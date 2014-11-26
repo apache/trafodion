@@ -46,6 +46,7 @@ import org.apache.hadoop.hbase.regionserver.ScanInfo;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
+import org.apache.hadoop.io.DataInputBuffer;
 
 /**
  * Holds the state of a transaction. This includes a buffer of all writes, a record of all reads / scans, and
@@ -276,9 +277,56 @@ public class TransactionState {
 
         return kv;
     }
+  
+    public void clearState() {
+
+      clearTransactionsToCheck();
+      clearWriteOrdering();
+      clearScanRange();
+      clearDeletes();
+      clearTags();
+      //clearWALEdit();
+    }
 
     public void clearTransactionsToCheck() {
         transactionsToCheck.clear();
+    }
+
+    public void clearWriteOrdering() {
+        writeOrdering.clear();
+    }
+
+    public void clearScanRange() {
+        scans.clear();
+    }
+
+    public void clearDeletes() {
+        deletes.clear();
+    }
+
+    public void clearTags() {
+        tagList.clear();
+    }
+
+    public void clearWALEdit() {
+      if (e.size() > 0) {
+
+        DataInputBuffer in = new DataInputBuffer();
+        try {
+          e.readFields(in);
+        } catch (java.io.EOFException eeof) { 
+          // DataInputBuffer was empty, successfully emptied kvs
+        } catch (Exception e) { 
+          if (LOG.isTraceEnabled()) LOG.trace("TransactionState clearWALEdit:  Clearing WALEdit caught an exception for transaction "+ this.transactionId + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "]" + ": exception " + e.toString());
+        } finally {
+          try {
+            in.close();
+          } catch (IOException io) {
+          }
+        }
+      }
+    //  if (e.size() > 0) 
+    //    if (LOG.isTraceEnabled()) LOG.trace("TransactionState clearWALEdit:  Possible leak with kvs entries in WALEDIT, for transaction "+ this.transactionId + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "], e is " + e.toString());
     }
 
     public void addTransactionToCheck(final TransactionState transaction) {

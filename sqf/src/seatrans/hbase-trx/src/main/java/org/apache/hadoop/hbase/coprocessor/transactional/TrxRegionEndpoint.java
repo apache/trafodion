@@ -204,13 +204,13 @@ CoprocessorService, Coprocessor {
   // Collection of active transactions (PENDING) keyed by id.
   protected ConcurrentHashMap<String, TransactionState> transactionsById = new ConcurrentHashMap<String, TransactionState>();
 
-  // Map of recent transactions that are COMMIT_PENDING or COMMITED keyed by
-  // their sequence number
+  // Map of recent transactions that are COMMIT_PENDING or COMMITED keyed 
+  // by their sequence number
+
   private SortedMap<Integer, TransactionState> commitedTransactionsBySequenceNumber = Collections.synchronizedSortedMap(new TreeMap<Integer, TransactionState>());
 
   // Collection of transactions that are COMMIT_PENDING
-  private Set<TransactionState> commitPendingTransactions = Collections
-                        .synchronizedSet(new HashSet<TransactionState>());
+  private Set<TransactionState> commitPendingTransactions = Collections.synchronizedSet(new HashSet<TransactionState>());
 
   // an in-doubt transaction list during recovery WALEdit replay
   private Map<Long, WALEdit> indoubtTransactionsById = new TreeMap<Long, WALEdit>();
@@ -246,6 +246,7 @@ CoprocessorService, Coprocessor {
   private int regionState = 0; 
   private Path recoveryTrxPath = null;
   private int cleanAT = 0;
+  
   private long[] commitCheckTimes   = new long[50];
   private long[] hasConflictTimes   = new long[50];
   private long[] putBySequenceTimes = new long[50];
@@ -637,10 +638,6 @@ CoprocessorService, Coprocessor {
     CheckAndDeleteResponse response = CheckAndDeleteResponse.getDefaultInstance();
 
     byte [] rowArray = null;
-    com.google.protobuf.ByteString row = null;
-    com.google.protobuf.ByteString family = null;
-    com.google.protobuf.ByteString qualifier = null;
-    com.google.protobuf.ByteString value = null;
     MutationProto proto = request.getDelete();
     MutationType type = proto.getMutateType();
     Delete delete = null;
@@ -669,8 +666,6 @@ CoprocessorService, Coprocessor {
 
     if (wre == null && type == MutationType.DELETE && proto.hasRow())
     {
-      rowArray = proto.getRow().toByteArray();
-
       try {
           delete = ProtobufUtil.toDelete(proto);
       } catch (Throwable e) {
@@ -682,22 +677,13 @@ CoprocessorService, Coprocessor {
       if (delete != null && t == null)
       {
         if (request.hasRow()) {
-          row = request.getRow();
 
-        if (!Bytes.equals(rowArray, request.getRow().toByteArray()))
+        if (!Bytes.equals(proto.getRow().toByteArray(), request.getRow().toByteArray()))
           t = new org.apache.hadoop.hbase.DoNotRetryIOException("Action's " +
           "Delete row must match the passed row");
         }
 
         if (t == null) {
-          if (request.hasRow())
-            row = request.getRow();
-          if (request.hasFamily())
-            family = request.getFamily();
-          if (request.hasQualifier())
-            qualifier = request.getQualifier();
-          if (request.hasValue())
-            value = request.getValue();
       
           try {
            result = checkAndDelete(request.getTransactionId(),
@@ -979,8 +965,6 @@ CoprocessorService, Coprocessor {
 
          if (type == MutationType.DELETE && proto.hasRow())
          {
-           row = proto.getRow().toByteArray();
-
            try {
                delete = ProtobufUtil.toDelete(proto);
            } catch (Throwable e) {
@@ -1000,7 +984,7 @@ CoprocessorService, Coprocessor {
              t = e;
              }
 
-             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(proto.getRow().toByteArray()));
            }
          }
        }
@@ -1059,8 +1043,6 @@ CoprocessorService, Coprocessor {
     }
     */
 
-    if (wre == null && type == MutationType.DELETE && proto.hasRow())
-      row = proto.getRow().toByteArray();
     try {
         delete = ProtobufUtil.toDelete(proto); 
     } catch (Throwable e) {
@@ -1078,7 +1060,7 @@ CoprocessorService, Coprocessor {
       t = e;
     }
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: delete - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: delete - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(proto.getRow().toByteArray()));
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteTransactionalResponse.Builder deleteTransactionalResponseBuilder = DeleteTransactionalResponse.newBuilder();
 
@@ -1135,12 +1117,14 @@ CoprocessorService, Coprocessor {
         t = e;
       }
 
-      byte[] row = proto.getRow().toByteArray();
-      byte[] getrow = get.getRow();
-      String rowKey = Bytes.toString(row);
-      String getRowKey = Bytes.toString(getrow);
+      if (LOG.isTraceEnabled()) {
+        byte[] row = proto.getRow().toByteArray();
+        byte[] getrow = get.getRow();
+        String rowKey = Bytes.toString(row);
+        String getRowKey = Bytes.toString(getrow);
 
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: get - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", row = " + rowKey + ", getRowKey = " + getRowKey);
+        LOG.trace("TrxRegionEndpoint coprocessor: get - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", row = " + rowKey + ", getRowKey = " + getRowKey);
+      }
 
 /*
  *    TODO: Disabled to resolve array out of bounds in certain cases
@@ -1160,7 +1144,15 @@ CoprocessorService, Coprocessor {
       List<Cell> results = new ArrayList<Cell>();
 
       try {
-         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: get - id Calling getScanner id/scan" + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", row = " + rowKey + ", getRowKey = " + getRowKey);
+        
+        if (LOG.isTraceEnabled()) {
+          byte[] row = proto.getRow().toByteArray();
+          byte[] getrow = get.getRow();
+          String rowKey = Bytes.toString(row);
+          String getRowKey = Bytes.toString(getrow);
+
+          LOG.trace("TrxRegionEndpoint coprocessor: get - id Calling getScanner id/scan" + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", row = " + rowKey + ", getRowKey = " + getRowKey);
+         }
          scanner = getScanner(request.getTransactionId(), scan);
 
          if (scanner != null)
@@ -1578,8 +1570,6 @@ CoprocessorService, Coprocessor {
 
       if (type == MutationType.PUT && proto.hasRow())
       {
-        row = proto.getRow().toByteArray();
-
         // Process in local memory
         try {   
           put(request.getTransactionId(), put);
@@ -1589,7 +1579,7 @@ CoprocessorService, Coprocessor {
           t = e;
         }
 
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: put - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: put - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(proto.getRow().toByteArray()));
       }
       else
       {
@@ -1656,8 +1646,6 @@ CoprocessorService, Coprocessor {
 
          if (type == MutationType.PUT && proto.hasRow())
          {
-           row = proto.getRow().toByteArray();
-
            try {
                put = ProtobufUtil.toPut(proto);
            } catch (Throwable e) {
@@ -1677,7 +1665,7 @@ CoprocessorService, Coprocessor {
                t = e;
              }
 
-             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(proto.getRow().toByteArray()));
            }
          }
        }
@@ -2373,8 +2361,8 @@ CoprocessorService, Coprocessor {
    */
   private void checkClosing(final long transactionId) throws IOException {
     if (closing) {
-      LOG.error("TrxRegionEndpoint coprocessor:  Trafodion Recovery: checkClosing(" + transactionId + ") - raising exception. no more transaction allowed.");
-      throw new IOException("closing region, no more transaction allowed");
+      LOG.error("TrxRegionEndpoint coprocessor:  Trafodion Recovery: checkClosing(" + transactionId + ") - raising exception. no more new transactions allowed.");
+      throw new IOException("closing region, no more new transactions allowed");
     }
   }
 
@@ -2426,7 +2414,6 @@ CoprocessorService, Coprocessor {
    * @param TransactionState state
    */
   private void retireTransaction(final TransactionState state) {
-    //long key = state.getTransactionId();
     String key = getTransactionalUniqueId(state.getTransactionId());
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: retireTransaction: [" 
@@ -2445,16 +2432,15 @@ CoprocessorService, Coprocessor {
       // Ignore
     }
 
-    // Clearing transaction conflict check list in case it is holding
-    // a reference to a transaction state
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction clearState for: " + key + " from all its TransactionState lists");
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction clearTransactionsById: " + key + " from list");
-    state.clearTransactionsToCheck();
+    // Clear out the structures in the state object
+    state.clearState();
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction calling Removing transaction: " + key + " from list");
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction calling remove entry for: " + key + " , from transactionById map ");
     transactionsById.remove(key);
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction Removed transaction: " + key + " from list");
 
+    //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:retireTransaction " + key + ", looking for retire transaction id " + state.getTransactionId() + ", transactionsById " + transactionsById.size() + ", commitedTransactionsBySequenceNumber " + commitedTransactionsBySequenceNumber.size() + ", commitPendingTransactions " + commitPendingTransactions.size());
    }
 
   public void deleteRecoveryzNode(int node, String encodedName) throws IOException {
@@ -2521,6 +2507,9 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  Commiting transaction: " + state.toString() + " to "
      + m_Region.getRegionInfo().getRegionNameAsString());
     long transactionId = state.getTransactionId();
+
+    //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commit looking for commit transactionId " + transactionId + ", transactionsById " + transactionsById.size() + ", commitedTransactionsBySequenceNumber " + commitedTransactionsBySequenceNumber.size() + ", commitPendingTransactions " + commitPendingTransactions.size());
+     
     if (state.isReinstated()) {
       if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  commit Trafodion Recovery: commit reinstated indoubt transactions " + transactionId + 
                               " in region " + m_Region.getRegionInfo().getRegionNameAsString());
@@ -2746,7 +2735,9 @@ CoprocessorService, Coprocessor {
    }
    switch (s.getStatus()) {
      case PENDING:
-       s.setStatus(Status.ABORTED);  
+       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  leaseExpired transaction " + s.getTransactionId() + " was PENDING, calling retireTransaction");
+       s.setStatus(Status.ABORTED);
+       retireTransaction(s);
        break;
       case COMMIT_PENDING:
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: leaseExpired  Transaction " + s.getTransactionId()
@@ -2764,6 +2755,7 @@ CoprocessorService, Coprocessor {
             transactionsById.put(getTransactionalUniqueId(s.getTransactionId()), s);
             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: leaseExpired  Adding transaction: " + s.getTransactionId() + " to list");
           }
+
           try {
             transactionLeases.createLease(
             getTransactionalUniqueId(s.getTransactionId()),
@@ -2793,7 +2785,6 @@ CoprocessorService, Coprocessor {
   public void delete(final long transactionId, final Delete delete)
     throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: delete -- ENTRY txId: " + transactionId);
-    checkClosing(transactionId);
     TransactionState state = this.beginTransIfNotExist(transactionId);
     state.addDelete(delete);
   }
@@ -2805,10 +2796,9 @@ CoprocessorService, Coprocessor {
    * @param Delete[] deletes   
    * @throws IOException 
    */
-  public synchronized void delete(long transactionId, Delete[] deletes)
+  public synchronized void delete(final long transactionId, Delete[] deletes)
     throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: deletes[], txid: " + transactionId);
-    checkClosing(transactionId);
 
     TransactionState state = this.beginTransIfNotExist(transactionId);
 
@@ -2828,7 +2818,7 @@ CoprocessorService, Coprocessor {
    * @return boolean
    * @throws IOException 
    */
-  public boolean checkAndDelete(long transactionId, 
+  public boolean checkAndDelete(final long transactionId, 
                                 byte[] row, byte[] family,
                                 byte[] qualifier, byte[] value, Delete delete)
     throws IOException {
@@ -2884,7 +2874,7 @@ CoprocessorService, Coprocessor {
    * @return boolean
    * @throws IOException 
    */
-  public boolean checkAndPut(long transactionId, byte[] row, byte[] family,
+  public boolean checkAndPut(final long transactionId, byte[] row, byte[] family,
                             byte[] qualifier, byte[] value, Put put)
     throws IOException {
 
@@ -3146,16 +3136,16 @@ CoprocessorService, Coprocessor {
 
     synchronized (transactionsById) {
       if (transactionsById.get(getTransactionalUniqueId(transactionId)) != null) {
-      TransactionState alias = getTransactionState(transactionId);
+        TransactionState alias = getTransactionState(transactionId);
 
-      LOG.error("TrxRegionEndpoint coprocessor:  beginTransaction - Ignoring - Existing transaction with id ["
+        LOG.error("TrxRegionEndpoint coprocessor:  beginTransaction - Ignoring - Existing transaction with id ["
           + transactionId + "] in region ["
           + m_Region.getRegionInfo().getRegionNameAsString() + "]");
                          
-      if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  beginTransaction -- EXIT txId: " + transactionId);
+        if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  beginTransaction -- EXIT txId: " + transactionId);
 
-      return;
-    }
+        return;
+      }
 
       if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  beginTransaction -- creating new TransactionState without coprocessorHost txId: " + transactionId);
 
@@ -3165,7 +3155,7 @@ CoprocessorService, Coprocessor {
                                 m_Region.getRegionInfo(),
                                 m_Region.getTableDesc());
 
-    state.setStartSequenceNumber(nextSequenceId.get());
+      state.setStartSequenceNumber(nextSequenceId.get());
     }
 
     List<TransactionState> commitPendingCopy = 
@@ -3182,19 +3172,19 @@ CoprocessorService, Coprocessor {
                 + m_Region.getRegionInfo().getRegionNameAsString() + "]" +
                  " to list");
 
-    try {
+      try {
 	transactionLeases.createLease(getTransactionalUniqueId(transactionId),
 				      transactionLeaseTimeout,
 				      new TransactionLeaseListener(transactionId));
-    } catch (LeaseStillHeldException e) {
-      LOG.error("TrxRegionEndpoint coprocessor:  beginTransaction - Lease still held for [" + transactionId + "] in region ["
+      } catch (LeaseStillHeldException e) {
+        LOG.error("TrxRegionEndpoint coprocessor:  beginTransaction - Lease still held for [" + transactionId + "] in region ["
                 + m_Region.getRegionInfo().getRegionNameAsString() + "]");
-        throw new RuntimeException(e);
-    }
+          throw new RuntimeException(e);
+      }
 
-    if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  beginTransaction -- EXIT txId: " + transactionId + " transactionsById size: " + transactionsById.size()
+      if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  beginTransaction -- EXIT txId: " + transactionId + " transactionsById size: " + transactionsById.size()
     		 + " region ID: " + this.regionInfo.getRegionId());
-  }
+    }
   }
 
   /**
@@ -3233,23 +3223,24 @@ CoprocessorService, Coprocessor {
     * @return true: begin; false: not necessary to begin
     * @throws IOException 
    */
-  private TransactionState beginTransIfNotExist(long transactionId)
+  private TransactionState beginTransIfNotExist(final long transactionId)
       throws IOException{
 
     TransactionState stateR = null;
 
     synchronized (transactionsById) {
-    if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: beginTransIfNotExist, txid: "
+      if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: beginTransIfNotExist, txid: "
               + transactionId + " transactionsById size: "
               + transactionsById.size());
-    TransactionState state = null;
+      TransactionState state = null;
 
       state = transactionsById.get(getTransactionalUniqueId(transactionId));
 
-    if (state == null) {
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  Begin transaction in beginTransIfNotExist beginning the transaction internally as state was null");
-      this.beginTransaction(transactionId);
-    }
+      if (state == null) {
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  Begin transaction in beginTransIfNotExist beginning the transaction internally as state was null");
+        this.beginTransaction(transactionId);
+        //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:beginTransaction looking for begin transaction id " + transactionId + ", transactionsById " + transactionsById.size() + ", commitedTransactionsBySequenceNumber " + commitedTransactionsBySequenceNumber.size() + ", commitPendingTransactions " + commitPendingTransactions.size());
+      }
 
       stateR =  transactionsById.get(getTransactionalUniqueId(transactionId));
     }
@@ -3308,14 +3299,15 @@ CoprocessorService, Coprocessor {
   public int commitRequest(final long transactionId) throws IOException {
     long txid = 0;
     if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest -- ENTRY txId: " + transactionId);
-    checkClosing(transactionId);
     TransactionState state;
 
-    int lv_totalCommits;
-    int lv_timeIndex;
-    synchronized (totalCommits){
-       lv_totalCommits = totalCommits.incrementAndGet();
-       lv_timeIndex = (timeIndex.getAndIncrement() % 50 );
+    int lv_totalCommits = 0;
+    int lv_timeIndex = 0;
+    if (LOG.isInfoEnabled()) {
+      synchronized (totalCommits){
+         lv_totalCommits = totalCommits.incrementAndGet();
+         lv_timeIndex = (timeIndex.getAndIncrement() % 50 );
+      }
     }
 
     long commitCheckStartTime = 0;
@@ -3328,7 +3320,7 @@ CoprocessorService, Coprocessor {
 
     boolean returnPending = false;
 
-    if (LOG.isDebugEnabled())LOG.debug("commitRequest timeIndex is " + lv_timeIndex);
+    if (LOG.isInfoEnabled())LOG.info("commitRequest timeIndex is " + lv_timeIndex);
     commitCheckStartTime = System.nanoTime();
 
     try {
@@ -3346,19 +3338,24 @@ CoprocessorService, Coprocessor {
         return COMMIT_UNSUCCESSFUL;
       }
 
-    hasConflictStartTime = System.nanoTime();
+    if (LOG.isInfoEnabled()) 
+      hasConflictStartTime = System.nanoTime();
 
     synchronized (commitCheckLock) {
       if (hasConflict(state)) {
-        hasConflictEndTime = System.nanoTime();
-        hasConflictTimes[lv_timeIndex] = hasConflictEndTime - hasConflictStartTime;
-        totalConflictTime += hasConflictTimes[lv_timeIndex];
+        if (LOG.isInfoEnabled()) {
+          hasConflictEndTime = System.nanoTime();
+          hasConflictTimes[lv_timeIndex] = hasConflictEndTime - hasConflictStartTime;
+          totalConflictTime += hasConflictTimes[lv_timeIndex];
+        }
         state.setStatus(Status.ABORTED);
         retireTransaction(state);
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest encountered conflict txId: " + transactionId + "returning COMMIT_CONFLICT");
         return COMMIT_CONFLICT;
       }
-      hasConflictEndTime = System.nanoTime();
+
+      if (LOG.isInfoEnabled()) 
+          hasConflictEndTime = System.nanoTime();
 
       // No conflicts, we can commit.
       if (LOG.isTraceEnabled()) LOG.trace("No conflicts for transaction " + transactionId
@@ -3369,7 +3366,8 @@ CoprocessorService, Coprocessor {
       // If there are writes we must keep record of the transaction
       putBySequenceStartTime = System.nanoTime();
       if (state.hasWrite()) {
-        putBySequenceOperations.getAndIncrement();
+        if (LOG.isInfoEnabled())
+          putBySequenceOperations.getAndIncrement();
         // Order is important
 	state.setStatus(Status.COMMIT_PENDING);
 	commitPendingTransactions.add(state);
@@ -3387,59 +3385,63 @@ CoprocessorService, Coprocessor {
                   state.getEdit(), new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
                   nextLogSequenceId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
              this.tHLog.sync(txid);
-             writeToLogEndTime = System.nanoTime();
-             writeToLogTimes[lv_timeIndex] = writeToLogEndTime - commitCheckEndTime;
-             writeToLogOperations.getAndIncrement();
+             if (LOG.isInfoEnabled()) {
+               writeToLogEndTime = System.nanoTime();
+               writeToLogTimes[lv_timeIndex] = writeToLogEndTime - commitCheckEndTime;
+               writeToLogOperations.getAndIncrement();
+             }
              if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:commitRequest COMMIT_OK -- EXIT txId: " + transactionId + " HLog seq " + txid);
       } catch (IOException exp) {
           if (LOG.isInfoEnabled()) LOG.info("TrxRegionEndpoint coprocessor:commitRequest IOException caught in HLOG appendNoSync -- EXIT txId: " + transactionId + " HLog seq " + txid);
           throw exp;
-      }
+      }      
       if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest COMMIT_OK -- EXIT txId: " + transactionId);
       returnPending = true;
     }
     // No write pending
     else {
-      writeToLogTimes[lv_timeIndex] = 0;
+      if (LOG.isInfoEnabled())
+        writeToLogTimes[lv_timeIndex] = 0;
     }
 
-    commitCheckTimes[lv_timeIndex] = commitCheckEndTime - commitCheckStartTime;
-    hasConflictTimes[lv_timeIndex] = hasConflictEndTime - hasConflictStartTime;
-    putBySequenceTimes[lv_timeIndex] = putBySequenceEndTime - putBySequenceStartTime;
-    totalCommitCheckTime += commitCheckTimes[lv_timeIndex];
-    totalConflictTime += hasConflictTimes[lv_timeIndex];
-    totalPutTime += putBySequenceTimes[lv_timeIndex];
-    totalWriteToLogTime += writeToLogTimes[lv_timeIndex];
-    if (commitCheckTimes[lv_timeIndex] > maxCommitCheckTime) {
-       maxCommitCheckTime = commitCheckTimes[lv_timeIndex];
-    }
-    if (commitCheckTimes[lv_timeIndex] < minCommitCheckTime) {
-       minCommitCheckTime = commitCheckTimes[lv_timeIndex];
-    }
-    if (hasConflictTimes[lv_timeIndex] > maxConflictTime) {
-       maxConflictTime = hasConflictTimes[lv_timeIndex];
-    }
-    if (hasConflictTimes[lv_timeIndex] < minConflictTime) {
-       minConflictTime = hasConflictTimes[lv_timeIndex];
-    }
-    if (putBySequenceTimes[lv_timeIndex] > maxPutTime) {
-       maxPutTime = putBySequenceTimes[lv_timeIndex];
-    }
-    if (putBySequenceTimes[lv_timeIndex] < minPutTime) {
-       minPutTime = putBySequenceTimes[lv_timeIndex];
-    }
-    if (writeToLogTimes[lv_timeIndex] > maxWriteToLogTime) {
-       maxWriteToLogTime = writeToLogTimes[lv_timeIndex];
-    }
-    if (writeToLogTimes[lv_timeIndex] < minWriteToLogTime) {
-       minWriteToLogTime = writeToLogTimes[lv_timeIndex];
-    }
+    if (LOG.isInfoEnabled()) {
+      commitCheckTimes[lv_timeIndex] = commitCheckEndTime - commitCheckStartTime;
+      hasConflictTimes[lv_timeIndex] = hasConflictEndTime - hasConflictStartTime;
+      putBySequenceTimes[lv_timeIndex] = putBySequenceEndTime - putBySequenceStartTime;
+      totalCommitCheckTime += commitCheckTimes[lv_timeIndex];
+      totalConflictTime += hasConflictTimes[lv_timeIndex];
+      totalPutTime += putBySequenceTimes[lv_timeIndex];
+      totalWriteToLogTime += writeToLogTimes[lv_timeIndex];
+      if (commitCheckTimes[lv_timeIndex] > maxCommitCheckTime) {
+         maxCommitCheckTime = commitCheckTimes[lv_timeIndex];
+      }
+      if (commitCheckTimes[lv_timeIndex] < minCommitCheckTime) {
+         minCommitCheckTime = commitCheckTimes[lv_timeIndex];
+      }
+      if (hasConflictTimes[lv_timeIndex] > maxConflictTime) {
+         maxConflictTime = hasConflictTimes[lv_timeIndex];
+      }
+      if (hasConflictTimes[lv_timeIndex] < minConflictTime) {
+         minConflictTime = hasConflictTimes[lv_timeIndex];
+      }
+      if (putBySequenceTimes[lv_timeIndex] > maxPutTime) {
+         maxPutTime = putBySequenceTimes[lv_timeIndex];
+      }
+      if (putBySequenceTimes[lv_timeIndex] < minPutTime) {
+         minPutTime = putBySequenceTimes[lv_timeIndex];
+      }
+      if (writeToLogTimes[lv_timeIndex] > maxWriteToLogTime) {
+         maxWriteToLogTime = writeToLogTimes[lv_timeIndex];
+      }
+      if (writeToLogTimes[lv_timeIndex] < minWriteToLogTime) {
+         minWriteToLogTime = writeToLogTimes[lv_timeIndex];
+      }
 
-    if (lv_timeIndex == 49) {
-       timeIndex.set(1);  // Start over so we don't exceed the array size
-    }
+      if (lv_timeIndex == 49) {
+         timeIndex.set(1);  // Start over so we don't exceed the array size
+      }
 
-    if (lv_totalCommits == 9999) {
+      if (lv_totalCommits == 9999) {
        avgCommitCheckTime = (double) (totalCommitCheckTime/lv_totalCommits);
        avgConflictTime = (double) (totalConflictTime/lv_totalCommits);
        avgPutTime = (double) (totalPutTime/lv_totalCommits);
@@ -3500,10 +3502,11 @@ CoprocessorService, Coprocessor {
                    maxWriteToLogTime =    0;
                    avgWriteToLogTime =    0;
                 }
+    } // end of LOG.Info
 
-                if (returnPending) {
-                  return COMMIT_OK;
-                }
+    if (returnPending) {
+      return COMMIT_OK;
+    }
 
     // Otherwise we were read-only and commitable, so we can forget it.
     state.setStatus(Status.COMMITED);
@@ -3527,7 +3530,7 @@ CoprocessorService, Coprocessor {
       if (other == null) {
         continue;
       }
-        //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: has Conflict state.getStartSequenceNumber  is " + i + ", nextSequenceId.get() is " + nextSequenceId.get() + ", state object is " + state.toString() + ", calling addTransactionToCheck");
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: has Conflict state.getStartSequenceNumber  is " + i + ", nextSequenceId.get() is " + nextSequenceId.get() + ", state object is " + state.toString() + ", calling addTransactionToCheck");
       state.addTransactionToCheck(other);
     }
     }
@@ -3644,6 +3647,7 @@ CoprocessorService, Coprocessor {
 
    retireTransaction(state);
 
+   //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:abortTransaction looking for abort transaction " + transactionId + ", transactionsById " + transactionsById.size() + ", commitedTransactionsBySequenceNumber " + commitedTransactionsBySequenceNumber.size() + ", commitPendingTransactions" + commitPendingTransactions.size());
    }
 
   /**
