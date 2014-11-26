@@ -4111,7 +4111,7 @@ NABoolean ValueId::isDivisioningColumn() const
       return FALSE;
 }
 
-NABoolean ValueId::isSaltedColumn() const
+NABoolean ValueId::isSaltColumn() const
 {
    ItemExpr *ck = getItemExpr();
 
@@ -4122,22 +4122,9 @@ NABoolean ValueId::isSaltedColumn() const
       ck = ((IndexColumn *) ck)->getDefinition().getItemExpr();
 
    if (ck->getOperatorType() == ITM_BASECOLUMN)
-   {
-      NAColumn *naCol = ((BaseColumn *) ck)->getNAColumn();
-      NAString saltCol = "_SALT_";
-      NAString trafCat(TRAFODION_SYSCAT_LIT);
-      NAString colName = naCol->getColName();
-      NAString catName = naCol->getTableName()->getCatalogName();
-      if (colName == saltCol && catName == trafCat && 
-          naCol->isComputedColumn())
-        return TRUE;
-      else
-        return FALSE;
-
-      return (((BaseColumn *) ck)->getNAColumn()->isComputedColumn());
-   }
+     return (((BaseColumn *) ck)->getNAColumn()->isSaltColumn());
    else
-      return FALSE;
+     return FALSE;
 }
 
 // -----------------------------------------------------------------------

@@ -65,6 +65,7 @@ ElemDDLColDef::ElemDDLColDef(const NAString & columnName,
   pDefault_(NULL),
   isHeadingSpec_(FALSE),
   heading_(heap),
+  columnClass_(COM_USER_COLUMN),
   isNotNullSpec_(FALSE),
   isNotNullNondroppable_(FALSE),
   isLoggableSpec_(FALSE),
@@ -79,7 +80,6 @@ ElemDDLColDef::ElemDDLColDef(const NAString & columnName,
   pSGLocation_(NULL),
   isDivisionColumn_(FALSE),
   divisionColumnSeqNum_(-1),
-  pDivExpr_(NULL),
   isLobAttrsSpec_(FALSE),
   lobStorage_(Lob_Invalid_Storage),
   isSeabaseSerializedSpec_(FALSE),
@@ -797,21 +797,6 @@ ElemDDLColDef::setSGOptions(ElemDDLSGOptions *pSGOptions)
 //
 // Helper methods
 //
-
-/*static*/ ComColumnOrdering ElemDDLColDef::getDivisionExprSortingOrder(ItemExpr * divExpr)
-{
-  ComColumnOrdering eSortingOrder = COM_UNKNOWN_ORDER;
-
-  if (divExpr->getOperatorType() == ITM_INVERSE)
-    if (divExpr->child(0)->getOperatorType() == ITM_INVERSE)
-      eSortingOrder = COM_ASCENDING_ORDER;  // specified ASC
-    else
-      eSortingOrder = COM_DESCENDING_ORDER; // specified DESC
-  else
-    eSortingOrder = COM_ASCENDING_ORDER;    // specified neither ASC nor DESC
-
-  return eSortingOrder;
-}
 
 //
 // methods for tracing

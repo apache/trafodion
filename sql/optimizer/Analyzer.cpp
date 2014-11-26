@@ -4186,7 +4186,7 @@ ValueIdSet TableAnalysis::getLocalPredsOnPrefixOfList(const ValueIdList & cols,
     }
     else {
 
-      if ( !cols[i].isSaltedColumn() )
+      if ( !cols[i].isSaltColumn() )
         break;
     }
   }

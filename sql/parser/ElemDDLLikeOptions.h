@@ -80,24 +80,24 @@ private:
 }; // class ElemDDLLikeOpt
 
 // -----------------------------------------------------------------------
-// definition of class ElemDDLLikeOptWithConstraints
+// definition of class ElemDDLLikeOptWithoutConstraints
 // -----------------------------------------------------------------------
-class ElemDDLLikeOptWithConstraints : public ElemDDLLikeOpt
+class ElemDDLLikeOptWithoutConstraints : public ElemDDLLikeOpt
 {
 
 public:
 
   // constructor
-  ElemDDLLikeOptWithConstraints()
-  : ElemDDLLikeOpt(ELM_LIKE_OPT_WITH_CONSTRAINTS_ELEM)
+  ElemDDLLikeOptWithoutConstraints()
+  : ElemDDLLikeOpt(ELM_LIKE_OPT_WITHOUT_CONSTRAINTS_ELEM)
   { }
 
   // virtual destructor
-  virtual ~ElemDDLLikeOptWithConstraints();
+  virtual ~ElemDDLLikeOptWithoutConstraints();
 
   // cast
-  virtual ElemDDLLikeOptWithConstraints *
-    castToElemDDLLikeOptWithConstraints();
+  virtual ElemDDLLikeOptWithoutConstraints *
+    castToElemDDLLikeOptWithoutConstraints();
 
   // method for tracing
   virtual const NAString getText() const;
@@ -105,7 +105,7 @@ public:
 
 private:
 
-}; // class ElemDDLLikeOptWithConstraints
+}; // class ElemDDLLikeOptWithoutConstraints
 
 // -----------------------------------------------------------------------
 // definition of class ElemDDLLikeOptWithHeadings
@@ -164,26 +164,25 @@ private:
 }; // class ElemDDLLikeOptWithHorizontalPartitions
 
 
-
 // -----------------------------------------------------------------------
-// definition of class ElemDDLLikeOptWithDivision
+// definition of class ElemDDLLikeOptWithoutSalt
 // -----------------------------------------------------------------------
-class ElemDDLLikeOptWithDivision : public ElemDDLLikeOpt
+class ElemDDLLikeOptWithoutSalt : public ElemDDLLikeOpt
 {
 
 public:
 
   // constructor
-  ElemDDLLikeOptWithDivision()
-    : ElemDDLLikeOpt(ELM_LIKE_OPT_WITH_DIVISION_ELEM)
+  ElemDDLLikeOptWithoutSalt()
+    : ElemDDLLikeOpt(ELM_LIKE_OPT_WITHOUT_SALT_ELEM)
   { }
 
   // virtual destructor
-  virtual ~ElemDDLLikeOptWithDivision();
+  virtual ~ElemDDLLikeOptWithoutSalt();
 
   // cast
-  virtual ElemDDLLikeOptWithDivision *
-    castToElemDDLLikeOptWithDivision();
+  virtual ElemDDLLikeOptWithoutSalt *
+    castToElemDDLLikeOptWithoutSalt();
 
   // method for tracing
   virtual const NAString getText() const;
@@ -191,6 +190,35 @@ public:
 
 private:
 
-}; // class ElemDDLLikeOptWithDivision
+}; // class ElemDDLLikeOptWithoutSalt
+
+
+// -----------------------------------------------------------------------
+// definition of class ElemDDLLikeOptWithoutDivision
+// -----------------------------------------------------------------------
+class ElemDDLLikeOptWithoutDivision : public ElemDDLLikeOpt
+{
+
+public:
+
+  // constructor
+  ElemDDLLikeOptWithoutDivision()
+    : ElemDDLLikeOpt(ELM_LIKE_OPT_WITHOUT_DIVISION_ELEM)
+  { }
+
+  // virtual destructor
+  virtual ~ElemDDLLikeOptWithoutDivision();
+
+  // cast
+  virtual ElemDDLLikeOptWithoutDivision *
+    castToElemDDLLikeOptWithoutDivision();
+
+  // method for tracing
+  virtual const NAString getText() const;
+
+
+private:
+
+}; // class ElemDDLLikeOptWithoutDivision
 
 #endif // ELEMDDLLIKEOPTIONS_H

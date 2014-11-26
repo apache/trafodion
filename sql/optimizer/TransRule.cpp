@@ -2706,7 +2706,7 @@ NABoolean JoinToTSJRule::topMatch (RelExpr * expr,
 		  }
 
                   // skip salted columns and constant predicates
-                  if (isaConstant || firstkeyCol.isSaltedColumn() ) 
+                  if (isaConstant || firstkeyCol.isSaltColumn() ) 
                     continue; // try next prefix column
 
                   // If firstkeyCol is one of the leading DIVISION columns

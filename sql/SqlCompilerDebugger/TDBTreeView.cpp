@@ -62,26 +62,6 @@ NAString TDBTreeView::TDBNodeTypeToString(ComTdb::ex_node_type nodeType)
       tdbName = "ex_describe_tdb";
       break;
 
-    case ComTdb::ex_DP2_INSERT:
-      tdbName = "ExDp2InsertTdb";
-      break;
-
-    case ComTdb::ex_DP2_SUBS_OPER:
-      tdbName = "ExDp2SubsOperTdb";
-      break;
-
-    case ComTdb::ex_DP2_UNIQUE_OPER:
-      tdbName = "ExDp2UniqueOperTdb";
-      break;
-
-    case ComTdb::ex_DP2_VSBB_INSERT:
-      tdbName = "ExDp2VSBBInsertTdb";
-      break;
-
-    case ComTdb::ex_DP2_VSBB_SIDETREE_INSERT:
-      tdbName = "ExDp2VSBBSidetreeTdb";
-      break;
-
     case ComTdb::ex_ROOT:
       tdbName = "ex_root_tdb";
       break;
@@ -148,10 +128,6 @@ NAString TDBTreeView::TDBNodeTypeToString(ComTdb::ex_node_type nodeType)
 
     case ComTdb::ex_PARTN_ACCESS:
       tdbName = "ex_partn_access_tdb";
-      break;
-
-    case ComTdb::ex_EID_ROOT:
-      tdbName = "ExEIDRootTdb";
       break;
 
     case ComTdb::ex_SEND_TOP:

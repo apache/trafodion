@@ -581,7 +581,13 @@ static short genHbaseUpdOrInsertExpr(
   if ((isInsert) &&
       (updRowVidList.entries() > 0))
     {
+      ValueIdList updRowKeyVidList;
+      const NAColumnArray &keyColArray = indexDesc->getNAFileSet()->getIndexKeyColumns();
       ULng32 firstKeyColumnOffset = 0;
+
+      for (CollIndex kc=0; kc<keyColArray.entries(); kc++)
+        updRowKeyVidList.insert(updRowVidList[keyColArray[kc]->getPosition()]);
+
       expGen->generateKeyEncodeExpr(indexDesc,
 				    1, // (IN) Destination Atp
 				    mergeInsertRowIdTuppIndex,
@@ -590,7 +596,7 @@ static short genHbaseUpdOrInsertExpr(
 				    mergeInsertRowIdExpr,
 				    FALSE,
 				    firstKeyColumnOffset,
-				    &updRowVidList,
+				    &updRowKeyVidList,
 				    TRUE);
     }
 

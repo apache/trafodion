@@ -67,17 +67,17 @@ ElemDDLLikeOpt::getText() const
 }
 
 // -----------------------------------------------------------------------
-// methods for class ElemDDLLikeOptWithConstraints
+// methods for class ElemDDLLikeOptWithoutConstraints
 // -----------------------------------------------------------------------
 
 // virtual destructor
-ElemDDLLikeOptWithConstraints::~ElemDDLLikeOptWithConstraints()
+ElemDDLLikeOptWithoutConstraints::~ElemDDLLikeOptWithoutConstraints()
 {
 }
 
 // casting
-ElemDDLLikeOptWithConstraints *
-ElemDDLLikeOptWithConstraints::castToElemDDLLikeOptWithConstraints()
+ElemDDLLikeOptWithoutConstraints *
+ElemDDLLikeOptWithoutConstraints::castToElemDDLLikeOptWithoutConstraints()
 {
   return this;
 }
@@ -87,9 +87,9 @@ ElemDDLLikeOptWithConstraints::castToElemDDLLikeOptWithConstraints()
 //
 
 const NAString
-ElemDDLLikeOptWithConstraints::getText() const
+ElemDDLLikeOptWithoutConstraints::getText() const
 {
-  return "ElemDDLLikeOptWithConstraints";
+  return "ElemDDLLikeOptWithoutConstraints";
 }
 
 // -----------------------------------------------------------------------
@@ -147,16 +147,16 @@ ElemDDLLikeOptWithHorizontalPartitions::getText() const
 
 
 // -----------------------------------------------------------------------
-// methods for class ElemDDLLikeOptWithDivision
+// methods for class ElemDDLLikeOptWithoutSalt
 // -----------------------------------------------------------------------
 
 // virtual destructor
-ElemDDLLikeOptWithDivision::~ElemDDLLikeOptWithDivision()
+ElemDDLLikeOptWithoutSalt::~ElemDDLLikeOptWithoutSalt()
 {
 }
 
 // casting
-ElemDDLLikeOptWithDivision * ElemDDLLikeOptWithDivision::castToElemDDLLikeOptWithDivision()
+ElemDDLLikeOptWithoutSalt * ElemDDLLikeOptWithoutSalt::castToElemDDLLikeOptWithoutSalt()
 {
   return this;
 }
@@ -165,9 +165,34 @@ ElemDDLLikeOptWithDivision * ElemDDLLikeOptWithDivision::castToElemDDLLikeOptWit
 // methods for tracing
 //
 
-const NAString ElemDDLLikeOptWithDivision::getText() const
+const NAString ElemDDLLikeOptWithoutSalt::getText() const
 {
-  return "ElemDDLLikeOptWithDivision";
+  return "ElemDDLLikeOptWithoutSalt";
+}
+
+
+// -----------------------------------------------------------------------
+// methods for class ElemDDLLikeOptWithoutDivision
+// -----------------------------------------------------------------------
+
+// virtual destructor
+ElemDDLLikeOptWithoutDivision::~ElemDDLLikeOptWithoutDivision()
+{
+}
+
+// casting
+ElemDDLLikeOptWithoutDivision * ElemDDLLikeOptWithoutDivision::castToElemDDLLikeOptWithoutDivision()
+{
+  return this;
+}
+
+//
+// methods for tracing
+//
+
+const NAString ElemDDLLikeOptWithoutDivision::getText() const
+{
+  return "ElemDDLLikeOptWithoutDivision";
 }
 
 

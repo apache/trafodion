@@ -1441,7 +1441,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
         }
       }
 
-      //get NATable from cache
+      //get NATable (from cache or from metadata)
       table = bindWA->getSchemaDB()->getNATableDB()->
                                      get(corrName, bindWA, inTableDescStruct);
 

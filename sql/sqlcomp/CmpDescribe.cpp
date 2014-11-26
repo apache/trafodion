@@ -180,6 +180,8 @@ short CmpDescribeSeabaseTable (
                              CollHeap *heap,
                              const char * pkeyStr = NULL,
                              NABoolean withPartns = FALSE,
+                             NABoolean withoutSalt = FALSE,
+                             NABoolean withoutDivisioning = FALSE,
                              NABoolean noTrailingSemi = FALSE);
 
 short CmpDescribeSequence ( 
@@ -2424,6 +2426,8 @@ short CmpDescribeSeabaseTable (
                                CollHeap *heap,
                                const char * pkeyStr,
                                NABoolean withPartns,
+                               NABoolean withoutSalt,
+                               NABoolean withoutDivisioning,
                                NABoolean noTrailingSemi)
 {
   const NAString& tableName =
@@ -2551,7 +2555,9 @@ short CmpDescribeSeabaseTable (
   Int32 nonSystemKeyCols = 0;
   NABoolean isStoreBy = FALSE;
   NABoolean isSalted = FALSE;
+  NABoolean isDivisioned = FALSE;
   ItemExpr *saltExpr;
+  LIST(NAString) divisioningExprs;
 
   if (naTable->getClusteringIndex())
     {
@@ -2561,11 +2567,20 @@ short CmpDescribeSeabaseTable (
           NAColumn * nac = naf->getIndexKeyColumns()[i];
           if (nac->isComputedColumnAlways())
             {
-              isSalted = TRUE;
-              ItemExpr * saltBaseCol =
-                tdesc->getColumnList()[nac->getPosition()].getItemExpr();
-              CMPASSERT(saltBaseCol->getOperatorType() == ITM_BASECOLUMN);
-              saltExpr = ((BaseColumn *) saltBaseCol)->getComputedColumnExpr().getItemExpr();
+              if (nac->isSaltColumn()  && !withoutSalt)
+                {
+                  isSalted = TRUE;
+                  ItemExpr * saltBaseCol =
+                    tdesc->getColumnList()[nac->getPosition()].getItemExpr();
+                  CMPASSERT(saltBaseCol->getOperatorType() == ITM_BASECOLUMN);
+                  saltExpr = ((BaseColumn *) saltBaseCol)->getComputedColumnExpr().getItemExpr();
+                }
+              else if (nac->isDivisioningColumn() && !withoutDivisioning)
+                {
+                  // any other case of computed column is treated as divisioning for now
+                  isDivisioned = TRUE;
+                  divisioningExprs.insert(NAString(nac->getComputedColumnExprString()));
+                }
             }
           if (NOT nac->isSystemColumn())
             nonSystemKeyCols++;
@@ -2629,7 +2644,7 @@ short CmpDescribeSeabaseTable (
                                space, buf, TRUE, TRUE);
         }
       
-      if ((isSalted) && (withPartns))
+      if ((isSalted) && (withPartns) && !withoutSalt)
         {
           Lng32 currPartitions = naf->getCountOfPartitions();
           Lng32 numPartitions = naTable->numSaltPartns();
@@ -2694,6 +2709,41 @@ short CmpDescribeSeabaseTable (
               
               outputShortLine(space, buf);
             }
+        }
+
+      if (isDivisioned && !withoutDivisioning)
+        {
+          NAString divByClause = "  DIVISION BY (";
+
+          for (CollIndex d=0; d<divisioningExprs.entries(); d++)
+            {
+              if (d > 0)
+                divByClause += ", ";
+              divByClause += divisioningExprs[d];
+            }
+          outputShortLine(space, divByClause.data());
+          divByClause = "     NAMED AS (";
+
+          NAFileSet * naf = naTable->getClusteringIndex();
+          NABoolean firstDivCol = TRUE;
+
+          for (Lng32 i = 0; i < naf->getIndexKeyColumns().entries(); i++)
+            {
+              NAColumn * nac = naf->getIndexKeyColumns()[i];
+              if (nac->isDivisioningColumn())
+                {
+                  if (firstDivCol)
+                    firstDivCol = FALSE;
+                  else
+                    divByClause += ", ";
+                  divByClause += "\"";
+                  divByClause += nac->getColName();
+                  divByClause += "\"";
+                }
+            }
+
+          divByClause += "))";
+          outputShortLine(space, divByClause.data());
         }
 
       NABoolean attributesSet = FALSE;

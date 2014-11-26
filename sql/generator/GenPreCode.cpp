@@ -3724,7 +3724,7 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
           // the first salt column we find in the key is the one
           // we are looking for
           for (CollIndex i=0; i<keyCols.entries(); i++)
-            if (keyCols[i].isSaltedColumn())
+            if (keyCols[i].isSaltColumn())
               {
                 saltCol = keyCols[i];
                 break;

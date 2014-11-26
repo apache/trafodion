@@ -12912,6 +12912,29 @@ ItemExpr * NATypeToItem::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 }
 
 // --------------------------------------------------------------
+// member functions for NamedTypeToItem operator
+// --------------------------------------------------------------
+
+ItemExpr* NamedTypeToItem::copyTopNode(ItemExpr *derivedNode, CollHeap *outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) NamedTypeToItem(name_.data(),
+                                           natype_pointer,
+                                           outHeap);
+  else
+    result = derivedNode;
+
+  return NATypeToItem::copyTopNode(result, outHeap);
+}
+
+const NAString NamedTypeToItem::getText() const
+{
+  return name_;
+}
+
+// --------------------------------------------------------------
 // member functions for NoOp operator
 // --------------------------------------------------------------
 

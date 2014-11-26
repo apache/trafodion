@@ -139,7 +139,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
 
      colInfoArray[i].colNumber = i; 
 
-     strcpy(colInfoArray[i].columnClass, COM_USER_COLUMN_LIT);
+     colInfoArray[i].columnClass = COM_USER_COLUMN;
 
      const NAType * naType = tableCol->getType();
 
@@ -279,7 +279,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
       colInfoArray[i].colName = col_name;
 
       colInfoArray[i].colNumber = i; 
-      strcpy(colInfoArray[i].columnClass, COM_USER_COLUMN_LIT);
+      colInfoArray[i].columnClass = COM_USER_COLUMN;
 
       selColList.insert(keyCol->getColName());
 
@@ -653,12 +653,14 @@ void CmpSeabaseDDL::createSeabaseIndex(
   const NAFileSet * nafs = naTable->getClusteringIndex();
   const NAColumnArray &baseTableKeyArr = nafs->getIndexKeyColumns();
   Int32 numSplits = 0;
+  CollIndex numPrefixColumns = 0;
 
   if (createIndexNode->getSaltOptions() && 
       createIndexNode->getSaltOptions()->getLikeTable())
   {
     if (createIndexNode->isUniqueSpecified())
     {
+      // TBD: allow unique indexes on a superset of the SALT BY columns
       *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_SALTED_UNIQUE_IDX)
                            << DgString0(extIndexName);
        deallocEHI(ehi);
@@ -669,25 +671,68 @@ void CmpSeabaseDDL::createSeabaseIndex(
     if (naTable->hasSaltedColumn())
     {
       createIndexNode->getSaltOptions()->setNumPartns(naTable->numSaltPartns());
-      NAString saltCol = "_SALT_";
+      NAString saltColName;
+      for (CollIndex c=0; c<baseTableKeyArr.entries(); c++)
+        if (baseTableKeyArr[c]->isSaltColumn())
+          {
+            saltColName = baseTableKeyArr[c]->getColName();
+            break;
+          }
+
       ElemDDLColRef * saltColRef = new (STMTHEAP) ElemDDLColRef(
-                                        saltCol /*column_name*/,
+                                        saltColName /*column_name*/,
                                         COM_UNKNOWN_ORDER /*default val*/,
                                         STMTHEAP);
       //SALT column will be the first column in the index
-      indexColRefArray.insertAt((CollIndex)0, saltColRef);
+      indexColRefArray.insertAt(numPrefixColumns, saltColRef);
+      numPrefixColumns++;
       numSplits = naTable->numSaltPartns() - 1;
     }
     else
     {
-       *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_SALT_LIKE_CLAUSE)
+       // give a warning that table is not salted
+       *CmpCommon::diags() << DgSqlCode(CAT_INVALID_SALT_LIKE_CLAUSE)
                            << DgString0(extTableName)
                            << DgString1(extIndexName);
-       deallocEHI(ehi);
-       processReturn();
-       return;
     }
   }
+
+  if (createIndexNode->getDivisionType() == ElemDDLDivisionClause::DIVISION_LIKE_TABLE)
+    {
+      if (createIndexNode->isUniqueSpecified())
+        {
+          // TBD: Allow unique indexes on a superset of the division by columns
+          *CmpCommon::diags() << DgSqlCode(-1402)
+                              << DgTableName(extIndexName)
+                              << DgString0(extTableName);
+          deallocEHI(ehi);
+          processReturn();
+          return;
+        }
+
+      int numDivisioningColumns = 0;
+
+      for (CollIndex c=0; c<baseTableKeyArr.entries(); c++)
+        if (baseTableKeyArr[c]->isDivisioningColumn())
+          {
+            ElemDDLColRef * divColRef = new (STMTHEAP) ElemDDLColRef(
+               baseTableKeyArr[c]->getColName(),
+               COM_UNKNOWN_ORDER /*default val*/,
+               STMTHEAP);
+          // divisioning columns go after the salt but before any user columns
+          indexColRefArray.insertAt(numPrefixColumns, divColRef);
+          numPrefixColumns++;
+          numDivisioningColumns++;
+        }
+
+      if (numDivisioningColumns == 0)
+        {
+          // give a warning that table is not divisioned
+          *CmpCommon::diags() << DgSqlCode(4248)
+                              << DgString0(extTableName)
+                              << DgString1(extIndexName);
+        }
+    }
 
   Lng32 keyColCount = 0;
   Lng32 nonKeyColCount = 0;

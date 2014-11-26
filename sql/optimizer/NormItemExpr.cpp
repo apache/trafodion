@@ -594,8 +594,16 @@ Between::setDirectionVector(const IntegerList & directionVector,
 //----------------------------------------------------------------------------
 ItemExpr * Between::transformIntoTwoComparisons()
 {
+  ItemExpr *tfm = NULL;
   OperatorTypeEnum leftBoundryOp = ITM_GREATER;
   OperatorTypeEnum rightBoundryOp = ITM_LESS;
+  ItemExpr *leftVal = child(0).getPtr();
+  ItemExpr *startVal = child(1).getPtr();
+  ItemExpr *endVal = child(2).getPtr();
+  NABoolean optimizeForEquals = (leftBoundryIncluded_ AND
+                                 rightBoundryIncluded_ AND
+                                 pDirectionVector_ == NULL);
+                                
 
   // THE DEFUALT BEHAVIOUR
   if (TRUE == leftBoundryIncluded_)
@@ -609,28 +617,80 @@ ItemExpr * Between::transformIntoTwoComparisons()
   }
 
   // ---------------------------------------------------------------------
-  // Replace  col between val1 and val2 with
-  //          col >= val1 and col <= val2
-  // NOTE: This transformation assumes the ascii collating sequence.
-  //       When other collations are supported, the transformation
-  //       rule will have to be different.
+  // Try to optimize the case "a between x and x" and produce an
+  // equals predicate instead, do this first for prefixes of multi-
+  // valued between predicates like (a,b,c) between (1,1,2) and (1,1,4)
   // ---------------------------------------------------------------------
+  if (optimizeForEquals AND
+      leftVal->getOperatorType() == ITM_ITEM_LIST)
+    {
+      ItemExprList leftList(leftVal, HEAP);
+      ItemExprList startList(startVal, HEAP);
+      ItemExprList endList(endVal, HEAP);
 
-  BiRelat * leftCondition =
-       new HEAP BiRelat(leftBoundryOp, child(0).getPtr(), child(1).getPtr());
+      while (leftList.entries() > 0 AND
+             startList[0] == endList[0])
+        {
+          ItemExpr *eqPred = 
+            new HEAP BiRelat(ITM_EQUAL,
+                             leftList[0],
+                             startList[0]);
+          if (tfm)
+            tfm = new HEAP BiLogic(ITM_AND, tfm, eqPred);
+          else
+            tfm = eqPred;
 
-  BiRelat * rightCondition =
-       new HEAP BiRelat(rightBoundryOp, child(0).getPtr(), child(2).getPtr());
+          leftList.removeAt(0);
+          startList.removeAt(0);
+          endList.removeAt(0);
+        }
+
+      if (tfm)
+        {
+          // we took care of a prefix of the comparisons,
+          // make a new list without those equal values
+          if (leftList.entries() > 0)
+            {
+              leftVal = leftList.convertToItemExpr();
+              startVal = startList.convertToItemExpr();
+              endVal = endList.convertToItemExpr();
+            }
+          else
+            leftVal = startVal = endVal = NULL;
+        }
+    }
+
+  if (leftVal)
+    {
+      // ---------------------------------------------------------------------
+      // Replace  col between val1 and val2 with
+      //          col >= val1 and col <= val2
+      // NOTE: This transformation assumes the ascii collating sequence.
+      //       When other collations are supported, the transformation
+      //       rule will have to be different.
+      // ---------------------------------------------------------------------
+
+      BiRelat * leftCondition =
+        new HEAP BiRelat(leftBoundryOp, leftVal, startVal);
+
+      BiRelat * rightCondition =
+        new HEAP BiRelat(rightBoundryOp, leftVal, endVal);
 
 
-  // NOTE: we copy the pointer as is. it should probably have been marked
-  // as const but there was to much damn code to change so I gave up.
-  //++ MV OZ
-  leftCondition->setDirectionVector((IntegerList *)pDirectionVector_);
-  rightCondition->setDirectionVector((IntegerList *)pDirectionVector_);
+      // NOTE: we copy the pointer as is. it should probably have been marked
+      // as const but there was to much damn code to change so I gave up.
+      //++ MV OZ
+      leftCondition->setDirectionVector((IntegerList *)pDirectionVector_);
+      rightCondition->setDirectionVector((IntegerList *)pDirectionVector_);
 
 
-  ItemExpr *tfm = new HEAP BiLogic(ITM_AND, leftCondition, rightCondition);
+      ItemExpr *noneqPreds = new HEAP BiLogic(ITM_AND, leftCondition, rightCondition);
+
+      if (tfm)
+        tfm = new HEAP BiLogic(ITM_AND, tfm, noneqPreds);
+      else
+        tfm = noneqPreds;
+    }
 
   CMPASSERT(tfm);
   return tfm;

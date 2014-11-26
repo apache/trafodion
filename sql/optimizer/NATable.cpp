@@ -3315,16 +3315,16 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
          char* defaultValue = column_desc->defaultvalue;
          char* heading = column_desc->heading;
          char* computed_column_text = column_desc->computed_column_text;
+         NABoolean isSaltColumn = FALSE;
          NABoolean isDivisioningColumn = FALSE;
 
          if (column_desc->defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT)
            {
-             if (computed_column_text ||
-                 defaultValue == NULL ||
-                 str_len(defaultValue) == 0)
-               // divisioning column, expression stored in TEXT metadata table
+             if (column_desc->colFlags & SEABASE_COLUMN_IS_SALT)
+               isSaltColumn = TRUE;
+             if (column_desc->colFlags & SEABASE_COLUMN_IS_DIVISION)
                isDivisioningColumn = TRUE;
-             else
+             if (!computed_column_text)
                {
                  computed_column_text = defaultValue;
                  defaultValue = NULL;
@@ -3357,7 +3357,7 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
 			       column_desc->colnumber,
 			       type,
                                heap,
-			       0 /* not a SQLMP KEYTAG column */,
+			       0,
 			       table,
 			       colClass,
 			       column_desc->defaultClass,
@@ -3370,44 +3370,13 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
                                NULL,
                                column_desc->stored_on_disk,
                                computed_column_text,
+                               isSaltColumn,
                                isDivisioningColumn);
 	}
       else
         {
-	  // Kludged KEYTAG column from srtdsrv.tal/RTD_Convert_Index_To_Table()
-	  // fetching INDEX metadata in BASETABLE format...
-	  // An empty COLNAME signals a KEYTAG column of what's actually an
-	  // MP INDEX -- the INDEX's KEYTAG VALUE is passed to us in the COLNUM,
-	  // which we save, then set to what we know is the real ordinal of
-	  // the KEYTAG column, i.e. zero.
-	  //
-	  // Some sanity checks to be on the safe side...
-	  //
-          if(table !=NULL)
-	    {
-	      
-	      CMPASSERT(table->isSQLMPTable());
-	      CMPASSERT(table->getSpecialType() == ExtendedQualName::INDEX_TABLE);
-	      CMPASSERT(colClass == SYSTEM_COLUMN);
-	      CMPASSERT(column_desc->offset == 0);
-	      unsigned short SQLMPKeytag = column_desc->colnumber;
-	      CMPASSERT(SQLMPKeytag);
-	      NAWchar* keytagStr = new (heap) NAWchar[20];
-	      NAWsprintf(keytagStr, WIDE_("%u"), (UInt32)SQLMPKeytag);
-	      
-	      newColumn = new (heap)
-		NAColumn(FUNNY_INTERNAL_IDENT("KEYTAG"),
-			 0 /* colnumber */,
-			 type,
-			 heap,
-			 SQLMPKeytag,
-			 table,
-			 colClass,
-			 COM_USER_DEFINED_DEFAULT,
-			 (char*)keytagStr
-			 );
-	    }
-	} // else
+          CMPASSERT(0);
+	}
       
       if (isMvSystemAdded)
 	newColumn->setMvSystemAddedColumn();
@@ -3504,6 +3473,9 @@ NABoolean createNAColumns(struct hive_column_desc* hcolumn /*IN*/,
       NAType* natype = getSQColTypeForHive(hcolumn->type_, heap);
 
       if ( !natype ) {
+	*CmpCommon::diags()
+	  << DgSqlCode(-1204)
+	  << DgString0(hcolumn->type_);
          return TRUE;
       }
 
@@ -4978,19 +4950,6 @@ NATable::NATable(BindWA *bindWA,
       setIsHbaseCellTable(corrName.isHbaseCell());
       setIsHbaseRowTable(corrName.isHbaseRow());
     }
-
-  // Check if it is a SQL/MP table, and set the flag to indicate this.
-  if (table_desc->body.table_desc.underlyingFileType == SQLMP)
-  {
-     setSQLMPTable(TRUE);
-     //need to store guardian name for future use. Ex. fetchHistograms need fully qualified guardian name
-     if((fileSetName_.getQualifiedNameAsString().data()[0])!='\\')
-      {
-      	ComMPLoc mpName(table_desc->body.table_desc.tablename,ComMPLoc::FULLFILE);
-      	QualifiedName qualName(mpName.getFileName(),mpName.getSubvolName(),mpName.getSysDotVol(),heap_);
-      	fileSetName_=qualName;
-      }
-  }
 
   // Check if the synonym name translation to reference object has been done.
   if (table_desc->body.table_desc.isSynonymNameTranslationDone)

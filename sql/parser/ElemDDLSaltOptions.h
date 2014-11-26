@@ -36,6 +36,7 @@
 
 #include "ComSmallDefs.h"
 #include "ElemDDLNode.h"
+#include "ElemDDLColRefArray.h"
 #include "ParNameLocList.h"
 
 // -----------------------------------------------------------------------

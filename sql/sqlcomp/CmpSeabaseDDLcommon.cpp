@@ -235,6 +235,7 @@ short CmpSeabaseDDL::convertColAndKeyInfoArrays(
       column_desc.datetimefractprec = ci.scale;
 
       column_desc.defaultClass = ci.defaultClass;
+      column_desc.colFlags = ci.colFlags;
 
       NAType *type;
       NAColumn::createNAType(&column_desc, NULL, type, STMTHEAP);
@@ -361,7 +362,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
 
       keyInfoArray = new(CTXTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
-      if (buildColInfoArray(&colArray, colInfoArray, FALSE, 0, FALSE, NULL, CTXTHEAP))
+      if (buildColInfoArray(&colArray, colInfoArray, FALSE, FALSE, NULL, CTXTHEAP))
 	{
 	  return resetCQDs(hbaseSerialization, hbVal, -1);
 	}
@@ -2003,7 +2004,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 				 Lng32 &nullable,
 				 NAString &charset,
 				 CharInfo::Collation &collationSequence,
-				 ULng32 &colFlags)
+				 ULng32 &hbaseColFlags)
 {
   short rc = 0;
 
@@ -2047,13 +2048,13 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
         collationSequence = charType->getCollation();
         if (serializedOption == 1) // option explicitly specified
           {
-            setFlags(colFlags, SEABASE_SERIALIZED);
+            setFlags(hbaseColFlags, SEABASE_SERIALIZED);
           }
         else if ((serializedOption == -1) && // not specified
                  (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) &&
                  (NOT alignedFormat))
           {
-            setFlags(colFlags, SEABASE_SERIALIZED);
+            setFlags(hbaseColFlags, SEABASE_SERIALIZED);
           }
        }
       break;
@@ -2073,7 +2074,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
         if (serializedOption == 1) // option explicitly specified
           {
             if (DFS2REC::isBinary(datatype))
-              setFlags(colFlags, SEABASE_SERIALIZED);
+              setFlags(hbaseColFlags, SEABASE_SERIALIZED);
             else if (numericType->isEncodingNeeded())
               {
                 *CmpCommon::diags() << DgSqlCode(-1191);
@@ -2085,7 +2086,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
                  (DFS2REC::isBinary(datatype)) &&
                  (NOT alignedFormat))
           {
-            setFlags(colFlags, SEABASE_SERIALIZED);
+            setFlags(hbaseColFlags, SEABASE_SERIALIZED);
           }
       }
       break;
@@ -2155,14 +2156,17 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
 				Lng32 &upshifted,
 				Lng32 &nullable,
 				NAString &charset,
+                                ComColumnClass &colClass,
 				ComColumnDefaultClass &defaultClass, 
 				NAString &defVal,
 				NAString &heading,
 				LobsStorage &lobStorage,
-				ULng32 &colFlags)
+				ULng32 &hbaseColFlags,
+                                Int64 &colFlags)
 {
   short rc = 0;
 
+  hbaseColFlags = 0;
   colFlags = 0;
 
   colName = colNode->getColumnName();
@@ -2186,11 +2190,11 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
   CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
   rc = getTypeInfo(naType, alignedFormat, serializedOption,
 		   datatype, length, precision, scale, dtStart, dtEnd, upshifted, nullable,
-		   charset, collationSequence, colFlags);
+		   charset, collationSequence, hbaseColFlags);
 
   if (colName == "SYSKEY")
     {
-      resetFlags(colFlags, SEABASE_SERIALIZED);
+      resetFlags(hbaseColFlags, SEABASE_SERIALIZED);
     }
 
   if  (collationSequence != CharInfo::DefaultCollation)
@@ -2220,7 +2224,9 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
   lobStorage = Lob_Invalid_Storage;
   if (naType->getTypeQualifier() == NA_LOB_TYPE)
     lobStorage = colNode->getLobStorage();
- 
+
+  colClass = colNode->getColumnClass();
+
   NABoolean negateIt = FALSE;
   if (colNode->getDefaultClauseStatus() == ElemDDLColDef::NO_DEFAULT_CLAUSE_SPEC)
     defaultClass = COM_NO_DEFAULT;
@@ -2244,15 +2250,19 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
             defaultClass = COM_IDENTITY_GENERATED_BY_DEFAULT;
         }
       else if (ie == NULL)
-        {
-          if (colNode->getComputedDefaultExpr().isNull())
-            defaultClass = COM_NO_DEFAULT;
-          else
-            {
-              defaultClass = COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT;
-              defVal = colNode->getComputedDefaultExpr();
-            }
-        }
+        if (colNode->getComputedDefaultExpr().isNull())
+          defaultClass = COM_NO_DEFAULT;
+        else
+          {
+            defaultClass = COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT;
+            defVal = colNode->getComputedDefaultExpr();
+            if (colNode->isDivisionColumn())
+              colFlags |= SEABASE_COLUMN_IS_DIVISION;
+            else if (colName == ElemDDLSaltOptionsClause::getSaltSysColName())
+              colFlags |= SEABASE_COLUMN_IS_SALT;
+            else
+              CMPASSERT(0);
+          }
       else if (ie->getOperatorType() == ITM_CURRENT_TIMESTAMP)
         {
           defaultClass = COM_CURRENT_DEFAULT;
@@ -2897,15 +2907,24 @@ short CmpSeabaseDDL::getSaltText(
   ToQuotedString(quotedSchName, NAString(schName), FALSE);
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objName), FALSE);
+  Int64 objUID;
+  Lng32 colNum;
+  NAString defaultValue;
 
   char buf[4000];
   char *data;
   Lng32 len;
-  str_sprintf(buf, "select cast(default_value as varchar(512) character set iso88591) from %s.\"%s\".%s o, %s.\"%s\".%s c where o.catalog_name = '%s' and o.schema_name = '%s' and o.object_name = '%s'  and o.object_type = '%s'  and o.object_uid = c.object_uid and c.column_name = '_SALT_' ",
+
+  // determine object UID and column number of the _SALT_ column in the Trafodion table
+  // TBD: Once flags has been updated for older objects, replace predicates on column_name
+  //      and default_class with a check for the SEABASE_COLUMN_IS_SALT bit in columns.flags
+  str_sprintf(buf, "select object_uid, column_number, cast(default_value as varchar(512) character set iso88591) from %s.\"%s\".%s o, %s.\"%s\".%s c where o.catalog_name = '%s' and o.schema_name = '%s' and o.object_name = '%s'  and o.object_type = '%s'  and o.object_uid = c.object_uid and c.column_name = '%s' and c.default_class = %d",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               catName, quotedSchName.data(), quotedObjName.data(),
-              inObjType);
+              inObjType,
+              ElemDDLSaltOptionsClause::getSaltSysColName(),
+              (int) COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT);
 
   Queue * saltQueue = NULL;
   cliRC = cliInterface->fetchAllRows(saltQueue, buf, 0, FALSE, FALSE, TRUE);
@@ -2921,7 +2940,27 @@ short CmpSeabaseDDL::getSaltText(
 
   saltQueue->position();
   OutputInfo * vi = (OutputInfo*)saltQueue->getNext(); 
-  saltText = vi->get(0);
+  objUID = *(Int64 *)vi->get(0);
+  colNum = *(Lng32 *)vi->get(1);
+  defaultValue = vi->get(2);
+
+  // this should be the normal case, salt text is stored in the TEXT table,
+  // not the default value
+  cliRC = getTextFromMD(cliInterface,
+                        objUID,
+                        COM_COMPUTED_COL_TEXT,
+                        colNum,
+                        saltText);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  if (saltText.isNull())
+    saltText = defaultValue;
+
+  CMPASSERT(!saltText.isNull());
 
   return 1;
 }
@@ -3113,6 +3152,8 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
         }
 
       NAString quotedDefVal;
+      NAString computedColumnDefinition;
+      NABoolean isComputedColumn = FALSE;
       if (colInfo->defVal)
         {
           NAString defVal = colInfo->defVal;
@@ -3135,14 +3176,43 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
             }
 
            ToQuotedString(quotedDefVal, defVal, FALSE);
+
+           if (colInfo->defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT ||
+               colInfo->defaultClass == COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT)
+             {
+               computedColumnDefinition = quotedDefVal;
+               quotedDefVal = "";
+               isComputedColumn = TRUE;
+             }
         }
 
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', 0)",
+      const char *colClassLit = NULL;
+
+      switch (colInfo->columnClass)
+        {
+        case COM_UNKNOWN_CLASS:
+          colClassLit = COM_UNKNOWN_CLASS_LIT;
+          break;
+        case COM_SYSTEM_COLUMN:
+          colClassLit = COM_SYSTEM_COLUMN_LIT;
+          break;
+        case COM_USER_COLUMN:
+          colClassLit = COM_USER_COLUMN_LIT;
+          break;
+        case COM_ADDED_USER_COLUMN:
+          colClassLit = COM_ADDED_USER_COLUMN_LIT;
+          break;
+        case COM_MV_SYSTEM_ADDED_COLUMN:
+          colClassLit = COM_MV_SYSTEM_ADDED_COLUMN_LIT;
+          break;
+        }
+
+      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', %Ld)",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
                   objUID,
                   colInfo->colName, 
                   colInfo->colNumber,
-                  colInfo->columnClass,
+                  colClassLit,
                   colInfo->datatype, 
                   getAnsiTypeStrFromFSType(colInfo->datatype),
                   colInfo->length,
@@ -3160,7 +3230,8 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                   colInfo->hbaseColFam ? colInfo->hbaseColFam : "" , 
                   colInfo->hbaseColQual ? colInfo->hbaseColQual : "",
                   colInfo->paramDirection,
-                  colInfo->isOptional ? "Y" : "N");
+                  colInfo->isOptional ? "Y" : "N",
+                  colInfo->colFlags);
 
       cliRC = cliInterface->executeImmediate(buf);
       if (cliRC < 0)
@@ -3168,6 +3239,22 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
 
           return -1;
+        }
+
+      if (isComputedColumn)
+        {
+          cliRC = updateTextTable(cliInterface,
+                                  objUID,
+                                  COM_COMPUTED_COL_TEXT,
+                                  colInfo->colNumber,
+                                  computedColumnDefinition);
+
+          if (cliRC < 0)
+            {
+              cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+
+              return -1;
+            }
         }
 
       rowDataLength += colInfo->length + (colInfo->nullable ? 1 : 0);
@@ -3481,6 +3568,18 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
       return -1;
     }
 
+  // delete data from TEXT table
+  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+              objUID);
+  cliRC = cliInterface->executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+    
+      return -1;
+    }
+
   if (strcmp(objType, COM_USER_DEFINED_ROUTINE_OBJECT_LIT) == 0)
   {
     str_sprintf(buf, "delete from %s.\"%s\".%s where udr_uid = %Ld",
@@ -3561,18 +3660,6 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
         {
           cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
 
-          return -1;
-        }
-
-      // delete data from TEXT table
-      str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-                  objUID);
-      cliRC = cliInterface->executeImmediate(buf);
-      if (cliRC < 0)
-        {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-          
           return -1;
         }
     }
@@ -3790,7 +3877,6 @@ short CmpSeabaseDDL::buildColInfoArray(
                                        ElemDDLColDefArray *colArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        NABoolean implicitPK,
-                                       CollIndex numSysCols,
                                        NABoolean alignedFormat,
                                        Lng32 *identityColPos,
 				       NAMemory * heap)
@@ -3802,36 +3888,28 @@ short CmpSeabaseDDL::buildColInfoArray(
       
       NAString colName;
       Lng32 datatype, length, precision, scale, dt_start, dt_end, nullable, upshifted;
+      ComColumnClass colClass;
       ComColumnDefaultClass defaultClass;
       NAString charset, defVal;
       NAString heading;
-      ULng32 colFlags;
+      ULng32 hbaseColFlags;
+      Int64 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(colNode,
 		     colName,
                      alignedFormat,
 		     datatype, length, precision, scale, dt_start, dt_end, upshifted, nullable,
-		     charset, defaultClass, defVal, heading, lobStorage, colFlags))
+		     charset, colClass, defaultClass, defVal, heading, lobStorage, hbaseColFlags, colFlags))
 	return -1;
 
-      colInfoArray[index].hbaseColFlags = colFlags;
+      colInfoArray[index].hbaseColFlags = hbaseColFlags;
       
       char * col_name = new((heap ? heap : STMTHEAP)) char[colName.length() + 1];
       strcpy(col_name, (char*)colName.data());
 
       colInfoArray[index].colName = col_name;
       colInfoArray[index].colNumber = index;
-      if (index < numSysCols)
-        {
-          strcpy(colInfoArray[index].columnClass, COM_SYSTEM_COLUMN_LIT);
-          // a system column with a default clause is a computed column
-          // (salt column)
-          if (defaultClass == COM_USER_DEFINED_DEFAULT)
-            defaultClass = COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT;
-        }
-      else
-        strcpy(colInfoArray[index].columnClass, COM_USER_COLUMN_LIT);
-      
+      colInfoArray[index].columnClass = colClass;
       colInfoArray[index].datatype = datatype;
       colInfoArray[index].length = length;
       colInfoArray[index].nullable = nullable;
@@ -3880,6 +3958,7 @@ short CmpSeabaseDDL::buildColInfoArray(
 
       strcpy(colInfoArray[index].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
       colInfoArray[index].isOptional = FALSE;
+      colInfoArray[index].colFlags = colFlags;
     }
 
   return 0;
@@ -3899,20 +3978,22 @@ short CmpSeabaseDDL::buildColInfoArray(
                             NULL, NULL, STMTHEAP);
       NAString colName;
       Lng32 datatype, length, precision, scale, dt_start, dt_end, nullable, upshifted;
+      ComColumnClass colClass;
       ComColumnDefaultClass defaultClass;
       NAString charset, defVal;
       NAString heading;
-      ULng32 colFlags;
+      ULng32 hbaseColFlags;
+      Int64 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(&colNode,
 		     colName,
                      FALSE,
 		     datatype, length, precision, scale, dt_start, dt_end, 
-                     upshifted, nullable, charset, defaultClass, defVal, 
-                     heading, lobStorage, colFlags))
+                     upshifted, nullable, charset, colClass, defaultClass, defVal, 
+                     heading, lobStorage, hbaseColFlags, colFlags))
         return -1;
 
-      colInfoArray[index].hbaseColFlags = colFlags;
+      colInfoArray[index].hbaseColFlags = hbaseColFlags;
       
       char * col_name = NULL;
       if (colName.length() == 0) {
@@ -3930,7 +4011,7 @@ short CmpSeabaseDDL::buildColInfoArray(
 
       colInfoArray[index].colName = col_name;
       colInfoArray[index].colNumber = index;
-      strcpy(colInfoArray[index].columnClass, COM_USER_COLUMN_LIT);
+      colInfoArray[index].columnClass = colClass;
       colInfoArray[index].datatype = datatype;
       colInfoArray[index].length = length;
       colInfoArray[index].nullable = nullable;
@@ -3958,6 +4039,7 @@ short CmpSeabaseDDL::buildColInfoArray(
                COM_UNKNOWN_PARAM_DIRECTION_LIT);
 
       colInfoArray[index].isOptional = 0; // Aways FALSE for now
+      colInfoArray[index].colFlags = colFlags;
     }
 
   return 0;
@@ -4063,6 +4145,409 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
     }
 
   return 0;
+}
+
+ItemExpr *CmpSeabaseDDL::bindDivisionExprAtDDLTime(ItemExpr *expr,
+                                                   NAColumnArray *availableCols,
+                                                   NAHeap *heap)
+{
+  // This doesn't fully "bind" the ItemExpr like ItemExpr::bindNode() would do it.
+  // Instead, it will find column references in the expression, validate that they
+  // refer to columns passed in as available columns and replace them with
+  // NamedTypeToItem ItemExprs that contain the column name and the type. This
+  // will allow us to do type synthesis for this expression later. We can
+  // also unparse the expression but the result isn't any good for any other
+  // purpose.
+
+  ItemExpr *retval = expr;
+  CollIndex nc = expr->getArity();
+
+  // call the method recursively on the children, this may modify the
+  // expression passed in
+  for (CollIndex c=0; c<nc; c++)
+    {
+      ItemExpr *boundChild =
+        bindDivisionExprAtDDLTime(expr->child(c), availableCols, heap);
+
+      if (boundChild)
+        expr->child(c) = boundChild;
+      else
+        retval = NULL;
+    }
+
+  if (retval)
+    switch (expr->getOperatorType())
+      {
+      case ITM_REFERENCE:
+        {
+          const NAType *colType = NULL;
+          const NAString &colName = ((ColReference *) expr)->getColRefNameObj().getColName();
+
+          // look up column name and column type in availableCols
+          for (CollIndex c=0; c<availableCols->entries() && colType == NULL; c++)
+            if (colName == (*availableCols)[c]->getColName())
+              colType = (*availableCols)[c]->getType();
+
+          if (colType)
+            {
+              retval = new(heap) NamedTypeToItem(colName.data(),
+                                                 colType->newCopy(heap),
+                                                 heap);
+            }
+          else
+            {
+              // column not found
+              NAString unparsed;
+              expr->unparse(unparsed, PARSER_PHASE, COMPUTED_COLUMN_FORMAT);
+              *CmpCommon::diags() << DgSqlCode(-4240)
+                                  << DgString0(unparsed);
+              retval = NULL;
+            }
+        }
+        break;
+
+      case ITM_NAMED_TYPE_TO_ITEM:
+      case ITM_CONSTANT:
+        // these are leaf operators that are allowed without further check
+        break;
+
+      default:
+        // we want to control explicitly what types of leaf operators we allow
+        if (nc == 0)
+          {
+            // general error, this expression is not supported in DIVISION BY
+            NAString unparsed;
+            
+            expr->unparse(unparsed, PARSER_PHASE, COMPUTED_COLUMN_FORMAT);
+            *CmpCommon::diags() << DgSqlCode(-4243) << DgString0(unparsed);
+            retval = NULL;
+          }
+      }
+
+  return retval;
+}
+
+short CmpSeabaseDDL::validateDivisionByExprForDDL(ItemExpr *divExpr)
+{
+  // Validate a DIVISION BY expression in a DDL statement
+  // Check that the DIVISION BY expression conforms to the
+  // supported types of expressions. This assumes that we
+  // already verified that the expression refers only to
+  // key columns
+
+  short result                 = 0;
+  NABoolean exprIsValid        = TRUE;
+  ItemExpr  *missingConstHere  = NULL;
+  ItemExpr  *missingColHere    = NULL;
+  ItemExpr  *unsupportedExpr   = NULL;
+
+  ItemExpr  *topLevelCast      = NULL;
+  NABoolean topLevelCastIsOk   = FALSE;
+  const OperatorTypeEnum leafColType = ITM_NAMED_TYPE_TO_ITEM;
+
+  if (divExpr->getOperatorType() == ITM_CAST)
+    {
+      // a cast on top of the divisioning expr is allowed
+      // in limited cases
+      topLevelCast = divExpr;
+      divExpr = topLevelCast->child(0).getPtr();
+    }
+
+  // check the shape of the divisioning expression
+  switch (divExpr->getOperatorType())
+    {
+    case leafColType:
+      {
+        // a simple column is not allowed
+        exprIsValid = FALSE;
+        unsupportedExpr = divExpr;
+      }
+      break;
+
+    case ITM_EXTRACT:       // for all variants except YEAR
+    case ITM_EXTRACT_ODBC:  // for YEAR
+      {
+        // Allowed are:
+        // date_part('year',         <arg>)
+        // date_part('yearquarter',  <arg>)
+        // date_part('yearmonth',    <arg>)
+        // date_part('yearquarterd', <arg>)
+        // date_part('yearmonthd',   <arg>)
+        //
+        // <arg> can be one of the following:
+        //   <col>
+        //   add_months(<col>, <const> [, 0])
+        //   <col> + <const>
+        //   <col> - <const>
+        enum rec_datetime_field ef = ((Extract *) divExpr)->getExtractField();
+
+        if (ef == REC_DATE_YEAR ||
+            ef == REC_DATE_YEARQUARTER_EXTRACT ||
+            ef == REC_DATE_YEARMONTH_EXTRACT ||
+            ef == REC_DATE_YEARQUARTER_D_EXTRACT ||
+            ef == REC_DATE_YEARMONTH_D_EXTRACT)
+          {
+            // check for the <arg> syntax shown above
+            // Note that the parser changes ADD_MONTHS(a, b [,c]) into
+            // a + cast(b as interval)
+            if (divExpr->child(0)->getOperatorType() != leafColType)
+              {
+                if ((divExpr->child(0)->getOperatorType() == ITM_PLUS ||
+                     divExpr->child(0)->getOperatorType() == ITM_MINUS) &&
+                    divExpr->child(0)->child(0)->getOperatorType() == leafColType)
+                  {
+                    BiArith *plusMinus = (BiArith *) divExpr->child(0).getPtr();
+                    ItemExpr *addedValue = plusMinus->child(1);
+
+                    if (plusMinus->isKeepLastDay())
+                      {
+                        // we don't support keep last day normalization
+                        // (1 as third argument to ADD_MONTHS)
+                        exprIsValid = FALSE;
+                        unsupportedExpr = plusMinus;
+                      }
+                    if (addedValue->getOperatorType() == ITM_CAST)
+                      addedValue = addedValue->child(0);
+                    if (addedValue->getOperatorType() == ITM_CAST)
+                      addedValue = addedValue->child(0); // sometimes 2 casts are stacked here
+                    if (NOT(addedValue->getOperatorType() == ITM_CONSTANT))
+                      {
+                        exprIsValid = FALSE;
+                        missingConstHere = addedValue;
+                      }
+                  }
+                else
+                  {
+                    exprIsValid = FALSE;
+                    missingColHere = divExpr->child(0);
+                  }
+              }
+          }
+        else
+          {
+            // invalid type of extract field
+            exprIsValid = FALSE;
+            *CmpCommon::diags() << DgSqlCode(-4244);
+          }
+      }
+      break;
+
+    case ITM_DATE_TRUNC_MINUTE:
+    case ITM_DATE_TRUNC_SECOND:
+    case ITM_DATE_TRUNC_MONTH:
+    case ITM_DATE_TRUNC_HOUR:
+    case ITM_DATE_TRUNC_CENTURY:
+    case ITM_DATE_TRUNC_DECADE:
+    case ITM_DATE_TRUNC_YEAR:
+    case ITM_DATE_TRUNC_DAY:
+      {
+        // Allowed are:
+        // DATE_TRUNC(<string>, <col>)
+        if (divExpr->child(0)->getOperatorType() != leafColType)
+          {
+            exprIsValid = FALSE;
+            missingColHere = divExpr->child(0);
+          }
+      }
+      break;
+
+    case ITM_DATEDIFF_YEAR:
+    case ITM_DATEDIFF_QUARTER:
+    case ITM_DATEDIFF_WEEK:
+    case ITM_DATEDIFF_MONTH:
+      // Allowed are:
+      // DATEDIFF(<date-part>, <const>, <col>)
+      if (divExpr->child(0)->getOperatorType() != ITM_CONSTANT)
+        {
+          exprIsValid = FALSE;
+          missingConstHere = divExpr->child(1);
+        }
+      if (divExpr->child(1)->getOperatorType() != leafColType)
+        {
+          exprIsValid = FALSE;
+          missingColHere = divExpr->child(0);
+        }
+      break;
+
+    case ITM_YEARWEEK:
+    case ITM_YEARWEEKD:
+      {
+        // Allowed are:
+        // DATE_PART('YEARWEEK',  <col>)
+        // DATE_PART('YEARWEEKD', <col>)
+        if (divExpr->child(0)->getOperatorType() != leafColType)
+          {
+            exprIsValid = FALSE;
+            missingColHere = divExpr->child(0);
+          }
+      }
+      break;
+
+    case ITM_DIVIDE:
+      {
+        // Allowed are:
+        //      <col> [ + <const> ] / <const>
+        // cast(<col> [ + <const> ] / <const> as <numeric-type>)
+        //
+        // Note: cast (if present) is stored in topLevelCast, not divExpr
+        if (divExpr->child(0)->getOperatorType() != leafColType)
+          {
+            if (divExpr->child(0)->getOperatorType() == ITM_PLUS)
+              {
+                if (divExpr->child(0)->child(0)->getOperatorType() != leafColType)
+                  {
+                    exprIsValid = FALSE;
+                    missingColHere = divExpr->child(0)->child(0);
+                  }
+                if (divExpr->child(0)->child(1)->getOperatorType() != ITM_CONSTANT)
+                  {
+                    exprIsValid = FALSE;
+                    missingConstHere = divExpr->child(0)->child(1);
+                  }
+              }
+            else
+              {
+                exprIsValid = FALSE;
+                missingColHere = divExpr->child(0);
+              }
+          }
+
+        if (divExpr->child(1)->getOperatorType() != ITM_CONSTANT)
+          {
+            exprIsValid = FALSE;
+            missingConstHere = divExpr->child(1);
+          }
+        if (topLevelCast)
+          {
+            topLevelCastIsOk = 
+              (topLevelCast->getValueId().getType().getTypeQualifier() == NA_NUMERIC_TYPE);
+          }
+      }
+      break;
+
+    case ITM_SUBSTR:
+    case ITM_LEFT:
+      {
+        // Allowed are:
+        // SUBSTRING(<col>, 1, <const>)
+        // SUBSTRING(<col> FROM 1 FOR <const>)  (which is the same thing)
+        // LEFT(<col>, <const>)
+        if (divExpr->child(0)->getOperatorType() != leafColType)
+          {
+            if (divExpr->child(0)->getOperatorType() == ITM_CAST &&
+                divExpr->child(0)->child(0)->getOperatorType() == leafColType)
+              {
+                // tolerate a CAST(<basecolumn>), as long as it doesn't
+                // alter the data type
+                const CharType& tgtType =
+                  (const CharType &) divExpr->child(0)->getValueId().getType();
+                const CharType& srcType =
+                  (const CharType &) divExpr->child(0)->child(0)->getValueId().getType();
+
+                if (NOT(
+                         srcType.getTypeQualifier() == NA_CHARACTER_TYPE &&
+                         tgtType.getTypeQualifier() == NA_CHARACTER_TYPE &&
+                         srcType.getCharSet() == tgtType.getCharSet() &&
+                         srcType.getFSDatatype() == tgtType.getFSDatatype() &&
+                         srcType.isVaryingLen() == tgtType.isVaryingLen()))
+                  {
+                    exprIsValid = FALSE;
+                    // show the whole expression, the cast itself may
+                    // not tell the user much, it may have been inserted
+                    unsupportedExpr = divExpr;
+                  }
+              }
+            else
+              {
+                exprIsValid = FALSE;
+                missingColHere = divExpr->child(0);
+              }
+          }
+        if (divExpr->child(1)->getOperatorType() != ITM_CONSTANT)
+          {
+            exprIsValid = FALSE;
+            missingConstHere = divExpr->child(1);
+          }
+
+        if (exprIsValid)
+          {
+            if (divExpr->getOperatorType() == ITM_LEFT)
+              {
+                // condition for LEFT: child 1 must be a constant
+                if (divExpr->child(1)->getOperatorType() != ITM_CONSTANT)
+                  {
+                    exprIsValid = FALSE;
+                    missingConstHere = divExpr->child(2);
+                  }
+              }
+            else
+              {
+                // additional conditions for SUBSTR: Second argument must be a
+                // constant and evaluate to 1, third argument needs to
+                // be present and be a constant
+                NABoolean negate = FALSE;
+                ConstValue *child1 = divExpr->child(1)->castToConstValue(negate);
+                Int64 child1Value = 0;
+
+                if (child1 && child1->canGetExactNumericValue())
+                  child1Value = child1->getExactNumericValue();
+
+                if (child1Value != 1 OR
+                    divExpr->getArity() != 3)
+                  {
+                    exprIsValid = FALSE;
+                    unsupportedExpr = divExpr;
+                  }
+                else if (divExpr->child(2)->getOperatorType() != ITM_CONSTANT)
+                  {
+                    exprIsValid = FALSE;
+                    missingConstHere = divExpr->child(2);
+                  }
+              }
+          }
+      }
+      break;
+
+    default:
+      {
+        // everything else is not allowed in DIVISION BY
+        exprIsValid = FALSE;
+        unsupportedExpr = divExpr;
+      }
+    }
+
+  if (topLevelCast && !topLevelCastIsOk)
+    {
+      exprIsValid = FALSE;
+      if (!missingConstHere && !missingColHere && !unsupportedExpr)
+        unsupportedExpr = topLevelCast;
+    }
+
+  if (NOT exprIsValid)
+    {
+      // common code for error handling
+      NAString unparsed;
+
+      result = -1;
+      if (missingConstHere)
+        {
+          missingConstHere->unparse(unparsed, BINDER_PHASE, COMPUTED_COLUMN_FORMAT);
+          *CmpCommon::diags() << DgSqlCode(-4241) << DgString0(unparsed);
+        }
+      if (missingColHere)
+        {
+          missingColHere->unparse(unparsed, BINDER_PHASE, COMPUTED_COLUMN_FORMAT);
+          *CmpCommon::diags() << DgSqlCode(-4242) << DgString0(unparsed);
+        }
+      if (unsupportedExpr)
+        {
+          // general error, this expression is not supported in DIVISION BY
+          unsupportedExpr->unparse(unparsed, BINDER_PHASE, COMPUTED_COLUMN_FORMAT);
+          *CmpCommon::diags() << DgSqlCode(-4243) << DgString0(unparsed);
+        }
+    }
+
+  return result;
 }
 
 short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,

@@ -128,6 +128,7 @@ public:
   inline const NABoolean getIsConstraintNotNullSpecified() const;
   inline const NABoolean getIsConstraintPKSpecified() const;
   inline const NABoolean getIsHeadingSpecified() const;
+  inline const ComColumnClass getColumnClass() const;
 
   inline const ElemDDLColRefArray & getPrimaryKeyColRefArray() const;
   inline ElemDDLColRefArray & getPrimaryKeyColRefArray();
@@ -163,14 +164,6 @@ public:
   
   inline NABoolean isDivisionColumn() const;
   inline ComSInt32 getDivisionColumnSequenceNumber() const;
-  inline ItemExpr * getDivExpr() { return pDivExpr_; }
-
-  // getDivisionExprSortingOrder() return COM_DESCENDING_ORDER if
-  // DESC (or descending) is explicitly specified; otherwise, the
-  // routine returns COM_ASCENDING_ORDER.
-  static ComColumnOrdering getDivisionExprSortingOrder(ItemExpr * divExpr);
-  inline ComColumnOrdering getDivExprSortingOrder() const { return getDivisionExprSortingOrder((ItemExpr *)pDivExpr_); }
-
 
   //
   // mutators
@@ -181,6 +174,7 @@ public:
   void setDefaultValueExpr(ItemExpr *pNewDefValNode);
   inline void setHeading(const NAString &heading);
   inline void setIsHeadingSpecified(const NABoolean isHeadingSpec);
+  inline void setColumnClass(ComColumnClass columnClass);
   inline void setDirection(const ComColumnDirection direction);
 
   void setColumnAttribute(ElemDDLNode * pColumnAttribute);
@@ -191,7 +185,6 @@ public:
 
   inline void setDivisionColumnFlag(NABoolean bVal);
   inline void setDivisionColumnSequenceNumber(ComSInt32 divColSeqNum);
-  inline void setDivExpr(ItemExpr * divExpr) { pDivExpr_ = divExpr; }
   inline void setNotNullNondroppableFlag(NABoolean bVal) { isNotNullNondroppable_ = bVal; }
   inline void setNotNullSpecifiedFlag(NABoolean bVal) { isNotNullSpec_ = bVal; }
   inline void setNotNullConstraint(ElemDDLConstraintNotNull * pParseNode) { pConstraintNotNull_ = pParseNode; }
@@ -250,6 +243,10 @@ private:
   NABoolean isHeadingSpec_;
   NAString heading_;
 
+  // Column class (set to user column by default, this is
+  // only changed by internal users)
+  ComColumnClass columnClass_;
+
   // NOT NULL
   //
   //   isNotNullSpec_ is used by the parser to check for
@@ -282,7 +279,6 @@ private:
   // Data members relate to a internally generated division column.
   NABoolean isDivisionColumn_;
   ComSInt32 divisionColumnSeqNum_;
-  ItemExpr * pDivExpr_;
 
   // pointers to child parse nodes
   //
@@ -422,6 +418,12 @@ ElemDDLColDef::getIsHeadingSpecified() const
   return isHeadingSpec_;
 }
 
+inline const ComColumnClass
+ElemDDLColDef::getColumnClass() const
+{
+  return columnClass_;
+}
+
 inline ElemDDLSGOptions *
 ElemDDLColDef::getSGOptions() const
 {
@@ -517,6 +519,12 @@ inline void
 ElemDDLColDef::setIsHeadingSpecified(const NABoolean isHeadingSpec)
 {
   isHeadingSpec_ = isHeadingSpec;
+}
+
+inline void
+ElemDDLColDef::setColumnClass(ComColumnClass columnClass)
+{
+  columnClass_ = columnClass;
 }
 
 inline void 
