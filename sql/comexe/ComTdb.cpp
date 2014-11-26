@@ -848,14 +848,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
       break;
     }
 
-    case ex_INTERPRET_AS_ROW:
-    {
-#pragma nowarn(1506)   // warning elimination
-      GetVTblPtr(vtblptr,ComTdbInterpretAsRow);
-#pragma warn(1506)  // warning elimination
-      break;
-    }
-
     case ex_PROBE_CACHE:
     {
 #pragma nowarn(1506)   // warning elimination

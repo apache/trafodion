@@ -1076,8 +1076,7 @@ void ExOperStats::merge(ExOperStats * other)
   {
   case ComTdb::ACCUMULATED_STATS:
   case ComTdb::PERTABLE_STATS:
-     if (castToExFragRootOperStats() && other->tdbType_ != ComTdb::ex_EID_ROOT)
-        dop_ += other->dop_;
+      dop_ += other->dop_;
      break;
   default:
      dop_ += other->dop_;
@@ -2017,14 +2016,8 @@ Int64 ExFragRootOperStats::getNumVal(Int32 i) const
     case 1:
       return ExOperStats::getNumVal(i);
     case 2:
-      if (getTdbType() == ComTdb::ex_EID_ROOT)
-         return dp2CpuTime_;
-      else
          return cpuTime_ + espCpuTime_;
     case 3:
-      if (getTdbType() == ComTdb::ex_EID_ROOT)
-         return 0;
-      else
          return ((ExFragRootOperStats *)this)->getAvgWaitTime();
     case 4:
       return timestamp_;
@@ -2053,7 +2046,7 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
       statType(),
       (((txtVal = getTextVal()) != NULL) ? txtVal : "NULL"),
       ((queryId_ != NULL) ? queryId_ : "NULL"),
-      ((getTdbType() == ComTdb::ex_EID_ROOT) ? dp2CpuTime_ : cpuTime_),
+                cpuTime_,
       (UInt32)maxSpaceUsage_,
       (UInt32)maxSpaceAlloc_,
       (UInt32)maxHeapUsage_,
@@ -2143,33 +2136,18 @@ Lng32 ExFragRootOperStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     switch (sqlStats_item->statsItem_id)
     {
     case SQLSTATS_SQL_CPU_BUSY_TIME:
-      if (getTdbType() == ComTdb::ex_EID_ROOT)
-         sqlStats_item->int64_value = dp2CpuTime_;
-      else
          sqlStats_item->int64_value = cpuTime_ + espCpuTime_;
       break;
     case SQLSTATS_SQL_SPACE_ALLOC:
-      if(getTdbType() == ComTdb::ex_EID_ROOT)
-        sqlStats_item->int64_value = dp2MaxSpaceAlloc_;
-      else    
         sqlStats_item->int64_value = maxSpaceAlloc_ + espMaxSpaceAlloc_;
       break;
     case SQLSTATS_SQL_SPACE_USED:
-      if (getTdbType() == ComTdb::ex_EID_ROOT)
-        sqlStats_item->int64_value = dp2MaxSpaceUsage_;
-      else    
         sqlStats_item->int64_value = maxSpaceUsage_+ espMaxSpaceUsage_;
       break;
     case SQLSTATS_SQL_HEAP_ALLOC:
-      if (getTdbType() == ComTdb::ex_EID_ROOT)
-        sqlStats_item->int64_value = dp2MaxHeapAlloc_;
-      else    
         sqlStats_item->int64_value = maxHeapAlloc_+ espMaxHeapAlloc_;
       break;
     case SQLSTATS_SQL_HEAP_USED:
-      if(getTdbType() == ComTdb::ex_EID_ROOT)
-        sqlStats_item->int64_value = dp2MaxHeapUsage_;
-      else    
         sqlStats_item->int64_value = maxHeapUsage_ + espMaxHeapUsage_;
       break;
     case SQLSTATS_EID_SPACE_ALLOC:
@@ -2247,26 +2225,14 @@ NABoolean ExFragRootOperStats::filterForCpuStats()
 {
   NABoolean retcode;
 
-  if (getTdbType() == ComTdb::ex_EID_ROOT)
-  {
-     if (histDp2CpuTime_ == 0)
-        return FALSE;
-     else
-     if ((diffCpuTime_ = dp2CpuTime_ - histDp2CpuTime_) > 0)
-        retcode = TRUE;
-     else
-        retcode = FALSE;
-  }
+  if (histCpuTime_ == 0)
+    retcode = FALSE;
   else
-  {
-     if (histCpuTime_ == 0)
-        retcode = FALSE;
-     else
-     if ((diffCpuTime_ = cpuTime_ - histCpuTime_) > 0)
-       retcode = TRUE;
-     else
-       retcode = FALSE;
-  }
+    if ((diffCpuTime_ = cpuTime_ - histCpuTime_) > 0)
+      retcode = TRUE;
+    else
+      retcode = FALSE;
+  
   setCpuStatsHistory();
   return retcode;
 }
@@ -8387,19 +8353,6 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
       else
       { 
          tdbType = stat->getTdbType();
-         if (tdbType  == ComTdb::ex_EID_ROOT && 
-                subReqType == SQLCLI_STATS_REQ_SE_ROOT)
-         {
-            if (((ExFragRootOperStats *)stat)->filterForCpuStats())
-            {
-               rootOperStats = new (getHeap()) ExFragRootOperStats(getHeap());
-               rootOperStats->setCollectStatsType(getCollectStatsType());
-               rootOperStats->copyContents((ExFragRootOperStats *)stat);
-               insert(rootOperStats);
-               retcode = TRUE;
-            }
-         }
-         else
          if (subReqType == SQLCLI_STATS_REQ_SE_OPERATOR  && 
                  statType == ExOperStats::PERTABLE_STATS)
          {

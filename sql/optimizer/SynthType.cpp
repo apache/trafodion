@@ -3743,14 +3743,16 @@ const NAType *Repeat::synthesizeType()
     }
   else if (getMaxLength() > -1)
     {
-      size_in_bytes = MINOF(CONST_32K, getMaxLength() * typ1.getNominalSize());
+      size_in_bytes = MINOF(CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH), 
+                            getMaxLength() * typ1.getNominalSize());
       size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
     }
   else
     {
       // Assign some arbitrary max result size since we can't
       // figure out the actual max size.
-      size_in_bytes = CONST_32K; // 32K.
+      size_in_bytes = 
+        CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH);
       size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
     }
 

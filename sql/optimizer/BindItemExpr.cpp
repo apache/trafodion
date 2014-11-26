@@ -10146,13 +10146,13 @@ Int32 ZZZBinderFunction::getPadLength (ItemExpr* padLengthExpr, BindWA* bindWA)
 	if (cv->canGetExactNumericValue())
 	{ 
 	   padLengthMax = (Int32) cv->getExactNumericValue();
-           /*    if ( padLengthMax > CONST_32K ) 
-           {
-	     *CmpCommon::diags() << DgSqlCode(-4129)
-                                << DgString0(getTextUpper());
-	     bindWA->setErrStatus();
-	     return -2;
-             } */
+           if ( padLengthMax > CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH))
+             {
+               *CmpCommon::diags() << DgSqlCode(-4129)
+                                   << DgString0(getTextUpper());
+               bindWA->setErrStatus();
+               return -2;
+             } 
         }
       }
     }  // padLength is a constant
@@ -11119,7 +11119,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
             sprintf(buf, "CAST(@A1 AS CHAR(%d) CHARACTER SET UCS2) ;", rpadLength);
           }
 
-            if ( rpadLength > CONST_100K )
+          if ( rpadLength > CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH))
           {
              //Note: We claim error occurred in "REPEAT" here just so we get a consistent
              //error message regardless of whether or not the CAST optimization is used.
@@ -12624,7 +12624,6 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
     {
       HbaseColumnCreateOptions * hcco = (*hccol_)[i];
 
-      //      ConstValue * cv = new(bindWA->wHeap()) ConstValue(hcco->hbaseCol());
       NAType * cnType = new(bindWA->wHeap()) SQLVarChar(colNameMaxLen_, FALSE);
       ItemExpr * cnChild =
 	new (bindWA->wHeap()) Cast(hcco->colName(), cnType);

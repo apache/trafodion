@@ -105,7 +105,6 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_EXPLAIN:
 	    case REL_TUPLE:
 	    case REL_TUPLE_LIST:
-	    case REL_INTERPRET_AS_ROW:
 	    case REL_LEAF_INSERT:
 	    case REL_LEAF_UPDATE:
 	    case REL_LEAF_DELETE:

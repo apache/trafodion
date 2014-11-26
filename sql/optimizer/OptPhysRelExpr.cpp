@@ -16959,40 +16959,6 @@ NABoolean RelExpr::isBigMemoryOperator(const Context* context, const Lng32)
 
 }
 
-PhysicalProperty * PhysicalInterpretAsRow::synthPhysicalProperty
-                                               (const Context* context,
-                                                const Lng32 planNumber)
-{
-   //----------------------------------------------------------
-   // Create a node map with a single, active, wild-card entry.
-   //----------------------------------------------------------
-   NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-                           NodeMap(CmpCommon::statementHeap(),
-                                   1,
-                                   NodeMapEntry::ACTIVE);
-
-   //------------------------------------------------------------
-   // Synthesize a partitioning function with a single partition.
-   //------------------------------------------------------------
-   PartitioningFunction* myPartFunc = new(CmpCommon::statementHeap())
-                                SinglePartitionPartitioningFunction(myNodeMap);
-
-   // Note that INTERPRET_AS_ROW only executes in the master executor.
-   PhysicalProperty * sppForMe = new(CmpCommon::statementHeap())
-                                       PhysicalProperty(myPartFunc,
-                                                        EXECUTE_IN_MASTER,
-                                                        SOURCE_VIRTUAL_TABLE);
-   // remove anything that's not covered by the group attributes
-   sppForMe->enforceCoverageByGroupAttributes(getGroupAttr());
-   return sppForMe;
-}
-
-CostMethod * PhysicalInterpretAsRow::costMethod(void) const
-{
-   return TableValuedFunction::costMethod();
-}
-
-
 PhysicalProperty*
 ControlRunningQuery::synthPhysicalProperty(const Context* myContext,
                                    const Lng32     planNumber)

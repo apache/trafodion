@@ -485,16 +485,6 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 					      Generator *generator)
 {
 
-  if ((tdb->doOltQueryOpt()) &&
-      (oltOptLean()) &&
-      (tdb->getNodeType() == ComTdb::ex_DP2_UNIQUE_LEAN_OPER))
-    {
-      char oltopt[100];
-
-      strcpy(oltopt, " olt_opt_lean: used ");
-      explainTuple->setDescription(oltopt);
-    }
-
   // accessOptions() belongs to class Scan in optimizer/RelScan.h
   // the possible values of lockMode() and accessType() can be
   // found in common/ComTransInfo.h
@@ -533,27 +523,21 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   {
     description += " mdam: used ";  // key_type: mdam format dropped
   }
-//if tdb exists and is a dp2
-  if (tdb != NULL && (tdb->getNodeType() >= ComTdb::ex_DP2_OPER  &&
-   tdb->getNodeType() <= ComTdb::ex_DP2_VSBB_SIDETREE_INSERT))
-  {
-    description += "dp2_node: not supported";
-  }
-  else {   //this is not a dp2 node
-    description += " lock_mode: ";
 
-    switch(accessOptions().lockMode()) {
-      case SHARE_:     description += "shared ";
-                      break;
-      case EXCLUSIVE_: description += "exclusive ";
-                      break;
-      case LOCK_MODE_NOT_SPECIFIED_: description += "not specified, defaulted to lock cursor ";
-                      break;
-      default:         description += "unknown ";
-                      break;
-    };
-
-    description += "access_mode: ";
+  description += " lock_mode: ";
+  
+  switch(accessOptions().lockMode()) {
+  case SHARE_:     description += "shared ";
+    break;
+  case EXCLUSIVE_: description += "exclusive ";
+    break;
+  case LOCK_MODE_NOT_SPECIFIED_: description += "not specified, defaulted to lock cursor ";
+    break;
+  default:         description += "unknown ";
+    break;
+  };
+  
+  description += "access_mode: ";
     switch(accessOptions().accessType()) {
       case BROWSE_:     description += "read uncommitted ";
                         break;
@@ -572,7 +556,7 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
       default:          description += "unknown ";
                         break;
     }; 
-  }
+
   // now get columns_retrieved
   description += "columns_retrieved: ";
   char buf[27];
@@ -1642,17 +1626,6 @@ GenericUpdate::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 				      Generator *generator,
 				      NAString &description)
 {
-
-  if ((tdb->doOltQueryOpt()) &&
-      (oltOptLean()) &&
-      (tdb->getNodeType() == ComTdb::ex_DP2_UNIQUE_LEAN_OPER))
-    {
-      char oltopt[100];
-
-      strcpy(oltopt, "olt_opt_lean: used ");
-      //      explainTuple->setDescription(oltopt);
-      description += oltopt;
-    }
 
   const NATable* natable = getIndexDesc()->getPrimaryTableDesc()->getNATable();
   NABoolean indexIUD = FALSE;

@@ -50,7 +50,6 @@
 
 #ifndef __EID
 #include "ComTdbControl.h"
-#include "ComTdbInterpretAsRow.h"
 #include "ComTdbRoot.h"
 #include "ComTdbOnlj.h"
 #include "ComTdbHashj.h"

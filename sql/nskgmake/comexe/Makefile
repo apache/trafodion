@@ -35,7 +35,6 @@ CPPSRC := CmpMessage.cpp \
 	ComTdbHashGrby.cpp \
 	ComTdbHashj.cpp \
 	ComTdbHbaseAccess.cpp \
-	ComTdbInterpretAsRow.cpp \
 	ComTdbMj.cpp \
 	ComTdbOnlj.cpp \
 	ComTdbPackRows.cpp \
