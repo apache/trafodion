@@ -143,8 +143,6 @@ public:
 
   const ValueIdSet getPrimaryKeyColumns()   { return primaryKeyColumns_; }
 
-  void validateDivisionByClauseForDDL(BindWA *bindWA);
-
   // ---------------------------------------------------------------------
   // Mutator functions
   // ---------------------------------------------------------------------

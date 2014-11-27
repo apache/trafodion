@@ -895,9 +895,9 @@ desc_struct* Generator::createColDescs(
 
       col_desc->body.columns_desc.colclass = 'U';
       col_desc->body.columns_desc.addedColumn = 0;
-      if (strcmp(info->columnClass, COM_SYSTEM_COLUMN_LIT) == 0)
+      if (info->columnClass == COM_SYSTEM_COLUMN)
 	col_desc->body.columns_desc.colclass = 'S';
-      else if (strcmp(info->columnClass, COM_ADDED_USER_COLUMN_LIT) == 0)
+      else if (info->columnClass == COM_ADDED_USER_COLUMN)
 	{
 	  col_desc->body.columns_desc.colclass = 'A';
 	  col_desc->body.columns_desc.addedColumn = 1;
@@ -923,6 +923,7 @@ desc_struct* Generator::createColDescs(
       col_desc->body.columns_desc.paramDirection =
            CmGetComDirectionAsComParamDirection(info->paramDirection);
       col_desc->body.columns_desc.isOptional = info->isOptional;
+      col_desc->body.columns_desc.colFlags = info->colFlags;
 
       if (!first_col_desc)
 	first_col_desc = col_desc;

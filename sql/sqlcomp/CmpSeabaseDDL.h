@@ -242,7 +242,6 @@ class CmpSeabaseDDL
 			  ElemDDLColDefArray * colArray,
 			  ComTdbVirtTableColumnInfo * colInfoArray,
 			  NABoolean implicitPK,
-			  CollIndex numSysCols,
                           NABoolean alignedFormat,
                           Lng32 *identityColPos = NULL,
 			  NAMemory * heap = NULL);
@@ -404,11 +403,13 @@ class CmpSeabaseDDL
 		   Lng32 &upshifted,
 		   Lng32 &nullable,
 		   NAString &charset,
+                   ComColumnClass &colClass,
 		   ComColumnDefaultClass &defaultClass,
 		   NAString &defVal,
 		   NAString &heading,
 		   LobsStorage &lobStorage,
-		   ULng32 &colFlags);
+		   ULng32 &hbaseColFlags,
+                   Int64 &colFlags);
   
   short createRowId(NAString &key,
 		    NAString &part1, Lng32 part1MaxLen,
@@ -563,6 +564,11 @@ class CmpSeabaseDDL
                         Lng32 textType, 
                         Lng32 subID, 
                         NAString &text);
+
+  ItemExpr * bindDivisionExprAtDDLTime(ItemExpr *expr,
+                                       NAColumnArray *availableCols,
+                                       NAHeap *heap);
+  short validateDivisionByExprForDDL(ItemExpr *divExpr);
 
   short createEncodedKeysBuffer(char** &encodedKeysBuffer,
 				desc_struct * colDescs, desc_struct * keyDescs,
@@ -766,6 +772,7 @@ class CmpSeabaseDDL
 		      ExeCliInterface * cliInterface,
 		      Int64 constrUID,
                       Lng32 textType,
+                      Lng32 textSubID,
 		      NAString &constrText);
     
   void alterSeabaseTableAddCheckConstraint(

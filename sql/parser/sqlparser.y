@@ -2664,8 +2664,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hbaseOptionsList>  hbase_options_list
 %type <hbaseOption>         hbase_option
 %type <tokval>    		division_by_clause_starting_tokens
-%type <tokval>    		division_by_clause_starting_tokens_2
-%type <pElemDDL>  		division_by_clause_sort_by_value_expression_list
+%type <pElemDDL>  		optional_division_column_names
 %type <pElemDDL>  		store_by_clause
 %type <pElemDDL>  		store_option_clause
 %type <pElemDDL>  		unique_store_option
@@ -27939,17 +27938,27 @@ optional_like_option_list : empty
 like_option_list : like_option
                       | like_option_list like_option
                                 {
-                                  $$ = new (PARSERHEAP())
-				    ElemDDLList(
-                                       $1 /*like_option_list*/,
-                                       $2 /*like_option*/);
+                                  if ($1 != NULL && $2 != NULL)
+                                    $$ = new (PARSERHEAP())
+                                      ElemDDLList(
+                                           $1 /*like_option_list*/,
+                                           $2 /*like_option*/);
+                                  else if ($1 != NULL)
+                                    $$ = $2;
+                                  else
+                                    $$ = $1;
                                 }
 
 /* type pElemDDL */
-like_option : TOK_WITH TOK_CONSTRAINTS
+like_option : TOK_WITHOUT TOK_CONSTRAINTS
                                 {
                                   $$ = new (PARSERHEAP())
-				    ElemDDLLikeOptWithConstraints();
+				    ElemDDLLikeOptWithoutConstraints();
+                                }
+                      | TOK_WITH TOK_CONSTRAINTS
+                                {
+                                  // for backward compatibility
+                                  $$ = NULL;
                                 }
 
                       | TOK_WITH TOK_HEADINGS
@@ -27967,10 +27976,15 @@ like_option : TOK_WITH TOK_CONSTRAINTS
                                   $$ = new (PARSERHEAP())
 				    ElemDDLLikeOptWithHorizontalPartitions();
                                 }
-                      | TOK_WITH TOK_DIVISION
+                      | TOK_WITHOUT TOK_SALT
                                 {
                                   $$ = new (PARSERHEAP())
-				    ElemDDLLikeOptWithDivision();
+				    ElemDDLLikeOptWithoutSalt();
+                                }
+                      | TOK_WITHOUT TOK_DIVISION
+                                {
+                                  $$ = new (PARSERHEAP())
+				    ElemDDLLikeOptWithoutDivision();
                                 }
 
 /* type pElemDDL */
@@ -29004,21 +29018,6 @@ division_by_clause_starting_tokens : TOK_DIVISION TOK_BY '('
                                   ParSetTextStartPosForDivisionByClause(ParNameDivByLocListPtr);
                                }
 
-/* type tokval */
-division_by_clause_starting_tokens_2 : TOK_DIVISION TOK_BY '(' TOK_USING '('
-                               {
-                                 // division_by_clause_starting_tokens ::= TOK_DIVISION TOK_BY '(' TOK_USING '('
-
-                                 // This code is similar to that of check_constraint_starting_tokens 
-                                 ParNameDivByLocListPtr = new (PARSERHEAP()) 
-                                   ParNameLocList ( SQLTEXT()
-                                                  , (CharInfo::CharSet)SQLTEXTCHARSET()
-                                                  , SQLTEXTW()
-                                                  , PARSERHEAP()
-                                                  );
-                                  ParSetTextStartPosForDivisionByClause(ParNameDivByLocListPtr);
-                               }
-
 /* type pElemDDL */
 salt_by_clause : TOK_SALT TOK_USING NUMERIC_LITERAL_EXACT_NO_SCALE TOK_PARTITIONS optional_salt_column_list
                                {
@@ -29044,7 +29043,7 @@ salt_like_clause : TOK_SALT TOK_LIKE TOK_TABLE
                                }
 
 /* type pElemDDL */
-division_by_clause : division_by_clause_starting_tokens sort_by_value_expression_list  ')'
+division_by_clause : division_by_clause_starting_tokens sort_by_value_expression_list  optional_division_column_names ')'
                                {
                                  // division_by_clause ::= division_by_clause_starting_tokens sort_by_value_expression_list ')'
 
@@ -29058,40 +29057,24 @@ division_by_clause : division_by_clause_starting_tokens sort_by_value_expression
                                  pDivClause->setStartPosition(ParNameDivByLocListPtr->getTextStartPosition());
                                  delete ParNameDivByLocListPtr;
                                  ParNameDivByLocListPtr = NULL;
-                                 $$ = pDivClause;
-                               }
-
-                   | division_by_clause_sort_by_value_expression_list TOK_NAMED TOK_AS '(' column_reference_list ')' ')'
-                               {
-                                 // division_by_clause ::= division_by_clause_sort_by_value_expression_list
-                                 //                          TOK_NAMED TOK_AS '(' column_reference_list ')' ')'
-
-                                 ElemDDLDivisionClause * pDivClause = $1 // division_by_clause_sort_by_value_expression_list
-                                   ->castToElemDDLDivisionClause();
-                                 pDivClause->synthesize($5 /*column_reference_list*/);
-                                 if (NOT pDivClause->isNumOfDivExprsAndColsMatched())
-                                 {
-                                   YYERROR;
-                                 }
+                                 if ($3)
+                                   {
+                                     pDivClause->synthesize($3 /*column_reference_list*/);
+                                     if (NOT pDivClause->isNumOfDivExprsAndColsMatched())
+                                       {
+                                         YYERROR;
+                                       }
+                                   }
+                                   
                                  $$ = pDivClause;
                                }
 
 /* type pElemDDL */
-division_by_clause_sort_by_value_expression_list : division_by_clause_starting_tokens_2 sort_by_value_expression_list ')'
+optional_division_column_names : empty
+                               { $$ = NULL; }
+                    | TOK_NAMED TOK_AS '(' column_reference_list ')'
                                {
-                                 // division_by_clause ::= division_by_clause_starting_tokens_2 sort_by_value_expression_list ')'
-
-                                 ElemDDLDivisionClause * pDivClause = NULL;
-                                 pDivClause = new (PARSERHEAP()) ElemDDLDivisionClause($2 /*sort_by_value_expression*/);
-                                 pDivClause->setNameLocList(*ParNameDivByLocListPtr); // deep copy
-                                 if (ParSetTextEndPos(pDivClause))
-                                 {
-                                   YYERROR;
-                                 }
-                                 pDivClause->setStartPosition(ParNameDivByLocListPtr->getTextStartPosition());
-                                 delete ParNameDivByLocListPtr;
-                                 ParNameDivByLocListPtr = NULL;
-                                 $$ = pDivClause;
+                                 $$ = $4;
                                }
 
 /* type pElemDDL */

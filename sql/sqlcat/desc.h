@@ -305,6 +305,7 @@ struct columns_desc_struct {
   ULng32 hbaseColFlags;
   ComParamDirection paramDirection;
   NABoolean isOptional; 
+  Int64 colFlags;
 #ifdef NA_LITTLE_ENDIAN
   void encode() {}
 #endif

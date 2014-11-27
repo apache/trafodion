@@ -196,13 +196,15 @@
 1194 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Label $0~String0 could not be dropped (file error $1~NSKCode). 
 1195 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Column $0~ColumnName is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
 1196 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The number of salt partitions must be between $0~int0 and $1~int1
-1197 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The salt column list (implicit or explicit) is too long.
+1197 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- available ----
 1198 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU View text is too long to fit into the metadata.
 1199 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The PARTITION BY clause is not allowed for a Trafodion table.
 1200 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An error occurred while reading HDFS file statistics for Hive table $1~TableName. Cause: $0~string0.
 1201 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Salted index $0~string0 cannot be unique.
 1202 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Index $0~string1 cannot be salted like a table since table $0~string0 is not salted.
 1203 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU HBASE_OPTIONS clause in CREATE statement is longer than 6000 characters. Object $0~string0 was not created.
+1204 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Unsupported Hive datatype $0~string0.
+1205 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Hive feature $0~string0 is not supported.
 1220 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Code must contain two non-blank characters.
 1221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only system components may contain system operations.
 1222 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Command not supported when authorization is not enabled.
@@ -384,7 +386,7 @@
 1399 ZZZZZ 99999 BEGINNER MINOR DBADMIN Metadata has already been upgraded. No action is needed.
 1400 ZZZZZ 99999 BEGINNER MINOR LOGONLY The default value of column $0~ColumnName contains characters that cannot be converted to $1~String0.
 1401 ZZZZZ 99999 BEGINNER MINOR DBADMIN The default value of column $0~ColumnName contains characters that cannot be converted to character set $1~String0.
-1402 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unique index $0~TableName could not be created because the specified column(s) do not appear in the division expressions of the associating object $1~String0.
+1402 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unique index $0~TableName could not be created with the DIVISION LIKE TABLE option. Only non-unique indexes are supported with this option.
 1420 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as it is part of the table's primary key.
 1421 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as it is used in the secondary index $1~TableName.
 1422 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid hbase name was specified in this DDL statement. A valid name can only contain these characters: [a-zA-Z_0-9-.]
@@ -883,10 +885,10 @@ $1~String1 --------------------------------
 3146 42000 99999 BEGINNER MAJOR DBADMIN The PRIMARY KEY/FIRST KEY clause is not allowed on a vertically partitioned table.
 3147 42000 99999 BEGINNER MAJOR DBADMIN In an IN predicate whose right operand is a value list, the left operand must be scalar (degree of one).
 3148 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Environment variable $0~String0 is being ignored because this version of the code is Release, not Debug.  Actual query results will likely not match expected results.
-3149 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITH CONSTRAINTS phrases were specified in LIKE clause in CREATE TABLE statement.
+3149 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITHOUT CONSTRAINTS phrases were specified in LIKE clause in CREATE TABLE statement.
 3150 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITH HEADING phrases were specified in LIKE clause in CREATE TABLE statement.
 3151 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITH HORIZONTAL PARTITIONS phrases were specified in LIKE clause in CREATE TABLE statement.
-3152 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITH $0~string0 phrases were specified in LIKE clause in CREATE TABLE statement.
+3152 42000 99999 BEGINNER MAJOR DBADMIN Duplicate WITHOUT $0~string0 phrases were specified in LIKE clause in CREATE TABLE statement.
 3153 42000 99999 BEGINNER MAJOR DBADMIN The FIRST KEY clause is not allowed with hash or hash2 partitioning.
 3154 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/25/04 ---
 3155 42000 99999 BEGINNER MAJOR DBADMIN The POPULATE and NO POPULATE clauses cannot coexist in the same CREATE INDEX statement.
@@ -1267,6 +1269,7 @@ $1~String1 --------------------------------
 4245 42000 99999 BEGINNER MAJOR DBADMIN Table $0~TableName is defined as INSERT_ONLY.  You cannot delete rows or update the contents of this table.
 4246 ZZZZZ 99999 BEGINNER MINOR DBADMIN All column values must be specified when loading data by UPSERT USING LOAD syntax.
 4247 0A000 99999 BEGINNER MAJOR DBADMIN Specified size in bytes ($0~Int0) exceeds the maximum size allowed ($1~Int1) for column $0~ColumnName.
+4248 ZZZZZ 99999 BEGINNER MINOR DBADMIN Index $0~string1 cannot be divisioned like a table since table $0~string0 is not divisioned.
 4300 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of procedure $0~TableName was not valid - a UDR was invoked within a trigger.
 4301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of routine $0~TableName was not valid - return of result sets is not allowed within a trigger.
 4302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName expects $1~Int0 parameters but was called with $1~int1 parameters.

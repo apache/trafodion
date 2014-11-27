@@ -326,7 +326,7 @@ static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsB
      checkLeadingDivColumns = FALSE;
 
    NABoolean isLeadingDivisionColumn = FALSE;
-   NABoolean isLeadingSaltedColumn = FALSE;
+   NABoolean isLeadingSaltColumn = FALSE;
 
    for (index = 0; index < lastColumnPosition; index++)
    {
@@ -338,7 +338,7 @@ static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsB
        typeOfRange= KeyColumns::KeyColumn::EMPTY;
 
      isLeadingDivisionColumn = FALSE;
-     isLeadingSaltedColumn = FALSE;
+     isLeadingSaltColumn = FALSE;
 
      if ( checkLeadingDivColumns )
      {
@@ -347,8 +347,8 @@ static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsB
             keyPredsByCol.getKeyColumnId(index).isDivisioningColumn();
 
        // Check if the key column is a leading salted column
-       isLeadingSaltedColumn =
-             keyPredsByCol.getKeyColumnId(index).isSaltedColumn();
+       isLeadingSaltColumn =
+             keyPredsByCol.getKeyColumnId(index).isSaltColumn();
      }
 
      if (typeOfRange == KeyColumns::KeyColumn::EMPTY) {
@@ -357,7 +357,7 @@ static NABoolean checkMDAMadditionalRestriction(const ColumnOrderList& keyPredsB
         // and the current key column is not divisioning, increase the
         // the non-key-predicate columns.
         if ( checkLeadingDivColumns == FALSE ||
-             (!isLeadingDivisionColumn && !isLeadingSaltedColumn)
+             (!isLeadingDivisionColumn && !isLeadingSaltColumn)
            )
            noOfmissingKeyColumns++;
 

@@ -101,6 +101,7 @@ public:
     char *routineParamType = NULL,
     NABoolean storedOnDisk = TRUE,
     char *computedColExpr = NULL,
+    NABoolean isSaltColumn = FALSE,
     NABoolean isDivisioningColumn = FALSE)
   : heap_(h),
     colName_(colName, h),
@@ -127,6 +128,7 @@ public:
     isOptional_(isOptional),
     storedOnDisk_(storedOnDisk),
     computedColumnExpression_(computedColExpr),
+    isSaltColumn_(isSaltColumn),
     isDivisioningColumn_(isDivisioningColumn),
     lobNum_(-1),
     lobStorageType_(Lob_Invalid_Storage),
@@ -164,6 +166,7 @@ public:
     isOptional_(nac.isOptional_),
     storedOnDisk_(nac.storedOnDisk_),
     computedColumnExpression_(nac.computedColumnExpression_),
+    isSaltColumn_(nac.isSaltColumn_),
     isDivisioningColumn_(nac.isDivisioningColumn_),
     lobNum_(nac.lobNum_),
     lobStorageType_(nac.lobStorageType_),
@@ -229,8 +232,6 @@ public:
   inline NABoolean isSystemColumn() const       { return columnClass_ == SYSTEM_COLUMN;}
   inline NABoolean isSyskeyColumn() const       { return columnClass_ == SYSTEM_COLUMN && colName_ == "SYSKEY" &&
                                                          defaultClass_ == COM_NO_DEFAULT;}
-  inline virtual NABoolean isSaltColumn() const       { return columnClass_ == SYSTEM_COLUMN && colName_ == "_SALT_" &&
-                                                          defaultClass_ == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT;}
 
   inline NABoolean isIdentityColumn() const {return (defaultClass_ == COM_IDENTITY_GENERATED_BY_DEFAULT ||
                                                      defaultClass_ == COM_IDENTITY_GENERATED_ALWAYS);}
@@ -242,6 +243,7 @@ public:
   inline const char* getComputedColumnExprString() const { return computedColumnExpression_; }
   inline NABoolean isStoredOnDisk() const       { return storedOnDisk_; }
   inline NABoolean isAddedColumn() const { return addedColumn_; }
+  inline NABoolean isSaltColumn() const        { return isSaltColumn_;}
   inline NABoolean isDivisioningColumn() const { return isDivisioningColumn_; }
 
   inline SortOrdering getClusteringKeyOrdering() const	{return clusteringKeyOrdering_;}
@@ -535,6 +537,7 @@ private:
 
   // expression to compute a computed column or NULL, stored in UTF8
   char *computedColumnExpression_;
+  NABoolean isSaltColumn_;
   NABoolean isDivisioningColumn_;
 
   // next 3 fields are for lob columns. They identify where

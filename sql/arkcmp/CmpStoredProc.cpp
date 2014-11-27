@@ -479,6 +479,7 @@ NABoolean CmpSPOutputFormat::ElemDDLColDef2ColumnDescStruct
     colDesc->defaultvalue = NULL;
   else
     colDesc->defaultvalue = copyString(pDefVal->getConstStr());
+  colDesc->colFlags = 0;
   
   return TRUE;
 }

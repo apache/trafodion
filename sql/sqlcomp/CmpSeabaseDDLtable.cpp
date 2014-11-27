@@ -56,6 +56,8 @@ extern short CmpDescribeSeabaseTable (
                              CollHeap *heap,
                              const char * pkeyStr = NULL,
                              NABoolean withPartns = FALSE,
+                             NABoolean withoutSalt = FALSE,
+                             NABoolean withoutDivisioning = FALSE,
                              NABoolean noTrailingSemi = FALSE);
 
 void CmpSeabaseDDL::convertVirtTableColumnInfoToDescStruct( 
@@ -90,8 +92,19 @@ void CmpSeabaseDDL::convertVirtTableColumnInfoToDescStruct(
   column_desc->body.columns_desc.null_flag = colInfo->nullable;
   column_desc->body.columns_desc.upshift   = colInfo->upshifted;
   column_desc->body.columns_desc.character_set = (CharInfo::CharSet) colInfo->charset;
-  column_desc->body.columns_desc.colclass = colInfo->columnClass[0];
+  switch (colInfo->columnClass)
+    {
+    case COM_USER_COLUMN:
+      column_desc->body.columns_desc.colclass = 'U';
+      break;
+    case COM_SYSTEM_COLUMN:
+      column_desc->body.columns_desc.colclass = 'S';
+      break;
+    default:
+      CMPASSERT(0);
+    }
   column_desc->body.columns_desc.defaultClass = colInfo->defaultClass;
+  column_desc->body.columns_desc.colFlags = colInfo->colFlags;
   
   
   column_desc->body.columns_desc.pictureText =
@@ -238,7 +251,11 @@ void CmpSeabaseDDL::createSeabaseTableLike(
   char * buf = NULL;
   ULng32 buflen = 0;
   retcode = CmpDescribeSeabaseTable(cn, 3/*createlike*/, buf, buflen, STMTHEAP,
-                                    NULL, likeOptions.getIsWithHorizontalPartitions(), TRUE);
+                                    NULL,
+                                    likeOptions.getIsWithHorizontalPartitions(),
+                                    likeOptions.getIsWithoutSalt(),
+                                    likeOptions.getIsWithoutDivision(),
+                                    TRUE);
   if (retcode)
     return;
 
@@ -1037,6 +1054,11 @@ void CmpSeabaseDDL::createSeabaseTable(
                              STMTHEAP);
   ElemDDLColRef edcr("SYSKEY", COM_ASCENDING_ORDER);
   CollIndex numSysCols = 0;
+  CollIndex numSaltCols = 0;
+  CollIndex numDivCols = 0;
+
+  syskeyColDef.setColumnClass(COM_SYSTEM_COLUMN);
+
   if (((createTableNode->getStoreOption() == COM_KEY_COLUMN_LIST_STORE_OPTION) &&
        (NOT createTableNode->getIsConstraintPKSpecified())) ||
       (keyArray.entries() == 0))
@@ -1161,16 +1183,6 @@ void CmpSeabaseDDL::createSeabaseTable(
           processReturn();
           return;
         }
-      if (saltExprText.length() > 500)
-        {
-          // the salt expression will not fit into the metadata column
-          // "_MD_".COLUMNS.DEFAULT_VALUE CHAR(512)
-          // number of salt partitions is out of bounds
-          *CmpCommon::diags() << DgSqlCode(-1197);
-          deallocEHI(ehi); 
-          processReturn();
-          return;
-        }
 
       NAString saltColName(ElemDDLSaltOptionsClause::getSaltSysColName());
       SQLInt * saltType = new(STMTHEAP) SQLInt(FALSE, FALSE, STMTHEAP);
@@ -1185,45 +1197,18 @@ void CmpSeabaseDDL::createSeabaseTable(
       ElemDDLColRef * edcrs = 
         new(STMTHEAP) ElemDDLColRef(saltColName, COM_ASCENDING_ORDER);
 
-      // add this new salt column before user columns but after SYSKEY
+      saltColDef->setColumnClass(COM_SYSTEM_COLUMN);
+
+      // add this new salt column at the end
       // and also as key column 0
-      colArray.insertAt(numSysCols, saltColDef);
+      colArray.insert(saltColDef);
       keyArray.insertAt(0, edcrs);
       numSysCols++;
+      numSaltCols++;
       numSplits = numSaltPartns - 1;
     }
 
-  Int32 keyLength = 0;
-  for(CollIndex i = 0; i < keyArray.entries(); i++) 
-    {
-      const NAString &colName = keyArray[i]->getColumnName();
-      Lng32      colIx    = colArray.getColumnIndex(colName);
-      if (colIx < 0)
-        {
-          *CmpCommon::diags() << DgSqlCode(-1009)
-                              << DgColumnName(colName);
-
-          deallocEHI(ehi); 
-          
-          processReturn();
-          
-          return;
-        }
-
-      NAType *colType = colArray[colIx]->getColumnDataType();
-      keyLength += colType->getEncodedKeyLength();
-    }
-
   // create table in seabase
-  Lng32 numCols = colArray.entries();
-  Lng32 numKeys = keyArray.entries();
-  
-  ComTdbVirtTableColumnInfo * colInfoArray = 
-    new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
-
-  ComTdbVirtTableKeyInfo * keyInfoArray = 
-    new(STMTHEAP) ComTdbVirtTableKeyInfo[numKeys];
-
   ParDDLFileAttrsCreateTable &fileAttribs =
     createTableNode->getFileAttributes();
 
@@ -1240,15 +1225,6 @@ void CmpSeabaseDDL::createSeabaseTable(
       alignedFormat = TRUE;
     }
 
-  Lng32 identityColPos = -1;
-  if (buildColInfoArray(&colArray, colInfoArray, implicitPK, numSysCols, 
-                        alignedFormat, &identityColPos))
-    {
-      processReturn();
-      
-      return;
-    }
-
   // allow nullable clustering key or unique constraints based on the
   // CQD settings. If a volatile table is being created and cqd
   // VOLATILE_TABLE_FIND_SUITABLE_KEY is ON, then allow it.
@@ -1259,11 +1235,173 @@ void CmpSeabaseDDL::createSeabaseTable(
       (CmpCommon::getDefault(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT) == DF_ON))
     allowNullableUniqueConstr = TRUE;
 
-  if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, allowNullableUniqueConstr))
+  int numIterationsToCompleteColumnList = 1;
+  Lng32 numCols = 0;
+  Lng32 numKeys = 0;
+  ComTdbVirtTableColumnInfo * colInfoArray = NULL;
+  ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
+  Lng32 identityColPos = -1;
+
+  // build colInfoArray and keyInfoArray, this may take two
+  // iterations if we need to add a divisioning column
+  for (int iter=0; iter < numIterationsToCompleteColumnList; iter++)
     {
-      processReturn();
-      
-      return;
+      numCols = colArray.entries();
+      numKeys = keyArray.entries();
+
+      colInfoArray = new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
+      keyInfoArray = new(STMTHEAP) ComTdbVirtTableKeyInfo[numKeys];
+
+      if (buildColInfoArray(&colArray, colInfoArray, implicitPK,
+                            alignedFormat, &identityColPos))
+        {
+          processReturn();
+
+          return;
+        }
+
+      if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, allowNullableUniqueConstr))
+        {
+          processReturn();
+
+          return;
+        }
+
+      if (iter == 0 && createTableNode->isDivisionClauseSpecified())
+        {
+          // We need the colArray to be able to bind the divisioning
+          // expression, check it and compute its type. Once we have the
+          // type, we will add a divisioning column of that type and
+          // also add that column to the key. Then we will need to go
+          // through this loop once more and create the updated colArray.
+          numIterationsToCompleteColumnList = 2;
+          NAColumnArray *naColArrayForBindingDivExpr = new(STMTHEAP) NAColumnArray(STMTHEAP);
+          NAColumnArray *keyColArrayForBindingDivExpr = new(STMTHEAP) NAColumnArray(STMTHEAP);
+          ItemExprList * divExpr = createTableNode->getDivisionExprList();
+          ElemDDLColRefArray *divColNamesFromDDL = createTableNode->getDivisionColRefArray();
+
+          CmpSeabaseDDL::convertColAndKeyInfoArrays(
+               numCols,
+               colInfoArray,
+               numKeys,
+               keyInfoArray,
+               naColArrayForBindingDivExpr,
+               keyColArrayForBindingDivExpr);
+
+          for (CollIndex d=0; d<divExpr->entries(); d++)
+            {
+              NABoolean exceptionOccurred = FALSE;
+              ComColumnOrdering divKeyOrdering = COM_ASCENDING_ORDER;
+              ItemExpr *boundDivExpr =
+                bindDivisionExprAtDDLTime((*divExpr)[d],
+                                          keyColArrayForBindingDivExpr,
+                                          STMTHEAP);
+              if (!boundDivExpr)
+                {
+                  processReturn();
+
+                  return;
+                }
+
+              if (boundDivExpr->getOperatorType() == ITM_INVERSE)
+                {
+                  divKeyOrdering = COM_DESCENDING_ORDER;
+                  boundDivExpr = boundDivExpr->child(0);
+                  if (boundDivExpr->getOperatorType() == ITM_INVERSE)
+                    {
+                      // in rare cases we could have two inverse operators
+                      // stacked on top of each other, indicating ascending
+                      divKeyOrdering = COM_ASCENDING_ORDER;
+                      boundDivExpr = boundDivExpr->child(0);
+                    }
+                }
+
+              try 
+                {
+                  // put this into a try/catch block because it could throw
+                  // an exception when type synthesis fails and that would leave
+                  // the transaction begun by the DDL operation in limbo
+                  boundDivExpr->synthTypeAndValueId();
+                }
+              catch (...)
+                {
+                  // diags area should be set
+                  CMPASSERT(CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0);
+                  exceptionOccurred = TRUE;
+                }
+
+              if (exceptionOccurred ||
+                  boundDivExpr->getValueId() == NULL_VALUE_ID)
+                {
+                  processReturn();
+
+                  return;
+                }
+
+              if (validateDivisionByExprForDDL(boundDivExpr))
+                {
+                  processReturn();
+
+                  return;
+                }
+
+              // Add a divisioning column to the list of columns and the key
+              char buf[16];
+              snprintf(buf, sizeof(buf), "_DIVISION_%d_", d+1);
+              NAString divColName(buf);
+              // if the division column name was specified in the DDL, use that instead
+              if (divColNamesFromDDL && divColNamesFromDDL->entries() > d)
+                divColName = (*divColNamesFromDDL)[d]->getColumnName();
+              NAType * divColType =
+                boundDivExpr->getValueId().getType().newCopy(STMTHEAP);
+              ElemDDLColDefault *divColDefault = 
+                new(STMTHEAP) ElemDDLColDefault(
+                     ElemDDLColDefault::COL_COMPUTED_DEFAULT);
+              NAString divExprText;
+              boundDivExpr->unparse(divExprText, PARSER_PHASE, COMPUTED_COLUMN_FORMAT);
+              divColDefault->setComputedDefaultExpr(divExprText);
+              ElemDDLColDef * divColDef =
+                new(STMTHEAP) ElemDDLColDef(divColName, divColType, divColDefault, NULL,
+                                            STMTHEAP);
+
+              ElemDDLColRef * edcrs = 
+                new(STMTHEAP) ElemDDLColRef(divColName, divKeyOrdering);
+
+              divColDef->setColumnClass(COM_SYSTEM_COLUMN);
+              divColDef->setDivisionColumnFlag(TRUE);
+              divColDef->setDivisionColumnSequenceNumber(d);
+
+              // add this new divisioning column to the end of the row
+              // and also to the key, right after any existing salt and divisioning columns
+              colArray.insert(divColDef);
+              keyArray.insertAt(numSaltCols+numDivCols, edcrs);
+              numSysCols++;
+              numDivCols++;
+            }
+        }
+
+     } // iterate 1 or 2 times to get all columns, including divisioning columns
+
+  Int32 keyLength = 0;
+
+  for(CollIndex i = 0; i < keyArray.entries(); i++) 
+    {
+      const NAString &colName = keyArray[i]->getColumnName();
+      Lng32      colIx    = colArray.getColumnIndex(colName);
+      if (colIx < 0)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1009)
+                              << DgColumnName(colName);
+
+          deallocEHI(ehi); 
+
+          processReturn();
+
+          return;
+        }
+
+      NAType *colType = colArray[colIx]->getColumnDataType();
+      keyLength += colType->getEncodedKeyLength();
     }
 
   char ** encodedKeysBuffer = NULL;
@@ -2595,7 +2733,6 @@ void CmpSeabaseDDL::dropSeabaseTable(
       NAString idxSchName = (char*)vi->get(1);
       NAString idxObjName = (char*)vi->get(2);
 
-
       NAString qCatName = "\"" + idxCatName + "\"";
       NAString qSchName = "\"" + idxSchName + "\"";
       NAString qObjName = "\"" + idxObjName + "\"";
@@ -2605,7 +2742,6 @@ void CmpSeabaseDDL::dropSeabaseTable(
 
       if (dropSeabaseObject(ehi, ansiName,
                             idxCatName, idxSchName, COM_INDEX_OBJECT_LIT, FALSE, TRUE))
-
         {
           processReturn();
           
@@ -2621,7 +2757,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
 
     } // for
 
-  // If blob/clob columns are present, drop all the depenedent files.
+  // If blob/clob columns are present, drop all the dependent files.
 
   Lng32 numCols = nacolArr.entries();
   
@@ -3091,17 +3227,18 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
 
   NAString colName;
   Lng32 datatype, length, precision, scale, dt_start, dt_end, nullable, upshifted;
+  ComColumnClass colClass;
   ComColumnDefaultClass defaultClass;
   NAString charset, defVal;
-  NAString colClass;
   NAString heading;
-  ULng32 colFlags;
+  ULng32 hbaseColFlags;
+  Int64 colFlags;
   LobsStorage lobStorage;
   if (getColInfo(pColDef,
 		 colName, 
                  naTable->isSQLMXAlignedTable(),
 		 datatype, length, precision, scale, dt_start, dt_end, upshifted, nullable,
-		 charset, defaultClass, defVal, heading, lobStorage, colFlags))
+		 charset, colClass, defaultClass, defVal, heading, lobStorage, hbaseColFlags, colFlags))
     {
       processReturn();
       
@@ -3138,7 +3275,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       ToQuotedString(quotedDefVal, defVal, FALSE);
     }
 
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%d', '%s', '%s', 0 )",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%d', '%s', '%s', %Ld )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               naTable->objectUid().castToInt64(), 
               col_name,
@@ -3152,7 +3289,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
               dt_start,
               dt_end,
               (upshifted ? "Y" : "N"),
-              colFlags, 
+              hbaseColFlags, 
               nullable,
               (char*)charset.data(),
               (Lng32)defaultClass,
@@ -3161,8 +3298,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
               SEABASE_DEFAULT_COL_FAMILY,
               naTable->getColumnCount()+1,
               COM_UNKNOWN_PARAM_DIRECTION_LIT,
-              "N"
-              );
+              "N",
+              colFlags);
   
   cliRC = cliInterface.executeImmediate(query);
   if (cliRC < 0)
@@ -4665,15 +4802,16 @@ short CmpSeabaseDDL::getTextFromMD(
                                    ExeCliInterface * cliInterface,
                                    Int64 textUID,
                                    Lng32 textType,
+                                   Lng32 textSubID,
                                    NAString &outText)
 {
   Lng32 cliRC;
 
   char query[1000];
 
-  str_sprintf(query, "select text from %s.\"%s\".%s where text_uid = %Ld and text_type = %d for read committed access order by seq_num",
+  str_sprintf(query, "select text from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d for read committed access order by seq_num",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-              textUID, textType);
+              textUID, textType, textSubID);
   
   Queue * textQueue = NULL;
   cliRC = cliInterface->fetchAllRows(textQueue, query, 0, FALSE, FALSE, TRUE);
@@ -6197,7 +6335,7 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
     "datetime_start_field, datetime_end_field, trim(is_upshifted), column_flags, "
     "nullable, trim(character_set), default_class, default_value, "
     "trim(column_heading), hbase_col_family, hbase_col_qualifier, direction, "
-    "is_optional  from %s.\"%s\".%s "
+    "is_optional, flags  from %s.\"%s\".%s "
     "where object_uid = %Ld and direction in (%s)"
     "order by 2 for read committed access",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
@@ -6229,8 +6367,18 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
       strcpy((char*)colInfo.colName, data);
       
       colInfo.colNumber = *(Lng32*)oi->get(1);
-  
-      strcpy(colInfo.columnClass, (char*)oi->get(2));
+
+      char *colClass = (char*)oi->get(2);
+      if (strcmp(colClass,COM_USER_COLUMN_LIT) == 0)
+        colInfo.columnClass = COM_USER_COLUMN;
+      else if (strcmp(colClass,COM_SYSTEM_COLUMN_LIT) == 0)
+        colInfo.columnClass = COM_SYSTEM_COLUMN;
+      else if (strcmp(colClass,COM_ADDED_USER_COLUMN_LIT) == 0)
+        colInfo.columnClass = COM_ADDED_USER_COLUMN;
+      else if (strcmp(colClass,COM_MV_SYSTEM_ADDED_COLUMN_LIT) == 0)
+        colInfo.columnClass = COM_MV_SYSTEM_ADDED_COLUMN;
+      else
+        CMPASSERT(0);
 
       colInfo.datatype = *(Lng32*)oi->get(3);
       
@@ -6261,11 +6409,29 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
       NAString tempDefVal;
       data = NULL;
       if (colInfo.defaultClass == COM_USER_DEFINED_DEFAULT ||
-          colInfo.defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT)
+          colInfo.defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT ||
+          colInfo.defaultClass == COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT)
         {
           oi->get(14, data, len);
-          if (colInfo.defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT)
-            tableIsSalted = TRUE;
+          if (colInfo.defaultClass != COM_USER_DEFINED_DEFAULT)
+            {
+              // get computed column definition from text table, but note
+              // that for older tables the definition may be stored in
+              // COLUMNS.DEFAULT_VALUE instead (that's returned in "data")
+              cliRC = getTextFromMD(cliInterface,
+                                    objUID,
+                                    COM_COMPUTED_COL_TEXT,
+                                    colInfo.colNumber,
+                                    tempDefVal);
+              if (cliRC < 0)
+                {
+                  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+                  return -1;
+                }
+              if (strcmp(colInfo.colName,
+                         ElemDDLSaltOptionsClause::getSaltSysColName()) == 0)
+                tableIsSalted = TRUE;
+            }
         }
       else if (colInfo.defaultClass == COM_NULL_DEFAULT)
         {
@@ -6336,6 +6502,14 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
          colInfo.isOptional = 1;
       else
          colInfo.isOptional = 0;
+      colInfo.colFlags = *(Int64 *)oi->get(20);
+      // temporary code, until we have updated flags to have the salt
+      // flag set for all tables, even those created before end of November
+      // 2014, when the flag was added during Trafodion R1.0 development
+      if (colInfo.defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT &&
+          strcmp(colInfo.colName,
+                 ElemDDLSaltOptionsClause::getSaltSysColName()) == 0)
+        colInfo.colFlags |=  SEABASE_COLUMN_IS_SALT;
    }
    if (isTableSalted != NULL)
       *isTableSalted = tableIsSalted;
@@ -6580,7 +6754,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       char * format = vi->get(1);
       alignedFormat = (memcmp(format, COM_ALIGNED_FORMAT_LIT, 2) == 0);
 
-      if (getTextFromMD(&cliInterface, objUID, COM_HBASE_OPTIONS_TEXT, 
+      if (getTextFromMD(&cliInterface, objUID, COM_HBASE_OPTIONS_TEXT, 0,
                         *hbaseCreateOptions))
         {
           processReturn();
@@ -6716,7 +6890,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
         }
 
       NAString * idxHbaseCreateOptions = new(STMTHEAP) NAString();
-      if (getTextFromMD(&cliInterface, idxUID, COM_HBASE_OPTIONS_TEXT, 
+      if (getTextFromMD(&cliInterface, idxUID, COM_HBASE_OPTIONS_TEXT, 0,
                         *idxHbaseCreateOptions))
         {
           processReturn();
@@ -7037,7 +7211,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
      if (strcmp(constrType, COM_CHECK_CONSTRAINT_LIT) == 0)
        {
          NAString constrText;
-         if (getTextFromMD(&cliInterface, constrUID, COM_CHECK_CONSTR_TEXT, 
+         if (getTextFromMD(&cliInterface, constrUID, COM_CHECK_CONSTR_TEXT, 0,
                            constrText))
            {
               processReturn();
@@ -7104,7 +7278,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
       // get view text from TEXT table
       NAString viewText;
-      if (getTextFromMD(&cliInterface, objUID, COM_VIEW_TEXT, viewText))
+      if (getTextFromMD(&cliInterface, objUID, COM_VIEW_TEXT, 0, viewText))
         {
           processReturn();
           

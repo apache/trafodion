@@ -4403,6 +4403,11 @@ public:
   // a virtual function for performing name binding within the query tree
   virtual ItemExpr * bindNode(BindWA *bindWA);
 
+  // the synthesizeType method is needed only when we process an item
+  // expression at DDL time, for DML the function gets transformed into
+  // another function before we reach type synthesis
+  virtual const NAType * synthesizeType();
+
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
                                  CollHeap* outHeap = 0);
 

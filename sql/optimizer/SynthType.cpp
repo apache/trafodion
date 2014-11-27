@@ -4200,11 +4200,13 @@ const NAType *Extract::synthesizeType()
     prec  += dti.getFractionPrecision();
     scale += dti.getFractionPrecision();
   }
-  const Int16 DisAmbiguate = 0; // added for 64bit project
+  const Int16 disAmbiguate = 0; // added for 64bit project
   return new HEAP
     SQLNumeric(type == NA_INTERVAL_TYPE, /*allowNegValues*/
 	       prec,
-	       scale, DisAmbiguate );
+	       scale,
+               disAmbiguate,
+               dti.supportsSQLnull());
 }
 #pragma warn(1506)  // warning elimination
 
@@ -5653,6 +5655,45 @@ const NAType* PackFunc::synthesizeType()
     deriveFormatInfoFromUnpackType(columnType);
   }
   return type_;
+}
+
+const NAType * ZZZBinderFunction::synthesizeType()
+{
+  // the synthesizeType method is needed only when we process an item
+  // expression at DDL time. For DML the function gets transformed into
+  // another function in the binder before we reach type synthesis
+  switch (getOperatorType())
+    {
+    case ITM_DATEDIFF_YEAR:
+    case ITM_DATEDIFF_MONTH:
+    case ITM_DATEDIFF_QUARTER:
+    case ITM_DATEDIFF_WEEK:
+      return new HEAP SQLInt(TRUE,
+                             child(0)->getValueId().getType().supportsSQLnull() ||
+                             child(1)->getValueId().getType().supportsSQLnull());
+      
+    case ITM_LEFT:
+      {
+        // make a temporary transformation for synthesizing the right type
+        Substring *temp = new HEAP Substring(child(0).getPtr(),
+                                             new HEAP ConstValue((Lng32) 1, (NAMemory *) HEAP),
+                                             child(1));
+        temp->synthTypeAndValueId();
+        return temp->getValueId().getType().newCopy(HEAP);
+      }
+
+    case ITM_YEARWEEK:
+    case ITM_YEARWEEKD:
+      return new HEAP SQLNumeric(4,
+                                 6,
+                                 0,
+                                 TRUE,
+                                 child(0)->getValueId().getType().supportsSQLnull());
+
+    default:
+      // use the parent class implementation by default
+      return BuiltinFunction::synthesizeType();
+    }
 }
 
 const NAType *Subquery::synthesizeType()

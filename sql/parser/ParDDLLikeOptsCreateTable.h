@@ -87,9 +87,9 @@ public:
   }
 
   const NABoolean
-  getIsWithConstraints() const
+  getIsWithoutConstraints() const
   {
-    return isLikeOptWithConstraints_;
+    return isLikeOptWithoutConstraints_;
   }
 
   const NABoolean
@@ -111,9 +111,15 @@ public:
   }
 
   const NABoolean
-  getIsWithDivision() const
+  getIsWithoutSalt() const
   {
-    return isLikeOptWithDivision_;
+    return isLikeOptWithoutSalt_;
+  }
+
+  const NABoolean
+  getIsWithoutDivision() const
+  {
+    return isLikeOptWithoutDivision_;
   }
 
   // mutators
@@ -127,9 +133,9 @@ public:
   }
 
   void
-  setIsWithConstraints(const NABoolean setting)
+  setIsWithoutConstraints(const NABoolean setting)
   {
-    isLikeOptWithConstraints_ = setting;
+    isLikeOptWithoutConstraints_ = setting;
   }
 
   void
@@ -151,9 +157,15 @@ public:
   }
 
   void
-  setIsWithDivision(const NABoolean setting)
+  setIsWithoutSalt(const NABoolean setting)
   {
-    isLikeOptWithDivision_ = setting;
+    isLikeOptWithoutSalt_ = setting;
+  }
+
+  void
+  setIsWithoutDivision(const NABoolean setting)
+  {
+    isLikeOptWithoutDivision_ = setting;
   }
 
 
@@ -175,20 +187,22 @@ private:
   // are used by the parser to look for duplicate options.
 
   NABoolean isLikeOptWithCommentsSpec_;
-  NABoolean isLikeOptWithConstraintsSpec_;
+  NABoolean isLikeOptWithoutConstraintsSpec_;
   NABoolean isLikeOptWithHeadingsSpec_;
   NABoolean isLikeOptWithHelpTextSpec_;
   NABoolean isLikeOptWithHorizontalPartitionsSpec_;
-  NABoolean isLikeOptWithDivisionSpec_;
+  NABoolean isLikeOptWithoutSaltSpec_;
+  NABoolean isLikeOptWithoutDivisionSpec_;
 
   // legal Like options in DDL Create Table statements
 
   NABoolean isLikeOptWithComments_;
-  NABoolean isLikeOptWithConstraints_;
+  NABoolean isLikeOptWithoutConstraints_;
   NABoolean isLikeOptWithHeadings_;
   NABoolean isLikeOptWithHelpText_;
   NABoolean isLikeOptWithHorizontalPartitions_;
-  NABoolean isLikeOptWithDivision_;
+  NABoolean isLikeOptWithoutSalt_;
+  NABoolean isLikeOptWithoutDivision_;
 
 }; // class ParDDLLikeOptsCreateTable
 

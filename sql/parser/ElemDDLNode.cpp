@@ -524,8 +524,8 @@ ElemDDLNode::castToElemDDLLikeOpt()
   return NULL;
 }
 
-ElemDDLLikeOptWithConstraints *
-ElemDDLNode::castToElemDDLLikeOptWithConstraints()
+ElemDDLLikeOptWithoutConstraints *
+ElemDDLNode::castToElemDDLLikeOptWithoutConstraints()
 {
   return NULL;
 }
@@ -542,7 +542,12 @@ ElemDDLNode::castToElemDDLLikeOptWithHorizontalPartitions()
   return NULL;
 }
 
-ElemDDLLikeOptWithDivision * ElemDDLNode::castToElemDDLLikeOptWithDivision()
+ElemDDLLikeOptWithoutSalt * ElemDDLNode::castToElemDDLLikeOptWithoutSalt()
+{
+  return NULL;
+}
+
+ElemDDLLikeOptWithoutDivision * ElemDDLNode::castToElemDDLLikeOptWithoutDivision()
 {
   return NULL;
 }

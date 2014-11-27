@@ -901,19 +901,18 @@ class ComTdbVirtTableTableInfo  : public ComTdbVirtTableBase
 class ComTdbVirtTableColumnInfo : public ComTdbVirtTableBase
 {
  public:
-  ComTdbVirtTableColumnInfo(const char * cName, Lng32 cNum, const char * cc,
+  ComTdbVirtTableColumnInfo(const char * cName, Lng32 cNum, ComColumnClass cc,
                             Lng32 dt, Lng32 l, Lng32 n, SQLCHARSET_CODE cs,
                             Lng32 p, Lng32 s, Lng32 dtS, Lng32 dtE, Lng32 u,
                             const char * ch, ULng32 flags, ComColumnDefaultClass dc,
                             const char * defVal, const char * hcf, const char * hcq,
                             const char * pd, Lng32 io) 
     : ComTdbVirtTableBase(),
-    colName(cName), colNumber(cNum), 
+      colName(cName), colNumber(cNum), columnClass(cc),
     datatype(dt), length(l), nullable(n), charset(cs), precision(p), scale(s),
     dtStart(dtS), dtEnd(dtE), upshifted(u), colHeading(ch), hbaseColFlags(flags),
-    defaultClass(dc), hbaseColFam(hcf), hbaseColQual(hcq), isOptional(io)
+      defaultClass(dc), hbaseColFam(hcf), hbaseColQual(hcq), isOptional(io), colFlags(0)
   {
-    strcpy(columnClass, cc);
     strcpy(paramDirection, pd);
   };
   
@@ -927,7 +926,7 @@ class ComTdbVirtTableColumnInfo : public ComTdbVirtTableBase
 
   const char * colName;
   Lng32   colNumber;
-  char columnClass[4];
+  ComColumnClass columnClass;
   Lng32   datatype;
   Lng32   length;
   Lng32   nullable;
@@ -945,6 +944,7 @@ class ComTdbVirtTableColumnInfo : public ComTdbVirtTableBase
   const char * hbaseColQual;
   char paramDirection[4];
   Lng32 isOptional; // 0, regular (does not apply OR FALSE). 1, Param is optional
+  Int64 colFlags;
 };
 
 class ComTdbVirtTableKeyInfo : public ComTdbVirtTableBase
