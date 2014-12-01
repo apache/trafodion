@@ -3925,8 +3925,16 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
     {
       // cannot create clustered primary key constraint.
       // create a unique constraint instead.
-      return alterSeabaseTableAddUniqueConstraint(alterAddConstraint,
-                                                  currCatName, currSchName);
+      NAString cliQuery;
+      cliQuery = "alter table " + extTableName + " add constraint " + uniqueStr
+        + " unique " + pkeyStr + ";";
+      cliRC = cliInterface.executeImmediate((char*)cliQuery.data());
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+        }
+
+      return;
     }
 
   Int64 tableUID = 

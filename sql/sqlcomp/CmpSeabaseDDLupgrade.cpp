@@ -435,8 +435,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                         // software version stored in metadata is uptodate
                         mdui.setSubstep(1);
                       else
-                        // metadata need to be updated with current software version.
-                        mdui.setSubstep(2);
+                        // Software version stored in metadata is not current.
+                        // Initialize scripts need to be enhanced to store current software 
+                        // version in metadata when trafodion is initialized or upgraded. 
+                        // Until scripts are enhanced to do that, do not return an error.
+                        mdui.setSubstep(1);
 		    }
 		  else if (retcode == -1397) // mismatch in software version
 		    {
@@ -458,10 +461,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                   Int64 expSWMajorVersion = SOFTWARE_MAJOR_VERSION;
                   Int64 expSWMinorVersion = SOFTWARE_MINOR_VERSION;
                   Int64 expSWUpdVersion = SOFTWARE_UPDATE_VERSION;
-		  str_sprintf(msgBuf, "  System Version %Ld.%Ld.%Ld. Expected Version %Ld.%Ld.%Ld. Metadata Version %Ld.%Ld",
+		  str_sprintf(msgBuf, "  System Version %Ld.%Ld.%Ld. Expected Version %Ld.%Ld.%Ld.",
 			      sysSWMajorVersion, sysSWMinorVersion, sysSWUpdVersion,
-			      expSWMajorVersion, expSWMinorVersion, expSWUpdVersion,
-                              mdSWMajorVersion, mdSWMinorVersion);
+			      expSWMajorVersion, expSWMinorVersion, expSWUpdVersion);
 		  mdui.setMsg(msgBuf);
 		  mdui.setEndStep(FALSE);
 		  
