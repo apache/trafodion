@@ -461,9 +461,7 @@ select _ucs2 x'0a$#' from (values(1))x;
 
 >>select rpad(N'test',2147483647,N'T') from (values(1)) as x;
 
-*** ERROR[4129] The character-typed result of the function REPEAT is longer than 32768 octets.
-
-*** ERROR[4062] The preceding error actually occurred in function RPAD.
+*** ERROR[4129] The character-typed result of the function RPAD is longer than 32768 octets.
 
 *** ERROR[8822] The statement was not prepared.
 
