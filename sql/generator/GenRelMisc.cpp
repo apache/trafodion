@@ -5369,8 +5369,74 @@ short PhysicalExtractSource::codeGen(Generator *)
 /////////////////////////////////////////////////////////
 short ControlRunningQuery::codeGen(Generator * generator)
 {
-      *CmpCommon::diags() << DgSqlCode(-1010);
-      GenExit();
-      return -1;
+  Space * space = generator->getSpace();
+
+  GenAssert((child(0) == NULL) && (child(1) == NULL),
+    "ControlRunningQuery does not expect any child.");
+
+  char *qid =
+    space->allocateAndCopyToAlignedSpace(queryId_, str_len(queryId_), 0);
+
+  char *pname =
+     space->allocateAndCopyToAlignedSpace(pname_, str_len(pname_), 0);
+
+  char *comment =
+    space->allocateAndCopyToAlignedSpace(comment_, str_len(comment_), 0);
+
+  ComTdbCancel::Action a = ComTdbCancel::InvalidAction;
+  switch (action_)
+  {
+    case Cancel:
+    {
+      switch (qs_)
+      {
+        case ControlQid:    
+          a = ComTdbCancel::CancelByQid;    
+          break;
+        case ControlPname:  
+        case ControlNidPid:
+          break;
+        default: 
+          GenAssert(0, "Invalid ControlRunningQuery::qs_"); break;
+      }
+      break;
+    }
+   case Suspend: 
+   case Activate:
+     break;
+   default: GenAssert(0, "Invalid ControlRunningQuery::action_");
+  }
+
+  if (a == ComTdbCancel::InvalidAction)
+  {
+    *CmpCommon::diags() << DgSqlCode(-1010);
+    GenExit();
+    return -1;
+  }
+
+  ComTdbCancel * exe_cancel_tdb = new(space)
+    ComTdbCancel(qid, pname, nid_, pid_,
+                 getDefault(CANCEL_MINIMUM_BLOCKING_INTERVAL),
+                 a,  forced_, comment,
+                 generator->getCriDesc(Generator::DOWN),
+                 generator->getCriDesc(Generator::DOWN),
+                 (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+                 (queue_index)getDefault(GEN_DDL_SIZE_UP)
+                );
+
+  generator->initTdbFields(exe_cancel_tdb);
+
+  // no tupps are returned
+  generator->setCriDesc((ex_cri_desc *)
+    (generator->getCriDesc(Generator::DOWN)),
+                           Generator::UP);
+  generator->setGenObj(this, exe_cancel_tdb);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_cancel_tdb, 0, 0, generator));
+  }
+
+  return 0;
 }
 

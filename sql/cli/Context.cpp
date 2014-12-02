@@ -150,6 +150,9 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     catmanInfo_(NULL),
     flags_(0),
     ssmpManager_(NULL),
+    cbServerClass_(NULL),
+    cbServer_ (NULL),
+    cbServerInUse_(false),
     udrServerList_(NULL),
     udrRuntimeOptions_(NULL),
     udrRuntimeOptionDelimiters_(NULL),
@@ -284,6 +287,9 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
   if (cliGlobals->getStatsGlobals())
     ssmpManager_ = new(ipcHeap_) ExSsmpManager(env_);
 
+  cbServerClass_ = new(ipcHeap_) IpcServerClass(env_, IPC_SQLSSMP_SERVER,
+    IPC_USE_PROCESS);  // use existing process.
+
   seqGen_ = new(exCollHeap()) SequenceValueGenerator(exCollHeap());
 
   // For CmpContext switch
@@ -398,6 +404,16 @@ void ContextCli::deleteMe()
      NADELETE(udrServerManager_, ExUdrServerManager, ipcHeap_);
   if (ssmpManager_ != NULL)
      NADELETE(ssmpManager_, ExSsmpManager, ipcHeap_);
+  if (cbServerClass_ != NULL)
+  {
+    NADELETE(cbServerClass_, IpcServerClass, ipcHeap_);
+    cbServerClass_ = NULL;
+  }
+  if (cbServer_ != NULL)
+  {
+    cbServer_->release();
+    cbServer_ = NULL;
+  }
   if (exeTraceInfo_ != NULL)
   {
     delete exeTraceInfo_;

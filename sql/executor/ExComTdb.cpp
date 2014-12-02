@@ -695,6 +695,14 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
+    case ex_CANCEL:
+    {
+#pragma nowarn(1506)   // warning elimination
+      GetVTblPtr(vtblptr,ExCancelTdb);
+#pragma warn(1506)  // warning elimination
+
+      break;
+    }
 
 #endif
     default:

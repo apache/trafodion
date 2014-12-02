@@ -427,6 +427,8 @@ inline
   char * myProgName() { return myProgName_; }
   ExeTraceInfo * getExeTraceInfo();
   CLISemaphore *getSemaphore() { return cliSemaphore_; }
+
+  IpcServerClass * getCbServerClass();
 #ifdef _DEBUG
   void deleteContexts();
 #endif  // _DEBUG

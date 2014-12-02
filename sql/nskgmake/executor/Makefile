@@ -119,6 +119,7 @@ CPPSRC := Allocator.cpp \
 CPPSRC += vers_libexecutor.cpp \
 	ssmpipc.cpp \
 	CancelBroker.cpp \
+	ExCancel.cpp \
 	ExSMCommon.cpp \
 	ExSMTrace.cpp \
 	ExSMGlobals.cpp \

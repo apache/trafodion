@@ -1,0 +1,169 @@
+cancel-specific showplan output
+Contents of EX_CANCEL [1]:
+For ComTdbCancel :
+qid_ = MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1
+action_ = cancel by queryId
+comment_ =
+>>
+>>
+>>obey TEST106(showplan2);
+>>
+>>log;
+control query default showplan output
+Contents of EX_CONTROL [1]:
+# of Expressions = 0
+>>
+>>
+>>
+>>obey TEST106(explain1);
+>>
+>>log;
+cancel-specific explain output
+CONTROL_RUNNING_QUERY =====================  SEQ_NO 1        NO CHILDREN
+  control_action ......... cancel by qid
+>>
+>>
+>>obey TEST106(invalid_qid);
+>>control query cancel qid foo;
+
+*** ERROR[8919] Unable to retrieve Runtime Statistics for invalid Query Id .
+
+--- SQL operation failed with errors.
+>>
+>>set envvar HP_FAKE_ERROR_2024;
+
+--- SQL operation complete.
+>>
+>>control query cancel qid
++>MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
+
+*** ERROR[8028] Server declined cancel request. The process $ZSM000 was not found.
+
+--- SQL operation failed with errors.
+>>
+>>set envvar HP_FAKE_ERROR_8142;
+
+--- SQL operation complete.
+>>
+>>control query cancel qid
++>MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
+
+*** ERROR[8142] An error was artificially injected, to test error handling. Testpoint ../executor/ExCancel.cpp, Value cbServer_ is NULL.
+
+--- SQL operation failed with errors.
+>>
+>>reset envvar HP_FAKE_ERROR_2024;
+
+--- SQL operation complete.
+>>
+>>reset envvar HP_FAKE_ERROR_8142;
+
+--- SQL operation complete.
+>>
+>>control query cancel qid
++>MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
+
+*** ERROR[8026] Server declined cancel request. The query ID  of the targeted query was not found.
+
+--- SQL operation failed with errors.
+>>
+>>set envvar HP_FAKE_ERROR_8028;
+
+--- SQL operation complete.
+>>
+>>control query cancel qid
++>MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
+
+*** ERROR[8028] Server declined cancel request. The process $ZSM000 was not found.
+
+--- SQL operation failed with errors.
+>>
+>>reset envvar HP_FAKE_ERROR_8028;
+
+--- SQL operation complete.
+>>
+>>control query cancel qid
++>MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
+
+*** ERROR[8026] Server declined cancel request. The query ID  of the targeted query was not found.
+
+--- SQL operation failed with errors.
+>>
+>>set envvar HP_FAKE_ERROR_201;
+
+--- SQL operation complete.
+>>
+>>control query cancel qid
++>MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
+
+*** ERROR[2034] I say: Operating system error 201 while communicating with server process control broker.
+
+--- SQL operation failed with errors.
+>>
+>>reset envvar HP_FAKE_ERROR_201;
+
+--- SQL operation complete.
+>>
+>>control query cancel qid
++>MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
+
+*** ERROR[8026] Server declined cancel request. The query ID  of the targeted query was not found.
+
+--- SQL operation failed with errors.
+>>
+>>control query suspend qid
++>MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
+
+*** ERROR[1010] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>control query suspend qid
++>MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1, force;
+
+*** ERROR[1010] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>control query activate qid
++>MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
+
+*** ERROR[1010] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>obey TEST106(invalid_pname);
+>>control query cancel pid $ZXXXXX;
+
+*** ERROR[1010] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>obey TEST106(invalid_nid_pid);
+>>control query cancel pid 44,66666;
+
+*** ERROR[1010] The statement just entered is currently not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>#ifdef SEABASE_CANCEL
+>>obey TEST106(qc1314);
+>>
+>>obey TEST106(qc1351);
+>>#endif
+>>
+>>#ifdef SEABASE_CANCEL
+>>obey TEST106(privs);
+>>select 'FUNKY_OPT_UNIQUE', 
++>  ts, msg from T106_interleaved_log order by ts;
+>>obey TEST106(clnup);
+>>#endif
+>>log;
