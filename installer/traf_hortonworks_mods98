@@ -167,6 +167,18 @@ if [ $? != 0 ]; then
     exit -1
 fi
 sleep 2
+$AMBARI_DIR/configs.sh -port $PORT set $(hostname --long) $CLUSTER_NAME hbase-site ipc.server.tcpnodelay tue
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify ipc.server.tcpnodelay through Ambari's configs.sh script."
+    exit -1
+fi
+sleep 2
+$AMBARI_DIR/configs.sh -port $PORT set $(hostname --long) $CLUSTER_NAME hbase-site ipc.client.tcpnodelay true
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify ipc.client.tcpnodelay through Ambari's configs.sh script."
+    exit -1
+fi
+sleep 2
 echo
 echo "***WARNING: Please manually restart HBase through the Ambari web GUI"
 echo
