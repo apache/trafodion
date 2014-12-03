@@ -194,10 +194,10 @@ public class HBaseAuditControlPoint {
       Put p = new Put(Bytes.toBytes(controlPtString));
       p.add(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK, Bytes.toBytes(String.valueOf(startingSequenceNumber)));
       try {
-         if (LOG.isDebugEnabled()) LOG.debug("try table.put with starting sequence number " + startingSequenceNumber);
+         if (LOG.isTraceEnabled()) LOG.trace("try table.put with starting sequence number " + startingSequenceNumber);
          table.put(p);
          if (useAutoFlush == false) {
-            if (LOG.isDebugEnabled()) LOG.debug("flushing controlpoint record");
+            if (LOG.isTraceEnabled()) LOG.trace("flushing controlpoint record");
             table.flushCommits();
          }
       }
@@ -288,7 +288,7 @@ public class HBaseAuditControlPoint {
       if (LOG.isTraceEnabled()) LOG.trace("doControlPoint start");
       try {
          currControlPt++;
-         if (LOG.isDebugEnabled()) LOG.debug("doControlPoint interval (" + currControlPt + "), sequenceNumber (" + sequenceNumber+ ") try putRecord");
+         if (LOG.isTraceEnabled()) LOG.trace("doControlPoint interval (" + currControlPt + "), sequenceNumber (" + sequenceNumber+ ") try putRecord");
          putRecord(currControlPt, sequenceNumber);
       }
       catch (Exception e) {
