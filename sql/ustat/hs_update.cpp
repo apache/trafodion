@@ -83,6 +83,15 @@ Lng32 ShowStats(const char* input, char* &outBuf,
     HSGlobalsClass hs_globals_obj(*ptrDiags);
     hs_globals_y = &hs_globals_obj;
 
+    // check privileges
+    NABoolean isShowStats = TRUE;
+    if (!hs_globals_obj.isAuthorized(isShowStats))
+      {
+        HSFuncMergeDiags(-UERR_NO_PRIVILEGE, hs_globals_obj.user_table->data());
+        retcode = -1;
+        HSExitIfError(retcode);
+      }
+
     NAString displayData("\n");
     
     // Do not show missing histogram warnings
@@ -306,6 +315,20 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     // LCOV_EXCL_STOP
 
                                                 /*==============================*/
+                                                /* VERIFY THAT THE REQUESTOR    */
+                                                /* HAS NECESSARY PRIVILEGES.    */
+                                                /*==============================*/
+
+    NABoolean isShowStats = FALSE;
+    if (!hs_globals_obj.isAuthorized(isShowStats))
+      {
+        HSFuncMergeDiags(-UERR_NO_PRIVILEGE, hs_globals_obj.user_table->data());
+        retcode = -1;
+        HSExitIfError(retcode);
+      }
+
+
+                                                /*==============================*/
                                                 /* HANDLE OPTIONS WHICH DO NOT  */
                                                 /* MODIFY HISTOGRAMS.           */
                                                 /*==============================*/
@@ -388,7 +411,9 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     HSExitIfError(retcode);
 
     if (hs_globals_obj.optFlags & VIEWONLY_OPT)
+    {
       return 0;
+    }
 
                                                 /*==============================*/
                                                 /*      COLLECT STATISTICS      */
@@ -496,6 +521,7 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
       }
 #endif
     LM->StopTimer();
+
     return retcode;
   }
 

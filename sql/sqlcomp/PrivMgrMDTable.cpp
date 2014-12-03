@@ -170,6 +170,9 @@ PrivStatus PrivMgrMDTable::CLIFetch(
   
 {
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 int32_t cliRC = cliInterface.fetchRowsPrologue(SQLStatement.c_str(),true/*no exec*/);
 
    if (cliRC < 0)
@@ -187,7 +190,7 @@ int32_t cliRC = cliInterface.fetchRowsPrologue(SQLStatement.c_str(),true/*no exe
 
    if (cliRC == 100) // did not find any rows
    {
-      cliInterface.clearGlobalDiags();
+      pDiags_->rewind(diagsMark);
       return STATUS_NOTFOUND;
    }
 
@@ -312,6 +315,9 @@ ExeCliInterface cliInterface(STMTHEAP);
 
    queue = NULL;
    
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 int32_t cliRC = cliInterface.fetchAllRows(queue,(char *)SQLStatement.c_str(),0,
                                           false,false,true);
 
@@ -323,7 +329,7 @@ int32_t cliRC = cliInterface.fetchAllRows(queue,(char *)SQLStatement.c_str(),0,
    
    if (cliRC == 100) // did not find the row
    {
-      cliInterface.clearGlobalDiags();
+      pDiags_->rewind(diagsMark);
       return STATUS_NOTFOUND;
    }
 

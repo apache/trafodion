@@ -859,12 +859,9 @@ short ExSetSessionDefaultTcb::work()
   else if (strcmp(defaultName, "SQL_USER") == 0)
     {
       NABoolean invalidInput = FALSE;
-      NABoolean isRoot = TRUE;
+      NABoolean isRoot = ComUser::isRootUserID();
 
       // Only allow this setting if the current user is DB__ROOT
-      Int32 *currentUser = currContext->getDatabaseUserID();
-      isRoot = ComUser::isRootUserID(*currentUser);
-
       if (isRoot)
       {
         // Make sure the input name is not too long

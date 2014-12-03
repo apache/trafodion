@@ -22,7 +22,7 @@
 -- This tests the following commands:
 --
 --   CREATE, DROP, ALTER table
---   CREATE, POPULATE, DISABLE/ENABLE, DROP index
+--   CREATE, DISABLE/ENABLE, DROP index
 --   CREATE, DROP view
 --   CREATE, DROP sequence
 --
@@ -101,8 +101,11 @@ get tables;
 set schema t138sch;
 get tables;
 
--- turn off alter privileges
+-- turn off privileges
 revoke component privilege "ALTER" on SQL_OPERATIONS from "PUBLIC";
+revoke component privilege "CREATE" on SQL_OPERATIONS from "PUBLIC";
+grant component privilege CREATE_TABLE on SQL_OPERATIONS to sql_user1;
+get privileges on component sql_operations for "PUBLIC";
 get privileges on component sql_operations for sql_user2;
 
 -- create some tables
@@ -126,6 +129,12 @@ revoke component privilege alter_library, alter_routine, alter_sequence, alter_v
 on sql_operations from sql_user2;
 get component privileges on sql_operations for sql_user2;
 sh sqlci -i "TEST138(drop_tbl)" -u sql_user1;
+
+-- reset
+revoke component privilege CREATE_TABLE on SQL_OPERATIONS from sql_user1;
+grant component privilege "CREATE" on SQL_OPERATIONS to public;
+get privileges on component sql_operations for "PUBLIC";
+get privileges on component sql_operations for sql_user1;
 
 ?section test_view
 -- =================================================================
@@ -239,7 +248,6 @@ alter table user1_t1 add constraint user1_uq unique (c2);
 alter table user1_t2 add constraint user1_pk primary key (c1);
 alter table user1_t2 add constraint user1_fk foreign key (c2) references user1_t1;
 create index user1_t1_ndx on user1_t1(c2);
-populate index user1_t1_ndx on user1_t1;
 alter table user1_t1 disable index user1_t1_ndx;
 create index user1_t2_ndx  on user1_t2(c2) no populate;
 alter table user1_t2 disable all indexes;

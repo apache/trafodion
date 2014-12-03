@@ -988,6 +988,9 @@ std::string whereClause ("WHERE ROLE_ID = ");
    whereClause += " AND GRANTEE_ID = ";          
    whereClause += authIDToString(authID);
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 int64_t rowCount = 0;
 
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
@@ -996,7 +999,7 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
         rowCount > 0)
       return true;
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
    return false;
 
 }
@@ -1045,6 +1048,9 @@ std::string whereClause (" WHERE ROLE_ID = ");
    whereClause += authIDToString(authID);
    whereClause += " AND GRANT_DEPTH <> 0";
    
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 int64_t rowCount = 0;
 
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
@@ -1053,7 +1059,7 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
         rowCount > 0)
       return true;
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
    return false;
    
 }
@@ -1110,6 +1116,9 @@ std::string whereClause ("WHERE ROLE_ID = ");
    whereClause += " AND GRANTEE_ID = ";          
    whereClause += authIDToString(granteeID); 
    
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 MyRow row(fullTableName_);
    
 PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
@@ -1120,7 +1129,7 @@ PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
       return true;
    }
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
    return false;
 
 }
@@ -1169,6 +1178,9 @@ std::string whereClause("WHERE ROLE_ID = ");
    if (shouldExcludeGrantsBySystem)
       whereClause += " AND GRANTOR_ID <> -2";
       
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 int64_t rowCount = 0;
    
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
@@ -1177,7 +1189,7 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
         rowCount > 0)
       return true;
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
    return false;
     
 }      
@@ -1218,6 +1230,9 @@ std::string whereClause(" WHERE GRANTEE_ID = ");
 
    whereClause += authIDToString(authID);
       
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 int64_t rowCount = 0;
    
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
@@ -1226,7 +1241,7 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
         rowCount > 0)
       return true;
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
    return false;
     
 }      

@@ -1394,6 +1394,8 @@ public:
     //Process USTAT options
     Lng32 Initialize();
 
+    //Checks privileges
+    NABoolean isAuthorized(NABoolean isShowStats);
 
     //Based on USTAT options used, it may not be necessary
     // to collect statistics. This method will tell you if
@@ -1611,7 +1613,8 @@ public:
 private:
     //++ MV
     // special parser flags (see contr. and destr.)
-    enum { dmALLOW_SPECIALTABLETYPE  = 0x1, dmALLOW_PHONYCHARACTERS = 0x2};
+    enum { dmALLOW_SPECIALTABLETYPE  = 0x1, dmALLOW_PHONYCHARACTERS = 0x2, dmINTERNAL_QUERY_FROM_EXEUTIL = 0x20000};
+    ULng32               savedParserFlags;
 
     //Generated unique histogram IDs for all groups
     Lng32 MakeAllHistid();

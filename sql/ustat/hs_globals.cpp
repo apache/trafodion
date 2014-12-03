@@ -62,6 +62,11 @@
 #include "ExSqlComp.h" // for NAExecTrans()
 #include "sql_id.h"
 #include "parser.h"
+#include "ComUser.h"
+#include "CmpSeabaseDDL.h"
+#include "PrivMgrDefs.h"
+#include "PrivMgrComponentPrivileges.h"
+#include "PrivMgrCommands.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -2777,9 +2782,13 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
     // Must add the context first in the constructor.
     contID_ = AddHSContext(this);
 
+    // Save parserflags
+    SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedParserFlags);
+
     // Special SQLParser flags to deal with namespaces and funny signs like '@'
+    // and security
     SQL_EXEC_SetParserFlagsForExSqlComp_Internal(
-      dmALLOW_SPECIALTABLETYPE | dmALLOW_PHONYCHARACTERS);
+      dmALLOW_SPECIALTABLETYPE | dmALLOW_PHONYCHARACTERS | dmINTERNAL_QUERY_FROM_EXEUTIL);
 
     // On first ustat statement of session, allocate and fill the static hash
     // table of table-specific elapsed-time thresholds.
@@ -2793,8 +2802,7 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
 HSGlobalsClass::~HSGlobalsClass()
 {
   // reset the parser flags that were set in the constructor
-  SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(
-    dmALLOW_SPECIALTABLETYPE | dmALLOW_PHONYCHARACTERS);
+  SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(savedParserFlags);
 
   HSColGroupStruct *group = singleGroup;
   while (group) 
@@ -2874,6 +2882,8 @@ Lng32 HSGlobalsClass::Initialize()
                                               /*==============================*/
     retcode = CreateHistTables(this);
     HSHandleError(retcode);
+
+
                                              /*==============================*/
                                              /*   CREATE UNDOCUMENTED VIEW   */
                                              /*==============================*/
@@ -3236,8 +3246,90 @@ Lng32 HSGlobalsClass::Initialize()
         LM->Log(LM->msg);
       }
 
+
     return 0;
   }
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: HSGlobalsClass::isAuthorized                                     *
+// *                                                                           *
+// *   This member function determines if a user has authority to perform a    *
+// * specific UPDATE STATISTICS operation.                                     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objOwner>                   const Int32                        In       *
+// *    is the userID of the target owner                                      *
+// *                                                                           *
+// *****************************************************************************
+NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
+{
+   // Root user is authorized for all operations.  For installations with no
+   // security, all users are mapped to root database user, so all users have
+   // full DDL authority.
+
+   Int32 currentUser = ComUser::getCurrentUser();
+   if (ComUser::isRootUserID(currentUser))
+      return TRUE;
+
+  // If authorization is not enabled, then authorization should not be enabled
+  // either, and the previous check should have already returned.  But just in 
+  // case, verify authorization is enabled before proceeding.
+
+   if (!CmpCommon::context()->isAuthorizationEnabled())
+      return TRUE;
+
+   // Authorization is enabled.  If the current user owns the target object or the 
+   // schema containing the object, they have full DDL authority on the object.
+   // TODO: add schema checks
+   assert (objDef->getNATable());
+   Int32 objOwner = objDef->getNATable()->getOwner();
+   if (currentUser == objOwner)
+     return TRUE;
+
+   // See if user has component priv
+   NAString privMgrMDLoc = 
+          NAString(CmpSeabaseDDL::getSystemCatalogStatic()) +
+          
+          NAString(SEABASE_PRIVMGR_SCHEMA) +
+          NAString("\"");
+
+   PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),&diagsArea);
+
+   if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::MANAGE_STATISTICS,true))
+      return TRUE;
+
+   // For SHOW STATS command, check for additional privileges
+   if (isShowStats)
+   {
+      // check for SHOW component privilege
+      if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::SHOW,true))
+         return TRUE;
+
+      // For show, check for SELECT privilege
+      PrivMgrUserPrivs *privs = objDef->getNATable()->getPrivInfo();
+      if (privs == NULL)
+      {
+        *CmpCommon::diags() << DgSqlCode(-1034);
+         return FALSE;
+      }
+
+      // Requester must have at least select privilege
+      if ( privs->hasSelectPriv() )
+          return TRUE;
+      else
+      {
+        *CmpCommon::diags() << DgSqlCode(-1034);
+         return FALSE;
+      }
+   }
+
+   // Nope - no privilege
+   return FALSE;
+}
 
 // Read the file, if present, containing table names and their execution
 // elapsed time thresholds. Store the thresholds in a hash table keyed by

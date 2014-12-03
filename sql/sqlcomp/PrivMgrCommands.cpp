@@ -96,7 +96,7 @@ PrivMgrCommands& PrivMgrCommands::operator=(const PrivMgrCommands& other)
 // ----------------------------------------------------------------------------
 bool PrivMgrCommands::authorizationEnabled()
 {
-  PrivMgrMDAdmin admin(getMetadataLocation());
+  PrivMgrMDAdmin admin(getMetadataLocation(), getDiags());
   return admin.isAuthorizationEnabled();
 }
   

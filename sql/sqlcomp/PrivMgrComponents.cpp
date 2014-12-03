@@ -416,10 +416,13 @@ std::string whereClause(" ");
 int64_t rowCount = 0;   
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
    if (privStatus != STATUS_GOOD)
-      pDiags_->clear();
+      pDiags_->rewind(diagsMark);
       
    return rowCount;
 
@@ -511,12 +514,12 @@ PrivStatus PrivMgrComponents::registerComponent(
 
 {
 
-int32_t effectiveUser = ComUser::getCurrentUser();
-
-//TODO: Could add check for granted privilege to register components.
-//TODO: Related, could check for setting isSystem, could be separate
+//TODO: Could check for setting isSystem, could be separate
 // privilege, or restricted to DB__ROOT.
-   if (effectiveUser != SUPER_USER)
+PrivMgrComponentPrivileges componentPrivileges(metadataLocation_, pDiags_);
+
+   if (!ComUser::isRootUserID()&&
+       !componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(), SQLOperation::MANAGE_COMPONENTS, true))
    {   
       *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
       return STATUS_ERROR;
@@ -640,12 +643,11 @@ PrivStatus PrivMgrComponents::unregisterComponent(
    
 {
 
-int32_t effectiveUser = ComUser::getCurrentUser();
+//TODO: Related, could check below for unregistering system level components.
+PrivMgrComponentPrivileges componentPrivileges(metadataLocation_, pDiags_);
 
-//TODO: Could add check for granted privilege to unregister components.
-//TODO: Related, could check below for unregistering system level
-// components.
-   if (effectiveUser != SUPER_USER)
+   if (!ComUser::isRootUserID()&&
+       !componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(), SQLOperation::MANAGE_COMPONENTS, true))
    {   
       *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
       return STATUS_ERROR;

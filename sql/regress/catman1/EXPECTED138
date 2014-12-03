@@ -20,12 +20,18 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE
+SHOW
 
 --- SQL operation complete.
 >>revoke component privilege "CREATE" on SQL_OPERATIONS from public;
 
 --- SQL operation complete.
 >>get privileges on component sql_operations for "PUBLIC";
+
+Privilege information on Component SQL_OPERATIONS for PUBLIC
+============================================================
+
+SHOW
 
 --- SQL operation complete.
 >>sh sqlci -i "TEST138(create_tbl)" -u sql_user1;
@@ -202,9 +208,6 @@ USER1_T2
 
 --- SQL operation complete.
 >>create index user1_t1_ndx on user1_t1(c2);
-
---- SQL operation complete.
->>populate index user1_t1_ndx on user1_t1;
 
 --- SQL operation complete.
 >>alter table user1_t1 disable index user1_t1_ndx;
@@ -393,6 +396,7 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE
+SHOW
 
 --- SQL operation complete.
 >>get privileges on component sql_operations for sql_user1;
@@ -418,12 +422,26 @@ CREATE
 
 --- SQL operation complete.
 >>
->>-- turn off alter privileges
+>>-- turn off privileges
 >>revoke component privilege "ALTER" on SQL_OPERATIONS from "PUBLIC";
 
 *** ERROR[1018] Grant of role or privilege ALTER on component SQL_OPERATIONS from DB__ROOT to -1 not found, revoke request ignored.
 
 --- SQL operation failed with errors.
+>>revoke component privilege "CREATE" on SQL_OPERATIONS from "PUBLIC";
+
+--- SQL operation complete.
+>>grant component privilege CREATE_TABLE on SQL_OPERATIONS to sql_user1;
+
+--- SQL operation complete.
+>>get privileges on component sql_operations for "PUBLIC";
+
+Privilege information on Component SQL_OPERATIONS for PUBLIC
+============================================================
+
+SHOW
+
+--- SQL operation complete.
 >>get privileges on component sql_operations for sql_user2;
 
 --- SQL operation complete.
@@ -541,11 +559,6 @@ USER1_T2
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
->>populate index user1_t1_ndx on user1_t1;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
 >>alter table user1_t1 disable index user1_t1_ndx;
 
 *** ERROR[1389] Object TRAFODION.T138SCH.USER1_T1_NDX does not exist in Trafodion.
@@ -576,9 +589,16 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
 --- SQL operation complete.
 >>showddl user1_t2;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+CREATE TABLE TRAFODION.T138SCH.USER1_T2
+  (
+    C1                               INT DEFAULT NULL
+  , C2                               INT DEFAULT NULL
+  )
+;
 
---- SQL operation failed with errors.
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T138SCH.USER1_T2 TO SQL_USER1 WITH GRANT OPTION;
+
+--- SQL operation complete.
 >>
 >>-- remove indexes, constraints, and columns
 >>alter table user1_t1 enable index user1_t1_ndx;
@@ -641,9 +661,16 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
 --- SQL operation complete.
 >>showddl user1_t2;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+CREATE TABLE TRAFODION.T138SCH.USER1_T2
+  (
+    C1                               INT DEFAULT NULL
+  , C2                               INT DEFAULT NULL
+  )
+;
 
---- SQL operation failed with errors.
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T138SCH.USER1_T2 TO SQL_USER1 WITH GRANT OPTION;
+
+--- SQL operation complete.
 >>
 >>alter table user1_t1 rename to user1_t4;
 
@@ -701,9 +728,6 @@ USER1_T2
 >>create index user1_t1_ndx on user1_t1(c2);
 
 --- SQL operation complete.
->>populate index user1_t1_ndx on user1_t1;
-
---- SQL operation complete.
 >>alter table user1_t1 disable index user1_t1_ndx;
 
 --- SQL operation complete.
@@ -748,9 +772,34 @@ ALTER TABLE TRAFODION.T138SCH.USER1_T1 ADD CONSTRAINT
 --- SQL operation complete.
 >>showddl user1_t2;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+CREATE TABLE TRAFODION.T138SCH.USER1_T2
+  (
+    C1                               INT DEFAULT NULL
+  , C2                               INT DEFAULT NULL
+  )
+;
 
---- SQL operation failed with errors.
+ALTER TABLE TRAFODION.T138SCH.USER1_T2 ADD CONSTRAINT
+  TRAFODION.T138SCH.USER1_PK UNIQUE
+  (
+    C1
+  )
+;
+
+ALTER TABLE TRAFODION.T138SCH.USER1_T2 ADD CONSTRAINT
+  TRAFODION.T138SCH.USER1_FK FOREIGN KEY
+  (
+    C2
+  )
+ REFERENCES TRAFODION.T138SCH.USER1_T1
+  (
+    C1
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T138SCH.USER1_T2 TO SQL_USER1 WITH GRANT OPTION;
+
+--- SQL operation complete.
 >>
 >>-- remove indexes, constraints, and columns
 >>alter table user1_t1 enable index user1_t1_ndx;
@@ -797,9 +846,16 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
 --- SQL operation complete.
 >>showddl user1_t2;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+CREATE TABLE TRAFODION.T138SCH.USER1_T2
+  (
+    C1                               INT DEFAULT NULL
+  , C2                               INT DEFAULT NULL
+  )
+;
 
---- SQL operation failed with errors.
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T138SCH.USER1_T2 TO SQL_USER1 WITH GRANT OPTION;
+
+--- SQL operation complete.
 >>
 >>alter table user1_t1 rename to user1_t4;
 
@@ -881,11 +937,6 @@ USER1_T2
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
->>populate index user1_t1_ndx on user1_t1;
-
-*** ERROR[1017] You are not authorized to perform this operation.
-
---- SQL operation failed with errors.
 >>alter table user1_t1 disable index user1_t1_ndx;
 
 *** ERROR[1389] Object TRAFODION.T138SCH.USER1_T1_NDX does not exist in Trafodion.
@@ -916,9 +967,16 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
 --- SQL operation complete.
 >>showddl user1_t2;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+CREATE TABLE TRAFODION.T138SCH.USER1_T2
+  (
+    C1                               INT DEFAULT NULL
+  , C2                               INT DEFAULT NULL
+  )
+;
 
---- SQL operation failed with errors.
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T138SCH.USER1_T2 TO SQL_USER1 WITH GRANT OPTION;
+
+--- SQL operation complete.
 >>
 >>-- remove indexes, constraints, and columns
 >>alter table user1_t1 enable index user1_t1_ndx;
@@ -981,9 +1039,16 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T1
 --- SQL operation complete.
 >>showddl user1_t2;
 
-*** ERROR[1017] You are not authorized to perform this operation.
+CREATE TABLE TRAFODION.T138SCH.USER1_T2
+  (
+    C1                               INT DEFAULT NULL
+  , C2                               INT DEFAULT NULL
+  )
+;
 
---- SQL operation failed with errors.
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T138SCH.USER1_T2 TO SQL_USER1 WITH GRANT OPTION;
+
+--- SQL operation complete.
 >>
 >>alter table user1_t1 rename to user1_t4;
 
@@ -1038,6 +1103,26 @@ USER1_T2
 End of MXCI Session
 
 >>
+>>-- reset
+>>revoke component privilege CREATE_TABLE on SQL_OPERATIONS from sql_user1;
+
+--- SQL operation complete.
+>>grant component privilege "CREATE" on SQL_OPERATIONS to public;
+
+--- SQL operation complete.
+>>get privileges on component sql_operations for "PUBLIC";
+
+Privilege information on Component SQL_OPERATIONS for PUBLIC
+============================================================
+
+CREATE
+SHOW
+
+--- SQL operation complete.
+>>get privileges on component sql_operations for sql_user1;
+
+--- SQL operation complete.
+>>
 >>obey TEST138(test_view);
 >>-- =================================================================
 >>-- run tests to make sure view related operations are
@@ -1056,6 +1141,7 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE
+SHOW
 
 --- SQL operation complete.
 >>get privileges on component sql_operations for sql_user1;
@@ -1140,6 +1226,11 @@ End of MXCI Session
 
 --- SQL operation complete.
 >>get privileges on component sql_operations for "PUBLIC";
+
+Privilege information on Component SQL_OPERATIONS for PUBLIC
+============================================================
+
+SHOW
 
 --- SQL operation complete.
 >>
@@ -1295,6 +1386,7 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE
+SHOW
 
 --- SQL operation complete.
 >>get privileges on component sql_operations for sql_user1;
@@ -1346,6 +1438,7 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE
+SHOW
 
 --- SQL operation complete.
 >>get privileges on component sql_operations for sql_user1;
@@ -1360,6 +1453,11 @@ CREATE
 
 --- SQL operation complete.
 >>get privileges on component sql_operations for "PUBLIC";
+
+Privilege information on Component SQL_OPERATIONS for PUBLIC
+============================================================
+
+SHOW
 
 --- SQL operation complete.
 >>
@@ -1513,6 +1611,7 @@ Privilege information on Component SQL_OPERATIONS for PUBLIC
 ============================================================
 
 CREATE
+SHOW
 
 --- SQL operation complete.
 >>get privileges on component sql_operations for sql_user1;

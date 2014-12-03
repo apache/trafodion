@@ -3741,6 +3741,16 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         if (setStartStatusMsgAndMoveToUpQueue(" PURGE DATA",&rc))
           return rc;
 
+        // Set the parserflag to prevent privilege checks in purgedata
+        ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+        ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+        NABoolean parserFlagSet = FALSE;
+        if ((masterGlob->getStatement()->getContext()->getSqlParserFlags() & 0x20000) == 0)
+        {
+          parserFlagSet = TRUE;
+          masterGlob->getStatement()->getContext()->setSqlParserFlags(0x20000);
+        }
+
         //for now the purgedata statement does not keep the partitions
         char * ttQuery =
           new(getMyHeap()) char[strlen("PURGEDATA  ; ") +
@@ -3755,6 +3765,9 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         cliRC = cliInterface()->executeImmediate(ttQuery, NULL,NULL,TRUE,NULL,TRUE);
         NADELETEBASIC(ttQuery, getHeap());
         ttQuery = NULL;
+
+        if (parserFlagSet)
+          masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
 
         if (cliRC < 0)
         {

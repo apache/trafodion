@@ -175,7 +175,17 @@ Int16 ComUser::getEffectiveUserName( NAString &userNameStr,
 // ----------------------------------------------------------------------------
 // method:  isRootUserID
 //
-// Returns true if passed in userID is the super user
+// Returns true if current userID is the root user
+// ----------------------------------------------------------------------------
+bool ComUser::isRootUserID()
+{
+  return isRootUserID(getCurrentUser());
+}
+
+// ----------------------------------------------------------------------------
+// method:  isRootUserID
+//
+// Returns true if passed in userID is the root user
 // ----------------------------------------------------------------------------
 bool ComUser::isRootUserID(Int32 userID)
 {

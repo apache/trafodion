@@ -2118,6 +2118,9 @@ bool PrivMgrPrivileges::isAuthIDGrantedPrivs(const int32_t authID)
 
    whereClause += authIDString; 
 
+   // set pointer in diags area
+   int32_t diagsMark = pDiags_->mark();
+
    int64_t rowCount = 0;   
    ObjectPrivsMDTable myTable(fullTableName_,pDiags_);
 
@@ -2127,7 +2130,7 @@ bool PrivMgrPrivileges::isAuthIDGrantedPrivs(const int32_t authID)
         rowCount > 0)
       return true;
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
    return false;
 
 }
@@ -2398,6 +2401,9 @@ PrivStatus ObjectPrivsMDTable::selectWhere(
   selectStmt += whereClause;
   selectStmt += " order by grantor_id, grantee_id";
 
+  // set pointer in diags area
+  int32_t diagsMark = pDiags_->mark();
+
   ExeCliInterface cliInterface(STMTHEAP);
   Queue * tableQueue = NULL;
   int32_t cliRC =  cliInterface.fetchAllRows(tableQueue, (char *)selectStmt.c_str(), 0, false, false, true);
@@ -2409,7 +2415,7 @@ PrivStatus ObjectPrivsMDTable::selectWhere(
     }
   if (cliRC == 100) // did not find the row
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     return STATUS_NOTFOUND;
   }
 
@@ -2588,6 +2594,9 @@ PrivStatus ObjectPrivsMDTable::deleteWhere(const std::string & whereClause)
   deleteStmt += " ";
   deleteStmt += whereClause;
 
+  // set pointer in diags area
+  int32_t diagsMark = pDiags_->mark();
+
   ExeCliInterface cliInterface(STMTHEAP);
 
   int32_t cliRC = cliInterface.executeImmediate(deleteStmt.c_str());
@@ -2600,7 +2609,7 @@ PrivStatus ObjectPrivsMDTable::deleteWhere(const std::string & whereClause)
 
   if (cliRC == 100) // did not find any rows
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     return STATUS_NOTFOUND;
   }
 
@@ -2632,6 +2641,9 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
   updateStmt += " ";
   updateStmt += whereClause;
 
+  // set pointer in diags area
+  int32_t diagsMark = pDiags_->mark();
+
   ExeCliInterface cliInterface(STMTHEAP);
   int32_t cliRC = cliInterface.executeImmediate(updateStmt.c_str());
   if (cliRC < 0)
@@ -2642,7 +2654,7 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
 
   if (cliRC == 100) // did not find any rows
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     return STATUS_NOTFOUND;
   }
 
@@ -2767,6 +2779,9 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
               privilegesClause.c_str(), grantableClause.c_str(),
               objectsLocation.c_str());
 
+  // set pointer in diags area
+  int32_t diagsMark = pDiags_->mark();
+
   Int64 rowsInserted = 0;
   cliRC = cliInterface.executeImmediate(buf, NULL, NULL, FALSE, &rowsInserted);
   if (cliRC < 0)
@@ -2779,7 +2794,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   //       operations succeeded.
   if (cliRC == 100) 
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     cliRC = 0;
   }
 
@@ -2835,6 +2850,9 @@ PrivStatus ObjectPrivsMDTable::insertSelectOnAuthsToPublic(
                "%d,'DB__ROOT','U',1,0 FROM %s O WHERE O.OBJECT_NAME = 'AUTHS'", 
               tableName_.c_str(),authsLocation.c_str(), MIN_USERID, objectsLocation.c_str());
 
+  // set pointer in diags area
+  int32_t diagsMark = pDiags_->mark();
+
   Int64 rowsInserted = 0;
   ExeCliInterface cliInterface(STMTHEAP);
   int32_t cliRC = cliInterface.executeImmediate(buf, NULL, NULL, FALSE, &rowsInserted);
@@ -2848,7 +2866,7 @@ PrivStatus ObjectPrivsMDTable::insertSelectOnAuthsToPublic(
   //       operations succeeded.
   if (cliRC == 100) 
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     cliRC = 0;
   }
  

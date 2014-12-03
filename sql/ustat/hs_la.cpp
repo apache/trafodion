@@ -127,13 +127,14 @@ void HSTableDef::setNATable()
     if (CmpCommon::context()->sqlSession()->volatileSchemaInUse())
       Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
     scan.bindNode(&bindWA);
-    // Restore parser flags to prior settings.
-    Set_SqlParser_Flags (savedParserFlags);
     if (!bindWA.errStatus())
       {
         naTbl_ = bindWA.getNATable(corrName);
+        HS_ASSERT(naTbl_);
         objectType_ = naTbl_->getObjectType();
       }
+    // Restore parser flags to prior settings.
+    Set_SqlParser_Flags (savedParserFlags);
   }
 
 void HSSqTableDef::GetLabelInfo(labelDetail detail)

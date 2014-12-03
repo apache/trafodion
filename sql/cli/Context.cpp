@@ -5132,7 +5132,7 @@ void ContextCli::setDatabaseUser(const Int32 &uid, const char *uname)
   // to make sure the passed in parameters are valid.  We don't want to
   // read any metadata since this could get into an infinte loop.
   ex_assert ((uid >= MIN_USERID && uid <= MAX_USERID), "Invalid userID was specified");
-  ex_assert ((uname != NULL || strlen(uname) > 0), "No username was specified");
+  ex_assert ((uname != NULL && strlen(uname) > 0), "No username was specified");
 
   // If the passed in credentials match what is stored, nothing needs
   // to be done.
