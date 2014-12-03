@@ -1277,7 +1277,7 @@ short HbaseDelete::codeGen(Generator * generator)
 	  (NOT noCheck()))
 	hbasescan_tdb->setHbaseSqlIUD(TRUE);
 
-      if (!getTableDesc()->getNATable()->isSeabaseMDTable())
+      if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(
           getTableDesc()->getNATable()->objectUid().get_value());
     }
@@ -2086,7 +2086,7 @@ short HbaseUpdate::codeGen(Generator * generator)
       if (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON)
 	hbasescan_tdb->setHbaseSqlIUD(TRUE);
 
-      if (!getTableDesc()->getNATable()->isSeabaseMDTable())
+      if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(
           getTableDesc()->getNATable()->objectUid().get_value());
     }
@@ -2724,7 +2724,7 @@ short HbaseInsert::codeGen(Generator *generator)
 
 
       }
-      if (!getTableDesc()->getNATable()->isSeabaseMDTable())
+      if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(
           getTableDesc()->getNATable()->objectUid().get_value());
     }

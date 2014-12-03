@@ -1111,9 +1111,8 @@ void CmpMain:: getAndProcessAnySiKeys(TimeVal begTime)
 #endif
       ;
     
-   int numRetriesRemaining = 16;
    Int32 sqlcode = -1;
-   while (sqlcode < 0 && numRetriesRemaining)
+   while (sqlcode < 0)
    {
      SQL_QIKEY sikKeyArray[arraySize];
 
@@ -1129,11 +1128,11 @@ void CmpMain:: getAndProcessAnySiKeys(TimeVal begTime)
      }
      else if (sqlcode < 0)
      {
-       // The CLI sends messages to RMS processes. The only errors we
-       // would expect would be retryable, as these processes are
-       // persistent.
-       sleep(1);
-       numRetriesRemaining--;
+       // No other error is expected. The CLI call 
+       // simply accesses memory. If the implementation
+       // changes, then the abort below should remind us
+       // to change the error handling.
+       abort();
      }
      else if ( returnedNumSiKeys > 0 )
      {

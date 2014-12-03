@@ -6790,6 +6790,30 @@ void NATable::lookupObjectUid()
     objectUID_ = ::lookupObjectUid(qualName, objectType_);
 }
 
+bool NATable::isEnabledForDDLQI() const
+{
+  if (isSeabaseMD_ || isSMDTable_)
+    return false;
+  else 
+  {
+    if (objectUID_.get_value() == 0)
+    {
+      // Looking up object UIDs at code-gen time was shown to cause
+      // more than 10% performance regression in YCSB benchmark. In
+      // that investigation, we learned that metadata and histogram 
+      // NATables would have no object UID at code-gen and would 
+      // require the lookup.  We're pretty sure these are the only 
+      // types of tables but will abend here otherwise. If this 
+      // causes problems, the envvar below can be used as a 
+      // temporary workaround. 
+      char *noAbendOnLp1398600 = getenv("NO_ABEND_ON_LP_1398600");
+      if (!noAbendOnLp1398600 || *noAbendOnLp1398600 == '0')
+        abort();
+    }
+    return true;
+  }
+}
+
 NATable::~NATable()
 {
   // remove the map entries of associated table identifers in
