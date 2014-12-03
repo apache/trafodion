@@ -437,8 +437,6 @@ SimpleFileScanOptimizer::computeSingleSubsetSize()
       
       singleSubsetPreds_.clear();
 
-      const ValueIdSet& cckp = getSearchKey()->getComputedKeyPredicates();
-
       for (CollIndex pred = 0; pred <= singleSubsetPrefixColumn; pred++)
         {
           const ValueIdSet *preds = keyPredsByCol[pred];
@@ -456,7 +454,7 @@ SimpleFileScanOptimizer::computeSingleSubsetSize()
       // Exclude the added computed predicates since they do not contribute
       // to the cardinality. 
       ValueIdSet predicatesToUse(singleSubsetPreds_);
-      predicatesToUse -= getSearchKey()->getComputedKeyPredicates();
+      predicatesToUse -= getFileScan().getComputedPredicates();
 
       innerHistograms.applyPredicates(predicatesToUse, getRelExpr(), selHint, cardHint, REL_SCAN);
 

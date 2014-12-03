@@ -435,6 +435,7 @@ public:
 
   const LIST(ScanIndexInfo *) &getIndexInfo()
                                            { return possibleIndexJoins_; }
+  const ValueIdSet &getComputedPredicates() const { return generatedCCPreds_; }
 
   // set (restrict) the potential output values that this node can produce
   void setPotentialOutputValues(const ValueIdSet &po)
@@ -629,6 +630,9 @@ protected:
                                             const ValueIdList& ikeys,
                                             CostScalar& rowsToScan);
 
+  inline void setComputedPredicates(const ValueIdSet &ccPreds)
+                                             { generatedCCPreds_ = ccPreds; }
+
 private:
 
   // the first param to this method, vid, is assumed to a OR predicate
@@ -663,6 +667,7 @@ private:
   // all indexes that can't deliver all the required values plus
   // some info about each of those indexes, calculated by addIndexInfo
   LIST(ScanIndexInfo *) possibleIndexJoins_;
+  ValueIdSet generatedCCPreds_;
 
   // the values that this logical scan node can deliver after this
   // set has been initialized to something other than an empty set
@@ -767,6 +772,7 @@ public:
            GroupAttributes * groupAttributesPtr,
            const ValueIdSet& selectionPredicates,
            const Disjuncts& disjuncts,
+           const ValueIdSet &generatedCCPreds,
            OperatorTypeEnum otype = REL_FILE_SCAN
            );
 
@@ -862,7 +868,8 @@ public:
   const ValueIdSet&  getExecutorPredicates() const
   { return executorPredicates_; }
   void setExecutorPredicates(const ValueIdSet& executorPredicates)
-  { executorPredicates_ = executorPredicates; }
+  { executorPredicates_ = executorPredicates;
+    executorPredicates_ -= getComputedPredicates(); }
   // Naked access to executorPredicates_ only because there is code
   // in precodegen that needs this (old code) (don't use this, use
   // get/set functions above):
@@ -1006,7 +1013,9 @@ private:
   //--------------- Disjuncts -------------------
   MdamKey *mdamKeyPtr_;
   const Disjuncts *disjunctsPtr_;
-
+  // computed predicates that are reflected in the disjuncts
+  // (those are predicates on computed columns that are
+  // computed from regular predicates)
 
   //--------------- Search key ----------------
 
@@ -1183,6 +1192,7 @@ public:
               GroupAttributes * groupAttributesPtr,
               const ValueIdSet& selectionPredicates,
               const Disjuncts& disjuncts,
+              const ValueIdSet& generatedCCPreds,
 	      OperatorTypeEnum otype = REL_HBASE_ACCESS,
               CollHeap *oHeap = CmpCommon::statementHeap());
  

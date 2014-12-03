@@ -3758,6 +3758,8 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
           mdamKeyPtr()->setNoExePred(FALSE);
         }
 
+      augmentedPreds += getComputedPredicates();
+
       if ( logPhysPartFunc != NULL )
       {
 	LogPhysPartitioningFunction::logPartType logPartType =

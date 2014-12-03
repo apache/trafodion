@@ -58,9 +58,11 @@ public:
   // returns FALSE if no more disjuncts,
   virtual NABoolean get(Disjunct& disjunct, CollIndex i) const;
 
-  virtual void print( FILE* ofd = stdout,
+  virtual void print( FILE* ofd,
 		    const char* indent = DEFAULT_INDENT,
 		    const char* title = "disjuncts") const;
+
+  void print() const;
   
   const ValueIdSet& getCommonPredicates() const
   { return commonPredicates_; }

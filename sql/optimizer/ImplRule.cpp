@@ -1049,6 +1049,7 @@ void createAndInsertHbaseScan(IndexDesc * idesc,
 			     RuleSubstituteMemory *& memory,
 			     //const MaterialDisjuncts * disjunctsPtr,
 			     const Disjuncts * disjunctsPtr,
+                             const ValueIdSet &generatedCCPreds,
 			     OrderComparison oc,
                              MdamFlags ixMdamFlag = UNDECIDED)
 {
@@ -1063,7 +1064,8 @@ void createAndInsertHbaseScan(IndexDesc * idesc,
                   bef->accessOptions(),
                   bef->getGroupAttr(),
                   bef->getSelectionPred(),
-                  *disjunctsPtr
+                  *disjunctsPtr,
+                  generatedCCPreds
                  );
 
    idesc->getPrimaryTableDesc()->getTableColStats();
@@ -1100,6 +1102,7 @@ void createAndInsertScan(IndexDesc * idesc,
 			 RuleSubstituteMemory *& memory,
 			 //const MaterialDisjuncts * disjunctsPtr,
 			 const Disjuncts * disjunctsPtr,
+                         const ValueIdSet &generatedCCPreds,
 			 OrderComparison oc,
                          MdamFlags ixMdamFlag = UNDECIDED,
                          NABoolean isHbase = FALSE)
@@ -1107,7 +1110,7 @@ void createAndInsertScan(IndexDesc * idesc,
    if ( !isHbase )
      createAndInsertDP2Scan(idesc, bef, memory, disjunctsPtr, oc, ixMdamFlag);
    else
-     createAndInsertHbaseScan(idesc, bef, memory, disjunctsPtr, oc, ixMdamFlag);
+     createAndInsertHbaseScan(idesc, bef, memory, disjunctsPtr, generatedCCPreds, oc, ixMdamFlag);
 }
 
 NABoolean FileScanRule::topMatch(RelExpr * relExpr, Context *context)
@@ -1197,6 +1200,10 @@ RelExpr * generateScanSubstitutes(RelExpr * before,
     // and end keys for the single subset case.
     //
     ValueIdSet inSet(bef->selectionPred());
+    const ValueIdSet &generatedComputedColPreds = 
+      bef->getComputedPredicates();
+
+    inSet += generatedComputedColPreds;
     Disjuncts *disjunctsPtr =  new (CmpCommon::statementHeap())
       MaterialDisjuncts(inSet);
     Disjuncts *disjunctsPtr0 = disjunctsPtr;
@@ -1238,7 +1245,7 @@ RelExpr * generateScanSubstitutes(RelExpr * before,
       else
 	smallestIndex = bef->deriveIndexOnlyIndexDesc()[0];
 
-      createAndInsertScan(smallestIndex,bef,memory,disjunctsPtr,oc,MDAM_OFF,isHbase);
+      createAndInsertScan(smallestIndex,bef,memory,disjunctsPtr,generatedComputedColPreds,oc,MDAM_OFF,isHbase);
 
     }
     else
@@ -1528,7 +1535,7 @@ RelExpr * generateScanSubstitutes(RelExpr * before,
       MaterialDisjuncts(inSet);
     CMPASSERT(disjunctsPtr0);
 
-    createAndInsertScan(viableIndexes[0]->getIndexDesc(),bef,memory,disjunctsPtr0,
+    createAndInsertScan(viableIndexes[0]->getIndexDesc(),bef,memory,disjunctsPtr0,generatedComputedColPreds,
 		        comparisonSet[0],viableIndexes[0]->getMdamFlag(),isHbase);
   }
 
@@ -1539,7 +1546,7 @@ RelExpr * generateScanSubstitutes(RelExpr * before,
       //No predicates so select the smallest order/part satisfying index. All the
       //index that are in the viable index set satisfy requirements naturally.
       IndexDesc * smallestIndex = findSmallestIndex(viableIndexes,entry);
-      createAndInsertScan(smallestIndex,bef,memory,disjunctsPtr,
+      createAndInsertScan(smallestIndex,bef,memory,disjunctsPtr,generatedComputedColPreds,
                           comparisonSet[entry],MDAM_OFF, isHbase);
       //if it is under a nested join then select the index that most number of
       //partitions.
@@ -1550,7 +1557,7 @@ RelExpr * generateScanSubstitutes(RelExpr * before,
 	if(partitionedIndex != smallestIndex)
 	{
 	  createAndInsertScan(partitionedIndex,bef,memory,disjunctsPtr,
-			      comparisonSet[entry],MDAM_OFF, isHbase);
+			      generatedComputedColPreds,comparisonSet[entry],MDAM_OFF, isHbase);
 	}
       }
     }
@@ -1571,7 +1578,7 @@ RelExpr * generateScanSubstitutes(RelExpr * before,
       for(CollIndex j=0;j<numIndex;j++)
       {
 	createAndInsertScan(viableIndexes[j]->getIndexDesc(),bef,memory,disjunctsPtr0,
-		            comparisonSet[j],viableIndexes[j]->getMdamFlag(), isHbase);
+		            generatedComputedColPreds,comparisonSet[j],viableIndexes[j]->getMdamFlag(), isHbase);
       }
 
     }
@@ -2360,9 +2367,19 @@ RelExpr * HbaseUpdateRule::nextSubstitute(RelExpr * before,
     return NULL;
 
   IndexDesc* idesc = (scan->deriveIndexOnlyIndexDesc())[0];
+  ValueIdSet clusteringKeyCols(
+       idesc->getClusteringKeyCols());
+  ValueIdSet generatedComputedColPreds;
 
   ValueIdSet nonKeyColumnSet;
   idesc->getNonKeyColumnSet(nonKeyColumnSet);
+
+  if (CmpCommon::getDefault(MTD_GENERATE_CC_PREDS) == DF_ON)
+    ScanKey::createComputedColumnPredicates(
+         exePreds,
+         clusteringKeyCols,
+         bef->getGroupAttr()->getCharacteristicInputs(),
+         generatedComputedColPreds);
 
   SearchKey * skey = new(CmpCommon::statementHeap())
     SearchKey(idesc->getIndexKey(),

@@ -3189,6 +3189,15 @@ void ValueIdSet::weedOutUnreferenced(ValueIdSet & other)
 
 } // ValueIdSet::weedOutUnreferenced()
 
+void ValueIdSet::weedOutNonEquiPreds()
+{
+  for (ValueId v = init(); next(v); advance(v))
+    {
+      if (v.getItemExpr()->getOperatorType() != ITM_VEG_PREDICATE &&
+          v.getItemExpr()->getOperatorType() != ITM_EQUAL)
+        *this -= v;
+    }
+}
 
 // -----------------------------------------------------------------------
 //  referencesAConstValue
