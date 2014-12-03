@@ -3320,7 +3320,6 @@ CoprocessorService, Coprocessor {
 
     boolean returnPending = false;
 
-    if (LOG.isInfoEnabled())LOG.info("commitRequest timeIndex is " + lv_timeIndex);
     commitCheckStartTime = System.nanoTime();
 
     try {
