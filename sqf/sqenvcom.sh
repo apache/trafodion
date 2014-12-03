@@ -740,14 +740,25 @@ export CLASSPATH="${CLASSPATH}:"
 ###################
 
 # Check that existing JAVA_HOME is suitable
-REQ_VER="javac 1.7.0_67"
+REQ_VER="1.7.0_67"
+JAVA7="7"
+JAVA67="67"
 if [[ -n "$JAVA_HOME" ]]; then
   THIS_JVM_VER="$($JAVA_HOME/bin/javac -version 2>&1 > /dev/null)"
-  if [[ "${THIS_JVM_VER:0:14}" != "$REQ_VER" ]]; then
-    echo "Warning: Your existing JAVA_HOME is not version 1.7.0_67"
-    echo "  Your JAVA_HOME = $JAVA_HOME"
-    echo "  Required java version = $REQ_VER"
+  temp_JAVA=`echo "${THIS_JVM_VER:6:3}" | sed 's/.*\.//'`
+  if [[ "$temp_JAVA" -lt "$JAVA7" ]]; then
+     echo "Warning: Your existing JAVA_HOME is less than 1.7"
+     echo "  Your JAVA_HOME = $JAVA_HOME"
+     echo "  Your Java Version = $THIS_JVM_VER"
+     echo "  Required java version should be greater than $REQ_VER"
   fi
+  if [[ "$temp_JAVA" -eq "$JAVA7" ]] && [[ "${THIS_JVM_VER:12:3}" -lt $JAVA67 ]]; then
+     echo "Warning: Your existing JAVA_HOME is less than 1.7.0_67"
+     echo "  Your JAVA_HOME = $JAVA_HOME"
+     echo "  Your Java Version = $THIS_JVM_VER"
+     echo "  Required java version should be greater than $REQ_VER"
+  fi
+
 fi
 
 # Check variables that should refer to real directories
