@@ -474,6 +474,122 @@ short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewN
   return 0;
 }
 
+// ****************************************************************************
+// method: getListOfReferencedTables
+//
+// Returns a list of all tables that are being referenced by the passed in 
+// view UID
+//
+// Parameters:
+//    cliInterface - used to get the list of object usages
+//    objectUID - the UID being processed
+//    tableList - a list of objectRefdByMe structures describing each usage
+//
+// returns:
+//    0 - successful
+//   -1 - unexpected error occurred
+// ****************************************************************************
+short CmpSeabaseDDL::getListOfReferencedTables( 
+   ExeCliInterface * cliInterface,
+   const Int64 objectUID,
+   NAList<objectRefdByMe> &tablesList )
+{
+  Lng32 retcode = 0;
+
+  NAList <objectRefdByMe> tempRefdList;
+  retcode = getListOfDirectlyReferencedObjects (cliInterface, objectUID, tempRefdList);
+  
+  // If unexpected error - return
+  if (retcode < 0)
+    return -1;
+
+  // For each view in the list, call getReferencedTables recursively
+  for (CollIndex i = 0; i < tempRefdList.entries(); i++)
+    {
+      objectRefdByMe objectRefd = tempRefdList[i];
+
+      // views should only be referencing tables or other views
+      CMPASSERT(objectRefd.objectType == COM_BASE_TABLE_OBJECT_LIT ||
+                objectRefd.objectType == COM_VIEW_OBJECT_LIT);
+
+      // found a table, add to list
+      if (objectRefd.objectType == COM_BASE_TABLE_OBJECT_LIT)
+        {  
+          // First make sure it has not already been added to the list
+          NABoolean foundEntry = FALSE;
+          for (CollIndex j = 0; j < tablesList.entries(); j++)
+            {
+               if (tablesList[j].objectUID == objectRefd.objectUID)
+                 foundEntry = TRUE;
+            }
+        if (!foundEntry)             
+          tablesList.insert(objectRefd);  
+      } 
+
+      // found a view, get objects associated with the view
+      if (objectRefd.objectType == COM_VIEW_OBJECT_LIT)
+        getListOfReferencedTables(cliInterface, objectRefd.objectUID, tablesList);
+    }
+
+  return 0;
+}
+  
+// ****************************************************************************
+// method: getListOfDirectlyReferencedObjects
+//
+// Returns a list of objects that are being directly referenced by the passed 
+// in objectUID
+//
+// Parameters:
+//    cliInterface - used to get the list of object usages
+//    objectUID - the UID being processed
+//    objectList - a list of objectRefdByMe structures describing each usage
+//
+// returns:
+//    0 - successful
+//   -1 - unexpected error occurred
+// ****************************************************************************
+short CmpSeabaseDDL::getListOfDirectlyReferencedObjects (
+  ExeCliInterface *cliInterface,
+  const Int64 objectUID,
+  NAList<objectRefdByMe> &objectsList)
+{
+  // Select all the rows from views_usage associated with the passed in
+  // objectUID
+  Lng32 cliRC = 0;
+  char buf[4000];
+  str_sprintf(buf, "select object_type, object_uid, catalog_name," 
+                   "schema_name, object_name from %s.\"%s\".%s T, %s.\"%s\".%s VU " 
+                   "where VU.using_view_uid = %Ld "
+                   "and T.object_uid = VU.used_object_uid",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
+              objectUID);
+
+  Queue * usingObjectsQueue = NULL;
+  cliRC = cliInterface->fetchAllRows(usingObjectsQueue, buf, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return cliRC;
+    }
+
+  // set up an objectRefdByMe struct for each returned row
+  usingObjectsQueue->position();
+  for (int idx = 0; idx < usingObjectsQueue->numEntries(); idx++)
+    {
+      OutputInfo * oi = (OutputInfo*)usingObjectsQueue->getNext();
+      objectRefdByMe objectInfo;
+      objectInfo.objectType = NAString(oi->get(0));
+      objectInfo.objectUID = *(Int64*)oi->get(1);
+      objectInfo.catalogName = NAString(oi->get(2));
+      objectInfo.schemaName = NAString(oi->get(3));
+      objectInfo.objectName = NAString(oi->get(4));
+      objectsList.insert(objectInfo);
+    }
+
+  return 0;
+}
 
 void CmpSeabaseDDL::createSeabaseView(
 				      StmtDDLCreateView * createViewNode,
@@ -893,6 +1009,11 @@ void CmpSeabaseDDL::dropSeabaseView(
 	}
     }
 
+  // get the list of all tables referenced by the view.  Save this list so 
+  // referenced tables can be removed from cache later
+  NAList<objectRefdByMe> tablesRefdList;
+  short status = getListOfReferencedTables(&cliInterface, objUID, tablesRefdList);
+
   if (usingViewsQueue)
     {
       usingViewsQueue->position();
@@ -926,6 +1047,29 @@ void CmpSeabaseDDL::dropSeabaseView(
 
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+
+  SQL_QIKEY qiKey;
+  qiKey.operation[0] = 'O';
+  qiKey.operation[1] = 'R';
+  qiKey.ddlObjectUID = objUID;
+  SQL_EXEC_SetSecInvalidKeys(1, &qiKey);
+
+  // Now remove referenced tables from cache.
+  // When a query that references a view is compiled, all views are converted
+  // to the underlying base tables.  Query plans are generated to access the
+  // tables, and the views are no longer relevant.
+  // When dropping a view, query plans that reference the dropped view will
+  // continue to work if the plans are cached.  This code removes the 
+  // referenced tables from caches to force recompilations so dropped views
+  // are noticed.
+  for (CollIndex i = 0; i < tablesRefdList.entries(); i++)
+    {
+      CorrName cn(tablesRefdList[i].objectName,
+                  STMTHEAP,
+                  tablesRefdList[i].schemaName,
+                  tablesRefdList[i].catalogName);
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+    }
 
   deallocEHI(ehi); 
       

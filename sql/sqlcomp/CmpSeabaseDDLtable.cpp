@@ -3134,7 +3134,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
-
+      processReturn();
       return;
     }
 
@@ -3382,7 +3382,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
-
+      processReturn();
       return;
     }
 
@@ -3797,6 +3797,14 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
   const NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
+  if ((isSeabaseReservedSchema(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
+      processReturn();
+      return;
+    }
+
   ExeCliInterface cliInterface(STMTHEAP);
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -4043,6 +4051,14 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
   const NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
+  if ((isSeabaseReservedSchema(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
+      processReturn();
+      return;
+    }
+
   ExeCliInterface cliInterface(STMTHEAP);
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -4241,6 +4257,14 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
   const NAString extTableName = referencingTableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
+  if ((isSeabaseReservedSchema(referencingTableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
+      processReturn();
+      return;
+    }
+
   ExeCliInterface cliInterface(STMTHEAP);
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -4290,6 +4314,14 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
   ComObjectName referencedTableName( constraintNode->getReferencedTableName()
                                      , COM_TABLE_NAME);
   referencedTableName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  if ((isSeabaseReservedSchema(referencedTableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
+      processReturn();
+      return;
+    }
 
   CorrName cn2(referencedTableName.getObjectNamePart().getInternalName(),
               STMTHEAP,
@@ -4868,6 +4900,14 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
   const NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
+  if ((isSeabaseReservedSchema(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
+      processReturn();
+      return;
+    }
+
   ExeCliInterface cliInterface(STMTHEAP);
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -5053,6 +5093,14 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
   const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
+
+  if ((isSeabaseReservedSchema(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
+      processReturn();
+      return;
+    }
 
   ExeCliInterface cliInterface(STMTHEAP);
 
@@ -5946,6 +5994,7 @@ void CmpSeabaseDDL::seabaseGrantRevokeHBase(
       *CmpCommon::diags() << DgSqlCode(-1118)
                           << DgTableName(extTableName);
       //      deallocEHI(ehi); 
+      processReturn();
       return;
     }
 

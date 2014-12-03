@@ -1,7 +1,8 @@
+-- ============================================================================
 -- Test: TEST0122 (Executor)
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -23,6 +24,7 @@
 -- Limitations:
 -- To do:
 -- Revision history:
+-- ============================================================================
 
 obey TEST122(clnup);
 
@@ -33,6 +35,8 @@ control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
 obey TEST122(test_drop_tab);
 
 obey TEST122(test_alter_tab);
+
+obey TEST122(test_drop_view);
 
 obey TEST122(clnup);
 
@@ -204,17 +208,108 @@ explain options 'f'
 insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
 
 
+?section test_drop_view
+
+-- makes sure referenced tables are invalidated
+-- structure:
+--     tables: t122t5_a, t122t5_b, t122t5_c, t122t5_d, t122t5_e
+--     t122_v1: selects from t122t5_a
+--     t122_v2: selects from t122t5_b
+--     t122_v3: selects from t122_v1 & t122_v2
+--     t122_v4: selects from t122t5_b & t122t5_c
+--     t122_v5: selects from t122_v4 
+--     t122_v6: selects from t122_v5 &t122_v3 & t122t5_d
+--     t122_v7: selects from t122_v6 & t122t5_e
+
+create table t122t5_a (a_c1 int not null primary key, a_c2 int);
+insert into t122t5_a values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t5_a;
+
+create view t122_v1 as select a_c1, a_c2 from t122t5_a;
+select * from t122_v1;
+
+create table t122t5_b (b_c1 int not null primary key, b_c2 int);
+insert into t122t5_b values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t5_b;
+
+create view t122_v2 as select b_c1, b_c2 from t122t5_b;
+select * from t122_v2;
+
+create view t122_v3 as select v1.a_c1 as v3_c1, v2.b_c2 as v3_c2 from t122_v1 v1, t122_v2 v2
+    where v1.a_c1 = v2.b_c1 + 1;
+select * from t122_v3;
+
+create table t122t5_c (c_c1 int not null primary key, c_c2 int);
+insert into t122t5_c values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t5_c;
+
+create view t122_v4 as select b.b_c1, c.c_c1 from t122t5_b b, t122t5_c c
+   where b.b_c1 = c.c_c2;
+select * from t122_v4;
+
+create view t122_v5 as select * from t122_v4;
+select * from t122_v5;
+
+create table t122t5_d (d_c1 int not null primary key, d_c2 int);
+insert into t122t5_d values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t5_d;
+
+create view t122_v6 as select v5.b_c1 v5_c1, v3.v3_c2 v5_c2, d.d_c2 v5_c3 
+  from t122_v5 v5, t122_v3 v3, t122t5_d d
+  where v5.b_c1 = v3.v3_c1 and v3.v3_c1 = d.d_c1;
+select * from t122_v6;
+
+create table t122t5_e (e_c1 int not null primary key, e_c2 int);
+insert into t122t5_e values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t5_e;
+
+create view t122_v7 as select v6.v5_c1, v6.v5_c2, e.e_c1, e.e_c2
+  from t122_v6 v6, t122t5_e e
+  where v6.v5_c1 = e.e_c1;
+select * from t122_v7;
+
+control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+select * from t122_v1;
+select * from t122_v2;
+select * from t122_v3;
+select * from t122_v4;
+select * from t122_v5;
+select * from t122_v6;
+select * from t122_v7;
+
+sh sqlci -i "TEST122(drop_view)";
+
+select * from t122_v1;
+select * from t122_v2;
+select * from t122_v3;
+select * from t122_v4;
+select * from t122_v5;
+select * from t122_v6;
+select * from t122_v7;
+
+select * from t122t5_a;
+select * from t122t5_b;
+select * from t122t5_c;
+select * from t122t5_d;
+select * from t122t5_e;
+
 ?section clnup
 
-drop table t122t1 cascade;
-drop table t122t3 cascade;
-drop table t122t3_col cascade;
-drop table t122t3_ck cascade;
-drop table t122t3_unique cascade;
-drop table t122t3_ri cascade;
-drop table t122t4 cascade;
-drop table t122t4_pk cascade;
-drop table t122t4_fk cascade;
+drop table if exists t122t1 cascade;
+drop table if exists t122t3 cascade;
+drop table if exists t122t3_col cascade;
+drop table if exists t122t3_ck cascade;
+drop table if exists t122t3_unique cascade;
+drop table if exists t122t3_ri cascade;
+drop table if exists t122t4 cascade;
+drop table if exists t122t4_pk cascade;
+drop table if exists t122t4_fk cascade;
+drop table if exists t122t5_a cascade;
+drop table if exists t122t5_b cascade;
+drop table if exists t122t5_c cascade;
+drop table if exists t122t5_d cascade;
+drop table if exists t122t5_e cascade;
 
 ?section uid_in_plan
 log;
@@ -257,6 +352,16 @@ alter table t122t4_pk drop constraint t122_pk;
 alter table t122t4_fk drop constraint t122_fk;
 drop index t122t3_index;
 
+?section drop_view
 
+log LOG122;
+
+drop view t122_v7;
+drop view t122_v6;
+drop view t122_v5;
+drop view t122_v4;
+drop view t122_v3;
+drop view t122_v2;
+drop view t122_v1;
 
 

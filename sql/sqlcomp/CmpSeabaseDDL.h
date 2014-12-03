@@ -138,6 +138,15 @@ class MDUpgradeInfo;
 
 #define HBASE_OPTION_MAX_INTEGER_LENGTH 5
 
+struct objectRefdByMe
+{
+  Int64 objectUID;
+  NAString objectType;
+  NAString objectName;
+  NAString schemaName;
+  NAString catalogName;
+};
+
 class CmpSeabaseDDL
 {
  public:
@@ -626,6 +635,14 @@ class CmpSeabaseDDL
 			      ExeCliInterface * cliInterface,
                               PrivMgrBitmap &privilegesBitmap,
                               PrivMgrBitmap &grantableBitmap);
+
+  short getListOfReferencedTables (ExeCliInterface * cliInterface,
+                                   const Int64 objectUID,
+                                   NAList<objectRefdByMe> &tablesList);
+
+  short getListOfDirectlyReferencedObjects (ExeCliInterface *cliInterface,
+                                            const Int64 objectUID,
+                                            NAList<objectRefdByMe> &objectsList);
 
   short genPKeyName(StmtDDLAddConstraintPK *addPKNode,
 		    const char * catName,
