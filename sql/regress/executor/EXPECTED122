@@ -164,7 +164,7 @@ iv
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Nov 19 17:36:16 2014
+-- Definition current  Mon Dec  1 08:22:30 2014
 
   (
     A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -588,9 +588,6 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
->>
->>
->>
 >>exit;
 
 End of MXCI Session
@@ -684,33 +681,540 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>
 >>
 >>
+>>obey TEST122(test_drop_view);
+>>
+>>-- makes sure referenced tables are invalidated
+>>-- structure:
+>>--     tables: t122t5_a, t122t5_b, t122t5_c, t122t5_d, t122t5_e
+>>--     t122_v1: selects from t122t5_a
+>>--     t122_v2: selects from t122t5_b
+>>--     t122_v3: selects from t122_v1 & t122_v2
+>>--     t122_v4: selects from t122t5_b & t122t5_c
+>>--     t122_v5: selects from t122_v4 
+>>--     t122_v6: selects from t122_v5 &t122_v3 & t122t5_d
+>>--     t122_v7: selects from t122_v6 & t122t5_e
+>>
+>>create table t122t5_a (a_c1 int not null primary key, a_c2 int);
+
+--- SQL operation complete.
+>>insert into t122t5_a values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t5_a;
+
+A_C1         A_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v1 as select a_c1, a_c2 from t122t5_a;
+
+--- SQL operation complete.
+>>select * from t122_v1;
+
+A_C1         A_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t5_b (b_c1 int not null primary key, b_c2 int);
+
+--- SQL operation complete.
+>>insert into t122t5_b values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t5_b;
+
+B_C1         B_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v2 as select b_c1, b_c2 from t122t5_b;
+
+--- SQL operation complete.
+>>select * from t122_v2;
+
+B_C1         B_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v3 as select v1.a_c1 as v3_c1, v2.b_c2 as v3_c2 from t122_v1 v1, t122_v2 v2
++>    where v1.a_c1 = v2.b_c1 + 1;
+
+--- SQL operation complete.
+>>select * from t122_v3;
+
+V3_C1        V3_C2      
+-----------  -----------
+
+          2            1
+          3            2
+          4            3
+          5            4
+          6            5
+          7            6
+
+--- 6 row(s) selected.
+>>
+>>create table t122t5_c (c_c1 int not null primary key, c_c2 int);
+
+--- SQL operation complete.
+>>insert into t122t5_c values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t5_c;
+
+C_C1         C_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v4 as select b.b_c1, c.c_c1 from t122t5_b b, t122t5_c c
++>   where b.b_c1 = c.c_c2;
+
+--- SQL operation complete.
+>>select * from t122_v4;
+
+B_C1         C_C1       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v5 as select * from t122_v4;
+
+--- SQL operation complete.
+>>select * from t122_v5;
+
+B_C1         C_C1       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create table t122t5_d (d_c1 int not null primary key, d_c2 int);
+
+--- SQL operation complete.
+>>insert into t122t5_d values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t5_d;
+
+D_C1         D_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v6 as select v5.b_c1 v5_c1, v3.v3_c2 v5_c2, d.d_c2 v5_c3 
++>  from t122_v5 v5, t122_v3 v3, t122t5_d d
++>  where v5.b_c1 = v3.v3_c1 and v3.v3_c1 = d.d_c1;
+
+--- SQL operation complete.
+>>select * from t122_v6;
+
+V5_C1        V5_C2        V5_C3      
+-----------  -----------  -----------
+
+          2            1            2
+          3            2            3
+          4            3            4
+          5            4            5
+          6            5            6
+          7            6            7
+
+--- 6 row(s) selected.
+>>
+>>create table t122t5_e (e_c1 int not null primary key, e_c2 int);
+
+--- SQL operation complete.
+>>insert into t122t5_e values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+
+--- 7 row(s) inserted.
+>>select * from t122t5_e;
+
+E_C1         E_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>create view t122_v7 as select v6.v5_c1, v6.v5_c2, e.e_c1, e.e_c2
++>  from t122_v6 v6, t122t5_e e
++>  where v6.v5_c1 = e.e_c1;
+
+--- SQL operation complete.
+>>select * from t122_v7;
+
+V5_C1        V5_C2        E_C1         E_C2       
+-----------  -----------  -----------  -----------
+
+          2            1            2            2
+          3            2            3            3
+          4            3            4            4
+          5            4            5            5
+          6            5            6            6
+          7            6            7            7
+
+--- 6 row(s) selected.
+>>
+>>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>
+>>select * from t122_v1;
+
+A_C1         A_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122_v2;
+
+B_C1         B_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122_v3;
+
+V3_C1        V3_C2      
+-----------  -----------
+
+          2            1
+          3            2
+          4            3
+          5            4
+          6            5
+          7            6
+
+--- 6 row(s) selected.
+>>select * from t122_v4;
+
+B_C1         C_C1       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122_v5;
+
+B_C1         C_C1       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122_v6;
+
+V5_C1        V5_C2        V5_C3      
+-----------  -----------  -----------
+
+          2            1            2
+          3            2            3
+          4            3            4
+          5            4            5
+          6            5            6
+          7            6            7
+
+--- 6 row(s) selected.
+>>select * from t122_v7;
+
+V5_C1        V5_C2        E_C1         E_C2       
+-----------  -----------  -----------  -----------
+
+          2            1            2            2
+          3            2            3            3
+          4            3            4            4
+          5            4            5            5
+          6            5            6            6
+          7            6            7            7
+
+--- 6 row(s) selected.
+>>
+>>sh sqlci -i "TEST122(drop_view)";
+>>
+>>drop view t122_v7;
+
+--- SQL operation complete.
+>>drop view t122_v6;
+
+--- SQL operation complete.
+>>drop view t122_v5;
+
+--- SQL operation complete.
+>>drop view t122_v4;
+
+--- SQL operation complete.
+>>drop view t122_v3;
+
+--- SQL operation complete.
+>>drop view t122_v2;
+
+--- SQL operation complete.
+>>drop view t122_v1;
+
+--- SQL operation complete.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>select * from t122_v1;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V1 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v2;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V2 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v3;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V3 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v4;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V4 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v5;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V5 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v6;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V6 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t122_v7;
+
+*** ERROR[4082] Object TRAFODION.SCH.T122_V7 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select * from t122t5_a;
+
+A_C1         A_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122t5_b;
+
+B_C1         B_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122t5_c;
+
+C_C1         C_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122t5_d;
+
+D_C1         D_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>select * from t122t5_e;
+
+E_C1         E_C2       
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            7
+
+--- 7 row(s) selected.
+>>
+>>
 >>obey TEST122(clnup);
 >>
->>drop table t122t1 cascade;
+>>drop table if exists t122t1 cascade;
 
 --- SQL operation complete.
->>drop table t122t3 cascade;
+>>drop table if exists t122t3 cascade;
 
 --- SQL operation complete.
->>drop table t122t3_col cascade;
+>>drop table if exists t122t3_col cascade;
 
 --- SQL operation complete.
->>drop table t122t3_ck cascade;
+>>drop table if exists t122t3_ck cascade;
 
 --- SQL operation complete.
->>drop table t122t3_unique cascade;
+>>drop table if exists t122t3_unique cascade;
 
 --- SQL operation complete.
->>drop table t122t3_ri cascade;
+>>drop table if exists t122t3_ri cascade;
 
 --- SQL operation complete.
->>drop table t122t4 cascade;
+>>drop table if exists t122t4 cascade;
 
 --- SQL operation complete.
->>drop table t122t4_pk cascade;
+>>drop table if exists t122t4_pk cascade;
 
 --- SQL operation complete.
->>drop table t122t4_fk cascade;
+>>drop table if exists t122t4_fk cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t5_a cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t5_b cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t5_c cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t5_d cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t5_e cascade;
 
 --- SQL operation complete.
 >>

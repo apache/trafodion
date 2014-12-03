@@ -273,7 +273,7 @@
 1286 ZZZZZ 99999 BEGINNER MINOR DBADMIN The NOT DROPPABLE clause is not allowed for volatile tables.
 1287 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only super ID can execute INITIALIZE SECURITY.
 1288 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Security was not able to initialize.
-1289 ZZZZZ 99999 BEGINNER MINOR DBADMIN The use of ALTER on definition schemas and metadata schemas is not permitted.
+1289 ZZZZZ 99999 BEGINNER MINOR DBADMIN The use of ALTER on reserved schemas and metadata schemas is not permitted.
 1290 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Select from table $0~TableName failed during UPGRADE operation.
 1291 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Select from table $0~TableName failed during DOWNGRADE operation.
 1292 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Delete from $0~string0 log table failed.    
