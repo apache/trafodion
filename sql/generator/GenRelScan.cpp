@@ -165,7 +165,7 @@ short Describe::codeGen(Generator * generator)
     CmpCommon::diags()->rewind(daMark, TRUE);
 
     if (describedTable && describedTable->isSeabaseTable() &&
-        (!describedTable->isSeabaseMDTable()))
+        describedTable->isEnabledForDDLQI())
       generator->objectUids().insert(
         describedTable->objectUid().get_value());
   }
@@ -2546,7 +2546,7 @@ short HbaseAccess::codeGen(Generator * generator)
 
       if (getTableDesc()->getNATable()->isSQLMXAlignedTable())
         hbasescan_tdb->setAlignedFormat(TRUE);
-      if (!getTableDesc()->getNATable()->isSeabaseMDTable())
+      if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(
           getTableDesc()->getNATable()->objectUid().get_value());
     }
@@ -2798,7 +2798,7 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
   if (getTableDesc()->getNATable()->isSeabaseTable())
   {
     hbasescan_tdb->setSQHbaseTable(TRUE);
-    if (!getTableDesc()->getNATable()->isSeabaseMDTable())
+    if (getTableDesc()->getNATable()->isEnabledForDDLQI())
       generator->objectUids().insert(
         getTableDesc()->getNATable()->objectUid().get_value());
   }

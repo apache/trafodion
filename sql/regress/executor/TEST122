@@ -52,6 +52,8 @@ prepare s1 from insert into t122t1 values
 , (1)
 ;
 
+update statistics for table t122t1 on every column;
+
 obey TEST122(uid_in_plan);
 
 execute s1;
@@ -320,6 +322,15 @@ sh echo "look for one uid only" >> LOG122;
 sh grep "^  ObjectUIDs .* [1-9][0-9]*$" PLAN122 | cut -c 1-20 >> LOG122; 
 sh echo "look for more than one uid" >> LOG122; 
 sh grep "^  ObjectUIDs .* [1-9][0-9]*," PLAN122;
+log LOG122;
+-- lp 1398600 -- test that there are no object UIDs for MD or histograms
+log;
+log PLAN122 clear;
+explain select * from SB_HISTOGRAMS;
+explain select * from SB_HISTOGRAM_INTERVALS;
+explain select * from "_MD_".OBJECTS;
+log;
+sh grep "^  ObjectUIDs .* [1-9][0-9]*" PLAN122 | cut -c 1-20  >> LOG122;
 log LOG122;
 
 ?section drop_tab

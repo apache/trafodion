@@ -17,11 +17,17 @@
 
 --- SQL command prepared.
 >>
+>>update statistics for table t122t1 on every column;
+
+--- SQL operation complete.
+>>
 >>obey TEST122(uid_in_plan);
 >>log;
 look for one uid only
   ObjectUIDs .......
 look for more than one uid
+>>-- lp 1398600 -- test that there are no object UIDs for MD or histograms
+>>log;
 >>
 >>
 >>execute s1;
@@ -37,6 +43,8 @@ look for more than one uid
 look for one uid only
   ObjectUIDs .......
 look for more than one uid
+>>-- lp 1398600 -- test that there are no object UIDs for MD or histograms
+>>log;
 >>
 >>
 >>execute s1;
@@ -53,7 +61,7 @@ A
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Nov 19 17:36:02 2014
+-- Definition current  Wed Dec  3 17:47:33 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -105,7 +113,7 @@ A
 >>execute s3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Nov 19 17:36:02 2014
+-- Definition current  Wed Dec  3 17:47:33 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -214,7 +222,7 @@ iv
 
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Nov 19 17:36:17 2014
+-- Definition current  Wed Dec  3 17:48:08 2014
 
   (
     A                                CHAR(4) CHARACTER SET ISO88591 COLLATE

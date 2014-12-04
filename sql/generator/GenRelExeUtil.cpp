@@ -5518,7 +5518,7 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
   TableDesc *tableDesc = getUtilTableDesc();
   if (tableDesc->getNATable()->isSeabaseTable())
   {
-    if (!tableDesc->getNATable()->isSeabaseMDTable())
+    if (tableDesc->getNATable()->isEnabledForDDLQI())
       generator->objectUids().insert(
         tableDesc->getNATable()->objectUid().get_value());
   }
