@@ -13316,10 +13316,6 @@ query_specification : exe_util_aqr
 				    RelRoot($1, REL_ROOT);
                                 }
 
-query_specification : unload_statement
-{
-  RelRoot *root = new (PARSERHEAP()) RelRoot($1, REL_ROOT);
-}
 
 /* type relx */
 query_specification : select_token '[' firstn_sorted NUMERIC_LITERAL_EXACT_NO_SCALE ']' set_quantifier query_spec_body
@@ -14602,6 +14598,9 @@ interactive_query_expression:
 				}
               | exe_util_lob_extract
                                 {
+				  $$ = finalize($1);
+				}
+				| unload_statement {
 				  $$ = finalize($1);
 				}
               | exe_util_init_hbase
@@ -19771,7 +19770,7 @@ hbb_upsert_using_load : TOK_UPSERT TOK_USING TOK_LOAD
 
 //url_string : QUOTED_STRING
 
-unload_statement : TOK_UNLOAD optional_hbb_unload_options TOK_INTO std_char_string_literal  non_join_query_primary 
+ unload_statement : TOK_UNLOAD optional_hbb_unload_options TOK_INTO std_char_string_literal query_expression 
                 {
                   CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
                   NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
@@ -19796,7 +19795,7 @@ unload_statement : TOK_UNLOAD optional_hbb_unload_options TOK_INTO std_char_stri
                   $$ = finalize(eubl);    
                 
                 }
-                |TOK_UNLOAD TOK_EXTRACT optional_hbb_unload_options TOK_TO std_char_string_literal   non_join_query_primary 
+                | TOK_UNLOAD TOK_EXTRACT optional_hbb_unload_options TOK_TO std_char_string_literal  query_expression 
                 {
                   if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
                   YYERROR;
