@@ -105,6 +105,7 @@ public:
     {};
     
    inline void clear() { lastRowRead_.clear(); };
+      
    
    PrivStatus fetchOwner(
       const int64_t componentUID,
@@ -276,6 +277,8 @@ CP.COMPONENT_UID = componentUIDString;
     selectJoinStmt += " AND CP.COMPONENT_UID = " + componentUIDString;
     ExeCliInterface cliInterface(STMTHEAP);
     Queue * tableQueue = NULL;
+
+    int32_t diagsMark = pDiags_->mark();
     int32_t cliRC =  cliInterface.fetchAllRows(tableQueue, 
                                                (char *)selectJoinStmt.c_str(), 
                                                 0, false, false, true);
@@ -287,7 +290,7 @@ CP.COMPONENT_UID = componentUIDString;
     }
     if (cliRC == 100) // did not find the row
     {
-      cliInterface.clearGlobalDiags();
+      pDiags_->rewind(diagsMark);
       return STATUS_NOTFOUND;
     }
 
@@ -511,10 +514,14 @@ std::string whereClause(" ");
 int64_t rowCount = 0;   
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
    if (privStatus != STATUS_GOOD)
-      pDiags_->clear();
+      pDiags_->rewind(diagsMark);
+
       
    return rowCount;
 
@@ -583,6 +590,9 @@ std::string whereClause("WHERE COMPONENT_UID = ");
    
 MyRow row(fullTableName_);
    
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
 
    if (privStatus == STATUS_GOOD || privStatus == STATUS_WARNING) 
@@ -591,7 +601,8 @@ PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
       return true;
    }
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
+
    return false;
 
 }
@@ -1021,13 +1032,17 @@ std::string whereClause(" WHERE COMPONENT_UID = ");
 int64_t rowCount = 0;   
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
    if ((privStatus == STATUS_GOOD || privStatus == STATUS_WARNING) &&
         rowCount > 0)
       return true;
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
+
    return false;
 
 }
@@ -1130,13 +1145,17 @@ std::string whereClause(" WHERE COMPONENT_UID = 1 AND (OPERATION_CODE = '");
 int64_t rowCount = 0;   
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
    if ((privStatus == STATUS_GOOD || privStatus == STATUS_WARNING) &&
         rowCount > 0)
       return true;
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
+
    return false;
 
 }
@@ -1196,13 +1215,17 @@ std::string whereClause (" WHERE GRANTEE_ID = ");
    
 int64_t rowCount = 0;
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
    if ((privStatus == STATUS_GOOD || privStatus == STATUS_WARNING) &&
         rowCount > 0)
       return true;
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
+
    return false;
    
 }
@@ -1241,13 +1264,17 @@ std::string whereClause(" WHERE GRANTEE_ID =  ");
 int64_t rowCount = 0;   
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
    if ((privStatus == STATUS_GOOD || privStatus == STATUS_WARNING) &&
         rowCount > 0)
       return true;
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
+
    return false;
 
 }
@@ -1303,12 +1330,16 @@ std::string whereClause("WHERE COMPONENT_UID = ");
    if (shouldExcludeGrantsBySystem)
       whereClause += " AND GRANTOR_ID <> -2";
    
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
 
    if (privStatus == STATUS_GOOD || privStatus == STATUS_WARNING)
       return true;
       
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
+
    return false;
     
 }      

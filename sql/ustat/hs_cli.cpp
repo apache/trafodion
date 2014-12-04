@@ -377,7 +377,7 @@ Lng32 CreateSeabaseHist(const HSGlobalsClass* hsGlobal)
         LM->Log(LM->msg);
       }
 
-    NAString ddl = "CREATE TABLE ";
+    NAString ddl = "CREATE TABLE IF NOT EXISTS ";
     ddl.append(hsGlobal->hstogram_table->data())
        .append(" (  TABLE_UID      LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                "  , HISTOGRAM_ID   INT UNSIGNED NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
@@ -405,7 +405,7 @@ Lng32 CreateSeabaseHist(const HSGlobalsClass* hsGlobal)
                "  , V6             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
               "  , constraint "HBASE_HIST_PK" primary key"
                 "  (TABLE_UID ASC, HISTOGRAM_ID ASC, COL_POSITION ASC)"
-               " );");
+               " ) ATTRIBUTE BY DB__ROOT;");
 
     LM->StartTimer("Create Trafodion HISTOGRAMS table");
     Lng32 retcode = HSFuncExecQuery(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
@@ -430,7 +430,7 @@ Lng32 CreateSeabaseHistint(const HSGlobalsClass* hsGlobal)
         LM->Log(LM->msg);
       }
 
-    NAString ddl = "CREATE TABLE ";
+    NAString ddl = "CREATE TABLE IF NOT EXISTS ";
     ddl.append(hsGlobal->hsintval_table->data())
        .append(" (  TABLE_UID         LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                "  , HISTOGRAM_ID      INT UNSIGNED NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
@@ -447,7 +447,7 @@ Lng32 CreateSeabaseHistint(const HSGlobalsClass* hsGlobal)
                "  , V6                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                "  , constraint "HBASE_HISTINT_PK" primary key"
               "     (TABLE_UID ASC, HISTOGRAM_ID ASC, INTERVAL_NUMBER ASC)"
-               " );");
+               " ) ATTRIBUTE BY DB__ROOT;");
 
     LM->StartTimer("Create Trafodion HISTOGRAM_INTERVALS table");
     Lng32 retcode = HSFuncExecQuery(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
@@ -468,220 +468,23 @@ Lng32 CreateSeabaseHistint(const HSGlobalsClass* hsGlobal)
 Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal)
   {
     Lng32 retcode = 0;
-    NAString ddl;
-    HSCliStatement::statementIndex stmt;
 
-    if (hsGlobal->tableFormat == UNKNOWN)
-      return retcode;
-    else if (hsGlobal->tableFormat == SQLMX)
-      {
-        // do NOT check security for volatile tables
-        if (hsGlobal->objDef->isVolatile()) return retcode;
+    // do NOT check security for volatile tables
+    if (hsGlobal->objDef->isVolatile()) return retcode;
 
-        HSLogMan *LM = HSLogMan::Instance();
+    // Create HISTOGRAMS if is doesn't already exist
+    retcode = CreateSeabaseHist(hsGlobal);
+    HSFilterWarning(retcode);
+    HSHandleError(retcode);
 
-        // Validate that user has authority to update HISTOGRAMS and
-        // HISTOGRAM_INTERVALS tables.
-#ifdef NA_USTAT_USE_STATIC
-        if (HSGlobalsClass::schemaVersion >= COM_VERS_2300)
-          stmt = HSCliStatement::SECURITY101_MX_2300;
-        else
-          stmt = HSCliStatement::SECURITY101_MX;
-        HSCliStatement security101(stmt,
-                                   (char *)hsGlobal->hstogram_table->data()
-                                  );
-        // Set the retry timeout count to the CQD.  Update statistics will
-        // retry the security checks up to this count, where there is a
-        // pause of 1 second between each retry.
-        double retryTimeout=CmpCommon::getDefaultNumeric(USTAT_RETRY_SECURITY_COUNT);
-        Int32 retryCnt=0;
-        LM->StartTimer("Check user permission to update HISTOGRAMS table");
-        while ((retcode = security101.execFetch("SECURITY101()")) &&
-               retryCnt++ < retryTimeout) {
-          HSFilterWarning(retcode); if(!retcode) break;
-        }
-        LM->StopTimer();
-        HSHandleError(retcode);
-        if (LM->LogNeeded()) {
-            snprintf(LM->msg, sizeof(LM->msg), "SECURITY101() rc=%d, retries=%d",
-                    retcode, retryCnt);
-            LM->Log(LM->msg);
-        }
-
-        // Now check Update permission on HISTOGRAM_INTERVALS.
-        if (HSGlobalsClass::schemaVersion >= COM_VERS_2300)
-          stmt = HSCliStatement::SECURITY201_MX_2300;
-        else
-          stmt = HSCliStatement::SECURITY201_MX;
-        HSCliStatement security201(stmt,
-                                   (char *)hsGlobal->hsintval_table->data()
-                                  );
-        retryCnt=0;
-        LM->StartTimer("Check user permission to update HISTOGRAM_INTERVALS table");
-        while ((retcode = security201.execFetch("SECURITY201()")) &&
-               retryCnt++ < retryTimeout) {
-          HSFilterWarning(retcode); if(!retcode) break;
-        }
-        LM->StopTimer();
-        HSHandleError(retcode);
-        if (LM->LogNeeded()) {
-            snprintf(LM->msg, sizeof(LM->msg), "SECURITY201() rc=%d, retries=%d",
-                    retcode, retryCnt);
-            LM->Log(LM->msg);
-        }
-
-#else // NA_USTAT_USE_STATIC not defined
-
-        // Check HISTOGRAMS.
-        NAString qry = "UPDATE ";
-        qry.append(hsGlobal->hstogram_table->data());
-        qry.append(" SET ROWCOUNT = ROWCOUNT WHERE TABLE_UID = -1 AND HISTOGRAM_ID = -1 AND COL_POSITION = -1");
-        LM->StartTimer("Check user permission to update HISTOGRAMS table");
-        retcode = HSFuncExecQuery(qry.data(), - UERR_INTERNAL_ERROR, NULL,
-                                  HS_QUERY_ERROR, NULL, NULL, TRUE);
-        LM->StopTimer();
-
-        if (hsGlobal->diagsArea.contains(-UERR_OBJECT_INACCESSIBLE))
-          {
-            hsGlobal->diagsArea.clear();
-            retcode = CreateSeabaseHist(hsGlobal);
-          }
-        else if (LM->LogNeeded())
-          {
-            snprintf(LM->msg, sizeof(LM->msg), "SECURITY101() rc=%d", retcode);
-            LM->Log(LM->msg);
-          }
-        HSFilterWarning(retcode);
-        HSHandleError(retcode);
-
-        // Check HISTOGRAM_INTERVALS.
-        qry = "UPDATE ";
-        qry.append(hsGlobal->hsintval_table->data());
-        qry.append(" SET INTERVAL_ROWCOUNT = INTERVAL_ROWCOUNT WHERE TABLE_UID = -1 AND HISTOGRAM_ID = -1 AND INTERVAL_NUMBER = -1");
-        LM->StartTimer("Check user permission to update HISTOGRAM_INTERVALS table");
-        retcode = HSFuncExecQuery(qry.data(), - UERR_INTERNAL_ERROR, NULL,
-                                  HS_QUERY_ERROR, NULL, NULL, TRUE);
-        LM->StopTimer();
-
-        if (hsGlobal->diagsArea.contains(-UERR_OBJECT_INACCESSIBLE))
-          {
-            hsGlobal->diagsArea.clear();
-            retcode = CreateSeabaseHistint(hsGlobal);
-          }
-        else if (LM->LogNeeded())
-          {
-            snprintf(LM->msg, sizeof(LM->msg), "SECURITY201() rc=%d", retcode);
-            LM->Log(LM->msg);
-          }
-        HSFilterWarning(retcode);
-        HSHandleError(retcode);
-#endif // NA_USTAT_USE_STATIC
-      }
-    // LCOV_EXCL_START :nsk
-    else
-      {
-        hs_table_type tableType = GUARDIAN_TABLE;
-                                             /*==============================*/
-                                             /*    CREATE HISTOGRM TABLE     */
-                                             /*==============================*/
-        ComMPLoc histTab(hsGlobal->hstogram_table->data(), ComMPLoc::FILE);
-        ComObjectName histName(histTab.getSysDotVol(),
-                               histTab.getSubvolName(),
-                               histTab.getFileName(),
-                               COM_UNKNOWN_NAME,
-                               ComAnsiNamePart::INTERNAL_FORMAT,
-                               STMTHEAP);
-
-        HSSqTableDef histDef(histName, tableType);
-        if (histDef.objExists())               /*== HISTOGRAM TABLE EXISTS ==*/
-          {
-            //Validate that user has authority to update HISTOGRM table
-            stmt = HSCliStatement::SECURITY101_MP;
-            HSCliStatement security101(stmt,
-                                       (char *)hsGlobal->hstogram_table->data()
-                                      );
-            retcode = security101.execFetch("SECURITY101()");
-            HSHandleError(retcode);
-          }
-        else
-          {                                     /*== CREATE HISTOGRM TABLE ==*/
-            if (hsGlobal->diagsArea.getNumber(DgSqlCode::ERROR_))
-              hsGlobal->diagsArea.deleteError(0);
-            ddl = "CREATE TABLE ";
-            ddl += histTab.getMPName();
-            ddl += " (TABLE_UID LARGEINT NOT NULL,                      \
-                   HISTOGRAM_ID INT UNSIGNED NOT NULL,                  \
-                   COL_POSITION INT NOT NULL,                           \
-                   COLUMN_NUMBER INT NOT NULL,                          \
-                   COLCOUNT INT NOT NULL,                               \
-                   INTERVAL_COUNT SMALLINT NOT NULL,                    \
-                   ROWCOUNT LARGEINT NOT NULL,                          \
-                   TOTAL_UEC LARGEINT NOT NULL,                         \
-                   STATS_TIME DATETIME YEAR TO SECOND NOT NULL,         \
-                   LOW_VALUE VARCHAR(500) NOT NULL,                     \
-                   HIGH_VALUE VARCHAR(500) NOT NULL,                    \
-                   PRIMARY KEY (TABLE_UID, HISTOGRAM_ID, COL_POSITION)) \
-                   SECURE \"UUUU\" MAXEXTENTS 900 TABLECODE 859 CATALOG ";
-            ddl += histTab.getSysDotVol();
-            ddl += ".";
-            ddl += histTab.getSubvolName();
-            retcode = HSFuncExecDDL(ddl,
-                                    - UERR_UNABLE_TO_CREATE_OBJECT,
-                                    NULL,
-                                    histTab.getMPName());
-            HSHandleError(retcode);
-          }
-
-                                              /*==============================*/
-                                              /*    CREATE HISTINTS TABLE     */
-                                              /*==============================*/
-        ComMPLoc histintTab(hsGlobal->hsintval_table->data(), ComMPLoc::FILE);
-        ComObjectName histintName(histintTab.getSysDotVol(),
-                                  histintTab.getSubvolName(),
-                                  histintTab.getFileName(),
-                                  COM_UNKNOWN_NAME,
-                                  ComAnsiNamePart::INTERNAL_FORMAT,
-                                  STMTHEAP);
-
-        HSSqTableDef histintDef(histintName, tableType);
-        if (histintDef.objExists())            /*== INTERVALS TABLE EXISTS ==*/
-          {
-            //Validate that user has authority to update HISTINT table
-            stmt = HSCliStatement::SECURITY201_MP;
-            HSCliStatement security201(stmt,
-                                       (char *)hsGlobal->hsintval_table->data()
-                                      );
-            retcode = security201.execFetch("SECURITY201()");
-            HSHandleError(retcode);
-          }
-        else
-          {                                         /*== CREATE HISTINTS TABLE ==*/
-            if (hsGlobal->diagsArea.getNumber(DgSqlCode::ERROR_))
-              hsGlobal->diagsArea.deleteError(0);
-            ddl = "CREATE TABLE ";
-            ddl += histintTab.getMPName();
-            ddl += " (TABLE_UID LARGEINT NOT NULL,        \
-                   HISTOGRAM_ID INT UNSIGNED NOT NULL,    \
-                   INTERVAL_NUMBER SMALLINT NOT NULL,     \
-                   INTERVAL_ROWCOUNT LARGEINT NOT NULL,   \
-                   INTERVAL_UEC LARGEINT NOT NULL,        \
-                   INTERVAL_BOUNDARY VARCHAR(500) NOT NULL,   \
-                   PRIMARY KEY (TABLE_UID, HISTOGRAM_ID, INTERVAL_NUMBER)) \
-                   SECURE \"UUUU\" MAXEXTENTS 900 TABLECODE 859 CATALOG ";
-            ddl += histintTab.getSysDotVol();
-            ddl += ".";
-            ddl += histintTab.getSubvolName();
-            retcode = HSFuncExecDDL(ddl,
-                                    - UERR_UNABLE_TO_CREATE_OBJECT,
-                                    NULL,
-                                    histintTab.getMPName());
-            HSHandleError(retcode);
-          }
-      }
-    // LCOV_EXCL_STOP
+    // create the  HISTOGRAM_INTERVALS, if it doesn't already exist.
+    hsGlobal->diagsArea.clear();
+    retcode = CreateSeabaseHistint(hsGlobal);
+    HSFilterWarning(retcode);
+    HSHandleError(retcode);
 
     return retcode;
-  }
+ }
 
 
 /***********************************************/
@@ -2881,6 +2684,7 @@ Lng32 HSCursor::prepareRowsetInternal
         return -1;
         // LCOV_EXCL_STOP
       }
+
 
     retcode_ = SQL_EXEC_ClearDiagnostics(stmt_);
     HSHandleError(retcode_);

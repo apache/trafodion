@@ -307,12 +307,12 @@ PrivStatus PrivMgrComponentOperations::createOperation(
   
 {
 
-int32_t effectiveUser = ComUser::getCurrentUser();
-
-//TODO: Could add check for granted privilege to create component operations.
 //TODO: Related, could check for setting isSystem, could be separate
 // privilege, or restricted to DB__ROOT.
-   if (effectiveUser != SUPER_USER)
+PrivMgrComponentPrivileges componentPrivileges(metadataLocation_, pDiags_);
+
+   if (!ComUser::isRootUserID()&&
+       !componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(), SQLOperation::MANAGE_COMPONENTS, true))
    {   
       *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
       return STATUS_ERROR;
@@ -404,6 +404,8 @@ Int32 maxLen = MAX_USERNAME_LEN;
 char granteeName[maxLen+1];
 Int32 actualLen;
       
+int32_t effectiveUser = ComUser::getCurrentUser();
+
    Int16 status = ComUser::getUserNameFromUserID(effectiveUser,granteeName,maxLen,actualLen);
    if (status != FEOK)
      *CmpCommon::diags() << DgSqlCode(-20235)
@@ -721,12 +723,12 @@ PrivStatus PrivMgrComponentOperations::dropOperation(
   
 {
 
-int32_t effectiveUser = ComUser::getCurrentUser();
-
-//TODO: Could add check for granted privilege to create component operations.
 //TODO: Related, could check for setting isSystem, could be separate
 // privilege, or restricted to DB__ROOT.
-   if (effectiveUser != SUPER_USER)
+PrivMgrComponentPrivileges componentPrivileges(metadataLocation_, pDiags_);
+
+   if (!ComUser::isRootUserID()&&
+       !componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(), SQLOperation::MANAGE_COMPONENTS, true))
    {   
       *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
       return STATUS_ERROR;
@@ -776,8 +778,6 @@ bool isSystemOperation;
 //
 // Has operation been granted to any authID?
 // 
-
-PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
 
    if (dropBehavior == PrivDropBehavior::RESTRICT &&
        componentPrivileges.isGranted(componentUIDString,operationCode,true))  
@@ -896,10 +896,13 @@ std::string whereClause(" ");
 int64_t rowCount = 0;   
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 
    if (privStatus != STATUS_GOOD)
-      pDiags_->clear();
+      pDiags_->rewind(diagsMark);
       
    return rowCount;
 
@@ -940,15 +943,18 @@ std::string whereClause("WHERE COMPONENT_UID = ");
 
    whereClause += componentUIDString;
    
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
 
    if (privStatus == STATUS_GOOD || privStatus == STATUS_WARNING)
       return true;
 
-// If not found or any other error is returned, clear the diagnostics and
+// If not found or any other error is returned, rewind the diagnostics and
 // return false.        
-   pDiags_->clear();
+   pDiags_->rewind(diagsMark);
    return false;
     
 }      
@@ -1504,6 +1510,9 @@ PrivStatus MyTable::selectWhere(
   selectStmt += " ";
   selectStmt += whereClause;
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
   ExeCliInterface cliInterface(STMTHEAP);
   Queue * tableQueue = NULL;
   int32_t cliRC =  cliInterface.fetchAllRows(tableQueue, 
@@ -1517,7 +1526,7 @@ PrivStatus MyTable::selectWhere(
   }
   if (cliRC == 100) // did not find the row
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     return STATUS_NOTFOUND;
   }
 

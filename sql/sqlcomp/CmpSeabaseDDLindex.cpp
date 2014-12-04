@@ -61,6 +61,8 @@
 
 #include "NumericType.h"
 
+#include "PrivMgrCommands.h"
+
 short 
 CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
      ElemDDLColRefArray &indexColRefArray,
@@ -528,9 +530,10 @@ void CmpSeabaseDDL::createSeabaseIndex(
     }
 
   // Verify that current user has authority to create an index
-  // The user must own the base table or have the ALTER_TABLE privilege
-  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
-                                naTable->getOwner()))
+  // The user must own the base table, have the base table ALTER_TABLE 
+  // privilege or have the CREATE_INDEX privilege
+  if ((!isDDLOperationAuthorized(SQLOperation::CREATE_INDEX, naTable->getOwner())) &&
+      (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, naTable->getOwner())))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
 
@@ -1132,15 +1135,43 @@ void CmpSeabaseDDL::populateSeabaseIndex(
     }
 
   // Verify that current user has authority to populate the index
-  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
-                                naTable->getOwner()))
-  {
-     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+  // User must be DB__ROOT or have privileges
+  PrivMgrUserPrivs *privs = naTable->getPrivInfo();
+  if (isAuthorizationEnabled() && privs == NULL)
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+  
+       processReturn();
 
-     processReturn();
+       return;
+    }
 
-     return;
-  }
+  // Requester must have SELECT and INSERT privileges
+  if (!ComUser::isRootUserID() && !isAuthorizationEnabled())
+    {
+      NABoolean hasPriv = TRUE;
+      if ( !privs->hasSelectPriv() )
+        {
+           hasPriv == FALSE;
+           *CmpCommon::diags() << DgSqlCode( -4481 )
+                               << DgString0( "SELECT" )
+                               << DgString1( extTableName.data());
+        }
+
+      if ( !privs->hasInsertPriv() )
+        {   
+           hasPriv == FALSE;
+           *CmpCommon::diags() << DgSqlCode( -4481 )
+                               << DgString0( "INSERT" )
+                               << DgString1( extTableName.data());
+        }   
+      if (hasPriv == FALSE)
+      {
+         processReturn();
+
+         return;
+      }
+    }
 
   const NAFileSetList &indexList = naTable->getIndexList();
   for (Int32 i = 0; i < indexList.entries(); i++)
@@ -1399,7 +1430,8 @@ void CmpSeabaseDDL::dropSeabaseIndex(
     }
   
   // Verify that current user has authority to drop the index
-  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner))
+  if ((!isDDLOperationAuthorized(SQLOperation::DROP_INDEX, btObjOwner)) &&
+      (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner)))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
 
@@ -1608,7 +1640,8 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
     }
 
   // Verify that current user has authority to drop the index
-  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner))
+  if ((!isDDLOperationAuthorized(SQLOperation::DROP_INDEX, btObjOwner)) &&
+      (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner)))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
 

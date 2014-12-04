@@ -6221,16 +6221,12 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
       return TRUE;
     }
 
-  // for now, return if root user.  There is a chicken and egg problem
-  // when check privileges is called during startup
-  // TDB - add something in context to know when we have set the current
-  // user ID in the globals.
-  Int32 thisUserID = ComUser::getCurrentUser();
+  // return if root user
   NAString qiPath = "";
   CmpCommon::getDefault(QI_PATH, qiPath, FALSE);
   if ( qiPath.length() == 0 ) // If debugging or regression testing Query Invalidation, skip root check
   {
-    if (ComUser::isRootUserID(thisUserID))
+    if (ComUser::isRootUserID())
       return TRUE;
   }
 
@@ -6245,12 +6241,6 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   if (!CmpCommon::context()->isAuthorizationEnabled())
     return TRUE;
 
-  std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
-  privMDLoc += std::string(".\"") +
-               std::string(SEABASE_PRIVMGR_SCHEMA) +
-               std::string("\"");
-  PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
-
   ComBoolean QI_enabled = (CmpCommon::getDefault(CAT_ENABLE_QUERY_INVALIDATION) == DF_ON);
 
   SqlTableOpenInfo * stoi = NULL ;
@@ -6261,6 +6251,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   // Note: The following code doesn't care about the object's hash value or the resulting 
   // ComSecurityKey's ActionType....we just need the hash value for the User's ID.
   int64_t objectUID = 12345;
+  Int32 thisUserID = ComUser::getCurrentUser();
   ComSecurityKey userKey( thisUserID , objectUID
                          , SELECT_PRIV
                          , ComSecurityKey::OBJECT_IS_OBJECT
@@ -6278,7 +6269,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     optStoi = (bindWA->getStoiList())[i];
     stoi = optStoi->getStoi();
     NATable* tab = optStoi->getTable();
-    if (tab->isSeabaseMDTable() || tab->isSeabasePrivSchemaTable())
+    if (tab->isSeabaseMDTable() )
       continue;
 
     // Privilege info for the user/table combination is stored in the NATable
@@ -6425,16 +6416,16 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   // dealing with RemoveNARoutineEntryFromCache are commented out!
 
   // NABoolean RemoveNARoutineEntryFromCache = FALSE ;
+  NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
+  privMDLoc += ".\"";
+  privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+  privMDLoc += "\"";
+
+  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags());
+
   OptUdrOpenInfo * udrStoi = NULL;
   if (bindWA->getUdrStoiList().entries())
   {
-    NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
-    privMDLoc += ".\"";
-    privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-    privMDLoc += "\"";
-
-    PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags());
-
     for(Int32 i=0; i<(Int32)bindWA->getUdrStoiList().entries(); i++)
     {
       thisPrivCheckSuccess = TRUE ;  // Initialize each time through loop
@@ -6494,7 +6485,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     coProcAggr = (bindWA->getCoProcAggrList())[i];
     NATable* tab = bindWA->getSchemaDB()->getNATableDB()->
                                    get(coProcAggr->getCorrName(), bindWA, NULL);
-    if (tab->isSeabaseMDTable() || tab->isSeabasePrivSchemaTable())
+    if (tab->isSeabaseMDTable())
       continue;
 
     PrivMgrUserPrivs* privInfo = tab->getPrivInfo();
@@ -13259,7 +13250,7 @@ RelExpr * SetSessionDefault::bindNode(BindWA *bindWA)
       if ((token_ == "SET_PARSERFLAGS") ||
           (token_ == "RESET_PARSERFLAGS"))
         {
-          if (!ComUser::isRootUserID(ComUser::getCurrentUser()))
+          if (!ComUser::isRootUserID())
             {
               *CmpCommon::diags() << DgSqlCode(-1017);
               bindWA->setErrStatus();

@@ -80,7 +80,13 @@
 #include "ComSqlId.h"
 #include "MVInfo.h"
 #include "StmtDDLCreateTable.h"
+
+// need for authorization checks
+#include "ComUser.h"
 #include "CmpSeabaseDDL.h"
+#include "PrivMgrCommands.h"
+#include "PrivMgrComponentPrivileges.h"
+// end authorization checks
 
 #ifndef HFS2DM
 #define HFS2DM
@@ -5751,6 +5757,10 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
           getAttr();
       }
 
+    // Check authorization
+    if (!isAuthorized(generator))
+      GenExit();
+
     ExpTupleDesc *tupleDesc = 0;
     ULng32 tupleLength = 0;
     expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
@@ -5904,6 +5914,123 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
 }
 
 
+///////////////////////////////////////////////////////////
+//
+// ExeUtilHBaseBulkLoad::isAuthorized()
+//
+// Verifies that current user is authorized.
+//
+//    To perform the LOAD you must:
+//      Be DB__ROOT OR
+//      Have correct privileges including
+//        SELECT and INSERT on the Target table  
+//        plus DELETE if TRUNCATE is specified  OR
+//      Have the MANAGE_LOAD component privilege
+//
+// return: TRUE if authorized
+//         FALSE is not authorized.
+//
+// If not authorized, then the ComDiags area is set up
+// with the reason.
+//
+// Code is organized to do the less performance
+// intensive checks first.
+//
+// TODO:  make this a virtual function in the parent class
+////////////////////////////////////////////////////////////
+
+NABoolean ExeUtilHBaseBulkLoad::isAuthorized(Generator * generator)
+{
+  // If not enabled, skip checks
+  if (!generator->currentCmpContext()->isAuthorizationEnabled())
+    return TRUE;
+
+  // DB__ROOT is always authorized
+  if (ComUser::isRootUserID())
+    return TRUE;
+
+  // get privileges from the NATable structure
+  NATable *naTable = generator->getBindWA()->getNATable(getTableName());
+  if ((! naTable) || (generator->getBindWA()->errStatus()))
+    {
+      if (!CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+        *CmpCommon::diags() << DgSqlCode(-4082) <<
+          DgTableName(getTableName().getQualifiedNameAsString().data());
+
+      return FALSE;
+    }
+
+  // If this is a special table, then assume privileges okay
+  if (naTable->getExtendedQualName().isSpecialTable())
+    return TRUE;
+
+  // If no privs available, return 1034 (unable to get privilege information)
+  PrivMgrUserPrivs* privs = naTable->getPrivInfo();
+  if (privs == NULL)
+    {
+      *CmpCommon::diags() << DgSqlCode( -1034 );
+      return FALSE;
+    }
+
+  // Verify user has the necesssary privileges
+  NABoolean havePrivs = TRUE;
+  Lng32 diagsMark = CmpCommon::diags()->mark();
+
+  if (!privs->hasSelectPriv())
+    {
+      havePrivs = FALSE;
+      *CmpCommon::diags()
+        << DgSqlCode( -4481 )
+        << DgString0( "SELECT" )
+        << DgString1(naTable->getTableName().getQualifiedNameAsAnsiString());
+    }
+
+  if (!privs->hasInsertPriv())
+    {
+      havePrivs = FALSE;
+      *CmpCommon::diags()
+        << DgSqlCode( -4481 )
+        << DgString0( "INSERT" )
+        << DgString1( naTable->getTableName().getQualifiedNameAsAnsiString() );
+    }
+  if (truncateTable_ && !privs->hasDeletePriv())
+    {
+      havePrivs = FALSE;
+      *CmpCommon::diags()
+        << DgSqlCode( -4481 )
+        << DgString0( "DELETE" )
+        << DgString1( naTable->getTableName().getQualifiedNameAsAnsiString() );
+    }
+ 
+  if (!havePrivs)
+    {
+      // Check to see if have the MANAGE_LOAD component privilege
+       NAString privMgrMDLoc =
+              NAString(CmpSeabaseDDL::getSystemCatalogStatic()) +
+              NAString(".\"") +
+              NAString(SEABASE_PRIVMGR_SCHEMA) +
+              NAString("\"");
+
+      PrivMgrComponentPrivileges componentPrivileges
+      (std::string(privMgrMDLoc.data()),CmpCommon::diags());
+      if (componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),SQLOperation::MANAGE_LOAD,true))
+        {
+          CmpCommon::diags()->rewind(diagsMark);
+          havePrivs = TRUE;
+        }
+    }
+
+  if (havePrivs)
+    return TRUE;
+
+  // By this time the diags() area should contain an error.  If not -
+  // add error 1034 (unable to get privilege information)
+  if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+     *CmpCommon::diags() << DgSqlCode( -1034 );
+ 
+  return FALSE;
+}
+
 
 ////////////////////////////////////////////////////////
 //
@@ -5971,6 +6098,10 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
           getAttr();
       }
 
+    // Check authorization
+    if (!isAuthorized(generator))
+      GenExit();
+    
     ExpTupleDesc *tupleDesc = 0;
     ULng32 tupleLength = 0;
     expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
@@ -6031,3 +6162,96 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
 
   return 0;
 }
+
+///////////////////////////////////////////////////////////
+//
+// ExeUtilHBaseBulkUnLoad::isAuthorized()
+//
+// Verifies that current user is authorized.
+//
+//    To perform the UNLOAD you must:
+//      Be DB__ROOT OR
+//      Have SELECT privilege on the target table OR
+//      Have the MANAGE_LOAD component privilege
+//
+// return: TRUE if authorized
+//         FALSE is not authorized.
+//
+// If not authorized, then the ComDiags area is set up
+// with the reason.
+//
+// Checks are performed to do the less performance
+// intensive checks first.
+//
+// TODO:  make this a virtual function in the parent class
+////////////////////////////////////////////////////////////
+
+NABoolean ExeUtilHBaseBulkUnLoad::isAuthorized(Generator * generator)
+{
+  // If not enabled, skip checks
+  if (!generator->currentCmpContext()->isAuthorizationEnabled())
+    return TRUE;
+
+  // DB__ROOT is always authorized
+  if (ComUser::isRootUserID())
+    return TRUE;
+
+  // get privileges from the NATable structure
+  NATable *naTable = generator->getBindWA()->getNATable(getTableName());
+  if ((! naTable) || (generator->getBindWA()->errStatus()))
+    {
+      if (!CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+        *CmpCommon::diags() << DgSqlCode(-4082) <<
+          DgTableName(getTableName().getQualifiedNameAsString().data());
+
+      return FALSE;
+    }
+
+  // If this is a special table, then assume privileges okay
+  if (naTable->getExtendedQualName().isSpecialTable())
+    return TRUE;
+
+  // If no privs available, return 1034 (unable to get privilege information)
+  PrivMgrUserPrivs* privs = naTable->getPrivInfo();
+  if (privs == NULL)
+    {
+      *CmpCommon::diags() << DgSqlCode( -1034 );
+      return FALSE;
+    }
+
+  // Verify current user has the necesssary privileges.
+  Lng32 diagsMark = CmpCommon::diags()->mark();
+  if (privs->hasSelectPriv())
+    return TRUE;
+  else
+    {
+      *CmpCommon::diags()
+        << DgSqlCode( -4481 )
+        << DgString0( "SELECT" )
+        << DgString1(naTable->getTableName().getQualifiedNameAsAnsiString());
+    }
+
+  // Check to see if current user has the MANAGE_LOAD component privilege
+  NAString privMgrMDLoc =
+      NAString(CmpSeabaseDDL::getSystemCatalogStatic()) +
+      NAString(".\"") +
+      NAString(SEABASE_PRIVMGR_SCHEMA) +
+      NAString("\"");
+
+  PrivMgrComponentPrivileges compPrivs
+   (std::string(privMgrMDLoc.data()),CmpCommon::diags());
+  if (compPrivs.hasSQLPriv(ComUser::getCurrentUser(),SQLOperation::MANAGE_LOAD,true))
+    {
+      CmpCommon::diags()->rewind(diagsMark);
+      return TRUE;
+    }
+
+  // By this time the diags() area should contain an error. If not -
+  // add error 1034 (unable to get privilege information)
+  if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+     *CmpCommon::diags() << DgSqlCode( -1034 );
+
+  return FALSE;
+}
+
+

@@ -6628,8 +6628,14 @@ NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
 
 void NATable::setupPrivInfo()
 {
-  if (!CmpCommon::context()->isAuthorizationEnabled())
-    return;
+  privInfo_ = new(heap_) PrivMgrUserPrivs;
+  if (!isSeabaseTable() || 
+      !CmpCommon::context()->isAuthorizationEnabled() ||
+      isVolatileTable())
+    {
+      privInfo_->setOwnerDefaultPrivs();
+      return;
+    }
 
   Int32 thisUserID = ComUser::getCurrentUser();
 
@@ -6647,8 +6653,6 @@ void NATable::setupPrivInfo()
       return;
     }
 
-
-  privInfo_ = new(heap_) PrivMgrUserPrivs;
   std::vector <ComSecurityKey *> secKeyVec;
 
   bool testError = false;
@@ -6657,6 +6661,26 @@ void NATable::setupPrivInfo()
   if (tpie && *tpie == '1')
     testError = true;
 #endif
+
+  // Use embedded compiler before making call to getPrivileges
+  NABoolean switched = FALSE;
+  CmpContext* prevContext = CmpCommon::context();
+  ExeCliInterface cliInterface(STMTHEAP);
+  if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
+    if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(CmpContextInfo::CMPCONTEXT_TYPE_META))
+    {
+      // Failed to switch/create metadata CmpContext; continue using current CmpContext.
+    }
+    else
+    {
+      switched = TRUE;
+      // send controls to the context we are switching to
+      sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION, TRUE, prevContext);
+      // Turn off hbase predicate filtering and esp parallelism, as they
+      // currently can cause problems.
+      cliInterface.holdAndSetCQD("hbase_filter_preds", "OFF");
+      cliInterface.holdAndSetCQD("attempt_esp_parallelism", "OFF");
+    }
 
   if (testError || (STATUS_GOOD !=
        privInterface.getPrivileges(objectUid().get_value(), thisUserID,
@@ -6671,7 +6695,21 @@ void NATable::setupPrivInfo()
 #endif
     NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
     privInfo_ = NULL;
+    if (switched == TRUE)
+      {
+        SQL_EXEC_SWITCH_BACK_COMPILER();
+        cliInterface.restoreCQD("hbase_filter_preds");
+        cliInterface.restoreCQD("attempt_esp_parallelism");
+      }
     return;
+  }
+
+  CMPASSERT (privInfo_);
+  if (switched == TRUE)
+  {
+    SQL_EXEC_SWITCH_BACK_COMPILER();
+    cliInterface.restoreCQD("hbase_filter_preds");
+    cliInterface.restoreCQD("attempt_esp_parallelism");
   }
 
   for (std::vector<ComSecurityKey*>::iterator iter = secKeyVec.begin();

@@ -178,6 +178,9 @@ PrivMDStatus PrivMgr::authorizationEnabled()
   ExeCliInterface cliInterface(STMTHEAP);
   Queue * schemaQueue = NULL;
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
   int32_t cliRC =  cliInterface.fetchAllRows(schemaQueue, buf, 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
   {
@@ -187,7 +190,7 @@ PrivMDStatus PrivMgr::authorizationEnabled()
 
   if (cliRC == 100) // did not find the row
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     return PRIV_UNINITIALIZED;
   }
 
@@ -273,6 +276,7 @@ const char * PrivMgr::getSQLOperationName(SQLOperation operation)
       case SQLOperation::ALTER_VIEW: return "ALTER_VIEW";
       case SQLOperation::CREATE: return "CREATE";
       case SQLOperation::CREATE_CATALOG: return "CREATE_CATALOG";
+      case SQLOperation::CREATE_INDEX: return "CREATE_INDEX";
       case SQLOperation::CREATE_LIBRARY: return "CREATE_LIBRARY";
       case SQLOperation::CREATE_PROCEDURE: return "CREATE_PROCEDURE";
       case SQLOperation::CREATE_ROUTINE: return "CREATE_ROUTINE";
@@ -285,6 +289,7 @@ const char * PrivMgr::getSQLOperationName(SQLOperation operation)
       case SQLOperation::CREATE_VIEW: return "CREATE_VIEW";
       case SQLOperation::DROP: return "DROP";
       case SQLOperation::DROP_CATALOG: return "DROP_CATALOG";
+      case SQLOperation::DROP_INDEX: return "DROP_INDEX";
       case SQLOperation::DROP_LIBRARY: return "DROP_LIBRARY";
       case SQLOperation::DROP_PROCEDURE: return "DROP_PROCEDURE";
       case SQLOperation::DROP_ROUTINE: return "DROP_ROUTINE";
@@ -295,9 +300,14 @@ const char * PrivMgr::getSQLOperationName(SQLOperation operation)
       case SQLOperation::DROP_TABLE: return "DROP_TABLE";
       case SQLOperation::DROP_TRIGGER: return "DROP_TRIGGER";
       case SQLOperation::DROP_VIEW: return "DROP_VIEW";
+      case SQLOperation::MANAGE_COMPONENTS: return "MANAGE_COMPONENTS";
+      case SQLOperation::MANAGE_LIBRARY: return "MANAGE_LIBRARY";
+      case SQLOperation::MANAGE_LOAD: return "MANAGE_LOAD";
       case SQLOperation::MANAGE_ROLES: return "MANAGE_ROLES";
+      case SQLOperation::MANAGE_STATISTICS: return "MANAGE_STATISTICS";
       case SQLOperation::MANAGE_USERS: return "MANAGE_USERS";
       case SQLOperation::REMAP_USER: return "REMAP_USER";
+      case SQLOperation::SHOW: return "SHOW";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "USE_ALTERNATE_SCHEMA";
       default:
          return "UNKNOWN";   
@@ -346,6 +356,7 @@ const char * PrivMgr::getSQLOperationCode(SQLOperation operation)
       case SQLOperation::ALTER_VIEW: return "AV";
       case SQLOperation::CREATE: return "C0";
       case SQLOperation::CREATE_CATALOG: return "CC";
+      case SQLOperation::CREATE_INDEX: return "CI";
       case SQLOperation::CREATE_LIBRARY: return "CL";
       case SQLOperation::CREATE_PROCEDURE: return "CP";
       case SQLOperation::CREATE_ROUTINE: return "CR";
@@ -358,6 +369,7 @@ const char * PrivMgr::getSQLOperationCode(SQLOperation operation)
       case SQLOperation::CREATE_VIEW: return "CV";
       case SQLOperation::DROP: return "D0";
       case SQLOperation::DROP_CATALOG: return "DC";
+      case SQLOperation::DROP_INDEX: return "DI";
       case SQLOperation::DROP_LIBRARY: return "DL";
       case SQLOperation::DROP_PROCEDURE: return "DP";
       case SQLOperation::DROP_ROUTINE: return "DR";
@@ -368,9 +380,14 @@ const char * PrivMgr::getSQLOperationCode(SQLOperation operation)
       case SQLOperation::DROP_TABLE: return "DT";
       case SQLOperation::DROP_TRIGGER: return "DG";
       case SQLOperation::DROP_VIEW: return "DV";
+      case SQLOperation::MANAGE_COMPONENTS: return "MC";
+      case SQLOperation::MANAGE_LIBRARY: return "ML";
+      case SQLOperation::MANAGE_LOAD: return "MT";
       case SQLOperation::MANAGE_ROLES: return "MR";
+      case SQLOperation::MANAGE_STATISTICS: return "MS";
       case SQLOperation::MANAGE_USERS: return "MU";
       case SQLOperation::REMAP_USER: return "RU";
+      case SQLOperation::SHOW: return "SW";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "UA";
       default:
          return "  ";   
@@ -422,6 +439,7 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
       case SQLOperation::ALTER_VIEW: return "Allow grantee to alter views";
       case SQLOperation::CREATE: return "Allow grantee to create database objects";
       case SQLOperation::CREATE_CATALOG: return "Allow grantee to create catalogs";
+      case SQLOperation::CREATE_INDEX: return "Allow grantee to create indexes";
       case SQLOperation::CREATE_LIBRARY: return "Allow grantee to create libraries";
       case SQLOperation::CREATE_PROCEDURE: return "Allow grantee to create procedures";
       case SQLOperation::CREATE_ROUTINE: return "Allow grantee to create routines";
@@ -434,6 +452,7 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
       case SQLOperation::CREATE_VIEW: return "Allow grantee to create views";
       case SQLOperation::DROP: return "Allow grantee to drop database objects";
       case SQLOperation::DROP_CATALOG: return "Allow grantee to drop catalogs";
+      case SQLOperation::DROP_INDEX: return "Allow grantee to drop indexes";
       case SQLOperation::DROP_LIBRARY: return "Allow grantee to drop libraries";
       case SQLOperation::DROP_PROCEDURE: return "Allow grantee to drop procedures";
       case SQLOperation::DROP_ROUTINE: return "Allow grantee to drop routines";
@@ -444,9 +463,14 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
       case SQLOperation::DROP_TABLE: return "Allow grantee to drop tables";
       case SQLOperation::DROP_TRIGGER: return "Allow grantee to drop triggers";
       case SQLOperation::DROP_VIEW: return "Allow grantee to drop views";
+      case SQLOperation::MANAGE_COMPONENTS: return "Allow grantee to manage components";
+      case SQLOperation::MANAGE_LIBRARY: return "Allow grantee to manage libraries";
+      case SQLOperation::MANAGE_LOAD: return "ALLOW grantee to perform LOAD and UNLOAD commands";
       case SQLOperation::MANAGE_ROLES: return "Allow grantee to manage roles";
+      case SQLOperation::MANAGE_STATISTICS: return "Allow grantee to show and update statistics";
       case SQLOperation::MANAGE_USERS: return "Allow grantee to manage users";
       case SQLOperation::REMAP_USER: return "Allow grantee to remap DB__ users to a different external username";
+      case SQLOperation::SHOW: return "Allow grantee to view metadata information about objects";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "Allow grantee to use non-default schemas";
       default:
          return "";   
@@ -621,6 +645,7 @@ bool PrivMgr::isSQLCreateOperation(SQLOperation operation)
        operation == SQLOperation::CREATE_TRIGGER ||
        operation == SQLOperation::CREATE_SCHEMA ||
        operation == SQLOperation::CREATE_CATALOG ||
+       operation == SQLOperation::CREATE_INDEX ||
        operation == SQLOperation::CREATE_LIBRARY ||
        operation == SQLOperation::CREATE_PROCEDURE ||
        operation == SQLOperation::CREATE_ROUTINE ||
@@ -665,6 +690,7 @@ bool PrivMgr::isSQLDropOperation(SQLOperation operation)
        operation == SQLOperation::DROP_TRIGGER ||
        operation == SQLOperation::DROP_SCHEMA ||
        operation == SQLOperation::DROP_CATALOG ||
+       operation == SQLOperation::DROP_INDEX ||
        operation == SQLOperation::DROP_LIBRARY ||
        operation == SQLOperation::DROP_PROCEDURE ||
        operation == SQLOperation::DROP_ROUTINE ||
@@ -854,7 +880,7 @@ PrivMgrMDAdmin::~PrivMgrMDAdmin()
 //
 // This method registers standard Trafodion components, creates the 
 // standard operations, and grants the privilege on those operations to
-// the role DB__ROOTROLE.  SQL DDL operations (ALTER, CREATE, DROP) are 
+// the role DB__ROOTROLE.  SQL DDL operations (CREATE, SHOW) are 
 // granted to PUBLIC.
 //
 // Returns PrivStatus
@@ -930,10 +956,11 @@ PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
    if (privStatus != STATUS_GOOD)
       return privStatus;
                                       
-// Grant SQL_OPERATIONS ALTER, CREATE, and DROP to PUBLIC 
+// Grant SQL_OPERATIONS CREATE, and SHOW to PUBLIC 
 std::vector<std::string> ACDOperationCodes;
 
    ACDOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::CREATE));
+   ACDOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::SHOW));
                                      
    privStatus = componentPrivileges.grantPrivilegeInternal(SQL_OPERATIONS_COMPONENT_UID,
                                                            ACDOperationCodes,
@@ -949,9 +976,9 @@ std::vector<std::string> ACDOperationCodes;
 // Verify counts for tables.
 
 // Expected number of privileges granted is 2 for each operation (one each
-// for DB__ROOT and DB__ROOTROLE) plus the one grants to PUBLIC.
+// for DB__ROOT and DB__ROOTROLE) plus the two grants to PUBLIC.
 
-int64_t expectedPrivCount = static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) * 2 + 1;
+int64_t expectedPrivCount = static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) * 2 + 2;
 
    if (components.getCount() != 1 ||
        componentOperations.getCount() != static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) ||
@@ -1179,6 +1206,9 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
   ExeCliInterface cliInterface(STMTHEAP);
   Queue * objectsQueue = NULL;
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
   int32_t cliRC =  cliInterface.fetchAllRows(objectsQueue, (char *)selectStmt.c_str(), 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
   {
@@ -1188,7 +1218,7 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
 
   if (cliRC == 100) // did not find the row
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     return STATUS_NOTFOUND;
   }
 
@@ -1275,6 +1305,9 @@ PrivStatus PrivMgrMDAdmin::getObjectsThatViewReferences (
   ExeCliInterface cliInterface(STMTHEAP);
   Queue * objectsQueue = NULL;
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
   int32_t cliRC =  cliInterface.fetchAllRows(objectsQueue, (char *)selectStmt.c_str(), 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
   {
@@ -1284,7 +1317,7 @@ PrivStatus PrivMgrMDAdmin::getObjectsThatViewReferences (
 
   if (cliRC == 100) // did not find the row
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     return STATUS_NOTFOUND;
   }
 
@@ -1385,6 +1418,9 @@ PrivStatus PrivMgrMDAdmin::getReferencingTablesForConstraints (
   ExeCliInterface cliInterface(STMTHEAP);
   Queue * objectsQueue = NULL;
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
   int32_t cliRC =  cliInterface.fetchAllRows(objectsQueue, (char *)selectStmt.c_str(), 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
   {
@@ -1394,7 +1430,7 @@ PrivStatus PrivMgrMDAdmin::getReferencingTablesForConstraints (
 
   if (cliRC == 100) // did not find the row
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     return STATUS_NOTFOUND;
   }
 
@@ -1498,6 +1534,9 @@ bool PrivMgrMDAdmin::getConstraintName(
   ExeCliInterface cliInterface(STMTHEAP);
   Queue * objectsQueue = NULL;
 
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
   int32_t cliRC =  cliInterface.fetchAllRows(objectsQueue, (char *)selectStmt.c_str(), 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
   {
@@ -1508,7 +1547,7 @@ bool PrivMgrMDAdmin::getConstraintName(
   // did not find a row, or found too many rows
   if (cliRC == 100)
   {
-    cliInterface.clearGlobalDiags();
+    pDiags_->rewind(diagsMark);
     return false;
   }
 

@@ -107,6 +107,9 @@ class PrivMgrUserPrivs
   void setGrantableBitmap (PrivMgrBitmap grantableBitmap)
      {grantableBitmap_ = grantableBitmap;}
 
+  void setOwnerDefaultPrivs() 
+     { objectBitmap_.set(); grantableBitmap_.set(); } 
+
  private:
    std::bitset<NBR_OF_PRIVS> objectBitmap_;
    std::vector <std::bitset<NBR_OF_PRIVS>> columnBitmaps_;

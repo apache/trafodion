@@ -159,6 +159,7 @@ enum USTAT_ERROR_CODES {UERR_SYNTAX_ERROR                    = 15001,
                         UERR_WARNING_FILESTATS_FAILED        = 9238,
                         UERR_NO_VIEWONLY                     = 9239,
                         UERR_NO_ONEVERYKEY                   = 9240,
+                        UERR_NO_PRIVILEGE                    = 9241,
                         UERR_NO_ERROR                        = 9250,
                         UERR_LAST_ERROR                      = 9250
                        };

@@ -2747,6 +2747,8 @@ public:
 
   virtual short codeGen(Generator*);
 
+  NABoolean isAuthorized(Generator* generator);
+
   NABoolean getKeepHFiles() const
   {
     return keepHFiles_;
@@ -2967,6 +2969,8 @@ public:
   virtual short codeGen(Generator*);
 
   ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple, ComTdb * tdb, Generator *generator);
+
+  NABoolean isAuthorized(Generator* generator);
 
   NABoolean getLogErrors() const
   {

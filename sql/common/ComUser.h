@@ -99,6 +99,7 @@ class ComUser
      // static accessors
      static Int32 getCurrentUser();
      static Int32 getSessionUser();
+     static bool isRootUserID();
      static bool isRootUserID(Int32 userID);
      static bool isPublicUserID(Int32 userID);
      static bool isSystemUserID(Int32 userID);

@@ -5829,6 +5829,43 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
       return;
     }
 
+  // Verify that the current user has authority to perform operation
+  if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) && isAuthorizationEnabled())
+    {
+      PrivMgrUserPrivs* privs = naTable->getPrivInfo();
+      if (privs == NULL)
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+          deallocEHI(ehi);
+          processReturn();
+          return;
+        }
+
+      NABoolean privCheckFailed = FALSE;
+      if (!privs->hasSelectPriv())
+        {
+           privCheckFailed = TRUE;
+           *CmpCommon::diags() << DgSqlCode( -4481 )
+                               << DgString0( "SELECT" )
+                               << DgString1( extTableName );
+        }
+
+      if (!privs->hasDeletePriv())
+        {
+          privCheckFailed = TRUE;
+          *CmpCommon::diags() << DgSqlCode( -4481 )
+                              << DgString0( "DELETE" )
+                              << DgString1( extTableName );
+        }
+
+      if (privCheckFailed)
+        {
+          deallocEHI(ehi);
+          processReturn();
+          return;
+        }
+    }
+
   // cannot purgedata a view
   if (naTable->getViewText())
     {
@@ -6792,7 +6829,7 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
       if (grantorID != ComUser::getRootUserID())
       {
          PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
-         
+
          if (!componentPrivileges.hasSQLPriv(grantorID,
                                              SQLOperation::MANAGE_ROLES,
                                              true))
@@ -6801,7 +6838,7 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
             return;
          }
       }
-   
+
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
       // TODO: Only works for users.  For roles, need a more generic 

@@ -88,6 +88,7 @@
 #include "CmpSeabaseDDLauth.h"
 #include "HDFSHook.h"
 #include "PrivMgrCommands.h"
+#include "PrivMgrComponentPrivileges.h"
 
 #include "Analyzer.h"
 #include "ComSqlId.h"
@@ -190,6 +191,8 @@ short CmpDescribeSequence (
                              ULng32 &outbuflen,
                              CollHeap *heap,
                              Space *inSpace);
+
+NABoolean CmpDescribeIsAuthorized( PrivMgrUserPrivs *privs );
 
 // The real Ark catalog manager returns all object names as three-part
 // identifiers, properly delimited where necessary.
@@ -2477,36 +2480,24 @@ short CmpDescribeSeabaseTable (
 
       outputLongLine(space, viewtext, 0);
 
+      // Verify user can perform SHOWDDL statements
+      if (!CmpDescribeIsAuthorized(naTable->getPrivInfo()))
+      {
+        *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+        return -1;
+      }
+
       // Display grant statements
       if (CmpCommon::context()->isAuthorizationEnabled())
       {
         std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
-        privMDLoc += std::string(".\"") + 
-                     std::string(SEABASE_PRIVMGR_SCHEMA) + 
-                     std::string("\"");
+        privMDLoc += std::string(".\"") +    
+             std::string(SEABASE_PRIVMGR_SCHEMA) +    
+             std::string("\"");
         PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
-        int64_t objectUID = (int64_t)naTable->objectUid().get_value();
-
-        // first check to see if user has any privilege on the view
-        PrivMgrUserPrivs privs;
-        Int32 userID = ComUser::getCurrentUser();
-        PrivStatus retcode = privInterface.getPrivileges(objectUID, userID, privs);
-        if (retcode == STATUS_ERROR)
-        {
-          if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-            *CmpCommon::diags() << DgSqlCode (-1001)
-                                << DgInt0(__LINE__)
-                                << DgString0("gathering privilege descriptor command");
-         return -1;
-        }
-
-        if (!privs.hasAnyPriv())
-        {
-          *CmpCommon::diags() << DgSqlCode (-1017);
-          return -1;
-        }
         std::string objectName(tableName);
         std::string privilegeText;
+        int64_t objectUID = (int64_t)naTable->objectUid().get_value();
         if (privInterface.describePrivileges(objectUID, objectName, privilegeText))
         {
           outputShortLine(space, " ");
@@ -3061,39 +3052,22 @@ short CmpDescribeSeabaseTable (
   // If SHOWDDL and authorization is enabled, display GRANTS
   if (type == 2)
   {
+    // Verify user can perform SHOWDDL statements
+    if (!CmpDescribeIsAuthorized(naTable->getPrivInfo()))
+    {
+      *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+      return -1;
+    }
+
     if (CmpCommon::context()->isAuthorizationEnabled())
     {
+      // now get the grant stmts
+      int64_t objectUID = (int64_t)naTable->objectUid().get_value();
       std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
       privMDLoc += std::string(".\"") + 
                    std::string(SEABASE_PRIVMGR_SCHEMA) + 
                    std::string("\"");
       PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
-     
-      int64_t objectUID = (int64_t)naTable->objectUid().get_value();
-
-      // first check to see if user has any privilege on the table
-      PrivMgrUserPrivs privs;
-      Int32 userID = ComUser::getCurrentUser();
-      if (!ComUser::isRootUserID(userID))
-      {
-        PrivStatus retcode = privInterface.getPrivileges(objectUID, userID, privs);
-        if (retcode == STATUS_ERROR)
-        {
-          if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-            *CmpCommon::diags() << DgSqlCode (-1001)
-                                << DgInt0(__LINE__)
-                                << DgString0("gathering privilege descriptor command");
-          return -1;
-        }
-
-        if (!privs.hasAnyPriv())
-        {
-          *CmpCommon::diags() << DgSqlCode (-1017);
-          return -1;
-        }
-      }
-
-      // now get the grant stmts
       std::string objectName(tableName);
       std::string privilegeText;
       if (privInterface.describePrivileges(objectUID, objectName, privilegeText))
@@ -3173,9 +3147,18 @@ short CmpDescribeSequence(
 
   outputShortLine(*space, ";");
 
+   // Verify user can perform commands
+  if (!CmpDescribeIsAuthorized(naTable->getPrivInfo()))
+  {
+    *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+    return -1;
+   }
+
   // If authorization enabled, display grant statements
   if (CmpCommon::context()->isAuthorizationEnabled())
   {
+    // now get the grant stmts
+    int64_t objectUID = (int64_t)naTable->objectUid().get_value();
     NAString privMDLoc;
     CONCAT_CATSCH(privMDLoc, CmpSeabaseDDL::getSystemCatalogStatic(), SEABASE_MD_SCHEMA);
     NAString privMgrMDLoc;
@@ -3184,32 +3167,6 @@ short CmpDescribeSequence(
                                   std::string(privMgrMDLoc.data()),
                                   CmpCommon::diags());
 
-    int64_t objectUID = (int64_t)naTable->objectUid().get_value();
-    PrivMgrUserPrivs* pPrivInfo = naTable->getPrivInfo();
-    PrivMgrUserPrivs privs;
-
-    if (pPrivInfo == NULL)
-    {
-      Int32 userID = ComUser::getCurrentUser();
-      PrivStatus retcode = privInterface.getPrivileges(objectUID, userID, privs);
-      if (retcode == STATUS_ERROR)
-      {
-        if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-          *CmpCommon::diags() << DgSqlCode (-1001)
-                              << DgInt0(__LINE__)
-                              << DgString0("showddl sequence get privileges failed");
-        return -1;
-      }
-      pPrivInfo = &privs;
-    }
-
-    if (!privs.hasAnyPriv())
-    {
-      *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
-      return -1;
-    }
-
-    // now get the grant stmts
     std::string objectName(seqName);
     std::string privilegeText;
     if (privInterface.describePrivileges(objectUID, objectName, privilegeText))
@@ -3229,5 +3186,37 @@ short CmpDescribeSequence(
   return 0;
 }
 
-  
+// ----------------------------------------------------------------------------
+// Function: CmpDescribeIsAuthorized
+//
+// Determines if current user is authorized to perform operations
+//
+// parameters:  PrivMgrUserPrivs *privs - pointer to granted privileges
+//
+// returns:  TRUE if authorized, FALSE otherwise
+// ----------------------------------------------------------------------------
+NABoolean CmpDescribeIsAuthorized (PrivMgrUserPrivs *privs)
+{
+  if (!CmpCommon::context()->isAuthorizationEnabled())
+    return TRUE;
+
+  if (ComUser::isRootUserID())
+    return TRUE;
+
+  // check to see if user has select privilege
+  if (privs && privs->hasSelectPriv())
+    return TRUE;
+
+  // check to see if user has SHOW component privilege
+  std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
+  privMDLoc += std::string(".\"") +
+       std::string(SEABASE_PRIVMGR_SCHEMA) +
+       std::string("\"");
+
+  PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
+  if (componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),SQLOperation::SHOW,true))
+    return TRUE;
+
+  return FALSE;
+}
   
