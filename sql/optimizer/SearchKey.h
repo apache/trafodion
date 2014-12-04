@@ -375,22 +375,12 @@ public:
   UInt32 _countTimesBoundaryValReq; //initially 0, counts the number of times we attempted
   //to retrieve a boundary value
 
-  const ValueIdSet& getComputedKeyPredicates() const { return  computedKeyPredicates_;}
-  void setComputedKeyPredicates(const ValueIdSet& x) { computedKeyPredicates_.insert(x) ;}
-
   Int32 getCoveredLeadingKeys() const { return coveredLeadingKeys_; }
 
 protected:
   void computeCoveredLeadingKeys();
 
 private:
-
-  // ***********************************************************************
-  // SearchKey - Private methods.
-  // ***********************************************************************
-
-  void addComputedColumnPredicates(ValueIdSet &keyPredicates,        /* in/out */
-                                   ValueIdSet &generatedPredicates) const; /* out */
 
   // ***********************************************************************
   // SearchKey - Private data.
@@ -442,9 +432,6 @@ private:
   // set to true if all explicitely specified key preds are equality
   // predicates.
   NABoolean allChosenPredsAreEqualPreds_;
-
-  // key predicates associated with all computed columns
-  ValueIdSet computedKeyPredicates_;
 
   Int32 coveredLeadingKeys_;
   //  NABoolean searchOnKeyColumnsOnly_;

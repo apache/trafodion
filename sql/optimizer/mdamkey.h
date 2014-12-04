@@ -191,21 +191,25 @@ public:
        ,const ValueId& keyColumn
        ) const;
 
-  NABoolean
+  static NABoolean
   isAKeyPredicateForColumn(
        const ValueId & predId
        ,ValueId & referencedInput
        ,ValueId & intervalExclusionExpr
        ,const ValueId& keyColum
-       , const ValueIdSet& inputValues
-       ) const;
+       ,const ValueIdSet& inputValues);
 
   NABoolean
   isAKeyPredicateForColumn(
        const ValueId& predId
-       ,const ValueId& keyColumn
-       ) const;
+       ,const ValueId& keyColumn) const;
 
+  static void createComputedColumnPredicates(
+       ValueIdSet &predicates,           /* in/out */
+       const ValueIdSet &keyColumns,     /* in */
+       const ValueIdSet &operatorInputs, /* in */
+       ValueIdSet &generatedPredicates   /* out */);
+  
   // -----------------------------------------------------------------------
   // Put those key predicates in keyPredicates that need to be
   // replicated in replicatedKeyPredicates:
@@ -255,10 +259,10 @@ protected:
 			     const ValueIdSet& predSet) const;
 
 
-  NABoolean expressionContainsColumn(
+  static NABoolean expressionContainsColumn(
        const ItemExpr& iePtr
        ,const ValueId& keyColumn
-       ) const;
+       );
 
   // This is a quick fix:
   void splitRangeSpecRef(ColumnOrderList& keyPredsByCol,
@@ -273,7 +277,6 @@ protected:
   // -----------------------------------------------------------------------
   // Mutators:
   // -----------------------------------------------------------------------
-
 
   
 private:

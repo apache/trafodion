@@ -1049,6 +1049,12 @@ public:
   // --------------------------------------------------------------------
   void weedOutUnreferenced(ValueIdSet & other);
 
+  // --------------------------------------------------------------------
+  // weedOutNonEquiPreds()
+  //
+  // Remove everything except equi-predicates (VEGPredicate and ITM_EQUAL)
+  // --------------------------------------------------------------------
+  void weedOutNonEquiPreds();
 
   // --------------------------------------------------------------------
   // normalizeNode()

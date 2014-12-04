@@ -8269,6 +8269,26 @@ void Scan::addIndexInfo()
 //	 preds += resultSet;
 //	 doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,resultOld);
   }
+
+
+  if (CmpCommon::getDefault(MTD_GENERATE_CC_PREDS) == DF_ON)
+    {
+      // compute predicates on computed columns from regular predicates, based
+      // on the definition of the computed column. Example: 
+      // - regular predicate: a = 99
+      // - computed column definition: "_SALT_" = HASH2PARTFUNC(a,2)
+      // - computed predicate: "_SALT_" = HASH2PARTFUNC(99,2);
+      ValueIdSet clusteringKeyCols(
+           getTableDesc()->getClusteringIndex()->getClusteringKeyCols());
+      ValueIdSet selectionPreds(preds);
+
+      ScanKey::createComputedColumnPredicates(
+           selectionPreds,
+           clusteringKeyCols,
+           getGroupAttr()->getCharacteristicInputs(),
+           generatedCCPreds_);
+    }
+
   // a shortcut for tables with no indexes
   if ((ixlist.entries() == 1)||
       (tableDesc->isPartitionNameSpecified()))
@@ -9398,6 +9418,7 @@ FileScan::FileScan(const CorrName& tableName,
 		   GroupAttributes * groupAttributesPtr,
 		   const ValueIdSet& selectionPredicates,
 		   const Disjuncts& disjuncts,
+                   const ValueIdSet& generatedCCPreds,
                    OperatorTypeEnum otype) :
      Scan (tableName, tableDescPtr, otype),
      indexDesc_(indexDescPtr),
@@ -9449,6 +9470,7 @@ FileScan::FileScan(const CorrName& tableName,
                                      indexDesc_
                                    );
     }
+  setComputedPredicates(generatedCCPreds);
 
 } // FileScan()
 
@@ -9937,12 +9959,14 @@ HbaseAccess::HbaseAccess(CorrName &corrName,
                          GroupAttributes * groupAttributesPtr,
                          const ValueIdSet& selectionPredicates,
                          const Disjuncts& disjuncts,
+                         const ValueIdSet& generatedCCPreds,
 			 OperatorTypeEnum otype,
                          CollHeap *oHeap)
   : FileScan(corrName, tableDesc, idx, 
              isReverseScan, baseCardinality,
              accessOptions, groupAttributesPtr,
              selectionPredicates, disjuncts,
+             generatedCCPreds,
              otype),
     listOfSearchKeys_(oHeap)
 {
@@ -10148,6 +10172,7 @@ HbaseAccessCoProcAggr::HbaseAccessCoProcAggr(CorrName &corrName,
 		isReverseScan, baseCardinality,
 		accessOptions, groupAttributesPtr,
 		selectionPredicates, disjuncts,
+                ValueIdSet(),
 		REL_HBASE_COPROC_AGGR),
     aggregateExpr_(aggregateExpr)
 {
@@ -10512,7 +10537,8 @@ DP2Scan::DP2Scan(const CorrName& tableName,
 		   accessOpts,
 		   groupAttributesPtr,
 		   selectionPredicates,
-		   disjuncts)
+		   disjuncts,
+                   ValueIdSet())
 {
 }
 

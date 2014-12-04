@@ -680,7 +680,7 @@ ScanKey::replicateNonKeyVEGPredicates(
 NABoolean ScanKey::expressionContainsColumn(
      const ItemExpr& ie
      ,const ValueId& column
-     ) const
+     )
 {
 
   NABoolean retVal = FALSE;
@@ -777,7 +777,7 @@ ScanKey::isAKeyPredicateForColumn(
                                   ,dummy1
                                   ,dummy2
                                   ,keyColumn
-                                  );
+                                  ,getOperatorInputs());
 } // isAKeyPredicate
 
 
@@ -789,9 +789,9 @@ ScanKey::isAKeyPredicateForColumn(
      ,const ValueId& keyColumn
      ) const
 {
-  ValueIdSet dummy;
   return isAKeyPredicateForColumn(predId, referencedInput, 
-                                  intervalExclusionExpr, keyColumn, dummy);
+                                  intervalExclusionExpr, keyColumn,
+                                  getOperatorInputs());
 }
 
 NABoolean
@@ -801,11 +801,11 @@ ScanKey::isAKeyPredicateForColumn(
      ,ValueId & intervalExclusionExpr /* out */
      ,const ValueId& keyColumn
      ,const ValueIdSet& inputValues
-     ) const
+     )
 {
 
   ValueIdSet externalInputs;
-  externalInputs = getOperatorInputs();
+
   externalInputs += inputValues;
 
   referencedInput = NULL_VALUE_ID;
@@ -995,6 +995,133 @@ ScanKey::isAKeyPredicateForColumn(
 
 } // ScanKey::isAKeyPredicateForColumn(...)
 
+
+void ScanKey::createComputedColumnPredicates(ValueIdSet &predicates,           /* in/out */
+                                             const ValueIdSet &keyColumns,     /* in */
+                                             const ValueIdSet &operatorInputs, /* in */
+                                             ValueIdSet &generatedPredicates   /* out */)
+{
+  generatedPredicates.clear();
+
+  if (predicates.isEmpty())
+    return; // nothing to do
+
+  ValueIdSet keyCols = keyColumns.convertToBaseIds();
+
+  CollIndex order = 0;
+  for (ValueId v = keyCols.init(); keyCols.next(v); keyCols.advance(v))
+  {
+     ItemExpr *iePtr = v.getItemExpr();
+     switch (iePtr->getOperatorType())
+       {
+       case ITM_BASECOLUMN:
+         {
+            if (((BaseColumn *) iePtr)->getNAColumn()->isComputedColumn())
+            {
+              // get the keyColumns referenced in the computed Column expr
+              BaseColumn * bcol = (BaseColumn *) iePtr;
+              ItemExpr * compExpr = bcol->getComputedColumnExpr().getItemExpr();
+              ValueIdSet potentialPredicates(predicates);
+              ValueIdSet keyColsReferencedByCompExpr;
+              ValueIdSet keyPredicatesOnCC;
+              ValueIdMap colToKeyValueMap;
+
+              bcol->getUnderlyingColumnsForCC(keyColsReferencedByCompExpr);
+              potentialPredicates = potentialPredicates.replaceRangeSpecRefs();
+
+              if (keyColsReferencedByCompExpr.entries() > 1 ||
+                  !bcol->getNAColumn()->isDivisioningColumn())
+                {
+                  // if the computed column expression references
+                  // multiple key columns or is not a divisioning
+                  // column, we only know how to mirror that
+                  // keyPredicate if it is an equiPred.
+
+                  potentialPredicates.weedOutNonEquiPreds();
+                }
+
+              // make sure we have a key pred for all the columns
+              // used in the expression of the computed column
+              NABoolean predsForAllUnderlyingCols = TRUE;
+
+              for (ValueId u=keyColsReferencedByCompExpr.init();
+                   keyColsReferencedByCompExpr.next(u);
+                   keyColsReferencedByCompExpr.advance(u))
+                {
+                  NABoolean foundPredForThisCol = FALSE;
+                  for (ValueId p=potentialPredicates.init();
+                       potentialPredicates.next(p);
+                       potentialPredicates.advance(p))
+                    {
+                      ValueId keyValueExpr;
+                      ValueId dummy;
+                      if (isAKeyPredicateForColumn(p,keyValueExpr,dummy,u,operatorInputs))
+                        {
+                          foundPredForThisCol = TRUE;
+                          // Farther down we are going to replace any occurrences of column
+                          // u with the expression keyValueExpr in the ItemExpr tree compExpr
+                          // that computes column v. Note that compExpr is written usually in 
+                          // terms of BaseColumns except for cases like key predicates. So
+                          // add base column and its VEGRefs to the map.
+                          DCMPASSERT(u.getItemExpr()->getOperatorType() == ITM_BASECOLUMN);
+                          BaseColumn *bc = (BaseColumn *)(u.getItemExpr());
+                          colToKeyValueMap.addMapEntry(u,keyValueExpr);
+                          colToKeyValueMap.addMapEntry(bc->getTableDesc()->
+                                                       getColumnVEGList()[bc->getColNumber()],
+                                                       keyValueExpr);
+                          keyPredicatesOnCC.insert(p);
+                        }
+                    }
+                  if (!foundPredForThisCol)
+                    predsForAllUnderlyingCols = FALSE;
+                }
+
+              if (predsForAllUnderlyingCols)
+                {
+                  // create an expression to add to the keyPreds
+                  // that will be used to generate begin-end key exprs
+                  if (bcol->getNAColumn()->isDivisioningColumn())
+                    generatedPredicates += 
+                      keyPredicatesOnCC.createMirrorPreds(v, keyColsReferencedByCompExpr);
+                  else
+                    {
+                      // for columns other than divisioning cols, use
+                      // a ValueIdMap to do the rewrite for "=" preds,
+                      // this handles compExpr trees that reference
+                      // multiple base columns
+
+                      // use the basecolumn Veg, using the basecolumn byitself can cause issues
+                      // during codegen downstream
+                      ValueId egVid = bcol->getTableDesc()->getColumnVEGList()[bcol->getColNumber()];
+
+                      // create a new predicate bcol = compExpr
+                      ItemExpr *mirrorPred = 
+                        new(CmpCommon::statementHeap()) BiRelat(
+                            ITM_EQUAL,
+                            egVid.getItemExpr(),
+                            compExpr);
+                      mirrorPred->synthTypeAndValueId();
+                      ValueId mpValId = mirrorPred->getValueId();
+                      ValueId mpValIdRewritten;
+                      // now rewrite the predicate such that instead
+                      // of base columns it uses the values that those
+                      // base columns are equated to. Example (simplified):
+                      // 
+                      // mpValId:           compCol = hash(col1 + col2)
+                      // predicates:        col1 = 5 and col2 = ?
+                      // colToKeyValueMap:  col1 -> 5, col2 -> ?
+                      // mpValIdRewritten:  compCol = hash(5 + ?)
+                      colToKeyValueMap.rewriteValueIdDown(mpValId,
+                                                          mpValIdRewritten);
+                      generatedPredicates += mpValIdRewritten;
+                    }
+                }
+            } 
+         }
+       }
+  }
+  predicates += generatedPredicates;
+} // createComputedColumnPredicates (...)
 
 
 
@@ -1697,6 +1824,10 @@ MdamKey::isAPartKeyPredicateForMdam(const ValueId& predId, const ValueIdSet& inp
   ValueId referencedInput = NULL_VALUE_ID;
   ValueId intervalExclusionExpr = NULL_VALUE_ID;
   const ValueIdList& keyCols = getKeyColumns();
+  ValueIdSet operatorInputs(inputValues);
+
+  operatorInputs += getOperatorInputs();
+
   for (CollIndex i=0; i < keyCols.entries(); i++)
     {
       const ValueId& col= keyCols[i];
@@ -1704,7 +1835,7 @@ MdamKey::isAPartKeyPredicateForMdam(const ValueId& predId, const ValueIdSet& inp
                                    ,referencedInput
                                    ,intervalExclusionExpr
                                    ,col
-                                   ,inputValues
+                                   ,operatorInputs
                                    ))
         {
           retVal = TRUE;
@@ -1904,6 +2035,11 @@ void Disjuncts::print( FILE* ofd,
 
 
 } // print()
+
+void Disjuncts::print() const
+{
+  print(stdout);
+}
 // LCOV_EXCL_STOP
 
 NABoolean Disjuncts::
