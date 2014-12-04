@@ -45,9 +45,7 @@
 #include "GlobalInformation.h"
 #include "org_trafodion_jdbc_t2_T2Driver.h"  //spjrs
 
-int SPJRS;
 static const int INVALID_TRANSACTION_STATE = -1;
-static int STMT_ATOMICITY=false;
 
 static Charset_def CHARSET_INFORMATION[] = {
 	{ SQLCHARSETCODE_ISO88591,	"ISO8859_1",	NULL,	NULL},
@@ -3006,8 +3004,6 @@ func_exit:
 		if(driverStmtatomicityFieldId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - driverStmtatomicityFieldId == NULL"));
 		jint driverStmtatomicityField = jenv->GetStaticIntField(T2DriverClass,driverStmtatomicityFieldId);
-		if(driverStmtatomicityField!=NULL)
-			STMT_ATOMICITY=true;
 
 
 		//Object
@@ -3541,16 +3537,16 @@ func_exit:
 	const char *getCharsetEncoding(jint charset)
 	{
 		FUNCTION_ENTRY("getCharsetEncoding",("charset=%ld",charset));
-		static const char *encoding_name = NULL;
-		static jint last_charset = -9999;
+		static __thread const char *encoding_name = NULL;
+		static __thread jint last_charset = -9999;
 		if (charset!=last_charset)
 		{
 			int idx = 0;
-			last_charset = charset;
 			while ((idx<gJNICache.totalCharsets) &&
 				(charset!=gJNICache.charsetInfo[idx].charset)) idx++;
 			if (idx!=gJNICache.totalCharsets) encoding_name = gJNICache.charsetInfo[idx].encodingName;
 			else encoding_name = NULL;
+			last_charset = charset;
 		}
 		if (encoding_name)
 			FUNCTION_RETURN_PTR(encoding_name,("%s",encoding_name));
@@ -3591,18 +3587,6 @@ func_exit:
 					useDefaultEnc = gJNICache.charsetInfo[idx].useDefaultEncoding;
 		}
 		FUNCTION_RETURN_NUMERIC(useDefaultEnc,(NULL));
-	}
-
-	//spjrs
-	JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_T2Driver_setIsSpjRSFlag(JNIEnv *jenv, jclass jcls,jint spjrsval)
-	{
-		if(spjrsval==0) {
-			SPJRS=false;
-		}
-		else {
-			SPJRS=true;
-		}
-
 	}
 
 

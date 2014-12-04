@@ -984,6 +984,11 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 
 	CLI_DEBUG_SHOW_SERVER_STATEMENT(pSrvrStmt);
 
+	SRVR_CONNECT_HDL *pConnect = NULL;
+	if(pSrvrStmt->dialogueId == 0) CLI_DEBUG_RETURN_SQL(SQL_ERROR);
+	pConnect = (SRVR_CONNECT_HDL*)pSrvrStmt->dialogueId;
+
+	BOOL isSPJRS = false;
 	long retcode = SQL_SUCCESS;
 	SQLDESC_ID *pInputDesc;
 	SQLDESC_ID *pOutputDesc;
@@ -1065,7 +1070,9 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 		{
 		case SQL_SELECT_UNIQUE:
 			DEBUG_OUT(DEBUG_LEVEL_CLI,("Unique SELECT statement type."));
-			if(!SPJRS) {
+			if(pConnect->isSPJRS)
+				isSPJRS = true;
+			if(!isSPJRS) {
 				// ClearExecFetchClose performs exec, fetch, and close
 				retcode = CLI_ClearExecFetchClose(pStmt, pInputDesc, pOutputDesc, 0, 0, 0);
 				// ClearExecFetchClose() does an implicit close
@@ -1175,7 +1182,6 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 			std::string strModuleName = pSrvrStmt->moduleName;
 			if(strModuleName.find("T2MFC") != -1)
 			{
-				SRVR_CONNECT_HDL *pConnect = (SRVR_CONNECT_HDL*)pSrvrStmt->dialogueId;
 				pConnect->removeFromLoadedModuleSet(strModuleName);
 				remove(strModuleName.c_str()); // removing the Module file
 			}
@@ -2890,6 +2896,7 @@ SQLRETURN PREPAREFORMFC(SRVR_STMT_HDL* pSrvrStmt)
 	SQLSTMT_ID	*pStmt;
 	SQLDESC_ID	*pInputDesc;
 	SQLDESC_ID	*pOutputDesc;
+	SRVR_CONNECT_HDL *pConnect;
 
 	long		numEntries;
 	char		*pStmtName;
@@ -2897,6 +2904,7 @@ SQLRETURN PREPAREFORMFC(SRVR_STMT_HDL* pSrvrStmt)
 	BOOL		rgWarning = FALSE;
 	int			SqlQueryStatementType;
 
+	pConnect = (SRVR_CONNECT_HDL *)pSrvrStmt->dialogueId;
 	pStmt = &pSrvrStmt->stmt;
 	pOutputDesc = &pSrvrStmt->outputDesc;
 	pInputDesc = &pSrvrStmt->inputDesc;
@@ -3004,9 +3012,9 @@ SQLRETURN PREPAREFORMFC(SRVR_STMT_HDL* pSrvrStmt)
 		
 		std::string moduleFileName = srvrGlobal->compiledModuleLocation;
 		moduleFileName.append("/");
-		moduleFileName.append(srvrGlobal->CurrentCatalog);
+		moduleFileName.append(pConnet->CurrentCatalog);
 		moduleFileName.append(".");
-		moduleFileName.append(srvrGlobal->CurrentSchema);
+		moduleFileName.append(pConnet->CurrentSchema);
 		moduleFileName.append(".");
 		moduleFileName.append(MFCKEY);
 
@@ -3614,6 +3622,7 @@ SQLRETURN BuildSQLDesc2ForModFile(SQLDESC_ID pDesc,long numEntries,InputDescInfo
 void CreateModulePlan(long inputParamCount, InputDescInfo *inputDescInfo, char *inputsqlString,long dialogueId,const char *resMD5)
 {
 
+	SRVR_CONNECT_HDL *pConnect = (SRVR_CONNECT_HDL *)dialogueId;
 	FILE *ModuleCachingFile = NULL;
 	int containDecimal = false;
 
@@ -3626,9 +3635,9 @@ void CreateModulePlan(long inputParamCount, InputDescInfo *inputDescInfo, char *
 	bool *indparam = new bool[inputParamCount];
 	memset(indparam, false, inputParamCount);
 
-	ModuleName.append(srvrGlobal->CurrentCatalog);
+	ModuleName.append(pConnect->CurrentCatalog);
 	ModuleName.append(".");
-	ModuleName.append(srvrGlobal->CurrentSchema);
+	ModuleName.append(pConnect->CurrentSchema);
 	ModuleName.append(".");
 	ModuleName.append(MFCKEY);
 	ModuleName.append(resMD5);
@@ -4171,7 +4180,7 @@ void CreateModulePlan(long inputParamCount, InputDescInfo *inputDescInfo, char *
 	{
 		fprintf(ModuleCachingFile,"EXEC SQL %s;\n", iter->c_str());
 	}
-	if(strcmp(srvrGlobal->CurrentSchema, "PUBLIC_ACCESS_SCHEMA") != 0 && strcmp(srvrGlobal->CurrentCatalog, "NONSTOP_SQLMX_NSK") != 0)
+	if(strcmp(pConnect->CurrentSchema, "PUBLIC_ACCESS_SCHEMA") != 0 && strcmp(srvrGlobal->CurrentCatalog, "NONSTOP_SQLMX_NSK") != 0)
 	{
 		fprintf(ModuleCachingFile,"EXEC SQL DECLARE SCHEMA %s.%s ; \n",srvrGlobal->CurrentCatalog,srvrGlobal->CurrentSchema);
 		fprintf(ModuleCachingFile,"EXEC SQL SET SCHEMA %s.%s ; \n", srvrGlobal->CurrentCatalog,srvrGlobal->CurrentSchema);
@@ -4185,7 +4194,8 @@ void CreateModulePlan(long inputParamCount, InputDescInfo *inputDescInfo, char *
 	memset(tempsqlstr, '\0', strlen(inputsqlString) +1);
 	strcpy(tempsqlstr, inputsqlString);
 	strToUpper(tempsqlstr);
-	char *sqlType = strtok(tempsqlstr," \t\n");
+	char *saveptr=NULL;
+	char *sqlType = strtok_r(tempsqlstr," \t\n",&saveptr);
 	int pos = -1;
 	
 	// This is becuase we need the indicator variables declared for Insert,Update & Delete kind of statements

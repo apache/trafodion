@@ -63,9 +63,16 @@ void JdbcUtil::setPerror(const char *action)
 void JdbcUtil::setPerror(int err, const char *action)
 {
 	errorCode = err;
-	const char *perr = strerror(errorCode);
-	if (perr==NULL) perr="Unknown";
+	char *perr = new char[1024]; //1K should be enough for system error message.
+#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE
+	int ret=strerror_r(errorCode,perr,1024);
+	if (ret==-1) strcpy(perr,"Unknown");
+#else
+	strerror_r(errorCode,perr,1024);
+#endif
+
 	sprintf(errorMsg,"%s.  Error=%d - %s",action,errorCode,perr);
+	delete []perr;
 }
 
 void JdbcUtil::setError(const char *action)

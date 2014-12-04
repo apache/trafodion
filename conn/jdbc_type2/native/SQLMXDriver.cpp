@@ -366,7 +366,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_checkLibraryVersion(J
 
 
 
-	if (javaVproc)
+	if (javaVproc && !driverVersionChecked)
 	{
 		const char *java_vproc_str = JNI_GetStringUTFChars(jenv,javaVproc, NULL);
 		if (java_vproc_str)

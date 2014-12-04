@@ -103,70 +103,76 @@ public class SQLMXDataSource extends T2Properties implements
 //							|| ((Integer.parseInt(System.getProperty("maxPoolSize", "0"))) > 0 && (Integer.parseInt(System.getProperty("minPoolSize", "0"))) > 0))) {
 			if((this.getMaxIdleTime() > 0) && (this.getInternalMaxPoolSize() > 0 && this.getInternalMinPoolSize() > 0) ) {
 				if (!threadCreated) {
-					
-						SQLMXMaxIdleTimeRunnable.getSQLMXMaxIdleTimeRunnable()
-								.setSleepTime(this.getMaxIdleTime());
-	
-					Thread connectionPoolScavenger = new Thread(
-							SQLMXMaxIdleTimeRunnable
-									.getSQLMXMaxIdleTimeRunnable());
-					try {
-						connectionPoolScavenger.setDaemon(true);
-					} catch (SecurityException secExc) {
-						SQLException ex = new SQLException(
-								"Daemon thread to monitor the maxIdleTime property could not be started "
-										+ secExc.getMessage());
-						throw ex;
+					synchronized (SQLMXDataSource.class) {
+						if (!threadCreated) {
+								SQLMXMaxIdleTimeRunnable.getSQLMXMaxIdleTimeRunnable()
+										.setSleepTime(this.getMaxIdleTime());
+			
+							Thread connectionPoolScavenger = new Thread(
+									SQLMXMaxIdleTimeRunnable
+											.getSQLMXMaxIdleTimeRunnable());
+							try {
+								connectionPoolScavenger.setDaemon(true);
+							} catch (SecurityException secExc) {
+								SQLException ex = new SQLException(
+										"Daemon thread to monitor the maxIdleTime property could not be started "
+												+ secExc.getMessage());
+								throw ex;
+							}
+							connectionPoolScavenger.start();
+							threadCreated = true;
+						}
 					}
-					connectionPoolScavenger.start();
-					threadCreated = true;
 				}
 			}
 			if ((this.getTraceFlag() >= T2Driver.POOLING_LVL) && (this.getLogWriter() == null) && (this.getTraceFile() != null)) {
-				if (traceWriter_ == null) {
-					try {
-						traceWriter_ = new PrintWriter(new FileOutputStream(
-								this.getTraceFile(), true), true);
-					} catch (java.io.IOException e) {
-						traceWriter_ = new PrintWriter(System.err, true);
-					}
-					this.setLogWriter(traceWriter_);
-				} else
-					this.setLogWriter(traceWriter_);
+				synchronized (SQLMXDataSource.class) {
+					if (traceWriter_ == null) {
+						try {
+							traceWriter_ = new PrintWriter(new FileOutputStream(
+									this.getTraceFile(), true), true);
+						} catch (java.io.IOException e) {
+							traceWriter_ = new PrintWriter(System.err, true);
+						}
+						this.setLogWriter(traceWriter_);
+					} else
+						this.setLogWriter(traceWriter_);
+				}
 			}
 
 			//R3.2 changes -- start
 			if (this.getQueryExecuteTime() > 0) {
 				if (queryExecuteTraceWriter_ == null
-						&& this.getT2QueryExecuteLogFile() != null) {
-
-					File directory = new File(this.getT2QueryExecuteLogFile());
-					if (directory.isDirectory()) {
-						// Generate a file name.
-						String pid = Integer.toString(T2Driver.getPid());
-						try {
-							T2QueryExecuteLogFile_ = directory
-									.getCanonicalPath()
-									+ "/" + "t2sqlmxquerytime" + pid + ".log";
-						this.setT2QueryExecuteLogFile(T2QueryExecuteLogFile_);
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							RuntimeException ex = new RuntimeException(e
-									.getMessage());
-
-							ex.setStackTrace(e.getStackTrace());
-							throw ex;
-
+							&& this.getT2QueryExecuteLogFile() != null) {
+					synchronized(SQLMXDataSource.class){
+						File directory = new File(this.getT2QueryExecuteLogFile());
+						if (directory.isDirectory()) {
+							// Generate a file name.
+							String pid = Integer.toString(T2Driver.getPid());
+							try {
+								T2QueryExecuteLogFile_ = directory
+										.getCanonicalPath()
+										+ "/" + "t2sqlmxquerytime" + pid + ".log";
+							this.setT2QueryExecuteLogFile(T2QueryExecuteLogFile_);
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								RuntimeException ex = new RuntimeException(e
+										.getMessage());
+	
+								ex.setStackTrace(e.getStackTrace());
+								throw ex;
+	
+							}
 						}
-					}
-					try {
-						queryExecuteTraceWriter_ = new PrintWriter(
-								new FileOutputStream(
-										getT2QueryExecuteLogFile(), true), true);
-						queryExecuteTraceWriter_.println(T2Driver.printTraceVproc);
-					} catch (java.io.IOException e) {
-						queryExecuteTraceWriter_ = new PrintWriter(System.err,
-								true);
+						try {
+							queryExecuteTraceWriter_ = new PrintWriter(
+									new FileOutputStream(
+											getT2QueryExecuteLogFile(), true), true);
+							queryExecuteTraceWriter_.println(T2Driver.printTraceVproc);
+						} catch (java.io.IOException e) {
+							queryExecuteTraceWriter_ = new PrintWriter(System.err,
+									true);
+						}
 					}
 				}
 			}

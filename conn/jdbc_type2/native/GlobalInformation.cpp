@@ -23,16 +23,16 @@
 long int		GlobalInformation::SQLMX_Version = 0;
 SQLCTX_HANDLE	GlobalInformation::CurrentContext;
 jint			GlobalInformation::charset;											// SQL/MX supported char sets (from sqlcli.h) 
-const char		GlobalInformation::*encodingName = NULL;							// Normal C encoding name
-jstring			GlobalInformation::encodingNameJava;								// Normal Java encoding name
-jboolean		GlobalInformation::useDefaultEncoding = JNI_FALSE;					// Allows a "default" value for the encoding
-int				GlobalInformation::totalCharsets = 0;
-jint			GlobalInformation::defaultCharset;
-short			GlobalInformation::nowaitFilenum;
-char			GlobalInformation::NskSystemCatalogName[MAX_NSKCATALOGNAME_LEN+1];	// MP system catalog name
-char			GlobalInformation::DefaultCatalog[MAX_CHAR_SET_STRING_LENGTH + 1];
-char			GlobalInformation::DefaultSchema[MAX_CHAR_SET_STRING_LENGTH + 1];
-char			GlobalInformation::SystemCatalog[MAX_MX_SYSTEM_CATALOG_NAME + 1];	// MX system catalog name
+//const char		GlobalInformation::*encodingName = NULL;							// Normal C encoding name
+//jstring			GlobalInformation::encodingNameJava;								// Normal Java encoding name
+//jboolean		GlobalInformation::useDefaultEncoding = JNI_FALSE;					// Allows a "default" value for the encoding
+//int				GlobalInformation::totalCharsets = 0;
+//jint			GlobalInformation::defaultCharset;
+//short			GlobalInformation::nowaitFilenum;
+//char			GlobalInformation::NskSystemCatalogName[MAX_NSKCATALOGNAME_LEN+1];	// MP system catalog name
+//char			GlobalInformation::DefaultCatalog[MAX_CHAR_SET_STRING_LENGTH + 1];
+//char			GlobalInformation::DefaultSchema[MAX_CHAR_SET_STRING_LENGTH + 1];
+//char			GlobalInformation::SystemCatalog[MAX_MX_SYSTEM_CATALOG_NAME + 1];	// MX system catalog name
 
 GlobalInformation::GlobalInformation()
 {
@@ -42,11 +42,13 @@ GlobalInformation::~GlobalInformation()
 {
 }
 
+/*
 void GlobalInformation::setMX_SystemsCatalog (char *sysCat) {
 	strncpy(SystemCatalog, sysCat, MAX_MX_SYSTEM_CATALOG_NAME);
 	SystemCatalog[MAX_MX_SYSTEM_CATALOG_NAME + 1] = '\0';
 	return;
 }
+*/
 
 //GlobalInformation GlobalInformation::globalInfo;
 

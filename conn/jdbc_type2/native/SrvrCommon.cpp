@@ -53,17 +53,15 @@
 #define SQL_API_SQLTABLES_JDBC			SQL_API_SQLTABLES + SQL_API_JDBC
 // Global Variables
 
-SRVR_SESSION_HDL	*pSrvrSession = NULL;
-SRVR_GLOBAL_Def		*srvrGlobal = NULL;
+__thread SRVR_GLOBAL_Def		*srvrGlobal = NULL;
 //ODBCMXEventMsg		*srvrEventLogger = NULL;
 long				*TestPointArray = NULL;
-SQLMODULE_ID		nullModule;
 __thread SQLDESC_ITEM		gDescItems[NO_OF_DESC_ITEMS];
-char				CatalogNm[MAX_ANSI_NAME_LEN+1];
-char				SchemaNm[MAX_ANSI_NAME_LEN+1];
-char				TableNm[MAX_ANSI_NAME_LEN+1];
-char				ColumnName[MAX_ANSI_NAME_LEN+1];
-char				ColumnHeading[MAX_ANSI_NAME_LEN+1];
+__thread char				CatalogNm[MAX_ANSI_NAME_LEN+1];
+__thread char				SchemaNm[MAX_ANSI_NAME_LEN+1];
+__thread char				TableNm[MAX_ANSI_NAME_LEN+1];
+__thread char				ColumnName[MAX_ANSI_NAME_LEN+1];
+__thread char				ColumnHeading[MAX_ANSI_NAME_LEN+1];
 
 // Linux port - ToDo
 // Added dummy functions for transaction support (originally in pThreadsSync.cpp - we are not including that)
@@ -93,13 +91,6 @@ int initSqlCore(int argc, char *argv[])
 	FUNCTION_ENTRY("initSqlCore",(NULL));
 	short	error;
 	int		retcode = 0;
-
-	// Assign the module Information
-	nullModule.version = SQLCLI_ODBC_MODULE_VERSION;
-	nullModule.module_name = NULL;
-	nullModule.module_name_len = 0;
-	nullModule.charset = "ISO88591";
-	nullModule.creation_timestamp = 0;
 
 #ifndef DISABLE_NOWAIT
 	if (srvrGlobal->nowaitOn)

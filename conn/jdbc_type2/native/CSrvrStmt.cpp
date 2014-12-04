@@ -183,7 +183,12 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
 		outValueList));
 
 	SQLRETURN rc;
-
+	char *saveptr=NULL;
+	SRVR_CONNECT_HDL *pConnect = NULL;
+	
+	if (dialogueId == 0) CLI_DEBUG_RETURN_SQL(SQL_ERROR);
+	pConnect = (SRVR_CONNECT_HDL *)dialogueId;
+				
 	cleanupSQLMessage();
 	cleanupSQLValueList();
 	if (batchRowsetSize)
@@ -256,11 +261,10 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
 				char currentSqlString[100];
 				strcpy(currentSqlString,(const char *)this->sqlString.dataValue._buffer);
 				strToUpper(currentSqlString);
-
-				char *stringtoken = strtok(currentSqlString," ");
-				stringtoken = strtok(NULL," ");
-				stringtoken = strtok(NULL," ;'");
-				strcpy(srvrGlobal->CurrentCatalog,(stringtoken));
+				char *stringtoken = strtok_r(currentSqlString," ",&saveptr);
+				stringtoken = strtok_r(NULL," ",&saveptr);
+				stringtoken = strtok_r(NULL," ;'",&saveptr);
+				strcpy(pConnect->CurrentCatalog,(stringtoken));
 			}
 			if(this->SqlQueryStatementType == 12) // set schema
 			{
@@ -268,21 +272,22 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
 				strcpy(currentSqlString1,(const char *)this->sqlString.dataValue._buffer);
 				strToUpper(currentSqlString1);
 
-
-				char *stringtoken = strtok(currentSqlString1," ");
-				stringtoken = strtok(NULL," ");
-				stringtoken = strtok(NULL," ;\n\t");
+				saveptr=NULL;
+				char *stringtoken = strtok_r(currentSqlString1," ",&saveptr);
+				stringtoken = strtok_r(NULL," ",&saveptr);
+				stringtoken = strtok_r(NULL," ;\n\t",&saveptr);
 				strcpy(currentSqlString2,stringtoken);
 
 				int pos = strcspn(stringtoken,".");
 				if (pos == strlen(stringtoken))
-					strcpy(srvrGlobal->CurrentSchema,(stringtoken));
+					strcpy(pConnect->CurrentSchema,(stringtoken));
 				else
 				{
-					stringtoken = strtok(currentSqlString2,".");
-					strcpy(srvrGlobal->CurrentCatalog,(stringtoken));
-					stringtoken = strtok(NULL,"; \t\n");
-					strcpy(srvrGlobal->CurrentSchema,(stringtoken));
+					saveptr=NULL;
+					stringtoken = strtok_r(currentSqlString2,".",&saveptr);
+					strcpy(pConnect->CurrentCatalog,(stringtoken));
+					stringtoken = strtok_r(NULL,"; \t\n",&saveptr);
+					strcpy(pConnect->CurrentSchema,(stringtoken));
 				}
 			}
 		}

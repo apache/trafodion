@@ -43,9 +43,6 @@
 //=========================================================
 long diagnostic_flags = 0; // used for dynamic tracing
 
-char g_ElapsedTime[20];
-char gClientComputerName[MAX_PC_NAME] = ".";
-
 //=========================================================
 // Procedures for trace "new" "delete"
 //=========================================================

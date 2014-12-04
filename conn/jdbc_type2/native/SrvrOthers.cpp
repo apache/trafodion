@@ -966,6 +966,13 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 	long retcode = 0;
 	long	sqlcode;
 
+	SRVR_CONNECT_HDL *pConnect = NULL;
+	if(dialogueId == 0) {
+		exception_->exception_nr = odbc_SQLSvc_SetConnectionOption_InvalidConnection_exn_;
+		FUNCTION_RETURN_VOID(("Connection handle is NULL"));
+	}
+	pConnect = (SRVR_CONNECT_HDL *)dialogueId;
+	
 	SRVR_STMT_HDL *pSrvrStmt;
 	char valueStr[129];
 	char schemaValueStr[128+128+5+1]; // 5 for quotes + dot
@@ -1056,7 +1063,7 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 			strcpy(valueStr, optionValueStr);
 		}
 
-		strcpy(srvrGlobal->DefaultCatalog, valueStr);
+		strcpy(pConnect->DefaultCatalog, valueStr);
 		strcpy(sqlString, "SET CATALOG '");
 		if ((strlen(sqlString)+strlen(valueStr)+1) >= sizeof(sqlString))
 		{
@@ -1080,7 +1087,7 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 			}
 			strcpy(schemaValueStr, optionValueStr);
 		}
-		strcpy(srvrGlobal->DefaultSchema, schemaValueStr);
+		strcpy(pConnect->DefaultSchema, schemaValueStr);
 		strcpy(sqlString, "SET SCHEMA ");
 		if ((strlen(sqlString)+strlen(schemaValueStr)) >= sizeof(sqlString))
 		{
@@ -1145,12 +1152,12 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 	case CLEAR_CATALOG:
 		strcpy(sqlString, "CONTROL QUERY DEFAULT CATALOG RESET");
 		// Set default catalog to null
-		srvrGlobal->DefaultCatalog[0] = '\0';
+		pConnect->DefaultCatalog[0] = '\0';
 		break;
 	case CLEAR_SCHEMA:
 		strcpy(sqlString, "CONTROL QUERY DEFAULT SCHEMA RESET");
 		// Set default schema to null
-		srvrGlobal->DefaultSchema[0] =  '\0';
+		pConnect->DefaultSchema[0] =  '\0';
 		break;
 		// MFC option to set recompilation warnings on
 	case SQL_RECOMPILE_WARNING:

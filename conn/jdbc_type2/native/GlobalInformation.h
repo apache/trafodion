@@ -30,16 +30,16 @@ class GlobalInformation {
 	static long int			SQLMX_Version;
 	static SQLCTX_HANDLE	CurrentContext;
 	static jint				charset;			// SQL/MX supported char sets (from sqlcli.h) 
-	static const char		*encodingName;		// Normal C encoding name
-	static jstring			encodingNameJava;	// Normal Java encoding name
-	static jboolean			useDefaultEncoding;	// Allows a "default" value for the encoding
-	static int				totalCharsets;
-	static jint				defaultCharset;
-	static short			nowaitFilenum;
-	static char				NskSystemCatalogName[MAX_NSKCATALOGNAME_LEN+1]; // MP system catalog name
-	static char				DefaultCatalog[MAX_CHAR_SET_STRING_LENGTH + 1];
-	static char				DefaultSchema[MAX_CHAR_SET_STRING_LENGTH + 1];
-	static char				SystemCatalog[MAX_MX_SYSTEM_CATALOG_NAME+1];	// MX system catalog name
+//	static const char		*encodingName;		// Normal C encoding name
+//	static jstring			encodingNameJava;	// Normal Java encoding name
+//	static jboolean			useDefaultEncoding;	// Allows a "default" value for the encoding
+//	static int				totalCharsets;
+//	static jint				defaultCharset;
+//	static short			nowaitFilenum;
+//	static char				NskSystemCatalogName[MAX_NSKCATALOGNAME_LEN+1]; // MP system catalog name
+//	static char				DefaultCatalog[MAX_CHAR_SET_STRING_LENGTH + 1];
+//	static char				DefaultSchema[MAX_CHAR_SET_STRING_LENGTH + 1];
+//	static char				SystemCatalog[MAX_MX_SYSTEM_CATALOG_NAME+1];	// MX system catalog name
 public:
 	GlobalInformation();
 	~GlobalInformation();
@@ -52,7 +52,7 @@ public:
 	inline static long int getSQLMX_Version () {
 		return (SQLMX_Version);
 	}
-	
+
 	inline static void setCurrentContext (SQLCTX_HANDLE context) {
 		CurrentContext = context;
 		return;
@@ -62,12 +62,13 @@ public:
 		return (CurrentContext);
 	}
 	
+/*	
 	static void setMX_SystemsCatalog ( char *sysCat );
 	
 	inline static char *getMX_SystemsCatalog () {
 		return (SystemCatalog);
 	}
-	
+
 	static void setDefaultCatalogName (char *catName);
 	
 	static char *getDefaultCatalogName () {
@@ -88,6 +89,7 @@ public:
 	inline static short int getNoWaitFileNumber () {
 		return (nowaitFilenum);
 	}
+*/	
 };
 
 #endif //_GLOBALINFORMATION_H_

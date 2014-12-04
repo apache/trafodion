@@ -486,7 +486,9 @@ void Benchmark::Report(const char *title, const char *dirname)
 	char filename[256];
 
 	time_t curr_time = time(NULL);
-	struct tm *local_time = localtime(&curr_time);
+	struct tm local_time;
+	struct tm *plocaltime=NULL;
+	plocaltime=localtime_r(&curr_time,&local_time);
 
 	struct tms curr_tms;
 	clock_t curr_ticks = times(&curr_tms);
@@ -508,15 +510,23 @@ void Benchmark::Report(const char *title, const char *dirname)
 
 	if (filename[0]==0) outFile = stdout;
 
-
+	if(plocaltime)
+		fprintf(outFile,"------------------------------ %02d/%02d/%04d %02d:%02d:%02d ------------------------------\n",
+				  local_time.tm_mon+1,
+				  local_time.tm_mday,
+				  local_time.tm_year+1900,
+				  local_time.tm_hour,
+				  local_time.tm_min,
+				  local_time.tm_sec);
+	else
 	fprintf(outFile,"------------------------------ %02d/%02d/%04d %02d:%02d:%02d ------------------------------\n",
-			local_time->tm_mon+1,
-			local_time->tm_mday,
-			local_time->tm_year+1900,
-			local_time->tm_hour,
-			local_time->tm_min,
-			local_time->tm_sec);
-
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+		
 	if (title) fprintf(outFile,"Benchmark Report: %s\n",title);
 	fprintf(outFile,"Process Id: %u  Thread Id: %lu\n",getpid(),currentThread->getThreadId());
 	Report(NULL,outFile);

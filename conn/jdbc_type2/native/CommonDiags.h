@@ -280,9 +280,6 @@ typedef struct TraceInfo TraceInfo;
 extern long diagnostic_flags;
 extern char szTraceFile[];
 
-extern char g_ElapsedTime[];
-extern char gClientComputerName[100];
-
 extern long trace_memory;
 extern long trace_SQL;
 

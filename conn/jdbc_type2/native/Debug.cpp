@@ -554,14 +554,23 @@ static const char *Timestamp(bool force)
 	else
 	{
 		time_t curr_time = time(NULL);
-		struct tm *local_time = localtime(&curr_time);
-		sprintf(timestamp,"%02d/%02d/%04d %02d:%02d:%02d ",
-			local_time->tm_mon+1,
-			local_time->tm_mday,
-			local_time->tm_year+1900,
-			local_time->tm_hour,
-			local_time->tm_min,
-			local_time->tm_sec);
+		struct tm local_time;
+		if(localtime_r(&curr_time,&local_time))
+			sprintf(timestamp,"%02d/%02d/%04d %02d:%02d:%02d ",
+					  local_time.tm_mon+1,
+					  local_time.tm_mday,
+					  local_time.tm_year+1900,
+					  local_time.tm_hour,
+					  local_time.tm_min,
+					  local_time.tm_sec);
+		else
+			sprintf(timestamp,"%02d/%02d/%04d %02d:%02d:%02d ",
+					  0,
+					  0,
+					  0,
+					  0,
+					  0,
+					  0);
 	}
 	return(timestamp);
 }

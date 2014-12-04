@@ -79,6 +79,8 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 						stmtatomicity_ = "OFF";
 				} else
 					stmtatomicity_ = "OFF";
+				String Spjrs_;
+				int Spjrsval_ = 0;
 				
 				Spjrs_ = getSpjrs();
 				if (Spjrs_ != null) {
@@ -92,7 +94,6 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 				
 				traceFlag_ = getTraceFlag();
 				
-				setIsSpjRSFlag(Spjrsval_); // native call
 				// Set the driver default encoding to the current java encoding.
 				// Only way to get the current encoding is through the
 				// OutputStreamWriter using the ByteArrayOutputStream constructor.
@@ -224,9 +225,6 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 	private static T2Driver singleton_;
 
 	static int stmtatomicityval_;
-//	// SPJRS
-	static String Spjrs_;
-	static int Spjrsval_;
 
 	// dateFormat object used to format the timestamps printed in jdbcTrace
 	// output.
@@ -286,9 +284,6 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 	private native static int getDatabaseMajorVersionJNI();
 
 	private native static int getDatabaseMinorVersionJNI();
-
-	// SPJRS
-	private native static int setIsSpjRSFlag(int Spjrsval_);
 
 	private static int methodId_acceptsURL = 0;
 	private static int methodId_getPropertyValue = 1;
