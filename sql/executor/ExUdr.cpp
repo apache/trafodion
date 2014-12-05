@@ -4498,6 +4498,7 @@ NABoolean ExUdrTcb::validateDataRow(const tupp &replyTupp,
     {
       Attributes &actual = *(tdb.getReplyAttr(outPosition));
       ComSInt16 fsType = formal.getType();
+      ComSInt16 nullValue = 0;
 
       // Check for a valid null indicator. Null indicators returned
       // from MXUDR are 2 bytes. Valid null indicator values are 0 and
@@ -4505,7 +4506,7 @@ NABoolean ExUdrTcb::validateDataRow(const tupp &replyTupp,
       if (result && actual.getNullFlag())
       {
         const char *nullIndPtr = dataPtr + actual.getNullIndOffset();
-        const ComSInt16 nullValue = *((ComSInt16 *) nullIndPtr);
+        nullValue = *((ComSInt16 *) nullIndPtr);
         if (nullValue != 0 && nullValue != -1)
         {
           if (diags == NULL)
@@ -4522,7 +4523,8 @@ NABoolean ExUdrTcb::validateDataRow(const tupp &replyTupp,
         }
       }
       
-      if (result && DFS2REC::isAnyVarChar(fsType))
+      // do not check for varchar length when the value is null as the varchar length could be garbage/uninitialized
+      if (nullValue != -1 && result && DFS2REC::isAnyVarChar(fsType))
       {
         // Check for valid VARCHAR length
         const char *vcIndPtr = dataPtr + actual.getVCLenIndOffset();
