@@ -7872,21 +7872,26 @@ ItemExpr *ColReference::bindNode(BindWA *bindWA)
 
   if (sqlCode) {
 #ifndef NDEBUG					// ##tmp
-	BindContext *ctxt = bindWA->getCurrentScope()->context();
-	char ii = ctxt->inItemList() ?    'i' : ' ';
-	char jj = ctxt->inJoinPred() ?    'j' : ' ';
-	char mm = ctxt->inMultaryPred() ? 'm' : ' ';
- Int32 iia = ii == ' ' ? -99 : ctxt->inItemList()->getArity();
- Int32 iic = ii == ' ' ? -99 : ctxt->inItemList()->currChildNo();
- Int32 jja = jj == ' ' ? -99 : ctxt->inJoinPred()->getArity();
- Int32 jjc = jj == ' ' ? -99 : ctxt->inJoinPred()->currChildNo();
- Int32 mma = mm == ' ' ? -99 : ctxt->inMultaryPred()->getArity();
- Int32 mmc = mm == ' ' ? -99 : ctxt->inMultaryPred()->currChildNo();
-	cout << getColRefNameObj().getColRefAsAnsiString()
-		<< "	(" << ii << " " << iia << " " << iic << ") "
-		<< "	(" << jj << " " << jja << " " << jjc << ") "
-		<< "	(" << mm << " " << mma << " " << mmc << ") "
-		<< endl;
+    // The following debug code is often useful when debugging 
+    // internal queries when the metadata changes. Just set the
+    // environment variable in a debug build to see the output.
+    if (getenv("COLREFERENCE_DEBUG")) {
+      BindContext *ctxt = bindWA->getCurrentScope()->context();
+      char ii = ctxt->inItemList() ?    'i' : ' ';
+      char jj = ctxt->inJoinPred() ?    'j' : ' ';
+      char mm = ctxt->inMultaryPred() ? 'm' : ' ';
+      Int32 iia = ii == ' ' ? -99 : ctxt->inItemList()->getArity();
+      Int32 iic = ii == ' ' ? -99 : ctxt->inItemList()->currChildNo();
+      Int32 jja = jj == ' ' ? -99 : ctxt->inJoinPred()->getArity();
+      Int32 jjc = jj == ' ' ? -99 : ctxt->inJoinPred()->currChildNo();
+      Int32 mma = mm == ' ' ? -99 : ctxt->inMultaryPred()->getArity();
+      Int32 mmc = mm == ' ' ? -99 : ctxt->inMultaryPred()->currChildNo();
+      cout << getColRefNameObj().getColRefAsAnsiString()
+        << "	(" << ii << " " << iia << " " << iic << ") "
+        << "	(" << jj << " " << jja << " " << jjc << ") "
+        << "	(" << mm << " " << mma << " " << mmc << ") "
+        << endl;
+    }
 #endif // NDEBUG
     bindWA->setErrStatus();
     return this;
