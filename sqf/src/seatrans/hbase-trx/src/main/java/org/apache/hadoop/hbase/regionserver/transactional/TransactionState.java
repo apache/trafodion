@@ -118,8 +118,11 @@ public class TransactionState {
     private Integer sequenceNumber;
     private int commitPendingWaits = 0;
     private HTableDescriptor tabledescriptor;
+    private long controlPointEpochAtPrepare = 0;
     private int reInstated = 0;
     private WALEdit e;
+    private Object xaOperation = new Object();;
+    private int commitProgress = 0; // 0 is no commit yet, 1 is a commit is under way, 2 is committed
     private List<Tag> tagList = Collections.synchronizedList(new ArrayList<Tag>());
 
     public TransactionState(final long transactionId, final long rLogStartSequenceId, final HRegionInfo regionInfo, HTableDescriptor htd) {
@@ -385,6 +388,31 @@ public class TransactionState {
 
     public WALEdit getEdit() {
        return e;
+    }
+
+    public Object getXaOperationObject() {
+       return xaOperation;
+    }
+
+    /**
+     * Get the CP epoch at Prepare.
+     * 
+     * @return Return the status.
+     */
+    public long getCPEpoch() {
+        return controlPointEpochAtPrepare;
+    }
+
+    public void setCPEpoch(long epoch) {
+        controlPointEpochAtPrepare = epoch;
+    }
+
+    public int getCommitProgress() {
+        return commitProgress;
+    }
+
+    public void setCommitProgress(int progress) {
+        commitProgress = progress;
     }
 
     /**

@@ -25,6 +25,7 @@
 #include "tmaudit.h"
 #include "tmregistry.h"
 #include "tmtxkey.h"
+#include "hbasetm.h"
 
 // seabed includes
 #include "seabed/ms.h"
@@ -182,7 +183,11 @@ int32 TM_Recov::recover_dtm_death(int32 pv_dtm)
 
    // First build the list of transaction states that the TSE care about
    // send xa_recover to each opened RM
-   lv_error = send_xa_recover_toall_TSEs(pv_dtm);
+   //lv_error = send_xa_recover_toall_TSEs(pv_dtm);
+
+	// Sending ID for node down.
+	TMTrace (2, ("TM_Recov::recover_dtm_death"));
+	gv_HbaseTM.nodeDown(pv_dtm);
 
    if (lv_error != FEOK)
    {

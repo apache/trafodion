@@ -17,7 +17,7 @@
  */
 
 package org.apache.hadoop.hbase.coprocessor.transactional;
-
+ 
 import org.apache.hadoop.hbase.util.Bytes; 
 import java.io.*;
 import java.io.IOException;

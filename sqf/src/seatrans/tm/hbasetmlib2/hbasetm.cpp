@@ -208,6 +208,10 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_CNTPOINT   ].jm_signature = "()J";
   JavaMethods_[JM_STALL      ].jm_name      = "stall";
   JavaMethods_[JM_STALL      ].jm_signature = "(I)S";
+  JavaMethods_[JM_NODEDOWN   ].jm_name      = "nodeDown";
+  JavaMethods_[JM_NODEDOWN   ].jm_signature = "(I)V";
+  JavaMethods_[JM_NODEUP     ].jm_name      = "nodeUp";
+  JavaMethods_[JM_NODEUP     ].jm_signature = "(I)V";
   JavaMethods_[JM_RQREGINFO  ].jm_name      = "callRequestRegionInfo";
   JavaMethods_[JM_RQREGINFO  ].jm_signature = "()Lorg/trafodion/dtm/HashMapArray;";
 
@@ -724,6 +728,50 @@ short CHbaseTM::stall(int where){
   return RET_OK;
 }
 
+short CHbaseTM::nodeDown(int32 nid){
+  jthrowable exc;
+  jint jiv_nid = nid;
+  JOI_RetCode lv_joi_retcode = JOI_OK;
+  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  if (lv_joi_retcode != JOI_OK) {
+    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
+    fflush(stdout);
+    abort();
+  }
+
+  cout << "CHbaseTM::nodeDown called with nodeId " << jiv_nid << "\n";
+  _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_NODEDOWN].methodID, jiv_nid);
+  exc = _tlp_jenv->ExceptionOccurred();
+  if(exc) {
+    _tlp_jenv->ExceptionDescribe();
+    _tlp_jenv->ExceptionClear();
+    return RET_EXCEPTION;
+  }
+  return RET_OK;
+}
+
+
+short CHbaseTM::nodeUp(int32 nid){
+  jthrowable exc;
+  jint jiv_nid = nid;
+  JOI_RetCode lv_joi_retcode = JOI_OK;
+  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  if (lv_joi_retcode != JOI_OK) {
+    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
+    fflush(stdout);
+    abort();
+  }
+
+  cout << "CHbaseTM::nodeUp called with: " << jiv_nid << "\n";
+  _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_NODEUP].methodID, jiv_nid);
+  exc = _tlp_jenv->ExceptionOccurred();
+  if(exc) {
+    _tlp_jenv->ExceptionDescribe();
+    _tlp_jenv->ExceptionClear();
+    return RET_EXCEPTION;
+  }
+  return RET_OK;
+}
 
 //----------------------------------------------------------------------------
 // CHbaseTM::shutdown
