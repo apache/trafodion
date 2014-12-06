@@ -80,6 +80,7 @@ public class HBaseTxClient {
    private static Configuration config;
    TransactionManager trxManager;
    Map<Long, TransactionState> mapTransactionStates = new HashMap<Long, TransactionState>();
+   Map<Integer, RecoveryThread> mapRecoveryThreads = new HashMap<Integer, org.trafodion.dtm.HBaseTxClient.RecoveryThread>();
    private final Object mapLock = new Object();
 
    public static final int RET_OK = 0;
@@ -184,7 +185,7 @@ public class HBaseTxClient {
       }
 
       if (useRecovThread) {
-         if (LOG.isDebugEnabled()) LOG.debug("Entering recovThread Usage");
+         if (LOG.isDebugEnabled()) LOG.debug("Starting recovery thread for tm ID: " + dtmID);
           try {                                                                          
               tmZK = new HBaseTmZK(config, dtmID);                              
           }catch (IOException e ){                                                       
@@ -274,11 +275,52 @@ public class HBaseTxClient {
               LOG.error("Unable to create HBaseTmZK TM-zookeeper class, throwing exception");
               throw new RuntimeException(e);                                             
           }                                                                              
-          recovThread = new RecoveryThread(tLog, tmZK, trxManager);                      
+          recovThread = new RecoveryThread(tLog, tmZK, trxManager, this);
           recovThread.start();                     
       }
       if (LOG.isTraceEnabled()) LOG.trace("Exit init()");
       return true;
+   }
+
+   public void nodeDown(int nodeID) throws IOException {
+       if(LOG.isTraceEnabled()) LOG.trace("nodeDown -- ENTRY node ID: " + nodeID);
+
+       RecoveryThread newRecovThread;
+       if(dtmID == nodeID)
+           throw new IOException("Down node ID is the same as current dtmID, Incorrect parameter");
+
+       try {
+           if(mapRecoveryThreads.containsKey(nodeID)) {
+               if(LOG.isDebugEnabled()) LOG.debug("nodeDown called on a node that already has RecoveryThread running node ID: " + nodeID);
+           }
+           else {
+               newRecovThread = new RecoveryThread(tLog, new HBaseTmZK(config, (short) nodeID), trxManager);
+               newRecovThread.start();
+               mapRecoveryThreads.put(nodeID, recovThread);
+               if(LOG.isTraceEnabled()) LOG.trace("nodeDown -- mapRecoveryThreads size: " + mapRecoveryThreads.size());
+           }
+       }
+       catch(Exception e) {
+           LOG.error("Unable to create rescue recovery thread for TM" + dtmID);
+       }
+       if(LOG.isTraceEnabled()) LOG.trace("nodeDown -- EXIT node ID: " + nodeID);
+   }
+
+   public void nodeUp(int nodeID) throws IOException {
+       if(LOG.isTraceEnabled()) LOG.trace("nodeUp -- ENTRY node ID: " + nodeID);
+       RecoveryThread rt = mapRecoveryThreads.get(nodeID);
+       if(rt == null) {
+           if(LOG.isWarnEnabled()) LOG.warn("nodeUp called on a node that has RecoveryThread removed already, node ID: " + nodeID);
+           if(LOG.isTraceEnabled()) LOG.trace("nodeUp -- EXIT node ID: " + nodeID);
+           return;
+       }
+       rt.stopThread();
+       try {
+           rt.join();
+       } catch (Exception e) { LOG.warn("Problem while waiting for the recovery thread to stop for node ID: " + nodeID); }
+       mapRecoveryThreads.remove(nodeID);
+       if(LOG.isTraceEnabled()) LOG.trace("nodeUp -- mapRecoveryThreads size: " + mapRecoveryThreads.size());
+       if(LOG.isTraceEnabled()) LOG.trace("nodeUp -- EXIT node ID: " + nodeID);
    }
 
    public short stall (int where) {
@@ -556,7 +598,15 @@ public class HBaseTxClient {
              private TransactionManager txnManager;
              private short tmID;
              private Set<Long> inDoubtList;
+             private boolean continueThread = true;
+             private int retryCount = 0;
+             HBaseTxClient hbtx;
 
+         public RecoveryThread(TmAuditTlog audit, HBaseTmZK zookeeper,
+                               TransactionManager txnManager, HBaseTxClient hbtx) {
+             this(audit, zookeeper, txnManager);
+             this.hbtx = hbtx;
+         }
              /**
               * 
               * @param audit
@@ -570,6 +620,10 @@ public class HBaseTxClient {
                           this.txnManager = txnManager;
                           this.inDoubtList = new HashSet<Long> ();
                           this.tmID = zookeeper.getTMID();
+             }
+
+             public void stopThread() {
+                 this.continueThread = false;
              }
              
              private void addRegionToTS(String hostnamePort, byte[] regionInfo,
@@ -612,46 +666,49 @@ public class HBaseTxClient {
              }
 
             @Override
-             public void run() {                     
-            	     int sleepTimeInt = 0;
-                     String sleepTime = System.getenv("TMRECOV_SLEEP");
-                     if (sleepTime != null)
-                             sleepTimeInt = Integer.parseInt(sleepTime);                                         
-                     
-                     if (LOG.isDebugEnabled()) LOG.debug("Starting recovery thread for TM" + tmID);
-                     while(true) {
-                             Map<String, byte []> regions = new HashMap<String, byte []>();
-                             Map<Long, TransactionState> transactionStates = 
-                            		 new HashMap<Long, TransactionState>();                             		 
-                             try {                                    
-                                     regions = zookeeper.checkForRecovery();
-                                     if(regions != null) 
-                                         if (LOG.isTraceEnabled()) LOG.trace("Processing " + regions.size() + " regions");
-                             } catch (Exception e) {
-                                     LOG.error("An ERROR occurred while checking for regions to recover. " + "TM: " + tmID);
-                                     StringWriter sw = new StringWriter();
-                                     PrintWriter pw = new PrintWriter(sw);
-                                     e.printStackTrace(pw);
-                                     LOG.error(sw.toString()); 
-                             }
-                             
-                             if (LOG.isDebugEnabled()) LOG.debug("in-doubt region size " + regions.size());
-                             for(Map.Entry<String,byte[]> region : regions.entrySet()) {  
-                            	     List<Long> TxRecoverList = new ArrayList<Long>();
-                                     if (LOG.isDebugEnabled()) LOG.debug("BBB Processing region: " + new String(region.getValue()));
-                                     String hostnamePort = region.getKey();
-                                     byte [] regionInfo =  region.getValue();                                    
-                                            try {
-                                         TxRecoverList = txnManager.recoveryRequest(hostnamePort, regionInfo, tmID);
-                                     } catch (Exception e) {
-                                         LOG.error("Error calling recoveryRequest " + new String(regionInfo) + " TM " + tmID);
-                                         e.printStackTrace();
-                                     }
-				                     for(Long txid : TxRecoverList) {
-				                    	 TransactionState ts = transactionStates.get(txid);
-				                    	 if(ts == null) {
-				                    		 ts = new TransactionState(txid);
-				                    	 }
+             public void run() {
+                int sleepTimeInt = 0;
+                String sleepTime = System.getenv("TMRECOV_SLEEP");
+                if (sleepTime != null)
+                    sleepTimeInt = Integer.parseInt(sleepTime);
+
+                while (this.continueThread) {
+                    try {
+                        Map<String, byte[]> regions = null;
+                        Map<Long, TransactionState> transactionStates =
+                                new HashMap<Long, TransactionState>();
+                        try {
+                            regions = zookeeper.checkForRecovery();
+                            if (regions != null)
+                                if (LOG.isTraceEnabled()) LOG.trace("Processing " + regions.size() + " regions");
+                        } catch (Exception e) {
+                            LOG.error("An ERROR occurred while checking for regions to recover. " + "TM: " + tmID);
+                            StringWriter sw = new StringWriter();
+                            PrintWriter pw = new PrintWriter(sw);
+                            e.printStackTrace(pw);
+                            LOG.error(sw.toString());
+                        }
+
+                        if(regions != null) {
+
+                            if (LOG.isDebugEnabled()) LOG.debug("in-doubt region size " + regions.size());
+                            for (Map.Entry<String, byte[]> region : regions.entrySet()) {
+                                List<Long> TxRecoverList = new ArrayList<Long>();
+                                if (LOG.isDebugEnabled())
+                                    LOG.debug("BBB Processing region: " + new String(region.getValue()));
+                                String hostnamePort = region.getKey();
+                                byte[] regionInfo = region.getValue();
+                                try {
+                                    TxRecoverList = txnManager.recoveryRequest(hostnamePort, regionInfo, tmID);
+                                } catch (Exception e) {
+                                    LOG.error("Error calling recoveryRequest " + new String(regionInfo) + " TM " + tmID);
+                                    e.printStackTrace();
+                                }
+                                for (Long txid : TxRecoverList) {
+                                    TransactionState ts = transactionStates.get(txid);
+                                    if (ts == null) {
+                                        ts = new TransactionState(txid);
+                                    }
 				                   /* 	 try {
 				                    		 this.addRegionToTS(hostnamePort, regionInfo, ts);
 				                    	 } catch (Exception e) {
@@ -659,47 +716,71 @@ public class HBaseTxClient {
 				                    		 		"region info: " + new String(regionBytes));
 				                    		 e.printStackTrace();
 				                    	 } */
-				                    	 transactionStates.put(txid, ts);
-				                     }
-                                     }
+                                    transactionStates.put(txid, ts);
+                                }
+                            }
+                            for (Map.Entry<Long, TransactionState> tsEntry : transactionStates.entrySet()) {
+                                TransactionState ts = tsEntry.getValue();
+                                Long txID = tsEntry.getKey();
+                                // TransactionState ts = new TransactionState(txID);
+                                try {
+                                    audit.getTransactionState(ts);
+                                    if (ts.getStatus().equals("COMMITTED")) {
+                                        if (LOG.isDebugEnabled())
+                                            LOG.debug("Redriving commit for " + ts.getTransactionId() + " number of regions " + ts.getParticipatingRegions().size() +
+                                                    " and tolerating UnknownTransactionExceptions");
+                                        txnManager.doCommit(ts, true /*ignore UnknownTransactionException*/);
+                                    } else if (ts.getStatus().equals("ABORTED")) {
+                                        if (LOG.isDebugEnabled())
+                                            LOG.debug("Redriving abort for " + ts.getTransactionId());
+                                        txnManager.abort(ts);
+                                    } else {
+                                        if (LOG.isDebugEnabled())
+                                            LOG.debug("Redriving abort for " + ts.getTransactionId());
+                                        LOG.warn("Recovering transaction " + txID + ", status is not set to COMMITTED or ABORTED. Aborting.");
+                                        txnManager.abort(ts);
+                                    }
 
-                             for(Map.Entry<Long, TransactionState> tsEntry: transactionStates.entrySet()) {
-                            	   TransactionState ts = tsEntry.getValue();
-                            	   Long txID = tsEntry.getKey();
-                                   // TransactionState ts = new TransactionState(txID);
-                                   try {
-                                           audit.getTransactionState(ts);
-                                           if(ts.getStatus().equals("COMMITTED")) {
-                                                   if (LOG.isDebugEnabled()) LOG.debug("Redriving commit for " + ts.getTransactionId() + " number of regions " + ts.getParticipatingRegions().size() +
-                                                             " and tolerating UnknownTransactionExceptions" );
-                                                   txnManager.doCommit(ts, true /*ignore UnknownTransactionException*/);
-                                           }
-                                           else if(ts.getStatus().equals("ABORTED")) {
-                                                   if (LOG.isDebugEnabled()) LOG.debug("Redriving abort for " + ts.getTransactionId());
-                                                   txnManager.abort(ts);
-                                           }
-                                           else {
-                                                   if (LOG.isDebugEnabled()) LOG.debug("Redriving abort for " + ts.getTransactionId());
-                                                   LOG.warn("Recovering transaction " + txID + ", status is not set to COMMITTED or ABORTED. Aborting.");
-                                                   txnManager.abort(ts);
-                                           }
+                                } catch (Exception e) {
+                                    LOG.error("Unable to get audit record for tx: " + txID + ", audit is throwing exception.");
+                                    e.printStackTrace();
+                                }
+                            }
 
-                                   }catch (Exception e) {
-                                           LOG.error("Unable to get audit record for tx: " + txID + ", audit is throwing exception.");
-                                           e.printStackTrace();
-                                   }
-                             }
+                        }
+                        try {
+                            if (sleepTimeInt > 0)
+                                Thread.sleep(sleepTimeInt);
+                            else
+                                Thread.sleep(SLEEP_DELAY);
+                            retryCount = 0;
+                        } catch (Exception e) {
+                            LOG.error("Error in recoveryThread: " + e);
+                        }
 
-                             try {
-                            	     if(sleepTimeInt > 0) 
-                            	    	 Thread.sleep(sleepTimeInt);
-                            	     else
-                            	    	 Thread.sleep(SLEEP_DELAY);                                     
-                             } catch (Exception e) {
-                                     e.printStackTrace();
-                             }
-                     }
-             }
+                    } catch (Exception e) {
+                        int possibleRetries = 4;
+                        LOG.error("Caught recovery thread exception for tmid: " + tmID + " retries: " + retryCount);
+                        StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw);
+                        e.printStackTrace(pw);
+                        LOG.error(sw.toString());
+
+                        retryCount++;
+                        if(retryCount > possibleRetries) {
+                            LOG.error("Recovery thread failure, aborting process");
+                            System.exit(4);
+                        }
+
+                        try {
+                            Thread.sleep(SLEEP_DELAY / possibleRetries);
+                        } catch(Exception se) {
+                            LOG.error(se);
+                        }
+                    }
+                }
+                if(LOG.isDebugEnabled()) LOG.debug("Exiting recovery thread for tm ID: " + tmID);
+            }
      }
 
      //================================================================================

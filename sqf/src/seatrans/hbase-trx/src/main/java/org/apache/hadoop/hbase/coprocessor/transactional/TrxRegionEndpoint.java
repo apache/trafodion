@@ -234,6 +234,7 @@ CoprocessorService, Coprocessor {
   private int reconstructIndoubts = 0; 
   //temporary THLog getSequenceNumber() replacement
   private AtomicLong nextLogSequenceId = new AtomicLong(0);
+  public AtomicLong controlPointEpoch = new AtomicLong(1);
   private final int oldTransactionFlushTrigger = 0;
   private final Boolean splitDelayEnabled = false;
   private final Boolean doWALHlog = false;
@@ -2443,6 +2444,75 @@ CoprocessorService, Coprocessor {
     //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:retireTransaction " + key + ", looking for retire transaction id " + state.getTransactionId() + ", transactionsById " + transactionsById.size() + ", commitedTransactionsBySequenceNumber " + commitedTransactionsBySequenceNumber.size() + ", commitPendingTransactions " + commitPendingTransactions.size());
    }
 
+  public void choreThreadDetectStaleTransactionBranch() {
+
+      List<Integer> staleBranchforTMId = new ArrayList<Integer>();
+      List<TransactionState> commitPendingCopy = new ArrayList<TransactionState>(commitPendingTransactions);
+      int tmid, tm;
+      long transactionId;
+
+      // selected printout for CP 
+      long currentEpoch = controlPointEpoch.get();
+      if ((currentEpoch < 10) || ((currentEpoch % 10) == 1)) {
+         if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Endpoint CP: Region " +regionInfo.getRegionNameAsString() + " ChoreThread CP Epoch " + controlPointEpoch.get());
+      }
+
+      byte [] lv_byte_region_info = regionInfo.toByteArray();
+      String lv_encoded = regionInfo.getEncodedName();
+
+      for (TransactionState commitPendingTS : commitPendingCopy) {
+            if (commitPendingTS.getCPEpoch() < (controlPointEpoch.get() - 2)) {
+               transactionId = commitPendingTS.getTransactionId();
+               if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Endpoint CP: stale branch Txn id " + transactionId + " region info bytes " + new String(lv_byte_region_info));
+               tmid = (int) (transactionId >> 32);
+               staleBranchforTMId.add(tmid);
+            }
+      }
+    
+      if (!staleBranchforTMId.isEmpty()) {
+            for (int i = 0; i < staleBranchforTMId.size(); i++) {
+               try {
+                   tm = staleBranchforTMId.get(i);
+                   if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Endpoint CP: ZKW Create Recovery zNode TM " + tm + " region encoded name " + lv_encoded + " region info bytes " + new String(lv_byte_region_info));
+                   createRecoveryzNode(tm, lv_encoded, lv_byte_region_info);
+                   } catch (IOException exp) {
+                   LOG.error("Trafodion Recovery Region Endpoint CP: ZKW Create recovery zNode failed");
+               }
+            } // for
+      } // if block
+
+      controlPointEpoch.getAndIncrement();
+      commitPendingCopy.clear();
+      staleBranchforTMId.clear();
+  }
+
+  public void createRecoveryzNode(int node, String encodedName, byte [] data) throws IOException {
+
+       synchronized(zkRecoveryCheckLock) {
+         // default zNodePath for recovery
+         String zNodeKey = lv_hostName + "," + lv_port + "," + encodedName;
+
+         StringBuilder sb = new StringBuilder();
+         sb.append("TM");
+         sb.append(node);
+         String str = sb.toString();
+         String zNodePathTM = zNodePath + str;
+         String zNodePathTMKey = zNodePathTM + "/" + zNodeKey;
+         if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Observer CP: ZKW Post region recovery znode" + node + " zNode Path " + zNodePathTMKey);
+          // create zookeeper recovery zNode, call ZK ...
+         try {
+                if (ZKUtil.checkExists(zkw1, zNodePathTM) == -1) {
+                   // create parent nodename
+                   if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Observer CP: ZKW create parent zNodes " + zNodePathTM);
+                   ZKUtil.createWithParents(zkw1, zNodePathTM);
+                }
+                ZKUtil.createAndFailSilent(zkw1, zNodePathTMKey, data);
+          } catch (KeeperException e) {
+          throw new IOException("Trafodion Recovery Region Observer CP: ZKW Unable to create recovery zNode to TM, throw IOException " + node, e);
+          }
+       }
+  } // end ogf createRecoveryzNode
+
   public void deleteRecoveryzNode(int node, String encodedName) throws IOException {
 
        synchronized(zkRecoveryCheckLock) {
@@ -2694,6 +2764,7 @@ CoprocessorService, Coprocessor {
         }
       }
     }
+    state.setCommitProgress(2);
     retireTransaction(state);
   }
 
@@ -3265,6 +3336,7 @@ CoprocessorService, Coprocessor {
   public void commit(final long transactionId, final boolean ignoreUnknownTransactionException) throws IOException {
     if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commit(txId) -- ENTRY txId: " + transactionId +
               " ignoreUnknownTransactionException: " + ignoreUnknownTransactionException);
+    int commitStatus = 0;
     TransactionState state;
     try {
       state = getTransactionState(transactionId);
@@ -3286,9 +3358,31 @@ CoprocessorService, Coprocessor {
 
       throw new IOException("Asked to commit a non-pending transaction");
     }
-
     if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commit(txId) -- EXIT txId: " + transactionId);
-    commit(state);
+
+    // manage concurrent duplicate commit requests through TS.xaOperation object
+
+    synchronized(state.getXaOperationObject()) {
+        commitStatus = state.getCommitProgress();
+        if (LOG.isDebugEnabled()) LOG.info("TrxRegionEndpoint coprocessor: commit HHH " + commitStatus);
+        if (commitStatus == 2) { // already committed, this is likely unnecessary due to Status check above
+            if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commit - duplicate commit for committed transaction ");
+        }
+        else if (commitStatus == 1) {
+            if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commit - duplicate commit during committing transaction ");
+            try {
+                  Thread.sleep(1000);          ///1000 milliseconds is one second.
+            } catch(InterruptedException ex) {
+                  Thread.currentThread().interrupt();
+            }
+        }
+        else if (commitStatus == 0) {
+            LOG.info("TrxRegionEndpoint coprocessor: commit HHH " + commitStatus);
+            state.setCommitProgress(1);
+            commit(state);
+        }
+    }
+
   } 
 
   /**
@@ -3369,6 +3463,7 @@ CoprocessorService, Coprocessor {
           putBySequenceOperations.getAndIncrement();
         // Order is important
 	state.setStatus(Status.COMMIT_PENDING);
+        state.setCPEpoch(controlPointEpoch.get());
 	commitPendingTransactions.add(state);
 	state.setSequenceNumber(nextSequenceId.getAndIncrement());
 	commitedTransactionsBySequenceNumber.put(state.getSequenceNumber(), state);
@@ -3547,6 +3642,7 @@ CoprocessorService, Coprocessor {
 
   public void abortTransaction(final long transactionId) throws IOException, UnknownTransactionException {
     long txid = 0;
+
     if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: abort transactionId: " + transactionId + " " + m_Region.getRegionInfo().getRegionNameAsString());
 
     TransactionState state;
@@ -3562,7 +3658,13 @@ CoprocessorService, Coprocessor {
       throw new IOException("UnknownTransactionException");
     }
 
-    state.setStatus(Status.ABORTED);
+    synchronized(state.getXaOperationObject()) {
+        if (state.getStatus().equals(Status.ABORTED)) { // already aborted, duplicate abort requested
+            if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: duplicate abort transaction Id: " + transactionId + " " + m_Region.getRegionInfo().getRegionNameAsString());
+            return;
+        }
+        state.setStatus(Status.ABORTED);
+    }
 
     if (state.hasWrite()) {
     // TODO log

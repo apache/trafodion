@@ -57,6 +57,8 @@ public:
    short abortTransaction(int64 pv_transid) {return FEOK; }
    int registerRegion(int64 pv_transid, const char pa_region[], int64 pv_hashcode, const char pa_regionInfo[], int pv_regionInfo_Length) {return FEOK; }
    int recoverRegion(int64 *pp_count, int64 *pp_transidList[], int64 *pp_flags);
+   short nodeDown(int32 pv_nid) { return FEOK; }
+   short nodeUp(int32 pv_nid) { return FEOK; }
 
    int failedRegions(int64 pv_transid) { return FEOK; }
    int participatingRegions(int64 pv_transid) { return FEOK; }

@@ -126,6 +126,8 @@ private:
       JM_PARREGION,
       JM_CNTPOINT,
       JM_STALL,
+	  JM_NODEDOWN,
+      JM_NODEUP,
       JM_RQREGINFO,
       JM_LAST
    };
@@ -196,6 +198,8 @@ public:
    int unresolvedRegions(int64 pv_transid);
    short stall(int32 when);
    void shutdown();
+   short nodeDown(int32 nid);
+   short nodeUp(int32 nid);
    HashMapArray* requestRegionInfo();
 
 private:

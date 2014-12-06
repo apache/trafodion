@@ -47,6 +47,10 @@ public class CleanOldTransactionsChore extends Chore {
 
       trx_Region.removeUnNeededCommitedTransactions();
 
+      //if (LOG.isDebugEnabled()) LOG.debug("Trafodion ChoreThread CP Epoch " + trx_Region.controlPointEpoch.get());
+
+      trx_Region.choreThreadDetectStaleTransactionBranch();
+
       //LOG.trace("CleanOldTransactionsChore: region " + this.trx_Region.getRegionNameAsString());
   }
 }
