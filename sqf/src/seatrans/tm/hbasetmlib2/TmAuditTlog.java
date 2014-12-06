@@ -33,7 +33,10 @@ import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Delete;
@@ -127,7 +130,6 @@ public class TmAuditTlog {
 
    private static int     versions;
    private static int     tlogNumLogs;
-   private static boolean distributedFS;
    private boolean useAutoFlush;
    private static boolean ageCommitted;
    private static boolean forceControlPoint;
@@ -236,14 +238,6 @@ public class TmAuditTlog {
       TLOG_TABLE_NAME = config.get("TLOG_TABLE_NAME");
       int fillerSize = 2;
       controlPointDeferred = false;
-
-      if (LocalHBaseCluster.isLocal(config)) {
-         distributedFS = false;
-      }
-      else {
-         distributedFS = true;
-      }
-      LOG.info("distributedFS is " + distributedFS);
 
       forceControlPoint = false;
       try {
@@ -357,12 +351,6 @@ public class TmAuditTlog {
       hcol.setMaxVersions(versions);
       admin = new HBaseAdmin(config);
 
-      if (distributedFS) {
-         fillerSize = 2;
-      }
-      else {
-         fillerSize = 4097;
-      }
       filler = new byte[fillerSize];
       Arrays.fill(filler, (byte) ' ');
       startTimes      =    new long[50];
@@ -819,15 +807,22 @@ public class TmAuditTlog {
       return true;
    }
 
-   public static boolean deleteAgedEntries(final long lvAsn) throws IOException {
+   public boolean deleteAgedEntries(final long lvAsn) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("deleteAgedEntries start:  Entries older than " + lvAsn + " will be removed");
+      HTableInterface deleteTable;
       for (int i = 0; i < tlogNumLogs; i++) {
+         String lv_tLogName = new String(TLOG_TABLE_NAME + "_LOG_" + Integer.toHexString(i));
+//         Connection deleteConnection = ConnectionFactory.createConnection(this.config);
+
+         HConnection deleteConnection = HConnectionManager.createConnection(this.config);
+
+         deleteTable = deleteConnection.getTable(TableName.valueOf(lv_tLogName));
          try {
             Scan s = new Scan();
-            s.setCaching(500);
+            s.setCaching(100);
             s.setCacheBlocks(false);
             ArrayList<Delete> deleteList = new ArrayList<Delete>();
-            ResultScanner ss = table[i].getScanner(s);
+            ResultScanner ss = deleteTable.getScanner(s);
 
             try {
                for (Result r : ss) {
@@ -856,7 +851,7 @@ public class TmAuditTlog {
                               String key = new String(r.getRow());
                               Get get = new Get(r.getRow());
                               get.setMaxVersions(versions);  // will return last n versions of row
-                              Result lvResult = table[i].get(get);
+                              Result lvResult = deleteTable.get(get);
                              // byte[] b = lvResult.getValue(TLOG_FAMILY, ASN_STATE);  // returns current version of value
                               List<Cell> list = lvResult.getColumnCells(TLOG_FAMILY, ASN_STATE);  // returns all versions of this column
                               for (Cell element : list) {
@@ -887,17 +882,36 @@ public class TmAuditTlog {
                      }
                   }
               }
-           } finally {
+           }
+           catch(Exception e){
+              LOG.error("deleteAgedEntries Exception getting results for table index " + i + "; " + e);
+              throw new RuntimeException(e);
+           }
+           finally {
               ss.close();
            }
            if (LOG.isDebugEnabled()) LOG.debug("attempting to delete list with " + deleteList.size() + " elements");
-           synchronized(tlogAuditLock[i]) {
-              table[i].delete(deleteList);
+           try {
+              deleteTable.delete(deleteList);
+           }
+           catch(IOException e){
+              LOG.error("deleteAgedEntries Exception deleting from table index " + i + "; " + e);
+              throw new RuntimeException(e);
            }
         }
         catch (IOException e) {
-           LOG.error("deleteAgedEntries IOException on table index " + i);
+           LOG.error("deleteAgedEntries IOException setting up scan on table index " + i);
            e.printStackTrace();
+        }
+        finally {
+           try {
+              deleteTable.close();
+              deleteConnection.close();
+           }
+           catch (IOException e) {
+              LOG.error("deleteAgedEntries IOException closing table or connection for table index " + i);
+              e.printStackTrace();
+           }
         }
      }
      if (LOG.isTraceEnabled()) LOG.trace("deleteAgedEntries - exit");
