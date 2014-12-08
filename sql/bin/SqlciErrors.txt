@@ -196,7 +196,7 @@
 1194 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Label $0~String0 could not be dropped (file error $1~NSKCode). 
 1195 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Column $0~ColumnName is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
 1196 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The number of salt partitions must be between $0~int0 and $1~int1
-1197 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- available ----
+1197 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The location $0~string0 for $1~string1 does not match with another location $2~string2 specified. All location specifications must be identical.
 1198 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU View text is too long to fit into the metadata.
 1199 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The PARTITION BY clause is not allowed for a Trafodion table.
 1200 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An error occurred while reading HDFS file statistics for Hive table $1~TableName. Cause: $0~string0.

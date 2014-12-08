@@ -232,6 +232,7 @@ struct DefaultDefault
 #define	 DDui0_5(name,value)		 DD(name,value,&validateUIntFrom0To5)
 #define	XDDui0_5(name,value)		XDD(name,value,&validateUIntFrom0To5)
 #define	 DDui1_6(name,value)		 DD(name,value,&validateUIntFrom1To6)
+#define	 DDui1_10(name,value)		 DD(name,value,&validateUIntFrom1To10)
 #define	 DDui2_10(name,value)		 DD(name,value,&validateUIntFrom2To10)
 #define	 DDui1500_4000(name,value)	 DD(name,value,&validateUIntFrom1500To4000)
 #define  DDipcBu(name,value)		 DD(name,value,&validateIPCBuf)
@@ -304,6 +305,7 @@ const ValidateUInt2		validateUI512(512);	// pos multiples of 512 only
 const ValidateUIntFrom0To5	validateUIntFrom0To5;	// integer from 0 to 5
 const ValidateUIntFrom1500To4000 validateUIntFrom1500To4000;	// integer from 1 to 6
 const ValidateUIntFrom1To6	validateUIntFrom1To6;	// integer from 1 to 6
+const ValidateUIntFrom1To10	validateUIntFrom1To10;	// integer from 1 to 10
 const ValidateUIntFrom2To10	validateUIntFrom2To10;	// integer from 2 to 10
 const ValidateIPCBuf		validateIPCBuf;	// for IPC message buffers (DP2 msgs)
 const ValidateFlt		validateFlt;	// allows neg, zero, pos (all nums)
@@ -1946,6 +1948,11 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDint__(HJ_SCAN_TO_NJ_PROBE_SPEED_RATIO,        "2000"),
   DDkwd__(HJ_TYPE,				"HYBRID"),
   DD_____(HP_ROUTINES_SCHEMA,                   "NEO.HP_ROUTINES"), // Must be in form <cat>.<sch>
+  DDkwd__(HQC_CONVDOIT_DISABLE_NUMERIC_CHECK, "OFF"),
+  DDkwd__(HQC_LOG, "OFF"),
+  DD_____(HQC_LOG_FILE,    ""),
+  DDui1_10(HQC_MAX_VALUES_PER_KEY, "5"), 
+  DDkwd__(HYBRID_QUERY_CACHE, "ON"),
   DDkwd__(IF_LOCKED,				"WAIT"),
 
     // ignore_duplicate_keys is no more valid. It is still
@@ -2848,6 +2855,8 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
  DDkwd__(QUERY_CACHE_STATISTICS,            "OFF"),
  DD_____(QUERY_CACHE_STATISTICS_FILE,       "qcachsts"),
  DDkwd__(QUERY_CACHE_TABLENAME,               "OFF"),
+ DDkwd__(QUERY_CACHE_USE_CONVDOIT_FOR_BACKPATCH, "ON"),
+
   // Limit CPU time a query can use in master or any ESP.  Unit is seconds.
  XDDint__(QUERY_LIMIT_SQL_PROCESS_CPU,         "0"),
  // Extra debugging info for QUERY_LIMIT feature.

@@ -81,7 +81,7 @@ class HistogramCache;
 class CompilerTrackingInfo;
 class OptDefaults;
 struct MDDescsInfo;
-
+class CmpStatementISP;
 class EstLogProp;
 typedef IntrusiveSharedPtr<EstLogProp> EstLogPropSharedPtr;
 
@@ -439,8 +439,7 @@ private:
   short GetTMFFileNumber() const { return tmpFileNumber_; }
   NAClusterInfo *getClusterInfo() { return clusterInfo_; }
   void swithcContext();
-
-
+  CmpStatementISP* getISPStatement(Int64 id);
 // MV
 private:
 

@@ -557,6 +557,17 @@ void CmpContext::resetContext()
   cmpMemMonitor = NULL;
 }
 
+CmpStatementISP* CmpContext::getISPStatement(Int64 id)
+{
+  NAList<CmpStatement*> & statements = this->statements();
+  CmpStatementISP* ispStatement;
+  for ( CollIndex i = 0; i < statements.entries(); i++)
+    if ( statements[i] && ( ispStatement = (statements[i])->ISPStatement() ) 
+      && ispStatement->ISPReqId() == id )
+      return ispStatement;
+  return 0;
+}
+
 #ifdef NA_CMPDLL
 // Interface to the embedded arkcmp, used for executor master to compile
 // query statement using this SQL compiler inside the same process.
@@ -753,6 +764,44 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
         break;
       } // end of case (CmpMessageObj::SET_TRANS)
 
+      case (CmpMessageObj::INTERNALSP_REQUEST) :
+      { 
+        //request is from ExStoredProcTcb::work(), 
+        cmpStatement = new CTXTHEAP CmpStatementISP(this);
+        //ISP request is passed as data argument
+        CMPASSERT(data);
+        CmpMessageISPRequest & ispRequest = *(CmpMessageISPRequest *)data;
+        Set_SqlParser_Flags(parserFlags);
+        //process request
+        rs = cmpStatement->process(ispRequest);
+        copyData = TRUE;
+        break;
+      }
+      
+      case (CmpMessageObj::INTERNALSP_GETNEXT) :
+      { 
+         //request is from ExStoredProcTcb::work()
+         CMPASSERT(data);
+          //ISPGetNext request is passed as data argument
+         CmpMessageISPGetNext & ispGetNext = *(CmpMessageISPGetNext *)data;
+         //do not create new statement for GetNext, 
+         //find previous-created statement in current context through requestId
+         cmpStatement = getISPStatement(ispGetNext.ispRequest());
+         if (!cmpStatement)
+         {
+            // There must be a previous ispStatement, otherwise it is an 
+            // internal error. Instantiate a dummy CmpStatement here, just
+            // to place the error information.
+            cmpStatement = new CTXTHEAP CmpStatement(this);
+            CMPASSERT(FALSE);
+         }
+         Set_SqlParser_Flags(parserFlags);//What is this for??
+         //process request
+         rs = cmpStatement->process(ispGetNext);
+         copyData = TRUE;
+         break;
+      }
+      
       default :  // the embedded compiler can not handle other operation yet
       {
         char emsText[120];
@@ -816,14 +865,21 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
           gen_code_len = rp_len;
           break;
         }
+        
       case CmpMessageObj::REPLY_ISP :
         {
-          // todo: REPLY_ISP case if needed.
-          char emsText[120];
-          str_sprintf(emsText,
-                      "Embedded arkcmp got unsupported REPLY_ISP");
-          SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, emsText, 0);
-          rs = CmpStatement::CmpStatement_ERROR;
+          if(copyData == TRUE && rs == CmpStatement::CmpStatement_SUCCESS)
+          {
+              CmpMessageReplyISP *rp = (CmpMessageReplyISP*)cmpStatement->reply();
+              //Receiving buffer is pointed by gen_code, which should be allocated by caller ( ExStoredProcTcb::work() ).
+              //Check receiving buffer length is larger than data length.
+              if(gen_code_len >= rp->getSize())
+                memcpy(gen_code, rp->getData(), rp->getSize());
+              else
+                rs = CmpStatement::CmpStatement_ERROR;
+              //caller shoud check if replied data length exceeds the gen_code_len passed in.
+              gen_code_len = rp->getSize();
+          }
           break;
         }
       default :

@@ -1646,6 +1646,10 @@ public:
   inline NABoolean hasCallStmts()     { return hasCallStmts_; }
   inline void setHasCallStmts(NABoolean v)      { hasCallStmts_ = v; }
 
+  inline void setISPExecLocation(const NAString & locationStr) { ISPExecLocation_ = locationStr; }
+
+  const NAString & getISPExecLocation() const { return ISPExecLocation_ ;}
+  
 private:
 
   // --------------------------------------------------------------------
@@ -1951,6 +1955,8 @@ private:
   BindScope *outerAggScope_;
 
   NABoolean hasCallStmts_;
+
+  NAString ISPExecLocation_;
 }; // class BindWA
 
 class HbaseColUsageInfo : public NABasicObject

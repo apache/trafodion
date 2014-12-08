@@ -190,6 +190,8 @@ public:
   HiveClient_JNI *getHiveClient() { return hiveClientJNI_; }
   void setHiveClient(HiveClient_JNI *hiveClientJNI)
   { hiveClientJNI_ = hiveClientJNI; }
+  //expose cmpContextInfo_ to get HQC info of different contexts
+  const NAArray<CmpContextInfo *> & getCmpContextInfo() const { return cmpContextInfo_; }
 
 private:
 

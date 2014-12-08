@@ -7796,6 +7796,14 @@ NABoolean NATableDB::isSQInternalStoredProcedure(CorrName& corrName)
                          strlen("SPTableOutQUERYCACHE")))
     return TRUE;
 
+  if ( !strncmp(tblName, "SPTableOutHYBRIDQUERYCACHEENTRIES",
+                         strlen("SPTableOutHYBRIDQUERYCACHEENTRIES")))
+    return TRUE;
+
+  if ( !strncmp(tblName, "SPTableOutHYBRIDQUERYCACHE",
+                         strlen("SPTableOutHYBRIDQUERYCACHE")))
+    return TRUE;
+
   return FALSE;
 }
 

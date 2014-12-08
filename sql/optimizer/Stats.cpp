@@ -46,6 +46,7 @@
 #include "NLSConversion.h" // For conversion to unicode strings
 #include "ComCextdecs.h" // For Timestamp related calls
 #include <queue>
+#include "QCache.h"
 
 #include "exp_function.h"
 
@@ -1192,6 +1193,53 @@ void Histogram::reduceNumHistInts(Criterion reductionCriterion,
 			  }
 		  }
 
+}
+
+// compute the extended boundaries of an interval when compared to its neighbors. The method does not
+// have any side affect on the interval or its neighbors . This is used by the HQC logic
+void Histogram::computeExtendedIntRange (Interval& currentInt, Criterion& reductionCriterion, 
+                                         EncodedValue& hiBound, EncodedValue& loBound, 
+                                         NABoolean& hiBoundInclusive, NABoolean& loBoundInclusive)
+{
+    // nothing to do if Criterion is NONE
+    if (reductionCriterion == NONE)
+       return;
+
+    NABoolean intervalExtended = FALSE;
+
+    // try merging with the subsequent intervals
+    Interval nextInt = getNextInterval (currentInt);
+
+    while (nextInt.isValid() && !nextInt.isNull() && currentInt.compare(AFTER_FETCH, reductionCriterion, nextInt))
+    {
+        intervalExtended = TRUE;
+        hiBound = nextInt.hiBound();
+        hiBoundInclusive = nextInt.isHiBoundInclusive();
+        nextInt = getNextInterval (nextInt);
+    }
+
+    // try merging with the preceeding intervals
+    Interval prevInt = getPrevInterval (currentInt);
+    while (prevInt.isValid() && currentInt.compare(AFTER_FETCH, CRITERION1, prevInt))
+    {
+        intervalExtended = TRUE;
+        loBound = prevInt.loBound();
+        loBoundInclusive = prevInt.isLoBoundInclusive();
+        prevInt = getPrevInterval (prevInt);
+    }
+
+    ostream* hqc_ostream=CURRENTQCACHE->getHQCLogFile();
+    if (intervalExtended && hqc_ostream)
+    {
+       *hqc_ostream << "  -- HQC performed an interval extention  -- \n" 
+                    << "    Interval Initial boundaries are: " << endl
+                    << "\t LOW:  [" << currentInt.loBound().getDblValue()  << "]" << endl
+                    << "\t HIGH: [" << currentInt.hiBound().getDblValue() << "]" << endl; 
+
+       *hqc_ostream << "    Result Interval boundaries: "  << endl
+                    << "\t LOW:  [" << loBound.getDblValue() << "] with low bound" << (loBoundInclusive? " ": " NOT ") << "inclusive" << endl
+                    << "\t HIGH: [" << hiBound.getDblValue() << "] with high bound" << (hiBoundInclusive? " " : " NOT ") << "inclusive" << endl;
+    }
 }
 
 
@@ -3249,7 +3297,8 @@ ColStats::ColStats (ComUID& histid, CostScalar uec, CostScalar rowcount,
               histogramID_(histid),
               frequentValues_(heap), 
               avgVarcharSize_(avgVCharSize),
-              mcSkewedValueList_(heap)
+              mcSkewedValueList_(heap),
+              afterFetchIntReductionAttempted_(FALSE)
 {
   // this assertion is invalid: stmt heap is null during static compilation
   //  CMPASSERT( heap != NULL ) ;
@@ -3315,6 +3364,7 @@ ColStats::ColStats (const ColStats &other, NAMemory* h, NABoolean assignColArray
   baseRowCount_    = other.baseRowCount_;
   sumOfMaxUec_     = other.sumOfMaxUec_ ;
   frequentValues_  = other.frequentValues_;
+  afterFetchIntReductionAttempted_ = other.afterFetchIntReductionAttempted_;
 
   setRedFactor     (other.rowRedFactor_) ;
   setUecRedFactor  (other.uecRedFactor_ ) ;
@@ -3586,6 +3636,7 @@ ColStats::overwrite( const ColStats &other )
   setMaxMinValuesFromHistogram() ;
   setIsColWithBndryConflict (other.isColWithBndryConflict());
   setSelectivitySetUsingHint (other.isSelectivitySetUsingHint());
+  afterFetchIntReductionAttempted_ = other.afterFetchIntReductionAttempted_;
 }  // overwrite
 
 // -----------------------------------------------------------------------
@@ -4546,7 +4597,7 @@ Criterion ColStats::decideReductionCriterion(Source invokedFrom,
 			}
 		}
 		//histogram caching is off
-		//of we want to ignore the fact that
+		//or we want to ignore the fact that
 		//histogram caching is on / off
 		else
 		{
@@ -7626,6 +7677,7 @@ void StatsList::reduceNumHistIntsAfterFetch(NATable& table)
             //get a reference to the full histogram's col stats
             //decide which version to use, then set statsToInsertFrom
             //to reference the stats list of the correct version.
+            colStats->setAfterFetchIntReductionAttempted();
             switch (colStats->decideReductionCriterion
                     (AFTER_FETCH,CRITERION1,column,TRUE))
             {

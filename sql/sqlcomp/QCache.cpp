@@ -45,6 +45,8 @@
 #include "ControlDB.h"
 #include "CmpErrLog.h"
 #include "CompilerTracking.h"
+#include "exp_clause_derived.h"
+#include "NumericType.h"
 #include "ComDistribution.h"
 
 #ifdef DBG_QCACHE
@@ -64,6 +66,7 @@ void logmsg(char* msg, ULong u)
      *filestream << msg << ": " << u << endl;
 }
 #endif
+
 
 ULng32 getDefaultInK(const Int32& key)
 {
@@ -765,7 +768,7 @@ Key::Key(CmpPhase phase, CompilerEnv* e, NAHeap *h)
 }
 
 // copy constructor
-Key::Key(Key &s, NAHeap *h)
+Key::Key(const Key &s, NAHeap *h)
   : phase_(s.phase_), heap_(h), env_(0)
 {
   if (s.env_) {
@@ -850,6 +853,7 @@ CacheKey::CacheKey(NAString &stmt, CmpPhase phase, CompilerEnv* e,
   , reqdShape_(cqs,h), compareSelectivity_(TRUE)
   , updateStatsTime_(h,tables.entries())
   , useView_(useView)
+  , planId_(-1)
 {
   // get & save referenced tables' histograms' timestamps
   updateStatsTimes(tables);
@@ -865,6 +869,7 @@ CacheKey::CacheKey(CacheKey &s, NAHeap *h)
   , rbackMode_(s.rbackMode_), compareSelectivity_(TRUE)
   , updateStatsTime_(s.updateStatsTime_,h)
   , useView_(s.useView_)
+  , planId_(s.planId_)
 {
 }
 
@@ -1005,6 +1010,13 @@ NABoolean TextKey::amSafeToHash() const
 // return hash value of a CacheKey; this is called (and required) by
 // NAHashDictionary<K,V>::getHashCode() to compute a key's hash address.
 static ULng32
+hashHQCKeyFunc(const HQCCacheKey& key)
+{
+  return key.hashKey();
+}
+// return hash value of a CacheKey; this is called (and required) by
+// NAHashDictionary<K,V>::getHashCode() to compute a key's hash address.
+static ULng32
 hashKeyFunc(const CacheKey& key)
 {
   // this function must have the following properties:
@@ -1063,8 +1075,10 @@ const Int32 initialTextPtrArrayLen=10;
 // cache entry of a compiled plan for possible addition into the cache.
 CacheData::CacheData(Generator *plan, const ParameterTypeList& f,
                      const SelParamTypeList& s,
+                     LIST(Int32) hqcParamPos, LIST(Int32) hqcSelPos, LIST(Int32) hqcConstPos,
                      Int64 planId, const char *text, Lng32 cs, NAHeap *h)
-  : CData(h), formals_(f,h), fSels_(s,h),
+  : CData(h), formals_(f,h), fSels_(s,h), hqcListOfConstParamPos_(hqcParamPos, h), 
+    hqcListOfSelParamPos_(hqcSelPos, h), hqcListOfConstPos_ (hqcConstPos, h),
     origStmt_((char*)text), textentries_(h, initialTextPtrArrayLen)
 {
   plan_ = new (h) Plan(plan, planId, h);
@@ -1093,6 +1107,9 @@ CData::CData(CData &s, NAHeap *h)
 CacheData::CacheData(CacheData &s, NAHeap *h, NABoolean sharePlan)
   : CData(s, h)
   , formals_(s.formals_, h), fSels_(s.fSels_, h)
+  , hqcListOfConstParamPos_(s.hqcListOfConstParamPos_, h)
+  , hqcListOfSelParamPos_(s.hqcListOfSelParamPos_, h)
+  , hqcListOfConstPos_(s.hqcListOfConstPos_, h)
   , origStmt_(s.origStmt_)
   , textentries_(s.textentries_, h)
 {
@@ -1156,8 +1173,10 @@ TextData::~TextData()
 // is not included!!!
 ULng32 CacheData::getSize() const
 {
-  ULng32 x = sizeof(*this) + formals_.getSize() + fSels_.getSize()  + 
-         (origStmt_ ? strlen(origStmt_) : 0);
+  ULng32 hqcTypesSize = (hqcListOfConstParamPos_.entries() * sizeof (Int32)) +
+                        (hqcListOfSelParamPos_.entries() * sizeof (Int32)) +
+                        (hqcListOfConstPos_.entries() * sizeof (Int32)) ;
+  ULng32 x = sizeof(*this) + formals_.getSize() + fSels_.getSize()  + hqcTypesSize + (origStmt_ ? strlen(origStmt_) : 0);
 
   return x;
 }
@@ -1239,6 +1258,209 @@ NABoolean CacheData::unpackParms
   return TRUE; // all OK
 }
 
+// backpatch for HQC queries
+NABoolean CacheData::backpatchParams
+    (LIST(hqcConstant *) &listOfConstantParameters,
+     LIST(hqcDynParam *) &listOfDynamicParameters,
+     BindWA &bindWA, char* &params, ULng32 &parameterBufferSize)
+{
+  // exit early if there's nothing to backpatch
+  parameterBufferSize = 0;
+  CollIndex countP = listOfConstantParameters.entries();
+  CollIndex countD = listOfDynamicParameters.entries();
+  if (countP+countD <= 0) {
+    return TRUE;
+  }
+
+  // number of HQC constants should be the sum of the SQC formal and selective parameters
+  CMPASSERT (countP == (formals_.entries() + fSels_.entries()))
+
+
+  // collect all the constants types in the order the constants appear in the query
+  CollIndex x=0;
+  CollIndex y=0;
+  Int32 countP2 = formals_.entries();
+  Int32 countS2 = fSels_.entries();
+  LIST(NAType*) hqcTypes;
+
+  for (CollIndex j = 0; j < (countP2+countS2); j ++)
+  {
+     if ((x < countP2) && hqcListOfConstParamPos_[x] == j)
+     {
+        hqcTypes.insert(formals_[x].type_);
+        x++;
+     }
+     else if ((y < countS2) && (hqcListOfSelParamPos_[y] == j))
+     {
+        hqcTypes.insert(fSels_[y].type_);
+        y++;
+     }
+  }
+
+  // temporary code until the issue of using convDotIt with numeric is resolved
+  NABoolean anyNumeric = FALSE;
+  CollIndex i;
+
+  NABoolean useConvDoIt = (CmpCommon::getDefault(QUERY_CACHE_USE_CONVDOIT_FOR_BACKPATCH) == DF_ON);
+
+  // disable numeric (x.y) for now, until issue is resolved
+  if (CmpCommon::getDefault(HQC_CONVDOIT_DISABLE_NUMERIC_CHECK) == DF_OFF)
+    for (CollIndex j = 0; j < (countP2+countS2); j ++)
+    {
+      NAType* targetType = hqcTypes[j];
+      if ((targetType->getTypeQualifier() == NA_NUMERIC_TYPE) &&
+        ((((NumericType*)targetType)->getSimpleTypeName() == "NUMERIC") || (((NumericType*)targetType)->getSimpleTypeName() == "BIG NUM")))
+      {
+         useConvDoIt = FALSE;
+         break;
+      }
+    }
+
+  // Generate a series of "assignment" expressions where the right hand sides
+  // "cast" each of the list of ConstantParameters into their corresponding
+  // formal types (taken from this CacheData's formals_) and the left hand
+  // sides are the corresponding elements of parameterBuffer (taken from the
+  // partially unpacked plan_ of this CacheData)
+
+  ValueIdList castExprs;
+  if (!useConvDoIt)
+  {
+     // Use an array to collect the ValueIds so that the literal positions
+     // in the SQL statement match those of the substituting parameters 
+     // in the plan.
+     ValueIdArray castExprArray(countP);
+     CollIndex i;
+     for (i = 0; i < countP; i++) {
+       ConstValue *constVal = listOfConstantParameters[hqcListOfConstPos_[i]]->getConstValue();
+       NAType *type = CONST_CAST(NAType*, hqcTypes[i]);
+       ItemExpr *castNode = new (CmpCommon::statementHeap()) Cast(constVal, type);
+       castNode = castNode->bindNode(&bindWA);
+       if (!castNode) {
+         return FALSE;
+       }
+       castExprArray.insertAt(i, castNode->getValueId());
+     }
+   
+     // transfer the list from array form to list form
+     //ValueIdList castExprs;
+     for (i=0; i<countP; i++) {
+       castExprs.insert(castExprArray[i]);
+     }
+  } // QUERY_CACHE_USE_CONVDOIT_FOR_BACKPATCH is OFF
+
+  // unpack parameter buffer part of plan_
+  NABasicPtr parameterBuffer;
+  if (!unpackParms(parameterBuffer, parameterBufferSize)) {
+    return FALSE;
+  }
+
+  if (!useConvDoIt)
+  {
+     // evaluate the "assignments" to accomplish the backpatch
+     ex_expr::exp_return_type evalReturnCode = castExprs.evalAtCompileTime
+       (0, ExpTupleDesc::SQLARK_EXPLODED_FORMAT, parameterBuffer,
+        parameterBufferSize);
+     // evaluation success is guaranteed for the 2 cases that get here:
+     // 1) on a cache hit, ParameterTypeList::operator == returns TRUE iff
+     //    NAType::errorsCanOccur() is false for all pairs of actual to
+     //    formal cast expression.
+     // 2) on a cache miss, actuals and formals are identical.
+     // But as CR 10-010618-3503 showed, there are still cases where
+     // evaluation can fail; so, let's fail gracefully here.
+     if (evalReturnCode != ex_expr::EXPR_OK) {
+       return FALSE;
+     }
+  } // QUERY_CACHE_USE_CONVDOIT_FOR_BACKPATCH is OFF
+  else
+  {
+     char* targetBugPtr = parameterBuffer.getPointer();
+     Lng32 offset = 0;
+     CollIndex x=0;
+     CollIndex y=0;
+     
+     for (CollIndex j = 0; j < (countP); j ++)
+     {
+        ConstValue *constVal = NULL;
+        const NAType *sourceType = NULL;
+        const NAType *targetType = NULL;
+  
+        constVal = listOfConstantParameters[hqcListOfConstPos_[j]]->getConstValue();
+        targetType = CONST_CAST(NAType*, hqcTypes[j]);
+
+        sourceType = constVal->getType();
+        Lng32 targetLen = targetType->getNominalSize();
+        Lng32 sourceScale = constVal->getType()->getScale();
+        Lng32 targetScale = targetType->getScale();
+        Lng32 varCharLenSize = 0;
+        char* varCharLen = NULL;
+        
+        if ((targetType->getFSDatatype() >= REC_MIN_NUMERIC) and (targetType->getFSDatatype() <= REC_MAX_FLOAT))
+        {
+            Lng32 extraBuffer = targetLen - (offset % targetLen);
+            if (extraBuffer != targetLen)
+               offset += extraBuffer;
+        }
+
+        if (DFS2REC::isAnyVarChar(targetType->getFSDatatype()))
+        {
+           varCharLenSize = targetType->getVarLenHdrSize();
+           // align on a 2-byte since this is an integer
+           offset += (offset % varCharLenSize);
+           varCharLen = (char*)(targetBugPtr+offset);
+           offset += varCharLenSize;
+           
+           // is this an empty string
+           if (constVal->isEmptyString())
+              varCharLenSize = 0;
+        }
+  
+        if (DFS2REC::isAnyCharacter(targetType->getFSDatatype()))
+        {
+           sourceScale= constVal->getType()->getCharSet();
+           targetScale= targetType->getCharSet();
+        }
+  
+        char* charVal = (char*)(constVal->getConstValue());
+        Int32 val = 0;
+
+        // NEED TO TEST FOR BIGNUM
+        if ((targetType->getTypeQualifier() == NA_NUMERIC_TYPE) &&
+          ((((NumericType*)targetType)->getSimpleTypeName() == "NUMERIC") || (((NumericType*)targetType)->getSimpleTypeName() == "BIG NUM")) &&
+           (targetScale > sourceScale)
+           )
+        {
+              val = *((Int32*) (constVal->getConstValue()));
+              val = val * pow(10, targetScale-sourceScale);
+              charVal = (char*) (&val);
+        }
+
+        short retCode = convDoIt((char*)charVal,
+           constVal->getStorageSize(),
+           (short)sourceType->getFSDatatype(),
+           sourceType->getPrecision(),
+           sourceScale,
+           (char*)(targetBugPtr+offset),
+           targetLen,
+           (short)(targetType->getFSDatatype()),
+           targetType->getPrecision(),
+           targetScale,
+           varCharLen, 
+           varCharLenSize);
+
+        if (retCode != ex_expr::EXPR_OK)
+           return FALSE;
+  
+        offset += targetLen;
+        CMPASSERT ((j < (countP-1)) || (offset == parameterBufferSize));
+     }
+  }
+
+  params = parameterBuffer.getPointer();
+  return TRUE; // all OK
+}
+
+
+
 // copies listOfConstantParameters into this CacheData's plan_
 NABoolean CacheData::backpatchParams
 (const ConstantParameters &listOfConstantParameters, 
@@ -1255,47 +1477,81 @@ NABoolean CacheData::backpatchParams
     return TRUE;
   }
 
+  // temporary code until the issue of using convDotIt with numeric is resolved
+  NABoolean anyNumeric = FALSE;
+  CollIndex i;
+
+  NABoolean useConvDoIt = (CmpCommon::getDefault(QUERY_CACHE_USE_CONVDOIT_FOR_BACKPATCH) == DF_ON);
+
+  // disable numeric (x.y) for now, until issue is resolved
+  if (CmpCommon::getDefault(HQC_CONVDOIT_DISABLE_NUMERIC_CHECK) == DF_OFF)
+    for (CollIndex x = 0; x  < countP; x++)
+    {
+       NAType* targetType = formals_[x].type_;
+       if ((targetType->getTypeQualifier() == NA_NUMERIC_TYPE) && 
+            ((((NumericType*)targetType)->getSimpleTypeName() == "NUMERIC") || (((NumericType*)targetType)->getSimpleTypeName() == "BIG NUM")))
+       {
+          useConvDoIt = FALSE;
+          break;
+       }
+    }
+  
+  for (CollIndex x = 0; (x  < countS) && useConvDoIt; x++)
+  {
+     NAType* targetType = fSels_[x].type_;
+     if ((targetType->getTypeQualifier() == NA_NUMERIC_TYPE) && 
+       ((((NumericType*)targetType)->getSimpleTypeName() == "NUMERIC") || (((NumericType*)targetType)->getSimpleTypeName() == "BIG NUM")))
+     {
+          useConvDoIt = FALSE;
+          break;
+     }
+  }
+
   // Generate a series of "assignment" expressions where the right hand sides
   // "cast" each of the list of ConstantParameters into their corresponding
   // formal types (taken from this CacheData's formals_) and the left hand
   // sides are the corresponding elements of parameterBuffer (taken from the
   // partially unpacked plan_ of this CacheData)
 
-  // Use an array to collect the ValueIds so that the literal positions
-  // in the SQL statement match those of the substituting parameters 
-  // in the plan.
-  ValueIdArray castExprArray(countP+countS);
-  CollIndex i;
-  for (i = 0; i < countP; i++) {
-    ConstValue *constVal = listOfConstantParameters[i]->getConstVal();
-    NAType *type = formals_[i].type_;
-    ItemExpr *castNode = new (CmpCommon::statementHeap()) Cast(constVal, type);
-    castNode = castNode->bindNode(&bindWA);
-    if (!castNode) {
-      return FALSE;
-    }
-    castExprArray.insertAt(
-       listOfConstParamPositionsInSql[i],
-       castNode->getValueId());
-  }
-  for (i = 0; i < countS; i++) {
-    ConstValue *constVal = listOfSelParameters[i]->getConstVal();
-    NAType *type = fSels_[i].type_;
-    ItemExpr *castNode = new (CmpCommon::statementHeap()) Cast(constVal, type);
-    castNode = castNode->bindNode(&bindWA);
-    if (!castNode) {
-      return FALSE;
-    }
-    castExprArray.insertAt(
-        listOfSelParamPositionsInSql[i],
-        castNode->getValueId());
-  }
-
-  // transfer the list from array form to list form
   ValueIdList castExprs;
-  for (i=0; i<countP+countS; i++) {
-    castExprs.insert(castExprArray[i]);
-  }
+  if (!useConvDoIt)
+  {
+     // Use an array to collect the ValueIds so that the literal positions
+     // in the SQL statement match those of the substituting parameters 
+     // in the plan.
+     ValueIdArray castExprArray(countP+countS);
+     CollIndex i;
+     for (i = 0; i < countP; i++) {
+       ConstValue *constVal = listOfConstantParameters[i]->getConstVal();
+       NAType *type = formals_[i].type_;
+       ItemExpr *castNode = new (CmpCommon::statementHeap()) Cast(constVal, type);
+       castNode = castNode->bindNode(&bindWA);
+       if (!castNode) {
+         return FALSE;
+       }
+       castExprArray.insertAt(
+          listOfConstParamPositionsInSql[i],
+          castNode->getValueId());
+     }
+     for (i = 0; i < countS; i++) {
+       ConstValue *constVal = listOfSelParameters[i]->getConstVal();
+       NAType *type = fSels_[i].type_;
+       ItemExpr *castNode = new (CmpCommon::statementHeap()) Cast(constVal, type);
+       castNode = castNode->bindNode(&bindWA);
+       if (!castNode) {
+         return FALSE;
+       }
+       castExprArray.insertAt(
+           listOfSelParamPositionsInSql[i],
+           castNode->getValueId());
+     }
+   
+     // transfer the list from array form to list form
+     //ValueIdList castExprs;
+     for (i=0; i<countP+countS; i++) {
+       castExprs.insert(castExprArray[i]);
+     }
+  } // QUERY_CACHE_USE_CONVDOIT_FOR_BACKPATCH is OFF
 
   // unpack parameter buffer part of plan_
   NABasicPtr parameterBuffer;
@@ -1303,22 +1559,120 @@ NABoolean CacheData::backpatchParams
     return FALSE;
   }
 
-  // evaluate the "assignments" to accomplish the backpatch
-  ex_expr::exp_return_type evalReturnCode = castExprs.evalAtCompileTime
-    (0, ExpTupleDesc::SQLARK_EXPLODED_FORMAT, parameterBuffer,
-     parameterBufferSize);
-  // evaluation success is guaranteed for the 2 cases that get here:
-  // 1) on a cache hit, ParameterTypeList::operator == returns TRUE iff
-  //    NAType::errorsCanOccur() is false for all pairs of actual to
-  //    formal cast expression.
-  // 2) on a cache miss, actuals and formals are identical.
-  // But as CR 10-010618-3503 showed, there are still cases where
-  // evaluation can fail; so, let's fail gracefully here.
-  if (evalReturnCode != ex_expr::EXPR_OK) {
-    return FALSE;
+  if (!useConvDoIt)
+  {
+     // evaluate the "assignments" to accomplish the backpatch
+     ex_expr::exp_return_type evalReturnCode = castExprs.evalAtCompileTime
+       (0, ExpTupleDesc::SQLARK_EXPLODED_FORMAT, parameterBuffer,
+        parameterBufferSize);
+     // evaluation success is guaranteed for the 2 cases that get here:
+     // 1) on a cache hit, ParameterTypeList::operator == returns TRUE iff
+     //    NAType::errorsCanOccur() is false for all pairs of actual to
+     //    formal cast expression.
+     // 2) on a cache miss, actuals and formals are identical.
+     // But as CR 10-010618-3503 showed, there are still cases where
+     // evaluation can fail; so, let's fail gracefully here.
+     if (evalReturnCode != ex_expr::EXPR_OK) {
+       return FALSE;
+     }
+  } // QUERY_CACHE_USE_CONVDOIT_FOR_BACKPATCH is OFF
+  else
+  {
+     char* targetBugPtr = parameterBuffer.getPointer();
+     Lng32 offset = 0;
+     CollIndex x=0;
+     CollIndex y=0;
+     
+     for (CollIndex j = 0; j < (countP+countS); j ++)
+     {
+        ConstValue *constVal = NULL;
+        const NAType *sourceType = NULL;
+        const NAType *targetType = NULL;
+  
+        if ((x < countP) && listOfConstParamPositionsInSql[x] == j)
+        {
+           constVal = listOfConstantParameters[x]->getConstVal();
+           targetType = formals_[x].type_;
+           x++; 
+        }
+        else if ((y < countS) && (listOfSelParamPositionsInSql[y] == j))
+        {
+           constVal = listOfSelParameters[y]->getConstVal();
+           targetType = fSels_[y].type_;
+           y++; 
+        }
+
+        sourceType = constVal->getType();
+        Lng32 targetLen = targetType->getNominalSize();
+        Lng32 sourceScale = constVal->getType()->getScale();
+        Lng32 targetScale = targetType->getScale();
+        Lng32 varCharLenSize = 0;
+        char* varCharLen = NULL;
+        
+        if ((targetType->getFSDatatype() >= REC_MIN_NUMERIC) and (targetType->getFSDatatype() <= REC_MAX_FLOAT))
+        {
+            Lng32 extraBuffer = targetLen - (offset % targetLen);
+            if (extraBuffer != targetLen)
+               offset += extraBuffer;
+        }
+
+        if (DFS2REC::isAnyVarChar(targetType->getFSDatatype()))
+        {
+           varCharLenSize = targetType->getVarLenHdrSize();
+           // align on a 2-byte since this is an integer
+           offset += (offset % varCharLenSize);
+           varCharLen = (char*)(targetBugPtr+offset);
+           offset += varCharLenSize;
+           
+           // is this an empty string
+           if (constVal->isEmptyString())
+              varCharLenSize = 0;
+        }
+  
+        if (DFS2REC::isAnyCharacter(targetType->getFSDatatype()))
+        {
+           sourceScale= constVal->getType()->getCharSet();
+           targetScale= targetType->getCharSet();
+        }
+  
+        char* charVal = (char*)(constVal->getConstValue());
+        Int32 val = 0;
+
+        // NEED TO TEST FOR BIGNUM
+        if ((targetType->getTypeQualifier() == NA_NUMERIC_TYPE) &&
+          ((((NumericType*)targetType)->getSimpleTypeName() == "NUMERIC") || (((NumericType*)targetType)->getSimpleTypeName() == "BIG NUM")) &&
+           (targetScale > sourceScale)
+           )
+        {
+              val = *((Int32*) (constVal->getConstValue()));
+              val = val * pow(10, targetScale-sourceScale);
+              charVal = (char*) (&val);
+        }
+  
+        short retCode = convDoIt((char*)charVal,
+           constVal->getStorageSize(),
+           (short)sourceType->getFSDatatype(),
+           sourceType->getPrecision(),
+           sourceScale,
+           (char*)(targetBugPtr+offset),
+           targetLen,
+           (short)(targetType->getFSDatatype()),
+           targetType->getPrecision(),
+           targetScale,
+           varCharLen, 
+           varCharLenSize);
+
+        if (retCode != ex_expr::EXPR_OK)
+           return FALSE;
+  
+        offset += targetLen;
+        CMPASSERT ((j < (countP+countS-1)) || (offset == parameterBufferSize));
+     }
   }
+
   params = parameterBuffer.getPointer();
   return TRUE; // all OK
+
 }
 
 // copies actuals_ into this CacheData's plan_
@@ -1614,6 +1968,7 @@ void QCache::makeEmpty()
   cache_->clear(); // removes entries from template hash table
   tlruQ_.clear();  // removes and destroys entries from text list
   clruQ_.clear();  // removes and destroys entries from template list
+  CURRENTQCACHE->getHQC()->clear();   //empty HQC as well
 }
 
 // return bytes that can be freed by evicting this postparser cache entry
@@ -1666,10 +2021,12 @@ NABoolean QCache::canFit(ULng32 size)
 }
 
 // try to add this new postparser (and preparser) entry into the cache
-void QCache::addEntry(TextKey *tkey,
+CacheKey* QCache::addEntry(TextKey *tkey,
                       CacheKey*stmt, CacheData *plan, TimeVal& begTime,
                       char *params, ULng32 parmSz)
 {
+   CacheKey* ckeyInQCache = NULL;
+
    // stmt and plan and tkey are well formed
    CMPASSERT(stmt && plan && tkey);
 
@@ -1757,7 +2114,8 @@ void QCache::addEntry(TextKey *tkey,
 
   KeyDataPair newEntry(stmt,plan);
   if (getFreeSize() >= bytesNeeded) { // yes, there's space.
-    addEntry(tkey, newEntry, begTime, params, parmSz, canReuseCachedPlan);
+    ckeyInQCache = 
+        addEntry(tkey, newEntry, begTime, params, parmSz, canReuseCachedPlan);
 
     // we must null newEntry's contents here to prevent its destructor
     // from delete'ing its contents which are now owned by the cache.
@@ -1770,7 +2128,8 @@ void QCache::addEntry(TextKey *tkey,
     }
     // yes, we can free enough space to make room for newEntry
     else if (freeLRUentries(bytesNeeded, limit_)) {
-      addEntry(tkey, newEntry, begTime, params, parmSz, canReuseCachedPlan);
+      ckeyInQCache = 
+         addEntry(tkey, newEntry, begTime, params, parmSz, canReuseCachedPlan);
 
       // we must null newEntry's contents here to prevent its destructor
       // from delete'ing its contents which are now owned by the cache.
@@ -1787,6 +2146,8 @@ void QCache::addEntry(TextKey *tkey,
    // we must null newEntry's contents here to prevent its destructor
    // from delete'ing its contents which are now owned by the cache.
    newEntry.first_ = NULL; newEntry.second_ = NULL;
+
+   return ckeyInQCache;
 }
 
 // make room for and add this new preparser entry into the cache
@@ -1907,17 +2268,20 @@ NABoolean QCache::lookUp(TextKey *stmt, TextDataPtr &data)
 }
 
 // unconditionally add this postparser (and preparser) entry into the cache
-void QCache::addEntry(TextKey *tkey, 
+CacheKey* QCache::addEntry(TextKey *tkey, 
                       KeyDataPair& newEntry, TimeVal& begTime,
                       char *params, ULng32 parmSz, NABoolean sharePlan)
 {
+  CacheKey* newCKeyInQCache = NULL;
+
   // if entry is malformed
   const CacheKey *entry = (const CacheKey*)(newEntry.first_);
   if (!entry || !entry->amSafeToHash())
-    return; // do nothing
+    return NULL; // do nothing
 
   // if entry is already in cache, do nothing
-  if (cache_->getFirstValue((const CacheKey*)(newEntry.first_))) return;
+  if (cache_->getFirstValue((const CacheKey*)(newEntry.first_))) 
+     return NULL;
 
 #ifdef DBG_QCACHE
    ULng32 x, y;
@@ -1926,8 +2290,8 @@ void QCache::addEntry(TextKey *tkey,
 #endif
 
   // transfer ownership of new postparser entry's memory to cache heap_
-  newEntry.first_ = new(heap_) CacheKey(*(CacheKey*)(newEntry.first_), heap_);
-
+  newEntry.first_ = newCKeyInQCache = new(heap_) CacheKey(*(CacheKey*)(newEntry.first_), heap_);
+  
 #ifdef DBG_QCACHE
   y = heap_->getAllocSize();
   logmsg("after allocate first_", y-x);
@@ -1935,6 +2299,11 @@ void QCache::addEntry(TextKey *tkey,
 
   newEntry.second_ = new(heap_) CacheData
     (*(CacheData*)(newEntry.second_), heap_, sharePlan);
+
+  //keep a copy of planId in CacheKey for HybridQueryCacheDetails convenience
+  CacheKey* cacheKey = (CacheKey*)(newEntry.first_);
+  CacheData* cacheData = (CacheData*)(newEntry.second_);
+  cacheKey->setPlanId(cacheData->getPlan()->getId());
 
 #ifdef DBG_QCACHE
   x = heap_->getAllocSize();
@@ -1970,6 +2339,10 @@ void QCache::addEntry(TextKey *tkey,
   // compute and set this entry's compile time
   newEntry.second_->setCompTime(begTime);
 
+  // return the cache key so that HQC can use the same pointer
+  // to point at the same ckey.
+  return newCKeyInQCache;
+
 #ifdef DBG_QCACHE
 logmsg("End in ::addEntry()");
 #endif
@@ -2001,6 +2374,8 @@ void QCache::deCachePostParserEntry(CacheEntry *entry)
   logmsg("begin QCache::deCachePostParserEntry");
   ULng32 x = heap_->getAllocSize();
 #endif
+
+  CURRENTQCACHE->getHQC()->delEntryWithCacheKey((CacheKey*)(entry->data_.first_));
 
   cache_->remove((CacheKey*)(entry->data_.first_));
 
@@ -2566,6 +2941,7 @@ ULng32 QCache::maxPreParserEntries(ULng32 maxByteSz, ULng32 avgEntrySz)
 QueryCache::QueryCache(ULng32 maxSize, ULng32 maxVictims, ULng32 avgPlanSz)
 {
   cache_ = NULL;
+  hqc_ = NULL;
   resizeCache(maxSize, maxVictims, avgPlanSz);
   parameterTypes_ = new (CTXTHEAP) NAString(parmTypesInitStrLen, CTXTHEAP);
 }
@@ -2652,6 +3028,50 @@ NABoolean QueryCache::getCompilationCacheStats(QCacheStats &stats)
   return TRUE;
 }
 
+void QueryCache::getHQCStats(HybridQueryCacheStats & stats)
+{
+    if(!hqc_)
+    {
+        memset(&stats, 0, sizeof(stats));
+    }
+    else{
+        stats.nHKeys = hqc_->getEntries();
+        stats.nSKeys = hqc_->getNumSQCKeys();
+        stats.nMaxValuesPerKey = hqc_->getMaxEntriesPerKey();
+        stats.nHashTableBuckets = hqc_->getNumBuckets();
+    }
+}
+
+void QueryCache::getHQCEntryDetails(HQCCacheKey* hkey, HQCCacheEntry* entry, HybridQueryCacheDetails & details)
+{
+    if(!hqc_)
+    {
+        memset(&details, 0, sizeof(details));
+    }
+    else{
+        details.planId = entry->getSQCKey()->getPlanId();
+        details.hkeyTxt = hkey->getKey();
+        details.skeyTxt = entry->getSQCKey()->getText();
+        details.nHits = entry->getNumHits();
+        details.nOfPConst = entry->getParams()->getConstantList().entries();
+
+        for(int i = 0; i < entry->getParams()->getConstantList().entries(); i++){
+            details.PConst += entry->getParams()->getConstantList()[i]->getConstValue()->getText();
+            details.PConst += "\n";
+        }
+        
+        details.nOfNPConst = 0;
+        for(int i = 0; i < entry->getParams()->getNPLiterals().entries(); i++)
+            if(!entry->getParams()->getNPLiterals()[i].isNull())
+                details.nOfNPConst++; 
+                     
+        for(int i = 0; i < entry->getParams()->getNPLiterals().entries(); i++)
+            if(!entry->getParams()->getNPLiterals()[i].isNull()){
+                details.NPConst += entry->getParams()->getNPLiterals()[i];
+                details.NPConst += "\n";
+            }
+    }
+}
 // get query cache statistics
 void QueryCache::getCacheStats(QueryCacheStats &stats)
 {
@@ -2738,7 +3158,17 @@ void QueryCache::resizeCache(ULng32 maxSize, ULng32 maxVictims, ULng32 avgPlanSz
   }
   else {
     cache_ = new CTXTHEAP QCache(maxSize, maxVictims, avgPlanSz);
-    //CmpCommon::context()->setQCache(cache_);
+  }
+
+  //do the same for Hybrid Query Cache
+  // set HQC HashTable to have same bucket number as CacheKey HashTable
+
+  Lng32 numBuckets = cache_->getNumBuckets();
+  if (hqc_ != NULL) {
+      hqc_ = hqc_->resizeCache(numBuckets);
+  }
+  else {
+      hqc_ = new (CTXTHEAP) HybridQCache(numBuckets);
   }
 }
 
@@ -2748,7 +3178,7 @@ void QueryCache::setQCache(QCache *qCache)
 }
 
 // add a new postparser entry into the cache
-void QueryCache::addEntry
+CacheKey* QueryCache::addEntry
 (TextKey            *tkey,   // (IN) : preparser key
  CacheKey           *stmt,   // (IN) : postparser key
  CacheData          *plan,   // (IN) : sql statement's compiled plan
@@ -2756,9 +3186,8 @@ void QueryCache::addEntry
  char               *params, // (IN) : parameters for preparser entry
  ULng32       parmSz) // (IN) : len of params for preparser entry
 { 
-  if (cache_) {
-    cache_->addEntry(tkey, stmt, plan, begT, params, parmSz); 
-  }
+  return (cache_) ? 
+    cache_->addEntry(tkey, stmt, plan, begT, params, parmSz) : NULL;
 }
 
 // add a new preparser entry into the cache
@@ -2815,4 +3244,1037 @@ KeyDataPair::~KeyDataPair()
    if ( first_ )
      logmsg("end ~KeyDataPair()\n");
 #endif
+}
+
+
+void HQCParseKey::bindConstant2SQC(BaseColumn* base, ConstantParameter* cParameter, LIST(Int32) &hqcConstPos)
+{
+   if ( !cParameter->getConstVal() || cParameter->getConstVal()->getOperatorType() != ITM_CONSTANT ||!isCacheable())
+        return;
+      
+    //loop over ConstValues collected in parser, 
+    //and find one corresponding to constVal,
+    //the matched one will be marked parameterized, and move to ConstantList_
+    //its correspondant in NPLiterals will be set empty.
+    hqcConstant* matchedItem = NULL;
+    LIST (hqcConstant*) & tmpL = *(getParams().getTmpList());
+    for(Int32 i = paramStart_; i < tmpL.entries(); i++)
+    {
+      if( (tmpL[i]->getConstValue() == cParameter->getConstVal() 
+               || tmpL[i]->getBinderRetConstVal() == cParameter->getConstVal())
+           && !tmpL[i]->isProcessed()
+        )
+      {
+          matchedItem = tmpL[i];
+          matchedItem->setIsParameterized(TRUE);
+          matchedItem->setProcessed();
+          matchedItem->setSQCType(cParameter->getType()->newCopy(heap()));
+          //the pos is index of new list
+          hqcConstPos.insert(getParams().getConstantList().entries());
+          //set corresponding literal empty as a sign of parameterized
+          getParams().getNPLiterals()[matchedItem->getIndex()] = "";
+          //also add to new list for furture compare/backpatch
+          getParams().getConstantList().insert(matchedItem);
+          numConsts_++;
+          //next time, the loop will start from paramStart_
+          //for performence good.
+          paramStart_ = i + 1;
+          break;
+      }
+    }
+    // If the constant cannot be found in HQC key, due to multiple 
+    // identical constant values bound into a single ConstValue 
+    // object, mark the key not cacheable and return. 
+    if(!matchedItem) {
+      setIsCacheable(FALSE);
+      return;
+   }
+
+   //if this constant doesn't need histogram info, the work is done.
+   if (!base)  return;
+   //then get histogram info for it.
+       
+   // check if there exists a histogram for the column
+   ColStatsSharedPtr cStatsPtr = 
+        (base->getTableDesc()->tableColStats()).
+               getColStatsPtrForColumn(base->getValueId());
+
+    if (cStatsPtr == NULL)
+      return;
+
+    // if the stats for this column is fake or the number of intervals is 1, there
+    // is no need to mark the boundary as all values will have the same selectivity
+    // just mark this item as no stats required
+    if (cStatsPtr->isFakeHistogram() ||  cStatsPtr->isSingleIntHist())
+    {
+        return;
+    }
+
+    const EncodedValue encodedConstVal(cParameter->getConstVal(), FALSE);
+
+    // check frquent value list first.
+    const FrequentValueList & fvList = cStatsPtr->getFrequentValues();
+    const FrequentValue fv(0, 0, 1, encodedConstVal);
+
+    CollIndex fvIndex;
+    if ( fvList.getfrequentValueIndex(fv, fvIndex) ) {
+       matchedItem->addRange(encodedConstVal, encodedConstVal, TRUE, TRUE);
+       matchedItem->setIsLookupHistRequired(TRUE);
+       return;
+    }
+
+    // next check each interval in the histogram
+    HistogramSharedPtr hist = cStatsPtr->getHistogram();
+
+    // was this histogram compressed to reduce the number of intervals
+    NABoolean histogramReduced = cStatsPtr->afterFetchIntReductionAttempted();
+
+    Interval last = hist->getLastInterval();
+    for ( Interval iter = hist->getFirstInterval(); ; iter.next())
+    {
+        if ( !iter.isValid() || iter.isNull() ) {
+             if ( iter == last ) {//cannot be found in any intervals.
+                 setIsCacheable(FALSE);
+                 break;
+             }
+             else
+                 continue;
+        }
+        // if the value contains in the current interval, save
+        // the range info for future HybridQCache key comparison.
+        if ( iter.containsValue(encodedConstVal) ) 
+        {
+            NABoolean loBoundInclusive = iter.isLoBoundInclusive();
+            NABoolean hiBoundInclusive = iter.isHiBoundInclusive();
+            EncodedValue loBound = iter.loBound();
+            EncodedValue hiBound = iter.hiBound();
+         
+            if (!histogramReduced)
+            {
+               //Column whose histogram is referred to by this ColStats object
+               const NAColumn * column = cStatsPtr->getStatColumns()[0];
+               Criterion reductionCriterion = cStatsPtr->decideReductionCriterion (AFTER_FETCH,CRITERION1,column,TRUE);
+               hist->computeExtendedIntRange(iter, reductionCriterion, hiBound, loBound, hiBoundInclusive, loBoundInclusive);
+            }
+            matchedItem->addRange(hiBound, loBound, hiBoundInclusive, loBoundInclusive);
+            matchedItem->setIsLookupHistRequired(TRUE);
+            break;
+        }
+        if ( iter == last ) 
+            break;
+    }//for
+}
+
+void HQCParseKey::collectItem4HQC(ItemExpr* itm)
+{
+  CMPASSERT(itm);
+  if(isCacheable())
+  {
+    if(itm->getOperatorType() == ITM_CONSTANT)
+    {
+        // The new hpcConstant will contain the same pointer to 
+        // itm. Later on, when call HQCParseKey::collectItem4HQC(),
+        // we will assure that that the histogram is collected for
+        // the same constant.  The constructor hqcConstant::hqcConstant()
+        // used has to guarantee that the same pointer is stored in
+        // the object. 
+        CMPASSERT(getParams().getNPLiterals().entries()>0);
+        hqcConstant * constPtr = 
+           new (heap_) hqcConstant( (ConstValue*)itm, 
+                                    getParams().getNPLiterals().entries() -1,
+                                    heap_ );
+        getParams().getTmpList()->insert(constPtr);
+    }
+    else if(itm->getOperatorType() == ITM_DYN_PARAM)
+    {
+        for(Int32 i = 0; i < HQCDynParamMap_.entries(); i ++)
+        {
+            if(HQCDynParamMap_[i].original_ == ((DynamicParam*)itm)->getText()){
+
+                hqcDynParam * dynPtr = 
+                    new (heap_) hqcDynParam((DynamicParam*)itm,
+                                            params_.getDynParamList().entries(),
+                                            HQCDynParamMap_[i].normalized_,
+                                            HQCDynParamMap_[i].original_);
+                params_.getDynParamList().insert(dynPtr);
+                return;
+            }
+        }
+    }
+  }
+}
+
+void HQCParseKey::collectBinderRetConstVal4HQC(ConstValue * origin, ConstValue* after)
+{
+    if( origin == after) //do nothing if bindNode didn't replace origin ConstValue
+        return;
+    //if ConstValue is replaced during bindNode,
+    //save pointer of new ConstValue, which will be used in bindConstant2SQC,
+    //to identify corresponding hqcConstant
+    LIST (hqcConstant*) & tmpL = *(getParams().getTmpList());
+    for(Int32 i = 0; i < tmpL.entries(); i++)
+        if(tmpL[i]->getConstValue() == origin)
+            tmpL[i]->setBinderRetConstVal(after);
+}
+
+// This operator is used to lookup the HQC hash table, only requiring a match
+// on the parent class, the HQC key text and the constant and param lists. 
+NABoolean HQCCacheKey::operator==(const HQCCacheKey &other) const
+{
+    return ( Key::isEqual(other) && this->keyText_ == other.keyText_ &&
+             numDynParams_ == other.numDynParams_  &&
+             reqdShape_ == other.reqdShape_
+           );
+}
+
+
+NABoolean HQCCacheEntry::operator==(const HQCCacheEntry &other) const
+{
+  return TRUE;
+}
+
+NABoolean HistIntRangeForHQC::constains(const EncodedValue & value) const
+{
+   if ( value < loBound_ || hiBound_ < value )
+      return FALSE;
+
+   if ( loBound_ < value && value < hiBound_ )
+       return TRUE ;
+
+   if ( loBound_ == value )
+      return loInclusive_;
+
+   if ( hiBound_ == value )
+      return hiInclusive_;
+
+   return FALSE;
+}
+
+NABoolean hqcConstant::isApproximatelyEqualTo(hqcConstant & other) 
+{
+  //for literals do not need to lookup histogram
+  // only make sure type is compatible, when coverting from other to *this,
+  // also fall into this categoray, if all histogram stats are uniform 
+  if( getIndex() == other.getIndex()
+      && isParameterized()
+      && !isLookupHistRequired()) //Constants of SQL functions don't need to lookup histograms.               
+  {
+    CMPASSERT(this->getSQCType());
+    // check type compatability for SQL function constant parameters
+
+#if 1    
+    //Check if an error can occur when coverting coming ConstValue()(other) to target( this->getConstValue() )
+    if(!other.getConstValue()->getType()->isCompatible(*(this->getSQCType())) 
+       ||other.getConstValue()->getType()->errorsCanOccur(*(this->getSQCType()), FALSE) )
+       return FALSE;
+#else     
+    if(other.getConstValue()->getType()->errorsCanOccur(*(this->getSQCType()), FALSE))
+        return FALSE;
+     //string literal ConstValue of ISO88591 can be convert to UTF8 encoded column     
+    if(!other.getConstValue()->getType()->isCompatible(*(this->getSQCType())) )
+    {
+         if(this->getSQCType()->getTypeQualifier() == NA_CHARACTER_TYPE 
+            && other.getConstValue()->getType()->getTypeQualifier() == NA_CHARACTER_TYPE
+            && this->getSQCType()->getCharSet() == CharInfo::UTF8 
+            && other.getConstValue()->getType()->getCharSet() == CharInfo::ISO88591 )
+         {
+            //for string ConstValue, if source charset is CharInfo::ISO88591 target is CharInfo::UTF8
+            //consider them compatible
+         }
+         else
+            return FALSE;
+    }
+#endif
+
+    other.setIsParameterized(TRUE);
+    return TRUE;
+  }
+  
+  //for literals need to lookup histogram
+  //cached hqcConstant should be parameterized, lookupHistRequired
+  if( getIndex() == other.getIndex()
+      && isParameterized()
+      && isLookupHistRequired()
+    )
+  {
+      CMPASSERT(this->getSQCType());
+      const EncodedValue encodedConstVal(other.getConstValue(), FALSE);
+      //histogram range should be collected
+      CMPASSERT(this->getRange());
+      if(this->getRange()->constains(encodedConstVal)){
+            other.setIsParameterized(TRUE);
+            return TRUE;
+      }
+  }
+  return FALSE;
+}
+
+hqcConstant::~hqcConstant()
+{
+    if(histRange_)
+       NADELETE(histRange_, HistIntRangeForHQC, heap_);
+}
+
+void hqcConstant::addRange(const EncodedValue & hiBound, const EncodedValue & loBound, NABoolean hiinc, NABoolean loinc)
+{
+  CMPASSERT(histRange_ == NULL);
+  histRange_ = new (heap_) HistIntRangeForHQC(hiBound, loBound, hiinc, loinc, heap_);
+}
+ 
+
+HybridQCache::HybridQCache(ULng32 nOfBuckets) 
+ : heap_(new CTXTHEAP NABoundedHeap("hybrid query cache heap", (NAHeap *)CTXTHEAP, 0, 0))
+ , hashTbl_(new (heap_) HQCHashTbl(hashHQCKeyFunc, nOfBuckets, TRUE, heap_))// enforce uniqueness of keys
+ , maxValuesPerKey_(CmpCommon::getDefaultLong(HQC_MAX_VALUES_PER_KEY))
+ , currentKey_(NULL)
+ , HQCLogFile_(NULL)
+ , planNoAQROrHiveAccess_(FALSE)
+{}
+
+HybridQCache::~HybridQCache()
+{
+   // free all memory owned by hybrid query cache heap
+   NADELETE(heap_, NABoundedHeap, CTXTHEAP);
+   delete HQCLogFile_;
+}
+
+
+void HybridQCache::initLogging()
+{
+   if ( HQCLogFile_ ) {
+     delete HQCLogFile_;
+     HQCLogFile_ = NULL;
+   }
+
+   if(CmpCommon::getDefault(HQC_LOG) == DF_ON) {
+      NAString logFile = ActiveSchemaDB()->getDefaults().getValue(HQC_LOG_FILE);
+      HQCLogFile_ = new ofstream(logFile, ios::app);
+   }
+}
+
+NABoolean HybridQCache::addEntry(HQCParseKey* hkey, CacheKey* ckey)
+{
+    //transfer ownership to context heap;
+    HQCCacheKey* _hkey = new (heap_) HQCCacheKey (*hkey, heap_);
+
+    // check if we have seen this key before
+    HQCHashTblItor hqcItor(*hashTbl_, _hkey);
+
+    HQCCacheKey* hqcKeyPtr = NULL;
+    HQCCacheData* valueList = NULL;
+    CacheKey* cKeyPtr = NULL;
+
+    hqcItor.getNext(hqcKeyPtr, valueList);
+
+    HQCCacheEntry* storedValue = new (heap_) HQCCacheEntry (hkey->getParams(), ckey, heap_);
+
+    // we have seen this before, we need to make sure we have enough space in the list
+    // if yes add it, otherwise we need to eject the LRU item
+    if (valueList)
+    {
+       if (valueList->addOrReplace())
+          valueList->insert(storedValue);
+       return TRUE;
+       
+    }
+    else // we have not seen this key before, just add it
+    {
+        HQCCacheData* valueList = new (heap_) HQCCacheData (heap_, maxValuesPerKey_);
+        valueList->insert(storedValue);
+        return (hashTbl_->insert(_hkey, valueList) != NULL);
+    }
+
+    return NULL;
+}
+
+NABoolean HybridQCache::lookUp(HQCParseKey * hkey, CacheKey* & ckey)
+{
+    HQCCacheKey* hkey2 = new (heap_) HQCCacheKey (*hkey, heap_);
+    HQCHashTblItor hqcItor(*hashTbl_, hkey2);
+
+    HQCCacheKey* hqcKeyPtr = NULL;
+    HQCCacheData* valueList = NULL;
+    CacheKey* cKeyPtr = NULL;
+
+    hqcItor.getNext(hqcKeyPtr, valueList);
+
+    // The passed-in hkey contains only the text key and constants. The
+    // key stored in hqc hash table (hqcKeyPtr) contains more information.
+    // Here we want to verfiy that each constant in hkey is within the 
+    // corresponding histogram interval boundaries the histogram specified
+    // in hqcKeyPtr.
+    if(hqcKeyPtr && valueList)
+    {
+       if (cKeyPtr = valueList->findMatchingSQCKey(hkey->getParams()))
+       {
+           ckey = cKeyPtr;
+           return TRUE;
+       }
+    }
+    return FALSE;
+}
+
+NABoolean HybridQCache::delEntryWithCacheKey(CacheKey* ckey)
+{
+    //iterate to remove entries with value ckey
+
+    HQCHashTblItor hqcHashItor(*hashTbl_);
+
+    HQCCacheKey* hkeyPtr = NULL;
+    HQCCacheData* valueList = NULL;
+    CacheKey* ckeyPtr = NULL;
+
+    hqcHashItor.getNext(hkeyPtr, valueList) ; 
+
+    while ( hkeyPtr && valueList )
+    {
+       if (valueList->removeEntry(ckey))
+       {
+          if( valueList->entries() == 0)
+          {
+             deCache(hkeyPtr);
+             delete valueList;
+          }
+          return TRUE;
+       }
+
+       hqcHashItor.getNext(hkeyPtr, valueList) ; 
+    }
+
+    return FALSE;
+} 
+
+ULng32 HybridQCache::getNumSQCKeys() const 
+{
+    //count number of SQCKeys in HQC
+	//one HQCkey entry may have multiple SQCKeys
+    ULng32 counter = 0;
+    
+    HQCHashTblItor hqcHashItor(*hashTbl_);
+
+    HQCCacheKey* hkeyPtr = NULL;
+    HQCCacheData* valueList = NULL;
+    CacheKey* ckeyPtr = NULL;
+
+    hqcHashItor.getNext(hkeyPtr, valueList) ; 
+
+    while ( hkeyPtr && valueList )
+    {
+       counter += valueList->entries();
+       hqcHashItor.getNext(hkeyPtr, valueList) ; 
+    }
+    return counter;
+}
+
+HybridQCache* HybridQCache::resizeCache(ULng32 numBuckets)
+{
+  // empty cache if numBuckets <= 0
+  if (numBuckets <= 0) {
+     clear();
+  }
+  else if (numBuckets == getNumBuckets()) { // same size as before
+    // do nothing.
+  } else { 
+     // this method has not been implemented fully.
+     //hashTbl_->resize(numBuckets);
+     if(getNumBuckets() < numBuckets)
+     {
+        //create a bigger hash table dictionary
+        HQCHashTbl* newHashTable = new (heap_) HQCHashTbl (hashHQCKeyFunc, 
+                                      numBuckets,
+                                      TRUE,   // enforce uniqueness of keys
+                                      heap_); // use this bounded heap
+
+         //move data from old hash dictionary to new
+        HQCHashTblItor itor(*hashTbl_);
+        HQCCacheKey* keyPtr = NULL;
+        HQCCacheData* valueList = NULL;
+        
+        itor.getNext(keyPtr, valueList);
+        while(keyPtr&&valueList)
+        {
+            newHashTable->insert(keyPtr, valueList);
+            itor.getNext(keyPtr, valueList);
+        }
+        //delete old one, and swith to new one
+        NADELETE(hashTbl_, HQCHashTbl, heap_);
+        hashTbl_ =newHashTable;
+        
+     }
+  }
+  return this;
+}
+
+void HybridQCache::clear()
+{
+  NAHashDictionaryIterator<HQCCacheKey, HQCCacheData> Iter (*hashTbl_);
+  HQCCacheKey* hk = NULL;
+  HQCCacheData* hkvl = NULL;
+
+  Iter.getNext (hk,hkvl) ; 
+  while ( hk && hkvl )
+  {
+      delete hk;
+      delete hkvl;
+      Iter.getNext (hk, hkvl) ; 
+  }
+
+  hashTbl_->clear();
+}
+
+void HQCParseKey::verifyCacheability(CacheKey* ckey)
+{
+   NAList <hqcConstant*> & paramConstList = getParams().getConstantList();
+   for(Int32 i = 0; i < paramConstList.entries(); i++)
+   {
+      if( paramConstList[i]->getConstValue() 
+          && paramConstList[i]->isParameterized()
+          && !paramConstList[i]->isProcessed()
+          )
+      {
+         setIsCacheable(FALSE);
+         return;
+      }
+      //or
+      if (paramConstList[i]->isLookupHistRequired()
+          && NULL == paramConstList[i]->getRange()
+          )
+      {
+         setIsCacheable(FALSE);
+         return;
+      }
+      //or
+      Int32 literalIndex = paramConstList[i]->getIndex();
+      if(!getParams().getNPLiterals()[literalIndex].isNull())
+      {
+         setIsCacheable(FALSE);
+         return;
+      }
+      
+   }
+
+   if ( ckey == NULL ||
+        numConsts_ != ckey->getNofParameters() ) 
+   {
+     setIsCacheable(FALSE);
+     return;
+   }
+}
+
+// This constructor is used add a hqc constant into a HQC key. It is 
+// very important to keep the pointer to cv. Never construct a new 
+// ConstValue object here.
+hqcConstant::hqcConstant(ConstValue* cv,
+                Int32 index,
+                NAHeap* h)
+      : constValue_(cv)
+      , binderRetConstVal_(cv)
+      , SQCType_(NULL)
+      , histRange_(NULL)
+      , index_(index)
+      , heap_(h)
+      , flags_(0)
+{}
+
+// This constructor is called to transfer HQC key to CmpContext.
+hqcConstant::hqcConstant(const hqcConstant & other, NAHeap* h)
+      : constValue_(new (h) ConstValue(*other.constValue_, h))
+      , binderRetConstVal_(constValue_)
+      , SQCType_(NULL)
+      , histRange_(NULL)
+      , index_(other.index_)
+      , heap_(h)
+      , flags_(other.flags_)
+{
+    // we need a new copy of the type_ member of ConstValue as
+    // the ConstValue construcotr does not do a deep copy of this attribute
+    constValue_->changeType (other.constValue_->getType()->newCopy(h));
+
+    //create copy of SQC NAType from parameterized source 
+    if(other.getSQCType() && other.isParameterized()) 
+      SQCType_ = other.getSQCType()->newCopy(h);
+
+    if(other.histRange_)
+      histRange_ = new (heap_) HistIntRangeForHQC(*(other.histRange_), heap_);
+}
+
+HQCCacheKey::HQCCacheKey(CompilerEnv* e, NAHeap* h)
+                : Key(CmpMain::PARSE, e, h)
+                , keyText_(h)
+                , numConsts_(0)
+                , numDynParams_(0)
+{
+    RelExpr* reqdShapeExp = NULL;
+    NAString reqdShape = "";
+    if (ActiveControlDB() && ActiveControlDB()->getRequiredShape() && ActiveControlDB()->getRequiredShape()->getShape())
+    {
+        ActiveControlDB()->getRequiredShape()->getShape()->unparse(reqdShape);
+    }
+    reqdShape_ = NAString(reqdShape, h);
+}
+
+HQCParseKey::HQCParseKey(CompilerEnv* e, NAHeap* h)
+                : HQCCacheKey(e, h)
+                , params_(h)
+                , isCacheable_(FALSE)
+                , isStringNormalized_(FALSE)
+                , nOfTokens_(0)
+                , paramStart_(0)
+{}
+
+HQCCacheEntry::~HQCCacheEntry()
+{
+    if (params_)
+       NADELETE(params_, HQCParams, heap_);
+
+    sqcCacheKey_ = NULL;
+}
+
+HQCCacheEntry::HQCCacheEntry(NAHeap* h)
+                : params_(NULL)
+                , sqcCacheKey_ (NULL)
+                , numHits_(0)
+                , heap_(h)
+{}
+
+HQCCacheKey::HQCCacheKey(const HQCParseKey& hkey, NAHeap* h)
+          : Key(hkey, h)
+          , keyText_(hkey.keyText_.data(), h)
+          , reqdShape_(hkey.getReqdShape(), h)
+          , numConsts_(hkey.getParams().getConstantList().entries())
+          , numDynParams_(hkey.getParams().getDynParamList().entries())
+{}
+
+HQCCacheEntry::HQCCacheEntry(const HQCParams& params, CacheKey* sqcCacheKey, NAHeap* h)
+                : heap_(h)
+                , params_(new (heap_) HQCParams (params, heap_))
+                , sqcCacheKey_(sqcCacheKey)
+                , numHits_(0)
+{}
+
+HQCParams::HQCParams(NAHeap* h)
+  : heap_(h)
+  , ConstantList_(h)
+  , DynParamList_(h)
+  , NPLiterals_(h)
+  , tmpList_(new (STMTHEAP) NAList<hqcConstant*>(STMTHEAP))
+{}
+
+   // copy constructor
+HQCParams::HQCParams (const HQCParams & other, NAHeap* h)
+  : heap_(h)
+  , ConstantList_(h)
+  , DynParamList_(h)
+  , NPLiterals_(other.NPLiterals_, h)
+{
+  for(Int32 i = 0; i < other.ConstantList_.entries(); i++)
+  {
+     hqcConstant* src = other.ConstantList_[i];
+     hqcConstant* des = new (h) hqcConstant(*src, h);
+     ConstantList_.insert(des);
+  }
+
+  for(Int32 i = 0; i < other.DynParamList_.entries(); i++)
+  {
+      hqcDynParam* src = other.DynParamList_[i];
+      hqcDynParam* des = new (h) hqcDynParam(*src);
+      DynParamList_.insert(des);
+  }
+  //tmpList_ shall be discarded, after a sucessful hit or addEntry  
+}
+   
+HQCParams::~HQCParams()
+{
+   for(Int32 i = 0; i < ConstantList_.entries(); i++)
+      NADELETE(ConstantList_[i], hqcConstant, heap_);
+      
+   for(Int32 i = 0; i < DynParamList_.entries(); i++)
+      NADELETE(DynParamList_[i], hqcDynParam, heap_);
+}
+
+NABoolean HQCParams::isApproximatelyEqualTo (HQCParams& otherParam) 
+{
+    //compare non-parameteriezed & parameterized literals in one run
+    NAList <hqcConstant* > & otherTmpL = *(otherParam.getTmpList());
+    for(CollIndex i = 0, h = 0, x = 0; i < this->getNPLiterals().entries(); i++)
+    {   
+        
+        if(!this->getNPLiterals()[i].isNull())
+        {   //return FALSE if non-parameterized literal is not identical
+            if(otherParam.getNPLiterals()[i].compareTo(this->getNPLiterals()[i], NAString::ignoreCase))
+                return FALSE;
+                
+            //ConstValue might also be created for non-parameterized literal.
+            //we need to advance to skip these non-parameterized ConstValue.
+            if(otherTmpL.entries() > h && i > otherTmpL[h]->getIndex())
+                h++;
+        }
+        else//this means we hit a parameterized literal
+        {
+            //find the parameterized constant in otherTmpL that corresponds to the one in this->getConstantList(), then compare them.
+            
+            //if h is pointing to preceding parameterized literal, advance to current one(which is also a parameterized literal)
+            if(otherTmpL.entries() > h && i > otherTmpL[h]->getIndex())
+                h++;
+             //if otherParam.getNPLiterals()[i] is a parameterized literal, otherTmpL[i]->getIndex() == i MUST be true.
+             CMPASSERT(otherTmpL[h]->getIndex() == i);
+
+             hqcConstant* parameterizedLiteral = otherTmpL[h];
+             
+             //add it to otherParam.getConstantList(), if all items are match, we will use it for backpatch, 
+             //otherwise, empty otherParam.getConstantList() after comparing all literals.
+             otherParam.getConstantList().insert(parameterizedLiteral);
+             
+             //do parameterized comparison
+             if(!this->getConstantList()[x]->isApproximatelyEqualTo(*parameterizedLiteral))
+                    return FALSE;
+
+             x++;
+         }
+         // The algorithm above is base on following truth: 
+         // it is possible a literal in this->getNPLiterals()(or otherParam.getNPLiterals()) doesn't have counterpart in otherTmpL, but the reverse is not true.
+         // it is also possible that hqcConstant in otherTmpL will not be a parameterized constant,
+         // if this->getNPLiterals()[i].isNull() is true, it MUST have a counterpart in otherTmpL whose getIndex()==i.
+         // so indexes
+         //               i  -- index of all literals, no matter with ConstValues or not, paremeterized or not, 
+         //               h -- index of literals with ConstValues, 
+         //               x -- index of parameterized constants
+         // The indexes of the three lists aren't corresponding,  
+         // but we can figure out items that corresponding in the three lists, by calculating these indexes.
+         
+    }
+
+    // we don't support dynamic parameters for now, so they are ignored
+    
+    return TRUE;
+}
+
+// search the list of values for the value associated with the given params
+// if found, increment the number of cache hits
+CacheKey* HQCCacheData::findMatchingSQCKey (HQCParams& param)
+{
+   for (CollIndex x = 0; x < entries(); x++)
+   {
+      HQCParams* entryParams = (*this)[x]->getParams();
+      if (entryParams && entryParams->isApproximatelyEqualTo(param))
+      {
+         // increment the number if hits for this entry
+         (*this)[x]->incrementNumHits();
+         return (*this)[x]->getSQCKey();
+      }
+      else
+       //hqcConstants might be added to param.getConstantList() 
+       //in HQCParams::isApproximatelyEqualTo() for possible backpatch, 
+       //if comparing fails, param.getConstantList() must be cleared.
+          param.getConstantList().clear();
+   }
+
+   return NULL;
+}
+
+// logic to decide whether we need to replace an exisiting
+// value for a given key. This is needed if the maximum
+// allowed number of values is exhausted
+NABoolean HQCCacheData::addOrReplace()
+{
+
+  // there is space, just add the new value
+  if (this->entries() < this->maxEntries_)
+     return TRUE;
+
+  Int32 minHits = (*this)[0]->getNumHits();
+  CollIndex minHitsLoc = 0;
+
+  // list is full, we need to eject the LRU entry
+  // find it first
+  for (CollIndex x = 1; x < entries(); x++)
+   {
+      Int32 numHits = (*this)[x]->getNumHits();
+      if (numHits < minHits)
+      {
+         minHits = numHits;
+         minHitsLoc = x;
+      }
+   }
+
+   // now remove it
+   HQCCacheEntry* entryToRemove = (*this)[minHitsLoc];
+   ostream* hqc_ostream=CURRENTQCACHE->getHQCLogFile();
+   if (hqc_ostream)
+   {
+      *hqc_ostream << "  -- HQC cache entry replaced. Entry has <" << entryToRemove->getNumHits() << "> hits \n";
+   }
+   this->removeAt(minHitsLoc);
+   delete entryToRemove;
+   return TRUE;
+
+}
+
+// remove a given value from the list of values that can be associated with an HQC key
+NABoolean HQCCacheData::removeEntry (CacheKey* sqcCacheKey)
+{
+  NABoolean entryRemoved = FALSE;
+  for (CollIndex j = 0; j < entries(); j++)
+  {
+    if ((*this)[j]->getSQCKey() == sqcCacheKey)
+    {
+        HQCCacheEntry* currEntry = (*this)[j];
+        this->removeAt(j);
+        delete currEntry;
+        entryRemoved = TRUE;
+        j--;
+    }
+  }
+
+  return entryRemoved;
+}
+
+static NABoolean initializeISPCaches(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, SP_ERROR_STRUCT* error, 
+                                  const NAArray<CmpContextInfo*> & ctxs, //input 
+                                  QueryCache* & qcache, //out set initial query cache in array of CmpContextInfos
+                                  Int32 & index           //out, set initial index in arrary of CmpContextInfos
+                                  ) 
+{
+//extract ISP input, find QueryCache belonging to specified context
+//and use it for fetch later
+  Lng32 maxSize = 16;
+  char receivingField[maxSize+1];
+  if (eFunc (0, inputData, (Lng32)maxSize, receivingField, FALSE) == SP_ERROR_EXTRACT_DATA)
+  {
+      error->error = arkcmpErrorISPFieldDef;
+      return FALSE;
+  }
+   //choose context
+   //for 'ALL' option, set index to 0 and increase it as traverse ctxs, and always keep qcache NULL unless exit.
+   //for 'USER', 'META', and remote compile case, index is always -1, set qcache to desired qurey cache.
+  NAString qCntxt = receivingField;
+  qCntxt.toLower();
+  //the receivingField is of pattern xxx$trafodion.yyy, 
+  //where xxx is the desired input string.
+  Int32 dollarIdx = qCntxt.index("$");
+  CMPASSERT(dollarIdx > 0);
+  //find the specified context
+  if(ctxs.entries() == 0){
+    //for remote compiler
+    if( (dollarIdx==3 && strncmp(qCntxt.data(), "all", dollarIdx)==0) 
+     ||(dollarIdx==4 && strncmp(qCntxt.data(), "user", dollarIdx)==0) )
+      qcache = CURRENTQCACHE;
+  }
+  else
+  {
+    if(dollarIdx==3 && strncmp(qCntxt.data(), "all", dollarIdx)==0)
+    {//add caches of all contexts to list
+       index = 0;
+    }
+    else if(dollarIdx==4 && strncmp(qCntxt.data(), "user", dollarIdx)==0)
+    {//add user query cache to list
+       for(Int32 i = 0; i < ctxs.entries(); i++ )
+           if(ctxs[i]->isSameClass("NONE")){
+               qcache = ctxs[i]->getCmpContext()->getQueryCache();
+               break;
+           }
+    }
+    else if(dollarIdx==4 && strncmp(qCntxt.data(), "meta", dollarIdx)==0)
+    {//add metadata query cache to list
+       for(Int32 i = 0; i < ctxs.entries(); i++ )
+           if(ctxs[i]->isSameClass("META")){
+               qcache = ctxs[i]->getCmpContext()->getQueryCache();
+               break;
+           }
+    }
+    else if(dollarIdx==6 && strncmp(qCntxt.data(), "ustats", dollarIdx)==0)
+    {//add ustats query cache to list
+       for(Int32 i = 0; i < ctxs.entries(); i++ )
+           if(ctxs[i]->isSameClass("USTATS")){
+               qcache = ctxs[i]->getCmpContext()->getQueryCache();
+               break;
+           }
+    }
+  }           
+  return TRUE;
+}
+
+QueryCacheStatsISPIterator::QueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                           SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
+: ISPIterator(ctxs, h)
+{
+    initializeISPCaches(inputData, eFunc, error, ctxs, currQCache_, currCacheIndex_);
+}
+
+QueryCacheEntriesISPIterator::QueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                             SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
+: ISPIterator(ctxs, h), counter_(0)
+{
+     initializeISPCaches( inputData, eFunc, error, ctxs, currQCache_, currCacheIndex_);
+      //iterator start with preparser cache entries of first query cache, if any
+      if(currCacheIndex_ == -1 && currQCache_)
+         SQCIterator_ = currQCache_->beginPre();
+      else
+         SQCIterator_ = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->beginPre();
+}
+
+HybridQueryCacheStatsISPIterator::HybridQueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                                      SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
+ : ISPIterator(ctxs, h)
+{
+    initializeISPCaches( inputData, eFunc, error, ctxs, currQCache_, currCacheIndex_);
+}
+
+HybridQueryCacheEntriesISPIterator::HybridQueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                                        SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
+: ISPIterator(ctxs, h)
+, currEntryIndex_(-1)
+, currEntriesPerKey_(-1)
+, currHKeyPtr_(NULL)
+, currValueList_(NULL)
+, HQCIterator_(NULL)
+{
+    initializeISPCaches( inputData, eFunc, error, ctxs, currQCache_, currCacheIndex_);
+    if(currCacheIndex_ == -1 && currQCache_)
+       HQCIterator_ = new (heap_) HQCHashTblItor (currQCache_->getHQC()->begin());
+    else
+       HQCIterator_ = new (heap_) HQCHashTblItor (ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->getHQC()->begin());
+}
+
+//if currCacheIndex_ is set 0, currQCache_ is not used and should always be NULL
+NABoolean QueryCacheStatsISPIterator::getNext(QueryCacheStats & stats)
+{
+   //just fetch specified one QueryCache
+   if(currCacheIndex_ == -1 && currQCache_)
+   {
+      currQCache_->getCacheStats(stats);
+      currQCache_ = NULL;
+      return TRUE;
+   }
+   //fetch QueryCaches of all CmpContexts
+   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
+   {
+      ctxInfos_[currCacheIndex_++]->getCmpContext()->getQueryCache()->getCacheStats(stats);
+      return TRUE;
+   }
+   //all entries of all caches are fetched, we are done!
+   return FALSE;
+}
+
+NABoolean QueryCacheEntriesISPIterator::getNext(QueryCacheDetails & details)
+{
+   //just fetch entries of specified one QueryCache
+   if( currCacheIndex_ == -1 && currQCache_ )
+   {
+         if (SQCIterator_ == currQCache_->endPre()) {
+              // end of preparser cache, continue with postparser entries
+             SQCIterator_ = currQCache_->begin();
+         }
+         if (SQCIterator_ != currQCache_->end())
+             currQCache_->getEntryDetails(SQCIterator_++, details);
+         else
+             return FALSE; //all entries are fetched, we are done!
+             
+         return TRUE;
+   }
+
+   //fetch QueryCaches of all CmpContexts
+   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
+   {
+        QueryCache * qcache = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache();
+        if(SQCIterator_ == qcache->endPre()) {
+              // end of preparser cache, continue with postparser entries
+             SQCIterator_ = qcache->begin();
+        }
+        
+        if(SQCIterator_ != qcache->end()){
+             qcache->getEntryDetails( SQCIterator_++, details);
+             return TRUE;
+        }
+        else
+        {
+            //end of this query cache, try to get rows from next one
+            currCacheIndex_++;
+            if(currCacheIndex_ < ctxInfos_.entries()){
+                //initialize iterator to first cache entry of next query cache, if any
+                SQCIterator_ = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->beginPre();
+            }
+            //let deeper getNext() decide.
+            return getNext(details);
+        }
+   }
+   //no more query caches, we are done.
+   return FALSE;
+}
+
+NABoolean HybridQueryCacheStatsISPIterator::getNext(HybridQueryCacheStats & stats)
+{
+   //just fetch specified one QueryCache
+   if(currCacheIndex_ == -1 && currQCache_)
+   {
+      currQCache_->getHQCStats(stats);
+      currQCache_ = NULL;
+      return TRUE;
+   }
+   //fetch QueryCaches of all CmpContexts
+   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
+   {
+      ctxInfos_[currCacheIndex_++]->getCmpContext()->getQueryCache()->getHQCStats(stats);
+      return TRUE;
+   }
+   //all entries of all caches are fetched, we are done!
+   return FALSE;
+}
+
+NABoolean HybridQueryCacheEntriesISPIterator::getNext(HybridQueryCacheDetails & details)
+{
+   //just fetch entries of specified one QueryCache
+   if( currCacheIndex_ == -1 && currQCache_ )
+   {
+      if( currEntryIndex_ >= currEntriesPerKey_ )
+      {
+          //get next key-value pair
+          HQCIterator_->getNext(currHKeyPtr_, currValueList_);
+          if(currHKeyPtr_ && currValueList_ && currQCache_->isCachingOn())
+          {
+             currEntryIndex_ = 0;
+             currEntriesPerKey_ = currValueList_->entries();
+          }
+          else//interator == end, all entries fetched, we are done!
+              return FALSE;
+      }
+      //just get next entry in previous valueList
+      currQCache_->getHQCEntryDetails(currHKeyPtr_, (*currValueList_)[currEntryIndex_++], details);
+      return TRUE;
+   }
+ 
+   //fetch QueryCaches of all CmpContexts
+   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
+   {
+      if( currEntryIndex_ >= currEntriesPerKey_ )
+      {
+         //get next key-value pair
+         HQCIterator_->getNext(currHKeyPtr_, currValueList_);
+         QueryCache * tmpCache = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache();
+         if(currHKeyPtr_ && currValueList_ && tmpCache->isCachingOn())
+         {
+            currEntryIndex_ = 0;
+            currEntriesPerKey_ = currValueList_->entries();
+         }
+         else//interator == end
+         {  
+            currCacheIndex_++;
+            if(currCacheIndex_ < ctxInfos_.entries())
+            {  //initialize HQCIterator to begin of next query cache, if any
+               if(HQCIterator_)
+                 delete HQCIterator_;
+               HQCIterator_ = NULL;
+               HQCIterator_ = new (heap_) HQCHashTblItor (ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->getHQC()->begin());
+            }
+            //let deeper getNext() decide.
+            return getNext(details);
+         }
+      }
+      //just get next entry in previous valueList
+      QueryCache * qcache = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache();
+      qcache->getHQCEntryDetails(currHKeyPtr_, (*currValueList_)[currEntryIndex_++], details);
+      return TRUE;
+   }
+   //no more query caches, we are done.
+   return FALSE;
 }

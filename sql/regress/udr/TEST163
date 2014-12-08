@@ -400,7 +400,7 @@ prepare s1 from select swap2(a,b) from t1;
 
 -- Should show an entry in the cache for the above query, with no hits.
 select phase, num_hits, cast(text as char(55))
-  from table(querycacheentries())
+  from table(querycacheentries('user', 'local'))
   order by plan_id, phase;
 
 -- This should be found in the cache
@@ -409,7 +409,7 @@ prepare s1 from select swap2(a,b) from t1;
 
 -- Should see a hit in the output
 select phase, num_hits, cast(text as char(55))
-from table(querycacheentries())
+from table(querycacheentries('user', 'local'))
 order by plan_id, phase;
 
 -- Flush the cache
@@ -419,7 +419,7 @@ values (add2(1,3));
 
 -- Should see an entry in the cache
 select phase, num_hits, cast(text as char(55))
-from table(querycacheentries())
+from table(querycacheentries('user', 'local'))
 order by plan_id, phase;
 
 -- should get a plan cache hit
@@ -427,7 +427,7 @@ values (add2(3,3));
 
 -- Should the use counter for the cache entry go up.
 select phase, num_hits, cast(text as char(55))
-from table(querycacheentries())
+from table(querycacheentries('user', 'local'))
 order by plan_id, phase;
 
 -- Nested subqueries

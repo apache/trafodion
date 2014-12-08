@@ -58,6 +58,8 @@ void CmpISPInterface::InitISPFuncs()
   QueryCacheEntriesStoredProcedure::Initialize(regFunc);
   QueryCacheDeleteStoredProcedure::Initialize(regFunc);
 
+  HybridQueryCacheStatStoredProcedure::Initialize(regFunc);
+  HybridQueryCacheEntriesStoredProcedure::Initialize(regFunc);
   
   // NATable cache statistics virtual table
   NATableCacheStatStoredProcedure::Initialize(regFunc);

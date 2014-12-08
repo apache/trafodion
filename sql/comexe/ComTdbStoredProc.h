@@ -38,7 +38,7 @@
 #include "ComTdb.h"
 #include "exp_tuple_desc.h"
 #include "exp_clause_derived.h"
-
+#include "RelStoredProc.h"
 class ExpTupleDesc;
 class ComDiagsArea;
 
@@ -208,9 +208,13 @@ public:
 
   NABoolean getUseExistingArkcmp() const
   {
-    return (arkcmpInfo_ == 1);
+    return (arkcmpInfo_ & RelInternalSP::executeInSameArkcmp );
   }
-   
+
+  NABoolean isExecuteInLocalProcess() const
+  {
+    return (arkcmpInfo_ & RelInternalSP::executeInLocalProcess );
+  }
 protected:
 
   // Name of stored procedure

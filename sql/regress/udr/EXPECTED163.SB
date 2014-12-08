@@ -111,16 +111,16 @@ OUTVAL
 A            OUTVAL     
 -----------  -----------
 
+          1            2
+          2            3
+          3            4
           4            5
           5            6
-          7            8
-          3            4
           6            7
-         10           11
-          2            3
+          7            8
           8            9
-          1            2
           9           10
+         10           11
 
 --- 10 row(s) selected.
 >>
@@ -215,7 +215,7 @@ A            (EXPR)
 
 *** ERROR[15001] A syntax error occurred at or before: 
 select a from t1 order by add2(t1.a,t1.b);
-                              ^ (31 characters from start of SQL statement)
+                                         ^ (42 characters from start of SQL statement)
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -291,15 +291,15 @@ A            (EXPR)
 A          
 -----------
 
-          3
-          6
-          2
           1
-          9
+          2
+          3
           4
-          8
           5
+          6
           7
+          8
+          9
          10
 
 --- 10 row(s) selected.
@@ -318,16 +318,16 @@ A
 OUTVAL1      OUTVAL2    
 -----------  -----------
 
-          1            3
-          1            6
           1            1
-          1            9
-          1            8
+          1            2
+          1            3
           1            4
           1            5
+          1            6
           1            7
+          1            8
+          1            9
           1           10
-          1            2
 
 --- 10 row(s) selected.
 >>
@@ -529,16 +529,16 @@ A            B            C
 A            OUTVAL1      OUTVAL2    
 -----------  -----------  -----------
 
-          2            ?            1
-          5          -30            1
-          7          -40            1
-          4            ?            1
-          8            ?            1
-         10            ?            1
-          3          -20            1
-          6            ?            1
           1          -10            1
+          2            ?            1
+          3          -20            1
+          4            ?            1
+          5          -30            1
+          6            ?            1
+          7          -40            1
+          8            ?            1
           9          -50            1
+         10            ?            1
 
 --- 10 row(s) selected.
 >>
@@ -551,16 +551,16 @@ A            OUTVAL1      OUTVAL2
 A            OUTVAL1      OUTVAL2    
 -----------  -----------  -----------
 
-          2            ?            1
-          4            ?            1
-          8            ?            1
-         10            ?            1
           1          -10            1
-          9          -50            1
+          2            ?            1
           3          -20            1
-          6            ?            1
+          4            ?            1
           5          -30            1
+          6            ?            1
           7          -40            1
+          8            ?            1
+          9          -50            1
+         10            ?            1
 
 --- 10 row(s) selected.
 >>
@@ -866,10 +866,15 @@ hello  Neo
 >>
 >>-- Should show an entry in the cache for the above query, with no hits.
 >>select phase, num_hits, cast(text as char(55))
-+>  from table(querycacheentries())
++>  from table(querycacheentries('user', 'local'))
 +>  order by plan_id, phase;
 
---- 0 row(s) selected.
+PHASE       NUM_HITS    (EXPR)
+----------  ----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+BINDING              0  select swap2(a,b) from t1;                                                                                                                                                                                                  
+
+--- 1 row(s) selected.
 >>
 >>-- This should be found in the cache
 >>prepare s1 from select swap2(a,b) from t1;
@@ -879,10 +884,15 @@ hello  Neo
 >>
 >>-- Should see a hit in the output
 >>select phase, num_hits, cast(text as char(55))
-+>from table(querycacheentries())
++>from table(querycacheentries('user', 'local'))
 +>order by plan_id, phase;
 
---- 0 row(s) selected.
+PHASE       NUM_HITS    (EXPR)
+----------  ----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+BINDING              1  select swap2(a,b) from t1;                                                                                                                                                                                                  
+
+--- 1 row(s) selected.
 >>
 >>-- Flush the cache
 >>cqd query_cache '0';
@@ -902,10 +912,15 @@ OUTVAL
 >>
 >>-- Should see an entry in the cache
 >>select phase, num_hits, cast(text as char(55))
-+>from table(querycacheentries())
++>from table(querycacheentries('user', 'local'))
 +>order by plan_id, phase;
 
---- 0 row(s) selected.
+PHASE       NUM_HITS    (EXPR)
+----------  ----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+BINDING              0  values (add2(1,3));                                                                                                                                                                                                         
+
+--- 1 row(s) selected.
 >>
 >>-- should get a plan cache hit
 >>values (add2(3,3));
@@ -919,10 +934,15 @@ OUTVAL
 >>
 >>-- Should the use counter for the cache entry go up.
 >>select phase, num_hits, cast(text as char(55))
-+>from table(querycacheentries())
++>from table(querycacheentries('user', 'local'))
 +>order by plan_id, phase;
 
---- 0 row(s) selected.
+PHASE       NUM_HITS    (EXPR)
+----------  ----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+BINDING              1  values (add2(1,3));                                                                                                                                                                                                         
+
+--- 1 row(s) selected.
 >>
 >>-- Nested subqueries
 >>select (select a, (select (select b,c from t1) from t2) from t1) from t2 ;

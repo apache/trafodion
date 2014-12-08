@@ -934,6 +934,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_PROTOTYPE           /* Tandem extension */
 %token <tokval> TOK_QUERY               /* Tandem extension */
 %token <tokval> TOK_QUERY_CACHE
+%token <tokval> TOK_HYBRID_QUERY_CACHE
+%token <tokval> TOK_HYBRID_QUERY_CACHE_ENTRIES
 %token <tokval> TOK_CATMAN_CACHE
 %token <tokval> TOK_NATABLE_CACHE
 %token <tokval> TOK_NATABLE_CACHE_ENTRIES
@@ -2941,6 +2943,7 @@ numeric_literal_exact :       NUMERIC_LITERAL_EXACT_NO_SCALE
 #pragma warn(1506)   // warning elimination  (goes with the nowarn above. do not remove.
                   $$ = literalOfNumericNoScale($1);
                   if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                 }
 
 /* type item */
@@ -2949,11 +2952,13 @@ numeric_literal :       numeric_literal_exact
                 {
                   $$ = literalOfNumericWithScale($1);
                   if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                 }
 	      | NUMERIC_LITERAL_APPROX
 		{
                   $$ = literalOfApproxNumeric($1);
 		  if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
 		}
 
 /* type item */
@@ -2966,6 +2971,7 @@ character_literal_sbyte : sbyte_string_literal character_literal_notcasespecific
                   const NAString& ns = *$1;
 
                   $$ = new (PARSERHEAP()) ConstValue(*$1, cs);
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   ((ConstValue*)$$)->setStrLitWithCharSetPrefixFlag(TRUE); // for use with DDL col def DEFAULT str lit only
 
                   if ($2/*character_literal_notcasespecific_option specified*/)
@@ -3000,6 +3006,7 @@ character_literal_sbyte : sbyte_string_literal character_literal_notcasespecific
                      {
                        wstr = new (PARSERHEAP()) NAWString(PARSERHEAP());
                        $$ = new (PARSERHEAP()) ConstValue (*$1,*wstr);
+                       SqlParser_CurrentParser->collectItem4HQC($$);
                      }
                      else // $1->length() != 0
                      {
@@ -3018,6 +3025,7 @@ character_literal_sbyte : sbyte_string_literal character_literal_notcasespecific
                        if (cs == CharInfo::ISO88591)
                        {
                          $$ = new (PARSERHEAP()) ConstValue (*$1,*wstr);
+                         SqlParser_CurrentParser->collectItem4HQC($$);		 
                        }
                        else // cs == CharInfo::UTF8
                        {
@@ -3029,10 +3037,14 @@ character_literal_sbyte : sbyte_string_literal character_literal_notcasespecific
                                                         , PARSERHEAP() // heap for allocated target str
                                                         );
                          if (newstr == NULL) // conversion failed
+                         {
                            $$ = new (PARSERHEAP()) ConstValue (*wstr, CharInfo::UnknownCharSet);
+                           SqlParser_CurrentParser->collectItem4HQC($$);
+                         }
                          else
                          {
                            $$ = new (PARSERHEAP()) ConstValue (*newstr,*wstr);
+                           SqlParser_CurrentParser->collectItem4HQC($$);
                            delete newstr;
                          }
                        }
@@ -3045,6 +3057,7 @@ character_literal_sbyte : sbyte_string_literal character_literal_notcasespecific
                      {
                        // Note that an empty string has the ISO88591 character set attribute
                        $$ = new (PARSERHEAP()) ConstValue (*$1, CharInfo::ISO88591);
+                       SqlParser_CurrentParser->collectItem4HQC($$);
                      }
                      else // cs == CharInfo::UTF8
                      {
@@ -3065,14 +3078,21 @@ character_literal_sbyte : sbyte_string_literal character_literal_notcasespecific
                          if (cstr3 != NULL) // str converted to DEFAULT_CHARSET successfully
                          {
                            $$ = new (PARSERHEAP()) ConstValue (*cstr3, SqlParser_DEFAULT_CHARSET);
+                           SqlParser_CurrentParser->collectItem4HQC($$);
                            delete cstr3;
                          }
                          else
+                         {
                            $$ = new (PARSERHEAP()) ConstValue (*wstr3, CharInfo::UCS2);
+                           SqlParser_CurrentParser->collectItem4HQC($$);
+                         }
                          delete wstr3;
                        }
                        else // charToUnicode conversion failed
+                       {
                          $$ = new (PARSERHEAP()) ConstValue (*$1, getStringCharSet(&$1));
+                         SqlParser_CurrentParser->collectItem4HQC($$);
+                       }
                      }
                    }
 
@@ -3095,7 +3115,7 @@ literal :       numeric_literal
                   $$ = literalOfInterval($4, $5, $3);
 #pragma warn(1506)   // warning elimination
 		  if (! $$) YYERROR;
-
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
 
                 }
@@ -3104,6 +3124,7 @@ literal :       numeric_literal
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
                   $$ = literalOfInterval($3, $4);
 		  if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
               | '{' TOK_INTERVAL disableCharsetInference sign QUOTED_STRING interval_qualifier '}'
@@ -3113,6 +3134,7 @@ literal :       numeric_literal
                   $$ = literalOfInterval($5, $6, $4);
 #pragma warn(1506)   // warning elimination
 		  if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
               | '{' TOK_INTERVAL disableCharsetInference QUOTED_STRING interval_qualifier '}'
@@ -3120,13 +3142,15 @@ literal :       numeric_literal
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
                   $$ = literalOfInterval($4, $5);
 		  if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
               | '{' TOK_D disableCharsetInference QUOTED_STRING '}'
                 {
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-                  $$ = literalOfDate($4);
+                  $$ = literalOfDate($4);		  
                   if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);	  
                   restoreInferCharsetState();
                 }
               | TOK_DATE_BEFORE_QUOTE disableCharsetInference QUOTED_STRING
@@ -3134,6 +3158,7 @@ literal :       numeric_literal
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
                   $$ = literalOfDate($3);
 		  if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
               | QUOTED_STRING TOK_LPAREN_BEFORE_DATE_COMMA_AND_FORMAT TOK_DATE ',' TOK_FORMAT QUOTED_STRING  ')'
@@ -3147,12 +3172,14 @@ literal :       numeric_literal
 		    {
                       $$ = new (PARSERHEAP()) ConstValue
                         (*$1, getStringCharSet(&$1));
+                      SqlParser_CurrentParser->collectItem4HQC($$);	
 		      $$ = new (PARSERHEAP()) Format($$, *$6, TRUE);
 		    }
 		  else
 		    {
 		      $$ = literalOfDate($1);
 		      if (! $$) YYERROR;
+                      SqlParser_CurrentParser->collectItem4HQC($$);
 		      restoreInferCharsetState();
 		      $$ = new (PARSERHEAP()) Format($$, *$6, FALSE);
 		    }
@@ -3163,12 +3190,14 @@ literal :       numeric_literal
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
                   $$ = literalOfTime($4);
                   if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
               | TOK_TIME_BEFORE_QUOTE disableCharsetInference QUOTED_STRING
                 {
                   $$ = literalOfTime($3);
 		  if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
               | TOK_TIMESTAMP disableCharsetInference QUOTED_STRING
@@ -3176,6 +3205,7 @@ literal :       numeric_literal
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
                   $$ = literalOfTimestamp($3);
 		  if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
               | '{' TOK_TS disableCharsetInference QUOTED_STRING '}'
@@ -3183,12 +3213,14 @@ literal :       numeric_literal
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
                   $$ = literalOfTimestamp($4);
                   if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
               | character_literal_sbyte 
               | unicode_string_literal
                 {
                   $$ = new (PARSERHEAP()) ConstValue(*$1, getStringCharSet(&$1));
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   ((ConstValue*)$$)->setStrLitWithCharSetPrefixFlag(TRUE); // for use with DDL col def DEFAULT str lit only
                   delete $1;
                 }
@@ -3197,6 +3229,7 @@ literal :       numeric_literal
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
                   $$ = literalOfDateTime($3, $4);
                   if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
 
@@ -3220,22 +3253,26 @@ literal_negatable : literal
 #pragma nowarn(1506)   // warning elimination 
                   $$ = literalOfNumericNoScale($2, $1);
                   if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                 }
 	      |	sign NUMERIC_LITERAL_EXACT_WITH_SCALE
                 {
                   $$ = literalOfNumericWithScale($2, $1);
                   if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                 }
 	      | sign NUMERIC_LITERAL_APPROX
 		{
                   $$ = literalOfApproxNumeric($2, $1);
                   if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
 		}
               | sign TOK_INTERVAL disableCharsetInference QUOTED_STRING interval_qualifier
                 {
                   // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
                   $$ = literalOfInterval($4, $5, $1);
 		  if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
                 }
               | sign TOK_INTERVAL disableCharsetInference sign QUOTED_STRING interval_qualifier
@@ -3244,6 +3281,7 @@ literal_negatable : literal
 		  char sign_sign = ($1 == $4) ? '+' : '-';
                   $$ = literalOfInterval($5, $6, sign_sign);
 		  if (! $$) YYERROR;
+                  SqlParser_CurrentParser->collectItem4HQC($$);
                   restoreInferCharsetState();
 #pragma warn(1506)  // warning elimination
                 }
@@ -5786,18 +5824,34 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
 				{
                                   $$ = new (PARSERHEAP()) HiveMDaccessFunc($5, $7);
 				}
-| TOK_TABLE '(' TOK_QUERY_CACHE '(' ')' ')'
+| TOK_TABLE '(' TOK_QUERY_CACHE '(' value_expression_list ')' ')'
   {
     $$ = new (PARSERHEAP()) RelInternalSP("QUERYCACHE"
-                                          , 0
+                                          , $5
                                           , REL_INTERNALSP
                                           , PARSERHEAP()
                                           , RelInternalSP::executeInSameArkcmp);
   }
-| TOK_TABLE '(' TOK_QUERY_CACHE_ENTRIES '(' ')' ')'
+| TOK_TABLE '(' TOK_QUERY_CACHE_ENTRIES '(' value_expression_list ')' ')'
   {
     $$ =  new (PARSERHEAP()) RelInternalSP( "QUERYCACHEENTRIES"
-                                          , 0
+                                          , $5
+                                          , REL_INTERNALSP
+                                          , PARSERHEAP()
+                                          , RelInternalSP::executeInSameArkcmp);
+  }
+|TOK_TABLE '(' TOK_HYBRID_QUERY_CACHE '(' value_expression_list ')' ')'
+  {
+      $$ =  new (PARSERHEAP()) RelInternalSP( "HYBRIDQUERYCACHE"
+                                          , $5
+                                          , REL_INTERNALSP
+                                          , PARSERHEAP()
+                                          , RelInternalSP::executeInSameArkcmp);
+  }
+|TOK_TABLE '(' TOK_HYBRID_QUERY_CACHE_ENTRIES '(' value_expression_list ')' ')'
+  {
+      $$ =  new (PARSERHEAP()) RelInternalSP( "HYBRIDQUERYCACHEENTRIES"
+                                          , $5
                                           , REL_INTERNALSP
                                           , PARSERHEAP()
                                           , RelInternalSP::executeInSameArkcmp);
@@ -7834,6 +7888,7 @@ primary :     '(' value_expression ')'
 null_constant : TOK_NULL
                                 {
                                   $$ = new (PARSERHEAP()) ConstValue();
+                                  SqlParser_CurrentParser->collectItem4HQC($$);
                                 }
 
 /* type item */
@@ -8582,6 +8637,7 @@ string_function :
         {
 	  $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_INSERT_STR,
 						    $3, $5, $7, $9, NULL);
+         SqlParser_CurrentParser->setIsHQCCacheable(FALSE);
 	}  
 
      /* added ODBC extension: map LEFT(str,count) in ODBC to  */
@@ -11459,6 +11515,7 @@ left_largeint_right : '(' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
       if (!returnValue) YYERROR;
       $$ = returnValue;
       assert( $$ == returnValue );
+      SqlParser_CurrentParser->collectItem4HQC($$);
       delete $2;
     }
 
@@ -12052,6 +12109,7 @@ dynamic_parameter : PARAMETER
 			    setHVorDPvarIndex ( $$, $1 );
 			    delete $1;
 			    $1 = NULL;
+                            SqlParser_CurrentParser->collectItem4HQC($$);
 			  }
 		      }
 
@@ -31987,6 +32045,8 @@ nonreserved_word :      TOK_ABORT
                       | TOK_QID_INTERNAL
 	              | TOK_QUERY
                       | TOK_QUERY_CACHE
+                      | TOK_HYBRID_QUERY_CACHE
+                      | TOK_HYBRID_QUERY_CACHE_ENTRIES
                       | TOK_QUERY_CACHE_ENTRIES
                       | TOK_CATMAN_CACHE
 		      | TOK_NATABLE_CACHE

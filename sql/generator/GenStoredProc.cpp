@@ -335,7 +335,7 @@ short RelInternalSP::codeGen(Generator * generator)
 		     5,
 		     64000,  //10240
 		     predExpr,
-		     (UInt16) getExecuteInSameArkcmp());
+		     (UInt16) arkcmpInfo_);
 		      
   generator->initTdbFields(sp_tdb);
 

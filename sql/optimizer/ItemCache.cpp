@@ -399,10 +399,16 @@ ItemExpr* BiRelat::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
         if (leftO == ITM_BASECOLUMN && rightO == ITM_CONSTANT) {
           parameterizeMe(cwa, bindWA, child(1),
                          (BaseColumn*)leftC, (ConstValue*)rightC);
+		  //HQC collect histogram for column
+		 ItemExpr * cParameter = child(1);
+		 cwa.bindConstant2SQC((BaseColumn*)leftC, (ConstantParameter*)cParameter);
         }
         else if (rightO == ITM_BASECOLUMN && leftO == ITM_CONSTANT) {
           parameterizeMe(cwa, bindWA, child(0),
                          (BaseColumn*)rightC, (ConstValue*)leftC);
+             //HQC collect histogram for column
+          ItemExpr * cParameter = child(0);
+          cwa.bindConstant2SQC((BaseColumn*)rightC, (ConstantParameter*)cParameter);
         }
         else if (leftO == ITM_ITEM_LIST && rightO == ITM_ITEM_LIST) {
           child(0) = ((ItemList*)leftC)->normalizeListForCache
@@ -689,6 +695,7 @@ ItemExpr* ConstValue::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
     // "after-parser" ConstantParameters will undergo complete binding, so
     // addConstParam does not have to bind "after-parser" ConstantParameters
     cwa.addConstParam(result, bindWA);
+    cwa.bindConstant2SQC((BaseColumn*)NULL, result);
     result->markAsNormalizedForCache();
   }
   // do not mark this ConstValue as normalizedForCache because it may
@@ -1106,10 +1113,16 @@ ItemExpr* ItemList::normalizeListForCache
       if (leftO == ITM_BASECOLUMN && rightO == ITM_CONSTANT) {
         parameterizeMe(cwa, bindWA, other->child(x), (BaseColumn*)leftC,
                        (ConstValue*)rightC);
+		 //HQC collect histogram for column
+		 ItemExpr * cParameter = other->child(x);
+        cwa.bindConstant2SQC((BaseColumn*)leftC, (ConstantParameter*)cParameter);
       }
       else if (rightO == ITM_BASECOLUMN && leftO == ITM_CONSTANT) {
         parameterizeMe(cwa, bindWA, child(x), (BaseColumn*)rightC,
                        (ConstValue*)leftC);
+		 //HQC collect histogram for column
+		 ItemExpr * cParameter = child(x);
+        cwa.bindConstant2SQC((BaseColumn*)leftC, (ConstantParameter*)cParameter);
       }
       else if (leftO == ITM_ITEM_LIST && rightO == ITM_ITEM_LIST) {
         child(x) = ((ItemList*)leftC)->normalizeListForCache
