@@ -1309,7 +1309,7 @@ public:
   // It is not an inline function to avoid the change in CmpContext
   // trigger a recompilation. Should be implemented as inline in the
   // future.
-  CollHeap* wHeap();
+  NAHeap* wHeap();
 
   inline void enableExplain()  { explainIsDisabled_--; }
 

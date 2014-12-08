@@ -23,12 +23,9 @@
 #include <wchar.h>
 #include <math.h>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
-
 #include "sqludr.h"
+
+extern "C" {
 
 /* ADD2 */
 SQLUDR_LIBFUNC SQLUDR_INT32 add2(SQLUDR_INT32 *in1,
@@ -812,7 +809,7 @@ SQLUDR_LIBFUNC SQLUDR_INT32 getMXV(SQLUDR_INT16 *out,
 }
 
 /* sleep */
-SQLUDR_LIBFUNC SQLUDR_INT32 sleep(SQLUDR_INT32 *in,
+SQLUDR_LIBFUNC SQLUDR_INT32 Sleep(SQLUDR_INT32 *in,
                                   SQLUDR_INT32 *out,
                                   SQLUDR_INT16 *inInd,
                                   SQLUDR_INT16 *outInd,
@@ -838,11 +835,7 @@ SQLUDR_LIBFUNC SQLUDR_INT32 sleep(SQLUDR_INT32 *in,
 
     for (i = 0; i < secondsToSleep; i++)
     {
-#ifdef _WIN32
-      Sleep(1 * 1000);
-#else
-      DELAY(1 * 100);
-#endif
+      sleep(1 * 1000);
     }
 
     printf("[SLEEP] Done\n");
@@ -1224,3 +1217,4 @@ SQLUDR_LIBFUNC SQLUDR_INT32 validate_current_role_name(SQLUDR_CHAR *in,
   return status;
 }
 
+} /* extern "C" */

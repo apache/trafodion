@@ -5204,7 +5204,7 @@ PhysicalTMUDFRule::~PhysicalTMUDFRule() {} // LCOV_EXCL_LINE
 NABoolean PhysicalTMUDFRule::topMatch (RelExpr *relExpr,
                                                 Context *context)
 {
-  if (NOT relExpr->getOperator().match(REL_TABLE_MAPPING_UDF))
+  if (NOT relExpr->getOperator().match(REL_ANY_TABLE_MAPPING_UDF))
     return FALSE;
   if (relExpr->isPhysical())
     return FALSE;
@@ -5227,13 +5227,13 @@ RelExpr * PhysicalTMUDFRule::nextSubstitute(RelExpr * before,
                                             Context * /*context*/,
                                             RuleSubstituteMemory *& /*memory*/)
 {
-  CMPASSERT(before->getOperatorType() == REL_TABLE_MAPPING_UDF);
+  CMPASSERT(before->getOperator().match(REL_ANY_TABLE_MAPPING_UDF));
   TableMappingUDF * bef = (TableMappingUDF *) before;
 
   // Simply copy the contents of the TableMappingUDF from the before pattern.
   PhysicalTableMappingUDF *result = new (CmpCommon::statementHeap())
     PhysicalTableMappingUDF(CmpCommon::statementHeap());
-  bef->copyTopNode(result, CmpCommon::statementHeap());
+  bef->TableMappingUDF::copyTopNode(result, CmpCommon::statementHeap());
 
   // now set the group attributes of the result's top node
   result->setGroupAttr(before->getGroupAttr());

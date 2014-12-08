@@ -1618,7 +1618,8 @@ void dataErrorReply(UdrGlobals *UdrGlob,
                     UdrServerDataStream &msgStream,
                     Lng32 errorNumber,
                     Lng32 intErrorInfo,
-                    const char *charErrorInfo)
+                    const char *charErrorInfo,
+                    ComDiagsArea *diags)
 {
   const char *moduleName = "dataErrorReply";
   doMessageBox(UdrGlob, TRACE_SHOW_DIALOGS, UdrGlob->showMain_, moduleName);
@@ -1632,11 +1633,12 @@ void dataErrorReply(UdrGlobals *UdrGlob,
   msgStream << *reply;
   reply->decrRefCount();
 
-  ComDiagsArea *diags = addOrCreateErrorDiags(UdrGlob,
-                                              errorNumber,
-                                              intErrorInfo,
-                                              charErrorInfo,
-                                              NULL);
+  if (!diags)
+    diags = addOrCreateErrorDiags(UdrGlob,
+                                  errorNumber,
+                                  intErrorInfo,
+                                  charErrorInfo,
+                                  NULL);
   if (diags)
   {
     msgStream << *diags;
@@ -1649,7 +1651,7 @@ void dataErrorReply(UdrGlobals *UdrGlob,
   UdrGlob->numErrUDR_++;
   UdrGlob->numErrSP_++;
   UdrGlob->numErrInvokeSP_++;
-  UDR_ASSERT(0, "UDR Data Error Reply");
+  // UDR_ASSERT(0, "UDR Data Error Reply");
 
 }  // dataErrorReply
 

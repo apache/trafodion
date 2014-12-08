@@ -48,19 +48,9 @@
 -- TO BUILD THE UDF DLL OUTSIDE THE RUNNING OF THIS TEST:
 ----------------------------------------------------------------------
 --
--- Windows:
---  cd w:/regress/udr
---  ../tools/dll-compile.ksh TEST107.c 
---
 -- Linux:
 --  cd $rundir/udr
 --  $scriptsdir/tools/dll-compile.ksh TEST107.c 
---
--- NSK:
---  . /<your-path>/regress/tools/setupnskenv
---  cd $rundir/udr
---  sh ../tools/dll-compile.ksh TEST107.c \
---    "-I$mxcidir -I/usr/tandem/sqlmx/include"
 --
 
 set pattern $$QUOTE$$ '''';
@@ -141,19 +131,10 @@ sh cp -f $MY_SQROOT/sql/sqludr/Install*Metadata $REGRTSTDIR;
 ?section compile_libs
 --------------------------------------------------------------------------
 log;
-#ifNT
 sh rm -f ./TEST107.dll;
-sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST107.c 
+sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST107.cpp
   2>&1 | tee -a LOG107-SECONDARY;
 set pattern $$DLL$$ TEST107.dll;
-#ifNT
-#ifNSK
-sh rm -f ./TEST107.so;
-sh $$scriptsdir$$/tools/dll-compile.ksh TEST107.c 
-  "-I$mxcidir -I/usr/tandem/sqlmx/include" "-lib zrlddll"
-   2>&1 | tee -a LOG107-SECONDARY;
-set pattern $$DLL$$ TEST107.so;
-#ifNSK
 log LOG107;
 
 ?section create_tables

@@ -37,19 +37,29 @@ shift
   NSK=0
   LINUX=1
 
-BASE=$(basename $SRC .c)
+if [ ${SRC%.cpp} != $SRC ]; then
+  # a C++ file
+  CC=g++
+  BASE=$(basename $SRC .cpp)
+elif [ ${SRC%.c} != $SRC ]; then
+  CC=gcc
+  BASE=$(basename $SRC .c)
+else
+  echo "Expecting a file argument ending in .c or .cpp"
+  exit 1
+fi
+  
 
-CC=
 CC_OPTS=
 LD=
 LD_OPTS=
 TARGET=
 
     # give preference to tools on /opt/home, use PATH on clusters
-    if [ -x /opt/home/tools/gcc-4.4.6/bin/gcc ]; then
-      CC=/opt/home/tools/gcc-4.4.6/bin/gcc
+    if [ -x /opt/home/tools/gcc-4.4.6/bin/${CC} ]; then
+      CC=/opt/home/tools/gcc-4.4.6/bin/${CC}
     else
-      CC=`which gcc`
+      CC=`which $CC`
     fi
   CC_OPTS="-g "
   CC_OPTS="$CC_OPTS -I$MY_SQROOT/sql/sqludr"

@@ -60,9 +60,15 @@ class IsolatedScalarUDF;
 class SPDupVarList;
 class TableMappingUDF;
 class TableMappingUDFChildInfo;
+class PredefinedTableMappingFunction;
+class PhysicalTableMappingUDF;
 
 // forward references
 class TMUDFDllInteraction;
+namespace tmudr {
+  class UDRInvocationInfo;
+  class TMUDRInterface;
+}
 
 // -----------------------------------------------------------------------
 /*!
@@ -255,7 +261,7 @@ public:
 
   //! addProcOutputParamsVids mutator method 
   //  add a ValueId to the procOutputParamsVids list
-  inline void addProcOutputParamsVids(ValueId vId) 
+  inline void addProcOutputParamsVid(ValueId vId) 
          { procOutputParamsVids_.insert(vId); }
 
   //! setHasSubquery method
@@ -523,8 +529,6 @@ public:
     getUserTableName().setCorrName(corrName);
   }
 
-  virtual Int32 getArity() const {return RelRoutine::getArity();};
-
 private:
 
   //! tabId_
@@ -686,7 +690,9 @@ public :
   childInfo_(oHeap),
   scalarInputParams_(NULL),
   outputParams_(NULL),
-  dllInteraction_(NULL)
+  dllInteraction_(NULL),
+  invocationInfo_(NULL),
+  udrInterface_(NULL)
   { };
 
   TableMappingUDF(RelExpr * child0,
@@ -697,7 +703,9 @@ public :
   childInfo_(oHeap),
   scalarInputParams_(NULL),
   outputParams_(NULL),
-  dllInteraction_(NULL)
+  dllInteraction_(NULL),
+  invocationInfo_(NULL),
+  udrInterface_(NULL)
   { };
   //! TableMappingUDF Constructor
   //  expects at least a name
@@ -708,7 +716,9 @@ public :
     childInfo_(oHeap),
 	scalarInputParams_(NULL),
 	outputParams_(NULL),
-    dllInteraction_(NULL)
+    dllInteraction_(NULL),
+    invocationInfo_(NULL),
+    udrInterface_(NULL)
   { };
 
   //! TableValueUDF Copy Constructor 
@@ -727,6 +737,9 @@ public :
   //! getText method
   // a virtual function for displaying the name of the node
   virtual const NAString getText() const ;
+
+  // safe method to cast to derived class
+  virtual PredefinedTableMappingFunction * castToPredefinedTableMappingFunction();
 
   virtual RelExpr* bindNode(BindWA* bindWA); 
   virtual desc_struct   *createVirtualTableDesc();
@@ -854,8 +867,6 @@ public :
 
   void createOutputVids(BindWA* bindWA);
 
-  virtual Int32 getArity() const ;
-
   TableMappingUDFChildInfo * getChildInfo(Int32 index)
   {
     CMPASSERT (index >= 0 && index < (Int32) childInfo_.entries()); 
@@ -865,6 +876,16 @@ public :
   TMUDFDllInteraction * getDllInteraction()
   {
     return dllInteraction_;
+  }
+
+  tmudr::UDRInvocationInfo * getInvocationInfo()
+  {
+    return invocationInfo_;
+  }
+
+  tmudr::TMUDRInterface * getUDRInterface()
+  {
+    return udrInterface_;
   }
 
   inline  const NAColumnArray    &getScalarInputParams()   const 
@@ -885,12 +906,28 @@ public :
   inline       ComSInt32        getOutputParamCount()     const 
   { return outputParams_->entries();}
 
+  inline void setInvocationInfo(tmudr::UDRInvocationInfo *invocationInfo)
+  { invocationInfo_ = invocationInfo; }
+
+  inline void setUDRInterface(tmudr::TMUDRInterface *udrInterface)
+  { udrInterface_ = udrInterface; }
 
 protected:
 
+  virtual NARoutine * getRoutineMetadata(QualifiedName &routineName,
+                                         CorrName &tmfuncName,
+                                         BindWA *bindWA);
+
   LIST(TableMappingUDFChildInfo *) childInfo_ ;
-  // selectivity hint from user. Set in the parser. Set if > 0, set -1 otherwise
+
+  // the udrInterface should be in a cache, created when we invoke
+  // a particular interface for the first time and deleted when
+  // we unload the DLL
+  tmudr::TMUDRInterface *udrInterface_;
+
 private:
+
+  // selectivity hint from user. Set in the parser. Set if > 0, set -1 otherwise
   CostScalar selectivityFactor_;
   CostScalar cardinalityHint_;
 
@@ -901,15 +938,55 @@ private:
   // columns of the udf to its output columns
   // top values: udf output
   // bottom values: child(ren) input
-  ValueIdMap UDFOutputToChildInputMap_;
+  ValueIdMap udfOutputToChildInputMap_;
   
-  // This list tells us child relexpr from which a particular
-  // output expression is produced. An entry of -1 represents
-  // the fact that the output produced is computed in the TableMappingUDF
-  LIST(CollIndex) outputChildIndexList_;
-  
+  // objects needed for the interaction with TMUDFs at compile time
   TMUDFDllInteraction *dllInteraction_ ;
+  tmudr::UDRInvocationInfo *invocationInfo_;
+
 }; // class TableMappingUDF
+
+class PredefinedTableMappingFunction : public TableMappingUDF
+{
+  // Predefined table mapping functions behave like UDFs and are
+  // implemented like UDFs, using the same interfaces, but they
+  // are created by the system and are always available. The DLL
+  // that implements them is distributed with the system.
+  // So, "predefined" is different from "builtin" in that builtin
+  // functions have their own executor operators and work
+  // methods, while predefined functions are executed like
+  // UDFs at runtime and during most of compile time.
+  // The physical node for a PredefinedTableMappingFunction
+  // is a PhysicalTableMappingUDF, like for regular TMUDFs.
+public:
+  PredefinedTableMappingFunction(
+       CorrName name,
+       ItemExpr *params,
+       OperatorTypeEnum otype,
+       CollHeap *oHeap = CmpCommon::statementHeap());
+
+  virtual ~PredefinedTableMappingFunction();
+
+  // static method to find out whether a given name is a
+  // built-in table-mapping function - returns operator type
+  // of predefined function if so, REL_TABLE_MAPPING_UDF otherwise
+  static OperatorTypeEnum nameIsAPredefinedTMF(const CorrName &name);
+
+  virtual const NAString getText() const;
+
+  virtual PredefinedTableMappingFunction * castToPredefinedTableMappingFunction();
+
+  // a virtual function used to copy most of a Node
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+                                CollHeap* outHeap = 0);
+
+private:
+
+  virtual NARoutine * getRoutineMetadata(QualifiedName &routineName,
+                                         CorrName &tmfuncName,
+                                         BindWA *bindWA);
+
+};
 
 // -----------------------------------------------------------------------
 /*!
@@ -948,6 +1025,7 @@ public:
   //  indicate if the node is physical
   virtual NABoolean isPhysical() const { return TRUE; }
 
+  virtual PlanWorkSpace* allocateWorkSpace() const;
   // ---------------------------------------------------------------------
   // Create a Context for a specific child and store it in the
   // PlanWorkSpace.

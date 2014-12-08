@@ -387,6 +387,7 @@ private:
   ComUInt32 numTableInfo_; 
   LmTableInfo *tableInfo_;
   SqlBuffer *sqlBufferScalar_;
+  SqlBuffer *sqlBufferTVF_;
   queue_index parentIndex_;
   
   // IPC stream to save Enter TX message for replying later

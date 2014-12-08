@@ -170,7 +170,7 @@ EXPORTSQLLIBS= libarkcmplib.so libarkcmp.so libarkesp.so libarkfsindp2.so libcat
 	libsqlc.so libsqlmsg.so libtdm_arkfsddl.so libtdm_arkfsdml.so \
 	libtdm_arkfsinopen.so libtdm_sqlcli_globals.so libtdm_sqlcli.so \
 	libtdm_sqlerrormsg.so libtdm_sqlexport.so libtdm_sqlexp.so libtdm_sqlmxevents.so \
-	libtdm_sqlshare.so libustat.so libSqlCompilerDebugger.so
+	libtdm_sqlshare.so libustat.so libSqlCompilerDebugger.so libudr_predef.so
 # SQL Utility Libraries
 EXPORTUTILLIBS= libds.a libdmol.a libddol.a libuol.a libqol.a libdup.a libPaUtiParser.a \
 	libuofs.a libpurgedata.a libtse_interface.so
@@ -199,26 +199,15 @@ setupdir:
 	-@./makelink ../../sql/$(STUBLIBDIR)/libtdm_tmfuser.so $(EXPORTLIB_DIR)
 	@# SQL .mdf files
 	-mkdir -p $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/sqlcat/readdef.mdf $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/smdio/CmNameMapSql.mdf $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/smdio/CmSmdioRead.mdf $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/smdio/CmSmdioWrite.mdf $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/smdio/CmSqlj.mdf $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/ddl/Rfork.mdf $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/ustat/sqlhist.mdf $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/sqlutils/ddol/ddol.mdf $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/qmscommon/QRQueries.mdf $(EXPORTINCSQL_DIR)
-	-ln -sf $(SQL_W)/qvp/qvp.mdf $(EXPORTINCSQL_DIR)
 
-	-@./makelink $(SQL_W)/odbc/modules/ansiMxGTI.mdf $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/odbc/modules/ansiMxJava.mdf $(EXPORTINCSQL_DIR)
-	-@./makelink $(SQL_W)/odbc/modules/ansiMxSmd.mdf $(EXPORTINCSQL_DIR)
 	@# SQL Messages .txt file
 	-@./makelink $(SQL_W)/bin/SqlciErrors.txt $(EXPORTINCSQL_DIR)
 
-	# copy some header files
+	@# copy some header files (.cpp file is for reference only)
 	-ln -sf $(SQL_W)/cli/sqlcli.h $(EXPORTINCSQL_DIR)
-	#
+	-ln -sf $(SQL_W)/sqludr/sqludr.h $(EXPORTINCSQL_DIR)
+	-ln -sf $(SQL_W)/sqludr/sqludr.cpp $(EXPORTINCSQL_DIR)
+	@#
 	-mkdir -p export/include/nsk
 	-cp -p inc/cextdecs/cextdecs.h export/include/nsk
 	@# USTAT
@@ -305,7 +294,7 @@ PKG_BIN_DIRS ?= sql seapilot export
 PKG_BIN_DIRS += trafci
 
 # Package Regression variables (parser file is for compGeneral/TESTTOK2)
-PKG_REGRESS_OBJS ?= $(SQL_W)/regress $(SQL_W)/sqludr inc/seaquest/sqtypes.h inc/fs/feerrors.h $(SQL_W)/cli/sqlcli.h $(SQL_W)/cli/SQLCLIdev.h $(SQL_W)/parser/sqlparser.y
+PKG_REGRESS_OBJS ?= $(SQL_W)/regress inc/seaquest/sqtypes.h inc/fs/feerrors.h $(SQL_W)/cli/sqlcli.h $(SQL_W)/cli/SQLCLIdev.h $(SQL_W)/parser/sqlparser.y
 REGRESS_EXCLUDE_FILES = "--exclude=$(SQL_W)/regress/seabase"
 REGRESS_EXCLUDE_FILES =
 

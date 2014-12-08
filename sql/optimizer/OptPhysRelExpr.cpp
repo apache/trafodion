@@ -53,6 +53,7 @@
 #include "HDFSHook.h"
 #include "Globals.h"
 #include "CmpStatement.h"
+#include "UdfDllInteraction.h"
 
 extern THREAD_P NAUnsigned              SortEnforcerRuleNumber;
 
@@ -16895,6 +16896,141 @@ PhysicalProperty *CallSP::synthPhysicalProperty(const Context* context,
   return sppForMe ;
 } // CallSP::synthPhysicalProperty()
 
+
+
+DefaultToken TableMappingUDF::getParallelControlSettings (
+            const ReqdPhysicalProperty* const rppForMe, /*IN*/
+            Lng32& numOfESPs, /*OUT*/
+            float& allowedDeviation, /*OUT*/
+            NABoolean& numOfESPsForced /*OUT*/) const 
+{ 
+  return RelExpr::getParallelControlSettings(rppForMe, 
+        numOfESPs, allowedDeviation, numOfESPsForced ); 
+};
+
+NABoolean TableMappingUDF::okToAttemptESPParallelism (
+            const Context* myContext, /*IN*/
+            PlanWorkSpace* pws, /*IN*/
+            Lng32& numOfESPs, /*OUT*/
+            float& allowedDeviation, /*OUT*/
+            NABoolean& numOfESPsForced /*OUT*/) 
+{ 
+  const ReqdPhysicalProperty* rppForMe = myContext->getReqdPhysicalProperty();
+
+  // call the base class method
+  NABoolean result = RelExpr::okToAttemptESPParallelism(myContext, 
+        pws, numOfESPs, allowedDeviation, numOfESPsForced);
+
+  Lng32 reqdNumOfPartitions = (rppForMe->requiresPartitioning() ?
+                               rppForMe->getCountOfPartitions() :
+                               ANY_NUMBER_OF_PARTITIONS);
+  int udfDoP = 0;
+
+  // also ask the UDF what DoP it would like
+  NABoolean status = dllInteraction_->degreeOfParallelism(
+       this, (TMUDFPlanWorkSpace *) pws, udfDoP);
+
+  if (udfDoP != 0 && udfDoP != numOfESPs && !numOfESPsForced)
+    {
+      // the UDF cares about parallelism and it did not
+      // return the same DoP as suggested by the base class method
+      // (and we are not forcing the # of ESPs)
+      DefaultToken parallelControlSetting =
+        CURRSTMT_OPTDEFAULTS->attemptESPParallelism();
+      Lng32 maxDoP = CURRSTMT_OPTDEFAULTS->getMaximumDegreeOfParallelism();
+
+      switch (udfDoP)
+        {
+        case tmudr::UDRPlanInfo::MAX_DEGREE_OF_PARALLELISM:
+          // UDF desires a DoP of maxDoP
+          if (result)
+            udfDoP = maxDoP;
+          break;
+
+        case tmudr::UDRPlanInfo::ONE_INSTANCE_PER_NODE:
+          // override base class implementation and CQDs
+          parallelControlSetting = DF_ON;
+          numOfESPs =
+          udfDoP =
+          maxDoP = gpClusterInfo->numOfSMPs();
+          numOfESPsForced = TRUE;
+          allowedDeviation = 0.0;
+          result = TRUE;
+          break;
+
+        case 1:
+          // UDF wants serial execution
+          numOfESPs = 1;
+          numOfESPsForced = TRUE;
+          result = FALSE;
+          break;
+
+        case tmudr::UDRPlanInfo::DEFAULT_DEGREE_OF_PARALLELISM:
+          udfDoP = reqdNumOfPartitions;
+          break;
+
+        default:
+          // leave all values unchanged
+          break;
+        }
+
+      if (result)
+        // try to reconcile the two different DoPs
+        // - if parallelism is OFF, ignore UDF parallelism
+        switch (parallelControlSetting)
+          {
+          case DF_OFF:
+            // this overrides the UDF method
+            break;
+
+          case DF_SYSTEM:
+          case DF_ON:
+          case DF_MAXIMUM:
+          default:
+            {
+              if (!numOfESPsForced)
+                if (parallelControlSetting == DF_SYSTEM &&
+                    reqdNumOfPartitions != ANY_NUMBER_OF_PARTITIONS ||
+                    udfDoP == ANY_NUMBER_OF_PARTITIONS)
+                  {
+                    // if CQD is SYSTEM and parent requires
+                    // a degree of ||ism, go with that
+                    numOfESPs = rppForMe->getCountOfPipelines();
+                    allowedDeviation = 1.0;
+                  }
+                else
+                  {
+                    // use udfDoP, up to max. degree of parallelism
+                    numOfESPs = MINOF(
+                         udfDoP,
+                         4*maxDoP);
+
+                    if (numOfESPs == udfDoP)
+                      // if we chose the exact DoP requested by the UDF, then
+                      // stick with the number the UDF specified, no deviation
+                      allowedDeviation = 0.0;
+                  }
+            }
+            break;
+          }
+    }
+
+  return result;
+}
+
+PartitioningFunction* TableMappingUDF::mapPartitioningFunction(
+                          const PartitioningFunction* partFunc,
+                          NABoolean rewriteForChild0) 
+{ 
+  return RelExpr::mapPartitioningFunction(partFunc, rewriteForChild0);
+};
+
+NABoolean TableMappingUDF::isBigMemoryOperator(const Context* context,
+                                        const Lng32 /*planNumber*/)
+{
+  return FALSE;
+};
+
 // -----------------------------------------------------------------------
 // PhysicalTableMappingUDF::costMethod()
 // Obtain a pointer to a CostMethod object providing access
@@ -16907,6 +17043,201 @@ CostMethod* PhysicalTableMappingUDF::costMethod() const
     m = new (GetCliGlobals()->exCollHeap()) CostMethodTableMappingUDF();
   return m;
 } 
+
+PlanWorkSpace * PhysicalTableMappingUDF::allocateWorkSpace() const
+{
+  PlanWorkSpace *result =
+    new(CmpCommon::statementHeap()) TMUDFPlanWorkSpace(getArity());
+
+  return result;
+}
+
+Context* PhysicalTableMappingUDF::createContextForAChild(Context* myContext,
+                     PlanWorkSpace* pws,
+                     Lng32& childIndex)
+{
+  // ---------------------------------------------------------------------
+  // If one Context has been generated for each child, return NULL
+  // to signal completion. This will also take care of 0 child case.
+  // ---------------------------------------------------------------------
+  childIndex = pws->getCountOfChildContexts();
+
+  if (childIndex == getArity())
+    return NULL;
+
+  Lng32 planNumber = 0;
+  const ReqdPhysicalProperty* rppForMe = myContext->getReqdPhysicalProperty();
+  Lng32 childNumPartsRequirement = ANY_NUMBER_OF_PARTITIONS;
+  float childNumPartsAllowedDeviation = 0.0;
+  NABoolean numOfESPsForced = FALSE;
+
+  RequirementGenerator rg(child(childIndex),rppForMe);
+  TableMappingUDFChildInfo * childInfo = getChildInfo(childIndex);
+  TMUDFInputPartReq childPartReqType = childInfo->getPartitionType();
+  PartitioningRequirement* partReqForChild = NULL;
+
+  NABoolean useAParallelPlan = okToAttemptESPParallelism(
+       myContext,
+       pws,
+       childNumPartsRequirement,
+       childNumPartsAllowedDeviation,
+       numOfESPsForced);
+
+  // add PARTITION BY as a required partitioning key
+  if (useAParallelPlan)
+    if (childPartReqType == SPECIFIED_PARTITIONING)
+      {
+        // if some specified partitioning is to be required from the child
+        // then the required partitioning columns should be mentioned
+        CMPASSERT(NOT childInfo->getPartitionBy().isEmpty());
+        rg.addPartitioningKey(childInfo->getPartitionBy());
+      }
+    else if(childPartReqType == REPLICATE_PARTITIONING)
+      {
+        // get the number of replicas
+        // for right now just get what ever number of streams the parent requires
+        Lng32 countOfPartitions = childNumPartsRequirement;
+        if(rppForMe->getPartitioningRequirement() &&
+           (countOfPartitions < rppForMe->getCountOfPartitions()))
+          countOfPartitions = rppForMe->getCountOfPartitions();
+
+        if(countOfPartitions > 1)
+          partReqForChild = new (CmpCommon::statementHeap() )
+            RequireReplicateViaBroadcast(countOfPartitions);
+        else
+          partReqForChild = new(CmpCommon::statementHeap())
+            RequireExactlyOnePartition();
+
+        rg.addPartRequirement(partReqForChild);
+      }
+
+  // Since we treat a TMUDF like a MapReduce operator, we ensure
+  // that the TMUDF sees all values of a particular partition
+  // together. We do that by requesting an arrangement by th
+  // PARTITION BY columns, if any are specified. This applies
+  // to parallel and serial plans.
+  rg.addArrangement(childInfo->getPartitionBy(),ESP_SOT);
+
+  // add ORDER BY as a required order
+  if (NOT childInfo->getOrderBy().isEmpty())
+  {
+     ValueIdList sortKey(getChildInfo(0)->getPartitionBy());
+     for (Int32 i=0;i<(Int32)getChildInfo(0)->getOrderBy().entries();i++)
+      sortKey.insert(getChildInfo(0)->getOrderBy()[i]);
+     rg.addSortKey(sortKey, ESP_SOT);
+  }
+
+  // add requirement for the degree of parallelism
+  if (useAParallelPlan)
+  {
+    if (NOT numOfESPsForced)
+      rg.makeNumOfPartsFeasible(childNumPartsRequirement,
+                                &childNumPartsAllowedDeviation);
+    rg.addNumOfPartitions(childNumPartsRequirement,
+                          childNumPartsAllowedDeviation);
+  }
+  else
+    rg.addNumOfPartitions(1);
+
+  // ---------------------------------------------------------------------
+  // Done adding all the requirements together, now see whether it worked
+  // and give up if it is not possible to satisfy them
+  // ---------------------------------------------------------------------
+  if (NOT rg.checkFeasibility())
+    {
+      // remember this so that we can give an appropriate error in case
+      // we fail to produce a plan
+      char reason[250];
+
+      snprintf(reason,
+               sizeof(reason),
+               "%s, use %d parallel streams in context %s",
+               getUserTableName().getCorrNameAsString().data(),
+               childNumPartsRequirement,
+               myContext->getRPPString().data());
+
+      CmpCommon::statement()->setTMUDFRefusedRequirements(reason);
+      return NULL;
+    }
+
+  // ---------------------------------------------------------------------
+  // Compute the cost limit to be applied to the child.
+  // ---------------------------------------------------------------------
+  CostLimit* costLimit = computeCostLimit(myContext, pws);
+
+  // ---------------------------------------------------------------------
+  // Get a Context for optimizing the child.
+  // Search for an existing Context in the CascadesGroup to which the
+  // child belongs that requires the same properties as those in
+  // rppForChild. Reuse it, if found. Otherwise, create a new Context
+  // that contains rppForChild as the required physical properties..
+  // ---------------------------------------------------------------------
+  Context* result = shareContext(
+         childIndex,
+         rg.produceRequirement(),
+         myContext->getInputPhysicalProperty(),
+         costLimit,
+         myContext,
+         myContext->getInputLogProp());
+
+
+  // ---------------------------------------------------------------------
+  // Store the Context for the child in the PlanWorkSpace.
+  // ---------------------------------------------------------------------
+  pws->storeChildContext(childIndex, planNumber, result);
+
+  return result;
+};
+
+PhysicalProperty* PhysicalTableMappingUDF::synthPhysicalProperty(
+     const Context* myContext,
+     const Lng32    planNumber)
+{
+  PartitioningFunction* myPartFunc = NULL;
+  if (getArity() == 0)
+  {
+    //----------------------------------------------------------
+    // Create a node map with a single, active, wild-card entry.
+    //----------------------------------------------------------
+    NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+                          NodeMap(CmpCommon::statementHeap(),
+                                  1,
+                                  NodeMapEntry::ACTIVE);
+
+    //------------------------------------------------------------
+    // Synthesize a partitioning function with a single partition.
+    //------------------------------------------------------------
+    const ReqdPhysicalProperty* rppForMe = myContext->getReqdPhysicalProperty();
+    PartitioningRequirement* partReq = rppForMe->getPartitioningRequirement();
+
+      if ( partReq == NULL || partReq->isRequirementExactlyOne())
+      {
+      myPartFunc = new(CmpCommon::statementHeap())
+                          SinglePartitionPartitioningFunction(myNodeMap);
+      }
+      else 
+      {
+          myPartFunc =  partReq->realize(myContext);
+      }
+  }
+  else
+  {
+    // for now, simply propagate the physical property 
+    const PhysicalProperty * const sppOfChild =
+      myContext->getPhysicalPropertyOfSolutionForChild(0);
+    myPartFunc = sppOfChild->getPartitioningFunction();
+  }
+  
+    PhysicalProperty * sppForMe =
+    new(CmpCommon::statementHeap()) PhysicalProperty(
+         myPartFunc,
+         EXECUTE_IN_MASTER_AND_ESP,
+          SOURCE_VIRTUAL_TABLE);
+
+  // remove anything that's not covered by the group attributes
+  sppForMe->enforceCoverageByGroupAttributes (getGroupAttr()) ;
+  return sppForMe ;
+}
 
 
 //***********************************************************************

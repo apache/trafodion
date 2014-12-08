@@ -59,6 +59,7 @@ extern void controlErrorReply(UdrGlobals *UdrGlob,
 extern void dataErrorReply(UdrGlobals *UdrGlob,
                            UdrServerDataStream &msgStream,
                            Lng32 errortype, Lng32 error,
-                           const char *charErrorInfo);
+                           const char *charErrorInfo = NULL,
+                           ComDiagsArea *diags = NULL);
 
 #endif // _UDREXTRN_H_

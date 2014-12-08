@@ -179,7 +179,6 @@ public:
   // To access the variables in current statement, use
   // CmpCommon::statement()->....
   static CmpStatement* statement();
-  static CmpStatement* statement2();
 
   // The TransMode for the current statement.  Was in generator.cpp previously.
   static TransMode * transMode(); 
