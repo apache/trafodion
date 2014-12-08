@@ -1437,10 +1437,28 @@ void CmpSeabaseDDL::createSeabaseTable(
   
   Int32 objOwnerID = 0;
   if (fileAttribs.isOwnerSpecified())
-  {
-     NAString owner = fileAttribs.getOwner();
-     ComUser::getUserIDFromUserName(owner.data(), objOwnerID);
-  }
+    {
+      // Fixed bug:  if BY CLAUSE specified an unregistered user, then the object
+      // owner is set to 0 in metadata.  Once 0, the table could not be dropped.
+      NAString owner = fileAttribs.getOwner();
+      Int16 retcode =  (ComUser::getUserIDFromUserName(owner.data(), objOwnerID));
+      if (retcode == FENOTFOUND)
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
+                              << DgString0(owner.data());
+          processReturn();
+          return;
+        }
+       else if (retcode != FEOK)
+         {
+           *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                               << DgString0(__FILE__)
+                               << DgInt0(__LINE__)
+                               << DgString1("verifying grantee");
+           processReturn();
+           return;
+         }
+    }
   else
   {
     ComUserVerifyObj verifyAuth(tableName, ComUserVerifyObj::OBJ_OBJ_TYPE);
@@ -2640,6 +2658,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
       return;
     }
 
+  SQL_QIKEY *qiKeys = new (STMTHEAP) SQL_QIKEY[indexInfoQueue->numEntries()];
   indexInfoQueue->position();
   for (int idx = 0; idx < indexInfoQueue->numEntries(); idx++)
     {
@@ -2649,6 +2668,13 @@ void CmpSeabaseDDL::dropSeabaseTable(
       NAString idxSchName = (char*)vi->get(1);
       NAString idxObjName = (char*)vi->get(2);
 
+      // set up a qiKey for this index, later we will removed the
+      // index cache entry from concurrent processes
+      Int64 objUID = *(Int64*)vi->get(3);
+      qiKeys[idx].ddlObjectUID = objUID;
+      qiKeys[idx].operation[0] = 'O';
+      qiKeys[idx].operation[1] = 'R';
+         
       NAString qCatName = "\"" + idxCatName + "\"";
       NAString qSchName = "\"" + idxSchName + "\"";
       NAString qObjName = "\"" + idxObjName + "\"";
@@ -2659,12 +2685,20 @@ void CmpSeabaseDDL::dropSeabaseTable(
       if (dropSeabaseObject(ehi, ansiName,
                             idxCatName, idxSchName, COM_INDEX_OBJECT_LIT, TRUE, FALSE))
         {
+          NADELETEBASIC (qiKeys, STMTHEAP);
+
           processReturn();
           
           return;
         }
 
     } // for
+
+  // Remove index entries from other processes cache
+  // Fix for bug 1396774 & bug 1396746
+  if (indexInfoQueue->numEntries() > 0)
+    SQL_EXEC_SetSecInvalidKeys(indexInfoQueue->numEntries(), qiKeys);
+  NADELETEBASIC (qiKeys, STMTHEAP);
 
   // if there is an identity column, drop sequence corresponding to it.
   NABoolean found = FALSE;
@@ -5895,7 +5929,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
           Int16 retcode = ComUser::getAuthIDFromAuthName(authName.data(), grantee);
           if (retcode == FENOTFOUND)
             {
-              *CmpCommon::diags() << DgSqlCode(-1008)
+              *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
                                   << DgString0(authName.data());
               processReturn();
      
@@ -6592,8 +6626,14 @@ ComTdbVirtTableSequenceInfo * CmpSeabaseDDL::getSeabaseSequenceInfo
                                 catName.data(), schName.data(), seqName.data(),
                                 (char*)COM_SEQUENCE_GENERATOR_OBJECT_LIT, NULL, 
                                 &objectOwner, TRUE/*report error*/);
-  if (seqUID == -1)
-    return NULL;
+  if (seqUID == -1 || objectOwner == 0)
+    {
+      // There may not be an error in the diags area, if not, add an error
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        SEABASEDDL_INTERNAL_ERROR("getting object UID and owner for get sequence command");
+
+      return NULL;
+    }
 
  char buf[4000];
 

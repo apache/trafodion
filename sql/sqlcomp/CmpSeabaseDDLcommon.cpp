@@ -2973,7 +2973,7 @@ short CmpSeabaseDDL::getAllIndexes(ExeCliInterface *cliInterface,
   Lng32 cliRC = 0;
 
   char query[4000];
-  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid and I.keytag != 0 for read committed access ",
+  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, O.object_uid from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid and I.keytag != 0 for read committed access ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,

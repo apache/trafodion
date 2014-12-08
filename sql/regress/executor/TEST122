@@ -38,6 +38,8 @@ obey TEST122(test_alter_tab);
 
 obey TEST122(test_drop_view);
 
+obey TEST122(test_drop_index);
+
 obey TEST122(clnup);
 
 exit;
@@ -296,6 +298,43 @@ select * from t122t5_c;
 select * from t122t5_d;
 select * from t122t5_e;
 
+?section test_drop_index
+-- makes sure compiler process(es) caches are cleaned up
+-- between drops in the same session
+
+create table t122t6
+(
+  Int_1 INT SIGNED not null not droppable,
+  Large_2 LARGEINT not null,
+  primary key(Int_1)
+);
+
+create index t122t6_idx1 on t122t6 (Large_2 desc, Int_1);
+showddl t122t6;
+
+insert into t122t6 values (1, 1804250150),(2, 939828307);
+
+drop table t122t6 cascade;
+
+create table t122t6
+(
+  Int_1 INT SIGNED not null not droppable,
+  Large_2 LARGEINT,
+  primary key(Int_1)
+);
+
+create index t122t6_idx1 on t122t6 (Large_2 desc, Int_1);
+create index t122t6_idx2 on t122t6 (Int_1, Large_2);
+insert into t122t6 values (3, -2115140520),(4, 2104744432);
+
+prepare XX from select min(Large_2) from t122t6;
+explain options 'f' XX;
+execute XX;
+
+prepare XX from select max(Large_2) from t122t6;
+explain options 'f' XX;
+execute XX;
+
 ?section clnup
 
 drop table if exists t122t1 cascade;
@@ -312,6 +351,7 @@ drop table if exists t122t5_b cascade;
 drop table if exists t122t5_c cascade;
 drop table if exists t122t5_d cascade;
 drop table if exists t122t5_e cascade;
+drop table if exists t122t6 cascade;
 
 ?section uid_in_plan
 log;

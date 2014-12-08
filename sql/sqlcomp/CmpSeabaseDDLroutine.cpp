@@ -59,6 +59,9 @@
 #include "ComSmallDefs.h"
 #include "CmpDDLCatErrorCodes.h"
 
+#include "PrivMgrComponentPrivileges.h"
+#include "ComUser.h"
+
 #include "NumericType.h"
 #include "DatetimeType.h" 
 #include "LmJavaSignature.h"
@@ -229,6 +232,23 @@ void CmpSeabaseDDL::createSeabaseLibrary(
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + 
     "." + objectNamePart;
   
+  // Verify that the requester has MANAGE_LIBRARY privilege.
+  if (!ComUser::isRootUserID())
+    {
+      NAString privMgrMDLoc;
+      CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+
+      PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
+
+      if (!componentPrivileges.hasSQLPriv
+            (ComUser::getCurrentUser(),SQLOperation::MANAGE_LIBRARY,true))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+         processReturn ();
+         return;
+      }
+    }
+
   // Check to see if user has the authority to create the library
   if (!isDDLOperationAuthorized(SQLOperation::CREATE_LIBRARY,
                                 ComUser::getCurrentUser()))

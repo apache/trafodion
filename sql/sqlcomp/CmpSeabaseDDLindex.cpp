@@ -1147,7 +1147,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
     }
 
   // Requester must have SELECT and INSERT privileges
-  if (!ComUser::isRootUserID() && !isAuthorizationEnabled())
+  if (!ComUser::isRootUserID() && isAuthorizationEnabled())
     {
       NABoolean hasPriv = TRUE;
       if ( !privs->hasSelectPriv() )

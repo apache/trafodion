@@ -61,7 +61,7 @@ A
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Dec  3 17:47:33 2014
+-- Definition current  Mon Dec  8 11:31:42 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -113,7 +113,7 @@ A
 >>execute s3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Dec  3 17:47:33 2014
+-- Definition current  Mon Dec  8 11:31:42 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -172,7 +172,7 @@ iv
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Mon Dec  1 08:22:30 2014
+-- Definition current  Mon Dec  8 11:31:58 2014
 
   (
     A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -222,7 +222,7 @@ iv
 
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Wed Dec  3 17:48:08 2014
+-- Definition current  Mon Dec  8 11:31:59 2014
 
   (
     A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1181,6 +1181,114 @@ E_C1         E_C2
 --- 7 row(s) selected.
 >>
 >>
+>>obey TEST122(test_drop_index);
+>>-- makes sure compiler process(es) caches are cleaned up
+>>-- between drops in the same session
+>>
+>>create table t122t6
++>(
++>  Int_1 INT SIGNED not null not droppable,
++>  Large_2 LARGEINT not null,
++>  primary key(Int_1)
++>);
+
+--- SQL operation complete.
+>>
+>>create index t122t6_idx1 on t122t6 (Large_2 desc, Int_1);
+
+--- SQL operation complete.
+>>showddl t122t6;
+
+CREATE TABLE TRAFODION.SCH.T122T6
+  (
+    INT_1                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LARGE_2                          LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (INT_1 ASC)
+  )
+;
+
+CREATE INDEX T122T6_IDX1 ON TRAFODION.SCH.T122T6
+  (
+    LARGE_2 DESC
+  , INT_1 ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>insert into t122t6 values (1, 1804250150),(2, 939828307);
+
+--- 2 row(s) inserted.
+>>
+>>drop table t122t6 cascade;
+
+--- SQL operation complete.
+>>
+>>create table t122t6
++>(
++>  Int_1 INT SIGNED not null not droppable,
++>  Large_2 LARGEINT,
++>  primary key(Int_1)
++>);
+
+--- SQL operation complete.
+>>
+>>create index t122t6_idx1 on t122t6 (Large_2 desc, Int_1);
+
+--- SQL operation complete.
+>>create index t122t6_idx2 on t122t6 (Int_1, Large_2);
+
+--- SQL operation complete.
+>>insert into t122t6 values (3, -2115140520),(4, 2104744432);
+
+--- 2 row(s) inserted.
+>>
+>>prepare XX from select min(Large_2) from t122t6;
+
+--- SQL command prepared.
+>>explain options 'f' XX;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+2    .    3    root                                                  1.00E+000
+1    .    2    sort_scalar_aggr                                      1.00E+000
+.    .    1    trafodion_index_scan            T122T6                1.00E+002
+
+--- SQL operation complete.
+>>execute XX;
+
+(EXPR)              
+--------------------
+
+         -2115140520
+
+--- 1 row(s) selected.
+>>
+>>prepare XX from select max(Large_2) from t122t6;
+
+--- SQL command prepared.
+>>explain options 'f' XX;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+000
+2    .    3    shortcut_scalar_aggr                                  1.00E+000
+1    .    2    firstn                                                1.00E+000
+.    .    1    trafodion_index_scan            T122T6                9.89E+001
+
+--- SQL operation complete.
+>>execute XX;
+
+(EXPR)              
+--------------------
+
+          2104744432
+
+--- 1 row(s) selected.
+>>
+>>
 >>obey TEST122(clnup);
 >>
 >>drop table if exists t122t1 cascade;
@@ -1223,6 +1331,9 @@ E_C1         E_C2
 
 --- SQL operation complete.
 >>drop table if exists t122t5_e cascade;
+
+--- SQL operation complete.
+>>drop table if exists t122t6 cascade;
 
 --- SQL operation complete.
 >>
