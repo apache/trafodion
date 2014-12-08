@@ -2617,7 +2617,7 @@ SQLRETURN CStmt::ColAttribute(SQLUSMALLINT ColumnNumber,
 	if (DataType == SQL_IS_SMALLINT)
 	{
 		if (NumericAttributePtr != NULL)
-			*(SQLINTEGER *)NumericAttributePtr = (SQLINTEGER)sTmp;
+			*(SQLSMALLINT *)NumericAttributePtr = (SQLSMALLINT)sTmp;
 	}
 	if (DataType == DRVR_PENDING)
 		if (StringLengthPtr != NULL)
