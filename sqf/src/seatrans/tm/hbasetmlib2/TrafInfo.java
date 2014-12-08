@@ -50,7 +50,7 @@ public class TrafInfo {
 
     public void init() throws IOException {
         this.config = HBaseConfiguration.create();
-        this.connection = HConnectionManager.getConnection(config);
+        this.connection = HConnectionManager.createConnection(config);
 
         try {
             hbadmin = new HBaseAdmin(config);

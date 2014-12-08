@@ -71,7 +71,7 @@ $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSTMOBJS)
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBTMB) -shared -o $@ $(LIBSTMOBJS)
 
 $(TMCLASS_FULL)/HBaseTxClient.class: HBaseTxClient.java
-	$(JAVAC) HBaseTxClient.java TmAuditTlog.java HBaseAuditControlPoint.java HBaseTmZK.java HashMapArray.java -d $(TMCLASS_DIR)
+	$(JAVAC) -Xlint -Xlint:-path HBaseTxClient.java TmAuditTlog.java HBaseAuditControlPoint.java HBaseTmZK.java HashMapArray.java -d $(TMCLASS_DIR)
 
 $(TMCLASS_FULL)/HBaseAuditControlPoint.class: HBaseAuditControlPoint.java
 	$(JAVAC) -Xlint -Xlint:-path -Werror HBaseAuditControlPoint.java TmAuditTlog.java -d $(TMCLASS_DIR)
@@ -80,10 +80,10 @@ $(TMCLASS_FULL)/TmAuditTlog.class: TmAuditTlog.java
 	$(JAVAC) -Xlint -Xlint:-path -Werror TmAuditTlog.java HBaseAuditControlPoint.java -d $(TMCLASS_DIR)
 
 $(TMCLASS_FULL)/HBaseTmZK.class: HBaseTmZK.java
-	$(JAVAC) HBaseTmZK.java -d $(TMCLASS_DIR)
+	$(JAVAC) -Xlint -Xlint:-path HBaseTmZK.java -d $(TMCLASS_DIR)
 
 $(TMCLASS_FULL)/TrafInfo.class: TrafInfo.java
-	$(JAVAC) TrafInfo.java -d $(TMCLASS_DIR)
+	$(JAVAC) -Xlint -Xlint:-path -Werror TrafInfo.java -d $(TMCLASS_DIR)
 
 $(TMCLASS_FULL)/HashMapArray.class: HashMapArray.java
 	$(JAVAC) -Xlint -Xlint:-path -Werror HashMapArray.java -d $(TMCLASS_DIR)
