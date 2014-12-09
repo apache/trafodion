@@ -29,6 +29,7 @@
  */
 
 #include "SimpleScanOptimizer.h"
+#include "AllRelExpr.h"
 
 #ifdef DEBUG
 #define SFSOWARNING(x) fprintf(stdout, "SimpleFileScan optimizer warning: %s\n", x);
@@ -3064,3 +3065,45 @@ SimpleFileScanOptimizer::ordersMatch(
   return FALSE;
 
 } // SimpleFileScanOptimizer::ordersMatch()
+
+NABoolean SimpleFileScanOptimizer::isLeadingKeyColCovered()
+{
+  ValueIdSet allPreds;
+  allPreds = getSingleSubsetPreds();
+  allPreds += getRelExpr().getGroupAttr()->getCharacteristicInputs();
+
+  NABoolean foundKey = FALSE;
+  ValueIdSet allReferencedBaseCols;
+  allPreds.findAllReferencedBaseCols(allReferencedBaseCols);
+
+  CollIndex x = 0;
+  const IndexDesc *iDesc = getIndexDesc();
+  const ValueIdList *currentIndexSortKey = &(iDesc->getOrderOfKeyValues());
+
+  for (x = 0; x < (*currentIndexSortKey).entries() && !foundKey; x++)
+  {
+    ValueId firstkey = (*currentIndexSortKey)[x];
+    ItemExpr *cv;
+    NABoolean isaConstant = FALSE;
+    ValueId firstkeyCol;
+    ColAnalysis *colA = firstkey.baseColAnalysis(&isaConstant, firstkeyCol);
+    if (!colA) // no column analysis
+      break; // we can't go further, break out of the loop.
+    // skip computed columns and constant predicates
+    if (isaConstant || firstkeyCol.isSaltColumn() ||
+        firstkeyCol.isDivisioningColumn())
+      continue; // try next prefix column
+    if (colA->getConstValue(cv,FALSE/*useRefAConstExpr*/))
+       continue; // try next prefix column
+
+    // any predicate on first nonconstant prefix key column?
+    if (allReferencedBaseCols.containsTheGivenValue(firstkeyCol))
+     // nonconstant prefix key matches predicate
+     foundKey = TRUE;
+    else
+      break; // predicate is not a key predicate, cost it high
+  }
+
+  return foundKey;
+}
+

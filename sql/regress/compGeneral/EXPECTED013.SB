@@ -16,11 +16,11 @@
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SCAN
+ROOT            
+SCAN            
 
 --- 2 row(s) selected.
 >>
@@ -31,13 +31,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 LEFT_HYBRID_HASH
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -75,7 +75,7 @@ SCAN
 >>
 >>showddl orders;
 
-CREATE TABLE #CAT.#SCH.ORDERS
+CREATE TABLE TRAFODION.SCH.ORDERS
   (
     O_ORDERKEY                       INT NO DEFAULT NOT NULL NOT DROPPABLE
   , O_CUSTKEY                        INT DEFAULT NULL
@@ -105,7 +105,7 @@ ALTER TABLE TRAFODION.SCH.ORDERS ADD CONSTRAINT TRAFODION.SCH.CONS11 FOREIGN
 --- SQL operation complete.
 >>showddl orders1;
 
-CREATE TABLE #CAT.#SCH.ORDERS1
+CREATE TABLE TRAFODION.SCH.ORDERS1
   (
     O_ORDERKEY                       INT NO DEFAULT NOT NULL NOT DROPPABLE
   , O_CUSTKEY                        INT DEFAULT NULL
@@ -114,14 +114,14 @@ CREATE TABLE #CAT.#SCH.ORDERS1
 ;
 
 -- The following index is a system created index --
-CREATE INDEX @name@ ON #CAT.#SCH.ORDERS1
+CREATE INDEX ORDERS1_133976266_2951 ON TRAFODION.SCH.ORDERS1
   (
     O_CUSTKEY ASC
   )
 ;
 
 ALTER TABLE TRAFODION.SCH.ORDERS1 ADD CONSTRAINT
-  TRAFODION.SCH.ORDERS1_694288671_8355 FOREIGN KEY
+  TRAFODION.SCH.ORDERS1_133976266_2951 FOREIGN KEY
   (
     O_CUSTKEY
   )
@@ -134,7 +134,7 @@ ALTER TABLE TRAFODION.SCH.ORDERS1 ADD CONSTRAINT
 --- SQL operation complete.
 >>showddl orders2;
 
-CREATE TABLE #CAT.#SCH.ORDERS2
+CREATE TABLE TRAFODION.SCH.ORDERS2
   (
     O_ORDERKEY                       INT NO DEFAULT NOT NULL NOT DROPPABLE
   , O_CUSTKEY                        INT DEFAULT NULL
@@ -143,14 +143,14 @@ CREATE TABLE #CAT.#SCH.ORDERS2
 ;
 
 -- The following index is a system created index --
-CREATE INDEX @name@ ON #CAT.#SCH.ORDERS2
+CREATE INDEX ORDERS2_965186266_2951 ON TRAFODION.SCH.ORDERS2
   (
     O_CUSTKEY ASC
   )
 ;
 
 ALTER TABLE TRAFODION.SCH.ORDERS2 ADD CONSTRAINT
-  TRAFODION.SCH.ORDERS2_913388671_8355 FOREIGN KEY
+  TRAFODION.SCH.ORDERS2_965186266_2951 FOREIGN KEY
   (
     O_CUSTKEY
   )
@@ -167,7 +167,7 @@ ALTER TABLE TRAFODION.SCH.ORDERS2 ADD CONSTRAINT
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
 ROOT            
@@ -182,16 +182,16 @@ TRAFODION_INSERT
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-NESTED_JOIN
-MERGE_UNION
+ROOT            
+NESTED_JOIN     
+MERGE_UNION     
 SORT_SCALAR_AGGR
-SCAN
-SEABASE_INSERT
-SEABASE_INSERT
+SCAN            
+TRAFODION_INSERT
+TRAFODION_INSERT
 
 --- 7 row(s) selected.
 >>
@@ -200,18 +200,18 @@ SEABASE_INSERT
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-NESTED_JOIN
-MERGE_UNION
+ROOT            
+NESTED_JOIN     
+MERGE_UNION     
 SORT_SCALAR_AGGR
-SCAN
-BLOCKED_UNION
-SEABASE_INSERT
-SEABASE_DELETE
-SEABASE_UPDATE
+SCAN            
+BLOCKED_UNION   
+TRAFODION_INSERT
+TRAFODION_DELETE
+TRAFODION_UPDATE
 
 --- 9 row(s) selected.
 >>
@@ -220,16 +220,16 @@ SEABASE_UPDATE
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
 ROOT            
 NESTED_JOIN     
 MERGE_UNION     
 SORT_SCALAR_AGGR
-SCAN
+SCAN            
 SORT_SCALAR_AGGR
-SCAN
+SCAN            
 TRAFODION_DELETE
 
 --- 8 row(s) selected.
@@ -245,10 +245,10 @@ TRAFODION_DELETE
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 TRAFODION_DELETE
 
 --- 2 row(s) selected.
@@ -256,7 +256,7 @@ TRAFODION_DELETE
 >>
 >>-----------------------------------------------------------------------------------------------
 >>
->>create table lineitem (l_linekey int not null, l_orderkey int, l_partkey int, l_quantity int,
+>>create table lineitem (l_linekey int not null, l_orderkey int, l_partkey int, l_quantity int,  
 +>foreign key(l_orderkey) references orders(o_orderkey), primary key(l_linekey));
 
 --- SQL operation complete.
@@ -264,7 +264,7 @@ TRAFODION_DELETE
 >>
 >>
 >>
->>prepare XX from
+>>prepare XX from 
 +>Select c_custkey, l_orderkey,l_partkey, l_quantity
 +>From lineitem, orders, customer
 +>Where l_orderkey = o_orderkey
@@ -275,13 +275,13 @@ TRAFODION_DELETE
 >>
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -298,13 +298,13 @@ SCAN
 >>
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -352,9 +352,9 @@ SCAN
 --- SQL operation complete.
 >>
 >>-- tables for sol: 10-100722-1962 test
->>create table t_013 ( a int not null,
-+>                  b char(32) not null,
-+>                  c char(32) ,
+>>create table t_013 ( a int not null, 
++>                  b char(32) not null, 
++>                  c char(32) , 
 +>                  primary key (a,b));
 
 --- SQL operation complete.
@@ -373,11 +373,11 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SCAN
+ROOT            
+SCAN            
 
 --- 2 row(s) selected.
 >>
@@ -390,11 +390,11 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SCAN
+ROOT            
+SCAN            
 
 --- 2 row(s) selected.
 >>
@@ -406,11 +406,11 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SCAN
+ROOT            
+SCAN            
 
 --- 2 row(s) selected.
 >>
@@ -422,11 +422,11 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SCAN
+ROOT            
+SCAN            
 
 --- 2 row(s) selected.
 >>
@@ -439,13 +439,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -458,13 +458,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -477,13 +477,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -496,13 +496,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -515,13 +515,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -534,13 +534,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -553,13 +553,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -570,13 +570,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>prepare XX from
@@ -585,13 +585,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>prepare XX from
@@ -600,13 +600,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -617,11 +617,11 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SCAN
+ROOT            
+SCAN            
 
 --- 2 row(s) selected.
 >>
@@ -632,13 +632,13 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
+ROOT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 4 row(s) selected.
 >>
@@ -650,14 +650,14 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-HYBRID_HASH_JOIN
-SCAN
+ROOT            
+NESTED_JOIN     
+SCAN            
 SORT_SCALAR_AGGR
-SCAN
+SCAN            
 
 --- 5 row(s) selected.
 >>
@@ -670,11 +670,11 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SCAN
+ROOT            
+SCAN            
 
 --- 2 row(s) selected.
 >>
@@ -688,11 +688,11 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SCAN
+ROOT            
+SCAN            
 
 --- 2 row(s) selected.
 >>
@@ -707,15 +707,15 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SCAN
+ROOT            
+SCAN            
 
 --- 2 row(s) selected.
 >>
->>-- uk0 should not be eliminated. Direct parent of potentially eliminatable
+>>-- uk0 should not be eliminated. Direct parent of potentially eliminatable 
 >>-- join causes a column from uk0 to be essential
 >>prepare XX from
 +>select fk0.a from fk0, uk0 where fk0.b = uk0.a order by uk0.b ;
@@ -723,18 +723,18 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SORT
+ROOT            
+SORT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 5 row(s) selected.
 >>
->>-- uk0 should not be eliminated. Some parent of potentially eliminatable
+>>-- uk0 should not be eliminated. Some parent of potentially eliminatable 
 >>-- join causes a column from uk0 to be essential
 >>prepare XX from
 +>select fk0.a from fk0, uk0, uk1 where fk0.b = uk0.a order by uk0.b ;
@@ -742,16 +742,16 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SORT
+ROOT            
+SORT            
 HYBRID_HASH_JOIN
 HYBRID_HASH_JOIN
-SCAN
-SCAN
-SCAN
+SCAN            
+SCAN            
+SCAN            
 
 --- 7 row(s) selected.
 >>
@@ -762,14 +762,14 @@ SCAN
 --- SQL command prepared.
 >>execute showOperatorsOnly ;
 
-OPERATOR
+OPERATOR        
 ----------------
 
-ROOT
-SORT
+ROOT            
+SORT            
 HYBRID_HASH_JOIN
-SCAN
-SCAN
+SCAN            
+SCAN            
 
 --- 5 row(s) selected.
 >>
@@ -792,10 +792,10 @@ SCAN
 +>and a11.c = a16.c)
 +>where a11.a =2;
 
-B
+B                               
 --------------------------------
 
-ghi
+ghi                             
 
 --- 1 row(s) selected.
 >>cqd hash_joins 'system';

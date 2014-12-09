@@ -8240,6 +8240,26 @@ const SET(IndexDesc *) & Scan::deriveIndexOnlyIndexDesc()
 
 }
 
+/*******************************************************
+* Generates set of IndexDesc from the set of ScanIndexInfo
+********************************************************/
+const SET(IndexDesc *) & Scan::deriveIndexJoinIndexDesc()
+{
+    indexJoinScans_.clear();
+    CollIndex ijCount = possibleIndexJoins_.entries();
+    for(CollIndex i=0; i< ijCount; i++)
+    {
+      ScanIndexInfo *ixi = possibleIndexJoins_[i];
+      CollIndex uixCount = ixi->usableIndexes_.entries();
+      for(CollIndex j=0; j < uixCount; j++)
+      {
+        if (ixi->usableIndexes_[j]->getIndexDesc())
+          indexJoinScans_.insert(ixi->usableIndexes_[j]->getIndexDesc());
+      }
+    }
+    return indexJoinScans_;
+}
+
 void Scan::addIndexInfo()
 {
   // don't do this twice, return if already set
@@ -8506,9 +8526,10 @@ void Scan::addIndexInfo()
 	    //Is any of the predicates covered by key columns of the
 	    //alternate index?
 	    ValueIdList userKeyColumns(idesc->getIndexKey());
-	    CollIndex numClusteringKey =
-	      idesc->getPrimaryTableDesc()->getClusteringIndex()
-	      ->getIndexKey().entries();
+            CollIndex numSecondaryIndexKey = 
+              idesc->getNAFileSet()->getCountOfUserSpecifiedIndexCols();
+	    CollIndex numClusteringKey = 
+              userKeyColumns.entries() - numSecondaryIndexKey;
 	    if(NOT idesc->isUniqueIndex())
 	    {
 	      CollIndex entry = userKeyColumns.entries() -1;
@@ -9307,11 +9328,14 @@ NABoolean Scan::reconcileGroupAttr(GroupAttributes *newGroupAttr)
 {
   addIndexInfo();
   const SET(IndexDesc *) & indexOnlyScans = deriveIndexOnlyIndexDesc();
+  const SET(IndexDesc *) & indexJoinScans = deriveIndexJoinIndexDesc();
   // we add the available indexes on this scan node to the
   // new GroupAttrs availableBtreeIndexes
   newGroupAttr->addToAvailableBtreeIndexes(indexOnlyScans);
+  newGroupAttr->addToAvailableBtreeIndexes(indexJoinScans);
   // This one is not actually necessary
   getGroupAttr()->addToAvailableBtreeIndexes(indexOnlyScans);
+  getGroupAttr()->addToAvailableBtreeIndexes(indexJoinScans);
   // Now as usual
   return RelExpr::reconcileGroupAttr(newGroupAttr);
 }

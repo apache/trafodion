@@ -131,6 +131,9 @@ private:
   // partitioning function)
   //
   NABoolean isLogicalSubPartitioned() const;
+
+  // does leading key column has predicate?
+  NABoolean isLeadingKeyColCovered();
   
   // Get any extra key predicates from the partitioning function.  The
   // partitioning function will provide extra key predicates when it
@@ -243,6 +246,7 @@ private:
   Cost* scmComputeCostVectors();
   Cost* scmComputeCostVectorsMultiProbes(); 
   Cost* scmComputeCostVectorsForHbase();
+  Cost* scmComputeCostVectorsMultiProbesForHbase();
 
   // Compute the sequential KBytes accessed to produce the first and
   // last rows. 

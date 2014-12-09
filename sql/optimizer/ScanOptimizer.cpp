@@ -3010,15 +3010,40 @@ CollIndex ScanOptimizer::getEstNumActivePartitionsAtRuntime() const
 	}
     }
   }
-  else if ( getIndexDesc()->getPrimaryTableDesc()->getNATable()->isHbaseTable() &&
-            (CmpCommon::getDefault(NCM_USE_HBASE_REGIONS) == DF_ON) )
-  {
-    PartitioningFunction * physicalPartFunc = getIndexDesc()->getPartitioningFunction();
+
+  return actParts;
+}
+
+// look at physical partition function of indexDesc to determine active partitions(AP)
+// for salted table. Adjust AP count if partitionkey predicate is a constant
+CollIndex ScanOptimizer::getEstNumActivePartitionsAtRuntimeForHbaseRegions() const
+{
+  CollIndex actParts;
+  PartitioningFunction *pf =
+    getContext().getPlan()->getPhysicalProperty()->getPartitioningFunction();
+
+  DCMPASSERT(pf != NULL);
+
+    // get estimated active partition count
+  CollIndex estActParts = ((NodeMap *)(pf->getNodeMap()))->getEstNumActivePartitionsAtRuntime();
+
+  // if partition key predicate is constant, then estimated active partition count will
+  // be set to one by computeDP2CostDataThatDependsOnSPP() method. 
+  // Use this value for costing REL_HBASE_ACCESS operator
+  if (estActParts == 1 AND (CmpCommon::getDefault(NCM_HBASE_COSTING) == DF_ON))
+    return estActParts;
+  
+  // return the #region servers via the partition function describing the physical Hbase table
+  PartitioningFunction * physicalPartFunc = getIndexDesc()->getPartitioningFunction();
   if (physicalPartFunc == NULL) // single region
-   return 1;
+   actParts =  1;
   else // multi-region case
-    return ((NodeMap *)(physicalPartFunc->getNodeMap()))->getNumActivePartitions();
-  }
+    actParts =  ((NodeMap *)(physicalPartFunc->getNodeMap()))->getNumActivePartitions();
+
+  // if partition key predicate is constant, then estimated active partition count will 
+  // be one, use that value
+  if (estActParts == 1 AND (CmpCommon::getDefault(NCM_HBASE_COSTING) == DF_ON))
+    actParts = estActParts;
 
   return actParts;
 }

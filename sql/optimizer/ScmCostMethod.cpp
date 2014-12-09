@@ -756,6 +756,10 @@ SimpleFileScanOptimizer::scmComputeCostVectors()
 Cost *
 SimpleFileScanOptimizer::scmComputeCostVectorsMultiProbes()
 {
+  if ( getIndexDesc()->getPrimaryTableDesc()->getNATable()->isHbaseTable() AND
+       (CmpCommon::getDefault(NCM_HBASE_COSTING) == DF_ON) )
+    return scmComputeCostVectorsMultiProbesForHbase();
+
   CostScalar numOuterProbes = (getContext().getInputLogProp())->getResultCardinality();
   CostScalar numActivePartitions =  getNumActivePartitions();
   CostScalar ioSeq, ioRand, numRandIOs;
@@ -1125,7 +1129,8 @@ SimpleFileScanOptimizer::scmComputeCostForSingleSubset()
      probesPerScan = MAXOF(probesPerScan, 1);
     
      skewFactor = (probesAtBusyStream/probesPerScan).minCsOne();
-     scanCost->cpScmlr().scaleByValue(skewFactor);
+     if (CmpCommon::getDefault(NCM_SKEW_COST_ADJ_FOR_PROBES) == DF_ON)
+       scanCost->cpScmlr().scaleByValue(skewFactor);
   }
 
   return scanCost;
@@ -1228,20 +1233,15 @@ FileScanOptimizer::scmComputeMDAMCostForHbase(
   tcProdInHCS *= outputRowSizeFactor;
   tcRcvdByHCS *= rowSizeFactor;
 
-  // normalize it by DoP for HRS
-  CostScalar HRSPartitions = getEstNumActivePartitionsAtRuntime();
+  // normalize it by #region servers for HRS
+  CollIndex HRSPartitions = getEstNumActivePartitionsAtRuntimeForHbaseRegions();
   tcProcInHRS = (tcProcInHRS / HRSPartitions).getCeiling();
   tcProdInHRS = (tcProdInHRS / HRSPartitions).getCeiling();
   seqIOsInHRS = (seqIOsInHRS / HRSPartitions).getCeiling();
   randomIOsInHRS = (randomIOsInHRS / HRSPartitions).getCeiling();
 
   // normalize it by DoP for HCS
-  PartitioningFunction *pf =
-    getContext().getPlan()->getPhysicalProperty()->getPartitioningFunction();
-
-  DCMPASSERT(pf != NULL);
-
-  CollIndex HCSPartitions = ((NodeMap *)(pf->getNodeMap()))->getNumActivePartitions();
+  CollIndex HCSPartitions = getEstNumActivePartitionsAtRuntime();
   tcProcInHCS = (tcProcInHCS / HCSPartitions).getCeiling();
   tcProdInHCS = (tcProdInHCS / HCSPartitions).getCeiling();
   tcRcvdByHCS = (tcRcvdByHCS / HCSPartitions).getCeiling();
@@ -1302,6 +1302,15 @@ SimpleFileScanOptimizer::scmComputeCostVectorsForHbase()
   tcProdInHCS = getResultSetCardinality();
   tcRcvdByHCS = tcProdInHRS;
 
+  // hueristics to favor serial plans for small queries
+  NABoolean costParPlanSameAsSer = FALSE;
+  CostScalar parPlanRcLowerLimit = 2.0 * 
+    ActiveSchemaDB()->getDefaults().getAsDouble(NUMBER_OF_ROWS_PARALLEL_THRESHOLD);
+  
+  if ( tcRcvdByHCS <= parPlanRcLowerLimit AND 
+       (CmpCommon::getDefault(NCM_HBASE_COSTING) == DF_ON) )
+    costParPlanSameAsSer = TRUE;
+
   // factor in row sizes;
   CostScalar rowSize = recordSizeInKb_ * csOneKiloBytes;
   CostScalar outputRowSize = getRelExpr().getGroupAttr()->getRecordLength();
@@ -1319,19 +1328,22 @@ SimpleFileScanOptimizer::scmComputeCostVectorsForHbase()
   tcProdInHCS *= outputRowSizeFactor;
   tcRcvdByHCS *= rowSizeFactor;
 
-  // normalize it by DoP for HRS
-  CostScalar HRSPartitions = getEstNumActivePartitionsAtRuntime();
+  // some book keeping
+  setProbes(1);
+  setTuplesProcessed(getSingleSubsetSize());
+  setEstRowsAccessed(getSingleSubsetSize());
+  setNumberOfBlocksToReadPerAccess(seqIOsInHRS);
+
+  // normalize it by #region servers for HRS
+  CollIndex HRSPartitions = getEstNumActivePartitionsAtRuntimeForHbaseRegions();
   tcProcInHRS = (tcProcInHRS / HRSPartitions).getCeiling();
   tcProdInHRS = (tcProdInHRS / HRSPartitions).getCeiling();
   seqIOsInHRS = (seqIOsInHRS / HRSPartitions).getCeiling();
 
   // normalize it by DoP for HCS
-  PartitioningFunction *pf =
-    getContext().getPlan()->getPhysicalProperty()->getPartitioningFunction();
-
-  DCMPASSERT(pf != NULL);
-
-  CollIndex HCSPartitions = ((NodeMap *)(pf->getNodeMap()))->getNumActivePartitions();
+  CollIndex HCSPartitions = getEstNumActivePartitionsAtRuntime();
+  if (costParPlanSameAsSer)
+    HCSPartitions = 1;
   tcProcInHCS = (tcProcInHCS / HCSPartitions).getCeiling();
   tcProdInHCS = (tcProdInHCS / HCSPartitions).getCeiling();
   tcRcvdByHCS = (tcRcvdByHCS / HCSPartitions).getCeiling();
@@ -1343,12 +1355,6 @@ SimpleFileScanOptimizer::scmComputeCostVectorsForHbase()
 
   // Total IO cost = seqIOsInHRS
   // Total Msg cost = tcRcvdByHCS
-
-  // some book keeping
-  setProbes(1);
-  setTuplesProcessed(getSingleSubsetSize());
-  setEstRowsAccessed(getSingleSubsetSize());
-  setNumberOfBlocksToReadPerAccess(seqIOsInHRS);
 
   Cost* hbaseScanCost =
     scmCost(tuplesProcessed, tuplesProduced, tcRcvdByHCS, csZero,
@@ -1365,6 +1371,239 @@ SimpleFileScanOptimizer::scmComputeCostVectorsForHbase()
 
   return hbaseScanCost;
 }
+
+// SimpleFileScanOptimizer::scmComputeCostVectorsMultiProbesForHbase()
+// Computes the cost  for multi-probe scan using NCM for Hbase Scan.
+// Computes:
+//   -- number of tuples processed by Region Server for all probes
+//   -- number of tuples produced by Region Server for all probes
+//   -- sequential IOs by Region Server for all probes
+//   -- random IOs by Region Server for all probes
+//
+//  -- number of tuples processed by Hbase client
+//  -- number of tuples produced by Hbase client
+//  -- number of tuples received by Hbase client
+//
+// OUTPUTS: SimpleCostVectors of a new Cost object are populated.
+Cost *
+SimpleFileScanOptimizer::scmComputeCostVectorsMultiProbesForHbase()
+{
+  // Hbase Scan cost :
+  //    Cost incurred at client side (Master or ESP)
+  //                   +
+  //    Cost incurred at Server side (Hbase Region Server a.k.a HRS)
+  //
+  // Server side cost : CPU cost + IO cost
+  //   CPU cost = Tuples processed +
+  //              Tuples produced (same as processed for now, will be different
+  //              when predicates pushed down to HRS
+  //   IO cost = Seq IO cost + Random IO cost
+  //   Seq IO cost = number of blocks need to be read get "Tuples processed"
+  //   Random IO cost = number of seeks needed to get "Tuples processed"
+  //
+  // Client side cost : CPU cost + Msg Cost
+  //   CPU cost = Tuples processed +
+  //              Tuples produced after applying executor predicates
+  //   Msg cost = Tuples received from HRS
+
+  // estimate HRS cost
+  CostScalar tcProcInHRS, tcProdInHRS, seqIOsInHRS, randIOsInHRS = csZero;
+  NABoolean isUnique = getSearchKey()->isUnique();
+  NABoolean isAnIndexJoin;
+
+  // helping data members needed to compute cost vectors
+  estimateEffTotalRowCount(totalRowCount_, effectiveTotalRowCount_);
+  CostScalar effectiveTotalBlocks =
+    getNumBlocksForRows(effectiveTotalRowCount_).getCeiling();
+
+  categorizeMultiProbes(&isAnIndexJoin);
+
+  CostScalar numProbes = probes_;
+  CostScalar numUniqueProbes = uniqueProbes_;
+  CostScalar numSuccessfulProbes = successfulProbes_;
+  CostScalar numUniqueSuccessfulProbes = (successfulProbes_ - duplicateSuccProbes_);
+
+  CostScalar estBolcksByUniqProbes = MINOF(uniqueProbes_, effectiveTotalBlocks);
+  const CostScalar uniqBlocks = numUniqueSuccessfulProbes * blksPerSuccProbe_;
+  CostScalar lowerBoundBlockCount = uniqBlocks + getFailedProbes();
+
+  tcProcInHRS = numProbes;
+  CostScalar accessedRows = getDataRows();
+  tcProdInHRS = getResultSetCardinality();
+
+  CollIndex HRSPartitions = getEstNumActivePartitionsAtRuntimeForHbaseRegions();
+  // 52 blocks cache per region
+  // Assumption : heap size of RS = 8GB
+  // data block cache = 20% * 8GB => 1.6GB
+  // cache in blocks = 1.6GB / 64KB (hbase block size) => 26214 blocks
+  // Assume on avg RS services 500 regions = 26214/500 ~= 52 blocks per region
+  CostScalar cacheSize = ActiveSchemaDB()->getDefaults().getAsDouble(NCM_CACHE_SIZE_IN_BLOCKS);
+  const CostScalar cacheSizeForAll(cacheSize * HRSPartitions);
+
+  CostScalar cacheHitProbability = (cacheSizeForAll/uniqBlocks).maxCsOne();
+
+  // logic for estimating randomIOs
+  if (isUnique)
+  {
+    // each probe brings no more than one data block
+    if (estBolcksByUniqProbes <= cacheSizeForAll)
+      randIOsInHRS = estBolcksByUniqProbes;
+    else
+    {
+      CostScalar cacheMissProbabilityForUniqueProbe =
+        ((estBolcksByUniqProbes - cacheSizeForAll)
+          /estBolcksByUniqProbes).minCsZero();
+      randIOsInHRS = cacheSizeForAll + // First probes to fill the cache
+                  (getProbes() - cacheSizeForAll) * // rest could miss
+                  cacheMissProbabilityForUniqueProbe;
+    }
+  }
+  else
+  {
+    // SearchKey is not unique. In this case each successful probe could bring several 
+    // (or even all) // blocks of inner table.
+    if (uniqBlocks <= cacheSizeForAll)
+      randIOsInHRS = estBolcksByUniqProbes;
+    else
+      // table does not fit in cache, extra seeks needed.
+      randIOsInHRS = getUniqueProbes() +
+                  getDuplicateSuccProbes() * (csOne - cacheHitProbability);
+  }
+
+  // logic for estimating seqIOs
+  // we also modify tcProcInHRS
+  if ( (effectiveTotalBlocks <= cacheSizeForAll) OR  // Whole table fits in cache
+       (lowerBoundBlockCount <= cacheSizeForAll) OR  // all blocks accessed fits cache
+          // Duplicate probe finds data in cache
+        ((getBlksPerSuccProbe() <= cacheSizeForAll) AND getInOrderProbesFlag())
+     )
+  {
+    // Full cache benefit
+    seqIOsInHRS = MINOF(effectiveTotalBlocks, lowerBoundBlockCount);
+    if (isUnique)
+      tcProcInHRS += numSuccessfulProbes;
+    else
+      tcProcInHRS += accessedRows;
+  }
+  else if ((getBlksPerSuccProbe() > cacheSize) &&
+            getInOrderProbesFlag())
+  {
+    seqIOsInHRS = lowerBoundBlockCount;
+    tcProcInHRS += accessedRows;
+  }
+  else if (isLeadingKeyColCovered())
+  {
+    const CostScalar extraDataBlocks =
+      (getDuplicateSuccProbes() * getBlksPerSuccProbe()) * (csOne - cacheHitProbability);
+    seqIOsInHRS = lowerBoundBlockCount + extraDataBlocks;
+    tcProcInHRS += accessedRows;
+  }
+  else
+  {
+    // worst case scenario
+    tcProcInHRS += (numProbes * effectiveTotalRowCount_);
+    seqIOsInHRS = numProbes * effectiveTotalBlocks;
+  }
+
+  tcProdInHRS = accessedRows; // will be different when predicates pushed down to HRS
+
+  // estimate Hbase Client Side (HCS)cost
+  CostScalar tcProcInHCS, tcProdInHCS, tcRcvdByHCS = csZero;
+  tcProcInHCS = tcProdInHRS;
+  tcProdInHCS = getResultSetCardinality();
+  tcRcvdByHCS = tcProdInHRS;
+
+  // hueristics to favor serial plans for small queries
+  NABoolean costParPlanSameAsSer = FALSE;
+  CostScalar parPlanRcLowerLimit = 2.0 *
+    ActiveSchemaDB()->getDefaults().getAsDouble(NUMBER_OF_ROWS_PARALLEL_THRESHOLD);
+
+  if ( tcRcvdByHCS <= parPlanRcLowerLimit )
+    costParPlanSameAsSer = TRUE;
+
+  // factor in row sizes;
+  CostScalar rowSize = recordSizeInKb_ * csOneKiloBytes;
+  CostScalar outputRowSize = getRelExpr().getGroupAttr()->getRecordLength();
+  CostScalar rowSizeFactor = scmRowSizeFactor(rowSize);
+  CostScalar outputRowSizeFactor = scmRowSizeFactor(outputRowSize);
+  CostScalar seqIORowSizeFactor = scmRowSizeFactor(rowSize, SEQ_IO_ROWSIZE_FACTOR);
+  CostScalar randIORowSizeFactor = scmRowSizeFactor(rowSize, RAND_IO_ROWSIZE_FACTOR);
+
+  // some book keeping
+  // set the field before it is being mutiplied by the row size factor
+  setTuplesProcessed(tcProcInHRS+tcProcInHCS);
+  setEstRowsAccessed(getDataRows());
+  setNumberOfBlocksToReadPerAccess(seqIOsInHRS);
+
+  // for HRS
+  tcProcInHRS *= rowSizeFactor;
+  tcProdInHRS *= rowSizeFactor;
+  seqIOsInHRS *= seqIORowSizeFactor;
+  randIOsInHRS *= randIORowSizeFactor;
+
+  // for HCS
+  tcProcInHCS *= rowSizeFactor;
+  tcProdInHCS *= outputRowSizeFactor;
+  tcRcvdByHCS *= rowSizeFactor;
+
+  // normalize it by #region servers for HRS
+  tcProcInHRS = (tcProcInHRS / HRSPartitions).getCeiling();
+  tcProdInHRS = (tcProdInHRS / HRSPartitions).getCeiling();
+  seqIOsInHRS = (seqIOsInHRS / HRSPartitions).getCeiling();
+  randIOsInHRS = (randIOsInHRS / HRSPartitions).getCeiling();
+
+  // normalize it by DoP for HCS
+  CollIndex HCSPartitions = getEstNumActivePartitionsAtRuntime();
+  if (costParPlanSameAsSer)
+    HCSPartitions = 1;
+
+  tcProcInHCS = (tcProcInHCS / HCSPartitions).getCeiling();
+  tcProdInHCS = (tcProdInHCS / HCSPartitions).getCeiling();
+
+  // compute HRS cost + HCS cost
+  // Total CPU cost
+  CostScalar tuplesProcessed = tcProcInHRS + tcProcInHCS;
+  CostScalar tuplesProduced = tcProdInHRS + tcProdInHCS;
+
+  // Total IO cost = seqIOsInHRS + randIOsInHRS
+  // Total Msg cost = tcRcvdByHCS
+
+  Cost* hbaseMultiProbeScanCost =
+    scmCost(tuplesProcessed, tuplesProduced, tcRcvdByHCS, randIOsInHRS,
+            seqIOsInHRS, csOne, rowSize, csZero, outputRowSize, csZero);
+
+  if (isProbeCacheApplicable())
+  {
+    CostScalar pcCostAdjFactor = getProbeCacheCostAdjFactor();
+    hbaseMultiProbeScanCost->cpScmlr().scaleByValue(pcCostAdjFactor);
+  }
+
+  // cost un-split index_scan cheaper than base table scan cost if index_scan
+  // selectivity < NCM_IND_SCAN_SELECTIVITY
+  if ( !(getIndexDesc()->isClusteringIndex()) && HRSPartitions == 1)
+  {
+    CostScalar sel = accessedRows / totalRowCount_;
+    CostScalar indScanSelThreshold = 
+      ActiveSchemaDB()->getDefaults().getAsDouble(NCM_IND_SCAN_SELECTIVITY);
+    if ( indScanSelThreshold != -1 AND sel < indScanSelThreshold )
+      hbaseMultiProbeScanCost->cpScmlr().scaleByValue(sel);
+  }
+
+  // to do : get number of index partitions:
+  /*
+  if (isAnIndexJoin && num_index_partitions == 1)
+  {
+    CostScalar sel = probes_ / totalRowCount_;
+    CostScalar indJoinSelThreshold = 
+      ActiveSchemaDB()->getDefaults().getAsDouble(NCM_IND_JOIN_SELECTIVITY);
+    if ( sel < indJoinSelThreshold )
+      hbaseMultiProbeScanCost->cpScmlr().scaleByValue(sel);
+  }
+  */
+
+  return hbaseMultiProbeScanCost;
+}
+
 
 /**********************************************************************/
 /*                                                                    */

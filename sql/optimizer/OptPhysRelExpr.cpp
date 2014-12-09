@@ -13095,11 +13095,12 @@ computeDP2CostDataThatDependsOnSPP(
 
         } // if we have range partitioning
       else
-        if ( physicalPartFunc.isATableHashPartitioningFunction()
-           AND
-	     (
-                (scan.getOperatorType() == REL_FILE_SCAN)
-             )
+        if ( ( physicalPartFunc.isATableHashPartitioningFunction() AND
+               (scan.getOperatorType() == REL_FILE_SCAN)
+             ) OR
+             ( indexDesc.isPartitioned() AND
+               (scan.getOperatorType() == REL_HBASE_ACCESS) AND
+               (CmpCommon::getDefault(NCM_HBASE_COSTING) == DF_ON))
            )
         {
 
@@ -13250,6 +13251,11 @@ computeDP2CostDataThatDependsOnSPP(
 	    }
 
 
+          CollIndex numParts = 1;
+          if (scan.getOperatorType() == REL_HBASE_ACCESS)
+            numParts = indexDesc.getPartitioningFunction()->getCountOfPartitions();
+          else
+            numParts = physicalPartFunc.getCountOfPartitions();
 
 	  // The order of the IF conditions in the following statement, is
 	  // CRITICAL. It is possible that partitioning-key list may be
@@ -13296,14 +13302,15 @@ computeDP2CostDataThatDependsOnSPP(
 	      // Hence, each outer probe goes to a single
 	      // inner table partition.
 
-              if (CURRSTMT_OPTDEFAULTS->incorporateSkewInCosting())
+              if (CURRSTMT_OPTDEFAULTS->incorporateSkewInCosting() AND
+                  physicalPartFunc.isATableHashPartitioningFunction())
               {
                  CostScalar probesAtBusyStream =
                      myContext.getInputLogProp()->getCardOfBusiestStream(
                                       &physicalPartFunc,
-                                      physicalPartFunc.getCountOfPartitions(),
+                                      numParts,
                                       &scanGroupAttr,
-                                      physicalPartFunc.getCountOfPartitions(),
+                                      numParts,
                                       TRUE);
 
                  dp2CostInfo.setProbesAtBusiestStream(probesAtBusyStream);
@@ -13312,8 +13319,7 @@ computeDP2CostDataThatDependsOnSPP(
 	      dp2CostInfo.setRepeatCountForOperatorsInDP2
 		(
 		   (myContext.getInputLogProp()->getResultCardinality()
-			  /physicalPartFunc.getCountOfPartitions()).
-			 getCeiling().minCsOne()
+			  /numParts).getCeiling().minCsOne()
 		 );
 
               dp2CostInfo.setRepeatCountState
@@ -13321,8 +13327,7 @@ computeDP2CostDataThatDependsOnSPP(
 
 	      // indicate in the node map that all partitions will be
 	      // accessed during plan evaluation.
-	      NodeMapPtr->setEstNumActivePartitionsAtRuntime
-		(physicalPartFunc.getCountOfPartitions());
+	      NodeMapPtr->setEstNumActivePartitionsAtRuntime(numParts);
 	    }
 	  else
 	    {
@@ -13339,7 +13344,7 @@ computeDP2CostDataThatDependsOnSPP(
 	      // indicate in the node map that all partitions will be
 	      // accessed during plan evaluation.
 	      NodeMapPtr->setEstNumActivePartitionsAtRuntime
-		(physicalPartFunc.getCountOfPartitions());
+		(numParts);
 	    };
 
 	  }; // inner table is hash-partitioned

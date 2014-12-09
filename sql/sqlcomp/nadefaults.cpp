@@ -2392,16 +2392,19 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // In normal situations, these will not be externalized in keeping
   // with the very few CQDs philosophy of NCM.
   // These are applicable only in conjunction with SIMPLE_COST_MODEL 'on'.
-  DDflt__(NCM_CACHE_SIZE_IN_BLOCKS,		"10000"),
+  DDflt__(NCM_CACHE_SIZE_IN_BLOCKS,		"52"),
   DDflt__(NCM_COSTLIMIT_FACTOR,                 "0.05"), //change to 0.05
   DDint__(NCM_ESP_FIXUP_WEIGHT,			"300"),
   DDkwd__(NCM_ESP_STARTUP_FIX,                  "ON"),
   DDflt__(NCM_EXCH_MERGE_FACTOR,                "0.10"), // change to 0.10
   DDkwd__(NCM_EXCH_NDCS_FIX,                    "ON"), // change to ON
+  DDkwd__(NCM_HBASE_COSTING,                    "ON"), // change to ON
   DDkwd__(NCM_HGB_OVERFLOW_COSTING,		"ON"),
   DDkwd__(NCM_HJ_OVERFLOW_COSTING,		"ON"),
   DDflt__(NCM_IND_JOIN_COST_ADJ_FACTOR,         "1.0"),
+  DDflt__(NCM_IND_JOIN_SELECTIVITY,             "1.0"),
   DDflt__(NCM_IND_SCAN_COST_ADJ_FACTOR,         "1.0"),
+  DDflt__(NCM_IND_SCAN_SELECTIVITY,             "1.0"),
   DDflt__(NCM_MAP_CPU_FACTOR,                   "4.0"),
   DDflt__(NCM_MAP_MSG_FACTOR,                   "4.0"),
   DDflt__(NCM_MAP_RANDIO_FACTOR,                "4.0"),
@@ -2412,6 +2415,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDflt0_(NCM_NJ_PROBES_MAXCARD_FACTOR,         "10000"),
   DDkwd__(NCM_NJ_SEQIO_FIX,                     "ON"), // change to ON
   DDint__(NCM_NUM_SORT_RUNS,			"4"),
+  DDflt__(NCM_OLTP_ET_THRESHOLD,                "60.0"),
   DDflt__(NCM_PAR_ADJ_FACTOR,                   "0.10"),
   DDkwd__(NCM_PAR_GRPBY_ADJ,			"ON"),
   DDkwd__(NCM_PRINT_ROWSIZE,			"OFF"),
@@ -2421,6 +2425,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDflt__(NCM_SEQ_IO_WEIGHT,			"543"),
   DDflt__(NCM_SERIAL_NJ_FACTOR,			"2"),
   DDflt__(NCM_SGB_TO_HGB_FACTOR,		"0.8"),
+  DDkwd__(NCM_SKEW_COST_ADJ_FOR_PROBES,		"OFF"),
   DDkwd__(NCM_SORT_OVERFLOW_COSTING,		"ON"),
   DDflt__(NCM_TUPLES_ROWSIZE_FACTOR,		"0.5"),
   DDkwd__(NCM_USE_HBASE_REGIONS,		"ON"),
@@ -2974,8 +2979,8 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   // = 1.2 means demand a 20% insurance premium that cost of risky operators
   // must overcome before they will be chosen over less-risky operators.
   DDflt0_(RISK_PREMIUM_MJ,     "1.15"),
- XDDflt0_(RISK_PREMIUM_NJ,     "1.2"),
- XDDflt0_(RISK_PREMIUM_SERIAL, "1.2"),
+ XDDflt0_(RISK_PREMIUM_NJ,     "1.0"),
+ XDDflt0_(RISK_PREMIUM_SERIAL, "1.0"),
  XDDui___(RISK_PREMIUM_SERIAL_SCALEBACK_MAXCARD_THRESHOLD, "10000"),
 
   DDflt0_(ROBUST_HJ_TO_NJ_FUDGE_FACTOR, "0.0"),

@@ -431,6 +431,7 @@ public:
   void setIndexOnlyScans(const SET(IndexProperty *) &ixonly)
                                            { indexOnlyIndexes_ = ixonly; }
   const SET(IndexDesc *)& deriveIndexOnlyIndexDesc();
+  const SET(IndexDesc *)& deriveIndexJoinIndexDesc();
   const SET(IndexDesc *)& getIndexJoinIndexDesc(){ return indexJoinScans_; }
 
   const LIST(ScanIndexInfo *) &getIndexInfo()
