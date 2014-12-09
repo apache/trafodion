@@ -185,9 +185,9 @@ int32 TM_Recov::recover_dtm_death(int32 pv_dtm)
    // send xa_recover to each opened RM
    //lv_error = send_xa_recover_toall_TSEs(pv_dtm);
 
-	// Sending ID for node down.
-	TMTrace (2, ("TM_Recov::recover_dtm_death"));
-	gv_HbaseTM.nodeDown(pv_dtm);
+   // Sending ID for node down.
+   TMTrace (2, ("TM_Recov::recover_dtm_death: sending node down message"));
+   gv_HbaseTM.nodeDown(pv_dtm);
 
    if (lv_error != FEOK)
    {
