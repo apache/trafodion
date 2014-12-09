@@ -749,10 +749,12 @@ public class HBaseTxClient {
 
                         }
                         try {
-                            if (sleepTimeInt > 0)
-                                Thread.sleep(sleepTimeInt);
-                            else
-                                Thread.sleep(SLEEP_DELAY);
+                            if(continueThread) {
+                                if (sleepTimeInt > 0)
+                                    Thread.sleep(sleepTimeInt);
+                                else
+                                    Thread.sleep(SLEEP_DELAY);
+                            }
                             retryCount = 0;
                         } catch (Exception e) {
                             LOG.error("Error in recoveryThread: " + e);
