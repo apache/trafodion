@@ -3473,6 +3473,7 @@ enum DefaultConstants
   // For PCODE - Native Expressions work
   PCODE_NE_LOG_PATH,
   PCODE_NE_DBG_LEVEL,
+  PCODE_NE_IN_SHOWPLAN,
    
   // To set Reorg verify command for REORG CHECK command
   REORG_VERIFY,

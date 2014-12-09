@@ -2272,7 +2272,7 @@ void PCodeCfg::optimize()
   if ( (optFlags_ & NATIVE_EXPR) ) {
     cfgRewiring(rewiringFlags);
     computeLiveness(FALSE /* no DCE */);
-    layoutNativeCode(NULL);
+    layoutNativeCode();
   }
   else
     expr_->setEvalPtr( (ex_expr::evalPtrType)( (CollIndex) 0 ) );//Ensure NULL!
@@ -2569,24 +2569,13 @@ void PCodeCfg::generateShowPlan(PCodeBinary* pCode, Space* space)
 
 
   // Dump out the native expr assembly code
-  if (expr_->getPCodeNative()) {
-
-#if 0 /* Sometimes causes us to core dump.  Disabling for now.  */
-    // Initialize constant vectors and hash tables
-    initConstants();
-
-    // Native code generation
-    computeLiveness(FALSE /* no DCE */);
+  if (expr_->getNEInShowplan())
     layoutNativeCode(space);
-#else
+  else if (expr_->getPCodeNative()) {
     space->allocateAndCopyToAlignedSpace("Native Expression exists but is not being displayed.\n",
                                   sizeof("Native Expression exists but is not being displayed.\n"),
                                   sizeof(short) );
-#endif /* ... Disabling for now. */
-
-  }
-
-
+    }
 }
 
 #endif // __EID

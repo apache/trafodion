@@ -5726,7 +5726,7 @@ NABoolean PCodeCfg::jitProcessPredicate(PCodeInst* comp,
 
 #if 1 /* NA_LINUX_LLVMJIT */
 
-void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
+void PCodeCfg::layoutNativeCode()
 {
   static pthread_mutex_t Our_LLVM_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -9161,7 +9161,7 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
 
 #if NExprDbgLvl >= VV_BD
   if ( ( NExprDbgLvl_ >= VV_BD ) &&
-       ( ( ! showplanSpace ) ||    /* Do if not doing showplan OR dbg log is a file */
+       ( 
          ( ( NExDbgInfoPtr_->getNExStmtSrc() != NULL ) &&
            ( NExDbgInfoPtr_->getNExStmtSrc()[0] != '\0' ) )
        )
@@ -9285,23 +9285,46 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
   expr_->setPCodeNative(TRUE);
 #endif
 
-  if (showplanSpace)
+  TheExecutionEngine->freeMachineCodeForFunction( ExpFn );
+  delete Bldr;
+  //delete TheModule;
+  delete TheExecutionEngine;
+
+  //
+  // Restore signal handlers to what they were on entry.  ALSO, if this is
+  // the first time LLVM was called, save the LLVM handlers!
+  //
+  for (Int32 ii = 0; ii < NumSaveSigs ; ii++ )
+  {
+     Int32 ret = sigaction( SaveSigs[ii], &(SavedSigInfo[ii].SigAct),
+                  (LLVMhandlersSaved == FALSE) ?
+                 &(SavedLLVMhandlers[ii].SigAct) : (struct sigaction *)NULL);
+     assert( ret == 0 );
+  }
+  LLVMhandlersSaved = TRUE ;
+  pthread_mutex_unlock( &Our_LLVM_mutex ); // Other threads could use LLVM now
+  return ;
+}
+
+void PCodeCfg::layoutNativeCode(Space* showplanSpace)
+{
+  if (expr_->getPCodeNative())
   {
     NABoolean firstTimeSeen = TRUE;
     char line[256];
     char insnLine[256];
-    char* linePtr;
-    char fileName[50];
     Int32 i;
+    void *FPtr =  expr_->getConstantsArea() + expr_->getEvalPtrOffset();
+    Long nativeCodeLen = expr_->getConstsLength() - expr_->getEvalPtrOffset();
 
     // First print out a header for the native expr dump
-    sprintf( line, "Native Expr (Length: %ld bytes)", funcBufLen );
+    sprintf( line, "Native Expr (Length: %ld bytes)", nativeCodeLen );
     showplanSpace->allocateAndCopyToAlignedSpace(line, str_len(line),
                                                  sizeof(short));
 
     ud_t ud_obj;
     ud_init(&ud_obj);
-    ud_set_input_buffer(&ud_obj, (uint8_t*)(FPtr), (size_t) funcBufLen);
+    ud_set_input_buffer(&ud_obj, (uint8_t*)(FPtr), (size_t) nativeCodeLen);
     ud_set_mode(&ud_obj, 64);
     ud_set_syntax(&ud_obj, UD_SYN_ATT);
     ud_set_vendor(&ud_obj, UD_VENDOR_INTEL);
@@ -9334,26 +9357,8 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
     showplanSpace->allocateAndCopyToAlignedSpace("\n", 1, sizeof(short));
   }
 
-  TheExecutionEngine->freeMachineCodeForFunction( ExpFn );
-  delete Bldr;
-  //delete TheModule;
-  delete TheExecutionEngine;
-
-  //
-  // Restore signal handlers to what they were on entry.  ALSO, if this is
-  // the first time LLVM was called, save the LLVM handlers!
-  //
-  for (Int32 ii = 0; ii < NumSaveSigs ; ii++ )
-  {
-     Int32 ret = sigaction( SaveSigs[ii], &(SavedSigInfo[ii].SigAct),
-                  (LLVMhandlersSaved == FALSE) ?
-                 &(SavedLLVMhandlers[ii].SigAct) : (struct sigaction *)NULL);
-     assert( ret == 0 );
-  }
-  LLVMhandlersSaved = TRUE ;
-  pthread_mutex_unlock( &Our_LLVM_mutex ); // Other threads could use LLVM now
-  return ;
 }
+
 #endif /* NA_LINUX_LLVMJIT */
 
 #ifdef NA_LINUX_LIBJIT

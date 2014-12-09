@@ -1756,7 +1756,7 @@ public:
     jitFailureSeen_ = FALSE;
 
     // Null out ptrs into Generator object as there is none for showplan
-    expr->setNExDbgInfo(NULL);
+    // expr->setNExDbgInfo(NULL);
     NExDbgInfoPtr_ = NULL ;
     NExprDbgLvl_    = 0 ;
   }
@@ -1951,7 +1951,9 @@ public:
   };
 #endif /* NA_LINUX_LIBJIT */
 
-  void layoutNativeCode(Space* space);
+  void layoutNativeCode(void);
+
+  void layoutNativeCode(Space* space);  // used by showplan
 
   NABoolean canGenerateNativeExpr();
   jit_value_t* getJitParams() { return jitParams_; }

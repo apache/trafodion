@@ -55,6 +55,9 @@
 
 --- 10 row(s) selected.
 >>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
+>>
 >>control query shape cut ;
 
 --- SQL operation complete.
@@ -111,6 +114,9 @@
 
 --- 11 row(s) selected.
 >>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
+>>
 >>control query shape cut ;
 
 --- SQL operation complete.
@@ -161,6 +167,9 @@
 
 --- 1 row(s) selected.
 >> -- one row expected
+>>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
 >>
 >>control query shape cut ;
 
@@ -246,6 +255,9 @@ I            J
 
 --- 3 row(s) selected.
 >>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
+>>
 >>-------------------
 >>-- now reset:
 >>-------------------
@@ -322,6 +334,9 @@ I            J
 
 --- 1000 row(s) inserted.
 >>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
+>>
 >>-- use internal CQD to force an overflow after 30 MB
 >>control query default EXE_MEM_LIMIT_PER_BMO_IN_MB '30';
 
@@ -367,6 +382,9 @@ I            J
 >>execute stmt;
 
 --- 100 row(s) inserted.
+>>
+>>-- test SHOWPLAN, the regression tool can report core file if generated
+>>log;
 >>
 >>control query shape cut ;
 

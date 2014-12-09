@@ -4628,6 +4628,9 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
 
   (*expr)->pCodeGenerate(getSpace(), wHeap(), f);
   (*expr)->setPCodeGenCompile(1);
+  if ((*expr)->getPCodeNative() &&
+      CmpCommon::getDefault(PCODE_NE_IN_SHOWPLAN) == DF_ON)
+    (*expr)->setNEInShowplan(TRUE);
 
   Lng32 pcodeExprLen = getSpace()->getAllocatedSpaceSize() - len1;
   Lng32 totalExprLen =

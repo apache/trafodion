@@ -251,6 +251,18 @@ prepare stmt from
 -- query should return 10 rows, where 7 are null extended
 execute stmt using 555;
 
+-- test SHOWPLAN, the regression tool can report core file if generated
+log;
+SHOWPLAN
+  select cast (a2 as smallint), cast (b2 as char(30)),
+         cast (a1 as smallint), cast (b1 as char(30)) from
+       t019t2
+         left join
+       t019t1 on a1 = a2
+             and c1 + c2 < ? ;
+
+log LOG019;
+
 control query shape cut ; 
 
 -- Statistics hold a proof that overflow took place:
@@ -277,6 +289,20 @@ prepare stmt from
 -- should return 11 rows
 execute stmt using 4000, 14000;
 
+-- test SHOWPLAN, the regression tool can report core file if generated
+log;
+SHOWPLAN
+  select cast (a2 as smallint), cast (b2 as char(30)),
+         cast (a1 as smallint), cast (b1 as char(30)) from
+     t019t2 tt1
+        join
+     t019t1 tt2
+     on isnull(a1,9999) = a2
+     where isnull(a1,2) < ? or a2 + a1 > ?  -- after-join predicate
+  ;
+
+log LOG019;
+
 control query shape cut ; 
 
 -- Statistics hold a proof that overflow took place:
@@ -302,6 +328,13 @@ prepare stmt from
          from t019t1 group by b1 having sum(a1) >= ? ;
 
 execute stmt using 9999 ; -- one row expected
+
+-- test SHOWPLAN, the regression tool can report core file if generated
+log;
+SHOWPLAN
+   select sum(a1), cast (b1 as char(30))
+         from t019t1 group by b1 having sum(a1) >= ? ;
+log LOG019;
 
 control query shape cut ; 
 
@@ -333,6 +366,15 @@ select * from t019left full join t019right on i = j ;
 insert into t019left values (1),(2),(3);
 -- should return three rows, no null extensions (see case 10-081205-8182)
 select * from t019left full join t019right on i = j ;
+
+-- test SHOWPLAN, the regression tool can report core file if generated
+log;
+SHOWPLAN
+insert into t019left values (1),(2),(3);
+
+SHOWPLAN
+select * from t019left full join t019right on i = j ;
+log LOG019;
 
 -------------------
 -- now reset:
@@ -400,6 +442,29 @@ insert into t019_c
     transpose 0,1,2,3,4,5,6,7,8,9 as x1
   ;
 
+-- test SHOWPLAN, the regression tool can report core file if generated
+log;
+SHOWPLAN
+#ifdef SEABASE_REGRESS
+upsert using load into t019_c
+#else
+insert into t019_c
+#endif
+  select  
+   0 + (100 * x100) + (10 * x10) + (1 * x1),
+   0 + (100 * x100) + (10 * x10) + (1 * x1),
+   'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+   0 + (10 * x10) + (1 * x1),
+   0 + (1 * x1),
+   0
+  from t019_starter 
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ;
+
+log LOG019;
+
 -- use internal CQD to force an overflow after 30 MB
 control query default EXE_MEM_LIMIT_PER_BMO_IN_MB '30';
 
@@ -431,6 +496,17 @@ prepare stmt from
 
 -- 100 rows should be inserted -- anything less shows that ASJ overflow bug
 execute stmt;
+
+-- test SHOWPLAN, the regression tool can report core file if generated
+log;
+SHOWPLAN
+  insert into t019_d
+    ( select * from t019_c
+      where
+        (uniq1, c100, c10, c1, uniq2, str1) NOT IN
+                       (select * from t019_a, t019_b) ) ;
+
+log LOG019;
 
 control query shape cut ; 
 
@@ -585,6 +661,12 @@ prepare stmt from
             group by T1.uniqb,T2.uniqb,T1.str1,T2.str1;
 
 execute stmt;
+
+-- Test for SHOWPLAN to make sure no core file is generated.
+SHOWPLAN
+   select [last 1] sum(T1.c1+T2.c1)
+        from t019_e T1, t019_e T2 where T1.c1 = T2.c1
+            group by T1.uniqb,T2.uniqb,T1.str1,T2.str1;
 
 set table t019_e timeout 100;
 set table * stream timeout 100;

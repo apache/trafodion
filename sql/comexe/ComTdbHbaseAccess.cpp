@@ -499,8 +499,8 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
 
 void ComTdbHbaseAccess::displayRowId(Space * space, char * inputRowIdBuf)
 {
-  char buf[1000];
-  char keyVal[1000];
+  char buf[100];
+  char keyVal[41];
   Lng32 keyValLen = 0;
   
   ExpTupleDesc * asciiSourceTD =
@@ -509,6 +509,7 @@ void ComTdbHbaseAccess::displayRowId(Space * space, char * inputRowIdBuf)
   Lng32 currPos = 0;
   if (asciiSourceTD)
     {
+#if 0
       for (CollIndex i = 0; i < asciiSourceTD->numAttrs(); i++)
 	{
 	  Attributes * attr = asciiSourceTD->getAttr(i);
@@ -546,14 +547,29 @@ void ComTdbHbaseAccess::displayRowId(Space * space, char * inputRowIdBuf)
 	      keyValLen = 0;
 	      strcpy(keyVal, "<missing>");
 	    }
+	}
+#endif
 
+	  keyValLen = (keyLen_ > 0)? keyLen_: rowIdLen_;
 	  keyValLen = MINOF(keyValLen, 40);
-	  keyVal[keyValLen] = 0;
+	  if (*(short*)inputRowIdBuf == 0)
+	    {
+	      keyValLen = 0;
+	      strcpy(keyVal, "<missing>");
+	    }
+	  else
+	    {
+	      // print max 20 bytes from the key value
+	      Int32 fieldWidth = (keyValLen + 1) / 2;
+	      for (Int32 idx = 0; idx < fieldWidth; idx++)
+		{
+		  sprintf(keyVal + 2*idx, "%02x", *(inputRowIdBuf + idx));
+		}
+	      keyVal[fieldWidth + 1] = 0;
+	    }
 	  str_sprintf(buf, "        %d:%s", keyValLen, keyVal);
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	  
-	  currPos += inputRowIdValLen;
-	}
     }
 }
 

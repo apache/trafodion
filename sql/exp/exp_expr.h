@@ -542,6 +542,8 @@ public:
 
   NA_EIDPROC NExDbgInfo * getNExDbgInfoPtr() { return NExDbgInfo_ ; }
 
+  NA_EIDPROC Long getEvalPtrOffset() { return evalPtrOff_ ; }
+
   NA_EIDPROC exp_return_type pCodeGenerate(ComSpace *space, CollHeap *heap,
 					   UInt32 flags);
   NA_EIDPROC void pCodePrint();
@@ -629,6 +631,15 @@ public:
 
   NA_EIDPROC NABoolean getPCodeNative() {
     return ((flags_ & PCODE_EVAL_NATIVE) != 0);
+  };
+
+  NABoolean getNEInShowplan() {
+    return ((flags_ & PCODE_NE_IN_SHOWPLAN) != 0);
+  };
+
+  void setNEInShowplan(NABoolean v) {
+   ( v ? flags_ |= PCODE_NE_IN_SHOWPLAN :
+         flags_ &= ~PCODE_NE_IN_SHOWPLAN );
   };
 
   NA_EIDPROC void setPCodeMoveFastpath(NABoolean v) {
@@ -767,7 +778,10 @@ protected:
     // If set, native code was generated for this expression.  The function
     // pointer evalPtr_ points to an offset in the constants area of the expr
     // where the code resides.
-    PCODE_EVAL_NATIVE = 0x0100
+    PCODE_EVAL_NATIVE = 0x0100,
+
+    // If set, SHOWPLAN will print native code
+    PCODE_NE_IN_SHOWPLAN = 0x0200
   };
   
   // flags passed to exp and clause generation methods.
