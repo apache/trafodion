@@ -42,78 +42,112 @@ class TMUDFDllInteraction;
 
 // forward references
 class TableMappingUDF;
+namespace tmudr {
+  class UDRInvocationInfo;
+}
 
 
-// if other RelExprs need a Dll interation we may need
+// if other RelExprs need a DLL interation we may need
 // to define a common base class then.
+
+// class TMUDFDllInteraction represents the metadata needed to interact
+// with a specific compiler interface for one or more TMUDFs. It can
+// be shared between multiple invocations of these TMUDFs.
+
+// Todo: A cache, for now we create one for each TableMappingUDR RelExpr.
+
 class TMUDFDllInteraction : public NABasicObject
 {
 
   public :
-    TMUDFDllInteraction(TableMappingUDF * TMUDFNode);
-    NABoolean ValidateScalarInputs(TableMappingUDF * TMUDFNode, BindWA * bindWA);
-    NABoolean DescribeMaxOutputs(TableMappingUDF * TMUDFNode, BindWA * bindWA);
-    NABoolean DescribeInputsAndOutputs(TableMappingUDF * TMUDFNode);
-    NABoolean DescribeInputPartitionAndOrder(TableMappingUDF * TMUDFNode);
-    NABoolean PredicatePushDown(TableMappingUDF * TMUDFNode);
-    NABoolean Cardinality(TableMappingUDF * TMUDFNode);
-    NABoolean Constraints(TableMappingUDF * TMUDFNode);
-    NABoolean Cost(TableMappingUDF * TMUDFNode);
-    NABoolean DegreeOfParallelism(TableMappingUDF * TMUDFNode);
-    NABoolean GenerateInputPartitionAndOrder(TableMappingUDF * TMUDFNode);
-    NABoolean DescribeOutputOrder(TableMappingUDF * TMUDFNode);
-    void setDllPtr(LmHandle val) {dllPtr_ = val;}
-    LmHandle getDllPtr() {return dllPtr_;}
-    void setFunctionPtrs(const NAString& entryName);
-    void processReturnStatus(ComSInt32 retcode, ComDiagsArea *diags,
-                             const char* routineName);
-    void setParamInfo(SQLUDR_PARAM * inpParam, const NAType * p, 
-                      const NAString & name);
-    void setScalarInputParamInfo(const ValueIdList & vids);
-    void setScalarInputValues(const ValueIdList & vids);
-    SQLUDR_PARAM * copyParams(Int32 num, SQLUDR_PARAM * src);
-    SQLUDR_PARAM * createEmptyParams(Int32 num, Int32 nameLen);
 
+  TMUDFDllInteraction();
+  NABoolean describeParamsAndMaxOutputs(TableMappingUDF * tmudfNode, BindWA * bindWA);
+  NABoolean createOutputInputColumnMap(TableMappingUDF * tmudfNode, ValueIdMap &result);
+  NABoolean describeInputsAndOutputs(TableMappingUDF * tmudfNode);
+  NABoolean describeInputPartitionAndOrder(TableMappingUDF * tmudfNode);
+  NABoolean predicatePushDown(TableMappingUDF * tmudfNode);
+  NABoolean cardinality(TableMappingUDF * tmudfNode);
+  NABoolean constraints(TableMappingUDF * tmudfNode);
+  NABoolean cost(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws);
+  NABoolean degreeOfParallelism(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws, int &dop);
+  NABoolean generateInputPartitionAndOrder(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws);
+  NABoolean describeOutputOrder(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws);
 
+  // helper methods for setup and return status
 
+  void setDllPtr(LmHandle val) {dllPtr_ = val;}
+  LmHandle getDllPtr() {return dllPtr_;}
+  void setFunctionPtrs(const NAString& entryName);
+  void processReturnStatus(const tmudr::UDRException &e, 
+                           ComDiagsArea *diags,
+                           const char* routineName);
 
+private:
 
-  private :
-    enum CallType
-    {
-      VALIDATE_SCALAR_INPUT,
-      DESCRIBE_MAX_INPUT,
-      DESCRIBE_INP_OUT,
-      DESCRIBE_INP_PART_ORDER,
-      PRED_PUSHDOWN,
-      CARDINALITY,
-      CONSTRAINTS,
-      COST,
-      DOP,
-      GENERATE_INP_PART_ORDER,
-      GENERATE_OUT_ORDER
-    };
+  LmHandle dllPtr_ ;
+  LmHandle createCompilerInterfaceObjectPtr_;
 
-    LmHandle dllPtr_ ;
-    LmHandle validateScalarInputsPtr_ ;
-    LmHandle describeMaxOutputsPtr_;
-    LmHandle describeInputsAndOutputsPtr_;
-    LmHandle describeInputPartitionAndOrderPtr_;
-    LmHandle predicatePushDownPtr_;
-    LmHandle cardinalityPtr_;
-    LmHandle constraintsPtr_;
-    LmHandle costPtr_;
-    LmHandle degreeOfParallelismPtr_;
-    LmHandle generateInputPartitionAndOrderPtr_;
-    LmHandle describeOutputOrderPtr_;
-
-    //static THREAD_P SQLUDR_CHAR *host_data_;     // Static data member
-
-    SQLUDR_CHAR         sqlState_[SQLUDR_SQLSTATE_SIZE];
-    SQLUDR_CHAR         msgText_[SQLUDR_MSGTEXT_SIZE];
-    SQLUDR_STATEAREA    *stateArea_;
-    SQLUDR_TMUDFINFO    *tmudfInfo_;
-    SQLUDR_CHAR         **inData_;
-    SQLUDR_INT16        *nullInData_;
 };
+
+// Class used to convert Trafodion classes to and from the C++
+// compiler interface classes defined in sqludr.h.
+
+// This class is a friend of many of the C++ compiler interface classes
+// and therefore it can set private data members that the UDF writer
+// should not set directly
+
+class TMUDFInternalSetup
+{
+public:
+
+  // these methods could be made methods of the C++ interface itself, but
+  // that would expose them to the UDF writer, who should not call them,
+  // therefore we make this class a friend and implement them here as static
+  // member functions
+
+  // methods to convert Trafodion objects to tmudr objects
+  // (allocated on system heap, if needed)
+  
+  static tmudr::UDRInvocationInfo *createInvocationInfoFromRelExpr(
+       TableMappingUDF * tmudfNode,
+       ComDiagsArea *diags);
+  static NABoolean setTypeInfoFromNAType(
+       tmudr::TypeInfo &tgt,
+       const NAType *src,
+       ComDiagsArea *diags);
+  static tmudr::ParameterInfo *createParameterInfoFromNAColumn(
+       NAColumn *src,
+       ComDiagsArea *diags);
+  static tmudr::ColumnInfo *createColumnInfoFromNAColumn(
+       const NAColumn *src,
+       ComDiagsArea *diags);
+  static NABoolean setTableInfoFromNAColumnArray(
+       tmudr::TableInfo &tgt,
+       const NAColumnArray *src,
+       ComDiagsArea *diags);
+
+  // methods to convert tmudr objects to Trafodion objects (allocated on NAHeap)
+  static NAType *createNATypeFromTypeInfo(
+       const tmudr::TypeInfo &src,
+       int colNumForDiags,
+       NAHeap *heap,
+       ComDiagsArea *diags);
+  static NAColumn *createNAColumnFromParameterInfo(
+       const tmudr::ParameterInfo &src,
+       int position,
+       NAHeap *heap,
+       ComDiagsArea *diags);
+  static NAColumnArray * createColumnArrayFromTableInfo(
+       const tmudr::TableInfo &tableInfo,
+       TableMappingUDF * tmudfNode,
+       NAHeap *heap,
+       ComDiagsArea *diags);
+
+  // invoke private constructors/destructors of the interface structs
+  static tmudr::UDRPlanInfo *createUDRPlanInfo();
+  static void deleteUDRInvocationInfo(tmudr::UDRInvocationInfo *toDelete);
+  static void deleteUDRPlanInfo(tmudr::UDRPlanInfo *toDelete);
+};
+
 #endif /* UDFDLLINTERACTION_H */

@@ -853,7 +853,7 @@ if [ $USE_NDCS -ne 0 -a $DIFFS_ONLY -eq 0 -a $SEABASE_REGRESS -eq 0 ]; then
   START_AND_TEST_MXODBC
 fi
 
-if [ $diffOnly -eq 0 ]; then
+if [ $DIFFS_ONLY -eq 0 ]; then
    if [ "$REGRTSTDIR" != "$REGRRUNDIR" ]; then
       echo "copying FILTER_TIME.AWK to $REGRRUNDIR"
       cp -f $REGRTSTDIR/FILTER_TIME.AWK $REGRRUNDIR 2>$NULL

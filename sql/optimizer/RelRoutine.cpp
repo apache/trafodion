@@ -64,6 +64,7 @@
 #include "RelRoutine.h"
 #include "ElemDDLColDefArray.h"
 #include "CmpSeabaseDDL.h"
+#include "UdfDllInteraction.h"
 
 
 // -----------------------------------------------------------------------
@@ -204,7 +205,7 @@ void RelRoutine::addLocalExpr(LIST(ExprNode *) &xlist,
     else
       xlist.insert(procAllParamsVids_.rebuildExprTree());
 
-    llist.insert("parameters");
+    llist.insert("actual_parameters");
   }
   
   RelExpr::addLocalExpr(xlist,llist);
@@ -317,8 +318,9 @@ TableMappingUDF::TableMappingUDF(const TableMappingUDF & other)
   scalarInputParams_ = other.scalarInputParams_;
   outputParams_ = other.outputParams_;
   dllInteraction_ = other.dllInteraction_ ;
-  UDFOutputToChildInputMap_ = UDFOutputToChildInputMap_;
-  outputChildIndexList_ = outputChildIndexList_;
+  invocationInfo_ = other.invocationInfo_;
+  udrInterface_ = other.udrInterface_;
+  udfOutputToChildInputMap_ = other.udfOutputToChildInputMap_;
 }
 
 //! TableMappingUDF::~TableMappingUDF Destructor
@@ -354,8 +356,9 @@ RelExpr * TableMappingUDF::copyTopNode(RelExpr *derivedNode,
   result->scalarInputParams_ = scalarInputParams_;
   result->outputParams_ = outputParams_;
   result->dllInteraction_ = dllInteraction_;
-  result->UDFOutputToChildInputMap_ = UDFOutputToChildInputMap_;
-  result->outputChildIndexList_ = outputChildIndexList_;
+  result->invocationInfo_ = invocationInfo_;
+  result->udrInterface_ = udrInterface_;
+  result->udfOutputToChildInputMap_ = udfOutputToChildInputMap_;
   return TableValuedFunction::copyTopNode(result, outHeap);
 }
 
@@ -367,6 +370,11 @@ const NAString TableMappingUDF::getText() const
  return op + getUserTableName().getTextWithSpecialType();
 }
 
+PredefinedTableMappingFunction * TableMappingUDF::castToPredefinedTableMappingFunction()
+{
+  return NULL;
+}
+
 void TableMappingUDF::addLocalExpr(LIST(ExprNode *) &xlist,
                             LIST(NAString) &llist) const
 { 
@@ -375,17 +383,17 @@ void TableMappingUDF::addLocalExpr(LIST(ExprNode *) &xlist,
     if (NOT childInfo_[i]->partitionBy_.isEmpty())
     {
       xlist.insert(childInfo_[i]->partitionBy_.rebuildExprTree());
-      llist.insert("child partBy");
+      llist.insert("child_part_by");
     }
     if (NOT childInfo_[i]->orderBy_.isEmpty())
     {
       xlist.insert(childInfo_[i]->orderBy_.rebuildExprTree());
-      llist.insert("child orderBy");
+      llist.insert("child_order_by");
     }
     if (NOT childInfo_[i]->outputs_.isEmpty())
     {
       xlist.insert(childInfo_[i]->outputs_.rebuildExprTree());
-      llist.insert("child outputs");
+      llist.insert("child_outputs");
     }
   } 
   RelRoutine::addLocalExpr(xlist,llist);
@@ -551,7 +559,7 @@ void TableMappingUDF::synthEstLogProp(const EstLogPropSharedPtr& inputLP)
     ValueId inputValId;
     ColStatsSharedPtr inputColStats;
     
-    UDFOutputToChildInputMap_.mapValueIdDown(udfOutputCol, inputValId);
+    udfOutputToChildInputMap_.mapValueIdDown(udfOutputCol, inputValId);
 
     // if output is not found then inputValId is set to 
     // udfOutputCol in such a case set inputValId to NULL_VALUE_ID
@@ -559,18 +567,16 @@ void TableMappingUDF::synthEstLogProp(const EstLogPropSharedPtr& inputLP)
       inputValId = NULL_VALUE_ID;
     
     if(inputValId != NULL_VALUE_ID)
-    {    
-      CollIndex outputLoc = UDFOutputToChildInputMap_.getTopValues().index(udfOutputCol);
-      CollIndex producingChild = outputChildIndexList_[outputLoc];
-      
-      // get child histogram
-      inputColStats =
-        child(producingChild).
-          outputLogProp(inputLP)->getColStats().
+    {
+      for (CollIndex c=0; c<getArity() && !inputHistFound; c++)
+        {
+          // try to get child histogram from this child
+          inputColStats = child(c).outputLogProp(inputLP)->getColStats().
             getColStatsPtrForColumn(inputValId);
       
-      if(inputColStats != NULL)
-        inputHistFound = TRUE;
+          if(inputColStats != NULL)
+            inputHistFound = TRUE;
+        }
     }
 
     if(!inputHistFound)
@@ -680,42 +686,6 @@ NABoolean TableMappingUDF::duplicateMatch(const RelExpr & other) const
 NABoolean TableMappingUDF::isLogical() const { return TRUE; }
 NABoolean TableMappingUDF::isPhysical() const { return FALSE; }
 
-DefaultToken TableMappingUDF::getParallelControlSettings (
-            const ReqdPhysicalProperty* const rppForMe, /*IN*/
-            Lng32& numOfESPs, /*OUT*/
-            float& allowedDeviation, /*OUT*/
-            NABoolean& numOfESPsForced /*OUT*/) const 
-{ 
-  return RelExpr::getParallelControlSettings(rppForMe, 
-        numOfESPs, allowedDeviation, numOfESPsForced ); 
-};
-
-NABoolean TableMappingUDF::okToAttemptESPParallelism (
-            const Context* myContext, /*IN*/
-            PlanWorkSpace* pws, /*IN*/
-            Lng32& numOfESPs, /*OUT*/
-            float& allowedDeviation, /*OUT*/
-            NABoolean& numOfESPsForced /*OUT*/) 
-{ 
-  return RelExpr::okToAttemptESPParallelism(myContext, 
-        pws, numOfESPs, allowedDeviation, numOfESPsForced); 
-};
-
-PartitioningFunction* TableMappingUDF::mapPartitioningFunction(
-                          const PartitioningFunction* partFunc,
-                          NABoolean rewriteForChild0) 
-{ 
-  return RelExpr::mapPartitioningFunction(partFunc, rewriteForChild0);
-};
-
-NABoolean TableMappingUDF::isBigMemoryOperator(const Context* context,
-                                        const Lng32 /*planNumber*/)
-{
-  return FALSE;
-};
-
-Int32 TableMappingUDF::getArity() const {return RelRoutine::getArity();};
-
 void TableMappingUDF::checkAndCoerceScalarInputParamTypes(BindWA* bindWA)
 {
   if (getProcInputParamsVids().entries() != getScalarInputParamCount())
@@ -807,7 +777,7 @@ void TableMappingUDF::createOutputVids(BindWA* bindWA)
     if ( bindWA->errStatus()) return;
 
     // Fill the ValueIdList for the output params
-    addProcOutputParamsVids(outputExprToBind->getValueId());
+    addProcOutputParamsVid(outputExprToBind->getValueId());
 
     const NAString &formalParamName = naColumn.getColName();
     const NAString *colParamName = &formalParamName;
@@ -819,177 +789,182 @@ void TableMappingUDF::createOutputVids(BindWA* bindWA)
   return ;
 }
 	
+NARoutine * TableMappingUDF::getRoutineMetadata(
+     QualifiedName &routineName,
+     CorrName &tmfuncName,
+     BindWA *bindWA)
+{
+  NARoutine *result = NULL;
+  CmpSeabaseDDL cmpSBD((NAHeap *)bindWA->wHeap());
+
+  desc_struct *tmudfMetadata =
+    cmpSBD.getSeabaseRoutineDesc(
+         routineName.getCatalogName(),
+         routineName.getSchemaName(),
+         routineName.getObjectName());
+
+  // IS req 5: If function name not found, output binder error.
+  if (NULL == tmudfMetadata)
+  {
+    *CmpCommon::diags() << DgSqlCode(-4450)
+			<< DgString0(tmfuncName.getQualifiedNameAsString());
+    bindWA->setErrStatus();
+    return NULL;
+  }
+
+  ComRoutineType udfType ;
+
+  udfType = tmudfMetadata->body.routine_desc.UDRType ;
+
+  // IS req 6: Check ROUTINE_TYPE column of ROUTINES table.
+  // Emit error if invalid type.
+  if (udfType != COM_TABLE_UDF_TYPE)
+  {
+    *CmpCommon::diags() << DgSqlCode(-4457)
+			<< DgString0(tmfuncName.getQualifiedNameAsString())
+			<< DgString1("Only table-valued functions are supported here");
+    bindWA->setErrStatus();
+    return NULL;
+  } 
+
+  // IS req 3, 7.3. Instantiate NARoutine object.  
+  // NARoutine data members will be assigned from udfMetadata.
+  Int32 errors=0;
+  result = new (bindWA->wHeap())
+    NARoutine(tmfuncName.getQualifiedNameObj(),
+	      tmudfMetadata, 
+	      bindWA,
+	      errors,
+	      bindWA->wHeap());
+  if ( NULL == result || errors != 0)
+  {
+    bindWA->setErrStatus();
+    return NULL;
+  }
+
+  return result;
+}
+
+
+
+// -----------------------------------------------------------------------
+// methods for class PredefinedTableMappingFunction
+// -----------------------------------------------------------------------
+
+PredefinedTableMappingFunction::PredefinedTableMappingFunction(
+       CorrName name,
+       ItemExpr *params,
+       OperatorTypeEnum otype,
+       CollHeap *oHeap) :
+     TableMappingUDF(name, params, otype, oHeap)
+{}
+
+PredefinedTableMappingFunction::~PredefinedTableMappingFunction()
+{}
+
+// static method to find out whether a given name is a
+// built-in table-mapping function - returns operator type
+// of predefined function if so, REL_TABLE_MAPPING_UDF otherwise
+OperatorTypeEnum PredefinedTableMappingFunction::nameIsAPredefinedTMF(const CorrName &name)
+{
+  // Predefined functions don't reside in a schema, they are referenced with an unqualified name
+  const QualifiedName &qualName = name.getQualifiedNameObj();
+  const NAString &funcName = qualName.getObjectName();
+
+  if (! qualName.getSchemaName().isNull())
+    return REL_TABLE_MAPPING_UDF;
+
+  if (funcName == "LOG_READER")
+    return REL_TABLE_MAPPING_BUILTIN_LOG_READER;
+  else
+    // none of the built-in names matched, so it must be a UDF
+    return REL_TABLE_MAPPING_UDF;
+}
+
+const NAString PredefinedTableMappingFunction::getText() const
+{
+  switch (getOperatorType())
+    {
+    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
+      return "log_reader";
+
+    default:
+      CMPASSERT(0);
+      return "predefined_tmf_with_invalid_operator_type";
+    }
+}
+
+PredefinedTableMappingFunction * PredefinedTableMappingFunction::castToPredefinedTableMappingFunction()
+{
+  return this;
+}
+
+// a virtual function used to copy most of a Node
+RelExpr * PredefinedTableMappingFunction::copyTopNode(RelExpr *derivedNode,
+                                                      CollHeap* outHeap)
+{
+  RelExpr *result;
+
+  if (derivedNode == NULL)
+    result = new(outHeap) PredefinedTableMappingFunction(
+         getUserTableName(),
+         NULL, // params get copied by parent classes
+         getOperatorType(),
+         outHeap);
+  else
+    result = derivedNode;
+
+  return TableMappingUDF::copyTopNode(derivedNode, outHeap);
+}
+
+NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
+     QualifiedName &routineName,
+     CorrName &tmfuncName,
+     BindWA *bindWA)
+{
+  NARoutine *result = NULL;
+  NAString libraryPath;
+
+  // the libraries for predefined UDRs are in the regular
+  // library directory $MY_SQROOT/export/lib${SQ_MBTYPE}
+  libraryPath += getenv("MY_SQROOT");
+  libraryPath += "/export/lib";
+  libraryPath += getenv("SQ_MBTYPE");
+
+  switch (getOperatorType())
+    {
+    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
+      {
+        // produce a very simple NARoutine, most of the
+        // error checking and determination of output
+        // columns is done by the compiler interface of
+        // this predefined table mapping function
+        result = new(bindWA->wHeap()) NARoutine(routineName,
+                                                bindWA->wHeap());
+        result->setExternalName("TRAF_CPP_EVENT_LOG_READER");
+      }
+      break;
+
+    default:
+      *CmpCommon::diags() << DgSqlCode(-4457)
+                          << DgString0(routineName.getQualifiedNameAsString())
+                          << DgString1("Failed to get metadata for predefined UDF");
+      bindWA->setErrStatus();
+      return NULL;
+    }
+ 
+  // by default, predefined UDRs share a DLL
+
+  result->setFile("libudr_predef.so");
+  result->setExternalPath(libraryPath);
+
+  return result;
+}
+
 
 // -----------------------------------------------------------------------
 // methods for class PhysicalTableMappingUDF
 // -----------------------------------------------------------------------
-Context* PhysicalTableMappingUDF::createContextForAChild(Context* myContext,
-                     PlanWorkSpace* pws,
-                     Lng32& childIndex)
-{
-  // ---------------------------------------------------------------------
-  // If one Context has been generated for each child, return NULL
-  // to signal completion. This will also take care of 0 child case.
-  // ---------------------------------------------------------------------
-  if (pws->getCountOfChildContexts() == getArity())
-    return NULL;
-
-  childIndex = 0;
-
-  // must be looking for a valid child
-  if ((childIndex+1) > getArity())
-    CMPASSERT(FALSE);
-    
-  Lng32 planNumber = 0;
-  const ReqdPhysicalProperty* rppForMe = myContext->getReqdPhysicalProperty();
-  Lng32 childNumPartsRequirement = ANY_NUMBER_OF_PARTITIONS;
-  float childNumPartsAllowedDeviation = 0.0;
-  NABoolean numOfESPsForced = FALSE;
-
-  RequirementGenerator rg(child(childIndex),rppForMe);
-  TMUDFInputPartReq childPartReqType = getChildInfo(0)->getPartitionType();
-  PartitioningRequirement* partReqForChild = NULL;
-
-  TableMappingUDFChildInfo * childInfo = getChildInfo(childIndex);
-  
-  if (  childPartReqType == SPECIFIED_PARTITIONING)
-  {
-    // if some specified partitioning is to be required from the child
-    // then the required partitioning columns should be mentioned
-    CMPASSERT(NOT childInfo->getPartitionBy().isEmpty());
-    /* if (   NOT isinBlockStmt() OR
-            ( ( rppForMe->getCountOfPipelines() > 1 ) OR
-              ( CmpCommon::getDefault(COMP_BOOL_36) == DF_OFF )
-            ) */
-     rg.addPartitioningKey(childInfo->getPartitionBy());
-     rg.addArrangement(childInfo->getPartitionBy(),ESP_SOT);
-  }
-  else if(childPartReqType == REPLICATE_PARTITIONING)
-  {
-    // get the number of replicas
-    // for right now just get what ever number of streams the parent requires
-    Lng32 countOfPartitions = CURRSTMT_OPTDEFAULTS->getMaximumDegreeOfParallelism();
-    if(rppForMe->getPartitioningRequirement() &&
-	(countOfPartitions < rppForMe->getCountOfPartitions()))
-      countOfPartitions = rppForMe->getCountOfPartitions();
-  
-    if(countOfPartitions > 1)
-      partReqForChild = new (CmpCommon::statementHeap() )
-        RequireReplicateViaBroadcast(countOfPartitions);
-    else
-      partReqForChild = new(CmpCommon::statementHeap())
-        RequireExactlyOnePartition();
-
-     rg.addPartRequirement(partReqForChild);
-  }
-
-  if (NOT childInfo->getOrderBy().isEmpty())
-  {
-     ValueIdList sortKey(getChildInfo(0)->getPartitionBy());
-     for (Int32 i=0;i<(Int32)getChildInfo(0)->getOrderBy().entries();i++)
-      sortKey.insert(getChildInfo(0)->getOrderBy()[i]);
-     rg.addSortKey(sortKey, ESP_SOT);
-  }
-
-
-  if (okToAttemptESPParallelism(myContext,
-                                pws,
-                                childNumPartsRequirement,
-                                childNumPartsAllowedDeviation,
-                                numOfESPsForced))
-  {
-    if (NOT numOfESPsForced)
-      rg.makeNumOfPartsFeasible(childNumPartsRequirement,
-                                &childNumPartsAllowedDeviation);
-    rg.addNumOfPartitions(childNumPartsRequirement,
-                          childNumPartsAllowedDeviation);
-  } // end if ok to try parallelism
-
-  // ---------------------------------------------------------------------
-  // Done adding all the requirements together, now see whether it worked
-  // and give up if it is not possible to satisfy them
-  // ---------------------------------------------------------------------
-  if (NOT rg.checkFeasibility())
-    return NULL;
-
-  // ---------------------------------------------------------------------
-  // Compute the cost limit to be applied to the child.
-  // ---------------------------------------------------------------------
-  CostLimit* costLimit = computeCostLimit(myContext, pws);
-
-  // ---------------------------------------------------------------------
-  // Get a Context for optimizing the child.
-  // Search for an existing Context in the CascadesGroup to which the
-  // child belongs that requires the same properties as those in
-  // rppForChild. Reuse it, if found. Otherwise, create a new Context
-  // that contains rppForChild as the required physical properties..
-  // ---------------------------------------------------------------------
-  Context* result = shareContext(
-         childIndex,
-         rg.produceRequirement(),
-         myContext->getInputPhysicalProperty(),
-         costLimit,
-         myContext,
-         myContext->getInputLogProp());
-
-
-  // ---------------------------------------------------------------------
-  // Store the Context for the child in the PlanWorkSpace.
-  // ---------------------------------------------------------------------
-  pws->storeChildContext(childIndex, planNumber, result);
-
-  return result;
-};
-
-PhysicalProperty* PhysicalTableMappingUDF::synthPhysicalProperty(const Context* myContext,
-                                                  const Lng32     planNumber)
-{
-  PartitioningFunction* myPartFunc = NULL;
-  if (getArity() == 0)
-  {
-    //----------------------------------------------------------
-    // Create a node map with a single, active, wild-card entry.
-    //----------------------------------------------------------
-    NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-                          NodeMap(CmpCommon::statementHeap(),
-                                  1,
-                                  NodeMapEntry::ACTIVE);
-
-    //------------------------------------------------------------
-    // Synthesize a partitioning function with a single partition.
-    //------------------------------------------------------------
-    const ReqdPhysicalProperty* rppForMe = myContext->getReqdPhysicalProperty();
-    PartitioningRequirement* partReq = rppForMe->getPartitioningRequirement();
-
-      if ( partReq == NULL || partReq->isRequirementExactlyOne())
-      {
-      myPartFunc = new(CmpCommon::statementHeap())
-                          SinglePartitionPartitioningFunction(myNodeMap);
-      }
-      else 
-      {
-          myPartFunc =  partReq->realize(myContext);
-      }
-  }
-  else
-  {
-    // for now, simply propagate the physical property 
-    const PhysicalProperty * const sppOfChild =
-      myContext->getPhysicalPropertyOfSolutionForChild(0);
-    myPartFunc = sppOfChild->getPartitioningFunction();
-  }
-  
-    PhysicalProperty * sppForMe =
-    new(CmpCommon::statementHeap()) PhysicalProperty(
-         myPartFunc,
-         EXECUTE_IN_MASTER_AND_ESP,
-          SOURCE_VIRTUAL_TABLE);
-
-  // remove anything that's not covered by the group attributes
-  sppForMe->enforceCoverageByGroupAttributes (getGroupAttr()) ;
-  return sppForMe ;
-};
-
 double PhysicalTableMappingUDF::getEstimatedRunTimeMemoryUsage(ComTdb * tdb) {return 0;}
 
 short PhysicalTableMappingUDF::generateShape(CollHeap * space, char * buf, NAString * shapeStr)

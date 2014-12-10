@@ -76,10 +76,9 @@
 +>select * from 
 +>UDF(tokenizer1( ' ')) XO;
 
-*** ERROR[11249] User-defined function XO completed with an error with SQLSTATE 00000. Details: Expecting one table input.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
+>>-- Note: tokenizer1 does not currently check the number of
+>>--       table-valued inputs at compile time.
 >>
 >>prepare s1 from
 +>select token from 

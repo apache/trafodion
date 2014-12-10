@@ -398,7 +398,8 @@ ExUdrTcb::ExUdrTcb(const ExUdrTdb &udrTdb,
       // Allocate array of child queue pairs (i.e., queue pairs for
       // communicating with children.
       //
-      qChild_ = (ex_queue_pair*) new (globSpace) ex_queue_pair[numChildren()];
+      qChild_ = new (globSpace) ex_queue_pair[numChildren()];
+      tmudfStates_ = new (globSpace) TmudfState[numChildren()];
 
       // Initialize array.
       //
@@ -406,6 +407,7 @@ ExUdrTcb::ExUdrTcb(const ExUdrTdb &udrTdb,
       for (i=0; i<numChildren(); i++)
 	{
 	  qChild_[i] = childTcbs_[i]->getParentQueue();
+          tmudfStates_[i] = INITIAL;
 	}
     }
 
@@ -925,30 +927,10 @@ ExWorkProcRetcode ExUdrTcb::work()
 
 NABoolean ExUdrTcb::anyOutstandingQueueRequests()
 {
-  NABoolean result = FALSE;
   // Return TRUE if any down queue entries exist that have been sent
   // to the UDR server but for which not all up queue entries have
   // been generated.
-   result = (nextToSend_ != qParent_.down->getHeadIndex());
-  // In case of tmudfs, we may be working on a parent downqueue entry even though
-  // we have not incremented nextToSend_. So check another flag
-  // 
-  if (myTdb().isTmudf())
-    {
-      if (!qParent_.down->isEmpty())
-	{
-	  ex_queue_entry *downEntry = qParent_.down->getHeadEntry();
-	  ExUdrPrivateState &down_pstate = 
-	    *((ExUdrPrivateState *) downEntry->pstate);
-	  if (down_pstate.tmudfInProgress())
-	    result = TRUE;
-	  else
-	    result = FALSE;
-	}
-      else
-	result = FALSE;
-    }
-  return result;
+  return (nextToSend_ != qParent_.down->getHeadIndex());
 }
 
 ExWorkProcRetcode ExUdrTcb::checkSend()
@@ -1010,16 +992,21 @@ ExWorkProcRetcode ExUdrTcb::checkReceive()
       switch (down_pstate.step_)
       {
         case CANCEL_BEFORE_SEND:
-          insertUpQueueEntry(ex_queue::Q_NO_DATA, NULL, TRUE);
+          insertUpQueueEntry(ex_queue::Q_NO_DATA);
           break;
           
-        case ERROR_BEFORE_SEND:
+        case PRODUCE_ERROR_REPLY:
           // An error occurred before the entry could be sent, probably
           // during expression evaluation. If any diags were generated
           // they were placed in the down entry ATP and will be copied
           // to the up entry ATP by the following function.
-          insertUpQueueEntry(ex_queue::Q_SQLERROR, NULL, FALSE);
-          insertUpQueueEntry(ex_queue::Q_NO_DATA, NULL, TRUE);
+          insertUpQueueEntry(ex_queue::Q_SQLERROR);
+          down_pstate.step_ = PRODUCE_EOD_AFTER_ERROR;
+          break;
+
+      case PRODUCE_EOD_AFTER_ERROR:
+          // finish up error handling by sending an EOD
+          insertUpQueueEntry(ex_queue::Q_NO_DATA);
           break;
           
         case STARTED:
@@ -1077,10 +1064,11 @@ ExWorkProcRetcode ExUdrTcb::checkReceive()
 // and end-of-data. It could possibly be extended to handle a data
 // row. I have not looked at that closely enough yet.
 //
-void ExUdrTcb::insertUpQueueEntry(ex_queue::up_status status,
-                                  ComDiagsArea *diags,
-                                  NABoolean popDownQueue)
+NABoolean ExUdrTcb::insertUpQueueEntry(ex_queue::up_status status,
+                                       ComDiagsArea *diags)
 {
+  if (qParent_.up->isFull())
+    return FALSE;
 
   ex_queue_entry *upEntry = qParent_.up->getTailEntry();
   ex_queue_entry *downEntry = qParent_.down->getHeadEntry();
@@ -1127,16 +1115,25 @@ void ExUdrTcb::insertUpQueueEntry(ex_queue::up_status status,
       atpDiags->mergeAfter(*diags);
     }
   }
+
+  if (status == ex_queue::Q_SQLERROR &&
+      myTdb().isTmudf())
+    {
+      // cancel child requests, if necessary
+      tmudfCancelChildRequests(qParent_.down->getHeadIndex());
+    }
   
   // Insert into up queue
   qParent_.up->insert();
  
   // Optionally remove the head of the down queue
-  if (popDownQueue)
+  if (status == ex_queue::Q_NO_DATA)
   {
     privateState.init();
     qParent_.down->removeHead();
   }
+
+  return TRUE;
 }
 
 ExWorkProcRetcode ExUdrTcb::buildAndSendRequestBuffer()
@@ -1302,7 +1299,7 @@ ExWorkProcRetcode ExUdrTcb::buildAndSendRequestBuffer()
                 {
                   sqlBuf->remove_tuple_desc();
                 }
-                pstate.step_ = ExUdrTcb::ERROR_BEFORE_SEND;
+                pstate.step_ = ExUdrTcb::PRODUCE_ERROR_REPLY;
                 numErrors++;
               }
 
@@ -1464,6 +1461,9 @@ void ExUdrTcb::reportLoadReply(NABoolean loadWasSuccessful)
     // running server now. JVM failures are indicated by error -11202
     // (LME_JVM_INIT_ERROR in langman/LmError.h).
     ComDiagsArea *d = getStatementDiags();
+
+    insertUpQueueEntry(ex_queue::Q_SQLERROR, d);
+
     if (d && d->contains(-11202))
     {
       udrServer_->stop();
@@ -2701,8 +2701,7 @@ ExWorkProcRetcode ExUdrTcb::returnSingleRow()
               {
                 ex_assert(validationDiags,
                           "validateDataRow() did not return diagnostics");
-                insertUpQueueEntry(ex_queue::Q_SQLERROR,
-                                   validationDiags, FALSE);
+                insertUpQueueEntry(ex_queue::Q_SQLERROR, validationDiags);
                 validationDiags->decrRefCount();
               }
               else
@@ -2815,13 +2814,13 @@ ExWorkProcRetcode ExUdrTcb::returnSingleRow()
           
           case ex_queue::Q_NO_DATA:
           {
-            insertUpQueueEntry(ex_queue::Q_NO_DATA, returnedDiags, TRUE);
+            insertUpQueueEntry(ex_queue::Q_NO_DATA, returnedDiags);
           } // case ex_queue::Q_NO_DATA
           break;
           
           case ex_queue::Q_SQLERROR:
           {
-            insertUpQueueEntry(ex_queue::Q_SQLERROR, returnedDiags, FALSE);
+            insertUpQueueEntry(ex_queue::Q_SQLERROR, returnedDiags);
           } // case ex_queue::Q_SQLERROR
           break;
           
@@ -2856,8 +2855,8 @@ ExWorkProcRetcode ExUdrTcb::returnSingleRow()
         // cause the TCB to return WORK_BAD_ERROR, then we could put
         // newDiags in the Q_SQLERROR up queue entry instead of in the
         // statement diags area.
-        insertUpQueueEntry(ex_queue::Q_SQLERROR, NULL, FALSE);
-        insertUpQueueEntry(ex_queue::Q_NO_DATA, NULL, TRUE);
+        // insertUpQueueEntry(ex_queue::Q_SQLERROR, newDiags);
+        insertUpQueueEntry(ex_queue::Q_NO_DATA);
         ComDiagsArea *stmtDiags = getOrCreateStmtDiags();
         stmtDiags->mergeAfter(*newDiags);
 
@@ -3286,7 +3285,6 @@ const char *ExUdrTcb::getUdrTcbStateString(UdrTcbState s)
     case SENDING_UNLOAD:  return "SENDING_UNLOAD";
     case IPC_ERROR:       return "IPC_ERROR";
     case DONE:            return "DONE";
-    case SEND_MORE_DATA : return "SEND_MORE_DATA";
     case SCALAR_INPUT_READY_TO_SEND: return "SCALAR_INPUT_READY_TO_SEND";
     case READ_TABLE_INPUT_FROM_CHILD : return "READ_TABLE_INPUT_FROM_CHILD";
     case RETURN_ROWS_FROM_CHILD: return "RETURN_ROWS_FROM_CHILD";
@@ -3572,16 +3570,21 @@ ExWorkProcRetcode ExUdrTcb::tmudfCheckReceive()
 	  switch (down_pstate.step_)
 	    {
 	    case CANCEL_BEFORE_SEND:
-	      insertUpQueueEntry(ex_queue::Q_NO_DATA, NULL, TRUE);
+	      insertUpQueueEntry(ex_queue::Q_NO_DATA);
 	      break;
           
-	    case ERROR_BEFORE_SEND:
+	    case PRODUCE_ERROR_REPLY:
 	      // An error occurred before the entry could be sent, probably
 	      // during expression evaluation. If any diags were generated
 	      // they were placed in the down entry ATP and will be copied
 	      // to the up entry ATP by the following function.
-	      insertUpQueueEntry(ex_queue::Q_SQLERROR, NULL, FALSE);
-	      insertUpQueueEntry(ex_queue::Q_NO_DATA, NULL, TRUE);
+	      insertUpQueueEntry(ex_queue::Q_SQLERROR);
+              down_pstate.step_ = PRODUCE_EOD_AFTER_ERROR;
+              break;
+
+	    case PRODUCE_EOD_AFTER_ERROR:
+              // finish up error with an EOD
+	      insertUpQueueEntry(ex_queue::Q_NO_DATA);
 	      break;
           
 	    case STARTED:
@@ -3724,44 +3727,7 @@ ExWorkProcRetcode ExUdrTcb::tmudfCheckReceive()
 }
 ExWorkProcRetcode ExUdrTcb::tmudfCheckSend()
 {
-  ExWorkProcRetcode result = WORK_OK;
-
-  // if the udrserver had indicated that more data should be sent, then
-  // send more otherwise return right away . Control would go to continueRequests
-  // 
-  if ((state_ == WORK) || (state_ == READ_TABLE_INPUT_FROM_CHILD) ||
-      (state_== RETURN_ROWS_FROM_CHILD))
-    { 
-
-      if (getIpcBroken())
-	{
-	  UdrDebug0("  [TMUDF WORK] IPC is broken");
-	  return WORK_BAD_ERROR;
-	}
-
-      // We should not attempt to send data unless we are sure the server
-      // has already loaded this UDR.
-      if (!serverResourcesAreLoaded())
-	{
-	  if (state_ == LOAD_FAILED)
-	    {
-	      UdrDebug0("  [TMUDF WORK] Cannot continue. The LOAD request failed.");
-	      result = WORK_BAD_ERROR;
-	    }
-	  else
-	    {
-	      UdrDebug0("  [TMDUF WORK] Cannot continue. Server resources not loaded.");
-	      result = WORK_OK;
-	    }
-	  return result;
-	}
-
-      if (!(qParent_.down->isEmpty()))
-	{
-	  result = buildAndSendTmudfInput();
-	}
-    }
-  return result;
+  return buildAndSendTmudfInput();
 }
 
 
@@ -3771,6 +3737,7 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
             this);
 
   ExWorkProcRetcode result = WORK_OK;
+  NABoolean done = FALSE;
   ULng32 numErrors = 0;
   ULng32 numCancels = 0;
   NABoolean sendSpaceAvailable =TRUE; 
@@ -3790,13 +3757,36 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
   
   // Process entries from the down queue. nextToSend_
   // will be incremented inside the loop following successful 
-  // insertion of a request row into the request buffer and after
-  // getting EOD from all child tables for this given parent request.
-  // state_ will be WORK until a request message is sent and
-  // then state_ will become WORK_IO_ACTIVE.
+  // insertion of a request row into the request buffer.
+  // This method will handle a sequence of actions until
+  // we reach the WORK_IO_ACTIVE state:
+  // 
+  // WORK:
+  //    - if a down queue entry exists, insert it into request buffer
+  //    - state_ ==> SCALAR_INPUT_READY_TO_SEND
+  //    - other possible subsequent states: WORK (for a cancel request)
+  // SCALAR_INPUT_READY_TO_SEND:
+  //    - send a message to the UDR server
+  //    - state ==> WORK_IO_ACTIVE
+  // ... 
+  // READ_TABLE_INPUT_FROM_CHILD:
+  //    - send a down queue request to child, if not done already
+  //    - make sure we have an allocated buffer to store data
+  //      returned from the child, to send to udrserv
+  //    - state ==> RETURN_ROWS_FROM_CHILD
+  // RETURN_ROWS_FROM_CHILD:
+  //    - If we have some rows and child up queue is empty,
+  //      send the buffer to udrserv
+  //    - Otherwise, try to read more rows
+  //    - state_ ==> CHILD_INPUT_READY_TO_SEND
+  // CHILD_INPUT_READY_TO_SEND:
+  //    - send message to udrserv
+  //    - state_ ==> WORK_IO_ACTIVE
   
-  while (result == WORK_OK  && (state_ != WORK_IO_ACTIVE)
-         && qParent_.down->entryExists(nextToSend_))// nextToSend points to tail
+  while (result == WORK_OK  &&
+         !done &&
+         state_ != WORK_IO_ACTIVE &&
+         (state_ != WORK || qParent_.down->entryExists(nextToSend_)))
   {
     // Two early tests to see if we should get out of the outer while
     // loop. First make sure a server is running then attempt to
@@ -3809,15 +3799,33 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
       break;
     }
    
-    ex_queue_entry *downEntry = qParent_.down->getQueueEntry(nextToSend_);
+    queue_index parentQueueIndex;
+
+    if (state_ == WORK)
+      {
+        // point to the next entry to be sent
+        parentQueueIndex = nextToSend_;
+      }
+    else
+      {
+        // point to the head entry we are already working on
+        parentQueueIndex = qParent_.down->getHeadIndex();
+      }
+
+    ex_queue_entry *downEntry = qParent_.down->getQueueEntry(parentQueueIndex);
     const ex_queue::down_request request = downEntry->downState.request;
     const Lng32 value = downEntry->downState.requestValue;
     ExUdrPrivateState &pstate = *((ExUdrPrivateState *) downEntry->pstate);
+
     switch (state_)
       {
+      case LOAD_FAILED:
+        result = WORK_BAD_ERROR;
+        break;
+
       case WORK :
 	{
-	  //  Allocate a request buffer on the message stream heap. Make
+          //  Allocate a request buffer on the message stream heap. Make
 	  // sure stream buffer limits have not been reached. Break out of
 	  // the outer while loop if the allocation fails.
 	  if (requestBuffer_ == NULL)
@@ -3908,7 +3916,7 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 			workAtp_->getTupp(myTdb().getRequestTuppIndex()) = scalarDesc;
 
 			// Evaluate the input expression. If diags are generated they
-			// will be left in the down entry ATP.
+			// will be left in the down entry ATP to be returned to the parent.
 			expStatus = 
 			  myTdb().getInputExpression()->eval(downEntry->getAtp(),
 							     workAtp_);
@@ -3925,8 +3933,12 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 			      {
 				sqlBuf->remove_tuple_desc();
 			      }
-			    pstate.step_ = ExUdrTcb::ERROR_BEFORE_SEND;
-			    numErrors++;
+                            if (insertUpQueueEntry(ex_queue::Q_SQLERROR))
+                              {
+                                pstate.step_ = ExUdrTcb::PRODUCE_EOD_AFTER_ERROR;
+                                numErrors++;
+                                nextToSend_++;
+                              }
 			  }
 
 		      } // if (myTdb().getInputExpression())
@@ -3935,9 +3947,12 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 		      {
 			pstate.step_ = ExUdrTcb::STARTED;
 			numRequestsAdded++;
+                        // Note: this will prevent us from adding
+                        // a second request from the parent down queue,
+                        // so we process those one at a time for now
 			setUdrTcbState(SCALAR_INPUT_READY_TO_SEND);
+                        nextToSend_++;
 		      }		    
-
 		  } // if (no space in the request buffer) else
           
 	      } // case GET_N, GET_ALL
@@ -3991,7 +4006,6 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 		requestBuffer_->setSendingScalarValues(TRUE);
 		sqlBuf->drivePack();
 		setUdrTcbState(WORK_IO_ACTIVE);
-		pstate.tmudfState_ = ExUdrTcb::SENDING_SCALAR;
 
 		if (getStatsEntry() && getStatsEntry()->castToExUDRStats())
 		  {
@@ -4032,15 +4046,13 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 	  // read rows from child specified in the reply from server
 	  // if nothing returned from any child. Get outta here.
 	  Int32 currChild = pstate.currentChildTcbIndex_;
-	   UdrDebug1("TMUDF BEGIN READING CHILD  %lu", currChild);
+          UdrDebug1("TMUDF BEGIN READING CHILD  %lu", currChild);
+
 	  // pass the parent request to the child downqueue
 	   if (!qChild_[currChild].down->isFull() )
 	     {
-	       if (pstate.tmudfState_ != ExUdrTcb::READING_FROM_CHILD)
+	       if (tmudfStates_[currChild] != READING_FROM_CHILD)
 		 {
-	    
-		   ex_queue_entry *pentry_down = qParent_.down->getQueueEntry(nextToSend_);
-		   const ex_queue::down_request request = pentry_down->downState.request;
 		   ex_queue_entry * centry = qChild_[currChild].down->getTailEntry();
 
 		   if (request == ex_queue::GET_N)
@@ -4048,12 +4060,12 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 		   else           
 		     centry->downState.request = request;
 
-		   centry->downState.requestValue = pentry_down->downState.requestValue;
-		   centry->downState.parentIndex = nextToSend_;
+		   centry->downState.requestValue = downEntry->downState.requestValue;
+		   centry->downState.parentIndex = parentQueueIndex;
 		   // set the child's input atp
-		   centry->passAtp(pentry_down->getAtp());
+		   centry->passAtp(downEntry->getAtp());
 		   qChild_[currChild].down->insert();
-		   pstate.tmudfState_ = ExUdrTcb::READING_FROM_CHILD;
+		   tmudfStates_[currChild] = READING_FROM_CHILD;
 		 }
 	    }
 	  else
@@ -4138,7 +4150,6 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 	     
 	      
 	    ex_queue_entry * centry = qChild_[currChild].up->getHeadEntry();
-	    ComDiagsArea *cda = NULL;		   
 	    ex_queue::up_status child_status = centry->upState.status;
 
 	    switch(child_status)
@@ -4157,6 +4168,8 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 		  Lng32 numTuppsBefore = childSqlBuf->getTotalTuppDescs();
 		  UdrDebug0(" Received OK_MMORE from child");
 		  tupp_descriptor *dataDesc=NULL;
+                  NABoolean processedUpEntry = TRUE;
+
 		  if (childSqlBuf->moveInSendOrReplyData(
 		      TRUE,     // [IN] sending? (vs. replying)
 		      FALSE,    // [IN] force move of control info?
@@ -4179,6 +4192,7 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 				"Request buffer not large enough to hold a single row");
 		      UdrDebug0("No more space in send buffer");
 		      sendSpaceAvailable = FALSE;
+                      processedUpEntry = FALSE;
 		    }
 		  else
 		    {
@@ -4193,9 +4207,7 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 			  workAtp_->getTupp(childTuppIndex) 
 			    = dataDesc;
 
-			  // Evaluate the input expression. If diags are 
-			  //generated they
-			  // will be left in the down entry ATP.
+			  // Evaluate the input expression.
 			  expStatus = 
 			    myTdb().getChildInputExpr(currChild)->
 			    eval(centry->getAtp(),workAtp_);
@@ -4214,8 +4226,16 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 				{
 				  childSqlBuf->remove_tuple_desc();
 				}
-			      pstate.step_ = ExUdrTcb::ERROR_BEFORE_SEND;
-			      numErrors++;
+                              if (insertUpQueueEntry(ex_queue::Q_SQLERROR,
+                                                     centry->getDiagsArea()))
+                                {
+                                  pstate.step_ = ExUdrTcb::PRODUCE_EOD_AFTER_ERROR;
+                                  numErrors++;
+                                }
+                              else
+                                {
+                                  processedUpEntry = FALSE;
+                                }
 			    }
 
 			} // if (myTdb().getChildInputExpression())
@@ -4225,7 +4245,12 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
              
             	
 		    }//else
-		  if (sendSpaceAvailable == FALSE)
+
+		  if (sendSpaceAvailable && processedUpEntry)
+                    {
+                      qChild_[currChild].up->removeHead();
+                    }
+                  else if (!sendSpaceAvailable)
 		    {
 		   
 		      // set the tableindex in the header
@@ -4249,13 +4274,27 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 		  pstate.numEodsFromChildTcbs_++;
 		  UdrDebug1(" NUm Child EOD's so far = %u",
 			    pstate.numEodsFromChildTcbs_);
+                  qChild_[currChild].up->removeHead();
+                  tmudfStates_[currChild] = INITIAL;
 		  setUdrTcbState(CHILD_INPUT_READY_TO_SEND);
 		}
 		break;
 	      case ex_queue::Q_SQLERROR:
 		{
-		  pstate.step_ = ExUdrTcb::ERROR_BEFORE_SEND;
-		  numErrors++;
+                  // pass the diags are on to the parent if there is space in
+                  // the up queue
+                  if (insertUpQueueEntry(ex_queue::Q_SQLERROR,
+                                         centry->getDiagsArea()))
+                    {
+                      pstate.step_ = ExUdrTcb::PRODUCE_EOD_AFTER_ERROR;
+                      qChild_[currChild].up->removeHead();
+                      numErrors++;
+                    }
+                  else
+                    {
+                      // come back later, when the up queue has room
+                      done = TRUE;
+                    }
 		}
 		break;
 	      case ex_queue::Q_INVALID:
@@ -4263,15 +4302,6 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 		break;
 		
 	      } // switch
-	    // consume the child row in all cases except if we were unable 
-	    // to put it into the sqlbuffer
-	    if (sendSpaceAvailable != FALSE)
-	      {
-		qChild_[currChild].up->removeHead();
-		sendSpaceAvailable = TRUE;
-	      }
-		  		  
-	    
 	  }
 	  break;
 
@@ -4337,23 +4367,17 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 	  setUdrTcbState(WORK_IO_ACTIVE);
 	}
 	break;
+
+
       default :
 	{
-	  ex_assert(FALSE, "Invalid state in  ExUdrTCB ");
-	  nextToSend_++;
+          // other states cause us to return back to the caller
+          done = TRUE;
 	}
 	  
 	break;
 
       }// switch(state_)
-    if (pstate.numEodsFromChildTcbs_ ==  numChildren() &&
-        (state_ != CHILD_INPUT_READY_TO_SEND))
-      {
-	// Received all input from children.
-	// we're done with this parent request
-	nextToSend_++;
-	//pstate.tmudfInProgress_ = FALSE;
-      }
   } // while 
  
  if (result == WORK_OK)
@@ -4460,6 +4484,15 @@ void ExUdrTcb::addIntegrityCheckFailureToDiagsArea(ComDiagsArea *diags) const
     serverProcessId_.addProcIdToDiagsArea(*diags, 1);
   }
   *diags << DgSqlCode(-EXE_UDR_INVALID_OR_CORRUPT_REPLY);
+}
+
+void ExUdrTcb::tmudfCancelChildRequests(queue_index parentIndex)
+{
+  for (int i=0; i<numChildren(); i++)
+    {
+      if (tmudfStates_[i] == READING_FROM_CHILD)
+        qChild_[i].down->cancelRequestWithParentIndex(parentIndex);
+    }
 }
 
 NABoolean ExUdrTcb::validateDataRow(const tupp &replyTupp,
@@ -4626,7 +4659,6 @@ void ExUdrPrivateState::init()
   matchCount_ = 0;
   numEodsFromChildTcbs_= 0;
   currentChildTcbIndex_ = -1; // no table input
-  tmudfState_ = ExUdrTcb::INITIAL;
 }
 
 ExUdrPrivateState::~ExUdrPrivateState()

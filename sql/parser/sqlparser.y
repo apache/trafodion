@@ -2238,7 +2238,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stringval> 		authorization_identifier_or_public
 %type <pElemDDL>  		authorization_identifier_list
 %type <stringval>               as_auth_clause
-%type <stringval>               optional_as_clause
+%type <stringval>               optional_as_auth_clause
 %type <stringval> 		external_user_identifier
 %type <tokval>	 		user_or_role
 %type <tokval>                  procedure_or_function
@@ -2936,9 +2936,13 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                    user_defined_scalar_function
 %type <item>                    udr_value_expression_list
 %type <item>                    table_name_dot_star
-%type <relx>                    user_defined_table_mapping_function
+%type <relx>                    table_mapping_function_invocation
+%type <relx>                    tmudf_table_expression
 %type <relx>                    tmudf_query_expression
+%type <item>      		optional_tmudf_order_by
 %type <item>                    tmudf_param
+%type <item>                    optional_tmudf_param_list_with_comma
+%type <item>                    optional_tmudf_param_list
 %type <item>                    tmudf_param_list
 %%
 
@@ -6479,7 +6483,7 @@ table_reference : table_name_and_hint
                                   $$ = $1;
                                 }
 
-              | rowset_derived_table as_clause '(' derived_column_list ')'
+             | rowset_derived_table as_clause '(' derived_column_list ')'
                                 {
                                   // Part of Rowset. 
                                   // This comment is used to identify 
@@ -6490,10 +6494,11 @@ table_reference : table_name_and_hint
                                   delete $2;
                                 }
 
-              | table_as_tmudf_function as_clause
+             | table_as_tmudf_function
+             | table_as_tmudf_function as_clause
 				{
-					$$=new(PARSERHEAP()) RenameTable($1, *$2);
-					((TableMappingUDF*)$1)->setCorrName(*$2);
+                                  $$=new(PARSERHEAP()) RenameTable($1, *$2);
+                                  ((TableMappingUDF*)$1)->setCorrName(*$2);
                                   delete $2;
 				 } 
 	     | table_as_tmudf_function as_clause '(' derived_column_list ')'
@@ -6502,7 +6507,7 @@ table_reference : table_name_and_hint
                     ((TableMappingUDF*)$1)->setCorrName(*$2);
                     delete $2;
                 } 
-            | TOK_DUAL
+             | TOK_DUAL
               {
                 CheckModeSpecial4;
 
@@ -6521,7 +6526,7 @@ table_reference : table_name_and_hint
                 $$ = new (PARSERHEAP()) RenameTable(root, id);
               }
 
-table_as_tmudf_function : TOK_UDF '(' user_defined_table_mapping_function ')'
+table_as_tmudf_function : TOK_UDF '(' table_mapping_function_invocation ')'
   {
     $$ = $3;
   }
@@ -8017,7 +8022,13 @@ user_defined_scalar_function : user_defined_function_name '(' udr_value_expressi
 	$$ = udf;
      }
 
-user_defined_table_mapping_function : qualified_name '(' tmudf_query_expression ',' tmudf_param_list ')' 
+table_mapping_function_invocation :
+     qualified_name '(' tmudf_table_expression ',' tmudf_table_expression optional_tmudf_param_list_with_comma ')' 
+   {
+     // TBD: Support TMUDFs with two table-valued inputs
+     YYERROR;
+   }
+   | qualified_name '(' tmudf_table_expression optional_tmudf_param_list_with_comma ')' 
    {
      // UDFs are disabled by default. This check can
      // be removed once UDFs are supported in the released product.
@@ -8028,14 +8039,24 @@ user_defined_table_mapping_function : qualified_name '(' tmudf_query_expression 
      CorrName  *functionName = corrNameFromStrings($1);
      if (functionName == NULL)
 		YYABORT;
+
+     OperatorTypeEnum opType =
+       PredefinedTableMappingFunction::nameIsAPredefinedTMF(*functionName);
+     TableMappingUDF *tmudf;
      
-     TableMappingUDF *tmudf = new (PARSERHEAP()) TableMappingUDF(*functionName, $5 );
+     if (opType == REL_TABLE_MAPPING_UDF)
+       tmudf = new (PARSERHEAP()) TableMappingUDF(*functionName, $4 );
+     else
+       tmudf = new (PARSERHEAP()) PredefinedTableMappingFunction(
+            *functionName,
+            $4,
+            opType);
 
      tmudf->child(0) = $3;
 	 tmudf->setArity(1) ;
      $$ = tmudf;
    }
-   |  qualified_name '(' tmudf_param_list ')' 
+   |  qualified_name '(' optional_tmudf_param_list ')' 
    {
      // UDFs are disabled by default. This check can
      // be removed once UDFs are supported in the released product.
@@ -8046,148 +8067,95 @@ user_defined_table_mapping_function : qualified_name '(' tmudf_query_expression 
      CorrName  *functionName = corrNameFromStrings($1);
      if (functionName == NULL)
 		YYABORT;
+
+     OperatorTypeEnum opType =
+       PredefinedTableMappingFunction::nameIsAPredefinedTMF(*functionName);
+     TableMappingUDF *tmudf;
      
-     TableMappingUDF *tmudf = new (PARSERHEAP()) TableMappingUDF(*functionName, $3 );
+     if (opType == REL_TABLE_MAPPING_UDF)
+       tmudf = new (PARSERHEAP()) TableMappingUDF(*functionName, $3 );
+     else
+       tmudf = new (PARSERHEAP()) PredefinedTableMappingFunction(
+            *functionName,
+            $3,
+            opType);
+     
      $$ = tmudf;
    } 
 
 
 
-tmudf_query_expression :   TOK_TABLE '(' query_specification ')' 
+tmudf_table_expression : TOK_TABLE '(' tmudf_query_expression ')' 
                          {
-                            $$ = $3;
+                           $$ = $3;
                          }
                          | 
-                         TOK_TABLE '(' query_specification ')' as_clause
+                         TOK_TABLE '(' tmudf_query_expression ')' as_clause
                          {
-							$$=new (PARSERHEAP()) RenameTable($3, *$5);
-                            delete $5;
+                           $$=new (PARSERHEAP()) RenameTable($3, *$5);
+                           delete $5;
                          }
-                         | TOK_TABLE '(' query_specification ')' as_clause '(' derived_column_list ')'
-						 {
-							$$ = new(PARSERHEAP()) RenameTable($3,*$5,$7);
-							delete $5;
-						 }
-                         | TOK_TABLE '(' query_specification  TOK_PARTITION_BY value_expression_list  ')'
-		 				 {
-                            ((RelRoot*)$3)->addPartitionByTree($5);
-                            ((RelRoot*)$3)->setPartReqType(SPECIFIED_PARTITIONING);
+                         | TOK_TABLE '(' tmudf_query_expression ')' as_clause '(' derived_column_list ')'
+			 {
+                           $$ = new(PARSERHEAP()) RenameTable($3,*$5,$7);
+                           delete $5;
+                         }
+
+tmudf_query_expression : query_specification optional_tmudf_order_by
+                           {
+                             if ($2)
+                               ((RelRoot*)$1)->addOrderByTree($2);
+                             $$ = $1;
+                           }
+                       | query_specification TOK_PARTITION_BY value_expression_list optional_tmudf_order_by
+                           {
+                             ((RelRoot*)$1)->addPartitionByTree($3);
+                             ((RelRoot*)$1)->setPartReqType(SPECIFIED_PARTITIONING);
+                             if ($4)
+                               ((RelRoot*)$1)->addOrderByTree($4);
+                             $$ = $1;
+                           }
+                       | query_specification TOK_NO_PARTITION optional_tmudf_order_by
+                           {
+                             ((RelRoot*)$1)->setPartReqType(NO_PARTITIONING);
+                             if ($3)
+                               ((RelRoot*)$1)->addOrderByTree($3);
+                             $$ = $1;
+                           }
+                       | query_specification TOK_REPLICATE_PARTITION optional_tmudf_order_by
+                           {
+                             ((RelRoot*)$1)->setPartReqType(REPLICATE_PARTITIONING);
+                             $$ = $1;
+                             if ($3)
+                               ((RelRoot*)$1)->addOrderByTree($3);
+                           }
+
+optional_tmudf_order_by : empty
+                           {
+                             $$ = NULL;
+                           }
+                        | TOK_ORDER TOK_BY sort_by_value_expression_list
+                           {
                              $$ = $3;
-                         }
-                         | TOK_TABLE '(' query_specification  TOK_PARTITION_BY value_expression_list  ')' as_clause
-		 				 {
-                            ((RelRoot*)$3)->addPartitionByTree($5);
-                            ((RelRoot*)$3)->setPartReqType(SPECIFIED_PARTITIONING);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$7);
-                            delete $7;
-                         }
-                         | TOK_TABLE '(' query_specification  TOK_PARTITION_BY value_expression_list  ')' as_clause '(' derived_column_list ')'
-		 				 {
-                            ((RelRoot*)$3)->addPartitionByTree($5);
-                            ((RelRoot*)$3)->setPartReqType(SPECIFIED_PARTITIONING);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$7, $9);
-                            delete $7;
-                         } 
-                         | TOK_TABLE '(' query_specification  TOK_NO_PARTITION ')'
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(NO_PARTITIONING);
-                             $$ = $3;
-                         } 
-                         | TOK_TABLE '(' query_specification  TOK_NO_PARTITION  ')' as_clause
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(NO_PARTITIONING);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$6);
-                            delete $6;
-                         } 
-                         | TOK_TABLE '(' query_specification  TOK_NO_PARTITION  ')' as_clause '(' derived_column_list ')'
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(NO_PARTITIONING);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$6, $8);
-                            delete $6;
-                         } 
-                         | TOK_TABLE '(' query_specification TOK_REPLICATE_PARTITION ')'
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(REPLICATE_PARTITIONING);
-                             $$ = $3;
-                         }
-                         | TOK_TABLE '(' query_specification TOK_REPLICATE_PARTITION ')' as_clause
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(REPLICATE_PARTITIONING);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$6);
-                            delete $6;
-                         }
-                         | TOK_TABLE '(' query_specification TOK_REPLICATE_PARTITION ')' as_clause '(' derived_column_list ')'
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(REPLICATE_PARTITIONING);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$6, $8);
-                            delete $6;
-                         }  
-                         | TOK_TABLE '(' query_specification  TOK_PARTITION_BY value_expression_list TOK_ORDER TOK_BY sort_by_value_expression_list ')'
-		 				 {
-                            ((RelRoot*)$3)->addPartitionByTree($5);
-                            ((RelRoot*)$3)->setPartReqType(SPECIFIED_PARTITIONING);
-                            ((RelRoot*)$3)->addOrderByTree($8);
-                             $$ = $3;
-                         }
-                         | TOK_TABLE '(' query_specification  TOK_PARTITION_BY value_expression_list  TOK_ORDER TOK_BY sort_by_value_expression_list ')' as_clause
-		 				 {
-                            ((RelRoot*)$3)->addPartitionByTree($5);
-                            ((RelRoot*)$3)->setPartReqType(SPECIFIED_PARTITIONING);
-                            ((RelRoot*)$3)->addOrderByTree($8);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$10);
-                            delete $10;
-                         }
-                         | TOK_TABLE '(' query_specification  TOK_PARTITION_BY value_expression_list  TOK_ORDER TOK_BY sort_by_value_expression_list ')' as_clause '(' derived_column_list ')'
-		 				 {
-                            ((RelRoot*)$3)->addPartitionByTree($5);
-                            ((RelRoot*)$3)->setPartReqType(SPECIFIED_PARTITIONING);
-                            ((RelRoot*)$3)->addOrderByTree($8);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$10, $12);
-                            delete $10;
-                         } 
-                         | TOK_TABLE '(' query_specification  TOK_NO_PARTITION  TOK_ORDER TOK_BY sort_by_value_expression_list ')'
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(NO_PARTITIONING);
-                            ((RelRoot*)$3)->addOrderByTree($7);
-                             $$ = $3;
-                         }
-                         | TOK_TABLE '(' query_specification  TOK_NO_PARTITION  TOK_ORDER TOK_BY sort_by_value_expression_list ')' as_clause
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(NO_PARTITIONING);
-                            ((RelRoot*)$3)->addOrderByTree($7);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$9);
-                            delete $9;
-                         }
-                         | TOK_TABLE '(' query_specification  TOK_NO_PARTITION TOK_ORDER TOK_BY sort_by_value_expression_list ')' as_clause '(' derived_column_list ')'
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(NO_PARTITIONING);
-                            ((RelRoot*)$3)->addOrderByTree($7);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$9, $11);
-                            delete $11;
-                         } 
-                         | TOK_TABLE '(' query_specification TOK_REPLICATE_PARTITION TOK_ORDER TOK_BY sort_by_value_expression_list ')'
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(REPLICATE_PARTITIONING);
-                            ((RelRoot*)$3)->addOrderByTree($7);
-                             $$ = $3;
-                         }
-                         | TOK_TABLE '(' query_specification TOK_REPLICATE_PARTITION TOK_ORDER TOK_BY sort_by_value_expression_list ')' as_clause
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(REPLICATE_PARTITIONING);
-                            ((RelRoot*)$3)->addOrderByTree($7);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$9);
-                            delete $9;
-                         }
-                         | TOK_TABLE '(' query_specification TOK_REPLICATE_PARTITION TOK_ORDER TOK_BY sort_by_value_expression_list ')' as_clause '(' derived_column_list ')'
-		 				 {
-                            ((RelRoot*)$3)->setPartReqType(REPLICATE_PARTITIONING);
-                            ((RelRoot*)$3)->addOrderByTree($7);
-                            $$=new (PARSERHEAP()) RenameTable($3, *$9, $11);
-                            delete $9;
-                         } 
-                                                                       
-                                                          
-  
+                           }
+
+/* type item */
+optional_tmudf_param_list_with_comma : empty
+                   {
+                     $$ = NULL;
+                   }
+               | ',' tmudf_param_list
+                   {
+                     $$ = $2;
+                   }
+
+/* type item */
+optional_tmudf_param_list : empty
+                   {
+                     $$ = NULL;
+                   }
+               | tmudf_param_list
+
 /* type item */
 tmudf_param_list : tmudf_param
                    {
@@ -8197,10 +8165,6 @@ tmudf_param_list : tmudf_param
                    {
 		     $$ = new(PARSERHEAP()) ItemList($1, $3);
                    } 
-                   | empty
-                   {
-                     $$ = NULL;
-                   }
 
 /* type item */
 tmudf_param : value_expression
@@ -34038,7 +34002,7 @@ component_str_lit : std_char_string_literal
 /* type pStmtDDL */
 /*REGISTER USER*/
 register_user_statement : TOK_REGISTER TOK_USER external_user_identifier
-                             optional_as_clause optional_by_auth_identifier
+                             optional_as_auth_clause optional_by_auth_identifier
                                 {
                                   $$ = new (PARSERHEAP())
                                   StmtDDLRegisterUser(
@@ -34082,7 +34046,7 @@ as_auth_clause : TOK_AS authorization_identifier
                      }
 
 /* type stringval */
-optional_as_clause : empty
+optional_as_auth_clause : empty
                      {
                         $$ = NULL;
                      }

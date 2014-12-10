@@ -24,6 +24,8 @@
 #include <math.h>
 #include "sqludr.h"
 
+extern "C" {
+
 /* ADD2 */
 SQLUDR_LIBFUNC SQLUDR_INT32 add2(SQLUDR_INT32 *in1,
                                  SQLUDR_INT32 *in2,
@@ -102,3 +104,5 @@ SQLUDR_LIBFUNC SQLUDR_INT32 swap2char(SQLUDR_CHAR *in1,
 
   return SQLUDR_SUCCESS;
 }
+
+} /* extern "C" */

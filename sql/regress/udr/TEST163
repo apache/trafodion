@@ -48,29 +48,14 @@
 -- TO BUILD THE UDF DLL OUTSIDE THE RUNNING OF THIS TEST:
 ----------------------------------------------------------------------
 --
--- Windows:
---  cd w:/regress/udr
---  ../tools/dll-compile.ksh TEST163.c 
---
 -- Linux:
 --  cd $rundir/udr
---  $scriptsdir/tools/dll-compile.ksh TEST163.c 
---
--- NSK:
---  . /<your-path>/regress/tools/setupnskenv
---  cd $rundir/udr
---  sh ../tools/dll-compile.ksh TEST163.c \
---    "-I$mxcidir -I/usr/tandem/sqlmx/include"
+--  $scriptsdir/tools/dll-compile.ksh TEST163.cpp
 --
 
 control query default ALLOW_UDF 'ON';
 set pattern $$QUOTE$$ '''';
-#ifNT
 set pattern $$DLL$$ TEST163.dll;
-#ifNT
-#ifNSK
-set pattern $$DLL$$ TEST163.so;
-#ifNSK
 
 create catalog neo;
 
@@ -118,17 +103,9 @@ sh cp -f $MY_SQROOT/sql/sqludr/Install*Metadata $REGRTSTDIR;
 ?section compile_libs
 --------------------------------------------------------------------------
 log;
-#ifNT
 sh rm -f ./TEST163.dll;
-sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST163.c 
+sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST163.cpp
   2>&1 | tee LOG163-SECONDARY;
-#ifNT
-#ifNSK
-sh rm -f ./TEST163.so;
-sh $scriptsdir/tools/dll-compile.ksh TEST163.c 
-  "-I$mxcidir -I/usr/tandem/sqlmx/include" "-lib zrlddll"
-   2>&1 | tee LOG163-SECONDARY;
-#ifNSK
 log LOG163;
 
 ?section create_tables

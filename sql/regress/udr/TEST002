@@ -18,13 +18,11 @@
 
 set pattern $$QUOTE$$ '''';      -- Needed for metadata insert of DLL path
 
-#ifNT
--- On Windows we use fake hardware settings to parallelize UDFs
+-- We may use fake hardware settings to parallelize UDFs
 --control query default ARKCMP_FAKE_HW 'ON';
 --control query default DEF_NUM_SMP_CPUS '4';
 --control query default DEF_NUM_NODES_IN_ACTIVE_CLUSTERS '1';
 --control query default ATTEMPT_ESP_PARALLELISM 'ON';
-#ifNT
 
 
 obey TEST002(clean_up);
@@ -48,19 +46,10 @@ drop library TEST002;
 ?section compile_libs
 --------------------------------------------------------------------------
 log;
-#ifNT
 sh rm -f ./TEST002.dll;
-sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST002.c 
+sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST002.cpp
   2>&1 | tee -a LOG002-SECONDARY;
 set pattern $$DLL$$ TEST002.dll;
-#ifNT
-#ifNSK
-sh rm -f ./TEST002.so;
-sh $scriptsdir/tools/dll-compile.ksh TEST002.c 
-  "-I$mxcidir -I/usr/tandem/sqlmx/include" "-lib zrlddll"
-   2>&1 | tee -a LOG002-SECONDARY;
-set pattern $$DLL$$ TEST002.so;
-#ifNSK
 log LOG002;
 
 ?section create_tables

@@ -100,6 +100,10 @@
 
 #include "Analyzer.h"
 
+#include "sqludr.h"
+
+#include "UdfDllInteraction.h"
+
 #include "rtdu.h"
 
 //#include "SqlParserGlobals.h"  // must be the last #include.
@@ -147,6 +151,9 @@ CmpStatement::CmpStatement(CmpContext* context,
   isSMDRecompile_ = FALSE;
   isParallelLabelOp_ = FALSE;
   displayGraph_ = FALSE;
+  udrInvocationInfosToDelete_ = NULL;
+  udrPlanInfosToDelete_ = NULL;
+  detailsOnRefusedRequirements_ = NULL;
 
 #ifndef NDEBUG
   if ( getenv("ARKCMP_NO_STATEMENTHEAP") )
@@ -204,6 +211,19 @@ CmpStatement::~CmpStatement()
 
   if (reply_)
     reply_->decrRefCount();
+
+  // delete UDF compiler interface structures that were allocated
+  // from the system heap. Note that the lists containing these
+  // are allocated from the statement heap
+  if (udrInvocationInfosToDelete_)
+    for (CollIndex i=0; i<udrInvocationInfosToDelete_->entries(); i++)
+      TMUDFInternalSetup::deleteUDRInvocationInfo(
+           udrInvocationInfosToDelete_->at(i));
+
+  if (udrPlanInfosToDelete_)
+    for (CollIndex i=0; i<udrPlanInfosToDelete_->entries(); i++)
+      TMUDFInternalSetup::deleteUDRPlanInfo(
+           udrPlanInfosToDelete_->at(i));
 
   // GLOBAL_EMPTY_INPUT_LOGPROP points to an EstLogProp object in the heap.
   // Because it is a SharedPtr, it must be set to NULL before the statement
@@ -1622,3 +1642,37 @@ void CmpStatement::clearCqsWA()
    cqsWA_ = NULL; 
 }
 
+void CmpStatement::addUDRInvocationInfoToDelete(
+     tmudr::UDRInvocationInfo *deleteThisAfterCompilation)
+{
+  if (!udrInvocationInfosToDelete_)
+    udrInvocationInfosToDelete_ = new(heap_) LIST(tmudr::UDRInvocationInfo *)(heap_);
+
+  udrInvocationInfosToDelete_->insert(deleteThisAfterCompilation);
+}
+
+void CmpStatement::addUDRPlanInfoToDelete(
+     tmudr::UDRPlanInfo *deleteThisAfterCompilation)
+{
+  if (!udrPlanInfosToDelete_)
+    udrPlanInfosToDelete_ = new(heap_) LIST(tmudr::UDRPlanInfo *)(heap_);
+
+  udrPlanInfosToDelete_->insert(deleteThisAfterCompilation);
+}
+
+void CmpStatement::setTMUDFRefusedRequirements(const char *details)
+{
+  if (!detailsOnRefusedRequirements_)
+    {
+      detailsOnRefusedRequirements_ =  new(heap_) LIST(const NAString *)(heap_);
+    }
+  else
+    {
+      // check whether this string already has been recorded
+      for (CollIndex i=0; i<detailsOnRefusedRequirements_->entries(); i++)
+        if (*((*detailsOnRefusedRequirements_)[i]) == details)
+          return;
+    }
+
+  detailsOnRefusedRequirements_->insert(new(heap_) NAString(details, heap_));
+}

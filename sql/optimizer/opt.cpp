@@ -887,7 +887,19 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
         *CmpCommon::diags() << DgSqlCode(arkcmpUnableToCompileWithCQS);
       }
     }
-    else // there is no CQS
+    else if (CmpCommon::statement()->getTMUDFRefusedRequirements())
+    {
+      // a TMUDF refused to satisfy some required properties during
+      // compilation, altert the user to that possible cause
+      const LIST(const NAString *) *reasonList =
+        CmpCommon::statement()->getDetailsOnRefusedRequirements();
+
+      // add up to 5 possible reasons to the diags area
+      for (CollIndex i=0; i<reasonList->entries() && i < 5; i++)
+        *CmpCommon::diags() << DgSqlCode(-11153)
+                            << DgString0((*reasonList)[i]->data());
+    }
+    else // there is no pub/sub, CQS or TMUDF involved
     {
       // Check the optimization level
       if (CURRSTMT_OPTDEFAULTS->optLevel() == OptDefaults::MINIMUM)
@@ -7098,6 +7110,7 @@ void QueryOptimizerDriver::genErrorNoPlan(RelExpr *relExpr, Context *context)
 
     }
     // QSTUFF
+
     // First we look to see if there is a CQS in effect
     if (isCQS_)
     {
@@ -7115,8 +7128,34 @@ void QueryOptimizerDriver::genErrorNoPlan(RelExpr *relExpr, Context *context)
         *CmpCommon::diags() << DgSqlCode(arkcmpUnableToCompileWithCQS);
       }
     }
-    else // there is no CQS
+
+    // check for an extract query
+    if (relExpr->getOperatorType() == REL_ROOT &&
+        ((RelRoot *) relExpr)->getNumExtractStreams() > 0)
+      {
+        // raise a general error stating that an extract plan could
+        // not be produced
+        *CmpCommon::diags() << DgSqlCode(-7004);
+      }
+
+    // check for TMUDFs with a compiler interface
+    if (CmpCommon::statement()->getTMUDFRefusedRequirements())
+      {
+        // a TMUDF refused to satisfy some required properties during
+        // compilation, altert the user to that possible cause
+        const LIST(const NAString *) *reasonList =
+          CmpCommon::statement()->getDetailsOnRefusedRequirements();
+
+        // add up to 5 possible reasons to the diags area
+        for (CollIndex i=0; i<reasonList->entries() && i < 5; i++)
+          *CmpCommon::diags() << DgSqlCode(-11153)
+                              << DgString0((*reasonList)[i]->data());
+      }
+
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
     {
+      // there is no Pub/Sub, CQS, extract or TMUDF involved
+
       // Check the optimization level
       if (CURRSTMT_OPTDEFAULTS->optLevel() == OptDefaults::MINIMUM)
       {
@@ -7128,21 +7167,6 @@ void QueryOptimizerDriver::genErrorNoPlan(RelExpr *relExpr, Context *context)
 	*CmpCommon::diags() << DgSqlCode(arkcmpUnableToCompileSeeWarning);
       }
     } // if (isCQS_) else ...
-
-    // If there are still no errors in the diags area and this is a
-    // parallel extract producer query then raise a general error
-    // stating that an extract plan could not be produced.
-    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-    {
-      if (relExpr->getOperatorType() == REL_ROOT)
-      {
-        RelRoot *root = (RelRoot *) relExpr;
-        if (root->getNumExtractStreams() > 0)
-        {
-          *CmpCommon::diags() << DgSqlCode(-7004);
-        }
-      }
-    }
 
   } // if there are no errors in the diags area
 

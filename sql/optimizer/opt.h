@@ -110,6 +110,9 @@ class CostWeight;
 
 // forward declaration
 class QueryComplexityVector;
+namespace tmudr {
+  class UDRPlanInfo;
+}
 
 #ifdef _DEBUG
   #define DBGLOGMSG(str) \
@@ -2114,6 +2117,27 @@ private:
   NABoolean OCRJoinIsConsidered_;
 
 }; // class NestedJoinPlanWorkSpace
+
+class TMUDFPlanWorkSpace : public PlanWorkSpace
+{
+public:
+
+  TMUDFPlanWorkSpace(Lng32 numberOfChildren) : 
+       PlanWorkSpace(numberOfChildren),
+       udrPlanInfo_(NULL)  {}
+  ~TMUDFPlanWorkSpace() {}
+
+  // ---------------------------------------------------------------------
+  // get/set TMUDF-related things
+  // ---------------------------------------------------------------------
+  tmudr::UDRPlanInfo *getUDRPlanInfo()           { return udrPlanInfo_; }
+  void setUDRPlanInfo(tmudr::UDRPlanInfo *pi)      { udrPlanInfo_ = pi; }
+
+private:
+
+  tmudr::UDRPlanInfo *udrPlanInfo_;
+
+};
 
 //<pb>
 // -----------------------------------------------------------------------

@@ -48,6 +48,10 @@
 // forward declaration
 class CmpStoredProc;
 class CmpMain;
+namespace tmudr {
+  class UDRInvocationInfo;
+  class UDRPlanInfo;
+}
 
 // contents
 class CmpStatement;
@@ -199,6 +203,16 @@ public:
   void setDisplayGraph (NABoolean val) { displayGraph_ = val; }
   void clearDisplayGraph () { displayGraph_ = FALSE; }
   
+  // objects allocated from system heap, delete when done with the statement
+  void addUDRInvocationInfoToDelete(tmudr::UDRInvocationInfo *deleteThisAfterCompilation);
+  void addUDRPlanInfoToDelete(tmudr::UDRPlanInfo *deleteThisAfterCompilation);
+
+  // help in diagnosing failed compilation with TMUDFs
+  NABoolean getTMUDFRefusedRequirements() const { return detailsOnRefusedRequirements_ != NULL; }
+  const LIST(const NAString *) *getDetailsOnRefusedRequirements() const
+                                            { return detailsOnRefusedRequirements_; }
+  void setTMUDFRefusedRequirements(const char *details);
+
 protected:
   // CmpStatement(const CmpStatement&); please remove this line
   CmpStatement& operator=(const CmpStatement&);
@@ -292,6 +306,10 @@ private:
   // to display the query tree during optimization. Certain methods
   // on RelExpr are enabled only when it is set.
   NABoolean displayGraph_;
+
+  LIST(tmudr::UDRInvocationInfo *) *udrInvocationInfosToDelete_;
+  LIST(tmudr::UDRPlanInfo *) *udrPlanInfosToDelete_;
+  LIST(const NAString *) *detailsOnRefusedRequirements_;
 }; // end of CmpStatement
 
 class CmpStatementISP: public CmpStatement

@@ -356,9 +356,10 @@ public:
   //
   // State transitions for a down queue entry
   //   NOT_STARTED ->
-  //       { STARTED, ERROR_BEFORE_SEND, CANCEL_BEFORE_SEND } ->
+  //       { STARTED, CANCEL_BEFORE_SEND } ->
   //           NOT_STARTED
   //   NOT_STARTED -> STARTED -> CANCEL_AFTER_SEND -> NOT_STARTED
+  //   NOT_STARTED -> STARTED -> PRODUCE_ERROR_REPLY -> PRODUCE_EOD_AFTER_ERROR -> NOT_STARTED
   //
   enum UdrTcbSendStep
   {
@@ -366,12 +367,12 @@ public:
     STARTED,
     CANCEL_BEFORE_SEND,
     CANCEL_AFTER_SEND,
-    ERROR_BEFORE_SEND
+    PRODUCE_ERROR_REPLY,
+    PRODUCE_EOD_AFTER_ERROR
   };
   enum TmudfState
     {
       INITIAL =0,
-      SENDING_SCALAR ,
       READING_FROM_CHILD
     };
   ExUdrTcb(const ExUdrTdb &tdb, 
@@ -410,7 +411,6 @@ public:
 
   }
 
- 
   ex_tcb_private_state *allocatePstates(
     Lng32 &numElems,      // [IN/OUT] desired/actual elements
     Lng32 &pstateLength); // [OUT] length of one element
@@ -518,11 +518,11 @@ protected:
   ExWorkProcRetcode returnSingleRow();
   NABoolean anyOutstandingQueueRequests();
   NABoolean verifyUdrServerProcessId();
-  void insertUpQueueEntry(ex_queue::up_status status,
-                          ComDiagsArea *diags,
-                          NABoolean popDownQueue);
+  NABoolean insertUpQueueEntry(ex_queue::up_status status,
+                               ComDiagsArea *diags = NULL);
   NABoolean serverResourcesAreLoaded() const;
   void addIntegrityCheckFailureToDiagsArea(ComDiagsArea *diags) const;
+  void tmudfCancelChildRequests(queue_index parentIndex);
 
   NABoolean validateDataRow(const tupp &replyTupp, ComDiagsArea *&diags);
 
@@ -538,7 +538,6 @@ protected:
     LOAD_FAILED,
     SENDING_UNLOAD,
     IPC_ERROR,
-    SEND_MORE_DATA,
     SCALAR_INPUT_READY_TO_SEND,
     READ_TABLE_INPUT_FROM_CHILD,
     RETURN_ROWS_FROM_CHILD,
@@ -575,7 +574,8 @@ protected:
   ComUInt32 rsIndex_;
   ExRsInfo *rsInfo_;
   const ex_tcb **childTcbs_;   // array of pointers to child task control blocks
-  ex_queue_pair *qChild_; // array of pointers to child queues
+  ex_queue_pair *qChild_;      // array of pointers to child queues
+  TmudfState *tmudfStates_;    // array of states of these child queues
   ExUDRBaseStats *udrBaseStats_;
   ExUDRStats *udrStats_;
 
@@ -607,16 +607,11 @@ public:
 
 protected:
   void init();
-  NABoolean tmudfInProgress() 
-  {
-    return (tmudfState_==ExUdrTcb::SENDING_SCALAR || tmudfState_ == ExUdrTcb::READING_FROM_CHILD);
-  }
 
   ExUdrTcb::UdrTcbSendStep step_;
   Int64 matchCount_;
   ComUInt32 numEodsFromChildTcbs_; // for future use 
   ComSInt32 currentChildTcbIndex_; 
-  ExUdrTcb::TmudfState tmudfState_; 
 };
 
 #endif // __EX_UDR_H

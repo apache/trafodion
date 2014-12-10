@@ -167,7 +167,7 @@ DLLS := comexe common executor sort sqlmsg \
 	tdm_sqlmxevents tdm_sqlshare tdm_sqlerrormsg \
 	eh lmcomp \
 	sqlcilib cli porting_layer tdm_sqlmxmsg_intl \
-	log4cpp arkcmp_dll smdio
+	log4cpp arkcmp_dll smdio udr_predef
 
 
 DLLS += sqlcomp ustat sqlcat parser optimizer generator \

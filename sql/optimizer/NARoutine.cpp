@@ -121,12 +121,9 @@ NARoutine::NARoutine (CollHeap *heap)
 
 // This is an empty constructor, with only the name specified
 // It is meant for use with TMUDF code where we want to fake the
-// presence of a TMUDF in metadata. It can be used to prototype
-// a new RelExpr like LOAD or Extract in the compiler by using
-// the TMUDF RelExpr, and faking the NARoutine. Typically a CQD 
-// switch or a specific TMUDF name denoted that we are dealing
-// with the prototyped RelExpr. This constructor is currently
-// meant for prototype use only.
+// presence of a TMUDF in metadata, for example with predefined
+// table mapping functions, where the metadata is all determined
+// by the compiler interface.
 
 NARoutine::NARoutine (  const QualifiedName &name
 		      , CollHeap            *heap
@@ -176,7 +173,7 @@ NARoutine::NARoutine (  const QualifiedName &name
     , schemaVersionOfRoutine_ (COM_VERS_2500)
     , heap_(heap)
 {
-  ComSInt32 colCount = 2;
+  CollIndex colCount = 0;
   NAColumn *newCol = NULL;
   NAType   *newColType = NULL;
   extRoutineName_ = new (heap) ExtendedQualName( name_, heap );
@@ -212,9 +209,8 @@ NARoutine::NARoutine (  const QualifiedName &name
   normalRowCost_.setIOTime( normIOCost < 0 ? csMinusOne  : normalIOCost);
   normalRowCost_.setMSGTime( normMsgCost < 0 ? csMinusOne  : normalMsgCost);
 
-#pragma warning (disable : 4018)   //warning elimination
+  // this is for prototyping only
   for (CollIndex currentCol=0; currentCol<colCount; currentCol++)
-#pragma warning (default : 4018)   //warning elimination
   {
      // Create the new NAType.
     newColType = new (heap) SQLVarChar ( 255
@@ -255,7 +251,7 @@ NARoutine::NARoutine (  const QualifiedName &name
       params_->insert (newCol );
   } // for
 
- passThruDataNumEntries_ = 0;
+  passThruDataNumEntries_ = 0;
   passThruData_ = NULL;
   passThruDataSize_ = NULL;
 

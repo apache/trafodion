@@ -462,9 +462,8 @@ public:
   //
   NABoolean canGetExactNumericValue() const;
 
-  // Method to convert a ConstValue into an exact number with a scale,
-  // (return value) * 10**-scale gives actual constant.
-  //
+  // Method to convert a ConstValue into an exact number,
+  // result must be multiplied by 10**-scale
   Int64 getExactNumericValue(Lng32 &scale) const;
 
   Int64 getExactNumericValue() const
@@ -474,6 +473,10 @@ public:
     while (scale--) result /= 10;
     return result;
   }
+
+  // same, but getting an approximate numeric value
+  NABoolean canGetApproximateNumericValue() const;
+  double getApproximateNumericValue() const;
 
   // Are two ConstValues equal to each other???
   virtual NABoolean operator == (const ItemExpr& other) const;

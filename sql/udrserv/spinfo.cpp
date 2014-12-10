@@ -154,6 +154,7 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
         numTableInfo_(0),
         tableInfo_(NULL),
         sqlBufferScalar_(NULL),
+        sqlBufferTVF_(NULL),
         parentIndex_(0),
         parentQid_(NULL),
         rowDiags_(NULL)
@@ -369,6 +370,7 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
         numTableInfo_(0),
         tableInfo_(NULL),
         sqlBufferScalar_(NULL),
+        sqlBufferTVF_(NULL),
         parentIndex_(0),
         parentQid_(NULL),
         rowDiags_(NULL)
@@ -432,6 +434,7 @@ SPInfo::~SPInfo()
       {
         tableInfo_[i].freeResources(udrHeapPtr_);
       }
+      udrHeapPtr_->deallocateMemory(tableInfo_);
     }
   }
 
@@ -1929,7 +1932,7 @@ void SPInfo::workTM()
   if (lmResult != LM_OK)
   {
     dataErrorReply(udrGlobals_, *dataStream_, UDR_ERR_MESSAGE_PROCESSING,
-                   INVOKE_ERR_NO_REPLY_DATA_BUFFER, NULL);
+                   INVOKE_ERR_NO_REPLY_DATA_BUFFER, NULL, rowDiags_);
 
     if (traceInvokeIPMS)
       ServerDebug("[UdrServ (%s)] Send Invoke Error Reply", moduleName);
@@ -2346,12 +2349,18 @@ SqlBuffer* SPInfo::getReqSqlBuffer(ComSInt32 tableIndex)
 
 SqlBuffer* SPInfo::getEmitSqlBuffer(ComSInt32 tableIndex)
 {
-  return tableInfo_[tableIndex].getEmitSqlBuffer();
+  if (numTableInfo_ == 0)
+    return sqlBufferTVF_;
+  else
+    return tableInfo_[tableIndex].getEmitSqlBuffer();
 }
 
 void SPInfo::setEmitSqlBuffer(SqlBuffer *buf, ComSInt32 tableIndex)
 {
-  tableInfo_[tableIndex].setEmitSqlBuffer(buf);
+  if (numTableInfo_ == 0)
+    sqlBufferTVF_ = buf;
+  else
+    tableInfo_[tableIndex].setEmitSqlBuffer(buf);
 }
 
 void SPInfo::reset(void)
@@ -2361,6 +2370,12 @@ void SPInfo::reset(void)
      sqlBufferScalar_->bufferFull();
      udrHeapPtr_->deallocateMemory(sqlBufferScalar_);
      sqlBufferScalar_ = NULL;
+   }
+   if(sqlBufferTVF_ != NULL)
+   {
+     sqlBufferTVF_->bufferFull();
+     udrHeapPtr_->deallocateMemory(sqlBufferTVF_);
+     sqlBufferTVF_ = NULL;
    }
    for(ComUInt32 i = 0; i < getNumTables(); i++)
    {

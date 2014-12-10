@@ -15799,7 +15799,7 @@ void CallSP::setInOrOutParam ( ItemExpr *expr,
     getProcAllParamsVids().insert( outputExprToBind->getValueId());
 
     // Fill the ValueIdList for the output params
-    addProcOutputParamsVids(outputExprToBind->getValueId ());
+    addProcOutputParamsVid(outputExprToBind->getValueId ());
 
     //
     // Populate our RETDesc
@@ -16055,54 +16055,14 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
 	return NULL;
       }
 
-  ComRoutineType udfType ;
-  CmpSeabaseDDL cmpSBD((NAHeap*)bindWA->wHeap());
-  desc_struct *tmudfMetadata = 
-	    cmpSBD.getSeabaseRoutineDesc(
-				       name.getCatalogName(),
-				       name.getSchemaName(),
-				       name.getObjectName());
-
-
-  
-
-  // IS req 5: If function name not found, output binder error.
-
-  
-  if (NULL == tmudfMetadata)
-  {
-    *CmpCommon::diags() << DgSqlCode(-4450)
-			<< DgString0(tmfuncName.getQualifiedNameAsString());
-    bindWA->setErrStatus();
-    return this;
-  }
-  udfType = tmudfMetadata->body.routine_desc.UDRType ;
-
-  // IS req 6: Check ROUTINE_TYPE column of ROUTINES table.
-  // Emit error if invalid type.
-  if (udfType != COM_TABLE_UDF_TYPE)
-  {
-    *CmpCommon::diags() << DgSqlCode(-4457)
-			<< DgString0(tmfuncName.getQualifiedNameAsString())
-			<< DgString1("Only scalar user-defined functions are supported");
-    bindWA->setErrStatus();
-    return this;
-    } 
-
-  // IS req 3, 7.3. Instantiate NARoutine object.  
-  // NARoutine data members will be assigned from udfMetadata.
-  Int32 errors=0;
-    tmudfRoutine = new (CmpCommon::contextHeap())
-    NARoutine(tmfuncName.getQualifiedNameObj(),
-	      tmudfMetadata, 
-	      bindWA,
-	      errors,
-	      CmpCommon::contextHeap());
-  if ( NULL == tmudfRoutine || errors != 0)
-  {
-    bindWA->setErrStatus();
-    return NULL;
-  }
+  tmudfRoutine = getRoutineMetadata(name, tmfuncName, bindWA);
+  if (tmudfRoutine == NULL)
+    {
+      // getRoutineMetadata has already set the diagnostics area
+      // and set the error status
+      CMPASSERT(bindWA->errStatus());
+      return NULL;
+    }
 
   RoutineDesc *tmudfRoutineDesc = new (bindWA->wHeap()) RoutineDesc(bindWA, tmudfRoutine); 
   if (tmudfRoutineDesc == NULL ||  bindWA->errStatus ())
@@ -16121,20 +16081,21 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
 
   ComUInt32 size = 0;
   LmHandle dllPtr;
+  Lng32 diagsMark = CmpCommon::diags()->mark();
+
   dllPtr = loadDll(tmudfRoutine->getFile().data(),
                    tmudfRoutine->getExternalPath().data(),
                    NULL,
                    &size,
                    CmpCommon::diags(),
-                   CmpCommon::statementHeap());
+                   bindWA->wHeap());
   if (dllPtr == NULL)
   {
     NABoolean tolerateMissingDll = FALSE;
-
     
     if (tolerateMissingDll)
     {
-      CmpCommon::diags()->clear();
+      CmpCommon::diags()->rewind(diagsMark);
     }
     else
     {
@@ -16142,11 +16103,13 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
       return this;
     }
   }
-// LCOV_EXCL_START - nsk
-  dllInteraction_ = new (CmpCommon::statementHeap()) TMUDFDllInteraction(this);
+
+  dllInteraction_ = new (bindWA->wHeap()) TMUDFDllInteraction();
   dllInteraction_->setDllPtr(dllPtr);
   dllInteraction_->setFunctionPtrs(tmudfRoutine->getExternalName());
 
+  // ValueIDList of the actual input parameters 
+  // (tmudfRoutine has formal parameters)
   if (getProcAllParamsTree() && (getProcAllParamsVids().isEmpty() == TRUE)) 
   {
       ((ItemExpr *)getProcAllParamsTree())->convertToValueIdList(
@@ -16155,80 +16118,45 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
       
       // Clear the Tree since we now have gotten vids for all the parameters.
       setProcAllParamsTree(NULL);
-    }
+  }
   getProcInputParamsVids().insert(getProcAllParamsVids());
 
-  // validate scalar inputs
-  dllInteraction_->setScalarInputParamInfo(getProcInputParamsVids());
-  dllInteraction_->setScalarInputValues(getProcInputParamsVids());
-  NABoolean status = dllInteraction_->ValidateScalarInputs(this, bindWA);
-  if (!status) return NULL;
-  if (scalarInputParams_ == NULL) 
-  {
-    // dll did not define scalar inputs, get from metadata.
-    setScalarInputParams((NAColumnArray *)&(getNARoutine()->getInParams()));
-  }
+  // invoke the optional UDF compiler interface or a default
+  // implementation to validate scalar inputs and produce a list of
+  // output columns
+
+  NABoolean status = dllInteraction_->describeParamsAndMaxOutputs(this, bindWA);
+  if (!status)
+    {
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
   checkAndCoerceScalarInputParamTypes(bindWA);
-  if (bindWA->errStatus()) return NULL;
+  if (bindWA->errStatus())
+    return NULL;
 
-  // get maximum outputs of tmudf
-  status = dllInteraction_->DescribeMaxOutputs(this, bindWA);
-  if (!status) return NULL;
-  if (outputParams_ == NULL) 
-  {
-    // dll did not define max outputs, get from metadata.
-    setOutputParams((NAColumnArray *)&(getNARoutine()->getOutParams()));
-  }
-  // will also add columns to the RetDesc
   createOutputVids(bindWA);
-  if (bindWA->errStatus()) return NULL;
+  if (bindWA->errStatus())
+    return NULL;
 
-  // Formal input and output columns of type routineParam are not set up yet.
-
-
-  // Map TableMappingUDF outputs to inputs supplied by children
-  // * Some outputs will be just direct pass-through i.e. columns
-  //   supplied by child(ren) will be pass back to TableMappingUDF parent
-  // * Some outputs will be computed i.e. created by TableMappingUDF
-  RETDesc * myRETDesc = getRETDesc();
-  
-  const ColumnDescList * myColList = myRETDesc->getColumnList();
-  Int32 numOutputCols = myColList->entries();
-  for(Int32 colNum=0; colNum < numOutputCols; colNum++)
-  {
-    NABoolean foundMatchingInput = FALSE;
-    ColumnDesc * outputColDesc = (*myColList)[colNum];
-    for(Int32 childNum=0; childNum < getArity(); childNum++)
+  // create a ValueIdMap that allows us to translate
+  // output columns that are passed through back to
+  // input columns (outputs of the child), this can
+  // be used to push down predicates, translate
+  // required order and partitioning, etc.
+  status = dllInteraction_->createOutputInputColumnMap(
+       this,
+       udfOutputToChildInputMap_);
+  if (!status)
     {
-      RETDesc *childRetDesc = child(childNum)->getRETDesc();
-      ColumnNameMap * childColNameMap =
-        childRetDesc->findColumn(outputColDesc->getColRefNameObj().getColName());
-      if(childColNameMap)
-      {
-        foundMatchingInput = TRUE;
-        UDFOutputToChildInputMap_.addMapEntry(outputColDesc->getValueId(),
-                                              childColNameMap->getValueId());
-        CollIndex * cIndex = new (CmpCommon::statementHeap()) CollIndex;
-        (*cIndex) = childNum;
-        outputChildIndexList_.insert(*cIndex);
-        break;
-      }
+      bindWA->setErrStatus();
+      return NULL;
     }
-    
-    if(!foundMatchingInput)
-    {
-      UDFOutputToChildInputMap_.addMapEntry(outputColDesc->getValueId(),
-                                            NULL_VALUE_ID);
 
-      CollIndex * cIndex = new (CmpCommon::statementHeap()) CollIndex;
-      (*cIndex) = -1;
-      outputChildIndexList_.insert(*cIndex);
-    }
-  }
-  
-  
   RelExpr *boundExpr = bindSelf(bindWA);
-  if (bindWA->errStatus()) return NULL;
+  if (bindWA->errStatus())
+    return NULL;
   return boundExpr;
 }
 

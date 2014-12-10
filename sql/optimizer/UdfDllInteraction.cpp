@@ -35,949 +35,1065 @@
 #include "CharType.h"
 #include "DatetimeType.h"
 #include "ItemOther.h"
+#include "NARoutine.h"
 #include "LmError.h"
 
-
-// ValidateScalarInput function declaration
-typedef Int32 (*valScalarInp_func) (  
-  SQLUDR_CHAR         **in_data,
-  SQLUDR_INT16        *null_in_data,
-  SQLUDR_TMUDFINFO    *tmudfInfo,                                     
-  SQLUDR_PARAM        *input_values,                                  
-  SQLUDR_CHAR          sqlstate[6],                                     
-  SQLUDR_CHAR          msgtext[256],                                      
-  SQLUDR_STATEAREA    *statearea) ;
-
-SQLUDR_INT32 SQLUDR_INVOKE_VALSCALARINP(valScalarInp_func   func_ptr,
-                                        SQLUDR_CHAR         **in_data,  
-                                        SQLUDR_INT16        *null_in_data,
-                                        SQLUDR_TMUDFINFO    *tmudfInfo,                                     
-                                        SQLUDR_PARAM        *input_values,                                  
-                                        SQLUDR_CHAR          sqlstate[6],                                     
-                                        SQLUDR_CHAR          msgtext[256],                                      
-                                        SQLUDR_STATEAREA    *statearea)
-{
-  return func_ptr(in_data, null_in_data, tmudfInfo, input_values, 
-                  sqlstate, msgtext, statearea);
-}
-
-// DescribeMaxOutputs function declaration
-typedef Int32 (*descMaxOutputs_func) (
-  SQLUDR_CHAR         **in_data,
-  SQLUDR_INT16        *null_in_data,
-  SQLUDR_TMUDFINFO    *tmudfInfo,                                     
-  SQLUDR_UINT32       *num_return_values,  
-  SQLUDR_PARAM        *return_values,                                         
-  SQLUDR_CHAR         sqlstate[6],                                     
-  SQLUDR_CHAR         msgtext[256],                                      
-  SQLUDR_STATEAREA    *statearea) ;
-
-SQLUDR_INT32 SQLUDR_INVOKE_DESCMAXOUTPUTS(descMaxOutputs_func   func_ptr,
-					  SQLUDR_CHAR           **in_data,  
-                                          SQLUDR_INT16          *null_in_data,
-                                          SQLUDR_TMUDFINFO      *tmudfInfo,                                     
-                                          SQLUDR_UINT32         *num_return_values,  
-					  SQLUDR_PARAM          *return_values,                                  
-                                          SQLUDR_CHAR           sqlstate[6],                                     
-                                          SQLUDR_CHAR           msgtext[256],                                      
-                                          SQLUDR_STATEAREA      *statearea)
-{
-  return func_ptr( in_data, null_in_data, tmudfInfo, num_return_values,
-		   return_values, sqlstate, msgtext, statearea);
-}
 
 // -----------------------------------------------------------------------
 // methods for class TMUDFDllInteraction
 // -----------------------------------------------------------------------
-//THREAD_P SQLUDR_CHAR * TMUDFDllInteraction::host_data_ = NULL ;
 
-TMUDFDllInteraction::TMUDFDllInteraction(TableMappingUDF * tmudfNode)
-:   dllPtr_(NULL),
-    validateScalarInputsPtr_(NULL),
-    describeMaxOutputsPtr_(NULL),
-    describeInputsAndOutputsPtr_(NULL),
-    describeInputPartitionAndOrderPtr_(NULL),
-    predicatePushDownPtr_(NULL),
-    cardinalityPtr_(NULL),
-    constraintsPtr_(NULL),
-    costPtr_(NULL),
-    degreeOfParallelismPtr_(NULL),
-    generateInputPartitionAndOrderPtr_(NULL),
-    describeOutputOrderPtr_(NULL),
-    stateArea_(NULL),
-    tmudfInfo_(NULL),
-    inData_(NULL),
-    nullInData_(NULL)
+TMUDFDllInteraction::TMUDFDllInteraction() :
+     dllPtr_(NULL),
+     createCompilerInterfaceObjectPtr_(NULL)
+{}
+
+NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
+                                TableMappingUDF * tmudfNode,
+                                BindWA * bindWA)
+{
+  // convert the compiler structures into something we can pass
+  // to the UDF writer, to describe input parameters and input tables
+  tmudr::UDRInvocationInfo *invocationInfo =
+    TMUDFInternalSetup::createInvocationInfoFromRelExpr(tmudfNode,
+                                                        CmpCommon::diags());
+  if (!invocationInfo)
     {
+      bindWA->setErrStatus();
+      return FALSE;
+    }
 
-/*
-      // Allocate (static) host_data_ if it's not already allocated.
-      // This will never be deleted and stays until the process dies.
-      if (TMUDFDllInteraction::host_data_ == NULL)
-      {
-        TMUDFDllInteraction::host_data_ = (SQLUDR_CHAR *) 
-          new (CmpCommon::contextHeap()) 
-          char[SQLUDR_STATEAREA_BUFFER_SIZE + 128];
-        CMPASSERT(TMUDFDllInteraction::host_data_);
-        memset((char *)TMUDFDllInteraction::host_data_, 0,
-              SQLUDR_STATEAREA_BUFFER_SIZE + 128);
-      }
-*/
+  tmudfNode->setInvocationInfo(invocationInfo);
 
+  // get the interface class that has the code for the compiler interaction,
+  // this could be a C++ class provided by the UDF writer or the base class
+  // with the default implementation. Note: This could already be cached.
+  tmudr::TMUDRInterface *udrInterface = tmudfNode->getUDRInterface();
 
-      // Allocate the SQLUDR_STATEAREA structure
-      stateArea_ = (SQLUDR_STATEAREA *) new (CmpCommon::statementHeap()) 
-                   char[sizeof(SQLUDR_STATEAREA) + 32];
-      CMPASSERT(stateArea_);
-      memset(stateArea_, 0, sizeof(SQLUDR_STATEAREA) + 32);
-      stateArea_->version = SQLUDR_STATEAREA_CURRENT_VERSION;
-  
-      stateArea_->host_data.data = 
-            CmpCommon::context()->getTMFUDF_DLL_InterfaceHostDataBuffer();
-
-      stateArea_->host_data.length = 
-            CmpCommon::context()->getTMFUDF_DLL_InterfaceHostDataBufferLen();
-
-      stateArea_->stmt_data.data = (SQLUDR_CHAR *)
-                                    new (CmpCommon::statementHeap()) 
-                                    char[SQLUDR_STATEAREA_BUFFER_SIZE + 128];
-      CMPASSERT(stateArea_->stmt_data.data);
-      memset((char *)stateArea_->stmt_data.data, 0,
-            SQLUDR_STATEAREA_BUFFER_SIZE + 128);
-      stateArea_->stmt_data.length = SQLUDR_STATEAREA_BUFFER_SIZE;
-
-      // Allocate SQLUDR_TMUDFINFO structure
-      tmudfInfo_ = (SQLUDR_TMUDFINFO *) new (CmpCommon::statementHeap()) 
-                   char[sizeof(SQLUDR_TMUDFINFO) + 32];
-      CMPASSERT(tmudfInfo_);
-      memset(tmudfInfo_, 0, sizeof(SQLUDR_TMUDFINFO) + 32);
-
-      tmudfInfo_->version = SQLUDR_TMUDFINFO_CURRENT_VERSION;
-      tmudfInfo_->sql_version = (SQLUDR_UINT16) ComVersion_GetMXV();
-      
-      NAString name(tmudfNode->getRoutineName().getQualifiedNameAsAnsiString());
-      tmudfInfo_->routine_name = new (CmpCommon::statementHeap()) 
-                                  char[name.length()+1];
-      strncpy(tmudfInfo_->routine_name, name.data(), name.length()+1); 
-
-      // pass through inputs currently not made available to dll
-      // during compiler interaction.
-      tmudfInfo_->num_pass_through = 0;
-      tmudfInfo_->pass_through = NULL;
-
-      // scalar inputs
-      tmudfInfo_->num_inputs = 0;
-      tmudfInfo_->inputs = NULL;
-
-      // table inputs
-      tmudfInfo_->num_table_inputs = (SQLUDR_UINT32) tmudfNode->getArity();
-      tmudfInfo_->table_inputs = new (CmpCommon::statementHeap())
-                                  SQLUDR_TABLE_PARAM[tmudfNode->getArity()];
-      for (Int32 i = 0; i < tmudfNode->getArity(); i++)
-      {
-        SQLUDR_TABLE_PARAM *childInfo = &(tmudfInfo_->table_inputs[i]);
-        TableMappingUDFChildInfo * cInfo = tmudfNode->getChildInfo(i);
-        childInfo->table_name =  new (CmpCommon::statementHeap()) 
-              char[cInfo->getInputTabName().length()+1];
-        strncpy(childInfo->table_name, 
-                cInfo->getInputTabName().data(), 
-                cInfo->getInputTabName().length()+1); 
-
-        childInfo->num_params = cInfo->getOutputs().entries();
-        childInfo->params = new (CmpCommon::statementHeap())
-                     SQLUDR_PARAM[childInfo->num_params];
-        CMPASSERT(childInfo->params);
-        memset(childInfo->params, 0, 
-          childInfo->num_params * sizeof(SQLUDR_PARAM));
-        for (Int32 j = 0; j < (Int32) childInfo->num_params; j++)
+  if (!udrInterface)
+    {
+      // try to allocate a user-provided class for compiler interaction
+      if (createCompilerInterfaceObjectPtr_)
         {
-          SQLUDR_PARAM * inpParam = &childInfo->params[j];
-          const NAType *p = cInfo->getInputTabCols()[j]->getType();
-          setParamInfo(inpParam, p, cInfo->getInputTabCols()[j]->getColName());
+          tmudr::CreateCompilerInterfaceObjectFunc factoryFunc =
+            (tmudr::CreateCompilerInterfaceObjectFunc)
+            createCompilerInterfaceObjectPtr_;
+
+          udrInterface = (*factoryFunc)(invocationInfo);
         }
-      }
+      else
+        // just use the default implementation
+        udrInterface = new tmudr::TMUDRInterface();
 
-      // output_info
-      NAString correlationName = 
-        tmudfNode->getUserTableName().getExposedNameAsAnsiString();
-      tmudfInfo_->output_info.table_name = new (CmpCommon::statementHeap()) 
-                                            char[correlationName.length()+1];
-      strncpy(tmudfInfo_->output_info.table_name,
-              correlationName.data(), correlationName.length()+1);
+      tmudfNode->setUDRInterface(udrInterface);
     }
 
-void 
-TMUDFDllInteraction::setParamInfo(SQLUDR_PARAM * inpParam, const NAType * p, 
-                                  const NAString & name)
-{
-  inpParam->version = SQLUDR_PARAM_CURRENT_VERSION;
-  inpParam->datatype = (SQLUDR_INT16)  
-    getAnsiTypeFromFSType(p->getFSDatatype());
-  
-  inpParam->data_len = (SQLUDR_UINT32)p->getNominalSize();
-
-
-  if (name.length() == 0)
-    inpParam->name = NULL;
-  else
-  {
-    inpParam->name = new (CmpCommon::statementHeap())char[name.length()+1];
-    strncpy(inpParam->name, name.data(),name.length()+1);
-  }
-
-  // Union u1 contains:
-  // * character_set
-  // * datetime_code
-  // * interval_code
-  // * scale
-  if (p->getTypeQualifier() == NA_CHARACTER_TYPE)
-  {
-    inpParam->u1.character_set =
-      (SQLUDR_INT16) ((const CharType*)p)->getCharSet();
-  }
-  else if (p->getTypeQualifier() == NA_DATETIME_TYPE)
-  {
-    // For datetime types: ANSI type will be SQLTYPECODE_DATETIME and
-    // SQLUDR_PARAM stores a code to indicate date, time, or
-    // timestamp.
-    inpParam->u1.datetime_code =
-      (SQLUDR_INT16) ((const DatetimeType*)p)->getPrecision();
-  }
-  else if (p->getTypeQualifier() == NA_INTERVAL_TYPE)
-  {
-    // For interval types: ANSI type will be SQLTYPECODE_INTERVAL and
-    // SQLUDR_PARAM stores a code to indicate start and end fields.
-    inpParam->u1.interval_code =
-      (SQLUDR_INT16) getIntervalCode(p->getFSDatatype());
-  }
-  else
-  {
-    inpParam->u1.scale = (SQLUDR_INT16) p->getScale();
-  }
-
-  // Union u2 contains:
-  // * precision
-  // * collation
-  if ((p->getTypeQualifier() == NA_DATETIME_TYPE)&&
-    ((((const DatetimeType*)p)->getPrecision() == REC_DTCODE_TIME) ||
-    (((const DatetimeType*)p)->getPrecision() == REC_DTCODE_TIMESTAMP)))
-  {
-    inpParam->u2.precision = (SQLUDR_INT16) p->getScale();
-  }
-  else if (p->getTypeQualifier() == NA_CHARACTER_TYPE)
-  {
-    SQLUDR_COLLATION collation = SQLUDR_COLLATION_UNKNOWN;
-    switch (((const CharType*)p)->getCollation())
+  try
     {
-      case CharInfo::DefaultCollation:
-        collation = SQLUDR_COLLATION_DEFAULT;
-        break;
-      case CharInfo::CZECH_COLLATION:
-        collation = SQLUDR_COLLATION_CZECH;
-        break;
-      case CharInfo::CZECH_COLLATION_CI:
-        collation = SQLUDR_COLLATION_CZECH_CI;
-        break;
-      case CharInfo::SJIS_COLLATION:
-        collation = SQLUDR_COLLATION_SJIS;
-        break;
+      udrInterface->describeParamsAndColumns(*invocationInfo);
     }
-    inpParam->u2.collation = (SQLUDR_INT16) collation;
-  }
-  else
-  {
-    inpParam->u2.precision = (SQLUDR_INT16) p->getPrecision();
-  }
-
-
-  inpParam->ind_offset = p->supportsSQLnullLogical() ? 0 : -1;
-
-}
-
-void TMUDFDllInteraction::setScalarInputParamInfo(const ValueIdList & vids)
-{
-  tmudfInfo_->num_inputs = vids.entries();
-
-  tmudfInfo_->inputs = NULL;
-  if (tmudfInfo_->num_inputs > 0)
-  {
-    tmudfInfo_->inputs = new (CmpCommon::statementHeap())
-      SQLUDR_PARAM[vids.entries()];
-    CMPASSERT(tmudfInfo_->inputs);
-    memset(tmudfInfo_->inputs, 0, 
-           tmudfInfo_->num_inputs * sizeof(SQLUDR_PARAM));
-    for (Int32 j = 0; j < (Int32) tmudfInfo_->num_inputs; j++)
+  catch (tmudr::UDRException e)
     {
-      SQLUDR_PARAM * inpParam = &tmudfInfo_->inputs[j];
-      const NAType *p = &(vids[j].getType());
-      NAString name;
-      if (vids[j].getItemExpr()->getOperatorType() == ITM_RENAME_COL)
-      {
-        RenameCol *ie = (RenameCol *) vids[j].getItemExpr();
-        name  = ie->getNewColRefName()->getCorrNameObj().getCorrNameAsString();
-      }
-      setParamInfo(inpParam, p, (const NAString &)name);
+      processReturnStatus(e,
+                          CmpCommon::diags(), 
+                          tmudfNode->getUserTableName().getExposedNameAsAnsiString().data());
+      bindWA->setErrStatus();
+      return FALSE;
     }
-  }
-}
 
-void TMUDFDllInteraction::setScalarInputValues(const ValueIdList & vids)
-{
-  Int32 numInputs = vids.entries();
+  NAHeap *outHeap = CmpCommon::statementHeap();
+  NAColumnArray * modifiedParameterArray =
+    new(outHeap) NAColumnArray(outHeap);
 
-  if (numInputs < 1)
-    return;
-
-  inData_ = new (CmpCommon::statementHeap()) char* [numInputs];
-  nullInData_ = new (CmpCommon::statementHeap()) short [numInputs];
-  NABoolean negate ;
-  ConstValue * cv;
-  Lng32 size;
-  for (Int32 i = 0; i < numInputs; i++)
-  {
-    inData_[i] = NULL;
-    nullInData_[i] = 0; // initialize everything to not null
-
-    cv = vids[i].getItemExpr()->castToConstValue(negate);
-    if (cv)
+  for (int p=0; p<invocationInfo->getNumFormalParameters(); p++)
     {
-      if (! cv->isNull())
-      {
-        size = vids[i].getType().getNominalSize();
-        inData_[i] = new (CmpCommon::statementHeap()) char[size+1];
-        switch (vids[i].getType().getFSDatatype())
+      NAColumn *newParam = 
+        TMUDFInternalSetup::createNAColumnFromParameterInfo(
+             invocationInfo->getFormalParameterInfo(p),
+             p,
+             outHeap,
+             CmpCommon::diags());
+      if (newParam == NULL)
         {
-        case COM_SIGNED_BIN16_FSDT:
-          memcpy(inData_[i], (short *) cv->getConstValue(), size);
-          break;
-
-        case COM_UNSIGNED_BIN16_FSDT:
-          memcpy(inData_[i], (unsigned short *) cv->getConstValue(), size);
-           break;
-
-        case COM_SIGNED_BIN32_FSDT:
-          memcpy(inData_[i], (Int32 *) cv->getConstValue(), size);
-          break;
-
-        case COM_UNSIGNED_BIN32_FSDT:
-          memcpy(inData_[i], (UInt32 *) cv->getConstValue(), size);
-          break;
-
-        case COM_SIGNED_BIN64_FSDT:
-          memcpy(inData_[i], (unsigned short *) cv->getConstValue(), size);
-          break;
-
-        case COM_FCHAR_FSDT:
-        case COM_VCHAR_FSDT:
-          memcpy(inData_[i], (char *) cv->getConstValue(), size);
-          *(inData_[i]+size) = 0;
-          break;
-          
-        default:
-          CMPASSERT(0);
+          bindWA->setErrStatus();
+          return FALSE;
         }
-      }
-      else 
-        nullInData_[i] = -1; // is a null value
-    } // item is a is a constant
-  }
-}
-
-SQLUDR_PARAM * TMUDFDllInteraction::copyParams(Int32 num, SQLUDR_PARAM * src)
-{
-  if (num < 1)
-    return NULL;
-
-  SQLUDR_PARAM * result = new (CmpCommon::statementHeap()) SQLUDR_PARAM[num];
-  CMPASSERT(result);
-  for(Int32 i=0; i<num; i++)
-  {
-    result[i] = src[i]; // copy all non ptr members
-    if (src[i].name != NULL)
-    {
-      result[i].name = new (CmpCommon::statementHeap()) 
-                        char[strlen(src[i].name)];
-      CMPASSERT(result[i].name);
-      strncpy(result[i].name, src[i].name, strlen(src[i].name)+1);
+      modifiedParameterArray->insert(newParam);
     }
-  }
-  return result;
 
-}
+  tmudfNode->setScalarInputParams(modifiedParameterArray);
 
-// Create a NAType from the Param returned by DLL
-NAType *UDRCreateNAType ( SQLUDR_PARAM * col
-                          , BindWA    *bindWA
-                          , CollHeap *heap )
-{
-		  
-  NAType *newType = NULL;
-  DataType datatype = (DataType) getFSTypeFromANSIType(col->datatype);
-  
-  switch (datatype)
-  {
-    
-    case REC_BPINT_UNSIGNED :
-      newType = new (heap) SQLBPInt ( col->u2.precision
-				      , (col->ind_offset == -1) ? FALSE : TRUE
-				      , FALSE
-				      , heap
-				    );
-      break;
-    
-    case REC_BIN16_SIGNED:
-      if (col->u2.precision > 0)
-	newType = new (heap) SQLNumeric ( TRUE
-					  , col->u2.precision
-					  , col->u1.scale
-					  , (col->ind_offset == -1) ? FALSE : TRUE
-					);
-      else
-	newType = new (heap) SQLSmall ( TRUE
-					, (col->ind_offset == -1) ? FALSE : TRUE
-					, heap
-				      );
-      break;
-    case REC_BIN16_UNSIGNED:
-      if (col->u2.precision > 0)
-	newType = new (heap) SQLNumeric ( FALSE
-					  , col->u2.precision
-					  , col->u1.scale
-					  , (col->ind_offset == -1) ? FALSE : TRUE
-					);
-      else
-	newType = new (heap) SQLSmall ( FALSE // allow neg values
-					, (col->ind_offset == -1) ? FALSE : TRUE
-					, heap
-				      );
-      break;
-    case REC_BIN32_SIGNED:
-		if (col->u2.precision > 0)
-	newType = new (heap) SQLNumeric ( TRUE
-					  , col->u2.precision
-					  , col->u1.scale
-					  , (col->ind_offset == -1) ? FALSE : TRUE
-					);
-      else
-	newType = new (heap) SQLInt ( TRUE
-					, (col->ind_offset == -1) ? FALSE : TRUE
-					, heap
-				      );
-      break;
-    case REC_BIN32_UNSIGNED:
-      if (col->u2.precision > 0)
-	newType = new (heap) SQLNumeric ( FALSE
-					  , col->u2.precision
-					  , col->u1.scale
-					  , (col->ind_offset == -1) ? FALSE : TRUE
-					);
-      else
-	newType = new (heap) SQLInt ( FALSE // allow neg values
-					, (col->ind_offset == -1) ? FALSE : TRUE
-					, heap
-				      );
-      break;
-    case REC_BIN64_SIGNED:
-		if (col->u2.precision > 0)
-	newType = new (heap) SQLNumeric ( TRUE
-					  , col->u2.precision
-					  , col->u1.scale
-					  , (col->ind_offset == -1) ? FALSE : TRUE
-					);
-      else
-	newType = new (heap) SQLLargeInt ( TRUE
-					, (col->ind_offset == -1) ? FALSE : TRUE
-					, heap
-				      );
-      break;
-    case REC_NUM_BIG_UNSIGNED:
-        newType = new (heap) SQLBigNum ( col->u2.precision
-				       , col->u1.scale
-				       , TRUE
-				       , FALSE
-				       , (col->ind_offset == -1) ? FALSE : TRUE
-				       , heap
-				     );
-      break;
-    case REC_NUM_BIG_SIGNED:
-        newType = new (heap) SQLBigNum ( col->u2.precision
-				       , col->u1.scale
-				       , TRUE
-				       , TRUE
-				       , (col->ind_offset == -1) ? FALSE : TRUE
-				       , heap
-				     );
-      break;
-    case REC_DECIMAL_UNSIGNED:
-      newType = new (heap) SQLDecimal ( col->u2.precision // precision is length?
-					, col->u1.scale
-					, FALSE
-					, (col->ind_offset == -1) ? FALSE : TRUE
-					, heap
-				      );
-      break;
-    case REC_DECIMAL_LSE:
-      newType = new (heap) SQLDecimal ( col->u2.precision // precision is length?
-					, col->u1.scale
-					, TRUE
-					, (col->ind_offset == -1) ? FALSE : TRUE
-					, heap
-				      );
-      break;
-    case REC_TDM_FLOAT32:
-      newType = new (heap) SQLRealTdm ( (col->ind_offset == -1) ? FALSE : TRUE
-					, heap
-					, col->u2.precision
-				      );
-      break;
-
-    case REC_TDM_FLOAT64:
-      newType = new (heap) SQLDoublePrecisionTdm ( 
-							(col->ind_offset == -1) ? FALSE : TRUE
-						   , heap
-						   , col->u2.precision
-						 );
-      break;
-
-    case REC_FLOAT32:
-      newType = new (heap) SQLReal ( (col->ind_offset == -1) ? FALSE : TRUE
-				     , heap
-				     , col->u2.precision
-				   );
-      break;
-
-    case REC_FLOAT64:
-      newType = new (heap) SQLDoublePrecision ( 
-						(col->ind_offset == -1) ? FALSE : TRUE
-						, heap
-						, col->u2.precision
-					      );
-      break;
-
-    case REC_BYTE_F_ASCII:
-      newType = new (heap) SQLChar ( col->data_len
-                                   , (col->ind_offset == -1) ? FALSE : TRUE
-                                   , FALSE // not upshifted
-								   , FALSE // not caseinsensitive
-                                   , FALSE
-								   , (CharInfo::CharSet) col->u1.character_set
-                                   , (CharInfo::Collation)col->u2.collation
-                                   , CharInfo::COERCIBLE
-                                   , CharInfo::UnknownCharSet // encoding?
-                                   );
-
-      break;
-
-    case REC_BYTE_F_DOUBLE:
-		newType = new (heap) SQLChar ( col->data_len/SQL_DBCHAR_SIZE
-                                   , (col->ind_offset == -1) ? FALSE : TRUE
-                                   , FALSE // not upshifted
-								   , FALSE // not caseinsensitive
-                                   , FALSE
-								   , (CharInfo::CharSet) col->u1.character_set
-                                   , (CharInfo::Collation)col->u2.collation
-                                   , CharInfo::COERCIBLE
-                                   , CharInfo::UnknownCharSet // encoding?
-                                   );
-      break;
-
-    case REC_BYTE_V_ASCII:
-      newType = new (heap) SQLVarChar ( col->data_len
-                                   , (col->ind_offset == -1) ? FALSE : TRUE
-                                   , FALSE // not upshifted
-								   , FALSE // not caseinsensitive
-								   , (CharInfo::CharSet) col->u1.character_set
-                                   , (CharInfo::Collation)col->u2.collation
-                                   , CharInfo::COERCIBLE
-                                   , CharInfo::UnknownCharSet // encoding?
-                                   );
-      break;
-
-    case REC_BYTE_V_DOUBLE:
-      newType = new (heap) SQLVarChar ( col->data_len/SQL_DBCHAR_SIZE
-                                   , (col->ind_offset == -1) ? FALSE : TRUE
-                                   , FALSE // not upshifted
-								   , FALSE // not caseinsensitive
-								   , (CharInfo::CharSet) col->u1.character_set
-                                   , (CharInfo::Collation)col->u2.collation
-                                   , CharInfo::COERCIBLE
-                                   , CharInfo::UnknownCharSet // encoding?
-                                   );
-      break;
-
-    case REC_BYTE_V_ASCII_LONG:
-      newType = new (heap) SQLLongVarChar ( col->data_len
-                                   , (col->ind_offset == -1) ? FALSE : TRUE
-                                   , FALSE // not upshifted
-								   , FALSE // not caseinsensitive
-                                   , FALSE
-								   , (CharInfo::CharSet) col->u1.character_set
-                                   , (CharInfo::Collation)col->u2.collation
-                                   , CharInfo::COERCIBLE
-                                   , CharInfo::UnknownCharSet // encoding?
-                                   );
-      break;
-
-    case REC_DATETIME:
-	  if (col->u1.datetime_code == SQLDTCODE_DATE)
-	  {
-		  	newType = new (heap)  SQLDate(
-				(col->ind_offset == -1) ? FALSE : TRUE, 
-					heap) ;
-	  }
-	  else if (col->u1.datetime_code == SQLDTCODE_TIME)
-	  {
-		  	newType = new (heap)  SQLTime(
-				(col->ind_offset == -1) ? FALSE : TRUE, 
-					col->u2.precision,
-					heap) ;
-	  }
-	  else if (col->u1.datetime_code == SQLDTCODE_TIMESTAMP)
-	  {
-		 newType = new (heap)  SQLTimestamp(
-				(col->ind_offset == -1) ? FALSE : TRUE, 
-					col->u2.precision,
-					heap) ;
-	  }
-	  else
-      {
-		// 4030 Column is an unsupported combination of datetime fields
-		*CmpCommon::diags() << DgSqlCode(-4030)
-					<< DgTableName("") ;
-		bindWA->setErrStatus();
-		return NULL;
-      }
-      break;
-     
-    default:
-      *CmpCommon::diags() << DgSqlCode(-4308)
-			  << DgInt0(datatype);
-	  bindWA->setErrStatus();
-      return NULL;   
-  } // end switch (column_desc->datatype)
-
-  // catch all
-  if ( NULL == newType )
-  {
-    if ( bindWA )
+  NAColumnArray * outColArray =
+    TMUDFInternalSetup::createColumnArrayFromTableInfo(
+         invocationInfo->getOutputTableInfo(),
+         tmudfNode,
+         outHeap,
+         CmpCommon::diags());
+  if (outColArray == NULL)
     {
-      bindWA->setErrStatus ();
+      bindWA->setErrStatus();
+      return FALSE;
     }
-  }
-    
-  return newType;
-} // UDRCreateNAType
 
+  tmudfNode->setOutputParams(outColArray);
 
-SQLUDR_PARAM * TMUDFDllInteraction::createEmptyParams(Int32 num, Int32 nameLen)
-{
-  SQLUDR_PARAM * result = new (CmpCommon::statementHeap()) SQLUDR_PARAM[num];
-  for (Int32 i=0; i < num; i++)
-  {
-    result[i].version = SQLUDR_PARAM_CURRENT_VERSION;
-    result[i].datatype = 0;
-    result[i].data_len = 0;
-    result[i].name = new (CmpCommon::statementHeap())char[nameLen];
-    memset(result[i].name, '\0',nameLen);
-    result[i].u1.character_set = 0;
-    result[i].u2.precision = 0;
-    result[i].ind_offset = 0;
-  }
-  return result;
+  return TRUE;
 }
 
-NABoolean TMUDFDllInteraction::ValidateScalarInputs(
-                                TableMappingUDF * TMUDFNode, BindWA * bindWA)
+NABoolean TMUDFDllInteraction::createOutputInputColumnMap(
+     TableMappingUDF * tmudfNode,
+     ValueIdMap &result)
+{
+  tmudr::UDRInvocationInfo * invocationInfo = tmudfNode->getInvocationInfo();
+  tmudr::TableInfo & outputTableInfo = invocationInfo->getOutputTableInfo();
+  int numOutputColumns = outputTableInfo.getNumColumns();
+
+  for (int oc=0; oc<numOutputColumns; oc++)
+    {
+      const tmudr::ProvenanceInfo &p =
+        outputTableInfo.getColumn(oc).getProvenance();
+
+      if (p.isFromInputTable())
+        {
+          result.addMapEntry(
+               tmudfNode->getProcOutputParamsVids()[oc],
+               tmudfNode->getChildInfo(p.getInputTableNum())->
+                             getOutputIds()[p.getInputColumnNum()]);
+        }
+    }
+
+  return TRUE;
+}
+
+NABoolean TMUDFDllInteraction::describeInputsAndOutputs(
+     TableMappingUDF * tmudfNode)
+{ return FALSE; }
+
+NABoolean TMUDFDllInteraction::describeInputPartitionAndOrder(
+     TableMappingUDF * tmudfNode)
+{ return FALSE; }
+
+NABoolean TMUDFDllInteraction::predicatePushDown(
+     TableMappingUDF * tmudfNode)
+{ return FALSE; }
+
+NABoolean TMUDFDllInteraction::cardinality(
+     TableMappingUDF * tmudfNode)
+{ return FALSE; }
+
+NABoolean TMUDFDllInteraction::constraints(
+     TableMappingUDF * tmudfNode)
+{ return FALSE; }
+
+NABoolean TMUDFDllInteraction::cost(
+     TableMappingUDF * tmudfNode,
+     TMUDFPlanWorkSpace * pws)
+{ return FALSE; }
+
+NABoolean TMUDFDllInteraction::degreeOfParallelism(
+     TableMappingUDF * tmudfNode,
+     TMUDFPlanWorkSpace * pws,
+     int &dop)
 { 
-  if (validateScalarInputsPtr_ == NULL)
-    return TRUE;
+  tmudr::TMUDRInterface *udrInterface = tmudfNode->getUDRInterface();
+  tmudr::UDRInvocationInfo *invocationInfo = tmudfNode->getInvocationInfo();
+  tmudr::UDRPlanInfo *udrPlanInfo = pws->getUDRPlanInfo();
 
-  // Initialize SQLSTATE to all '0' characters and add a null terminator
-  str_pad(sqlState_, SQLUDR_SQLSTATE_SIZE - 1, '0');
-  sqlState_[SQLUDR_SQLSTATE_SIZE - 1] = 0;
+  if (udrPlanInfo == NULL)
+    {
+      // make a UDRPlanInfo for this PWS
+      udrPlanInfo = TMUDFInternalSetup::createUDRPlanInfo();
+      CmpCommon::statement()->addUDRPlanInfoToDelete(udrPlanInfo);
+      pws->setUDRPlanInfo(udrPlanInfo);
+    }
+
+  try
+    {
+      udrInterface->describeDesiredDegreeOfParallelism(*invocationInfo,
+                                                       *udrPlanInfo);
+    }
+  catch (tmudr::UDRException e)
+    {
+      processReturnStatus(e,
+                          CmpCommon::diags(), 
+                          tmudfNode->getUserTableName().getExposedNameAsAnsiString().data());
+      return FALSE;
+    }
+
+  dop = udrPlanInfo->getDesiredDegreeOfParallelism();
   
-  // Initialize SQL text to all zero bytes
-  str_pad(msgText_, SQLUDR_MSGTEXT_SIZE, '\0');
-
-  SQLUDR_PARAM  *input_values = copyParams(tmudfInfo_->num_inputs,
-                                            tmudfInfo_->inputs) ;
-
-  // Call the function
-  Int32 retValue = SQLUDR_INVOKE_VALSCALARINP(
-                        (valScalarInp_func)   validateScalarInputsPtr_,
-                                              inData_,  
-                                              nullInData_,
-                                              tmudfInfo_,                                     
-                                              input_values,                                  
-                                              sqlState_,                                     
-                                              msgText_,                                      
-                                              stateArea_);
-  
-
-
-  // Check the return value from routine execution
-  if (retValue != SQLUDR_SUCCESS)
-  {
-    sqlState_[SQLUDR_SQLSTATE_SIZE - 1] = 0;
-    processReturnStatus(retValue, CmpCommon::diags(), 
-      TMUDFNode->getUserTableName().getExposedNameAsAnsiString().data());
-    bindWA->setErrStatus();
-    return FALSE; 
-  }
-
-  NAHeap* h = CmpCommon::statementHeap();
-  NAColumnArray * inpColArray = new (h) NAColumnArray(h);
-  for (Int32 i=0; i < (Int32) tmudfInfo_->num_inputs; i++)
-  {
-    if ((!input_values) || !(&(input_values[i])))
-    {
-      retValue = SQLUDR_ERROR;
-      sprintf(msgText_, 
-	      "Returned parameter input_value[%d] is null after a call to ValidateScalarInputs",i);
-      processReturnStatus(retValue, CmpCommon::diags(), 
-      TMUDFNode->getUserTableName().getExposedNameAsAnsiString().data());
-      bindWA->setErrStatus();
-      return FALSE; 
-    }
-
-    char * paramName = input_values[i].name ;
-    if (paramName == NULL)
-    {
-      NAString nameStr(h);
-      char val[4];
-      str_itoa(i,val);
-      nameStr = TMUDFNode->getUserTableName().getExposedNameAsAnsiString().data();
-      nameStr += "_scalarInput_";
-      nameStr += val;
-      paramName = (char *) nameStr.data();
-    }
-
-
-    NAType * inpType = UDRCreateNAType(&input_values[i], bindWA, h);
-    NAColumn * inpParam = new (h) NAColumn(paramName,i,inpType,h);
-    inpColArray->insert(inpParam);
-
-    // copy info from output param to tmudfInfo
-    tmudfInfo_->inputs[i] = input_values[i]; // copy all non ptr members
-    if (tmudfInfo_->inputs[i].name != NULL)
-    {
-      delete tmudfInfo_->inputs[i].name;
-    }
-    tmudfInfo_->inputs[i].name = new (h) char[strlen(paramName)+1];
-    strncpy(tmudfInfo_->inputs[i].name, paramName, strlen(paramName)+1);
-  }
-  TMUDFNode->setScalarInputParams(inpColArray);
   return TRUE;
 }
 
-NABoolean TMUDFDllInteraction::DescribeMaxOutputs(
-                                TableMappingUDF * TMUDFNode, BindWA * bindWA)
-{   
-  if (describeMaxOutputsPtr_ == NULL)
-    return TRUE;
-
-  // Initialize SQLSTATE to all '0' characters and add a null terminator
-  str_pad(sqlState_, SQLUDR_SQLSTATE_SIZE - 1, '0');
-  sqlState_[SQLUDR_SQLSTATE_SIZE - 1] = 0;
-  
-  // Initialize SQL text to all zero bytes
-  str_pad(msgText_, SQLUDR_MSGTEXT_SIZE, '\0');
-
-  const Int32 OutputParamLimit = 100;
-  const Int32 ParamNameLimit   = 128;
-
-  SQLUDR_PARAM  *return_values = createEmptyParams(OutputParamLimit,
-						    ParamNameLimit) ;
-  SQLUDR_UINT32 num_return_values = 0;
-
-  // Call the function
-  Int32 retValue = SQLUDR_INVOKE_DESCMAXOUTPUTS(
-                        (descMaxOutputs_func) describeMaxOutputsPtr_,
-                                              inData_,  
-                                              nullInData_,
-                                              tmudfInfo_,
-					      &num_return_values,
-                                              return_values,                                  
-                                              sqlState_,                                     
-                                              msgText_,                                      
-                                              stateArea_);
-  
-
-
-  // Check the return value from routine execution
-  if (retValue != SQLUDR_SUCCESS)
-  {
-    sqlState_[SQLUDR_SQLSTATE_SIZE - 1] = 0;
-    processReturnStatus(retValue, CmpCommon::diags(), 
-      TMUDFNode->getUserTableName().getExposedNameAsAnsiString().data());
-    bindWA->setErrStatus();
-    return FALSE; 
-  }
-
-  NAHeap* h = CmpCommon::statementHeap();
-  NAColumnArray * outColArray = new (h) NAColumnArray(h);
-  for (Int32 i=0; i < (Int32) num_return_values; i++)
-  {
-    if ((!return_values) || !(&(return_values[i])))
-    {
-      retValue = SQLUDR_ERROR;
-      sprintf(msgText_, 
-	      "Returned parameter return_values[%d] is null after a call to DescribeMaxOutputs",i);
-      processReturnStatus(retValue, CmpCommon::diags(), 
-      TMUDFNode->getUserTableName().getExposedNameAsAnsiString().data());
-      bindWA->setErrStatus();
-      return FALSE; 
-    }
-
-    char * paramName = return_values[i].name ;
-    if (paramName == NULL)
-    {
-      NAString nameStr(h);
-      char val[4];
-      str_itoa(i,val);
-      nameStr = TMUDFNode->getUserTableName().getExposedNameAsAnsiString().data();
-      nameStr += "_output_";
-      nameStr += val;
-      paramName = (char *) nameStr.data();
-    }
-
-
-    NAType * outType = UDRCreateNAType(&return_values[i], bindWA, h);
-    NAColumn * outParam = new (h) NAColumn(paramName,i,outType,h);
-    outColArray->insert(outParam);
-  }
-  TMUDFNode->setOutputParams(outColArray);
-  return TRUE;
-}
-
-NABoolean TMUDFDllInteraction::DescribeInputsAndOutputs(
-                                TableMappingUDF * TMUDFNode)
+NABoolean TMUDFDllInteraction::generateInputPartitionAndOrder(
+     TableMappingUDF * tmudfNode,
+     TMUDFPlanWorkSpace * pws)
 { return FALSE; }
 
-NABoolean TMUDFDllInteraction::DescribeInputPartitionAndOrder(
-                                TableMappingUDF * TMUDFNode)
-{ return FALSE; }
-
-NABoolean TMUDFDllInteraction::PredicatePushDown(TableMappingUDF * TMUDFNode)
-{ return FALSE; }
-
-NABoolean TMUDFDllInteraction::Cardinality(TableMappingUDF * TMUDFNode)
-{ return FALSE; }
-
-NABoolean TMUDFDllInteraction::Constraints(TableMappingUDF * TMUDFNode)
-{ return FALSE; }
-
-NABoolean TMUDFDllInteraction::Cost(TableMappingUDF * TMUDFNode)
-{ return FALSE; }
-
-NABoolean TMUDFDllInteraction::DegreeOfParallelism(TableMappingUDF * TMUDFNode)
-{ return FALSE; }
-
-NABoolean TMUDFDllInteraction::GenerateInputPartitionAndOrder(
-                                                  TableMappingUDF * TMUDFNode)
-{ return FALSE; }
-
-NABoolean TMUDFDllInteraction::DescribeOutputOrder(TableMappingUDF * TMUDFNode)
+NABoolean TMUDFDllInteraction::describeOutputOrder(
+     TableMappingUDF * tmudfNode,
+     TMUDFPlanWorkSpace * pws)
 { return FALSE; }
 
 
-void TMUDFDllInteraction::setFunctionPtrs(const NAString& entryName)
+void TMUDFDllInteraction::setFunctionPtrs(
+     const NAString& entryName)
 {
   if (dllPtr_ == NULL)
     return ;
 
-  NAString f1;
-  f1 = entryName + "_ValidateScalarInputs" ;
-  validateScalarInputsPtr_ = getRoutinePtr(dllPtr_, f1.data());
-
-  NAString f2;
-  f2 = entryName + "_DescribeMaxOutputs" ;
-  describeMaxOutputsPtr_ = getRoutinePtr(dllPtr_, f2.data());
-
-  NAString f3;
-  f3 = entryName + "_DescribeInputsAndOutputs" ;
-  describeInputsAndOutputsPtr_ = getRoutinePtr(dllPtr_, f3.data());
-
-  NAString f4;
-  f4 = entryName + "_DescribeInputPartitionAndOrder" ;
-  describeInputPartitionAndOrderPtr_ = getRoutinePtr(dllPtr_, f4.data());
-
-  NAString f5;
-  f5 = entryName + "_PredicatePushDown" ;
-  predicatePushDownPtr_ = getRoutinePtr(dllPtr_, f5.data());
-
-  NAString f6;
-  f6 = entryName + "_Cardinality" ;
-  cardinalityPtr_ = getRoutinePtr(dllPtr_, f6.data());
-
-  NAString f7;
-  f7 = entryName + "_Constraints" ;
-  constraintsPtr_ = getRoutinePtr(dllPtr_, f7.data());
-
-  NAString f8;
-  f8 = entryName + "_Cost" ;
-  costPtr_ = getRoutinePtr(dllPtr_, f8.data());
-
-  NAString f9;
-  f9 = entryName + "_DegreeOfParallelism" ;
-  degreeOfParallelismPtr_ = getRoutinePtr(dllPtr_, f9.data());
-
-  NAString f10;
-  f10 = entryName + "_GenerateInputPartitionAndOrder" ;
-  generateInputPartitionAndOrderPtr_ = getRoutinePtr(dllPtr_, f10.data());
-
-  NAString f11;
-  f11 = entryName + "_describeOutputOrder" ;
-  describeOutputOrderPtr_= getRoutinePtr(dllPtr_, f11.data());
-
+  // create the mangled C++ entry point name
+  // Todo: should this call some ABI interface instead???
+  NAString f;
+  char nameLenString[10];
+  f = entryName + "_CreateCompilerInterfaceObject";
+  snprintf(nameLenString, 10,"Z%d",(int) f.length());
+  // This did not work for me to get the mangled C++ name, not sure why
+  // f.prepend(nameLenString);
+  // f += "PKN5tmudr17UDRInvocationInfoE";
+  createCompilerInterfaceObjectPtr_ = getRoutinePtr(dllPtr_, f.data());
 }
 
-
-void TMUDFDllInteraction::processReturnStatus(ComSInt32 retcode, 
+void TMUDFDllInteraction::processReturnStatus(const tmudr::UDRException &e, 
                                               ComDiagsArea *diags,
                                               const char* routineName)
 {
-  char *returnMsgText = NULL, *noMsgText = NULL;
+  int iSQLState = e.getSQLState();
+  char sqlState[6];
 
-  if (retcode == SQLUDR_SUCCESS)
-    return ;
+  snprintf(sqlState,6,"%5d", iSQLState);
 
-  if (msgText_[0] != '\0')
-  {
-    returnMsgText = msgText_;
-  }
+  if (iSQLState > 38000 && iSQLState < 39000)
+    {
+      *diags << DgSqlCode(-LME_CUSTOM_ERROR)
+             << DgString0(e.getText().data())
+             << DgString1(sqlState);
+      *diags << DgCustomSQLState(sqlState);
+    }
   else
-  {
-    const char *text =
-      "No SQL message text was provided by user-defined function ";
-    ComUInt32 msgLen = str_len(text) + str_len(routineName);
-    noMsgText = new (CmpCommon::statementHeap()) char[msgLen + 1];
-    sprintf(noMsgText, "%s%s", text, routineName);
-
-    returnMsgText = noMsgText;
-  }
-
-  // Check the returned SQLSTATE value and raise appropriate
-  // SQL code. Valid SQLSTATE values begin with "38" except "38000"
-  if ((strncmp(sqlState_, "38", 2) == 0) &&
-      (strncmp(sqlState_, "38000", 5) != 0))
-  {
-    Int32 sqlCode = (retcode == SQLUDR_ERROR) ?
-      -LME_CUSTOM_ERROR : LME_CUSTOM_WARNING;
-
-    *diags << DgSqlCode(sqlCode)
-           << DgString0(returnMsgText)
-	   << DgString1(sqlState_);
-    *diags << DgCustomSQLState(sqlState_);
-  }
-  else
-  {
-    Int32 sqlCode = (retcode == SQLUDR_ERROR) ? -LME_UDF_ERROR : LME_UDF_WARNING;
-
-    *diags << DgSqlCode(sqlCode)
-	   << DgString0(routineName)
-           << DgString1(sqlState_)
-           << DgString2(returnMsgText);
-  }  
-  return ;
+    {
+      *diags << DgSqlCode(-LME_UDF_ERROR)
+             << DgString0(routineName)
+             << DgString1(sqlState)
+             << DgString2(e.getText().data());
+    }
 }
+
+tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
+     TableMappingUDF * tmudfNode,
+     ComDiagsArea *diags)
+{
+  tmudr::UDRInvocationInfo *result = new tmudr::UDRInvocationInfo();
+  NABoolean success = TRUE;
+
+  result->version_ = result->getCurrentVersion();
+  result->name_ = tmudfNode->getRoutineName().getQualifiedNameAsAnsiString().data();
+  result->numTableInputs_ = tmudfNode->getArity();
+  // initialize the function type with the most general
+  // type there is, SETFUNC
+  result->funcType_ = tmudr::UDRInvocationInfo::SETFUNC;
+
+  // set info for the formal scalar input parameters
+  const NAColumnArray &formalParams = tmudfNode->getNARoutine()->getInParams();
+  for (CollIndex c=0; c<formalParams.entries(); c++)
+    {
+      tmudr::ParameterInfo *pi =
+        TMUDFInternalSetup::createParameterInfoFromNAColumn(
+             formalParams[c],
+             diags);
+      if (!pi)
+        return NULL;
+
+      result->formalParameterInfo_.push_back(pi);
+    }
+
+  // set info for the actual scalar input parameters
+  const ValueIdList &actualParamVids = tmudfNode->getProcInputParamsVids();
+  for (CollIndex i=0; i < actualParamVids.entries(); i++)
+    {
+      NABoolean success = TRUE;
+      NABoolean negate;
+      const NAType &paramType = actualParamVids[i].getType();
+      NABuiltInTypeEnum typeClass = paramType.getTypeQualifier();
+      ConstValue *constVal = actualParamVids[i].getItemExpr()->castToConstValue(negate);
+      std::string paramName;
+      char paramNum[10];
+
+      if (i < result->getNumFormalParameters())
+        paramName = result->getFormalParameterInfo(i).getParameterName();
+
+      tmudr::TypeInfo ti;
+      success = TMUDFInternalSetup::setTypeInfoFromNAType(
+           ti,
+           &paramType,
+           diags);
+      if (!success)
+        return NULL;
+
+      tmudr::ParameterInfo *pi = new tmudr::ParameterInfo(
+           paramName.data(),
+           ti);
+      
+      // if the actual parameter is a constant value, pass its data
+      // to the UDF
+      if (constVal)
+        {
+          if (typeClass == NA_NUMERIC_TYPE)
+            {
+              if (constVal->canGetExactNumericValue())
+                {
+                  Lng32 scale;
+                  pi->isAvailable_ = tmudr::ParameterInfo::EXACT_NUMERIC_VALUE;
+                  pi->exactNumericValue_ = constVal->getExactNumericValue(scale);
+                  // leave it up to the UDF writer to evaluate the scale
+                }
+              else if (constVal->canGetApproximateNumericValue())
+                {
+                  pi->isAvailable_ = tmudr::ParameterInfo::APPROX_NUMERIC_VALUE;
+                  pi->approxNumericValue_ = constVal->getApproximateNumericValue();
+                }
+            }
+          else if (typeClass == NA_CHARACTER_TYPE)
+            {
+              // return the actual string value, no quoting,
+              // no character set conversion (for now)
+              pi->isAvailable_ = tmudr::ParameterInfo::STRING_VALUE;
+              pi->stringValue_ =
+                std::string(reinterpret_cast<const char *>(constVal->getConstValue()),
+                            paramType.getNominalSize());
+            }
+          else if (typeClass == NA_DATETIME_TYPE ||
+                   typeClass == NA_INTERVAL_TYPE)
+            {
+              // convert the value into a string
+              pi->isAvailable_ = tmudr::ParameterInfo::STRING_VALUE;
+              NAString dateIntVal = constVal->getConstStr();
+              pi->stringValue_ = std::string(dateIntVal.data(),
+                                             dateIntVal.length());
+            }
+        }
+      result->actualParameterInfo_.push_back(pi);
+    }
+
+  // set up info for the input (child) tables
+  for (int c=0; c<result->numTableInputs_; c++)
+    {
+      TableMappingUDFChildInfo *childInfo = tmudfNode->getChildInfo(c);
+      const NAColumnArray &childColArray = childInfo->getInputTabCols();
+
+      success = TMUDFInternalSetup::setTableInfoFromNAColumnArray(
+           result->inputTableInfo_[c],
+           &childColArray,
+           diags);
+      if (!success)
+        return NULL;
+
+      // Todo: Set query partitioning and ordering for this child table
+      // (numRows and constraints will be set later)
+    }
+
+  // initialize output columns with the columns declared in the metadata
+  // UDF compiler interface can change this
+  success = TMUDFInternalSetup::setTableInfoFromNAColumnArray(
+       result->outputTableInfo_,
+       &(tmudfNode->getNARoutine()->getOutParams()),
+       diags);
+  if (!success)
+    return NULL;
+
+  // predicates_ is initially empty, nothing to do
+
+  // Since we allocated all our structures from the system heap,
+  // make sure that someone deletes it after compilation of the
+  // current statement completes
+  CmpCommon::statement()->addUDRInvocationInfoToDelete(result);
+
+  return result;
+}
+
+NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
+     tmudr::TypeInfo &tgt,
+     const NAType *src,
+     ComDiagsArea *diags)
+{
+  // follows code in TMUDFDllInteraction::setParamInfo() - approximately
+  NABoolean result = TRUE;
+
+  tgt.scale_        =
+  tgt.precision_    =
+  tgt.collation_    = tmudr::TypeInfo::SYSTEM_COLLATION;
+  tgt.nullable_     = (src->supportsSQLnullLogical() != FALSE);
+  tgt.charset_      = tmudr::TypeInfo::UNDEFINED_CHARSET;
+  tgt.intervalCode_ = tmudr::TypeInfo::UNDEFINED_INTERVAL_CODE;
+  tgt.length_       = src->getNominalSize();
+  
+  // sqlType_, cType_, scale_, charset_, intervalCode_, precision_, collation_
+  // are somewhat dependent on each other and are set in the following
+  switch (src->getTypeQualifier())
+    {
+    case NA_NUMERIC_TYPE:
+      {
+        const NumericType *numType = static_cast<const NumericType *>(src);
+        NABoolean isUnsigned = numType->isUnsigned();
+        NABoolean isDecimal = numType->isDecimal();
+        NABoolean isDecimalPrecision = numType->decimalPrecision();
+        NABoolean isExact = numType->isExact();
+
+        tgt.scale_ = src->getScale();
+
+        if (isDecimalPrecision)
+          {
+            // only decimal precision is stored for SQL type NUMERIC
+            tgt.sqlType_ = tmudr::TypeInfo::NUMERIC;
+            // C type will be set below, same as non-decimal exact numeric
+            tgt.precision_ = src->getPrecision();
+          }
+
+        if (isDecimal)
+          {
+            // decimals are represented as strings in the UDF (Todo: ???)
+            // NOTE: For signed LSE decimals, the most significant
+            //       bit in the first digit is the sign
+            if (isUnsigned)
+              tgt.sqlType_ = tmudr::TypeInfo::DECIMAL_UNSIGNED;
+            else
+              tgt.sqlType_ = tmudr::TypeInfo::DECIMAL_LSE;
+            tgt.cType_ = tmudr::TypeInfo::STRING;
+          }
+        else if (isExact)
+          switch (tgt.length_)
+            {
+              // SMALLINT, INT, LARGEINT, NUMERIC, signed and unsigned
+            case 2:
+              if (isUnsigned)
+                {
+                  if (!isDecimalPrecision)
+                    tgt.sqlType_ = tmudr::TypeInfo::SMALLINT_UNSIGNED;
+                  tgt.cType_   = tmudr::TypeInfo::UINT16;
+                }
+              else
+                {
+                  if (!isDecimalPrecision)
+                    tgt.sqlType_ = tmudr::TypeInfo::SMALLINT;
+                  tgt.cType_   = tmudr::TypeInfo::INT16;
+                }
+              break;
+              
+            case 4:
+              if (isUnsigned)
+                {
+                  if (!isDecimalPrecision)
+                    tgt.sqlType_ = tmudr::TypeInfo::INT_UNSIGNED;
+                  tgt.cType_   = tmudr::TypeInfo::UINT32;
+                }
+              else
+                {
+                  if (!isDecimalPrecision)
+                    tgt.sqlType_ = tmudr::TypeInfo::INT;
+                  tgt.cType_   = tmudr::TypeInfo::INT32;
+                }
+              break;
+
+            case 8:
+              CMPASSERT(!isUnsigned);
+              if (!isDecimalPrecision)
+                tgt.sqlType_ = tmudr::TypeInfo::LARGEINT;
+              tgt.cType_   = tmudr::TypeInfo::INT64;
+              break;
+
+            default:
+              *diags << DgSqlCode(11151)
+                     << DgString0("type")
+                     << DgString1(src->getTypeSQLname())
+                     << DgString2("unsupported length");
+              result = FALSE;
+            }
+        else // inexact numeric
+          if (tgt.length_ == 4)
+            {
+              tgt.sqlType_ = tmudr::TypeInfo::REAL;
+              tgt.cType_   = tmudr::TypeInfo::FLOAT;
+            }
+          else
+            {
+              // note that there is no SQL FLOAT in UDFs, SQL FLOAT
+              // gets mapped to REAL or DOUBLE PRECISION
+              CMPASSERT(tgt.length_ == 8);
+              tgt.sqlType_ = tmudr::TypeInfo::DOUBLE_PRECISION;
+              tgt.cType_   = tmudr::TypeInfo::DOUBLE;
+            }
+      }
+      break;
+
+    case NA_CHARACTER_TYPE:
+      {
+        CharInfo::CharSet cs = (CharInfo::CharSet) src->getScaleOrCharset();
+
+        if (src->isVaryingLen())
+          tgt.sqlType_ = tmudr::TypeInfo::VARCHAR;
+        else
+          tgt.sqlType_ = tmudr::TypeInfo::CHAR;
+
+        // character set
+        switch (cs)
+          {
+          case CharInfo::ISO88591:
+            tgt.charset_ = tmudr::TypeInfo::CHARSET_ISO88591;
+            tgt.cType_   = tmudr::TypeInfo::STRING;
+            break;
+
+          case CharInfo::UTF8:
+            tgt.charset_ = tmudr::TypeInfo::CHARSET_UTF8;
+            tgt.cType_   = tmudr::TypeInfo::STRING;
+            break;
+
+          case CharInfo::UCS2:
+            tgt.charset_ = tmudr::TypeInfo::CHARSET_UCS2;
+            tgt.cType_ = tmudr::TypeInfo::U16STRING;
+            break;
+
+          default:
+            *diags << DgSqlCode(11151)
+                   << DgString0("character set")
+                   << DgString1(CharInfo::getCharSetName(
+                                     (CharInfo::CharSet) src->getScaleOrCharset()))
+                   << DgString2("unsupported character set");
+            result = FALSE;
+          }
+
+        // collation stays at 0 for now
+      }
+      break;
+
+    case NA_DATETIME_TYPE:
+      {
+        const DatetimeType *dType = static_cast<const DatetimeType *>(src);
+
+        // fraction precision for time/timestamp
+        tgt.precision_ = dType->getFractionPrecision();
+
+        switch (dType->getSubtype())
+          {
+          case DatetimeType::SUBTYPE_SQLDate:
+            tgt.sqlType_ = tmudr::TypeInfo::DATE;
+            break;
+          case DatetimeType::SUBTYPE_SQLTime:
+            tgt.sqlType_ = tmudr::TypeInfo::TIME;
+            break;
+          case DatetimeType::SUBTYPE_SQLTimestamp:
+            tgt.sqlType_ = tmudr::TypeInfo::TIMESTAMP;
+            break;
+          default:
+            *diags << DgSqlCode(11151)
+                   << DgString0("type")
+                   << DgString1(src->getTypeSQLname())
+                   << DgString2("unsupported datetime subtype");
+            result = FALSE;
+          }
+
+        // Todo, translate to time_t C type or to string??
+        tgt.cType_ = tmudr::TypeInfo::STRING;
+      }
+      break;
+
+    case NA_INTERVAL_TYPE:
+      {
+        const IntervalType *iType = static_cast<const IntervalType *>(src);
+
+        tgt.sqlType_ = tmudr::TypeInfo::INTERVAL;
+        tgt.precision_ = iType->getLeadingPrecision();
+        tgt.scale_ = iType->getFractionPrecision();
+
+        switch (src->getFSDatatype())
+          {
+          case REC_INT_YEAR:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_YEAR;
+            break;
+          case REC_INT_MONTH:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_MONTH;
+            break;
+          case REC_INT_YEAR_MONTH:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_YEAR_MONTH;
+            break;
+          case REC_INT_DAY:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_DAY;
+            break;
+          case REC_INT_HOUR:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_HOUR;
+            break;
+          case REC_INT_DAY_HOUR:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_DAY_HOUR;
+            break;
+          case REC_INT_MINUTE:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_MINUTE;
+            break;
+          case REC_INT_HOUR_MINUTE:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_HOUR_MINUTE;
+            break;
+          case REC_INT_DAY_MINUTE:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_DAY_MINUTE;
+            break;
+          case REC_INT_SECOND:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_SECOND;
+            break;
+          case REC_INT_MINUTE_SECOND:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_MINUTE_SECOND;
+            break;
+          case REC_INT_HOUR_SECOND:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_HOUR_SECOND;
+            break;
+          case REC_INT_DAY_SECOND:
+            tgt.intervalCode_ = tmudr::TypeInfo::INTERVAL_DAY_SECOND;
+            break;
+          default:
+            *diags << DgSqlCode(11151)
+                   << DgString0("type")
+                   << DgString1("interval")
+                   << DgString2("unsupported interval subtype");
+            result = FALSE;
+          }
+
+        // Todo, convert to special data structure or just an integer?
+        tgt.cType_ = tmudr::TypeInfo::INT64;
+
+      }
+      break;
+
+    default:
+      *diags << DgSqlCode(11151)
+             << DgString0("type")
+             << DgString1(src->getTypeSQLname())
+             << DgString2("unsupported type class");
+      result = FALSE;
+    }
+
+  return result;
+}
+
+tmudr::ParameterInfo *TMUDFInternalSetup::createParameterInfoFromNAColumn(
+     NAColumn *src,
+     ComDiagsArea *diags)
+{
+  tmudr::TypeInfo ti;
+
+  if (!TMUDFInternalSetup::setTypeInfoFromNAType(
+       ti,
+       src->getType(),
+       diags))
+    return NULL;
+
+  tmudr::ParameterInfo *result = new tmudr::ParameterInfo(
+       src->getColName().data(),
+       ti);
+
+  return result;
+}
+
+tmudr::ColumnInfo * TMUDFInternalSetup::createColumnInfoFromNAColumn(
+     const NAColumn *src,
+     ComDiagsArea *diags)
+{
+  tmudr::TypeInfo ti;
+
+  if (!TMUDFInternalSetup::setTypeInfoFromNAType(
+       ti,
+       src->getType(),
+       diags))
+    return NULL;
+
+  return new tmudr::ColumnInfo(
+       src->getColName(),
+       ti);
+}
+
+NABoolean TMUDFInternalSetup::setTableInfoFromNAColumnArray(
+     tmudr::TableInfo &tgt,
+     const NAColumnArray *src,
+     ComDiagsArea *diags)
+{
+  for (CollIndex c=0; c<src->entries(); c++)
+    {
+      const NAColumn *nac = (*src)[c];
+      tmudr::ColumnInfo *ci =
+        TMUDFInternalSetup::createColumnInfoFromNAColumn(
+             nac,
+             diags);
+      if (ci == NULL)
+        return FALSE;
+
+      tgt.columns_.push_back(ci);
+    }
+
+  return TRUE;
+}
+
+NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
+     const tmudr::TypeInfo &src,
+     int colNumForDiags,
+     NAHeap *heap,
+     ComDiagsArea *diags)
+{
+  NAType *result = NULL;
+  tmudr::TypeInfo::SQLTYPE_CODE typeCode = src.getSQLType();
+
+  switch (typeCode)
+    {
+    case tmudr::TypeInfo::SMALLINT:
+    case tmudr::TypeInfo::SMALLINT_UNSIGNED:
+      result = new(heap)
+        SQLSmall((typeCode == tmudr::TypeInfo::SMALLINT),
+                 src.getIsNullable(),
+                 heap);
+      break;
+
+    case tmudr::TypeInfo::INT:
+    case tmudr::TypeInfo::INT_UNSIGNED:
+      result = new(heap)
+        SQLInt((typeCode == tmudr::TypeInfo::INT),
+               src.getIsNullable(),
+               heap);
+      break;
+
+    case tmudr::TypeInfo::LARGEINT:
+      result = new(heap) SQLLargeInt(TRUE,
+                                     src.getIsNullable(),
+                                     heap);
+      break;
+
+    case tmudr::TypeInfo::NUMERIC:
+    case tmudr::TypeInfo::NUMERIC_UNSIGNED:
+      {
+        int storageSize = getBinaryStorageSize(src.getPrecision());
+        // if the storage size is specified, it must match
+        if (src.getLength() > 0 &&
+            src.getLength() != storageSize)
+          {
+            *diags << DgSqlCode(-11152)
+                   << DgInt0(typeCode)
+                   << DgInt1(colNumForDiags)
+                   << DgString0("Incorrect storage size");
+          }
+        else
+          result = new(heap) 
+            SQLNumeric(storageSize,
+                       src.getPrecision(),
+                       src.getScale(),
+                       (typeCode == tmudr::TypeInfo::NUMERIC),
+                       src.getIsNullable(),
+                       heap);
+      }
+      break;
+
+    case tmudr::TypeInfo::DECIMAL_LSE:
+    case tmudr::TypeInfo::DECIMAL_UNSIGNED:
+      result = new(heap)
+        SQLDecimal(src.getPrecision(),
+                   src.getScale(),
+                   (typeCode == tmudr::TypeInfo::DECIMAL_LSE),
+                   src.getIsNullable(),
+                   heap);
+      break;
+
+    case tmudr::TypeInfo::REAL:
+      result = new(heap) SQLReal(src.getIsNullable(),
+                                 heap);
+      break;
+
+    case tmudr::TypeInfo::DOUBLE_PRECISION:
+      result = new(heap) SQLDoublePrecision(src.getIsNullable(),
+                                            heap);
+      break;
+
+    case tmudr::TypeInfo::CHAR:
+    case tmudr::TypeInfo::VARCHAR:
+      {
+        CharInfo::CharSet cs = CharInfo::UnknownCharSet;
+
+        switch (src.getCharset())
+          {
+          case tmudr::TypeInfo::CHARSET_ISO88591:
+            cs = CharInfo::ISO88591;
+            break;
+          case tmudr::TypeInfo::CHARSET_UTF8:
+            cs = CharInfo::UTF8;
+            break;
+          case tmudr::TypeInfo::CHARSET_UCS2:
+            cs = CharInfo::UCS2;
+            break;
+          default:
+            *diags << DgSqlCode(-11152)
+                   << DgInt0(src.getSQLType())
+                   << DgInt1(colNumForDiags)
+                   << DgString0("Invalid charset");
+          }
+
+        if (cs != CharInfo::UnknownCharSet)
+          {
+            // assume that any UTF8 strings are
+            // limited by their byte length, not
+            // the number of UTF8 characters
+            CharLenInfo lenInfo(0,src.getLength());
+
+            if (typeCode == tmudr::TypeInfo::CHAR)
+              result = new(heap)
+                SQLChar(lenInfo,
+                        src.getIsNullable(),
+                        FALSE,
+                        FALSE,
+                        FALSE,
+                        cs);
+            else
+              result = new(heap)
+                SQLVarChar(lenInfo,
+                           src.getIsNullable(),
+                           FALSE,
+                           FALSE,
+                           cs);
+          }
+      }
+      break;
+
+    case tmudr::TypeInfo::DATE:
+      result = new(heap) SQLDate(src.getIsNullable(),
+                                 heap);
+      break;
+
+    case tmudr::TypeInfo::TIME:
+      result = new(heap) SQLTime(src.getIsNullable(),
+                                 src.getScale(),
+                                 heap);
+      break;
+
+    case tmudr::TypeInfo::TIMESTAMP:
+      result = new(heap) SQLTimestamp(src.getIsNullable(),
+                                      src.getScale(),
+                                      heap);
+      break;
+
+    case tmudr::TypeInfo::INTERVAL:
+      {
+        rec_datetime_field startField = REC_DATE_UNKNOWN;
+        rec_datetime_field endField = REC_DATE_UNKNOWN;
+
+        switch (src.getIntervalCode())
+          {
+          case tmudr::TypeInfo::INTERVAL_YEAR:
+            startField =
+              endField = REC_DATE_YEAR;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_MONTH:
+            startField =
+              endField = REC_DATE_MONTH;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_DAY:
+            startField =
+              endField = REC_DATE_DAY;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_HOUR:
+            startField =
+              endField = REC_DATE_HOUR;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_MINUTE:
+            startField =
+              endField = REC_DATE_MINUTE;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_SECOND:
+            startField =
+              endField = REC_DATE_SECOND;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_YEAR_MONTH:
+            startField = REC_DATE_YEAR;
+            endField = REC_DATE_MONTH;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_DAY_HOUR:
+            startField = REC_DATE_DAY;
+            endField = REC_DATE_HOUR;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_DAY_MINUTE:
+            startField = REC_DATE_DAY;
+            endField = REC_DATE_MINUTE;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_DAY_SECOND:
+            startField = REC_DATE_DAY;
+            endField = REC_DATE_SECOND;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_HOUR_MINUTE:
+            startField = REC_DATE_HOUR;
+            endField = REC_DATE_MINUTE;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_HOUR_SECOND:
+            startField = REC_DATE_HOUR;
+            endField = REC_DATE_SECOND;
+            break;
+
+          case tmudr::TypeInfo::INTERVAL_MINUTE_SECOND:
+            startField = REC_DATE_MINUTE;
+            endField = REC_DATE_SECOND;
+            break;
+
+          default:
+            *diags << DgSqlCode(-11152)
+                   << DgInt0(src.getSQLType())
+                   << DgInt1(colNumForDiags)
+                   << DgString0("Invalid interval start/end fields");
+          }
+
+        if (startField != REC_DATE_UNKNOWN)
+          {
+            result = new(heap) SQLInterval(src.getIsNullable(),
+                                           startField,
+                                           src.getPrecision(),
+                                           endField,
+                                           src.getScale(),
+                                           heap);
+            if (!static_cast<SQLInterval *>(result)->checkValid(diags))
+              {
+                *diags << DgSqlCode(-11152)
+                       << DgInt0(src.getSQLType())
+                       << DgInt1(colNumForDiags)
+                       << DgString0("See previous error");
+                result = NULL;
+              }
+          }
+      }
+      break;
+
+    default:
+      *diags << DgSqlCode(-11152)
+             << DgInt0(src.getSQLType())
+             << DgInt1(colNumForDiags)
+             << DgString0("Invalid SQL Type code");
+      break;
+    }
+
+  return result;
+}
+
+NAColumn *TMUDFInternalSetup::createNAColumnFromParameterInfo(
+     const tmudr::ParameterInfo &src,
+     int position,
+     NAHeap *heap,
+     ComDiagsArea *diags)
+{
+  NAType *newColType = createNATypeFromTypeInfo(src.getType(),
+                                                position,
+                                                heap,
+                                                diags);
+  if (newColType == NULL)
+    return NULL;
+
+  return new(heap) NAColumn(
+       src.getParameterName().data(),
+       position,
+       newColType,
+       heap);
+}
+
+NAColumnArray * TMUDFInternalSetup::createColumnArrayFromTableInfo(
+     const tmudr::TableInfo &tableInfo,
+     TableMappingUDF * tmudfNode,
+     NAHeap *heap,
+     ComDiagsArea *diags)
+{
+  NAColumnArray *result = new(heap) NAColumnArray(heap);
+  int numColumns = tableInfo.getNumColumns();
+
+  for (int i=0; i<numColumns; i++)
+    {
+      const tmudr::ColumnInfo &colInfo = tableInfo.getColumn(i);
+      NAColumn *newCol = NULL;
+      const tmudr::ProvenanceInfo &provenance = colInfo.getProvenance();
+
+      if (provenance.isFromInputTable())
+        {
+          // the output column is passed through from an input
+          // column
+
+          const NAColumn *ic =
+            tmudfNode->getChildInfo(
+                 provenance.getInputTableNum())->getInputTabCols().getColumn(
+                      provenance.getInputColumnNum());
+          const char *newColName = colInfo.getColName().data();
+
+          // unless specified, use the input column name
+          if (!newColName || strlen(newColName) == 0)
+            newColName = ic->getColName();
+
+          // use type and heading from the input column when
+          // creating the descriptor of the output column
+          newCol = new(heap) NAColumn(
+               newColName,
+               i,
+               ic->getType()->newCopy(heap),
+               heap,
+               0,
+               NULL,
+               USER_COLUMN,
+               COM_NO_DEFAULT,
+               NULL,
+               const_cast<char *>(ic->getHeading()));
+        }
+      else
+        {
+          char defaultName[30];
+          const char *usedColName;
+          NAType *newColType = createNATypeFromTypeInfo(colInfo.getType(),
+                                                        i,
+                                                        heap,
+                                                        diags);
+
+          if (newColType == NULL)
+            return NULL;
+
+          usedColName = colInfo.getColName().data();
+
+          if (usedColName[0] == 0)
+            {
+              // no name specified by UDF writer, make one up
+              snprintf(defaultName, 30, "output_%d", i);
+              usedColName = defaultName;
+            }
+
+          newCol = new(heap) NAColumn(
+               usedColName,
+               i,
+               newColType,
+               heap);
+        }
+
+      result->insert(newCol);
+    }
+
+  return result;
+}
+
+tmudr::UDRPlanInfo *TMUDFInternalSetup::createUDRPlanInfo()
+{
+  return new tmudr::UDRPlanInfo();
+}
+
+void TMUDFInternalSetup::deleteUDRInvocationInfo(tmudr::UDRInvocationInfo *toDelete)
+{
+  // sorry, I'm your friend, but I'll have to terminate you now
+  delete toDelete;
+}
+
+void TMUDFInternalSetup::deleteUDRPlanInfo(tmudr::UDRPlanInfo *toDelete)
+{
+  // sorry, I'm your friend, but I'll have to terminate you now
+  delete toDelete;
+}
+
+// also source in the methods defined in sqludr.cpp
+#include "sqludr.cpp"

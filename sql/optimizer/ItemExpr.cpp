@@ -9968,12 +9968,13 @@ ConstValue::ConstValue(const NAType * type, void * value, Lng32 value_len,
   if(type)
     type_ = type->newCopy(outHeap);
 
+  NABoolean isNull = FALSE;
+
   // If a literal was not supplied, call a method to convert
   // the value from its binary form to UTF-8 and add any necessary
   // syntax modifiers like the charset and date and time qualifiers
   if (literal == NULL)
     {
-      NABoolean isNull = FALSE;
       if (type_)
         textIsValidatedSQLLiteralInUTF8_ =
           type_->createSQLLiteral((const char *)value,
@@ -9983,14 +9984,26 @@ ConstValue::ConstValue(const NAType * type, void * value, Lng32 value_len,
       DCMPASSERT(textIsValidatedSQLLiteralInUTF8_); // for now
       if (!textIsValidatedSQLLiteralInUTF8_)
         text_ = new (outHeap) NAString("<unknown value>", outHeap);
-      if (isNull)
-        isNull_ = IS_NULL;
     }
   else
     {
       text_ = new (outHeap) NAString(*literal, outHeap);
       textIsValidatedSQLLiteralInUTF8_ = FALSE;
+      if (type->supportsSQLnull())
+        {
+          // call the NAType base class method
+          // just to check for a NULL value (sets isNull)
+          NAString *dummyPtr;
+
+          type->NAType::createSQLLiteral((const char *) value,
+                                         dummyPtr,
+                                         isNull,
+                                         outHeap);
+        }
     }
+
+  if (isNull)
+    isNull_ = IS_NULL;
 }
 
 /*soln:10-050710-9594 begin */
@@ -10266,6 +10279,36 @@ Int64 ConstValue::getExactNumericValue(Lng32 &scale) const
     }
 
   return result;
+}
+
+NABoolean ConstValue::canGetApproximateNumericValue() const
+{
+  // return TRUE if this is an approximate numeric type or if we
+  // can return an exact numeric value
+  return (type_->getTypeQualifier() == NA_NUMERIC_TYPE &&
+          ((!((NumericType *) type_)->isExact() ||
+            canGetExactNumericValue())));
+}
+
+double ConstValue::getApproximateNumericValue() const
+{
+  CMPASSERT(canGetApproximateNumericValue());
+
+  switch (type_->getFSDatatype())
+    {
+    case REC_IEEE_FLOAT32:
+      return *((float *) value_);
+
+    case REC_IEEE_FLOAT64:
+      return *((double *) value_);
+
+    default:
+      {
+        Int32 scale;
+        double tempResult = (double) getExactNumericValue(scale);
+        return tempResult * pow(10,-scale);
+      }
+    }
 }
 
 // The implementation checks for identity rather than equality,

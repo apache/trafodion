@@ -366,7 +366,7 @@
 1379 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Audit aging days must be 0 to $0~Int0.
 1380 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Audit threshold must be a percentage from 0 to 100.
 1381 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Column/value pair mismatch.
-1382 ZZZZZ 99999 BEGINNER MINOR DBADMIN JAR file $0~String0 not found.
+1382 ZZZZZ 99999 BEGINNER MINOR DBADMIN JAR or DLL file $0~String0 not found.
 1383 ZZZZZ 99999 BEGINNER MAJOR DBADMIN User management operations have been disabled. $0~string0 cannot be performed for $1~TableName.
 1384 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unable to perform 1-to-1 mapping of $0~int0 partitions to $1~int1 disks for $2~TableName.  Since there are more partitions than available disks, $3~int2 partitions have been created on each disk.
 1385 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mapping of disk pools for $0~TableName during CREATE failed. The number of partitions is $1~int0, the expected number of disks is $2~int1 and the actual number of disks is $3~int2.
@@ -1993,6 +1993,10 @@ drop the default context
 11116 ZZZZZ 99999 ADVANCED MAJOR DBADMIN MXUDR: Internal error: A stored procedure result set $0~string0 request arrived containing an invalid result set index: $1~int0.
 11117 ZZZZZ 99999 ADVANCED MAJOR DIALOUT MXUDR: Internal error: A stored procedure result set request of type $0~$string0 could not be processed because the specified result set is in an unexpected state: $1~string1.
 11118 ZZZZZ 99999 ADVANCED MAJOR DIALOUT MXUDR: A stored procedure result set was encountered with an output column count of $0~int0. All stored procedure result sets are expected to have at least one output column.
+11150 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ----- UDF compile time interface errors
+11151 ZZZZZ 99999 BEGINNER MINOR LOGONLY Unable to use '$0~string0' '$1~string1' in a user-defined routine. Details: $2~string2.
+11152 ZZZZZ 99999 BEGINNER MINOR LOGONLY Unable to convert TypeInfo $0~int0 for column or parameter number $1~int1 from UDF compiler interface into an SQL internal type. Details: $2~string0.
+11153 ZZZZZ 99999 BEGINNER MINOR LOGONLY Unable to produce a query plan. This could be related to a TMUDF that failed to negotiate a query plan with the optimizer. One possible reason: $0~string0.
 11200 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU -----First Language Manager Error -----
 11201 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Language Manager initialization failed. Details: Errors occurred while loading Java class $0~String0.
 11202 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Language Manager initialization failed. Details: Unable to initialize the Java virtual machine. $0~string0

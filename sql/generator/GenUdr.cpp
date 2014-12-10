@@ -330,53 +330,34 @@ ExplainTuple *PhysicalTableMappingUDF::addSpecificExplainInfo(ExplainTupleMaster
 
   ULng32 i;
   NAString name = getUserTableName().getCorrNameAsString();
- 
+  const NAColumnArray & formalInputParams = getScalarInputParams();
+  const NAColumnArray & outputColumns = getOutputParams();
+
   NAString description = "TMUDF_name: ";
   description += name;
 
-  description += " parameter_modes: ";
-  const ULng32 numParams = getNARoutine()->getParamCount();
-
-  if (numParams == 0)
-  {
-    description += "none";
-  }
-  else
-  {
-    for (i = 0; i < numParams; i++)
+  description += " input_parameters: ";
+  for (CollIndex i=0; i<formalInputParams.entries(); i++)
     {
-      const NAColumnArray &formalParams = getNARoutine()->getParams();
-      const NAColumn &c = *(formalParams[i]);
-      ComColumnDirection dir = ((NAColumn &)c).getColumnMode();
+      if (i > 0)
+        description += ", ";
+      description += formalInputParams[i]->getColName();
+    }
 
-      switch (dir)
-      {
-        case COM_INPUT_COLUMN:
-          description += COM_INPUT_COLUMN_LIT;
-          break;
-        case COM_OUTPUT_COLUMN:
-          description += COM_OUTPUT_COLUMN_LIT;
-          break;
-        case COM_UNKNOWN_DIRECTION:
-        default:
-        {
-          NAString msg = "No parameter mode specified for routine ";
-          msg += name;
-          GenAssert(FALSE, msg.data());
-          break;
-        }
-      }
-
-    } // for each SQL parameter
-  } // if numParams > 0
-
-
-
+  description += " result_columns: ";
+  for (CollIndex o=0; o<outputColumns.entries(); o++)
+    {
+      if (o > 0)
+        description += ", ";
+      description += outputColumns[o]->getColName();
+    }
+  
   description += " external_name: ";
   description += getNARoutine()->getExternalName();
 
   description += " external_file: ";
   description += getNARoutine()->getFile();
+  description += " ";
 
   explainTuple->setDescription(description);
   explainTuple->setTableName(name);
@@ -1778,7 +1759,7 @@ PhysicalTableMappingUDF::codeGen(Generator *generator)
     //
     MapTable *localMapTable = generator->appendAtEnd();
 
-    // The input descriptor passed to the VPJoin node is the
+    // The input descriptor passed to the TMUDF node is the
     // input descriptor passed to all children.
     generator->setCriDesc(givenDesc, Generator::DOWN);
 
@@ -1829,6 +1810,14 @@ PhysicalTableMappingUDF::codeGen(Generator *generator)
          addExplainInfo(newTdb, firstExplainTuple, secondExplainTuple, generator));
   }
 
+  // Todo: Handle multiple TMUDF invocations using the same DLL in the same
+  //       SQL statement. Also error situations where we load the DDL but
+  //       don't reach here
+
+  // delete the TMUDRInterface object here, since this will call a destructor
+  // that's defined in the DLL to be unloaded
+  delete udrInterface_;
+  udrInterface_ = NULL;
   unloadDll(getDllInteraction()->getDllPtr(), CmpCommon::diags());
   
   return result;

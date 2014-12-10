@@ -694,7 +694,7 @@ CollIndex Generator::addVpFileDesc(const IndexDesc* vpDesc,
   return i;
   }
 
-CollHeap* Generator::wHeap()
+NAHeap* Generator::wHeap()
 {
   return (currentCmpContext_) ? currentCmpContext_->statementHeap() : 0;
 }
