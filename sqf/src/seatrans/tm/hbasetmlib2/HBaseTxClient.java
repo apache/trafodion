@@ -709,13 +709,13 @@ public class HBaseTxClient {
                                     if (ts == null) {
                                         ts = new TransactionState(txid);
                                     }
-				                   /* 	 try {
+				                   try {
 				                    		 this.addRegionToTS(hostnamePort, regionInfo, ts);
 				                    	 } catch (Exception e) {
 				                    		 LOG.error("Unable to add region to TransactionState" +
-				                    		 		"region info: " + new String(regionBytes));
+				                    		 		"region info: "/* + new String(regionBytes)*/);
 				                    		 e.printStackTrace();
-				                    	 } */
+				                    	 }
                                     transactionStates.put(txid, ts);
                                 }
                             }

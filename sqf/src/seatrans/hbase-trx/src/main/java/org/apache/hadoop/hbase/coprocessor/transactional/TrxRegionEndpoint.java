@@ -132,6 +132,7 @@ import org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionSca
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionState;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.TransactionScanner;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.WriteAction;
+import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.CommitProgress;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.Status;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -1760,11 +1761,27 @@ CoprocessorService, Coprocessor {
                           long tid = entry.getKey();
                           if ((int) (tid >> 32) == tmId) {
                               indoubtTransactions.add(tid);
-                              LOG.info("Trafodion Recovery: region " + regionInfo.getEncodedName() + " in-doubt transaction " + tid + " has been added into the recovery repply to TM " + tmId);
+                              LOG.info("Trafodion Recovery: region " + regionInfo.getEncodedName() + " in-doubt transaction " + tid + " has been added into the recovery reply to TM " + tmId + " during recovery ");
                           }
                      } 
                      break;
               case 2: // START
+                     List<TransactionState> commitPendingCopy = new ArrayList<TransactionState>(commitPendingTransactions);
+                     for (TransactionState commitPendingTS : commitPendingCopy) {
+                        long tid = commitPendingTS.getTransactionId();
+                          if ((int) (tid >> 32) == tmId) {
+                              indoubtTransactions.add(tid);
+                              LOG.info("Trafodion Recovery: region " + regionInfo.getEncodedName() + " in-doubt transaction " + tid + " has been added into the recovery reply to TM " + tmId + " during start ");
+                          }
+                     }
+                     // now remove the ZK node after TM has initiated the ecovery request   
+                    String lv_encoded = m_Region.getRegionInfo().getEncodedName();
+                    try {
+                         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: recovery request  Trafodion Recovery: delete recovery zNode TM " + tmId + " region encoded name " + lv_encoded + " for 0 in-doubt transaction");
+                        deleteRecoveryzNode(tmId, lv_encoded);
+                     } catch (IOException e) {
+                     LOG.error("Trafodion Recovery: delete recovery zNode failed");
+                     }              
                      break;
        }
 
@@ -2480,7 +2497,7 @@ CoprocessorService, Coprocessor {
       String lv_encoded = regionInfo.getEncodedName();
 
       for (TransactionState commitPendingTS : commitPendingCopy) {
-            if (commitPendingTS.getCPEpoch() < (controlPointEpoch.get() - 2)) {
+            if (commitPendingTS.getCPEpoch() < (controlPointEpoch.get() - 1)) {
                transactionId = commitPendingTS.getTransactionId();
                if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Endpoint CP: stale branch Txn id " + transactionId + " region info bytes " + new String(lv_byte_region_info));
                tmid = (int) (transactionId >> 32);
@@ -2783,7 +2800,7 @@ CoprocessorService, Coprocessor {
         }
       }
     }
-    state.setCommitProgress(2);
+    state.setCommitProgress(CommitProgress.COMMITED);
     retireTransaction(state);
   }
 
@@ -3355,7 +3372,7 @@ CoprocessorService, Coprocessor {
   public void commit(final long transactionId, final boolean ignoreUnknownTransactionException) throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit(txId) -- ENTRY txId: " + transactionId +
               " ignoreUnknownTransactionException: " + ignoreUnknownTransactionException);
-    int commitStatus = 0;
+    CommitProgress commitStatus = CommitProgress.NONE;
     TransactionState state;
     try {
       state = getTransactionState(transactionId);
@@ -3384,10 +3401,10 @@ CoprocessorService, Coprocessor {
     synchronized(state.getXaOperationObject()) {
         commitStatus = state.getCommitProgress();
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit HHH " + commitStatus);
-        if (commitStatus == 2) { // already committed, this is likely unnecessary due to Status check above
+        if (commitStatus == CommitProgress.COMMITED) { // already committed, this is likely unnecessary due to Status check above
             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - duplicate commit for committed transaction ");
         }
-        else if (commitStatus == 1) {
+        else if (commitStatus == CommitProgress.COMMITTING) {
             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - duplicate commit during committing transaction ");
             try {
                   Thread.sleep(1000);          ///1000 milliseconds is one second.
@@ -3395,9 +3412,9 @@ CoprocessorService, Coprocessor {
                   Thread.currentThread().interrupt();
             }
         }
-        else if (commitStatus == 0) {
+        else if (commitStatus == CommitProgress.NONE) {
             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit HHH " + commitStatus);
-            state.setCommitProgress(1);
+            state.setCommitProgress(CommitProgress.COMMITTING);
             commit(state);
         }
     }

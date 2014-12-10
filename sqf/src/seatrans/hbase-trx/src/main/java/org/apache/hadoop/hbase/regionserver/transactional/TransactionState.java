@@ -56,7 +56,15 @@ public class TransactionState {
 
     private static final Log LOG = LogFactory.getLog(TransactionState.class);
 
-    /** Current status. */
+    /** Current commit progress */
+    public enum CommitProgress {
+        /** Initial status, still performing operations. */
+        NONE,
+        COMMITTING,
+        COMMITED,
+    }
+
+    /** Current status */
     public enum Status {
         /** Initial status, still performing operations. */
         PENDING,
@@ -122,7 +130,7 @@ public class TransactionState {
     private int reInstated = 0;
     private WALEdit e;
     private Object xaOperation = new Object();;
-    private int commitProgress = 0; // 0 is no commit yet, 1 is a commit is under way, 2 is committed
+    private CommitProgress commitProgress = CommitProgress.NONE; // 0 is no commit yet, 1 is a commit is under way, 2 is committed
     private List<Tag> tagList = Collections.synchronizedList(new ArrayList<Tag>());
 
     public TransactionState(final long transactionId, final long rLogStartSequenceId, final HRegionInfo regionInfo, HTableDescriptor htd) {
@@ -411,12 +419,12 @@ public class TransactionState {
         controlPointEpochAtPrepare = epoch;
     }
 
-    public int getCommitProgress() {
+    public CommitProgress getCommitProgress() {
         return commitProgress;
     }
 
-    public void setCommitProgress(int progress) {
-        commitProgress = progress;
+    public void setCommitProgress(final CommitProgress progress) {
+        this.commitProgress = progress;
     }
 
     /**

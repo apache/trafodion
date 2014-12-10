@@ -1066,6 +1066,7 @@ public class TmAuditTlog {
                if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: tLog transaction not found: " + transidString);
                return;
             }
+            ts.clearParticipatingRegions();
             String recordString =  new String (Bytes.toString(value));
             StringTokenizer st = new StringTokenizer(recordString, ",");
             if (st.hasMoreElements()) {
