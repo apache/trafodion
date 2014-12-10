@@ -20,10 +20,8 @@
 
 #
 # This script will configure HBase with HBase-trx
-# and co-processors needed for Trafodion.  It uses
-# Cloudera Manager's REST api to do this.
+# and co-processors needed for Trafodion.
 #
-# NOTE: Only for Cloudera installations
 
 ###Default Values###
 typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
