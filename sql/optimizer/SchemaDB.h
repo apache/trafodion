@@ -160,8 +160,6 @@ public:
   void initPerStatement(NABoolean lightweight = FALSE);		// before stmt
   void cleanupPerStatement();					// after stmt
 
-  CollationDB &userCollationDB()	{ return userCollationDB_; }
-
   NodeToCpuVolMapDB *getNodeToCpuVolMapDB();
 
   Lng32 getCurrentDiskPool() { return currentDiskPool_; }
@@ -234,8 +232,6 @@ private:
   //   globals -- see NADefaults and SqlParserGlobalsCmn.h.
   // --------------------------------------------------------------------------
   SchemaName defaultSchema_;			// always ANSI (not MPLOC)
-
-  CollationDB userCollationDB_;		// ##tmp, for NSK REL 1 only?
 
   // triggers -- eliezer
   // created on demand

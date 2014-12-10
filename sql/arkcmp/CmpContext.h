@@ -425,6 +425,8 @@ public :
   void setCIClass(CmpContextInfo::CmpContextClassType x) { ciClass_ = x; }
   CmpContextInfo::CmpContextClassType getCIClass() { return ciClass_; }
 
+  CollationDBList *getCollationDBList() { return CDBList_; }
+
 // MV
 private:
 // Adding support for multi threaded requestor (multi transactions) handling
@@ -437,6 +439,7 @@ private:
   short GetTMFFileNumber() const { return tmpFileNumber_; }
   NAClusterInfo *getClusterInfo() { return clusterInfo_; }
   void swithcContext();
+
 
 // MV
 private:
@@ -565,6 +568,8 @@ private:
   MDDescsInfo * trafMDDescsInfo_;
 
   CmpContextInfo::CmpContextClassType ciClass_;
+
+  CollationDBList *CDBList_;
   
 }; // end of CmpContext 
 #pragma warn(1506)  // warning elimination 

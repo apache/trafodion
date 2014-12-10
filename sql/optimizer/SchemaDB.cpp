@@ -82,7 +82,6 @@ SchemaDB::SchemaDB(ReadTableDef *rtd)
     actionRoutineDB_(CmpCommon::contextHeap()),
     valueDArray_(),
     domainDList_(CmpCommon::contextHeap()),
-    userCollationDB_(CmpCommon::contextHeap()),
     readTableDef_(rtd),
     defaults_(CmpCommon::contextHeap()),
     defaultSchema_(CmpCommon::contextHeap()),
@@ -136,11 +135,6 @@ void SchemaDB::initPerStatement(NABoolean lightweight)
   defaultSchema_.setCatalogName(cat);
   defaultSchema_.setSchemaName (sch);
 
-  #ifndef NDEBUG
-  if (userCollationDB_.refreshNeeded() && ActiveSchemaDB_Safe())
-    cerr << __FILE__ << ": userCollationDB_.refreshNeeded() !" << endl;
-  #endif
-
 }
 
 // By default, this returns the ANSI default schema.
@@ -171,13 +165,6 @@ void SchemaDB::cleanupPerStatement()
   // is done so that an uninitialized value id (= 0) could
   // be detected as an invalid entry.
   valueDArray_.insertAt(0,NULL);
-
-  // ##NCHAR: While NADefaults attr MP_COLLATIONS is in effect,
-  // we do *not* reset the userCollationDB per statement.
-  // In a *real* Ansi-compliant implementation we might have to do this reset
-  // (at least need to do a metadata lookup at bind-time to see if any
-  // collation definitions changed...)
-  //	userCollationDB_.clearAndReset();
 
   // NATables are now on the statement heap, so there've already been
   // destroyed at this point.
