@@ -2363,6 +2363,12 @@ CoprocessorService, Coprocessor {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:OOO successfully get the reference from Region CoprocessorEnvironment ");
     }
 
+    commitPendingTransactions = (Set<TransactionState>)transactionsByIdTestz.get(
+               this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeycommitPendingTransactions);
+
+    transactionsById = (ConcurrentHashMap<String, TransactionState>) transactionsByIdTestz.get(
+                               this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeytransactionsById);
+
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: start");
   }
 

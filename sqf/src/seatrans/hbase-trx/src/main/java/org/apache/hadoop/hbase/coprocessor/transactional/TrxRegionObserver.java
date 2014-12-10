@@ -94,6 +94,9 @@ private Map<Integer, Integer> indoubtTransactionsCountByTmid = new TreeMap<Integ
 // Map for Transactional Region to exchange data structures between Region Observer coprocessor and Endpoint Coprocessor
 static ConcurrentHashMap<String, Object> transactionsRefMap = new ConcurrentHashMap<String, Object>();
 
+private ConcurrentHashMap<String, TransactionState> transactionsById = new ConcurrentHashMap<String, TransactionState>();
+private Set<TransactionState> commitPendingTransactions = Collections.synchronizedSet(new HashSet<TransactionState>());
+
 HRegion my_Region;
 HRegionInfo regionInfo;
 HLog tHLog;
@@ -146,7 +149,9 @@ public void start(CoprocessorEnvironment e) throws IOException {
    if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Observer CP: HRegion " + regionName + " starts to put transactional data lists into reference map ... ");
 
    transactionsRefMap.put(regionName+trxkeypendingTransactionsById, pendingTransactionsById);
-   transactionsRefMap.put(regionName+trxkeyindoubtTransactionsCountByTmid, indoubtTransactionsCountByTmid);;
+   transactionsRefMap.put(regionName+trxkeyindoubtTransactionsCountByTmid, indoubtTransactionsCountByTmid);
+   transactionsRefMap.put(regionName+trxkeytransactionsById, transactionsById);
+   transactionsRefMap.put(regionName+trxkeycommitPendingTransactions, commitPendingTransactions);
 
     if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Observer CP: trxRegionObserver load start complete");
 
@@ -420,6 +425,29 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
           throw new IOException("Trafodion Recovery Region Observer CP: ZKW Unable to create recovery zNode to TM, throw IOException " + node, e);
           }
        }
-} // end ogf createRecoveryzNode
+} // end of createRecoveryzNode
+
+    @Override
+    public void preSplit(ObserverContext<RegionCoprocessorEnvironment> c, byte[] splitRow) throws IOException {
+        HRegion region = c.getEnvironment().getRegion();
+        int sleepCounter = 0;
+        boolean delayed = false;
+        if(LOG.isTraceEnabled()) LOG.trace("preSplit -- ENTRY region: " + region.getRegionNameAsString());
+
+        while(!(transactionsById.isEmpty() && commitPendingTransactions.isEmpty())) {
+               try {
+                       delayed = true;
+                       Thread.sleep(60000);
+                       sleepCounter++;
+                       if(LOG.isDebugEnabled()) LOG.debug("Delaying split due to transactions present. Delayed : " + sleepCounter +
+                                       " minute(s) on " + region.getRegionNameAsString());
+               } catch(InterruptedException e) {
+                       LOG.warn("Problem while calling sleep(), " + e);
+               }
+        }
+        if(delayed) if(LOG.isDebugEnabled()) LOG.debug("Continuing with split operation, no transactions on: " + region.getRegionNameAsString());
+
+        if(LOG.isTraceEnabled()) LOG.trace("preSplit -- EXIT region: " + region.getRegionNameAsString());
+    }
 
 } // end of TrxRegionObserver Class
