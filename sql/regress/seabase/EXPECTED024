@@ -138,7 +138,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ6
 >>
 >>alter sequence test024seq2 minvalue 5;
 
-*** ERROR[1592] Only MAXVALUE or INCREMENT BY options can be specified for ALTER SEQUENCE.
+*** ERROR[1592] MINVALUE cannot be specified for ALTER SEQUENCE.
 
 --- SQL operation failed with errors.
 >>showddl sequence test024seq2;
@@ -833,7 +833,7 @@ TRAFODION                                                                       
 --- SQL operation complete.
 >>alter sequence error_seq start with 50;
 
-*** ERROR[1592] Only MAXVALUE or INCREMENT BY options can be specified for ALTER SEQUENCE.
+*** ERROR[1592] START WITH cannot be specified for ALTER SEQUENCE.
 
 --- SQL operation failed with errors.
 >>

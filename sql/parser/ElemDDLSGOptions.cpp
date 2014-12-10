@@ -403,7 +403,9 @@ short ElemDDLSGOptions::validate(short queryType)
       if ((isMinValueSpecified()|| isStartValueSpecified()))
         {
           *CmpCommon::diags() << DgSqlCode(-1592)
-                              << DgString0(queryTypeStr);
+                              << (isMinValueSpecified() ? DgString0("MINVALUE") : DgString0("START WITH"))
+                              << DgString1(queryTypeStr);
+          
           return -1;
         }
       
@@ -530,25 +532,18 @@ short ElemDDLSGOptions::validate(short queryType)
     }
 
   Int64 cache = 0;
-  double fMaxVal = maxValue;
-  double fMinVal = MAXOF(startValue, minValue);
   Int64 minVal = MAXOF(startValue, minValue);
-  double fRangeOfVals = ceil((fMaxVal-fMinVal+1)/increment);
-  Int64 rangeOfVals = (maxValue-minVal+1);
+  Int64 rangeOfVals = (maxValue-minVal)/increment + 1;
+
   if (isCacheSpecified())
     cache = getCache();
   else
-    {
-      if (increment == 1)
-	cache = MINOF(rangeOfVals, 25);
-      else
-	cache = MINOF(fRangeOfVals, 25);
-    }
+    cache = MINOF(rangeOfVals, 25);
 
   if (NOT isNoCache())
     {
       if ((cache <= 1) ||
-	  (cache > (increment == 1 ? rangeOfVals : fRangeOfVals)))
+	  (cache > rangeOfVals))
 	{
 	  *CmpCommon::diags() << DgSqlCode(-1577)
 			      << DgString0(queryTypeStr);	  
@@ -556,10 +551,7 @@ short ElemDDLSGOptions::validate(short queryType)
 	}
     }
   
-  if (increment == 1)
-    cache = MINOF(rangeOfVals, cache);
-  else
-    cache = MINOF(fRangeOfVals, cache);
+  cache = MINOF(rangeOfVals, cache);
 
   setStartValue(startValue);
   setIncrement(increment);

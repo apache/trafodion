@@ -1168,14 +1168,6 @@ short Exchange::codeGenForESP(Generator * generator)
     sendBottom->setSMTag(smTag);
   }
 
-  if (0) //generator->getUserSidetreeInsert())
-    {
-      // user load with sidetree inserts are not allowed with ESPs.
-      GenAssert((NOT generator->getUserSidetreeInsert()),
-		"User load using sideinserts are not allowed with ESPs");
-      return 0;
-    }
-
   if(isAnESPAccess()) {
     splitTop->setMWayRepartitionFlag();
   }

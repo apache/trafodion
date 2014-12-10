@@ -3260,20 +3260,6 @@ enum DefaultConstants
   // query must be this old to be canceled if only PID is specified
   CANCEL_MINIMUM_BLOCKING_INTERVAL,
 
-  // transform insert...select to sidetree insert select
-  TRANSFORM_TO_SIDETREE_INSERT,
-
-  // min num of source select rows before transformation is done.
-  TRANSFORM_TO_SIDETREE_INSERT_MIN_ROWS,
-
-  // aqr a no rollback query that was transformed to sidetree insert.
-  TRANSFORM_TO_SIDETREE_INSERT_AQR,
-
-  TRANSFORM_TO_SIDETREE_INSERT_WITH_ALTER,
-
-  // issue a warning if insert could not be transformed
-  TRANSFORM_TO_SIDETREE_INSERT_WARNINGS,
-
   // propagate child available Btree indexes from child for arity 1 ops
   GA_PROP_INDEXES_ARITY_1, 
   // FAst extract Routines

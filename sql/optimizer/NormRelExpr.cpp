@@ -6445,8 +6445,7 @@ RelExpr * Insert::normalizeNode(NormWA & normWARef)
 
   // If the child is not a Tuple node - nothing to do here.
   CMPASSERT(normalizedThis->getArity() > 0);
-  if ((normalizedThis->child(0)->getOperatorType() != REL_TUPLE) ||
-      (getInsertType() == Insert::VSBB_LOAD_USER_SIDEINSERTS))
+  if (normalizedThis->child(0)->getOperatorType() != REL_TUPLE)
     return normalizedThis;
 
   if (normalizedThis->child(0)->getSelectionPred().isEmpty())

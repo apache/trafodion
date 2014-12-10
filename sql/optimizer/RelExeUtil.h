@@ -440,7 +440,6 @@ public:
     CREATE_TABLE_AS_          = 7,
     FAST_DELETE_              = 8,
     GET_STATISTICS_           = 9,
-    USER_LOAD_                = 10,
     LONG_RUNNING_             = 11,
     GET_METADATA_INFO_        = 12,
     GET_VERSION_INFO_         = 13,
@@ -451,7 +450,6 @@ public:
     GET_UID_                  = 21,
     POP_IN_MEM_STATS_         = 22,
     REPLICATE_                = 23,
-    ST_INSERT_                = 24,
     GET_ERROR_INFO_           = 25,
     LOB_EXTRACT_              = 26,
     LOB_SHOWDDL_              = 27,
@@ -625,7 +623,6 @@ private:
   //  qry1_  ==> create table in memory...
   //  qry2_  ==> explain create table...
   //  qry3_  ==> explain insert using vsbb...
-  //  qry4_  ==> explain insert using sideinserts...
   //
   ////////////////////////////////////////////////////////////////
   NAString qry1_;
@@ -653,159 +650,6 @@ public:
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
-
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
-private:
-};
-
-class ExeUtilUserLoad : public ExeUtilExpr
-{
-public:
-  enum UserLoadOptionType
-  {
-    OLD_LOAD_,
-    WITH_SORT_,
-    NOT_ATOMIC_,
-    EXCEPTION_TABLE_,
-    EXCEPTION_ROWS_PERCENTAGE_,
-    EXCEPTION_ROWS_NUMBER_,
-    LOAD_ID_,
-    INGEST_MASTER_,
-    INGEST_SOURCE_
-  };
-
-  class UserLoadOption
-  {
-    friend class ExeUtilUserLoad;
-  public:
-    UserLoadOption(UserLoadOptionType option, Int64 numericVal,
-		   void * stringVal)
-	 : option_(option), numericVal_(numericVal), stringVal_(stringVal)
-    {}
-
-  private:
-    UserLoadOptionType option_;
-    Int64   numericVal_;
-    void * stringVal_;
-  };
-
-  ExeUtilUserLoad(const CorrName &name,
-		  RelExpr * child,
-		  ItemExpr * eodExpr,
-		  ItemExpr * partnNumExpr,
-		  NAList<UserLoadOption*> * userLoadOptionsList,
-		  CollHeap *oHeap = CmpCommon::statementHeap());
-
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-				CollHeap* outHeap = 0);
-
-  virtual RelExpr * bindNode(BindWA *bindWAPtr);
-
-  virtual Int32 getArity() const { return 1; };
-
-  virtual RelExpr * preCodeGen(Generator * generator,
-			       const ValueIdSet & externalInputs,
-			       ValueIdSet &pulledNewInputs);
-
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
-  void setEodExpr(ItemExpr * ee) 
-  { 
-    if (eodExpr_ == NULL)
-      eodExpr_ = ee; 
-  };
-
-  ItemExpr *rwrsInputSizeExpr()      { return rwrsInputSizeExpr_;}
-  ItemExpr *rwrsMaxInputRowlenExpr() { return rwrsMaxInputRowlenExpr_;}
-  ItemExpr *rwrsBufferAddrExpr()     { return rwrsBufferAddrExpr_;}
-  ValueIdList &rwrsInputParamVids()  { return rwrsInputParamVids_; }
-
-  void setRwrsInputSizeExpr(ItemExpr * v)      {rwrsInputSizeExpr_ = v;}
-  void setRwrsMaxInputRowlenExpr(ItemExpr * v) {rwrsMaxInputRowlenExpr_ = v;}
-  void setRwrsBufferAddrExpr(ItemExpr * v)     {rwrsBufferAddrExpr_ = v;}
-
-  CorrName excpTabNam() { return excpTabNam_; }
-
-  void setDoFastLoad(NABoolean v)
-  {(v ? flags_ |= DO_FAST_LOAD : flags_ &= ~DO_FAST_LOAD); }
-  NABoolean doFastLoad() { return (flags_ & DO_FAST_LOAD) != 0;}
-
-  void setDoSortFromTop(NABoolean v)
-  {(v ? flags_ |= SORT_FROM_TOP : flags_ &= ~SORT_FROM_TOP); }
-  NABoolean sortFromTop() { return (flags_ & SORT_FROM_TOP) != 0;}
-
-  void setIngestMaster(NABoolean v)
-  {(v ? flags_ |= INGEST_MASTER : flags_ &= ~INGEST_MASTER); }
-  NABoolean ingestMaster() { return (flags_ & INGEST_MASTER) != 0;}
-
-  void setIngestSource(NABoolean v)
-  {(v ? flags_ |= INGEST_SOURCE : flags_ &= ~INGEST_SOURCE); }
-  NABoolean ingestSource() { return (flags_ & INGEST_SOURCE) != 0;}
-
-private:
-  enum Flags
-  {
-    DO_FAST_LOAD      = 0x0001,
-    SORT_FROM_TOP     = 0x0002,
-    INGEST_MASTER     = 0x0004,
-    INGEST_SOURCE     = 0x0008
-  };
-
-  ItemExpr * eodExpr_;
-  ItemExpr * partnNumExpr_;
-
-  ULng32 flags_;
-
-  // if the rows are packed rowwise
-  Lng32 maxRowsetSize_;
-  ItemExpr *rwrsInputSizeExpr_;
-  ItemExpr *rwrsMaxInputRowlenExpr_;
-  ItemExpr *rwrsBufferAddrExpr_;
-
-  // value ids of values which are returned by this operator.
-  ValueIdList rwrsInputParamVids_;
-
-  // name of exception table where error rows are to be inserted.
-  CorrName excpTabNam_;
-  NAString excpTabInsertStmt_;
-  Lng32 excpRowsPercentage_;
-  Lng32 excpRowsNumber_;
-  Int64 loadId_;
-
-  TableDesc * excpTabDesc_;
-
-  Lng32 ingestNumSourceProcesses_;
-  NAString ingestTargetProcessIds_;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// this class implements sidetree insert.
-// It converts a regular insert...select into a sidetree insert...select
-// if certain conditions are met.
-// See Insert::bindNode for the conditions.
-///////////////////////////////////////////////////////////////////////////
-class ExeUtilSidetreeInsert : public ExeUtilExpr
-{
-public:
-  ExeUtilSidetreeInsert(const CorrName &name,
-			RelExpr * child,
-			char * stmtText,
-			CharInfo::CharSet stmtTextCharSet,
-			CollHeap *oHeap = CmpCommon::statementHeap());
-
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-				CollHeap* outHeap = 0);
-
-  virtual RelExpr * bindNode(BindWA *bindWAPtr);
-
-  virtual Int32 getArity() const { return 1; };
-
-  virtual RelExpr * preCodeGen(Generator * generator,
-			       const ValueIdSet & externalInputs,
-			       ValueIdSet &pulledNewInputs);
 
   // method to do code generation
   virtual short codeGen(Generator*);

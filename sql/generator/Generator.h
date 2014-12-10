@@ -596,7 +596,7 @@ private:
   ValueIdList willUseMinMaxKeys_;
   int nCIFNodes_;
 
-  // used if an ExeUtilSidetreeInsert  or ExeUtilWnrInsert node is added. 
+  // used if an ExeUtilWnrInsert node is added. 
   // see RelRoot::preCodeGen where this is added.
   CorrName utilInsertTable_;
 

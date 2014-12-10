@@ -4842,15 +4842,11 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 	  Insert * ins = (Insert*)child(0)->castToRelExpr();
 	  if (ins->isNoRollback())
           {
-            if (CmpCommon::getDefault(TRANSFORM_TO_SIDETREE_INSERT) 
-                != DF_OFF)
-                ins->enableTransformToSTI() = TRUE;
-            else 
-              if ((CmpCommon::getDefault(AQR_WNR) 
-                  != DF_OFF) &&
-                  (CmpCommon::getDefault(AQR_WNR_INSERT_CLEANUP)
-                  != DF_OFF))
-                ins->enableAqrWnrEmpty() = TRUE;
+            if ((CmpCommon::getDefault(AQR_WNR) 
+                 != DF_OFF) &&
+                (CmpCommon::getDefault(AQR_WNR_INSERT_CLEANUP)
+                 != DF_OFF))
+              ins->enableAqrWnrEmpty() = TRUE;
           }
           if (CmpCommon::transMode()->anyNoRollback())
           {
@@ -7444,8 +7440,6 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) return this;
   setRETDesc(bindWA->getCurrentScope()->getRETDesc());
 
-  // the only DML operations allowed on a non-audited table are sideinserts
-  // see QC 4519
   if ((CmpCommon::getDefault(ALLOW_DML_ON_NONAUDITED_TABLE) == DF_OFF) &&
       (naTable && naTable->getClusteringIndex() && !naTable->getClusteringIndex()->isAudited()))
   {
@@ -9164,9 +9158,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       setInsertSelectQuery(TRUE);
     }
 
- 
   // if table has a lob column, then fix up any reference to LOBinsert
-  // function in the source values list
+  // function in the source values list.
+  //
   if ((getOperatorType() == REL_UNARY_INSERT) &&
       (getTableDesc()->getNATable()->hasLobColumn()) &&
       (child(0)->getOperatorType() == REL_TUPLE || // VALUES (1,'b')
@@ -9196,7 +9190,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 		      bindWA->setErrStatus();
 		      
 		      return boundExpr; 
-		      
    
 		      LOBinsert * li = (LOBinsert*)ie;
 		      li->insertedTableObjectUID() = 
@@ -9319,8 +9312,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       // (topmost view or table), *not* that of the base table (getTableDesc()).
       columnLkp = bindRowValues(bindWA, columnTree, tgtColList, this, FALSE);
       if (bindWA->errStatus()) return boundExpr;
-
-
     } 
     else 
     {
@@ -9452,6 +9443,73 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
    
   bindChildren(bindWA);
   if (bindWA->errStatus()) return this;
+
+  // if this is an insert into native hbase table in _ROW_ format, then
+  // validate that only REL_TUPLE or REL_TUPLE_LIST is being used.
+  if ((getOperatorType() == REL_UNARY_INSERT) &&
+      (getTableDesc()->getNATable()->isHbaseRowTable()))
+    {
+      NABoolean isError = FALSE;
+      if (NOT (child(0)->getOperatorType() == REL_TUPLE || // VALUES (1,'b')
+               child(0)->getOperatorType() == REL_TUPLE_LIST)) // VALUES (1,'b'),(2,'Y')
+        {
+          isError = TRUE;
+        }
+
+      // Also make sure that inserts into column_details field of _ROW_ format
+      // hbase virtual table are being done through column_create function.
+      //   For ex: insert into hbase."_ROW_".hb values ('1', column_create('cf:a', '100'))
+      //
+      if ((NOT isError) && (child(0)->getOperatorType() == REL_TUPLE))
+	{
+          ValueIdList &tup = ((Tuple*)(child(0)->castToRelExpr()))->tupleExpr();
+          if (tup.entries() == 2) // can only have 2 entries
+            {
+              ItemExpr * ie = tup[1].getItemExpr();
+              if (ie && ie->getOperatorType() != ITM_HBASE_COLUMN_CREATE)
+                {
+                  isError = TRUE;
+                }
+            }
+          else
+            isError = TRUE;
+        }
+
+      if ((NOT isError) && (child(0)->getOperatorType() == REL_TUPLE_LIST))
+	{
+	  TupleList * tl = (TupleList*)(child(0)->castToRelExpr());
+	  for (CollIndex x = 0; x < (UInt32)tl->numTuples(); x++)
+	    {
+	      ValueIdList tup;
+	      if (!tl->getTuple(bindWA, tup, x)) 
+		{
+                  isError = TRUE;
+		}
+
+              if (NOT isError)
+                {
+                  if (tup.entries() == 2) // must have 2 entries
+                    {
+                      ItemExpr * ie = tup[1].getItemExpr();
+                      if (ie->getOperatorType() != ITM_HBASE_COLUMN_CREATE)
+                        {
+                          isError = TRUE;
+                        }
+                    }
+                  else
+                    isError = TRUE;
+                } // if
+            } // for
+        } // if
+
+      if (isError)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1429);
+          bindWA->setErrStatus();
+          
+          return boundExpr; 
+        }
+    }
 
   // the only time that tgtColList.entries()(Insert's colList) != tl->castToList().entries()
   // (TupleList's colList) is when DEFAULTS are removed in TupleList::bindNode() for insert
@@ -10026,104 +10084,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       setNoFlow(TRUE);
     }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // If following conditions are met, convert to insert...select using sidetree
-  //
-  // -- insert with NO ROLLBACK
-  // -- insert...select
-  // -- not insert into a special table
-  // -- not MERGE stmt
-  // -- not VOLATILE table
-  // -- autocommit on, and no user transaction
-  // -- no identity column
-  // -- no mts
-  // -- no inlining
-  // -- no values returned
-  // -- not a VP table
-  // -- not a RR table
-  // -- no check constraints
-  // -- no added columns
-  // -- number of rows being inserted greater than threshold(MIN_ROW_FOR_VSBB)
-  // -- rows being inserted in sorted order
-  // -- cqd TRANSFORM_TO_SIDETREE_INSERT is set to ON
-  // -- not explain
-  // -- also check DP2Insert::preCodeGen for some more conditions
-  // 
-  /////////////////////////////////////////////////////////////////////////////
-  ValueIdList idVIDlist;
-  getTableDesc()->getIdentityColumn(idVIDlist);
-  if (enableTransformToSTI_)
-    {
-      if (((isNoRollback()) ||
-	   (CmpCommon::transMode()->getRollbackMode() == TransMode::NO_ROLLBACK_)) &&
-	  (isInsertSelectQuery()) &&
-	  (ExtendedQualName::NORMAL_TABLE == 
-	   getTableDesc()->getNATable()->getSpecialType()) &&
-	  //	  (NOT getTableName().isVolatile()) &&
-	  (NOT isMerge()) &&
-	  (NOT getInliningInfo().hasInlinedActions()) &&
-	  (NOT getInliningInfo().isEffectiveGU()) &&
-	  (NOT isMtsStatement()) &&
-	  (NOT producesOutputs()) &&
-	  (NOT (getTableDesc() && !getTableDesc()->getVerticalPartitions().isEmpty())) &&
-	  (NOT isRRTable) &&
-	  //	  (NOT getTableDesc()->getNATable()->hasAddedColumn()) &&
-	  (idVIDlist.entries() == 0) && // not identity
-	  ((CmpCommon::getDefault(TRANSFORM_TO_SIDETREE_INSERT) == DF_ON) ||
-	   (CmpCommon::getDefault(TRANSFORM_TO_SIDETREE_INSERT) == DF_MEDIUM)))
-	{
-	  enableTransformToSTI_ = TRUE;
-	}
-      else
-	{
-	  if (CmpCommon::getDefault(TRANSFORM_TO_SIDETREE_INSERT_WARNINGS) == DF_ON)
-	    {
-	      NAString reason;
-	      
-	      if (NOT isInsertSelectQuery())
-		reason = "Not an insert select query";
-	      else if (ExtendedQualName::NORMAL_TABLE != 
-		       getTableDesc()->getNATable()->getSpecialType())
-		reason = "Insert into a special table";
-	      //	      else if (getTableName().isVolatile())
-	      //		reason = "Volatile table";
-	      else if (isMerge())
-		reason = "Merge statement";
-	      else if ((getInliningInfo().hasInlinedActions()) ||
-		       (getInliningInfo().isEffectiveGU()))
-		reason = "Dependent objects";
-	      else if (isMtsStatement())
-		reason = "MTS statement";
-	      else if (producesOutputs())
-		reason = "Returns rows";
-	      else if (getTableDesc() && !getTableDesc()->getVerticalPartitions().isEmpty())
-		reason = "Vertical Partitioned table";
-	      else if (isRRTable)
-		reason = "Round Robin Table";
-	      //	      else if (getTableDesc()->getNATable()->hasAddedColumn())
-	      //		reason = "Table has added columns";
-	      else if (idVIDlist.entries() != 0)
-		reason = "Table has Identity columns";
-	      //	  else if (getTableDesc()->getNATable()->getCheckConstraints().entries() != 0)
-	      //	    reason = "Table has check constraints";
-	      else
-		reason = "Some other reason";
-	      
-	      *CmpCommon::diags() << DgSqlCode(8587)
-				  << DgString0(reason.data());
-	    }
-	  
-	  enableTransformToSTI_ = FALSE;
-	}
-    }
-
-  if (CmpCommon::getDefault(TRANSFORM_TO_SIDETREE_INSERT) == DF_ALL)
-    {
-      enableTransformToSTI_ = TRUE;
-    }
-
   return boundExpr;
 } // Insert::bindNode()
+
 RelExpr *HBaseBulkLoadPrep::bindNode(BindWA *bindWA)
 {
   //CMPASSERT((CmpCommon::getDefault(TRAF_LOAD) == DF_ON &&
@@ -11578,22 +11541,9 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
   if (naTable && naTable->isHbaseTable())
     hbaseOper() = TRUE;
 
-  if ((getOperatorType() == REL_UNARY_INSERT) && 
-      ( ((Insert*)(this))->getInsertType() == Insert::VSBB_LOAD || 
-        ((Insert*)(this))->getInsertType() == Insert::VSBB_LOAD_USER_SIDEINSERTS || 
-        ((Insert*)(this))->getInsertType() == Insert::VSBB_LOAD_USER_SIDEINSERTS_WITH_SORT
-      )  
-     )
-  {
-      bindWA->setUsingSideinserts();
-  }
-
-  // the only DML operations allowed on a non-audited table are sideinserts
-  // see QC 4519
   if ((CmpCommon::getDefault(ALLOW_DML_ON_NONAUDITED_TABLE) == DF_OFF) &&
       naTable && naTable->getClusteringIndex() && 
-      (!naTable->getClusteringIndex()->isAudited()) &&
-      !bindWA->usingSideinserts()
+      (!naTable->getClusteringIndex()->isAudited())
       // && !bindWA->isBindingMvRefresh()  // uncomment if non-audit MVs are ever supported
      )
   {

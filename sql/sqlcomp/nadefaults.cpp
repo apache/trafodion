@@ -3255,12 +3255,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
 
-  DDkwd__(TRANSFORM_TO_SIDETREE_INSERT,                 "OFF"),   
-  DDkwd__(TRANSFORM_TO_SIDETREE_INSERT_AQR,             "ON"),   
-  DDint__(TRANSFORM_TO_SIDETREE_INSERT_MIN_ROWS,        "1000000"),   
-  DDkwd__(TRANSFORM_TO_SIDETREE_INSERT_WARNINGS,        "OFF"),   
-  DDkwd__(TRANSFORM_TO_SIDETREE_INSERT_WITH_ALTER,      "OFF"),   
-
   DDkwd__(TRY_DP2_REPARTITION_ALWAYS,		"OFF"),
 
  SDDkwd__(TRY_PASS_ONE_IF_PASS_TWO_FAILS,       "OFF"),
@@ -6422,12 +6416,6 @@ DefaultToken NADefaults::token(Int32 attrEnum,
     case EXE_PARALLEL_PURGEDATA:
       if (tok == DF_ALL || tok == DF_MINIMUM ||
 	  tok == DF_OFF || tok == DF_ON || tok == DF_MEDIUM)
-	isValid = TRUE;
-      break;
-
-    case TRANSFORM_TO_SIDETREE_INSERT:
-      if (tok == DF_ALL || tok == DF_MEDIUM ||
-	  tok == DF_OFF || tok == DF_ON )
 	isValid = TRUE;
       break;
 

@@ -409,7 +409,18 @@ ROW_ID      (EXPR)
 *** ERROR[1426] An invalid hbase column name :b was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
 
 --- 0 row(s) inserted.
->>
+>>insert into hbase."_ROW_".t022hbt1 values ('2', '100');
+
+*** ERROR[1429] Inserts into _ROW_ format external hbase tables can only use VALUES clause and must use column_create function to create values.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into hbase."_ROW_".t022hbt1 select * from hbase."_ROW_".t022hbt2;
+
+*** ERROR[1429] Inserts into _ROW_ format external hbase tables can only use VALUES clause and must use column_create function to create values.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- tests with large rows
 >>invoke hbase."_CELL_".t022hbt2;

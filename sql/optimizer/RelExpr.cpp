@@ -12862,8 +12862,6 @@ const NAString InsertCursor::getText() const
 	   (insertType_ == VSBB_LOAD_NO_DUP_KEY_CHECK) ||
 	   (insertType_ == VSBB_LOAD_APPEND_NO_DUP_KEY_CHECK))
     text = text + "_sidetree";
-  else if (insertType_ == VSBB_LOAD_USER_SIDEINSERTS)
-    text = text + "_sidetree_user";
   else if (insertType_ == VSBB_LOAD_AUDITED)
     text = text + "_sidetree_audited";
 

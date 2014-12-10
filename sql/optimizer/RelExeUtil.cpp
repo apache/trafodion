@@ -336,10 +336,6 @@ const NAString ExeUtilExpr::getText() const
       result = "EXE_LONG_RUNNING";
       break;
 
-    case USER_LOAD_:
-      result = "USER_LOAD";
-      break;
-
     case GET_METADATA_INFO_:
       result = "GET_METADATA_INFO";
       break;
@@ -354,10 +350,6 @@ const NAString ExeUtilExpr::getText() const
 
     case REPLICATE_:
       result = "REPLICATE";
-      break;
-
-    case ST_INSERT_:
-      result = "ST_INSERT";
       break;
 
     case LOB_EXTRACT_:
@@ -412,10 +404,6 @@ ExeUtilExpr::unparse(NAString &result,
 
     case DISPLAY_EXPLAIN_COMPLEX_:
       result += "Explain complex command";
-      break;
-
-    case USER_LOAD_:
-      result += "User Load statement";
       break;
 
     case LONG_RUNNING_:
@@ -548,42 +536,6 @@ RelExpr * ExeUtilLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   else
     result = (ExeUtilLoad *) derivedNode;
 
-  return ExeUtilExpr::copyTopNode(result, outHeap);
-}
-
-// -----------------------------------------------------------------------
-// Member functions for class ExeUtilLoad
-// -----------------------------------------------------------------------
-RelExpr * ExeUtilUserLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
-{
-  ExeUtilUserLoad *result;
-
-  if (derivedNode == NULL)
-    result = new (outHeap) ExeUtilUserLoad(getTableName(),
-					   NULL, eodExpr_, partnNumExpr_,
-					   NULL, outHeap);
-  else
-    result = (ExeUtilUserLoad *) derivedNode;
-
-  result->maxRowsetSize_ = maxRowsetSize_;
-  result->rwrsInputSizeExpr_ = rwrsInputSizeExpr_;
-  result->rwrsMaxInputRowlenExpr_ = rwrsMaxInputRowlenExpr_;
-  result->rwrsBufferAddrExpr_ = rwrsBufferAddrExpr_;
-  
-  result->excpTabNam_ = excpTabNam_;
-  result->excpTabInsertStmt_ = excpTabInsertStmt_;
-
-  result->excpTabDesc_ = excpTabDesc_;
-
-  result->excpRowsPercentage_ = excpRowsPercentage_;
-  result->excpRowsNumber_ = excpRowsNumber_;
-  result->loadId_ = loadId_;
-
-  result->ingestNumSourceProcesses_ = ingestNumSourceProcesses_;
-  result->ingestTargetProcessIds_ = ingestTargetProcessIds_;
-
-  result->flags_ = flags_;
-  
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
@@ -6825,7 +6777,7 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
   NAString attributeList = " ";
   NAString attrListEndPosStmt = " ";
   StmtDDLCreateTable * createTableNode = NULL;
-  NABoolean sidetreeInsertAllowed = TRUE;
+  NABoolean upsertUsingLoadAllowed = TRUE;
   Int32 errorcode = 0;
   NAWcharBuf* wcbuf = 0;
       
@@ -6855,9 +6807,6 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
   if (getTableName().isSeabase())
     {
       isSeabase = TRUE;
-
-      // no sidetree inserts into hbase tables
-      sidetreeInsertAllowed = FALSE;
     }
 
   if (createTableNode && (createTableNode->isVolatile()))
@@ -6963,7 +6912,7 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 		  colType.getMyTypeAsText(&colDef);
 
 		  if (colType.isLob())
-		    sidetreeInsertAllowed = FALSE;
+		    upsertUsingLoadAllowed = FALSE;
 
 		  if (i < (retDesc->getDegree() -1))
 		    colDef += ", ";
@@ -6999,7 +6948,7 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 			  colDef += colDefNode->getColDefAsText();
 
 			  if (colDefNode->getColumnDataType()->isLob())
-			    sidetreeInsertAllowed = FALSE;
+			    upsertUsingLoadAllowed = FALSE;
 			}
 		      else
 			{
@@ -7020,7 +6969,7 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 			  colType.getMyTypeAsText(&colDef);
 
 			  if (colType.isLob())
-			    sidetreeInsertAllowed = FALSE;
+			    upsertUsingLoadAllowed = FALSE;
 			}
 
 		      j++;
@@ -7114,9 +7063,7 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 	ctQuery_.append(" IN MEMORY ");
 
       if (createTableNode->isSetTable())
-	sidetreeInsertAllowed = FALSE;
-
-      //      ctQuery_ += ";";
+	upsertUsingLoadAllowed = FALSE;
 
       loadIfExists_ = createTableNode->loadIfExists();
       noLoad_ = createTableNode->noLoad();
@@ -7151,9 +7098,9 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
 
   viQuery_ += &stmtText[asQueryPos];
 
-  if (sidetreeInsertAllowed)
+  if (upsertUsingLoadAllowed)
     {
-      siQuery_ = "insert using sideinserts into ";
+      siQuery_ = "upsert using load into ";
       siQuery_ += getTableName().getQualifiedNameObj().getQualifiedNameAsAnsiString();
       siQuery_ += " ";
 
@@ -7450,299 +7397,6 @@ RelExpr * ExeUtilPopulateInMemStats::bindNode(BindWA *bindWA)
   return boundExpr;
 }
 
-// -----------------------------------------------------------------------
-// member functions for class ExeUtilUserLoad
-// -----------------------------------------------------------------------
-ExeUtilUserLoad::ExeUtilUserLoad(const CorrName &name,
-				 RelExpr * child,
-				 ItemExpr * eodExpr,
-				 ItemExpr * partnNumExpr,
-				 NAList<UserLoadOption*> * userLoadOptionsList,
-				 CollHeap *oHeap)
-     : ExeUtilExpr(USER_LOAD_, name, NULL, child, NULL, CharInfo::UnknownCharSet, oHeap),
-       eodExpr_(eodExpr),
-       partnNumExpr_(partnNumExpr),
-       maxRowsetSize_(0),
-       rwrsInputSizeExpr_(NULL),
-       rwrsMaxInputRowlenExpr_(NULL),
-       rwrsBufferAddrExpr_(NULL),
-       excpTabDesc_(NULL),
-       excpRowsPercentage_(-1),
-       excpRowsNumber_(-1),
-       loadId_(-1),
-       ingestNumSourceProcesses_(-1),
-       flags_(0)
-{
-  setDoFastLoad(TRUE);
-
-  if (userLoadOptionsList)
-    {
-      for (CollIndex i = 0; i < userLoadOptionsList->entries(); i++)
-	{
-	  UserLoadOption * fro = (*userLoadOptionsList)[i];
-	  switch (fro->option_)
-	    {
-	    case OLD_LOAD_:
-	      {
-		setDoFastLoad(FALSE);
-	      }
-	    break;
-
-	    case WITH_SORT_:
-	      {
-		setDoSortFromTop(TRUE);
-	      }
-	    break;
-
-	    case EXCEPTION_TABLE_:
-	      {
-		excpTabNam_ = *((CorrName*)(fro->stringVal_));
-		child->setTolerateNonFatalError(RelExpr::NOT_ATOMIC_);
-	      }
-	    break;
-
-	    case EXCEPTION_ROWS_PERCENTAGE_:
-	      {
-		excpRowsPercentage_ = (Lng32)fro->numericVal_;
-	      }
-	    break;
-
-	    case EXCEPTION_ROWS_NUMBER_:
-	      {
-		excpRowsNumber_ = (Lng32)fro->numericVal_;
-	      }
-	    break;
-
-	    case LOAD_ID_:
-	      {
-		loadId_ = fro->numericVal_;
-	      }
-	    break;
-
-	    case INGEST_MASTER_:
-	      {
-		setIngestMaster(TRUE);
-		ingestNumSourceProcesses_ = (Lng32)fro->numericVal_;
-	      }
-	    break;
-
-	    case INGEST_SOURCE_:
-	      {
-		setIngestSource(TRUE);
-		ingestTargetProcessIds_ = (char*)fro->stringVal_;
-	      }
-	    break;
-
-	    }
-	} // for
-    }
-};
-
-RelExpr * ExeUtilUserLoad::bindNode(BindWA *bindWA)
-{
-  if (nodeIsBound()) {
-    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
-    return this;
-  }
-
-  // do not do override schema for this
-  bindWA->setToOverrideSchema(FALSE);
-
-  // Allocate a TableDesc and attach it to this.
-  //
-  NATable *naTable = bindWA->getNATable(getTableName());
-  if (bindWA->errStatus()) 
-    return this;
-
-  NATable *excpNATable = NULL;
-  if (NOT excpTabNam().isEmpty())
-    {
-      excpNATable = bindWA->getNATable(excpTabNam_);
-      if (bindWA->errStatus()) 
-	return this;
-
-      bindWA->getCurrentScope()->xtnmStack()->createXTNM();
-      excpTabDesc_ = bindWA->createTableDesc(excpNATable, excpTabNam_);
-      bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
-      if (bindWA->errStatus())
-	return this;
-    }
-
-  bindWA->getCurrentScope()->xtnmStack()->createXTNM();
-  setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
-  bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
-  if (bindWA->errStatus())
-    return this;
-
-  if (! eodExpr_)
-    {
-      CMPASSERT(eodExpr_);
-
-      bindWA->setErrStatus();
-      return this;
-    }
-
-  NAType * typ = new(bindWA->wHeap()) SQLInt(FALSE, FALSE); 
-  ItemExpr * newExpr = new(bindWA->wHeap()) Cast(eodExpr_, typ);
-  if (bindWA->errStatus()) 
-    return this;
-
-  eodExpr_ = newExpr->bindNode(bindWA);
-  if (bindWA->errStatus()) 
-    return this;
-
-  if (partnNumExpr_)
-    {
-      NAType * typ = new(bindWA->wHeap()) SQLInt(FALSE, FALSE); 
-      ItemExpr * newExpr = new(bindWA->wHeap()) Cast(partnNumExpr_, typ);
-      if (bindWA->errStatus()) 
-	return this;
-      
-      partnNumExpr_ = newExpr->bindNode(bindWA);
-      if (bindWA->errStatus()) 
-	return this;
-    }
-
-  // We get the list of input host vars, which is stored in the root of the
-  // parse tree
-  HostArraysWA *arrayArea = bindWA->getHostArraysArea();
-  
-  if ((arrayArea->rwrsMaxSize()->getOperatorType() != ITM_CONSTANT) ||
-      (((ConstValue *)arrayArea->rwrsMaxSize())->getType()->getTypeQualifier()
-       != NA_NUMERIC_TYPE))
-    {
-      // 30003 Rowset size must be an integer host variable or an
-      //       integer constant
-      *CmpCommon::diags() << DgSqlCode(-30003);
-      bindWA->setErrStatus();
-      return NULL;
-    }
-  
-  maxRowsetSize_ = 
-    (Lng32)((ConstValue *)arrayArea->rwrsMaxSize())->getExactNumericValue() ;
-  
-  typ = new(bindWA->wHeap()) SQLInt(FALSE, FALSE); 
-  rwrsInputSizeExpr_ = 
-    new(bindWA->wHeap()) Cast(arrayArea->inputSize(), typ);
-  rwrsInputSizeExpr_ = rwrsInputSizeExpr_->bindNode(bindWA);
-  if (bindWA->errStatus()) 
-    return this;
-  
-  rwrsMaxInputRowlenExpr_ =
-    new(bindWA->wHeap()) Cast(arrayArea->rwrsMaxInputRowlen(), typ);
-  rwrsMaxInputRowlenExpr_ = rwrsMaxInputRowlenExpr_->bindNode(bindWA);
-  if (bindWA->errStatus()) 
-    return this;
-  
-#ifdef NA_64BIT
-  typ = new(bindWA->wHeap()) SQLLargeInt(TRUE, FALSE); 
-#endif
-  rwrsBufferAddrExpr_ =
-    new(bindWA->wHeap()) Cast(arrayArea->rwrsBuffer(), typ);
-  rwrsBufferAddrExpr_ = rwrsBufferAddrExpr_->bindNode(bindWA);
-  if (bindWA->errStatus()) 
-    return this;
-
-  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
-  if (bindWA->errStatus()) 
-    return NULL;
-
-  if ((naTable->getViewFileName()) ||
-      (naTable->isAnMV()) ||
-      (naTable->isAnMVMetaData()) ||
-      (naTable->isAnMPTableWithAnsiName()) ||
-      (naTable->isUMDTable ()) ||
-      (naTable->isSMDTable ()) ||
-      (naTable->isMVUMDTable ()) ||
-      (naTable->isTrigTempTable ()) ||
-      (naTable->getClusteringIndex()->isAudited()))
-    {
-      *CmpCommon::diags() << DgSqlCode(-4219);
-      bindWA->setErrStatus();
-      return this;
-    }
-
-  // can't do fast load for audited tables.
-  if (getUtilTableDesc()->getClusteringIndex()->getNAFileSet()->isAudited())
-    setDoFastLoad(FALSE);
-
-  if (NOT excpTabNam().isEmpty())
-    {
-      excpTabInsertStmt_ = "insert into ";
-      excpTabInsertStmt_ += excpTabNam().getQualifiedNameAsString();
-      excpTabInsertStmt_ += " values (";
-      
-      UInt32 colcount = excpNATable->getUserColumnCount();
-
-      for (UInt32 i = 0; i < colcount-1; i++)
-	{
-	  excpTabInsertStmt_ += " ?, ";
-	}
-
-      excpTabInsertStmt_ += " ? );";
-    }
-
-  return boundExpr;
-}
-
-// -----------------------------------------------------------------------
-// member functions for class ExeUtilSidetreeInsert
-// -----------------------------------------------------------------------
-ExeUtilSidetreeInsert::ExeUtilSidetreeInsert(const CorrName &name,
-					     RelExpr * child,
-					     char * stmtText,
-					     CharInfo::CharSet stmtTextCharSet,
-					     CollHeap *oHeap)
-     : ExeUtilExpr(ST_INSERT_, name, NULL, child, 
-		   stmtText, stmtTextCharSet, oHeap)
-{
-}
-
-RelExpr * ExeUtilSidetreeInsert::bindNode(BindWA *bindWA)
-{
-  if (nodeIsBound()) {
-    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
-    return this;
-  }
-
-  // do not do override schema for this
-  bindWA->setToOverrideSchema(FALSE);
-
-  // Allocate a TableDesc and attach it to this.
-  //
-  NATable *naTable = bindWA->getNATable(getTableName());
-  if (bindWA->errStatus()) 
-    return this;
-
-  bindWA->getCurrentScope()->xtnmStack()->createXTNM();
-  setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
-  bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
-  if (bindWA->errStatus())
-    return this;
-
-  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
-  if (bindWA->errStatus()) 
-    return NULL;
-
-  return boundExpr;
-}
-
-RelExpr * ExeUtilSidetreeInsert::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
-{
-  ExeUtilSidetreeInsert *result;
-
-  if (derivedNode == NULL)
-    result = new (outHeap) ExeUtilSidetreeInsert
-      (getTableName(),
-       NULL, 
-       NULL,
-       CharInfo::UnknownCharSet, outHeap);
-  else
-    result = (ExeUtilSidetreeInsert *) derivedNode;
-  
-  return ExeUtilExpr::copyTopNode(result, outHeap);
-}
- 
 // -----------------------------------------------------------------------
 // member functions for class ExeUtilWnrInsert
 // -----------------------------------------------------------------------

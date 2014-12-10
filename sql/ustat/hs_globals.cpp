@@ -3792,7 +3792,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
       insertType = "INSERT INTO ";
     else
       {
-        insertType = "INSERT USING SIDEINSERTS INTO ";
+        insertType = "INSERT INTO ";
         //10-040706-7608: a workaround for this solution is to turn cqd    //Workaround: 10-040706-7608
         //PLAN_STEALING OFF. Once the compiler fixes their plan stealing   //Workaround: 10-040706-7608
         //plan issues, the cqd should be removed.                          //Workaround: 10-040706-7608
