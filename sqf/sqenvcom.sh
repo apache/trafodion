@@ -178,8 +178,8 @@ export PATH=$MPI_ROOT/bin:$MY_SQROOT/export/bin"$SQ_MBTYPE":$MY_SQROOT/sql/scrip
 # The guiding principle is that the user's own software is preferred over anything else;
 # system customizations are likewise preferred over default software.
 
-  CC_LIB_RUNTIME=/usr/lib
-  VARLIST=""
+CC_LIB_RUNTIME=/usr/lib
+VARLIST=""
 
 
 # need these to link
@@ -267,7 +267,7 @@ if [ -e $MY_SQROOT/sql/scripts/sw_env.sh ]; then
   export HADOOP_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hadoop/etc/hadoop
   export HBASE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hbase/conf
   export HIVE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hive/conf
-  
+
 elif [[ -f $MY_SQROOT/Makefile && -d $TOOLSDIR ]]; then
   # we are are in a source tree - use build-time dependencies in TOOLSDIR
   # ----------------------------------------------------------------
@@ -308,7 +308,7 @@ then
   # -------------------------------------------
 
   # native library directories and include directories
-  export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native 
+  export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native
   export HADOOP_INC_DIR=/usr/include
 
   ### Thrift not supported on Cloudera yet (so use TOOLSDIR download)
@@ -441,8 +441,22 @@ elif [ -d /opt/mapr ]; then
   # HBase-trx jar with some modifications to work with MapR HBase 0.94.13
   export HBASE_TRX_JAR=hbase_mapr-trx-0.94.13.jar
 
+elif [[ -e $MY_SQROOT/sql/scripts/install_local_hadoop
+     && -e $MY_SQROOT/export/bin${SQ_MBTYPE}/monitor
+     && -e ${HBASE_TRXDIR}/${HBASE_TRX_JAR}
+     && -e $MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar
+     && -e $MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar
+     && -e $MY_SQROOT/export/lib/jdbcT2.jar ]]; then
+
+  # Several built files exist, perhaps by unpackaging a file from downloads.trafodion.org,
+  # but install_local_hadoop has not yet run.
+
+  NEEDS_HADOOP_INSTALL=1
+  echo "WARNING: Did not find Hadoop distribution,"
+  echo "         you may need to run sql/scripts/install_local_hadoop"
+
 else
-  echo "ERROR: Did not find supported Hadoop distribution"
+  echo "WARNING: Did not find supported Hadoop distribution"
 
 fi
 
@@ -677,7 +691,7 @@ do
           SUPPRESS_FILE=1
         fi
       done
-      # also eliminate ant jar that may be 
+      # also eliminate ant jar that may be
       # incompatible with system ant command
       [[ $j =~ /ant- ]] && SUPPRESS_FILE=1
 
@@ -691,9 +705,12 @@ done
 # remove the leading colon from the classpath
 SQ_CLASSPATH=${SQ_CLASSPATH#:}
 
-# add Hadoop and HBase config dirs to classpath
-SQ_CLASSPATH=$SQ_CLASSPATH:$HADOOP_CNF_DIR:$HBASE_CNF_DIR:$HIVE_CNF_DIR
-SQ_CLASSPATH=$SQ_CLASSPATH:${HBASE_TRXDIR}:${HBASE_TRXDIR}/${HBASE_TRX_JAR}:$MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar:$MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar:$MY_SQROOT/export/lib/jdbcT2.jar
+# add Hadoop and HBase config dirs to classpath, if they exist
+if [[ -n "$HADOOP_CNF_DIR" ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HADOOP_CNF_DIR"; fi
+if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HBASE_CNF_DIR";  fi
+if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HIVE_CNF_DIR";   fi
+if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
+SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:${HBASE_TRXDIR}/${HBASE_TRX_JAR}:$MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar:$MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar:$MY_SQROOT/export/lib/jdbcT2.jar
 
 # check whether we executed this script previously
 
