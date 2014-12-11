@@ -51,8 +51,7 @@
 // ***************************************************************************
 // ***************************************************************************
 // NOTE: DO NOT make this enum non-contiguous.
-// Add new defaults after the last entry in this enum. Do not reuse
-// or change the enum value of an existing default.
+// Add new defaults after the last entry in this enum.
 // Valid attributes must begin at zero and there must be no holes.
 // The algorithm to read defaults from the defaults table requires this.
 // You must always add a default default in NADefaults.cpp, otherwise
@@ -3455,7 +3454,6 @@ enum DefaultConstants
   // For PCODE - Native Expressions work
   PCODE_NE_LOG_PATH,
   PCODE_NE_DBG_LEVEL,
-  PCODE_NE_IN_SHOWPLAN,
    
   // To set Reorg verify command for REORG CHECK command
   REORG_VERIFY,
@@ -3649,6 +3647,7 @@ enum DefaultConstants
   NCM_IND_SCAN_SELECTIVITY,
   NCM_OLTP_ET_THRESHOLD,
   NCM_SKEW_COST_ADJ_FOR_PROBES, 
+  PCODE_NE_IN_SHOWPLAN,
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

@@ -203,6 +203,11 @@ fi
 
 export BUILD_FLAVOR=`echo $BUILD_FLAVOR | tr a-z A-Z`
 
+# enable NA memory overflow checking during test
+if [ "$BUILD_FLAVOR" = "DEBUG" ]; then
+  export MEMDEBUG=2
+fi
+
 if [ -z "$1" ]; then
   # default is to run TEST???* scripts (TEST001, ..., TEST399a, etc)
   # This complicated pipe lists all the TEST???* files, uppercases them,

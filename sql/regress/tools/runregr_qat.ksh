@@ -140,6 +140,13 @@ fi
 
 export TEST_SCHEMA="$TEST_CATALOG.$TEST_SCHEMA_NAME"
 
+export BUILD_FLAVOR=`echo $BUILD_FLAVOR | tr a-z A-Z`
+
+# enable NA memory overflow checking during test
+if [ "$BUILD_FLAVOR" = "DEBUG" ]; then
+  export MEMDEBUG=2
+fi
+
 cd $REGRTSTDIR 2>$NULL
 
 testfiles=
