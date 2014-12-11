@@ -129,7 +129,8 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   transMode_(TransMode::IL_NOT_SPECIFIED_,    // init'd below
              TransMode::READ_WRITE_,
              TransMode::OFF_),
-  ciClass_(CmpContextInfo::CMPCONTEXT_TYPE_NONE)
+  ciClass_(CmpContextInfo::CMPCONTEXT_TYPE_NONE),
+  CDBList_(NULL)
 {
   SetMode(isDynamicSQL() ? STMT_DYNAMIC : STMT_STATIC);
 
@@ -188,6 +189,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
       clusterInfo_ = gpClusterInfo;
     }
 
+    CDBList_ = new (heap_) CollationDBList(heap_);
     readTableDef_ = new(heap_) ReadTableDef();
 
     // globals for Optimizer -- also causes NADefaults table to be read in
@@ -288,6 +290,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   cmpSeabaseDDL.createMDdescs(trafMDDescsInfo_);
 
   emptyInLogProp_ = NULL;
+
 }
 
 // MV

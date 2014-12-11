@@ -411,24 +411,11 @@ class CollationDB : private CollationDBSupertype
 {
 public:
 
-  CollationDB(CollHeap *h)
-  : CollationDBSupertype(h), heap_(h), refreshNeeded_(TRUE)
-  { CDBlist_.insert(this); }
+  CollationDB(CollHeap *h);
 
-  CollationDB(CollHeap *h, const CollationInfo *co, size_t count)
-  : CollationDBSupertype(h), heap_(h), refreshNeeded_(!!count)
-  { while (count--) CollationDBSupertype::insert(co++);
-    CDBlist_.insert(this);
-  }
+  CollationDB(CollHeap *h, const CollationInfo *co, size_t count);
 
-  ~CollationDB()
-  { 
-#if !defined(CHARINFONOTUSED)
-    if (this == &CharInfo::builtinCollationDB_) return;
-    clearAndReset();
-    CDBlist_.remove(this);
-#endif
-  }
+  ~CollationDB();
 
   void clearAndReset()
   {
@@ -485,7 +472,6 @@ friend class CharInfo;	// its static funx should be the only callers of these:
   NABoolean			refreshNeeded_;
 
   static Lng32			nextUserCo_;
-  static CollationDBList	CDBlist_;
 }; // CollationDB
 
 

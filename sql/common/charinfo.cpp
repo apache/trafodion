@@ -47,6 +47,10 @@
 #include "str.h"
 #include "wstr.h"
 #include "SQLTypeDefs.h"
+#include "CmpMessage.h"
+#include "CmpConnection.h"
+#include "CmpContext.h"
+#include "CmpCommon.h"
 
 
 
@@ -371,6 +375,29 @@ void CollationInfo::display() const
 {
 }
 //LCOV_EXCL_STOP
+//
+CollationDB::CollationDB(CollHeap *h)
+  : CollationDBSupertype(h), heap_(h), refreshNeeded_(TRUE)
+{
+    if (this == &CharInfo::builtinCollationDB_) return;
+    cmpCurrentContext->getCollationDBList()->insert(this);
+}
+
+CollationDB::CollationDB(CollHeap *h, const CollationInfo *co, size_t count)
+  : CollationDBSupertype(h), heap_(h), refreshNeeded_(!!count)
+{ 
+   while (count--) CollationDBSupertype::insert(co++);
+   if (this == &CharInfo::builtinCollationDB_) return;
+   cmpCurrentContext->getCollationDBList()->insert(this);
+}
+
+CollationDB::~CollationDB()
+{ 
+   if (this == &CharInfo::builtinCollationDB_) return;
+   clearAndReset();
+   cmpCurrentContext->getCollationDBList()->remove(this);
+}
+
 
 //LCOV_EXCL_START :cnu -- As of 8/30/2011, no support in SQ for Collations
 void CollationDB::display() const
@@ -380,9 +407,10 @@ void CollationDB::display() const
 
 void CollationDB::Display()
 {
-  CollIndex i, n = CDBlist_.entries();
+  CollationDBList *CDBlist = cmpCurrentContext->getCollationDBList();
+  CollIndex i, n = CDBlist->entries();
   for (i = 0; i < n; i++)
-    CDBlist_[i]->display();
+    (*CDBlist)[i]->display();
 }
 
 //****************************************************************************
@@ -401,22 +429,18 @@ void CollationDB::Display()
 //	caller interface make this work.
 //****************************************************************************
 
-// Initialize our static self-maintaining chain of CDB's on the system heap,
-// preallocating 2 entries
-// (for CharInfo::builtinCollationDB_ and SchemaDB::collationDB_).
-//
-CollationDBList		CollationDB::CDBlist_(NULL/*system heap*/, 2);
-
 inline
 CollationDB * CollationDB::nextCDB() const
 {
   // If this is in the CDB chain [should always be true -- defensive prog'ing],
   // return the next CDB in the chain, if there is one.
-  CollIndex i = CDBlist_.index((CollationDB *)this);
+  CollationDBList *CDBlist = cmpCurrentContext->getCollationDBList();
+
+  CollIndex i = CDBlist->index((CollationDB *)this);
   if (i != NULL_COLL_INDEX)				// [defensive prog'ing]
-    for (CollIndex n = CDBlist_.entries(); ++i < n; )
-      if (CDBlist_[i] && CDBlist_[i] != this)		// [defensive prog'ing]
-        return CDBlist_[i];
+    for (CollIndex n = CDBlist->entries(); ++i < n; )
+      if ((*CDBlist)[i] && (*CDBlist)[i] != this)		// [defensive prog'ing]
+        return (*CDBlist)[i];
 
   return NULL;
 }

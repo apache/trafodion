@@ -3547,21 +3547,6 @@ static NABoolean isSynonymOfSYSTEM(Int32 attrEnum, NAString &value)
   return FALSE;
 }
 
-//## Should make this a private member of class NADefaults...
-//## Move the CDB member out from SchemaDB into NADefaults, that would simplify
-//## this method quite a bit...move the CDB code into DefaultValidator.cpp?
-static void refreshUserCollationDB(NADefaults *nad,
-				   NADefaults::Provenance state,
-				   NABoolean onlyRespondToEarlierRefreshNeeded=FALSE)
-{
-  SchemaDB *sdb = ActiveSchemaDB_Safe();
-  if (sdb) {
-    CollationDB &cdb = sdb->userCollationDB();
-    if (state < NADefaults::SET_BY_CQD)
-      cdb.refreshNeeded() = TRUE;
-  }
-}
-
 size_t NADefaults::numDefaultAttributes()
 {
   return (size_t)__NUM_DEFAULT_ATTRIBUTES;
@@ -3857,8 +3842,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
   // build hierarchy.
   NAString_setIsoMapCS((SQLCHARSET_CODE) SqlParser_NADefaults_->ISO_MAPPING_);
 
-
-  refreshUserCollationDB(this, SET_BY_CQD);
 }
 
 NADefaults::NADefaults(NAMemory * h)
@@ -4652,7 +4635,6 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
   currentState_ = SET_BY_CQD;	// enter the next state...
 
   // Make self fully consistent, by executing deferred actions last of all
-  refreshUserCollationDB(this, currentState_);
   getSqlParser_NADefaults();
 } // NADefaults::readFromSQLTables()
 
@@ -4664,8 +4646,6 @@ const char * NADefaults::getValueWhileInitializing(Int32 attrEnum)
   if (!tablesRead_.entries())
     if (getProvenance(attrEnum) < SET_BY_CQD)
       readFromSQLTables(SET_BY_CQD);
-
-  refreshUserCollationDB(this, currentState_, TRUE/*only refresh if needed*/);
 
   return getValue(attrEnum);
 }
@@ -5399,31 +5379,8 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	// on the next query, i.e. next call to getSqlParser_NADefaults().
 	SqlParser_NADefaults_->MPLOC_.setUnknown();
 
-	// FALL THRU TO refreshUserCollationDB()!
       case CATALOG:
       case SCHEMA:
-	//
-	// Currently, user-defined collation names are made known to Parser
-	// and the rest of the compiler, in the absence of a ReadCollationDef
-	// or other catman lookup mechanism for collation metadata.
-	// The userCollationDB is accessed by Parser which has no notion of
-	// applying default name parts to partially qualified names,
-	// whether MP or Ansi.
-	//   (Although, we *could* add, to the SqlParser_NADefaults global
-	//   struct, members identical to ActiveSchemaDB's defaultSchema and
-	//   defaultMPLoc, and have Parser apply them.)
-	// Therefore name lookup in the CDB must allow for all partially
-	// qualified names *relative to the current defaults*.
-	// Thus if *any* of those defaults change, then MP_COLLATIONS needs to
-	// be reprocessed.
-	//
-	//   (Nominally, MP_COLLATIONS contains only MP format names, so
-	//   CATALOG and SCHEMA would *seem* to be here unnecessarily,
-	//   causing needless recomputation.  However, CAT and SCH are present
-	//   in case in future we do allow ANSI names in MP_COLLATIONS,
-	//   and at present to aid in debugging on NT.)
-	//
-	refreshUserCollationDB(this, currentState_);
 	break;
       case ISOLATION_LEVEL:
 	{
