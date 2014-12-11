@@ -76,20 +76,16 @@ struct SRVR_SESSION_HDL {
 // Following are the global variables
 #define				NO_OF_DESC_ITEMS		15
 
-extern SRVR_SESSION_HDL *pSrvrSession;  // Allocation at the time of ImplInit if it is not allocated
-// already
-extern SRVR_GLOBAL_Def		*srvrGlobal;
+extern __thread SRVR_GLOBAL_Def		*srvrGlobal;
 //extern ODBCMXEventMsg		*srvrEventLogger;
-extern SQLMODULE_ID		nullModule;
 extern __thread SQLDESC_ITEM		gDescItems[];
-extern char				CatalogNm[MAX_ANSI_NAME_LEN+1];
-extern char				SchemaNm[MAX_ANSI_NAME_LEN+1];
-extern char				TableNm[MAX_ANSI_NAME_LEN+1];
-extern char				ColumnName[MAX_ANSI_NAME_LEN+1];
-extern char				ColumnHeading[MAX_ANSI_NAME_LEN+1];
+extern __thread char				CatalogNm[MAX_ANSI_NAME_LEN+1];
+extern __thread char				SchemaNm[MAX_ANSI_NAME_LEN+1];
+extern __thread char				TableNm[MAX_ANSI_NAME_LEN+1];
+extern __thread char				ColumnName[MAX_ANSI_NAME_LEN+1];
+extern __thread char				ColumnHeading[MAX_ANSI_NAME_LEN+1];
 
 extern long					*TestPointArray;
-extern SQLMODULE_ID				nullModule;
 #define NUMERIC_NULL			-32767
 #define NUMEIRC_NULL_IN_CHAR	"-32767"
 // Function Prototypes

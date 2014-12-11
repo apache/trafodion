@@ -30,7 +30,6 @@
 #define _SQLDT_NUM_BIG_U  155   /* BigNum unsigned NUMERIC datatype */
                                 /* NUMERIC(N) where N > 9           */
 #define _SQLDT_NUM_BIG_S  156   /* BigNum signed NUMERIC datatype   */
-extern int SPJRS;
 struct WrapperInfoStruct
 {
 	JNIEnv *jenv;

@@ -51,9 +51,16 @@ SRVR_CONNECT_HDL::SRVR_CONNECT_HDL()
 	pSrvrStmtListHead = NULL;
 	pCurrentSrvrStmt = NULL;
 	count = 0;
+	isSPJRS = 0;
 	pSrvrStmtInternal = NULL;
 	CLEAR_WARNING(sqlWarning);
 	CLEAR_ERROR(sqlError);
+
+	memset(DefaultCatalog, '\0', 129);
+	memset(DefaultSchema, '\0', 129);
+	memset(CurrentCatalog, '\0', 129);
+	memset(CurrentSchema, '\0', 129);
+
 	FUNCTION_RETURN_VOID((NULL));
 }
 

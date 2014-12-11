@@ -47,7 +47,6 @@ import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Properties;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -2637,6 +2636,8 @@ public class SQLMXConnection extends PreparedStatementManager implements
 			isClosed_ = false;
 			byteSwap_ = false;
 
+			setIsSpjRSFlag(getDialogueId_(), t2props.isSpjrsOn());
+
 			refQ_ = new ReferenceQueue<SQLMXStatement>();
 			refToStmt_ = new HashMap<WeakReference, Long>();
 			pRef_ = new WeakReference<SQLMXConnection>(this,WeakConnection.refQ_);
@@ -2832,6 +2833,10 @@ public class SQLMXConnection extends PreparedStatementManager implements
 	private native void setTransactionIsolation(String server, long dialogueId,
 			int level);
 	private native void setAutoCommit(String server, long dialogueId, boolean autoCommit);
+	
+	// SPJRS
+	private native void setIsSpjRSFlag(long dialogueId, boolean isSpjrsOn);
+
 
 	// private native void setReadOnly(String server, int dialogueId, boolean
 	// readOnly);
@@ -2981,6 +2986,7 @@ public class SQLMXConnection extends PreparedStatementManager implements
 		// enableLog
 		// system property is set to "on".
 		if ((info.getEnableLog() != null) && (info.getIdMapFile() != null)	&& (info.getEnableLog().equalsIgnoreCase("on"))) {
+		    synchronized (SQLMXDataSource.class) {
 			if (SQLMXDataSource.prWriter_ == null) {
 				try {
 					SQLMXDataSource.prWriter_ = new PrintWriter(new FileOutputStream(info.getIdMapFile(),	true), true);
@@ -2988,6 +2994,7 @@ public class SQLMXConnection extends PreparedStatementManager implements
 					SQLMXDataSource.prWriter_ = new PrintWriter(System.err, true);
 				}
 			}
+		    }
 		}
 
 	}

@@ -100,6 +100,12 @@ public:
 	ERROR_DESC_LIST_def		sqlWarning;
 	odbc_SQLSvc_SQLError	sqlError;
 	BOOL					isClosed;
+	BOOL                    isSPJRS;
+	
+	char				DefaultCatalog[129];
+	char				DefaultSchema[129];
+	char				CurrentCatalog[129];
+	char				CurrentSchema[129];
 	
 	std::list<std::string> listOfCQDs;
 
@@ -111,7 +117,6 @@ private:
 //    __gnu_cxx::hash_map<std::string,SRVR_STMT_HDL*> mapOfInternalSrvrStmt;
     MapOfSrvrStmt mapOfSrvrStmt;
     MapOfInternalSrvrStmt mapOfInternalSrvrStmt;
-
 
 	SRVR_STMT_HDL			*pCurrentSrvrStmt;
 	long					count;

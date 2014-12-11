@@ -75,8 +75,7 @@ class DataWrapper
 	private boolean			inserted;
 	private boolean			isInsertRow;
 	private int				totalColumns;
-
-	static boolean dataTruncation;			// >0 indicates truncation has occurred
+	private boolean[] dataTruncation;
 
 	private static final double FLOAT_MAX = 3.4028235E38;
 	private static final BigDecimal MinLong = BigDecimal.valueOf(Long.MIN_VALUE);
@@ -134,6 +133,7 @@ class DataWrapper
 			isNullValue = new boolean[totalColumns];
 			numericValid = new boolean[totalColumns];
 			setNeeded = new boolean[totalColumns];
+			dataTruncation = new boolean[totalColumns];
 
 			// The bytes, object and orig value arrays are only allocated on demand.
 			// Creating an array is actually an object itself and requires extra overhead.
@@ -1506,7 +1506,7 @@ class DataWrapper
 			if (outOfRange(col_num, Byte.MIN_VALUE, Byte.MAX_VALUE))
 				throw Messages.createSQLException(locale,
 					"numeric_out_of_range", null);
-			dataTruncation = ((double)byteValue[col_num-1] != doubleValue[col_num-1]);
+			dataTruncation[col_num-1] = ((double)byteValue[col_num-1] != doubleValue[col_num-1]);
 			if (JdbcDebugCfg.traceActive) debug[methodId_getByte].methodReturn("byteValue[" + col_num + "]= " + byteValue[col_num-1] +
 											  "dataTruncation=" + dataTruncation);
 			return byteValue[col_num-1];
@@ -1517,7 +1517,7 @@ class DataWrapper
 		}
 	}
 
-	static byte parseByte(Locale locale, String s) throws SQLException
+	byte parseByte(Locale locale, String s) throws SQLException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_parseByte].methodEntry();
 		if (JdbcDebugCfg.traceActive) debug[methodId_parseByte].methodParameters(
@@ -1538,9 +1538,9 @@ class DataWrapper
 				(dvalue > (double)Byte.MAX_VALUE))
 				throw Messages.createSQLException(locale, "numeric_out_of_range", null);
 			byte bvalue = (byte) dvalue;
-			dataTruncation = ((double)bvalue != dvalue);
+			dataTruncation[0] = ((double)bvalue != dvalue);
 			if (JdbcDebugCfg.traceActive) debug[methodId_parseByte].methodReturn("bvalue=" + bvalue +
-											  "dataTruncation=" + dataTruncation);
+											  "dataTruncation=" + dataTruncation[0]);
 			return bvalue;
 		}
 		finally
@@ -1562,9 +1562,9 @@ class DataWrapper
 			if (outOfRange(col_num, Short.MIN_VALUE, Short.MAX_VALUE))
 				throw Messages.createSQLException(locale,
 					"numeric_out_of_range", null);
-			dataTruncation = ((double)shortValue[col_num-1] != doubleValue[col_num-1]);
+			dataTruncation[col_num-1] = ((double)shortValue[col_num-1] != doubleValue[col_num-1]);
 			if (JdbcDebugCfg.traceActive) debug[methodId_getShort].methodReturn("shortValue[" + col_num + "]= " + shortValue[col_num-1] +
-											  "dataTruncation=" + dataTruncation);
+											  "dataTruncation=" + dataTruncation[col_num-1]);
 			return shortValue[col_num-1];
 		}
 		finally
@@ -1573,7 +1573,7 @@ class DataWrapper
 		}
 	}
 
-	static short parseShort(Locale locale, String s) throws SQLException
+	short parseShort(Locale locale, String s) throws SQLException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_parseShort].methodEntry();
 		if (JdbcDebugCfg.traceActive) debug[methodId_parseShort].methodParameters(
@@ -1588,9 +1588,9 @@ class DataWrapper
 					throw Messages.createSQLException(locale,
 						"numeric_out_of_range", null);
 				short svalue = (short) dvalue;
-				dataTruncation = ((double)svalue != dvalue);
+				boolean isTruncated = ((double)svalue != dvalue);
 				if (JdbcDebugCfg.traceActive) debug[methodId_parseShort].methodReturn("svalue=" + svalue +
-												  "dataTruncation=" + dataTruncation);
+												  "dataTruncation=" + isTruncated);
 				return svalue;
 			}
 			catch (NumberFormatException e)
@@ -1618,9 +1618,9 @@ class DataWrapper
 			if (outOfRange(col_num, Integer.MIN_VALUE, Integer.MAX_VALUE))
 				throw Messages.createSQLException(locale,
 					"numeric_out_of_range", null);
-			dataTruncation = ((double)intValue[col_num-1] != doubleValue[col_num-1]);
+			dataTruncation[col_num-1] = ((double)intValue[col_num-1] != doubleValue[col_num-1]);
 			if (JdbcDebugCfg.traceActive) debug[methodId_getInt].methodReturn("intValue[" + (col_num-1) + "]= " + intValue[col_num-1] +
-											  " dataTruncation=" + dataTruncation);
+											  " dataTruncation=" + dataTruncation[col_num-1]);
 			return intValue[col_num-1];
 		}
 		finally
@@ -1629,7 +1629,7 @@ class DataWrapper
 		}
 	}
 
-	static int parseInt(Locale locale, String s) throws SQLException
+	int parseInt(Locale locale, String s) throws SQLException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_parseInt].methodEntry();
 		if (JdbcDebugCfg.traceActive) debug[methodId_parseInt].methodParameters(
@@ -1644,9 +1644,9 @@ class DataWrapper
 					throw Messages.createSQLException(locale,
 						"numeric_out_of_range", null);
 				int ivalue = (int) dvalue;
-				dataTruncation = ((double)ivalue != dvalue);
+				boolean isTruncated = ((double)ivalue != dvalue);
 				if (JdbcDebugCfg.traceActive) debug[methodId_parseInt].methodReturn("ivalue=" + ivalue +
-												  "dataTruncation=" + dataTruncation);
+												  "dataTruncation=" + isTruncated);
 				return ivalue;
 			}
 			catch (NumberFormatException e)
@@ -1688,7 +1688,7 @@ class DataWrapper
 						throw Messages.createSQLException(locale,
 							"numeric_value_out_of_range", errorParmList);
 					}
-					dataTruncation = (doubleValue[col_num-1] != longValue[col_num-1]);
+					dataTruncation[col_num-1] = (doubleValue[col_num-1] != longValue[col_num-1]);
 					break;
 				}
 
@@ -1704,14 +1704,14 @@ class DataWrapper
 						throw Messages.createSQLException(locale,
 							"numeric_value_out_of_range", errorParmList);
 					}
-					dataTruncation = (floatValue[col_num-1] != longValue[col_num-1]);
+					dataTruncation[col_num-1] = (floatValue[col_num-1] != longValue[col_num-1]);
 					break;
 				}
 				default:
-					dataTruncation = false;
+					dataTruncation[col_num-1] = false;
 			}
 			if (JdbcDebugCfg.traceActive) debug[methodId_getLong].methodReturn("longValue[" + (col_num-1) + "]= " + longValue[col_num-1] +
-											  " dataTruncation=" + dataTruncation);
+											  " dataTruncation=" + dataTruncation[col_num-1]);
 			return longValue[col_num-1];
 		}
 		finally
@@ -1720,7 +1720,7 @@ class DataWrapper
 		}
 	}
 
-	static long parseLong(Locale locale, String s, int columnIndex) throws SQLException
+	long parseLong(Locale locale, String s, int columnIndex) throws SQLException
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_parseLong].methodEntry();
 		if (JdbcDebugCfg.traceActive) debug[methodId_parseLong].methodParameters(
@@ -1729,6 +1729,7 @@ class DataWrapper
 		{
 			long retValue;
 
+			boolean isTruncated;
 			// Try to use the Long parser to catch errors.  If the string will be truncated or
 			//    is out of range, the parse will fail and we will have to use BigDecimal to
 			//    determine the result.
@@ -1761,14 +1762,14 @@ class DataWrapper
 						"numeric_value_out_of_range", errorParmList);
 				}
 				retValue = bigValue.longValue();
-				dataTruncation = (retValue != bigValue.doubleValue());
+				isTruncated = (retValue != bigValue.doubleValue());
 				if (JdbcDebugCfg.traceActive) debug[methodId_getLong].methodReturn("parseValue=" + retValue +
-												  "dataTruncation=" + dataTruncation);
+												  "dataTruncation=" + isTruncated);
 				return retValue;
 			}
-			dataTruncation = false;
+			isTruncated = false;
 			if (JdbcDebugCfg.traceActive) debug[methodId_getLong].methodReturn("parseValue=" + retValue +
-											  "dataTruncation=" + dataTruncation);
+											  "dataTruncation=" + isTruncated);
 			return retValue;
 		}
 		finally
@@ -2345,5 +2346,9 @@ class DataWrapper
 			debug[methodId_initDataWrapper_I] = new JdbcDebug(className,"initDataWrapper_I");
 			debug[methodId_setInsertRow] = new JdbcDebug(className,"setInsertRow");
 		}
+	}
+
+	public boolean isTruncated(int columnIndex) {
+		return this.dataTruncation[columnIndex - 1];
 	}
 }

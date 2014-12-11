@@ -412,6 +412,12 @@ public class T2Properties {
 			Spjrs_ = "OFF";
 	}
 
+	public boolean isSpjrsOn() {
+		if(Spjrsval_ == 1)
+			return true;
+		else
+			return false;
+	}
 
 	/**
 	 * @return the contBatchOnError_

@@ -108,6 +108,17 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setAutoCommit
 	FUNCTION_RETURN_VOID((NULL));
 }
 
+//spjrs
+JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setIsSpjRSFlag
+(JNIEnv *jenv, jobject jobj, jlong dialogueId, jboolean isSpjrsOn)
+{
+	SRVR_CONNECT_HDL *pConnect;
+	if(dialogueId != 0) {
+		pConnect = (SRVR_CONNECT_HDL *)dialogueId;
+		pConnect->isSPJRS = isSpjrsOn;
+	}
+}
+
 JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setTransactionIsolation
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint transactionIsolation)
 {

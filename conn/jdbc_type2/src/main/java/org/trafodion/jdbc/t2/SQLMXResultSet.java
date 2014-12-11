@@ -703,7 +703,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 				return 0;
 
 			byteValue = row.getByte(columnIndex, connection_.locale_);
-			if (DataWrapper.dataTruncation)
+			if (row.isTruncated(columnIndex))
 				setSQLWarning(null, "data_truncation", null);
 			return byteValue;
 		} finally {
@@ -1222,7 +1222,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 				return 0;
 
 			int intValue = row.getInt(columnIndex, connection_.locale_);
-			if (DataWrapper.dataTruncation)
+			if (row.isTruncated(columnIndex))
 				setSQLWarning(null, "data_truncation", null);
 			return intValue;
 		} finally {
@@ -1263,7 +1263,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 			if (wasNull_)
 				return 0;
 			longValue = row.getLong(columnIndex, connection_.locale_);
-			if (DataWrapper.dataTruncation)
+			if (row.isTruncated(columnIndex))
 				setSQLWarning(null, "data_truncation", null);
 			return longValue;
 		} finally {
@@ -1527,7 +1527,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 			if (wasNull_)
 				return 0;
 			shortValue = row.getShort(columnIndex, connection_.locale_);
-			if (DataWrapper.dataTruncation)
+			if (row.isTruncated(columnIndex))
 				setSQLWarning(null, "data_truncation", null);
 			return shortValue;
 		} finally {
