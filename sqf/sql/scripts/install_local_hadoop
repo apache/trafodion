@@ -36,6 +36,28 @@
 ## - Creates a TPC-DS sample database in Hive
 ##
 ##############################################################################
+# Environment variables - optional
+#
+# MY_LOCAL_SW_DIST - shared location on local network for tar balls for Hadoop, etc.
+# - Hadoop
+# - HBase
+# - Hive
+# - MySQL (used as Hive metastore DB)
+# - MySQL connector for Java (used by Hive to access metastore)
+# - TPC-DS from tpc.org (for Hive sample DB)
+# also set http_proxy and ftp_proxy if necessary, to download
+# files from repositories on the Internet
+#
+# DCS to use. This list is in order of precedent.
+# DCS_TAR - Optionally specify a local tar file to use
+# DCS_URL - Optionally specify a URL to download
+# DCS_SRC - Optionally specify a local source tree to use
+# If none specified, download latest code from github
+#
+# phoenix_test
+# PHX_SRC - Optionally specify a local source tree to use
+#  otherwise, download latest code from github
+##############################################################################
 
 function usage {
 
@@ -51,6 +73,8 @@ $MY_CMD [ -p {<start port num> | rand | fromDisplay} ]  [ -y ]
   -p fromDisplay          if you are running on a VNC session
 
   -y answers interactive questions implicitly with yes
+
+  See script header for use of optional environment variables.
 
 EOF
 }
@@ -350,6 +374,8 @@ if [ $USE_DEFAULT_PORTS == 'yes' ]; then
   MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM=2181
   # hbase.rest.port
   MY_HBASE_REST_PORT_NUM=8080
+  # dcs.master.port
+  MY_DCS_MASTER_PORT=37800
 else
   # fs.default.name
   MY_HADOOP_HDFS_PORT_NUM=$MY_START_PORT
@@ -371,6 +397,7 @@ else
   MY_HBASE_REST_PORT_NUM=`expr $MY_START_PORT + 171`
   # unique port # for MySQL (default is 3306)
   MY_SQL_PORT_NUM=`expr $MY_START_PORT + 46`
+  MY_DCS_MASTER_PORT=`expr $MY_START_PORT + 172`
 fi
 
 # handle ports in the range of 50000 to 50199
@@ -439,6 +466,15 @@ HBASE_TAR=hbase-0.98.1-cdh5.1.0.tar.gz
 
 TPCDS_MIRROR_URL=http://www.tpc.org/tpcds/dsgen/dsgen-download-files.asp?download_key=NaN
 TPCDS_ZIP=tpcds_kit.zip
+
+# Default location of DCS code
+DCS_GIT=https://github.com/trafodion/dcs
+
+# phoenix_test
+# PHX_SRC - Optionally specify a local source tree to use
+PHX_SRC=${PHX_SRC:-$MY_SW_ROOT/phoenix_test}
+# otherwise we download from here
+PHX_GIT=https://github.com/trafodion/phoenix_test
 
 echo "Checking for existing Hadoop processes..."
 if [ `netstat -anl | grep ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} | grep LISTEN | wc -l` -gt 0 -o \
@@ -752,6 +788,7 @@ EOF
 </HTML>
 EOF
 
+
   mkdir -p $MY_SQROOT/etc
   SYSTEM_DEFAULTS_TEXT_FILE=$MY_SQROOT/etc/SQSystemDefaults.conf
 
@@ -904,11 +941,11 @@ EOF
          <value>yarn</value>
      </property>
      <property>
-         <name>mapred.job.tracker.http.address</name>
+         <name>mapreduce.jobtracker.http.address</name>
          <value>${MY_HOST_1}:${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM}</value>
      </property>
      <property>
-         <name>mapred.http.tracker.http.address</name>
+         <name>mapreduce.tasktracker.http.address</name>
          <value>${MY_HOST_1}:${MY_HADOOP_TASK_TRACKER_PORT_NUM}</value>
      </property>
      <property>
@@ -1684,6 +1721,136 @@ EOF
 
 fi
 # end of TPC-DS setup
+
+
+cd $MY_SW_ROOT
+
+if [ -d dcs-* ]; then
+  echo "DCS files already exist, skipping DCS setup"
+else
+  #####################################################
+  # four options, depend on user Env variables, as described above
+  if [[ -f $DCS_TAR ]]
+  then 
+    echo "Using DCS Tar: $DCS_TAR" | tee -a ${MY_LOG_FILE}
+  elif [[ -n $DCS_URL ]]
+  then
+    echo "Downloading DCS Tar: $DCS_URL" | tee -a ${MY_LOG_FILE}
+    rm -f dcs_download.tar
+    curl ${DCS_URL} -o dcs_download.tar
+    DCS_TAR=./dcs_download.tar
+  elif [[ -d $DCS_SRC ]]
+  then
+    if [[ -f $DCS_SRC/target/dcs*tar.gz ]]
+    then
+      echo "Using DCS tar file in source tree: $DCS_SRC" | tee -a ${MY_LOG_FILE}
+    else
+      echo "No DCS tar file found, building DCS: $DCS_SRC" | tee -a ${MY_LOG_FILE}
+      cd $DCS_SRC
+      mvn site package
+      cd $MY_SW_ROOT
+    fi
+    DCS_TAR=$(ls $DCS_SRC/target/dcs*tar.gz)
+  else
+    echo "Downloading DCS Source: $DCS_GIT" | tee -a ${MY_LOG_FILE}
+    mkdir -p src
+    git clone $DCS_GIT src/dcs >>${MY_LOG_FILE} 2>&1
+    echo "Building DCS Source..." | tee -a ${MY_LOG_FILE}
+    cd src/dcs
+    mvn site package     >>${MY_LOG_FILE} 2>&1
+    cd $MY_SW_ROOT
+    DCS_TAR=$(ls $MY_SW_ROOT/src/dcs/target/dcs*tar.gz)
+  fi
+  if [[ ! -f $DCS_TAR ]]
+  then
+    echo '**** ERROR:'  | tee -a ${MY_LOG_FILE}
+    echo "DCS tar file not found: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
+    exit 1
+  fi
+  # install
+  echo "Installing DCS from: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
+  tar xzf $DCS_TAR
+  DCS_HOME=$(ls -d $MY_SW_ROOT/dcs-*)
+
+  # configure DCS
+
+  #   use ~/.trafodion to avoid modifying sqenv*.sh in source tree
+  echo "Adding DCS_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
+  echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
+  if [[ -f ~/.trafodion ]]
+  then 
+    mv -f ~/.trafodion ~/.trafodion.orig
+    grep -v 'DCS_INSTALL_DIR=' ~/.trafodion.orig > ~/.trafodion
+  fi
+  echo "export DCS_INSTALL_DIR=$DCS_HOME" >> ~/.trafodion
+
+  cd $DCS_HOME/conf/
+  mv dcs-env.sh dcs-env.sh.orig
+   # SQROOT env var does not propagate thru ssh command
+  echo "MY_SQROOT=$MY_SQROOT" > dcs-env.sh
+  sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" dcs-env.sh.orig >> dcs-env.sh
+  mv -f dcs-site.xml dcs-site.xml.orig
+  sed -e "s@</configuration>@@" dcs-site.xml.orig > dcs-site.xml
+  cat >>dcs-site.xml <<EOF
+    <property>
+     <name>dcs.master.port</name> <value>$MY_DCS_MASTER_PORT</value>
+    </property>
+    <property>
+     <name>dcs.master.info.port</name> <value>-1</value>
+    </property>
+    <property>
+     <name>dcs.server.info.port</name> <value>-1</value>
+    </property>
+    <property>
+     <name>dcs.zookeeper.peerport</name> <value>$MY_HBASE_ZOOKEEPER_PEERPORT_NUM</value>
+    </property>
+    <property>
+     <name>dcs.zookeeper.leaderport</name> <value>$MY_HBASE_ZOOKEEPER_LEADERPORT_NUM</value>
+    </property>
+    <property>
+     <name>dcs.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
+    </property>
+  </configuration>
+EOF
+  echo "$(hostname -f) 4" > servers
+fi
+# end of DCS setup
+
+if [[ -d $PHX_SRC ]]; then
+  echo "Phoenix files already exist, skipping Phoenix setup" | tee -a ${MY_LOG_FILE}
+else
+  echo "Cloning phoenix_test repo...." | tee -a ${MY_LOG_FILE}
+  git clone $PHX_GIT $PHX_SRC >>${MY_LOG_FILE} 2>&1
+
+  #######################################################
+  # scripts to run tests
+  #######################################################
+  # adding this in this section to enable adding it to 
+  # existing local_hadoop installations
+  echo "Adding swphoenix script...." | tee -a ${MY_LOG_FILE}
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swphoenix
+#!/bin/sh
+# command to run phoenix tests
+
+cd $PHX_SRC
+# Only T4 supported so far
+#if [[ \$1 == "t4" ]]
+#then
+  ./phoenix_test.py --target=localhost:$MY_DCS_MASTER_PORT --user=dontcare --pw=dontcare \\
+     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar
+#elif [[ \$1 == "t2" ]]
+#then
+#  export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
+#  ./phoenix_test.py --targettype=TR --javahome=\$JAVA_HOME \\
+#     --jdbccp=\$MY_SQROOT/export/lib/jdbcT2.jar --jdbctype=T2 
+#else
+#  echo "Usage: swphoenix (t2|t4)"
+#fi
+EOF
+  chmod +x $MY_SW_SCRIPTS_DIR/swphoenix
+
+fi
+# end of Phoenix setup
 
 echo
 echo "Installed directory size and name = $(du -sh $MY_SW_ROOT)" | tee -a ${MY_LOG_FILE}
