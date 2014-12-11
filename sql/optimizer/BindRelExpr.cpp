@@ -6547,8 +6547,10 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     // No need to save priv info in NATable object representing a sequence;
     // these NATables are not cached.
     PrivMgrUserPrivs privInfo;
-    retcode = privInterface.getPrivileges(tab->objectUid().get_value(),
-                                          thisUserID, privInfo);
+    Int64 tabUid = tab->objectUid().get_value();
+    if (tabUid <= 0)
+      tabUid = tab->lookupObjectUid();
+    retcode = privInterface.getPrivileges(tabUid, thisUserID, privInfo);
     if (retcode != STATUS_GOOD)
      return false;
 

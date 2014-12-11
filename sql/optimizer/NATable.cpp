@@ -6822,10 +6822,11 @@ Int64 lookupObjectUid( const QualifiedName& qualName
 // Query the metadata to find the object uid of the table. This is used when
 // the uid for a metadata table is requested, since 0 is usually stored for
 // these tables.
-void NATable::lookupObjectUid()
+Int64 NATable::lookupObjectUid()
 {
     QualifiedName qualName = getExtendedQualName().getQualifiedNameObj();
     objectUID_ = ::lookupObjectUid(qualName, objectType_);
+    return objectUID_.get_value();
 }
 
 bool NATable::isEnabledForDDLQI() const

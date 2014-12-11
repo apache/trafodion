@@ -510,7 +510,7 @@ public:
     return objectUID_;
   }
 
-  void lookupObjectUid();  // Used to look up uid on demand for metadata tables
+  Int64 lookupObjectUid();  // Used to look up uid on demand for metadata tables
   bool isEnabledForDDLQI() const;
 
   const ComObjectType &getObjectType() const { return objectType_; }
