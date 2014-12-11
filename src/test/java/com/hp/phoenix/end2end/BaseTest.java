@@ -87,8 +87,10 @@ public abstract class BaseTest {
     // @BeforeClass is defined in the child and then it calls this
     // one after objDropList is defined.
     protected static void doBaseTestSuiteSetup() throws Exception {
-        // shouldn't have any, but just in case
-        dropTestObjects();
+        if (tgtSQ())
+           createCatalogIfNotExist();
+        createSchemaIfNotExist();
+
         String name = Thread.currentThread().getStackTrace()[2].toString();
         name = name.substring(0, name.indexOf(".doTestSuiteSetup")); 
         System.out.println(name);
@@ -96,14 +98,14 @@ public abstract class BaseTest {
 
     @AfterClass
     public static void doBaseTestSuiteCleanup() throws Exception {
-        // do nothing for now
+        dropSchemaIfExist();
+        if (tgtSQ())
+           dropCatalogIfExist();
     }
 
     @Before
     public void doBaseTestSetup() throws Exception {
         conn = getConnection();
-        if (tgtSQ())
-           createCatalogSchemaIfNotExist();
     }
 
     @After
@@ -114,20 +116,60 @@ public abstract class BaseTest {
 
     private static Connection baseConn = null;
 
-    // For SQ only, create catalog and schema in case they don't exist.
-    private void createCatalogSchemaIfNotExist() throws Exception {
-        assertNotNull(conn);
+    // For SQ only, create catalog if it does not exist
+    private static void createCatalogIfNotExist() throws Exception {
+        // Use our own conn.  Who knows what the tests have been doing with
+        // auto commit of the conn that it has been using.
+        if (baseConn == null)
+            baseConn = getConnection();
          
         try {
-            conn.createStatement().execute("create catalog " + my_catalog);
+            baseConn.createStatement().execute("create catalog " + my_catalog);
         } catch (Exception e) {
             // Do nothing, the catalog may already exist.
         }
+    }
+
+    // create schema if it does exist.
+    private static void createSchemaIfNotExist() throws Exception {
+        // Use our own conn.  Who knows what the tests have been doing with
+        // auto commit of the conn that it has been using.
+        if (baseConn == null)
+            baseConn = getConnection();
 
         try {
-            conn.createStatement().execute("create schema " + my_catalog + "." + my_schema);
+            baseConn.createStatement().execute("create schema " + my_catalog + "." + my_schema);
         } catch (Exception e) {
             // Do nothing, the schema may already exist.
+        }
+    }
+
+    // For SQ only, drop catalog if it exists
+    private static void dropCatalogIfExist() throws Exception {
+        // Use our own conn.  Who knows what the tests have been doing with
+        // auto commit of the conn that it has been using.
+        if (baseConn == null)
+            baseConn = getConnection();
+
+        try {
+            baseConn.createStatement().execute("drop catalog " + my_catalog);
+        } catch (Exception e) {
+            // failure is OK. The 'cascade' option is not used here, so if 
+            // the catalog has some other schemas other than the one that
+            // Phoenix tests use, this will certainly fail.
+        }
+    }
+
+    private static void dropSchemaIfExist() throws Exception {
+        // Use our own conn.  Who knows what the tests have been doing with
+        // auto commit of the conn that it has been using.
+        if (baseConn == null)
+            baseConn = getConnection();
+
+        try {
+            baseConn.createStatement().execute("drop schema " + my_catalog + "." + my_schema + " cascade");
+        } catch (Exception e) {
+            // Do nothing, the schema may not exist.  
         }
     }
 
