@@ -192,16 +192,33 @@ def get_hadoop_component_version(distro, component):
         'hive': (hw_mvn_url_base + "org/apache/hive/hive-exec/maven-metadata.xml"),
         'zookeeper': (hw_mvn_url_base + "org/apache/zookeeper/zookeeper/maven-metadata.xml")
     }
+    if 'HBASE_CNF_DIR' in os.environ:
+        local_file_dict = {
+            'hadoop_regex': re.compile("^hadoop-common-(\d.*).jar"),
+            'hadoop': (os.environ['HBASE_CNF_DIR'] + "/../lib/hadoop-common-*[0-9].jar"),
+            'hbase_regex': re.compile("^hbase-common-(\d.*).jar"),
+            'hbase': (os.environ['HBASE_CNF_DIR'] + "/../lib/hbase-common-*[0-9].jar"),
+            'hive_regex': re.compile("^hive-common-(\d.*).jar"),
+            'hive': (os.environ['HIVE_CNF_DIR'] + "/../lib/hive-common-*[0-9].jar"),
+            'zookeeper_regex': re.compile("^zookeeper-(\d.*).jar"),
+            'zookeeper': (os.environ['HBASE_CNF_DIR'] + "/../lib/zookeeper-*[0-9].jar")
+        }
 
-    # find version number of component using rpm command
-    rpm_ver = subprocess.Popen(["rpm", "-q", "--qf", '%{VERSION}', component],
-                               stdout=subprocess.PIPE).communicate()[0]
+        # find version number of component using rpm command
+    if 'HBASE_CNF_DIR' in os.environ and "local_hadoop" in os.environ['HBASE_CNF_DIR']:
+        rpm_ver = 'LOCAL'
+    else:
+        rpm_ver = subprocess.Popen(["rpm", "-q", "--qf", '%{VERSION}', component],
+                                   stdout=subprocess.PIPE).communicate()[0]
 
     # if distro is Cloudera (CDH) then parse string from rpm_ver
     # if distro is HortonWorks (HW) then fetch Maven XML files and
     # parse those for the actual version of the component
 
-    if distro.startswith("CDH"):
+    if rpm_ver == 'LOCAL':
+        return(local_file_dict[component + "_regex"].search(
+               os.path.basename(glob.glob(local_file_dict[component])[0])).group(1))
+    elif distro.startswith("CDH"):
         return(rpm_ver[:rpm_ver.rfind("+")].replace("+", "-"))
     elif distro.startswith("HDP"):
         proxy = urllib2.ProxyHandler()
@@ -233,7 +250,9 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
                                ('org.apache.hadoop', 'hadoop-hdfs', '${hadoop_version}', 'EDEP'),
                                ('org.apache.hadoop', 'hadoop-auth', '${hadoop_version}', 'IDEP'),
                                ('org.apache.hadoop', 'hadoop-common', '${hadoop_version}', 'EDEP'),
-                               ('org.apache.hive', 'hive-exec', '${hive_version}', 'EDEP')]
+                               ('org.apache.hive', 'hive-exec', '${hive_version}', 'EDEP'),
+                               ('org.apache.zookeeper', 'zookeeper', '${zookeeper_version}', 'EDEP')
+                               ]
                   },
         'HDP21': {'MY_HADOOP_DISTRO': 'HDPReleases',
                   'MY_HADOOP_VERSION': get_hadoop_component_version(hadoop_distro, "hadoop"),
@@ -250,7 +269,9 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
                                ('org.apache.hadoop', 'hadoop-hdfs', '${hadoop_version}', 'EDEP'),
                                ('org.apache.hadoop', 'hadoop-auth', '${hadoop_version}', 'IDEP'),
                                ('org.apache.hadoop', 'hadoop-common', '${hadoop_version}', 'EDEP'),
-                               ('org.apache.hive', 'hive-exec', '${hive_version}', 'EDEP')]
+                               ('org.apache.hive', 'hive-exec', '${hive_version}', 'EDEP'),
+                               ('org.apache.zookeeper', 'zookeeper', '${zookeeper_version}', 'EDEP')
+                               ]
                   }
     }
 
@@ -485,8 +506,8 @@ def prog_parse_args():
     elif options.jdbctype == 'T2':
         # check for Trafodion ENV variables to be set
         req_envs_error_string = ""
-        for req_env in ['SQ_MBTYPE', 'MY_SQROOT', 'MPI_TMPDIR', 'LD_PRELOAD',
-                        'LD_LIBRARY_PATH', 'PATH', 'LANG']:
+        for req_env in ['SQ_MBTYPE', 'MY_SQROOT', 'MPI_TMPDIR', 'LD_PRELOAD', 'LD_LIBRARY_PATH',
+                        'PATH', 'LANG', 'HADOOP_CNF_DIR', 'HBASE_CNF_DIR', 'HIVE_CNF_DIR']:
             if req_env not in os.environ:
                 req_envs_error_string = (req_envs_error_string + 'Required environment variable ' +
                                          req_env + ' for T2 test has NOT been set!\n')

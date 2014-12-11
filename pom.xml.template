@@ -21,8 +21,10 @@
   <name>phoenix_test</name>
   <url>http://maven.apache.org</url>
 
-  <!-- START_FOR_T2_ONLY -->
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jdbc_path>MYJDBC_PATH</jdbc_path>
+    <!-- START_FOR_T2_ONLY -->
     <hadoop_distro>MY_HADOOP_DISTRO</hadoop_distro>
     <hadoop_version>MY_HADOOP_VERSION</hadoop_version>
     <hadoop_mvn_url>MY_MVN_URL</hadoop_mvn_url>
@@ -30,8 +32,10 @@
     <hive_version>MY_HIVE_VERSION</hive_version>
     <zookeeper_version>MY_ZOOKEEPER_VERSION</zookeeper_version>
     <traf_hbase_version>MY_TRAF_HBASE_VERSION</traf_hbase_version>
+    <!-- END_FOR_T2_ONLY -->
   </properties>
 
+  <!-- START_FOR_T2_ONLY -->
   <repositories>
     <repository>
       <id>${hadoop_distro}</id>
@@ -47,18 +51,6 @@
          org.apache.hadoop:hadoop-auth.jar 
          commons-configuration:commons-configuration.jar -->
     <!-- START_DISTRO_DEP -->
-    <dependency>
-      <groupId>org.apache.zookeeper</groupId>
-      <artifactId>zookeeper</artifactId>
-      <version>${zookeeper_version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
     <dependency>
       <groupId>org.cloudera.htrace</groupId>
       <artifactId>htrace-core</artifactId>
@@ -188,7 +180,7 @@
       <artifactId>MYJDBC_ART_ID</artifactId>
       <version>1</version>
       <scope>system</scope>
-      <systemPath>MYJDBC_PATH</systemPath>
+      <systemPath>${jdbc_path}</systemPath>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -227,17 +219,20 @@
           <!-- START_FOR_T2_ONLY -->
           <!-- <argLine>-Xcheck:jni -Dsurefire.useFile=false -Duser.timezone=GMT</argLine> -->
           <additionalClasspathElements>
-            <additionalClasspathElement>/etc/hadoop/conf</additionalClasspathElement>
-            <additionalClasspathElement>/etc/hbase/conf</additionalClasspathElement>
-            <additionalClasspathElement>/etc/hive/conf</additionalClasspathElement>
+            <additionalClasspathElement>${env.HADOOP_CNF_DIR}</additionalClasspathElement>
+            <additionalClasspathElement>${env.HBASE_CNF_DIR}</additionalClasspathElement>
+            <additionalClasspathElement>${env.HIVE_CNF_DIR}</additionalClasspathElement>
           </additionalClasspathElements>
           <argLine>-Xcheck:jni</argLine>
-          <useManifestOnlyJar>false</useManifestOnlyJar>
+          <!-- <useManifestOnlyJar>false</useManifestOnlyJar> -->
           <!-- For T2 tests Maven should never fork the Java VM otherwise the environment variables
                set below in the environmentVariables section are lost -->
           <forkCount>0</forkCount>
           <environmentVariables>
             <LANG>${env.LANG}</LANG>
+            <HADOOP_CNF_DIR>${env.HADOOP_CNF_DIR}</HADOOP_CNF_DIR>
+            <HBASE_CNF_DIR>${env.HBASE_CNF_DIR}</HBASE_CNF_DIR>
+            <HIVE_CNF_DIR>${env.HIVE_CNF_DIR}</HIVE_CNF_DIR>
             <SQ_MBTYPE>${env.SQ_MBTYPE}</SQ_MBTYPE>
             <MY_SQROOT>${env.MY_SQROOT}</MY_SQROOT>
             <MPI_TMPDIR>${env.MPI_TMPDIR}</MPI_TMPDIR>
