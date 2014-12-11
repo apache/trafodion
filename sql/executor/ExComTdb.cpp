@@ -532,22 +532,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
-    case ex_USER_LOAD:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ExExeUtilUserLoadTdb);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-
-    case ex_SIDETREE_INSERT:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ExExeUtilSidetreeInsertTdb);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-
     case ex_PROBE_CACHE:
     {
 #pragma nowarn(1506)   // warning elimination

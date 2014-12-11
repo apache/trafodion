@@ -2124,41 +2124,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 
   if (isTrueRoot())
     {
-      if (generator->enableTransformToSTI())
-	//	  (NOT generator->noTransformToSTI()))
-	{
-	  ExeUtilSidetreeInsert * si =
-	    new(generator->getBindWA()->wHeap()) 
-	    ExeUtilSidetreeInsert(generator->utilInsertTable(),
-				  child(0)->castToRelExpr(),
-				  NULL,
-				  CharInfo::UnknownCharSet); 
-
-	  child(0)->markAsBound();
-
-	  si->bindNode(generator->getBindWA());
-	  if (generator->getBindWA()->errStatus())
-	    return NULL;
-
-	  // Use the same characteristic inputs and outputs as my child
-	  si->setGroupAttr(new(generator->wHeap())
-			   GroupAttributes(*(child(0)->getGroupAttr())));
-	  //pass along some of the  estimates 
-	  si->setEstRowsUsed(child(0)->getEstRowsUsed());
-	  si->setMaxCardEst(child(0)->getMaxCardEst());
-	  si->setInputCardinality(child(0)->getInputCardinality());
-	  si->setPhysicalProperty(child(0)->getPhysicalProperty());
-	  si->setOperatorCost(0);
-	  si->setRollUpCost(child(0)->getRollUpCost());
-	  
-	  if (! si->preCodeGen(generator,
-			       getGroupAttr()->getCharacteristicInputs(),
-			       pulledNewInputs))
-	    return NULL;
-
-	  child(0) = si;
-	}
-      else if (generator->isAqrWnrInsert())
+      if (generator->isAqrWnrInsert())
         {
           ExeUtilWnrInsert * wi = new(generator->getBindWA()->wHeap())
             ExeUtilWnrInsert(generator->utilInsertTable(),
@@ -10622,22 +10588,6 @@ RelExpr * ExeUtilGetStatistics::preCodeGen(Generator * generator,
 
   markAsPreCodeGenned();
 
-  // Done.
-  return this;
-}
-
-RelExpr * ExeUtilUserLoad::preCodeGen(Generator * generator,
-				      const ValueIdSet & externalInputs,
-				      ValueIdSet &pulledNewInputs)
-{
-  // Done.
-  return this;
-}
-
-RelExpr * ExeUtilSidetreeInsert::preCodeGen(Generator * generator,
-					    const ValueIdSet & externalInputs,
-					    ValueIdSet &pulledNewInputs)
-{
   // Done.
   return this;
 }

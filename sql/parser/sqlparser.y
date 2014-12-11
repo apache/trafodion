@@ -1384,7 +1384,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_CURSOR_WITHOUT_HOLD
 // QSTUFF
 
-%token <tokval> TOK_SIDEINSERTS         /* Tandem extension non-reserved word */
 %token <tokval> TOK_VSBB                /* Tandem extension non-reserved word */
 
 %token <tokval> TOK_ROWSET
@@ -1683,9 +1682,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
   NAList<ExeUtilAQR::AQROption*> * aqrOptionsList;
   ExeUtilAQR::AQROption * aqrOption;
 
-  NAList<ExeUtilUserLoad::UserLoadOption*> * userLoadOptionsList;
-  ExeUtilUserLoad::UserLoadOption * userLoadOption;
-  
   NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> * hBaseBulkLoadOptionsList;
   ExeUtilHBaseBulkLoad::HBaseBulkLoadOption * hBaseBulkLoadOption;
 
@@ -2130,11 +2126,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>      		Rest_Of_insert_wo_INTO_statement
 %type <insertType>     		front_of_insert
 %type <insertType>     		Front_Of_Insert
-%type <insertType>              front_of_insert_with_rwrs
 //%type <corrName>  		optional_exception_table_name
-%type <userLoadOptionsList>     user_load_options
-%type <userLoadOptionsList>     user_load_options_list
-%type <userLoadOption>          user_load_option
 %type <atomicityType>           atomic_clause
 %type <atomicityType>           opt_atomic_clause
 %type <item>      		column_list
@@ -2699,7 +2691,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>                drop_sql
 %type <pStmtDDL>                drop_table_constraint_definition
 %type <pStmtDDL>                drop_module
-%type <pStmtDDL>                create_exception_stmt
 %type <pStmtDDL>                drop_exception_stmt
 %type <pStmtDDL>                drop_all_exception_stmt
 %type <operator_type>           proc_identifier
@@ -2741,10 +2732,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>			rowset_for
 %type <relx>			rowset_for_input
 %type <relx>			rowset_for_output
-%type <relx>			rowwise_rowset_info
-%type <uint>			begin_commit_sidetree_insert
-%type <ptr_placeholder>         optional_rwrs_buffer_attributes
-%type <ptr_placeholder>         rwrs_buffer_compression_options
 %type <na_type>   		proc_arg_rowset_type
 %type <item>      		rowset_input_host_variable
 %type <item>      		rowset_input_host_variable_list
@@ -5189,10 +5176,6 @@ special_table_name : special_regular_table_name
 	   | TOK_TABLE '(' TOK_EXCEPTION_TABLE actual_table_name
              optional_special_table_loc_clause ')'
 		{
-                  // This was used on a SELECT of the Exception Table view,
-                  // so don't require the user to be DB Transporter.
-                  // CHECK_DBTRANSPORTER ;
-
 		  $4->setSpecialType(ExtendedQualName::EXCEPTION_TABLE);
                   if ($5 /*optional_special_table_loc_clause*/ NEQ NULL)
                     {
@@ -5216,9 +5199,6 @@ special_table_name : special_regular_table_name
 		
 exception_table_name :  TOK_EXCEPTION TOK_TABLE actual_table_name 
 		{
-                  // This was used on a DML of the Exception Table,
-                  // so don't require the user to be DB Transporter.
-                  // CHECK_DBTRANSPORTER ;
 		  $3->setSpecialType(ExtendedQualName::EXCEPTION_TABLE);
 		  $$ = $3;  // actual_table_name
 		}	
@@ -13714,179 +13694,6 @@ rowset_for_input : TOK_ROWSET TOK_FOR rowset_input_size ',' rowset_index
 rowset_for : rowset_for_input 
 	   |  rowset_for_output
 
-rowwise_rowset_info : '(' TOK_MAX TOK_ROWSET TOK_SIZE literal ','
-                          TOK_INPUT TOK_ROWSET TOK_SIZE dynamic_parameter ','
-                          TOK_INPUT TOK_ROW TOK_MAX TOK_LENGTH dynamic_parameter ','
-                          TOK_ROWSET TOK_BUFFER dynamic_parameter
-                          optional_rwrs_buffer_attributes
-                      ')' 
-                      {
-			ItemExpr * mrs  = $5;
-			ItemExpr * irs  = $10;
-			ItemExpr * irml = $16;
-			ItemExpr * rrb  = $20;
-
-			// partition number
-			ItemExpr * pn   = NULL;
-
-			NABoolean packedFormat = FALSE;
-			NABoolean compressed = FALSE;
-			NABoolean dcompressInMaster = FALSE;
-			NABoolean compressInMaster = FALSE;
-			NABoolean partnNumInBuf = FALSE;
-			if ($21)
-			  {
-			    PtrPlaceHolder * pph = $21;
-
-			    // buffer attributes have been specified.
-			    // Order and meaning of attributes is:
-			    //  ptr1_  ==>  partition number
-			    //  ptr2_  ==>  if rows are packed sql/mp style
-			    //  ptr3_  ==>  if input buffer is compressed
-			    //  ptr4_  ==>  if decompression to be done in
-			    //              master executor or in eid
-			    //  ptr5_  ==>  if buffer not compressed but
-			    //              master exe to compress it before
-			    //              sending to eid.
-			    //  ptr6_  ==>  if partition number is part of
-			    //              input buffer and precedes data.
-			    //              Only one of ptr1_ or ptr6_ could
-			    //              be specified.
-			    if (pph->ptr1_)
-			      {
-				// partition number
-				pn = (ItemExpr *)pph->ptr1_;
-			      }
-
-			    packedFormat = (pph->ptr2_ != NULL);
-			    compressed = (pph->ptr3_ != NULL);
-			    dcompressInMaster = (pph->ptr4_ != NULL);
-			    compressInMaster = (pph->ptr5_ != NULL);
-			    partnNumInBuf = (pph->ptr6_ != NULL);
-			  }
-
-			// if input values are params, 
-			// type them as 'long'.
-			if (irs->getOperatorType() == ITM_DYN_PARAM)
-			  {
-			    ((DynamicParam*)irs)->setDPRowsetForInputSize();
-			    irs = new (PARSERHEAP()) 
-			      Cast(irs, new (PARSERHEAP()) SQLInt(TRUE, FALSE));
-			  }
-			else
-			  YYERROR;
-
-			if (irml->getOperatorType() == ITM_DYN_PARAM)
-			  {
-			    ((DynamicParam*)irml)->setRowwiseRowsetInputMaxRowlen();
-			    irml = new (PARSERHEAP()) 
-			      Cast(irml, new (PARSERHEAP()) SQLInt(TRUE, FALSE));
-			  }
-			else
-			  YYERROR;
-
-			if (rrb->getOperatorType() == ITM_DYN_PARAM)
-			  {
-			    ((DynamicParam *)rrb)->setRowwiseRowsetInputBuffer();
-#ifdef NA_64BIT
-			    rrb = new (PARSERHEAP()) 
-			      Cast(rrb, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
-#else
-			    rrb = new (PARSERHEAP()) 
-			      Cast(rrb, new (PARSERHEAP()) SQLInt(FALSE, FALSE));
-#endif
-			  }
-			else
-			  YYERROR;
-
-			if (pn && pn->getOperatorType() == ITM_DYN_PARAM)
-			  {
-			    ((DynamicParam *)pn)->setRowwiseRowsetInputBuffer();
-			    pn = new (PARSERHEAP()) 
-			      Cast(pn, new (PARSERHEAP()) SQLInt(TRUE, FALSE));
-			  }
-			
-			RowsetFor *rowsetfor = new (PARSERHEAP()) 
-			  RowsetFor(NULL, irs, NULL, NULL, mrs, irml, rrb, pn);
-			rowsetfor->rowwiseRowset() = TRUE;
-
-			rowsetfor->setBufferAttributes(
-			     packedFormat, 
-			     compressed, dcompressInMaster,
-			     compressInMaster, partnNumInBuf);
-
-			$$ = rowsetfor;
-
-		      }
-
-/* type ptr_placeholder */
-optional_rwrs_buffer_attributes : 
-                           empty 
-                            { 
-			      $$ = 
-				new(PARSERHEAP()) PtrPlaceHolder(
-				     NULL, NULL, NULL, NULL, NULL);
-			    }
-                          | ',' TOK_BUFFER TOK_ATTRIBUTES '(' rwrs_buffer_compression_options ')'
-                            {
-			      $$ = $5;
-			    }
-                          | ',' TOK_BUFFER TOK_ATTRIBUTES '(' TOK_PACKED ',' rwrs_buffer_compression_options ')'
-                            {
-			      PtrPlaceHolder * pph = $7;
-			      pph->ptr2_ = new(PARSERHEAP()) NAString();
-
-			      $$ = pph;
-			    }
-                          | ',' TOK_PARTITION TOK_NUMBER dynamic_parameter ',' TOK_BUFFER TOK_ATTRIBUTES '(' rwrs_buffer_compression_options ')'
-                            {
-			      PtrPlaceHolder * pph = $9;
-			      pph->ptr1_ = $4;
-			      $$ = pph;
-			    }
-                          | ',' TOK_PARTITION TOK_NUMBER dynamic_parameter ',' TOK_BUFFER TOK_ATTRIBUTES '(' TOK_PACKED ',' rwrs_buffer_compression_options ')'
-                            {
-			      PtrPlaceHolder * pph = $11;
-			      pph->ptr1_ = $4;
-			      pph->ptr2_ = new(PARSERHEAP()) NAString();
-
-			      $$ = pph;
-			    }
-                          | ',' TOK_BUFFER TOK_ATTRIBUTES '(' TOK_PARTITION TOK_NUMBER TOK_IN TOK_BUFFER ',' rwrs_buffer_compression_options ')'
-                            {
-			      PtrPlaceHolder * pph = $10;
-			      pph->ptr6_ = new(PARSERHEAP()) NAString();
-			      $$ = pph;
-			    }
-                          | ',' TOK_BUFFER TOK_ATTRIBUTES '(' TOK_PARTITION TOK_NUMBER TOK_IN TOK_BUFFER ',' TOK_PACKED ',' rwrs_buffer_compression_options ')'
-                            {
-			      PtrPlaceHolder * pph = $12;
-			      pph->ptr2_ = new(PARSERHEAP()) NAString();
-			      pph->ptr6_ = new(PARSERHEAP()) NAString();
-
-			      $$ = pph;
-			    }
-
-/* type ptr_placeholder */
-rwrs_buffer_compression_options :      TOK_COMPRESSED ',' TOK_DCOMPRESS TOK_IN TOK_MASTER
-                            { 
-			      $$ = 
-				new(PARSERHEAP()) PtrPlaceHolder(
-				     NULL, NULL, (new(PARSERHEAP()) NAString()), (new(PARSERHEAP()) NAString()), NULL);
-			    }
-                          | TOK_COMPRESSED ',' TOK_DCOMPRESS TOK_IN TOK_EID
-                            { 
-			      $$ = 
-				new(PARSERHEAP()) PtrPlaceHolder(
-				     NULL, NULL, (new(PARSERHEAP()) NAString()), NULL, NULL);
-			    }
-                          | TOK_COMPRESS TOK_IN TOK_MASTER
-                            { 
-			      $$ = 
-				new(PARSERHEAP()) PtrPlaceHolder(
-				     NULL, NULL, NULL, NULL, (new(PARSERHEAP()) NAString()));
-		      }
-
 /* type stmt_ptr */
 sql_statement : interactive_query_expression
 		   {
@@ -14053,10 +13860,6 @@ sql_schema_definition_statement :
                                 }
                                 
               | create_library_stmt
-                                {
-                                }
-                                
-              | create_exception_stmt
                                 {
                                 }
                                 
@@ -14689,63 +14492,8 @@ optional_limit_spec : TOK_LIMIT NUMERIC_LITERAL_EXACT_NO_SCALE
 		     $$ = -1;
 		   }
 
-begin_commit_sidetree_insert : empty { $$ = 0; }
-                             | TOK_NO TOK_BEGIN  { $$ = 1; }
-                             | TOK_NO TOK_COMMIT { $$ = 2; }
-                             | TOK_NO TOK_BEGIN TOK_NO TOK_COMMIT { $$ = 3; }
-
 dml_statement : dml_query { $$ = $1; }
 
-	       | front_of_insert_with_rwrs user_load_options begin_commit_sidetree_insert rowwise_rowset_info Rest_Of_insert_statement 
-		{
-		  if (CmpCommon::getDefault(IS_DB_TRANSPORTER) == DF_OFF)
-		    YYERROR;
-		  
-		  if (($1 != Insert::VSBB_LOAD_USER_SIDEINSERTS) &&
-		      ($1 != Insert::VSBB_INSERT_USER))
-		    YYERROR;
-
-		  Insert * ie = (Insert *)$5;
-		  if ((ie->child(0) == NULL) ||
-		      (ie->child(0)->getOperatorType() != REL_TUPLE))
-		    YYERROR;
-		  
-		  ie->setInsertType($1);
-
-		  if (CmpCommon::getDefault(INSERT_VSBB) == DF_OFF) 
-		    ie->setInsertType(Insert::SIMPLE_INSERT);
-
-		  RelExpr * re = NULL;
-		  if ($1 == Insert::VSBB_LOAD_USER_SIDEINSERTS)
-		    {
-		      re =
-			new (PARSERHEAP()) ExeUtilUserLoad
-			(ie->getTableName(),
-			 ie, 
-			 ((RowsetFor*)$4)->getInputSize(), 
-			 ((RowsetFor*)$4)->partnNum(),
-			 $2,
-			 PARSERHEAP());
-
-		      NABoolean noBeginSTInsert  = 
-			(($3 == 1) || ($3 == 3));
-		      NABoolean noCommitSTInsert = 
-			(($3 == 2) || ($3 == 3));
-
-		      ie->setNoBeginCommitSTInsert
-			(noBeginSTInsert, noCommitSTInsert);
-                    }
-		  else
-		    {
-                      if ($3 != 0)
-                        YYERROR;
-                      re = ie;
-
-                    }
-
-		  $4->child(0) = re;
-		  $$ = finalize($4);
-                  }
 	      |	front_of_insert Rest_Of_insert_statement 
 				{
 				  ((Insert *)$2)->setInsertType($1);
@@ -21047,10 +20795,6 @@ Front_Of_Insert : TOK_INSERT
                       {
                          $$ = Insert::VSBB_INSERT_SYSTEM;
                       }
-              | TOK_INSERT TOK_USING TOK_SIDEINSERTS 
-                      {
-                         $$ = Insert::VSBB_LOAD;
-                      }
               | TOK_INSERT TOK_USING TOK_LOAD 
                       {
                          $$ = Insert::VSBB_LOAD_AUDITED;
@@ -21058,10 +20802,6 @@ Front_Of_Insert : TOK_INSERT
               | TOK_UPSERT TOK_USING TOK_LOAD 
                       {
                          $$ = Insert::UPSERT_LOAD;
-                      }
-              | TOK_INSERT TOK_USING TOK_AUDIT TOK_SIDEINSERTS
-                      {
-                         $$ = Insert::VSBB_LOAD_AUDITED;
                       }
 
 front_of_insert: TOK_INS
@@ -21073,127 +20813,6 @@ front_of_insert: TOK_INS
 
               | Front_Of_Insert
                 { $$ = $1; }
-
-front_of_insert_with_rwrs :  TOK_INSERT TOK_USING TOK_USER TOK_APPEND
-                      {
-                        $$ = Insert::VSBB_INSERT_USER;
-                      }
-                 | TOK_INSERT TOK_USING TOK_USER TOK_LOAD
-                      {
-			$$ = Insert::VSBB_LOAD_USER_SIDEINSERTS;
-                      }
-
-user_load_options : empty
-                      {
-			$$ = NULL;
-                      }
-                 | user_load_options_list
-                      {
-			$$ = $1;
-		      }
-
-user_load_options_list : user_load_option
-                      {
-			NAList<ExeUtilUserLoad::UserLoadOption*> * ulol =
-			  new (PARSERHEAP ()) NAList<ExeUtilUserLoad::UserLoadOption*>;
-			ulol->insert($1);
-			$$ = ulol;
-
-		      }
-                 | user_load_option ',' user_load_options_list
-                      {
-			$3->insert($1);
-			$$ = $3;
-		      }
-
-user_load_option : TOK_WITH TOK_SORT
-                      {
-			ExeUtilUserLoad::UserLoadOption * ulo = 
-			  new (PARSERHEAP ()) ExeUtilUserLoad::UserLoadOption
-			  (ExeUtilUserLoad::WITH_SORT_,
-			   0, NULL);
-			
-			$$ = ulo;
-		      }
-                    | TOK_OLD TOK_LOAD
-                      {
-			ExeUtilUserLoad::UserLoadOption * ulo = 
-			  new (PARSERHEAP ()) ExeUtilUserLoad::UserLoadOption
-			  (ExeUtilUserLoad::OLD_LOAD_,
-			   0, NULL);
-			
-			$$ = ulo;
-		      }
-                    | TOK_EXCEPTION TOK_TABLE table_name
-                      {
-			CorrName * cn = new(PARSERHEAP()) CorrName(*$3, PARSERHEAP());
-
-			ExeUtilUserLoad::UserLoadOption * ulo = 
-			  new (PARSERHEAP ()) ExeUtilUserLoad::UserLoadOption
-			  (ExeUtilUserLoad::EXCEPTION_TABLE_,
-			   0, (void*)cn);
-			
-			$$ = ulo;
-		      }
-                    | TOK_STOP TOK_AFTER unsigned_integer TOK_PERCENT TOK_ERROR TOK_ROWS
-                      {
-			ExeUtilUserLoad::UserLoadOption * ulo = 
-			  new (PARSERHEAP ()) ExeUtilUserLoad::UserLoadOption
-			  (ExeUtilUserLoad::EXCEPTION_ROWS_PERCENTAGE_,
-			   $3, NULL);
-			
-			$$ = ulo;
-		      }
-                    | TOK_STOP TOK_AFTER unsigned_integer TOK_ERROR TOK_ROWS
-                      {
-			ExeUtilUserLoad::UserLoadOption * ulo = 
-			  new (PARSERHEAP ()) ExeUtilUserLoad::UserLoadOption
-			  (ExeUtilUserLoad::EXCEPTION_ROWS_NUMBER_,
-			   $3, NULL);
-			
-			$$ = ulo;
-		      }
-                    | TOK_LOAD_ID NUMERIC_LITERAL_EXACT_NO_SCALE
-                      {
-			ConstValue * cv = 
-			  (ConstValue*)literalOfNumericNoScale($2);
-			if (! cv)
-			  YYERROR;
-
-			if ((cv->getType()->isComplexType()) ||
-			    (NOT ((NumericType*)cv->getType())->isExact()) ||
-			    (cv->getType()->getScale() > 0) ||
-			    (NOT cv->canGetExactNumericValue()))
-			  YYERROR;
-
-			Lng32 scale;
-			Int64 cval = cv->getExactNumericValue(scale);
-
-			ExeUtilUserLoad::UserLoadOption * ulo = 
-			  new (PARSERHEAP ()) ExeUtilUserLoad::UserLoadOption
-			  (ExeUtilUserLoad::LOAD_ID_,
-			   cval, NULL);
-			
-			$$ = ulo;
-		      }
-                    | TOK_INGEST TOK_MASTER unsigned_integer
-                      {
-			ExeUtilUserLoad::UserLoadOption * ulo = 
-			  new (PARSERHEAP ()) ExeUtilUserLoad::UserLoadOption
-			  (ExeUtilUserLoad::INGEST_MASTER_,
-			   $3, NULL);
-			
-			$$ = ulo;
-		      }
-                    | TOK_INGEST TOK_SOURCE character_string_literal
-                      {
-			ExeUtilUserLoad::UserLoadOption * ulo = 
-			  new (PARSERHEAP ()) ExeUtilUserLoad::UserLoadOption
-			  (ExeUtilUserLoad::INGEST_SOURCE_,
-			   0, $3);
-			
-			$$ = ulo;
-		      }
 
 /* type uint */
 /*returning_clause : TOK_RETURN TOK_LASTSYSKEY
@@ -32884,7 +32503,6 @@ alter_table_statement : TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name
 
                        | TOK_ALTER optional_ghost TOK_TABLE ddl_qualified_name online_or_offline                      
                         {
-			  //                            CHECK_DBTRANSPORTER ;
                             StmtDDLAlterTable *pNode = new (PARSERHEAP())
 			                                    StmtDDLAlterTable(DDL_ALTER_TABLE_TOGGLE_ONLINE);
                             pNode->setTableName(QualifiedName(*$4 , PARSERHEAP())); 
@@ -33279,7 +32897,6 @@ location_list : location_definition
 /* type pStmtDDL */
 alter_table_disable_index_clause : TOK_DISABLE TOK_ALL TOK_INDEXES
                                 {
-				  //                                  CHECK_DBTRANSPORTER ;
                                   NAString *tmp = new 
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
@@ -33289,7 +32906,6 @@ alter_table_disable_index_clause : TOK_DISABLE TOK_ALL TOK_INDEXES
                                 |
                                 TOK_DISABLE TOK_ALL TOK_INDEX
                                 {
-				  //                                  CHECK_DBTRANSPORTER ;
                                   NAString *tmp = new
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
@@ -33299,7 +32915,6 @@ alter_table_disable_index_clause : TOK_DISABLE TOK_ALL TOK_INDEXES
                                 |
                                 TOK_DISABLE TOK_INDEX index_name 
                                 {
-				  //                                  CHECK_DBTRANSPORTER ;
                                   $$ = new (PARSERHEAP())
                                     StmtDDLAlterTableDisableIndex
                                      ( *$3, FALSE);
@@ -33345,7 +32960,8 @@ alter_table_rename_clause : TOK_RENAME TOK_TO identifier optional_cascade
 /* type pStmtDDL */
 alter_table_disable_constraint_clause : TOK_DISABLE TOK_ALL TOK_CONSTRAINTS
                                 {
-                                  CHECK_DBTRANSPORTER ;
+                                  YYERROR; // not yet supported.
+
                                   NAString *tmp = new 
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
@@ -33355,7 +32971,8 @@ alter_table_disable_constraint_clause : TOK_DISABLE TOK_ALL TOK_CONSTRAINTS
                                 |
                                 TOK_DISABLE TOK_CONSTRAINT constraint_name
                                 {
-                                  CHECK_DBTRANSPORTER ;
+                                  YYERROR; // not yet supported
+
                                   $$ = new (PARSERHEAP())
                                     StmtDDLAlterTableToggleConstraint( *$3, FALSE, TRUE, FALSE);
                                   delete $3;
@@ -33364,7 +32981,8 @@ alter_table_disable_constraint_clause : TOK_DISABLE TOK_ALL TOK_CONSTRAINTS
 /* type pStmtDDL */
 alter_table_enable_constraint_clause : TOK_ENABLE TOK_ALL TOK_CONSTRAINTS optional_validate_clause
                                 {
-                                  CHECK_DBTRANSPORTER ;
+                                  YYERROR; // not yet supported.
+
                                   NAString *tmp = new 
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
@@ -33374,7 +32992,8 @@ alter_table_enable_constraint_clause : TOK_ENABLE TOK_ALL TOK_CONSTRAINTS option
                                 |
                                 TOK_ENABLE TOK_CONSTRAINT constraint_name optional_validate_clause
                                 {
-                                  CHECK_DBTRANSPORTER ;
+                                  YYERROR; // not yet supported
+
                                   $$ = new (PARSERHEAP())
                                     StmtDDLAlterTableToggleConstraint( *$3, FALSE, FALSE, $4);
                                   delete $3;
@@ -34280,35 +33899,6 @@ synonym_grantee_type : TOK_USER
                        $$ = TRUE;
                      }
 
-/* type pStmtDDL */
-create_exception_stmt : TOK_CREATE TOK_EXCEPTION TOK_TABLE ddl_qualified_name TOK_ON 
-                        ddl_qualified_name
-                               {
-                                  CHECK_DBTRANSPORTER ;
-                                  $$ = new (PARSERHEAP())
-                                    StmtDDLCreateExceptionTable(
-                                        *$4 /*ddl_qualified_name*/,
-                                        *$6 /*ddl_qualified_name*/);
-                                  delete $4 /*ddl_qualified_name*/;
-                                  delete $6 /*ddl_qualified_name*/;
-                               }
-
-/* type pStmtDDL */
-create_exception_stmt : TOK_CREATE TOK_USER TOK_LOAD TOK_EXCEPTION TOK_TABLE ddl_qualified_name TOK_ON 
-                        ddl_qualified_name
-                               {
-                                  CHECK_DBTRANSPORTER ;
-                                  StmtDDLCreateExceptionTable * pNode = 
-				    new (PARSERHEAP())
-                                    StmtDDLCreateExceptionTable(
-					 *$6 /*ddl_qualified_name*/,
-					 *$8 /*ddl_qualified_name*/);
-				  pNode->setProcessAsExeUtil(TRUE);
-                                  delete $6 /*ddl_qualified_name*/;
-                                  delete $8 /*ddl_qualified_name*/;
-				  $$ = pNode;
-                               }
-                               
 /* type longint */
 options : /* empty */
              { $$ = 0x0000000E; }
@@ -34904,7 +34494,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_SHARE
                       | TOK_SHARED
 	              | TOK_SHOWLEAKS                  
-	              | TOK_SIDEINSERTS
                       | TOK_SIGNED
 		      | TOK_SINGLEDELTA // MV
 //                      | TOK_SIZE

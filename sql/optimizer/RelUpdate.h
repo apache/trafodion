@@ -900,17 +900,6 @@ public:
     VSBB_LOAD,           // SideTree Insert - Buffered inserts into an empty
                          // non-audited key sequenced table. Used with
                          // Load or Create Index queries.
-    VSBB_LOAD_USER_SIDEINSERTS, // SideTree Insert - Buffered inserts into
-                         // empty non-audited key sequenced table. Used with
-                         // rowset insert statements executed from an 
-                         // application.
-    VSBB_LOAD_USER_SIDEINSERTS_WITH_SORT, // same as previous one except
-                                          // that data is 'sorted from top'
-                                          // before insert. This type is only
-                                          // used during the parser stage
-                                          // to set SortFromTop indication
-                                          // in the UserLoad node.
-
     VSBB_LOAD_AUDITED,   // SideTree Insert - Buffered inserts into an empty
                          // audited key sequenced table. Used with
                          // "insert using load" queries.

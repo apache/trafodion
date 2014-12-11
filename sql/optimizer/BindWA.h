@@ -1638,10 +1638,6 @@ public:
     return shouldLogAccessViolations_ ;
   }
 
-  // does this statement involve a sideinserts 
-  void             setUsingSideinserts()     { usingSideinserts_ = TRUE; }
-  NABoolean        usingSideinserts()     { return usingSideinserts_; }
-
   NABoolean queryCanUseSeaMonster();
   NABoolean &volatileTableFound() { return volatileTableFound_; }
   
@@ -1938,12 +1934,6 @@ private:
   // This is used to temporarily remove the schema access limitation 
   // for some cases when DEFAULT_SCHEMA_ACCESS_ONLY is ON.
   NABoolean noNeedToLimitSchemaAccess_;
-
-
-  // --------------------------------------------------------------------
-  // True if a 'using sideinserts' clause is present.
-  // --------------------------------------------------------------------
-  NABoolean usingSideinserts_;
 
   // True if this a UNLOAD query
   NABoolean isFastExtract_;

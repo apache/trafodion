@@ -2072,7 +2072,7 @@ SURROGATE_KEY         B           C
 >>
 >>alter table T025T002 alter column surrogate_key set MINVALUE 900;
 
-*** ERROR[1592] Only MAXVALUE or INCREMENT BY options can be specified for ALTER SEQUENCE.
+*** ERROR[1592] MINVALUE cannot be specified for ALTER SEQUENCE.
 
 --- SQL operation failed with errors.
 >>
@@ -2080,7 +2080,7 @@ SURROGATE_KEY         B           C
 >>
 >>alter table T025T002 alter column surrogate_key set MINVALUE 900 MAXVALUE 900;
 
-*** ERROR[1592] Only MAXVALUE or INCREMENT BY options can be specified for ALTER SEQUENCE.
+*** ERROR[1592] MINVALUE cannot be specified for ALTER SEQUENCE.
 
 --- SQL operation failed with errors.
 >>

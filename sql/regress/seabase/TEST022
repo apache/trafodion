@@ -157,7 +157,8 @@ select left(row_id, 10) row_id, left(column_display(column_details), 40)
 -- negative tests
 delete from hbase."_CELL_".t022hbt1;
 insert into hbase."_ROW_".t022hbt1 values ('2', column_create(':b', '201'));
-
+insert into hbase."_ROW_".t022hbt1 values ('2', '100');
+insert into hbase."_ROW_".t022hbt1 select * from hbase."_ROW_".t022hbt2;
 
 -- tests with large rows
 invoke hbase."_CELL_".t022hbt2;

@@ -174,7 +174,6 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL)
      , isBindTrueRoot_(FALSE)
      , noNeedToLimitSchemaAccess_(FALSE)
      , holdableType_(SQLCLIDEV_NONHOLDABLE)
-     , usingSideinserts_(FALSE)
      , isFastExtract_(FALSE)
      , failedForPrivileges_(FALSE)
      , shouldLogAccessViolations_(FALSE)
@@ -1608,16 +1607,6 @@ RelExpr *RelRoot::xformRowsetsInTree(BindWA& wa,
 	RelExpr * newExpr =
 	  hostArraysArea_->modifyTree(this, atomicity); // open sesame!
 	
-	/*
-	if ((child(0)->getOperatorType() == REL_EXE_UTIL) &&
-	    (((ExeUtilExpr*)child(0)->castToRelExpr())->getExeUtilType() == ExeUtilExpr::USER_LOAD_))
-	  {
-	    ExeUtilUserLoad * euul = 
-	      (ExeUtilUserLoad*)child(0)->castToRelExpr();
-	    euul->setEodExpr(hostArraysArea_->inputSize());
-	  }
-	  */
-
 	return newExpr;
       }
     }

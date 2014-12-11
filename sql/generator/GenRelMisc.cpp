@@ -2498,8 +2498,6 @@ short RelRoot::codeGen(Generator * generator)
         else
           root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_CTAS);
       }
-      else if (exeUtil->getExeUtilType() == ExeUtilExpr::USER_LOAD_)
-	root_tdb->setQueryType(ComTdbRoot::SQL_INSERT_RWRS);
       else if (exeUtil->getExeUtilType() == ExeUtilExpr::REPLICATE_)
           root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_REPLICATE);
       else if (exeUtil->getExeUtilType() == ExeUtilExpr::GET_STATISTICS_)
@@ -2525,13 +2523,6 @@ short RelRoot::codeGen(Generator * generator)
       else if (exeUtil->isExeUtilQueryType())
 	{
 	   root_tdb->setQueryType(ComTdbRoot::SQL_EXE_UTIL);
-	}
-
-      if (exeUtil->getExeUtilType() == ExeUtilExpr::ST_INSERT_)
-	{
-	  ExeUtilSidetreeInsert * exeUtil = (ExeUtilSidetreeInsert*)child(0)->castToRelExpr();
-	  if (CmpCommon::getDefault(TRANSFORM_TO_SIDETREE_INSERT_WITH_ALTER) == DF_ON)
-	    root_tdb->setNoEspsFixup(TRUE);
 	}
     }
   else if (generator->getBindWA()->hasCallStmts())
