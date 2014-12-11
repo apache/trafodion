@@ -1085,6 +1085,10 @@ function status_sb_regr {
     popd > /dev/null
 }
 
+function remove_duplicates_in_path {
+    echo "$1" | awk -F: '{for(i=1;i<=NF;i++) if(!($i in arr)){arr[$i];printf s$i;s=":"}}'
+}
+
 export -f run_sb_regr
 export -f run_sb_test
 export -f check_sb_regr

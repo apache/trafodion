@@ -63,7 +63,7 @@ export MALLOC_ARENA_MAX=1
 # set this to 0 to use GNU compiler
 export SQ_USE_INTC=0
 
-if [ "$SQ_BUILD_TYPE" = "release" ]; then
+if [[ "$SQ_BUILD_TYPE" = "release" ]]; then
   SQ_BTYPE=
 else
   SQ_BTYPE=d
@@ -72,10 +72,10 @@ export SQ_BTYPE
 export SQ_MBTYPE=$SQ_MTYPE$SQ_BTYPE
 
 # To enable code coverage, set this to 1
-if [ -z "$SQ_COVERAGE" ]; then
+if [[ -z "$SQ_COVERAGE" ]]; then
   SQ_COVERAGE=0
-elif [ $SQ_COVERAGE -eq 1 ]; then
-  if [ "$SQ_VERBOSE" == "1" ]; then
+elif [[ $SQ_COVERAGE -eq 1 ]]; then
+  if [[ "$SQ_VERBOSE" == "1" ]]; then
     echo "*****************************"
     echo "*  Code coverage turned on  *"
     echo "*****************************"
@@ -86,12 +86,11 @@ export SQ_COVERAGE
 
 # Set default build parallelism
 # Can be overridden on make commandline
-cpucnt=`grep processor /proc/cpuinfo | wc -l`
+cpucnt=$(grep processor /proc/cpuinfo | wc -l)
 #     no number means unlimited, and will swamp the system
 export MAKEFLAGS="-j$cpucnt"
 
-CLUSTNAME=`echo $CLUSTERNAME`
-if [ -n "${CLUSTNAME}" ]; then
+if [[ -n "$CLUSTERNAME" ]]; then
   export MY_ROOT=/opt/hp
   export TOOLSDIR=${TOOLSDIR:-/home/tools}
   export MY_UDR_ROOT=/home/udr
@@ -103,27 +102,16 @@ fi
 
 export MY_MPI_ROOT=$MY_ROOT
 
-# JDK - Using 1.7, but also need 1.6 to create back-compatible jar
 # Use JAVA_HOME if set, else look for installed openjdk, finally toolsdir
-# Likewise for JAVAJDK16
-if [[ -z "$JAVA_HOME" && -d ${TOOLSDIR}/jdk1.7.0_67 ]]
-then
-  export JAVA_HOME="${TOOLSDIR}/jdk1.7.0_67"
-elif [[ -z "$JAVA_HOME" && -d /usr/lib/jvm/java-1.7.0-openjdk.x86_64/ ]]
-then
+REQ_JDK_VER="1.7.0_67"
+if [[ -z "$JAVA_HOME" && -d "${TOOLSDIR}/jdk${REQ_JDK_VER}" ]]; then
+  export JAVA_HOME="${TOOLSDIR}/jdk${REQ_JDK_VER}"
+elif [[ -z "$JAVA_HOME" && -d /usr/lib/jvm/java-1.7.0-openjdk.x86_64/ ]]; then
   export JAVA_HOME="/usr/lib/jvm/java-1.7.0-openjdk.x86_64"
-elif [[ -z "$JAVA_HOME" ]]
-then
-#    export JAVA_HOME="${TOOLSDIR}/jdk1.7.0_67"
- echo "Please set JAVA_HOME to version jdk1.7.0_67"
+elif [[ -z "$JAVA_HOME" ]]; then
+  echo "Please set JAVA_HOME to version jdk${REQ_JDK_VER}"
 fi
-if [[ -z "$JAVAJDK16" && -d /usr/lib/jvm/java-1.6.0-openjdk.x86_64 ]]
-then
-  export JAVAJDK16="/usr/lib/jvm/java-1.6.0-openjdk.x86_64"
-elif [[ -z "$JAVAJDK16" ]]
-then
-  export JAVAJDK16="${TOOLSDIR}/jdk1.6.37_64"
-fi
+
 
 
 export SQ_PDSH=/usr/bin/pdsh
@@ -148,10 +136,10 @@ export HBASE_TRX_JAR=hbase-trx-${TRAFODION_VER}.jar
 # want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart
 # so we can determine if we are on a workstation or not
 if [[ -e ${MY_SQROOT}/etc/ms.env ]] ; then
-   VIRT_NODES=`awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $MY_SQROOT/etc/ms.env`
-   if [[ -n "$VIRT_NODES" ]] ; then
-      export SQ_VIRTUAL_NODES="$VIRT_NODES"
-   fi
+  VIRT_NODES=$(awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $MY_SQROOT/etc/ms.env)
+  if [[ -n "$VIRT_NODES" ]] ; then
+     export SQ_VIRTUAL_NODES="$VIRT_NODES"
+  fi
 fi
 
 export MY_MPI_ROOT="$MY_SQROOT"
@@ -223,13 +211,13 @@ unset USE_HADOOP_1
 # HIVE_CNF_DIR             directory with Hive config file hive-site.xml
 
 # ---+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-if [ "$SQ_MTYPE" == 64 ]; then
+if [[ "$SQ_MTYPE" == 64 ]]; then
   export LOC_JVMLIBS=$JAVA_HOME/jre/lib/amd64/server
 else
   export LOC_JVMLIBS=$JAVA_HOME/jre/lib/i386/server
 fi
 
-if [ -e $MY_SQROOT/sql/scripts/sw_env.sh ]; then
+if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
   # we are on a development system where install_local_hadoop has been
   # executed
   # ----------------------------------------------------------------
@@ -251,8 +239,7 @@ if [ -e $MY_SQROOT/sql/scripts/sw_env.sh ]; then
   export HADOOP_JAR_FILES=
   export HBASE_JAR_FILES=
   HBASE_JAR_DIRS="$HBASE_HOME/lib"
-  for d in $HBASE_JAR_DIRS
-  do
+  for d in $HBASE_JAR_DIRS; do
     HBASE_JAR_FILES="$HBASE_JAR_FILES $d/*.jar"
   done
 
@@ -285,8 +272,7 @@ elif [[ -f $MY_SQROOT/Makefile && -d $TOOLSDIR ]]; then
                           $TOOLSDIR/hadoop-2.4.0/share/hadoop/hdfs"
   export HBASE_JAR_FILES=
   HBASE_JAR_DIRS="$HBASE_HOME/lib"
-  for d in $TOOLSDIR/hbase-0.98.1-cdh5.1.0/lib
-  do
+  for d in $TOOLSDIR/hbase-0.98.1-cdh5.1.0/lib; do
     HBASE_JAR_FILES="$HBASE_JAR_FILES $d/*.jar"
   done
 
@@ -302,8 +288,7 @@ elif [[ -f $MY_SQROOT/Makefile && -d $TOOLSDIR ]]; then
   export HBASE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hbase/conf
   export HIVE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hive/conf
 
-elif ls /usr/lib/hadoop/hadoop-*cdh*.jar >/dev/null 2>&1
-then
+elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
   # we are on a cluster with Cloudera installed
   # -------------------------------------------
 
@@ -342,7 +327,7 @@ then
   export HBASE_CNF_DIR=/etc/hbase/conf
   export HIVE_CNF_DIR=/etc/hive/conf
 
-elif [ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]; then
+elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   # we are on a cluster with Hortonworks installed
   # ----------------------------------------------
 
@@ -380,7 +365,7 @@ elif [ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]; then
   export HBASE_CNF_DIR=/etc/hbase/conf
   export HIVE_CNF_DIR=/etc/hive/conf
 
-elif [ -d /opt/mapr ]; then
+elif [[ -d /opt/mapr ]]; then
   # we are on a MapR system
   # ----------------------------------------------------------------
 
@@ -389,23 +374,23 @@ elif [ -d /opt/mapr ]; then
   # Note that hadoopversion and hiveversion are not officially
   # supported by MapR, only hbaseversion is. We recommend creating
   # these files to guide Trafodion to the right version, if necessary.
-  if [ -r /opt/mapr/hadoop/hadoopversion ]; then
-    MAPR_HADOOP_VERSION=`cat /opt/mapr/hadoop/hadoopversion`
+  if [[ -r /opt/mapr/hadoop/hadoopversion ]]; then
+    MAPR_HADOOP_VERSION=$(cat /opt/mapr/hadoop/hadoopversion)
     MAPR_HADOOPDIR=/opt/mapr/hadoop/hadoop-${MAPR_HADOOP_VERSION}
   else
-    MAPR_HADOOPDIR=`echo /opt/mapr/hadoop/hadoop-*`
+    MAPR_HADOOPDIR=$(echo /opt/mapr/hadoop/hadoop-*)
   fi
-  if [ -r /opt/mapr/hbase/hbaseversion ]; then
-    MAPR_HBASE_VERSION=`cat /opt/mapr/hbase/hbaseversion`
+  if [[ -r /opt/mapr/hbase/hbaseversion ]]; then
+    MAPR_HBASE_VERSION=$(cat /opt/mapr/hbase/hbaseversion)
     MAPR_HBASEDIR=/opt/mapr/hbase/hbase-${MAPR_HBASE_VERSION}
   else
-    MAPR_HBASEDIR=`echo /opt/mapr/hbase/hbase-*`
+    MAPR_HBASEDIR=$(echo /opt/mapr/hbase/hbase-*)
   fi
-  if [ -r /opt/mapr/hive/hiveversion ]; then
-    MAPR_HIVE_VERSION=`cat /opt/mapr/hive/hiveversion`
+  if [[ -r /opt/mapr/hive/hiveversion ]]; then
+    MAPR_HIVE_VERSION=$(cat /opt/mapr/hive/hiveversion)
     MAPR_HIVEDIR=/opt/mapr/hive/hive-${MAPR_HIVE_VERSION}
   else
-    MAPR_HIVEDIR=`echo /opt/mapr/hive/hive-*`
+    MAPR_HIVEDIR=$(echo /opt/mapr/hive/hive-*)
   fi
 
   ### Thrift not supported on MapR (so use TOOLSDIR download)
@@ -413,7 +398,7 @@ elif [ -d /opt/mapr ]; then
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
 
   # native library directories and include directories
-  if [ -r $MAPR_HADOOPDIR/lib/native/Linux-amd64-64/libhdfs.so ]; then
+  if [[ -r $MAPR_HADOOPDIR/lib/native/Linux-amd64-64/libhdfs.so ]]; then
     export HADOOP_LIB_DIR=$MAPR_HADOOPDIR/lib/native/Linux-amd64-64
   else
     export HADOOP_LIB_DIR=$MAPR_HADOOPDIR/c++/Linux-amd64-64/lib
@@ -474,13 +459,13 @@ export PROTOBUFS=/usr
 export LD_BIND_NOW=true
 
 export MPI_TMPDIR=$PWD/tmp
-if [ -d $MPI_TMPDIR ]; then
-  if [ "$SQ_VERBOSE" == "1" ]; then
+if [[ -d $MPI_TMPDIR ]]; then
+  if [[ "$SQ_VERBOSE" == "1" ]]; then
     echo "Pre-existing directory found for MPI_TMPDIR: $MPI_TMPDIR"
     echo
   fi
 else
-  if [ "$SQ_VERBOSE" == "1" ]; then
+  if [[ "$SQ_VERBOSE" == "1" ]]; then
     echo "Creating directory for MPI_TMPDIR: $MPI_TMPDIR"
     echo
   fi
@@ -607,7 +592,7 @@ function ckillall {
 }
 export -f ckillall
 
-. tools/sqtools.sh
+source tools/sqtools.sh
 
 #######################
 # BUILD Tools/Libraries
@@ -615,16 +600,14 @@ export -f ckillall
 
 # Standard tools expected to be installed and found in PATH
 export ANT="/usr/bin/ant"
-if [[ ! -e $ANT ]]
-then
+if [[ ! -e $ANT ]]; then
   ANT="${TOOLSDIR}/bin/ant"
 fi
 export AR=ar
 export FLEX=flex
 export CXX=g++
 export MAVEN=mvn
-if [[ -z "$(which $MAVEN 2> /dev/null)" ]]
-then
+if [[ -z "$(which $MAVEN 2> /dev/null)" ]]; then
   export M2_HOME="${TOOLSDIR}/apache-maven-3.0.5"
   MAVEN="${M2_HOME}/bin/mvn"
 fi
@@ -642,8 +625,7 @@ export QT_TOOLKIT="${TOOLSDIR}/Qt-4.8.5-64"
 #######################
 # Developer Local over-rides  (see sqf/LocalSettingsTemplate.sh)
 ######################
-if [[ -r ~/.trafodion ]]
-then
+if [[ -r ~/.trafodion ]]; then
   [[ $SQ_VERBOSE == 1 ]] && echo "Sourcing local settings file ~/.trafodion"
   source ~/.trafodion
 fi
@@ -656,9 +638,9 @@ export PROTOBUFS_INC=$PROTOBUFS/include
 export LD_LIBRARY_PATH=$CC_LIB:$MPI_ROOT/lib/$MPILIB:$MY_SQROOT/export/lib"$SQ_MBTYPE":$HADOOP_LIB_DIR:$LOC_JVMLIBS:$HWMSLIBS:${SP_EXPORT_LIB}:.
 
 ######################
-# Class Path calculation may include local over-rides
+# classpath calculation may include local over-rides
 
-# check for previous invocation of this script
+# check for previous invocation of this script in this shell
 PREV_SQ_CLASSPATH=$SQ_CLASSPATH
 SQ_CLASSPATH=
 
@@ -668,35 +650,31 @@ SQ_CLASSPATH=
 # Hortonworks seems to have a hadoop-client.jar
 
 # expand jar files in list of directories
-for d in $HADOOP_JAR_DIRS
-  do
-    HADOOP_JAR_FILES="$HADOOP_JAR_FILES $d/*.jar"
-  done
+for d in $HADOOP_JAR_DIRS; do
+  HADOOP_JAR_FILES="$HADOOP_JAR_FILES $d/*.jar"
+done
 
-for d in $HIVE_JAR_DIRS
-  do
-    HIVE_JAR_FILES="$HIVE_JAR_FILES $d/*.jar"
-  done
+for d in $HIVE_JAR_DIRS; do
+  HIVE_JAR_FILES="$HIVE_JAR_FILES $d/*.jar"
+done
 
 # assemble all of them into a classpath
-for j in $HBASE_JAR_FILES $HADOOP_JAR_FILES $HIVE_JAR_FILES
-do
-  if [ -f $j ]; then
+for j in $HBASE_JAR_FILES $HADOOP_JAR_FILES $HIVE_JAR_FILES; do
+  if [[ -f $j ]]; then
 
     # eliminate jars with unwanted suffixes
     SUPPRESS_FILE=0
-    for s in $SUFFIXES_TO_SUPPRESS
-      do
-        if [ ${j%${s}} != $j ]; then
-          SUPPRESS_FILE=1
-        fi
-      done
-      # also eliminate ant jar that may be
-      # incompatible with system ant command
-      [[ $j =~ /ant- ]] && SUPPRESS_FILE=1
+    for s in $SUFFIXES_TO_SUPPRESS; do
+      if [[ ${j%${s}} != $j ]]; then
+        SUPPRESS_FILE=1
+      fi
+    done
+    # also eliminate ant jar that may be
+    # incompatible with system ant command
+    [[ $j =~ /ant- ]] && SUPPRESS_FILE=1
 
     # finally, add the jar to the classpath
-    if [ $SUPPRESS_FILE -eq 0 ]; then
+    if [[ $SUPPRESS_FILE -eq 0 ]]; then
       SQ_CLASSPATH=$SQ_CLASSPATH:$j
     fi
   fi
@@ -710,24 +688,17 @@ if [[ -n "$HADOOP_CNF_DIR" ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HADOOP_CNF_DIR"
 if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HBASE_CNF_DIR";  fi
 if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HIVE_CNF_DIR";   fi
 if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
-SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:${HBASE_TRXDIR}/${HBASE_TRX_JAR}:$MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar:$MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar:$MY_SQROOT/export/lib/jdbcT2.jar
+SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:\
+${HBASE_TRXDIR}/${HBASE_TRX_JAR}:\
+$MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar:\
+$MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar:\
+$MY_SQROOT/export/lib/jdbcT2.jar
 
-# check whether we executed this script previously
-
-# take anything from the existing classpath, but not the part that was
-# added by previous invocations of this script (assuming it produced
-# the same classpath).
-
-# Note: this will produce unwanted classpath entries if you do the
-# following: a) source in this file, b) prepend to the classpath and
-# c) source this file in again
-USER_CLASSPATH=${CLASSPATH##${SQ_CLASSPATH}}
-USER_CLASSPATH=${USER_CLASSPATH#:}
-
-# Check whether the environment changed from a previous execution of this
+# Check whether the current shell environment changed from a previous execution of this
 # script.
-if [ -n "$PREV_SQ_CLASSPATH" -a \
-     "$PREV_SQ_CLASSPATH" != "$SQ_CLASSPATH" ]; then
+SQ_CLASSPATH=$(remove_duplicates_in_path "$SQ_CLASSPATH")
+if [[  ( -n "$PREV_SQ_CLASSPATH" )
+    && ( "$PREV_SQ_CLASSPATH" != "$SQ_CLASSPATH" ) ]]; then
   cat <<EOF
 The environment changed from a previous execution of this script.
 This is not supported. To change environments, do the following:
@@ -741,42 +712,31 @@ This is not supported. To change environments, do the following:
 EOF
 fi
 
+# take anything from the existing classpath, but not the part that was
+# added by previous invocations of this script in this shell (assuming it
+# produced the same classpath).
 
+# Note: There will be unwanted classpath entries if you do the
+# following: a) source in this file;
+#            b) prepend to the classpath;
+#            c) source this file in again
 
+USER_CLASSPATH=${CLASSPATH##${SQ_CLASSPATH}}
+USER_CLASSPATH=$(remove_duplicates_in_path ${USER_CLASSPATH#:})
 
-if [ -n "$USER_CLASSPATH" ]; then
+if [[ -n "$USER_CLASSPATH" ]]; then
   # new info, followed by the original classpath
   export CLASSPATH="${SQ_CLASSPATH}:${USER_CLASSPATH}"
 else
   export CLASSPATH="${SQ_CLASSPATH}"
 fi
-export CLASSPATH="${CLASSPATH}:"
+export CLASSPATH=$(remove_duplicates_in_path "${CLASSPATH}:")
+
+PATH=$(remove_duplicates_in_path "$PATH")
 
 ####################
 # Check/Report on key variables
 ###################
-
-# Check that existing JAVA_HOME is suitable
-REQ_VER="1.7.0_67"
-JAVA7="7"
-JAVA67="67"
-if [[ -n "$JAVA_HOME" ]]; then
-  THIS_JVM_VER="$($JAVA_HOME/bin/javac -version 2>&1 > /dev/null)"
-  temp_JAVA=`echo "${THIS_JVM_VER:6:3}" | sed 's/.*\.//'`
-  if [[ "$temp_JAVA" -lt "$JAVA7" ]]; then
-     echo "Warning: Your existing JAVA_HOME is less than 1.7"
-     echo "  Your JAVA_HOME = $JAVA_HOME"
-     echo "  Your Java Version = $THIS_JVM_VER"
-     echo "  Required java version should be greater than $REQ_VER"
-  fi
-  if [[ "$temp_JAVA" -eq "$JAVA7" ]] && [[ "${THIS_JVM_VER:12:3}" -lt $JAVA67 ]]; then
-     echo "Warning: Your existing JAVA_HOME is less than 1.7.0_67"
-     echo "  Your JAVA_HOME = $JAVA_HOME"
-     echo "  Your Java Version = $THIS_JVM_VER"
-     echo "  Required java version should be greater than $REQ_VER"
-  fi
-
-fi
 
 # Check variables that should refer to real directories
 VARLIST="MY_SQROOT $VARLIST JAVA_HOME PERL5LIB MPI_TMPDIR"
