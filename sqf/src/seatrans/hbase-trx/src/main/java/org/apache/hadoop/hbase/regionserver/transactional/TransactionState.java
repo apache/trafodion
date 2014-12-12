@@ -353,7 +353,12 @@ public class TransactionState {
                   return true;
                 }
               } catch (Exception e) {
-                if (LOG.isTraceEnabled()) LOG.trace("TransactionState hasConflict: Returning false. Caught exception for transaction " + transactionState.toString() + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "], exception is " + e.toString());
+                // We are unable to ascertain if we have had a conflict with 
+                // the rows we are trying to modify.  We will return true, 
+                // indicating that we can not allow the pending changes 
+                // for this transaction to commit.
+                LOG.error("TransactionState hasConflict: Returning true. Caught exception for transaction " + transactionState.toString() + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "], exception is " + e.toString());
+                return true;
             }
         }
         return false;
