@@ -449,12 +449,21 @@ public class TmAuditTlog {
       return;
    }
 
+   public long getNextAuditSeqNum(int nid) throws IOException{
+      if (LOG.isTraceEnabled()) LOG.trace("getNextAuditSeqNum node: " + nid);
+      return tLogControlPoint.getNextAuditSeqNum(nid);
+   }
+
    public static long asnGetAndIncrement () {
       if (LOG.isTraceEnabled()) LOG.trace("asnGetAndIncrement");
       return asn.getAndIncrement();
    }
 
    public void putSingleRecord(final long lvTransid, final String lvTxState, final Set<TransactionRegionLocation> regions, boolean forced) throws Exception {
+      putSingleRecord(lvTransid, lvTxState, regions, forced, -1);
+   }
+
+   public void putSingleRecord(final long lvTransid, final String lvTxState, final Set<TransactionRegionLocation> regions, boolean forced, long recoveryASN) throws Exception {
       long threadId = Thread.currentThread().getId();
       if (LOG.isTraceEnabled()) LOG.trace("putSingleRecord start in thread " + threadId);
       StringBuilder tableString = new StringBuilder();
@@ -490,70 +499,108 @@ public class TmAuditTlog {
       lv_lockIndex = (int)(lvTransid & tLogHashKey);
       if (LOG.isTraceEnabled()) LOG.trace("key: " + key + ", hex: " + Long.toHexString(key) + ", transid: " +  lvTransid);
       p = new Put(Bytes.toBytes(key));
- 
-      lvAsn = asn.getAndIncrement();
+
+      if (recoveryASN == -1){
+         // This is a normal audit record so we manage the ASN
+         lvAsn = asn.getAndIncrement();
+      }
+      else {
+         // This is a recovery audit record so use the ASN passed in
+         lvAsn = recoveryASN;
+      }
       if (LOG.isTraceEnabled()) LOG.trace("transid: " + lvTransid + " state: " + lvTxState + " ASN: " + lvAsn);
       p.add(TLOG_FAMILY, ASN_STATE, Bytes.toBytes(String.valueOf(lvAsn) + "," 
                        + transidString + "," + lvTxState 
                        + "," + Bytes.toString(filler)  
                        +  "," + tableString.toString()));
 
-      if (LOG.isTraceEnabled()) LOG.trace("TLOG putSingleRecord synchronizing tlogAuditLock[" + lv_lockIndex + "] in thread " + threadId );
-      startSynch = System.nanoTime();
-      try {
-         synchronized (tlogAuditLock[lv_lockIndex]) {
-            endSynch = System.nanoTime();
+
+      if (recoveryASN != -1){
+         // We need to send this to a remote Tlog, not our local one, so open the appropriate table
+         HTableInterface recoveryTable;
+         int lv_ownerNid = (int)(lvTransid >> 32);
+         String lv_tLogName = new String("TRAFODION._DTM_.TLOG" + String.valueOf(lv_ownerNid) + "_LOG_" + Integer.toHexString(lv_lockIndex));
+         HConnection recoveryTableConnection = HConnectionManager.createConnection(this.config);
+         recoveryTable = recoveryTableConnection.getTable(TableName.valueOf(lv_tLogName));
+
+         try {
+            recoveryTable.put(p);
+         }
+         catch (Exception e2){
+            // create record of the exception
+            LOG.error("putSingleRecord Exception in recoveryTable" + e2);
+            e2.printStackTrace();
+            throw e2;
+         }
+         finally {
             try {
-               if (LOG.isTraceEnabled()) LOG.trace("try table.put " + p );
-               startTimes[lv_TimeIndex] = System.nanoTime();
-               table[lv_lockIndex].put(p);
-               if ((forced) && (useAutoFlush == false)) {
-                  if (LOG.isTraceEnabled()) LOG.trace("flushing commits");
-                  table[lv_lockIndex].flushCommits();
+               recoveryTable.close();
+               recoveryTableConnection.close();
+            }
+            catch (IOException e) {
+               LOG.error("putSingleRecord IOException closing recovery table or connection for table " + lv_tLogName);
+               e.printStackTrace();
+            }
+         }
+      }
+      else {
+         // THis goes to our local TLOG
+         if (LOG.isTraceEnabled()) LOG.trace("TLOG putSingleRecord synchronizing tlogAuditLock[" + lv_lockIndex + "] in thread " + threadId );
+         startSynch = System.nanoTime();
+         try {
+            synchronized (tlogAuditLock[lv_lockIndex]) {
+               endSynch = System.nanoTime();
+               try {
+                  if (LOG.isTraceEnabled()) LOG.trace("try table.put " + p );
+                  startTimes[lv_TimeIndex] = System.nanoTime();
+                  table[lv_lockIndex].put(p);
+                  if ((forced) && (useAutoFlush == false)) {
+                     if (LOG.isTraceEnabled()) LOG.trace("flushing commits");
+                     table[lv_lockIndex].flushCommits();
+                  }
+                  endTimes[lv_TimeIndex] = System.nanoTime();
                }
-               endTimes[lv_TimeIndex] = System.nanoTime();
-            }
-            catch (Exception e2){
-               // create record of the exception
-               LOG.error("putSingleRecord Exception " + e2);
-               e2.printStackTrace();
-               throw e2;
-            }
-         } // End global synchronization
-      }
-      catch (Exception e) {
-         // create record of the exception
-         LOG.error("Synchronizing on tlogAuditLock[" + lv_lockIndex + "] Exception " + e);
-         e.printStackTrace();
-         throw e;
-      }
-      if (LOG.isTraceEnabled()) LOG.trace("TLOG putSingleRecord synchronization complete in thread " + threadId );
+               catch (Exception e2){
+                  // create record of the exception
+                  LOG.error("putSingleRecord Exception " + e2);
+                  e2.printStackTrace();
+                  throw e2;
+               }
+            } // End global synchronization
+         }
+         catch (Exception e) {
+            // create record of the exception
+            LOG.error("Synchronizing on tlogAuditLock[" + lv_lockIndex + "] Exception " + e);
+            e.printStackTrace();
+            throw e;
+         }
+         if (LOG.isTraceEnabled()) LOG.trace("TLOG putSingleRecord synchronization complete in thread " + threadId );
 
-      synchTimes[lv_TimeIndex] = endSynch - startSynch;
-      totalSynchTime += synchTimes[lv_TimeIndex];
-      totalWriteTime += (endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]);
-      if (synchTimes[lv_TimeIndex] > maxSynchTime) {
-         maxSynchTime = synchTimes[lv_TimeIndex];
-      }
-      if (synchTimes[lv_TimeIndex] < minSynchTime) {
-         minSynchTime = synchTimes[lv_TimeIndex];
-      }
-      if ((endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]) > maxWriteTime) {
-         maxWriteTime = (endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]);
-      }
-      if ((endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]) < minWriteTime) {
-         minWriteTime = (endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]);
-      }
+         synchTimes[lv_TimeIndex] = endSynch - startSynch;
+         totalSynchTime += synchTimes[lv_TimeIndex];
+         totalWriteTime += (endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]);
+         if (synchTimes[lv_TimeIndex] > maxSynchTime) {
+            maxSynchTime = synchTimes[lv_TimeIndex];
+         }
+         if (synchTimes[lv_TimeIndex] < minSynchTime) {
+            minSynchTime = synchTimes[lv_TimeIndex];
+         }
+         if ((endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]) > maxWriteTime) {
+            maxWriteTime = (endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]);
+         }
+         if ((endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]) < minWriteTime) {
+            minWriteTime = (endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]);
+         }
 
-      if (lv_TimeIndex == 49) {
-         timeIndex.set(1);  // Start over so we don't exceed the array size
-      }
+         if (lv_TimeIndex == 49) {
+            timeIndex.set(1);  // Start over so we don't exceed the array size
+         }
 
-      if (lv_TotalWrites == 59999) {
-         avgWriteTime = (double) (totalWriteTime/lv_TotalWrites);
-         avgSynchTime = (double) (totalSynchTime/lv_TotalWrites);
-         LOG.info("TLog Audit Write Report\n" + 
-                   "                        Total records: " 
+         if (lv_TotalWrites == 59999) {
+            avgWriteTime = (double) (totalWriteTime/lv_TotalWrites);
+            avgSynchTime = (double) (totalSynchTime/lv_TotalWrites);
+            LOG.info("TLog Audit Write Report\n" + 
+                   "                        Total records: "
                        + lv_TotalRecords + " in " + lv_TotalWrites + " write operations\n" +
                    "                        Write time:\n" +
                    "                                     Min:  " 
@@ -570,26 +617,26 @@ public class TmAuditTlog {
                    "                                     Avg:  " 
                        + avgSynchTime / 1000 + " microseconds\n");
 
-         // Start at index 1 since there is no startTimes[0]
-         timeIndex.set(1);
-         endTimes[0]          = System.nanoTime();
-         totalWriteTime       = 0;
-         totalSynchTime       = 0;
-         totalPrepTime        = 0;
-         totalRecords.set(0);
-         totalWrites.set(0);
-         minWriteTime         = 50000;             // Some arbitrary high value
-         maxWriteTime         = 0;
-         minWriteTimeBuffSize = 0;
-         maxWriteTimeBuffSize = 0;
-         minSynchTime         = 50000;             // Some arbitrary high value
-         maxSynchTime         = 0;
-         minPrepTime          = 50000;            // Some arbitrary high value
-         maxPrepTime          = 0;
-         minBufferSize        = 1000;             // Some arbitrary high value
-         maxBufferSize        = 0;
-      }
- 
+            // Start at index 1 since there is no startTimes[0]
+            timeIndex.set(1);
+            endTimes[0]          = System.nanoTime();
+            totalWriteTime       = 0;
+            totalSynchTime       = 0;
+            totalPrepTime        = 0;
+            totalRecords.set(0);
+            totalWrites.set(0);
+            minWriteTime         = 50000;             // Some arbitrary high value
+            maxWriteTime         = 0;
+            minWriteTimeBuffSize = 0;
+            maxWriteTimeBuffSize = 0;
+            minSynchTime         = 50000;             // Some arbitrary high value
+            maxSynchTime         = 0;
+            minPrepTime          = 50000;            // Some arbitrary high value
+            maxPrepTime          = 0;
+            minBufferSize        = 1000;             // Some arbitrary high value
+            maxBufferSize        = 0;
+         }
+      }// End else revoveryASN == -1
       if (LOG.isTraceEnabled()) LOG.trace("putSingleRecord exit");
    }
 
@@ -1036,8 +1083,17 @@ public class TmAuditTlog {
    public void getTransactionState (TransactionState ts) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("getTransactionState start; transid: " + ts.getTransactionId());
 
+      // This request might be for a transaction not originating on this node, so we need to open
+      // the appropriate Tlog
+      HTableInterface unknownTransactionTable;
+      long lvTransid = ts.getTransactionId();
+      int lv_ownerNid = (int)(lvTransid >> 32);
+      int lv_lockIndex = (int)(lvTransid & tLogHashKey);
+      String lv_tLogName = new String("TRAFODION._DTM_.TLOG" + String.valueOf(lv_ownerNid) + "_LOG_" + Integer.toHexString(lv_lockIndex));
+      HConnection unknownTableConnection = HConnectionManager.createConnection(this.config);
+      unknownTransactionTable = unknownTableConnection.getTable(TableName.valueOf(lv_tLogName));
+
       try {
-         long lvTransid = ts.getTransactionId();
          String transidString = new String(String.valueOf(lvTransid));
          Get g;
          long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
@@ -1046,9 +1102,8 @@ public class TmAuditTlog {
          int lvTxState = TM_TX_STATE_NOTX;
          String stateString = "";
          String transidToken = "";
-         int    lv_lockIndex = (int)(lvTransid & tLogHashKey);
          try {
-            Result r = table[lv_lockIndex].get(g);
+            Result r = unknownTransactionTable.get(g);
             if (r == null) {
                if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: tLog result is null: " + transidString);
             }
@@ -1095,7 +1150,7 @@ public class TmAuditTlog {
                String keyS = new String(r.getRow());
                Get get = new Get(r.getRow());
                get.setMaxVersions(versions);  // will return last n versions of row
-               Result lvResult = table[lv_lockIndex].get(get);
+               Result lvResult = unknownTransactionTable.get(get);
                // byte[] b = lvResult.getValue(TLOG_FAMILY, ASN_STATE);  // returns current version of value
                List<Cell> list = lvResult.getColumnCells(TLOG_FAMILY, ASN_STATE);  // returns all versions of this column
                for (Cell element : list) {

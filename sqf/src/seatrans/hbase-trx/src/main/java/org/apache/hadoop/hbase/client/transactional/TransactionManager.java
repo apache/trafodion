@@ -355,9 +355,8 @@ public class TransactionManager {
              canCommit = false;
              transactionState.addRegionToIgnore(location); // No need to re-abort.
              break;
-  	    default:
+        default:
              LOG.warn("Received invalid return code from requestCommit " + commitStatus + " for transaction " + transactionId + " throwing CommitUnsuccessfulException");
-  
              throw new CommitUnsuccessfulException("Unexpected return code from prepareCommit: "
               + commitStatus);
      }
@@ -600,29 +599,36 @@ public class TransactionManager {
           }
 
         // loop to retrieve replies
+        int commitError = 0;
         try {
-          int commitError = 0;
           for (int loopIndex = 0; loopIndex < loopCount; loopIndex ++) {
             int canCommit = compPool.take().get();
-      	
-          	if (canCommit == TM_COMMIT_FALSE) {
-          		// Commit conflict takes precedence
-          		if(commitError != TransactionalReturn.COMMIT_CONFLICT)
-          			commitError = TransactionalReturn.COMMIT_UNSUCCESSFUL;
-          	}
-          	if(canCommit == TM_COMMIT_FALSE_CONFLICT) {
-          		commitError = TransactionalReturn.COMMIT_CONFLICT;
-          	}
-          	else if (canCommit == TM_COMMIT_TRUE)
-          		allReadOnly = false;
-         	}
-          if(commitError != 0) 
-        	  return commitError;
-        }catch (Exception e) {        	
+            switch (canCommit) {
+               case TM_COMMIT_TRUE:
+                 allReadOnly = false;
+                 break;
+               case TM_COMMIT_READ_ONLY:
+                 break;
+               case TM_COMMIT_FALSE_CONFLICT:
+                 commitError = TransactionalReturn.COMMIT_CONFLICT;
+                 break;
+               case TM_COMMIT_FALSE:
+                 // Commit conflict takes precedence
+                 if(commitError != TransactionalReturn.COMMIT_CONFLICT)
+                    commitError = TransactionalReturn.COMMIT_UNSUCCESSFUL;
+                 break;
+               default:
+                 LOG.error("Unexpected value of canCommit in prepareCommit (during completion processing): " + canCommit);
+                 commitError = TransactionalReturn.COMMIT_UNSUCCESSFUL;;
+            }
+          }
+        }catch (Exception e) {
           LOG.error("exception in prepareCommit (during completion processing): " + e);
           throw new CommitUnsuccessfulException(e);
-        }        
-        return allReadOnly ? TransactionalReturn.COMMIT_OK_READ_ONLY: 
+        }
+        if(commitError != 0)
+           return commitError;
+        return allReadOnly ? TransactionalReturn.COMMIT_OK_READ_ONLY:
                              TransactionalReturn.COMMIT_OK;
     }
 

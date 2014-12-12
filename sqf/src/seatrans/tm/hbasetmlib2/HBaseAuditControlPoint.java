@@ -32,7 +32,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Delete;
@@ -72,7 +75,7 @@ public class HBaseAuditControlPoint {
     static final Log LOG = LogFactory.getLog(HBaseAuditControlPoint.class);
     private static long currControlPt;
     private static HBaseAdmin admin;
-//    private static HBaseAuditContext tLogContext;
+    private Configuration config;
     private static String CONTROL_POINT_TABLE_NAME;
     private static final byte[] CONTROL_POINT_FAMILY = Bytes.toBytes("cpf");
     private static final byte[] ASN_HIGH_WATER_MARK = Bytes.toBytes("hwm");
@@ -82,6 +85,7 @@ public class HBaseAuditControlPoint {
 
     public HBaseAuditControlPoint(Configuration config) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("Enter HBaseAuditControlPoint constructor()");
+      this.config = config;
       CONTROL_POINT_TABLE_NAME = config.get("CONTROL_POINT_TABLE_NAME");
       HTableDescriptor desc = new HTableDescriptor(TableName.valueOf(CONTROL_POINT_TABLE_NAME));
       HColumnDescriptor hcol = new HColumnDescriptor(CONTROL_POINT_FAMILY);
@@ -283,6 +287,63 @@ public class HBaseAuditControlPoint {
       if (LOG.isTraceEnabled()) LOG.trace("getStartingAuditSeqNum - exit returning " + lvAsn);
       return lvAsn;
     }
+
+   public long getNextAuditSeqNum(int nid) throws IOException {
+      if (LOG.isTraceEnabled()) LOG.trace("getNextAuditSeqNum for node: " + nid);
+
+      // We need to open the appropriate control point table and read the value from it
+      HTableInterface remoteTable;
+      String lv_tName = new String("TRAFODION._DTM_.TLOG" + String.valueOf(nid) + "_CONTROL_POINT");
+      HConnection remoteConnection = HConnectionManager.createConnection(this.config);
+      remoteTable = remoteConnection.getTable(TableName.valueOf(lv_tName));
+
+      long highValue = -1;
+      try {
+         Scan s = new Scan();
+         s.setCaching(10);
+         s.setCacheBlocks(false);
+         if (LOG.isDebugEnabled()) LOG.debug("getNextAuditSeqNum resultScanner");
+         ResultScanner ss = table.getScanner(s);
+         try {
+            long currValue;
+            String rowKey;
+            if (LOG.isDebugEnabled()) LOG.debug("getNextAuditSeqNum entering for loop" );
+            for (Result r : ss) {
+               rowKey = new String(r.getRow());
+               if (LOG.isDebugEnabled()) LOG.debug("getNextAuditSeqNum rowKey is " + rowKey );
+               currValue =  Long.parseLong(Bytes.toString(r.value()));
+               if (LOG.isDebugEnabled()) LOG.debug("getNextAuditSeqNum value is " + currValue);
+               if (currValue > highValue) {
+                  if (LOG.isDebugEnabled()) LOG.debug("getNextAuditSeqNum Setting highValue to " + currValue);
+                  highValue = currValue;
+               }
+            }
+         }
+         catch (Exception e) {
+           LOG.error("getNextAuditSeqNum IOException" + e);
+           e.printStackTrace();
+         } finally {
+            ss.close();
+         }
+      }
+      catch (IOException e) {
+         LOG.error("getNextAuditSeqNum IOException setting up scan for " + lv_tName);
+         e.printStackTrace();
+      }
+      finally {
+         try {
+            remoteTable.close();
+            remoteConnection.close();
+         }
+         catch (IOException e) {
+            LOG.error("getNextAuditSeqNum IOException closing table or connection for " + lv_tName);
+            e.printStackTrace();
+         }
+      }
+      if (LOG.isTraceEnabled()) LOG.trace("getNextAuditSeqNum returning " + (highValue + 1));
+      return (highValue + 1);
+    }
+
 
    public long doControlPoint(final long sequenceNumber) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("doControlPoint start");
