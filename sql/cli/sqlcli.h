@@ -828,7 +828,6 @@ enum SQLATTR_SUBQUERY_TYPE
 {
   SQL_STMT_NA = 0, 
   SQL_STMT_CTAS = 1,
-  SQL_STMT_REPLICATE = 2,
   SQL_STMT_GET_STATISTICS = 3,
   /* describe type of statements like showcontrol, showplan */
   SQL_DESCRIBE_QUERY = 4,

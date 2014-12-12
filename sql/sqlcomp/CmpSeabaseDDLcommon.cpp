@@ -4880,6 +4880,12 @@ void CmpSeabaseDDL::initSeabaseMD()
       xnWasStartedHere = TRUE;
     }
 
+  cliRC = cliInterface.holdAndSetCQD("traf_bootstrap_md_mode", "ON");
+  if (cliRC < 0)
+    {
+      goto label_error;
+    }
+
   // update MD with information about metadata objects
   for (Lng32 i = 0; i < numTables; i++)
     {
@@ -4968,6 +4974,8 @@ void CmpSeabaseDDL::initSeabaseMD()
     {
       goto label_error;
     }
+
+  cliRC = cliInterface.restoreCQD("traf_bootstrap_md_mode");
 
   return;
 

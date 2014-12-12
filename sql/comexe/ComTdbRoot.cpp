@@ -622,8 +622,6 @@ const char *ComTdbRoot::getSubqueryTypeText(Int16 subqueryType)
     return "SQL_STMT_NA";
   case SQL_STMT_CTAS:
     return "SQL_STMT_CTAS";
-  case SQL_STMT_REPLICATE:
-    return "SQL_STMT_REPLICATE";
   case SQL_STMT_GET_STATISTICS:
     return "SQL_STMT_GET_STATISTICS";
   default:

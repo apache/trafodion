@@ -6265,11 +6265,69 @@ void CmpSeabaseDDL::dropNativeHbaseTable(
   
 }
 
-desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(const NAString &catName, 
+/////////////////////////////////////////////////////////////////////////
+// This method generates and returns tableInfo struct for internal special
+// tables (like metadata, histograms). These tables have hardcoded definitions
+// but need objectUID to be returned. ObjectUID is stored in metadata
+// and is read from there.
+// This is done only if we are not in bootstrap mode, for ex, when initializing
+// metadata. At that time, there is no metadata available so it cannot be read
+// to return objectUID.
+// A NULL tableInfo is returned if in bootstrap mode.
+//
+// RETURN: -1, if error. 0, if all ok.
+//////////////////////////////////////////////////////////////////////////
+short CmpSeabaseDDL::getSpecialTableInfo
+(
+ const NAString &catName, 
+ const NAString &schName, 
+ const NAString &objName,
+ const NAString &extTableName,
+ const char * objType, 
+ ComTdbVirtTableTableInfo* &tableInfo)
+{
+  Lng32 cliRC = 0;
+  tableInfo = NULL;
+  if (CmpCommon::getDefault(TRAF_BOOTSTRAP_MD_MODE) == DF_OFF)
+    {
+      ExeCliInterface cliInterface(STMTHEAP);
+      
+      cliRC = cliInterface.holdAndSetCQD("traf_bootstrap_md_mode", "ON");
+      if (cliRC < 0)
+        {
+          return -1;
+        }
+
+      Int32 objectOwner = 0;
+      Int64 objUID = getObjectUIDandOwner(&cliInterface, 
+                                          catName.data(), schName.data(), objName.data(), 
+                                          objType, NULL, &objectOwner);
+      cliRC = cliInterface.restoreCQD("traf_bootstrap_md_mode");
+      if (objUID <= 0)
+        return -1;
+
+      tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
+      tableInfo->tableName = extTableName.data();
+      tableInfo->createTime = 0;
+      tableInfo->redefTime = 0;
+      tableInfo->objUID = objUID;
+      tableInfo->isAudited = 1;
+      tableInfo->validDef = 1;
+      tableInfo->objOwnerID = objectOwner;
+      tableInfo->hbaseCreateOptions = NULL;
+    }
+
+  return 0;
+}
+
+desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(
+                                                   const NAString &catName, 
                                                    const NAString &schName, 
                                                    const NAString &objName,
                                                    const char * objType)
 {
+  Lng32 cliRC = 0;
+
   desc_struct * tableDesc = NULL;
   NAString schNameL = "\"";
   schNameL += schName;
@@ -6292,6 +6350,11 @@ desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(const NAString &catName,
                                               objType))
     return NULL;
 
+  ComTdbVirtTableTableInfo * tableInfo = NULL;
+  if (getSpecialTableInfo(catName, schName, objName,
+                          extTableName, objType, tableInfo))
+    return NULL;
+
   tableDesc =
     Generator::createVirtualTableDesc
     ((char*)extTableName.data(),
@@ -6301,7 +6364,9 @@ desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(const NAString &catName,
      (ComTdbVirtTableKeyInfo*)keyInfo,
      0, NULL,
      indexInfoSize, 
-     (ComTdbVirtTableIndexInfo *)indexInfo);
+     (ComTdbVirtTableIndexInfo *)indexInfo,
+     0, NULL,
+     tableInfo);
 
   return tableDesc;
 
@@ -6311,6 +6376,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
                                                      const NAString &schName, 
                                                      const NAString &objName)
 {
+  Lng32 cliRC = 0;
+
   desc_struct * tableDesc = NULL;
   NAString schNameL = "\"";
   schNameL += schName;
@@ -6379,6 +6446,11 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
   constrInfo->checkConstrLen = 0;
   constrInfo->checkConstrText = NULL;
 
+  ComTdbVirtTableTableInfo * tableInfo = NULL;
+  if (getSpecialTableInfo(catName, schName, objName,
+                          extTableName, COM_BASE_TABLE_OBJECT_LIT, tableInfo))
+    return NULL;
+
   tableDesc =
     Generator::createVirtualTableDesc
     ((char*)extTableName.data(),
@@ -6387,7 +6459,9 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
      numKeys,
      keyInfo,
      1, constrInfo,
-     0, NULL);
+     0, NULL,
+     0, NULL,
+     tableInfo);
 
   return tableDesc;
 }
@@ -6602,8 +6676,8 @@ ComTdbVirtTableSequenceInfo * CmpSeabaseDDL::getSeabaseSequenceInfo
  const NAString &schName, 
  const NAString &seqName,
  NAString &extSeqName,
- Int32 objectOwner,
- Int64 seqUID)
+ Int32 &objectOwner,
+ Int64 &seqUID)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;

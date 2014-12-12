@@ -2950,18 +2950,6 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
 			   TOK_INITIALIZE_MAINTAIN,
 			   keyWordEntry1->getTokenCode(),
 			   end1, holdChar1, lvalp);
-		      else if (keyWordEntry2->getTokenCode() == TOK_REPLICATE)
-			return eitherCompoundOrSimpleKeyword
-			  (keyWordEntry2->getTokenCode() == TOK_REPLICATE,
-			   TOK_INITIALIZE_REPLICATE,
-			   keyWordEntry1->getTokenCode(),
-			   end1, holdChar1, lvalp);
-		      else if (keyWordEntry2->getTokenCode() == TOK_REORG)
-			return eitherCompoundOrSimpleKeyword
-			  (keyWordEntry2->getTokenCode() == TOK_REORG,
-			   TOK_INITIALIZE_REORG,
-			   keyWordEntry1->getTokenCode(),
-			   end1, holdChar1, lvalp);
 		      else if (keyWordEntry2->getTokenCode() == TOK_SQL)
 			return eitherCompoundOrSimpleKeyword
 			  (keyWordEntry2->getTokenCode() == TOK_SQL,
@@ -2997,12 +2985,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
 			   TOK_REINITIALIZE_MAINTAIN,
 			   keyWordEntry1->getTokenCode(),
 			   end1, holdChar1, lvalp);
-		      else if (keyWordEntry2->getTokenCode() == TOK_REPLICATE)
-			return eitherCompoundOrSimpleKeyword
-			  (keyWordEntry2->getTokenCode() == TOK_REPLICATE,
-			   TOK_REINITIALIZE_REPLICATE,
-			   keyWordEntry1->getTokenCode(),
-			   end1, holdChar1, lvalp);
+                      break;
                     case TOK_REPEATABLE:
                       return eitherCompoundOrSimpleKeyword
                         (keyWordEntry2->getTokenCode() == TOK_ACCESS ||
@@ -3010,13 +2993,6 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
 
                          keyWordEntry2->getTokenCode() == TOK_ACCESS
                          ? TOK_REPEATABLE_ACCESS : TOK_REPEATABLE_READ,
-                         keyWordEntry1->getTokenCode(),
-                         end1, holdChar1, lvalp);
-                      break;
-		    case TOK_REPLICATE:
-                      return eitherCompoundOrSimpleKeyword
-                        (keyWordEntry2->getTokenCode() == TOK_PARTITION, 
-                         TOK_REPLICATE_PARTITION,
                          keyWordEntry1->getTokenCode(),
                          end1, holdChar1, lvalp);
                       break;

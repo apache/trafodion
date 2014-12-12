@@ -396,7 +396,7 @@
 1426 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid hbase column name $0~String0 was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
 1427 ZZZZZ 99999 BEGINNER MINOR DBADMIN Table cannot be renamed. $0~String0
 1428 ZZZZZ 99999 BEGINNER MINOR DBADMIN Metadata definitions could not be created and preloaded in global MDdescInfo struct. Make sure that metadata table definition syntax is correct.
-1429 ZZZZZ 99999 BEGINNER MINOR DBADMIN Inserts into _ROW_ format external hbase tables can only use VALUES clause and must use column_create function to create values.
+1429 ZZZZZ 99999 BEGINNER MINOR DBADMIN Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
 1500 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The CATSYS - CAT_REFERENCES system schema relationship for catalog $0~CatalogName might be corrupt.
 1501 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 5/7/12 ---
 1502 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The OBJECTS - REPLICAS definition schema relationship for $0~String0 $1~TableName might be corrupt.

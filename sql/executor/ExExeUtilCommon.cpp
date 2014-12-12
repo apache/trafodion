@@ -104,16 +104,7 @@ ex_tcb * ExExeUtilTdb::build(ex_globals * glob)
 {
   ExExeUtilTcb * exe_util_tcb;
 
-  switch (type_)
-    {
-    case ComTdbExeUtil::LOAD_:
-      exe_util_tcb = new(glob->getSpace()) ExExeLoadUtilTcb(*this, glob);
-      break;
-      
-    default:
-      exe_util_tcb = new(glob->getSpace()) ExExeUtilTcb(*this, NULL, glob);
-      break;
-    }
+  exe_util_tcb = new(glob->getSpace()) ExExeUtilTcb(*this, NULL, glob);
 
   exe_util_tcb->registerSubtasks();
 
