@@ -35,7 +35,7 @@ public:
 
     void commAcceptor( void );
     void processNewComm( MPI_Comm interComm );
-//    void processNewSock( int sockFd );
+    void processNewSock( int sockFd );
     void start( void );
     void shutdownWork( void );
 
@@ -44,7 +44,8 @@ private:
 
     void commAcceptorIB( void );
     void commAcceptorSock( void );
-    bool sendNodeInfo ( MPI_Comm interComm );
+    bool sendNodeInfoMPI( MPI_Comm interComm );
+    bool sendNodeInfoSock( int sockFd );
 
     bool shutdown_;
 

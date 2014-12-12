@@ -2403,13 +2403,19 @@ SB_Export int msg_mon_get_my_segid(int *pp_segid) {
                               XZFIL_ERR_INVALIDSTATE);
     lp_p = strstr(ga_ms_su_c_port, "$port#");
     if (lp_p == NULL) {
-        sprintf(&lv_line, "monitor-port=%s does not contain '$port#'",
-                ga_ms_su_c_port);
-        if (gv_ms_trace_mon)
-            trace_where_printf(WHERE, "%s\n", &lv_line);
-        return ms_err_rtn_msg(WHERE, &lv_line, XZFIL_ERR_INVALIDSTATE);
+        lp_p = strchr(ga_ms_su_c_port, ':');
+        if (lp_p == NULL) {
+            sprintf(&lv_line, "monitor-port=%s does not contain '$port#' or ':'",
+                    ga_ms_su_c_port);
+            if (gv_ms_trace_mon)
+                trace_where_printf(WHERE, "%s\n", &lv_line);
+            return ms_err_rtn_msg(WHERE, &lv_line, XZFIL_ERR_INVALIDSTATE);
+        }
+        lv_segid = atoi(&lp_p[1]);
     }
-    lv_segid = atoi(&lp_p[6]);
+    else {
+        lv_segid = atoi(&lp_p[6]);
+    }
     if (gv_ms_trace_mon)
         trace_where_printf(WHERE, "EXIT OK segid=%d\n", lv_segid);
     *pp_segid = lv_segid;

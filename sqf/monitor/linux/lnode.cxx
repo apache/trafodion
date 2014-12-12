@@ -95,7 +95,7 @@ CLNode::CLNode(CLNodeContainer  *lnodes
 
     // Set  numCores_ firstCore_ based on coreMask.  These are used
     // when retrieving processor statistics.
-    for (int i = 0; i < 32; i++ )
+    for (int i = 0; i < MAX_CORES; i++ )
     {
         if ( CPU_ISSET( i, &coreMask ) )
         {

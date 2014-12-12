@@ -73,7 +73,7 @@ extern bool PidMap;
 extern int Measure;
 extern int trace_level;
 extern int MyPNID;
-extern char MyPort[MPI_MAX_PORT_NAME];
+extern char MyCommPort[MPI_MAX_PORT_NAME];
 extern char Node_name[MPI_MAX_PROCESSOR_NAME];
 extern sigset_t SigSet;
 extern CLock MemModLock;
@@ -1692,8 +1692,8 @@ bool CProcess::Create (CProcess *parent, int & result)
     argv[j + 4] = new char[strlen(Name) ? strlen(Name)+1 : MAX_PROCESS_NAME_STR];
     strcpy (argv[j + 4], Name);
 
-    argv[j + 5] = new char[strlen (MyPort) + 1];
-    strcpy (argv[j + 5], MyPort);
+    argv[j + 5] = new char[strlen (MyCommPort) + 1];
+    strcpy (argv[j + 5], MyCommPort);
 
     argv[j + 6] = new char[6];
     sprintf (argv[j + 6], "%5.5d", Type);
@@ -4654,7 +4654,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
              process->GetType() == ProcessType_SPX))
         {
             // see if we can restart the process
-            restarted = Persist_Process( process, downNode );
+            restarted = RestartPersistentProcess( process, downNode );
             if ( !restarted )
             {
                 if (!process->IsClone() && !MyNode->isInQuiesceState())
@@ -5203,7 +5203,7 @@ bool CProcessContainer::Open_Process (int nid, int pid, Verifier_t verifier, int
     return status;
 }
 
-bool CProcessContainer::Persist_Process( CProcess *process, int downNode )
+bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNode )
 {
     bool successful = false;
     bool restart = false;
@@ -5223,7 +5223,7 @@ bool CProcessContainer::Persist_Process( CProcess *process, int downNode )
     CConfigGroup *group;
     CConfigKey *key;
 
-    const char method_name[] = "CProcessContainer::Persist_Process";
+    const char method_name[] = "CProcessContainer::RestartPersistentProcess";
     TRACE_ENTRY;
 
     // if 1st time retrying to restart process

@@ -59,6 +59,48 @@ extern CReplicate Replicator;
 extern CMonStats *MonStats;
 extern CReqQueue ReqQueue;
 
+const char *RedirEpollEventString( __uint32_t events )
+{
+    static char str[80] = {0};
+    
+    strcpy( str, "( " );
+    if ( events & EPOLLIN )
+    {
+        strncat( str, "EPOLLIN ", sizeof(str) );
+    }
+    if ( events & EPOLLOUT )
+    {
+        strncat( str, "EPOLLOUT ", sizeof(str) );
+    }
+    if ( events & EPOLLRDHUP )
+    {
+        strncat( str, "EPOLLRDHUP ", sizeof(str) );
+    }
+    if ( events & EPOLLPRI )
+    {
+        strncat( str, "EPOLLPRI ", sizeof(str) );
+    }
+    if ( events & EPOLLERR )
+    {
+        strncat( str, "EPOLLERR ", sizeof(str) );
+    }
+    if ( events & EPOLLHUP )
+    {
+        strncat( str, "EPOLLHUP ", sizeof(str) );
+    }
+    if ( events & EPOLLET )
+    {
+        strncat( str, "EPOLLET ", sizeof(str) );
+    }
+    if ( events & EPOLLONESHOT )
+    {
+        strncat( str, "EPOLLONESHOT ", sizeof(str) );
+    }
+    strncat( str, ")", sizeof(str) );
+
+    return( str );
+}
+
 CRedirect::CRedirect(int nid, int pid)
                     :fd_(-1)
                     ,activity_(false)
@@ -1362,6 +1404,10 @@ void CRedirector::delFromEpollSet(int fd)
         mon_log_write(MON_REDIR_DELFROMEPOLL_1, SQ_LOG_ERR, buf);
     }
 
+    if (trace_settings & TRACE_REDIRECTION)
+        trace_printf("%s@%d deleted fd=%d from list of epoll monitored fds\n",
+                     method_name, __LINE__, fd);
+
     TRACE_EXIT;
 }
 
@@ -1568,6 +1614,11 @@ void CRedirector::stderrFd(const char *nodeName, const char *processName,
     // will handle output data.
     CRedirectStderr *redirect;
     redirect = new CRedirectStderr(nodeName, processName, nid, pid);
+
+    if (trace_settings & TRACE_REDIRECTION)
+        trace_printf("%s@%d adding stderr fd=%d to list of monitored "
+                     "pipes. Redirection to %s (%d,%d)\n",
+                     method_name, __LINE__, fd, processName, nid, pid);
 
     // Create a mapping between the pipe file descriptor
     // and an object that will handle input data.
@@ -1823,6 +1874,10 @@ void CRedirector::redirectThread()
         }
         else if (ready_fds != 0)
         {
+            if (trace_settings & TRACE_REDIRECTION)
+                trace_printf("%s@%d ready_fds=%d\n",
+                             method_name, __LINE__, ready_fds);
+
             // Take the appropriate action for each of the file
             // descriptors that is ready.
             for (int n=0; n < ready_fds; n++)
@@ -1831,8 +1886,9 @@ void CRedirector::redirectThread()
                 events = event_list[n].events;
 
                 if (trace_settings & TRACE_REDIRECTION)
-                    trace_printf("%s@%d for fd=%d, events=%d\n",
-                                 method_name, __LINE__, fd, events);
+                    trace_printf("%s@%d for fd=%d, events=%d %s\n",
+                                 method_name, __LINE__, fd, events, 
+                                 RedirEpollEventString(events));
 
                 // Acquire lock to prevent memory modifications during
                 // fork/exec (see uses of OFED_MUTEX define)

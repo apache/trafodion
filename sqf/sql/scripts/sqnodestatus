@@ -1,0 +1,92 @@
+#!/usr/bin/perl
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+#
+# Implements:
+#   ssh -M "ConnectTimeout 1" -o "ConnectionAttempts 3" n028 hostinfo 2>&1
+#
+# Uses:
+#   export MY_NODES=' -w n028 -w n044 -w n029 -w n045 -w n030 -w n031 -w n032 '
+#   export SQ_MON_SSH_OPTIONS=' -o "ConnectTimeout 1" -o "ConnectionAttempts 3" '
+#
+
+my $node_context=readpipe("echo \$MY_NODES");
+my %node_hash=();
+my $sq_mon_ssh_options=readpipe("echo -n \$SQ_MON_SSH_OPTIONS");
+
+&main();
+
+sub main()
+{
+  $node_context=~s/-w//ig;
+  #print "node_context=${node_context}";
+  chomp($node_context);
+  my @nodes=split(' ',$node_context);
+  foreach my $node(@nodes)
+  {
+     $check_flag=check_node_status($node);
+  }
+  print_node_status();
+}
+
+sub print_node_status()
+{
+    foreach my $node(sort keys %node_hash)
+    {
+       my $status=$node_hash{$node}{"status"};
+       print "${node} \[ ${status} \]\n";
+    }
+}
+
+sub check_node_status($)
+{
+    my $node_id, $node_status;
+    my $check_node=shift;
+    #print "node=${check_node}\n";
+    my $command="ssh -M $sq_mon_ssh_options $check_node hostname 2>&1";
+    #print "command=${command}\n";
+    my $down_character="ssh:";
+    #print "down_character=${down_character}\n";
+
+    my @check_results=(readpipe($command));
+
+    foreach my $check_result(@check_results)
+    {
+        if($check_result =~ /^$check_node/)
+        {
+           #print "check_result=${check_result}\n";
+           $node_id=$check_node;
+           $node_status="UP";
+        }
+        elsif($check_result =~ /^$down_character/)
+        {
+           #print "check_result=${check_result}\n";
+           $node_id=$check_node;
+           $node_status="DOWN";
+        }
+
+        #print "${node_id} [ ${node_status} ]\n";
+        $node_hash{$node_id}{"status"}=$node_status;
+    }
+
+    return 1;
+}
+

@@ -45,12 +45,6 @@ enum OpType
 #endif
 };
 
-enum MonXChngTags
-{
-    MON_XCHNG_HEADER = 100,
-    MON_XCHNG_DATA
-};
-
 class CMonitor : public CTmSync_Container
 {
 friend class SQ_LocalIOToClient;
@@ -94,8 +88,6 @@ public:
     int   GetProcTermSig() { return procTermSig_; }
     int   PackProcObjs(char *&buffer);
     void  UnpackProcObjs(char *&buffer, int procCount);
-    int   Receive(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm);
-    int   Send(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm);
 #ifdef USE_SEQUENCE_NUM
     long long GetTimeSeqNum();  // time based seq number
 #endif

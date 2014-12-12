@@ -49,7 +49,7 @@ bool traceOpen = false;
 char traceFileName[MAX_PROCESS_PATH];
 FILE *locio_trace_file = NULL;
 
-char MyPort[MPI_MAX_PORT_NAME];
+char MyPort[MPI_MAX_PORT_NAME] = {0};;
 char *MyName;
 char *dbgLine;
 int MyRank = -1;
@@ -732,10 +732,9 @@ int main (int argc, char *argv[])
         genSnmpTrapEnabled = true;
     }
     
-    // Mask all allowed signals except SIGUSR1 and SIGPROF
+    // Mask all allowed signals except SIGPROF
     sigset_t    mask;
     sigfillset( &mask);
-    sigdelset( &mask, SIGUSR1 );
     sigdelset( &mask, SIGPROF ); // allows profiling such as google profiler
 
     int rc = pthread_sigmask( SIG_SETMASK, &mask, NULL );
@@ -743,7 +742,7 @@ int main (int argc, char *argv[])
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf( buf, "[%s - main], pthread_sigmask error=%d\n", MyName, rc );
-        wdt_log_write( MON_WATCHDOG_MAIN_6, SQ_LOG_ERR, buf );
+        wdt_log_write( MON_WATCHDOG_MAIN_7, SQ_LOG_ERR, buf );
     }
 
     MonLog = new CMonLog( "wdt" );

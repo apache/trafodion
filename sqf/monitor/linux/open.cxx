@@ -38,7 +38,6 @@ using namespace std;
 
 extern int trace_level;
 extern int MyPNID;
-extern char MyPort[MPI_MAX_PORT_NAME];
 extern char Node_name[MPI_MAX_PROCESSOR_NAME];
 extern CMonitor *Monitor;
 extern CNodeContainer *Nodes;

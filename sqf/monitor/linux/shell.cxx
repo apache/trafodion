@@ -103,7 +103,7 @@ CClusterConfig ClusterConfig; // 'cluster.conf' objects
 char PNode[MAX_NODES][MPI_MAX_PROCESSOR_NAME];
 char Node[MAX_NODES][MPI_MAX_PROCESSOR_NAME];
 char MyNode[MPI_MAX_PROCESSOR_NAME];
-char MyPort[MPI_MAX_PORT_NAME];
+char MyPort[MPI_MAX_PORT_NAME] = {0};;
 int MyRank = -1;
 int MyPNid = -1;
 int MyNid = -1;
@@ -238,12 +238,8 @@ bool set_pnode_state( const char *name, NodeState_t &state )
 
 bool update_cluster_state( bool displayState, bool checkSpareColdStandby = true )
 {
-#if 0
-    //
-    // TODO: Enable this logic when node status utility is implemented
-    //
     int rc, rc2;
-    CCmsh cmshcmd( "ssh master trafnodestatus $MY_NODES" );
+    CCmsh cmshcmd( "sqnodestatus" );
 
     // save, close and restore stdin when executing ssh command 
     // because ssh, by design, would consume contents of stdin.
@@ -268,7 +264,6 @@ bool update_cluster_state( bool displayState, bool checkSpareColdStandby = true 
     {
         return( false );
     }
-#endif
 
     NumDown = 0;
 
@@ -4709,16 +4704,19 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
                 }
                 return true;
             }
+            bool copiedToList =false;
             for(i=0,nodelist[0]='\0'; i<NumNodes; i++)
             {
-                if (i)
+                if (copiedToList)
                 {
+                    copiedToList =false;
                     strcat(nodelist, ",");
                 }
                 if ( get_pnode_state( PNode[i], nodeState ) )
                 {
                     if ( nodeState == StateUp )
                     {
+                        copiedToList =true;
                         strcat(nodelist,PNode[i]);
                     }
                 }
