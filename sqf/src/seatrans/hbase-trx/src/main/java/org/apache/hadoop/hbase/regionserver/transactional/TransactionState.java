@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableSet;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.codec.binary.Hex;
 
@@ -38,6 +40,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.regionserver.wal.HLog;
 import org.apache.hadoop.hbase.regionserver.InternalScanner;
 import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
 import org.apache.hadoop.hbase.regionserver.ScanQueryMatcher;
@@ -117,6 +120,7 @@ public class TransactionState {
     private final HRegionInfo regionInfo;
     private final long hLogStartSequenceId;
     private final long transactionId;
+    private AtomicLong logSeqId; 
     public Status status;
     private List<ScanRange> scans = Collections.synchronizedList(new LinkedList<ScanRange>());
     private List<Delete> deletes = Collections.synchronizedList(new LinkedList<Delete>());
@@ -128,21 +132,39 @@ public class TransactionState {
     private HTableDescriptor tabledescriptor;
     private long controlPointEpochAtPrepare = 0;
     private int reInstated = 0;
+    private long flushTxId = 0;
     private WALEdit e;
+    private boolean earlyLogging = false;
+    private boolean commit_TS_CC = false;
+    private HLog tHLog = null;
     private Object xaOperation = new Object();;
     private CommitProgress commitProgress = CommitProgress.NONE; // 0 is no commit yet, 1 is a commit is under way, 2 is committed
     private List<Tag> tagList = Collections.synchronizedList(new ArrayList<Tag>());
 
-    public TransactionState(final long transactionId, final long rLogStartSequenceId, final HRegionInfo regionInfo, HTableDescriptor htd) {
-        if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: create TS object for " + transactionId);
+    public static final int TS_ACTIVE = 0;
+    public static final int TS_COMMIT_REQUEST = 1;
+    public static byte TS_TRAFODION_TXN_TAG_TYPE = 41;
+
+    public TransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId, final HRegionInfo regionInfo,
+                                                 HTableDescriptor htd, HLog hLog, boolean logging) {
+        Tag transactionalTag = null;
+        if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: EEE create TS object for " + transactionId + " early logging " + logging);
         this.transactionId = transactionId;
         this.hLogStartSequenceId = rLogStartSequenceId;
+        this.logSeqId = hlogSeqId;
         this.regionInfo = regionInfo;
         this.status = Status.PENDING;
         this.tabledescriptor = htd;
+        this.earlyLogging = logging;
         this.e = new WALEdit();
-        Tag transactionalTag = this.formTransactionalContextTag(1);
-        tagList.add(transactionalTag );
+        this.tHLog = hLog;
+        if (earlyLogging) {
+           transactionalTag = this.formTransactionalContextTag(TS_ACTIVE);
+        }
+        else {
+           transactionalTag = this.formTransactionalContextTag(TS_COMMIT_REQUEST);
+        }
+        tagList.add(transactionalTag);
     }
 
     public HTableDescriptor getTableDesc() {
@@ -177,7 +199,7 @@ public class TransactionState {
         byte[] version = Bytes.toBytes(vers);
 
         byte[] tagBytes = concat(version, type, tid, logSeqId);
-        byte tagType = 41;
+        byte tagType = TS_TRAFODION_TXN_TAG_TYPE;
         Tag tag = new Tag(tagType, tagBytes);
         return tag;
     }    
@@ -189,19 +211,40 @@ public class TransactionState {
     public synchronized void addWrite(final Put write) {
         if (LOG.isTraceEnabled()) LOG.trace("addWrite -- ENTRY: write: " + write.toString());
         WriteAction waction;
+        KeyValue kv;
+        WALEdit e1 = new WALEdit();
         updateLatestTimestamp(write.getFamilyCellMap().values(), EnvironmentEdgeManager.currentTimeMillis());
         // Adding read scan on a write action
 	addRead(new WriteAction(write).getRow());
-        if (LOG.isTraceEnabled()) LOG.trace("writeOrdering size before: " + writeOrdering.size());
         writeOrdering.add(waction = new WriteAction(write));
-        if (LOG.isTraceEnabled()) LOG.trace("writeOrdering size after: " + writeOrdering.size());
-         for (Cell value : waction.getCells()) {
+
+        if (this.earlyLogging) { // immeditaely write edit out to HLOG during DML (actve transaction state)
+           for (Cell value : waction.getCells()) {
              //KeyValue kv = KeyValueUtil.ensureKeyValue(value);
-             //if (LOG.isDebugEnabled()) LOG.debug("add tag into edit for put " + this.transactionId);
-             KeyValue kv = KeyValue.cloneAndAddTags(value, tagList);
+             kv = KeyValue.cloneAndAddTags(value, tagList);
+             //if (LOG.isTraceEnabled()) LOG.trace("KV hex dump " + Hex.encodeHexString(kv.getValueArray() /*kv.getBuffer()*/));
+             e1.add(kv);
              e.add(kv);
-         }
-       if (LOG.isTraceEnabled()) LOG.trace("addWrite -- EXIT");
+            }
+           try {
+           long txid = this.tHLog.appendNoSync(this.regionInfo, this.regionInfo.getTable(),
+                    e1, new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.tabledescriptor,
+                    this.logSeqId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
+           //if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: Y11 write edit to HLOG during put with txid " + txid + " ts flush id " + this.flushTxId);
+           if (txid > this.flushTxId) this.flushTxId = txid; // save the log txid into TS object, later sync on largestSeqid during phase 1
+           }
+           catch (IOException exp1) {
+           LOG.info("TrxRegionEndpoint coprocessor addWrite writing to HLOG for early logging: Threw an exception");
+           //throw exp1;
+           }
+        }
+        else { // edits are buffered in ts and written out to HLOG in phase 1
+            for (Cell value : waction.getCells()) {
+             kv = KeyValue.cloneAndAddTags(value, tagList);
+             e.add(kv);
+             }
+        }
+        if (LOG.isTraceEnabled()) LOG.trace("addWrite -- EXIT");
     }
 
    public  static void updateLatestTimestamp(final Collection<List<Cell>> kvsCollection, final long time) {
@@ -223,6 +266,7 @@ public class TransactionState {
 
     public synchronized void addDelete(final Delete delete) {
         WriteAction waction;
+        WALEdit e1  = new WALEdit();
         long now = EnvironmentEdgeManager.currentTimeMillis();
         updateLatestTimestamp(delete.getFamilyCellMap().values(), now);
         if (delete.getTimeStamp() == HConstants.LATEST_TIMESTAMP) {
@@ -231,11 +275,31 @@ public class TransactionState {
         deletes.add(delete);
         writeOrdering.add(waction = new WriteAction(delete));
 
-         for (Cell value : waction.getCells()) {
-             // if (LOG.isDebugEnabled()) LOG.debug("add tag into edit for put " + this.transactionId);
-             KeyValue kv = KeyValue.cloneAndAddTags(value, tagList);
-             e.add(kv);
-         }
+        if (this.earlyLogging) {
+           for (Cell value : waction.getCells()) {
+               KeyValue kv = KeyValue.cloneAndAddTags(value, tagList);
+               e1.add(kv);
+               e.add(kv);
+           }
+           try {
+           long txid = this.tHLog.appendNoSync(this.regionInfo, this.regionInfo.getTable(),
+                    e1, new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.tabledescriptor,
+                    this.logSeqId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
+                    //if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: Y00 write edit to HLOG during delete with txid " + txid + " ts flush id " + this.flushTxId);
+           if (txid > this.flushTxId) this.flushTxId = txid; // save the log txid into TS object, later sync on largestSeqid during phase 1
+           }
+           catch (IOException exp1) {
+           LOG.info("TrxRegionEndpoint coprocessor addDelete writing to HLOG for early logging: Threw an exception");
+           }
+       }
+       else {
+           for (Cell value : waction.getCells()) {
+               KeyValue kv = KeyValue.cloneAndAddTags(value, tagList);
+               e.add(kv);
+           }
+       }
+    
+       if (LOG.isTraceEnabled()) LOG.trace("addDelete -- EXIT");
     }
 
     public synchronized void applyDeletes(final List<Cell> input, final long minTime, final long maxTime) {
@@ -288,7 +352,7 @@ public class TransactionState {
 
         return kv;
     }
-  
+
     public void clearState() {
 
       clearTransactionsToCheck();
@@ -348,10 +412,10 @@ public class TransactionState {
 
         for (TransactionState transactionState : transactionsToCheck) {
             try {
-                if (hasConflict(transactionState)) {
-                  if (LOG.isTraceEnabled()) LOG.trace("TransactionState hasConflict: Returning true for " + transactionState.toString() + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "]");
-                  return true;
-                }
+            if (hasConflict(transactionState)) {
+                if (LOG.isTraceEnabled()) LOG.trace("TransactionState hasConflict: Returning true for " + transactionState.toString() + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "]");
+                return true;
+            }
               } catch (Exception e) {
                 // We are unable to ascertain if we have had a conflict with 
                 // the rows we are trying to modify.  We will return true, 
@@ -363,7 +427,6 @@ public class TransactionState {
         }
         return false;
     }
-
     private boolean hasConflict(final TransactionState checkAgainst) {
         if (checkAgainst.getStatus().equals(TransactionState.Status.ABORTED)) {
             return false; // Cannot conflict with aborted transactions
@@ -405,6 +468,22 @@ public class TransactionState {
 
     public WALEdit getEdit() {
        return e;
+    }
+
+    public long getFlushTxId() {
+       return flushTxId;
+    }
+
+    public boolean getEarlyLogging() {
+       return earlyLogging;
+    }
+
+    public void setFullEditInCommit(boolean fullEdit) {
+       this.commit_TS_CC = fullEdit;
+    }
+
+    public boolean getFullEditInCommit() {
+       return this.commit_TS_CC;
     }
 
     public Object getXaOperationObject() {
@@ -624,7 +703,7 @@ public class TransactionState {
       }
 
 	    // Pick only the Cell's that match the 'scan' specifications
-	Map<byte [], NavigableSet<byte []>> lv_familyMap = scan.getFamilyMap();
+		Map<byte [], NavigableSet<byte []>> lv_familyMap = scan.getFamilyMap();
 	    for (KeyValue lv_kv : kvs) {
 		byte[] lv_kv_family = lv_kv.getFamily();
 		NavigableSet<byte []> set = lv_familyMap.get(lv_kv_family);
