@@ -75,7 +75,7 @@
 #include "Statement.h"
 #include "ComSqlId.h"
 
-CLISemaphore cliSemaphore ;
+CLISemaphore globalSemaphore ;
 
 
 #include "seabed/ms.h"
@@ -900,19 +900,22 @@ short sqInit()
 static Lng32 CliNonPrivPrologue()
 {
 
+  Lng32 retcode;
+
   if (cli_globals == NULL)
   {
-    cliSemaphore.get();
+    globalSemaphore.get();
     if (cli_globals != NULL)
     {
-      cliSemaphore.release();
-      return SQL_EXEC_SetEnviron_Internal(0);
+      globalSemaphore.release();
+      return 0;
     }
     sqInit();
     CliGlobals::createCliGlobals(FALSE); // this call will create the globals. 
-    cliSemaphore.release();
+    ex_assert(SQL_EXEC_SetEnviron_Internal(0) == 0, "Unable to set the Environment");
+    globalSemaphore.release();
   }
-  return SQL_EXEC_SetEnviron_Internal(0);
+  return 0;
 }
 #endif
 
@@ -6025,12 +6028,16 @@ Lng32 SQL_EXEC_SetParserFlagsForExSqlComp_Internal2(ULng32 flagbits)
 Lng32 SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(ULng32 flagbits)
 {
    Lng32 retcode;
+   CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
 
    try
    {
-      cliSemaphore.get();
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
       retcode = SQLCLI_AssignParserFlagsForExSqlComp_Internal(GetCliGlobals(),
 							      flagbits);
    }
@@ -6040,26 +6047,31 @@ Lng32 SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(ULng32 flagbits)
 #if defined(_THROW_EXCEPTIONS)
      if (cliWillThrow())
        {
-         cliSemaphore.release();
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
          throw;
        }
 #endif
    }
 
-   cliSemaphore.release();
-
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
    return retcode;
 }
 
 Lng32 SQL_EXEC_GetParserFlagsForExSqlComp_Internal(ULng32 &flagbits)
 {
    Lng32 retcode;
+   CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
 
    try
    {
-      cliSemaphore.get();
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
       retcode = SQLCLI_GetParserFlagsForExSqlComp_Internal(GetCliGlobals(),
 							   flagbits);
    }
@@ -6069,13 +6081,15 @@ Lng32 SQL_EXEC_GetParserFlagsForExSqlComp_Internal(ULng32 &flagbits)
 #if defined(_THROW_EXCEPTIONS)
      if (cliWillThrow())
        {
-         cliSemaphore.release();
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
          throw;
        }
 #endif
    }
 
-   cliSemaphore.release();
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
 
    return retcode;
 }
@@ -6562,9 +6576,6 @@ Lng32 SQL_EXEC_SetEnviron_Internal(Lng32 propagate)
    ContextCli   *threadContext;
 
 #ifndef CLI_PRIV_SRL
-  if (NOT __CLI_NONPRIV_INIT__)
-    __CLI_NONPRIV_INIT__ = TRUE;
-
   try
     {
       tmpSemaphore = getCliSemaphore(threadContext);
@@ -6586,8 +6597,6 @@ Lng32 SQL_EXEC_SetEnviron_Internal(Lng32 propagate)
 	 }
       threadContext->decrNumOfCliCalls();
       tmpSemaphore->release();
-
-
 #else
    // this method should not be called from inside of the priv srl.
    retcode = -CLI_INTERNAL_ERROR;
