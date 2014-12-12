@@ -5544,15 +5544,39 @@ RelExpr * ExeUtilFastDelete::preCodeGen(Generator * generator,
 
   return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
 }
+
 RelExpr * ExeUtilLobExtract::preCodeGen(Generator * generator,
-					const ValueIdSet & externalInputs,
-					ValueIdSet &pulledNewInputs)
+                                       const ValueIdSet & externalInputs,
+                                       ValueIdSet &pulledNewInputs)
 {
   if (nodeIsPreCodeGenned())
     return this;
 
-  return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
-}
+  if (! ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
+    return NULL;
+
+  ValueIdSet availableValues;
+  for (ValueId exprId = getGroupAttr()->getCharacteristicInputs().init();
+       getGroupAttr()->getCharacteristicInputs().next(exprId);
+       getGroupAttr()->getCharacteristicInputs().advance(exprId) )
+    {
+      if (exprId.getItemExpr()->getOperatorType() != ITM_VEG_REFERENCE)
+       availableValues += exprId;
+    }
+  
+  getGroupAttr()->setCharacteristicInputs(availableValues);
+  getInputValuesFromParentAndChildren(availableValues);
+
+  if (handle_)
+    handle_->replaceVEGExpressions
+      (availableValues, getGroupAttr()->getCharacteristicInputs());
+  
+  markAsPreCodeGenned();
+
+   // Done.
+   return this;
+ }
+
 RelExpr * HashGroupBy::preCodeGen(Generator * generator,
                                  const ValueIdSet & externalInputs,
                                  ValueIdSet &pulledNewInputs)
