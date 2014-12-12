@@ -97,4 +97,6 @@ INCLUDE_DIRS := $(TOPDIR)/sql/nsk/inc
 
 SRCPATH := exp
 
+CPPSRC += vprocsqlci.cpp
+
 TARGET := mxlobsrvr

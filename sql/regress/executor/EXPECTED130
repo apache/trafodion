@@ -48,9 +48,9 @@ C1
 C1           C2
 -----------  ----------------------------------------------------------------------------------------------------
 
-          1  LOBH000002000100006241560996850124178899520421158119818212281244010242037017"TRAFODION"."SCH"       
-          2  LOBH000002000100006241560996850124178899520421504829018212281244013708245017"TRAFODION"."SCH"       
-          3  LOBH000002000100006241560996850124178899520421839730618212281244017058536017"TRAFODION"."SCH"       
+          1  LOBH000002000100073799409368804257171637851416934573018212285097957215483017"TRAFODION"."SCH"       
+          2  LOBH000002000100073799409368804257171637851417317319618212285097963203014017"TRAFODION"."SCH"       
+          3  LOBH000002000100073799409368804257171637851417635354318212285097966389715017"TRAFODION"."SCH"       
 
 --- 3 row(s) selected.
 >>
@@ -216,35 +216,27 @@ C1           (EXPR)
 
 --- 3 row(s) selected.
 >>
->>obey(dml_delete);
-
-*** ERROR[15007] Error 2 while opening file DML_DELETE.
-
+>>obey TEST130(dml_delete);
 >>
+>>delete from t130lob3 where c1=1;
+
+--- 1 row(s) deleted.
+>>select c1, lobtostring(c2,30), lobtostring(c3,30)  from t130lob3;
+
+C1           (EXPR)                          (EXPR)
+-----------  ------------------------------  ------------------------------
+
+          2  inserted row22a                 inserted row22b               
+          3  inserted row23a                 inserted row23b               
+          4  inserted row24a                 inserted row24b               
+
+--- 3 row(s) selected.
 >>
+>>delete from t130lob2 ;
+
+--- 3 row(s) deleted.
+>>select * from t130lob2;
+
+--- 0 row(s) selected.
 >>
->>
->>
->>obey TEST130(dml);
-
-*** ERROR[15014] Section dml was not found in file TEST130.
-
->>obey TEST130(clnup);
->>drop table t130lob1 cascade;
-
---- SQL operation complete.
->>drop table t130lob2 cascade;
-
---- SQL operation complete.
->>drop table t130lob3 cascade;
-
---- SQL operation complete.
->>drop table t130lob4 cascade;
-
---- SQL operation complete.
->>
->>
->>exit;
-
-End of MXCI Session
-
+>>log;

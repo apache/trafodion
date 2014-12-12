@@ -28,7 +28,9 @@
 --     (10/21/2014) - Created.
 -- 
 
-cqd TRAF_BLOB_AS_VARCHAR 'OFF'; // remove after this is made the default. 
+-- remove after this is made the default.  
+cqd TRAF_BLOB_AS_VARCHAR 'OFF'; 
+
 obey TEST130(clnup);
 
 log LOG130 clear;
@@ -113,7 +115,7 @@ select c1, lobtostring(c2) from t130lob2 where c1=1;
 update t130lob2 set c2=stringtolob(' appended c2 to all rows',append);
 select c1, lobtostring(c2,50) from t130lob2;
 
-obey(dml_delete);
+obey TEST130(dml_delete);
 
 ?section dml_delete
 
@@ -123,7 +125,8 @@ select c1, lobtostring(c2,30), lobtostring(c3,30)  from t130lob3;
 delete from t130lob2 ;
 select * from t130lob2;
 
-obey(clnup);
+log;
+obey TEST130(clnup);
 
 
 
