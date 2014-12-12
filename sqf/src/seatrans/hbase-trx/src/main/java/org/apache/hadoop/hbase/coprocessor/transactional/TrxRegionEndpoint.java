@@ -2629,7 +2629,7 @@ CoprocessorService, Coprocessor {
         editList = (ArrayList<WALEdit>) indoubtTransactionsById.get(transactionId);
       }
       num  = editList.size();
-       if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:R00 " + regionInfo.getRegionNameAsString() + " re-drive commit for transaction: "
+       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: " + regionInfo.getRegionNameAsString() + " re-drive commit for transaction: "
                                      + transactionId + " with number of edit kvs list size " + num);
       for ( int i = 0; i < num; i++){
          b = editList.get(i);
@@ -2740,7 +2740,7 @@ CoprocessorService, Coprocessor {
                     txid = this.tHLog.appendNoSync(this.regionInfo, this.regionInfo.getTable(),
                         e, new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
                         nextLogSequenceId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
-                    if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: Y22 write commit HLOG " + transactionId + " HLog seq " + txid);
+                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: write commit HLOG " + transactionId + " HLog seq " + txid);
                  }
                  catch (IOException exp1) {
                     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor commit writing to HLOG : Threw an exception");
@@ -2788,7 +2788,7 @@ CoprocessorService, Coprocessor {
     }
     }
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  commit(tstate) -- EXIT TransactionState: " + 
+    if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  commit(tstate) -- EXIT TransactionState: " + 
       state.toString());
 
     if (state.isReinstated()) {
@@ -3548,7 +3548,7 @@ CoprocessorService, Coprocessor {
                   txid = this.tHLog.appendNoSync(this.regionInfo, this.regionInfo.getTable(),
                   state.getEdit(), new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
                   nextLogSequenceId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
-                  if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: YYY commitRequest COMMIT_OK -- EXIT txId: " + transactionId + " HLog seq " + txid);
+                  if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest COMMIT_OK -- EXIT txId: " + transactionId + " HLog seq " + txid);
                   this.tHLog.sync(txid);
             }
             else {
