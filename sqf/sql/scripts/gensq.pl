@@ -463,7 +463,7 @@ sub genComponentWait {
     printScript(1, "\n");
     printScript(1, "sqcheck -c $l_compname -d $l_duration -i $l_iteration -r\n");
     printScript(1, "sq_stat_$l_compname=\$\?\n");
-    printScript(1, "if \[\[ \$sq_stat_$l_compname \!= 0 \]\]; then\n");
+    printScript(1, "if \(\[ \$sq_stat_$l_compname '!=' 0 \] && [ \$sq_stat_$l_compname '!=' 1 \]\); then\n");
     printScript(1, "\techo \"The $l_compname process(es) are Not Ready yet. Stopping further startup (if any).\"\n");
     printScript(1, "\texit 1\n");
     printScript(1, "else\n");

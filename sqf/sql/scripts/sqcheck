@@ -19,6 +19,12 @@
 # @@@ END COPYRIGHT @@@
 #
 
+# sqcheck 'all' will return:
+#    -1 - Not up ($?=255)
+#     0 - Fully up and operational
+#     1 - Partially up and operational
+#     2 - Partially up and NOT operational
+
 function Usage {
 
     echo 
@@ -26,7 +32,7 @@ function Usage {
     echo 
     echo "-i <nn>  Number of times the check for SQ processes be done (Default $max_checks)"
     echo "-d <nn>  Duration of sleep (in seconds) between each check  (Default $sleep_duration)"
-    echo "-c <cc>  Which component to check: [all | tse | ase | dtm | backout | amp | mxcs | seapilot | rms | qvp] (Default $sqck_component)"
+    echo "-c <cc>  Which component to check: [all | dtm | mxcs | rms ] (Default $sqck_component)"
     echo "-f       fast - (it's like running $0 -i 1 -d 0)"
     echo "-r       reset the iteration counter if the process count increases (as compared to the count in the last iteration)"
     echo "-h       Help"
@@ -46,16 +52,9 @@ function GetOpts {
           if 
           (
               [ $t_ck == "all" ] || 
-              [ $t_ck == "tse" ] || 
-              [ $t_ck == "ase" ] ||
               [ $t_ck == "dtm" ] ||
-              [ $t_ck == "backout" ] ||
-              [ $t_ck == "amp" ] ||
               [ $t_ck == "mxcs" ] ||
-              [ $t_ck == "seamonster" ] ||
-              [ $t_ck == "seapilot" ] ||
-              [ $t_ck == "rms" ] ||
-              [ $t_ck == "qvp" ]
+              [ $t_ck == "rms" ]
           ); then 
               sqck_component=${OPTARG}
           else
@@ -95,8 +94,6 @@ function fillArray {
         #echo $item
         if [[ "$2" == "TM" ]]; then
             act_dtms[count]="$item"
-        elif [[ "$2" == "ASE" ]]; then
-            act_ases[count]="$item"
         fi
         let ++count
     done
@@ -114,11 +111,10 @@ let sleep_duration=1
 let sqc_verbose=0
 let reset_counter=0
 
+# Set debug_display to 1 to eanble debugging display of values
+let debug_display=0
+
 sqck_component="all"
-chk_ft_cfg=""
-chk_ase_ft_cfg=""
-chk_tse_ft_cfg=""
-chk_amp_ft_cfg=""
 ft_pair=""
 
 GetOpts $1 $2 $3 $4 $5 $6 $7 $8 $9
@@ -134,35 +130,12 @@ declare -i cmp_result
 declare -i sq_up
 
 declare -i cfg_dtm_cnt
-declare -i cfg_ase_cnt
-declare -i cfg_tse_cnt
-declare -i cfg_bkt_cnt
-declare -i cfg_bkt_per_tse_cnt
-declare -i cfg_amp_cnt
-declare -i cfg_sp_cnt
-declare -i cfg_sms_cnt
-declare -i cfg_qvp_cnt
 declare -i cfg_rms_cnt
-declare -i cfg_ndcs_cnt
 declare -i cfg_lnode_cnt
 declare -i cfg_pnode_cnt
 
-declare -a act_ases
-declare -a act_dtms
-
 let act_dtm_cnt=0
-let act_tse_cnt=0
-let act_ase_cnt=0
-let act_bkt_cnt=0
-let act_amp_cnt=0
-let act_sp_cnt=0
-let act_sms_cnt=0
-let act_qvp_cnt=0
 let act_rms_cnt=0
-let act_ndcs_cnt=0
-
-let act_tse_down_cnt=0
-let act_ase_down_cnt=0
 
 let act_lnode_down_cnt=0
 let act_pnode_down_cnt=0
@@ -170,15 +143,7 @@ let act_lnode_up_cnt=0
 let act_pnode_up_cnt=0
 
 let last_dtm_cnt=0
-let last_tse_cnt=0
-let last_ase_cnt=0
-let last_bkt_cnt=0
-let last_amp_cnt=0
-let last_sp_cnt=0
-let last_sms_cnt=0
-let last_qvp_cnt=0
 let last_rms_cnt=0
-let last_ndcs_cnt=0
 
 let num_checks=0
 let chk_cnt_result=1
@@ -189,10 +154,8 @@ if [[ -z $SQSCRIPTS_DIR ]]; then
     SQSCRIPTS_DIR=$MY_SQROOT/sql/scripts
 fi
 SQSCRIPT_FILE="$SQSCRIPTS_DIR/gomon.cold"
-STARTSM_FILE="$SQSCRIPTS_DIR/smstart"
 STARTSSMP_FILE="$SQSCRIPTS_DIR/ssmpstart"
 STARTSSCP_FILE="$SQSCRIPTS_DIR/sscpstart"
-STARTQVP_FILE="$SQSCRIPTS_DIR/qvpstart"
 
 
 ### CONFIGURED NODEs
@@ -269,6 +232,12 @@ if [[ $? != 0 ]]; then
 fi
 
 echo  "Checking if processes are up."
+
+declare -i pcmp_result
+declare -i total_procs_result
+let pcmp_result=0
+let total_procs_result=0
+
 while [ $chk_cnt_result '==' 1 ];
 do 
   let ++num_checks
@@ -278,8 +247,10 @@ do
 
   echo -en "\rChecking attempt: $num_checks; user specified max: $max_checks. Execution time in seconds: $elapsed_seconds."
 
-  #DTM
+  # Get the current process status (all processes)
   sqps > $sq_tmp_ps 2>&1
+
+  #DTM
   let act_dtm_cnt=`< $sq_tmp_ps grep -a -i '$TM' | wc -l`
   if [ $reset_counter '==' 1 ]; then
       let lv_cnt_check=(act_dtm_cnt '>' last_dtm_cnt)
@@ -293,7 +264,7 @@ do
   if ( [ $act_dtm_cnt '!=' $cfg_dtm_cnt ] &&
          ( [ "$sqck_component" == "all" ] || [ "$sqck_component" == "dtm" ] ) ); then 
       for dtms in ${cfg_dtms[*]}; do
-          if [ -z "`grep -i $dtms $sq_tmp_ps`" ]; then
+          if [ -z "`grep -i \"$dtms\>\" $sq_tmp_ps`" ]; then
               for dups in ${down_dtms[*]}; do
                   if [[ "$dups" == "$dtms" ]]; then
                       let duplicate=1
@@ -312,7 +283,7 @@ do
   if [ $reset_counter '==' 1 ]; then
       let lv_cnt_check=(act_rms_cnt '>' last_rms_cnt)
       if [ $lv_cnt_check '==' 1 ]; then
-	  let num_checks=0
+          let num_checks=0
       fi
       let last_rms_cnt=act_rms_cnt
   fi
@@ -337,29 +308,55 @@ do
 
   
   if [[ $sqck_component == "all" ]]; then
-      let cmp_result=(act_lnode_up_cnt '>' 0 )
-      #let cmp_result=(act_dtm_cnt '==' cfg_dtm_cnt '&&' act_ase_cnt '>=' cfg_ase_cnt '&&' act_bkt_cnt '==' cfg_bkt_cnt)
-	  let cmp_result=(act_lnode_up_cnt '>' 0 '&&' act_dtm_cnt '==' act_lnode_up_cnt)
-      #echo "cmp_result=$cmp_result act_rms_cnt=$act_rms_cnt cfg_rms_cnt=$cfg_rms_cnt tmp_cfg_rms=$tmp_cfg_rms"
-  elif [[ $sqck_component == "tse" ]]; then
-      let cmp_result=(act_tse_cnt '>=' cfg_tse_cnt)
+
+      # Get nodes up count
+      let cmp_result=(act_lnode_up_cnt '>' 0)
+      if [ $debug_display '==' 1 ]; then
+          echo
+          echo "cmp_result=$cmp_result act_lnode_up_cnt=$act_lnode_up_cnt"
+      fi
+
+      if [ $cmp_result '==' 0 ]; then
+          break
+      fi
+
+      # Check DTM
+      let tmp_cfg_dtm=(act_lnode_up_cnt)
+      if ( [ $act_dtm_cnt '!=' $cfg_dtm_cnt ] ); then
+          let cmp_result=(cmp_result '&&' tmp_cfg_dtm '>' 0 '&&' act_dtm_cnt '==' tmp_cfg_dtm)
+          let pcmp_result=(act_dtm_cnt '==' tmp_cfg_dtm '&&' cmp_result)
+      else
+          let cmp_result=(cmp_result '&&' act_dtm_cnt '==' cfg_dtm_cnt)
+      fi
+      if [ $debug_display '==' 1 ]; then
+          echo "cmp_result=$cmp_result pcmp_result=$pcmp_result act_dtm_cnt=$act_dtm_cnt cfg_dtm_cnt=$cfg_dtm_cnt tmp_cfg_dtm=$tmp_cfg_dtm"
+      fi
+
+      # Check RMS
+      let tmp_cfg_rms=(act_lnode_up_cnt*2)
+      if ( [ $act_rms_cnt '!=' $cfg_rms_cnt ] ); then
+          let cmp_result=(cmp_result '&&' tmp_cfg_rms '>' 0 '&&' act_rms_cnt '==' tmp_cfg_rms)
+          let pcmp_result=(cmp_result)
+      else
+          let cmp_result=(cmp_result '&&' act_rms_cnt '==' cfg_rms_cnt)
+      fi
+      if [ $debug_display '==' 1 ]; then
+          echo "cmp_result=$cmp_result pcmp_result=$pcmp_result act_rms_cnt=$act_rms_cnt cfg_rms_cnt=$cfg_rms_cnt tmp_cfg_rms=$tmp_cfg_rms"
+      fi
+
   elif [[ $sqck_component == "dtm" ]]; then
-      #let cmp_result=(act_dtm_cnt '==' cfg_dtm_cnt)
-      let cmp_result=(act_lnode_up_cnt '>' 0 '&&'act_dtm_cnt '==' act_lnode_up_cnt)
-  elif [[ $sqck_component == "ase" ]]; then
-      #let cmp_result=(act_ase_cnt '>=' cfg_ase_cnt)
-      let cmp_result=(act_ase_cnt '>=' cfg_ase_cnt)
-  elif [[ $sqck_component == "backout" ]]; then
-      let cmp_result=(act_bkt_cnt '==' cfg_bkt_cnt)
-  elif [[ $sqck_component == "seapilot" ]]; then
-      let cmp_result=(act_lnode_up_cnt '>' 0 '&&'act_sp_cnt '==' cfg_sp_cnt)
-  elif [[ $sqck_component == "qvp" ]]; then
-      let cmp_result=(act_qvp_up_cnt '>' 0 '&&'act_qvp_cnt '==' cfg_qvp_cnt)
+      let tmp_cfg_dtm=(act_lnode_up_cnt)
+      if ( [ $act_dtm_cnt '!=' $cfg_dtm_cnt ] ); then
+          let cmp_result=(tmp_cfg_dtm '>' 0 '&&' act_dtm_cnt '==' tmp_cfg_dtm)
+          let pcmp_result=(cmp_result)
+      else
+          let cmp_result=(act_dtm_cnt '==' cfg_dtm_cnt)
+      fi
   elif [[ $sqck_component == "rms" ]]; then
-      #let cmp_result=(act_rms_cnt '==' act_lnode_up_cnt)
       let tmp_cfg_rms=(act_lnode_up_cnt*2)
       if ( [ $act_rms_cnt '!=' $cfg_rms_cnt ] ); then
           let cmp_result=(tmp_cfg_rms '>' 0 '&&' act_rms_cnt '==' tmp_cfg_rms)
+          let pcmp_result=(cmp_result)
       else
           let cmp_result=(act_rms_cnt '==' cfg_rms_cnt)
       fi
@@ -369,30 +366,26 @@ do
       let act_osr_cnt=`< $sq_tmp_ps grep -a -i mxosrvr | wc -l`
       let cmp_result=(act_oas_cnt '>' 0 '&&' act_ocf_cnt '>' 0 '&&' act_osr_cnt '>' 0)
       if [ $cmp_result '==' 1 ]; then
+          echo
           echo "MXCS processes are up!"
-          exit 0;
-      fi
-      if [ $chk_cnt_result '==' 0 ]; then
+          echo
+      else
+          echo
           echo "MXCS processes are not up."
-          exit 1;
+          echo
       fi
   fi
 
+  if [ $debug_display '==' 1 ]; then
+      echo cmp_result=$cmp_result
+  fi
   if [ $cmp_result '==' 1 ]; then
       let sq_up=1
       if [[ $sqck_component == "all" ]]; then
-          if ([ $act_lnode_up_cnt == $cfg_lnode_cnt ] &&
-              [ $act_pnode_up_cnt == $cfg_pnode_cnt ] ); then
+          if ([ $act_lnode_up_cnt == $cfg_lnode_cnt ] ); then
               echo
               echo
               echo "The SQ environment is up!"
-          elif ([ $act_lnode_up_cnt == $cfg_lnode_cnt ] ); then
-              echo
-              echo
-              echo "The SQ environment is up! Node(s) are down and environment is not in a degraded state."
-              echo
-              echo
-              sqshell -c node info
           else
               echo
               echo
@@ -409,56 +402,55 @@ do
 
 done
 
+let total_procs_result=($act_dtm_cnt+
+                        $act_rms_cnt)
+
+if [ $debug_display '==' 1 ]; then
+    echo act_dtm_cnt=$act_dtm_cnt
+    echo act_rms_cnt=$act_rms_cnt
+    echo total_procs_result=$total_procs_result
+fi
+
 rm -f $sq_tmp_ps
 
-declare -i pcmp_result
-let pcmp_result=0
 echo
 
 if [[ $sqck_component == "all" ]]; then
-    if [ $sq_up '==' 0 ]; then
-        let pcmp_result=(act_dtm_cnt '>' 0 '||' act_ase_cnt '>' 0 '||' act_bkt_cnt '>' 0)
-        let pcmp_result=(pcmp_result '||' act_tse_cnt '>' 0 )
-        let pcmp_result=(pcmp_result '||' act_sp_cnt '>' 0 '||' act_rms_cnt '>' 0)
-        echo
+    if [ $sq_up '==' 1 ]; then
         if [ $pcmp_result '==' 1 ]; then
-            echo "The SQ environment is partially up. Check the logs and run sqcheck to check the status again."
-        else
-            echo "The SQ environment is not up at all. Check the logs."
+            echo
+            echo "The SQ environment is partially up and operational."
         fi
+    else
+        echo
+        echo "The SQ environment is not up all, or partially up and not operational. Check the logs."
     fi
 fi
 
+if [[ $sqck_component != "mxcs" ]]; then
        echo
        echo -e "Process\t\tConfigured\tActual\t    Down"
        echo -e "-------\t\t----------\t------\t    ----"
-    if [[ $sqck_component == "all" ]]; then
-	echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}"
-        echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}\n"
-elif [[ $sqck_component == "tse" ]]; then
-    echo -e "TSE\t\t$cfg_tse_cnt $ft_pair\t\t$act_tse_cnt $ft_pair\t    ${down_tses[*]}\n"
+fi
+if [[ $sqck_component == "all" ]]; then
+    echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}"
+    echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}\n"
 elif [[ $sqck_component == "dtm" ]]; then
     echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}\n"
-elif [[ $sqck_component == "ase" ]]; then
-    echo -e "ASE\t\t$cfg_ase_cnt $ft_pair\t\t$act_ase_cnt $ft_pair\t    ${down_ases[*]}\n"
-elif [[ $sqck_component == "backout" ]]; then
-    echo -e "BACKOUT\t\t$cfg_bkt_cnt\t\t$act_bkt_cnt\t    ${down_bkts[*]}\n"
-elif [[ $sqck_component == "seamonster" ]]; then
-    echo -e "SEAMONSTER\t$cfg_sms_cnt\t\t$act_sms_cnt\t    ${down_sms[*]}\n"
-elif [[ $sqck_component == "seapilot" ]]; then
-    echo -e "SEAPILOT\t$cfg_sp_cnt\t\t$act_sp_cnt\t    ${down_sp[*]}\n"
 elif [[ $sqck_component == "rms" ]]; then
     echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}\n"
-elif [[ $sqck_component == "qvp" ]]; then
-    echo -e "QVP\t\t$cfg_qvp_cnt\t\t$act_qvp_cnt\t    ${down_qvp[*]}\n"
 fi
 
 if [ $sq_up '==' 1 ]; then
-    exit 0;
-else
     if [ $pcmp_result '==' 1 ]; then
         exit 1;
     else
-        exit 2;
+        exit 0;
     fi
+elif ( [ $total_procs_result '==' 0 ] ); then
+    echo
+    echo "The SQ environment is down."
+    exit -1;
+else
+    exit 2;
 fi

@@ -48,6 +48,13 @@ extern CMonLog *SnmpLog;
 int mon_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
     MonLog->writeAltLog(eventType, severity, msg);
+
+    if (trace_settings & TRACE_EVLOG_MSG)
+    {
+        trace_printf("Evlog event: type=%d, severity=%d, text: %s",
+                     eventType, severity, msg);
+    }
+
     return(0);
 }
 

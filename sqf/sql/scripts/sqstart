@@ -54,34 +54,34 @@ function GetOpts {
 
     while getopts "qvcrwhx" arg
       do
-      case $arg in
-	  c)
-	      sq_start=c;
-	      ;;
-	  r)
-	      sq_start=r;
-	      ;;
-	  w)
-	      sq_start=w;
-	      ;;
-	  x)
-	      run_chk_dbperms=1;
-	      ;;
-	  h)
-	      Usage;
-              ;;
+       case $arg in
+          c)
+             sq_start=c;
+             ;;
+          r)
+             sq_start=r;
+             ;;
+          w)
+             sq_start=w;
+             ;;
+          x)
+             run_chk_dbperms=1;
+             ;;
+          h)
+             Usage;
+             ;;
           *)
-	      Usage;
-              ;;
-      esac
+             Usage;
+             ;;
+       esac
     done
 }
 
 function chkReturnCode {
     if [[ $2 != 0 ]]; then
-	LogIt "End $script_name $sq_start, exit code: $2"
-	echo "$1 returned error $2, Exiting..."
-	exit $2;
+       LogIt "End $script_name $sq_start, exit code: $2"
+       echo "$1 returned error $2, Exiting..."
+       exit $2;
     fi
 }
 
@@ -111,15 +111,15 @@ function gomonWarmStart {
 function CheckMonitorLink {
 
     if [ ! -e monitor ]; then
-	if [ -h monitor ]; then
-	    echoLog "The monitor link $MY_SQROOT/sql/scripts/monitor points to a non-existent target:"
-	    ls -al monitor
-	else
-	    echoLog "A soft link to 'monitor' is missing in $MY_SQROOT/sql/scripts"
-	fi
-	echoLog "Aborting startup."
-	LogIt "End $script_name $sq_start, exit code: 1"
-	exit 1
+        if [ -h monitor ]; then
+            echoLog "The monitor link $MY_SQROOT/sql/scripts/monitor points to a non-existent target:"
+            ls -al monitor
+        else
+            echoLog "A soft link to 'monitor' is missing in $MY_SQROOT/sql/scripts"
+        fi
+        echoLog "Aborting startup."
+        LogIt "End $script_name $sq_start, exit code: 1"
+        exit 1
     fi
 
 }
@@ -128,7 +128,7 @@ function CheckMonitorLink {
 function getJobInfo {
 
     if [ -z "$1" ]; then
-	exit 1
+        exit 1
     fi
 
     lv_job=$1
@@ -137,13 +137,13 @@ function getJobInfo {
     lv_jobinfo=`jobs -l $lv_job`
 
     if [ ! -z "$lv_jobinfo" ]; then
-	let lv_count=0
-	for lv_item in $lv_jobinfo; do
-	    if [ $lv_count '==' 1 ]; then
-		gv_job_pid=$lv_item
-	    fi
-	    let ++lv_count
-	done
+        let lv_count=0
+        for lv_item in $lv_jobinfo; do
+            if [ $lv_count '==' 1 ]; then
+                gv_job_pid=$lv_item
+            fi
+            let ++lv_count
+        done
     fi
 
 }
@@ -157,21 +157,21 @@ function SQStartProcesses {
     sqstart_stat=$?
     echo
     if [[ $sqstart_stat == 0 ]]; then
-	echoLog "SQ Startup script ($SQSCRIPT_FILE) ran successfully. Performing further checks..."
-	echo "0" > $SQSTART_EXIT_STATUS
+        echoLog "SQ Startup script ($SQSCRIPT_FILE) ran successfully. Performing further checks..."
+        echo "0" > $SQSTART_EXIT_STATUS
     else
-	echoLog "Error while executing the startup script!!!"
-	sqcheck -f
-	sq_stat=$?
-	if [[ $sq_stat == 0 ]]; then
-	    echoLog "Even though all the SQ processes started up, the startup did not succeed!"
-	fi
-	echoLog
-	echoLog "Please check the SQ shell log file : $SQMON_LOG"
-	echoLog
-	echoLog "SQ Startup (from $PWD) Failed"
-	echoLog
-	echo "1" > $SQSTART_EXIT_STATUS
+        echoLog "Error while executing the startup script!!!"
+        sqcheck -f
+        sq_stat=$?
+        if [[ $sq_stat == 0 ]]; then
+            echoLog "Even though all the SQ processes started up, the startup did not succeed!"
+        fi
+        echoLog
+        echoLog "Please check the SQ shell log file : $SQMON_LOG"
+        echoLog
+        echoLog "SQ Startup (from $PWD) Failed"
+        echoLog
+        echo "1" > $SQSTART_EXIT_STATUS
     fi
 
 }
@@ -186,33 +186,33 @@ function SQCheckOrphanProcesses {
 
     echo -n "Checking orphan processes"
     while [ $lv_sqcop_done '==' 0 ]; do
-	echo -n "."
-	lv_orphan_process_count=`cstat -h | wc -l`
-	let lv_orphans_exist=(lv_orphan_process_count '>' 2)
+    echo -n "."
+    lv_orphan_process_count=`cstat -h | wc -l`
+    let lv_orphans_exist=(lv_orphan_process_count '>' 2)
 
-	if [ $lv_orphans_exist '==' 1 ]; then
-	    let lv_actual_orphan_count=(lv_orphan_process_count '-' 2)
+    if [ $lv_orphans_exist '==' 1 ]; then
+        let lv_actual_orphan_count=(lv_orphan_process_count '-' 2)
             echo -ne "\rChecking orphan processes: $lv_actual_orphan_count"
-	    let ++lv_num_checks
-	    let lv_sqcop_done=(lv_num_checks '>' lv_max_checks)
-	    if [ $lv_sqcop_done '==' 0 ]; then
-		sleep 5
-	    fi
-	else
-	    let lv_sqcop_done=1
-	fi
+        let ++lv_num_checks
+        let lv_sqcop_done=(lv_num_checks '>' lv_max_checks)
+        if [ $lv_sqcop_done '==' 0 ]; then
+            sleep 5
+        fi
+    else
+        let lv_sqcop_done=1
+    fi
     done
 
     echo
     if [ $lv_orphans_exist '==' 1 ]; then
-	lv_msg1="There are orphan processes from a previous SQ instance."
-	echo "$lv_msg1"
-	cstat
-	echo
-	lv_msg2="SQ startup has not been initiated. Exiting..."
-	echo "$lv_msg"
-	LogIt "End $script_name, exit code: 1, $lv_msg1 $lv_msg2"
-	exit 1
+        lv_msg1="There are orphan processes from a previous SQ instance."
+        echo "$lv_msg1"
+        cstat
+        echo
+        lv_msg2="SQ startup has not been initiated. Exiting..."
+        echo "$lv_msg"
+        LogIt "End $script_name, exit code: 1, $lv_msg1 $lv_msg2"
+        exit 1
     fi
 
 }
@@ -273,36 +273,36 @@ LogIt "Begin $script_name $sq_start"
 sqcheck -i 1 -d 1 > /dev/null 2>&1
 sq_stat=$?
 if [[ $sq_stat == 0 ]]; then
-   lv_msg="SQ environment is already up."
-   echoLog "$lv_msg"
-   LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
-   exit 1
+    lv_msg="SQ environment is already up."
+    echoLog "$lv_msg"
+    LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
+    exit 1
 elif [[ $sq_stat == 1 ]]; then
-   lv_msg="SQ environment is partially up."
-   echoLog "$lv_msg"
-   LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
-   exit 1
+    lv_msg="SQ environment is partially up."
+    echoLog "$lv_msg"
+    LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
+    exit 1
 fi
 
 SQCheckOrphanProcesses
 
 if [[ $run_chk_dbperms == 1 ]]; then
-  chk_dbperms=$MY_SQROOT/sql/scripts/chk_dbperms
-  if [ -x $chk_dbperms ]; then
-    echo
-    echo "Checking ownership and permissions."
-    echo -n "This will take a few minutes..."
-    $chk_dbperms --busy
-    chk_res=$?
-    echo
-    if [ $chk_res -gt 0 ]; then
-      lv_msg="Ownership and/or Permissions issues found.. aborting."
-      echoLog "$lv_msg"
-      LogIt "End $script_name $sq_start, exit code: $chk_res, $lv_msg"
-      exit 1
+    chk_dbperms=$MY_SQROOT/sql/scripts/chk_dbperms
+    if [ -x $chk_dbperms ]; then
+        echo
+        echo "Checking ownership and permissions."
+        echo -n "This will take a few minutes..."
+        $chk_dbperms --busy
+        chk_res=$?
+        echo
+        if [ $chk_res -gt 0 ]; then
+            lv_msg="Ownership and/or Permissions issues found.. aborting."
+            echoLog "$lv_msg"
+            LogIt "End $script_name $sq_start, exit code: $chk_res, $lv_msg"
+            exit 1
+        fi
+        echo
     fi
-    echo
-  fi
 fi
 
 
@@ -351,7 +351,7 @@ else
         warmstart=""
     fi
 
-    # -If SHUTDOWN was found warm start, otherwise recovery start
+    # If SHUTDOWN was found warm start, otherwise recovery start
     if [[ $warmstart != "" ]]; then
         gomonWarmStart
     else
@@ -422,7 +422,7 @@ let lv_process_count_curr=0
 let lv_process_count_last=0
 let lv_TM0_started=0
 let lv_tm_svc_ready=0
-let lv_max_iterations=36
+let lv_max_iterations=5
 let lv_num_iterations=0
 let lv_sleep_per_iteration=5
 let tx_srvc_ready_printed=0
@@ -439,14 +439,14 @@ do
       let lv_cnt_check=(lv_process_count_curr '>' lv_process_count_last)
 
       if [ $lv_cnt_check '==' 1 ]; then
-	  let lv_num_checks=0
+         let lv_num_checks=0
       fi
       lv_process_count_last=lv_process_count_curr
 
-      lv_TM0_started=`cstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | grep TM0 | wc -l`
+      lv_TM0_started=`cstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | grep TM | wc -l`
 
-      if [ $lv_TM0_started '==' 1 ]; then
-	 let lv_num_checks=0
+      if [ $lv_TM0_started '!=' 0 ]; then
+      let lv_num_checks=0
          lv_recovery_tx_cnt=`sqshell -c show | grep -v 'Configuration Change Notice' | grep DTM_RECOVERING_TX_COUNT | cut -d= -f2 | sed -e 's/^[[:space:]]*//'`
          if [ "$lv_recovery_tx_cnt" -gt "0" ]; then
             echo -ne "\r# of Transactions being recovered: $lv_recovery_tx_cnt "
@@ -473,27 +473,27 @@ do
 
       getJobInfo SQStartProcesses
       if [ -z "$gv_job_pid" ]; then
-	  if [ ! -e $SQSTART_EXIT_STATUS ]; then
-	      echoLog "The background SQ job (pid: $lv_sqstartup_job_pid) that was starting up the SQ processes exitted abnormally."
-	      echoLog "There are still $lv_process_count_curr SQ processes that exist in the environment."
-	      echoLog "Exiting."
-	      let lv_done=1
-	      lv_startup_status=3
-	      break
-	  fi
+          if [ ! -e $SQSTART_EXIT_STATUS ]; then
+              echoLog "The background SQ job (pid: $lv_sqstartup_job_pid) that was starting up the SQ processes exitted abnormally."
+              echoLog "There are still $lv_process_count_curr SQ processes that exist in the environment."
+              echoLog "Exiting."
+              let lv_done=1
+              lv_startup_status=3
+              break
+          fi
       fi
 
       let ++lv_num_checks
       if [[ $((lv_num_checks % 100)) -eq 0 ]]; then
-        date; sqcheck -f
+          date; sqcheck -f
       fi
       let lv_done=(lv_num_checks '>' lv_max_checks)
       if [ $lv_done '==' 1 ]; then
-	  lv_startup_status=2
-	  echoLog ""
-	  echoLog "SQ Startup is taking longer than usual and seems to be stalled at $lv_process_count_curr processes. "
-	  echoLog "The background SQ job (pid: $lv_sqstartup_job_pid) that is starting up the SQ processes is still running."
-	  echoLog "Exiting."
+          lv_startup_status=2
+          echoLog ""
+          echoLog "SQ Startup is taking longer than usual and seems to be stalled at $lv_process_count_curr processes. "
+          echoLog "The background SQ job (pid: $lv_sqstartup_job_pid) that is starting up the SQ processes is still running."
+          echoLog "Exiting."
       fi
       sleep 10
   fi
@@ -507,15 +507,29 @@ if [ $lv_startup_status '==' 0 ]; then
     let lv_done=0
     while [[ $lv_done -eq 0 ]] && [[ $lv_num_iterations -lt $lv_max_iterations ]];
     do
-      sleep $lv_sleep_per_iteration
-      sqcheck > /dev/null 2>&1
-      sq_stat=$?
-      if [[ $sq_stat -eq 0 ]]; then
-	      let lv_done=1
-	    else
-	      let ++lv_num_iterations
-      fi
+        sleep $lv_sleep_per_iteration
+        # sqcheck will return:
+        #    -1 - Not up ($?=255) 
+        #     0 - Fully up and operational
+        #     1 - Partially up and operational
+        #     2 - Partially up and NOT operational
+        #  On a return of 1, we loop for a while to let it come fully up
+        sqcheck > /dev/null 2>&1
+        sq_stat=$?
+        if ([ $sq_stat '!=' 1 ]); then
+            let lv_done=1
+        else
+            if [ $lv_num_iterations '==' 0 ]; then
+                echo "The SQ environment is partially up! Continuing checks."
+                echo -n "Checking"
+            fi
+            echo -n "."
+            let ++lv_num_iterations
+        fi
     done
+    if [ $lv_num_iterations -eq $lv_max_iterations ]; then
+        echo
+    fi
 #   Official sqcheck that will be displayed
     sqcheck | tee -a $SQMON_LOG
     echoLog "`date`"

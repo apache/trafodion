@@ -67,7 +67,8 @@ extern CReqQueue ReqQueue;
 
 extern int MyPNID;
 extern CNode *MyNode;
-extern char MyPort[];
+extern char MyCommPort[];
+extern CommType_t CommType;
 extern CMonitor *Monitor;
 extern sigset_t SigSet;
 extern CMonStats *MonStats;
@@ -1175,13 +1176,25 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
   // augments to the MPI port number.
   unsigned long int myPortNum;
   errno = 0;
-  char * pPort = strstr(MyPort, "$port#");
-  if (pPort) pPort += 5;
+  char *pPort;
+  switch( CommType )
+  {
+      case CommType_InfiniBand:
+          pPort = strstr(MyCommPort, "$port#");
+          if (pPort) pPort += 5;
+          break;
+      case CommType_Sockets:
+          pPort = strchr(MyCommPort, ':');
+          break;
+      default:
+          // Programmer bonehead!
+          abort();
+  }
   if (pPort == NULL)
   {
       char la_buf[MON_STRING_BUF_SIZE];
       sprintf(la_buf, "[%s], Monitor port does not contain ':' (%s)\n",
-              method_name, MyPort);
+              method_name, MyCommPort);
       mon_log_write(MON_MLIO_INIT_2, SQ_LOG_ERR, la_buf);
       abort();
   }
@@ -1190,7 +1203,7 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
   if (errno != 0)
   {
       char la_buf[MON_STRING_BUF_SIZE];
-      sprintf(la_buf, "[%s], Cannot convert MyPort - errno=%d (%s)\n",
+      sprintf(la_buf, "[%s], Cannot convert MyCommPort - errno=%d (%s)\n",
               method_name, errno, strerror(errno));
       mon_log_write(MON_MLIO_INIT_3, SQ_LOG_ERR, la_buf);
       abort();
@@ -1199,7 +1212,7 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
   if (myPortNum > 65535)
   {
       char la_buf[MON_STRING_BUF_SIZE];
-      sprintf(la_buf, "[%s], MyPort value exceeds 16 bits\n", method_name);
+      sprintf(la_buf, "[%s], MyCommPort value exceeds 16 bits\n", method_name);
       mon_log_write(MON_MLIO_INIT_4, SQ_LOG_ERR, la_buf);
       abort();
   }

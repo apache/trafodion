@@ -79,12 +79,6 @@ public:
                      bool checkstate=true );
     inline NodesList *GetSpareNodesList( void ) { return ( &spareNodesList_ ); }
     inline NodesList *GetSpareNodesConfigList( void ) { return ( &spareNodesConfigList_ ); }
-    int    PackSpareNodesList( intBuffPtr_t &buffer );
-    void   UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesCount );
-    int    PackNodeMappings( intBuffPtr_t &buffer );
-    void   UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount );
-    void   PackZids( intBuffPtr_t &buffer );
-    void   UnpackZids( intBuffPtr_t &buffer );
     inline int GetNodesCount( void ) { return ( NumberPNodes ); }
     inline int GetLNodesCount( void ) { return ( NumberLNodes ); }
     inline int GetSNodesCount( void ) { return ( clusterConfig_->GetSNodesCount() ); }
@@ -126,6 +120,13 @@ public:
     void    AddMsg (struct internal_msg_def *&msg, int msgSize );
     void    SetupCluster( CNode ***pnode_list, CLNode ***lnode_list );
     void    RemoveFromSpareNodesList( CNode *node );
+
+    int     PackNodeMappings( intBuffPtr_t &buffer );
+    int     PackSpareNodesList( intBuffPtr_t &buffer );
+    void    PackZids( intBuffPtr_t &buffer );
+    void    UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount );
+    void    UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesCount );
+    void    UnpackZids( intBuffPtr_t &buffer );
 
 protected:
 
@@ -204,8 +205,18 @@ public:
     inline JOINING_PHASE GetJoiningPhase( void ) { return( joiningPhase_ ); }
     inline int   GetRank( void ) { return( rank_ ); }
     inline ShutdownLevel GetShutdownLevel( void) { return( shutdownLevel_ ); }
+    inline const char *GetCommPort( void ) { return commPort_.c_str(); }
+    inline const char *GetSyncPort( void ) { return syncPort_.c_str(); }
+    inline int   GetCommSocketPort( void ) { return( commSocketPort_ ); }
+    inline int   GetSyncSocketPort( void ) { return( syncSocketPort_ ); }
     inline PNidVector   &GetSparePNids( void ) { return( sparePNids_ ); }
     inline STATE GetState( void ) { return( state_ ); }
+
+    // If candidate string has not been seen before assign a unique
+    // id and store it in the config database.   In either case return
+    // the unique id as the value of the method.
+    strId_t GetStringId(char *candidate);
+
     inline int   GetTmSyncNid( void ) { return( tmSyncNid_ ); }
     inline SyncState GetTmSyncState( void ) { return( tmSyncState_ ); }
     inline int   GetZone( void ) { return( zid_ ); }
@@ -255,19 +266,26 @@ public:
     inline void SetRank( int rank ) { rank_ = rank; }
     inline void SetRankFailure( bool failed ) { rankFailure_ = failed; 
                                                 rank_ = rankFailure_ ? -1 : rank_; }
+    //inline void SetPort( char * port) { port_ = port; }
+    inline void SetCommPort( char *commPort) { commPort_ = commPort; }
+    inline void SetSyncPort( char *syncPort) { syncPort_ = syncPort; }
+    //inline void SetSockPort( int sockPort ) { sockPort_ = sockPort; }
+    inline void SetCommSocketPort( int commSocketPort) { commSocketPort_ = commSocketPort; }
+    inline void SetSyncSocketPort( int syncSocketPort) { syncSocketPort_ = syncSocketPort; }
     inline void SetSpareNode( void ) { spareNode_ = true; }
     inline void SetShutdownLevel( ShutdownLevel level ) { shutdownLevel_ = level; }
     void SetState( STATE state );
     inline void SetTmSyncNid( int nid ) { tmSyncNid_ = nid; }
     inline void SetTmSyncState( SyncState syncState ) { tmSyncState_ = syncState; }
     inline void SetZone( int zid ) { zid_ = zid; }
-    void    StartPStartDProcess( void );
-    void    StartPStartDPersistent( void );
-    void    StartPStartDPersistentDTM( int nid );
-    void    StartSMServiceProcess( void );
-    void    StartWatchdogProcess( void );
-    void    StartWatchdogTimer( void );
-    void    StopWatchdogTimer( void );
+    void StartPStartDProcess( void );
+    void StartPStartDPersistent( void );
+    void StartPStartDPersistentDTM( int nid );
+    void StartSMServiceProcess( void );
+    void StartWatchdogProcess( void );
+    void StartWatchdogTimer( void );
+    void StopWatchdogTimer( void );
+
     void addToQuiesceSendPids( int pid, Verifier_t verifier );
     void addToQuiesceExitPids( int pid, Verifier_t verifier );
     void delFromQuiesceExitPids( int pid, Verifier_t verifier );
@@ -279,18 +297,9 @@ public:
     inline void clearQuiesceState() { internalState_ = State_Default; }
     inline IntNodeState getInternalState() { return internalState_; }
     inline void SetInternalState( IntNodeState state ) { internalState_ = state; }
+    void EmptyQuiescingPids();
+    void SendQuiescingNotices();
     
-    void    EmptyQuiescingPids();
-    void    SendQuiescingNotices();
-    
-    // If candidate string has not been seen before assign a unique
-    // id and store it in the config database.   In either case return
-    // the unique id as the value of the method.
-    strId_t GetStringId(char * candidate);
-
-    void SetPort( char * port) { port_ = port; }
-    const char * GetPort( void ) { return port_.c_str(); }
-
 protected:
 private:
     enum itemsProcmem {memTotal,        // total usable memory
@@ -345,7 +354,10 @@ private:
     IntNodeState  internalState_;     // internal state of a node, not externalized to users 
     
     int           zid_;
-    string        port_;              // monitor port for the node
+    string        commPort_;          // monitor MPI or Integration port
+    string        syncPort_;          // monitor socket allgather port
+    int           commSocketPort_;          // re-integration socket port
+    int           syncSocketPort_;          // algather socket port
 
     int uniqStrId_;
     

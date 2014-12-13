@@ -51,6 +51,7 @@ extern int req_type_startup;
 
 extern bool IAmIntegrating;
 extern bool IAmIntegrated;
+extern CommType_t CommType;
 
 CReqResource::CReqResource()
 {
@@ -1786,8 +1787,24 @@ void CIntReviveReq::performRequest()
 
     CCluster::snapShotHeader_t header; 
 
-    error = Monitor->Receive((char *)&header, sizeof(header), 
-                             0, MON_XCHNG_HEADER, Monitor->getJoinComm());
+    switch( CommType )
+    {
+        case CommType_InfiniBand:
+            error = Monitor->ReceiveMPI( (char *)&header
+                                       , sizeof(header)
+                                       , 0
+                                       , MON_XCHNG_HEADER
+                                       , Monitor->getJoinComm());
+            break;
+        case CommType_Sockets:
+            error = Monitor->ReceiveSock( (char *)&header
+                                         , sizeof(header)
+                                         , Monitor->getJoinSock());
+            break;
+        default:
+            // Programmer bonehead!
+            abort();
+    }
 
     mem_log_write(MON_REQQUEUE_REVIVE_2, error);
 
@@ -1830,8 +1847,24 @@ void CIntReviveReq::performRequest()
         return;
     }
 
-    error = Monitor->Receive(compBuf, header.compressedSize_, 
-                             0, MON_XCHNG_DATA, Monitor->getJoinComm());
+    switch( CommType )
+    {
+        case CommType_InfiniBand:
+            error = Monitor->ReceiveMPI( compBuf
+                                       , header.compressedSize_
+                                       , 0
+                                       , MON_XCHNG_DATA
+                                       , Monitor->getJoinComm());
+            break;
+        case CommType_Sockets:
+            error = Monitor->ReceiveSock( compBuf
+                                        , header.compressedSize_
+                                        , Monitor->getJoinSock());
+            break;
+        default:
+            // Programmer bonehead!
+            abort();
+    }
 
     mem_log_write(MON_REQQUEUE_REVIVE_3, error);
 
@@ -1958,7 +1991,7 @@ void CIntSnapshotReq::populateRequestString( void )
 
 void CIntSnapshotReq::performRequest()
 {
-    const char method_name[] = "CSnapshotReq::performRequest";
+    const char method_name[] = "CIntSnapshotReq::performRequest";
     TRACE_ENTRY;
 
     char *snapshotBuf = NULL;
@@ -1974,20 +2007,38 @@ void CIntSnapshotReq::performRequest()
 
     mem_log_write(MON_REQQUEUE_SNAPSHOT_1);
     
-    // abort this request if joinComm is not setup
-    if (!Monitor->getJoinComm())
+    // abort this request if join communication is not setup
+    switch( CommType )
     {
-        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-            trace_printf("%s@%d - Join Comm is Null, aborting snapshot req\n", method_name, __LINE__);
-
-        mem_log_write(MON_REQQUEUE_SNAPSHOT_2);
-
-        char buf[MON_STRING_BUF_SIZE];
-        sprintf(buf, "[%s], Join Comm is Null, aborting snapshot req.\n", method_name);
-        mon_log_write(MON_REQQUEUE_SNAPSHOT_2, SQ_LOG_ERR, buf);
-      
-        TRACE_EXIT;
-        return;
+        case CommType_InfiniBand:
+            if (Monitor->getJoinComm() == MPI_COMM_NULL)
+            {
+                mem_log_write(MON_REQQUEUE_SNAPSHOT_2);
+        
+                char buf[MON_STRING_BUF_SIZE];
+                sprintf(buf, "[%s], Join communicator is null, aborting snapshot req.\n", method_name);
+                mon_log_write(MON_REQQUEUE_SNAPSHOT_2, SQ_LOG_ERR, buf);
+              
+                TRACE_EXIT;
+                return;
+            }
+            break;
+        case CommType_Sockets:
+            if (Monitor->getJoinSock() == -1)
+            {
+                mem_log_write(MON_REQQUEUE_SNAPSHOT_2);
+        
+                char buf[MON_STRING_BUF_SIZE];
+                sprintf(buf, "[%s], Join socket is -1, aborting snapshot req.\n", method_name);
+                mon_log_write(MON_REQQUEUE_SNAPSHOT_2, SQ_LOG_ERR, buf);
+              
+                TRACE_EXIT;
+                return;
+            }
+            break;
+        default:
+            // Programmer bonehead!
+            abort();
     }
 
     // copy sqconfig.db
@@ -2099,8 +2150,24 @@ void CIntSnapshotReq::performRequest()
 
        // send msg to new monitor so that it can exit
        header.compressedSize_ = -1;
-       error = Monitor->Send((char *)&header, sizeof(header), 
-                             0, MON_XCHNG_HEADER, Monitor->getJoinComm());
+       switch( CommType )
+       {
+           case CommType_InfiniBand:
+               error = Monitor->SendMPI( (char *)&header
+                                       , sizeof(header)
+                                       , 0
+                                       , MON_XCHNG_HEADER
+                                       , Monitor->getJoinComm());
+               break;
+           case CommType_Sockets:
+               error = Monitor->SendSock( (char *)&header
+                                        , sizeof(header)
+                                        , Monitor->getJoinSock());
+               break;
+           default:
+               // Programmer bonehead!
+               abort();
+       }
        if (error) {
          sprintf(buf, "Unable to send exit msg to new monitor, error = %d\n", error);
          mon_log_write(MON_REQQUEUE_SNAPSHOT_9, SQ_LOG_CRIT, buf);
@@ -2127,8 +2194,24 @@ void CIntSnapshotReq::performRequest()
 
     mem_log_write(MON_REQQUEUE_SNAPSHOT_10);
 
-    error = Monitor->Send((char *)&header, sizeof(header), 
-                          0, MON_XCHNG_HEADER, Monitor->getJoinComm());
+    switch( CommType )
+    {
+        case CommType_InfiniBand:
+            error = Monitor->SendMPI( (char *)&header
+                                    , sizeof(header)
+                                    , 0
+                                    , MON_XCHNG_HEADER
+                                    , Monitor->getJoinComm());
+            break;
+        case CommType_Sockets:
+            error = Monitor->SendSock( (char *)&header
+                                     , sizeof(header)
+                                     , Monitor->getJoinSock());
+            break;
+        default:
+            // Programmer bonehead!
+            abort();
+    }
 
     mem_log_write(MON_REQQUEUE_SNAPSHOT_11, error);
 
@@ -2146,8 +2229,24 @@ void CIntSnapshotReq::performRequest()
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         trace_printf("%s@%d - Msg Sent - header. Error = %d\n", method_name, __LINE__, error);
 
-    error = Monitor->Send(compBuf, header.compressedSize_, 
-                          0, MON_XCHNG_DATA, Monitor->getJoinComm());
+    switch( CommType )
+    {
+        case CommType_InfiniBand:
+            error = Monitor->SendMPI( compBuf
+                                    , header.compressedSize_
+                                    , 0
+                                    , MON_XCHNG_DATA
+                                    , Monitor->getJoinComm());
+            break;
+        case CommType_Sockets:
+            error = Monitor->SendSock( compBuf
+                                     , header.compressedSize_
+                                     , Monitor->getJoinSock());
+            break;
+        default:
+            // Programmer bonehead!
+            abort();
+    }
 
     mem_log_write(MON_REQQUEUE_SNAPSHOT_12, header.compressedSize_, error);
 

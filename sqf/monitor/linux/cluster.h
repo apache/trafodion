@@ -48,6 +48,12 @@
 
 #define ACCEPT_NEW_MONITOR_TIMEOUT "250"
 
+enum MonXChngTags
+{
+    MON_XCHNG_HEADER = 100,
+    MON_XCHNG_DATA
+};
+
 class CNode;
 class CLNode;
 
@@ -58,8 +64,8 @@ class CCluster
                                      // member variable of the class
     int           *socks_;
     int           *sockPorts_;
-    int            serverSock_;
-    int            serverSockPort_;
+    int            commSock_;
+    int            syncSock_;
     int            epollFD_;
 
 public:
@@ -89,8 +95,11 @@ public:
     CCluster( void );
     virtual ~CCluster( void );
 
-    int  AcceptSock( void );
+    int  AcceptCommSock( void );
+    int  AcceptSyncSock( void );
+    int  Connect( const char *portName );
     void ConnectToSelf( void );
+    int  MkCltSock( const char *portName );
 #ifndef USE_BARRIER
     void ArmWakeUpSignal (void);
 #endif
@@ -109,7 +118,8 @@ public:
     int  GetDownedNid( void );
     inline int GetTmSyncPNid( void ) { return( TmSyncPNid ); } // Physical Node ID of current TmSync operations master
     void InitClusterComm(int worldSize, int myRank, int *rankToPnid);
-    void addNewComm(int nid, int otherRank,  MPI_Comm comm);
+    void addNewComm(int nid, int otherRank, MPI_Comm comm);
+    void addNewSock(int nid, int otherRank, int sockFd );
 
     bool exchangeNodeData ( );
     void exchangeTmSyncData ( struct sync_def *sync );
@@ -144,6 +154,11 @@ public:
     bool isMonSyncResponsive() { return monSyncResponsive_; }
     void SaveSchedData( struct internal_msg_def *recv_msg );
     bool IsNodeDownDeathNotices() { return nodeDownDeathNotices_; }
+
+    int  ReceiveMPI(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm);
+    int  ReceiveSock(char *buf, int size, int sockFd);
+    int  SendMPI(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm);
+    int  SendSock(char *buf, int size, int sockFd);
 
     int incrGetVerifierNum();
 
@@ -307,6 +322,7 @@ private:
                                  int nid, nodeId_t *nodeInfo,
                                  bool abort );
     void ReIntegrateMPI( int initProblem );
+    void ReIntegrateSock( int initProblem );
     void SendReIntegrateStatus( STATE nodeState, int status );
 
     void UpdateClusterState( bool & shutdown,
@@ -319,6 +335,7 @@ private:
 
     bool checkIfDone ( void );
     void setNewComm(int nid);
+    void setNewSock(int nid);
  
 
     void CoordinateTmSeqNumber( int nid );
@@ -330,7 +347,8 @@ private:
     void InitializeConfigCluster( void );
     void InitializeVirtualConfigCluster( int rank );
 
-    void InitClusterSocks( int worldSize, int myRank, char *nodeNames );
+    void InitClusterSocks( int worldSize, int myRank, char *nodeNames,int *rankToPnid );
+    void InitServerSock( void );
     int AcceptSock( int sock );
     void EpollCtl( int efd, int op, int fd, struct epoll_event *event );
     int  MkSrvSock( int *pport );

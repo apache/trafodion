@@ -74,7 +74,7 @@ fi
 # Check if the SQ environment is up or not
 sqcheck -i 1 -d 1 > /dev/null 2>&1
 sq_stat=$?
-if [[ $sq_stat == 2 ]]; then
+if [[ $sq_stat -eq 255 ]]; then
     lv_msg="SQ environment is not up."
     echo "$lv_msg"
     LogIt "End $script_name $shutdowntype, exit code: 0, $lv_msg"

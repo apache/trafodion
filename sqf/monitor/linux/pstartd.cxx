@@ -1221,16 +1221,25 @@ int main (int argc, char *argv[])
     bool done = false;
 
     CALL_COMP_DOVERS(pstartd, argc, argv);
+    CALL_COMP_PRINTVERS(pstartd)
 
     TraceInit ( argc, argv );
 
+    // Mask all allowed signals except SIGPROF
+    sigset_t    mask;
+    sigfillset( &mask);
+    sigdelset( &mask, SIGPROF ); // allows profiling such as google profiler
+
+    int rc = pthread_sigmask( SIG_SETMASK, &mask, NULL );
+    if ( rc != 0 )
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf( buf, "[%s - main], pthread_sigmask error=%d\n", MyName, rc );
+        wdt_log_write( MON_PSTARTD_MAIN_1, SQ_LOG_ERR, buf );
+    }
+
     // This process does not use MPI.  But unless MPI is initialized
     // printf does to route output correctly.
-
-    // Setup HP_MPI software license
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-    MPI_Init (&argc, &argv);
 
     monUtil.processArgs (argc, argv);
     MyName = monUtil.getProcName();
@@ -1271,7 +1280,6 @@ int main (int argc, char *argv[])
         delete req;
     }
     while ( !done && !shuttingDown );    
-
 
     monUtil.requestExit ();
 }

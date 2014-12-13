@@ -375,7 +375,14 @@ int Local_IO_To_Monitor::mon_port_num()
     if ( strlen(ga_ms_su_c_port) != 0 )
     {
         char *lp_port = strstr(ga_ms_su_c_port, "$port#");
-        if (lp_port) lp_port += 5;
+        if (lp_port)
+        {
+            lp_port += 5;
+        }
+        else
+        {
+            lp_port = strchr(ga_ms_su_c_port, ':');
+        }
         myPortNum = strtoul(&lp_port[1], NULL, 10);
 
         if (gp_local_mon_io && gp_local_mon_io->cv_trace)
@@ -422,8 +429,15 @@ int Local_IO_To_Monitor::mon_port_num()
                 ip_mon_mpi_port = MonitorPort;
             }
 
-            char * lp_port = strstr(MonitorPort, "$port#");
-            if (lp_port) lp_port += 5;
+            char *lp_port = strstr(MonitorPort, "$port#");
+            if (lp_port)
+            {
+                lp_port += 5;
+            }
+            else
+            {
+                lp_port = strchr(MonitorPort, ':');
+            }
             myPortNum = strtoul(&lp_port[1], NULL, 10);
         }
         close(fd);

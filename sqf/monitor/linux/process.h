@@ -168,7 +168,8 @@ private:
     hungupPids_t               hungupPids_;
     CLock                      hungupPidsLock_;
 
-    bool Persist_Process( CProcess *process, int downNode );
+    bool RestartPersistentProcess( CProcess *process, int downNode );
+
     // Constant that gives the number of seconds that should elapse
     // following the receipt of a pipe hangup before checking process
     // status in PidHangupCheck.

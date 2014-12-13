@@ -63,10 +63,9 @@ static void *ProcessMonitorThread( void *arg )
         trace_printf( "%s@%d Thread started\n", method_name, __LINE__ );
     }
 
-    // Mask all allowed signals except SIGUSR1 and SIGPROF
+    // Mask all allowed signals except SIGPROF
     sigset_t    mask;
     sigfillset( &mask);
-    sigdelset( &mask, SIGUSR1 );
     sigdelset( &mask, SIGPROF ); // allows profiling such as google profiler
 
     int rc = pthread_sigmask( SIG_SETMASK, &mask, NULL );

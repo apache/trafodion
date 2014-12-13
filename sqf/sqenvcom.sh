@@ -539,6 +539,9 @@ export SQ_NEW_PHANDLE=1
 
 unset SQ_SEAMONSTER
 
+# Uncomment to set ssh connection option used by the 'sqnodestatus' script
+#export SQ_MON_SSH_OPTIONS=' -o "ConnectTimeout 1" -o "ConnectionAttempts 3" '
+
 export ENABLE_EMBEDDED_ARKCMP=1
 
 # make sure we get HUGE pages in cores

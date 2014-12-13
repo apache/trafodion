@@ -90,6 +90,9 @@ if [[ $sq_stat == 0 ]]; then
 elif [[ $sq_stat == 1 ]]; then
    echo "SQ environment is partially up. sqgen not executed. Exiting..."
    exit 1
+elif [[ $sq_stat == 2 ]]; then
+   echo "SQ environment is partially up. sqgen not executed. Exiting..."
+   exit 1
 fi
 
 cd $MY_SQROOT/sql/scripts

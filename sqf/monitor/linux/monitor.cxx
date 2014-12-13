@@ -86,8 +86,10 @@ bool genSnmpTrapEnabled = false;
 int Measure=0;
 long trace_level = 0;
 char MyPath[MAX_PROCESS_PATH];
-char MyPort[MPI_MAX_PORT_NAME];
-char Node_name[MPI_MAX_PROCESSOR_NAME];
+char MyCommPort[MPI_MAX_PORT_NAME] = {'\0'};
+char MyMPICommPort[MPI_MAX_PORT_NAME] = {'\0'};
+char MySyncPort[MPI_MAX_PORT_NAME] = {'\0'};
+char Node_name[MPI_MAX_PROCESSOR_NAME] = {'\0'};
 sigset_t SigSet;
 bool Emulate_Down = false;
 long next_test_delay = 10000; // in usec.
@@ -723,80 +725,6 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
     return;
 }
 
-int CMonitor::Receive(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm)
-{
-    const char method_name[] = "CMonitor::Receive";
-    TRACE_ENTRY;
-
-    MPI_Request request;
-    MPI_Status status;  
-    int received = 0;
-
-    int error = MPI_Irecv(buf, size, MPI_CHAR, source, tag, comm, &request);
-
-    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-        trace_printf("%s@%d - Msg Received. Error = %d\n", method_name, __LINE__, error);
-
-    if (!error)
-    {
-        while (!received)
-        {
-            error = MPI_Test(&request, &received, &status);
-
-            if (!error)
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-                    trace_printf("%s@%d - Msg Received Test. Flag = %d\n", method_name, __LINE__, received);
-            }
-            else
-            {
-                usleep(10000); // sleep 10ms and try again
-            }
-         }
-    }
-
-    TRACE_EXIT;
-    return error;
-}
-
-int CMonitor::Send(char *buf, int size, int source, MonXChngTags tag, MPI_Comm comm)
-{
-    const char method_name[] = "CMonitor::Send";
-    TRACE_ENTRY;
-
-    MPI_Request request;
-    MPI_Status status;  
-    int sent = 0;
-
-    int error = MPI_Isend(buf, size, MPI_CHAR, source, tag, comm, &request);
-
-    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-        trace_printf("%s@%d - Msg Sent. Error = %d\n", method_name, __LINE__, error);
-
-    if (!error)
-    {
-        while (!sent)
-        {
-            error = MPI_Test(&request, &sent, &status);
-
-            if (!error)
-            {
-                if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-                    trace_printf("%s@%d - Msg Sent Test. Flag = %d\n", method_name, __LINE__, sent);
-            }
-            else
-            {
-                usleep(10000); // sleep 10ms and try again
-            }
-         }
-    }
-
-    TRACE_EXIT;
-    return error;
-}
-//===========================================================================
-
-
 void CMonitor::StartPrimitiveProcesses( void )
 {
     const char method_name[] = "CMonitor::StartPrimitiveProcesses";
@@ -982,8 +910,6 @@ int main (int argc, char *argv[])
     MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyPNID);
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
-    MPI_Open_port (MPI_INFO_NULL, MyPort);
-
 
 #ifdef MULTI_TRACE_FILES
     setThreadVariable( (char *)"mainThread" );
@@ -1019,17 +945,49 @@ int main (int argc, char *argv[])
         printf ( "dup2 failed for stderr: %s (%d)\n", strerror(errno), errno);
     }
 
+    switch( CommType )
+    {
+        case CommType_Sockets: // Valid communication protocol
+            break;
+        case CommType_InfiniBand: // Currenly disabled - requires HA MPI
+            //MPI_Open_port (MPI_INFO_NULL, MyMPICommPort);
+        default:
+            printf( "SQ_IC contains invalid communication protocol: %s\n"
+                   , CommTypeString(CommType));
+            abort();
+    }
+
     if (argc > 3 && strcmp (argv[2], "-integrate") == 0)
     {
-        if (argc == 4 && strstr(argv[3], "$port#"))
+        switch( CommType )
         {
-            SMSIntegrating = IAmIntegrating = true;
-            strcpy( IntegratingMonitorPort, argv[3] );
-        }
-        else
-        {
-            printf ( "Invalid integrating monitor port: %s\n", argv[3]);
-            abort();
+            case CommType_InfiniBand:
+                if (argc == 4 && strstr(argv[3], "$port#"))
+                {
+                    SMSIntegrating = IAmIntegrating = true;
+                    strcpy( IntegratingMonitorPort, argv[3] );
+                }
+                else
+                {
+                    printf ( "Invalid integrating monitor MPI port: %s\n", argv[3]);
+                    abort();
+                }
+                break;
+            case CommType_Sockets:
+                if ( isdigit (*argv[3]) )
+                {
+                    SMSIntegrating = IAmIntegrating = true;
+                    strcpy( IntegratingMonitorPort, argv[3] );
+                }
+                else
+                {
+                    printf ( "Invalid integrating monitor socket port: %s\n", argv[3]);
+                    abort();
+                }
+                break;
+            default:
+                // Programmer bonehead!
+                abort();
         }
         if ( isdigit (*argv[4]) )
         {
@@ -1243,7 +1201,7 @@ int main (int argc, char *argv[])
                    , S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
         if ( fd != -1 )
         {
-            snprintf( ioBuffer, BLOCK_SIZE, "%s", MyPort );
+            snprintf( ioBuffer, BLOCK_SIZE, "%s", MyCommPort );
             rc = write( fd, ioBuffer, BLOCK_SIZE );
             if ( rc == -1 )
             {
@@ -1264,7 +1222,7 @@ int main (int argc, char *argv[])
             }
             close( fd );
             if (trace_settings & TRACE_INIT)
-                trace_printf("%s@%d" " Port file created, pnid=%d, port=%s" "\n", method_name, __LINE__, MyPNID, MyPort );
+                trace_printf("%s@%d" " Port file created, pnid=%d, port=%s" "\n", method_name, __LINE__, MyPNID, MyCommPort );
         }
         else
         {
@@ -1332,8 +1290,20 @@ int main (int argc, char *argv[])
     }
 
     // Initialize Seabed disconnect semaphore
-    char *port = strstr(MyPort, "$port#");
-    if (port) port += 5;
+    char *port;
+    switch( CommType )
+    {
+        case CommType_InfiniBand:
+            port = strstr(MyCommPort, "$port#");
+            if (port) port += 5;
+            break;
+        case CommType_Sockets:
+            port = strchr(MyCommPort, ':');
+            break;
+        default:
+            // Programmer bonehead!
+            abort();
+    }
     if (port != NULL)
     {
         int myPortNum;
@@ -1495,12 +1465,18 @@ int main (int argc, char *argv[])
     {
         RobSem::destroy_sem( sbDiscSem );
     }
-     
-    MPI_Close_port( MyPort );
+    if ( CommType == CommType_InfiniBand )
+    {
+        MPI_Close_port( MyCommPort );
+    } 
+#if 0
+    // TODO: MPICH cannot handle a node down and subsequent shutdown
+    //       MPI_Finalize() hangs so its currently disabled, but
+    //       causes an abnormal termination in the monitor process at exit.
     if (trace_settings & TRACE_INIT)
        trace_printf("%s@%d" "- Calling MPI_Finalize()" "\n", method_name, __LINE__);
     MPI_Finalize ();
-
+#endif
     if (trace_settings & TRACE_STATS)
     {
       trace_printf("%s@%d" "- LIO Stats: shared_buffers_total="  "%d" "\n", method_name, __LINE__, SQ_theLocalIOToClient->getSharedBufferCount());
