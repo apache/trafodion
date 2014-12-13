@@ -415,12 +415,15 @@ public class HBaseTxClient {
              }
              if (LOG.isTraceEnabled()) LOG.trace("Exit OK_READ_ONLY prepareCommit, txid: " + transactionId);
              return RET_READONLY;
+          case TransactionalReturn.COMMIT_UNSUCCESSFUL:
+             LOG.info("Exit RET_EXCEPTION prepareCommit, txid: " + transactionId);
+             return RET_EXCEPTION;
           case TransactionalReturn.COMMIT_CONFLICT:
              LOG.info("Exit RET_HASCONFLICT prepareCommit, txid: " + transactionId);
              return RET_HASCONFLICT;
           default:
-             if (LOG.isTraceEnabled()) LOG.trace("Exit RET_PARAMERR prepareCommit, txid: " + transactionId);
-             return RET_PARAMERR;
+             if (LOG.isTraceEnabled()) LOG.trace("Exit default RET_EXCEPTION prepareCommit, txid: " + transactionId);
+             return RET_EXCEPTION;
         }
      } catch (IOException e) {
   	   LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + RET_IOEXCEPTION + " IOException");
