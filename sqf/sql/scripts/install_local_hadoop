@@ -1747,7 +1747,7 @@ else
     else
       echo "No DCS tar file found, building DCS: $DCS_SRC" | tee -a ${MY_LOG_FILE}
       cd $DCS_SRC
-      mvn site package
+      ${MAVEN:-mvn} site package >>${MY_LOG_FILE} 2>&1
       cd $MY_SW_ROOT
     fi
     DCS_TAR=$(ls $DCS_SRC/target/dcs*tar.gz)
@@ -1757,7 +1757,7 @@ else
     git clone $DCS_GIT src/dcs >>${MY_LOG_FILE} 2>&1
     echo "Building DCS Source..." | tee -a ${MY_LOG_FILE}
     cd src/dcs
-    mvn site package     >>${MY_LOG_FILE} 2>&1
+    ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
     cd $MY_SW_ROOT
     DCS_TAR=$(ls $MY_SW_ROOT/src/dcs/target/dcs*tar.gz)
   fi
@@ -1765,7 +1765,7 @@ else
   then
     echo '**** ERROR:'  | tee -a ${MY_LOG_FILE}
     echo "DCS tar file not found: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
-    exit 1
+    exit 2
   fi
   # install
   echo "Installing DCS from: $DCS_TAR"  | tee -a ${MY_LOG_FILE}
@@ -1833,19 +1833,19 @@ else
 # command to run phoenix tests
 
 cd $PHX_SRC
-# Only T4 supported so far
-#if [[ \$1 == "t4" ]]
-#then
+if [[ \$1 == "t4" ]]
+then
   ./phoenix_test.py --target=localhost:$MY_DCS_MASTER_PORT --user=dontcare --pw=dontcare \\
      --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar
-#elif [[ \$1 == "t2" ]]
-#then
-#  export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
-#  ./phoenix_test.py --targettype=TR --javahome=\$JAVA_HOME \\
-#     --jdbccp=\$MY_SQROOT/export/lib/jdbcT2.jar --jdbctype=T2 
-#else
-#  echo "Usage: swphoenix (t2|t4)"
-#fi
+elif [[ \$1 == "t2" ]]
+then
+  export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
+  ./phoenix_test.py --targettype=TR --javahome=\$JAVA_HOME \\
+     --jdbccp=\$MY_SQROOT/export/lib/jdbcT2.jar --jdbctype=T2 
+else
+  echo "Usage: swphoenix (t2|t4)"
+  exit 1
+fi
 EOF
   chmod +x $MY_SW_SCRIPTS_DIR/swphoenix
 
