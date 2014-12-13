@@ -276,6 +276,15 @@ class CmpSeabaseDDL
        const ComTdbVirtTableColumnInfo *colInfoArray,
        Lng32 numKeys);
 
+   Int64 getObjectUID(
+                     ExeCliInterface *cliInterface,
+                     const char * catName,
+                     const char * schName,
+                     const char * objName,
+                     const char * inObjType,
+                     const char * inObjTypeStr = NULL,
+                     char * outObjType = NULL);
+
  protected:
 
   enum { 
@@ -443,14 +452,6 @@ class CmpSeabaseDDL
 			     NAString &catName,
 			     NAString &schName,
 			     NAString &objName);
-   Int64 getObjectUID(
-                     ExeCliInterface *cliInterface,
-                     const char * catName,
-                     const char * schName,
-                     const char * objName,
-                     const char * inObjType,
-                     const char * inObjTypeStr = NULL,
-                     char * outObjType = NULL);
 
    Int64 getObjectUIDandOwner(
                      ExeCliInterface *cliInterface,
@@ -904,6 +905,16 @@ class CmpSeabaseDDL
   short updateSeabaseVersions(ExeCliInterface * cliInterface, const char * sysCat,
 			      Lng32 majorVersion = -1);
 
+  short getSpecialTableInfo
+    (
+     const NAString &catName, 
+     const NAString &schName, 
+     const NAString &objName,
+     const NAString &extTableName,
+     const char * objType, 
+     ComTdbVirtTableTableInfo* &tableInfo
+     );
+
   desc_struct * getSeabaseMDTableDesc(const NAString &catName, 
 				      const NAString &schName, 
 				      const NAString &objName,
@@ -918,8 +929,8 @@ class CmpSeabaseDDL
      const NAString &schName, 
      const NAString &seqName,
      NAString &extSeqName,
-     Int32 objectOwner,
-     Int64 seqUID);
+     Int32 &objectOwner,
+     Int64 &seqUID);
 
   desc_struct * getSeabaseSequenceDesc(const NAString &catName, 
 				       const NAString &schName, 

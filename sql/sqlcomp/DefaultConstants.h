@@ -3632,6 +3632,10 @@ enum DefaultConstants
  // max size in bytes of a char or varchar column in a trafodion table.
   TRAF_MAX_CHARACTER_COL_LENGTH,
 
+  // set when metadata definition is to be read from hardcoded structs
+  // and not from metadata. 
+  TRAF_BOOTSTRAP_MD_MODE,
+
   // The threshold on the number of rows scanned in an index join scan. 
   // If the estimated value is below the threshold, the index will be 
   // subjected to the elimination heuristics.

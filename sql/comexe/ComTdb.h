@@ -297,7 +297,6 @@ public:
     ex_PROCESS_INMEMORY_TABLE = 129,
     ex_GET_UID = 130,
     ex_POP_IN_MEM_STATS = 131,
-    ex_REPLICATE = 132,
     ex_REPLICATOR = 133,
     ex_FAST_EXTRACT = 134,
     ex_GET_ERROR_INFO = 136,

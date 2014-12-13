@@ -6544,8 +6544,9 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     // these NATables are not cached.
     PrivMgrUserPrivs privInfo;
     Int64 tabUid = tab->objectUid().get_value();
-    if (tabUid <= 0)
-      tabUid = tab->lookupObjectUid();
+    CMPASSERT(tabUid > 0);
+    //    if (tabUid <= 0)
+    //      tabUid = tab->lookupObjectUid();
     retcode = privInterface.getPrivileges(tabUid, thisUserID, privInfo);
     if (retcode != STATUS_GOOD)
      return false;

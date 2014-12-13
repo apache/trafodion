@@ -658,22 +658,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
       break;
     }
 
-    case ex_REORG:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ComTdbExeUtilReorg);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-
-    case ex_REPLICATE:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ComTdbExeUtilReplicate);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-
     case ex_MAINTAIN_OBJECT:
     {
 #pragma nowarn(1506)   // warning elimination 
@@ -766,14 +750,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
     {
 #pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilGetStatistics);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-
-     case ex_GET_REORG_STATISTICS:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ComTdbExeUtilGetReorgStatistics);
 #pragma warn(1506)  // warning elimination 
       break;
     }

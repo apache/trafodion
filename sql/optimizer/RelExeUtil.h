@@ -50,8 +50,6 @@
 class GenericUtilExpr;
 class ExeUtilExpr;
 
-NABoolean ExeUtilReplicate_checkReplicateCQD(Int32 userID);
-
 // -----------------------------------------------------------------------
 // This class is the base class for sql statements which are processed and
 // evaluated at runtime. They could be DDL statements, or other stmts
@@ -430,8 +428,6 @@ class ExeUtilExpr : public GenericUtilExpr
 public:
   enum ExeUtilType
   {
-    LOAD_                     = 0,
-    REORG_                    = 1,
     DISPLAY_EXPLAIN_          = 2,
     MAINTAIN_OBJECT_          = 3,
     LOAD_VOLATILE_            = 4,
@@ -449,7 +445,6 @@ public:
     DISPLAY_EXPLAIN_COMPLEX_  = 20,
     GET_UID_                  = 21,
     POP_IN_MEM_STATS_         = 22,
-    REPLICATE_                = 23,
     GET_ERROR_INFO_           = 25,
     LOB_EXTRACT_              = 26,
     LOB_SHOWDDL_              = 27,
@@ -634,27 +629,6 @@ private:
 
   // CREATE of a volatile table/index.
   NABoolean isVolatile_;
-};
-
-class ExeUtilLoad : public ExeUtilExpr
-{
-public:
-  ExeUtilLoad(const CorrName &name,
-	      ExprNode * exprNode,
-	      char * stmtText,
-	      CharInfo::CharSet stmtTextCharSet,
-	      CollHeap *oHeap = CmpCommon::statementHeap())
-       : ExeUtilExpr(LOAD_, name, exprNode, NULL, stmtText, stmtTextCharSet, oHeap)
-  {
-  };
-
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-				CollHeap* outHeap = 0);
-
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
-private:
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1042,431 +1016,6 @@ private:
   Int32 hiveHdfsPort_;
 };
 
-class ExeUtilReorg : public ExeUtilExpr
-{
-public:
-  enum ReorgOptionType
-  {
-    PARTITION_,
-    CONCURRENCY_,
-    RATE_, DSLACK_, ISLACK_, SLACK_, DELAY_, NO_DEALLOC_,
-    PRIORITY_, PRIORITY_DELTA_,
-    DISPLAY_, NO_OUTPUT_,
-    RETURN_SUMMARY_, RETURN_DETAIL_OUTPUT_,
-    GET_STATUS_,
-    SUSPEND_, NEW_REORG_,
-    CHECK_, REORG_IF_NEEDED_, COMPACT_, OVERRIDE_, STOP_, COMPRESS_,
-    WHERE_,
-    GET_TABLES_,
-    UPDATE_DB_, USE_DB_,
-    RETURN_FAST_, MAX_TABLES_,
-    GENERATE_MAINTAIN_COMMANDS_, MAX_MAINTAIN_TABLES_, 
-    SHOW_MAINTAIN_COMMANDS_, RUN_MAINTAIN_COMMANDS_,
-    GENERATE_CHECK_COMMANDS_, CONCURRENT_CHECK_SESSIONS_,
-    CONTINUE_ON_ERROR_, STOP_ON_ERROR,
-    SYSTEM_OBJECTS_ONLY_, DEBUG_OUTPUT_,
-    INITIALIZE_DB_, REINITIALIZE_DB_, 
-    DROP_DB_, CLEANUP_REORG_DB_,
-    CREATE_DB_VIEW_, DROP_DB_VIEW_,
-    VERIFY_
-  };
-
-  enum ReorgObjectType
-  {
-    TABLE_, INDEX_, MV_, SCHEMA_, CATALOG_, NOOP_, INVALID_
-  };
-
-  class ReorgOption
-  {
-    friend class ExeUtilReorg;
-  public:
-    ReorgOption(ReorgOptionType option, 
-      Long numericVal,
-      char * stringVal,
-      Lng32 numericVal2 = 0,
-      char * stringVal2 = NULL)
-      : option_(option), 
-      numericVal_(numericVal), stringVal_(stringVal),
-      numericVal2_(numericVal2), stringVal2_(stringVal2)
-
-    {}
-
-  private:
-    ReorgOptionType option_;
-    Long   numericVal_;
-    char * stringVal_;
-    Lng32   numericVal2_;
-    char * stringVal2_;
-  };
-
-  ExeUtilReorg(enum ReorgObjectType type,
-	       const CorrName &name,
-	       NAList<ReorgOption*> * reorgOptionsList,
-	       QualNamePtrList * additionalTables,
-	       CollHeap *oHeap = CmpCommon::statementHeap());
-
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-				CollHeap* outHeap = 0);
-
-  virtual NABoolean producesOutput() { return TRUE; }
-  virtual NABoolean isExeUtilQueryType() { return TRUE; }
-
-  virtual RelExpr * bindNode(BindWA *bindWAPtr);
-
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
-  void setParams(Lng32 concurrency,
-		 Lng32 firstPartn, Lng32 lastPartn,
-		 Lng32 rate, Lng32 dslack, Lng32 islack, Lng32 delay,
-		 NABoolean noDealloc,
-		 Lng32 priority,
-		 NAString &partnName,
-		 NABoolean displayOnly, NABoolean noOutputMsg,
-		 NABoolean returnSummary, NABoolean returnDetailOutput,
-		 NABoolean doCheck,
-		 NABoolean doReorg,
-		 NABoolean reorgIfNeeded,
-		 NABoolean getStatus,
-		 NABoolean suspend,
-                 NABoolean stop,
-		 NABoolean newReorg,
-		 NABoolean doCompact,
-		 NABoolean doOverride,
-                 Lng32 compressionType,
-                 NABoolean updateReorgDB,
-                 NABoolean useReorgDB,
-                 NABoolean returnFast,
-                 Lng32 rowsetSize,
-                 Lng32 firstTable,
-                 Lng32 lastTable,
-                 NAString wherePredStr,
-                 NABoolean generateMaintainCommands,
-		 NABoolean showMaintainCommands,
-		 NABoolean runMaintainCommands,
-                 Lng32 maxMaintainTables,
-                 NABoolean reorgCheckAll,
-                 NABoolean generateCheckCommands,
-                 Lng32 concurrentCheckSessions,
-                 NABoolean continueOnError,
-                 NABoolean systemObjectsOnly,
-		 NABoolean debugOutput,
-                 NABoolean verify);
-
-   LIST(OptSqlTableOpenInfo *) &getStoiList()  { return stoiList_; }
-
-private:
-  ReorgObjectType type_;
-  Lng32 concurrency_;
-  Lng32 firstPartn_;
-  Lng32 lastPartn_;
-  Lng32 rate_;
-  Lng32 dslack_;
-  Lng32 islack_;
-  Lng32 delay_;
-  Lng32 priority_;
-  NABoolean noDealloc_;
-  NAString partnName_;
-  NABoolean displayOnly_;
-  NABoolean noOutputMsg_;
-
-  NABoolean returnSummary_;
-  NABoolean returnDetailOutput_;
-
-  NABoolean doCheck_;
-  NABoolean doReorg_;
-  NABoolean reorgIfNeeded_;
-
-  NABoolean getStatus_;
-  NABoolean suspend_;
-  NABoolean stop_;
-  NABoolean newReorg_;
-
-  NABoolean doCompact_;
-  NABoolean doOverride_;
-
-  NABoolean updateDBspecified_;
-  NABoolean updateReorgDB_;
-  NABoolean useReorgDB_;
-
-  NABoolean returnFast_;
-  
-  Lng32 rowsetSize_;
-  NABoolean generateMaintainCommands_;
-  Lng32 maxMaintainTables_;
-  NABoolean generateCheckCommands_;
-  Lng32 concurrentCheckSessions_;
-  NABoolean showMaintainCommands_;
-  NABoolean runMaintainCommands_;
-
-  NABoolean reorgCheckAll_;
-  
-  void * wherePred_;
-  NAString wherePredStr_;
-  
-  Lng32 firstTable_;
-  Lng32 lastTable_;
-  
-  Lng32 compressionType_;
-
-  Int64 statusAfterTS_;
-
-  NABoolean continueOnError_;
-  
-  NAString statusSummaryOptionsStr_;
-  Lng32 statusSummaryOptions_;
-
-  NABoolean systemObjectsOnly_; // only reorg check system objects(schemas, table)
-
-  NABoolean debugOutput_;
-
-  NABoolean initialize_;
-  NABoolean reinitialize_;
-  NABoolean drop_;
-  NABoolean createView_;
-  NABoolean dropView_;
-
-  NABoolean cleanupReorgDB_;
-  Int64 cleanupToTS_;
-
-  UInt32     maxTables_;
-  
-  // additional tables that are to be reorged alongwith the primary table.
-  QualNamePtrList additionalTables_;
-
-  TableDescList * additionalTablesDescs_;
-
-  LIST(OptSqlTableOpenInfo *) stoiList_;  // open infos
-  NABoolean verify_;
-};
-
-class ExeUtilReplicate : public ExeUtilExpr
-{
-public:
-  enum ReplicateOptionType
-  {
-    SOURCE_OBJECT_, SOURCE_SCHEMA_,
-    SOURCE_OBJ_IN_LIST_,
-    LIKE_PATTERN_, NOT_LIKE_PATTERN_,
-    IN_LIST_, NOT_IN_LIST_,
-    TARGET_OBJECT_, PURGEDATA_TARGET_,
-    TARGET_SYSTEM_, 
-    SOURCE_IMPLICIT_UNIQUE_INDEX_POSITION_,
-    VALIDATE_TGT_DDL_, NO_VALIDATE_TGT_DDL_,
-    COPY_DDL_, COPY_DATA_, COPY_STATISTICS_,
-    STATISTICS_, TGT_STATISTICS_, TGT_DDL_,
-    VALIDATE_DATA_,
-    PRIORITY_, PRIORITY_DELTA_,
-    CONCURRENCY_, RATE_, DELAY_,
-    GET_STATUS_,
-    SUSPEND_, RESUME_, ABORT_,
-    COMPRESS_,
-    TGT_OBJS_ONLINE_, TGT_OBJS_OFFLINE_,
-    TGT_OBJS_UNAUDITED_, TGT_OBJS_AUDITED_,
-    TGT_CAT_NAME_,
-    PARENT_QID_,
-    TGT_RETURN_PARTITION_DETAILS_,
-    TRANSFORM_, NO_TRANSFORM_, TGT_ACTIONS_,
-    GET_DETAILS_,
-    INITIALIZE_, REINITIALIZE_, DROP_,
-    ADD_CONFIG_, REMOVE_CONFIG_,
-    DEBUG_TARGET_, FORCE_ERROR_,
-    DISABLE_SCHEMA_CREATE_,
-    NUM_SRC_PARTNS_,
-    RECOVER_, ROLE_NAME_,
-    NO_VALIDATE_ROLE_,
-    VALIDATE_PRIVILEGES_,
-    CLEANUP_,
-    VERSION_,
-    INCREMENTAL_,
-    AUTHORIZATION_,
-    COPY_BOTH_DATA_AND_STATISTICS_,
-    COMPRESSION_TYPE_,
-    DISK_POOL_,
-    TARGET_SCHEMA_,
-    VALIDATE_DDL_,
-    VALIDATE_AND_PURGEDATA_,
-    WAITED_STARTUP_
-  };
-
-  enum ReplicateObjectType
-  {
-    TABLE_, INDEX_, MV_
-  };
-
-  class ReplicateOption
-  {
-    friend class ExeUtilReplicate;
-  public:
-    ReplicateOption(ReplicateOptionType option, 
-		    Lng32 numericVal,
-		    void * stringVal,
-		    Lng32 numericVal2 = 0,
-		    char * stringVal2 = NULL)
-	 : option_(option), 
-	   numericVal_(numericVal), stringVal_(stringVal),
-	   numericVal2_(numericVal2), stringVal2_(stringVal2)
-    {}
-
-  private:
-    ReplicateOptionType option_;
-    Lng32   numericVal_;
-    void * stringVal_;
-    Lng32   numericVal2_;
-    void * stringVal2_;
-  };
-
-  ExeUtilReplicate(NAList<ReplicateOption*> * replicateOptionsList,
-		   CollHeap *oHeap = CmpCommon::statementHeap());
-
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-				CollHeap* outHeap = 0);
-
-  virtual NABoolean producesOutput() { return TRUE; }
-  virtual NABoolean isExeUtilQueryType() { return TRUE; }
-
-  virtual RelExpr * bindNode(BindWA *bindWAPtr);
-
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
-private:
-  void setErrorInParams(NABoolean v, const char * reason);
-
-  NAString reason_;
-
-  // source object name
-  CorrName sourceName_;
-  ReplicateObjectType sourceType_;
-
-  // target object name
-  CorrName targetName_;
-  ReplicateObjectType targetType_;
-  
-  // source schema name
-  SchemaName sourceSchema_;
-  
-  // target schema name
-  SchemaName targetSchema_;
-
-  NAString srcCatName_;
-  NAString tgtCatName_;
-
-  Lng32 srcImpUnqIxPos_;
-
-  NAString likePattern_;
-  NABoolean notLikePattern_;
-  NAString escChar_;
-  NAString inList_;
-  NABoolean notInList_;
-
-  // target system
-  NAString targetSystem_;
-  //  NABoolean tgtIpAddr_;
-
-  NABoolean purgedataTgt_;
-  NABoolean incremental_;
-
-  NAString ddlInputStr_;
-
-  NABoolean srcObjsInList_;
-  //  ConstStringList srcInList_;
-  QualNamePtrList srcInList_;
-
-  Lng32 concurrency_;
-  Lng32 rate_;
-  Lng32 priority_;
-  Lng32 priorityDelta_;
-  Lng32 delay_;
-
-  Int64 srcObjectUid_;
-
-  NABoolean compress_;
-  NABoolean compressSpecified_;
-
-  NABoolean getStatus_;
-  NABoolean suspend_;
-  NABoolean resume_;
-  NABoolean abort_;
-  NAString  controlQueryId_;
-
-  // validate that source and target DDL is the same
-  NABoolean validateTgtDDL_;
-
-  NABoolean validateDDL_;
-  NABoolean validateAndPurgedata_;
-  NABoolean validateDDLSpecified_; 
-
-  NABoolean copyData_;
-  NABoolean validateData_;
-  NABoolean copyBothDataAndStats_;
-
-  NABoolean onlySpecified_;
-
-  NABoolean tgtObjsOnline_;
-  NABoolean tgtObjsOffline_;
-
-  NABoolean tgtObjsAudited_;
-  NABoolean tgtObjsUnaudited_;
-
-  NABoolean returnPartnDetails_;
-
-  NABoolean transform_;
-  NABoolean noTransform_;
-  
-  NABoolean tgtActions_;
-
-  NABoolean initialize_;
-  NABoolean reinitialize_;
-  NABoolean drop_;
-  
-  NABoolean addConfig_;
-  NABoolean removeConfig_;
-  NAString ipAddr_;
-  Int32    portNum_;
-
-  NABoolean getDetails_;
-  NAString formatOptions_;
-
-  NABoolean debugTarget_;
-
-  NAString forceError_;
-
-  NABoolean disableSchemaCreate_;
-
-  Int32 numSrcPartns_;
-
-  Lng32 recoverType_;
-
-  NAString roleName_;
-  NABoolean noValidateRole_;
-
-  NABoolean statistics_;
-  Lng32 tgtStatsType_;
-
-  NABoolean copyDDL_;
-  Lng32 tgtDDLType_;
-
-  NABoolean validatePrivs_;
-
-  // set if CLEANUP option is specified.
-  // From/To are the start times of the replicate queries
-  // that need to be removed from replicate status tables.
-  NABoolean cleanup_;
-  Int64 cleanupFrom_;
-  Int64 cleanupTo_;
-
-  NABoolean errorInParams_;
-  NABoolean SQTargetType_;
-  NABoolean authids_;
-  NABoolean compressionTypeSpecified_;
-  NABoolean diskPoolSpecified_;
-  Lng32 version_;
-  Lng32 compressionType_;
-  Lng32 diskPool_;
-  NABoolean waitedStartup_;
-};
-
 class ExeUtilMaintainObject : public ExeUtilExpr
 {
 public:
@@ -1475,15 +1024,12 @@ public:
     INITIALIZE_, REINITIALIZE_, DROP_, 
     CREATE_VIEW_, DROP_VIEW_,
     ALL_,
-    REORG_TABLE_, REORG_INDEX_,
     UPD_STATS_TABLE_, UPD_STATS_MVLOG_,
     UPD_STATS_MVS_, UPD_STATS_MVGROUP_,
     UPD_STATS_ALL_MVS_,
     REFRESH_ALL_MVGROUP_, REFRESH_MVGROUP_, 
     REFRESH_ALL_MVS_, REFRESH_MVS_,
-    REORG_MVGROUP_,
-    REORG_MVS_, REORG_MVS_INDEX_,
-    REORG_, REFRESH_,
+    REFRESH_,
     ENABLE_, DISABLE_, RESET_,
     CONTINUE_ON_ERROR_,
     GET_STATUS_, GET_DETAILS_,
@@ -1832,21 +1378,6 @@ protected:
   short statsReqType_;
   short statsMergeType_;
   short activeQueryNum_;
-};
-
-class ExeUtilGetReorgStatistics : public ExeUtilGetStatistics
-{
-public:
-  ExeUtilGetReorgStatistics(NAString qid = "",
-			    char * optionsStr = NULL,
-			    CollHeap *oHeap = CmpCommon::statementHeap());
-  
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-				CollHeap* outHeap = 0);
-
-  virtual short codeGen(Generator*);
-
-private:
 };
 
 class ExeUtilGetProcessStatistics : public ExeUtilGetStatistics

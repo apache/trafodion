@@ -2498,8 +2498,6 @@ short RelRoot::codeGen(Generator * generator)
         else
           root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_CTAS);
       }
-      else if (exeUtil->getExeUtilType() == ExeUtilExpr::REPLICATE_)
-          root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_REPLICATE);
       else if (exeUtil->getExeUtilType() == ExeUtilExpr::GET_STATISTICS_)
           root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_GET_STATISTICS);
       else if (exeUtil->getExeUtilType() == ExeUtilExpr::DISPLAY_EXPLAIN_)

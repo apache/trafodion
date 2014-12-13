@@ -1116,7 +1116,6 @@ enum ComPrivilegeType { COM_UNKNOWN_PRIVILEGE = 0   // must always be first
                       , COM_BUSINESS_CONTINUITY_PRIVILEGE
                       , COM_BACKUP_PRIVILEGE
                       , COM_RESTORE_PRIVILEGE
-                      , COM_REPLICATE_PRIVILEGE
                       , COM_ARCHIVE_PRIVILEGE
 // The Privileges below are not yet used; the ones that become used should
 // be moved to before those that remain unused.
@@ -1180,7 +1179,6 @@ enum ComPrivilegeType { COM_UNKNOWN_PRIVILEGE = 0   // must always be first
 #define COM_BUSINESS_CONTINUITY_PRIVILEGE_LIT      "BC"
 #define COM_BACKUP_PRIVILEGE_LIT                   "BA"
 #define COM_RESTORE_PRIVILEGE_LIT                  "RS"
-#define COM_REPLICATE_PRIVILEGE_LIT                "RP"
 #define COM_ARCHIVE_PRIVILEGE_LIT                  "AC"
 
 // Values for Query Invalidation
@@ -1459,8 +1457,6 @@ enum ComReplicationRule { COM_UNKNOWN_REPLICATION,
 enum ComSchemaOperation { COM_NO_SCHEMA_OPERATION,
                           COM_UPGRADE_OPERATION,
                           COM_DOWNGRADE_OPERATION,
-                          COM_REPLICATE_OPERATION,
-                          COM_UNREPLICATE_OPERATION,
                           COM_VOLATILE_SCHEMA_OPERATION,
                           COM_DISABLE_CREATE_OPERATION,
                           COM_UNKNOWN_SCHEMA_OPERATION};
@@ -1468,8 +1464,6 @@ enum ComSchemaOperation { COM_NO_SCHEMA_OPERATION,
 #define COM_NO_SCHEMA_OPERATION_LIT                "  "
 #define COM_UPGRADE_OPERATION_LIT                  "UG"
 #define COM_DOWNGRADE_OPERATION_LIT                "DG"
-#define COM_REPLICATE_OPERATION_LIT                "RP"
-#define COM_UNREPLICATE_OPERATION_LIT              "UR"
 #define COM_VOLATILE_SCHEMA_OPERATION_LIT          "VS"
 #define COM_DISABLE_CREATE_OPERATION_LIT           "DC"
 #define COM_UNKNOWN_SCHEMA_OPERATION_LIT           "??"
@@ -1603,7 +1597,6 @@ enum ComUtilOperation { COM_UNKNOWN_UTIL
                       , COM_UTIL_ALL_METADATA_DOWNGRADE
                       , COM_UTIL_TRANSFORM
                       , COM_UTIL_VALIDATE
-                      , COM_UTIL_REPLICATE
                       };
 
 #define COM_UNKNOWN_UTIL_LIT            "  "
@@ -1625,7 +1618,6 @@ enum ComUtilOperation { COM_UNKNOWN_UTIL
 #define COM_UTIL_ALL_METADATA_UPGRADE_LIT  "MU"
 #define COM_UTIL_ALL_METADATA_DOWNGRADE_LIT  "MD"
 #define COM_UTIL_VALIDATE_LIT              "VA"
-#define COM_UTIL_REPLICATE_LIT             "RP"
 
 
 enum ComDdlStatus { COM_UNKNOWN_DDL_STATUS
