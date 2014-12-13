@@ -1524,9 +1524,6 @@ enum DefaultConstants
   // ----------------------------------------------------------------------
   // User-defined routines
   //
-  // ALLOW_UDF: Enable or disable user-defined functions. Has no
-  // effect on stored procedures. Default is OFF.
-  // 
   // UDF_METADATA_SCHEMA: Schema containing user metadata tables for
   // UDFs. This setting will not be needed once we support UDF
   // metadata in the SQL catalog.
@@ -1539,7 +1536,6 @@ enum DefaultConstants
   // options. The default is a single space character.
   //
   // ----------------------------------------------------------------------
-  ALLOW_UDF,
   UDF_METADATA_SCHEMA,
   UDR_JAVA_OPTIONS,
   UDR_JAVA_OPTION_DELIMITERS,

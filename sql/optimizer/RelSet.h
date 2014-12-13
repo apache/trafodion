@@ -522,7 +522,8 @@ public:
   virtual NABoolean findOptimalSolution(Context* myContext,
                                         PlanWorkSpace* pws);
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // Helper function for plan generation.
   Context* createChildContext(Context* context, PlanWorkSpace* pws,

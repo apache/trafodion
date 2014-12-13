@@ -191,9 +191,8 @@ static RETDesc *bindRowValues(BindWA *bindWA,
   // default is ON, or if the default is SYSTEM and ALLOW_UDF is ON.
   NABoolean udfSubqInAggGrby_Enabled = FALSE;
   DefaultToken udfSubqTok = CmpCommon::getDefault(UDF_SUBQ_IN_AGGS_AND_GBYS);
-  DefaultToken allowUdfTok = CmpCommon::getDefault(ALLOW_UDF);
   if ((udfSubqTok == DF_ON) ||
-      (udfSubqTok == DF_SYSTEM && allowUdfTok == DF_ON))
+      (udfSubqTok == DF_SYSTEM))
     udfSubqInAggGrby_Enabled = TRUE;
   
   // See if ALLOW_MULTIDEGREE_SUBQ_IN_SELECTLIST is enabled. It is
@@ -203,7 +202,7 @@ static RETDesc *bindRowValues(BindWA *bindWA,
   DefaultToken allowMultiDegreeTok =
     CmpCommon::getDefault(ALLOW_MULTIDEGREE_SUBQ_IN_SELECTLIST);
   if ((allowMultiDegreeTok == DF_ON) ||
-      (allowMultiDegreeTok == DF_SYSTEM && allowUdfTok == DF_ON))
+      (allowMultiDegreeTok == DF_SYSTEM))
     allowMultiDegSubqInSelect_Enabled = TRUE;
   
   //
@@ -3827,9 +3826,8 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
   // default is ON, or if the default is SYSTEM and ALLOW_UDF is ON.
   NABoolean udfSubqInAggGrby_Enabled = FALSE;
   DefaultToken udfSubqTok = CmpCommon::getDefault(UDF_SUBQ_IN_AGGS_AND_GBYS);
-  DefaultToken allowUdfTok = CmpCommon::getDefault(ALLOW_UDF);
   if ((udfSubqTok == DF_ON) ||
-      (udfSubqTok == DF_SYSTEM && allowUdfTok == DF_ON))
+      (udfSubqTok == DF_SYSTEM))
     udfSubqInAggGrby_Enabled = TRUE;
 
   // This list will store duplicate expression specified in  select list and 
@@ -12119,9 +12117,8 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
               NABoolean allowSubqInSet_Enabled = FALSE;
               DefaultToken allowSubqTok =
                 CmpCommon::getDefault(ALLOW_SUBQ_IN_SET);
-              DefaultToken allowUdfTok = CmpCommon::getDefault(ALLOW_UDF);
               if ((allowSubqTok == DF_ON) ||
-                  (allowSubqTok == DF_SYSTEM && allowUdfTok == DF_ON))
+                  (allowSubqTok == DF_SYSTEM))
                 allowSubqInSet_Enabled = TRUE;
 
               if (!allowSubqInSet_Enabled)

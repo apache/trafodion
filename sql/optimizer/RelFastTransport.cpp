@@ -311,7 +311,8 @@ NABoolean FastExtract::duplicateMatch(const RelExpr & other) const
 
 
 PhysicalProperty* PhysicalFastExtract::synthPhysicalProperty(const Context* myContext,
-                                                  	  	  	  const Lng32     planNumber)
+                                                             const Lng32     planNumber,
+                                                             PlanWorkSpace  *pws)
 {
   PartitioningFunction* myPartFunc = NULL;
   const IndexDesc* myIndexDesc = NULL;

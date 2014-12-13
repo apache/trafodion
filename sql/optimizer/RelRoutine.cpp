@@ -874,7 +874,7 @@ OperatorTypeEnum PredefinedTableMappingFunction::nameIsAPredefinedTMF(const Corr
   if (! qualName.getSchemaName().isNull())
     return REL_TABLE_MAPPING_UDF;
 
-  if (funcName == "LOG_READER")
+  if (funcName == "EVENT_LOG_READER")
     return REL_TABLE_MAPPING_BUILTIN_LOG_READER;
   else
     // none of the built-in names matched, so it must be a UDF
@@ -886,7 +886,7 @@ const NAString PredefinedTableMappingFunction::getText() const
   switch (getOperatorType())
     {
     case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
-      return "log_reader";
+      return "event_log_reader";
 
     default:
       CMPASSERT(0);
@@ -1265,7 +1265,8 @@ HiveMDaccessFunc::synthLogProp(NormWA * normWAPtr)
 //==============================================================================
 PhysicalProperty*
 HiveMDaccessFunc::synthPhysicalProperty(const Context* myContext,
-                                   const Lng32     planNumber)
+                                        const Lng32     planNumber,
+                                        PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------

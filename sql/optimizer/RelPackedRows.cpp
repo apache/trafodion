@@ -1151,7 +1151,8 @@ PhysUnPackRows::costMethod() const
 //==============================================================================
 PhysicalProperty *
 PhysUnPackRows::synthPhysicalProperty(const Context *context,
-                                      const Lng32    planNumber)
+                                      const Lng32    planNumber,
+                                      PlanWorkSpace  *pws)
 {
   const PhysicalProperty* const sppOfTheChild =
                  context->getPhysicalPropertyOfSolutionForChild(0);

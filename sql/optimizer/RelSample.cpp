@@ -1122,7 +1122,9 @@ RelSample::mapSortKey(const ValueIdList &sortKey) const
 }
 
 PhysicalProperty *
-PhysSample::synthPhysicalProperty(const Context *context, const Lng32 pn)
+PhysSample::synthPhysicalProperty(const Context *context,
+                                  const Lng32 pn,
+                                  PlanWorkSpace  *pws)
 {
 
   const PhysicalProperty * const sppOfChild =

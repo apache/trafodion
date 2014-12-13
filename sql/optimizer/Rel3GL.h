@@ -140,7 +140,9 @@ public:
   // Optimizer methods.
   virtual RelExpr *copyTopNode(RelExpr * = NULL, CollHeap * = NULL);
 
-  virtual  PhysicalProperty *synthPhysicalProperty(const Context*, const Lng32); 
+  virtual  PhysicalProperty *synthPhysicalProperty(const Context*,
+                                                   const Lng32,
+                                                   PlanWorkSpace *pws); 
 
   // Code generation methods.
   virtual short codeGen(Generator *);

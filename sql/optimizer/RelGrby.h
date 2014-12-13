@@ -647,7 +647,8 @@ public:
   // cost and physical property functions
   virtual CostMethod* costMethod() const;
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   virtual PlanPriority computeOperatorPriority
     (const Context* context,
@@ -739,7 +740,8 @@ public:
   // cost and physical property functions
   virtual CostMethod* costMethod() const;
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
 }; // class PhysShortCutGroupBy
 
@@ -771,7 +773,8 @@ public:
   // cost and physical property functions
   virtual CostMethod* costMethod() const;
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   virtual RelExpr * preCodeGen(Generator *generator,
                                const ValueIdSet &externalInputs,

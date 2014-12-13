@@ -299,7 +299,8 @@ public:
             const ReqdPhysicalProperty* const rppForMe) const;
 
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // method to do code generation
   RelExpr * preCodeGen(Generator * generator,
@@ -881,7 +882,8 @@ public:
   // cost functions
   virtual CostMethod* costMethod() const;
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   NABoolean& rejectPredicates() { return rejectPredicates_; }
 
@@ -1467,7 +1469,8 @@ public:
                      PlanWorkSpace* pws,
                      Lng32& childIndex);
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // accessor functions
   ValueIdMap & getMap() { return map_; }
@@ -1593,7 +1596,8 @@ public:
   // Physical properties implemented in OptPhysRelExpr.cpp
   //
   PhysicalProperty *synthPhysicalProperty(const Context* myContext,
-					  const Lng32     planNumber);
+					  const Lng32     planNumber,
+                                          PlanWorkSpace  *pws);
 
   virtual RelExpr * preCodeGen(Generator * generator,
 			       const ValueIdSet & externalInputs,
@@ -1929,7 +1933,8 @@ public:
   // cost functions
   //
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
   virtual CostMethod* costMethod() const;
 
   // Redefine these virtual methods to declare this node as a
@@ -2174,7 +2179,8 @@ public:
   // Methods on Physical Properties and Costing.
   // ---------------------------------------------------------------------
   virtual PhysicalProperty* synthPhysicalProperty(const Context* context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
   virtual CostMethod* costMethod() const;
 
 }; // class PhyPack
@@ -2488,7 +2494,8 @@ public:
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // method to do code generation
   virtual short codeGen(Generator*);

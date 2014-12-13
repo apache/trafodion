@@ -98,7 +98,8 @@ public:
 
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-						  const Lng32     planNumber);
+						  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // this is both logical and physical node
   virtual NABoolean isLogical() const{return TRUE;};
@@ -2096,7 +2097,8 @@ public:
 
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 

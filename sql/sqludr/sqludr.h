@@ -662,6 +662,8 @@ namespace tmudr
         APPROX_NUMERIC_VALUE
       };
 
+    inline ParameterInfo(const char *name,
+                         const TypeInfo &type);
     inline const std::string &getParameterName() const;
     inline long getLongValue() const;           // numeric value, for numeric types
     inline double getDoubleValue() const;       // numeric value, for bigger numeric types
@@ -673,9 +675,6 @@ namespace tmudr
     inline VALUE_CODE isAvailable() const;      // What type of value is available, if any
 
   private:
-
-    inline ParameterInfo(const char *name,
-                         const TypeInfo &type);
 
     std::string  name_;
     TypeInfo     type_;
@@ -1050,6 +1049,7 @@ namespace tmudr
 
     // Functions available at compile time only
     inline TableInfo &getOutputTableInfo();
+    void addFormalParameter(const ParameterInfo &param);
     void setFuncType(FUNC_TYPE type);
     void addPassThruColumns(int inputTableNum,
                             int startInputColumnNum = 0,

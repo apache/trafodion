@@ -1858,9 +1858,8 @@ ItemExpr * ItemExpr::bindUDFsOrSubqueries(BindWA *bindWA)
       DefaultToken allowMultiDegreeTok =
                     CmpCommon::getDefault(ALLOW_MULTIDEGREE_SUBQ_IN_SELECTLIST);
 
-      if ((allowMultiDegreeTok == DF_ON) ||
-         (allowMultiDegreeTok == DF_SYSTEM && 
-          CmpCommon::getDefault(ALLOW_UDF) == DF_ON))
+      if (allowMultiDegreeTok == DF_ON ||
+          allowMultiDegreeTok == DF_SYSTEM)
         return bindNode(bindWA); 
       else
         return this; // don't do anything.
@@ -3117,9 +3116,7 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) 
     return this;
 
-  if (CmpCommon::getDefault(ALLOW_UDF) == DF_ON)
-  {
-    if ( getOperatorType() != ITM_BETWEEN )
+  if ( getOperatorType() != ITM_BETWEEN )
     {
       // Reverify inputs
       // This is to deal with cases where a builtin function requires one 
@@ -3172,7 +3169,6 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
         return NULL;
       }
     } // if ITM_BETWEEN
-  } // if ALLOW_UDF
 
   ItemExpr * retExpr = NULL;
   NABoolean useCase = FALSE;
@@ -7450,9 +7446,8 @@ ItemExpr *ColReference::bindNode(BindWA *bindWA)
   // default is ON, or if the default is SYSTEM and ALLOW_UDF is ON.
   NABoolean udfSubqInAggGrby_Enabled = FALSE;
   DefaultToken udfSubqTok = CmpCommon::getDefault(UDF_SUBQ_IN_AGGS_AND_GBYS);
-  DefaultToken allowUdfTok = CmpCommon::getDefault(ALLOW_UDF);
   if ((udfSubqTok == DF_ON) ||
-      (udfSubqTok == DF_SYSTEM && allowUdfTok == DF_ON))
+      (udfSubqTok == DF_SYSTEM))
     udfSubqInAggGrby_Enabled = TRUE;
   
   BindScope *currScope = bindWA->getCurrentScope();
@@ -8720,9 +8715,8 @@ ItemExpr *Subquery::bindNode(BindWA *bindWA)
   // default is ON, or if the default is SYSTEM and ALLOW_UDF is ON.
   NABoolean udfSubqInAggGrby_Enabled = FALSE;
   DefaultToken udfSubqTok = CmpCommon::getDefault(UDF_SUBQ_IN_AGGS_AND_GBYS);
-  DefaultToken allowUdfTok = CmpCommon::getDefault(ALLOW_UDF);
   if ((udfSubqTok == DF_ON) ||
-      (udfSubqTok == DF_SYSTEM && allowUdfTok == DF_ON))
+      (udfSubqTok == DF_SYSTEM))
     udfSubqInAggGrby_Enabled = TRUE;
   
   if (!udfSubqInAggGrby_Enabled)
@@ -10234,8 +10228,6 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 
   ItemExpr *parseTree = NULL, *boundTree = NULL;
 
-  if (CmpCommon::getDefault(ALLOW_UDF) == DF_ON)
-  {
     // Need to check to see if we have any parameters that are MVFs or 
     // subqueries of degree > 1.
     // 
@@ -10336,7 +10328,6 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
       bindWA->setErrStatus();
       return this;
     }
-  } // if ALLOW_UDF
 
   // fix 10-040621-7164. Make sure that the child expression is not dynamic param
   // before verifying the type of the child. Otherwise, the verification may fail

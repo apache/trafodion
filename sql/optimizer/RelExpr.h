@@ -1039,7 +1039,8 @@ public:
   // (used in the implementation of createPlan)
   // ---------------------------------------------------------------------
   virtual PhysicalProperty* synthPhysicalProperty(const Context* myContext,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // ---------------------------------------------------------------------
   // A helper method for synthesizing the physical properties for the leaf
