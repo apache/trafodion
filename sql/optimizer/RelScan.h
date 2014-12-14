@@ -817,7 +817,8 @@ public:
   virtual NABoolean isPhysical() const;
 
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   PhysicalProperty * synthHiveScanPhysicalProperty(const Context *context,
                                                    const Lng32    planNumber,
@@ -1295,11 +1296,6 @@ public:
   // used by the compiler to estimate cost
   virtual void synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp);
 
-  //! synthPhysicalProperty
-  // cost functions
-  //virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-  //                                                const Lng32     planNumber);
-
   //! getText method
   //  used to display the name of the node.
   //  virtual const NAString getText() const;
@@ -1500,7 +1496,8 @@ public:
   virtual void getPotentialOutputValues(ValueIdSet & outputValues) const;
 
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-						  const Lng32     planNumber);
+						  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
   
   virtual NABoolean isLogical() const { return TRUE; }
   virtual NABoolean isPhysical() const { return TRUE; }
@@ -1722,7 +1719,8 @@ public:
 
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // method to do code generation
   virtual short codeGen(Generator*);

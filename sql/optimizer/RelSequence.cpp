@@ -820,14 +820,15 @@ RelSequence::mapSortKey(const ValueIdList &sortKey) const
 
 PhysicalProperty *
 PhysSequence::synthPhysicalProperty(const Context *context,
-                                    const Lng32 pn)
+                                    const Lng32   pn,
+                                    PlanWorkSpace *pws)
 {
 
   // Call the default implementation
   // (RelExpr::synthPhysicalProperty()) to synthesize the properties
   // on the number of cpus.
   // 
-  PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(context,pn);
+  PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(context,pn,pws);
 
   const PhysicalProperty * const sppOfChild =
     context->getPhysicalPropertyOfSolutionForChild(0);

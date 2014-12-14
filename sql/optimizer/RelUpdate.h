@@ -1622,7 +1622,8 @@ public:
   //! synthPhysicalProperty
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   //! getText method
   //  used to display the name of the node.
@@ -1688,7 +1689,8 @@ public:
 
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // get a printable string that identifies the operator
   const NAString getText() const;
@@ -1723,7 +1725,8 @@ public:
 
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // get a printable string that identifies the operator
   const NAString getText() const;
@@ -1765,7 +1768,8 @@ public:
 
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // get a printable string that identifies the operator
   const NAString getText() const;
@@ -1844,7 +1848,8 @@ public:
 
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // method to do code generation
   virtual RelExpr *preCodeGen(Generator * generator,
@@ -1914,7 +1919,8 @@ public:
   //! synthPhysicalProperty
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   //! getText method
   //  used to display the name of the node.
@@ -1976,7 +1982,8 @@ public:
 
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // method to do code generation
   virtual short codeGen(Generator *);

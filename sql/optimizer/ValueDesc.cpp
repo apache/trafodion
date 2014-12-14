@@ -2255,9 +2255,8 @@ NABoolean ValueIdSet::transformNode(NormWA & normWARef,
                 NABoolean udfSubqInAggGrby_Enabled = FALSE;
                 DefaultToken udfSubqTok =
                   CmpCommon::getDefault(UDF_SUBQ_IN_AGGS_AND_GBYS);
-                DefaultToken allowUdfTok = CmpCommon::getDefault(ALLOW_UDF);
                 if ((udfSubqTok == DF_ON) ||
-                    (udfSubqTok == DF_SYSTEM && allowUdfTok == DF_ON))
+                    (udfSubqTok == DF_SYSTEM))
                   udfSubqInAggGrby_Enabled = TRUE;
 
                 if (!udfSubqInAggGrby_Enabled)

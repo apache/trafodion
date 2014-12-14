@@ -130,10 +130,8 @@ select char_length(upper(repeat(_ucs2 x'0390', 682))) from (values(1))x;
 select char_length(upper(repeat(_ucs2 x'0390', 683))) from (values(1))x;
 
 --disabled old func names
-cqd ALLOW_UDF 'on';
 select unicode_value(_ucs2 x'0390', ucs2) from (values(1))x;
 select unicode_char(0390, ucs2) from (values(1))x;
-cqd ALLOW_UDF 'off';
 
 --replace(), zero length pattern
 select replace(_ucs2'abc', _ucs2'', _ucs2 x'') from (values(1))x;

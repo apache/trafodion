@@ -1167,7 +1167,8 @@ public:
                                         PlanWorkSpace* pws);
 
   virtual PhysicalProperty* synthPhysicalProperty(const Context* myContext,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
   // method to do code generation
   // method to do code generation
   RelExpr * preCodeGen(Generator * generator,
@@ -1364,7 +1365,8 @@ public:
             const ReqdPhysicalProperty* const rppForMe) const;
 
   virtual PhysicalProperty* synthPhysicalProperty(const Context* myContext,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // method to do code generation
   RelExpr * preCodeGen(Generator * generator,
@@ -1539,7 +1541,8 @@ public:
             const ReqdPhysicalProperty* const rppForMe) const;
 
   virtual PhysicalProperty* synthPhysicalProperty(const Context* myContext,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // method to do code generation
   virtual RelExpr * preCodeGen(Generator * generator,

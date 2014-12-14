@@ -1126,7 +1126,7 @@ NABoolean ExUdrTcb::insertUpQueueEntry(ex_queue::up_status status,
   // Insert into up queue
   qParent_.up->insert();
  
-  // Optionally remove the head of the down queue
+  // Remove the head of the down queue if we are done
   if (status == ex_queue::Q_NO_DATA)
   {
     privateState.init();

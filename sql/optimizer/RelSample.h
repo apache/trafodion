@@ -237,7 +237,8 @@ public:
   // cost functions
   //
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32 planNumber);
+                                                  const Lng32 planNumber,
+                                                  PlanWorkSpace  *pws);
   virtual CostMethod* costMethod() const;
 
   // Redefine these virtual methods to declare this node as a

@@ -418,8 +418,6 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
 
   DDkwd__(ALLOW_SUBQ_IN_SET,                     "SYSTEM"),
 
-  DDkwd__(ALLOW_UDF,                             "ON"),
-
   DDkwd__(ALLOW_UNEXTERNALIZED_MAINTAIN_OPTIONS, "OFF"),
 
   DDSkwd__(ALTPRI_ESP,                          ""),

@@ -10280,7 +10280,8 @@ void HbaseAccessCoProcAggr::getPotentialOutputValues(
 
 PhysicalProperty*
 HbaseAccessCoProcAggr::synthPhysicalProperty(const Context* myContext,
-					     const Lng32     planNumber)
+					     const Lng32     planNumber,
+                                             PlanWorkSpace  *pws)
 {
   
   //----------------------------------------------------------

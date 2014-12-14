@@ -155,7 +155,8 @@ public:
                      Lng32& childindex);
 
   virtual PhysicalProperty* synthPhysicalProperty(const Context* myContext,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   void synthPartialSortKeyFromChild(const Context*);
   virtual void produceFinalSortKey();
@@ -495,7 +496,8 @@ public:
                      Lng32& childIndex);
 
   virtual PhysicalProperty* synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
 
   // ---------------------------------------------------------------------
   // Methods used by the generator.

@@ -210,7 +210,7 @@ Context* RelExpr::createPlan(Context* myContext,
       {
         if (myPlan->getPhysicalProperty() == NULL)
         {
-          PhysicalProperty* sppForMe = synthPhysicalProperty(myContext,-1);
+          PhysicalProperty* sppForMe = synthPhysicalProperty(myContext,-1,pws);
           if (sppForMe == NULL)
           {
             // bad properties, no plan can ever be found
@@ -534,7 +534,8 @@ Context* RelExpr::createPlan(Context* myContext,
       {
         Lng32 planNumber = pws->getBestPlanSoFar();
         myPlan->setPhysicalProperty(synthPhysicalProperty(myContext,
-                                                          planNumber)
+                                                          planNumber,
+                                                          pws)
                                    );
       }
 
@@ -844,7 +845,8 @@ NABoolean RelExpr::currentPlanIsAcceptable(Lng32 planNo,
 //==============================================================================
 PhysicalProperty*
 RelExpr::synthPhysicalProperty(const Context* myContext,
-                               const Lng32     planNumber)
+                               const Lng32     planNumber,
+                               PlanWorkSpace  *pws)
 {
   // ---------------------------------------------------------------------
   // By the time synthPhysicalProperty() is done, the plan whose spp is
@@ -990,21 +992,26 @@ NABoolean RelExpr::okToAttemptESPParallelism (
     // end up with a lot of ESPs doing nothing.
     if (NOT numOfESPsForced)
     {
-      // Determine the number of outer table rows
-      EstLogPropSharedPtr inLogProp = myContext->getInputLogProp();
-      EstLogPropSharedPtr child0OutputLogProp = child(0).outputLogProp(inLogProp);
-      const CostScalar child0RowCount =
-        (child0OutputLogProp->getResultCardinality()).minCsOne();
-      numOfESPs = rppForMe->getCountOfPipelines();
-      if (child0RowCount.getCeiling() < numOfESPs)
-      {
-        // Fewer outer table rows then pipelines - allow one or more parts
-        allowedDeviation = 1.0;
-      }
+      if (getArity() > 0)
+        {
+          // Determine the number of outer table rows
+          EstLogPropSharedPtr inLogProp = myContext->getInputLogProp();
+          EstLogPropSharedPtr child0OutputLogProp = child(0).outputLogProp(inLogProp);
+          const CostScalar child0RowCount =
+            (child0OutputLogProp->getResultCardinality()).minCsOne();
+          numOfESPs = rppForMe->getCountOfPipelines();
+          if (child0RowCount.getCeiling() < numOfESPs)
+            {
+              // Fewer outer table rows then pipelines - allow one or more parts
+              allowedDeviation = 1.0;
+            }
+          else
+            {
+              allowedDeviation =  CURRSTMT_OPTDEFAULTS->numberOfPartitionsDeviation();
+            }
+        }
       else
-      {
         allowedDeviation =  CURRSTMT_OPTDEFAULTS->numberOfPartitionsDeviation();
-      }
     } // end if number of ESPs not forced
     result = TRUE;
   }
@@ -1461,7 +1468,8 @@ Context* Sort::createContextForAChild(Context* myContext,
 //==============================================================================
 PhysicalProperty*
 Sort::synthPhysicalProperty(const Context* myContext,
-                            const Lng32     planNumber)
+                            const Lng32     planNumber,
+                            PlanWorkSpace  *pws)
 {
 
   // ---------------------------------------------------------------------
@@ -1469,7 +1477,8 @@ Sort::synthPhysicalProperty(const Context* myContext,
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
   PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext,
-                                                             planNumber);
+                                                             planNumber,
+                                                             pws);
 
   if (CmpCommon::getDefault(COMP_BOOL_86) == DF_ON)
   {
@@ -2410,7 +2419,8 @@ void Exchange::storePhysPropertiesInNode(const ValueIdList &partialSortKey)
 //==============================================================================
 PhysicalProperty*
 Exchange::synthPhysicalProperty(const Context *myContext,
-                                const Lng32     planNumber)
+                                const Lng32     planNumber,
+                                PlanWorkSpace  *pws)
 {
   const PhysicalProperty      *sppOfChild = myContext->
                                  getPhysicalPropertyOfSolutionForChild(0);
@@ -6494,7 +6504,8 @@ NABoolean NestedJoin::okToAttemptESPParallelism (
 //==============================================================================
 PhysicalProperty*
 NestedJoin::synthPhysicalProperty(const Context *myContext,
-                                  const Lng32     planNumber)
+                                  const Lng32     planNumber,
+                                  PlanWorkSpace  *pws)
 {
   const PhysicalProperty* const sppOfLeftChild =
                       myContext->getPhysicalPropertyOfSolutionForChild(0);
@@ -6730,7 +6741,8 @@ NestedJoin::synthPhysicalProperty(const Context *myContext,
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
   PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext,
-                                                             planNumber);
+                                                             planNumber,
+                                                             pws);
 
   // ---------------------------------------------------------------------
   // The result of a nested join has the sort order of the outer
@@ -8012,7 +8024,8 @@ NABoolean MergeJoin::currentPlanIsAcceptable(Lng32 planNo,
 //==============================================================================
 PhysicalProperty*
 MergeJoin::synthPhysicalProperty(const Context* myContext,
-                                 const Lng32     planNumber)
+                                 const Lng32     planNumber,
+                                 PlanWorkSpace  *pws)
 {
 
   const PhysicalProperty* const sppOfLeftChild =
@@ -8039,7 +8052,8 @@ MergeJoin::synthPhysicalProperty(const Context* myContext,
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
   PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext,
-                                                             planNumber);
+                                                             planNumber,
+                                                             pws);
 
   // ----------------------------------------------------------------
   // Synthesize the partitioning function from the first child of the
@@ -9434,7 +9448,8 @@ HashJoin::computeCostLimit(const Context*       myContext,
 //==============================================================================
 PhysicalProperty*
 HashJoin::synthPhysicalProperty(const Context* myContext,
-                                const Lng32     planNumber)
+                                const Lng32     planNumber,
+                                PlanWorkSpace  *pws)
 {
   if(isNoOverflow()){
     CMPASSERT( (getOperatorType() == REL_ORDERED_HASH_JOIN) OR
@@ -9466,7 +9481,8 @@ HashJoin::synthPhysicalProperty(const Context* myContext,
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
   PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext,
-                                                             planNumber);
+                                                             planNumber,
+                                                             pws);
 
   // ----------------------------------------------------------------
   // Synthesize the partitioning function from the first child of the
@@ -10881,7 +10897,8 @@ NABoolean MergeUnion::findOptimalSolution(Context* myContext,
 //==============================================================================
 PhysicalProperty*
 MergeUnion::synthPhysicalProperty(const Context* myContext,
-                                  const Lng32     planNumber)
+                                  const Lng32     planNumber,
+                                  PlanWorkSpace  *pws)
 {
   const ReqdPhysicalProperty* rppForMe =
                       myContext->getReqdPhysicalProperty();
@@ -10981,7 +10998,7 @@ MergeUnion::synthPhysicalProperty(const Context* myContext,
   // Call the default implementation (RelExpr::synthPhysicalProperty())
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
-  PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext, -1);
+  PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext, -1, pws);
 
   PartitioningFunction* myPartFunc;
   PartitioningFunction* leftPartFunc;
@@ -11530,7 +11547,8 @@ void SortGroupBy::addArrangementAndOrderRequirements(
 //==============================================================================
 PhysicalProperty*
 SortGroupBy::synthPhysicalProperty(const Context* myContext,
-                                   const Lng32     planNumber)
+                                   const Lng32     planNumber,
+                                   PlanWorkSpace  *pws)
 {
   const PhysicalProperty* const sppOfChild =
                       myContext->getPhysicalPropertyOfSolutionForChild(0);
@@ -11540,7 +11558,8 @@ SortGroupBy::synthPhysicalProperty(const Context* myContext,
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
   PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext,
-                                                             planNumber);
+                                                             planNumber,
+                                                             pws);
 
   PhysicalProperty* sppForMe =
     new (CmpCommon::statementHeap())
@@ -11681,7 +11700,8 @@ void PhysShortCutGroupBy::addArrangementAndOrderRequirements(
 //==============================================================================
 PhysicalProperty*
 PhysShortCutGroupBy::synthPhysicalProperty(const Context* myContext,
-                                      const Lng32     planNumber)
+                                           const Lng32     planNumber,
+                                           PlanWorkSpace  *pws)
 {
   ValueIdList emptySortKey;
   const PhysicalProperty* sppOfChild = myContext->
@@ -11692,7 +11712,8 @@ PhysShortCutGroupBy::synthPhysicalProperty(const Context* myContext,
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
   PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext,
-                                                             planNumber);
+                                                             planNumber,
+                                                             pws);
 
   PhysicalProperty* sppForMe =
     new (CmpCommon::statementHeap())
@@ -11855,7 +11876,8 @@ HashGroupBy::costMethod() const
 //==============================================================================
 PhysicalProperty*
 HashGroupBy::synthPhysicalProperty(const Context* myContext,
-                                   const Lng32     planNumber)
+                                   const Lng32     planNumber,
+                                   PlanWorkSpace  *pws)
 {
   ValueIdList emptySortKey;
   const PhysicalProperty* sppOfChild =
@@ -11866,7 +11888,8 @@ HashGroupBy::synthPhysicalProperty(const Context* myContext,
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
   PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext,
-                                                             planNumber);
+                                                             planNumber,
+                                                             pws);
 
   // ---------------------------------------------------------------------
   // The output of a hash groupby is not sorted.
@@ -12454,7 +12477,8 @@ NABoolean RelRoot::currentPlanIsAcceptable(Lng32 planNo,
 //==============================================================================
 PhysicalProperty*
 RelRoot::synthPhysicalProperty(const Context* myContext,
-                               const Lng32     planNumber)
+                               const Lng32     planNumber,
+                               PlanWorkSpace  *pws)
 {
   const PhysicalProperty* sppForChild =
                       myContext->getPhysicalPropertyOfSolutionForChild(0);
@@ -12464,7 +12488,8 @@ RelRoot::synthPhysicalProperty(const Context* myContext,
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
   PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext,
-                                                             planNumber);
+                                                             planNumber,
+                                                             pws);
 
   PhysicalProperty* sppForMe =
     new (CmpCommon::statementHeap())
@@ -12642,7 +12667,8 @@ Context* MapValueIds::createContextForAChild(Context* myContext,
 //==============================================================================
 PhysicalProperty*
 MapValueIds::synthPhysicalProperty(const Context* myContext,
-                                   const Lng32     planNumber)
+                                   const Lng32     planNumber,
+                                   PlanWorkSpace  *pws)
 {
   const PhysicalProperty* const sppOfChild =
                       myContext->getPhysicalPropertyOfSolutionForChild(0);
@@ -12681,7 +12707,8 @@ MapValueIds::synthPhysicalProperty(const Context* myContext,
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
   PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(myContext,
-                                                             planNumber);
+                                                             planNumber,
+                                                             pws);
 
   PhysicalProperty* sppForMe =
     new (CmpCommon::statementHeap())
@@ -14758,7 +14785,8 @@ FileScan::costMethod() const
 //==============================================================================
 PhysicalProperty*
 FileScan::synthPhysicalProperty(const Context* myContext,
-                                const Lng32     planNumber)
+                                const Lng32     planNumber,
+                                PlanWorkSpace  *pws)
 {
   PhysicalProperty *sppForMe;
   // synthesized order
@@ -15045,7 +15073,8 @@ DP2Scan::costMethod() const
 //==============================================================================
 PhysicalProperty*
 Describe::synthPhysicalProperty(const Context* myContext,
-                                const Lng32     planNumber)
+                                const Lng32     planNumber,
+                                PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -15097,7 +15126,8 @@ Describe::synthPhysicalProperty(const Context* myContext,
 //==============================================================================
 PhysicalProperty*
 GenericUtilExpr::synthPhysicalProperty(const Context* myContext,
-				       const Lng32     planNumber)
+				       const Lng32     planNumber,
+                                       PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -15150,7 +15180,8 @@ GenericUtilExpr::synthPhysicalProperty(const Context* myContext,
 //==============================================================================
 PhysicalProperty*
 FirstN::synthPhysicalProperty(const Context* context,
-                               const Lng32     planNumber)
+                              const Lng32     planNumber,
+                              PlanWorkSpace  *pws)
 {
   // ---------------------------------------------------------------------
   // Simply propogate child's physical property.
@@ -15193,7 +15224,8 @@ FirstN::synthPhysicalProperty(const Context* context,
 //==============================================================================
 PhysicalProperty*
 RelTransaction::synthPhysicalProperty(const Context* myContext,
-                                      const Lng32     planNumber)
+                                      const Lng32     planNumber,
+                                      PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -15243,7 +15275,8 @@ RelTransaction::synthPhysicalProperty(const Context* myContext,
 //============================================================================
 PhysicalProperty*
 RelSetTimeout::synthPhysicalProperty(const Context* myContext,
-				     const Lng32     planNumber)
+				     const Lng32     planNumber,
+                                     PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -15294,7 +15327,8 @@ RelSetTimeout::synthPhysicalProperty(const Context* myContext,
 //==============================================================================
 PhysicalProperty*
 RelLock::synthPhysicalProperty(const Context* myContext,
-                               const Lng32     planNumber)
+                               const Lng32     planNumber,
+                               PlanWorkSpace  *pws)
 {
 
   PartitioningFunction *myPartFunc = NULL;
@@ -15370,7 +15404,8 @@ RelLock::synthPhysicalProperty(const Context* myContext,
 //==============================================================================
 PhysicalProperty*
 ControlAbstractClass::synthPhysicalProperty(const Context* myContext,
-                                            const Lng32     planNumber)
+                                            const Lng32     planNumber,
+                                            PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -15444,7 +15479,8 @@ Tuple::costMethod() const
 #pragma nowarn(262)   // warning elimination
 PhysicalProperty*
 Tuple::synthPhysicalProperty(const Context* myContext,
-                             const Lng32     planNumber)
+                             const Lng32     planNumber,
+                             PlanWorkSpace  *pws)
 {
   CMPASSERT(myContext != NULL);
 
@@ -15702,7 +15738,8 @@ Tuple::synthPhysicalProperty(const Context* myContext,
 //==============================================================================
 PhysicalProperty*
 InsertCursor::synthPhysicalProperty(const Context* myContext,
-                                    const Lng32     planNumber)
+                                    const Lng32     planNumber,
+                                    PlanWorkSpace  *pws)
 {
   ValueIdList emptySortKey;
   PhysicalProperty * sppForMe = synthDP2PhysicalProperty(myContext,
@@ -15740,7 +15777,8 @@ InsertCursor::synthPhysicalProperty(const Context* myContext,
 //==============================================================================
 PhysicalProperty*
 UpdateCursor::synthPhysicalProperty(const Context* myContext,
-                                    const Lng32     planNumber)
+                                    const Lng32     planNumber,
+                                    PlanWorkSpace  *pws)
 {
 
   ValueIdList emptySortKey;
@@ -15780,7 +15818,8 @@ UpdateCursor::synthPhysicalProperty(const Context* myContext,
 //==============================================================================
 PhysicalProperty*
 DeleteCursor::synthPhysicalProperty(const Context* myContext,
-                                    const Lng32     planNumber)
+                                    const Lng32     planNumber,
+                                    PlanWorkSpace  *pws)
 {
 
 
@@ -15917,7 +15956,8 @@ NABoolean GenericUpdate::okToAttemptESPParallelism (
 //==============================================================================
 PhysicalProperty*
 ExplainFunc::synthPhysicalProperty(const Context* myContext,
-                                   const Lng32     planNumber)
+                                   const Lng32     planNumber,
+                                   PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -15950,7 +15990,8 @@ ExplainFunc::synthPhysicalProperty(const Context* myContext,
 
 PhysicalProperty*
 StatisticsFunc::synthPhysicalProperty(const Context* myContext,
-                                   const Lng32     planNumber)
+                                      const Lng32     planNumber,
+                                      PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -15983,7 +16024,8 @@ StatisticsFunc::synthPhysicalProperty(const Context* myContext,
 
 PhysicalProperty *
 PhysicalSPProxyFunc::synthPhysicalProperty(const Context *myContext,
-                                           const Lng32 planNumber)
+                                           const Lng32 planNumber,
+                                           PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -16010,7 +16052,8 @@ PhysicalSPProxyFunc::synthPhysicalProperty(const Context *myContext,
 
 PhysicalProperty *
 PhysicalExtractSource::synthPhysicalProperty(const Context *myContext,
-                                             const Lng32 planNumber)
+                                             const Lng32 planNumber,
+                                             PlanWorkSpace  *pws)
 {
   //----------------------------------------------------------
   // Create a node map with a single, active, wild-card entry.
@@ -16067,7 +16110,8 @@ PhysTranspose::costMethod() const
 //==============================================================================
 PhysicalProperty*
 PhysTranspose::synthPhysicalProperty(const Context *context,
-                                     const Lng32     planNumber)
+                                     const Lng32     planNumber,
+                                     PlanWorkSpace  *pws)
 {
   // for now, simply propagate the physical property
 
@@ -16101,7 +16145,8 @@ PhysTranspose::synthPhysicalProperty(const Context *context,
 //==============================================================================
 PhysicalProperty *
 RelInternalSP::synthPhysicalProperty(const Context * myContext,
-                                     const Lng32     planNumber)
+                                     const Lng32     planNumber,
+                                     PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -16150,7 +16195,8 @@ RelInternalSP::costMethod() const
 
 PhysicalProperty*
 HbaseDelete::synthPhysicalProperty(const Context* myContext,
-                                   const Lng32     planNumber)
+                                   const Lng32     planNumber,
+                                   PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -16183,7 +16229,8 @@ HbaseDelete::synthPhysicalProperty(const Context* myContext,
 
 PhysicalProperty*
 HbaseUpdate::synthPhysicalProperty(const Context* myContext,
-                                   const Lng32     planNumber)
+                                   const Lng32     planNumber,
+                                   PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -16216,7 +16263,8 @@ HbaseUpdate::synthPhysicalProperty(const Context* myContext,
 
 PhysicalProperty*
 HiveInsert::synthPhysicalProperty(const Context* myContext,
-                                 const Lng32     planNumber)
+                                  const Lng32     planNumber,
+                                  PlanWorkSpace  *pws)
 {
 
   const ReqdPhysicalProperty* rppForMe =
@@ -16255,7 +16303,8 @@ HiveInsert::synthPhysicalProperty(const Context* myContext,
 
 PhysicalProperty*
 HbaseInsert::synthPhysicalProperty(const Context* myContext,
-                                 const Lng32     planNumber)
+                                   const Lng32     planNumber,
+                                   PlanWorkSpace  *pws)
 {
   const ReqdPhysicalProperty* rppForMe =
           myContext->getReqdPhysicalProperty();
@@ -16332,7 +16381,8 @@ CostMethod* PhyPack::costMethod() const
 //==============================================================================
 PhysicalProperty*
 PhyPack::synthPhysicalProperty(const Context* context,
-                               const Lng32     planNumber)
+                               const Lng32     planNumber,
+                               PlanWorkSpace  *pws)
 {
 /*
   PlanExecutionEnum planExecutionLocation;
@@ -16396,7 +16446,8 @@ PhysCompoundStmt::costMethod() const
 }
 
 PhysicalProperty* PhysCompoundStmt::synthPhysicalProperty(const Context* context,
-                                                          const Lng32 /*unused*/)
+                                                          const Lng32 /*unused*/,
+                                                          PlanWorkSpace  *pws)
 {
   const PhysicalProperty* const sppOfLeftChild =
                      context->getPhysicalPropertyOfSolutionForChild(0);
@@ -16405,7 +16456,7 @@ PhysicalProperty* PhysCompoundStmt::synthPhysicalProperty(const Context* context
   // Call the default implementation (RelExpr::synthPhysicalProperty())
   // to synthesize the properties on the number of cpus.
   // ---------------------------------------------------------------------
-  PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(context,0);
+  PhysicalProperty* sppTemp = RelExpr::synthPhysicalProperty(context,0, pws);
 
   // ---------------------------------------------------------------------
   // The result of a compound statement has the sort order of the left
@@ -16693,7 +16744,8 @@ PhysicalIsolatedScalarUDF::costMethod() const
 #pragma nowarn(262)   // warning elimination
 PhysicalProperty*
 IsolatedScalarUDF::synthPhysicalProperty(const Context* myContext,
-                                         const Lng32     planNumber)
+                                         const Lng32     planNumber,
+                                         PlanWorkSpace  *pws)
 {
   CMPASSERT(myContext != NULL);
 
@@ -16871,7 +16923,8 @@ IsolatedScalarUDF::synthPhysicalProperty(const Context* myContext,
 
 
 PhysicalProperty *CallSP::synthPhysicalProperty(const Context* context,
-                                                const Lng32 /*unused*/)
+                                                const Lng32 /*unused*/,
+                                                PlanWorkSpace  *pws)
 {
 
   //----------------------------------------------------------
@@ -16986,6 +17039,11 @@ NABoolean TableMappingUDF::okToAttemptESPParallelism (
           {
           case DF_OFF:
             // this overrides the UDF method
+            if (!numOfESPsForced)
+              {
+                result = FALSE;
+                numOfESPs = 1;
+              }
             break;
 
           case DF_SYSTEM:
@@ -17005,7 +17063,7 @@ NABoolean TableMappingUDF::okToAttemptESPParallelism (
                   }
                 else
                   {
-                    // use udfDoP, up to max. degree of parallelism
+                    // allow udfDoP, up to 4 * max. degree of parallelism
                     numOfESPs = MINOF(
                          udfDoP,
                          4*maxDoP);
@@ -17196,51 +17254,89 @@ Context* PhysicalTableMappingUDF::createContextForAChild(Context* myContext,
 
 PhysicalProperty* PhysicalTableMappingUDF::synthPhysicalProperty(
      const Context* myContext,
-     const Lng32    planNumber)
+     const Lng32    planNumber,
+     PlanWorkSpace  *pws)
 {
   PartitioningFunction* myPartFunc = NULL;
+
   if (getArity() == 0)
   {
-    //----------------------------------------------------------
-    // Create a node map with a single, active, wild-card entry.
-    //----------------------------------------------------------
-    NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-                          NodeMap(CmpCommon::statementHeap(),
-                                  1,
-                                  NodeMapEntry::ACTIVE);
+    // for a TMUDF with no table inputs, call okToAttemptESPParallelism()
+    // here to determine the DoP. In the other case where we had table
+    // inputs, we did that already in
+    // PhysicalTableMappingUDF::createContextForAChild()
 
-    //------------------------------------------------------------
-    // Synthesize a partitioning function with a single partition.
-    //------------------------------------------------------------
-    const ReqdPhysicalProperty* rppForMe = myContext->getReqdPhysicalProperty();
-    PartitioningRequirement* partReq = rppForMe->getPartitioningRequirement();
+    Lng32 numOfESPs = 0;
+    float allowedDeviation = 0.0;
+    NABoolean numOfESPsForced = FALSE;
 
-      if ( partReq == NULL || partReq->isRequirementExactlyOne())
+    NABoolean useAParallelPlan = okToAttemptESPParallelism(
+         myContext,
+         pws,
+         numOfESPs,
+         allowedDeviation,
+         numOfESPsForced);
+
+    if (useAParallelPlan && numOfESPs > 1)
       {
-      myPartFunc = new(CmpCommon::statementHeap())
-                          SinglePartitionPartitioningFunction(myNodeMap);
+        //----------------------------------------------------------
+        // Create a node map with a single, active, wild-card entry.
+        //----------------------------------------------------------
+        NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+          NodeMap(CmpCommon::statementHeap(),
+                  numOfESPs,
+                  NodeMapEntry::ACTIVE);
+
+        // set node numbers in the entries, if we need to have one
+        // ESP per node
+        if (numOfESPs == gpClusterInfo->numOfSMPs())
+          for (int i=0; i<numOfESPs; i++)
+            myNodeMap->getNodeMapEntry(i)->setNodeNumber(i);
+
+        ValueIdSet partKey;
+        ItemExpr *randNum =
+          new(CmpCommon::statementHeap()) RandomNum(NULL, TRUE);
+        randNum->synthTypeAndValueId();
+        partKey.insert(randNum->getValueId());
+        myPartFunc = new(CmpCommon::statementHeap())
+          Hash2PartitioningFunction (partKey,
+                                     partKey,
+                                     numOfESPs,
+                                     myNodeMap);
+        myPartFunc->createPartitioningKeyPredicates();
       }
-      else 
+    else
       {
-          myPartFunc =  partReq->realize(myContext);
+        //----------------------------------------------------------
+        // Create a node map with a single, active, wild-card entry.
+        //----------------------------------------------------------
+        NodeMap* myNodeMap = new(CmpCommon::statementHeap())
+          NodeMap(CmpCommon::statementHeap(),
+                  1,
+                  NodeMapEntry::ACTIVE);
+
+        myPartFunc = new(CmpCommon::statementHeap())
+          SinglePartitionPartitioningFunction(myNodeMap);
       }
+
   }
   else
   {
-    // for now, simply propagate the physical property 
+    // for now, simply propagate the physical property of the first child
     const PhysicalProperty * const sppOfChild =
       myContext->getPhysicalPropertyOfSolutionForChild(0);
     myPartFunc = sppOfChild->getPartitioningFunction();
   }
   
-    PhysicalProperty * sppForMe =
+  PhysicalProperty * sppForMe =
     new(CmpCommon::statementHeap()) PhysicalProperty(
          myPartFunc,
          EXECUTE_IN_MASTER_AND_ESP,
           SOURCE_VIRTUAL_TABLE);
 
   // remove anything that's not covered by the group attributes
-  sppForMe->enforceCoverageByGroupAttributes (getGroupAttr()) ;
+  sppForMe->enforceCoverageByGroupAttributes (getGroupAttr());
+
   return sppForMe ;
 }
 
@@ -17297,7 +17393,8 @@ NABoolean RelExpr::isBigMemoryOperator(const Context* context, const Lng32)
 
 PhysicalProperty*
 ControlRunningQuery::synthPhysicalProperty(const Context* myContext,
-                                   const Lng32     planNumber)
+                                           const Lng32     planNumber,
+                                           PlanWorkSpace  *pws)
 
 {
 

@@ -2664,7 +2664,7 @@ PlanWorkSpace::getFinalOperatorCost(Lng32 planNumber)
   //-----------------------------------------------
   //  Synthesize physical properties for this plan.
   //-----------------------------------------------
-  PhysicalProperty* sppForMe = op->synthPhysicalProperty(myContext_,planNumber);
+  PhysicalProperty* sppForMe = op->synthPhysicalProperty(myContext_,planNumber,this);
   myPlan->setPhysicalProperty(sppForMe);
   PartitioningFunction* synthPartFunc = sppForMe->getPartitioningFunction();
   Lng32 synthNumOfParts = synthPartFunc->getCountOfPartitions();

@@ -372,9 +372,6 @@ abc
 --- 1 row(s) selected.
 >>
 >>--disabled old func names
->>cqd ALLOW_UDF 'on';
-
---- SQL operation complete.
 >>select unicode_value(_ucs2 x'0390', ucs2) from (values(1))x;
 
 *** ERROR[1389] Object UNICODE_VALUE does not exist in Trafodion.
@@ -399,9 +396,6 @@ abc
 
 *** ERROR[8822] The statement was not prepared.
 
->>cqd ALLOW_UDF 'off';
-
---- SQL operation complete.
 >>
 >>--replace(), zero length pattern
 >>select replace(_ucs2'abc', _ucs2'', _ucs2 x'') from (values(1))x;

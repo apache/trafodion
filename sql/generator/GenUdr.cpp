@@ -1769,15 +1769,19 @@ PhysicalTableMappingUDF::codeGen(Generator *generator)
     // only two children.  This should be fixed at some point,
     // either by generalizing support for EXPLAIN to allow
     // an arbitrary number of children, or generating special
-    // EXPLAIN information for vp join that somehow includes
-    // information about all children.
-    //
+    // EXPLAIN information for a TMUDF that somehow includes
+    // information about all children. Note that so far we only
+    // support one child. We may support two in the near future,
+    // but more than two are very unlikely to ever be supported.
     child(i)->codeGen(generator);
     childTdbs[i] = (ComTdb *)(generator->getGenObj());
     if (i==0)
       firstExplainTuple = generator->getExplainTuple();
     else if (i==1)
       secondExplainTuple = generator->getExplainTuple();
+    else
+      // fix or just remove the assert if we ever get here
+      GenAssert(i < 2, "Explain for TMUDF with > 2 children not supported");
   }
 
   // The udr_codegen() subroutine will set this variable to point to

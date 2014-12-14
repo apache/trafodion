@@ -1048,7 +1048,8 @@ public:
   // (used in the implementation of createPlan)
   // ---------------------------------------------------------------------
   virtual PhysicalProperty* synthPhysicalProperty(const Context* myContext,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   virtual RelExpr * preCodeGen(Generator * generator,
                                const ValueIdSet & externalInputs,
@@ -1191,7 +1192,8 @@ public:
   //! synthPhysicalProperty
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   //! getText method
   //  used to display the name of the node.
@@ -1307,7 +1309,8 @@ public:
   //! synthPyshicalProperty method
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   //! getText method
   //  get a printable string that identifies the operator
@@ -1387,7 +1390,8 @@ public:
   //! synthPhysicalProperty
   // cost functions
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
+                                                  const Lng32     planNumber,
+                                                  PlanWorkSpace  *pws);
 
   //! getText method
   //  used to display the name of the node.
@@ -1710,7 +1714,8 @@ public:
   //! synthPhysicalProperty method 
   //  metod to generate code for the node
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32 planNumber);
+                                                  const Lng32 planNumber,
+                                                  PlanWorkSpace  *pws);
 private:
 
   //! PhysicalSPProxyFunc Copy Constructor
@@ -1855,7 +1860,8 @@ public:
 
   //! synthPhysicalProperty method
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32 planNumber);
+                                                  const Lng32 planNumber,
+                                                  PlanWorkSpace  *pws);
 private:
 
   //! PhysicalExtractSource Copy Constructor 
@@ -2099,7 +2105,8 @@ public:
     //! synthPhysicalProp method
     //  Physical properties implemented in OptPhysRelExpr.cpp
     virtual PhysicalProperty *synthPhysicalProperty(const Context* myContext,
-                                            const Lng32     planNumber);
+                                                    const Lng32     planNumber,
+                                                    PlanWorkSpace  *pws);
 
     //! codeGen method
     //  virtual method in Generator code :generator/GenUdr.cpp
@@ -2273,7 +2280,8 @@ public:
     //! synthPysicalProperty method
     // Logical properties implemented in OptLogRelExpr.cpp
     virtual PhysicalProperty *synthPhysicalProperty(const Context* myContext,
-                                            const Lng32     planNumber);
+                                                    const Lng32     planNumber,
+                                                    PlanWorkSpace  *pws);
 
     //! costMethod method
     //  cost functions

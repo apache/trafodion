@@ -7898,11 +7898,6 @@ user_defined_function_name :
          }
 user_defined_scalar_function : user_defined_function_name '(' udr_value_expression_list ')'
      {
-       // UDFs are disabled by default. This check can
-       // be removed once UDFs are supported in the released product.
-       if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-         YYERROR;
-
         // UDFs - returns a UDFunction (ItemExpr).
         ComObjectName functionName(*$1, PARSERHEAP());
         LIST(ItemExpr *) newList(PARSERHEAP(), 0);
@@ -7984,11 +7979,6 @@ table_mapping_function_invocation :
    }
    | qualified_name '(' tmudf_table_expression optional_tmudf_param_list_with_comma ')' 
    {
-     // UDFs are disabled by default. This check can
-     // be removed once UDFs are supported in the released product.
-     if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-       YYERROR;
-
      //Table mapping UDF returns a TMUDFunction (RelExpr)
      CorrName  *functionName = corrNameFromStrings($1);
      if (functionName == NULL)
@@ -8012,11 +8002,6 @@ table_mapping_function_invocation :
    }
    |  qualified_name '(' optional_tmudf_param_list ')' 
    {
-     // UDFs are disabled by default. This check can
-     // be removed once UDFs are supported in the released product.
-     if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-       YYERROR;
-
      //Table mapping UDF returns a TMUDFunction (RelExpr)
      CorrName  *functionName = corrNameFromStrings($1);
      if (functionName == NULL)
@@ -22904,11 +22889,6 @@ routine_definition : TOK_CREATE TOK_PROCEDURE ddl_qualified_name
     optional_passthrough_inputs_clause
     optional_create_function_attribute_list
     {
-      // UDFs are disabled by default.  This check can
-      // be removed once UDFs are supported in the released product.
-      if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-        YYERROR;
-      
       QualifiedName noActionQualName(PARSERHEAP());
       StmtDDLCreateRoutine *pNode =
         new (PARSERHEAP()) StmtDDLCreateRoutine
@@ -22933,12 +22913,6 @@ routine_definition : TOK_CREATE TOK_PROCEDURE ddl_qualified_name
     optional_create_function_attribute_list
     optional_by_auth_identifier
     {
-      // UDFs are disabled by default . This check can
-      // be removed once UDFs are supported in the released product.
-      if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-        YYERROR;
-      
-     
       QualifiedName noActionQualName(PARSERHEAP());
       StmtDDLCreateRoutine *pNode =
         new (PARSERHEAP()) StmtDDLCreateRoutine
@@ -22961,11 +22935,6 @@ routine_definition : TOK_CREATE TOK_PROCEDURE ddl_qualified_name
     universal_function_param_clause
     optional_create_function_attribute_list
     {
-      // UDFs are disabled by default . This check can
-      // be removed once UDFs are supported in the released product.
-      if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-        YYERROR;
-      
       QualifiedName noActionQualName(PARSERHEAP());
       StmtDDLCreateRoutine *pNode =
         new (PARSERHEAP()) StmtDDLCreateRoutine
@@ -23061,11 +23030,6 @@ alter_function_statement : TOK_ALTER universal_function_tokens ddl_qualified_nam
                            optional_passthrough_inputs_clause
                            optional_create_function_attribute_list
                                 {
-                                  // UDFs are disabled by default. This check can
-                                  // be removed once UDFs are supported in the released product.
-                                  if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-                                    YYERROR;
-
                                   StmtDDLCreateRoutine *pNode99 = new (PARSERHEAP())
                                     StmtDDLCreateRoutine
                                     ( *$3 // ddl_qualified_name of uudf - deep copy
@@ -23088,11 +23052,6 @@ alter_function_statement : TOK_ALTER universal_function_tokens ddl_qualified_nam
                            optional_cleanup    optional_drop_behavior
                            optional_validate   optional_logfile
                                 {
-                                  // UDFs are disabled by default. This check can
-                                  // be removed once UDFs are supported in the released product.
-                                  if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-                                    YYERROR;
-
                                   $$ = SqlParserAux_buildDropAction
                                     ( $3  // in - QualifiedName * ddl_qualified_name of uudf   - deep copy
                                     , $6  // in - QualifiedName * ddl_qualified_name of action - deep copy
@@ -23112,11 +23071,6 @@ alter_function_statement : TOK_ALTER universal_function_tokens ddl_qualified_nam
                            optional_add_passthrough_inputs_clause
                            optional_create_function_attribute_list
                                 {
-                                  // UDFs are disabled by default. This check can
-                                  // be removed once UDFs are supported in the released product.
-                                  if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-                                    YYERROR;
-
                                   $$ = SqlParserAux_buildAlterFunction
                                     ( $3 // in - NAString    * ddl_qualified_name of function - deep copy
                                     , $4 // in - ElemDDLNode * optional_alter_passthrough_inputs_clause
@@ -23132,11 +23086,6 @@ alter_function_statement : TOK_ALTER universal_function_tokens ddl_qualified_nam
                            optional_add_passthrough_inputs_clause
                            optional_create_function_attribute_list
                                 {
-                                  // UDFs are disabled by default. This check can
-                                  // be removed once UDFs are supported in the released product.
-                                  if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-                                    YYERROR;
-
                                   $$ = SqlParserAux_buildAlterAction
                                     ( $3 // in - ddl_qualified_name of UUDF - deep copy
                                     , $6 // in - ddl_qualified_name of routine action - deep copy
@@ -23153,11 +23102,6 @@ alter_function_statement : TOK_ALTER universal_function_tokens ddl_qualified_nam
                            optional_add_passthrough_inputs_clause
                            optional_create_function_attribute_list
                                 {
-                                  // UDFs are disabled by default. This check can
-                                  // be removed once UDFs are supported in the released product.
-                                  if (CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-                                    YYERROR;
-
                                   $$ = SqlParserAux_buildAlterTableMappingFunction
                                     ( $3 // in - QualifiedName * ddl_qualified_name of function - deep copy
                                     , $4 // in - ElemDDLNode   * optional_alter_passthrough_inputs_clause
@@ -31091,11 +31035,6 @@ drop_routine_statement : TOK_DROP drop_routine_type_tokens ddl_qualified_name
                          optional_cleanup  optional_drop_behavior
                          optional_validate optional_logfile
                 {
-                  // disallow drop funciton if ALLOW_UDF is not set to ON
-                  if ( $2 != COM_PROCEDURE_TYPE &&
-                       CmpCommon::getDefault(ALLOW_UDF) != DF_ON)
-                              YYERROR;
-
                   $$ = SqlParserAux_buildDropRoutine
                     ( $2  // in - ComRoutineType drop_routine_type_tokens
                     , $3  // in - QualifiedName * ddl_qualified_name of routine - deep copy

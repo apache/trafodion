@@ -77,7 +77,8 @@ public:
   virtual RelExpr *copyTopNode(RelExpr *derivedNode = NULL, CollHeap *h = NULL);
   virtual NABoolean duplicateMatch(const RelExpr &other) const;
   virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
+                                                  const Lng32    planNumber,
+                                                  PlanWorkSpace  *pws);
   virtual short codeGen(Generator*);	// defined in GenRelDCL.cpp
 
   const NAString &getSqlText() const	{ return sqlText_; }

@@ -454,6 +454,7 @@ const char *TypeInfo::getStringValue(const Bytes data,
 // Member functions for class ColumnInfo
 // ------------------------------------------------------------------------
 
+
 // ------------------------------------------------------------------------
 // Member functions for class ConstraintInfo
 // ------------------------------------------------------------------------
@@ -682,6 +683,11 @@ const ParameterInfo &UDRInvocationInfo::getActualParameterInfo(
       return getActualParameterInfo(i);
 
   throw UDRException(38911, "Actual parameter %s not found", name.data());
+}
+
+void UDRInvocationInfo::addFormalParameter(const ParameterInfo &param)
+{
+  formalParameterInfo_.push_back(new ParameterInfo(param));
 }
 
 void UDRInvocationInfo::addPassThruColumns(int inputTableNum,

@@ -4919,7 +4919,8 @@ RelExpr * ExeUtilLongRunning::bindNode(BindWA *bindWA)
 // OptPhysRelExpr methods for ExeUtil operators
 //////////////////////////////////////////////////////////////////////////////
 PhysicalProperty * ExeUtilLongRunning::synthPhysicalProperty(const Context * context,
-                                                                      const Lng32 planNumber)
+                                                             const Lng32 planNumber,
+                                                             PlanWorkSpace *pws)
 {
    const ReqdPhysicalProperty* rppForMe = context->getReqdPhysicalProperty();
 
