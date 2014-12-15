@@ -792,22 +792,10 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
                     , Int64 createStatsSize
                     )
 {
-  //Since the transaction manager must stay around through multiple
-  //statements, we must make sure that all members are initialized at every
-  //entry-point to Update Statistics code. Otherwise we may receive residual
-  //errors from previous statements. For example:
-  //     >begin work;
-  //     >update statistics <...> TM knows a user transaction was started
-  //      <error occurs>
-  //     >rollback;
-  //     >update statistics <...> TM still thinks a user transaction was
-  //                              started - wrong!
-  HSTranMan *TM = HSTranMan::Instance();
-  TM->Reset();
-
   HSLogMan *LM = HSLogMan::Instance();
   LM->LogTimeDiff("\nEntering FetchHistograms ================================", TRUE);
   LM->StartTimer("FetchHistograms()");
+  HSPrologEpilog pe("FetchHistograms()");
 
   HSGlobalsClass::schemaVersion = COM_VERS_UNKNOWN;
   HSGlobalsClass::autoInterval = 0; 
@@ -1357,8 +1345,8 @@ Lng32 readHistograms(HSTableDef *tabDef
       NAHeap *curStmtHeap = STMTHEAP;
       NABoolean switched = FALSE;
       CmpContext* prevContext = CmpCommon::context();
-      // switch to another context to avoid spawning an arkcmp processing when compiling
-      // the user metadara queries on the histograms tables
+      // switch to another context to avoid spawning an arkcmp process when compiling
+      // the user metadata queries on the histograms tables
       if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
          if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(CmpContextInfo::CMPCONTEXT_TYPE_META))
          {

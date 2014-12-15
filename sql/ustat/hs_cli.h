@@ -303,7 +303,6 @@ class HSTranMan
   {
     public:
          static HSTranMan* Instance();
-         void Reset();                    /* Reset Transaction info          */
          Lng32 Begin(const char *title = ""); /* Begin Transaction            */
          Lng32 Commit();                   /* Commit Transaction              */
          Lng32 Rollback();                 /* Rollback Transaction            */
@@ -332,6 +331,34 @@ class HSTranMan
          Lng32 retcode_;
          static THREAD_P HSTranMan* instance_;     /* 1 and only 1 instance           */
   };
+
+/********************************************************************************/
+/* CLASS:    HSPrologEpilog                                                     */
+/* FUNCTION: An instance of this class with automatic storage class should be   */
+/*           used at the beginning of each function that is an entry point to   */
+/*           ustat processing (UpdateStats, FetchHistograms). The ctor/dtor     */
+/*           work in tandem to do any work or satisfy any invariants required   */
+/*           at the beginning/end of processing. Currently, the only necessity  */
+/*           is to ensure that any transaction initiated by ustat is terminated */
+/*           before returning from the ustat code. This is to catch any case    */
+/*           where an exception disrupts the normal control flow such that the  */
+/*           commit or rollback of a transaction is bypassed. Normally, this is */
+/*           precluded by use of an HSTranController object, but there are still*/
+/*           a few places where this is not used (some of which are not amenable*/
+/*           to its use).                                                       */
+/********************************************************************************/
+class HSPrologEpilog
+{
+  public:
+    HSPrologEpilog(NAString scopeName);
+    virtual ~HSPrologEpilog();
+
+  private:
+    NAString   scopeName_;  // Used in log messages to identify function
+    HSTranMan* tranMan_;
+    HSLogMan*  logMan_;
+    NABoolean  enteredWithTranInProgress_;
+};
 
 /*****************************************************************************/
 /* CLASS:    HSTranController                                                */

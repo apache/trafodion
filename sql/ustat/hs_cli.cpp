@@ -853,6 +853,61 @@ Lng32 HSSample::dropSample(NAString& sampTblName, HSTableDef *sourceTblDef)
   }
 
 
+/******************************************************/
+/* METHOD:  HSPrologEpilog constructor                */
+/* PURPOSE: Record transaction state when instance of */
+/*          HSPrologEpilog is created. This info is   */
+/*          used by the destructor to check for an    */
+/*          unterminated transaction                  */
+/******************************************************/
+HSPrologEpilog::HSPrologEpilog(NAString scopeName)
+  : scopeName_(scopeName),
+    tranMan_(HSTranMan::Instance()),
+    logMan_(HSLogMan::Instance())
+{
+  enteredWithTranInProgress_ = tranMan_->InTransaction();
+}
+
+/******************************************************/
+/* METHOD:  HSPrologEpilog destructor                 */
+/* PURPOSE: Compare current transaction state with    */
+/*          the state when the object was created.    */
+/*          The expectation is that they will be the  */
+/*          same. If a transaction is in progress now */
+/*          but was not when the object was created,  */
+/*          a rollback is performed under the         */
+/*          assumption that its termination was       */
+/*          bypassed due to a thrown exception. An    */
+/*          external transaction that was terminated  */
+/*          during the life of this object causes a   */
+/*          message to be logged.                     */
+/******************************************************/
+HSPrologEpilog::~HSPrologEpilog()
+{
+  NABoolean inTranNow = tranMan_->InTransaction();
+  if (!enteredWithTranInProgress_ && inTranNow)
+    {
+      if (logMan_->LogNeeded())
+        {
+          snprintf(logMan_->msg, sizeof(logMan_->msg),
+                   "Rolling back transaction started but not terminated during %s",
+                   scopeName_.data());
+          logMan_->Log(logMan_->msg);
+        }
+      tranMan_->Rollback();
+    }
+  else if (enteredWithTranInProgress_ && !inTranNow)
+    {
+      if (logMan_->LogNeeded())
+        {
+          snprintf(logMan_->msg, sizeof(logMan_->msg),
+                   "External transaction terminated within dynamic scope of %s",
+                   scopeName_.data());
+          logMan_->Log(logMan_->msg);
+        }
+    }
+}
+
 /*****************************************************************************/
 /* CLASS:   HSTranMan                                                        */
 /* PURPOSE: Transaction manager for all of Update Statistics needs.          */
@@ -878,32 +933,6 @@ HSTranMan* HSTranMan::Instance()
     if (instance_ == 0)
       instance_ = new (GetCliGlobals()->exCollHeap()) HSTranMan;
     return instance_;
-  }
-
-/***********************************************/
-/* METHOD:  Reset()                            */
-/* PURPOSE: This will reset all members in the */
-/*          class. The results are similar to  */
-/*          the constructor.                   */
-/* CAUTION: initializing members may cause     */
-/*          unexpected results. Use extra care!*/
-/*          This method should be used in every*/
-/*          entry-point to Update Statistics   */
-/*          code:                              */
-/*            hs_update.cpp  UpdateStats()     */
-/*            hs_read.cpp    FetchHistograms() */
-/*                           FetchStatsTime()  */
-/*                           GetHSModifyTime() */
-/***********************************************/
-void HSTranMan::Reset()
-  {
-    HSLogMan *LM = HSLogMan::Instance();
-    if (transStarted_ && LM->LogNeeded())
-      LM->Log("WARNING: HSTranMan::Reset() called when transStarted_=TRUE -- Update Stats\n"
-              "         may have returned from a previous call while still in transaction state");
-    transStarted_ = FALSE;
-    extTrans_ = FALSE;
-    retcode_ = 0;
   }
 
 /***********************************************/
@@ -1103,11 +1132,7 @@ Lng32 HSTranMan::Rollback()
 /***********************************************/
 NABoolean HSTranMan::InTransaction()
   {
-    if (transStarted_ || extTrans_   ||
-        (extTrans_ = ((SQL_EXEC_Xact(SQLTRANS_STATUS, 0) == 0) ? TRUE : FALSE)))
-      return TRUE;
-    else
-      return FALSE;
+    return (SQL_EXEC_Xact(SQLTRANS_STATUS, 0) == 0);
   }
 
 /***********************************************/
@@ -1125,7 +1150,8 @@ NABoolean HSTranMan::InTransaction()
 /*          value should be checked upon ctor  */
 /*          return.                            */
 /***********************************************/
-HSTranController::HSTranController(const char* title, Lng32* returnCodePtr)
+HSTranController::HSTranController(const char* title,
+                                   Lng32* returnCodePtr)
   : tranMan_(HSTranMan::Instance()),
     logMan_(HSLogMan::Instance()),
     title_(title),
@@ -3777,9 +3803,7 @@ HSinsertHist::HSinsertHist(const char *histTable)
         moduleSet = TRUE;
       }
 
-    init_SQLCLI_OBJ_ID(&stmt_, SQLCLI_CURRENT_VERSION,
-                       stmt_name, &module, stmtName, 0,
-                       SQLCHARSETSTRING_ISO88591, (Lng32)strlen(stmtName), 0);
+    init_SQLCLI_OBJ_ID(&stmt_, SQLCLI_CURRENT_VERSION, stmt_handle, &module);
     init_SQLCLI_OBJ_ID(&srcDesc_);
     init_SQLCLI_OBJ_ID(&desc_);
 
@@ -3900,9 +3924,7 @@ Lng32 HSinsertHist::initialize()
     HSHandleError(retcode_);
 #endif
 
-    // histogram versioning
-    if (HSGlobalsClass::schemaVersion >= COM_VERS_2300) {
-      retcode_ = SQL_EXEC_SetRowsetDescPointers(&desc_
+    retcode_ = SQL_EXEC_SetRowsetDescPointers(&desc_
                                              ,MAX_ROWSET
                                              ,0
                                              ,1
@@ -4044,79 +4066,6 @@ Lng32 HSinsertHist::initialize()
                                              ,(void*)0
                                              ,(void*)0
                                             );
-    } else {
-      retcode_ = SQL_EXEC_SetRowsetDescPointers(&desc_
-                                             ,MAX_ROWSET
-                                             ,0
-                                             ,1
-                                             ,13
-
-                                             ,0
-                                             ,&(numRows_)
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,0
-                                             ,tableName_
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,sizeof(Int64)
-                                             ,&(tableUid_)
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,sizeof(ULng32)
-                                             ,&(histID_)
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,sizeof(Lng32)
-                                             ,&(colPosition_)
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,sizeof(Lng32)
-                                             ,&(colNumber_)
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,sizeof(Lng32)
-                                             ,&(colcount_)
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,sizeof(signed short)
-                                             ,&(intCount_)
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,sizeof(Int64)
-                                             ,&(rowCount_)
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,sizeof(Int64)
-                                             ,&(totalUEC_)
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,TIMESTAMP_CHAR_LEN+1
-                                             ,&(statsTime_[0])
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,250*sizeof(NAWchar)
-                                             ,&(lowValue_[0])
-                                             ,(void*)0
-                                             ,(void*)0
-
-                                             ,250*sizeof(NAWchar)
-                                             ,&(hiValue_[0])
-                                             ,(void*)0
-                                             ,(void*)0
-                                            );
-    }
     HSHandleError(retcode_);
 
     return retcode_;
@@ -4779,6 +4728,7 @@ Lng32 HSinsertEmptyHist::addColumn(const Lng32 columnNumber)
 /**********************************************************/
 Lng32 HSinsertEmptyHist::insert()
   {
+    HSGlobalsClass::schemaVersion = getTableSchemaVersion(histTable_);
     Lng32 retcode = 0;
     ULng32 histid = 0;
     Lng32 colPos = 0;
@@ -4870,7 +4820,7 @@ Lng32 HSinsertEmptyHist::insert()
     LM->LogTimeDiff("END GET EXISTING HISTOGRAMS BEFORE INSERT EMPTY ONES");
 
     // do not insert empty histograms if they exist
-    if (matchCount == colCount_ || retcode)
+    if (matchCount == colCount_ || retcode < 0)
       {
         if (LM->LogNeeded() && matchCount == colCount_)
           {
@@ -4885,64 +4835,99 @@ Lng32 HSinsertEmptyHist::insert()
 
     LM->LogTimeDiff("START INSERT EMPTY HISTOGRAMS");
 
-    HSinsertHist *histRS;
-    histRS = new(HISTHEAP) HSinsertHist("INSERT104_MX_2300", histTable_);
-    retcode = histRS->initialize();
-    if (maxHistid ==0)
-      {
-        Int64 timeStamp = NA_JulianTimestamp();
-        maxHistid = (ULng32) (timeStamp & 0x7FFFFFFF); //histogram ID = Julian Timestamp masked with 0x7FFFFFFF
-      }
-    else
-      // Since we are in a transaction, simply add a 5 to the max histid found.
-      maxHistid += 5;
+#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
+    HSinsertHist* histRS=new HSinsertHist("INSERT104_MX_2300", histTable_);
+#else // NA_USTAT_USE_STATIC not defined, use dynamic query
+    HSinsertHist* histRS=new HSinsertHist(histTable_);
+#endif // NA_USTAT_USE_STATIC not defined
 
-    Lng32 histId = maxHistid;
-    const char *statsTime = "0001-01-01:00:00:00";
-    HSDataBuffer lval(L"()");
-    HSDataBuffer hval(L"()");
-    //HSDataBuffer v5(L"");
-    //HSDataBuffer v6(L"");
-    for (Lng32 i = 0; i < colCount_; i++)
-      {
-        retcode = histRS->addRow( tableUID_,
-                                  histId,
-                                  i, // col position
-                                  colNumber_[i], // position in table
-                                  colCount_, // number of columns
-                                  0,
-                                  0,
-                                  0,
-                                  statsTime,
-                                  lval,
-                                  hval,
-                                  statsTime,
-                                  0,
-                                  0,
-                                  0,
-                                  0,
-                                  0,
-                                  HS_REASON_EMPTY);
-                                  //0,0,0,0,v5,v6);
-        HSLogError(retcode);
-        if (LM->LogNeeded())
-          {
-            snprintf(LM->msg, sizeof(LM->msg), "\tAdd an empty histogram: HistID(%d),ColPos(%d),ColNum(%d),ColCount(%d),retcode(%d)\n",
-              histId, i, colNumber_[i], colCount_, retcode);
-            LM->Log(LM->msg);
-          }
-      }
-    retcode = histRS->flush();
-    HSLogError(retcode);
-    if (LM->LogNeeded())
-      {
-        snprintf(LM->msg, sizeof(LM->msg), "Flush empty histograms: retcode(%d)\n", retcode);
-        LM->Log(LM->msg);
-      }
+    // The format expected for an input parameter that is a timestamp value
+    // depends on the INTERNAL_FORMAT_IO session default. Sqlci sets this to 1
+    // (meaning use internal format), which affects us if running from sqlci
+    // and using the embedded compiler. We switch to external format if necessary,
+    // to match the constant we provide, and switch back afterwards. It must be
+    // set before calling initialize(), because that includes compiling the
+    // statement, which sets up its input descriptor.
+    SessionDefaults* sessionDefaults = GetCliGlobals()->currContext()->getSessionDefaults();
+    NABoolean usingInternalFormat = sessionDefaults->getInternalFormatIO();
+    if (usingInternalFormat)
+      sessionDefaults->setInternalFormatIO(FALSE);
+
+    try
+    {
+      retcode = histRS->initialize();
+
+      if (maxHistid ==0)
+        {
+          Int64 timeStamp = NA_JulianTimestamp();
+          maxHistid = (ULng32) (timeStamp & 0x7FFFFFFF); //histogram ID = Julian Timestamp masked with 0x7FFFFFFF
+        }
+      else
+        // Since we are in a transaction, simply add a 5 to the max histid found.
+        maxHistid += 5;
+
+      Lng32 histId = maxHistid;
+
+      const char* statsTime = "0001-01-01 00:00:00";  // external format
+      HSDataBuffer lval(L"()");
+      HSDataBuffer hval(L"()");
+      //HSDataBuffer v5(L"");
+      //HSDataBuffer v6(L"");
+      for (Lng32 i = 0; i < colCount_; i++)
+        {
+          retcode = histRS->addRow( tableUID_,
+                                    histId,
+                                    i, // col position
+                                    colNumber_[i], // position in table
+                                    colCount_, // number of columns
+                                    0,
+                                    0,
+                                    0,
+                                    statsTime,
+                                    lval,
+                                    hval,
+                                    statsTime,
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    HS_REASON_EMPTY);
+                                    //0,0,0,0,v5,v6);
+          HSLogError(retcode);
+          if (LM->LogNeeded())
+            {
+              snprintf(LM->msg, sizeof(LM->msg), "\tAdd an empty histogram: HistID(%d),ColPos(%d),ColNum(%d),ColCount(%d),retcode(%d)\n",
+                histId, i, colNumber_[i], colCount_, retcode);
+              LM->Log(LM->msg);
+            }
+        }  // for
+
+      retcode = histRS->flush();
+      HSLogError(retcode);
+      if (LM->LogNeeded())
+        {
+          snprintf(LM->msg, sizeof(LM->msg), "Flush empty histograms: retcode(%d)\n", retcode);
+          LM->Log(LM->msg);
+        }
+
+      // Switch back to internal timestamp format if we changed it above.
+      if (usingInternalFormat)
+        sessionDefaults->setInternalFormatIO(TRUE);
+      delete histRS;
+      histRS = NULL;
+    }
+    catch(...)
+    {
+      // Make sure session value is reset and histRS is deleted in case of an exception.
+      if (usingInternalFormat)
+        sessionDefaults->setInternalFormatIO(TRUE);
+      delete histRS;
+      throw;
+    }
 
     LM->LogTimeDiff("END INSERT EMPTY HISTOGRAMS");
 
-    NADELETE (histRS, HSinsertHist, HISTHEAP);
     if (jit == DF_ON) // Turn JIT logging back on if it was ON when function was entered.
       HSFuncExecQuery("CONTROL QUERY DEFAULT USTAT_JIT_LOGGING 'ON'"); // do not check for error
     return retcode;

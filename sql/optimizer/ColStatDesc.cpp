@@ -46,6 +46,7 @@
 #include "hs_cli.h"       // ustat automation, insert empty histograms
 #include "hs_log.h"       // ustat log
 #include "SqlParserGlobals.h"
+#include "CmpDescribe.h"
 
 #ifdef DEBUG
 #define HISTWARNING(x) fprintf(stdout, "Histogram optimizer warning: %s\n", x);
@@ -11478,19 +11479,18 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
          tableUID = mostRefdNATable->getSynonymReferenceObjectUid().get_value();
          // Get catalog and schema name.  Find end of schema name.
          QualifiedName qualName(tableName, 3);
-         histogramTableName = qualName.getSchemaNameAsAnsiString();
-         histogramTableName += ".HISTOGRAMS";
+         histogramTableName = qualName.getSchemaNameAsAnsiString() + "." + HBASE_HIST_NAME;
        }
        else {
          tableName = mostRefdNATable->getExtendedQualName().getText();
          tableUID = mostRefdNATable->objectUid().get_value();
          histogramTableName = mostRefdNATable->getTableName().getCatalogName() + "."
                             + mostRefdNATable->getTableName().getSchemaName()
-                            + ".HISTOGRAMS";
+                            + "." + HBASE_HIST_NAME;
        }
-       HSinsertEmptyHist *hist;
+
        Lng32 retcode = -1;
-       hist = new(HISTHEAP) HSinsertEmptyHist(tableUID, tableName.data(), histogramTableName.data()); 
+       HSinsertEmptyHist hist(tableUID, tableName.data(), histogramTableName.data());
        Lng32 colCount = 0;
        // get col numbers
        for ( col = predCols.init(); 
@@ -11501,14 +11501,36 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
             if (baseCol)
               {
                  Lng32 colNumber = baseCol->getColNumber();
-                 retcode = hist->addColumn(colNumber);
+                 retcode = hist.addColumn(colNumber);
                  if (retcode == 0) 
                    colCount++;
               }
          }
        if ( retcode == 0 && predCols.entries() == (CollIndex)colCount ) // got every col number?
-         retcode = hist->insert();
-    
+         {
+         NABoolean switched = FALSE;
+         CmpContext* prevContext = CmpCommon::context();
+         // switch to another context to avoid spawning an arkcmp process when compiling
+         // the user metadata queries on the histograms tables
+         if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
+            if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(CmpContextInfo::CMPCONTEXT_TYPE_USTATS))  //CMPCONTEXT_TYPE_META))
+            {
+               //failed to switch/create metadata CmpContext,  continue using current compiler context
+            }
+            else
+            {
+               switched = TRUE;
+               // send controls to the context we are switching to
+               sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION, TRUE, prevContext);
+            }
+
+         retcode = hist.insert();
+
+         // switch back to previous compiler context if we switched above
+         if (switched == TRUE)
+           SQL_EXEC_SWITCH_BACK_COMPILER();
+         }
+
        if (predCols.entries() == 1) 
        {
          if (quickStats)

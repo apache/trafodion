@@ -3046,7 +3046,8 @@ Lng32 HSGlobalsClass::Initialize()
         // in spite of successful execution.
         if (retry > 0 && retcode >= 0)
           diagsArea.rewind(diagMark, TRUE);
-
+        if (retcode == HS_EOF)
+          retcode = 0;
         HSHandleError(retcode);
       }
 
@@ -13934,9 +13935,9 @@ NABoolean histIsObsolete(float obsoletePercent,
 /****************************************************************/
 /* METHOD:  AddNecessaryColumns()                               */
 /* PURPOSE: Determine histograms in need of update by finding   */
-/*          those that have been recently read and are obsolete */
-/*          with regard to stored row counts, or have been      */
-/*          requested by the optimizer but were not available.  */
+/*          those that have been requested by the optimizer but */
+/*          were not available, or had abbreviated stats added  */
+/*          on the fly by the optimizer.                        */
 /* RETCODE:  0 - successful                                     */
 /*          -1 - failure                                        */
 /* PARAMS:  none                                                */
@@ -13947,9 +13948,7 @@ Lng32 AddNecessaryColumns()
     HSGlobalsClass *hs_globals = GetHSContext();
 
     if (LM->LogNeeded())
-      {
-        LM->Log("Determining NECESSARY columns");
-      }
+      LM->Log("Determining NECESSARY columns");
 
     Lng32 retcode;
     HSColGroupStruct *group = NULL, *sgroup = NULL, *sgroup2 = NULL, *prevGroup = NULL;
@@ -13957,24 +13956,12 @@ Lng32 AddNecessaryColumns()
     NAString columnName;
     char tempStr[30];
     Int64 objID = hs_globals->objDef->getObjectUID(); // TABLE_UID
-    double samplePercent;               // Sample percent for a previously generated hist.
-    double minUsedSamplePct = 0;        // Min SAMPLE_PERCENT of obsolete columns
-    double maxRecommendedSamplePct = 0; // Max adequate sample percent of obsolete
-                                        //    columns, based on coefficient of
-                                        //    variation stored for the histogram
-    float defSampleRatio = (float) CmpCommon::getDefaultNumeric(HIST_DEFAULT_SAMPLE_RATIO);
-    Int64 defNecSampleMax = (Int64) CmpCommon::getDefaultLong(USTAT_NECESSARY_SAMPLE_MAX);
-                                        // Default maximum sample size for NECESSARY.
-    float defCVSampleSlope = (float) CmpCommon::getDefaultNumeric(USTAT_AUTO_CV_SAMPLE_SLOPE);
-    Lng32 maxMCWidthForAutomation = (Lng32) CmpCommon::getDefaultLong(USTAT_AUTO_MC_MAX_WIDTH);
+    Lng32 maxMCWidthForAutomation = CmpCommon::getDefaultLong(USTAT_AUTO_MC_MAX_WIDTH);
     // Columns read from Histograms table.
     ULng32 histid;
     Lng32 colPos;
     Lng32 colNum;
     Lng32 colCount;
-    Int64 rowCount;
-    short samplePercentX100;  // Stored value is sample % * 100.
-    double cv;
     char reason;
 
     // Keep track of info on single-column groups for processing multi-column
@@ -13991,16 +13978,6 @@ Lng32 AddNecessaryColumns()
     SingleColStatus *singleCols 
           = new (STMTHEAP) SingleColStatus[hs_globals->objDef->getNumCols()+1];  // +1 bec. 0 not used
 
-    // Get the total number of inserts, deletes, and updates since the last
-    // time statistics were generated. This will be used in determining
-    // whether the current histograms are obsolete.
-    Int64 inserts, deletes, updates;
-    if (hs_globals->rowChangeCount == -1)
-      {
-        hs_globals->objDef->getRowChangeCounts(inserts, deletes, updates);
-        hs_globals->rowChangeCount = inserts + deletes + updates;
-      }
-
     // Max read age must be at least twice as long as the automation interval.
     Lng32 maxReadMinutes = CmpCommon::getDefaultLong(USTAT_MAX_READ_AGE_IN_MIN);
     if (maxReadMinutes < 2 * HSGlobalsClass::autoInterval)
@@ -14012,22 +13989,8 @@ Lng32 AddNecessaryColumns()
     Int64 oldestSecs = curSecs - (Int64) (maxReadMinutes*60); // Subtract max read time.
     hs_formatTimestamp(oldestSecs, maxGMTTimeStr);     // Convert to GMT and timestamp string.
 
-    float obsoletePercent = CmpCommon::getDefaultLong(USTAT_OBSOLETE_PERCENT_ROWCOUNT) / 100.0f;
     if (LM->LogNeeded())
       {
-        char intStr[30];
-        convertInt64ToAscii(hs_globals->actualRowCount, intStr);
-        sprintf(LM->msg, "\tTotal rows in table = %s", intStr);
-        LM->Log(LM->msg);
-        convertInt64ToAscii(hs_globals->rowChangeCount, intStr);
-        sprintf(LM->msg, "\tRows changed (ins/upd/del) since last stats generated = %s", intStr);
-        LM->Log(LM->msg);
-        sprintf(LM->msg, "\tRows changed = %.2f (fraction), required = %.2f (fraction) (%s).", 
-                         (float) hs_globals->rowChangeCount/(float) hs_globals->actualRowCount, 
-                         obsoletePercent,
-                         (float) hs_globals->rowChangeCount/(float) hs_globals->actualRowCount >=
-                           obsoletePercent ? "OBSOLETE" : "NOT OBSOLETE");
-        LM->Log(LM->msg);
         sprintf(LM->msg, "\tLooking for histograms read in the last %d minutes.", 
                          maxReadMinutes);
         LM->Log(LM->msg);
@@ -14047,17 +14010,42 @@ Lng32 AddNecessaryColumns()
     HSTranController TC("GET GROUP LIST FOR NECESSARY", &retcode);
     HSErrorCatcher errorCatcher(retcode, -UERR_INTERNAL_ERROR, "AddNecessaryColumns", TRUE);
     
-
+#ifdef NA_USTAT_USE_STATIC  // use static query defined in module file
+    // Note that the output list of the query used in the SQ module file no
+    // longer matches the items selected by the new dynamic version of the query.
     HSCliStatement necStmt(HSCliStatement::CURSOR105_MX_2300,
                            (char *)hs_globals->hstogram_table->data(),
                            (char *)&objID,
                            (char *)&maxGMTTimeStr);
+#else // NA_USTAT_USE_STATIC not defined, use dynamic query
+    char sbuf[25];
+    NAString qry = "SELECT HISTOGRAM_ID, COL_POSITION, COLUMN_NUMBER, COLCOUNT, REASON "
+                   "FROM ";
+    qry.append(hs_globals->hstogram_table->data());
+    qry.append(    " WHERE TABLE_UID=");
+    snprintf(sbuf, sizeof(sbuf), PF64, objID);
+    qry.append(sbuf);
+    qry.append(      " AND (REASON='S'");
+    qry.append(       " OR  REASON=' ')");
+    qry.append(    " ORDER BY COLCOUNT, HISTOGRAM_ID, COL_POSITION");
+    qry.append(    " FOR READ UNCOMMITTED ACCESS");
 
+    HSCursor necStmt;
+    retcode = necStmt.prepareQuery(qry.data(), 0, 5);
+    HSLogError(retcode);
+    if (retcode < 0)
+      {
+        if (LM->LogNeeded())
+          LM->Log("Failed to prepare query to fetch missing stats data from histograms table");
+        errorCatcher.setString1(" in call to prepareQuery()");
+        return retcode;
+      }
+#endif
     retcode = necStmt.open();
     if (retcode < 0)
       {
         if (LM->LogNeeded())
-          LM->Log("Failed to open HSCliStatement for CURSOR105_MX_2300");
+          LM->Log("Failed to open cursor for query to fetch missing stats data from histograms table");
         errorCatcher.setString1(" in call to open()");
         return retcode;
       }
@@ -14070,16 +14058,14 @@ Lng32 AddNecessaryColumns()
     // their info before we can process the multicolumn groups.
     while (retcode == 0 && colCount == 1)
       {
-        retcode = necStmt.fetch(8,
+        retcode = necStmt.fetch(5,
                                (void *)&histid, (void *)&colPos,
                                (void *)&colNum, (void *)&colCount,
-                               (void *)&rowCount, (void *)&samplePercentX100,
-                               (void *)&cv, (void *)&reason
+                               (void *)&reason
                               );
 
         if (retcode || colCount > 1)  // end of data, error, or end of single-col groups
           break;
-        samplePercent = ((float) samplePercentX100) / 100; // Stored value is % * 100.
 
         if (LM->LogNeeded())
           {
@@ -14099,46 +14085,7 @@ Lng32 AddNecessaryColumns()
             continue;
           }
 
-        // If there is an existing histogram which is not obsolete, ignore the
-        // current column.
         singleCols[colNum].recentlyRead = TRUE;  // query selects only these
-        singleCols[colNum].obsolete = histIsObsolete(obsoletePercent, rowCount, 
-                                                     hs_globals->rowChangeCount);
-        if (reason != HS_REASON_EMPTY && reason != HS_REASON_SMALL_SAMPLE && 
-            !singleCols[colNum].obsolete)
-          {
-            if (LM->LogNeeded())
-              LM->Log("\t\t(ignored; existing histogram not obsolete, empty, or small stats)");
-            continue;  // don't keep this group
-          }
-        else if (singleCols[colNum].obsolete)
-          {
-            // Keep track of the minimum sample percentage used previously for
-            // manually generated histograms, and the maximum percentage we would like
-            // based on CV. These are used in determining the sampling percentage
-            // to use for the current Update Stats statement.
-
-            // Save the smallest sample % for all previous histograms MANUALLY generated.
-            if (reason == HS_REASON_MANUAL)
-              {                            
-                if (minUsedSamplePct == 0)
-                  minUsedSamplePct = samplePercent;
-                else if (samplePercent > 0)  // 0 means sampling not used
-                  minUsedSamplePct = MINOF(minUsedSamplePct, samplePercent);
-              }
-            // Save the maximum recommended sampling rate based on CV (skew).
-            // For each histogram, cap at USTAT_NECESSARY_SAMPLE_MAX,
-            double recommendedPct = 
-                    MINOF(defSampleRatio*100 + defCVSampleSlope*cv,
-                          MINOF((float)defNecSampleMax/(float)hs_globals->actualRowCount*100, 10));
-            // Must sample # of rows at least twice the number of partitions.
-            recommendedPct = 
-                    MAXOF(recommendedPct, hs_globals->numPartitions*2/
-                                          (float)hs_globals->actualRowCount*100);
-            // Update the max recommended sample pct.
-            maxRecommendedSamplePct = 
-              MAXOF(maxRecommendedSamplePct, recommendedPct);
-          }
 
         // Set up a group containing this column, add it to the HSGlobalsClass
         // single-col list, and allocate a new group for the next one.
@@ -14151,45 +14098,31 @@ Lng32 AddNecessaryColumns()
         group->colSet.insert(col);
         group->oldHistid = histid;
         group->colCount = colCount;
-        group->newReason = ((reason == HS_REASON_EMPTY || 
-                             reason == HS_REASON_SMALL_SAMPLE) 
-                                        ? HS_REASON_AUTO_INIT 
-                                        : HS_REASON_AUTO_REGEN);
+        HS_ASSERT(reason == HS_REASON_EMPTY ||
+                  reason == HS_REASON_SMALL_SAMPLE);
+        group->newReason = HS_REASON_AUTO_INIT;
         *group->colNames += ToAnsiIdentifier(columnName);
         hs_globals->addGroup(group);
         prevGroup = group;
 
-        // If reason for this single column histogram is not empty, then
+        // If reason for this single column histogram is not empty or small-stats,
         // all of the histograms being generated are NOT for missing statistics.
         // (If all single column histograms ARE for missing statistics, then
-        //  all histograms are.)  This flag is used to determine whether table
+        // all histograms are.)  This flag is used to determine whether table
         // rowcounts should be reset.
-        if (reason != HS_REASON_EMPTY) hs_globals->allMissingStats = FALSE;
+        // (Note: the condition will never be true with the current code; it was
+        //  left in place so it isn't forgotten if we add an obsolescence
+        //  criterion for automation).
+        if (reason != HS_REASON_EMPTY && reason != HS_REASON_SMALL_SAMPLE)
+          hs_globals->allMissingStats = FALSE;
       }
 
-    if (LM->LogNeeded())
-      {
-        if (hs_globals->optFlags & SAMPLE_REQUESTED)
-          LM->Log("Using sampling specified by user.");
-        else
-          {
-            sprintf(LM->msg,
-                    "\tMinimum sample percentage used for selected obsolete "
-                    "histograms that were manually generated is %f",
-                    minUsedSamplePct);
-            LM->Log(LM->msg);
-            sprintf(LM->msg,
-                    "\tMaximum recommended sample percentage for selected "
-                    "obsolete histograms is %f",
-                    maxRecommendedSamplePct);
-            LM->Log(LM->msg);
-          }
-      }
+    if (LM->LogNeeded() && (hs_globals->optFlags & SAMPLE_REQUESTED))
+      LM->Log("Using sampling specified by user.");
 
     // Next read the multicolumn groups. Upon entry, the first column
     // of the first MC group has been read (unless retcode != 0).
-    NABoolean skipToNextHist = FALSE;
-    NABoolean mcEmpty=FALSE, mcObsolete=FALSE, mcSizeTooBig=FALSE;
+    NABoolean skipToNextHist;
     NABoolean rowReadByPreviousLoop = TRUE;
     while (retcode == 0)
       {
@@ -14197,74 +14130,54 @@ Lng32 AddNecessaryColumns()
         // the one read by the loop above. Query returns rows ordered by
         // colcount/histid/colpos, so MC columns are read in correct order.
         if (rowReadByPreviousLoop)
-          rowReadByPreviousLoop = FALSE;  // need to read a new one next time
+          {
+            HS_ASSERT(colPos == 0);
+            rowReadByPreviousLoop = FALSE;  // need to read a new one next time
+          }
         else
           {
-            retcode = necStmt.fetch(8,
+            retcode = necStmt.fetch(5,
                                   (void *)&histid, (void *)&colPos,
                                   (void *)&colNum, (void *)&colCount,
-                                  (void *)&rowCount, (void *)&samplePercentX100,
-                                  (void *)&cv, (void *)&reason
+                                  (void *)&reason
                                   );
             if (retcode)  // end of data or error
               break;
           }
 
-        // If a column has disqualified a group from being necessary, ignore
-        // the rest of the columns in the group. Since the results are ordered
-        // by column position within hist id, we know we're starting a new group
-        // when colPos is 0.
-        if (skipToNextHist)
+        // Since the results are ordered by column position within histogram
+        // id, we know we're starting a new group when colPos is 0.
+        // All rows representing the MC will have the same reason and colcount
+        // values, so we can tell whether the MC should be included in the
+        // necessary histograms by looking at the first row. If it is to be
+        // included, create the group and set the values for it that are not
+        // column-specific. Below, the component columns of the MC are added
+        // to the group, one per iteration of this loop.
+        if (colPos == 0)
           {
-            if (colPos == 0)
-              skipToNextHist = FALSE;  // Found first col of next histogram
-            else
-              continue;                // Skip this column, part of one we don't want
-          }
-
-        // Determine if MC group should be generated.
-        // 1. If REASON field is empty for all columns, generate.
-        //    Note that if one column has reason empty in an MC group, they all will.
-        //    MC stats don't have a reason of HS_REASON_SMALL_SAMPLE.
-        if (reason == HS_REASON_EMPTY)   mcEmpty = TRUE;
-        // 2. If any single col of MC group is obsolete, generate if 
-        //    all columns also recently read (recently read checked below).
-        if (singleCols[colNum].obsolete) mcObsolete = TRUE;
-        // 3. If size of MC histogram is not larger than that allowed for automation.
-        if (colCount > maxMCWidthForAutomation) mcSizeTooBig = TRUE;
-
-        // Do not add this MC group (skip) if conditions 1-3 do not apply.
-        if (!(mcEmpty ||                                                    // Cond 1.
-              (singleCols[colNum].recentlyRead && colPos != colCount-1) ||  // Cond 2.
-              (singleCols[colNum].recentlyRead && colPos == colCount-1 && mcObsolete))
-            || mcSizeTooBig                                                 // Cond 3.
-           )
-          {
-            skipToNextHist = TRUE;
-            if (colPos != 0) 
+            // Skip if not an empty histogram or if # cols in the histogram is
+            // larger than that allowed for automation. An MC histogram will
+            // never have a reason of HS_REASON_SMALL_SAMPLE.
+            skipToNextHist = (reason != HS_REASON_EMPTY || colCount > maxMCWidthForAutomation);
+            if (!skipToNextHist)
               {
-                delete group; // discard partially built group
-                while (sgroup) // Delete any single column groups.
-                  {
-                    sgroup2 = sgroup->prev;
-                    delete sgroup;
-                    sgroup = sgroup2;
-                  }
+                group = new(STMTHEAP) HSColGroupStruct;
+                group->oldHistid = histid;
+                group->colCount = colCount;
+                HS_ASSERT(reason == HS_REASON_EMPTY);
+                group->newReason = HS_REASON_AUTO_INIT;
               }
-            mcEmpty = mcObsolete = mcSizeTooBig = FALSE;
-            continue;
           }
+
+        // For any colPos, avoid rest of loop if this MC is not necessary.
+        // This ignores all rows for the columns that make up the MC.
+        // skipToNextHist will be assigned a new value on the next iteration
+        // in which colPos==0, which marks the beginning of the set of rows
+        // for the next MC.
+        if (skipToNextHist)
+          continue;
 
         // Add this column to the group.
-        if (colPos == 0) 
-          {
-            group = new(STMTHEAP) HSColGroupStruct;
-            group->oldHistid = histid;
-            group->colCount = colCount;
-            group->newReason = (reason == HS_REASON_EMPTY 
-                                        ? HS_REASON_AUTO_INIT 
-                                        : HS_REASON_AUTO_REGEN);
-          }
         col = hs_globals->objDef->getColInfo(colNum); // colNum is position in table
         col.colnum = colNum;
         col.position = colPos;
@@ -14276,13 +14189,16 @@ Lng32 AddNecessaryColumns()
 
         // Make sure that a single column group exists for this column.  If not,
         // create it.  This can occur if an MC histogram is empty, but the corresponding
-        // single column histograms are not.  Note that MC stats don't have a reason of
+        // single column histograms are not. Note that MC stats don't have a reason of
         // HS_REASON_SMALL_SAMPLE.
         if (hs_globals->findGroup(colNum) == NULL)
           {
             sgroup2 = new(STMTHEAP) HSColGroupStruct;
-            if (sgroup) sgroup2->prev = sgroup; // Link single col groups so they
-                                                // can be added later.
+            if (sgroup)
+              // Link single col groups so they can be added later. Note that
+              // this is a partially-constructed link; we can only traverse
+              // from the end of the list to the front.
+              sgroup2->prev = sgroup;
             sgroup = sgroup2;
             col = hs_globals->objDef->getColInfo(colNum); // colNum = position in table
             col.colnum = colNum;
@@ -14290,9 +14206,8 @@ Lng32 AddNecessaryColumns()
             sgroup->colSet.insert(col);
             sgroup->oldHistid = 0;
             sgroup->colCount = 1;
-            sgroup->newReason = (reason == HS_REASON_EMPTY 
-                                        ? HS_REASON_AUTO_INIT 
-                                        : HS_REASON_AUTO_REGEN);
+            HS_ASSERT(reason == HS_REASON_EMPTY);
+            group->newReason = HS_REASON_AUTO_INIT;
             *sgroup->colNames += ToAnsiIdentifier(columnName);
           }
 
@@ -14300,26 +14215,27 @@ Lng32 AddNecessaryColumns()
         // to the multicolumn list of HSGlobalsClass and allocate a new group. 
         if (colPos == colCount - 1)
           {
-            // Check to see if this is a duplicate group. 
-            if (!(prevGroup = hs_globals->findGroup(group)))
-            {
-              hs_globals->addGroup(group);
-              while (sgroup) // Add the list of single col groups if necessary.
-                {
-                  sgroup2 = sgroup->prev;
-                  sgroup->prev = 0; // Zero out 'prev' before adding group.
-                  hs_globals->addGroup(sgroup);
-                  sgroup = sgroup2;
-                }
-            }
-            else {
-              // Duplicate, save histid to remove it later.  Delete MC group.
-              // No need to delete sgroup, none will be created for an MC duplicate.
-              sprintf(tempStr, " %u,", histid);
-              prevGroup->oldHistidList += tempStr;
-              delete group;
-            }
-            mcEmpty = mcObsolete = mcSizeTooBig = FALSE;
+            // Check to see if this is a duplicate group.
+            prevGroup = hs_globals->findGroup(group);
+            if (!prevGroup)
+              {
+                hs_globals->addGroup(group);
+                while (sgroup) // Add the list of single col groups if necessary.
+                  {
+                    sgroup2 = sgroup->prev;
+                    sgroup->prev = 0; // Zero out 'prev' before adding group.
+                    hs_globals->addGroup(sgroup);
+                    sgroup = sgroup2;
+                  }
+              }
+            else
+              {
+                // Duplicate, save histid to remove it later.  Delete MC group.
+                // No need to delete sgroup, none will be created for an MC duplicate.
+                sprintf(tempStr, " %u,", histid);
+                prevGroup->oldHistidList += tempStr;
+                delete group;
+              }
           }
       }
 
@@ -14351,37 +14267,15 @@ Lng32 AddNecessaryColumns()
 
     HSHandleError(retcode);
 
-    // Skip determination of the sampling percentage if it was specified by
-    // the user.
+    // Use default sampling unless it was specified by the user.
     if (!(hs_globals->optFlags & SAMPLE_REQUESTED))
       {
-        // We will use as the sampling percentage the max we judge is needed for
-        // any column, unless the smallest of those previously manually generated 
-        // exceeds it. If there were no obsolete columns (only columns with no 
-        // existing histogram), use the default sampling parameters.
-        //
-        double samplePctToUse = MAXOF(minUsedSamplePct, maxRecommendedSamplePct);
-        if (samplePctToUse > 0)
+        hs_globals->optFlags |= SAMPLE_BASIC_0;  // use default
+        if (LM->LogNeeded())
           {
-            hs_globals->optFlags |= SAMPLE_RAND_1;
-            hs_globals->sampleValue1 = (Int64)(samplePctToUse * 10000);
-            if (LM->LogNeeded())
-              {
-                // Preserve the text used in this log message; it is searched for
-                // by certain ustat regression tests.
-                sprintf(LM->msg, "Sampling for NECESSARY: %f", samplePctToUse); 
-                LM->Log(LM->msg);
-              }
-          }
-        else
-          {
-            hs_globals->optFlags |= SAMPLE_BASIC_0;  // use default
-            if (LM->LogNeeded())
-              {
-                // Preserve the text used in this log message; it is searched for
-                // by certain ustat regression tests.
-                LM->Log("Sampling for NECESSARY: default used");
-              }
+            // Preserve the text used in this log message; it is searched for
+            // by certain ustat regression tests.
+            LM->Log("Sampling for NECESSARY: default used");
           }
       }
 
