@@ -56,7 +56,7 @@
 #include  "ExpLOB.h"
 
 #include "ex_transaction.h"
-
+#include "ComSqlId.h"
 #include "ExCextdecs.h"
 
 #include "ExSMTrace.h"
@@ -400,6 +400,11 @@ ex_root_tcb::ex_root_tcb(
       pkeyAtp_(NULL),
       lastQueueSize_(0),  // used by rowsets
       triggerStatusVector_(NULL),
+     queryStartedStream_(NULL),
+     queryFinishedStream_(NULL),
+     cbServer_(NULL),
+     havePrivateCbServer_(false),
+     cbCommStatus_(0),
       mayPinAudit_(false),
       mayLock_(false)
 {
@@ -546,6 +551,27 @@ void ex_root_tcb::freeResources()
     // we will log and clear the counter now.  As a result, we will not 
     // attempt to correlate retried errors with any particular Statement.
     glob->getIpcEnvironment()->logRetriedMessages();
+  }
+
+  if (cbServer_ && havePrivateCbServer_)
+  {
+    cbServer_->release();
+    cbServer_ = NULL;
+    havePrivateCbServer_ = false;
+  }
+
+  if (queryStartedStream_)
+  {
+    queryStartedStream_->removeRootTcb();
+    queryStartedStream_->addToCompletedList();
+    queryStartedStream_ = NULL;
+  }
+
+  if (queryFinishedStream_)
+  {
+    queryFinishedStream_->removeRootTcb();
+    queryFinishedStream_->addToCompletedList();
+    queryFinishedStream_ = NULL;
   }
 
 };
@@ -1010,7 +1036,7 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
     castToExMasterStmtGlobals()->getRtFragTable()->setActiveState();
 
   // Let cancel broker know about this query,
-  registerQuery(diagsArea);
+  registerCB(diagsArea);
 
   cpuLimitExceeded_ = FALSE;
 
@@ -2052,7 +2078,7 @@ Int32 ex_root_tcb::oltExecute(ExExeStmtGlobals * glob,
 
   qchild.down->insert();
 
-  registerQuery(diagsArea);
+  registerCB(diagsArea);
 
   cpuLimitExceeded_ = FALSE;
 
@@ -2253,7 +2279,6 @@ static IpcTimeout CancelTimeout = -1;
 Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
 			NABoolean getQueueDiags)
 {
-
   if (fatalError_)
     {
       // After fatal error, just ignore cancel, because
@@ -2271,10 +2296,19 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
       glob->castToExMasterStmtGlobals()->getRtFragTable()->
 	continueWithTransaction();
       
+      // IPC errors (e.g., SQLCODE 2034, error 201 or 14)
+      // accumulate on the statement globals. Get rid of
+      // them or any other new errors created during cancel.
+      ComDiagsArea *globDiagsAreaAtEntry = glob->getDiagsArea();
+      Lng32 oldDiagsAreaMark = -1;
+      if (globDiagsAreaAtEntry && !getQueueDiags)
+        oldDiagsAreaMark = globDiagsAreaAtEntry->mark();
+
       // while there is anything in the up or down queue
       // between the root node and its child, work to
       // remove whatever is in it.
-      while (!qchild.up->isEmpty() || !qchild.down->isEmpty())
+      while ((!qchild.up->isEmpty() || !qchild.down->isEmpty())
+             && (schedRetcode != WORK_BAD_ERROR))
         {
 	  // remove all up entries that have accumulated
 	  // in the up queue from the child.
@@ -2341,20 +2375,32 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
               context->diags().clear();
 
               schedRetcode = glob->getScheduler()->work();
- 
+
               savedContextDiags->mergeAfter(context->diags());
               context->diags().clear();
               context->diags().mergeAfter(*savedContextDiags);
               savedContextDiags->decrRefCount();
             }
-
-	  if (schedRetcode == WORK_BAD_ERROR)
-            {
-              // deregister to avoid a leak in broker process MXSSMP.
-              deregisterQuery();
-	      return fatal_error(glob, diagsArea, TRUE);
-            }
         }
+      if (!getQueueDiags)
+      {
+        if (globDiagsAreaAtEntry)
+          globDiagsAreaAtEntry->rewind(oldDiagsAreaMark);
+        else if (glob->getDiagsArea())
+        {
+          // newly created diagnostic area in the statement globals.
+          // Clear it, since the caller doesn't want new diags.
+          glob->getDiagsArea()->clear();
+        }
+      }
+
+      if (schedRetcode == WORK_BAD_ERROR)
+        {
+          // deregister to avoid a leak in broker process MXSSMP.
+          deregisterCB();
+          return fatal_error(glob, diagsArea, TRUE);
+        }
+
       if (!fatalError_)
         {
           glob->testAllQueues();
@@ -2367,7 +2413,7 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
   // ex_root_tcb by the cancel thread.
   glob->castToExMasterStmtGlobals()->clearCancelState();
 
-  deregisterQuery();
+  deregisterCB();
 
   return 0;
 }
@@ -2639,14 +2685,527 @@ Int32 ex_root_tcb::checkTransBeforeExecute(ExTransaction *myTrans,
   return 0;
 }
 
-void ex_root_tcb::registerQuery(ComDiagsArea *&diagsArea, bool isReRegister)
+void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
 {
+  ExMasterStmtGlobals *glob =
+    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals();
+
+  CliGlobals *cliGlobals = glob->getCliGlobals();
+  ContextCli *context = cliGlobals->currContext();
+
+  // Let MXSSMP know this query is ready to be suspended, since any ESPs will
+  // now have their root oper stats in place and we are guaranteed to go into
+  // ExScheduler::work.
+  ExMasterStats *mStats = NULL;
+  StmtStats *sStats = glob->getStatement()->getStmtStats();
+  if(sStats)
+    mStats = sStats ->getMasterStats();
+  if (mStats)
+    mStats->setReadyToSuspend();
+
+  Lng32 qidLen = glob->getStatement()->getUniqueStmtIdLen();
+  char *qid = glob->getStatement()->getUniqueStmtId();
+  
+  // No query id -- no cancel or suspend.
+  if (qidLen == 0)
+    return;
+
+  // No query id -- no cancel or suspend.
+  if (NULL == getStatsEntry())
+    return;
+
+  // For executionCount, will need either an ExFragRootOperStats 
+  // or else an ExMeasStats, otherwise no cancel or suspend.
+  Int32 executionCount;
+  ExFragRootOperStats *rootOperStats = 
+                      getStatsEntry()->castToExFragRootOperStats();
+  ExMeasStats *measStats =
+                      getStatsEntry()->castToExMeasStats();
+  if (rootOperStats)
+    executionCount = rootOperStats->getExecutionCount();
+  else if (measStats)
+    executionCount = measStats->getExecutionCount();
+  else
+    return;
+    
+  // See if query allows cancel or suspend.
+  if (root_tdb().mayNotCancel())
+    return;
+
+  SessionDefaults *sessionDefaults = context->getSessionDefaults();
+  if (sessionDefaults)
+  {
+    // Note that it will be required that if a session does not
+    // allow queries to be canceled, then it also will not be 
+    // possible to suspend the queries.
+    // See if session allows cancel.
+    if (!sessionDefaults->getCancelQueryAllowed())
+      return;
+      
+    // See if query is "unique" and session allows cancel of unique.
+    if (!sessionDefaults->getCancelUniqueQuery())
+    {
+      Lng32 qt = root_tdb().getQueryType();
+      if ((qt == ComTdbRoot::SQL_SELECT_UNIQUE) ||
+          (qt == ComTdbRoot::SQL_INSERT_UNIQUE) ||
+          (qt == ComTdbRoot::SQL_UPDATE_UNIQUE) ||
+          (qt == ComTdbRoot::SQL_DELETE_UNIQUE))
+      return;
+    }
+  }
+
+  // See if an error happened on an earlier execution's finished message.
+  // Temporarily use the cliGlobal's IpcServer to check for error state.
+  if (context->canUseCbServer())
+  {
+    IpcServer * globalCbServer = context->useCbServer();
+    if (globalCbServer && 
+        globalCbServer->getControlConnection()  &&
+        globalCbServer->getControlConnection()->getErrorInfo() != 0)
+    {
+      globalCbServer->release();
+      context->lostCbServer();   // this method also calls doneWithCbServer.
+    }
+    else
+      context->doneWithCbServer();
+  }
+
+  // Also, fix any problem for a private server.
+  if (cbServer_ && 
+      cbServer_->getControlConnection()  &&
+      cbServer_->getControlConnection()->getErrorInfo() != 0)
+  {
+    ex_assert(havePrivateCbServer_, 
+              "Bad cleanup after finishQuery message.");
+    cbServer_->release();
+    cbServer_ = NULL;
+    havePrivateCbServer_ = false;
+
+  }
+
+  if (cbServer_ == NULL)
+  {
+    // Use context's IpcServer if it is allocated and not in use.
+    // If context's IpcServer is not allocated, create one, give it to 
+    // globals, and use it. 
+    // If context's IpcServer is allocated, but in use, create a private one,
+    // and remember to release it in ex_root_tcb::freeResources().
+
+    bool fakeAPrivateServer = false;
+#ifdef _DEBUG
+#ifdef NA_LINUX
+   fakeAPrivateServer = (NULL != getenv("CB_PRIVATE"));
+#endif
+#endif
+
+    if ((context->canUseCbServer()) && !fakeAPrivateServer)
+    {
+      cbServer_ = context->useCbServer();
+      havePrivateCbServer_ = false;
+    }
+    else
+    {
+      char nodeName[16];
+      nodeName[0] = '\\';
+      Lng32 nodeNameLen = str_len(cliGlobals->myNodeName()); 
+      str_cpy_all(&nodeName[1], cliGlobals->myNodeName(), nodeNameLen);
+      nodeName[1+nodeNameLen] = '\0';
+
+      IpcServer * cbServer = 
+          context->getCbServerClass()->allocateServerProcess(
+                      &diagsArea, 
+                      context->getIpcHeap(),
+                      nodeName,
+                      cliGlobals->myCpu(),
+                      IPC_PRIORITY_DONT_CARE,
+                      1,      //espLevel (not relevant)
+                      FALSE,  // usesTransactions 
+                      TRUE,   // waitedCreation
+                      3       // maxNowaitRequests -- start+finish+(1 extra).
+                      );
+      if (cbServer == NULL || cbServer->getControlConnection() == NULL)
+      {
+        // We could not get a phandle for the cancel broker.  However,
+        // let the query run (on the assumption that it will not need to 
+        // be canceled) and convert any error conditions to warnings.
+
+        // tbd - figure a way retry registration later, as the query progresses.
+        if (diagsArea != NULL)
+          NegateAllErrors(diagsArea);
+        return;
+      }
+
+      if (context->hasACbServer() || fakeAPrivateServer)
+      {
+        // this statement will use its own CB connection and will release
+        // it when done.
+        cbServer_ = cbServer;
+        havePrivateCbServer_ = true;
+      }
+      else
+      {
+        context->takeCbServer(cbServer);
+        cbServer_ = context->useCbServer();
+        havePrivateCbServer_ = false;
+      }
+
+    }
+  }
+  
+  // The stream's actOnSend method will delete (or call decrRefCount()) 
+  // for this object.
+  RtsQueryId *rtsQueryId = new (context->getIpcHeap()) 
+                         RtsQueryId(context->getIpcHeap(), qid, qidLen); 
+
+  RtsHandle rtsHandle = (RtsHandle) this;
+
+  // Make the message
+  QueryStarted *queryStarted = 
+    new (context->getIpcHeap()) 
+      QueryStarted(rtsHandle, context->getIpcHeap(), 
+                   JULIANTIMESTAMP(), executionCount);
+
+
+  //Create the stream on the IpcHeap, since we don't dispose of it immediately.
+  //We just add it to the list of completed messages in the IpcEnv, and it is disposed of later.
+  //If we create it in the executor heap, that heap gets deallocated when the statement is 
+  //finished, and we can corrupt some other statement's heap later on when we deallocate this stream.
+
+  if (queryStartedStream_ == NULL)
+  {
+    queryStartedStream_  = new (context->getIpcHeap())
+          QueryStartedMsgStream(context->getEnvironment(), this);
+
+    queryStartedStream_->addRecipient(cbServer_->getControlConnection());
+  }
+
+  *queryStartedStream_ << *queryStarted;
+  queryStarted->decrRefCount();
+
+  *queryStartedStream_<< *rtsQueryId;
+  rtsQueryId->decrRefCount();
+
+  // send the no-wait request so cancel broker knows this query has started.
+  queryStartedStream_->send(FALSE);  
+  
+  setCbStartedMessageSent();
 }
 
-void ex_root_tcb::deregisterQuery()
+void ex_root_tcb::deregisterCB()
 {
+  ExMasterStmtGlobals *glob =
+    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals();
+
+  CliGlobals *cliGlobals = glob->getCliGlobals();
+  ContextCli *context = cliGlobals->currContext();
+
+#if 0
+  bool allowUnitTestSuspend = false;
+  // This "unit test" has been unit tested but cannot be tested
+  // in the developer regression tests without slowing down 
+  // everybody's run, and also risking false positive due to 
+  // timing issues.  Hence, the use of LCOV. 
+  // LCOV_EXCL_START
+    allowUnitTestSuspend = (NULL != getenv("UNIT_TEST_LATE_SUSPEND"));
+
+  if (allowUnitTestSuspend)
+    DELAY(20*100);
+  // LCOV_EXCL_STOP
+#endif
+
+  // Let MXSSMP know this query can no longer be suspended.  Also, here
+  // is where we handle one possibilty:  the query can be suspended after
+  // the ExScheduler::work method has made its final check of the root
+  // oper stats isSuspended_ flag, but before we get to this code where
+  // we change ExMasterStats::readyToSuspend_ from READY to NOT_READY.
+  // To handle this, the subject master will obtain the Stats semaphore
+  // and test ExMasterStats::isSuspended_.  If set to true, it will
+  // release the semaphore, wait a few seconds, and obtain the semaphore
+  // and test again.  This will repeat until the ExMasterStats::isSuspended_
+  // is false.  Then, before releasing the semaphore, the subject master
+  // makes the change from READY->NOT_READY.  By waiting until the SSMP has
+  // cleared the ExMasterStats::isSuspended_ flag, we can be sure it has
+  // also sent messages to the SSCPs to set all the frag root oper stats
+  // isSuspended_ flag to false.
+
+  StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
+  ExMasterStats *mStats = NULL;
+  StmtStats *sStats = glob->getStatement()->getStmtStats();
+  if(sStats)
+    mStats = sStats->getMasterStats();
+  if (statsGlobals && mStats && mStats->isReadyToSuspend())
+  {
+    short savedPriority, savedStopMode;
+    short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+                cliGlobals->myPin(), savedPriority, savedStopMode,
+                FALSE /*shouldTimeout*/);
+
+    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+
+    while (mStats->isQuerySuspended())
+    {
+      // See comments around allowUnitTestSuspend above.  This code has
+      // been manually unit tested, and it too difficult and costly to 
+      // test in an automated script.
+      // LCOV_EXCL_START
+      statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
+               cliGlobals->myPin(),savedPriority, savedStopMode);
+      DELAY(300);
+
+      short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+                  cliGlobals->myPin(), savedPriority, savedStopMode,
+                  FALSE /*shouldTimeout*/);
+
+      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      // LCOV_EXCL_STOP
+    }
+
+    // Now we have the semaphore, and the query is not suspended.  Quick
+    // set the flag in the masterStats to prevent it from being suspended.
+    mStats->setNotReadyToSuspend();
+
+    // Now it is safe to let MXSSMP process another SUSPEND.
+    statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
+               cliGlobals->myPin(),savedPriority, savedStopMode);
+  }
+
+  if (context->getCbServerClass() == NULL ||  
+      cbServer_ == NULL ||
+      cbServer_->getControlConnection() == NULL)
+    return;
+
+  if (cbServer_->getControlConnection()->getErrorInfo() != 0)
+  {
+    // Some IPC error happened after we registered.  No need to deregister.
+    if (havePrivateCbServer_)
+    {
+      ; // Private server will be cleanup up in destructor, or when the 
+        // query is re-executed - registerCB.
+    }
+    else
+    {
+      cbServer_ = NULL;
+      // Tell context that we are finished with his cbServer_.
+      // The ipc error will be cleaned up when registerCB is
+      // called next for this query or any other query.
+      context->doneWithCbServer();
+    }
+    return;
+  }
+
+  // No started message sent, so no finished message should be sent.
+  if (!isCbStartedMessageSent())
+    return;
+
+  // Holdable cursor is known to deregister more than once.
+  if (isCbFinishedMessageSent())
+    return;
+
+#pragma warning (disable : 4291)
+
+  // The stream's actOnSend method will delete (or call decrRefCount()) 
+  // for this object.
+  RtsQueryId *rtsQueryId = new (context->getIpcHeap()) 
+                         RtsQueryId( context->getIpcHeap(), 
+                                     glob->getStatement()->getUniqueStmtId(),
+                                     glob->getStatement()->getUniqueStmtIdLen()
+                                   );
+
+  RtsHandle rtsHandle = (RtsHandle) this;
+
+  // Make the message
+  QueryFinished *queryFinished = 
+    new (context->getIpcHeap()) QueryFinished( rtsHandle, 
+                                                  context->getIpcHeap());
+#pragma warning (default : 4291)
+
+  //Create the stream on the IpcHeap, since we don't dispose of it immediately.
+  //We just add it to the list of completed messages in the IpcEnv, and it is disposed of later.
+  //If we create it in the executor heap, that heap gets deallocated when the statement is 
+  //finished, and we can corrupt some other statement's heap later on when we deallocate this stream.
+
+  if (queryFinishedStream_ == NULL)
+  {
+    queryFinishedStream_  = new (context->getIpcHeap())
+          QueryFinishedMsgStream(context->getEnvironment(), this);
+
+    queryFinishedStream_->addRecipient(cbServer_->getControlConnection());
+  }
+
+  *queryFinishedStream_ << *queryFinished;
+  queryFinished->decrRefCount();
+
+  *queryFinishedStream_<< *rtsQueryId;
+  rtsQueryId->decrRefCount();
+
+  // send the no-wait request to let the cancel broker know this query has started.
+  queryFinishedStream_->send(FALSE);  
+
+  setCbFinishedMessageSent();
 }
 
+void ex_root_tcb::setCbFinishedMessageReplied()    
+{ 
+  ExMasterStmtGlobals *glob =
+  getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals();
+
+  ContextCli *context = glob->getCliGlobals()->currContext();
+
+  cbCommStatus_ &= ~FINISHED_PENDING_; 
+
+  if (havePrivateCbServer_)
+  {
+    // Let my destructor release the server, since we are executing 
+    // from a callback it would not be safe to delete the IpcConnection
+    // object that called us.
+  }
+  else
+  {
+    // Tell context that we are finished with his cbServer_.
+    context->doneWithCbServer();
+    cbServer_ = NULL;
+  }
+}
+
+void ex_root_tcb::dumpCb()
+{
+  ExMasterStmtGlobals *master_glob = getGlobals()->
+                    castToExExeStmtGlobals()->castToExMasterStmtGlobals();
+  CliGlobals *cliGlobals = master_glob->getCliGlobals();
+  StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
+  if (statsGlobals == NULL)
+    return; 
+  short savedPriority, savedStopMode;
+  short error =
+         statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+          cliGlobals->myPin(), savedPriority, savedStopMode,
+          FALSE /*shouldTimeout*/);
+  bool doDump = false;
+  Int64 timenow = NA_JulianTimestamp();
+  if ((timenow - statsGlobals->ssmpDumpedTimestamp_) > 
+       5*60*1000*1000) // 5 minutes
+  {
+    doDump = true;
+    statsGlobals->ssmpDumpedTimestamp_ = timenow;
+  }
+  statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
+                      cliGlobals->myPin(),savedPriority, savedStopMode);
+  if (doDump)
+    cbServer_->getServerId().getPhandle().dumpAndStop(true, true);
+}
+
+// -----------------------------------------------------------------------
+// Methods for QueryStartedMsgStream. 
+// -----------------------------------------------------------------------
+
+void QueryStartedMsgStream::actOnSendAllComplete()
+{
+  clearAllObjects();
+  receive(FALSE);
+}
+
+void QueryStartedMsgStream::actOnReceive(IpcConnection *connection)
+{
+  if (connection->getErrorInfo() == 0)
+  {
+    CollHeap *ipcHeap = connection->getEnvironment()->getHeap();
+
+    #pragma warning (disable : 4291)
+
+    QueryStartedReply *reply = new (ipcHeap) 
+            QueryStartedReply(INVALID_RTS_HANDLE, ipcHeap);
+
+    #pragma warning (default : 4291)
+
+    *this >> *reply;
+
+    ex_assert( !moreObjects(), "Unknown extra objects follow started reply");
+
+    if(reply->isNextActionComplete())
+      ; // normal completion of a query.  This query requested a reply to its
+        // own QueryStarted msg.
+    else if (rootTcb_)
+    {
+      ex_assert(reply->isNextActionCancel(), "Unknown reply to Query Started message.");
+      rootTcb_->requestCancel();
+      if (reply->cancelLogging())
+      {
+        ExMasterStmtGlobals *glob = rootTcb_->getGlobals()->
+            castToExExeStmtGlobals()->castToExMasterStmtGlobals();
+        char *qid = glob->getStatement()->getUniqueStmtId();
+        char msg[80 + // the constant text
+                 ComSqlId::MAX_QUERY_ID_LEN];
+
+        str_sprintf(msg,
+               "Master executor of query %s has begun internal SQL cancel.",
+                qid);
+        SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msg, 0);
+      }
+    }
+    reply->decrRefCount();
+  }
+}
+
+void QueryStartedMsgStream::actOnReceiveAllComplete()
+{
+  if (rootTcb_)
+  {
+    // clear i/o pending flag for Statement::releaseTransaction
+    rootTcb_->setCbStartedMessageReplied();
+    // root's pointer to this stream is no longer valid.
+    rootTcb_->setQueryStartedMsgStreamIsInvalid();
+    // This stream's pointer to root is no longer valid.
+    rootTcb_ = NULL;
+  }
+  addToCompletedList();
+}
+
+// -----------------------------------------------------------------------
+// Methods for QueryFinishedMsgStream. 
+// -----------------------------------------------------------------------
+
+void QueryFinishedMsgStream::actOnSendAllComplete()
+{
+  clearAllObjects();
+  receive(FALSE);
+}
+
+void QueryFinishedMsgStream::actOnReceive(IpcConnection *connection)
+{
+  if (connection->getErrorInfo() == 0)
+  {
+
+    CollHeap *ipcHeap = connection->getEnvironment()->getHeap();
+
+  #pragma warning (disable : 4291)
+
+    RmsGenericReply *reply = new (ipcHeap) 
+              RmsGenericReply(ipcHeap);
+
+  #pragma warning (default : 4291)
+
+    *this >> *reply;
+
+    ex_assert( !moreObjects(), "Unknown extra objects follow started reply");
+
+    reply->decrRefCount();
+  }
+}
+
+void QueryFinishedMsgStream::actOnReceiveAllComplete()
+{
+  if (rootTcb_)
+  {
+    // clear i/o pending flag for Statement::releaseTransaction
+    rootTcb_->setCbFinishedMessageReplied();
+    // root's pointer to this stream is no longer valid.
+    rootTcb_->setQueryFinishMsgStreamIsInvalid();
+    // This stream's pointer to root is no longer valid.
+    rootTcb_ = NULL;
+  }
+
+  addToCompletedList();
+}
 
 void ex_root_tcb::cpuLimitExceeded()
 {

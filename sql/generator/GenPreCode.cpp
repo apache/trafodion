@@ -5030,9 +5030,6 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	generator->setUpdAbortOnError(TRUE);
     }
 
-  // for now, do not cancel any seabase queries as we dont support cancel
-  generator->setMayNotCancel(TRUE);
-
   // flag for hbase tables
   generator->setHdfsAccess(TRUE);
 
@@ -5265,9 +5262,6 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 	  (generator->oltOptInfo()->multipleRowsReturned()))
 	generator->setUpdAbortOnError(TRUE);
     }
-
-  // for now, do not cancel any seabase queries as we dont support cancel
-  generator->setMayNotCancel(TRUE);
 
   // flag for hbase tables
   generator->setHdfsAccess(TRUE);
@@ -5528,9 +5522,6 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 	  (generator->oltOptInfo()->multipleRowsReturned()))
 	generator->setUpdAbortOnError(TRUE);
     }
-
-  // for now, do not cancel any seabase queries as we dont support cancel
-  generator->setMayNotCancel(TRUE);
 
   return this;
 }
@@ -11340,9 +11331,6 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
 	    }
 	}
     }
-
-  // for now, do not cancel any seabase queries as we dont support cancel
-  generator->setMayNotCancel(TRUE);
 
   // executorPred() contains an ANDed list of predicates.
   // if hbase filter preds are enabled, then extracts those preds from executorPred()

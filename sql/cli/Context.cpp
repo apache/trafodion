@@ -404,15 +404,15 @@ void ContextCli::deleteMe()
      NADELETE(udrServerManager_, ExUdrServerManager, ipcHeap_);
   if (ssmpManager_ != NULL)
      NADELETE(ssmpManager_, ExSsmpManager, ipcHeap_);
-  if (cbServerClass_ != NULL)
-  {
-    NADELETE(cbServerClass_, IpcServerClass, ipcHeap_);
-    cbServerClass_ = NULL;
-  }
   if (cbServer_ != NULL)
   {
     cbServer_->release();
     cbServer_ = NULL;
+  }
+  if (cbServerClass_ != NULL)
+  {
+    NADELETE(cbServerClass_, IpcServerClass, ipcHeap_);
+    cbServerClass_ = NULL;
   }
   if (exeTraceInfo_ != NULL)
   {
