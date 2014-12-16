@@ -572,7 +572,7 @@ Lng32 ExHbaseScanSQTaskTcb::getProbeResult(char* &keyData)
 				 tcb_->columns_, -1,
 				 tcb_->hbaseAccessTdb().readUncommittedScan(),
 				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
-				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
+				 1, // for the probe we want only one row
 				 TRUE, NULL, NULL, NULL);
   if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
     {
