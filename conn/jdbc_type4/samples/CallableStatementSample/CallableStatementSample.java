@@ -34,7 +34,18 @@ public class CallableStatementSample
               stmt.executeUpdate(st);
               } catch (Exception e) {}
 
-              st = "create procedure CallableStatementSample(out OUT_PARAM INTEGER) EXTERNAL NAME 'IntegerSPJ.Integer_Proc(int[])' EXTERNAL PATH '/tmp' LANGUAGE JAVA PARAMETER STYLE JAVA CONTAINS SQL NO ISOLATE";
+      	      st = "drop library qaspj";
+	      try {
+	          stmt.executeUpdate(st);
+	      } catch (Exception e) {}
+
+
+	      String path = System.getProperty("serverJarPath"); 
+	     
+	      st = "create library qaspj file '" + path + "/qaspj.jar'";
+              stmt.executeUpdate(st);
+
+              st = "create procedure CallableStatementSample(out OUT_PARAM INTEGER) EXTERNAL NAME 'IntegerSPJ.Integer_Proc(int[])' LANGUAGE JAVA PARAMETER STYLE JAVA NO ISOLATE LIBRARY QASPJ";
               stmt.executeUpdate(st);
               stmt.close();
             }
@@ -47,7 +58,7 @@ public class CallableStatementSample
 
             // get the CallableStatement object
             CallableStatement cstmt = conn.prepareCall("{call CallableStatementSample(?)}");
-            System.out.println("The Callable Statement " + cstmt);
+            //System.out.println("The Callable Statement " + cstmt);
 
             //register the output parameters
             cstmt.registerOutParameter(1, java.sql.Types.VARCHAR);
