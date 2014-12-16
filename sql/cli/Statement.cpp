@@ -774,7 +774,10 @@ RETCODE Statement::releaseTransaction(NABoolean allWorkRequests,
   // do not send new DML request. 
   statementGlobals_->setNoNewRequest(TRUE);
 
-
+  if (!statementRemainsOpen               &&  // is holdable cursor?
+      root_tcb                            &&
+      root_tcb->needsDeregister())
+    root_tcb->deregisterCB();
 
   Int64 cbWaitStartTime = NA_JulianTimestamp();
 
@@ -801,7 +804,7 @@ RETCODE Statement::releaseTransaction(NABoolean allWorkRequests,
 					alwaysSendReleaseMsg);
 	  
           // Note that for the cancel broker, we have already sent the 
-          // finish message -- see the call to deregisterQuery in this 
+          // finish message -- see the call to deregisterCB in this 
           // method above.
 	  
           // wait until the messages have come back
@@ -952,6 +955,33 @@ RETCODE Statement::releaseTransaction(NABoolean allWorkRequests,
         } // if (root_tcb && ..)
     } // if (fragTable)
 
+  // In most case, the wait loop above will ensure that cancel broker messages
+  // are now complete.  However, if there is no fragTable, or there was
+  // fatalErrorOccurred or if in the wait loop some problem happened that
+  // caused the loop to exit early, then here we must wait for cancel broker
+  // to reply to start  and finish message.
+  NABoolean cbDidTimedOut = FALSE;
+  while (root_tcb && root_tcb->anyCbMessages() && !statementRemainsOpen)
+  {
+    // Allow the Control Broker 5 minutes to reply.  The time spend waiting
+    // for ESPs is included in this interval.
+    Int64 timeSinceCBMsgSentMicroSecs = NA_JulianTimestamp() - cbWaitStartTime;
+    IpcTimeout timeSinceCBMsgSentCentiSecs = (IpcTimeout)
+                              (timeSinceCBMsgSentMicroSecs / 10000);
+
+    IpcTimeout cbTimeout = (5*60*100) - timeSinceCBMsgSentCentiSecs;
+    if (cbTimeout <= 0)
+      cbTimeout = IpcImmediately;
+    statementGlobals_->getIpcEnvironment()->getAllConnections()->
+      waitOnAll(cbTimeout, FALSE, &cbDidTimedOut);
+    if (cbDidTimedOut)
+    {
+      SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__,
+              "Dumping the MXSSMP after IPC timeout.", 0);
+      root_tcb->dumpCb();
+      ex_assert(!cbDidTimedOut, "Timeout waiting for control broker.");
+    }
+  }
   // If there is an error either in Context diagsArea or
   // in StatementGlobals_ diagsArea, do not update the end time
   ComDiagsArea *diagsArea = context_->getDiagsArea();
@@ -5799,6 +5829,15 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
       diagsPtr = NULL;
     }
 
+  if (retcode >= 0 && root_tcb->anyCbMessages())
+  {
+    Int32 cancelRetcode = root_tcb->cancel(statementGlobals_,diagsPtr);
+    StmtDebug1("  root_tcb->cancel() returned %s",
+             RetcodeToString((RETCODE) cancelRetcode));
+
+    setState(CLOSE_);
+    releaseTransaction(TRUE);
+  }
 
   updateStatsAreaInContext();
   if (retcode < 0)
@@ -7480,6 +7519,10 @@ void Statement::setUniqueStmtId(char * id)
 {
   if (uniqueStmtId_)
     {
+      // get start & finished messages to cancel broker cleaned up
+      // before switching qid.
+      if (root_tcb && root_tcb->anyCbMessages())
+        releaseTransaction(TRUE);
 
       NADELETEBASIC(uniqueStmtId_, &heap_);
       uniqueStmtId_ = NULL;

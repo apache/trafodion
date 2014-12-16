@@ -2025,7 +2025,8 @@ ExRtFragInstance * ExRtFragTable::findInstance(
   ExRtFragTableEntry *entry = fragmentEntries_[fragId];
   for (CollIndex i = 0; i < (CollIndex)entry->numEsps_; i++)
     if (entry->assignedEsps_.used(i) AND
-	entry->assignedEsps_[i]->usedEsp_->
+	entry->assignedEsps_[i]->usedEsp_->getIpcServer() AND 
+        entry->assignedEsps_[i]->usedEsp_->
           getIpcServer()->getControlConnection() == connection)
       return entry->assignedEsps_[i];
 

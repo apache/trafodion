@@ -24,50 +24,34 @@
 -- To do:
 -- Revision history:
 
-cqd HIST_NO_STATS_FORCE_LABEL_ROWCOUNT_READ 'OFF';
-#ifdef SEABASE_CANCEL
-obey TEST106(dump_repos);
-
-obey TEST106(clnup);
 sh echo > cumulative_GET_STATS106; 
+sh echo > LOG106;
+sh echo > T106_INTERLEAVED_LOG;
+sh rm ${REGRRUNDIR}/test106_synch ; 
 
-log LOG106 clear;
-obey TEST106(setup);
-control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'OFF';
-#endif 
+sh sqlci -i"TEST106(setup)";
+
+log LOG106;
 obey TEST106(dml);
-#ifdef SEABASE_CANCEL
+
+#ifdef SEABASE_CANCEL_TBD
 obey TEST106(privs);
 select 'FUNKY_OPT_UNIQUE', 
   ts, msg from T106_interleaved_log order by ts;
-obey TEST106(clnup);
 #endif
-log;
 
---After the test, wait 60 seconds and dump rows from repos.
-sh sh ./runmxci.ksh -i"GET_REPOS_106" > /dev/null &;
+obey TEST106(clnup);
+
+log;
 
 exit;
-
-?section dump_repos
--- This section will get any events logged into the repos 
--- from runtimestats or ex_root after the test starts.  The 
--- purpose it to allow post-hoc analysis of test failures.
-
-log SELECT_REPOS_106 clear;
-select 'select PROCESS_ID, GEN_TS_LCT, cast ( substr (MESSAGETEXT, 1, 240) as char(240)) from MANAGEABILITY.INSTANCE_REPOSITORY.EVENT_SQLINFO_1 where GEN_TS_LCT > timestamp ''' , CURRENT_TIMESTAMP, ''' and EVENT_ID = 109000508 and (FILENAME like ''%runtimestats%'' or FILENAME like ''%ex_root.cpp'') order by GEN_TS_LCT;'
-from (values(0)) as t1;
-log;
-sh echo "sh sleep 60;" > GET_REPOS_106;
-sh echo "log DUMP_REPOS_106 clear;" >> GET_REPOS_106;
-sh grep "^select" SELECT_REPOS_106 >> GET_REPOS_106;
-sh echo "log;" >> GET_REPOS_106;
 
 ?section clnup
 
 drop table T106a;
-drop table T106_synch_cancel;
-drop table T106_synch_lock;
+log T106_INTERLEAVED_LOG;
+select * from T106_interleaved_log 
+  order by ts;
 drop table T106_interleaved_log;
 
 -- These should already be removed but just in case
@@ -79,24 +63,16 @@ drop role exetest106;
 
 ?section setup
 
+obey TEST106(clnup);
+
+log LOG106 clear;
+
 create table T106_interleaved_log (
                    ts time(6) not null,
                    msg char(60) ) no partition;
  
 
-create table T106_synch_cancel (a int not null,
-                    b int not null,
-                    ts time(6) not null,
-                      primary key(a)
-                      ) no partition;
-
-create table T106_synch_lock (a int not null,
-                    b int not null,
-                    ts time(6) not null,
-                      primary key(a)
-                      ) no partition;
-
-create table T106a
+create table t106a
   (uniq int not null,
    c10K int ,
    c1K   int,
@@ -104,13 +80,13 @@ create table T106a
    c10   int,
    c1    int,
    primary key (uniq)
-  );
+  )
+salt using 4 partitions ;
 
-insert into T106_synch_cancel values (1, 1, CURRENT_TIME(6));
-
-insert into T106a
+upsert using load into t106a
   select
-  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100) + (10 * x10) +( 1 * x1),
+  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100) 
+    + (10 * x10) +( 1 * x1),
   0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
   0 + (100 * x100) + (10 * x10) + (1 * x1),
   0 + (10 * x10) + (1 * x1),
@@ -125,26 +101,13 @@ insert into T106a
     transpose 0,1,2,3,4,5,6,7,8,9 as x1
   ;
 
-delete from T106_synch_cancel;
-
-control query default HIST_MISSING_STATS_WARNING_LEVEL '0';
+update statistics for table t106a on every column;
 
 ?section dml
 
-#ifdef SEABASE_CANCEL
 sh rm cancel_cmd cancel_log106_all LOCK_LOG106;
 
-control query default STREAM_TIMEOUT '12000';
-set envvar sqlci_cursor;
-declare cancel_sync_cursor cursor for select 
- 'pubsub sync FUNKY_OPT_UNIQUE', b, ts from 
- stream(T106_synch_cancel) as t1 for read uncommitted access;
-
-declare lock_sync_cursor cursor for select 
- 'pubsub sync lock FUNKY_OPT_UNIQUE', b, ts from 
- stream(T106_synch_lock) as t1 for read uncommitted access;
-
---obey TEST106(cursor_close_early);
+obey TEST106(cursor_close_early);
 
 obey TEST106(uniq_query_test);
 
@@ -168,6 +131,8 @@ obey TEST106(cpu_bound_esps);
 
 obey TEST106(escalation1);
 
+#ifdef SEABASE_CANCEL_TBD
+
 obey TEST106(positive_test1_pname);
 
 obey TEST106(positive_test2_pname);
@@ -187,8 +152,6 @@ obey TEST106(escalation1_nid_pid);
 
 obey TEST106(showplan1);
 
-obey TEST106(showplan2);
-
 obey TEST106(explain1);
 
 obey TEST106(invalid_qid);
@@ -197,11 +160,9 @@ obey TEST106(invalid_pname);
 
 obey TEST106(invalid_nid_pid);
 
-#ifdef SEABASE_CANCEL
 obey TEST106(qc1314);
 
 obey TEST106(qc1351);
-#endif
 
 ?section cursor_close_early
 -- From bug 2583
@@ -220,135 +181,27 @@ open c1;
 close c1;
 
 ?section uniq_query_test
--- By default, cannot cancel unique queries:
+-- By default, cannot cancel unique queries. And since we 
+-- do not have locks in trafodion, it doesn't make sense to
+-- try to cancel a unique query. 
+-- TBD -- add tests to show the unique query does not register
+-- with cancel broker
 
 ---------- unique select query ---------------------
 
 prepare s1 from select 'unique query row' from t106a where uniq = 44;
 
-obey TEST106(make_cancel_stmt);
-
-sh sh ./runmxci.ksh -i"TEST106(lock_t106a)" & ;
-
-sh sh ./runmxci.ksh -i"TEST106(do_cancel)" & ;
-
-obey TEST106(synch_cancel);
-
-obey TEST106(synch_lock);
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6),
-'unique select query, execute s1, start');
-
-execute s1;
-
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
-'unique select query, execute s1, finish');
-
-delete from T106_synch_lock;
-
-obey TEST106(synch_cancel);
-
-obey TEST106(append_cancel_log);
-
 ---------- unique delete query ---------------------
 
 prepare s1 from delete from t106a where uniq = 44;
-
-obey TEST106(make_cancel_stmt);
-
-sh sh ./runmxci.ksh -i"TEST106(lock_t106a)" & ;
-
-sh sh ./runmxci.ksh -i"TEST106(do_cancel)" & ;
-
-obey TEST106(synch_cancel);
-
-obey TEST106(synch_lock);
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6),
-'unique delete query, execute s1, start');
-
-execute s1;
-
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
-'unique delete query, execute s1, finished');
-
-delete from T106_synch_lock;
-
-obey TEST106(synch_cancel);
-
-obey TEST106(append_cancel_log);
 
 ---------- unique update query ---------------------
 
 prepare s1 from update t106a set c10k = 12 where uniq = 46;
 
-obey TEST106(make_cancel_stmt);
-
-sh sh ./runmxci.ksh -i"TEST106(lock_t106a)" & ;
-
-sh sh ./runmxci.ksh -i"TEST106(do_cancel)" & ;
-
-obey TEST106(synch_cancel);
-
-obey TEST106(synch_lock);
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6),
-'unique update query, execute s1, start');
-
-execute s1;
-
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6),
-'unique update query, execute s1, finished');
-
-delete from T106_synch_lock;
-
-obey TEST106(synch_cancel);
-
-obey TEST106(append_cancel_log);
-
 ---------- unique insert query ---------------------
 
 prepare s1 from insert into t106a values (44, 2, 3, 4, 5, 6);
-
-obey TEST106(make_cancel_stmt);
-
-sh sh ./runmxci.ksh -i"TEST106(lock_t106a)" & ;
-
-sh sh ./runmxci.ksh -i"TEST106(do_cancel)" & ;
-
-obey TEST106(synch_cancel);
-
-obey TEST106(synch_lock);
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6),
-'unique insert query, execute s1, start');
-
-execute s1;
-
-select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6),
-'unique insert query, execute s1, finish');
-
-delete from T106_synch_lock;
-
-obey TEST106(synch_cancel);
-
-obey TEST106(append_cancel_log);
 
 ?section positive_test1
 
@@ -375,7 +228,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'positive_test1, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel)" & ;
+sh sqlci -i"TEST106(do_cancel)" & ;
 
 select 'subject synch cancel - FUNKY_OPT_UNIQUE',
 CURRENT_TIME (6) from (values (1)) as t1;
@@ -427,7 +280,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'positive_test2, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel)" & ;
+sh sqlci -i"TEST106(do_cancel)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -467,8 +320,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'cpu_bound_esps, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel)" & ;
-
+sh sqlci -i"TEST106(do_cancel)" & ;
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'cpu_bound_esps, launch canceler, finished');
@@ -508,7 +360,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'escalation1, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel)" & ;
+sh sqlci -i"TEST106(do_cancel)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -555,7 +407,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'positive_test1_nid_pid, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel_nid_pid)" & ;
+sh sqlci -i"TEST106(do_cancel_nid_pid)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -607,7 +459,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'positive_test2_nid_pid, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel_nid_pid)" & ;
+sh sqlci -i"TEST106(do_cancel_nid_pid)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -647,7 +499,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'cpu_bound_esps_nid_pid, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel_nid_pid)" & ;
+sh sqlci -i"TEST106(do_cancel_nid_pid)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -688,7 +540,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'escalation1_nid_pid, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel_nid_pid)" & ;
+sh sqlci -i"TEST106(do_cancel_nid_pid)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -735,7 +587,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'positive_test1_pname, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel_pname)" & ;
+sh sqlci -i"TEST106(do_cancel_pname)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -787,7 +639,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'positive_test2_pname, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel_pname)" & ;
+sh sqlci -i"TEST106(do_cancel_pname)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -827,7 +679,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'cpu_bound_esps_pname, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel_pname)" & ;
+sh sqlci -i"TEST106(do_cancel_pname)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -868,7 +720,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'escalation1_pname, launch canceler, start');
 
-sh sh ./runmxci.ksh -i"TEST106(do_cancel_pname)" & ;
+sh sqlci -i"TEST106(do_cancel_pname)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -906,9 +758,10 @@ MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
 showplan control query suspend qid
 MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1, force;
 
+#ifdef SEABASE_CANCEL_TBD
 showplan control query cancel pid 0, 17677;
-
 showplan control query cancel pid $Z00034G;
+#endif
 
 log;
 
@@ -922,21 +775,6 @@ sh grep "^cancelPname_" SP106               >> LOG106;
 sh grep "^comment_ =" SP106                 >> LOG106;
 
 log LOG106;
-
-?section showplan2
-
-log; log SP106 clear;
-
-showplan control query default TIMEOUT '600';
-
-log;
-
-sh echo "control query default showplan output"       >> LOG106;
-sh grep "Contents of EX_CONTROL"                SP106 >> LOG106;
-sh grep "# of Expressions" SP106 | tail -n 1          >> LOG106;
-
-log LOG106;
-
 
 ?section explain1
 
@@ -954,9 +792,10 @@ MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1, force;
 explain control query activate qid
 MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
 
+#ifdef SEABASE_CANCEL_TBD
 explain control query cancel pid 0, 17677;
-
 explain control query cancel pid $Z00034G;
+#endif
 
 
 log;
@@ -1082,37 +921,19 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'foreground awaits synch_cancel');
 
--- wait until other mxci is ready, using pubsub.
-open cancel_sync_cursor;
-fetch cancel_sync_cursor;
-close cancel_sync_cursor;
-select 'done with cancel_sync_cursor - FUNKY_OPT_UNIQUE', 
+-- wait until other mxci is ready
+sh sh $scriptsdir/executor/synch_106.ksh;
+
+select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
        CURRENT_TIME (6) from (values (1)) as t1;
 log;
-delete from T106_synch_cancel;
+sh rm ${REGRRUNDIR}/test106_synch ; 
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'foreground finished synch_cancel');
 
 log LOG106;
-
-?section synch_lock
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
-'foreground awaits synch_lock');
-
--- wait until other mxci is ready, using pubsub.
-open lock_sync_cursor;
-fetch lock_sync_cursor;
-close lock_sync_cursor;
-select 'done with lock_sync_cursor - FUNKY_OPT_UNIQUE',
-       CURRENT_TIME (6) from (values (1)) as t1;
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
-'foreground finished synch_lock');
 
 ?section do_cancel
 log CANCEL_LOG106 clear;
@@ -1123,7 +944,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'do_cancel has begun');
 
-insert into t106_synch_cancel values( 99, 101, CURRENT_TIME(6));
+sh touch ${REGRRUNDIR}/test106_synch;
 
 select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
 CURRENT_TIME (6) from (values (1)) as t1;
@@ -1156,13 +977,14 @@ select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
 log;
 sh cat CANCEL_LOG106 >> cancel_log106_all;
 log CANCEL_FINAL_SYN106;
-insert into t106_synch_cancel values( 199, 102, CURRENT_TIME(6));
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'do_cancel is exiting');
 
 log;
+
+sh touch ${REGRRUNDIR}/test106_synch;
 
 ?section do_cancel_pname
 log CANCEL_LOG106 clear;
@@ -1173,7 +995,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'do_cancel_pname has begun');
 
-insert into t106_synch_cancel values( 99, 101, CURRENT_TIME(6));
+sh touch ${REGRRUNDIR}/test106_synch;
 
 select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
 CURRENT_TIME (6) from (values (1)) as t1;
@@ -1206,13 +1028,14 @@ select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
 log;
 sh cat CANCEL_LOG106 >> cancel_log106_all;
 log CANCEL_FINAL_SYN106;
-insert into t106_synch_cancel values( 199, 102, CURRENT_TIME(6));
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'do_cancel is exiting');
 
 log;
+
+sh touch ${REGRRUNDIR}/test106_synch;
 
 ?section do_cancel_nid_pid
 log CANCEL_LOG106 clear;
@@ -1223,7 +1046,7 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'do_cancel_nid_pid has begun');
 
-insert into t106_synch_cancel values( 99, 101, CURRENT_TIME(6));
+sh touch ${REGRRUNDIR}/test106_synch;
 
 select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
 CURRENT_TIME (6) from (values (1)) as t1;
@@ -1256,7 +1079,6 @@ select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
 log;
 sh cat CANCEL_LOG106 >> cancel_log106_all;
 log CANCEL_FINAL_SYN106;
-insert into t106_synch_cancel values( 199, 102, CURRENT_TIME(6));
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -1264,28 +1086,7 @@ insert into T106_interleaved_log values
 
 log;
 
-?section lock_t106a
-log LOCK_LOG106 ;
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
-'lock_t106a has begun');
-
-------------------------------------------;
------- Contents of locking session -------;
-------------------------------------------;
-begin work;
-lock table t106a in exclusive mode;
-insert into t106_synch_lock values( 1, 1, CURRENT_TIME(6));
-sh sleep 21;
-commit;
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
-'lock_t106a has committed');
-
-select 'locker - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
-log;
+sh touch ${REGRRUNDIR}/test106_synch;
 
 ?section make_suicide_script
 -- Make a shell script to stop this mxci.

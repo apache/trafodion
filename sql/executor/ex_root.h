@@ -63,6 +63,8 @@ class ComDiagsArea;
 // -----------------------------------------------------------------------
 class ex_root_tdb;
 class ex_root_tcb;
+class QueryStartedMsgStream;
+class QueryFinishedMsgStream;
 // -----------------------------------------------------------------------
 // Classes referenced in this file
 // -----------------------------------------------------------------------
@@ -250,8 +252,48 @@ public:
   inline NABoolean fatalErrorOccurred() { return fatalError_; }
   void setFatalError() { fatalError_ = TRUE; }
 
+  // This is a way to let the root tcb know that cleanup has already been done.
+  void setQueryStartedMsgStreamIsInvalid()
+      { queryStartedStream_ = NULL ;}
+
+  // This is a way to let the root tcb know that cleanup has already been done.
+  void setQueryFinishMsgStreamIsInvalid()
+      { queryFinishedStream_ = NULL ;}
+
+  // Used by Statement to know whether I/O needs to complete.
+  enum CancelBrokerCommStatus {
+      STARTED_PENDING_  = 0x0001
+    , FINISHED_PENDING_ = 0x0002
+  };
+
+  bool isCbStartedMessageSent() const
+  { return (cbCommStatus_ & STARTED_PENDING_ ) ? true: false; };
+
+  bool isCbFinishedMessageSent() const
+  { return (cbCommStatus_ & FINISHED_PENDING_) ? true : false; };
+
+  bool anyCbMessages() const
+  { return isCbStartedMessageSent() || isCbFinishedMessageSent(); };
+
+  void setCbStartedMessageSent()
+    { cbCommStatus_ |= STARTED_PENDING_; }
+
+  void setCbStartedMessageReplied()
+    { cbCommStatus_ &= ~STARTED_PENDING_; }
+
+  void setCbFinishedMessageSent()
+    { cbCommStatus_ |= FINISHED_PENDING_; }
+
+  void setCbFinishedMessageReplied();
+
+  bool needsDeregister()
+    { return (isCbStartedMessageSent()    &&
+              !isCbFinishedMessageSent());
+    }
   // Let the cancel broker know this query is finished.
-  void deregisterQuery();
+  void deregisterCB();
+
+  void dumpCb();
 
   // Enforce query CPU limit.
   NA_EIDPROC virtual void cpuLimitExceeded();
@@ -296,6 +338,31 @@ private:
   // used by rowsets. See work() method.
   Lng32 lastQueueSize_;
 
+  // Used to communicate control or cancel messages to broker, MXSSMP.
+
+  // Our cancel broker.  This IpcServer is owned by this root tcb, if
+  // havePrivateCbServer_ is true.  Otherwise it is owned by ContextCli, 
+  // which by design, is used by one thread at a time. 
+  //
+  // We will use the ContextCli's IpcServer for the normal case that
+  // queries are executed serially.  But if a query is aleady executing
+  // and then a second query is started, the second query will use a
+  // "private" cbServer_.  This means that the cancel broker is opened
+  // a second time.  Of course, we could allow up to 15 query's to
+  // concurrently share the ContextCli IpcServer, but for simplicity in
+  // design, we will not support sharing at this time.
+  IpcServer * cbServer_;
+  bool havePrivateCbServer_;
+
+  // An IpcMessageStream subclass, used to let cancel broker know
+  // that a given query has started.
+  QueryStartedMsgStream *queryStartedStream_;
+
+  // An IpcMessageStream subclass, used to let cancel broker know
+  // that a given query has finished.
+  QueryFinishedMsgStream *queryFinishedStream_;
+
+  Int32 cbCommStatus_;
   // Support for safe suspend:
   bool mayPinAudit_;
   bool mayLock_;
@@ -324,7 +391,7 @@ private:
 				ComDiagsArea *& diags);
 
   // Let the cancel broker know this query is executing.
-  void registerQuery(ComDiagsArea *&diagsArea, bool isReRegister = false);
+  void registerCB(ComDiagsArea *&diagsArea);
 
   void populateCancelDiags( ComDiagsArea &diags);
 
@@ -339,4 +406,92 @@ inline const ex_tcb* ex_root_tcb::getChild(Int32 pos) const
    else
       return NULL;
 }
+
+// -----------------------------------------------------------------------
+// The message stream used by the root to let the cancel broker (MXSSMP) 
+// know that a query has begun, so that the query can be cancelled or, in
+// the future, otherwise controlled.
+// -----------------------------------------------------------------------
+
+class QueryStartedMsgStream : public IpcMessageStream
+{
+public:
+
+  // constructor
+  QueryStartedMsgStream(IpcEnvironment *env, 
+                        ex_root_tcb *rootTcb)
+
+      : IpcMessageStream(env,
+                         IPC_MSG_SSMP_REQUEST,
+                         CurrSsmpRequestMessageVersion,
+#ifndef USE_SB_NEW_RI
+                         RTS_STATS_MSG_BUF_SIZE, 
+#else
+                         env->getGuaMaxMsgIOSize(),
+#endif
+                         TRUE)
+      , rootTcb_(rootTcb)
+  {
+  }
+  
+  // method called upon send complete
+  virtual void actOnSendAllComplete();
+
+  // methods called upon receive complete.
+  virtual void actOnReceive(IpcConnection *conn);
+  virtual void actOnReceiveAllComplete();
+
+  // When there is a fatal error (ipc-related) the actOnReceiveAllComplete
+  // might not be called and the statement dealloc'd.  In that 
+  // case, we don't want this surviving stream to reference the
+  // dealloc'd root tcb any more.
+  void removeRootTcb()   { rootTcb_ = NULL; }
+
+private:
+  ex_root_tcb *rootTcb_;
+};
+
+// -----------------------------------------------------------------------
+// The message stream used by the root to let the control broker (MXSSMP) 
+// know that a query has finished, so it is too late to cancel or 
+// otherewise control the query.  Also, lets cancel broker do its cleanup.
+// -----------------------------------------------------------------------
+class QueryFinishedMsgStream : public IpcMessageStream
+{
+public:
+
+  // constructor
+  QueryFinishedMsgStream(IpcEnvironment *env, 
+                        ex_root_tcb *rootTcb)
+
+      : IpcMessageStream(env,
+                         IPC_MSG_SSMP_REQUEST,
+                         CurrSsmpRequestMessageVersion,
+#ifndef USE_SB_NEW_RI
+                         RTS_STATS_MSG_BUF_SIZE, 
+#else
+                         env->getGuaMaxMsgIOSize(),
+#endif
+                         TRUE)
+    , rootTcb_(rootTcb)
+  {
+  }
+  
+  // method called upon send complete
+  virtual void actOnSendAllComplete();
+ 
+  // methods called upon receive complete.
+  virtual void actOnReceive(IpcConnection *conn);
+  virtual void actOnReceiveAllComplete();
+
+  // When there is a fatal error (ipc-related) the actOnReceiveAllComplete
+  // might not be called and the statement dealloc'd.  In that 
+  // case, we don't want this surviving stream to reference the
+  // dealloc'd root tcb any more.
+  void removeRootTcb()   { rootTcb_ = NULL; }
+
+private:
+  ex_root_tcb *rootTcb_;
+};
+
 #endif

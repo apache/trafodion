@@ -431,6 +431,10 @@ s/^\([ ]*HBASE_FILTER_PREDS[ ]*\) .*/\1 removed/g
 
 # For ObjectUIDs , which are now included in EXPLAIN.
 s/^ ObjectUIDs \.\.\.\.\.\.\.\.\.\.\.\.\. [0-9,]*$/  ObjectUIDs filtered/g
+
+# Query IDs
+s/qid MXID11.*$/qid filtered/g
+s/ID MXID11.*$/qid filtered/g
 " $sedInput
 
 #
