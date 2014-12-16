@@ -987,7 +987,7 @@ CoprocessorService, Coprocessor {
              t = e;
              }
 
-             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(proto.getRow().toByteArray()));
+             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: deleteMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toStringBinary(proto.getRow().toByteArray()) + ", row in hex " + Hex.encodeHexString(proto.getRow().toByteArray()));
            }
          }
        }
@@ -1063,7 +1063,7 @@ CoprocessorService, Coprocessor {
       t = e;
     }
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: delete - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(proto.getRow().toByteArray()));
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: delete - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toStringBinary(proto.getRow().toByteArray()) + ", row in hex " + Hex.encodeHexString(proto.getRow().toByteArray()));
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteTransactionalResponse.Builder deleteTransactionalResponseBuilder = DeleteTransactionalResponse.newBuilder();
 
@@ -1602,7 +1602,7 @@ CoprocessorService, Coprocessor {
           t = e;
         }
 
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: put - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(proto.getRow().toByteArray()));
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: put - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toStringBinary(proto.getRow().toByteArray()) + ", row in hex " + Hex.encodeHexString(proto.getRow().toByteArray()));
       }
       else
       {
@@ -1688,7 +1688,7 @@ CoprocessorService, Coprocessor {
                t = e;
              }
 
-             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(proto.getRow().toByteArray()));
+             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: putMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toStringBinary(proto.getRow().toByteArray()) + ", row in hex " + Hex.encodeHexString(proto.getRow().toByteArray()));
            }
          }
        }
@@ -2023,7 +2023,7 @@ CoprocessorService, Coprocessor {
       }
     }
     LOG.info("Row counter for transactionId " + transactionId + " from this region: "
-        + env.getRegion().getRegionNameAsString() + " is " + counter);
+        + env.getRegion().getRegionNameAsString() + " is " + counter + ", startKey is " + Bytes.toStringBinary(env.getRegion().getStartKey()) + ", endKey is " + Bytes.toStringBinary(env.getRegion().getEndKey()));
     done.run(response);
   }
 
