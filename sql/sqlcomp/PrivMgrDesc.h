@@ -25,6 +25,7 @@
 #include <string>
 #include "PrivMgrMDDefs.h"
 #include "PrivMgrDefs.h"
+#include "ComSmallDefs.h"
 
 class ComDiags;
 
@@ -261,11 +262,44 @@ class PrivMgrCoreDesc
                                   const bool insertable=true,
                                   const bool deletable=true);
     void setAllDDLGrantPrivileges(const bool wgo);
-
+    void setAllObjectGrantPrivilege(const ComObjectType objectType,const bool wgo);
     void setAllRevokePrivileges(const bool grantOptionFor);
     void setAllDMLRevokePrivileges(const bool grantOptionFor);
     void setAllDDLRevokePrivileges(const bool grantOption);
+   
+    inline void setAllLibraryGrantPrivileges(const bool wgo)
+    {
+      setPriv(UPDATE_PRIV, TRUE);
+      setWgo(UPDATE_PRIV, wgo);
+      setPriv(USAGE_PRIV, TRUE);
+      setWgo(USAGE_PRIV, wgo);
+    }
+    
+    inline void setAllTableGrantPrivileges(const bool wgo)
+    {
+      setPriv(SELECT_PRIV, TRUE);
+      setWgo(SELECT_PRIV, wgo);
+      setPriv(INSERT_PRIV, TRUE);
+      setWgo(INSERT_PRIV, wgo);
+      setPriv(DELETE_PRIV, TRUE);
+      setWgo(DELETE_PRIV, wgo);
+      setPriv(UPDATE_PRIV, TRUE);
+      setWgo(UPDATE_PRIV, wgo);
+      setPriv(REFERENCES_PRIV, TRUE);
+      setWgo(REFERENCES_PRIV, wgo);
+    }
 
+    inline void setAllSequenceGrantPrivileges(const bool wgo)
+    {
+      setPriv(USAGE_PRIV, TRUE);
+      setWgo(USAGE_PRIV, wgo);
+    }
+
+    inline void setAllUdrGrantPrivileges(const bool wgo)
+    {
+      setPriv(EXECUTE_PRIV, TRUE);
+      setWgo(EXECUTE_PRIV, wgo);
+    }
 
 private:
    std::bitset<NBR_OF_PRIVS> priv_;  // Bit == True if the privilege is held.
@@ -450,42 +484,36 @@ public:
    void setAllTableGrantPrivileges(const bool wgo)
    {
      PrivMgrCoreDesc tableCorePrivs;
-     tableCorePrivs.setPriv(SELECT_PRIV, TRUE);
-     tableCorePrivs.setWgo(SELECT_PRIV, wgo);
-     tableCorePrivs.setPriv(INSERT_PRIV, TRUE);
-     tableCorePrivs.setWgo(INSERT_PRIV, wgo);
-     tableCorePrivs.setPriv(DELETE_PRIV, TRUE);
-     tableCorePrivs.setWgo(DELETE_PRIV, wgo);
-     tableCorePrivs.setPriv(UPDATE_PRIV, TRUE);
-     tableCorePrivs.setWgo(UPDATE_PRIV, wgo);
-     tableCorePrivs.setPriv(REFERENCES_PRIV, TRUE);
-     tableCorePrivs.setWgo(REFERENCES_PRIV, wgo);
+     
+     tableCorePrivs.setAllTableGrantPrivileges(wgo);
+
      setTablePrivs(tableCorePrivs);
    }
 
    void setAllLibraryGrantPrivileges(const bool wgo)
    {
      PrivMgrCoreDesc tableCorePrivs;
-     tableCorePrivs.setPriv(UPDATE_PRIV, TRUE);
-     tableCorePrivs.setWgo(UPDATE_PRIV, wgo);
-     tableCorePrivs.setPriv(USAGE_PRIV, TRUE);
-     tableCorePrivs.setWgo(USAGE_PRIV, wgo);
+     
+     tableCorePrivs.setAllLibraryGrantPrivileges(wgo);
+     
      setTablePrivs(tableCorePrivs);
    }
 
    void setAllUdrGrantPrivileges(const bool wgo)
    {
      PrivMgrCoreDesc tableCorePrivs;
-     tableCorePrivs.setPriv(EXECUTE_PRIV, TRUE);
-     tableCorePrivs.setWgo(EXECUTE_PRIV, wgo);
+     
+     tableCorePrivs.setAllUdrGrantPrivileges(wgo);
+     
      setTablePrivs(tableCorePrivs);
    }
 
    void setAllSequenceGrantPrivileges(const bool wgo)
    {
      PrivMgrCoreDesc corePrivs;
-     corePrivs.setPriv(USAGE_PRIV, TRUE);
-     corePrivs.setWgo(USAGE_PRIV, wgo);
+     
+     corePrivs.setAllSequenceGrantPrivileges(wgo);
+     
      setTablePrivs(corePrivs);
    }
    void setAllTableRevokePrivileges(const bool grantOption);

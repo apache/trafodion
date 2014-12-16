@@ -203,8 +203,10 @@ const char* comObjectTypeLit(ComObjectType objType)
         return COM_TRIGGER_TABLE_OBJECT_LIT;
       case COM_SYNONYM_OBJECT:
         return COM_SYNONYM_OBJECT_LIT;
-      case COM_SCHEMA_LABEL_OBJECT:
-        return COM_SCHEMA_LABEL_OBJECT_LIT;
+      case COM_SHARED_SCHEMA_OBJECT:
+        return COM_SHARED_SCHEMA_OBJECT_LIT;
+      case COM_PRIVATE_SCHEMA_OBJECT:
+        return COM_PRIVATE_SCHEMA_OBJECT_LIT;
       case COM_EXCEPTION_TABLE_OBJECT:
         return COM_EXCEPTION_TABLE_OBJECT_LIT;
       case COM_SEQUENCE_GENERATOR_OBJECT:

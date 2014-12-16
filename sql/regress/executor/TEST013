@@ -29,7 +29,7 @@ set schema cat.t013_sch;
 #else
 cqd hbase_async_drop_table 'OFF';
 --cqd call_embedded_arkcmp 'OFF';
-cqd seabase_volatile_tables 'ON';
+--cqd seabase_volatile_tables 'ON';
 set schema trafodion.t013_sch;
 #endif
 
@@ -62,6 +62,7 @@ create schema t013_sch;
 set schema $$TEST_CATALOG$$.t013_sch;
 #else
 set schema trafodion.t013_sch;
+create schema trafodion.t013_sch;
 #endif
 
 create table t013t1 (a int);
@@ -211,21 +212,14 @@ drop volatile table t013t1;
 create volatile index tempi on t013t1(a);
 drop volatile index tempi;
 
-#ifndef SEABASE_REGRESS
-create catalog t013cat;
-create schema t013cat.t013sch;
-set catalog t013cat;
-set schema t013cat.t013sch;
-#else
-set catalog seabase;
-set schema trafodion.t013sch;
-#endif
+create schema trafodion.t013sch1;
+set schema trafodion.t013sch1;
 
 create volatile table t013t1 (a int);
 
 select b from t013t1;
 select t013t1.b from t013t1;
-select b from $$TEST_CATALOG$$.t013_sch.t013t1;
+select b from t013_sch.t013t1;
 
 create volatile index t013t1i on t013t1(a desc);
 
@@ -274,7 +268,7 @@ drop table t013t3;
 invoke t013t3;
 
 -- drop regular table
-drop table t013sch.t013t3;
+drop table t013sch1.t013t3;
 
 -- these tests do not automatically make the first col to be NNND and
 -- the pkey of the volatile table.
@@ -440,10 +434,7 @@ showddl t013t1, external;
 drop table t013t1;
 drop table t013t2;
 
-#ifndef SEABASE_REGRESS
-drop schema t013cat.t013sch cascade;
-drop catalog t013cat;
-#endif
+drop schema t013sch1 cascade;
 
 cleanup obsolete volatile tables;
 

@@ -41,6 +41,7 @@
 #define MAX_AUTHID_AS_STRING_LEN 20
 #define MIN_USERID 33333
 #define MAX_USERID 999999
+#define MIN_ROLEID 1000000
 #define MAX_ROLEID 1499999
 #define NA_UserId Int32
 #define NA_AuthID Int32

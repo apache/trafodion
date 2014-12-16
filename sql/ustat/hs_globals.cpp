@@ -3293,7 +3293,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
    // See if user has component priv
    NAString privMgrMDLoc = 
           NAString(CmpSeabaseDDL::getSystemCatalogStatic()) +
-          
+          NAString(".\"") +
           NAString(SEABASE_PRIVMGR_SCHEMA) +
           NAString("\"");
 

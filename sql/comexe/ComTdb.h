@@ -890,6 +890,7 @@ class ComTdbVirtTableTableInfo  : public ComTdbVirtTableBase
   Lng32 isAudited;
   Lng32 validDef; // 0, invalid. 1, valid. 2, disabled.
   Int32 objOwnerID;
+  Int32 schemaOwnerID;
   const char * hbaseCreateOptions;
   Lng32 numSaltPartns; // num of salted partitions this table was created with.
   Lng32 rowFormat; //hbase format = 0, aligned format = 1

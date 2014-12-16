@@ -1118,6 +1118,7 @@ enum OperatorTypeEnum {
                         ELM_REF_TRIG_ACT_DELETE_RULE_ELEM,
                         ELM_REF_TRIG_ACT_UPDATE_RULE_ELEM,
 
+                        ELM_AUTH_SCHEMA_ELEM,
                         ELM_SCHEMA_NAME_ELEM,
 
                         ELM_SALT_OPTIONS_ELEM,

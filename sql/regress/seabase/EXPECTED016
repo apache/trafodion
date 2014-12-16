@@ -1,5 +1,8 @@
 >>
 >>obey TEST016(mcStatsPart_CQDs);
+>>create schema trafodion.hbase;
+
+--- SQL operation complete.
 >>set schema Trafodion.hbase;
 
 --- SQL operation complete.

@@ -36,6 +36,7 @@
 #include "ElemDDLLocation.h"
 #include "ComSmallDefs.h"
 #include "StmtDDLNode.h"
+#include "ElemDDLAuthSchema.h"
 
 // -----------------------------------------------------------------------
 // contents of this file
@@ -62,7 +63,7 @@ public:
   // register user
   StmtDDLRegisterUser(const NAString & externalUserName,
 		      const NAString * pDbUserName,
-                      ElemDDLNode *pOwner,
+                      ElemDDLNode * authSchema,
                       CollHeap * heap);
 
   // unregister user
@@ -84,9 +85,10 @@ public:
   inline const NAString & getExternalUserName() const;
   inline const NAString & getDbUserName() const ;
   inline const RegisterUserType getRegisterUserType() const;
-  inline const NABoolean isOwnerSpecified() const;
-  inline const ElemDDLGrantee *getOwner() const;
   inline const ComDropBehavior getDropBehavior() const;
+  inline const NABoolean isSchemaSpecified() const;
+  inline const SchemaName * getSchemaName() const;
+  inline const ComSchemaClass getSchemaClass() const;
 
   // for tracing
 
@@ -100,7 +102,7 @@ private:
   NAString dbUserName_;
   RegisterUserType registerUserType_;
   ComDropBehavior dropBehavior_;
-  ElemDDLGrantee *pOwner_;
+  ElemDDLAuthSchema *authSchema_;
 
 }; // class StmtDDLRegisterUser
 
@@ -129,15 +131,11 @@ StmtDDLRegisterUser::getRegisterUserType() const
 {
   return registerUserType_;
 }
+
 inline const NABoolean
-StmtDDLRegisterUser::isOwnerSpecified() const
+StmtDDLRegisterUser::isSchemaSpecified() const
 {
-  return pOwner_ ? TRUE : FALSE;
-}
-inline const ElemDDLGrantee *
-StmtDDLRegisterUser::getOwner() const
-{
-  return pOwner_;
+  return authSchema_ ? TRUE : FALSE;
 }
 
 inline const ComDropBehavior
@@ -145,6 +143,29 @@ StmtDDLRegisterUser::getDropBehavior() const
 {
   return dropBehavior_;
 }
+
+inline const ComSchemaClass
+StmtDDLRegisterUser::getSchemaClass() const
+{
+
+  if (authSchema_)
+     return authSchema_->getSchemaClass();
+   
+  return COM_SCHEMA_CLASS_DEFAULT;
+  
+}
+
+inline const SchemaName *
+StmtDDLRegisterUser::getSchemaName() const
+{
+
+  if (authSchema_ && authSchema_->isSchemaNameSpecified())
+     return &authSchema_->getSchemaName();
+   
+  return NULL;
+  
+}
+
 
 // -----------------------------------------------------------------------
 // Definition of class StmtDDLRegisterUserArray

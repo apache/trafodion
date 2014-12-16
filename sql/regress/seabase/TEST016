@@ -34,6 +34,7 @@ obey TEST016(mcStatsPart_cleanup);
 exit;
 
 ?section mcStatsPart_CQDs
+create schema trafodion.hbase;
 set schema Trafodion.hbase;
 
 cqd query_cache '0';
@@ -51,6 +52,7 @@ drop table if exists mcStatPart5;
 drop table if exists mcStatPart6;
 drop table if exists mcStatPart7;
 drop table if exists mcStatPart8;
+drop schema trafodion.hbase cascade;
 
 ?section mcStatsPart_Setup
 -- int, smallint, largeint

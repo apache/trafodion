@@ -128,6 +128,7 @@ order by 1, 2, d.grantor_ID, d.grantee_name, grant_depth
 for read uncommitted access;
 
 ?section create_db
+create shared schema t137;
 set schema t137;
 
 create role library_admin;
@@ -397,7 +398,7 @@ sh sh runmxci.ksh -i "TEST137(user8_cc)" -u sql_user8;
 -- reset state
 grant component privilege create_catalog on sql_operations to public;
 grant component privilege create_schema on sql_operations to public;
-showddl component sql_operations, grantees;
+showddl component sql_operations;
 
 ?section user1_tests
 obey TEST137 (set_up);

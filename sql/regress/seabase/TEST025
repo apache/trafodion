@@ -15,6 +15,7 @@ drop table T025T008;
 drop table T025T009;
 
 ?section prep
+create schema S025;
 set schema S025;
 
 log LOG025 clear;

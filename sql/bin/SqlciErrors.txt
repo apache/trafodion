@@ -215,7 +215,7 @@
 1227 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot unregister user.  User has been granted privileges.
 1228 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot drop role.  Role has been granted privileges.
 1229 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~string0 option is not supported.
-1230 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 04/1/04 ---
+1230 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object owner must be the schema owner in private schemas.
 1231 ZZZZZ 99999 BEGINNER MAJOR DBADMIN User-defined routine $0~String0 could not be created.
 1232 ZZZZZ 99999 BEGINNER MINOR DBADMIN A file error ($0~int0) occurred when saving dropped table DDL for table $1~TableName to $2~String0.
 1233 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating schema in SQL system catalog $0~String0 is prohibited.
@@ -378,9 +378,9 @@
 1391 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 is a metadata object and cannot be updated.
 1392 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion is already initialized on this system. No action is needed.
 1393 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion is not initialized on this system. Do 'initialize trafodion' to initialize it.
-1394 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion need to be reinitialized on this system due to missing or corrupted metadata objects. Do 'initialize trafodion, drop' followed by 'initialize trafodion' to reinitialize it. This would delete all metadata and user objects from trafodion database and recreate metadata.
-1395 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion need to be upgraded on this system due to metadata version mismatch. Do 'initialize trafodion, upgrade' to upgrade metadata. Or do 'initialize trafodion, drop' followed by 'initialize trafodion'. Be aware that the second option would delete all metadata and user objects from trafodion database.
-1396 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion need to be reinitialized on this system due to data format version mismatch.
+1394 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion needs to be reinitialized on this system due to missing or corrupted metadata objects. Do 'initialize trafodion, drop' followed by 'initialize trafodion' to reinitialize Trafodion. This will delete all metadata and user objects from the Trafodion database and recreate metadata.
+1395 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion needs to be upgraded on this system due to metadata version mismatch. Do 'initialize trafodion, upgrade' to upgrade metadata. Or do 'initialize trafodion, drop' followed by 'initialize trafodion'. Be aware that the second option will delete all metadata and user objects from Trafodion database.
+1396 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion needs to be reinitialized on this system due to data format version mismatch.
 1397 ZZZZZ 99999 BEGINNER MINOR DBADMIN Software version of objects being used is different than the version of software running on the system. Make sure that objects being used are built with the same version as that running on the system. Version of Trafodion software is picked from file sqenvcom.sh.
 1398 ZZZZZ 99999 BEGINNER MINOR DBADMIN Error $0~Int0 occured while accessing the hbase subsystem. Fix that error and make sure hbase is up and running. Error Details: $0~String0. 
 1399 ZZZZZ 99999 BEGINNER MINOR DBADMIN Metadata has already been upgraded. No action is needed.

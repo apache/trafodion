@@ -39,6 +39,7 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "ComSecurityKey.h"
 #include "NAUserId.h"
+#include "ComUser.h"
 
 // ****************************************************************************
 // File: PrivMgrPrivileges.h
@@ -93,7 +94,7 @@ public:
    
    inline const int64_t getObjectUID (void) const { return objectUID_; };
    inline const std::string getObjectName (void) const { return objectName_; };
-   inline const std::string getObjectType (void) const { return objectType_; };
+   inline const ComObjectType getObjectType (void) const { return objectType_; };
    inline const int64_t getGrantee (void) const { return granteeID_; };
    inline const std::string getGranteeName (void) const { return granteeName_; };
    inline const int64_t getGrantor (void) const { return grantorID_; };
@@ -105,7 +106,7 @@ public:
        { objectUID_ = objectUID; };
    inline void setObjectName (std::string objectName)
        { objectName_ = objectName; };
-   inline void setObjectType (std::string objectType)
+   inline void setObjectType (ComObjectType objectType)
        { objectType_ = objectType; };
    inline void setGrantee (int64_t grantee)
        { granteeID_ = grantee; };
@@ -146,7 +147,7 @@ public:
      
    int64_t            objectUID_;
    std::string        objectName_;
-   std::string        objectType_;
+   ComObjectType      objectType_;
    int32_t            granteeID_;
    std::string        granteeName_;
    std::string        granteeType_;
@@ -342,7 +343,7 @@ PrivStatus PrivMgrPrivileges::buildSecurityKeys(
 // *                                                               
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::grantObjectPriv(
-      const std::string &objectType,
+      const ComObjectType objectType,
       const int32_t granteeID,
       const std::string &granteeName,
       const std::string &grantorName,
@@ -520,7 +521,7 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
     for (size_t i = 0; i < listOfObjects.size(); i++)
     {
       ObjectUsage *pObj = listOfObjects[i];
-      int32_t theGrantor = (pObj->objectType == VIEW_OBJECT_LIT) ? SYSTEM_AUTH_ID : grantorID_;
+      int32_t theGrantor = (pObj->objectType == COM_VIEW_OBJECT) ? SYSTEM_AUTH_ID : grantorID_;
       int32_t theGrantee = pObj->objectOwner;
       int64_t theUID = pObj->objectUID;
       PrivMgrCoreDesc thePrivs = pObj->updatedPrivs.getTablePrivs();
@@ -571,7 +572,7 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
 // *                                                               
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::grantObjectPriv(
-      const std::string &objectType,
+      const ComObjectType objectType,
       const int32_t granteeID,
       const std::string &granteeName,
       const PrivMgrBitmap privsBitmap,
@@ -638,6 +639,89 @@ PrivStatus PrivMgrPrivileges::grantSelectOnAuthsToPublic(
   
 }
 
+// *****************************************************************************
+// * Method: grantToOwners                                
+// *                                                       
+// *   Performs the initial grant from the system to the owner.  For private 
+// * schemas, where the creator is not the schema/object owner, a grant from 
+// * the object owner to the creator is also performed.                                                     
+// *                                                       
+// *  Parameters:    
+// *                                                                       
+// *  <objectType> is the type of the subject object.
+// *  <granteeID> is the unique identifier for the grantee
+// *  <granteeName> is the name of the grantee (upper cased)
+// *  <ownerID> is the unique identifier for the owner of the object
+// *  <ownerName> is the name of the owner (upper cased)
+// *  <creatorID> is the unique identifier for the creator of the object
+// *  <creatorName> is the name of the creator (upper cased)
+// *                                                                     
+// * Returns: PrivStatus                                               
+// *                                                                  
+// * STATUS_GOOD: All DML privs were granted 
+// *           *: Not all privs were granted.  Error in CLI diags area.     
+// *                                                               
+// *****************************************************************************
+PrivStatus PrivMgrPrivileges::grantToOwners(
+   const ComObjectType objectType,
+   const Int32 granteeID,
+   const std::string & granteeName,
+   const Int32 ownerID,
+   const std::string & ownerName,
+   const Int32 creatorID,
+   const std::string & creatorName)
+
+{
+
+ObjectPrivsMDRow row;
+PrivMgrCoreDesc corePrivs;
+PrivMgrBitmap privsBitmap; 
+PrivMgrBitmap grantableBitmap; 
+
+   corePrivs.setAllObjectGrantPrivilege(objectType,true);
+   privsBitmap = corePrivs.getPrivBitmap();
+   grantableBitmap = corePrivs.getWgoBitmap();
+   
+// Add the root grant from the system.   
+   row.objectUID_ = objectUID_;
+   row.objectName_ = objectName_;
+   row.objectType_ = objectType;
+   row.granteeID_ = ownerID;
+   row.granteeName_ = ownerName;
+   row.granteeType_ = USER_GRANTEE_LIT;
+   row.grantorID_ = SYSTEM_AUTH_ID;
+   row.grantorName_ = SYSTEM_AUTH_NAME;  
+   row.grantorType_ = COM_SYSTEM_GRANTOR_LIT;
+   row.privsBitmap_ = privsBitmap;
+   row.grantableBitmap_ = grantableBitmap;
+ 
+ObjectPrivsMDTable objectPrivsTable(fullTableName_,pDiags_);
+
+PrivStatus privStatus = objectPrivsTable.insert(row);
+
+   if (privStatus != STATUS_GOOD)
+      return privStatus;
+
+// If the owner and creator are the same, we are done.
+// If not, this is an object being created in a private schema, and 
+// we need to grant privileges to the creator.  If the creator is DB__ROOT,
+// no need to grant privileges.
+// 
+// This creator grant may be controlled by a CQD in the future.
+   if (ownerID == creatorID || creatorID == ComUser::getRootUserID())
+      return STATUS_GOOD;
+ 
+// Add a grant from the private schema owner to the creator.     
+   row.grantorID_ = row.granteeID_;
+   row.grantorName_ = row.granteeName_;
+   row.grantorType_ = USER_GRANTOR_LIT;
+   row.granteeID_ = creatorID;
+   row.granteeName_ = creatorName;
+      
+   return objectPrivsTable.insert(row); 
+  
+}
+
 // ****************************************************************************
 // method:  dealWithConstraints
 //
@@ -660,7 +744,7 @@ PrivStatus PrivMgrPrivileges::dealWithConstraints(
   PrivStatus retcode = STATUS_GOOD;
 
   // RI constraints can only be defined for base tables
-  if (objectUsage.objectType != BASE_TABLE_OBJECT_LIT)
+  if (objectUsage.objectType != COM_BASE_TABLE_OBJECT)
     return STATUS_GOOD;
   
   // get the underlying tables for all RI constraints that reference the object
@@ -787,7 +871,7 @@ PrivStatus PrivMgrPrivileges::dealWithViews(
       pUsage->objectUID = viewUsage.viewUID;
       pUsage->objectOwner = viewUsage.viewOwner;
       pUsage->objectName = viewUsage.viewName;
-      pUsage->objectType = VIEW_OBJECT_LIT;
+      pUsage->objectType = COM_VIEW_OBJECT;
       pUsage->originalPrivs = viewUsage.originalPrivs;
       pUsage->updatedPrivs = viewUsage.updatedPrivs;
       listOfAffectedObjects.push_back(pUsage);
@@ -969,7 +1053,7 @@ PrivStatus PrivMgrPrivileges::getGrantedPrivs(
 // *           *: Unable to grant privileges, see diags.     
 // *                                                               
 // *****************************************************************************
-PrivStatus PrivMgrPrivileges::revokeObjectPriv (const std::string &objectType,
+PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
                                                 const int32_t granteeID,
                                                 const std::vector<std::string> &privsList,
                                                 const bool isAllSpecified,
@@ -1149,7 +1233,7 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const std::string &objectType,
     PrivMgrCoreDesc thePrivs = pObj->updatedPrivs.getTablePrivs();
 
     // If view no longer has select privilege, throw an error
-    if (pObj->objectType == VIEW_OBJECT_LIT)
+    if (pObj->objectType == COM_VIEW_OBJECT)
     {
       if (!thePrivs.getPriv(SELECT_PRIV))
       {
@@ -1161,7 +1245,7 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const std::string &objectType,
       }
     }
 
-    int32_t theGrantor = (pObj->objectType == VIEW_OBJECT_LIT) ? SYSTEM_AUTH_ID : grantorID_;
+    int32_t theGrantor = (pObj->objectType == COM_VIEW_OBJECT) ? SYSTEM_AUTH_ID : grantorID_;
     int32_t theGrantee = pObj->objectOwner;
     int64_t theUID = pObj->objectUID;
 
@@ -2159,7 +2243,7 @@ bool PrivMgrPrivileges::isAuthIDGrantedPrivs(const int32_t authID)
 // *                                                               
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::convertPrivsToDesc( 
-  const std::string objectType,
+  const ComObjectType objectType,
   const bool isAllSpecified,
   const bool isWgoSpecified,
   const bool isGOFSpecified,
@@ -2172,21 +2256,29 @@ PrivStatus PrivMgrPrivileges::convertPrivsToDesc(
   bool isUdr = false;
   bool isObject = false;
   bool isSequence = false;
-  if (objectType == BASE_TABLE_OBJECT_LIT)
-    isObject = true;
-  else if (objectType == VIEW_OBJECT_LIT)
-    isObject = true;
-  else if (objectType == LIBRARY_OBJECT_LIT)
-    isLibrary = true;
-  else if (objectType == USER_DEFINED_ROUTINE_OBJECT_LIT)
-    isUdr = true;
-  else if (objectType == SEQUENCE_GENERATOR_OBJECT_LIT)
-    isSequence = true;
-  else
+  switch (objectType)
   {
-    *pDiags_ << DgSqlCode (-4219)
-            << DgString1 (objectType.c_str());
-    return STATUS_ERROR;
+     case COM_BASE_TABLE_OBJECT:
+     case COM_VIEW_OBJECT:
+       isObject = true;
+       break;
+     case COM_LIBRARY_OBJECT:
+       isLibrary = true;
+       break;
+     case COM_USER_DEFINED_ROUTINE_OBJECT:
+       isUdr = true;
+       break;
+     case COM_SEQUENCE_GENERATOR_OBJECT:
+       isSequence = true;
+       break;
+     default:
+     {
+       char objectTypeLit[3] = {0};
+       strncpy(objectTypeLit,ObjectEnumToLit(objectType),2);
+       *pDiags_ << DgSqlCode(-4219)
+                << DgString1(objectTypeLit);
+       return STATUS_ERROR;
+     }
   }
 
   // If all is specified, set bits appropriate for the object type and return
@@ -2468,7 +2560,7 @@ void ObjectPrivsMDTable::setRow (OutputInfo *pCliRow,
   assert (len < 3);
   strncpy(value, ptr, len);
   value[len] = 0;
-  row.objectType_ = value;
+  row.objectType_ = PrivMgr::ObjectLitToEnum(value);
 
   // column 4: grantee uid
   pCliRow->get(3,ptr,len);
@@ -2544,11 +2636,15 @@ PrivStatus ObjectPrivsMDTable::insert(const PrivMgrMDRow &rowIn)
 
   int64_t privilegesBitmapLong = row.getPrivilegesBitmap().to_ulong();
   int64_t grantableBitmapLong = row.getGrantableBitmap().to_ulong();
+  char objectTypeLit[3] = {0};
+  
+  strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(row.objectType_),2);
+  
   sprintf(insertStmt, "insert into %s values (%ld, '%s', '%s', %ld, '%s', '%s', %ld, '%s', '%s', %ld, %ld)",
               tableName_.c_str(),
               row.getObjectUID(),
               row.getObjectName().c_str(),
-              row.getObjectType().c_str(),
+              objectTypeLit,
               row.getGrantee(),
               row.getGranteeName().c_str(),
               row.granteeType_.c_str(),
@@ -2771,13 +2867,18 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
            tableBits, libraryBits, sequenceBits);
   std::string grantableClause(buf);
 
-  sprintf(buf, "insert into %s select distinct object_uid, trim(catalog_name) || '.\"' || trim(schema_name) ||  '\".\"' || trim(object_name) || '\"', object_type, object_owner, (select auth_db_name from %s where auth_id = o.object_owner) as auth_db_name, '%s', %d, '%s', '%s', %s, %s from %s o where o.object_type in ('VI','BT','LB','UR','SG')",
-              tableName_.c_str(),
-              authsLocation.c_str(),
-              USER_GRANTEE_LIT,
-              -2, systemGrantor.c_str(), SYSTEM_GRANTOR_LIT,
-              privilegesClause.c_str(), grantableClause.c_str(),
-              objectsLocation.c_str());
+  sprintf(buf, "insert into %s select distinct object_uid, "
+          "trim(catalog_name) || '.\"' || trim(schema_name) ||  '\".\"' || trim(object_name) || '\"', "
+          "object_type, object_owner, "
+          "(select auth_db_name from %s where auth_id = o.object_owner) as auth_db_name, "
+          "'%s', %d, '%s', '%s', %s, %s from %s o " 
+          "where o.object_type in ('VI','BT','LB','UR','SG')",
+          tableName_.c_str(),
+          authsLocation.c_str(),
+          USER_GRANTEE_LIT,
+          SYSTEM_AUTH_ID, SYSTEM_AUTH_NAME, SYSTEM_GRANTOR_LIT,
+          privilegesClause.c_str(), grantableClause.c_str(),
+          objectsLocation.c_str());
 
   // set pointer in diags area
   int32_t diagsMark = pDiags_->mark();

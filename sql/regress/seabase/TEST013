@@ -18,7 +18,6 @@
 --  limitations under the License.
 --
 -- @@@ END COPYRIGHT @@@
-
 set schema trafodion.hbase;
 obey TEST013(clean_up);
 
@@ -52,7 +51,7 @@ exit;
 
 ?section setup
 --------------------------------------------------------------------------
-
+create schema trafodion.hbase;
 -- CHAR ----
 create table char8(a char(10) not null not droppable, b char(20), primary key (a)) ;
 
@@ -136,6 +135,7 @@ drop table if exists date8;
 drop table if exists numeric10dot2;
 drop table if exists time2;
 drop table if exists timestamp2;
+drop schema trafodion.hbase cascade;
 
 
 ?section test_char

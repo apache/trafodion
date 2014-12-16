@@ -92,16 +92,14 @@
 >>set parserflags 1;
 
 --- SQL operation complete.
->>-- succeed: register user -> BY clause
->>register user test136_user5
-+>  by DB__UserAdminUser;
+>>-- succeed: register user
+>>register user test136_user5;
 
 --- SQL operation complete.
 >>
->>-- succeed: register user -> AS and BY clause
+>>-- succeed: register user -> AS clause
 >>register user test136_user6
-+>  as test136_u6
-+>  by DB__UserAdminUser;
++>  as test136_u6;
 
 --- SQL operation complete.
 >>reset parserflags 1;
@@ -674,9 +672,9 @@ CREATE TABLE TRAFODION.T136SCH.T136T1
 
 >>showddl schema $$TEST_CATALOG$$.t136sch, privileges;
 
-*** ERROR[4222] The DESCRIBE SCHEMA feature is not supported in this software version.
+CREATE PRIVATE SCHEMA "TRAFODION"."T136SCH" AUTHORIZATION "DB__ROOT";
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>revoke create on schema $$TEST_CATALOG$$.t136sch from test136_user1;
 
 *** ERROR[4222] The DDL feature is not supported in this software version.
@@ -685,9 +683,9 @@ CREATE TABLE TRAFODION.T136SCH.T136T1
 
 >>showddl schema $$TEST_CATALOG$$.t136sch, privileges;
 
-*** ERROR[4222] The DESCRIBE SCHEMA feature is not supported in this software version.
+CREATE PRIVATE SCHEMA "TRAFODION"."T136SCH" AUTHORIZATION "DB__ROOT";
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>unregister user test136_user1;
 
 *** ERROR[1333] User TEST136_USER1 does not exist.

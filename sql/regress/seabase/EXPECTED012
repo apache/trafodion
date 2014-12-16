@@ -44,7 +44,7 @@
 >>invoke t012t1;
 
 -- Definition of Trafodion table TRAFODION.SEABASE.T012T1
--- Definition current  Thu May 29 07:45:21 2014
+-- Definition current  Thu Nov 20 07:44:05 2014
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -67,7 +67,7 @@
 >>invoke t012v1;
 
 -- Definition of Trafodion view TRAFODION.SEABASE.T012V1
--- Definition current  Thu May 29 07:45:23 2014
+-- Definition current  Thu Nov 20 07:44:08 2014
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -185,6 +185,9 @@ A       B            C
 --- SQL operation complete.
 >>
 >>obey TEST012(schemaDrop);
+>>create schema trafodion.zschema;
+
+--- SQL operation complete.
 >>set schema trafodion.zschema;
 
 --- SQL operation complete.

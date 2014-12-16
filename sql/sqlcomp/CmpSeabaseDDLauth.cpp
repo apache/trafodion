@@ -63,15 +63,31 @@ inline static bool validateExternalUsername(
 // ****************************************************************************
 
 // ----------------------------------------------------------------------------
-// Default constructor
+// Constructors
 // ----------------------------------------------------------------------------
-CmpSeabaseDDLauth::CmpSeabaseDDLauth()
+CmpSeabaseDDLauth::CmpSeabaseDDLauth(
+   const NAString & systemCatalog,
+   const NAString & MDSchema) 
 : authID_(NA_UserIdDefault),
   authType_(COM_UNKNOWN_ID_CLASS),
   authCreator_(NA_UserIdDefault),
   authCreateTime_(0),
   authRedefTime_(0),
-  authValid_(true)
+  authValid_(true),
+  systemCatalog_(systemCatalog),
+  MDSchema_(MDSchema)
+{}
+
+CmpSeabaseDDLauth::CmpSeabaseDDLauth() 
+: authID_(NA_UserIdDefault),
+  authType_(COM_UNKNOWN_ID_CLASS),
+  authCreator_(NA_UserIdDefault),
+  authCreateTime_(0),
+  authRedefTime_(0),
+  authValid_(true),
+  systemCatalog_("TRAFODION"),
+  MDSchema_("TRAFODION.\"_MD_\"")
+  
 {}
 
 // ----------------------------------------------------------------------------
@@ -282,6 +298,45 @@ bool CmpSeabaseDDLauth::isAuthNameValid(const NAString &authName)
   return false;
 }
 
+
+
+// ----------------------------------------------------------------------------
+// method: isRoleID
+//
+// Determines if an authID is in the role ID range
+//
+// Input:
+//    Int32 - authID -- numeric ID to check
+//
+// Returns:  true if authID is a role ID, false otherwise
+// ----------------------------------------------------------------------------
+bool CmpSeabaseDDLauth::isRoleID(Int32 authID) 
+
+{
+
+   return (authID >= MIN_ROLEID && authID <= MAX_ROLEID);
+   
+}
+
+
+// ----------------------------------------------------------------------------
+// method: isUserID
+//
+// Determines if an authID is in the user ID range
+//
+// Input:
+//    Int32 - authID -- numeric ID to check
+//
+// Returns:  true if authID is a user ID, false otherwise
+// ----------------------------------------------------------------------------
+bool CmpSeabaseDDLauth::isUserID(Int32 authID) 
+
+{
+
+   return (authID >= MIN_USERID && authID <= MAX_USERID);
+   
+}
+
 // ----------------------------------------------------------------------------
 // Methods that perform metadata access
 //
@@ -400,8 +455,10 @@ CmpSeabaseDDLauth::selectExactRow(const NAString & whereClause)
 {
    NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
    char buf[1000];
-   str_sprintf(buf, "select auth_id, auth_db_name, auth_ext_name, auth_type, auth_creator, auth_is_valid, auth_create_time, auth_redef_time from %s.\"%s\".%s %s ",
-              sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS, whereClause.data());
+   str_sprintf(buf, "select auth_id, auth_db_name, auth_ext_name, auth_type, "
+                    "auth_creator, auth_is_valid, auth_create_time, auth_redef_time"
+                    " from %s.%s %s ",
+               MDSchema_.data(), SEABASE_AUTHS, whereClause.data());
     NAString cmd (buf);
 
   ExeCliInterface cliInterface(STMTHEAP);
@@ -493,8 +550,8 @@ Int64 CmpSeabaseDDLauth::selectCount(const NAString & whereClause)
 {
   NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
   char buf[1000];
-  str_sprintf(buf, "select count(*) from %s.\"%s\".%s %s ",
-                sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS, 
+  str_sprintf(buf, "select count(*) from %s.%s %s ",
+                MDSchema_.data(), SEABASE_AUTHS, 
                 whereClause.data());
 
   Lng32 len = 0;
@@ -518,9 +575,8 @@ Int32 CmpSeabaseDDLauth::selectMaxAuthID(const NAString &whereClause)
 {
   NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
   char buf[400];
-  str_sprintf(buf, "select nvl(max (auth_id),0) from %s.\"%s\".%s %s" , 
-              sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS,
-              whereClause.data());
+  str_sprintf(buf, "select nvl(max (auth_id),0) from %s.%s %s" , 
+              MDSchema_.data(),SEABASE_AUTHS,whereClause.data());
 
   Lng32 len = 0;
   Int64 maxValue = 0;
@@ -542,10 +598,18 @@ Int32 CmpSeabaseDDLauth::selectMaxAuthID(const NAString &whereClause)
 // ****************************************************************************
 
 // ----------------------------------------------------------------------------
-// Default constructor
+// Constructor
 // ----------------------------------------------------------------------------
-CmpSeabaseDDLuser::CmpSeabaseDDLuser()
+CmpSeabaseDDLuser::CmpSeabaseDDLuser(
+   const NAString & systemCatalog,
+   const NAString & MDSchema) 
+: CmpSeabaseDDLauth(systemCatalog,MDSchema)
+
+{}
+
+CmpSeabaseDDLuser::CmpSeabaseDDLuser() 
 : CmpSeabaseDDLauth()
+
 {}
 
 // ----------------------------------------------------------------------------
@@ -723,26 +787,49 @@ DBUserAuth::AuthenticationConfiguration foundConfigurationNumber = DBUserAuth::D
     Int32 userID = getUniqueID();
     setAuthID (userID);
 
-    // If the BY clause was specified, then register the user on behalf of the
-    // authorization ID specified in this clause.
-    // Need to translate the creator name to its authID
-    if (pNode->getOwner() == NULL)
-    {
-      // get effective user from the Context
-      Int32 *pUserID = GetCliGlobals()->currContext()->getDatabaseUserID();
-      setAuthCreator(*pUserID);
-    }
-    else
-    {
-      const NAString creatorName =
-        pNode->getOwner()->getAuthorizationIdentifier();
-      // TODO: get the authID for the creatorName
-      // TODO: verify creator can register users
-      setAuthCreator(NA_UserIdDefault);
-    }
+    // get effective user from the Context
+    Int32 *pUserID = GetCliGlobals()->currContext()->getDatabaseUserID();
+    setAuthCreator(*pUserID);
 
     // Add the user to AUTHS table
     insertRow();
+#if 0    
+    if (pNode->isSchemaSpecified())
+    {
+       ExeCliInterface cliInterface(STMTHEAP);
+       char buf [1000];
+       NAString csStmt;
+                      COM_SCHEMA_CLASS_PRIVATE = 3,
+                      COM_SCHEMA_CLASS_SHARED = 4,
+                      COM_SCHEMA_CLASS_DEFAULT = 5};
+       
+       csStmt = "CREATE ";
+       switch (pNode->getSchemaClass())
+       {
+          case COM_SCHEMA_CLASS_SHARED:
+             csStmt += "SHARED ";
+             break;
+          case COM_SCHEMA_CLASS_DEFAULT:
+          case COM_SCHEMA_CLASS_PRIVATE:
+             csStmt += "PRIVATE ";
+             break;
+          default:
+          {
+             SEABASEDDL_INTERNAL_ERROR("Unknown schema class in registerUser");
+             return;
+          }
+       }
+           
+       csStmt += pNode->getSchemaName()->getCatalogName();
+       csStmt +- ".";  
+       csStmt += pNode->getSchemaName()->getSchemaName();
+       
+       str_sprintf(buf, "CREATE %s SCHEMA %s \"%s\".\"%s\".\"%s\" cascade",
+                   (char*)catName.data(), (char*)schName.data(), objName);
+       
+       cliRC = cliInterface.executeImmediate(buf);
+    }
+#endif       
   }
   catch (...)
   {
@@ -761,9 +848,7 @@ DBUserAuth::AuthenticationConfiguration foundConfigurationNumber = DBUserAuth::D
 // Input:  parse tree containing a definition of the user
 // Output: the global diags area is set up with the result
 // ----------------------------------------------------------------------------
-void CmpSeabaseDDLuser::unregisterUser(
-   const std::string & systemCatalog,
-   StmtDDLRegisterUser * pNode)
+void CmpSeabaseDDLuser::unregisterUser(StmtDDLRegisterUser * pNode)
 
 {
   try
@@ -811,17 +896,13 @@ void CmpSeabaseDDLuser::unregisterUser(
     }
     
     // User does not own any roles, but may have been granted roles.
+    NAString privMgrMDLoc;
+
+    CONCAT_CATSCH(privMgrMDLoc,systemCatalog_.data(),SEABASE_PRIVMGR_SCHEMA);
     
-      NAString trafMDLocation;
-
-      CONCAT_CATSCH(trafMDLocation,systemCatalog.c_str(),SEABASE_MD_SCHEMA);
-        
-      NAString privMgrMDLoc;
-
-      CONCAT_CATSCH(privMgrMDLoc,systemCatalog.c_str(),SEABASE_PRIVMGR_SCHEMA);
-      
-      PrivMgrRoles role(std::string(trafMDLocation),std::string(privMgrMDLoc),
-                        CmpCommon::diags());
+    PrivMgrRoles role(std::string(MDSchema_.data()),
+                      std::string(privMgrMDLoc.data()),
+                      CmpCommon::diags());
     
     if (role.isAuthorizationEnabled() &&
         role.isUserGrantedAnyRole(getAuthID()))
@@ -1166,9 +1247,25 @@ PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
 // ****************************************************************************
 
 // ----------------------------------------------------------------------------
-// Default constructor
+// Constructors
 // ----------------------------------------------------------------------------
-CmpSeabaseDDLrole::CmpSeabaseDDLrole()
+CmpSeabaseDDLrole::CmpSeabaseDDLrole(
+   const NAString & systemCatalog,
+   const NAString & MDSchema) 
+: CmpSeabaseDDLauth(systemCatalog,MDSchema)
+{}
+
+CmpSeabaseDDLrole::CmpSeabaseDDLrole(const NAString & systemCatalog) 
+: CmpSeabaseDDLauth()
+{
+
+   systemCatalog_ = systemCatalog;
+
+   CONCAT_CATSCH(MDSchema_,systemCatalog.data(),SEABASE_MD_SCHEMA);
+
+}
+
+CmpSeabaseDDLrole::CmpSeabaseDDLrole() 
 : CmpSeabaseDDLauth()
 {}
 
@@ -1181,9 +1278,7 @@ CmpSeabaseDDLrole::CmpSeabaseDDLrole()
 // Input:  parse tree containing a definition of the role
 // Output: the global diags area is set up with the result
 // ----------------------------------------------------------------------------
-void CmpSeabaseDDLrole::createRole(
-   const std::string & systemCatalog,
-   StmtDDLCreateRole * pNode)
+void CmpSeabaseDDLrole::createRole(StmtDDLCreateRole * pNode)
    
 {
 
@@ -1276,15 +1371,11 @@ void CmpSeabaseDDLrole::createRole(
       insertRow();
       
       // Grant this role to the creator of the role if authorization is enabled.
-      NAString trafMDLocation;
-
-      CONCAT_CATSCH(trafMDLocation,systemCatalog.c_str(),SEABASE_MD_SCHEMA);
-        
       NAString privMgrMDLoc;
 
-      CONCAT_CATSCH(privMgrMDLoc,systemCatalog.c_str(),SEABASE_PRIVMGR_SCHEMA);
+      CONCAT_CATSCH(privMgrMDLoc,systemCatalog_.data(),SEABASE_PRIVMGR_SCHEMA);
       
-      PrivMgrRoles roles(std::string(trafMDLocation),std::string(privMgrMDLoc),
+      PrivMgrRoles roles(std::string(MDSchema_.data()),std::string(privMgrMDLoc),
                          CmpCommon::diags());
       
       if (roles.isAuthorizationEnabled())
@@ -1367,7 +1458,6 @@ size_t prefixLength = strlen(RESERVED_AUTH_NAME_PREFIX);
 //
 // Input:
 //   roleName - name of role to describe
-//   systemCatalog - the location of the system catalog
 //
 // Input/Output:  
 //   roleText - the CREATE ROLE (and GRANT ROLE) text
@@ -1378,7 +1468,6 @@ size_t prefixLength = strlen(RESERVED_AUTH_NAME_PREFIX);
 //-----------------------------------------------------------------------------
 bool CmpSeabaseDDLrole::describe(
    const NAString & roleName, 
-   const char * systemCatalog,
    NAString &roleText)
    
 {
@@ -1432,15 +1521,11 @@ bool CmpSeabaseDDLrole::describe(
       
       // See if authorization is enable.  If so, need to list any grants of this
       // role.  Otherwise, we are outta here.
-      NAString trafMDLocation;
-
-      CONCAT_CATSCH(trafMDLocation,systemCatalog,SEABASE_MD_SCHEMA);
-        
       NAString privMgrMDLoc;
 
-      CONCAT_CATSCH(privMgrMDLoc,systemCatalog,SEABASE_PRIVMGR_SCHEMA);
+      CONCAT_CATSCH(privMgrMDLoc,systemCatalog_.data(),SEABASE_PRIVMGR_SCHEMA);
       
-      PrivMgrRoles roles(std::string(trafMDLocation),std::string(privMgrMDLoc),
+      PrivMgrRoles roles(std::string(MDSchema_.data()),std::string(privMgrMDLoc),
                          CmpCommon::diags());
     
       if (!roles.isAuthorizationEnabled())
@@ -1529,9 +1614,7 @@ bool CmpSeabaseDDLrole::describe(
 // Input:  parse tree containing a definition of the role
 // Output: the global diags area is set up with the result
 // ----------------------------------------------------------------------------
-void CmpSeabaseDDLrole::dropRole(
-   const std::string & systemCatalog,
-   StmtDDLCreateRole * pNode)
+void CmpSeabaseDDLrole::dropRole(StmtDDLCreateRole * pNode)
         
 {
 
@@ -1564,15 +1647,11 @@ void CmpSeabaseDDLrole::dropRole(
       if (ComUser::getCurrentUser() != getAuthCreator())
          verifyAuthority();
       
-      NAString trafMDLocation;
-
-      CONCAT_CATSCH(trafMDLocation,systemCatalog.c_str(),SEABASE_MD_SCHEMA);
-        
       NAString privMgrMDLoc;
 
-      CONCAT_CATSCH(privMgrMDLoc,systemCatalog.c_str(),SEABASE_PRIVMGR_SCHEMA);
+      CONCAT_CATSCH(privMgrMDLoc,systemCatalog_.data(),SEABASE_PRIVMGR_SCHEMA);
       
-      PrivMgrRoles role(std::string(trafMDLocation),std::string(privMgrMDLoc),
+      PrivMgrRoles role(std::string(MDSchema_.data()),std::string(privMgrMDLoc),
                         CmpCommon::diags());
       
       if (role.isAuthorizationEnabled())

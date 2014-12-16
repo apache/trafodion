@@ -581,9 +581,20 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
 
   if (d->getIsSchema())
     {
-      *CmpCommon::diags() << DgSqlCode(-4222)
-                          << DgString0("DESCRIBE SCHEMA");
-      return -1;
+      NAString schemaText;
+      QualifiedName objQualName(d->getDescribedTableName().getQualifiedNameObj(),
+                                STMTHEAP);
+      if (!CmpSeabaseDDL::describeSchema(objQualName.getCatalogName(),
+                                         objQualName.getSchemaName(),
+                                         schemaText))
+        return -1;
+        
+      outputLine(space, schemaText,0);
+      outbuflen = space.getAllocatedSpaceSize();
+      outbuf = new (heap) char[outbuflen];
+      space.makeContiguous(outbuf, outbuflen);
+
+      return 0;
     }
   
   // If SHOWDDL USER, go get description and return
@@ -606,10 +617,8 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   if (d->getIsRole())
   {
       NAString roleText;
-      CmpSeabaseDDLrole roleInfo;
-      if (!roleInfo.describe(d->getAuthIDName(),
-                             ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG),
-                             roleText))
+      CmpSeabaseDDLrole roleInfo(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
+      if (!roleInfo.describe(d->getAuthIDName(),roleText))
         return -1;
 
       outputLine(space, roleText,0);
@@ -2755,16 +2764,21 @@ short CmpDescribeSeabaseTable (
       // be owned by the effective user
       if (type == 3)
         {
-          // Get the effective user
-          ComUser userInfo;
-          NAString userNameStr;
-          if (userInfo.getEffectiveUserName(userNameStr) != 0)
+          // Get the owner of the table
+          char authName[MAX_DBUSERNAME_LEN + 1];
+          int32_t length;
+          
+          Int16 retCode = ComUser::getAuthNameFromAuthID(naTable->getOwner(),
+                                                         authName,
+                                                         sizeof(authName),
+                                                         length);
+          if (retCode != 0)
             return -1;
 
           if (attributesSet)
-            sprintf(buf,  ", BY \"%s\"", userNameStr.data());
+            sprintf(buf,  ", BY \"%s\"", authName);
           else
-            sprintf(buf,  " attributes BY \"%s\"", userNameStr.data());
+            sprintf(buf,  " attributes BY \"%s\"", authName);
           outputShortLine(space, buf);
         }
 

@@ -10,6 +10,9 @@
 >>set schema trafodion.t013_sch;
 
 --- SQL operation complete.
+>>create schema trafodion.t013_sch;
+
+--- SQL operation complete.
 >>#endif
 >>
 >>create table t013t1 (a int);
@@ -18,7 +21,7 @@
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Sep  2 22:04:27 2014
+-- Definition current  Fri Dec 12 13:13:55 2014
 
   (
     A                                INT DEFAULT NULL
@@ -46,7 +49,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Tue Sep  2 22:04:31 2014
+-- Definition current  Fri Dec 12 13:14:07 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -108,7 +111,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Sep  2 22:04:39 2014
+-- Definition current  Fri Dec 12 13:14:47 2014
 
   (
     A                                INT DEFAULT NULL
@@ -133,7 +136,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Tue Sep  2 22:04:41 2014
+-- Definition current  Fri Dec 12 13:14:57 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -172,7 +175,7 @@ A            B            C
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Sep  2 22:04:45 2014
+-- Definition current  Fri Dec 12 13:15:08 2014
 
   (
     A                                INT DEFAULT NULL
@@ -194,7 +197,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Tue Sep  2 22:04:46 2014
+-- Definition current  Fri Dec 12 13:15:10 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -428,10 +431,10 @@ CONTROL QUERY DEFAULT
   DEF_NUM_NODES_IN_ACTIVE_CLUSTERS	1
   POS_ALLOW_NON_PK_TABLES       	ON
   MODE_SEABASE                  	ON
+  SEABASE_VOLATILE_TABLES       	ON
   HBASE_SERIALIZATION           	ON
   HBASE_FILTER_PREDS            	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
-  SEABASE_VOLATILE_TABLES       	ON
   POS                           	OFF
   SCHEMA                        	TRAFODION.T013_SCH
   METADATA_CACHE_SIZE           	20
@@ -443,7 +446,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Sep  2 22:04:54 2014
+-- Definition current  Fri Dec 12 13:15:54 2014
 
   (
     A                                INT DEFAULT NULL
@@ -463,7 +466,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Sep  2 22:04:56 2014
+-- Definition current  Fri Dec 12 13:15:59 2014
 
   (
     A                                INT DEFAULT NULL
@@ -488,19 +491,12 @@ CONTROL QUERY DEFAULT
 
 --- SQL operation failed with errors.
 >>
->>#ifndef SEABASE_REGRESS
->>create catalog t013cat;
->>create schema t013cat.t013sch;
->>set catalog t013cat;
->>set schema t013cat.t013sch;
->>#else
->>set catalog seabase;
+>>create schema trafodion.t013sch1;
 
 --- SQL operation complete.
->>set schema trafodion.t013sch;
+>>set schema trafodion.t013sch1;
 
 --- SQL operation complete.
->>#endif
 >>
 >>create volatile table t013t1 (a int);
 
@@ -508,19 +504,19 @@ CONTROL QUERY DEFAULT
 >>
 >>select b from t013t1;
 
-*** ERROR[4001] Column B is not found.  Tables in scope: T013T1(volatile).  Default schema: TRAFODION.T013SCH.
+*** ERROR[4001] Column B is not found.  Tables in scope: T013T1(volatile).  Default schema: TRAFODION.T013SCH1.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select t013t1.b from t013t1;
 
-*** ERROR[4002] Column T013T1.B is not found.  Table T013T1 not exposed.  Tables in scope: T013T1(volatile).  Default schema: TRAFODION.T013SCH.
+*** ERROR[4002] Column T013T1.B is not found.  Table T013T1 not exposed.  Tables in scope: T013T1(volatile).  Default schema: TRAFODION.T013SCH1.
 
 *** ERROR[8822] The statement was not prepared.
 
->>select b from $$TEST_CATALOG$$.t013_sch.t013t1;
+>>select b from t013_sch.t013t1;
 
-*** ERROR[4001] Column B is not found.  Tables in scope: TRAFODION.T013_SCH.T013T1.  Default schema: TRAFODION.T013SCH.
+*** ERROR[4001] Column B is not found.  Tables in scope: TRAFODION.T013_SCH.T013T1.  Default schema: TRAFODION.T013SCH1.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -560,8 +556,8 @@ control query shape nested_join(anything,anything);
 --- SQL operation complete.
 >>invoke t013t3;
 
--- Definition of Trafodion table TRAFODION.T013SCH.T013T3
--- Definition current  Tue Sep  2 22:05:06 2014
+-- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
+-- Definition current  Fri Dec 12 13:16:42 2014
 
   (
     A                                INT DEFAULT NULL
@@ -578,7 +574,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion volatile table T013T3
--- Definition current  Tue Sep  2 22:05:07 2014
+-- Definition current  Fri Dec 12 13:16:44 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -592,8 +588,8 @@ control query shape nested_join(anything,anything);
 --- SQL operation complete.
 >>invoke t013t3;
 
--- Definition of Trafodion table TRAFODION.T013SCH.T013T3
--- Definition current  Tue Sep  2 22:05:08 2014
+-- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
+-- Definition current  Fri Dec 12 13:16:51 2014
 
   (
     A                                INT DEFAULT NULL
@@ -657,8 +653,8 @@ CREATE VOLATILE TABLE T013T3
 >>#endif
 >>invoke t013t3;
 
--- Definition of Trafodion table TRAFODION.T013SCH.T013T3
--- Definition current  Tue Sep  2 22:05:14 2014
+-- Definition of Trafodion table TRAFODION.T013SCH1.T013T3
+-- Definition current  Fri Dec 12 13:17:19 2014
 
   (
     A                                INT DEFAULT NULL
@@ -668,7 +664,7 @@ CREATE VOLATILE TABLE T013T3
 --- SQL operation complete.
 >>
 >>-- drop regular table
->>drop table t013sch.t013t3;
+>>drop table t013sch1.t013t3;
 
 --- SQL operation complete.
 >>
@@ -788,7 +784,7 @@ CREATE VOLATILE TABLE T013T1
 --- SQL operation failed with errors.
 >>showddl t013t1, external;
 
-*** ERROR[4082] Object TRAFODION.T013SCH.T013T1 does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.T013SCH1.T013T1 does not exist or is inaccessible.
 
 --- SQL operation failed with errors.
 >>
@@ -1259,10 +1255,9 @@ CREATE VOLATILE TABLE T013T1
 
 --- SQL operation complete.
 >>
->>#ifndef SEABASE_REGRESS
->>drop schema t013cat.t013sch cascade;
->>drop catalog t013cat;
->>#endif
+>>drop schema t013sch1 cascade;
+
+--- SQL operation complete.
 >>
 >>cleanup obsolete volatile tables;
 
@@ -1280,7 +1275,7 @@ CREATE VOLATILE TABLE T013T1
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Sep  2 22:06:24 2014
+-- Definition current  Fri Dec 12 13:21:07 2014
 
   (
     A                                INT DEFAULT NULL

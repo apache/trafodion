@@ -152,6 +152,10 @@ typedef NABoolean               ComBoolean;
 #define SEABASE_VALIDATE_SPJ      "VALIDATEROUTINE"
 #define SEABASE_VALIDATE_LIBRARY  "UDR_LIBRARY"
 
+#define SEABASE_SCHEMA_OBJECTNAME "__SCHEMA__" 
+
+#define SEABASE_SEQ_GEN  "SEQ_GEN"
+
 // DTM log files are created in this schema. It is a reserved schema.
 #define SEABASE_DTM_SCHEMA     "_DTM_"
 
@@ -900,7 +904,8 @@ enum ComObjectType { COM_UNKNOWN_OBJECT
                    , COM_LOB_TABLE_OBJECT
                    , COM_TRIGGER_TABLE_OBJECT
                    , COM_SYNONYM_OBJECT
-                   , COM_SCHEMA_LABEL_OBJECT
+                   , COM_PRIVATE_SCHEMA_OBJECT
+                   , COM_SHARED_SCHEMA_OBJECT
                    , COM_EXCEPTION_TABLE_OBJECT
                    , COM_SEQUENCE_GENERATOR_OBJECT
                    };
@@ -927,7 +932,8 @@ enum ComObjectType { COM_UNKNOWN_OBJECT
 #define COM_LOB_TABLE_OBJECT_LIT                "LT"
 #define COM_TRIGGER_TABLE_OBJECT_LIT            "TT"
 #define COM_SYNONYM_OBJECT_LIT                  "SY"
-#define COM_SCHEMA_LABEL_OBJECT_LIT             "SL"
+#define COM_SHARED_SCHEMA_OBJECT_LIT            "SS"
+#define COM_PRIVATE_SCHEMA_OBJECT_LIT           "PS"
 #define COM_EXCEPTION_TABLE_OBJECT_LIT          "EX"
 #define COM_SEQUENCE_GENERATOR_OBJECT_LIT       "SG"
 
@@ -1476,6 +1482,12 @@ enum ComSchemaType { COM_USER_TYPE,
 #define COM_USER_TYPE_LIT       "U"
 #define COM_PUBLIC_TYPE_LIT     "P"
 #define COM_SYSTEM_TYPE_LIT     "S"
+
+//Schema Class
+enum ComSchemaClass { COM_SCHEMA_CLASS_UNKNOWN = 2,
+                      COM_SCHEMA_CLASS_PRIVATE = 3,
+                      COM_SCHEMA_CLASS_SHARED = 4,
+                      COM_SCHEMA_CLASS_DEFAULT = 5};
 
 enum ComSQLDataType { COM_UNKNOWN_SDT
                     , COM_CHARACTER_SDT

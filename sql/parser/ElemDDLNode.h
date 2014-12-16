@@ -52,6 +52,7 @@ class ElemDDLNode;
 // -----------------------------------------------------------------------
 class BindWA;
 class ElemDDLAlterTableMove;
+class ElemDDLAuthSchema;
 class ElemDDLLibClientFilename;
 class ElemDDLLibClientName;
 class ElemDDLLibPathName;
@@ -362,6 +363,7 @@ public:
   virtual ElemDDLNode                   * castToElemDDLNode();
   virtual const ElemDDLNode             * castToElemDDLNode() const;
   virtual ElemDDLAlterTableMove         * castToElemDDLAlterTableMove();
+  virtual ElemDDLAuthSchema             * castToElemDDLAuthSchema();
   virtual ElemDDLLibClientFilename      * castToElemDDLLibClientFilename();
   virtual ElemDDLLibClientName          * castToElemDDLLibClientName();
   virtual ElemDDLLibPathName            * castToElemDDLLibPathName();

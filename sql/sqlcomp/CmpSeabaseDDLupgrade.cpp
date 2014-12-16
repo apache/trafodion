@@ -35,6 +35,7 @@
 #include "CmpSeabaseDDLincludes.h"
 #include "CmpDDLCatErrorCodes.h"
 #include "CmpSeabaseDDLupgrade.h"
+#include "PrivMgrMD.h"
 
 // get software major and minor versions from -D defs defined in sqlcomp/Makefile.
 // These defs pick up values from export vars defined in sqf/sqenvcom.sh.
@@ -1598,10 +1599,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                                 }
                             }
 			}
-
+                      ComObjectType objectType = PrivMgr::ObjectLitToEnum(objType);
 		      if (dropSeabaseObject(ehi, mdti.oldName,
 					    catName, schName,
-                                            objType,
+                                            objectType,
 					    TRUE, FALSE))
 			{
 			  deallocEHI(ehi); 
@@ -1647,7 +1648,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 		      if (dropSeabaseObject(ehi, oldViewName,
 					    catName, schName,
-					    COM_VIEW_OBJECT_LIT))
+					    COM_VIEW_OBJECT))
 			{
 			  deallocEHI(ehi); 
 
@@ -1958,7 +1959,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		      schName += "\"";
 		      if (dropSeabaseObject(ehi, mdti.oldName,
 					    catName, schName,
-					    (mdti.isIndex ? COM_INDEX_OBJECT_LIT : COM_BASE_TABLE_OBJECT_LIT),
+					    (mdti.isIndex ? COM_INDEX_OBJECT : COM_BASE_TABLE_OBJECT),
 					    FALSE, TRUE))
 			{
 			  // ignore errors. Continue dropping old md tables.

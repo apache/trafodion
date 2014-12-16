@@ -57,7 +57,10 @@ class CmpSeabaseDDLauth
                        STATUS_NOTFOUND  = 13,
                        STATUS_ERROR     = 14 };
                        
-     CmpSeabaseDDLauth ();
+     CmpSeabaseDDLauth();
+     CmpSeabaseDDLauth(
+        const NAString & systemCatalog,
+        const NAString & MDSchema);
 
      AuthStatus   getAuthDetails (const char *pAuthName, 
                                     bool isExternal = false);
@@ -80,6 +83,8 @@ class CmpSeabaseDDLauth
      bool  isPublic() const        { return false; }
      bool  isRole()   const        { return authType_ == COM_ROLE_CLASS; }
      bool  isUser()   const        { return authType_ == COM_USER_CLASS; }
+     static bool isRoleID(Int32 authID); 
+     static bool isUserID(Int32 authID); 
 
  protected:
 
@@ -113,6 +118,10 @@ class CmpSeabaseDDLauth
     AuthStatus selectExactRow (const NAString &cmd); 
     Int64      selectCount    (const NAString & whereClause);
     Int32      selectMaxAuthID(const NAString &whereClause);
+    
+  NAString systemCatalog_;
+  NAString MDSchema_; /* Qualified metadata schema */
+    
 
  private:
 
@@ -138,14 +147,15 @@ class CmpSeabaseDDLuser : public CmpSeabaseDDLauth
 {
    public:
 
-     CmpSeabaseDDLuser ();
+     CmpSeabaseDDLuser();
+     CmpSeabaseDDLuser(
+        const NAString & systemCatalog,
+        const NAString & MDSchema);
 
      // Execute level methods
      void alterUser(StmtDDLAlterUser * pNode);
      void registerUser(StmtDDLRegisterUser * pNode);
-     void unregisterUser(
-        const std::string & systemCatalog,
-        StmtDDLRegisterUser * pNode);
+     void unregisterUser(StmtDDLRegisterUser * pNode);
      
      CmpSeabaseDDLauth::AuthStatus getUserDetails(const char *pUserName, 
                                                     bool isExternal = false);
@@ -171,11 +181,13 @@ class CmpSeabaseDDLrole : public CmpSeabaseDDLauth
 {
    public:
 
-     CmpSeabaseDDLrole ();
+     CmpSeabaseDDLrole();
+     CmpSeabaseDDLrole(const NAString & systemCatalog);
+     CmpSeabaseDDLrole(
+        const NAString & systemCatalog,
+        const NAString & MDSchema);
 
-     void createRole(
-        const std::string & systemCatalog,
-        StmtDDLCreateRole * pNode);
+     void createRole(StmtDDLCreateRole * pNode);
         
      void createStandardRole(
         const std::string roleName,
@@ -183,12 +195,9 @@ class CmpSeabaseDDLrole : public CmpSeabaseDDLauth
         
      bool describe(
         const NAString & roleName, 
-        const char * systemCatalog,
         NAString & roleText);
      
-     void dropRole(
-        const std::string & systemCatalog,
-        StmtDDLCreateRole * pNode);
+     void dropRole(StmtDDLCreateRole * pNode);
      
      void dropStandardRole(const std::string roleName);
         

@@ -7965,7 +7965,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 					   corrName.getQualifiedNameObj().getCatalogName(),
 					   corrName.getQualifiedNameObj().getSchemaName(),
 					   corrName.getQualifiedNameObj().getObjectName(),
-					   "IX");
+					   COM_INDEX_OBJECT);
 	    }
 	  else
 	    {
@@ -7974,7 +7974,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 					   corrName.getQualifiedNameObj().getCatalogName(),
 					   corrName.getQualifiedNameObj().getSchemaName(),
 					   corrName.getQualifiedNameObj().getObjectName(),
-					   "BT");
+					   COM_BASE_TABLE_OBJECT);
 	      if (tableDesc)
 		{
 		  if (cmpSBD.isUserUpdatableSeabaseMD(
@@ -7995,7 +7995,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 				       corrName.getQualifiedNameObj().getCatalogName(),
 				       corrName.getQualifiedNameObj().getSchemaName(),
 				       corrName.getQualifiedNameObj().getObjectName(),
-				       "IX");
+				       COM_INDEX_OBJECT);
 	  isSeabase = TRUE;
 	}
       else if (corrName.isSpecialTable() && corrName.getSpecialType() == ExtendedQualName::SG_TABLE)
@@ -8005,7 +8005,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 				       corrName.getQualifiedNameObj().getCatalogName(),
 				       corrName.getQualifiedNameObj().getSchemaName(),
 				       corrName.getQualifiedNameObj().getObjectName(),
-				       "SG");
+				       COM_SEQUENCE_GENERATOR_OBJECT);
 	}
       else 
 	{
@@ -8014,7 +8014,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 				       corrName.getQualifiedNameObj().getCatalogName(),
 				       corrName.getQualifiedNameObj().getSchemaName(),
 				       corrName.getQualifiedNameObj().getObjectName(),
-				       "BT");
+				       COM_BASE_TABLE_OBJECT);
 	  isSeabase = TRUE;
 	}
 

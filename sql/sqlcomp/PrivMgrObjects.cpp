@@ -75,6 +75,7 @@ public:
       redefTime_ = other.redefTime_;
       isValid_ = other.isValid_;
       objectOwner_ = other.objectOwner_;
+      schemaOwner_ = other.schemaOwner_;
    };
    virtual ~MyRow(){};
    inline void clear() {objectUID_ = 0;};
@@ -92,6 +93,7 @@ public:
    int64_t            createTime_;
    int64_t            redefTime_;
    int32_t            objectOwner_;
+   int32_t            schemaOwner_;
    bool               isValid_;
    
 private:
@@ -103,8 +105,10 @@ private:
 // * Class:         MyTable
 // * Description:  This class represents the COMPONENTS table containing:
 // *                - the fully qualified name of the table 
+// *                - the last row read 
 // *                
-// *    A component can be uniquely identified by its ANSI name or its UID.
+// *    An object can be uniquely identified by its fully-qualified ANSI name 
+// * or its UID.
 // *****************************************************************************
 class MyTable : public PrivMgrMDTable
 {
@@ -177,6 +181,94 @@ PrivMgrObjects::~PrivMgrObjects()
 
 }
 
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrObjects::addEntry                                        *
+// *                                                                           *
+// *    Adds an entry to the OBJECTS table.                                    *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectUID>                     const int64_t                   In       *
+// *    is the unique ID representing the object.                              *
+// *                                                                           *
+// *  <catalogName>                   const std::string &             In       *
+// *    is the name of the catalog.                                            *
+// *                                                                           *
+// *  <schemaName>                    const std::string &             In       *
+// *    is the name of the schema.                                             *
+// *                                                                           *
+// *  <objectName>                    const std::string &             In       *
+// *    is the name of the object.                                             *
+// *                                                                           *
+// *  <objectType>                    const ComObjectType             In       *
+// *    is the type of the object (table, view, sequence, etc.)                *
+// *                                                                           *
+// *  <createTime>                    const int64_t                   In       *
+// *    is the Julian timestamp of the object creation.                        *
+// *                                                                           *
+// *  <redefTime>                     const int64_t                   In       *
+// *    is the Julian timestamp of the last time the object's definition was   *
+// *  changed in any way.  At object creation, this should have the same       *
+// *  value as <createTime>.                                                   *
+// *                                                                           *
+// *  <isValid>                       const bool                      In       *
+// *    is true if the object is valid, false otherwise.  State is recorded.   *
+// *                                                                           *
+// *  <objectOwner>                   const int32_t                   In       *
+// *    is the authorization ID of the owner of the object.                    *
+// *                                                                           *
+// *  <schemaOwner>                   const int32_t                   In       *
+// *    is the authorization ID of the owner of the schema containing the      *
+// *    object.                                                                *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// *  STATUS_GOOD: New entry was successfully written to OBJECTS table.        *
+// * STATUS_ERROR: Entry could not be added.  A CLI error is put into          *
+// *               the diags area.                                             *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrObjects::addEntry(
+   const int64_t objectUID,
+   const std::string & catalogName, 
+   const std::string & schemaName, 
+   const std::string & objectName,
+   const ComObjectType objectType, 
+   const int64_t createTime,
+   const int64_t redefTime,
+   const bool isValid,
+   const int32_t objectOwner,
+   const int32_t schemaOwner)
+        
+{
+
+MyTable &myTable = static_cast<MyTable &>(myTable_);
+MyRow row(fullTableName_);
+
+   row.objectUID_ = objectUID;
+   row.catalogName_ = catalogName; 
+   row.schemaName_ = schemaName; 
+   row.objectName_ = objectName;
+   row.objectType_ = objectType;
+   row.createTime_ = createTime;
+   row.redefTime_ = redefTime;
+   row.isValid_ = isValid;
+   row.objectOwner_ = objectOwner;
+   row.schemaOwner_ = schemaOwner;
+   
+   return myTable.insert(row);
+   
+}
+//*********************** End of PrivMgrObjects::addEntry **********************
+
+
 // *****************************************************************************
 // *                                                                           *
 // * Function: PrivMgrObjects::clear                                           *
@@ -194,6 +286,59 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
    
 }
 //************************* End of PrivMgrObjects::clear ***********************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrObjects::deleteEntryByName                               *
+// *                                                                           *
+// *     Removes an object definition from the OBJECTS table.  Object is       *
+// *  uniquely identified by qualified name.                                   *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <catalogName>                   const std::string &             In       *
+// *    is the name of the catalog.                                            *
+// *                                                                           *
+// *  <schemaName>                    const std::string &             In       *
+// *    is the name of the schema.                                             *
+// *                                                                           *
+// *  <objectName>                    const std::string &             In       *
+// *    is the name of the object.                                             *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// *  STATUS_GOOD: Name of object was returned.                                *
+// * STATUS_ERROR: Name of object was not returned.  A CLI error is put into   *
+// *               the diags area.                                             *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrObjects::deleteEntryByName(
+   const std::string & catalogName, 
+   const std::string & schemaName, 
+   const std::string & objectName)
+        
+{
+
+MyTable &myTable = static_cast<MyTable &>(myTable_);
+
+std::string whereClause(" WHERE CATALOG_NAME = '");
+
+   whereClause += catalogName + "' AND SCHEMA_NAME = '";
+   whereClause += schemaName + "' AND OBJECT_NAME = '";
+   whereClause += objectName + "'";
+   
+   return myTable.deleteWhere(whereClause);
+   
+}
+//****************** End of PrivMgrObjects::deleteEntryByName *****************
+
+
+
 
 // *****************************************************************************
 // *                                                                           *
@@ -266,7 +411,6 @@ PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
 // *****************************************************************************
 // *                                                                           *
 // *  Parameters:                                                              *
-// *                                                                           *
 // *                                                                           *
 // *  <whereClause>                   const std::string &             In       *
 // *    is the WHERE clause specifying a unique object.                        *
@@ -400,11 +544,33 @@ PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
 PrivStatus MyTable::insert(const PrivMgrMDRow & rowIn)
 {
 
+const MyRow & row = static_cast<const MyRow &>(rowIn);
 char insertStatement[1000];
+char objectTypeLit[3] = {0};
 
-   //return CLIImmediate(insertStatement);
-   PRIVMGR_INTERNAL_ERROR("Insert request not yet supported");
-   return STATUS_ERROR;
+   strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(row.objectType_),2);
+
+char validDef[2] = {0};
+
+   if (row.isValid_)
+      validDef[0] = 'Y';
+   else       
+      validDef[0] = 'N';
+
+   sprintf(insertStatement,"insert into %s values ('%s', '%s', '%s', '%s', %ld, %ld, %ld, '%s', %d, %d)",     
+                           tableName_.c_str(),
+                           row.catalogName_.c_str(),
+                           row.schemaName_.c_str(),
+                           row.objectName_.c_str(),
+                           objectTypeLit,
+                           row.objectUID_,
+                           row.createTime_,
+                           row.redefTime_,
+                           validDef,
+                           row.objectOwner_,
+                           row.schemaOwner_);
+
+   return CLIImmediate(insertStatement);
 
 }
 //************************** End of MyTable::insert ****************************

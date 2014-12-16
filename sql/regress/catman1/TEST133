@@ -54,6 +54,7 @@ drop schema t133sch cascade;
 initialize authorization, drop;
 
 ?section create_db
+create schema t133sch;
 set schema t133sch;
 create table teams
   (team_number int not null primary key,
@@ -211,9 +212,13 @@ execute get_owner_privs;
 
 initialize authorization, drop;
 get tables;
-
+sh sleep 30;
 initialize authorization;
 get tables;
+select count (*) from components;
+select count (*) from component_operations;
+select count (*) from component_privileges;
+execute get_owner_privs;
 set parserflags 131072;
 drop table role_usage;
 get tables;

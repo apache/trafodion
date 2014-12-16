@@ -87,6 +87,7 @@ insert into t012v1 values (3,3,3);
 create table t012t11(a int not null);
 
 ?section schemaDrop
+create schema trafodion.zschema;
 set schema trafodion.zschema;
 create table t012t11 (a int not null primary key, b int not null, c int not null, d int not null);
 create table t012t12 (a int not null primary key, b int not null);

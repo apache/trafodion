@@ -450,7 +450,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 	
 	retcode = existsInSeabaseMDTable(&cliInterface, 
 					 vtCatNamePart, vtSchNamePart, vtObjNamePart,
-					 COM_BASE_TABLE_OBJECT_LIT);
+					 COM_BASE_TABLE_OBJECT);
 
 	if (retcode < 0)
 	  {
@@ -530,10 +530,12 @@ void CmpSeabaseDDL::createSeabaseIndex(
     }
 
   // Verify that current user has authority to create an index
-  // The user must own the base table, have the base table ALTER_TABLE 
-  // privilege or have the CREATE_INDEX privilege
-  if ((!isDDLOperationAuthorized(SQLOperation::CREATE_INDEX, naTable->getOwner())) &&
-      (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, naTable->getOwner())))
+  // The user must own the base table or have the ALTER_TABLE privilege or
+  // have the CREATE_INDEX privilege
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner(),naTable->getSchemaOwner()) &&
+      !isDDLOperationAuthorized(SQLOperation::CREATE_INDEX,
+                                naTable->getOwner(),naTable->getSchemaOwner()))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
 
@@ -618,7 +620,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
     }
   
   retcode = existsInSeabaseMDTable(&cliInterface, 
-				   catalogNamePart, schemaNamePart, objectNamePart, NULL);
+				   catalogNamePart, schemaNamePart, objectNamePart);
   if (retcode < 0)
     {
       deallocEHI(ehi); 
@@ -794,6 +796,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   tableInfo->redefTime = 0;
   tableInfo->objUID = 0;
   tableInfo->objOwnerID = naTable->getOwner(); 
+  tableInfo->schemaOwnerID = naTable->getSchemaOwner();
 
   if (NOT createIndexNode->isNoPopulateOptionSpecified())
     // if index is to be populated during create index, then initially create it as an
@@ -839,7 +842,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
 			 catalogNamePart, schemaNamePart, objectNamePart,
-			 COM_INDEX_OBJECT_LIT,
+			 COM_INDEX_OBJECT,
 			 "N",
 			 tableInfo,
 			 totalColCount,
@@ -849,6 +852,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 			 1, // numIndex
                          ii,
                          tableInfo->objOwnerID,
+                         tableInfo->schemaOwnerID,
                          objUID))
     {
       deallocEHI(ehi); 
@@ -879,7 +883,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
                                         useLoad))
 	{
 	  if (dropSeabaseObject(ehi, createIndexNode->getIndexName(),
-				currCatName, currSchName, COM_INDEX_OBJECT_LIT))
+				currCatName, currSchName, COM_INDEX_OBJECT))
 	    {
 	      processReturn();
 	      return;
@@ -1112,7 +1116,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 		      tableName.getCatalogNamePart().getInternalName(),
 		      tableName.getSchemaNamePart().getInternalName(),
 		      tableName.getObjectNamePart().getInternalName(),
-		      "BT",
+		      COM_BASE_TABLE_OBJECT,
 		      TRUE /*return info on valid and invalid indexes */);
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), 
@@ -1199,9 +1203,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 				 &cliInterface,
 				 qn.getCatalogName().data(), 
 				 qn.getSchemaName().data(), 
-				 qn.getObjectName().data(),
-				 NULL,
-				 TRUE);
+				 qn.getObjectName().data());
 	  if (isValid)
 	    continue;
 
@@ -1334,7 +1336,7 @@ void CmpSeabaseDDL::dropSeabaseIndex(
 
 	retcode = existsInSeabaseMDTable(&cliInterface, 
 					 vtCatNamePart, vtSchNamePart, vtObjNamePart,
-					 COM_INDEX_OBJECT_LIT);
+					 COM_INDEX_OBJECT);
 
 	if (retcode < 0)
 	  {
@@ -1379,7 +1381,7 @@ void CmpSeabaseDDL::dropSeabaseIndex(
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
 				 catalogNamePart, schemaNamePart, objectNamePart,
-				 COM_INDEX_OBJECT_LIT);
+				 COM_INDEX_OBJECT);
   if (retcode < 0)
     {
       deallocEHI(ehi); 
@@ -1417,10 +1419,11 @@ void CmpSeabaseDDL::dropSeabaseIndex(
   NAString btSchName;
   NAString btObjName;
   Int64 btUID;
-  Int32 btObjOwner;
+  Int32 btObjOwner = 0;
+  Int32 btSchemaOwner = 0;
   if (getBaseTable(&cliInterface,
 		   catalogNamePart, schemaNamePart, objectNamePart,
-		   btCatName, btSchName, btObjName, btUID, btObjOwner))
+		   btCatName, btSchName, btObjName, btUID, btObjOwner, btSchemaOwner))
     {
       processReturn();
       
@@ -1430,8 +1433,8 @@ void CmpSeabaseDDL::dropSeabaseIndex(
     }
   
   // Verify that current user has authority to drop the index
-  if ((!isDDLOperationAuthorized(SQLOperation::DROP_INDEX, btObjOwner)) &&
-      (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner)))
+  if ((!isDDLOperationAuthorized(SQLOperation::DROP_INDEX, btObjOwner, btSchemaOwner)) &&
+      (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner, btSchemaOwner)))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
 
@@ -1536,7 +1539,7 @@ void CmpSeabaseDDL::dropSeabaseIndex(
      }
 
   if (dropSeabaseObject(ehi, idxName,
-			currCatName, currSchName, COM_INDEX_OBJECT_LIT))
+			currCatName, currSchName, COM_INDEX_OBJECT))
     {
       processReturn();
 
@@ -1606,7 +1609,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
 				 catalogNamePart, schemaNamePart, objectNamePart,
-				 COM_INDEX_OBJECT_LIT);
+				 COM_INDEX_OBJECT);
   if (retcode < 0)
     {
       processReturn();
@@ -1629,10 +1632,11 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
   NAString btSchName;
   NAString btObjName;
   Int64 btUID;
-  Int32 btObjOwner;
+  Int32 btObjOwner = 0;
+  Int32 btSchemaOwner = 0;
   if (getBaseTable(&cliInterface,
 		   catalogNamePart, schemaNamePart, objectNamePart,
-		   btCatName, btSchName, btObjName, btUID, btObjOwner))
+		   btCatName, btSchName, btObjName, btUID, btObjOwner, btSchemaOwner))
     {
       processReturn();
 
@@ -1640,8 +1644,8 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
     }
 
   // Verify that current user has authority to drop the index
-  if ((!isDDLOperationAuthorized(SQLOperation::DROP_INDEX, btObjOwner)) &&
-      (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner)))
+  if ((!isDDLOperationAuthorized(SQLOperation::DROP_INDEX, btObjOwner, btSchemaOwner)) &&
+      (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner, btSchemaOwner)))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
 
@@ -1724,7 +1728,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
   // Fix for launchpad bug 1381621
   Lng32 retcode = existsInSeabaseMDTable(&cliInterface,
                                          catalogNamePart, schemaNamePart, objectNamePart,
-                                         COM_BASE_TABLE_OBJECT_LIT);
+                                         COM_BASE_TABLE_OBJECT);
   if (retcode < 0)
     {
       processReturn();

@@ -76,7 +76,6 @@ public:
   inline const NAString & getSchemaName() const;
   inline const SchemaName & getSchemaNameAsQualifiedName() const;
   inline       SchemaName & getSchemaNameAsQualifiedName();
-  inline const NAString & getAuthorizationId() const;
   
   ComBoolean dropObjectsOnly() { return dropObjectsOnly_; }
 
@@ -95,7 +94,6 @@ private:
   SchemaName schemaQualName_;
   ComDropBehavior dropBehavior_;
   ComBoolean cleanupMode_;
-  NAString authorizationId_;
 
   // if TRUE, then only drop objects in the schema. Do not drop the schema.
   ComBoolean dropObjectsOnly_;
@@ -138,12 +136,6 @@ inline const NAString &
 StmtDDLDropSchema::getSchemaName() const
 {
   return schemaName_;
-}
-
-inline const NAString &
-StmtDDLDropSchema::getAuthorizationId() const
-{
-  return authorizationId_;
 }
 
 #endif // STMTDDLDROPSCHEMA_H

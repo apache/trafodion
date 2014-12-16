@@ -3,7 +3,7 @@
 >>-- ============================================================================
 >>
 >>-- create schema
->>create schema t135sch;
+>>create shared schema t135sch;
 
 --- SQL operation complete.
 >>

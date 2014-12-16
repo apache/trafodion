@@ -29,6 +29,7 @@
 #include "PrivMgrMD.h"
 #include "PrivMgrMDTable.h"
 #include "PrivMgrDesc.h"
+#include "ComSmallDefs.h"
 
 class ComSecurityKey;
 
@@ -56,6 +57,18 @@ public:
 class PrivMgrPrivileges : public PrivMgr
 {
 public:
+
+// -------------------------------------------------------------------
+// Static functions:
+// -------------------------------------------------------------------
+   static bool isSecurableObject(const ComObjectType objectType)
+   {
+     return (objectType == COM_BASE_TABLE_OBJECT ||
+             objectType == COM_LIBRARY_OBJECT ||
+             objectType == COM_USER_DEFINED_ROUTINE_OBJECT ||
+             objectType == COM_VIEW_OBJECT ||
+             objectType == COM_SEQUENCE_GENERATOR_OBJECT);
+   }
 
  enum ChosenPrivs { ORIGINAL_PRIVS, CURRENT_PRIVS };
 
@@ -107,7 +120,7 @@ public:
       std::vector<UIDAndPrivs> & UIDandPrivs);
        
    PrivStatus grantObjectPriv(
-      const std::string &objectType,
+      const ComObjectType objectType,
       const int32_t granteeID,
       const std::string &granteeName,
       const std::string &grantorName,
@@ -116,7 +129,7 @@ public:
       const bool isWGOSpecified);
        
   PrivStatus grantObjectPriv(
-      const std::string &objectType,
+      const ComObjectType objectType,
       const int32_t granteeID,
       const std::string &granteeName,
       const PrivMgrBitmap privsBitmap,
@@ -126,12 +139,22 @@ public:
       const std::string & objectsLocation,
       const std::string & authsLocation);
       
+   PrivStatus grantToOwners(
+      const ComObjectType objectType,
+      const Int32 granteeID,
+      const std::string & granteeName,
+      const Int32 ownerID,
+      const std::string & ownerName,
+      const Int32 creatorID,
+      const std::string & creatorName);
+      
+      
    PrivStatus populateObjectPriv(
       const std::string &objectsLocation,
       const std::string &authsLocation);
  
    PrivStatus revokeObjectPriv(
-      const std::string &objectType,
+      const ComObjectType objectType,
       const int32_t granteeID,
       const std::vector<std::string> &privList,
       const bool isAllSpecified,
@@ -155,7 +178,7 @@ public:
 protected:
 
    PrivStatus convertPrivsToDesc( 
-     const std::string objectType,
+     const ComObjectType objectType,
      const bool isAllSpecified,
      const bool isWGOSpecified,
      const bool isGOFSpecified,

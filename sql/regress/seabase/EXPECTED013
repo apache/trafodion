@@ -10,7 +10,9 @@
 >>
 >>obey TEST013(setup);
 >>--------------------------------------------------------------------------
->>
+>>create schema trafodion.hbase;
+
+--- SQL operation complete.
 >>-- CHAR ----
 >>create table char8(a char(10) not null not droppable, b char(20), primary key (a)) ;
 
@@ -175,12 +177,12 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 B                     (EXPR)              
 --------------------  --------------------
 
-9                                        1
-8                                        1
-2                                        1
-4                                        1
 5                                        1
 7                                        1
+2                                        1
+4                                        1
+9                                        1
+8                                        1
 3                                        1
 10                                       1
 1                                        1
@@ -335,8 +337,8 @@ B            (EXPR)
           6                     1
           2                     1
          10                     1
-          8                     1
           3                     1
+          8                     1
           9                     1
           7                     1
           5                     1

@@ -216,6 +216,47 @@ void PrivMgrCoreDesc::setAllRevokePrivileges(const bool grantOption)
   }
 }
 
+// ----------------------------------------------------------------------------
+// method: setAllObjectGrantPrivilege
+//
+// This method sets all the relevant DML privileges for the specified 
+// object type.  Optionally all corresponding WITH GRANT OPTIONS privileges
+// are also set.
+//
+// Params:
+//     objectType - The type of object.  Based on the object type (e.g. table,
+//                  routine, sequence, etc.) all the relevant privs are set
+//     wgo - WITH GRANT OPTION.  If true, the corresponding WGO bits are set.
+//
+// ---------------------------------------------------------------------------- 
+void PrivMgrCoreDesc::setAllObjectGrantPrivilege(
+   const ComObjectType objectType,
+   const bool wgo)
+
+{
+
+   switch (objectType)
+   {
+      case COM_BASE_TABLE_OBJECT:
+         setAllTableGrantPrivileges(wgo);
+         break;
+      case COM_LIBRARY_OBJECT:
+         setAllLibraryGrantPrivileges(wgo);
+         break;
+      case COM_SEQUENCE_GENERATOR_OBJECT:
+         setAllSequenceGrantPrivileges(wgo);
+         break;
+      case COM_USER_DEFINED_ROUTINE_OBJECT:
+         setAllUdrGrantPrivileges(wgo);
+         break;
+      default:
+         ; //TODO: internal error?
+   }   
+
+}
+
+
+
 // Set all privilege and wgo indicators to the specified value.
 void  PrivMgrCoreDesc::setAllPrivAndWgo(const bool val)
 {

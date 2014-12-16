@@ -69,7 +69,7 @@ initialize authorization, drop;
 -- ============================================================================
 
 -- create schema
-create schema t135sch;
+create shared schema t135sch;
 
 -- Prepare library file
 sh rm -f ./udrtest135.dll;
@@ -332,6 +332,7 @@ drop view user2_v1;
 
 ?section user3_objects
 -- ============================================================================
+create private schema t135sch_user3;
 set schema t135sch_user3;
 log LOG135;
 create table t135_t3 (c1 int not null primary key, c2 int);

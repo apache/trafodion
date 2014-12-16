@@ -559,19 +559,25 @@ void CmpSeabaseDDL::createSeabaseView(
   const NAString extViewName = viewName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
   
-  if (!isDDLOperationAuthorized(SQLOperation::CREATE_VIEW,
-                                ComUser::getCurrentUser()))
+  ExeCliInterface cliInterface(STMTHEAP);
+  Int32 objectOwnerID = SUPER_USER;
+  Int32 schemaOwnerID = SUPER_USER;
+  ComSchemaClass schemaClass;
+
+  retcode = verifyDDLCreateOperationAuthorized(&cliInterface,
+                                               SQLOperation::CREATE_VIEW,
+                                               catalogNamePart,
+                                               schemaNamePart,
+                                               schemaClass,
+                                               objectOwnerID,
+                                               schemaOwnerID);
+  if (retcode != 0)
   {
-     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-     processReturn ();
+     handleDDLCreateAuthorizationError(retcode,catalogNamePart,schemaNamePart);
      return;
   }
   
-  ComUserVerifyObj verifyAuth(viewName, ComUserVerifyObj::OBJ_OBJ_TYPE);
-  Int32 objOwnerID = verifyAuth.getEffectiveUserID(ComUser::CREATE_ROUTINE);
-
   ExpHbaseInterface * ehi = NULL;
-  ExeCliInterface cliInterface(STMTHEAP);
 
   ehi = allocEHI();
   if (ehi == NULL)
@@ -604,12 +610,12 @@ void CmpSeabaseDDL::createSeabaseView(
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
 				   catalogNamePart, schemaNamePart, objectNamePart, 
-				   NULL, TRUE, FALSE);
+				   COM_UNKNOWN_OBJECT, TRUE, FALSE);
   if (retcode < 0)
     {
       deallocEHI(ehi); 
 
-     processReturn();
+      processReturn();
 
       return;
     }
@@ -648,6 +654,7 @@ void CmpSeabaseDDL::createSeabaseView(
 	{
 	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 	  
+	  deallocEHI(ehi); 
 	  processReturn();
 	  
 	  return;
@@ -688,6 +695,7 @@ void CmpSeabaseDDL::createSeabaseView(
   ElemDDLColDefArray colDefArray(STMTHEAP);
   if (buildViewColInfo(createViewNode, &colDefArray))
     {
+      deallocEHI(ehi); 
       processReturn();
 
       return;
@@ -699,6 +707,7 @@ void CmpSeabaseDDL::createSeabaseView(
 
   if (buildColInfoArray(&colDefArray, colInfoArray, FALSE, 0, FALSE))
     {
+      deallocEHI(ehi); 
       processReturn();
       
       return;
@@ -707,19 +716,20 @@ void CmpSeabaseDDL::createSeabaseView(
   Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
 			   catalogNamePart, schemaNamePart, objectNamePart,
-			   COM_VIEW_OBJECT_LIT,
+			   COM_VIEW_OBJECT,
 			   "N",
 			   NULL,
 			   numCols,
-			   colInfoArray,
+			   colInfoArray,	       
 			   0, NULL,
 			   0, NULL,
-                           objOwnerID,
+                           objectOwnerID,
+                           schemaOwnerID,
                            objUID))
     {
       deallocEHI(ehi); 
 
-     processReturn();
+      processReturn();
 
       return;
     }
@@ -734,18 +744,17 @@ void CmpSeabaseDDL::createSeabaseView(
   // grant privileges for view
   if (isAuthorizationEnabled())
     {
-      Int32 userID = ComUser::getCurrentUser();
-      char userName[MAX_USERNAME_LEN+1];
+      char authName[MAX_AUTHNAME_LEN+1];
       Int32 lActualLen = 0;
-      Int16 status = ComUser::getUserNameFromUserID( (Int32) userID
-                                                   , (char *)&userName
-                                                   , MAX_USERNAME_LEN
+      Int16 status = ComUser::getAuthNameFromAuthID( (Int32) objectOwnerID
+                                                   , (char *)&authName
+                                                   , MAX_AUTHNAME_LEN
                                                    , lActualLen );
       if (status != FEOK)
         {
           *CmpCommon::diags() << DgSqlCode(-20235)
                               << DgInt0(status)
-                              << DgInt1(objOwnerID);
+                              << DgInt1(objectOwnerID);
 
           deallocEHI(ehi);
 
@@ -761,8 +770,8 @@ void CmpSeabaseDDL::createSeabaseView(
                                     CmpCommon::diags());
 
       retcode = privInterface.grantObjectPrivilege 
-       (objUID, std::string(extViewName.data()), std::string (COM_VIEW_OBJECT_LIT), 
-        userID, std::string(userName), 
+       (objUID, std::string(extViewName.data()), COM_VIEW_OBJECT, 
+        objectOwnerID, std::string(authName), 
         privilegesBitmap, grantableBitmap);
       if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
         {
@@ -794,6 +803,7 @@ void CmpSeabaseDDL::createSeabaseView(
       else
         cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
+      deallocEHI(ehi); 
       processReturn();
 
       return;
@@ -801,15 +811,17 @@ void CmpSeabaseDDL::createSeabaseView(
 
   if (updateTextTable(&cliInterface, objUID, COM_VIEW_TEXT, 0, newViewText))
     {
+      deallocEHI(ehi); 
       processReturn();
       return;
     }
 
   if (updateViewUsage(createViewNode, objUID, &cliInterface))
     {
-     processReturn();
+      deallocEHI(ehi); 
+      processReturn();
      
-     return;
+      return;
     }
 
   if (updateObjectValidDef(&cliInterface, 
@@ -819,7 +831,7 @@ void CmpSeabaseDDL::createSeabaseView(
     {
       deallocEHI(ehi); 
 
-     processReturn();
+      processReturn();
 
       return;
     }
@@ -827,6 +839,7 @@ void CmpSeabaseDDL::createSeabaseView(
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
 
+  deallocEHI(ehi); 
   processReturn();
 
   return;
@@ -871,7 +884,7 @@ void CmpSeabaseDDL::dropSeabaseView(
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
 				   catalogNamePart, schemaNamePart, objectNamePart,
-				   COM_VIEW_OBJECT_LIT, TRUE, FALSE);
+				   COM_VIEW_OBJECT, TRUE, FALSE);
   if (retcode < 0)
     {
       deallocEHI(ehi); 
@@ -893,14 +906,15 @@ void CmpSeabaseDDL::dropSeabaseView(
       return;
     }
 
-  Int32 objOwnerID = 0;
-  Int64 objUID = getObjectUIDandOwner(&cliInterface,
+  Int32 objectOwnerID = 0;
+  Int32 schemaOwnerID = 0;
+  Int64 objUID = getObjectUIDandOwners(&cliInterface,
 			              catalogNamePart.data(), schemaNamePart.data(), 
 			              objectNamePart.data(),
-			              COM_VIEW_OBJECT_LIT,
-                                      NULL, &objOwnerID);
+			              COM_VIEW_OBJECT,
+                                      objectOwnerID,schemaOwnerID);
 
-  if (objUID < 0 || objOwnerID == 0)
+  if (objUID < 0 || objectOwnerID == 0)
     {
       if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
         SEABASEDDL_INTERNAL_ERROR("getting object UID and owner for drop view");
@@ -913,7 +927,7 @@ void CmpSeabaseDDL::dropSeabaseView(
     }
 
   // Verify user can perform operation
-  if (!isDDLOperationAuthorized(SQLOperation::DROP_VIEW,objOwnerID))
+  if (!isDDLOperationAuthorized(SQLOperation::DROP_VIEW,objectOwnerID,schemaOwnerID))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
      deallocEHI(ehi);
@@ -975,7 +989,7 @@ void CmpSeabaseDDL::dropSeabaseView(
 	  char * viewName = vi->get(0);
 	  
 	  if (dropSeabaseObject(ehi, viewName,
-				 currCatName, currSchName, COM_VIEW_OBJECT_LIT))
+				 currCatName, currSchName, COM_VIEW_OBJECT))
 	    {
 	      deallocEHI(ehi); 
 
@@ -987,7 +1001,7 @@ void CmpSeabaseDDL::dropSeabaseView(
     }
 
   if (dropSeabaseObject(ehi, tabName,
-			 currCatName, currSchName, COM_VIEW_OBJECT_LIT))
+			 currCatName, currSchName, COM_VIEW_OBJECT))
     {
       deallocEHI(ehi); 
 

@@ -386,9 +386,22 @@ static const QueryString getTrafViewsOnObjectQuery[] =
 
 static const QueryString getTrafSchemasInCatalogQuery[] =
 {
-  {" select distinct T.schema_name "},
+  {" select T.schema_name "},
   {"   from %s.\"%s\".%s T "},
   {"  where T.catalog_name = '%s' "},
+  {"        and (T.object_type = 'PS' or T.object_type = 'SS') "},
+  {"  for read uncommitted access "},
+  {" order by 1 "},
+  {"  ; "}
+};
+
+static const QueryString getTrafSchemasForAuthIDQuery[] =
+{
+  {" select T.schema_name "},
+  {"   from %s.\"%s\".%s T, "},
+  {"        %s.\"%s\".%s A "},
+  {"  where (T.object_type = 'PS' or T.object_type = 'SS') and "},
+  {"         A.auth_db_name = '%s' and T.object_owner = A.auth_id  "},
   {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
@@ -1779,7 +1792,21 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[3] = getMItdb().cat_;
 		}
 	      break;
-             case ComTdbExeUtilGetMetadataInfo::USERS_:
+              case ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_:
+		{
+		  qs = getTrafSchemasForAuthIDQuery;
+		  sizeOfqs = sizeof(getTrafSchemasForAuthIDQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+		  param_[3] = cat;
+		  param_[4] = sch;
+		  param_[5] = auths;
+		  param_[6] = getMItdb().getParam1();
+		}
+	      break;
+              case ComTdbExeUtilGetMetadataInfo::USERS_:
                 {
                   qs = getTrafUsers;
                   sizeOfqs = sizeof(getTrafUsers);
