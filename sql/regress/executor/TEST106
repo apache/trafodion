@@ -48,7 +48,9 @@ exit;
 
 ?section clnup
 
-drop table T106a;
+drop table t106a;
+drop table t106b;
+drop table t106c;
 log T106_INTERLEAVED_LOG;
 select * from T106_interleaved_log 
   order by ts;
@@ -103,6 +105,48 @@ upsert using load into t106a
 
 update statistics for table t106a on every column;
 
+create table t106b
+  (uniq int not null,
+   c10K int ,
+   c1K   int,
+   c100  int,
+   c10   int,
+   c1    int,
+   primary key (uniq)
+  )
+salt using 4 partitions ;
+
+upsert using load into t106b
+  select
+  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100)
+    + (10 * x10) +( 1 * x1),
+  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (10 * x10) + (1 * x1),
+  0 + (1 * x1),
+  0
+  from (values(1)) as t1
+    transpose 0,1                 as x100000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ;
+
+update statistics for table t106b on every column;
+
+create table t106c
+  (uniq int not null,
+   c10K int ,
+   c1K   int,
+   c100  int,
+   c10   int,
+   c1    int,
+   primary key (uniq)
+  )
+salt using 4 partitions ;
+
 ?section dml
 
 sh rm cancel_cmd cancel_log106_all LOCK_LOG106;
@@ -113,19 +157,17 @@ obey TEST106(uniq_query_test);
 
 obey TEST106(positive_test1);
 
-set session default CANCEL_QUERY_ALLOWED 'OFF';
-
-obey TEST106(positive_test1);
-
-set session default CANCEL_QUERY_ALLOWED 'ON';
-
 obey TEST106(positive_test2);
 
-set session default CANCEL_QUERY_ALLOWED 'OFF';
+obey TEST106(update_test1);
 
-obey TEST106(positive_test2);
+obey TEST106(delete_test1);
 
-set session default CANCEL_QUERY_ALLOWED 'ON';
+obey TEST106(insert_test1);
+
+obey TEST106(insert_test2);
+
+obey TEST106(upsert_test1);
 
 obey TEST106(cpu_bound_esps);
 
@@ -300,6 +342,259 @@ select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'positive_test2, execute s1, finished');
+
+obey TEST106(synch_cancel);
+
+obey TEST106(append_cancel_log);
+
+?section update_test1
+
+control query default QUERY_LIMIT_SQL_PROCESS_CPU '20';
+
+prepare s1 from update t106a set c100 = c100 + 1; 
+
+control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
+
+obey TEST106(make_cancel_stmt);
+
+select 'subject launch canceler - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'update_test1, launch canceler, start');
+
+sh sqlci -i"TEST106(do_cancel)" & ;
+
+select 'subject synch cancel - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'update_test1, launch canceler, finish');
+
+obey TEST106(synch_cancel);
+
+select 'subject execute s1 - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values 
+(CURRENT_TIME (6),
+'update_test1, execute, start');
+
+execute s1;
+
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'update_test1, execute, finished');
+
+obey TEST106(synch_cancel);
+
+obey TEST106(append_cancel_log);
+
+?section delete_test1
+
+prepare s1 from delete from t106a;
+
+obey TEST106(make_cancel_stmt);
+
+select 'subject launch canceler - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'delete_test1, launch canceler, start');
+
+sh sqlci -i"TEST106(do_cancel)" & ;
+
+select 'subject synch cancel - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'delete_test1, launch canceler, finish');
+
+obey TEST106(synch_cancel);
+
+select 'subject execute s1 - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values 
+(CURRENT_TIME (6),
+'delete_test1, execute, start');
+
+execute s1;
+
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'delete_test1, execute, finished');
+
+obey TEST106(synch_cancel);
+
+obey TEST106(append_cancel_log);
+
+?section insert_test1
+
+prepare s1 from insert into t106c select * from t106a;
+obey TEST106(make_cancel_stmt);
+
+select 'subject launch canceler - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'insert_test1, launch canceler, start');
+
+sh sqlci -i"TEST106(do_cancel)" & ;
+
+select 'subject synch cancel - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'insert_test1, launch canceler, finish');
+
+obey TEST106(synch_cancel);
+
+select 'subject execute s1 - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values 
+(CURRENT_TIME (6),
+'insert_test1, execute, start');
+
+execute s1;
+
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'insert_test1, execute, finished');
+
+obey TEST106(synch_cancel);
+
+obey TEST106(append_cancel_log);
+
+?section insert_test2
+
+prepare s1 from insert into t106c 
+  select
+  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100)
+    + (10 * x10) +( 1 * x1),
+  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (10 * x10) + (1 * x1),
+  0 + (1 * x1),
+  0
+  from (values(1)) as t1
+    transpose 0,1                 as x100000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ;
+
+
+obey TEST106(make_cancel_stmt);
+
+select 'subject launch canceler - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'insert_test2, launch canceler, start');
+
+sh sqlci -i"TEST106(do_cancel)" & ;
+
+select 'subject synch cancel - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'insert_test2, launch canceler, finish');
+
+obey TEST106(synch_cancel);
+
+select 'subject execute s1 - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values 
+(CURRENT_TIME (6),
+'insert_test2, execute, start');
+
+execute s1;
+
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'insert_test2, execute, finished');
+
+obey TEST106(synch_cancel);
+
+obey TEST106(append_cancel_log);
+
+?section upsert_test1
+
+prepare s1 from 
+upsert using load into t106c 
+  select
+  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100)
+    + (10 * x10) +( 1 * x1),
+  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (10 * x10) + (1 * x1),
+  0 + (1 * x1),
+  0
+  from (values(1)) as t1
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ;
+
+
+obey TEST106(make_cancel_stmt);
+
+select 'subject launch canceler - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'upsert_test1, launch canceler, start');
+
+sh sqlci -i"TEST106(do_cancel)" & ;
+
+select 'subject synch cancel - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'upsert_test1, launch canceler, finish');
+
+obey TEST106(synch_cancel);
+
+select 'subject execute s1 - FUNKY_OPT_UNIQUE',
+CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values 
+(CURRENT_TIME (6),
+'upsert_test1, execute, start');
+
+execute s1;
+
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'upsert_test1, execute, finished');
 
 obey TEST106(synch_cancel);
 

@@ -48,6 +48,7 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
   rc = 0;
+  Lng32 remainingInBatch = batchSize_;
 
   while (1)
     {
@@ -95,6 +96,12 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
  	  {
+            if (--remainingInBatch <= 0)
+            {
+              rc = WORK_CALL_AGAIN;
+              return 1;
+            }
+
 	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	    {
@@ -221,6 +228,7 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
   rc = 0;
+  Lng32 remainingInBatch = batchSize_;
 
   while (1)
     {
@@ -270,6 +278,12 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {
+            if (--remainingInBatch <= 0)
+            {
+              rc = WORK_CALL_AGAIN;
+              return 1;
+            }
+
 	    tcb_->rowwiseRowLen_ = 0;
 	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
@@ -416,6 +430,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
   rc = 0;
+  Lng32 remainingInBatch = batchSize_;
 
   while (1)
     {
@@ -464,6 +479,11 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {
+            if (--remainingInBatch <= 0)
+            {
+              rc = WORK_CALL_AGAIN;
+              return 1;
+            }
 	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	      {
@@ -645,6 +665,7 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
   rc = 0;
+  Lng32 remainingInBatch = batchSize_;
 
   while (1)
     {
@@ -693,6 +714,11 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {       
+            if (--remainingInBatch <= 0)
+            {
+              rc = WORK_CALL_AGAIN;
+              return 1;
+            }
 	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	    {
@@ -823,6 +849,7 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
   rc = 0;
+  Lng32 remainingInBatch = batchSize_;
 
   while (1)
     {
@@ -871,6 +898,12 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {
+            if (--remainingInBatch <= 0)
+            {
+              rc = WORK_CALL_AGAIN;
+              return 1;
+            }
+
 	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	    {
@@ -998,6 +1031,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
   rc = 0;
+  Lng32 remainingInBatch = batchSize_;
 
   while (1)
     {
@@ -1040,6 +1074,11 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {
+            if (--remainingInBatch <= 0)
+            {
+              rc = WORK_CALL_AGAIN;
+              return 1;
+            }
 	    retcode = tcb_->ehi_->nextRow();
             // EOD is end of data, EOR is end of result set. 
             // for single get, EOD or EOR indicates DONE

@@ -2337,8 +2337,15 @@ void ExHbaseAccessTcb::setRowID(char *rowId, Lng32 rowIdLen)
    memcpy(rowID_.val, rowId, rowIdLen);
 }
 
+static const char * const BatchSizeEnvvar = 
+  getenv("SQL_CANCEL_BATCH_SIZE");
+static const Lng32 BatchSize = (BatchSizeEnvvar &&
+                               atoi(BatchSizeEnvvar) > 0 )?
+                               atoi(BatchSizeEnvvar) : 8192;
+
 ExHbaseTaskTcb::ExHbaseTaskTcb(ExHbaseAccessTcb * tcb)
   : tcb_(tcb)
+  , batchSize_(BatchSize)
 {}
 
 ExWorkProcRetcode ExHbaseTaskTcb::work(short &rc)

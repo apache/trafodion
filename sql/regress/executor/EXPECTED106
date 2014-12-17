@@ -43,6 +43,56 @@
 
 --- SQL operation complete.
 >>
+>>create table t106b
++>  (uniq int not null,
++>   c10K int ,
++>   c1K   int,
++>   c100  int,
++>   c10   int,
++>   c1    int,
++>   primary key (uniq)
++>  )
++>salt using 4 partitions ;
+
+--- SQL operation complete.
+>>
+>>upsert using load into t106b
++>  select
++>  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100)
++>    + (10 * x10) +( 1 * x1),
++>  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
++>  0 + (100 * x100) + (10 * x10) + (1 * x1),
++>  0 + (10 * x10) + (1 * x1),
++>  0 + (1 * x1),
++>  0
++>  from (values(1)) as t1
++>    transpose 0,1                 as x100000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>  ;
+
+--- 200000 row(s) inserted.
+>>
+>>update statistics for table t106b on every column;
+
+--- SQL operation complete.
+>>
+>>create table t106c
++>  (uniq int not null,
++>   c10K int ,
++>   c1K   int,
++>   c100  int,
++>   c10   int,
++>   c1    int,
++>   primary key (uniq)
++>  )
++>salt using 4 partitions ;
+
+--- SQL operation complete.
+>>
 >>exit;
 
 End of MXCI Session
@@ -152,7 +202,7 @@ End of MXCI Session
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-subject launch canceler - FUNKY_OPT_UNIQUE  22:56:36.092321
+subject launch canceler - FUNKY_OPT_UNIQUE  16:09:21.040507
 
 --- 1 row(s) selected.
 >>
@@ -170,7 +220,7 @@ subject launch canceler - FUNKY_OPT_UNIQUE  22:56:36.092321
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-subject synch cancel - FUNKY_OPT_UNIQUE     22:56:37.075189
+subject synch cancel - FUNKY_OPT_UNIQUE     16:09:22.201984
 
 --- 1 row(s) selected.
 >>
@@ -197,7 +247,7 @@ subject synch cancel - FUNKY_OPT_UNIQUE     22:56:37.075189
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   22:56:40.959932
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:09:29.012576
 
 --- 1 row(s) selected.
 >>log;
@@ -209,7 +259,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   22:56:40.959932
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-subject execute s1 - FUNKY_OPT_UNIQUE       22:56:40.979334
+subject execute s1 - FUNKY_OPT_UNIQUE       16:09:29.028790
 
 --- 1 row(s) selected.
 >>
@@ -232,7 +282,7 @@ subject execute s1 - FUNKY_OPT_UNIQUE       22:56:40.979334
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-subject - FUNKY_OPT_UNIQUE                  22:56:56.946613
+subject - FUNKY_OPT_UNIQUE                  16:09:42.021226
 
 --- 1 row(s) selected.
 >>
@@ -259,7 +309,7 @@ subject - FUNKY_OPT_UNIQUE                  22:56:56.946613
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   22:56:56.981169
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:09:42.046277
 
 --- 1 row(s) selected.
 >>log;
@@ -284,7 +334,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   22:56:56.981169
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  22:56:40.880540
+canceler going to sleep - FUNKY_OPT_UNIQUE  16:09:28.964233
 
 --- 1 row(s) selected.
 >>
@@ -296,7 +346,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  22:56:40.880540
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         22:56:53.894462
+canceler woke up - FUNKY_OPT_UNIQUE         16:09:41.976380
 
 --- 1 row(s) selected.
 >>
@@ -313,7 +363,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000020249212284839336567932000000000206U3333300_129_S1;
+>>control query cancel qid MXID11000021072212285592465743895000000000206U3333300_184_S1;
 
 --- SQL operation complete.
 >>
@@ -328,239 +378,12 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler - FUNKY_OPT_UNIQUE                 22:56:56.941223
+canceler - FUNKY_OPT_UNIQUE                 16:09:42.020279
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
->>
->>set session default CANCEL_QUERY_ALLOWED 'OFF';
-
---- SQL operation complete.
->>
->>obey TEST106(positive_test1);
->>
->>-- Test canceling a query with and without the 
->>-- CANCEL_QUERY_ALLOWED.
->>
->>------- long running, cpu-bound select query -------
->>
->>control query default QUERY_LIMIT_SQL_PROCESS_CPU '20';
-
---- SQL operation complete.
->>control query default ATTEMPT_ESP_PARALLELISM 'off';
-
---- SQL operation complete.
->>
->>prepare s1 from select count(*) from t106a A, t106a B 
-+>where A.uniq < 3000;
-
---- SQL command prepared.
->>
->>control query default ATTEMPT_ESP_PARALLELISM 'system';
-
---- SQL operation complete.
->>control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
-
---- SQL operation complete.
->>
->>obey TEST106(make_cancel_stmt);
->>log;
->>
->>
->>select 'subject launch canceler - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
-
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
-
-subject launch canceler - FUNKY_OPT_UNIQUE  22:56:59.069289
-
---- 1 row(s) selected.
->>
->>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'positive_test1, launch canceler, start');
-
---- 1 row(s) inserted.
->>
->>sh sqlci -i"TEST106(do_cancel)" & ;
->>
->>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
-
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
-
-subject synch cancel - FUNKY_OPT_UNIQUE     22:56:59.081742
-
---- 1 row(s) selected.
->>
->>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'positive_test1, launch canceler, finish');
-
---- 1 row(s) inserted.
->>
->>obey TEST106(synch_cancel);
->>
->>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'foreground awaits synch_cancel');
-
---- 1 row(s) inserted.
->>
->>-- wait until other mxci is ready
->>sh sh $scriptsdir/executor/synch_106.ksh;
->>
->>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
-
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
-
-done with synch_cancel - FUNKY_OPT_UNIQUE   22:57:02.952403
-
---- 1 row(s) selected.
->>log;
->>
->>
->>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
-+>CURRENT_TIME (6) from (values (1)) as t1;
-
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
-
-subject execute s1 - FUNKY_OPT_UNIQUE       22:57:02.968076
-
---- 1 row(s) selected.
->>
->>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'positive_test1, execute, start');
-
---- 1 row(s) inserted.
->>
->>execute s1;
-
-*** ERROR[8023] The query has been terminated because it exceeded its CPU time limit of 20 seconds in fragment 0.
-
---- 0 row(s) selected.
->>
->>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
-
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
-
-subject - FUNKY_OPT_UNIQUE                  22:57:23.747929
-
---- 1 row(s) selected.
->>
->>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'positive_test1, execute, finished');
-
---- 1 row(s) inserted.
->>
->>obey TEST106(synch_cancel);
->>
->>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'foreground awaits synch_cancel');
-
---- 1 row(s) inserted.
->>
->>-- wait until other mxci is ready
->>sh sh $scriptsdir/executor/synch_106.ksh;
->>
->>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
-+>       CURRENT_TIME (6) from (values (1)) as t1;
-
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
-
-done with synch_cancel - FUNKY_OPT_UNIQUE   22:57:23.771486
-
---- 1 row(s) selected.
->>log;
->>
->>
->>obey TEST106(append_cancel_log);
->>log;
->>------------------------------------------;
->>------ Contents of cancel session --------;
->>------------------------------------------;
->>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'do_cancel has begun');
-
---- 1 row(s) inserted.
->>
->>sh touch ${REGRRUNDIR}/test106_synch;
->>
->>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
-
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
-
-canceler going to sleep - FUNKY_OPT_UNIQUE  22:57:02.913860
-
---- 1 row(s) selected.
->>
->>sh sleep 13;
->>
->>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
-+>CURRENT_TIME (6) from (values (1)) as t1;
-
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
-
-canceler woke up - FUNKY_OPT_UNIQUE         22:57:15.926661
-
---- 1 row(s) selected.
->>
->>set session default CANCEL_ESCALATION_INTERVAL '5';
-
---- SQL operation complete.
->>log;
-Execute End Time         -1
->>
->>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'do_cancel will cancel');
-
---- 1 row(s) inserted.
->>
->>obey cancel_cmd;
->>control query cancel qid MXID11000020249212284839336567932000000000206U3333300_231_S1;
-
-*** ERROR[8031] Server declined cancel request for query ID MXID11000020249212284839336567932000000000206U3333300_231_S1. The query is not registered with the cancel broker.
-
---- SQL operation failed with errors.
->>
->>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'do_cancel has canceled');
-
---- 1 row(s) inserted.
->>
->>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
-
-(EXPR)                                      (EXPR)         
-------------------------------------------  ---------------
-
-canceler - FUNKY_OPT_UNIQUE                 22:57:18.975936
-
---- 1 row(s) selected.
->>log;
->>
->>
->>
->>set session default CANCEL_QUERY_ALLOWED 'ON';
-
---- SQL operation complete.
 >>
 >>obey TEST106(positive_test2);
 >>
@@ -623,7 +446,7 @@ canceler - FUNKY_OPT_UNIQUE                 22:57:18.975936
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   22:57:29.697868
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:09:51.125834
 
 --- 1 row(s) selected.
 >>log;
@@ -649,7 +472,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   22:57:29.697868
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-subject - FUNKY_OPT_UNIQUE                  22:57:42.747315
+subject - FUNKY_OPT_UNIQUE                  16:10:07.126171
 
 --- 1 row(s) selected.
 >>
@@ -676,7 +499,7 @@ subject - FUNKY_OPT_UNIQUE                  22:57:42.747315
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   22:57:42.772503
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:10:07.151938
 
 --- 1 row(s) selected.
 >>log;
@@ -701,7 +524,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   22:57:42.772503
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  22:57:29.676489
+canceler going to sleep - FUNKY_OPT_UNIQUE  16:09:51.057745
 
 --- 1 row(s) selected.
 >>
@@ -713,7 +536,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  22:57:29.676489
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         22:57:42.691180
+canceler woke up - FUNKY_OPT_UNIQUE         16:10:04.070084
 
 --- 1 row(s) selected.
 >>
@@ -730,7 +553,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000020249212284839336567932000000000206U3333300_251_S1;
+>>control query cancel qid MXID11000021072212285592465743895000000000206U3333300_285_S1;
 
 --- SQL operation complete.
 >>
@@ -745,38 +568,22 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler - FUNKY_OPT_UNIQUE                 22:57:42.737535
+canceler - FUNKY_OPT_UNIQUE                 16:10:07.116895
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>
->>set session default CANCEL_QUERY_ALLOWED 'OFF';
-
---- SQL operation complete.
->>
->>obey TEST106(positive_test2);
->>
->>-- Test canceling a query with and without the 
->>-- CANCEL_QUERY_ALLOWED.
+>>obey TEST106(update_test1);
 >>
 >>control query default QUERY_LIMIT_SQL_PROCESS_CPU '20';
 
 --- SQL operation complete.
 >>
->>control query shape expr(sort_groupby(esp_exchange(cut)));
-
---- SQL operation complete.
->>
->>prepare s1 from select count(*) from t106a A, t106a B 
-+>where A.uniq < 3000;
+>>prepare s1 from update t106a set c100 = c100 + 1;
 
 --- SQL command prepared.
->>
->>control query shape cut;
-
---- SQL operation complete.
 >>
 >>control query default QUERY_LIMIT_SQL_PROCESS_CPU 'reset';
 
@@ -786,17 +593,37 @@ canceler - FUNKY_OPT_UNIQUE                 22:57:42.737535
 >>log;
 >>
 >>
+>>select 'subject launch canceler - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject launch canceler - FUNKY_OPT_UNIQUE  16:10:09.268033
+
+--- 1 row(s) selected.
+>>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'positive_test2, launch canceler, start');
++>(CURRENT_TIME (6),
++>'update_test1, launch canceler, start');
 
 --- 1 row(s) inserted.
 >>
 >>sh sqlci -i"TEST106(do_cancel)" & ;
 >>
+>>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject synch cancel - FUNKY_OPT_UNIQUE     16:10:09.282513
+
+--- 1 row(s) selected.
+>>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'positive_test2, launch canceler, finished');
++>(CURRENT_TIME (6),
++>'update_test1, launch canceler, finish');
 
 --- 1 row(s) inserted.
 >>
@@ -817,37 +644,46 @@ canceler - FUNKY_OPT_UNIQUE                 22:57:42.737535
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   22:57:48.637009
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:10:16.086832
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
->>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'positive_test2, execute s1, start');
+>>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject execute s1 - FUNKY_OPT_UNIQUE       16:10:16.100918
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values 
++>(CURRENT_TIME (6),
++>'update_test1, execute, start');
 
 --- 1 row(s) inserted.
 >>
->>------- long running, cpu-bound select query -------
 >>execute s1;
 
-*** ERROR[8023] The query has been terminated because it exceeded its CPU time limit of 20 seconds in fragment 2.
+*** ERROR[8007] The operation has been canceled.
 
---- 0 row(s) selected.
+--- 0 row(s) updated.
 >>
 >>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
 
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-subject - FUNKY_OPT_UNIQUE                  22:58:09.244837
+subject - FUNKY_OPT_UNIQUE                  16:10:33.538522
 
 --- 1 row(s) selected.
 >>
 >>insert into T106_interleaved_log values
-+>(CURRENT_TIME (6), 
-+>'positive_test2, execute s1, finished');
++>(CURRENT_TIME (6),
++>'update_test1, execute, finished');
 
 --- 1 row(s) inserted.
 >>
@@ -868,7 +704,7 @@ subject - FUNKY_OPT_UNIQUE                  22:58:09.244837
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   22:58:09.267923
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:10:33.564486
 
 --- 1 row(s) selected.
 >>log;
@@ -893,7 +729,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   22:58:09.267923
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  22:57:48.567160
+canceler going to sleep - FUNKY_OPT_UNIQUE  16:10:16.025944
 
 --- 1 row(s) selected.
 >>
@@ -905,7 +741,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  22:57:48.567160
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         22:58:01.580028
+canceler woke up - FUNKY_OPT_UNIQUE         16:10:29.049442
 
 --- 1 row(s) selected.
 >>
@@ -922,11 +758,9 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000020249212284839336567932000000000206U3333300_268_S1;
+>>control query cancel qid MXID11000021072212285592465743895000000000206U3333300_300_S1;
 
-*** ERROR[8031] Server declined cancel request for query ID MXID11000020249212284839336567932000000000206U3333300_268_S1. The query is not registered with the cancel broker.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>
 >>insert into T106_interleaved_log values
 +>(CURRENT_TIME (6), 
@@ -939,16 +773,834 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler - FUNKY_OPT_UNIQUE                 22:58:04.625671
+canceler - FUNKY_OPT_UNIQUE                 16:10:32.094495
 
 --- 1 row(s) selected.
 >>log;
 >>
 >>
 >>
->>set session default CANCEL_QUERY_ALLOWED 'ON';
+>>obey TEST106(delete_test1);
+>>
+>>prepare s1 from delete from t106a;
+
+--- SQL command prepared.
+>>
+>>obey TEST106(make_cancel_stmt);
+>>log;
+>>
+>>
+>>select 'subject launch canceler - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject launch canceler - FUNKY_OPT_UNIQUE  16:10:35.646590
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'delete_test1, launch canceler, start');
+
+--- 1 row(s) inserted.
+>>
+>>sh sqlci -i"TEST106(do_cancel)" & ;
+>>
+>>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject synch cancel - FUNKY_OPT_UNIQUE     16:10:35.662141
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'delete_test1, launch canceler, finish');
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST106(synch_cancel);
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'foreground awaits synch_cancel');
+
+--- 1 row(s) inserted.
+>>
+>>-- wait until other mxci is ready
+>>sh sh $scriptsdir/executor/synch_106.ksh;
+>>
+>>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
++>       CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:10:42.383107
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject execute s1 - FUNKY_OPT_UNIQUE       16:10:42.399211
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values 
++>(CURRENT_TIME (6),
++>'delete_test1, execute, start');
+
+--- 1 row(s) inserted.
+>>
+>>execute s1;
+
+*** ERROR[8007] The operation has been canceled.
+
+--- 0 row(s) deleted.
+>>
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject - FUNKY_OPT_UNIQUE                  16:11:02.055901
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'delete_test1, execute, finished');
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST106(synch_cancel);
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'foreground awaits synch_cancel');
+
+--- 1 row(s) inserted.
+>>
+>>-- wait until other mxci is ready
+>>sh sh $scriptsdir/executor/synch_106.ksh;
+>>
+>>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
++>       CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:11:02.080289
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>obey TEST106(append_cancel_log);
+>>log;
+>>------------------------------------------;
+>>------ Contents of cancel session --------;
+>>------------------------------------------;
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel has begun');
+
+--- 1 row(s) inserted.
+>>
+>>sh touch ${REGRRUNDIR}/test106_synch;
+>>
+>>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler going to sleep - FUNKY_OPT_UNIQUE  16:10:42.327597
+
+--- 1 row(s) selected.
+>>
+>>sh sleep 13;
+>>
+>>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler woke up - FUNKY_OPT_UNIQUE         16:10:55.339944
+
+--- 1 row(s) selected.
+>>
+>>set session default CANCEL_ESCALATION_INTERVAL '5';
 
 --- SQL operation complete.
+>>log;
+Execute End Time         -1
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel will cancel');
+
+--- 1 row(s) inserted.
+>>
+>>obey cancel_cmd;
+>>control query cancel qid MXID11000021072212285592465743895000000000206U3333300_316_S1;
+
+--- SQL operation complete.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel has canceled');
+
+--- 1 row(s) inserted.
+>>
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler - FUNKY_OPT_UNIQUE                 16:10:58.384874
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>
+>>obey TEST106(insert_test1);
+>>
+>>prepare s1 from insert into t106c select * from t106a;
+
+--- SQL command prepared.
+>>obey TEST106(make_cancel_stmt);
+>>log;
+>>
+>>
+>>select 'subject launch canceler - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject launch canceler - FUNKY_OPT_UNIQUE  16:11:05.270117
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'insert_test1, launch canceler, start');
+
+--- 1 row(s) inserted.
+>>
+>>sh sqlci -i"TEST106(do_cancel)" & ;
+>>
+>>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject synch cancel - FUNKY_OPT_UNIQUE     16:11:05.284747
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'insert_test1, launch canceler, finish');
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST106(synch_cancel);
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'foreground awaits synch_cancel');
+
+--- 1 row(s) inserted.
+>>
+>>-- wait until other mxci is ready
+>>sh sh $scriptsdir/executor/synch_106.ksh;
+>>
+>>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
++>       CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:11:11.889591
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject execute s1 - FUNKY_OPT_UNIQUE       16:11:11.903328
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values 
++>(CURRENT_TIME (6),
++>'insert_test1, execute, start');
+
+--- 1 row(s) inserted.
+>>
+>>execute s1;
+
+*** ERROR[8007] The operation has been canceled.
+
+--- 0 row(s) inserted.
+>>
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject - FUNKY_OPT_UNIQUE                  16:11:26.571982
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'insert_test1, execute, finished');
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST106(synch_cancel);
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'foreground awaits synch_cancel');
+
+--- 1 row(s) inserted.
+>>
+>>-- wait until other mxci is ready
+>>sh sh $scriptsdir/executor/synch_106.ksh;
+>>
+>>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
++>       CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:11:26.598207
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>obey TEST106(append_cancel_log);
+>>log;
+>>------------------------------------------;
+>>------ Contents of cancel session --------;
+>>------------------------------------------;
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel has begun');
+
+--- 1 row(s) inserted.
+>>
+>>sh touch ${REGRRUNDIR}/test106_synch;
+>>
+>>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler going to sleep - FUNKY_OPT_UNIQUE  16:11:11.867340
+
+--- 1 row(s) selected.
+>>
+>>sh sleep 13;
+>>
+>>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler woke up - FUNKY_OPT_UNIQUE         16:11:24.880641
+
+--- 1 row(s) selected.
+>>
+>>set session default CANCEL_ESCALATION_INTERVAL '5';
+
+--- SQL operation complete.
+>>log;
+Execute End Time         -1
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel will cancel');
+
+--- 1 row(s) inserted.
+>>
+>>obey cancel_cmd;
+>>control query cancel qid MXID11000021072212285592465743895000000000206U3333300_331_S1;
+
+--- SQL operation complete.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel has canceled');
+
+--- 1 row(s) inserted.
+>>
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler - FUNKY_OPT_UNIQUE                 16:11:24.928969
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>
+>>obey TEST106(insert_test2);
+>>
+>>prepare s1 from insert into t106c 
++>  select
++>  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100)
++>    + (10 * x10) +( 1 * x1),
++>  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
++>  0 + (100 * x100) + (10 * x10) + (1 * x1),
++>  0 + (10 * x10) + (1 * x1),
++>  0 + (1 * x1),
++>  0
++>  from (values(1)) as t1
++>    transpose 0,1                 as x100000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>  ;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST106(make_cancel_stmt);
+>>log;
+>>
+>>
+>>select 'subject launch canceler - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject launch canceler - FUNKY_OPT_UNIQUE  16:11:28.811174
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'insert_test2, launch canceler, start');
+
+--- 1 row(s) inserted.
+>>
+>>sh sqlci -i"TEST106(do_cancel)" & ;
+>>
+>>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject synch cancel - FUNKY_OPT_UNIQUE     16:11:28.825565
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'insert_test2, launch canceler, finish');
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST106(synch_cancel);
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'foreground awaits synch_cancel');
+
+--- 1 row(s) inserted.
+>>
+>>-- wait until other mxci is ready
+>>sh sh $scriptsdir/executor/synch_106.ksh;
+>>
+>>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
++>       CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:11:35.425110
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject execute s1 - FUNKY_OPT_UNIQUE       16:11:35.439303
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values 
++>(CURRENT_TIME (6),
++>'insert_test2, execute, start');
+
+--- 1 row(s) inserted.
+>>
+>>execute s1;
+
+*** ERROR[8007] The operation has been canceled.
+
+--- 0 row(s) inserted.
+>>
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject - FUNKY_OPT_UNIQUE                  16:11:52.528882
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'insert_test2, execute, finished');
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST106(synch_cancel);
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'foreground awaits synch_cancel');
+
+--- 1 row(s) inserted.
+>>
+>>-- wait until other mxci is ready
+>>sh sh $scriptsdir/executor/synch_106.ksh;
+>>
+>>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
++>       CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:11:52.553099
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>obey TEST106(append_cancel_log);
+>>log;
+>>------------------------------------------;
+>>------ Contents of cancel session --------;
+>>------------------------------------------;
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel has begun');
+
+--- 1 row(s) inserted.
+>>
+>>sh touch ${REGRRUNDIR}/test106_synch;
+>>
+>>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler going to sleep - FUNKY_OPT_UNIQUE  16:11:35.428353
+
+--- 1 row(s) selected.
+>>
+>>sh sleep 13;
+>>
+>>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler woke up - FUNKY_OPT_UNIQUE         16:11:48.441182
+
+--- 1 row(s) selected.
+>>
+>>set session default CANCEL_ESCALATION_INTERVAL '5';
+
+--- SQL operation complete.
+>>log;
+Execute End Time         -1
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel will cancel');
+
+--- 1 row(s) inserted.
+>>
+>>obey cancel_cmd;
+>>control query cancel qid MXID11000021072212285592465743895000000000206U3333300_431_S1;
+
+--- SQL operation complete.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel has canceled');
+
+--- 1 row(s) inserted.
+>>
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler - FUNKY_OPT_UNIQUE                 16:11:51.488914
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>
+>>obey TEST106(upsert_test1);
+>>
+>>prepare s1 from 
++>upsert using load into t106c 
++>  select
++>  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100)
++>    + (10 * x10) +( 1 * x1),
++>  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
++>  0 + (100 * x100) + (10 * x10) + (1 * x1),
++>  0 + (10 * x10) + (1 * x1),
++>  0 + (1 * x1),
++>  0
++>  from (values(1)) as t1
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>  ;
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST106(make_cancel_stmt);
+>>log;
+>>
+>>
+>>select 'subject launch canceler - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject launch canceler - FUNKY_OPT_UNIQUE  16:11:54.780222
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'upsert_test1, launch canceler, start');
+
+--- 1 row(s) inserted.
+>>
+>>sh sqlci -i"TEST106(do_cancel)" & ;
+>>
+>>select 'subject synch cancel - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject synch cancel - FUNKY_OPT_UNIQUE     16:11:54.795690
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'upsert_test1, launch canceler, finish');
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST106(synch_cancel);
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'foreground awaits synch_cancel');
+
+--- 1 row(s) inserted.
+>>
+>>-- wait until other mxci is ready
+>>sh sh $scriptsdir/executor/synch_106.ksh;
+>>
+>>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
++>       CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:12:01.499670
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>select 'subject execute s1 - FUNKY_OPT_UNIQUE',
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject execute s1 - FUNKY_OPT_UNIQUE       16:12:01.514027
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values 
++>(CURRENT_TIME (6),
++>'upsert_test1, execute, start');
+
+--- 1 row(s) inserted.
+>>
+>>execute s1;
+
+*** ERROR[8007] The operation has been canceled.
+
+--- 0 row(s) inserted.
+>>
+>>select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+subject - FUNKY_OPT_UNIQUE                  16:12:17.525834
+
+--- 1 row(s) selected.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6),
++>'upsert_test1, execute, finished');
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST106(synch_cancel);
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'foreground awaits synch_cancel');
+
+--- 1 row(s) inserted.
+>>
+>>-- wait until other mxci is ready
+>>sh sh $scriptsdir/executor/synch_106.ksh;
+>>
+>>select 'done with synch_cancel - FUNKY_OPT_UNIQUE', 
++>       CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:12:17.649112
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
+>>obey TEST106(append_cancel_log);
+>>log;
+>>------------------------------------------;
+>>------ Contents of cancel session --------;
+>>------------------------------------------;
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel has begun');
+
+--- 1 row(s) inserted.
+>>
+>>sh touch ${REGRRUNDIR}/test106_synch;
+>>
+>>select 'canceler going to sleep - FUNKY_OPT_UNIQUE', 
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler going to sleep - FUNKY_OPT_UNIQUE  16:12:01.472416
+
+--- 1 row(s) selected.
+>>
+>>sh sleep 13;
+>>
+>>select 'canceler woke up - FUNKY_OPT_UNIQUE', 
++>CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler woke up - FUNKY_OPT_UNIQUE         16:12:14.485544
+
+--- 1 row(s) selected.
+>>
+>>set session default CANCEL_ESCALATION_INTERVAL '5';
+
+--- SQL operation complete.
+>>log;
+Execute End Time         -1
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel will cancel');
+
+--- 1 row(s) inserted.
+>>
+>>obey cancel_cmd;
+>>control query cancel qid MXID11000021072212285592465743895000000000206U3333300_446_S1;
+
+--- SQL operation complete.
+>>
+>>insert into T106_interleaved_log values
++>(CURRENT_TIME (6), 
++>'do_cancel has canceled');
+
+--- 1 row(s) inserted.
+>>
+>>select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+(EXPR)                                      (EXPR)         
+------------------------------------------  ---------------
+
+canceler - FUNKY_OPT_UNIQUE                 16:12:17.530040
+
+--- 1 row(s) selected.
+>>log;
+>>
+>>
 >>
 >>obey TEST106(cpu_bound_esps);
 >>
@@ -999,7 +1651,7 @@ canceler - FUNKY_OPT_UNIQUE                 22:58:04.625671
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   22:58:15.164549
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:12:26.482142
 
 --- 1 row(s) selected.
 >>log;
@@ -1024,7 +1676,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   22:58:15.164549
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-subject - FUNKY_OPT_UNIQUE                  22:58:31.205663
+subject - FUNKY_OPT_UNIQUE                  16:12:39.517114
 
 --- 1 row(s) selected.
 >>
@@ -1051,7 +1703,7 @@ subject - FUNKY_OPT_UNIQUE                  22:58:31.205663
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE   22:58:31.230077
+done with synch_cancel - FUNKY_OPT_UNIQUE   16:12:39.550448
 
 --- 1 row(s) selected.
 >>log;
@@ -1076,7 +1728,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE   22:58:31.230077
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  22:58:15.128428
+canceler going to sleep - FUNKY_OPT_UNIQUE  16:12:26.432161
 
 --- 1 row(s) selected.
 >>
@@ -1088,7 +1740,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  22:58:15.128428
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         22:58:28.142067
+canceler woke up - FUNKY_OPT_UNIQUE         16:12:39.444966
 
 --- 1 row(s) selected.
 >>
@@ -1105,7 +1757,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000020249212284839336567932000000000206U3333300_284_S1;
+>>control query cancel qid MXID11000021072212285592465743895000000000206U3333300_462_S1;
 
 --- SQL operation complete.
 >>
@@ -1120,7 +1772,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler - FUNKY_OPT_UNIQUE                 22:58:31.185812
+canceler - FUNKY_OPT_UNIQUE                 16:12:39.497989
 
 --- 1 row(s) selected.
 >>log;
@@ -1185,7 +1837,7 @@ canceler - FUNKY_OPT_UNIQUE                 22:58:31.185812
 (EXPR)                      (EXPR)         
 --------------------------  ---------------
 
-subject - FUNKY_OPT_UNIQUE  22:59:03.224534
+subject - FUNKY_OPT_UNIQUE  16:13:11.961638
 
 --- 1 row(s) selected.
 >>
@@ -1212,7 +1864,7 @@ subject - FUNKY_OPT_UNIQUE  22:59:03.224534
 (EXPR)                                     (EXPR)         
 -----------------------------------------  ---------------
 
-done with synch_cancel - FUNKY_OPT_UNIQUE  22:59:03.268222
+done with synch_cancel - FUNKY_OPT_UNIQUE  16:13:11.992826
 
 --- 1 row(s) selected.
 >>log;
@@ -1237,7 +1889,7 @@ done with synch_cancel - FUNKY_OPT_UNIQUE  22:59:03.268222
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler going to sleep - FUNKY_OPT_UNIQUE  22:58:37.172272
+canceler going to sleep - FUNKY_OPT_UNIQUE  16:12:48.458589
 
 --- 1 row(s) selected.
 >>
@@ -1249,7 +1901,7 @@ canceler going to sleep - FUNKY_OPT_UNIQUE  22:58:37.172272
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler woke up - FUNKY_OPT_UNIQUE         22:58:50.185088
+canceler woke up - FUNKY_OPT_UNIQUE         16:13:01.471592
 
 --- 1 row(s) selected.
 >>
@@ -1266,7 +1918,7 @@ Execute End Time         -1
 --- 1 row(s) inserted.
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000020249212284839336567932000000000206U3333300_299_S1;
+>>control query cancel qid MXID11000021072212285592465743895000000000206U3333300_477_S1;
 
 --- SQL operation complete.
 >>
@@ -1281,7 +1933,7 @@ Execute End Time         -1
 (EXPR)                                      (EXPR)         
 ------------------------------------------  ---------------
 
-canceler - FUNKY_OPT_UNIQUE                 22:58:53.231319
+canceler - FUNKY_OPT_UNIQUE                 16:13:04.519212
 
 --- 1 row(s) selected.
 >>log;
@@ -1545,9 +2197,9 @@ CONTROL_RUNNING_QUERY =====================  SEQ_NO 1        NO CHILDREN
 >>log;
 >>
 >>obey cancel_cmd;
->>control query cancel qid MXID11000020249212284839336567932000000000206U3333300_540_S1;
+>>control query cancel qid MXID11000021072212285592465743895000000000206U3333300_718_S1;
 
-*** ERROR[8031] Server declined cancel request for query ID MXID11000020249212284839336567932000000000206U3333300_540_S1. The query is not in OPEN or FETCH or EXECUTE state.
+*** ERROR[8031] Server declined cancel request for query ID MXID11000021072212285592465743895000000000206U3333300_718_S1. The query is not in OPEN or FETCH or EXECUTE state.
 
 --- SQL operation failed with errors.
 >>
@@ -1561,7 +2213,13 @@ CONTROL_RUNNING_QUERY =====================  SEQ_NO 1        NO CHILDREN
 >>
 >>obey TEST106(clnup);
 >>
->>drop table T106a;
+>>drop table t106a;
+
+--- SQL operation complete.
+>>drop table t106b;
+
+--- SQL operation complete.
+>>drop table t106c;
 
 --- SQL operation complete.
 >>log T106_INTERLEAVED_LOG;
