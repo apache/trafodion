@@ -283,10 +283,25 @@ void CCluster::NodeReady( CNode *spareNode )
         lnode->Up();
     }
 
-    if ( joinComm_ != MPI_COMM_NULL )
+    switch( CommType )
     {
-        MPI_Comm_free( &joinComm_ );
-        joinComm_ = MPI_COMM_NULL;
+        case CommType_InfiniBand:
+            if ( joinComm_ != MPI_COMM_NULL )
+            {
+                MPI_Comm_free( &joinComm_ );
+                joinComm_ = MPI_COMM_NULL;
+            }
+            break;
+        case CommType_Sockets:
+            if ( joinSock_ != -1 )
+            {
+                close(joinSock_);
+                joinSock_ = -1;
+            }
+            break;
+        default:
+            // Programmer bonehead!
+            abort();
     }
     spareNode->SetActivatingSpare( false );
     integratingPNid_ = -1;
@@ -788,10 +803,25 @@ void CCluster::MarkDown (int pnid, bool communicate_state)
         {
             if ( node->GetPNid() == integratingPNid_ )
             {
-                if ( joinComm_ != MPI_COMM_NULL )
+                switch( CommType )
                 {
-                    MPI_Comm_free( &joinComm_ );
-                    joinComm_ = MPI_COMM_NULL;
+                    case CommType_InfiniBand:
+                        if ( joinComm_ != MPI_COMM_NULL )
+                        {
+                            MPI_Comm_free( &joinComm_ );
+                            joinComm_ = MPI_COMM_NULL;
+                        }
+                        break;
+                    case CommType_Sockets:
+                        if ( joinSock_ != -1 )
+                        {
+                            close(joinSock_);
+                            joinSock_ = -1;
+                        }
+                        break;
+                    default:
+                        // Programmer bonehead!
+                        abort();
                 }
                 integratingPNid_ = -1;
                 if ( MyNode->IsCreator() )
@@ -1286,10 +1316,25 @@ int CCluster::MarkUp( int pnid, char *node_name )
                 }
             }
 
-            if ( joinComm_ != MPI_COMM_NULL )
+            switch( CommType )
             {
-                MPI_Comm_free( &joinComm_ );
-                joinComm_ = MPI_COMM_NULL;
+                case CommType_InfiniBand:
+                    if ( joinComm_ != MPI_COMM_NULL )
+                    {
+                        MPI_Comm_free( &joinComm_ );
+                        joinComm_ = MPI_COMM_NULL;
+                    }
+                    break;
+                case CommType_Sockets:
+                    if ( joinSock_ != -1 )
+                    {
+                        close(joinSock_);
+                        joinSock_ = -1;
+                    }
+                    break;
+                default:
+                    // Programmer bonehead!
+                    abort();
             }
             integratingPNid_ = -1;
             if ( MyNode->IsCreator() )
