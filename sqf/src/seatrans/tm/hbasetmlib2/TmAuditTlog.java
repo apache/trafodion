@@ -482,9 +482,12 @@ public class TmAuditTlog {
          // be translated back into new region names following a restart.  THis allows us to ensure all
          // branches reply prior to cleanup
          Iterator<TransactionRegionLocation> it = regions.iterator();
+         List<String> tableNameList = new ArrayList<String>();
          while (it.hasNext()) {
-	     String name = new String(it.next().getRegionInfo().getTable().getNameAsString());
-            if (name.length() > 0){
+            String name = new String(it.next().getRegionInfo().getTable().getNameAsString());
+            if ((name.length() > 0) && (tableNameList.contains(name) != true)){
+               // We have a table name not already in the list
+               tableNameList.add(name);
                tableString.append(",");
                tableString.append(name);
             }
