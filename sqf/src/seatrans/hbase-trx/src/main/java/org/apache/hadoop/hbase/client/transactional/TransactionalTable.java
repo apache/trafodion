@@ -446,11 +446,13 @@ public class TransactionalTable extends HTable {
    			List<Delete> deletes) throws IOException {
    		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.delete[] row ");
    		// collect all rows from same region
-   			final Map<HRegionLocation, List<Delete>> rows = new HashMap<HRegionLocation, List<Delete>>();
-   			HRegionLocation location = null;
+                        final Map<TransactionRegionLocation, List<Delete>> rows = new HashMap<TransactionRegionLocation, List<Delete>>();
+                        HRegionLocation hlocation = null;
+                        TransactionRegionLocation location = null;
    			List<Delete> list = null;
    			for (Delete del : deletes) {
-   				location = this.getRegionLocation(del.getRow(), false);
+                                hlocation = this.getRegionLocation(del.getRow(), false);
+                                location = new TransactionRegionLocation(hlocation.getRegionInfo(), hlocation.getServerName());
    				if (!rows.containsKey(location)) {
    					list = new ArrayList<Delete>();
    					rows.put(location, list);
@@ -461,7 +463,7 @@ public class TransactionalTable extends HTable {
    			}
 
    			final List<Delete> rowsInSameRegion = new ArrayList<Delete>();
-   			for (Map.Entry<HRegionLocation, List<Delete>> entry : rows.entrySet()) {
+                        for (Map.Entry<TransactionRegionLocation, List<Delete>> entry : rows.entrySet()) {
    				rowsInSameRegion.clear();
    				rowsInSameRegion.addAll(entry.getValue());
    				final String regionName = entry.getKey().getRegionInfo().getRegionNameAsString();
@@ -524,12 +526,14 @@ public class TransactionalTable extends HTable {
 			final List<Put> puts) throws IOException {
 		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.put[] row ");
 		// collect all rows from same region
-		final Map<HRegionLocation, List<Put>> rows = new HashMap<HRegionLocation, List<Put>>();
-		HRegionLocation location = null;
+		final Map<TransactionRegionLocation, List<Put>> rows = new HashMap<TransactionRegionLocation, List<Put>>();
+		HRegionLocation hlocation = null;
+                TransactionRegionLocation location = null;
 		List<Put> list = null;
 		for (Put put : puts) {
 			validatePut(put);
-			location = this.getRegionLocation(put.getRow(), false);
+			hlocation = this.getRegionLocation(put.getRow(), false);
+                        location = new TransactionRegionLocation(hlocation.getRegionInfo(), hlocation.getServerName());
 			if (!rows.containsKey(location)) {
 				list = new ArrayList<Put>();
 				rows.put(location, list);
@@ -540,7 +544,7 @@ public class TransactionalTable extends HTable {
 		}
 
 		final List<Put> rowsInSameRegion = new ArrayList<Put>();
-		for (Map.Entry<HRegionLocation, List<Put>> entry : rows.entrySet()) {
+		for (Map.Entry<TransactionRegionLocation, List<Put>> entry : rows.entrySet()) {
 			rowsInSameRegion.clear();
 			rowsInSameRegion.addAll(entry.getValue());
 			final String regionName = entry.getKey().getRegionInfo().getRegionNameAsString();
