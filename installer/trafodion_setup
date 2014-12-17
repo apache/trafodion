@@ -155,6 +155,10 @@ if [ ${PIPESTATUS[0]} != "0" ]; then
    echo "***ERROR: Error while running trafodion_setup." | tee -a $SETUP_LOG
    echo "***ERROR: Setup not complete, review logs." | tee -a $SETUP_LOG
    echo "***ERROR: Exiting...." | tee -a $SETUP_LOG
+   echo "*****************************************"
+   echo "*****ERROR DURING TRAFODION INSTALL******"
+   echo "******DO NOT CONTINUE INSTALLATION*******"
+   echo "*****************************************"
    exit -1 
 fi
 
