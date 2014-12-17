@@ -2993,6 +2993,13 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
 
                          keyWordEntry2->getTokenCode() == TOK_ACCESS
                          ? TOK_REPEATABLE_ACCESS : TOK_REPEATABLE_READ,
+                         keyWordEntry1->getTokenCode(),		
+                         end1, holdChar1, lvalp);		
+                      break;		
+                    case TOK_REPLICATE:		
+                      return eitherCompoundOrSimpleKeyword		
+                        (keyWordEntry2->getTokenCode() == TOK_PARTITION, 		
+                         TOK_REPLICATE_PARTITION,
                          keyWordEntry1->getTokenCode(),
                          end1, holdChar1, lvalp);
                       break;

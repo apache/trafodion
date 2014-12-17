@@ -1333,6 +1333,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_REGISTER            /* Tandem extension */
 %token <tokval> TOK_UNREGISTER          /* Tandem extension */
 %token <tokval> TOK_RENAME              /* Tandem extension */
+%token <tokval> TOK_REPLICATE           /* Tandem extension non-reserved word*/
 %token <tokval> TOK_RESTRICT
 %token <tokval> TOK_REVOKE
 %token <tokval> TOK_ROWS                /* Tandem extension */

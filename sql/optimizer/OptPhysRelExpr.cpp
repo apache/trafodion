@@ -1002,7 +1002,7 @@ NABoolean RelExpr::okToAttemptESPParallelism (
           numOfESPs = rppForMe->getCountOfPipelines();
           if (child0RowCount.getCeiling() < numOfESPs)
             {
-              // Fewer outer table rows then pipelines - allow one or more parts
+              // Fewer outer table rows than pipelines - allow one or more parts
               allowedDeviation = 1.0;
             }
           else
@@ -12007,11 +12007,11 @@ Context* RelRoot::createContextForAChild(Context* myContext,
 
   Lng32 pipelinesPerCPU = DEFAULT_SINGLETON;
 
-  // Regardless of how the ATTEMPT_ESP_PARALLELISM CQD is set, LRU
-  // operations always execute under ESPs for partitioned tables. LRU ops
-  // are indicated by containsLRU() == TRUE.
-  NABoolean isFastLoadIntoTrafodion = FALSE;
-  if ( ((CURRSTMT_OPTDEFAULTS->attemptESPParallelism() != DF_OFF) OR containsLRU())
+  // Regardless of how the ATTEMPT_ESP_PARALLELISM CQD is set, some operations
+  // like LRU always execute under ESPs for partitioned tables.
+  // These are indicated by mustUseESPs() == TRUE.
+  // Note that some conditions below may still override this.
+  if ( ((CURRSTMT_OPTDEFAULTS->attemptESPParallelism() != DF_OFF) OR mustUseESPs())
       // QSTUFF
       // we don't support paralled execution in the get_next
       // protocol yet - but for streams there should not be
@@ -12049,7 +12049,8 @@ Context* RelRoot::createContextForAChild(Context* myContext,
     OperatorTypeEnum childOpType = child(0).getLogExpr()->getOperatorType();
 
     // Decide if it is a fast trafodion load query
-    isFastLoadIntoTrafodion = FALSE;
+    NABoolean isFastLoadIntoTrafodion = FALSE;
+
     if ( childOpType == REL_UNARY_INSERT ) {
 
        RelExpr* c0 = child(0).getLogExpr();
@@ -12061,7 +12062,8 @@ Context* RelRoot::createContextForAChild(Context* myContext,
     if ((CmpCommon::getDefault(ASG_FEATURE) == DF_ON) &&
         (childOpType != REL_EXE_UTIL) &&
         (numExtractStreams_ == 0) &&
-        !isFastLoadIntoTrafodion)
+        !isFastLoadIntoTrafodion &&
+        !mustUseESPs())
     {
       if(!OSIM_isNSKbehavior())
       {
@@ -12223,7 +12225,9 @@ Context* RelRoot::createContextForAChild(Context* myContext,
     Lng32 minBytesPerESP = defs.getAsLong(HBASE_MIN_BYTES_PER_ESP_PARTITION);
 
     // To be replaced later by a different CQD
-    if ( CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) == DF_OFF  || isASON )
+    if ( CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) == DF_OFF  ||
+         isASON ||
+         mustUseESPs())
       canAdjustDoP = FALSE;
 
     // Adjust DoP based on table size, if possible

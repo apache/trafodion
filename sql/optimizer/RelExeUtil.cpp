@@ -4907,6 +4907,7 @@ RelExpr * ExeUtilLongRunning::bindNode(BindWA *bindWA)
 
   // indicate that this is a an LRU statement
   bindWA->getTopRoot()->setContainsLRU(TRUE);
+  bindWA->getTopRoot()->setMustUseESPs(TRUE);
 
   return boundExpr;
 }

@@ -466,6 +466,12 @@ public:
   inline void setContainsLRU(NABoolean h)
   { containsLRU_ = h; }
 
+  inline NABoolean mustUseESPs() const
+  { return mustUseESPs_; }
+
+  inline void setMustUseESPs(NABoolean h = TRUE)
+  { mustUseESPs_ = h; }
+
   // MVQR
   inline NABoolean isAnalyzeOnly()
   { return isAnalyzeOnly_; }
@@ -747,6 +753,9 @@ public:
 
   // TRUE, if the IUD statement is an LRU
   NABoolean containsLRU_;
+
+  // TRUE, if one of the children must execute in parallel
+  NABoolean mustUseESPs_;
   
   // MVQR
   // TRUE if the query result should be the query descriptor used for MV Query Reqrite.
