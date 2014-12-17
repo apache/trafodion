@@ -169,18 +169,6 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     sortBuffer1 = NULL;
     sortBuffer2 = NULL;
 
-    //Since the transaction manager must stay around through multiple
-    //statements, we must make sure that all members are initialized at every
-    //entry-point to Update Statistics code. Otherwise we may receive residual
-    //errors from previous statements. For example:
-    //     >begin work;
-    //     >update statistics <...> TM knows a user transaction was started
-    //      <error occurs>
-    //     >rollback;
-    //     >update statistics <...> TM still thinks a user transaction was
-    //                              started - wrong!
-    HSTranMan *TM = HSTranMan::Instance();
-    TM->Reset();
     HSLogMan *LM = HSLogMan::Instance();
 
     ComDiagsArea *ptrDiags = CmpCommon::diags();
@@ -190,6 +178,7 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     LM->Log("\nUPDATE STATISTICS\n=====================================================================");
     LM->Log(hs_input);
     LM->StartTimer("UpdateStats()");
+    HSPrologEpilog pe("UpdateStats()");
     HSGlobalsClass hs_globals_obj(*ptrDiags);
     hs_globals_obj.requestedByCompiler = requestedByCompiler;
     hs_globals_y = &hs_globals_obj;

@@ -763,9 +763,8 @@ predefined_groups : EVERY COLUMN
                       }
                  | NECESSARY columns_spec
                       {
-                        HSFuncMergeDiags(-4222, "ON NECESSARY COLUMNS");
-                        hs_globals_y->parserError = HSGlobalsClass::ERROR_SEMANTICS;
-                        return -1;
+                        // Set flag indicating use of NECESSARY.
+                        hs_globals_y->optFlags |= NECESSARY_OPT;
                       }
 ;
 
