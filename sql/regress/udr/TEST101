@@ -1,7 +1,6 @@
 --
 -- TEST101
 --
-
 set schema trafodion.spjrs;
 
 --------------------------------------------------------------------------
@@ -9,7 +8,7 @@ set schema trafodion.spjrs;
 --------------------------------------------------------------------------
 set schema trafodion.spjrs;
 obey TEST101(clean_up);
-
+create schema trafodion.spjrs;
 obey $$REGRTSTDIR$$/sampledb;
 
 log LOG101 clear;
@@ -48,6 +47,8 @@ drop table trafodion.sch.interval_columns;
 drop table trafodion.sch.varchar_columns;
 drop table trafodion.sch.ucs2_columns;
 sh rm -f TEST101.class TEST101.jar TEST101.patterns;
+
+drop schema trafodion.spjrs cascade;
 
 
 ?section java_compile

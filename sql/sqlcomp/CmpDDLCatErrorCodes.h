@@ -237,9 +237,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_NO_UNREG_USER_HAS_PRIVS                   = 1227
                   , CAT_ROLE_HAS_PRIVS_NO_DROP                    = 1228
                   , CAT_OPTION_NOT_SUPPORTED                      = 1229
-                  //
-                  // More Catalog Manager errors
-                  //
+                  , CAT_BY_CLAUSE_IN_PRIVATE_SCHEMA               = 1230
                   , CAT_UNABLE_TO_CREATE_ROUTINE                  = 1231
                   , CAT_UNABLE_TO_SAVE_DDL                        = 1232
                   , CAT_CREATE_SCHEMA_IN_SYSCAT_IS_PROHIBITED     = 1233
@@ -377,6 +375,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_DISABLE_AUTHNAME_CHANGES                  = 1383
                   , CAT_POS_UNEQUABLE_DISK_POOL_DEFINED           = 1384
                   , CAT_POS_DISK_POOL_MAPPING_FAILED              = 1385
+                  , CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION        = 1389
                   , CAT_TRAFODION_OBJECT_EXISTS                   = 1390
 
                   , CAT_SHOWDDL_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE  = 1400

@@ -1160,6 +1160,7 @@ desc_struct * Generator::createVirtualTableDesc(
     table_desc->body.table_desc.objectType = COM_BASE_TABLE_OBJECT;
 
   table_desc->body.table_desc.owner = (tableInfo ? tableInfo->objOwnerID : SUPER_USER);
+  table_desc->body.table_desc.schemaOwner = (tableInfo ? tableInfo->schemaOwnerID : SUPER_USER);
 
   desc_struct * files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
   //  files_desc->body.files_desc.audit = -1; // audited table

@@ -496,7 +496,7 @@ PrivStatus privStatus = STATUS_GOOD;
 PrivStatus PrivMgrCommands::grantObjectPrivilege (
    const int64_t objectUID,
    const std::string &objectName,
-   const std::string &objectType,
+   const ComObjectType objectType,
    const int32_t granteeUID,
    const std::string &granteeName,
    const int32_t grantorUID,
@@ -505,7 +505,7 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
    const bool isAllSpecified,
    const bool isWGOSpecified)
 {
-  if (!isSecurableObject(objectType))
+  if (!PrivMgrPrivileges::isSecurableObject(objectType))
   {
     *pDiags_ << DgSqlCode (-15455)
              << DgString0 ("GRANT")
@@ -522,13 +522,13 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
 PrivStatus PrivMgrCommands::grantObjectPrivilege (
       const int64_t objectUID,
       const std::string &objectName,
-      const std::string &objectType,
+      const ComObjectType objectType,
       const int32_t granteeUID,
       const std::string &granteeName,
       const PrivMgrBitmap &objectPrivs,
       const PrivMgrBitmap &grantablePrivs)
 {
-  if (!isSecurableObject(objectType))
+  if (!PrivMgrPrivileges::isSecurableObject(objectType))
   {
     *pDiags_ << DgSqlCode (-15455)
              << DgString0 ("GRANT")
@@ -852,14 +852,14 @@ PrivStatus privStatus = STATUS_GOOD;
 PrivStatus PrivMgrCommands::revokeObjectPrivilege(
     const int64_t objectUID,
     const std::string &objectName,
-    const std::string &objectType,
+    const ComObjectType objectType,
     const int32_t granteeUID,
     const int32_t grantorUID,
     const std::vector<string> &privList,
     const bool isAllSpecified,
     const bool isGOFSpecified)
 {
-  if (!isSecurableObject(objectType))
+  if (!PrivMgrPrivileges::isSecurableObject(objectType))
   {
     *pDiags_ << DgSqlCode (-15455)
              << DgString0 ("REVOKE")

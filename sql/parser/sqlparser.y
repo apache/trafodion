@@ -1320,6 +1320,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_POPULATE            /* Tandem extension */
 %token <tokval> TOK_PRIMARY
 %token <tokval> TOK_PRIMARY_INDEX
+%token <tokval> TOK_PRIVATE              
 %token <tokval> TOK_PRIVILEGE           /* HP extension non-reserved word */
 %token <tokval> TOK_PRIVILEGES
 %token <tokval> TOK_PUBLIC
@@ -1571,6 +1572,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
   ComRoutinePassThroughInputType passThroughInputType;
   ComAuthenticationType         authTypeEnum;
   ComRCMatchOption  	     	matchTypeEnum;
+  ComSchemaClass                schemaClassEnum;
   ComUnits          	     	fileAttrSizeUnitEnum;
   ComTableFeature		tableFeatureEnum;
   CorrName	       	     	*corrName;
@@ -2213,27 +2215,22 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <boolean>   		constraint_setting
 %type <pSchemaName> 		schema_name
 %type <pElemDDLSchemaName>	schema_name_clause
-%type <pElemDDLSchemaName>      schema_name_and_location_clause
+%type <schemaClassEnum>         schema_class
 %type <stringval> 		schema_authorization_identifier
 %type <stringval> 		authorization_identifier
 %type <stringval> 		authorization_identifier_or_public
 %type <pElemDDL>  		authorization_identifier_list
 %type <stringval>               as_auth_clause
+%type <pElemDDL>                optional_schema_clause
 %type <stringval>               optional_as_auth_clause
 %type <stringval> 		external_user_identifier
 %type <tokval>	 		user_or_role
 %type <tokval>                  procedure_or_function
-%type <stringval>               schema_subvolume
-%type <stringval>               schema_location_clause
-%type <boolean>                 schema_location_reuse_clause
 %type <pStmtDDL>  		sql_schema_statement
 %type <pStmtDDL>  		sql_schema_definition_statement
 %type <pStmtDDL>  		sql_schema_manipulation_statement
 %type <pStmtDDL>  		sql_schema_statement_prologue
 %type <pStmtDDL>  		schema_definition
-%type <pElemDDL>  		optional_schema_element_list
-%type <pElemDDL>  		schema_element_list
-%type <pElemDDL>  		schema_element
 %type <pStmtDDL>  		routine_definition
 %type <pStmtDDL>                alter_function_statement
 %type <pElemDDL>                routine_params_list
@@ -15645,7 +15642,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, TRUE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE,
+							  FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15662,7 +15659,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, FALSE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE,
+							  FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15679,7 +15676,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, TRUE, FALSE, TRUE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE,
+							  FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15696,7 +15693,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, TRUE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE,
+							  FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15713,7 +15710,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, TRUE,
                                                           FALSE, FALSE,
-							  FALSE, FALSE,
+							  FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15737,7 +15734,24 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           FALSE, FALSE,
-							  TRUE, FALSE,
+							  TRUE, FALSE, FALSE,
+							  (char*)stmt->data(),
+							  stmtCharSet,
+							  PARSERHEAP());
+
+                 $$ = de;
+
+               }
+             | TOK_INITIALIZE TOK_TRAFODION ',' TOK_CREATE TOK_SCHEMA TOK_OBJECTS
+               {
+		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
+                                                          FALSE, FALSE,
+							  FALSE, FALSE,	TRUE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15753,7 +15767,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 		 DDLExpr * ia = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           TRUE, FALSE,
-							  FALSE, FALSE,
+							  FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15770,7 +15784,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * ia = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           FALSE, TRUE,
-							  FALSE, FALSE,
+							  FALSE, FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15788,7 +15802,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE, TRUE,
+							  FALSE, TRUE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -21425,11 +21439,10 @@ show_statement:
             }
   
           | TOK_SHOWDDL_COMPONENT identifier
-              optional_showddl_role_option
             {
               $$ = new (PARSERHEAP())
                 RelRoot(new (PARSERHEAP())
-                  Describe(SQLTEXT(), *$2, Describe::LONG_, $3),
+                  Describe(SQLTEXT(), *$2),
                   REL_ROOT,
                   new (PARSERHEAP())
                   ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
@@ -22614,31 +22627,11 @@ extended_label_name : label_name
               }
            }
 
-schema_location_clause: TOK_LOCATION schema_subvolume
-                      {
-                        $$ = $2;
-                      }
-
-schema_location_reuse_clause:
-                      {
-                        $$ = FALSE;
-                      }
-                      | TOK_REPEAT TOK_USE TOK_ALLOWED
-                      {
-                        $$ = TRUE;
-                      }
-
-schema_subvolume :  regular_identifier
-                      {
-                        $$ = $1;
-                      }
-
 /* type pStmtDDL */
 
-schema_definition : TOK_CREATE TOK_SCHEMA schema_name_and_location_clause char_set collation_option
-                                optional_schema_element_list
+schema_definition : TOK_CREATE schema_class TOK_SCHEMA schema_name_clause char_set collation_option
 				{
-				  NAString extSchName($3->getSchemaName().getSchemaNameAsAnsiString());
+				  NAString extSchName($4->getSchemaName().getSchemaNameAsAnsiString());
 				  if (! validateVolatileSchemaName(extSchName))
 				    {
 				      YYERROR;
@@ -22648,16 +22641,16 @@ schema_definition : TOK_CREATE TOK_SCHEMA schema_name_and_location_clause char_s
           // StmtDDLCreateSchema will free the memory there.
           CharType *charType = new CharType(CharType::LiteralSchema, 
                                             0, 0, FALSE, FALSE, FALSE, FALSE, FALSE,
-                                            $4, $5.collation_, $5.coercibility_ );
+                                            $5, $6.collation_, $6.coercibility_ );
                                                          
           StmtDDLCreateSchema *pNode = new (PARSERHEAP())
 				                          StmtDDLCreateSchema(
-                                      *$3 /*schema_name_clause*/,
-                                      charType,
-                                       $6 /*optional_schema_element_list*/);
+                                      *$4 /*schema_name_clause*/,
+                                      $2, /* schema class */
+                                      charType);
                                   pNode->synthesize();
                                   $$ = pNode;
-				  delete $3 /*schema_name_clause*/;
+				  delete $4 /*schema_name_clause*/;
 				}
 
 schema_definition : TOK_CREATE TOK_VOLATILE TOK_SCHEMA 
@@ -22672,47 +22665,28 @@ schema_definition : TOK_CREATE TOK_VOLATILE TOK_SCHEMA
 				    new (PARSERHEAP())
 				      StmtDDLCreateSchema(
                                       edsn /*schema_name_clause*/,
-                                      NULL,
-                                      NULL /*optional_schema_element_list*/);
+                                      COM_SCHEMA_CLASS_SHARED, /* schema class */
+                                      NULL);
 				  pNode->setIsVolatile(TRUE);
 				  pNode->setProcessAsExeUtil(TRUE);
                                   pNode->synthesize();
                                   $$ = pNode;
 				}
 
-//  
-//  schema_definition : TOK_CREATE TOK_SCHEMA schema_name_clause collation_option
-//                                  optional_schema_element_list
-//                                  {
-//                                    StmtDDLCreateSchema *pNode =
-//                                      new (PARSERHEAP())
-//                                        StmtDDLCreateSchema(
-//                                        *$3 /*schema_name_clause*/,
-//                                         ( ($4.coercibility_ == CharInfo::EXPLICIT) ? 
-//                                              $4.collation_  :  CharInfo::UNKNOWN_COLLATION ),
-//                                         $5 /*optional_schema_element_list*/);
-//                                    pNode->synthesize();
-//                                    $$ = pNode;
-//                                    delete $3 /*schema_name_clause*/;
-//                                  }
-//  
+/* type schemaClassEnum */
+schema_class : empty
+                                { 
+                                  $$ = COM_SCHEMA_CLASS_DEFAULT;
+                                }
+                              | TOK_PRIVATE
+                                {
+                                  $$ = COM_SCHEMA_CLASS_PRIVATE;
+                                }
+                              | TOK_SHARED
+                                {
+                                  $$ = COM_SCHEMA_CLASS_SHARED;
+                                }
 
-schema_name_and_location_clause: schema_name_clause
-                                  |
-                                  schema_name_clause schema_location_clause schema_location_reuse_clause
-                                  {
-                                    ComSubvolumeName subvol ($2->data());
-                                    size_t svMinLength = 4;
-                                    if (subvol.isMXSubvol(svMinLength))
-                                     {
-                                       $1->setSubvolumeName(subvol);
-                                      $1->setLocationReuse($3);
-                                     }
-                                    else
-                                     {
-                                       *SqlParser_Diags << DgSqlCode(-3025) << DgString0(subvol);
-                                     }
-                                  }
 
 /* type pElemDDLSchemaName */
 schema_name_clause: schema_name
@@ -22767,95 +22741,6 @@ external_user_identifier : identifier
                                   // upshift even if delimited
                                   NAString temp (*$$);
                                   $$->toUpper();
-                                }
-
-/* type pElemDDL */
-optional_schema_element_list :  empty
-                                {
-                                  $$ = NULL;
-                                }
-                      | 
-                        schema_element_list
-                        {
-                          if (NOT Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                          {
-                            // Don't allow the customer to use this feature
-                            // Internal use is OK.
-                            // Compound create schema is not supported.
-                            *SqlParser_Diags << DgSqlCode(-3080)
-                            << DgString0("object definition");
-                            YYERROR;
-                          }
-                        }
-
-/* type pElemDDL */
-schema_element_list : schema_element
-                      | schema_element_list schema_element
-                                {
-                                  $$ = new (PARSERHEAP())
-				    ElemDDLList(
-						$1 /*schema_element_list*/,
-						$2 /*schema_element*/);
-                                }
-
-/* type pElemDDL */
-schema_element : table_definition
-                                {
-                                  if ($1 /*table_definition*/)
-				    {
-				      $$ = $1->castToElemDDLNode();
-
-				      // volatile or CTAS stmts not supported
-				      // as part of a compound schema stmt.
-				      if (($$->castToStmtDDLCreateTable()->isVolatile()) ||
-					  ($$->castToStmtDDLCreateTable()->getQueryExpression()))
-					{
-					  YYERROR;
-					}
-				    }
-                                  else
-                                    $$ = NULL;
-                                }
-
-                      | view_definition
-                                {
-                                  if ($1 /*view_definition*/)
-                                    $$ = $1->castToElemDDLNode();
-                                  else
-                                    $$ = NULL;
-                                }
-
-                      | index_definition
-                                {
-                                  if ($1 /*index_definition*/)
-				    {
-				      $$ = $1->castToElemDDLNode();
-				      
-				      // volatile stmts not supported
-				      // as part of a compound schema stmt.
-				      if ($$->castToStmtDDLCreateIndex()->isVolatile())
-					{
-					  YYERROR;
-					}
-				    }
-                                  else
-                                    $$ = NULL;
-                                }
-
-                      | trigger_definition
-                                {
-                                  if ($1 != NULL)
-                                    $$ = $1->castToElemDDLNode();
-                                  else
-                                    $$ = NULL;
-                                }
-
-                      | grant_statement
-                                {
-                                  if ($1 /*grant_statement*/)
-                                    $$ = $1->castToElemDDLNode();
-                                  else
-                                    $$ = NULL;
                                 }
 
 /* type pStmtDDL */
@@ -31289,17 +31174,35 @@ component_str_lit : std_char_string_literal
 /* type pStmtDDL */
 /*REGISTER USER*/
 register_user_statement : TOK_REGISTER TOK_USER external_user_identifier
-                             optional_as_auth_clause optional_by_auth_identifier
+                             optional_as_auth_clause optional_schema_clause
                                 {
                                   $$ = new (PARSERHEAP())
                                   StmtDDLRegisterUser(
                                         *$3 /*external_user*/, 
                                         $4 /*auth_id*/,
-                                        $5 /*by clause*/,
+                                        $5 /*schema clause*/,
                                         PARSERHEAP()); 
                                   delete $3;
                                 }
 
+/* type pElemDDL */
+optional_schema_clause : empty
+                         {
+                           $$ = NULL;
+                         }
+                         /*TODO: Increases shift/reduce conflicts
+                         | schema_class TOK_SCHEMA schema_name
+                         {
+	     	           $$ = new (PARSERHEAP()) ElemDDLAuthSchema(*$3, $1, PARSERHEAP());
+                             if ($3 != NULL)
+                                delete $3;
+                         }
+                         */
+                         | schema_class TOK_SCHEMA 
+                         {
+	     	           $$ = new (PARSERHEAP()) ElemDDLAuthSchema($1, PARSERHEAP());
+                         }
+                     
 /* type pStmtDDL */
 unregister_component_statement : TOK_UNREGISTER TOK_COMPONENT component_name optional_drop_behavior
                                 {
@@ -32073,6 +31976,7 @@ nonreserved_word :      TOK_ABORT
 		      | TOK_PRESERVE
                       | TOK_PRIORITY
                       | TOK_PRIORITY_DELTA
+                      | TOK_PRIVATE
                       | TOK_PRIVILEGE
                       | TOK_PROCESS
                       | TOK_PROGRESS

@@ -580,6 +580,7 @@ short ExTransaction::rollbackTransactionWaited()
     {
       createDiagsArea (EXE_ROLLBACK_WAITED_ERROR_TRANS_SUBSYS, rc,
 		       "TMF");
+      genLinuxCorefile("Issue trying to rollback a transaction");
       return -1;
     }
   

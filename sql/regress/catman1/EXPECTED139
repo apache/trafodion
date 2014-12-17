@@ -54,6 +54,9 @@
 --- SQL command prepared.
 >>
 >>obey TEST139(create_db);
+>>create shared schema t139sch;
+
+--- SQL operation complete.
 >>set schema t139sch;
 
 --- SQL operation complete.

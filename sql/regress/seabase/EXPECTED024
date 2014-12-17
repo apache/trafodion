@@ -1,3 +1,6 @@
+>>create schema seqsch;
+
+--- SQL operation complete.
 >>set schema seqsch;
 
 --- SQL operation complete.
@@ -721,7 +724,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
 >>invoke trafodion."_MD_".sequences_view;
 
 -- Definition of Trafodion view TRAFODION."_MD_".SEQUENCES_VIEW
--- Definition current  Tue Nov 11 18:31:14 2014
+-- Definition current  Mon Dec  1 13:28:27 2014
 
   (
     CATALOG_NAME                     VARCHAR(256 BYTES) CHARACTER SET UTF8
@@ -876,6 +879,10 @@ TRAFODION                                                                       
 
 --- SQL operation complete.
 >>drop table test024t2;
+
+--- SQL operation complete.
+>>
+>>drop schema seqsch cascade;
 
 --- SQL operation complete.
 >>

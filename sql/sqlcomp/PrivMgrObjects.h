@@ -64,8 +64,25 @@ public:
 // -------------------------------------------------------------------
 // Public functions:
 // -------------------------------------------------------------------
+   PrivStatus addEntry(
+      const int64_t objectUID,
+      const std::string & catalogName, 
+      const std::string & schemaName, 
+      const std::string & objectName,
+      const ComObjectType objectType, 
+      const int64_t createTime,
+      const int64_t redefTime,
+      const bool isValid,
+      const int32_t objectOwner,
+      const int32_t schemaOwner);
+      
    void clear();
 
+   PrivStatus deleteEntryByName(
+      const std::string & catalogName, 
+      const std::string & schemaName, 
+      const std::string & objectName);
+      
    PrivStatus fetchQualifiedName(
       const int64_t objectUID,
       std::string & qualifiedObjectName);

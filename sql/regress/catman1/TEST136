@@ -166,14 +166,12 @@ register user test136_user2
    as test136_u2;
 
 set parserflags 1;
--- succeed: register user -> BY clause
-register user test136_user5
-  by DB__UserAdminUser;
+-- succeed: register user
+register user test136_user5;
 
--- succeed: register user -> AS and BY clause
+-- succeed: register user -> AS clause
 register user test136_user6
-  as test136_u6
-  by DB__UserAdminUser;
+  as test136_u6;
 reset parserflags 1;
 
 -- 7 users should be returned

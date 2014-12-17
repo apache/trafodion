@@ -129,18 +129,6 @@ class PrivMgrCommands : public PrivMgr
 {
 public:
 
-// -------------------------------------------------------------------
-// Static functions:
-// -------------------------------------------------------------------
-   static bool isSecurableObject (const std::string objectType)
-   {
-     return (objectType == BASE_TABLE_OBJECT_LIT ||
-             objectType == LIBRARY_OBJECT_LIT ||
-             objectType == USER_DEFINED_ROUTINE_OBJECT_LIT ||
-             objectType == VIEW_OBJECT_LIT ||
-             objectType == SEQUENCE_GENERATOR_OBJECT_LIT);
-   }
-
 // ---------------------------------------------------------------------
 // Constructors/Destructor
 // ---------------------------------------------------------------------
@@ -199,7 +187,7 @@ public:
    PrivStatus grantObjectPrivilege(
       const int64_t objectUID,
       const std::string &objectName,
-      const std::string &objectType,
+      const ComObjectType objectType,
       const int32_t granteeUID,
       const std::string &granteeName,
       const int32_t grantorUID,
@@ -211,7 +199,7 @@ public:
    PrivStatus grantObjectPrivilege(
       const int64_t objectUID,
       const std::string &objectName,
-      const std::string &objectType,
+      const ComObjectType objectType,
       const int32_t granteeUID,
       const std::string &granteeName,
       const PrivMgrBitmap &objectPrivs,
@@ -249,7 +237,7 @@ public:
    PrivStatus revokeObjectPrivilege(
       const int64_t objectUID,
       const std::string &objectName,
-      const std::string &objectType,
+      const  ComObjectType objectType,
       const int32_t granteeUID,
       const int32_t grantorUID,
       const std::vector<std::string> &privs,

@@ -21,12 +21,13 @@
 CPPSRC := CmpDescribe.cpp \
 	CmpMain.cpp \
 	CmpSeabaseDDLcommon.cpp \
-	CmpSeabaseDDLtable.cpp \
 	CmpSeabaseDDLindex.cpp \
-	CmpSeabaseDDLview.cpp \
         CmpSeabaseDDLauth.cpp \
 	CmpSeabaseDDLroutine.cpp \
+	CmpSeabaseDDLschema.cpp \
+	CmpSeabaseDDLtable.cpp \
 	CmpSeabaseDDLupgrade.cpp \
+	CmpSeabaseDDLview.cpp \
         PrivMgrCommands.cpp \
         PrivMgrMD.cpp \
         PrivMgrMDTable.cpp \

@@ -59,6 +59,7 @@ drop schema t139sch cascade;
 initialize authorization, drop;
 
 ?section create_db
+create shared schema t139sch;
 set schema t139sch;
 create table teams
   (team_number int not null primary key,

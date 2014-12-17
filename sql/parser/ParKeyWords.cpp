@@ -796,7 +796,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("PRIOR",              IDENTIFIER,      ANS_|RESWORD_),
   ParKeyWord("PRIORITY",           TOK_PRIORITY,    NONRESTOKEN_),
   ParKeyWord("PRIORITY_DELTA",     TOK_PRIORITY_DELTA,    NONRESTOKEN_),
-  ParKeyWord("PRIVATE",            IDENTIFIER,      POTANS_|RESWORD_),
+  ParKeyWord("PRIVATE",            TOK_PRIVATE,     NONRESTOKEN_),
   ParKeyWord("PRIVILEGE",          TOK_PRIVILEGE,   NONRESWORD_),
   ParKeyWord("PRIVILEGES",         TOK_PRIVILEGES,  ANS_|RESWORD_),
   ParKeyWord("PROCEDURE",          TOK_PROCEDURE,   ANS_|RESWORD_),

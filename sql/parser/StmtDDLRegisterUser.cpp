@@ -41,6 +41,7 @@
 #include "AllElemDDLParam.h"
 #include "AllElemDDLUdr.h"
 #include "StmtDDLRegisterUser.h"
+#include "ElemDDLAuthSchema.h"
 #include "BaseTypes.h"
 #include "ComDiags.h"
 #include "ComOperators.h"
@@ -61,7 +62,7 @@
 // constructor used for REGISTER USER
 StmtDDLRegisterUser::StmtDDLRegisterUser(const NAString & externalUserName,
                                          const NAString * pDbUserName,
-                                         ElemDDLNode *pOwner,
+                                         ElemDDLNode * authSchema,
                                          CollHeap * heap)
   : StmtDDLNode(DDL_REGISTER_USER),
     externalUserName_(externalUserName,heap),
@@ -78,13 +79,13 @@ StmtDDLRegisterUser::StmtDDLRegisterUser(const NAString & externalUserName,
     NAString userName(*pDbUserName, heap);
     dbUserName_ = userName;
   }
-  if (pOwner)
+  if (authSchema)
   {
-    pOwner_ = pOwner->castToElemDDLGrantee();
-    ComASSERT(pOwner_ NEQ NULL);
+    authSchema_ = authSchema->castToElemDDLAuthSchema();
+    ComASSERT(authSchema_ NEQ NULL);
   }
   else
-    pOwner_ = NULL;
+    authSchema_ = NULL;
 }
 
 // constructor used for UNREGISTER USER
@@ -95,7 +96,8 @@ StmtDDLRegisterUser::StmtDDLRegisterUser(const NAString & dbUserName,
     dbUserName_(dbUserName, heap),
     externalUserName_("", heap),
     registerUserType_(UNREGISTER_USER),
-    dropBehavior_(dropBehavior) 
+    dropBehavior_(dropBehavior),
+    authSchema_(NULL) 
 {
 } // StmtDDLRegisterUser::StmtDDLRegisterUser()
 
@@ -105,8 +107,8 @@ StmtDDLRegisterUser::StmtDDLRegisterUser(const NAString & dbUserName,
 StmtDDLRegisterUser::~StmtDDLRegisterUser()
 {
   // delete all children
-  if (pOwner_)
-    delete pOwner_;
+  if (authSchema_)
+    delete authSchema_;
 }
 
 //

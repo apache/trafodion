@@ -23,6 +23,7 @@ set schema seqsch;
 obey TEST024(clean_up);
 
 log LOG024 clear;
+create schema seqsch;
 set schema seqsch;
 obey TEST024(setup);
 obey TEST024(select_queries);
@@ -46,6 +47,8 @@ drop sequence error_seq;
 
 drop table test024t1;
 drop table test024t2;
+
+drop schema seqsch cascade;
 
 ?section setup
 -- add sequence metadata, if  doesn't already exists

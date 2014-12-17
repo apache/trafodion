@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,16 +17,16 @@
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
-#ifndef ELEMDDLSCHEMANAME_H
-#define ELEMDDLSCHEMANAME_H
+#ifndef ELEMDDLAUTHSCHEMA_H
+#define ELEMDDLAUTHSCHEMA_H
 /* -*-C++-*-
  *****************************************************************************
  *
- * File:         ElemDDLSchemaName.h
+ * File:         ElemDDLAuthSchema.h
  * Description:  Temporary parse node to contain schema name and
- *               authorization identifier
+ *               schema class
  *
- * Created:      4/3/95
+ * Created:      12/10/2014
  * Language:     C++
  *
  *
@@ -35,48 +35,60 @@
  *****************************************************************************
  */
 
-
+#ifndef   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
+#define   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
+#endif
+#include "SqlParserGlobals.h"
+#include "ElemDDLSchemaName.h"
 #include "ObjectNames.h"
+#include "ComSmallDefs.h"
 
 // -----------------------------------------------------------------------
 // contents of this file
 // -----------------------------------------------------------------------
-class ElemDDLSchemaName;
+class ElemDDLAuthSchema;
 
 // -----------------------------------------------------------------------
-// ElemDDLSchemaName
+// ElemDDLAuthSchema
 //
 // A temporary parse node to contain a schema name and an optional
 // authorization identifier.
 // -----------------------------------------------------------------------
-class ElemDDLSchemaName : public ElemDDLNode
+class ElemDDLAuthSchema : public ElemDDLNode
 {
 
 public:
 
   // default constructor
-  ElemDDLSchemaName(const SchemaName & aSchemaName,
-                    const NAString & anAuthorizationID = "",
+  ElemDDLAuthSchema(const SchemaName & aSchemaName,
+                    const ComSchemaClass schemaClass,
                     CollHeap * h=PARSERHEAP())
-    : ElemDDLNode(ELM_SCHEMA_NAME_ELEM),
+    : ElemDDLNode(ELM_AUTH_SCHEMA_ELEM),
       schemaName_(aSchemaName, h),
-      authorizationID_(anAuthorizationID, h)  {}
+      schemaClass_(schemaClass),
+      isSchemaNameSpecified_(TRUE)  {}
+      
+  ElemDDLAuthSchema(const ComSchemaClass schemaClass,
+                    CollHeap * h=PARSERHEAP())
+    : ElemDDLNode(ELM_AUTH_SCHEMA_ELEM),
+      schemaClass_(schemaClass),
+      isSchemaNameSpecified_(FALSE)  {}
 
   // copy ctor
-  ElemDDLSchemaName (const ElemDDLSchemaName & orig, CollHeap * h=PARSERHEAP()) ; // not written
+  ElemDDLAuthSchema (const ElemDDLAuthSchema & orig, CollHeap * h=PARSERHEAP()) ; // not written
 
   // virtual destructor
-  virtual ~ElemDDLSchemaName();
+  virtual ~ElemDDLAuthSchema();
 
   // cast
-  virtual ElemDDLSchemaName * castToElemDDLSchemaName();
+  virtual ElemDDLAuthSchema * castToElemDDLAuthSchema();
 
   // accessors
 
-  const NAString &
-  getAuthorizationID() const
+  const ComSchemaClass
+  getSchemaClass() const
   {
-    return authorizationID_;
+    return schemaClass_;
   }
 
   const SchemaName &
@@ -85,13 +97,20 @@ public:
     return schemaName_;
   }
 
+  NABoolean
+  isSchemaNameSpecified() const
+  {
+    return isSchemaNameSpecified_;
+  }
+
 private:
 
   SchemaName schemaName_;
-  NAString authorizationID_;
+  ComSchemaClass schemaClass_;
+  NABoolean isSchemaNameSpecified_;
 
-}; // class ElemDDLSchemaName
+}; // class ElemDDLAuthSchema
 
-#endif /* ELEMDDLSCHEMANAME_H */
+#endif /* ELEMDDLAUTHSCHEMA_H */
 
 

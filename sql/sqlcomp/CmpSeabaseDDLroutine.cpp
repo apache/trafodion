@@ -250,19 +250,25 @@ void CmpSeabaseDDL::createSeabaseLibrary(
     }
 
   // Check to see if user has the authority to create the library
-  if (!isDDLOperationAuthorized(SQLOperation::CREATE_LIBRARY,
-                                ComUser::getCurrentUser()))
+  ExeCliInterface cliInterface(STMTHEAP);
+  Int32 objectOwnerID = SUPER_USER;
+  Int32 schemaOwnerID = SUPER_USER;
+  ComSchemaClass schemaClass;
+
+  retcode = verifyDDLCreateOperationAuthorized(&cliInterface,
+                                               SQLOperation::CREATE_LIBRARY,
+                                               catalogNamePart,
+                                               schemaNamePart,
+                                               schemaClass,
+                                               objectOwnerID,
+                                               schemaOwnerID);
+  if (retcode != 0)
   {
-     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-     processReturn ();
+     handleDDLCreateAuthorizationError(retcode,catalogNamePart,schemaNamePart);
      return;
   }
-
-  ComUserVerifyObj verifyAuth(libraryName, ComUserVerifyObj::OBJ_OBJ_TYPE);
-  Int32 objOwnerID = verifyAuth.getEffectiveUserID(ComUser::CREATE_LIBRARY);
-
+     
   ExpHbaseInterface * ehi = NULL;
-  ExeCliInterface cliInterface(STMTHEAP);
 
   ehi = allocEHI();
   if (ehi == NULL)
@@ -273,7 +279,7 @@ void CmpSeabaseDDL::createSeabaseLibrary(
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
 				   catalogNamePart, schemaNamePart, 
-                                   objectNamePart, COM_LIBRARY_OBJECT_LIT, 
+                                   objectNamePart, COM_LIBRARY_OBJECT, 
                                    TRUE, FALSE);
   if (retcode < 0)
     {
@@ -305,15 +311,16 @@ void CmpSeabaseDDL::createSeabaseLibrary(
   Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
 			   catalogNamePart, schemaNamePart, objectNamePart,
-			   COM_LIBRARY_OBJECT_LIT,
+			   COM_LIBRARY_OBJECT,
 			   "N",
 			   NULL,
 			   0,
 			   NULL,
-			   0,
+			   0,			       
 			   NULL,
 			   0, NULL,
-                           objOwnerID,
+                           objectOwnerID,
+                           schemaOwnerID,
                            objUID))
     {
       deallocEHI(ehi); 
@@ -392,7 +399,7 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
   retcode = existsInSeabaseMDTable(&cliInterface, 
 				   catalogNamePart, schemaNamePart, 
                                    objectNamePart,
-				   COM_LIBRARY_OBJECT_LIT, TRUE, FALSE);
+				   COM_LIBRARY_OBJECT, TRUE, FALSE);
   if (retcode < 0)
     {
       deallocEHI(ehi); 
@@ -409,19 +416,22 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
       return;
     }
 
-  Int32 objOwnerID = 0;
-  Int64 objUID = getObjectUIDandOwner(&cliInterface,
+  Int32 objectOwnerID = 0;
+  Int32 schemaOwnerID = 0;
+  Int64 objUID = getObjectUIDandOwners(&cliInterface,
 			      catalogNamePart.data(), schemaNamePart.data(), 
-			      objectNamePart.data(), COM_LIBRARY_OBJECT_LIT,
-                              NULL, &objOwnerID);
-  if (objUID < 0 || objOwnerID == 0)
+			      objectNamePart.data(), COM_LIBRARY_OBJECT,
+                              objectOwnerID,schemaOwnerID);
+  if (objUID < 0 || objectOwnerID == 0 || schemaOwnerID == 0)
     {
       deallocEHI(ehi); 
       processReturn();
       return;
     }
 
-  if (!isDDLOperationAuthorized(SQLOperation::DROP_LIBRARY, objOwnerID))
+  if (!isDDLOperationAuthorized(SQLOperation::DROP_LIBRARY,
+                                objectOwnerID,
+                                schemaOwnerID))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
      processReturn ();
@@ -450,7 +460,7 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
 
   // can get a slight perf. gain if we pass in objUID
   if (dropSeabaseObject(ehi, objName,
-                        currCatName, currSchName, COM_LIBRARY_OBJECT_LIT,
+                        currCatName, currSchName, COM_LIBRARY_OBJECT,
                         TRUE, FALSE))
     {
       deallocEHI(ehi); 
@@ -483,19 +493,25 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   const NAString extRoutineName = routineName.getExternalName(TRUE);
   
   // Check to see if user has the authority to create the routine
-  if (!isDDLOperationAuthorized(SQLOperation::CREATE_ROUTINE,
-                                ComUser::getCurrentUser()))
+  ExeCliInterface cliInterface(STMTHEAP);
+  Int32 objectOwnerID = SUPER_USER;
+  Int32 schemaOwnerID = SUPER_USER;
+  ComSchemaClass schemaClass;
+
+  retcode = verifyDDLCreateOperationAuthorized(&cliInterface,
+                                               SQLOperation::CREATE_ROUTINE,
+                                               catalogNamePart,
+                                               schemaNamePart,
+                                               schemaClass,
+                                               objectOwnerID,
+                                               schemaOwnerID);
+  if (retcode != 0)
   {
-     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-     processReturn ();
+     handleDDLCreateAuthorizationError(retcode,catalogNamePart,schemaNamePart);
      return;
   }
   
-  ComUserVerifyObj verifyAuth(routineName, ComUserVerifyObj::OBJ_OBJ_TYPE);
-  Int32 objOwnerID = verifyAuth.getEffectiveUserID(ComUser::CREATE_ROUTINE);
-
   ExpHbaseInterface * ehi = NULL;
-  ExeCliInterface cliInterface(STMTHEAP);
 
   ehi = allocEHI();
   if (ehi == NULL)
@@ -506,7 +522,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   
   retcode = existsInSeabaseMDTable(&cliInterface, 
 				   catalogNamePart, schemaNamePart, 
-                                   objectNamePart, COM_USER_DEFINED_ROUTINE_OBJECT_LIT, 
+                                   objectNamePart, COM_USER_DEFINED_ROUTINE_OBJECT, 
                                    TRUE, FALSE);
   if (retcode < 0)
     {
@@ -720,14 +736,15 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
 			   catalogNamePart, schemaNamePart, objectNamePart,
-			   COM_USER_DEFINED_ROUTINE_OBJECT_LIT,
+			   COM_USER_DEFINED_ROUTINE_OBJECT,
 			   "N",
 			   NULL,
 			   numParams,
 			   colInfoArray,
 			   0, NULL,
 			   0, NULL,
-                           objOwnerID,
+                           objectOwnerID,
+                           schemaOwnerID,
                            objUID))
     {
       deallocEHI(ehi); 
@@ -860,7 +877,7 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
 				   catalogNamePart, schemaNamePart, 
-                                   objectNamePart, COM_USER_DEFINED_ROUTINE_OBJECT_LIT, 
+                                   objectNamePart, COM_USER_DEFINED_ROUTINE_OBJECT, 
                                    TRUE, FALSE);
   if (retcode < 0)
     {
@@ -879,12 +896,13 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
     }
   
   // get objectOwner
-  Int32 objOwnerID = 0;
-  Int64 objUID = getObjectUIDandOwner(&cliInterface,
+  Int32 objectOwnerID = 0;
+  Int32 schemaOwnerID = 0;
+  Int64 objUID = getObjectUIDandOwners(&cliInterface,
 			      catalogNamePart.data(), schemaNamePart.data(), 
-			      objectNamePart.data(), COM_USER_DEFINED_ROUTINE_OBJECT_LIT,
-                              NULL, &objOwnerID);
-  if (objUID < 0 || objOwnerID == 0)
+			      objectNamePart.data(), COM_USER_DEFINED_ROUTINE_OBJECT,
+                              objectOwnerID,schemaOwnerID);
+  if (objUID < 0 || objectOwnerID == 0 || schemaOwnerID == 0)
     {
       deallocEHI(ehi); 
       processReturn();
@@ -892,7 +910,7 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
     }
 
   // Verify user has privilege to drop routine
-  if (!isDDLOperationAuthorized(SQLOperation::DROP_ROUTINE, objOwnerID))
+  if (!isDDLOperationAuthorized(SQLOperation::DROP_ROUTINE,objectOwnerID,schemaOwnerID))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
      deallocEHI(ehi);
@@ -901,7 +919,7 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
   }
 
   if (dropSeabaseObject(ehi, dropRoutineNode->getRoutineName(),
-                        currCatName, currSchName, COM_USER_DEFINED_ROUTINE_OBJECT_LIT,
+                        currCatName, currSchName, COM_USER_DEFINED_ROUTINE_OBJECT,
                         TRUE, FALSE))
     {
       deallocEHI(ehi); 

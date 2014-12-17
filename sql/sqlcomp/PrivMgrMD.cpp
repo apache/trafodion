@@ -35,6 +35,7 @@
 #include "PrivMgrComponents.h"
 #include "PrivMgrComponentOperations.h"
 #include "PrivMgrComponentPrivileges.h"
+#include "PrivMgrObjects.h"
 #include "CmpSeabaseDDLauth.h"
 #include "ComUser.h"
 
@@ -52,7 +53,7 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "ComUser.h"
 
-// Specified in expected order of likelyhood. See sql/common/ComSmallDefs 
+// Specified in expected order of likelihood. See sql/common/ComSmallDefs 
 // for actual values.
 static const literalAndEnumStruct objectTypeConversionTable [] =
 {
@@ -71,7 +72,8 @@ static const literalAndEnumStruct objectTypeConversionTable [] =
   {COM_LOB_TABLE_OBJECT, COM_LOB_TABLE_OBJECT_LIT},
   {COM_TRIGGER_TABLE_OBJECT, COM_TRIGGER_TABLE_OBJECT_LIT},
   {COM_SYNONYM_OBJECT, COM_SYNONYM_OBJECT_LIT},
-  {COM_SCHEMA_LABEL_OBJECT, COM_SCHEMA_LABEL_OBJECT_LIT},
+  {COM_PRIVATE_SCHEMA_OBJECT, COM_PRIVATE_SCHEMA_OBJECT_LIT},
+  {COM_SHARED_SCHEMA_OBJECT, COM_SHARED_SCHEMA_OBJECT_LIT},
   {COM_LIBRARY_OBJECT, COM_LIBRARY_OBJECT_LIT},
   {COM_EXCEPTION_TABLE_OBJECT, COM_EXCEPTION_TABLE_OBJECT_LIT},
   {COM_SEQUENCE_GENERATOR_OBJECT, COM_SEQUENCE_GENERATOR_OBJECT_LIT},
@@ -124,6 +126,7 @@ PrivMgr::PrivMgr(
 
   setFlags();
 }
+
 
 // -----------------------------------------------------------------------
 // Copy constructor
@@ -880,7 +883,7 @@ PrivMgrMDAdmin::~PrivMgrMDAdmin()
 //
 // This method registers standard Trafodion components, creates the 
 // standard operations, and grants the privilege on those operations to
-// the role DB__ROOTROLE.  SQL DDL operations (CREATE, SHOW) are 
+// the role DB__ROOTROLE.  SQL DDL operations (CREATE_SCHEMA, SHOW) are 
 // granted to PUBLIC.
 //
 // Returns PrivStatus
@@ -956,14 +959,14 @@ PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
    if (privStatus != STATUS_GOOD)
       return privStatus;
                                       
-// Grant SQL_OPERATIONS CREATE, and SHOW to PUBLIC 
-std::vector<std::string> ACDOperationCodes;
+// Grant SQL_OPERATIONS CREATE_SCHEMA and SHOW to PUBLIC 
+std::vector<std::string> CSOperationCodes;
 
-   ACDOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::CREATE));
-   ACDOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::SHOW));
+   CSOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::CREATE_SCHEMA));
+   CSOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::SHOW));
                                      
    privStatus = componentPrivileges.grantPrivilegeInternal(SQL_OPERATIONS_COMPONENT_UID,
-                                                           ACDOperationCodes,
+                                                           CSOperationCodes,
                                                            ComUser::getRootUserID(),
                                                            ComUser::getRootUserName(),
                                                            PUBLIC_AUTH_ID,
@@ -971,7 +974,6 @@ std::vector<std::string> ACDOperationCodes;
                                       
    if (privStatus != STATUS_GOOD)
       return privStatus;
-      
       
 // Verify counts for tables.
 
@@ -1027,11 +1029,29 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (const std::string &objectsLocatio
     // If metadata tables already initialize, just return STATUS_GOOD
     if (initStatus == PRIV_INITIALIZED)
       return STATUS_GOOD;
-
+      
+    // Create the privilege manager schema.
+    ExeCliInterface cliInterface(STMTHEAP);
+    std::string schemaCommand("CREATE PRIVATE SCHEMA ");
+    
+    schemaCommand += metadataLocation_;
+    Int32 cliRC = cliInterface.executeImmediate(schemaCommand.c_str());
+    if (cliRC < 0)
+    {
+      // If schema already exists, change to warning and continue
+      cliInterface.retrieveSQLDiagnostics(pDiags_);
+      if (cliRC == -CAT_SCHEMA_ALREADY_EXISTS)
+      {
+        NegateAllErrors(pDiags_);
+        retcode = STATUS_WARNING;
+      }
+      else
+        throw cliRC;
+    }
+      
     // Create the tables
     //   If table already exists, skip it and continue
     //   TBD: if the table already exists, then see if it needs to be upgraded
-    ExeCliInterface cliInterface(STMTHEAP);
     size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
     bool populateObjectPrivs = true;
     bool populateRoleGrants = true;
@@ -1144,6 +1164,15 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (const std::vector<std::string> &objects
         cliInterface.retrieveSQLDiagnostics(pDiags_);
         retcode = STATUS_ERROR;
       }
+    }
+    
+    std::string schemaDDL("DROP SCHEMA ");
+    schemaDDL += metadataLocation_;
+    Int32 cliRC = cliInterface.executeImmediate(schemaDDL.c_str());
+    if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(pDiags_);
+      retcode = STATUS_ERROR;
     }
     CmpSeabaseDDLrole role;
     

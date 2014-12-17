@@ -539,7 +539,6 @@ StmtDDLDropSchema::StmtDDLDropSchema(//const SchemaName & schemaName,
                                      ComBoolean dropObjectsOnly)
         : StmtDDLNode(DDL_DROP_SCHEMA),
           schemaQualName_(aSchemaNameParseNode.getSchemaName(), PARSERHEAP()),
-	  authorizationId_(aSchemaNameParseNode.getAuthorizationId(), PARSERHEAP()),
           dropBehavior_(dropBehavior),
           cleanupMode_(cleanupMode),
           dropObjectsOnly_(dropObjectsOnly),

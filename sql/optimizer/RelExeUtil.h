@@ -199,6 +199,7 @@ public:
     initAuthorization_(FALSE),
     dropAuthorization_(FALSE),
     addSeqTable_(FALSE),
+    addSchemaObjects_(FALSE),
     flags_(0)
   {
     if (explObjName)
@@ -208,7 +209,7 @@ public:
  DDLExpr(NABoolean initHbase, NABoolean dropHbase,
 	 NABoolean createMDviews, NABoolean dropMDviews,
          NABoolean initAuthorization, NABoolean dropAuthorization,
-	 NABoolean addSeqTable, NABoolean updateVersion,
+	 NABoolean addSeqTable, NABoolean updateVersion, NABoolean addSchemaObjects,
 	 char * ddlStmtText,
 	 CharInfo::CharSet ddlStmtTextCharSet,
 	  CollHeap *oHeap = CmpCommon::statementHeap())
@@ -234,6 +235,7 @@ public:
     initAuthorization_(initAuthorization),
     dropAuthorization_(dropAuthorization),
     addSeqTable_(addSeqTable),
+    addSchemaObjects_(addSchemaObjects),
     flags_(0)
   {
     if (createMDviews)
@@ -269,6 +271,7 @@ public:
     initAuthorization_(FALSE),
     dropAuthorization_(FALSE),
     addSeqTable_(FALSE),
+    addSchemaObjects_(FALSE),
     flags_(0)
   {
     purgedataTableName_ = purgedataTableName;
@@ -335,6 +338,7 @@ public:
   NABoolean initAuthorization() { return initAuthorization_; }
   NABoolean dropAuthorization() { return dropAuthorization_; }
   NABoolean addSeqTable() { return addSeqTable_; }
+  NABoolean addSchemaObjects() { return addSchemaObjects_; }
 
   NAString getQualObjName() { return qualObjName_.getQualifiedNameAsString(); }
 
@@ -397,6 +401,7 @@ public:
   NABoolean initAuthorization_;
   NABoolean dropAuthorization_;
   NABoolean addSeqTable_;
+  NABoolean addSchemaObjects_;
 
   // if set, this ddl cannot run under a user transaction. It must run in autocommit
   // mode.

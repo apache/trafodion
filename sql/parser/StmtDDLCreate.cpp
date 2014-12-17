@@ -1387,15 +1387,6 @@ StmtDDLCreateTrigger::getText() const
   return "StmtDDLCreateTrigger";
 }
 
-// -----------------------------------------------------------------------
-// non-inline methods for class StmtDDLCreateTriggerArray
-// -----------------------------------------------------------------------
-
-// virtual destructor
-StmtDDLCreateTriggerArray::~StmtDDLCreateTriggerArray()
-{
-}
-
 /**********************************************************/
 /****     E N D                                        ****/
 /**********************************************************/
@@ -2266,16 +2257,6 @@ StmtDDLCreateIndex::getText() const
 {
   return "StmtDDLCreateIndex";
 }
-
-// -----------------------------------------------------------------------
-// methods for class StmtDDLCreateIndexArray
-// -----------------------------------------------------------------------
-
-// virtual destructor
-StmtDDLCreateIndexArray::~StmtDDLCreateIndexArray()
-{
-}
-
 
 // -----------------------------------------------------------------------
 // methods for class StmtDDLPopulateIndex
@@ -3674,28 +3655,17 @@ StmtDDLCreateRoutine::getText() const
 //
 StmtDDLCreateSchema::StmtDDLCreateSchema(
      const ElemDDLSchemaName & aSchemaNameParseNode,
+     ComSchemaClass            schemaClass,
      CharType*                 pCharType,
-     ElemDDLNode             * pSchemaElemList,
      CollHeap                * heap)
 
 : StmtDDLNode(DDL_CREATE_SCHEMA),
   schemaName_(heap),
   schemaQualName_(aSchemaNameParseNode.getSchemaName(), heap),
-  authorizationId_(aSchemaNameParseNode.getAuthorizationId(), heap),
-  subvolumeName_(aSchemaNameParseNode.getSubvolumeName(), heap),
-  allowLocationReuse_(aSchemaNameParseNode.getLocationReuse()),
-  createIndexArray_(heap),
-  createTableArray_(heap),
-  createViewArray_(heap),
-  createTriggerArray_(heap),
-  grantArray_(heap),
-  addConstraintCheckArray_(heap),
-  addConstraintRIArray_(heap),
-  addConstraintUniqueArray_(heap),
-  pCharType_(pCharType),
-  isCompoundCreateSchema_(FALSE)
+  authorizationID_(aSchemaNameParseNode.getAuthorizationID(), heap),
+  schemaClass_(schemaClass),
+  pCharType_(pCharType)
 {
-  setChild(INDEX_SCHEMA_ELEMENT_LIST, pSchemaElemList);
 }
 
 //
@@ -3703,11 +3673,6 @@ StmtDDLCreateSchema::StmtDDLCreateSchema(
 //
 StmtDDLCreateSchema::~StmtDDLCreateSchema()
 {
-  // delete all children
-  for (Int32 i = 0; i < getArity(); i++)
-  {
-    delete getChild(i);
-  }
   delete pCharType_;
 }
 
@@ -3723,41 +3688,6 @@ StmtDDLCreateSchema::castToStmtDDLCreateSchema()
 //
 // accessors
 //
-
-Int32
-StmtDDLCreateSchema::getArity() const
-{
-  return MAX_STMT_DDL_CREATE_SCHEMA_ARITY;
-}
-
-ExprNode *
-StmtDDLCreateSchema::getChild(Lng32 index)
-{
-  ComASSERT(index >= 0 AND index < getArity());
-  return children_[index];
-}
-
-//
-// mutators
-//
-
-void
-StmtDDLCreateSchema::setChild(Lng32 index, ExprNode * pChildNode)
-{
-  ComASSERT(index >= 0 AND index < getArity());
-  if (pChildNode EQU NULL)
-  {
-    children_[index] = NULL;
-  }
-  else
-  {
-    children_[index] = pChildNode->castToElemDDLNode();
-  }
-}
-void
-StmtDDLCreateSchema_visitSchemaElement(ElemDDLNode * pCreateSchemaNode,
-                                       CollIndex /* index */,
-                                       ElemDDLNode * pElement);
 
 //
 // collects information in the parse sub-tree and copy/move them
@@ -3776,119 +3706,8 @@ StmtDDLCreateSchema::synthesize()
       ToAnsiIdentifier(schemaQualName_.getSchemaName());
   }
 
-  // Traverses the Schema Elements list that contains parse
-  // nodes representing Create Table, Create View, Create Trigger, 
-  // Alter Table statements, etc.  Collects pointers to these
-  // parse nodes and saves them in the corresponding array
-  // create...Array_ or grantArray_ for easier access.
-
-  if (getChild(INDEX_SCHEMA_ELEMENT_LIST) NEQ NULL)
-  {
-    isCompoundCreateSchema_ = TRUE; 
-    ElemDDLNode *pElemList =
-      getChild(INDEX_SCHEMA_ELEMENT_LIST)->castToElemDDLNode();
-    ComASSERT(pElemList NEQ NULL);
-    pElemList->traverseList(this,
-                            StmtDDLCreateSchema_visitSchemaElement);
-  }
-
 } // StmtDDLCreateSchema::synthesize()
 
-void
-StmtDDLCreateSchema_visitSchemaElement(ElemDDLNode * pCreateSchemaNode,
-                                       CollIndex /* index */,
-                                       ElemDDLNode * pElement)
-{
-  ComASSERT(pCreateSchemaNode NEQ NULL AND
-            pCreateSchemaNode->castToStmtDDLCreateSchema() NEQ NULL AND
-            pElement NEQ NULL);
-
-  StmtDDLCreateSchema * pCreateSchema =
-                        pCreateSchemaNode->castToStmtDDLCreateSchema();
-
-  switch (pElement->getOperatorType())
-  {
-  case DDL_CREATE_INDEX :
-    {
-      StmtDDLCreateIndex * pCreateIndex = pElement->castToStmtDDLCreateIndex();
-      ComASSERT(pCreateIndex NEQ NULL);
-      pCreateSchema->createIndexArray_.insert(pCreateIndex);
-    }
-    break;
-
-  case DDL_CREATE_TABLE :
-    {
-      StmtDDLCreateTable * pCreateTable =
-                           pElement->castToStmtDDLCreateTable();
-      ComASSERT(pCreateTable NEQ NULL);
-
-      pCreateSchema->createTableArray_.insert(pCreateTable);
-
-      //
-      // Move Check, Referential Integrity, and Unique constraint
-      // definitions from the Create Table parse nodes (in the sub-
-      // tree of the Create Schema parse node) to the Create Schema
-      // parse node.
-      //
-
-      StmtDDLAddConstraintCheck * pAddConstraintCheck;
-      while (pCreateTable->getAddConstraintCheckArray().
-             getFirst(pAddConstraintCheck))
-      {
-        pCreateSchema->getAddConstraintCheckArray().insert(
-             pAddConstraintCheck);
-      }
-
-      StmtDDLAddConstraintRI * pAddConstraintRI;
-      while (pCreateTable->getAddConstraintRIArray().
-             getFirst(pAddConstraintRI))
-      {
-        pCreateSchema->getAddConstraintRIArray().insert(
-             pAddConstraintRI);
-      }
-
-      StmtDDLAddConstraintUnique * pAddConstraintUnique;
-      while (pCreateTable->getAddConstraintUniqueArray().
-             getFirst(pAddConstraintUnique))
-      {
-        pCreateSchema->getAddConstraintUniqueArray().insert(
-             pAddConstraintUnique);
-      }
-
-    }
-    break;
-
-  case DDL_CREATE_VIEW :
-    {
-      StmtDDLCreateView * pCreateView = pElement->castToStmtDDLCreateView();
-      ComASSERT(pCreateView NEQ NULL);
-      pCreateSchema->createViewArray_.insert(pCreateView);
-    }
-    break;
-
-  case DDL_CREATE_TRIGGER :
-    {
-      StmtDDLCreateTrigger * pCreateTrigger = 
-	pElement->castToStmtDDLCreateTrigger();
-      ComASSERT(pCreateTrigger NEQ NULL);
-      pCreateSchema->createTriggerArray_.insert(pCreateTrigger);
-    }
-    break;
-
-  case DDL_GRANT :
-    {
-      StmtDDLGrant * pGrant = pElement->castToStmtDDLGrant();
-      ComASSERT(pGrant NEQ NULL);
-      pCreateSchema->grantArray_.insert(pGrant);
-    }
-    break;
-
-  default :
-    NAAbort("StmtDDLCreate.C", __LINE__, "internal logic error");
-    break;
-  } // switch
-
-} // StmtDDLCreateSchema_visitSchemaElement()
 
 //
 // methods for tracing
@@ -3903,9 +3722,9 @@ StmtDDLCreateSchema::displayLabel1() const
 const NAString
 StmtDDLCreateSchema::displayLabel2() const
 {
-  if (NOT getAuthorizationId().isNull())
+  if (NOT getAuthorizationID().isNull())
   {
-    return NAString("Authorization id: ") + getAuthorizationId();
+    return NAString("Authorization ID: ") + getAuthorizationID();
   }
   else
   {
@@ -7398,15 +7217,6 @@ const NAString
 StmtDDLCreateView::getText() const
 {
   return "StmtDDLCreateView";
-}
-
-// -----------------------------------------------------------------------
-// non-inline methods for class StmtDDLCreateViewArray
-// -----------------------------------------------------------------------
-
-// virtual destructor
-StmtDDLCreateViewArray::~StmtDDLCreateViewArray()
-{
 }
 
 /*****************************************************

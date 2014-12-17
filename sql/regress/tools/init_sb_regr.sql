@@ -36,5 +36,7 @@ insert into TRAFODION."_MD_".DEFAULTS
      values
      ('MODE_SEAHIVE ', 'ON', 'inserted during seabase regressions run');
 
+create shared schema trafodion.sch;
+
 #endif
 

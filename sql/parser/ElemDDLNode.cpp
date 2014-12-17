@@ -47,6 +47,7 @@
 #include "ComOperators.h"
 #include "ComLocationNames.h"
 #include "ElemDDLAlterTableMove.h"
+#include "ElemDDLAuthSchema.h"
 #include "ElemDDLLibClientFilename.h"
 #include "ElemDDLLibClientName.h"
 #include "ElemDDLLibPathName.h"
@@ -117,6 +118,12 @@ ElemDDLNode::castToElemDDLIndexPopulateOption()
 
 ElemDDLAlterTableMove *
 ElemDDLNode::castToElemDDLAlterTableMove()
+{
+  return NULL;
+}
+
+ElemDDLAuthSchema *
+ElemDDLNode::castToElemDDLAuthSchema()
 {
   return NULL;
 }
@@ -1987,6 +1994,24 @@ ElemDDLAlterTableMove::getText() const
 {
   return "ElemDDLAlterTableMove";
 }
+
+// -----------------------------------------------------------------------
+// methods for class ElemDDLAuthSchema
+// -----------------------------------------------------------------------
+
+// virtual destructor
+ElemDDLAuthSchema::~ElemDDLAuthSchema()
+{
+}
+
+// cast virtual function
+ElemDDLAuthSchema *
+ElemDDLAuthSchema::castToElemDDLAuthSchema()
+{
+  return this;
+}
+
+
 
 // -----------------------------------------------------------------------
 // methods for class ElemDDLGrantee
