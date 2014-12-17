@@ -152,16 +152,14 @@ class NAMutex
 {
   bool threadSafe_;
   pthread_mutex_t *mutex_;
-  bool destroy_;
 public:
   // Do not implement a default constructor. This will generate a link
   // error if anyone tries to call it.
   NAMutex();
 
-  NAMutex(bool threadSafe, pthread_mutex_t *mutex, bool destroy = false)
+  NAMutex(bool threadSafe, pthread_mutex_t *mutex)
     : threadSafe_(threadSafe),
-      mutex_(mutex),
-      destroy_(destroy)
+      mutex_(mutex)
   {
     if (threadSafe_)
     {
@@ -175,8 +173,6 @@ public:
     {
       int rc = pthread_mutex_unlock(mutex_);
       assert(rc == 0);
-      if (destroy_)
-        pthread_mutex_destroy(mutex_);
     }
   }
 };
@@ -1008,9 +1004,6 @@ NAMemory::NAMemory(const char * name, NAHeap * parent, size_t blockSize,
 #endif
   setName(name);
 
-  // register this memory in the parent memoryList_
-  parent_->registerMemory(this);
-
   if (blockSize <= 0)
     // illegal block size. Use default of 0.5 MB (adjusted).
     blockSize = (Lng32)524288;
@@ -1298,18 +1291,14 @@ NAMemory::~NAMemory()
 
 }
 
-void NAMemory::setType(NAMemoryType type, Lng32 blockSize, NAHeap * parent)
+void NAMemory::setType(NAMemoryType type, Lng32 blockSize)
 {
   // upperLimit_ must be zero for EXECUTOR_MEMORY, IPC_MEMORY, SYSTEM_MEMORY,
   // DP2_MEMORY.
 
   type_ = type;
 
-  parent_ = parent;
-
-  // register this memory in the parent's memoryList_
-  if (parent_)
-    parent_->registerMemory(this);
+  parent_ = NULL;
 
   // whenever we make changes to the following initial, increment, and
   // maximum sizes, we should make sure, that all values are divisible
@@ -2263,17 +2252,6 @@ NAHeap::tmallocSmall(size_t nb)
 #pragma warning( default : 4146 ) // allow "unsigned" warnings
 #endif // WIN32
 
-// LCOV_EXCL_START
-void NAMemory::setParent(NAHeap * parent, Lng32 blockSize)
-{
-  // make sure that the new parent is valid, we don't have a parent yet 
-  // and that we haven't allocated any blocks yet.
-  assert((parent != NULL) && (parent_ == NULL) && (blockCnt_ == 0));
-
-  // since the memory has a parent, it is a DERIVED_MEMORY now!
-  setType(DERIVED_MEMORY, blockSize, parent);
-}
-
 Lng32 NAMemory::getAllocatedSpaceSize()
 {
   assert(type_ != NO_MEMORY_TYPE);
@@ -2888,6 +2866,11 @@ NAHeap::NAHeap(const char * name,
   threadSafe_ = false;
   memset(&mutex_, '\0', sizeof(mutex_));
 #endif
+  if (parent != NULL)
+  {
+     NAMutex mutex(parent->threadSafe_, &parent->mutex_);
+     parent_->registerMemory(this);
+  }
 
 #ifdef _DEBUG
   setAllocTrace();
@@ -2974,6 +2957,8 @@ NAHeap::~NAHeap()
 {
   // destruction will take place through the destroy() call within the NAMemory
   // destructor
+  if (threadSafe_)
+     pthread_mutex_destroy(&mutex_);
 }
 
 #if defined(NA_LINUX) && !defined(__EID)
@@ -3010,7 +2995,8 @@ void NAHeap::destroy()
 #if defined(NA_LINUX) && !defined(__EID)
   // By setting the third argument to true, we are asking that the
   // pthreads mutex be destroyed when the NAMutex destructor runs
-  NAMutex mutex(threadSafe_, &mutex_, true);
+  if (parent_ != NULL)
+     NAMutex mutex(parent_->threadSafe_, &parent_->mutex_);
 #endif
 
 #ifdef _DEBUG

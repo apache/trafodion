@@ -100,7 +100,7 @@ extern char ** environ;
 // On the first cli call, method CliNonPrivPrologue is called.
 // Only used for the top level CLI calls and not if cli is called
 // from within priv srl.
-THREAD_P NABoolean __CLI_NONPRIV_INIT__ = FALSE;
+NABoolean __CLI_NONPRIV_INIT__ = FALSE;
 #endif
 
 #ifndef CLI_PRIV_SRL
@@ -122,9 +122,6 @@ THREAD_P NABoolean __CLI_NONPRIV_INIT__ = FALSE;
       __CLI_NONPRIV_INIT__ = TRUE; \
     }
 
-#else
-#define CLI_NONPRIV_PROLOGUE(rc)
-#define CLI_NONPRIV_PROLOGUE_SHORT(rc)
 #endif
 
 #ifndef CLI_PRIV_SRL
@@ -847,7 +844,7 @@ short my_mpi_setup (Int32* argc, char** argv[] );
 static 
 short sqInit()
 {
-  static THREAD_P bool sbInitialized = false;
+  static bool sbInitialized = false;
 
   if (!sbInitialized) {
     sbInitialized = true;
@@ -912,7 +909,7 @@ static Lng32 CliNonPrivPrologue()
     }
     sqInit();
     CliGlobals::createCliGlobals(FALSE); // this call will create the globals. 
-    ex_assert(SQL_EXEC_SetEnviron_Internal(0) == 0, "Unable to set the Environment");
+    ex_assert(SQL_EXEC_SetEnviron_Internal(1) == 0, "Unable to set the Environment");
     globalSemaphore.release();
   }
   return 0;
@@ -3548,10 +3545,12 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo(
                 /*IN*/             SQLDESC_ID * output_descriptor)
 {
   Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
+  CLISemaphore *tmpSemaphore;
+  ContextCli   *threadContext;
+
   
   CLI_NONPRIV_PROLOGUE(retcode);
+
 
   NAHeap heap("NonPriv CLI", NAMemory::DERIVED_FROM_SYS_HEAP, 32 * 1024);
   
@@ -3781,8 +3780,9 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo(
       } // for (Lng32 i = 0; i < condition_item_count && retcode == 0; i++)
     } // if (condition_item_count > 0) 
   delete [] condition_item_array;
-
+  
   diagsArea->clear();
+
   return retcode;
 }
 
@@ -3813,6 +3813,14 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo2(
    CLISemaphore *tmpSemaphore;
    ContextCli   *threadContext;
 
+   
+  CLI_NONPRIV_PROLOGUE(retcode);
+
+  try
+  {
+     tmpSemaphore = getCliSemaphore(threadContext);
+     tmpSemaphore->get();
+     threadContext->incrNumOfCliCalls();
    switch (what_to_get)
      {
      case  SQLDIAG_RET_SQLSTATE:  /* (string ) returned SQLSTATE */
@@ -3887,9 +3895,25 @@ Lng32 SQL_EXEC_GetDiagnosticsCondInfo2(
 				 len_of_item);
        }
      }
-   retcode = RecordError(NULL, retcode);
-   return retcode;
+  }
+  catch(...)
+  {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+     {
+        threadContext->decrNumOfCliCalls();
+        tmpSemaphore->release();
+        throw;
+     }
+#endif
+  }
+  threadContext->decrNumOfCliCalls();
+  tmpSemaphore->release();
+  retcode = RecordError(NULL, retcode);
+  return retcode;
 }
+
 #pragma warn(770)  // warning elimination 
 
 SQLCLI_LIB_FUNC
@@ -4216,8 +4240,6 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetMainSQLSTATE(
 		/*OUT*/ char * sqlstate /* assumed to be char[6] */)
 {
   Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
   
   CLI_NONPRIV_PROLOGUE(retcode);
 
@@ -4251,8 +4273,6 @@ Lng32 SQL_EXEC_GetCSQLSTATE(/*OUT*/ char * theSQLSTATE /* assumed char[6] */,
                            /*IN*/  Lng32   theSQLCODE)
 {
    Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
 
    CLI_NONPRIV_PROLOGUE(retcode);
 
@@ -4265,8 +4285,6 @@ Lng32 SQL_EXEC_GetCSQLSTATE(/*OUT*/ char * theSQLSTATE /* assumed char[6] */,
                            /*IN*/  Lng32   theSQLCODE)
 {
   Lng32 retcode = 0;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
   
   // when this method is called from a priv caller(executor), then
   // we cannot look at the msgs file(it could be looked at only thru
@@ -6581,7 +6599,8 @@ Lng32 SQL_EXEC_SetEnviron_Internal(Lng32 propagate)
       tmpSemaphore = getCliSemaphore(threadContext);
       tmpSemaphore->get();
       threadContext->incrNumOfCliCalls();
-      retcode = SQLCLI_SetEnviron_Internal(GetCliGlobals(), environ, propagate);
+      if (propagate)
+         retcode = SQLCLI_SetEnviron_Internal(GetCliGlobals(), environ, propagate);
     }
   catch(...)
     {

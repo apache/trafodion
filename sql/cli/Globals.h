@@ -129,17 +129,7 @@ public:
  
   CliGlobals(NABoolean espProcess);
 
-  CliGlobals(short   firstSegId = 0,
-	     void  * firstSegStart = 0,
-	     Lng32    firstSegOffset = 0,
-	     Lng32    firstSegLen = 0,
-	     Lng32    firstSegMaxLen = 0,
-             NABoolean espProcess = FALSE,
-             StatsGlobals *statsGlobals = 0);
   ~CliGlobals();
-
-  // allow the caller to place the CliGlobals in memory
-  static void* operator new (size_t, void* loc = 0);
 
   void initiateDefaultContext();
 
@@ -231,7 +221,6 @@ SQLCLI_LIB_FUNC
 
   //LCOV_EXCL_STOP
   inline UInt32 * getEventConsumed()   { return &eventConsumed_; }
-  void setProcessIsStopping(NABoolean withinRMSSemaphore);
   inline NABoolean processIsStopping() { return processIsStopping_; }
   
   // create the CLI globals (caller may determine their address)
@@ -277,7 +266,8 @@ SQLCLI_LIB_FUNC
 
   Lng32 createContext(ContextCli* &newContext);
   Lng32 dropContext(ContextCli* context);
-  ContextCli * getContext(SQLCTX_HANDLE context_handle);
+  ContextCli * getContext(SQLCTX_HANDLE context_handle, 
+                          NABoolean calledFromDrop = FALSE);
   ContextTidMap * getThreadContext(pid_t tid);
   Lng32 switchContext(ContextCli*newContext);
   Lng32 switchTransaction(ContextCli *newContext);
@@ -314,15 +304,7 @@ SQLCLI_LIB_FUNC
 
 SQLCLI_LIB_FUNC
 
-  NABoolean checkOperationsPending(Int64 transid);
-  void closeAllOpenCursors(Int64 transid);
- 
- /* the follwing will be removed
-    When FS2 changes the call to checkOperationsPending. */
-inline
-  NABoolean checkOpenStatements(Int64 transid)
-        { return checkOperationsPending(transid); }
-
+  //void closeAllOpenCursors(Int64 transid);
 inline
   short getGlobalSbbCount()
       { return globalSbbCount_; }  
@@ -421,7 +403,6 @@ inline
   char *myParentProcessNameString() { return parentProcessNameString_;}
   Int32 getSharedMemId() { return shmId_; }
   void setSharedMemId(Int32 shmId) { shmId_ = shmId; }
-  Int16 getPFSUsage(Int32 &pfsSize, Int32 &pfsCurUse, Int32 &pfsMaxUse);
   
   void initMyProgName();
   char * myProgName() { return myProgName_; }
@@ -609,7 +590,6 @@ private:
   NABoolean isUncProcess_;
   char myProcessNameString_[PROCESSNAME_STRING_LEN]; // PROCESSNAME_STRING_LEN in ComRtUtils.h =40 in ms.h the equiv seabed limit is 32
   char parentProcessNameString_[PROCESSNAME_STRING_LEN]; 
-  Int32 pfsValues_[3];  // [0] =  PFS_SIZE [1] = PFS_CUR_USE [2] = PFS_MAX_USE
   // For executor trace.
   char myProgName_[PROGRAM_NAME_LEN];   // 64, see define in ComRtUtils.h
   HashQueue *tidList_;

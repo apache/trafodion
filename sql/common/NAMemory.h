@@ -373,11 +373,7 @@ NA_EIDPROC
 
 NA_EIDPROC
   void setType(NAMemoryType type,
-	       Lng32 blockSize = 0,
-	       NAHeap * parent = NULL);
-
-NA_EIDPROC
-  void setParent(NAHeap * parent, Lng32 blockSize = 0);
+	       Lng32 blockSize = 0);
 
 NA_EIDPROC
   Lng32 getAllocatedSpaceSize();

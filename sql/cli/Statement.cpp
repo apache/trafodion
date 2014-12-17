@@ -3414,7 +3414,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
             {
               // Reclaim Statements if it is available
               context_->reclaimStatements();
-              context_->reclaimStatementsForPFS();
             }
             if (masterStats != NULL)
             {

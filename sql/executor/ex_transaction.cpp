@@ -795,7 +795,7 @@ short ExTransaction::inheritTransaction()
 	  // caller aborted/committed/started a new Xn.
 	  // For each context that has matched tcbref, close all nonholdable
           // cursors.
-	  cliGlob_->closeAllOpenCursors(exeXnId_);
+	  // cliGlob_->closeAllOpenCursors(exeXnId_);
 	  
 	  if (exeStartedXn_)
 	    {

@@ -78,48 +78,7 @@ CliGlobals * cli_globals = NULL;
 #include "CmpContext.h"
 #endif // NA_CMPDLL
 
-void * operator new(size_t size, CollHeap* h);
-
-CliGlobals::CliGlobals(short   firstSegId,
-		       void  * firstSegStart,
-		       Lng32    firstSegOffset,
-		       Lng32    firstSegLen,
-		       Lng32    firstSegMaxLen,
-                       NABoolean espProcess,
-                       StatsGlobals *statsGlobals
-                       )
-     : inConstructor_(TRUE),
-       executorMemory_("Global Executor Memory",firstSegId,firstSegStart,
-		       firstSegOffset,firstSegLen,firstSegMaxLen, &segGlobals_),
-       contextList_(NULL),
-       defaultVolSeed_(0),
-       listOfVolNames_(NULL),
-       listOfAuditedVols_(NULL),
-       listOfVolNamesCacheTime_(-1),
-       sysVolNameInitialized_(FALSE),
-       envvars_(NULL),
-       envvarsContext_(0),
-       sharedArkcmp_(NULL),
-       arkcmpInitFailed_(arkcmpIS_OK_),
-       processIsStopping_(FALSE),
-       totalCliCalls_(0),
-       savedCompilerVersion_ (COM_VERS_COMPILER_VERSION),
-       globalSbbCount_(0),
-       //       sessionDefaults_(NULL),
-       priorityChanged_(FALSE),
-       currRootTcb_(NULL),
-       savedPriority_(148), // Set it to some valid priority to start with
-       processStats_(NULL),
-       statsGlobals_(NULL)
-       , tidList_(NULL)
-       , cliSemaphore_(NULL)
-       , suspendTransId_(-1)
-{
-  executorMemory_.setThreadSafe();
-  init(espProcess, statsGlobals);
-}
 //ss_cc_change
-//unused constructor
 //LCOV_EXCL_START
 CliGlobals::CliGlobals(NABoolean espProcess)
      : inConstructor_(TRUE),
@@ -377,10 +336,7 @@ void CliGlobals::init( NABoolean espProcess,
 #endif 
 
   inConstructor_ = FALSE;
-  pfsValues_[0] = 0;
-  pfsValues_[1] = 0;
-  pfsValues_[2] = 0;
-
+  //
   // could initialize the program file name here but ...
   myProgName_[0] = '\0';
 
@@ -563,14 +519,6 @@ void CliGlobals::updateMeasure( Statement* stmt, Int64 startTime )
 	      
     };
 }
-  
-void* CliGlobals::operator new (size_t size, void* loc)
-{
-  if (loc)
-    return loc; 
-
-  return ::operator new(size);
-}
 
 ExSqlComp * CliGlobals::getArkcmp(short index)
 {
@@ -582,26 +530,10 @@ CliGlobals * CliGlobals::createCliGlobals(NABoolean espProcess)
 {
   CliGlobals *result;
 
-#ifdef NA_NO_GLOBAL_EXE_VARS
-  // global variables are not allowed, keep the CLI globals in the
-  // beginning of the first executor segment
-  Cause a compiler error, no global variables are supported only
-  on a platform that supports SEGMENT_ALLOCATE_ and SEGMENT_GETINFO_
-#else
-  // global variables are allowed, so keep the CLI globals as one
-    // In the case of Linux and Windows NT,
-    // cli_globals is assigned in CliGlobals::init
-    cli_globals =  new CliGlobals(0, // firstSegId
-                            0, // firstSegStart
-                            0, // firstSegOffset
-                            0, // firstSegLen
-                            0, // firstSegMaxLen
-                           espProcess);
-    result = cli_globals;
-    //pthread_key_create(&thread_key, SQ_CleanupThread);
-    ex_assert(cli_globals != NULL, "constructor must have initialized cli_globals");
-#endif /* NA_NO_GLOBAL_EXE_VARS */
-  cli_globals = result;
+  cli_globals =  new CliGlobals(espProcess);
+  result = cli_globals;
+  //pthread_key_create(&thread_key, SQ_CleanupThread);
+  ex_assert(cli_globals != NULL, "constructor must have initialized cli_globals");
   return result;
 }
 
@@ -647,13 +579,9 @@ ContextCli *CliGlobals::currContext()
 
 Lng32 CliGlobals::createContext(ContextCli* &newContext)
 {
-  newContext = new (&executorMemory_) ContextCli(this);
-  if (! newContext)
-  {
-    return -1;
-  }
-  SQLCTX_HANDLE ch = newContext->getContextHandle();
   cliSemaphore_->get();
+  newContext = new (&executorMemory_) ContextCli(this);
+  SQLCTX_HANDLE ch = newContext->getContextHandle();
   contextList_->insert((char*)&ch, sizeof(SQLCTX_HANDLE), (void*)newContext);
   cliSemaphore_->release();
    
@@ -707,19 +635,24 @@ Lng32 CliGlobals::dropContext(ContextCli* context)
 }
 //LCOV_EXCL_STOP
 
-ContextCli * CliGlobals::getContext(SQLCTX_HANDLE context_handle)
+ContextCli * CliGlobals::getContext(SQLCTX_HANDLE context_handle, 
+                                    NABoolean calledFromDrop)
 {
   ContextCli * context;
   cliSemaphore_->get();
   contextList_->position((char*)&context_handle, sizeof(SQLCTX_HANDLE));
-  while (context = (ContextCli *)contextList_->getNext())
-    {
-      if (context_handle == context->getContextHandle())
-      {
+  while ((context = (ContextCli *)contextList_->getNext()) != NULL)
+  {
+     if (context_handle == context->getContextHandle())
+     {
+        if (context->isDropInProgress())
+           context = NULL;
+        else if (calledFromDrop)
+           context->setDropInProgress();
         cliSemaphore_->release();
-	return context;
-      }
-    }
+        return context;
+     }
+  }
   cliSemaphore_->release();
   return NULL;
 }
@@ -766,8 +699,7 @@ Lng32 CliGlobals::switchContext(ContextCli * newContext)
 
   pid_t tid;
   SQLCTX_HANDLE ch, currCh;
-  if (newContext == NULL || tidList_ == NULL)
-     return -1; 
+
   tid = syscall(SYS_gettid);
   if (newContext != defaultContext_  && 
         tsCurrentContextMap != NULL && 
@@ -783,6 +715,7 @@ Lng32 CliGlobals::switchContext(ContextCli * newContext)
      {
         contextTidMap->context_ = newContext;
         tidFound = TRUE;
+        tsCurrentContextMap = contextTidMap;
         break;
      }
   } 
@@ -1025,55 +958,7 @@ char * CliGlobals::getEnv(const char * name)
 {
   return (char*)ComRtGetEnvValueFromEnvvars((const char**)envvars_, name);
 }
-/*
 //
-// Context management functions added to implement user-defined routines
-//
-Lng32 CliGlobals::deleteContext(SQLCTX_HANDLE handle)
-{
-  contextList_->position((char *)&handle, sizeof(SQLCTX_HANDLE));
-
-  ContextCli * iterContext;
-
-  while (iterContext = (ContextCli *)contextList_->getNext())
-  {
-    if (iterContext->getContextHandle() == handle)
-    {
-      // find it, so remove it
-      if (currContext() == iterContext)
-      {
-        // can not remove current context
-        *(currContext()->getDiagsArea()) <<
-          DgSqlCode(- CLI_REMOVE_CURRENT_CONTEXT);
-        return ERROR;
-      }
-      
-      if (defaultContext_ == iterContext)
-      {
-        defaultContext_ = NULL;
-      }
-      
-	   
-      // Call closeAllCursors here
-      // This will :
-      // a) Close all cursors/statments
-      // b) Call release transaction
-      // c) Return an error if there is a pending nowait operation in any 
-      //     of the statments in this context 
-     
-      iterContext->closeAllCursors(ContextCli::CLOSE_ALL_INCLUDING_ANSI_PUBSUB_HOLDABLE, 
-                            ContextCli::CLOSE_ALL_XN);       
-      contextList_->remove(iterContext);
-      delete iterContext;
-      return SUCCESS;
-
-    }
-  }
-
-  *(currContext()->getDiagsArea()) << DgSqlCode(- CLI_CONTEXT_NOT_FOUND);
-  return ERROR;
-}
-*/
 //ss_cc_change : unused anywhere in our code base
 //LCOV_EXCL_START
 Lng32 CliGlobals::resetContext(ContextCli *theContext, void *contextMsg)
@@ -1083,78 +968,8 @@ Lng32 CliGlobals::resetContext(ContextCli *theContext, void *contextMsg)
 }
 //LCOV_EXCL_STOP
 
-// The following is commented out because shared Arkcmp is not supported.
-/*void CliGlobals::deleteAndCreateNewArkcmp(){
-  // probably a better way than just deleting it, but it should work until
-  // we find a better way...
-  if ( sharedArkcmp_ )
-    {
-      delete sharedArkcmp_ ;
-      sharedArkcmp_ = new(exCollHeap()) ExSqlComp(0,
-                                            exCollHeap(),
-                                            this);
-      sharedArkcmp_-> setShared(TRUE);
-    } 
-}
-
-*/
-
-//ss_cc_change : This is only applicable to nowaited CLI -obsolete on SQ
-//LCOV_EXCL_START
-NABoolean CliGlobals::checkOperationsPending(Int64 transid) {
-  // This function goes through each context and check if the context transid
-  // matches the param transid.  If there is a match, it looks for statements 
-  // that have outstanding requests and return TRUE, otherwise, FALSE is
-  // returned.
-  // This function is called by FS2^FLUSH^ALL^VSBB via a function ptr. registed
-  // at process startup time.
-
-  // Decrement the pfs sbbcount by the global sbbcount (saved from previous
-  // call to checkOperationsPending). If there are no prior MP sbb operations
-  // the updated pfs sbbcount should be 0.
-  resetGlobalSbbCount(); 
- 
-  contextList_->position();
-
-  ContextCli * cntxt;
-
-  while (cntxt = (ContextCli *)contextList_->getNext())
-  {
-    ExTransaction *trans = cntxt->getTransaction();
-    Int64 contextTransid = cntxt->getTransaction()->getExeXnId();
-    if (contextTransid == transid)
-      {
-	// match transid, loop through each open statement.
-	cntxt->getOpenStatementList()->position();
-        Statement * stmt;
-        while (stmt = (Statement *)cntxt->getOpenStatementList()->getNext())
-	  { 
-	    // Check if statement involves any update, delete or
-	    // insert operations, or stmt is being prepared, or stmt
-	    // involves UDR interactions. If any of the above is true
-	    // and this nowaited operation is pending, return true.
-	    if ( stmt->updateInProgress() ||
-		 stmt->getState() == Statement::PREPARE_ ||
-		 stmt->containsUdrInteractions() )
-	      {
-
-		if (stmt->updateInProgress())
-		  {
-		    // Increment pfs sbbcount to signal FS2^FLUSH^ALL^VSBB to 
-		    // check for outstanding dp2 messages.
-		    // The sbbcount is also updated in CliGlobals so that it can
-		    // be used for adjusting the pfs sbbcount the next time
-		    // this function is called.
-		    incGlobalSbbCount();  
-		  }
-	      }
-	  }
-      }
-  }
-  return FALSE;
-}
 //LCOV_EXCL_STOP
-
+/*
 void CliGlobals::closeAllOpenCursors(Int64 tcbref) {
   // This function goes through each context and check if the context transid
   // matches the param transid.  If there is a match, it looks for statements 
@@ -1175,7 +990,7 @@ void CliGlobals::closeAllOpenCursors(Int64 tcbref) {
       }
   }
 }
-
+*/
 //ss_cc_change POS featue no longer used
 //LCOV_EXCL_START
 void CliGlobals::clearQualifiedDiskInfo()
@@ -1215,43 +1030,6 @@ void CliGlobals::addQualifiedDiskInfo(
   capacities_.insert(capacity);
   freespaces_.insert(freeSpace);
   largestFragments_.insert(largestFragment);
-}
-
-
-void CliGlobals::setProcessIsStopping(NABoolean withinRMSSemaphore)
-{
-  processIsStopping_ = TRUE;
-  if (contextList_ == NULL)
-     return;
-  contextList_->position();
-
-  NABoolean getSemaphore = (! withinRMSSemaphore);
-
-  ContextCli * cntxt;
-
-  while (cntxt = (ContextCli *)contextList_->getNext())
-  {
-    cntxt->setStatsArea(NULL, FALSE, FALSE, getSemaphore);
-  }
-}
-//LCOV_EXCL_STOP 
-Int16 CliGlobals::getPFSUsage(Int32 &pfsSize, Int32 &pfsCurUse, 
-                           Int32 &pfsMaxUse)
-{
-  Int16 retcode = 0;
-  if (retcode == 0)
-  {
-    pfsSize = pfsValues_[0];
-    pfsCurUse = pfsValues_[1];
-    pfsMaxUse = pfsValues_[2];
-    if (processStats_ != NULL)
-    {
-       processStats_->setPfsSize(pfsSize);
-       processStats_->setPfsCurUse(pfsCurUse);
-       processStats_->setPfsMaxUse(pfsMaxUse);
-    }
-  }
-  return retcode;
 }
 
 NAHeap *CliGlobals::getCurrContextHeap()
