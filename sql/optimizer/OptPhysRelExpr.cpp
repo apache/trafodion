@@ -4417,6 +4417,17 @@ Context* NestedJoin::createContextForAChild(Context* myContext,
           OCRJoinIsConsidered = TRUE;
         }
 
+
+      // Decide if it is a fast trafodion load query
+      NABoolean isFastLoadIntoTrafodion = FALSE;
+      OperatorTypeEnum childOpType = child(1).getLogExpr()->getOperatorType();
+      if ( childOpType == REL_LEAF_INSERT ) {
+          RelExpr* c1 = child(1).getLogExpr();
+          Insert* ins = (Insert*)c1;
+          isFastLoadIntoTrafodion = ins->getIsTrafLoadPrep();
+       }
+
+
       // store results in njPws for later reuse
       njPws->setParallelismItems(useParallelism,
                                  childNumPartsRequirement,
@@ -4425,6 +4436,7 @@ Context* NestedJoin::createContextForAChild(Context* myContext,
       njPws->setChildPlansToConsider(childPlansToConsider);
       njPws->setOCBJoinIsConsidered(OCBJoinIsConsidered);
       njPws->setOCRJoinIsConsidered(OCRJoinIsConsidered);
+      njPws->setFastLoadIntoTrafodion(isFastLoadIntoTrafodion);
     } // end njPws->isEmpty()
   // ---------------------------------------------------------------------
   // If enough Contexts are generated, return NULL
@@ -4466,7 +4478,7 @@ Context* NestedJoin::createContextForAChild(Context* myContext,
   if ( (updateTableDesc() != NULL) &&
        (rppForMe->getMustMatch() == NULL) &&
        (!rppForMe->executeInDP2()) &&
-       (!getReqdOrder().entries()) &&
+       (!getReqdOrder().entries() || njPws->getFastLoadIntoTrafodion())  &&
         CURRSTMT_OPTDEFAULTS->orderedWritesForNJ()
      )
     shutDownPlan0 = TRUE;
