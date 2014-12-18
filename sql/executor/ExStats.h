@@ -2705,6 +2705,8 @@ class ExHbaseAccessStats : public ExOperStats {
     inline void incUsedRows(Int64 v) {usedRows_ += v;}
  
     inline void incHbaseCalls() {++numHbaseCalls_;}
+
+    inline void incMaxHbaseIOTime(Int64 v) {maxHbaseIOTime_ += v;}
  
   NA_EIDPROC
     Int64 numBytesRead() const {return numBytesRead_;}
@@ -2715,6 +2717,8 @@ class ExHbaseAccessStats : public ExOperStats {
     Int64 rowsUsed() const {return usedRows_;}
   
     Int64 hbaseCalls() const {return numHbaseCalls_;}
+
+    Int64 maxHbaseIOTime() const {return maxHbaseIOTime_;}
   
   NA_EIDPROC
     ExHbaseAccessStats * castToExHbaseAccessStats();
@@ -2746,6 +2750,7 @@ class ExHbaseAccessStats : public ExOperStats {
   Int64  accessedRows_;
   Int64  usedRows_;
   Int64  numHbaseCalls_;
+  Int64  maxHbaseIOTime_;
 };
 
    

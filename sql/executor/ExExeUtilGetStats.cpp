@@ -2999,7 +2999,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (hbaseStatsItems_ == NULL)
         {
-          maxHbaseStatsItems_ = 8;
+          maxHbaseStatsItems_ = 9;
           hbaseStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxHbaseStatsItems_];
           initSqlStatsItems(hbaseStatsItems_, maxHbaseStatsItems_, FALSE);
@@ -3011,7 +3011,8 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           hbaseStatsItems_[5].statsItem_id = SQLSTATS_HBASE_IOS;
           hbaseStatsItems_[6].statsItem_id = SQLSTATS_HBASE_IO_BYTES;
           hbaseStatsItems_[7].statsItem_id = SQLSTATS_HBASE_IO_ELAPSED_TIME;
-          // maxHbaseStatsItems_ is set to 8
+          hbaseStatsItems_[8].statsItem_id = SQLSTATS_HBASE_IO_MAX_TIME;
+          // maxHbaseStatsItems_ is set to 9
           // SQLSTATS_TABLE_ANSI_NAME
           hbaseStatsItems_[0].str_value = new (getGlobals()->getDefaultHeap())
             char[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+1];
@@ -3044,13 +3045,13 @@ short ExExeUtilGetRTSStatisticsTcb::work()
         moveRowToUpQueue(" ");
         str_sprintf(statsBuf_, "%15s", "Table Name");
 	moveRowToUpQueue(statsBuf_);
-        str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s",
+        str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
 		"Records Accessed", "Records Used", "Hbase", "Hbase", 
-                "Hbase IO ");
+                "Hbase IO ", "Hbase IO");
         moveRowToUpQueue(statsBuf_);
-	str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s",
-		"Estimated/Actual", "Estimated/Actual", "IOs", "IO Bytes",
-                "Elapsed Time");
+	str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
+		"Estimated/Actual", "Estimated/Actual", "IOs", "IO MBytes",
+                "Elapsed Time", "Max Time");
         moveRowToUpQueue(statsBuf_);
         isHeadingDisplayed_ = TRUE;
         step_ = FORMAT_AND_RETURN_HBASE_STATS_;
@@ -3102,12 +3103,18 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-13s", Int64Val);
             break;
           case SQLSTATS_HBASE_IO_BYTES:
-            str_sprintf(Int64Val, "%Ld", hbaseStatsItems_[i].int64_value);
+            str_sprintf(Int64Val, "%Ld", hbaseStatsItems_[i].int64_value/1024/1024);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-13s", Int64Val);
             break;
           case SQLSTATS_HBASE_IO_ELAPSED_TIME:
+            str_sprintf(Int64Val, "%Ld", hbaseStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
+            break;
+          case SQLSTATS_HBASE_IO_MAX_TIME:
             str_sprintf(Int64Val, "%Ld", hbaseStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
