@@ -7244,21 +7244,21 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
               (bindWA && bindWA->isTrafLoadPrep());
              
             // if force to range partition a salted table, and the salted table is 
-            // a hash2, do not return the cached object.
+            // not a range, do not return the cached object.
             if ( rangeSplitSaltedTable &&
+                 cachedNATable->hasSaltedColumn() &&
                  pf->castToHash2PartitioningFunction() ) {
                removeEntry = TRUE;
-            } 
-
+            } else 
             // if force to hash2 partition a salted table, and the cached table is 
-            // a range, do not return the cached object.
+            // not a hash2, do not return the cached object.
             if ( 
                  CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) != DF_OFF &&
                  cachedNATable->hasSaltedColumn() &&
-                 pf->castToRangePartitioningFunction() 
+                 pf->castToHash2PartitioningFunction() == NULL
                )
                removeEntry = TRUE;
-         }
+         } 
      }
   }
 
