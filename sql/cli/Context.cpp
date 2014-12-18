@@ -167,6 +167,7 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     prevStmtStats_(NULL),
     lobGlobals_(NULL),
     seqGen_(NULL),
+    dropInProgress_(FALSE),
 #ifdef NA_CMPDLL
     isEmbeddedArkcmpInitialized_(FALSE),
     embeddedArkcmpContext_(NULL)
@@ -3068,49 +3069,6 @@ NABoolean ContextCli::reclaimStatements()
   }
   if (someStmtReclaimed)
   {
-    logReclaimEvent((Lng32)freeSize,(Lng32)totalSize);
-  }
-  return someStmtReclaimed;
-}
-
-NABoolean ContextCli::reclaimStatementsForPFS()
-{
-  NABoolean someStmtReclaimed = FALSE;
-  Int32 pfsSize;
-  Int32 pfsCurUse;
-  Int32 pfsMaxUse;
-  double curUsePFSPercent;
-  NABoolean retcode;
-
-  if (nextReclaimStatement_ == NULL)
-    return FALSE;
-  CliGlobals *cliGlobals = getCliGlobals();
-
-  if (cliGlobals->getPFSUsage(pfsSize, pfsCurUse, pfsMaxUse) != 0)
-    return FALSE;
-  curUsePFSPercent = (double)pfsCurUse * 100 / (double)pfsSize;
-  double reclaimPFSPercent = 100 - getSessionDefaults()->getReclaimFreePFSRatio();
-  if (curUsePFSPercent > reclaimPFSPercent)
-  {
-    retcode = TRUE;
-    while (retcode && 
-      curUsePFSPercent > reclaimPFSPercent) 
-    {
-      retcode = reclaimStatementSpace();
-      if (retcode)
-        someStmtReclaimed = TRUE;
-      if (cliGlobals->getPFSUsage(pfsSize, pfsCurUse, pfsMaxUse) != 0)
-        break;
-      curUsePFSPercent = (double)pfsCurUse * 100 / (double)pfsSize;
-    }
-  }
-  if (someStmtReclaimed)
-  {
-    size_t freeSize;
-    size_t totalSize;
-    size_t lastBlockSize;
-    NAHeap *heap = exHeap(); // Get the context Heap
-    NABoolean crowded = heap->getUsage(&lastBlockSize, &freeSize, &totalSize);
     logReclaimEvent((Lng32)freeSize,(Lng32)totalSize);
   }
   return someStmtReclaimed;

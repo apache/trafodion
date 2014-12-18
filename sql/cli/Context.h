@@ -449,6 +449,7 @@ private:
   IpcServerClass *cbServerClass_;
   IpcServer *cbServer_;
   bool cbServerInUse_;
+  NABoolean dropInProgress_;
 
 
   //   
@@ -789,6 +790,8 @@ SQLCLI_LIB_FUNC
   Int32 switchToCmpContext(Int32 cmpCntxtType);
   Int32 switchToCmpContext(void *cmpCntxt);
   Int32 switchBackCmpContext(void);
+  NABoolean isDropInProgress() { return dropInProgress_; }
+  void setDropInProgress() { dropInProgress_ = TRUE; };
 
   // Method to acquire a reference to a UDR server associated with
   // a given set of JVM startup options
@@ -868,9 +871,6 @@ Lng32 setAuthID(
 
   // Reclaim statements if it is available
   NABoolean reclaimStatements();
-
-  // Reclaim statements when PFS is running out of space
-  NABoolean reclaimStatementsForPFS();
 
   // Dealocate statement space based on least recently used rule.
   NABoolean reclaimStatementSpace();

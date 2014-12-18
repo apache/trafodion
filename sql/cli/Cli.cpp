@@ -424,14 +424,18 @@ static Lng32 CliPrologue(CliGlobals   * cliGlobals,
   if ((numOfCliCalls == 1) ||
       ((numOfCliCalls == 2) && (cliGlobals->isESPProcess())))
     {
-      retcode = (Lng32)context->getTransaction()->inheritTransaction();
-      //LCOV_EXCL_START
-      if (isERROR(retcode))
-        {
-          diags << DgSqlCode(- CLI_BEGIN_TRANSACTION_ERROR);
-          return ERROR;
-        }
-      //LCOV_EXCL_STOP
+      ExTransaction *exTransaction = context->getTransaction();
+      if (exTransaction != NULL)
+      {
+          retcode =  exTransaction->inheritTransaction();
+          //LCOV_EXCL_START
+         if (isERROR(retcode))
+         {
+            diags << DgSqlCode(- CLI_BEGIN_TRANSACTION_ERROR);
+            return ERROR;
+         }
+         //LCOV_EXCL_STOP
+      }
     }
 
   //LCOV_EXCL_START - versioning obsolete
@@ -1793,7 +1797,8 @@ Lng32 SQLCLI_DropContext(/*IN*/ CliGlobals * cliGlobals,
   ContextCli *defaultContext = cliGlobals->getDefaultContext();
   ComDiagsArea & diags       = defaultContext->diags();
 
-  ContextCli * droppedContext = cliGlobals->getContext(context_handle);
+  ContextCli * droppedContext = cliGlobals->getContext(context_handle,
+                                                       TRUE);
 
   if (context_handle == cliGlobals->getDefaultContext()->getContextHandle())
   {
@@ -7291,7 +7296,7 @@ Lng32 SQLCLI_SwitchContext(
   // integrity could be compromised if another context inherits
   // such a transaction.
   ExTransaction * exTransaction = currContext.getTransaction();
-  if (exTransaction->exeStartedXnDuringRecursiveCLICall())
+  if (exTransaction != NULL && exTransaction->exeStartedXnDuringRecursiveCLICall())
     {
       // abort the transaction so this problem doesn't persist
       exTransaction->rollbackStatement();
