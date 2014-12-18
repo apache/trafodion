@@ -78,8 +78,6 @@ fi
 for node in $NODE_LIST;
 do
    ssh $node echo "exit" | hbase shell &> hbaseVersion.txt
-   echo $node
-   more hbaseVersion.txt
    hbaseInstalled=`grep "Version" hbaseVersion.txt | wc -l`
 
    if [[ $hbaseInstalled -eq "0" ]]; then
