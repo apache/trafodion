@@ -19,6 +19,7 @@
 --
 -- @@@ END COPYRIGHT @@@
 
+create schema trafodion.hbase;
 set schema trafodion.hbase;
 cqd comp_bool_226 'on';
 

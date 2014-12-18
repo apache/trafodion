@@ -297,7 +297,7 @@ std::string whereClause(" WHERE OBJECT_TYPE IN ('RC','SP','UR','VI') AND OBJECT_
 
    whereClause += authIDToString(userID);
    
-PrivMgrObjects objects(trafMetadataLocation_);
+PrivMgrObjects objects(trafMetadataLocation_,pDiags_);
 
 std::vector<UIDAndType> ownedUIDandTypes;
 

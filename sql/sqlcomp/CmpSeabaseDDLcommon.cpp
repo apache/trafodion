@@ -5288,6 +5288,10 @@ bool xnWasStartedHere = false;
      xnWasStartedHere = true;
    }
    
+   // save the current parserflags setting
+   ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+   Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+   
    for (size_t s = 0; s < schemaNames.size(); s++)
    {
       QualifiedSchema schemaEntry = schemaNames[s];
@@ -5297,13 +5301,35 @@ bool xnWasStartedHere = false;
                                  SEABASE_SCHEMA_OBJECTNAME)) 
          continue;     
       
-      ComSchemaName schemaName(ComAnsiNamePart(schemaEntry.catalogName),
-                               ComAnsiNamePart(schemaEntry.schemaName));
-   
+      // Catalog or schema names could be delimited names.  Surround them
+      // in quotes to avoid scanning problems.     
+      
+      NAString quotedCatalogName;
+      
+         quotedCatalogName = '\"';
+         quotedCatalogName += schemaEntry.catalogName;
+         quotedCatalogName += '\"';
+         
+      NAString quotedSchemaName;
+
+         quotedSchemaName = '\"';
+         quotedSchemaName += schemaEntry.schemaName;
+         quotedSchemaName += '\"';
+              
+      ComSchemaName schemaName(quotedCatalogName,quotedSchemaName);
+
+    
       if (addSchemaObject(*cliInterface,schemaName,
                           COM_SCHEMA_CLASS_SHARED,SUPER_USER)) 
+      {
+         // Restore parser flags settings to what they originally were
+         Assign_SqlParser_Flags(savedParserFlags);
          return -1;
+      }
    }
+   
+   // Restore parser flags settings to what they originally were
+   Assign_SqlParser_Flags(savedParserFlags);
    
    if (xnWasStartedHere)
    {
@@ -7101,6 +7127,7 @@ ComObjectType objectType;
 
 }
 //********* End of CmpSeabaseDDL::verifyDDLCreateOperationAuthorized ***********
+
 
 
 
