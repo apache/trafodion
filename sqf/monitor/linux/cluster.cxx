@@ -6612,6 +6612,10 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd)
                 error = errno;
                 readAgain = false;
             }
+            else
+            {
+                readAgain = true;
+            }
         }
     }
     while( readAgain );
@@ -6670,6 +6674,10 @@ int CCluster::SendSock(char *buf, int size, int sockFd)
             {
                 error = errno;
                 sendAgain = false;
+            }
+            else
+            {
+                sendAgain = true;
             }
         }
     }
