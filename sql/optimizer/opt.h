@@ -2079,7 +2079,8 @@ public:
        numOfESPsForced_(FALSE),
        childPlansToConsider_(0),
        OCBJoinIsConsidered_(FALSE),
-       OCRJoinIsConsidered_(FALSE) {}
+       OCRJoinIsConsidered_(FALSE),
+       fastLoadIntoTrafodion_(FALSE) {}
   ~NestedJoinPlanWorkSpace() {}
 
   NABoolean getUseParallelism()       const       { return useParallelism_; }
@@ -2091,6 +2092,7 @@ public:
   Lng32     getChildPlansToConsider() const { return childPlansToConsider_; }
   NABoolean getOCBJoinIsConsidered()  const  { return OCBJoinIsConsidered_; }
   NABoolean getOCRJoinIsConsidered()  const  { return OCRJoinIsConsidered_; }
+  NABoolean getFastLoadIntoTrafodion()  const  { return fastLoadIntoTrafodion_; }
 
   void setParallelismItems(NABoolean useParallelism,
                            Lng32     childNumPartsRequirement,
@@ -2103,6 +2105,7 @@ public:
   void setChildPlansToConsider(Lng32 cp)      { childPlansToConsider_ = cp; }
   void setOCBJoinIsConsidered(NABoolean o)      { OCBJoinIsConsidered_ = o; }
   void setOCRJoinIsConsidered(NABoolean o)      { OCRJoinIsConsidered_ = o; }
+  void setFastLoadIntoTrafodion(NABoolean o)      { fastLoadIntoTrafodion_ = o; }
 
   void transferParallelismReqsToRG(RequirementGenerator &rg);
 
@@ -2115,6 +2118,7 @@ private:
   Lng32     childPlansToConsider_;
   NABoolean OCBJoinIsConsidered_;
   NABoolean OCRJoinIsConsidered_;
+  NABoolean fastLoadIntoTrafodion_;
 
 }; // class NestedJoinPlanWorkSpace
 
