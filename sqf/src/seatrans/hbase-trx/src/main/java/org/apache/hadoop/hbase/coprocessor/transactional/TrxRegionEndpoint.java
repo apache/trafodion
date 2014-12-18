@@ -283,7 +283,7 @@ CoprocessorService, Coprocessor {
   private HLog tHLog = null;
   boolean closing = false;
   private boolean fullEditInCommit = true;
-  private boolean configuredEarlyLogging;
+  private boolean configuredEarlyLogging = false;
   private static Object zkRecoveryCheckLock = new Object();
   private static ZooKeeperWatcher zkw1 = null;
   String lv_hostName;
@@ -2280,7 +2280,7 @@ CoprocessorService, Coprocessor {
     this.t_Region = (TransactionalRegion) tmp_env.getRegion();
     this.fs = this.m_Region.getFilesystem();
 
-    org.apache.hadoop.conf.Configuration conf = env.getConfiguration(); //new org.apache.hadoop.conf.Configuration(); 
+    org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration(); 
     
     synchronized (stoppable) {
       try {
@@ -2358,7 +2358,6 @@ CoprocessorService, Coprocessor {
     zkw1 = rss.getZooKeeper();
 
     this.configuredEarlyLogging = conf.getBoolean("hbase.regionserver.region.transactional.earlylogging", false);
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: HBase transactional early logging is " + this.configuredEarlyLogging);
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: get the reference from Region CoprocessorEnvironment ");
 
