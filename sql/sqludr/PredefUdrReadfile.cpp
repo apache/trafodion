@@ -23,55 +23,88 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
+#include <limits>
 #include "sqludr.h"
 
 using namespace tmudr;
 
-int getVCLen(SQLUDR_PARAM *inParam, char *input_row)
+// -------------------------------------
+// constants
+// -------------------------------------
+
+// max. line length we can parse (give or take a few),
+// this should be the size of the "message" output column
+// plus enough room for the other fields
+const int maxLineLength = 5000;
+
+const char TruncationError     = 'T';
+const char FieldParserError    = 'E';
+const char CharConversionError = 'C';
+
+static void setParseError(char err,
+                          char *parseErrorField)
 {
-  char *vcInd = ((char *) input_row) + inParam->vc_ind_offset;
-  unsigned long vcIndLen = inParam->vc_ind_len;
-  int inDataLen = 0;
-  if (vcIndLen == 2)
-    inDataLen = *((unsigned short *) vcInd);
-  else
-    inDataLen = *((unsigned long *) vcInd);
-  return inDataLen;
+  if (err != ' ' && parseErrorField)
+    {
+      // parse_error_output_field points to a 2 character field
+      // that is initialized with blanks. Add the code to the end
+      // if it is not yet recorded in the field
+      if (parseErrorField[0] == ' ')
+        parseErrorField[0] = err;
+      else if (parseErrorField[1] == ' ' &&
+               parseErrorField[0] != err)
+        parseErrorField[1] = err;
+    }
 }
 
-void setVCLen(SQLUDR_PARAM *outParam,  char *output_row, int len)
+static void setIntOutputColumn(char *outputRow,
+                               SQLUDR_PARAM *param,
+                               const char *src,
+                               char *parseErrorField)
 {
-  char *vcInd = ((char *) output_row) + outParam->vc_ind_offset;
-  outParam->vc_ind_len = 2;
-  *((unsigned short *) vcInd) = (unsigned short) len;
-}
-
-static void setIntOutputColumn(SQLUDR_INT32 *tgt,
-                               SQLUDR_INT16 *indPtr,
-                               const char *src)
-{
+  SQLUDR_INT32 *tgt = (SQLUDR_INT32 *) (outputRow + param->data_offset);
+  SQLUDR_INT16 *indPtr = (SQLUDR_INT16 *) (outputRow + param->ind_offset);
   char *endptr = NULL;
 
-  *tgt = (SQLUDR_INT32) strtol(src, &endptr, 10);
+  long num = strtol(src, &endptr, 10);
+
+  if (num <= std::numeric_limits<int32_t>::max() &&
+      num >= std::numeric_limits<int32_t>::min())
+    *tgt = (SQLUDR_INT32) strtol(src, &endptr, 10);
+  else
+    {
+      if (num < std::numeric_limits<int32_t>::min())
+        *tgt = std::numeric_limits<int32_t>::min();
+      else
+        *tgt = std::numeric_limits<int32_t>::max();
+      setParseError(TruncationError, parseErrorField);
+    }
 
   if (endptr == NULL || *endptr != 0 || endptr == src)
     {
       // no valid number read, treat this as a NULL value
       *tgt = 0;
       *indPtr = -1;
+      if (endptr && *endptr != 0)
+        // strtol didn't consume all the characters, this is a
+        // parse error
+        setParseError(FieldParserError, parseErrorField);
     }
   else
     *indPtr = 0;
 }
 
-static void setCharOutputColumn(char *tgt,
-                                SQLUDR_INT16 *indPtr,
+static void setCharOutputColumn(char *outputRow,
                                 SQLUDR_PARAM *param,
-                                const char *src)
+                                const char *src,
+                                char *parseErrorField)
 {
+  char *tgt = outputRow + param->data_offset;
+  SQLUDR_INT16 *indPtr = (SQLUDR_INT16 *) (outputRow + param->ind_offset);
+
   strncpy(tgt, src, param->data_len);
   int len = strlen(src);
-  if (len < param->data_len)
+  if (len <= param->data_len)
     {
       if (len > 0)
         {
@@ -85,21 +118,23 @@ static void setCharOutputColumn(char *tgt,
           memset(tgt, ' ', param->data_len);
         }
     }
+  else
+    setParseError(TruncationError, parseErrorField);
 }
 
-static void setVarCharOutputColumn(char *tgt,
-                                   SQLUDR_INT16 *lenPtr,
-                                   SQLUDR_INT16 *indPtr,
+static void setVarCharOutputColumn(char *outputRow,
                                    SQLUDR_PARAM *param,
-                                   const char *src)
+                                   const char *src,
+                                   char *parseErrorField)
 {
   int len = strlen(src);
+  char *tgt = outputRow + param->data_offset;
+  SQLUDR_INT16 *indPtr = (SQLUDR_INT16 *) (outputRow + param->ind_offset);
 
   strncpy(tgt, src, param->data_len);
   *indPtr = 0;
-  if (len < param->data_len)
+  if (len <= param->data_len)
     {
-      *lenPtr = len;
       // just to be clean, blank out remainder of the field
       memset(tgt+len, ' ', param->data_len - len); 
 
@@ -108,7 +143,15 @@ static void setVarCharOutputColumn(char *tgt,
         *indPtr = -1;
     }
   else
-    *lenPtr = param->data_len;
+    {
+      len = param->data_len;
+      setParseError(TruncationError, parseErrorField);
+    }
+
+  if (param->vc_ind_len == sizeof(SQLUDR_UINT16))
+    *((SQLUDR_UINT16 *) (outputRow + param->vc_ind_offset)) = len;
+  else // if (param->vc_ind_len == sizeof(SQLUDR_INT32))
+    *((SQLUDR_UINT32 *) (outputRow + param->vc_ind_offset)) = len;
 }
 
 // -----------------------------------------------------------------
@@ -140,13 +183,21 @@ static void setVarCharOutputColumn(char *tgt,
 // query_id      varchar(200 bytes) character set utf8,
 // message       varchar(4000 bytes) character set utf8
 //
-// if option "f" was specified, we have three more columns:
+// if option "f" was specified, we have four more columns:
 //
 // log_file_node integer not null,
 // log_file_name varchar(200 bytes) character set utf8 not null,
-// log_file_line integer not null
+// log_file_line integer not null,
+// parse_status  char(2 bytes) character set utf8 not null
 //
-// together, these three extra columns are unique for each result row
+// (log_file_node, log_file_name, log_file_line) form a unique key 
+// for each result row. parse_status indicates whether there were
+// any errors reading the information:
+// '  ' (two blanks): no errors
+// 'E'  (as first or second character): parse error
+// 'T'  (as first or second character): truncation or over/underflow
+//                                      occurred
+// 'C'  (as first or second character): character conversion error
 // -----------------------------------------------------------------
 
 extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
@@ -199,14 +250,14 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
   }
 
   if (udrinfo->num_return_values != 10)
-    if (udrinfo->num_return_values == 13)
+    if (udrinfo->num_return_values == 14)
       addFileColumns = 1;
     else
         {
           strcpy(sqlstate, "38000");
           snprintf(msgtext,
                    SQLUDR_MSGTEXT_SIZE,
-                   "Expecting 10 or 13 result columns, got %d",
+                   "Expecting 10 or 14 result columns, got %d",
                    udrinfo->num_return_values);
           return SQLUDR_ERROR;
         }
@@ -225,60 +276,31 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
   SQLUDR_PARAM *log_file_node_param = NULL;
   SQLUDR_PARAM *log_file_name_param = NULL;
   SQLUDR_PARAM *log_file_line_param = NULL;
+  SQLUDR_PARAM *parse_status_param  = NULL;
   if (addFileColumns)
     {
       log_file_node_param = &(udrinfo->return_values[10]);
       log_file_name_param = &(udrinfo->return_values[11]);
       log_file_line_param = &(udrinfo->return_values[12]);
+      parse_status_param  = &(udrinfo->return_values[13]);
     }
 
   char *output_row = rowDataSpace2;
 
   // pointers of the appropriate type for the output
-  char          *log_ts_param_ptr        = (char *) &(output_row[udrinfo->return_values[0].data_offset]);
-  char          *severity_param_ptr      = (char *) &(output_row[udrinfo->return_values[1].data_offset]);
-  char          *component_param_ptr     = (char *) &(output_row[udrinfo->return_values[2].data_offset]);
-  SQLUDR_INT32  *node_number_param_ptr   = (SQLUDR_INT32 *) &(output_row[udrinfo->return_values[3].data_offset]);
-  SQLUDR_INT32  *cpu_param_ptr           = (SQLUDR_INT32 *) &(output_row[udrinfo->return_values[4].data_offset]);
-  SQLUDR_INT32  *pin_param_ptr           = (SQLUDR_INT32 *) &(output_row[udrinfo->return_values[5].data_offset]);
-  char          *process_name_param_ptr  = (char *) &(output_row[udrinfo->return_values[6].data_offset]);
-  SQLUDR_INT32  *sql_code_param_ptr      = (SQLUDR_INT32 *) &(output_row[udrinfo->return_values[7].data_offset]);
-  SQLUDR_INT16  *query_id_param_len      = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[8].vc_ind_offset]);
-  char          *query_id_param_ptr      = (char *) &(output_row[udrinfo->return_values[8].data_offset]);
-  SQLUDR_INT16  *message_param_len       = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[9].vc_ind_offset]);
-  char          *message_param_ptr       = (char *) &(output_row[udrinfo->return_values[9].data_offset]);
+  char          *log_ts_param_ptr        = (char *) &(output_row[log_ts_param->data_offset]);
   SQLUDR_INT32  *log_file_node_param_ptr = NULL;
-  SQLUDR_INT16  *log_file_name_param_len = NULL;
-  char          *log_file_name_param_ptr = NULL;
   SQLUDR_INT32  *log_file_line_param_ptr = NULL;
+  char          *parse_status_param_ptr  = NULL;
   if (addFileColumns)
     {
-      log_file_node_param_ptr = (SQLUDR_INT32 *) &(output_row[udrinfo->return_values[10].data_offset]);
-      log_file_name_param_len = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[11].vc_ind_offset]);
-      log_file_name_param_ptr = (char *) &(output_row[udrinfo->return_values[11].data_offset]);
-      log_file_line_param_ptr = (SQLUDR_INT32 *) &(output_row[udrinfo->return_values[12].data_offset]);
+      log_file_node_param_ptr = (SQLUDR_INT32 *) &(output_row[log_file_node_param->data_offset]);
+      log_file_line_param_ptr = (SQLUDR_INT32 *) &(output_row[log_file_line_param->data_offset]);
+      parse_status_param_ptr  = &(output_row[parse_status_param->data_offset]);
     }
 
   // null indicators
   SQLUDR_INT16 *log_ts_param_ind        = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[0].ind_offset]);
-  SQLUDR_INT16 *severity_param_ind      = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[1].ind_offset]);
-  SQLUDR_INT16 *component_param_ind     = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[2].ind_offset]);
-  SQLUDR_INT16 *node_number_param_ind   = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[3].ind_offset]);
-  SQLUDR_INT16 *cpu_param_ind           = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[4].ind_offset]);
-  SQLUDR_INT16 *pin_param_ind           = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[5].ind_offset]);
-  SQLUDR_INT16 *process_name_param_ind  = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[6].ind_offset]);
-  SQLUDR_INT16 *sql_code_param_ind      = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[7].ind_offset]);
-  SQLUDR_INT16 *query_id_param_ind      = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[8].ind_offset]);
-  SQLUDR_INT16 *message_param_ind       = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[9].ind_offset]);
-  SQLUDR_INT16 *log_file_node_param_ind = NULL;
-  SQLUDR_INT16 *log_file_name_param_ind = NULL;
-  SQLUDR_INT16 *log_file_line_param_ind = NULL;
-  if (addFileColumns)
-    {
-      log_file_node_param_ind = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[10].ind_offset]);
-      log_file_name_param_ind = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[11].ind_offset]);
-      log_file_line_param_ind = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[12].ind_offset]);
-    }
 
   char inString[1024] = "";
   int inLen = 0;
@@ -289,10 +311,11 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
   int status = 0;
   int columnNum = 0;
   int columnSequenceError = 0;   // error that prevents us from parsing further
-  char inputLine[5000];          // space for all fields in character form
-  char inputLineValidated[5000]; // inputLine after validation
-  char *ok = NULL;               // status of fgets
+  char inputLine[maxLineLength];          // space for all fields in character form
+  char inputLineValidated[maxLineLength]; // inputLine after validation
+  char *ok = NULL;                        // status of fgets
 
+#ifndef NDEBUG
   if (startWithALoop)
     {
       int i=1;
@@ -300,6 +323,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
       while (i < 2)
         i = 1-i;
     }
+#endif
 
   char* sqroot = getenv("MY_SQROOT");
   if (strlen(sqroot) > 1000)
@@ -310,6 +334,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
   }
 
   std::string logDirName(sqroot);
+  std::string logFileName;
 
   logDirName += "/logs";
 
@@ -326,16 +351,6 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
       status = errno;
       strcpy(sqlstate, "38002");
       snprintf(msgtext, SQLUDR_MSGTEXT_SIZE, "Error %d on opening directory %s",
-               status, logDirName.data());
-      return SQLUDR_ERROR;
-    }
-
-  status = chdir(logDirName.data());
-
-  if (status != 0)
-    {
-      strcpy(sqlstate, "38003");
-      snprintf(msgtext, SQLUDR_MSGTEXT_SIZE, "Error %d on changing current directory to %s",
                status, logDirName.data());
       return SQLUDR_ERROR;
     }
@@ -384,8 +399,10 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
         strcmp(strstr(dirEntry->d_name, ".log"), ".log") == 0)
       {
 
+        logFileName = logDirName + "/" + dirEntry->d_name;
+
         /* Open the input file */
-        infile = fopen(dirEntry->d_name, "r");
+        infile = fopen(logFileName.data(), "r");
         if (infile == NULL)
           {
             status = errno;
@@ -404,11 +421,10 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
         if (addFileColumns)
           {
             // set file name output column (same for all lines of this file)
-            setVarCharOutputColumn(log_file_name_param_ptr,
-                                   log_file_name_param_len,
-                                   log_file_name_param_ind,
+            setVarCharOutputColumn(output_row,
                                    log_file_name_param,
-                                   dirEntry->d_name);
+                                   dirEntry->d_name,
+                                   NULL); // no truncation warning for this metadata column
           }
 
         lineNumber = 0;
@@ -428,6 +444,10 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
             int lineLengthValidated = 0;
 
             lineNumber++;
+
+            if (parse_status_param_ptr)
+              // initialize parse status for this row
+              memset(parse_status_param_ptr, ' ', 2);
 
             // skip any empty lines or lines obviously not in the right format,
             // should not really happen
@@ -460,6 +480,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                   }
                 while (extraStatus != NULL && extraChars[strlen(extraChars)-1] != '\n');
 
+                setParseError(TruncationError, parse_status_param_ptr);
               }
 
             // validate UTF-8 characters in inputLine and copy
@@ -474,7 +495,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
             while (srcPos < lineLength && tgtPos < tgtLimit)
               {
                 c = inputLine[srcPos];
-                
+
                 if (c < 0x80)
                   {
                     // ASCII character
@@ -511,7 +532,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                         if (s < 0x80 || s >= 0xc0)
                           validUTF8Char = 0;
                       }
-                          
+
                     if (validUTF8Char)
                       {
                         for (int j=0; j<numBytes; j++)
@@ -533,6 +554,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                                    pid, numBytes, (int) inputLine[srcPos-numBytes], lineNumber);
                             fflush(stdout);
                           }
+                        setParseError(CharConversionError, parse_status_param_ptr);
                       }
                   }
               }
@@ -549,8 +571,8 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
 
             if (numItems == 8)
               {
-                // when we see a comma between time and fraction, we interpret
-                // that as a fraction that is specified in milliseconds, convert
+                // When we see a comma between time and fraction, we interpret
+                // that as a fraction that is specified in milliseconds. Convert
                 // to microseconds. When it's specified with a dot, we interpret
                 // the fraction as microseconds (SQL syntax).
                 if (*fractionSeparator == ',')
@@ -574,6 +596,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
 
                 // return a NULL value if we fail to parse the timestamp
                 *log_ts_param_ind = -1;
+                setParseError(FieldParserError, parse_status_param_ptr);
               }
 
             // skip over the information already read
@@ -595,6 +618,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                 *currField = 0;
                 messageTextField =
                   (numChars < lineLengthValidated) ? currField+1 : currField;
+                setParseError(FieldParserError, parse_status_param_ptr);
               }
 
             // read columns 2: SEVERITY - 9: QUERY_ID
@@ -603,7 +627,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                 // find the next comma, the end of our field value
                 char *endOfField = strstr(currField, ",");
                 char *startOfVal = NULL;
-                
+
                 if (endOfField != NULL)
                   {
                     startOfVal = (endOfField != currField ? endOfField-1 : currField);
@@ -662,6 +686,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                       messageTextField =
                         (currField-inputLineValidated < lineLengthValidated) ?
                         currField+1 : currField;
+                    setParseError(FieldParserError, parse_status_param_ptr);
                   }
 
                 // now that we have the non-blank portion of the value,
@@ -669,56 +694,59 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                 switch (columnNum)
                   {
                   case 2:
-                    setCharOutputColumn(severity_param_ptr,
-                                        severity_param_ind,
+                    setCharOutputColumn(output_row,
                                         severity_param,
-                                        startOfVal);
+                                        startOfVal,
+                                        parse_status_param_ptr);
                     break;
 
                   case 3:
-                    setCharOutputColumn(component_param_ptr,
-                                        component_param_ind,
+                    setCharOutputColumn(output_row,
                                         component_param,
-                                        startOfVal);
+                                        startOfVal,
+                                        parse_status_param_ptr);
                     break;
 
                   case 4:
-                    setIntOutputColumn(node_number_param_ptr,
-                                       node_number_param_ind,
-                                       startOfVal);
+                    setIntOutputColumn(output_row,
+                                       node_number_param,
+                                       startOfVal,
+                                       parse_status_param_ptr);
                     break;
 
                   case 5:
-                    setIntOutputColumn(cpu_param_ptr,
-                                       cpu_param_ind,
-                                       startOfVal);
+                    setIntOutputColumn(output_row,
+                                       cpu_param,
+                                       startOfVal,
+                                       parse_status_param_ptr);
                     break;
 
                   case 6:
-                    setIntOutputColumn(pin_param_ptr,
-                                       pin_param_ind,
-                                       startOfVal);
+                    setIntOutputColumn(output_row,
+                                       pin_param,
+                                       startOfVal,
+                                       parse_status_param_ptr);
                     break;
 
                   case 7:
-                    setCharOutputColumn(process_name_param_ptr,
-                                        process_name_param_ind,
+                    setCharOutputColumn(output_row,
                                         process_name_param,
-                                        startOfVal);
+                                        startOfVal,
+                                        parse_status_param_ptr);
                     break;
 
                   case 8:
-                    setIntOutputColumn(sql_code_param_ptr,
-                                       sql_code_param_ind,
-                                       startOfVal);
+                    setIntOutputColumn(output_row,
+                                       sql_code_param,
+                                       startOfVal,
+                                       parse_status_param_ptr);
                     break;
 
                   case 9:
-                    setVarCharOutputColumn(query_id_param_ptr,
-                                           query_id_param_len,
-                                           query_id_param_ind,
+                    setVarCharOutputColumn(output_row,
                                            query_id_param,
-                                           startOfVal);
+                                           startOfVal,
+                                           parse_status_param_ptr);
                     // we read all required fields,
                     // next field is the message text
                     if (messageTextField == NULL)
@@ -733,18 +761,16 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
             while (*messageTextField == ' ')
               messageTextField++;
 
-            setVarCharOutputColumn(message_param_ptr,
-                                   message_param_len,
-                                   message_param_ind,
+            setVarCharOutputColumn(output_row,
                                    message_param,
-                                   messageTextField);
+                                   messageTextField,
+                                   parse_status_param_ptr);
 
             if (addFileColumns)
               {
                 // line number column is computed, not from the log file
                 *log_file_line_param_ptr = lineNumber;
               }
-            
 
             /* Emit a row */
             emitRow(output_row, 0, &qstate);
@@ -774,7 +800,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
     printf("(%d) EVENT_LOG_READER emit EOD\n", pid);
     fflush(stdout);
   }
-  
+
   return SQLUDR_SUCCESS;
 }
 
@@ -869,7 +895,6 @@ void ReadCppEventsUDFInterface::describeParamsAndColumns(
                                    *options,
                                    info.getUDRName().data());
               }
-              
             }
           options++;
         }
@@ -899,6 +924,7 @@ void ReadCppEventsUDFInterface::describeParamsAndColumns(
       outTable.addIntegerColumn("LOG_FILE_NODE");
       outTable.addVarCharColumn("LOG_FILE_NAME",200);
       outTable.addIntegerColumn("LOG_FILE_LINE");
+      outTable.addCharColumn   ("PARSE_STATUS",2);
     }
 }
 
@@ -908,7 +934,7 @@ void ReadCppEventsUDFInterface::describeDesiredDegreeOfParallelism(
 {
   // check for configurations with virtual nodes. Run the UDF serially
   // in those cases, since all the virtual nodes share the same node.
-  int usesNoVirtualNodes = system("grep '^_virtualnodes ' $MY_SQROOT/sql/scripts/sqconfig >/dev/null");
+  int usesNoVirtualNodes = system("grep '^[ \t]*_virtualnodes ' $MY_SQROOT/sql/scripts/sqconfig >/dev/null");
 
   if (usesNoVirtualNodes != 0 || useParallelExecForVirtualNodes_)
     // this TMUDF needs to run once on each node, since every

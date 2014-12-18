@@ -10637,6 +10637,7 @@ RelRoot::RelRoot(RelExpr *input,
     avoidHalloween_(FALSE),
     containsOnStatementMV_(FALSE),
     containsLRU_(FALSE),
+    mustUseESPs_(FALSE),
     disableESPParallelism_(FALSE),
     hasOlapFunctions_(FALSE),
     hasTDFunctions_(FALSE),
@@ -10707,6 +10708,7 @@ RelRoot::RelRoot(RelExpr *input,
     avoidHalloween_(FALSE),
     containsOnStatementMV_(FALSE),
     containsLRU_(FALSE),
+    mustUseESPs_(FALSE),
     disableESPParallelism_(FALSE),
     hasOlapFunctions_(FALSE),
     hasTDFunctions_(FALSE),
@@ -10783,6 +10785,7 @@ RelRoot::RelRoot(const RelRoot & other)
     disableESPParallelism_(other.disableESPParallelism_),
     containsOnStatementMV_(other.containsOnStatementMV_),
     containsLRU_(other.containsLRU_),
+    mustUseESPs_(other.mustUseESPs_),
     hasOlapFunctions_(other.hasOlapFunctions_),
     hasTDFunctions_(other.hasTDFunctions_ ),
     isAnalyzeOnly_(FALSE),
@@ -10993,6 +10996,8 @@ RelExpr * RelRoot::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->hasOlapFunctions_ = hasOlapFunctions_;
 
   result->containsLRU_ = containsLRU_;
+
+  result->mustUseESPs_ = mustUseESPs_;
 
   result->isAnalyzeOnly_ = isAnalyzeOnly_;
 
