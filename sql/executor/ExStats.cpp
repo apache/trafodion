@@ -2866,6 +2866,7 @@ void ExHbaseAccessStats::init()
   accessedRows_ = 0;
   usedRows_     = 0;
   numHbaseCalls_ = 0;
+  maxHbaseIOTime_ = 0;
 }
 
 ExHbaseAccessStats::~ExHbaseAccessStats()
@@ -2889,6 +2890,7 @@ UInt32 ExHbaseAccessStats::packedLength()
   size += sizeof(accessedRows_);
   size += sizeof(usedRows_);
   size += sizeof(numHbaseCalls_);
+  size += sizeof(maxHbaseIOTime_);
   return size;
 }
 
@@ -2905,6 +2907,7 @@ UInt32 ExHbaseAccessStats::pack(char *buffer)
   size += packIntoBuffer(buffer, accessedRows_);
   size += packIntoBuffer(buffer, usedRows_);
   size += packIntoBuffer(buffer, numHbaseCalls_);
+  size += packIntoBuffer(buffer, maxHbaseIOTime_);
 
   return size;
 }
@@ -2922,6 +2925,7 @@ void ExHbaseAccessStats::unpack(const char* &buffer)
   unpackBuffer(buffer, accessedRows_);
   unpackBuffer(buffer, usedRows_);
   unpackBuffer(buffer, numHbaseCalls_);
+  unpackBuffer(buffer, maxHbaseIOTime_);
 }
 
 void ExHbaseAccessStats::merge(ExHbaseAccessStats *other)
@@ -2933,6 +2937,8 @@ void ExHbaseAccessStats::merge(ExHbaseAccessStats *other)
   accessedRows_ += other->accessedRows_;
   usedRows_ += other->usedRows_;
   numHbaseCalls_ += other->numHbaseCalls_;
+  if (maxHbaseIOTime_ < other->maxHbaseIOTime_) // take the larger value
+    maxHbaseIOTime_ = other->maxHbaseIOTime_;
 }
 
 void ExHbaseAccessStats::copyContents(ExHbaseAccessStats *other)
@@ -2954,6 +2960,7 @@ void ExHbaseAccessStats::copyContents(ExHbaseAccessStats *other)
   accessedRows_ = other->accessedRows_;
   usedRows_ = other->usedRows_;
   numHbaseCalls_ = other->numHbaseCalls_;
+  maxHbaseIOTime_ = other->maxHbaseIOTime_;
 }
 
 ExOperStats * ExHbaseAccessStats::copyOper(NAMemory * heap)
@@ -2985,6 +2992,8 @@ const char *ExHbaseAccessStats::getNumValTxt(Int32 i) const
       return "UsedRows";
     case 6:
       return "NumHbaseCalls";
+    case 7:
+      return "MaxHbaseIOTime";
     }
   return NULL;
 }
@@ -3005,6 +3014,8 @@ Int64 ExHbaseAccessStats::getNumVal(Int32 i) const
       return usedRows_;
     case 6:
       return numHbaseCalls_;
+    case 7:
+      return maxHbaseIOTime_;
     }
   return 0;
 }
@@ -3022,13 +3033,14 @@ void ExHbaseAccessStats::getVariableStatsInfo(char * dataBuffer,
   buf += *((short *) dataLen);
 
   str_sprintf (buf, 
-	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HbaseCalls: %Ld TimeWaitingOnHbase: %Ld",
+	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HbaseCalls: %Ld TimeWaitingOnHbase: %Ld MaxHbaseIOTime: %Ld",
 	       (char*)tableName_,
 	       numBytesRead(), //lobStats()->bytesRead,
 	       rowsAccessed(),
 	       rowsUsed(),
 	       hbaseCalls(), //lobStats()->numReadReqs, 
-	       timer_.getTime()
+	       timer_.getTime(),
+	       maxHbaseIOTime()
   //	       lobStats()->hdfsAccessLayerTime/1000 
   //	       lobStats()->CumulativeReadTime/1000 
 	       );
@@ -3084,6 +3096,9 @@ Lng32 ExHbaseAccessStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     break;
   case SQLSTATS_HBASE_IO_ELAPSED_TIME:
     sqlStats_item->int64_value = timer_.getTime();
+    break;
+  case SQLSTATS_HBASE_IO_MAX_TIME:
+    sqlStats_item->int64_value = maxHbaseIOTime_;
     break;
   case SQLSTATS_DETAIL:
     if (sqlStats_item->str_value != NULL)

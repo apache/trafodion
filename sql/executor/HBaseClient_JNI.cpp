@@ -1480,7 +1480,7 @@ HBLC_RetCode HBulkLoadClient_JNI::addToHFile( short rowIDLen, HbaseStr &rowIDs,
             j_rowIDLen, jRowIDs, jRows);
   if (hbs)
   {
-    hbs->getTimer().stop();
+    hbs->incMaxHbaseIOTime(hbs->getTimer().stop());
     hbs->incHbaseCalls();
   }
   jenv_->DeleteLocalRef(jRowIDs);
@@ -2025,7 +2025,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
             j_smplPct, j_preFetch);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -2100,7 +2100,7 @@ HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const Text& rowID,
             j_cols, j_ts);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -2166,7 +2166,7 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs,
       JavaMethods_[JM_GETS_OPEN].methodID, j_tid, j_rows, j_cols, j_ts);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -2226,7 +2226,7 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const Te
           JavaMethods_[JM_DELETE].methodID, j_tid, jba_rowID, j_cols, j_ts);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -2276,7 +2276,7 @@ HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, short rowIDLen, HbaseStr
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_DELETE_ROWS].methodID, j_tid, j_rowIDLen, jRowIDs, j_ts);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -2359,7 +2359,7 @@ HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CHECKANDDELETE].methodID, j_tid, jba_rowID, jba_columntocheck, jba_colvaltocheck, j_ts);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -2418,7 +2418,7 @@ HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID,
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_INSERT].methodID, j_tid, jba_rowID, jDirectBuffer, j_ts);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -2474,7 +2474,7 @@ HTC_RetCode HTableClient_JNI::insertRows(Int64 transID, short rowIDLen, HbaseStr
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_INSERT_ROWS].methodID, j_tid, j_rowIDLen, jRowIDs, jRows, j_ts, j_af);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -2588,7 +2588,7 @@ HbaseStr &row, Int64 timestamp)
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_CHECKANDINSERT].methodID, j_tid, jba_rowID, jDirectBuffer, j_ts);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -2663,7 +2663,7 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
 	        jba_columntocheck, jba_colvaltocheck, j_ts);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -2793,7 +2793,7 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
               jba_colname, j_cb, j_ncr);
   if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
@@ -3750,7 +3750,7 @@ HTC_RetCode HTableClient_JNI::fetchRows()
              jniObject);
    if (hbs_)
     {
-      hbs_->getTimer().stop();
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
       hbs_->incHbaseCalls();
     }
 
