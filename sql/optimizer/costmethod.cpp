@@ -4657,7 +4657,11 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifndef NDEBUG
   // When cost is going up we get the streams from the
   // *real* part. func. in the phys. props
   // The file scan optimizer figures this out in the method below
-  countOfStreams = (Lng32)scanOptimizer->getNumActivePartitions();
+  if (CmpCommon::getDefault(NCM_HBASE_COSTING) == DF_ON)
+    countOfStreams = 
+      (Lng32)scanOptimizer->getEstNumActivePartitionsAtRuntimeForHbaseRegions();
+  else
+    countOfStreams = (Lng32)scanOptimizer->getNumActivePartitions();
 
   // ------------------------------------------------------------------------
   // If we are on the right leg of a parallel nested join, the

@@ -5981,6 +5981,13 @@ NABoolean NestedJoin::isProbeCacheApplicable(PlanExecutionEnum loc) const
      if (childExpr)
         {
            OperatorTypeEnum x = childExpr->getOperator();
+           if (x == REL_HBASE_ACCESS || x == REL_HBASE_COPROC_AGGR)
+           {
+             HbaseAccess *hbscan = (HbaseAccess*)childExpr;
+             const SearchKey *skey = hbscan->getSearchKey();
+             if (skey && skey->isUnique())
+               probeIsUnique = TRUE;
+           }
         }
   }
 

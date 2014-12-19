@@ -2335,7 +2335,7 @@ public:
       EXPLORE_GROUP_TASK,
       EXPLORE_EXPR_TASK,
       GARBAGE_COLLECTION_TASK,
-      NUMBER_OF_TASK_TYPES     // This should be at the end of the list
+      NUMBER_OF_TASK_TYPES = 7     // This should be at the end of the list
     };
 
   CascadesTask (Guidance * guidance, Context * context,
@@ -3004,7 +3004,7 @@ public:
    Int32 cascade_count;
    
    // TaskMonitor cascadesTasksMonitor[CascadesTask::NUMBER_OF_TASK_TYPES];
-   TaskMonitor *cascadesTasksMonitor[];
+   TaskMonitor *cascadesTasksMonitor[CascadesTask::NUMBER_OF_TASK_TYPES];
    TaskMonitor *cascadesPassMonitor;
    
    // These monitor were introduced to collect statistics about how
