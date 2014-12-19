@@ -2993,8 +2993,6 @@ void NAHeap::setThreadSafe()
 void NAHeap::destroy() 
 {
 #if defined(NA_LINUX) && !defined(__EID)
-  // By setting the third argument to true, we are asking that the
-  // pthreads mutex be destroyed when the NAMutex destructor runs
   if (parent_ != NULL)
      NAMutex mutex(parent_->threadSafe_, &parent_->mutex_);
 #endif

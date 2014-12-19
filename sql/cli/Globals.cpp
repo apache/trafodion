@@ -106,9 +106,12 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        , tidList_(NULL)
        , cliSemaphore_(NULL)
        , suspendTransId_(-1)
+       , defaultContext_(NULL)
 {
+  globalsAreInitialized_ = FALSE;
   executorMemory_.setThreadSafe();
   init(espProcess, NULL);
+  globalsAreInitialized_ = TRUE;
 }
 //LCOV_EXCL_STOP
 
@@ -120,8 +123,6 @@ void CliGlobals::init( NABoolean espProcess,
   if (threadCount != 1) // The main executor thread must be first
     abort();
   SQLMXLoggingArea::init();
-  ex_assert(cli_globals == NULL ||!(cli_globals->getIsInitialized()), "cli_globals must not already be initialized");
-  cli_globals = this;
 
 #if !(defined(__SSCP) || defined(__SSMP))
   sharedCtrl_ = new(&executorMemory_) ExControlArea(NULL /*context */,
@@ -133,7 +134,6 @@ void CliGlobals::init( NABoolean espProcess,
   char *_sqptr = 0;
   _sqptr = new (&executorMemory_) char[10];
 
-  globalsAreInitialized_ = TRUE;
   numCliCalls_ = 0;
   logEmsEvents_ = TRUE;
   nodeName_[0] = '\0';
@@ -236,9 +236,12 @@ void CliGlobals::init( NABoolean espProcess,
                                                (Lng32) 32768);
     lastUniqueNumber_ = 0;
     sessionUniqueNumber_ = 0;
-
+    // It is not thread safe to set the globals cli_globals
+    // before cli_globals is fully initialized, but it is being done
+    // here because the code below expects it 
+    cli_globals = this;
     short error;
-  statsGlobals_ = (StatsGlobals *)shareStatsSegment(shmId_);
+    statsGlobals_ = (StatsGlobals *)shareStatsSegment(shmId_);
     if (statsGlobals_ == NULL
       || (statsGlobals_ != NULL && 
         statsGlobals_->getVersion() != StatsGlobals::CURRENT_SHARED_OBJECTS_VERSION_))
@@ -289,21 +292,17 @@ void CliGlobals::init( NABoolean espProcess,
       }
     }
     // create a default context and make it the current context
+    cliSemaphore_ = new (&executorMemory_) CLISemaphore();
     defaultContext_ = new (&executorMemory_) ContextCli(this);
     contextList_  = new(&executorMemory_) HashQueue(&executorMemory_);
     tidList_  = new(&executorMemory_) HashQueue(&executorMemory_);
-    cliSemaphore_ = new (&executorMemory_) CLISemaphore();
     SQLCTX_HANDLE ch = defaultContext_->getContextHandle();
     contextList_->insert((char*)&ch, sizeof(SQLCTX_HANDLE), (void*)defaultContext_);
-
- 
-
     qualifyingVolsPerNode_.setHeap(defaultContext_->exCollHeap());
     cpuNumbers_.setHeap(defaultContext_->exCollHeap());
     capacities_.setHeap(defaultContext_->exCollHeap());
     freespaces_.setHeap(defaultContext_->exCollHeap());
     largestFragments_.setHeap(defaultContext_->exCollHeap());
-
   } // (!espProcess)
 
   else
@@ -320,7 +319,7 @@ void CliGlobals::init( NABoolean espProcess,
     //   - ExEspFragInstanceDir
     //   - ExEspControl Message
     //   - Global UDR server manager
-    
+    cliSemaphore_ = new (&executorMemory_) CLISemaphore();
     statsGlobals_ = NULL;
     semId_ = -1;
     statsHeap_ = NULL;
@@ -329,6 +328,7 @@ void CliGlobals::init( NABoolean espProcess,
   } // if (!espProcess) else ...
 
 #else // (defined(__SSCP) || defined(__SSMP)) 
+  cliSemaphore_ = new (&executorMemory_) CLISemaphore();
   statsGlobals_ = statsGlobals;
   semId_ = -1;
   statsHeap_ = NULL;
@@ -339,7 +339,6 @@ void CliGlobals::init( NABoolean espProcess,
   //
   // could initialize the program file name here but ...
   myProgName_[0] = '\0';
-
 }
 //ss_cc_change
 //LCOV_EXCL_START
@@ -369,6 +368,16 @@ CliGlobals::~CliGlobals()
     sem_close((sem_t *)semId_);
   }
 }
+
+Lng32 CliGlobals::getNextUniqueContextHandle()
+{
+    Lng32 contextHandle;
+    cliSemaphore_->get();
+    contextHandle = nextUniqueContextHandle++;
+    cliSemaphore_->release();
+    return contextHandle;
+}
+
 //LCOV_EXCL_STOP
 IpcPriority CliGlobals::myCurrentPriority()
 {
@@ -530,10 +539,9 @@ CliGlobals * CliGlobals::createCliGlobals(NABoolean espProcess)
 {
   CliGlobals *result;
 
-  cli_globals =  new CliGlobals(espProcess);
-  result = cli_globals;
+  result =  new CliGlobals(espProcess);
   //pthread_key_create(&thread_key, SQ_CleanupThread);
-  ex_assert(cli_globals != NULL, "constructor must have initialized cli_globals");
+  cli_globals = result;
   return result;
 }
 
@@ -579,9 +587,9 @@ ContextCli *CliGlobals::currContext()
 
 Lng32 CliGlobals::createContext(ContextCli* &newContext)
 {
-  cliSemaphore_->get();
   newContext = new (&executorMemory_) ContextCli(this);
   SQLCTX_HANDLE ch = newContext->getContextHandle();
+  cliSemaphore_->get();
   contextList_->insert((char*)&ch, sizeof(SQLCTX_HANDLE), (void*)newContext);
   cliSemaphore_->release();
    

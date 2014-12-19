@@ -106,7 +106,8 @@ arkcmpERROR_ };
 class CliGlobals : public NAAssertGlobals
 {
 public:
-  Lng32 getNextUniqueContextHandle() { return nextUniqueContextHandle++; }
+  Lng32 getNextUniqueContextHandle();
+     
   ExControlArea * getSharedControl() { return sharedCtrl_; }
   CollHeap * exCollHeap() { return &executorMemory_; }
 

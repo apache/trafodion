@@ -899,7 +899,7 @@ static Lng32 CliNonPrivPrologue()
 
   Lng32 retcode;
 
-  if (cli_globals == NULL)
+  if (cli_globals == NULL || cli_globals->getIsInitialized() == FALSE)
   {
     globalSemaphore.get();
     if (cli_globals != NULL)
@@ -6599,8 +6599,7 @@ Lng32 SQL_EXEC_SetEnviron_Internal(Lng32 propagate)
       tmpSemaphore = getCliSemaphore(threadContext);
       tmpSemaphore->get();
       threadContext->incrNumOfCliCalls();
-      if (propagate)
-         retcode = SQLCLI_SetEnviron_Internal(GetCliGlobals(), environ, propagate);
+      retcode = SQLCLI_SetEnviron_Internal(GetCliGlobals(), environ, propagate);
     }
   catch(...)
     {
