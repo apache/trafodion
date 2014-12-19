@@ -2331,7 +2331,8 @@ NABoolean Generator::considerDefragmentation( const ValueIdList & valIdList,
   return considerDefrag;
 }
 
-void Generator::setHBaseNumCacheRows(double estRowsAccessed, ComTdbHbaseAccess::HbasePerfAttributes * hbpa)
+void Generator::setHBaseNumCacheRows(double estRowsAccessed,
+                                     ComTdbHbaseAccess::HbasePerfAttributes * hbpa)
 {
   // compute the number of rows accessed per scan node instance and use it
   // to set HBase scan cache size (in units of number of rows). This cache
@@ -2342,14 +2343,16 @@ void Generator::setHBaseNumCacheRows(double estRowsAccessed, ComTdbHbaseAccess::
   // big chunk of rows can take longer to complete.
   CollIndex myId = getFragmentDir()->getCurrentId();
   Lng32 numProcesses = getFragmentDir()->getNumESPs(myId);
+  Lng32 cacheMin = CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MIN);
+  Lng32 cacheMax = CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MAX);
   if (numProcesses == 0)
     numProcesses++;
   UInt32 rowsAccessedPerProcess = ceil(estRowsAccessed/numProcesses) ;
-  if (rowsAccessedPerProcess < CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MIN))
-    hbpa->setNumCacheRows(CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MIN));
-  else if (rowsAccessedPerProcess < CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MAX))
+  if (rowsAccessedPerProcess < cacheMin)
+    hbpa->setNumCacheRows(cacheMin);
+  else if (rowsAccessedPerProcess < cacheMax)
     hbpa->setNumCacheRows(rowsAccessedPerProcess);
   else
-      hbpa->setNumCacheRows(CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MAX));
-
+      hbpa->setNumCacheRows(cacheMax);
+    
 }
