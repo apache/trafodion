@@ -2264,8 +2264,9 @@ Int32 ex_root_tcb::requestCancel()
     // To guarantee correct concurrent execution, the order of
     // the following three statements must not change.
     glob->castToExMasterStmtGlobals()->setCancelState(CLI_CANCEL_REQUESTED);
-    // Schedule ex_root_tcb::work to finish the cancel.
     asyncCancelSubtask_->schedule();
+    // Call ex_root_tcb::work to start the cancel.
+    work();
     // Break the IPC wait loop.
     glob->getIpcEnvironment()->getAllConnections()->cancelWait(TRUE);
   }
@@ -2685,8 +2686,15 @@ Int32 ex_root_tcb::checkTransBeforeExecute(ExTransaction *myTrans,
   return 0;
 }
 
+static const char * const NCRenvvar = 
+  getenv("SQL_NO_REGISTER_CANCEL");
+static const bool NoRegisterCancel = (NCRenvvar && *NCRenvvar == '1');
+
 void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
 {
+  if (NoRegisterCancel)
+    return;
+
   ExMasterStmtGlobals *glob =
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals();
 

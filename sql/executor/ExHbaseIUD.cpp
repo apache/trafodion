@@ -2648,6 +2648,7 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
   Lng32 retcode = 0;
   HbaseStr rowID;
   rc = 0;
+  Lng32 remainingInBatch = batchSize_;
 
   while (1)
     {
@@ -2681,6 +2682,12 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {
+            if (--remainingInBatch <= 0)
+              {
+                rc = WORK_CALL_AGAIN;
+                return 1;
+              }
+
 	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	      {
@@ -3032,6 +3039,7 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
   rc = 0;
+  Lng32 remainingInBatch = batchSize_;
 
   while (1)
     {
@@ -3091,6 +3099,11 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {
+            if (--remainingInBatch <= 0)
+              {
+                rc = WORK_CALL_AGAIN;
+                return 1;
+              }
 	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	    {
