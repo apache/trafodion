@@ -33,7 +33,6 @@
  * limitations under the License.
  */
 
-//package org.apache.hadoop.hbase.rest;
 package org.trafodion.dcs.rest;
 
 import java.io.IOException;

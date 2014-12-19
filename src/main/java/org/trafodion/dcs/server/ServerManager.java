@@ -16,10 +16,8 @@
 package org.trafodion.dcs.server;
 
 import java.net.InetAddress;
-import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.StringTokenizer;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -27,8 +25,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
-import java.util.Date;
-import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
 import java.text.DateFormat;
 
 import org.apache.commons.logging.Log;
@@ -47,6 +44,8 @@ import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.Bytes;
 import org.trafodion.dcs.util.DcsConfiguration;
 import org.trafodion.dcs.util.DcsNetworkConfiguration;
+import org.trafodion.dcs.util.RetryCounter;
+import org.trafodion.dcs.util.RetryCounterFactory;
 import org.trafodion.dcs.zookeeper.ZkClient;
 import org.trafodion.dcs.script.ScriptManager;
 import org.trafodion.dcs.script.ScriptContext;
@@ -56,8 +55,8 @@ public final class ServerManager implements Callable {
 	private static Configuration conf;
 	private static ZkClient zkc;
 	private static boolean userProgEnabled;
-	private static String userProgHome;
-	private static String userProgCommand;
+	private static String userProgramHome;
+	private static String userProgramCommand;
 	private static String hostName;
 	private static String masterHostName;
 	private static long masterStartTime;
@@ -72,28 +71,54 @@ public final class ServerManager implements Callable {
 	private static int userProgExitAfterDisconnect;
 	private static int infoPort;
 	private static int maxHeapPctExit;
+	private static int statisticsIntervalTime;
+	private static int statisticsLimitTime;
+	private static String statisticsType;
+	private static String statisticsEnable;
+	private static int userProgPortMapToSecs;
+	private static int userProgPortBindToSecs;
+	
+	class RegisteredWatcher implements Watcher {
+		CountDownLatch startSignal;
+		
+		public RegisteredWatcher(CountDownLatch startSignal) {
+			this.startSignal = startSignal;
+		}
+		public void process(WatchedEvent event) {
+			if(event.getType() == Event.EventType.NodeDeleted) {
+				String znodePath = event.getPath();
+				LOG.debug("Registered znode deleted [" + znodePath + "]");
+				try {
+					startSignal.countDown();
+				} catch (Exception e) {
+					e.printStackTrace();
+					LOG.error(e);
+				}
+			}
+		}
+	}
 	
 	class ServerMonitor {
-		ScriptManager scriptManager;
 		ScriptContext scriptContext = new ScriptContext();
 		int childInstance;
 		String registeredPath;
 		Stat stat = null;
+		boolean isRunning = false;
 
-		public ServerMonitor(ScriptManager scriptManager,int childInstance) {
-			this.scriptManager = scriptManager;
+		public ServerMonitor(int childInstance, String registeredPath) {
 			this.childInstance = childInstance;
-			this.registeredPath = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + "/" + hostName + ":" + instance + ":" + childInstance; 
+			this.registeredPath = registeredPath; 
 		}
-
-		public boolean call() throws Exception {
-			boolean result = false;
+		
+		public boolean monitor() throws Exception {
+			LOG.debug("registered path [" + registeredPath + "]");
 			stat = zkc.exists(registeredPath,false);
 			if(stat != null) {	//User program znode found in /registered...check pid
-				if(isPid())
-					result = true;//User program znode found in /registered...pid found to be running
+				isRunning = isPid(); 
+				LOG.debug("isRunning [" + isRunning + "]");
 			}
-			return result;
+			
+			return isRunning;
 		}
 		private boolean isPid() throws Exception {
 			String data = Bytes.toString(zkc.getData(registeredPath, false, stat));
@@ -106,42 +131,48 @@ public final class ServerManager implements Callable {
 			String pid = scn.next();//pid
 			scn.close();
 			scriptContext.setHostName(hostName);
-			scriptContext.setScriptName("sys_shell.py");
+			scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
 			scriptContext.setCommand("ps -p " + pid);
-			scriptManager.runScript(scriptContext);
+			ScriptManager.getInstance().runScript(scriptContext);
 			return scriptContext.getExitCode() != 0 ? false: true;
 		}
 	}
 
 	class ServerRunner {
-		ScriptManager scriptManager;
 		ScriptContext scriptContext;
 		String registeredPath;
 		int childInstance;
 
-		public ServerRunner(ScriptManager scriptManager,int childInstance) {
-			this.scriptManager = scriptManager;
+		public ServerRunner(int childInstance, String registeredPath) {
 			this.scriptContext = new ScriptContext();
 			this.childInstance = childInstance;
-			this.registeredPath = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + "/" + hostName + ":" + instance + ":" + childInstance; 
+			this.registeredPath = registeredPath; 
 			scriptContext.setHostName(hostName);
-			scriptContext.setScriptName("sys_shell.py");
-			StringBuilder progParams = new StringBuilder();
-			progParams.append(" -ZkHost " + zkc.getZkQuorum());
-			progParams.append(" -RZ " + hostName + ":" + instance + ":" + childInstance);
-			progParams.append(" -ZkPnode " + "\"" + parentZnode + "\""); 
-			progParams.append(" -CNGTO " + connectingTimeout); 
-			progParams.append(" -ZKSTO " + zkSessionTimeout);
-			progParams.append(" -EADSCO " + userProgExitAfterDisconnect);
-			progParams.append(" -TCPADD " + netConf.getExtHostAddress());
-			progParams.append(" -MAXHEAPPCT " + maxHeapPctExit);
-			scriptContext.setCommand(userProgCommand + progParams.toString());
+			scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+			String command = userProgramCommand.replace("-ZKHOST","-ZKHOST " + zkc.getZkQuorum() + " ")
+			.replace("-RZ","-RZ " + hostName + ":" + instance + ":" + childInstance + " ")
+			.replace("-ZKPNODE","-ZKPNODE " + "\"" + parentZnode + "\"" + " ")
+			.replace("-CNGTO","-CNGTO " + connectingTimeout + " ")
+			.replace("-ZKSTO","-ZKSTO " + zkSessionTimeout + " ")
+			.replace("-EADSCO","-EADSCO " + userProgExitAfterDisconnect + " ")
+			.replace("-TCPADD","-TCPADD " + netConf.getExtHostAddress() + " ")
+			.replace("-MAXHEAPPCT","-MAXHEAPPCT " + maxHeapPctExit + " ")
+			.replace("-STATISTICSINTERVAL","-STATISTICSINTERVAL " + statisticsIntervalTime + " ")
+			.replace("-STATISTICSLIMIT","-STATISTICSLIMIT " + statisticsLimitTime + " ")
+			.replace("-STATISTICSTYPE","-STATISTICSTYPE " + statisticsType + " ")
+			.replace("-STATISTICSENABLE","-STATISTICSENABLE " + statisticsEnable + " ")
+			.replace("-PORTMAPTOSECS","-PORTMAPTOSECS " + userProgPortMapToSecs + " ")
+			.replace("-PORTBINDTOSECS","-PORTBINDTOSECS " + userProgPortBindToSecs)
+			.replace("&lt;","<")
+			.replace("&amp;","&")
+			.replace("&gt;",">");
+			scriptContext.setCommand(command);
 		}
 
-		public void call() throws Exception {
+		public void exec() throws Exception {
 			cleanupZk();
 			LOG.info("User program exec [" + scriptContext.getCommand() + "]");
-			scriptManager.runScript(scriptContext);//This will block while user prog is running
+			ScriptManager.getInstance().runScript(scriptContext);//This will block while user prog is running
 			LOG.info("User program exit [" + scriptContext.getExitCode()+ "]");
 			StringBuilder sb = new StringBuilder();
 			sb.append("exit code [" + scriptContext.getExitCode() + "]");
@@ -175,25 +206,32 @@ public final class ServerManager implements Callable {
 	}
 
 	class ServerHandler implements Callable<Integer> {
-		ScriptManager scriptManager;
 		ServerMonitor serverMonitor;
 		ServerRunner serverRunner;
 		int childInstance;
-
+		String registeredPath;
+		CountDownLatch startSignal = new CountDownLatch(1);
+		
 		public ServerHandler(int childInstance) {
 			this.childInstance = childInstance;
-			scriptManager = new ScriptManager();
-			serverMonitor = new ServerMonitor(scriptManager,childInstance);
-			serverRunner = new ServerRunner(scriptManager,childInstance);
+			this.registeredPath =  parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + "/" + hostName + ":" + instance + ":" + childInstance; 
+			serverMonitor = new ServerMonitor(childInstance,registeredPath);
+			serverRunner = new ServerRunner(childInstance,registeredPath);
 		}
 
 		@Override
 		public Integer call() throws Exception {
 			Integer result = new Integer(childInstance);
-
-			if(false == serverMonitor.call()) {  
-				LOG.info("User program, instance [" + instance + ":" + childInstance + "] is not running");
-				serverRunner.call();
+			
+			if(serverMonitor.monitor()) {  
+				LOG.info("Server handler [" + instance + ":" + childInstance + "] is running");
+				zkc.exists(registeredPath,new RegisteredWatcher(startSignal));
+				LOG.debug("Waiting for start signal");
+				startSignal.await();
+				serverRunner.exec();
+			} else {
+				LOG.info("Server handler [" + instance + ":" + childInstance + "] is not running");
+				serverRunner.exec();
 			}
 			
 			return result;
@@ -214,6 +252,12 @@ public final class ServerManager implements Callable {
 		this.zkSessionTimeout = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT);	   	
 		this.userProgExitAfterDisconnect = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT);
 		this.maxHeapPctExit = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_MAX_HEAP_PCT_EXIT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_MAX_HEAP_PCT_EXIT);
+		this.statisticsIntervalTime = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_INTERVAL_TIME,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_INTERVAL_TIME);
+		this.statisticsLimitTime = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME);
+		this.statisticsType = this.conf.get(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE);
+		this.statisticsEnable = this.conf.get(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE);
+		this.userProgPortMapToSecs = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS);	   	
+		this.userProgPortBindToSecs = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_PORT_BIND_TIMEOUT_SECONDS,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_BIND_TIMEOUT_SECONDS);	   	
 	}
 
 	@Override
@@ -227,17 +271,21 @@ public final class ServerManager implements Callable {
 			featureCheck();
 			registerInRunning(instance);
 			
+			//When started from bin/dcs-start.sh script childServers will contain the
+			//count passed in from the servers.sh script. However when DcsServer is
+			//killed or dies for any reason DcsMaster restarts it using /bin/dcs-daemon script
+			//which DOES NOT set childServers count. 
 			for(int childInstance = 1; childInstance <= childServers; childInstance++) {
 				completionService.submit(new ServerHandler(childInstance));
 				LOG.debug("Started server handler [" + instance + ":" + childInstance + "]");
 			}
 
 		    while(true) {
-		    	LOG.debug("Waiting for thread completion");
+		    	LOG.debug("Waiting for any server handler to finish");
 		    	Future<Integer> f = completionService.take();//blocks waiting for any ServerHandler to finish
 		    	if(f != null) {
 		    		Integer result = f.get();
-		    		LOG.debug("Server handler result [" + result + "], restarting");
+		    		LOG.debug("Server handler [" + instance + ":" + result + "] finished, restarting");
 		    		completionService.submit(new ServerHandler(result));
 		    	}
 		    }
@@ -318,17 +366,17 @@ public final class ServerManager implements Callable {
 		boolean ready=false;
 		while(! ready) {
 			userProgEnabled = conf.getBoolean(Constants.DCS_SERVER_USER_PROGRAM,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM);
-			userProgHome = System.getProperty("dcs.user.program.home");
-			userProgCommand = conf.get(Constants.DCS_SERVER_USER_PROGRAM_COMMAND,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND);
+			userProgramHome = System.getProperty("dcs.user.program.home");
+			userProgramCommand = conf.get(Constants.DCS_SERVER_USER_PROGRAM_COMMAND,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND);
 
-			if(userProgEnabled == true && userProgHome.isEmpty() == false && userProgCommand.isEmpty() == false) {
+			if(userProgEnabled == true && userProgramHome.isEmpty() == false && userProgramCommand.isEmpty() == false) {
 				ready=true;
 				continue;
 			} 
 			
 			if(userProgEnabled == false)
 				LOG.error(msg1);
-			if(userProgHome.isEmpty())
+			if(userProgramHome.isEmpty())
 				LOG.error(msg2);
 	
 			try {
@@ -393,5 +441,9 @@ public final class ServerManager implements Callable {
 	
 	public String getZKParentZnode(){
 		return parentZnode;
+	}
+	
+	public String getUserProgramHome(){
+		return userProgramHome;
 	}
 }

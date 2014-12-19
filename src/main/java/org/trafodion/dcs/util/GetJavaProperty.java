@@ -1,4 +1,4 @@
-/*
+/**
  *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * Copyright 2010 The Apache Software Foundation
+/**
+ * Copyright 2007 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -32,49 +32,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.trafodion.dcs.rest.provider;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.ws.rs.ext.ContextResolver;
-import javax.ws.rs.ext.Provider;
-import javax.xml.bind.JAXBContext;
-
-import org.trafodion.dcs.rest.model.ServerModel;
-import org.trafodion.dcs.rest.model.VersionModel;
-
-import com.sun.jersey.api.json.JSONConfiguration;
-import com.sun.jersey.api.json.JSONJAXBContext;
+package org.trafodion.dcs.util;
 
 /**
- * Plumbing for hooking up Jersey's JSON entity body encoding and decoding
- * support to JAXB. Modify how the context is created (by using e.g. a 
- * different configuration builder) to control how JSON is processed and
- * created.
+ * A generic way for querying Java properties.
  */
-@Provider
-public class JAXBContextResolver implements ContextResolver<JAXBContext> {
-
-	private final JAXBContext context;
-
-	private final Set<Class<?>> types;
-
-	private final Class<?>[] cTypes = {
-      ServerModel.class,
- 	  VersionModel.class
-	};
-
-	@SuppressWarnings("unchecked")
-  public JAXBContextResolver() throws Exception {
-		this.types = new HashSet<Class<?>>(Arrays.asList(cTypes));
-		this.context = new JSONJAXBContext(JSONConfiguration.natural().build(),
-		  cTypes);
-	}
-
-	@Override
-	public JAXBContext getContext(Class<?> objectType) {
-		return (types.contains(objectType)) ? context : null;
+public class GetJavaProperty {
+  public static void main(String args[]) {
+    if (args.length == 0) {
+      for (Object prop: System.getProperties().keySet()) {
+        System.out.println(prop + "=" + System.getProperty((String)prop, ""));
+      }
+    } else {
+      for (String prop: args) {
+        System.out.println(System.getProperty(prop, ""));
+      }
+    }
   }
 }

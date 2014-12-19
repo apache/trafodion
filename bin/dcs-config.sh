@@ -87,6 +87,8 @@ done
 DCS_CONF_DIR="${DCS_CONF_DIR:-$DCS_HOME/conf}"
 # List of DCS servers.
 DCS_SERVERS="${DCS_SERVERS:-$DCS_CONF_DIR/servers}"
+# List of DCS secondary masters.
+DCS_BACKUP_MASTERS="${DCS_BACKUP_MASTERS:-$DCS_CONF_DIR/backup-masters}"
 
 # Source the dcs-env.sh.  Will have JAVA_HOME defined.
 if [ -f "${DCS_CONF_DIR}/dcs-env.sh" ]; then

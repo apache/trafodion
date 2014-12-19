@@ -16,25 +16,44 @@
 #
 
 import subprocess
+import datetime
 
 def runScript ():
-    proc = subprocess.Popen(scriptcontext.getCommand(),shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    command = scriptcontext.getCommand()
+
+    if isDebug() == True :
+        print 'command[%s]' % command   
+        
+    proc = subprocess.Popen(command,shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     scriptcontext.setExitCode(proc.wait())
     for line in proc.stdout:
          scriptcontext.getStdOut().append(line.rstrip())
     for line in proc.stderr:
          scriptcontext.getStdErr().append(line.rstrip())
+         
+    if isDebug() == True :
+        print 'exitCode[%d]' % scriptcontext.getExitCode()
+        print 'stdout[%s]' % scriptcontext.getStdOut()
+        print 'stderr[%s]' % scriptcontext.getStdErr()   
     
 def start():
     runScript()
-
+    
+def isDebug():
+    return False
+    
+def log(msg):
+    dts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print dts + ' ' + msg
+ 
 #######################################################################
 #                main portion of script starts here
 #######################################################################
-if scriptcontext.isDebug() == True  :
-    print 'Begin script[%s]' % scriptcontext.getScriptName()
+if isDebug() == True :
+   log ('Begin script[' + scriptcontext.getScriptName() + ']')
     
 start()
 
-if scriptcontext.isDebug() == True  :
-    print 'End script[%s]' % scriptcontext.getScriptName()
+if isDebug() == True :
+   log ('End script[' + scriptcontext.getScriptName() + ']')

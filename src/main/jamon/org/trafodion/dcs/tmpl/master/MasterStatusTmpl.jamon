@@ -36,8 +36,10 @@ DcsMaster master;
 String filter = "general";
 String format = "html";
 List<RunningServer> servers = null;
+JSONArray workloads = null;
 </%args>
 <%import>
+java.io.*;
 java.util.*;
 org.trafodion.dcs.master.DcsMaster;
 org.trafodion.dcs.master.RunningServer;
@@ -45,11 +47,10 @@ org.trafodion.dcs.master.RegisteredServer;
 org.trafodion.dcs.util.DcsConfiguration;
 org.trafodion.dcs.Constants;
 org.trafodion.dcs.util.Bytes;
+org.codehaus.jettison.json.JSONArray;
+org.codehaus.jettison.json.JSONException;
+org.codehaus.jettison.json.JSONObject;
 </%import>
-
-<%java>
-
-</%java>
 
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- Commenting out DOCTYPE so our blue outline shows on hadoop 0.20.205.0, etc.
@@ -62,10 +63,19 @@ org.trafodion.dcs.util.Bytes;
 <title>DcsMaster: <% master.getServerName() %></title>
 <link rel="stylesheet" type="text/css" href="/static/dcs.css" />
 </head>
+
+<& DcsServers2 &>
+
+<%def DcsServers2>
+<meta http-equiv="refresh" content="0; url=servers.jsp" />
+</%def>
+
+<%def DcsServers>
 <body>
 <h1 id="page_title">DcsMaster: <% master.getServerName() %>:<% master.getInfoPort() %></h1>
 <p id="links_menu">
-  <a href="/logs/">Local logs</a>
+  <a href="/logs/">Dcs logs</a>,
+  <a href="/TrafodionLogs/">Trafodion logs</a>
 </p>
 
 <hr id="head_rule" />
@@ -84,14 +94,6 @@ org.trafodion.dcs.util.Bytes;
 <tr><td>Metrics</td><td><% master.getMetrics() %></td><td>Server Metrics; heap sizes are in megabytes</td></tr>
 </table>
 
-<%if (servers != null) %>
-<& DcsServers &>
-</%if>
-
-</body>
-</html>
-
-<%def DcsServers>
 <h2>Dcs Servers</h2>
 <%if (servers != null && servers.size() > 0)%>
 <%java>
@@ -158,4 +160,6 @@ org.trafodion.dcs.util.Bytes;
 <tr><th>Total: </th><td>Dcs Servers: <% servers.size() %>, Child Servers: <% totalChildServers %> </td></tr>
 </table>
 </%if>
+</body>
+</html>
 </%def>

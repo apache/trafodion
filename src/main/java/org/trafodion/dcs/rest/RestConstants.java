@@ -35,7 +35,7 @@
 package org.trafodion.dcs.rest;
 
 /**
- * Common constants for com.hp.wms.rest
+ * Common constants for org.trafodion.dcs.rest
  */
 public interface RestConstants {
   public static final String VERSION_STRING = "0.0.2";

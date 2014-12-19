@@ -48,6 +48,8 @@ org.trafodion.dcs.util.Bytes;
   String metrics = server.getMetrics();
   int masterInfoPort = server.getConfiguration().getInt("dcs.master.info.port", 40010);
   int serverInfoPort = server.getConfiguration().getInt("dcs.server.info.port", 40030);
+  String trafodionHome = server.getTrafodionHome();
+  boolean trafodionLogs = server.getConfiguration().getBoolean(Constants.DCS_MASTER_TRAFODION_LOGS, Constants.DEFAULT_DCS_MASTER_TRAFODION_LOGS);
 </%java>
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- Commenting out DOCTYPE so our blue outline shows on hadoop 0.20.205.0, etc.
@@ -64,7 +66,17 @@ org.trafodion.dcs.util.Bytes;
 <body>
 <h1 id="page_title">DcsServer: <% server.getServerName() %>:<% server.getInfoServer().getPort() %></h1>
 <p id="links_menu">
-  <a href="/logs/">Local logs</a>
+  <a href="http://<% server.getMasterHostName() %>:<% masterInfoPort %>">Home</a>,
+  <a href="/logs/">Dcs local logs</a>
+  <%java>
+   if(! trafodionHome.isEmpty()) { 
+     if(trafodionLogs) { 
+  </%java>
+, <a href="/TrafodionLogs/">Trafodion local logs</a>
+  <%java>
+     } 
+   }
+  </%java> 
 </p>
 <hr id="head_rule" />
 
@@ -81,17 +93,6 @@ org.trafodion.dcs.util.Bytes;
 <tr><td>Zookeeper Znode</td><td><% server.getZKParentZnode() %></td><td>Parent ZK znode of this cluster</td></tr>
 <tr><td>Start Time</td><td><% new Date(server.getStartTime()) %></td><td>Date/Time when this server was started</td></tr>
 </tr>
-<tr><td>Dcs Master</td><td>
-<%if (masterInfoPort < 0) %>
-No dcs.master.info.port found
-<%else>
-<%java>
-String host = server.getMasterHostName() + ":" + masterInfoPort;
-String url = "http://" + host + "/";
-</%java>
-<a href="<% url %>"><% host %></a>
-</%if>
-</td><td>Address of Dcs Master</td></tr>
 </table>
 
 </body>

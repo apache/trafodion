@@ -80,14 +80,14 @@ public class DcsRest implements Runnable, RestConstants {
 	}
 
 	public DcsRest(String[] args) {
-		conf = DcsConfiguration.create();
 		this.args = args;
-		thrd = new Thread(this);
-		thrd.start();
-	}
-
-	public void run() {
-		VersionInfo.logVersion();
+		conf = DcsConfiguration.create();
+		
+		Options options = new Options();
+		options.addOption("p", "port", true, "Port to bind to [default: 8080]");
+		options.addOption("ro", "readonly", false, "Respond only to GET HTTP " +
+		"method requests [default: false]");
+		options.addOption(null, "infoport", true, "Port for web UI");
 		
 		try {
 			servlet = RESTServlet.getInstance(conf);
@@ -95,13 +95,7 @@ public class DcsRest implements Runnable, RestConstants {
 			LOG.error("Exception " + e);
 			e.printStackTrace();
 		}
-
-		Options options = new Options();
-		options.addOption("p", "port", true, "Port to bind to [default: 8080]");
-		options.addOption("ro", "readonly", false, "Respond only to GET HTTP " +
-		"method requests [default: false]");
-		options.addOption(null, "infoport", true, "Port for web UI");
-
+		
 		CommandLine commandLine = null;
 		try {
 			commandLine = new PosixParser().parse(options, args);
@@ -144,10 +138,32 @@ public class DcsRest implements Runnable, RestConstants {
 		} else {
 			printUsageAndExit(options, 1);
 		}
+		
+		thrd = new Thread(this);
+		thrd.start();	
+	}
+	
+	public DcsRest(Configuration conf) {
+		try {
+			servlet = RESTServlet.getInstance(conf);
+		} catch (IOException e) {
+			LOG.error("Exception " + e);
+			e.printStackTrace();
+			return;
+		}
+		
+		thrd = new Thread(this);
+		thrd.start();	
+	}
 
+	public void run() {
+		VersionInfo.logVersion();
+		
 		// set up the Jersey servlet container for Jetty
 		ServletHolder sh = new ServletHolder(ServletContainer.class);
-		sh.setInitParameter("com.sun.jersey.config.property.resourceConfigClass",ResourceConfig.class.getCanonicalName());
+		sh.setInitParameter(
+				"com.sun.jersey.config.property.resourceConfigClass",
+				ResourceConfig.class.getCanonicalName());
 		sh.setInitParameter("com.sun.jersey.config.property.packages","org.trafodion.dcs.rest");
 
 		// set up Jetty and run the embedded server

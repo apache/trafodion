@@ -38,6 +38,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
 import java.util.Date;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.HashMap;
 
 import java.text.DateFormat;
 
@@ -56,10 +58,11 @@ import org.trafodion.dcs.script.ScriptManager;
 import org.trafodion.dcs.script.ScriptContext;
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.zookeeper.ZkClient;
-import org.trafodion.dcs.util.DcsConfiguration;
-import org.trafodion.dcs.util.DcsNetworkConfiguration;
-import org.trafodion.dcs.util.RetryCounter;
-import org.trafodion.dcs.util.RetryCounterFactory;
+import org.trafodion.dcs.util.*;
+
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
 public class ServerManager implements Callable {
 	private static  final Log LOG = LogFactory.getLog(ServerManager.class);
@@ -74,9 +77,13 @@ public class ServerManager implements Callable {
     private String parentZnode;
 	private RetryCounterFactory retryCounterFactory;
 	private final ArrayList<String> configuredServers = new ArrayList<String>();
+	private final Map<String,ServerPortMap> serverPortMap = new HashMap<String,ServerPortMap>();
 	private final ArrayList<String> runningServers = new ArrayList<String>();
 	private final ArrayList<String> registeredServers = new ArrayList<String>();
 	private final Queue<RestartHandler> restartQueue = new LinkedList<RestartHandler>();
+	private final ArrayList<ServerItem> serverItemList = new ArrayList<ServerItem>();
+	private boolean trafodionRepositoryEnabled;
+	private JdbcT4Util jdbcT4Util = null;
 	
 	public ServerManager(Configuration conf, ZkClient zkc,
 			DcsNetworkConfiguration netConf,long startupTimestamp, Metrics metrics) throws Exception {
@@ -88,12 +95,16 @@ public class ServerManager implements Callable {
 			this.metrics = metrics;
 			maxRestartAttempts = conf.getInt(Constants.DCS_MASTER_SERVER_RESTART_HANDLER_ATTEMPTS,Constants.DEFAULT_DCS_MASTER_SERVER_RESTART_HANDLER_ATTEMPTS);
 			retryIntervalMillis = conf.getInt(Constants.DCS_MASTER_SERVER_RESTART_HANDLER_RETRY_INTERVAL_MILLIS,Constants.DEFAULT_DCS_MASTER_SERVER_RESTART_HANDLER_RETRY_INTERVAL_MILLIS);
+			trafodionRepositoryEnabled = conf.getBoolean(Constants.DCS_MASTER_TRAFODION_REPOSITORY,Constants.DEFAULT_DCS_MASTER_TRAFODION_REPOSITORY);
+			if(trafodionRepositoryEnabled)
+				jdbcT4Util = new JdbcT4Util(conf,netConf);
 			retryCounterFactory = new RetryCounterFactory(maxRestartAttempts, retryIntervalMillis);
 			parentZnode = conf.get(Constants.ZOOKEEPER_ZNODE_PARENT,Constants.DEFAULT_ZOOKEEPER_ZNODE_PARENT);
 			pool = Executors.newSingleThreadExecutor();
 		} catch ( Exception e ) {
 			e.printStackTrace();
-			LOG.error(e);
+			if(LOG.isErrorEnabled())
+				LOG.error(e);
 			throw e;
 		}
 	}
@@ -101,9 +112,11 @@ public class ServerManager implements Callable {
 	class RestartHandler implements Callable<ScriptContext> {
 		private ScriptContext scriptContext = new ScriptContext();
 		private String znodePath;
+		private int childCount;
 
-		public RestartHandler(String znodePath) {
+		public RestartHandler(String znodePath,int childCount) {
 			this.znodePath = znodePath;
+			this.childCount = childCount;
 		}
 		
 		@Override
@@ -123,7 +136,8 @@ public class ServerManager implements Callable {
 				scn.useDelimiter(":");
 				String confDir = scn.next();
 				scn.close();
-				LOG.debug("conf dir [" + confDir + "]");
+				if(LOG.isDebugEnabled())
+					LOG.debug("conf dir [" + confDir + "]");
 
 				//Get -Ddcs.home.dir
 				String dcsHome = System.getProperty("dcs.home.dir");				
@@ -136,11 +150,12 @@ public class ServerManager implements Callable {
     			//DcsServer running znodes that have timestamps after last DcsMaster startup.
 				if(serverStartTimestamp > startupTimestamp){
 					scriptContext.setHostName(hostName);
-					scriptContext.setScriptName("sys_shell.py");
+					scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+					
 					if(hostName.equalsIgnoreCase(netConf.getHostName())) 
-						scriptContext.setCommand("bin/dcs-daemon.sh --config " + confDir + " start server " + instance);
+						scriptContext.setCommand("bin/dcs-daemon.sh --config " + confDir + " start server " + instance + " " + childCount);
 					else
-						scriptContext.setCommand("pdsh -w " + hostName + " \"cd " + dcsHome + ";bin/dcs-daemon.sh --config " + confDir + " start server " + instance + "\"");
+						scriptContext.setCommand("pdsh -w " + hostName + " \"cd " + dcsHome + ";bin/dcs-daemon.sh --config " + confDir + " start server " + instance + " " + childCount + "\"");
 					
 					RetryCounter retryCounter = retryCounterFactory.create();
 					while(true) {
@@ -161,10 +176,12 @@ public class ServerManager implements Callable {
 								sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
 							if(! scriptContext.getStdErr().toString().isEmpty())
 								sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
-							LOG.error(sb.toString());
+							if(LOG.isErrorEnabled())
+								LOG.error(sb.toString());
 							
 							if (! retryCounter.shouldRetry()) {
-								LOG.error("DcsServer [" + hostName + ":" + instance + "] restart failed after "
+								if(LOG.isErrorEnabled())
+									LOG.error("DcsServer [" + hostName + ":" + instance + "] restart failed after "
 										+ retryCounter.getMaxRetries() + " retries");
 								break;
 							} else {
@@ -174,11 +191,13 @@ public class ServerManager implements Callable {
 						}
 					}
 				} else {
-					LOG.debug("No restart for " + znodePath + "\nbecause DcsServer start time [" + DateFormat.getDateTimeInstance().format(new Date(serverStartTimestamp)) + "] was before DcsMaster start time [" + DateFormat.getDateTimeInstance().format(new Date(startupTimestamp)) + "]");
+					if(LOG.isDebugEnabled())
+						LOG.debug("No restart for " + znodePath + "\nbecause DcsServer start time [" + DateFormat.getDateTimeInstance().format(new Date(serverStartTimestamp)) + "] was before DcsMaster start time [" + DateFormat.getDateTimeInstance().format(new Date(startupTimestamp)) + "]");
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-				LOG.error(e);
+				if(LOG.isErrorEnabled())
+					LOG.error(e);
 			}
 			
 			return scriptContext;
@@ -188,21 +207,25 @@ public class ServerManager implements Callable {
 	class RunningWatcher implements Watcher {
 		public void process(WatchedEvent event) {
 			if(event.getType() == Event.EventType.NodeChildrenChanged) {
-				LOG.debug("Running children changed [" + event.getPath() + "]");
+				if(LOG.isDebugEnabled())
+					LOG.debug("Running children changed [" + event.getPath() + "]");
 				try {
 					getZkRunning();
 				} catch (Exception e) {
 					e.printStackTrace();
-					LOG.error(e);
+					if(LOG.isErrorEnabled())
+						LOG.error(e);
 				}
 			} else if(event.getType() == Event.EventType.NodeDeleted) {
 				String znodePath = event.getPath();
-				LOG.debug("Running znode deleted [" + znodePath + "]");
+				if(LOG.isDebugEnabled())
+					LOG.debug("Running znode deleted [" + znodePath + "]");
 				try {
 					restartServer(znodePath);
 				} catch (Exception e) {
 					e.printStackTrace();
-					LOG.error(e);
+					if(LOG.isErrorEnabled())
+						LOG.error(e);
 				}
 			}
 		}
@@ -211,12 +234,14 @@ public class ServerManager implements Callable {
 	class RegisteredWatcher implements Watcher {
 		public void process(WatchedEvent event) {
 			if(event.getType() == Event.EventType.NodeChildrenChanged) {
-				LOG.debug("Registered children changed [" + event.getPath() + "]");
+				if(LOG.isDebugEnabled())
+					LOG.debug("Registered children changed [" + event.getPath() + "]");
 				try {
 					getZkRegistered();
 				} catch (Exception e) {
 					e.printStackTrace();
-					LOG.error(e);
+					if(LOG.isErrorEnabled())
+						LOG.error(e);
 				}
 			}
 		}
@@ -229,12 +254,14 @@ public class ServerManager implements Callable {
 
 		try {
 			getServersFile();
+			createServersPortMap();
 			getZkRunning();
 			getZkRegistered();
 
 			while (true) {
 				while (! restartQueue.isEmpty()) {
-					LOG.debug("Restart queue size [" + restartQueue.size() + "]");
+					if(LOG.isDebugEnabled())
+						LOG.debug("Restart queue size [" + restartQueue.size() + "]");
 					RestartHandler handler = restartQueue.poll();
 					Future<ScriptContext> runner = pool.submit(handler);
 					ScriptContext scriptContext = runner.get();//blocking call
@@ -249,7 +276,8 @@ public class ServerManager implements Callable {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			LOG.error(e);
+			if(LOG.isErrorEnabled())
+				LOG.error(e);
 			pool.shutdown();
 			throw e;
 		}
@@ -271,13 +299,28 @@ public class ServerManager implements Callable {
     	BufferedReader br = new BufferedReader(new InputStreamReader(is));
     	configuredServers.clear();
     	String line;
-    	int count = 1;
+    	int lineNum = 1;
     	while((line = br.readLine()) != null) {
-    		if(line.equalsIgnoreCase("localhost")){
-    			line = netConf.getHostName();
+			Scanner scn = new Scanner(line);
+			scn.useDelimiter(" ");
+			String hostName = null;
+			String serverCount = null;
+			if(scn.hasNext())
+				hostName = scn.next();//host name
+			else
+				hostName = new String("localhost");
+			if(scn.hasNext())
+				serverCount = scn.next();// optional
+			else
+				serverCount = "1";
+			scn.close();
+    		if(hostName.equalsIgnoreCase("localhost")){
+    			hostName = netConf.getHostName();
     		}
-    		configuredServers.add(line + ":" + count);
-    		count++;
+    		if(LOG.isDebugEnabled())
+    			LOG.debug("Adding to configured servers [" + hostName + ":" + lineNum + ":" + serverCount + "]");
+    		configuredServers.add(hostName + ":" + lineNum + ":" + serverCount);
+    		lineNum++;
      	}
 
     	Collections.sort(configuredServers);
@@ -287,13 +330,64 @@ public class ServerManager implements Callable {
 
     	int lnum=1;
     	for(int i=0; i < configuredServers.size(); i++) {
-     		LOG.debug("servers file line " + lnum + " [" + configuredServers.get(i) + "]");
+    		if(LOG.isDebugEnabled())
+    			LOG.debug("servers file line " + lnum + " [" + configuredServers.get(i) + "]");
      		lnum++;
     	}
     }
+    
+	class ServerPortMap {
+		int begPortNum = conf.getInt(Constants.DCS_MASTER_PORT,Constants.DEFAULT_DCS_MASTER_PORT) + 1;
+		int endPortNum = begPortNum;
+		StringBuilder sb = new StringBuilder();
+		
+		public void add(int instance,int childCount) {
+			for(int i = 1; i <= childCount; i++) {
+				if(endPortNum > begPortNum)
+					sb.append(":");
+				sb.append(instance + ":" + i + ":" + endPortNum);
+				endPortNum++;
+			}
+		}
+		
+		public String toString() {
+			return sb.toString();
+		}
+	}
+    
+	private void createServersPortMap() throws Exception {
+		serverPortMap.clear();
+
+		for(String aServer : configuredServers) {
+			Scanner scn = new Scanner(aServer);
+			scn.useDelimiter(":");
+			String hostName = scn.next(); 
+			int instance = Integer.parseInt(scn.next()); 
+			int childCount = Integer.parseInt(scn.next()); 
+			scn.close();
+			
+			ServerPortMap spm = serverPortMap.get(hostName);
+			if(spm == null)
+				spm = new ServerPortMap();
+			spm.add(instance,childCount);
+			serverPortMap.put(hostName,spm);
+		}
+		
+		StringBuilder sb = new StringBuilder();
+		for (Map.Entry<String, ServerPortMap> entry : serverPortMap.entrySet()) {
+			LOG.debug(("Key = " + entry.getKey() + ", Value = " + entry.getValue()));
+	    	sb.append(entry.getValue());
+	    	sb.append(":");
+		}
+		
+		LOG.debug("Setting " + parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + " data [" + sb.toString() + "]");
+		byte[] data = Bytes.toBytes(sb.toString());
+		zkc.setData(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED, data, -1);
+	}
 	
     private synchronized void getZkRunning() throws Exception {
-    	LOG.debug("Reading " + parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING);
+		if(LOG.isDebugEnabled())
+			LOG.debug("Reading " + parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING);
     	List<String> children =  getChildren(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING, new RunningWatcher());
 
     	if( ! children.isEmpty()) {
@@ -316,7 +410,8 @@ public class ServerManager implements Callable {
     				continue;
 
     			if(! runningServers.contains(child)) {
-    				LOG.debug("Watching running [" + child + "]");
+    				if(LOG.isDebugEnabled())
+    					LOG.debug("Watching running [" + child + "]");
     				zkc.exists(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING + "/" + child, new RunningWatcher());
     				runningServers.add(child);
     			}
@@ -337,7 +432,8 @@ public class ServerManager implements Callable {
 		long serverStartTimestamp = Long.parseLong(scn.next());
 		scn.close();	
 		
-		LOG.error("DcsServer [" + hostName + ":" + instance + "] failed.");
+		if(LOG.isErrorEnabled())
+			LOG.error("DcsServer [" + hostName + ":" + instance + "] failed.");
 		
 		if(runningServers.contains(child)) {
 			LOG.debug("Found [" + child + "], deleting from running servers list");
@@ -345,26 +441,47 @@ public class ServerManager implements Callable {
 			metrics.setTotalRunning(runningServers.size());
 		}
 		
-		//For local-servers.sh we won't restart anything that's not in the servers file
-		if(! configuredServers.contains(hostName + ":" + instance)){
+		//Extract the server count for the restarting instance
+		int count = 1;
+		boolean found = false;
+		for(String aServer : configuredServers) {
+			scn = new Scanner(aServer);
+			scn.useDelimiter(":");
+			String srvrHostName = scn.next(); 
+			String srvrInstance = scn.next(); 
+			int srvrCount = new Integer(scn.next()).intValue();
+			scn.close();
+			if(srvrHostName.equals(hostName) && srvrInstance.equals(instance)) {
+				LOG.debug("Found [" + srvrHostName + ":" + srvrInstance + ":" + srvrCount + "] in configured servers");
+				found = true;
+				if(srvrCount > 0) 
+					count = srvrCount;
+				break;
+			}
+		}
+		
+		//For local-servers.sh don't restart anything that's not in the servers file
+		if(! found){
 			LOG.info("DcsServer [" + hostName + ":" + instance + "] not in servers file. Not restarting");
 			return;
-		}
+		} 
 
-		RestartHandler handler = new RestartHandler(child);
+		RestartHandler handler = new RestartHandler(child,count);
 		restartQueue.add(handler);
 
 	}
 	
 	private synchronized void getZkRegistered() throws Exception {
-		LOG.debug("Reading " + parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED);
+		if(LOG.isDebugEnabled())
+			LOG.debug("Reading " + parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED);
         List<String> children =  getChildren(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED, new RegisteredWatcher());
 
         if( ! children.isEmpty()) {
             registeredServers.clear();
         	for(String child : children) {
+        		if(LOG.isDebugEnabled())
         			LOG.debug("Registered [" + child + "]");
-        			registeredServers.add(child);
+        		registeredServers.add(child);
         	}
            	metrics.setTotalRegistered(registeredServers.size());
         } else {
@@ -381,7 +498,8 @@ public class ServerManager implements Callable {
 		int totalConnecting = 0;
 		int totalConnected = 0;
 		
-		LOG.debug("Begin getServersList()");
+		if(LOG.isDebugEnabled())
+			LOG.debug("Begin getServersList()");
 		
 		if( ! runningServers.isEmpty()) {
 			for(String aRunningServer : runningServers) {
@@ -404,7 +522,8 @@ public class ServerManager implements Callable {
 									data = zkc.getData(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + "/" + aRegisteredServer, false, stat);
 									scn = new Scanner(new String(data));
 									scn.useDelimiter(":");
-									LOG.debug("getDataRegistered [" + new String(data) + "]");
+									if(LOG.isDebugEnabled())
+										LOG.debug("getDataRegistered [" + new String(data) + "]");
 									registeredServer.setState(scn.next());
 									String state = registeredServer.getState();
 									if(state.equals("AVAILABLE"))
@@ -430,6 +549,7 @@ public class ServerManager implements Callable {
 								}
 							} catch (Exception e) {
 								e.printStackTrace();
+								if(LOG.isErrorEnabled())
 								LOG.error("Exception: " + e.getMessage());
 							}
 						}
@@ -452,9 +572,100 @@ public class ServerManager implements Callable {
 		     }
 		});
 		
-		LOG.debug("End getServersList()");
+		if(LOG.isDebugEnabled())
+			LOG.debug("End getServersList()");
 		
 		return serverList;
 	}
+	
+	public synchronized List<ServerItem> getServerItemList () {
+		if(LOG.isDebugEnabled())
+			LOG.debug("Begin getServerItemList()");
+		
+        serverItemList.clear();
+        
+        for(RunningServer aRunningServer: this.getServersList()) {
+            for(RegisteredServer aRegisteredServer: aRunningServer.getRegistered()) {
+                ServerItem serverItem = new ServerItem();
+                serverItem.setHostname(aRunningServer.getHref()); 
+                serverItem.setInstance(aRunningServer.getInstance()); 
+                serverItem.setStartTime(aRunningServer.getStartTimeAsDate()); 
+                serverItem.setIsRegistered(aRegisteredServer.getIsRegistered()); 
+                serverItem.setState(aRegisteredServer.getState()); 
+                serverItem.setNid(aRegisteredServer.getNid()); 
+                serverItem.setPid(aRegisteredServer.getPid());  
+                serverItem.setProcessName(aRegisteredServer.getProcessName());  
+                serverItem.setIpAddress(aRegisteredServer.getIpAddress());  
+                serverItem.setPort(aRegisteredServer.getPort());  
+                serverItem.setClientName(aRegisteredServer.getClientName());  
+                serverItem.setClientAppl(aRegisteredServer.getClientAppl());  
+                serverItem.setClientIpAddress(aRegisteredServer.getClientIpAddress());  
+                serverItem.setClientPort(aRegisteredServer.getClientPort());  
+                serverItemList.add(serverItem);
+              }
+        }
+		if(LOG.isDebugEnabled())
+			LOG.debug("End getServerItemList()");
+        return serverItemList;
+	}
+	
+	public synchronized List<JSONObject> getRepositoryItemList(String command) {
+		if(LOG.isDebugEnabled())
+			LOG.debug("Begin getRepositoryItemList()");	
+		
+        JSONArray reposList = null;
+		reposList = getRepositoryListT4Driver(command);
+		List<JSONObject> objList = new ArrayList<JSONObject>();
+		
+		if(reposList != null) {
+			try {
+				for(int i = 0; i < reposList.length(); i ++) {
+					objList.add(reposList.getJSONObject(i));
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				if(LOG.isErrorEnabled())
+					LOG.error(e.getMessage());
+			}
+		}
+
+		if(LOG.isDebugEnabled())
+			LOG.debug("End getRepositoryItemList()");
+		
+		return objList;
+	}
+
+	public synchronized JSONArray getRepositoryListT4Driver(String command) {
+		if(LOG.isDebugEnabled())
+			LOG.debug("Begin getRepositoryListT4Driver()");
+		
+		JSONArray reposList = null;
+		
+		StringBuilder sb = new StringBuilder();
+		if(command.equals(Constants.TRAFODION_REPOS_METRIC_SESSION_TABLE)) {
+			sb.append(conf.get(Constants.TRAFODION_REPOS_METRIC_SESSION_TABLE_QUERY,Constants.DEFAULT_TRAFODION_REPOS_METRIC_SESSION_TABLE_QUERY));
+		} else if (command.equals(Constants.TRAFODION_REPOS_METRIC_QUERY_TABLE)) {
+			sb.append(conf.get(Constants.TRAFODION_REPOS_METRIC_QUERY_TABLE_QUERY,Constants.DEFAULT_TRAFODION_REPOS_METRIC_QUERY_TABLE_QUERY));
+		} else if (command.equals(Constants.TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE)) {
+			sb.append(conf.get(Constants.TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE_QUERY,Constants.DEFAULT_TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE_QUERY));
+		}
+		
+		if(LOG.isDebugEnabled())
+			LOG.debug("command [" + sb.toString() + "]");
+		reposList = jdbcT4Util.exec(sb.toString());
+
+		if(LOG.isDebugEnabled())
+			LOG.debug("End getRepositoryListT4Driver()");
+		
+		return reposList;
+	}
+	
+	public String getZKParentZnode(){
+		return parentZnode;
+	}
+	
+    public ZkClient getZkClient(){
+    	return zkc;
+    }
 }
 

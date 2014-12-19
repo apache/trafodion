@@ -50,15 +50,14 @@ public final class ScriptManager {
 		return instance;
 	}
 	
-	public ScriptManager() {
-		StringBuffer sb = new StringBuffer();
-
+	private ScriptManager() {
 		List<ScriptEngineFactory> engines = manager.getEngineFactories();
 		if (engines.isEmpty()) {
 			LOG.warn("No scripting engines were found");
 			return;         
 		}
 
+		StringBuffer sb = new StringBuffer();
 		sb.append("\nThe following " + engines.size() + " scripting engine(s) were found");
 
 		for (ScriptEngineFactory engine : engines) {
@@ -76,7 +75,22 @@ public final class ScriptManager {
 				for (String n : engine.getNames()) {
 					sb.append("\n\t\t" + n);                 
 				}             
-			}             
+			} 
+			
+			String [] params =
+			{
+					ScriptEngine.ENGINE,
+					ScriptEngine.ENGINE_VERSION,
+					ScriptEngine.LANGUAGE,
+					ScriptEngine.LANGUAGE_VERSION,
+					ScriptEngine.NAME,
+					"THREADING"
+			};
+			
+			sb.append("\n\tEngine has the following parameters:");
+			for (String param: params){
+				sb.append("\n\t\t" + param + " = " + engine.getParameter(param));
+			}
 			sb.append("\n=========================");
 		}
 		LOG.debug(sb.toString());
@@ -87,8 +101,8 @@ public final class ScriptManager {
 		//Start the scripts directory watcher
 		watcherWorker = new ScriptManagerWatcher ("ScriptManagerWatcher",dcsHome + "/bin/scripts");
 	}
-	
-	public synchronized void runScript(ScriptContext ctx) {
+
+ 	public void runScript(ScriptContext ctx) {
 		String scriptName;
 		
 		if(ctx.getScriptName().length() == 0)
@@ -126,7 +140,7 @@ public final class ScriptManager {
 			LOG.warn(se.getMessage());
 		}
 	}
-	
+
 	public synchronized void removeScript(String name) {
 		m.remove(name);
 	}

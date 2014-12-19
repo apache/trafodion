@@ -47,49 +47,49 @@ import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * Simple representation of a list of servers.
+ * Simple representation of a list of workloads.
  */
-@XmlRootElement(name="ServerList")
-public class ServerListModel {
+@XmlRootElement(name="Workloads")
+public class WorkloadListModel {
 	private static final long serialVersionUID = 1L;
-	private List<ServerModel> servers = new ArrayList<ServerModel>();
+	private List<WorkloadModel> workloads = new ArrayList<WorkloadModel>();
 	private static int refreshSeconds;
 	/**
 	 * Default constructor
 	 */
-	public ServerListModel() {
+	public WorkloadListModel() {
 		Configuration conf = DcsConfiguration.create();
 		refreshSeconds = conf.getInt("dcs.rest.refresh.seconds",5);
 	}
 
 	/**
-	 * Add the server to the list
-	 * @param server the server model
+	 * Add the workload to the list
+	 * @param workload the workload model
 	 */
-	public void add(ServerModel server) {
-		servers.add(server);
+	public void add(WorkloadModel workload) {
+		workloads.add(workload);
 	}
 	
 	/**
 	 * @param index the index
-	 * @return the server model
+	 * @return the workload model
 	 */
-	public ServerModel get(int index) {
-		return servers.get(index);
+	public WorkloadModel get(int index) {
+		return workloads.get(index);
 	}
 
 	/**
 	 * @return the workloads
 	 */
-	public List<ServerModel> getServers() {
-		return servers;
+	public List<WorkloadModel> getWorkloads() {
+		return workloads;
 	}
 
 	/**
-	 * @param servers the list of servers
+	 * @param workloads the list of workloads
 	 */
-	public void setServers(List<ServerModel> servers) {
-		this.servers = servers;
+	public void setWorkloads(List<WorkloadModel> workloads) {
+		this.workloads = workloads;
 	}
 
 	/* (non-Javadoc)
@@ -114,8 +114,8 @@ public class ServerListModel {
 		sb.append("<th>Data</th>\n");		
 		sb.append("</tr>\n");
 
-		for(ServerModel aServer : servers) {
-			sb.append(aServer.toString());
+		for(WorkloadModel aWorkload : workloads) {
+			sb.append(aWorkload.toString());
 			sb.append('\n');
 		}
 
@@ -194,9 +194,9 @@ public class ServerListModel {
 		  		    sb.append("</thead>\n");
 		  		    sb.append("<tbody>\n");
 		  		  
-		  		for(ServerModel aServer : servers) {
+		  		for(WorkloadModel aWorkload : workloads) {
 		  			sb.append("<tr>\n");
-		  			sb.append(aServer.toString());
+		  			sb.append(aWorkload.toString());
 		  			sb.append("</tr>\n");
 		  		  }
 

@@ -82,7 +82,7 @@ if [ $# = 0 ]; then
   echo ""
   echo "PROCESS MANAGEMENT"
   echo "  master           run a dcs master" 
-  echo "  server     	   run a dcs server" 
+  echo "  server           run a dcs server" 
   echo "  zookeeper        run a Zookeeper server"
   echo "  rest             run a dcs REST server" 
   echo ""
@@ -176,11 +176,6 @@ for f in $DCS_HOME/lib/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
-# Add user-specified CLASSPATH last
-if [ "$DCS_CLASSPATH" != "" ]; then
-  CLASSPATH=${CLASSPATH}:${DCS_CLASSPATH}
-fi
-
 # default log directory & file
 if [ "$DCS_LOG_DIR" = "" ]; then
   DCS_LOG_DIR="$DCS_HOME/logs"
@@ -206,17 +201,16 @@ function append_path() {
 
 JAVA_PLATFORM=""
 
-if [ -d "${DCS_HOME}/build/native" -o -d "${DCS_HOME}/lib/native" ]; then
-  if [ -z $JAVA_PLATFORM ]; then
-    JAVA_PLATFORM=`CLASSPATH=${CLASSPATH} ${JAVA} org.apache.hadoop.util.PlatformName | sed -e "s/ /_/g"`
+#If avail, add Trafodion to the JAVA_LIBRARY_PATH
+if [ "$MY_SQROOT" != "" ]; then
+  if [ -d $MY_SQROOT ]; then
+     export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib$SQ_MBTYPE/libseabasesig.so;
   fi
-  if [ -d "$DCS_HOME/build/native" ]; then
-    JAVA_LIBRARY_PATH=$(append_path "$JAVA_LIBRARY_PATH" ${DCS_HOME}/build/native/${JAVA_PLATFORM}/lib)
-  fi
+fi
 
-  if [ -d "${DCS_HOME}/lib/native" ]; then
-    JAVA_LIBRARY_PATH=$(append_path "$JAVA_LIBRARY_PATH" ${DCS_HOME}/lib/native/${JAVA_PLATFORM})
-  fi
+# Add user-specified CLASSPATH last
+if [ "$DCS_CLASSPATH" != "" ]; then
+  CLASSPATH=${CLASSPATH}:${DCS_CLASSPATH}
 fi
 
 # cygwin path translation
@@ -230,16 +224,16 @@ unset IFS
 #Set the right GC options based on the what we are running
 declare -a client_cmds=("shell" "zkcli")
 for cmd in $client_cmds; do
-	if [[ $cmd == $COMMAND ]]; then
-		client=true
-		break
-	fi
+    if [[ $cmd == $COMMAND ]]; then
+        client=true
+        break
+    fi
 done
 
 if [[ $client ]]; then
-	DCS_OPTS="$DCS_OPTS $CLIENT_GC_OPTS"
+    DCS_OPTS="$DCS_OPTS $CLIENT_GC_OPTS"
 else
-	DCS_OPTS="$DCS_OPTS $SERVER_GC_OPTS"
+    DCS_OPTS="$DCS_OPTS $SERVER_GC_OPTS"
 fi
 
 # figure out which class to run
@@ -286,15 +280,18 @@ DCS_OPTS="$DCS_OPTS -Ddcs.log.file=$DCS_LOGFILE"
 DCS_OPTS="$DCS_OPTS -Ddcs.home.dir=$DCS_HOME"
 DCS_OPTS="$DCS_OPTS -Ddcs.id.str=$DCS_IDENT_STRING"
 DCS_OPTS="$DCS_OPTS -Ddcs.root.logger=${DCS_ROOT_LOGGER:-INFO,console}"
+
 if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
   DCS_OPTS="$DCS_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$JAVA_LIBRARY_PATH"
 fi
 DCS_OPTS="$DCS_OPTS -Ddcs.user.program.home=$DCS_USER_PROGRAM_HOME"
+DCS_OPTS="$DCS_OPTS -Ddcs.conf.dir=$DCS_CONF_DIR"
+DCS_OPTS="$DCS_OPTS -Ddcs.trafodion.home=$MY_SQROOT"
 
 # Exec unless DCS_NOEXEC is set.
 if [ "${DCS_NOEXEC}" != "" ]; then
- echo exec "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p" $JAVA_HEAP_MAX $DCS_OPTS -classpath "$CLASSPATH" $CLASS "$@"
+ "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p" $JAVA_HEAP_MAX $DCS_OPTS -classpath "$CLASSPATH" $CLASS "$@"
 else
  exec "$JAVA" -XX:OnOutOfMemoryError="kill -9 %p" $JAVA_HEAP_MAX $DCS_OPTS -classpath "$CLASSPATH" $CLASS "$@"
 fi

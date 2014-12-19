@@ -20,6 +20,10 @@ import java.util.*;
 import org.apache.log4j.Logger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.io.monitor.FileAlterationListener;
+import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
+import org.apache.commons.io.monitor.FileAlterationMonitor;
+import org.apache.commons.io.monitor.FileAlterationObserver;
 
 public class ScriptManagerWatcher implements Runnable {
 	Thread thrd;
@@ -33,30 +37,36 @@ public class ScriptManagerWatcher implements Runnable {
 	}
 	
 	public void run() {
-		LOG.info(" Watching directory \"" + dir + "\"");
-		File directory = new File(dir);
-		long currentLastModified = directory.lastModified();
-		while (true) {
-			if (directory.lastModified() > currentLastModified) {
-				currentLastModified = directory.lastModified();
-				File[] files = directory.listFiles();
-				for (int i=0; i < files.length; i++) {
-					if(files[i].getName().endsWith(".swp"))//Ignore swap files
-						continue;
-					Long lastModified = files[i].lastModified();
-					Date date = new Date(lastModified);
-					LOG.info("File \"" + files[i].getName() + "\" last modified " + date);
-					ScriptManager.getInstance().removeScript(files[i].getName());
+		final long pollingInterval = 5 * 1000;// 5 seconds
+		File folder = new File(dir);
+
+		if (!folder.exists()) {
+			throw new RuntimeException("Directory not found: " + dir);
+		}
+
+		try {
+			FileAlterationObserver observer = new FileAlterationObserver(folder);
+			FileAlterationMonitor monitor =
+				new FileAlterationMonitor(pollingInterval);
+			FileAlterationListener listener = new FileAlterationListenerAdaptor() {
+				// Is triggered when a file is changed in the monitored folder
+				@Override
+				public void onFileChange(File file) {
+					try {
+						LOG.info("File changed: " + file.getCanonicalPath());
+						ScriptManager.getInstance().removeScript(file.getName());
+					} catch (IOException e) {
+						e.printStackTrace(System.err);
+					}
 				}
-			} else {
-				LOG.debug(" Directory \"" + dir + "\" unchanged");
-			}
-			
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				LOG.debug("Interrupted!");
-			}
+			};
+
+			observer.addListener(listener);
+			monitor.addObserver(observer);
+			monitor.start();
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOG.error(e.getMessage());
 		}
 	}
 }

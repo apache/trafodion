@@ -53,11 +53,18 @@ import org.apache.commons.logging.LogFactory;
 
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.Bytes;
-import org.trafodion.dcs.rest.RestConstants;
+import org.trafodion.dcs.script.ScriptManager;
+import org.trafodion.dcs.script.ScriptContext;
+import org.trafodion.dcs.rest.model.WorkloadListModel;
+import org.trafodion.dcs.rest.model.WorkloadModel;
 
-@Path("/")
-public class RootResource extends ResourceBase {
-	private static final Log LOG = LogFactory.getLog(RootResource.class);
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+
+public class WorkloadResource extends ResourceBase {
+	private static final Log LOG =
+		LogFactory.getLog(WorkloadResource.class);
 
 	static CacheControl cacheControl;
 	static {
@@ -66,49 +73,62 @@ public class RootResource extends ResourceBase {
 		cacheControl.setNoTransform(false);
 	}
 
-	public RootResource() throws IOException {
+	/**
+	 * Constructor
+	 * @throws IOException
+	 */
+	public WorkloadResource() throws IOException {
 		super();
+
 	}
-	
+
 	@GET
 	@Produces({MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON})
 	public Response get(final @Context UriInfo uriInfo) {
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("GET " + uriInfo.getAbsolutePath());
 		}
-		
+
 		try {
-			return new WorkloadResource().get(uriInfo);
+//			ScriptContext scriptContext = new ScriptContext();
+//			scriptContext.setScriptName(Constants.JDBCT2UTIL_SCRIPT_NAME);
+//			scriptContext.setCommand(Constants.TRAFODION_REPOS_METRIC_SESSION_TABLE);
+
+			try {
+//				ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw new IOException(e);
+			}
+
+//			StringBuilder sb = new StringBuilder();
+//			sb.append("exit code [" + scriptContext.getExitCode() + "]");
+//			if(! scriptContext.getStdOut().toString().isEmpty()) 
+//				sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
+//			if(! scriptContext.getStdErr().toString().isEmpty())
+//				sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
+//			LOG.info(sb.toString());
+			
+			JSONArray workloadList = null;
+
+//			try {
+//				if(scriptContext.getExitCode() == 0 && (! scriptContext.getStdOut().toString().isEmpty())) {
+//					workloadList = new JSONArray(scriptContext.getStdOut().toString());
+//				}
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//				LOG.error(e.getMessage());
+//				throw new IOException(e);
+//			}			
+
+			ResponseBuilder response = Response.ok(workloadList);
+			response.cacheControl(cacheControl);
+			return response.build();
 		} catch (IOException e) {
 			return Response.status(Response.Status.SERVICE_UNAVAILABLE)
 			.type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
 			.build();
 		}
-
-	}
-
-	@Path("/v1/servers")
-	public ServerResource getServerResource() throws IOException {
-		//To test:
-		//curl -v -X GET -H "Accept: application/json" http://<DcsMaster IP address>:8080/v1/servers
-		//
-		return new ServerResource();
-	}
-	
-	@Path("/v1/workloads")
-	public WorkloadResource getWorkloadResource() throws IOException { 
-		//To test:
-		//curl -v -X GET -H "Accept: application/json" http://<DcsMaster IP address>:8080/v1/workloads
-		//
-		return new WorkloadResource();
-	}
-
-	@Path("/v1/version")
-	public VersionResource getVersionResource() throws IOException {
-		//To test:
-		//curl -v -X GET -H "Accept: application/json" http://<DcsMaster IP address>:8080/v1/version
-		//
-		return new VersionResource();
 	}
 
 }

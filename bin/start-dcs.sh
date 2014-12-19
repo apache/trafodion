@@ -60,10 +60,11 @@ then
 fi
 
 if [ "$master" == "" ] || [ "$master" == "$(hostname -f)" ] ; then
-  "$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" start master
+  "$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" start master 
 else
   remote_cmd="cd ${DCS_HOME}; $bin/dcs-daemon.sh --config ${DCS_CONF_DIR} start master"
   ssh -n $DCS_SSH_OPTS $master $remote_cmd 2>&1 | sed "s/^/$master: /"
 fi
 
 "$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_SERVERS}" start server
+"$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_BACKUP_MASTERS}" start master-backup

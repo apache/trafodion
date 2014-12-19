@@ -110,16 +110,12 @@ public class RESTServlet implements RestConstants {
 	RESTServlet(Configuration conf) throws IOException {
 		this.conf = conf;
 		this.parentZnode = conf.get(Constants.ZOOKEEPER_ZNODE_PARENT,Constants.DEFAULT_ZOOKEEPER_ZNODE_PARENT);	   	
-		
-		//   int maxSize = conf.getInt("hbase.rest.htablepool.size", 10);
-		//   this.pool = new HTablePool(conf, maxSize);
-		//   this.admin = new HBaseAdmin(conf);
+
 	}
 
 	private void openZk() throws IOException {
 		try {
 			if(zkc == null)  
-				//zkc = new ZkClient(3000,0,0);//CTRL-C...set sessionTimeout,maxRetries,retryIntervalMillis
 				zkc = new ZkClient();//CTRL-C...set sessionTimeout,maxRetries,retryIntervalMillis
 			zkc.connect();
 		} catch (InterruptedException e) {
@@ -128,7 +124,7 @@ public class RESTServlet implements RestConstants {
 	}
 
 	public synchronized List<String> getChildren(String znode) throws IOException {
-		List<String> s=null;
+		List<String> s = null;
 		
 		try {
 			openZk();

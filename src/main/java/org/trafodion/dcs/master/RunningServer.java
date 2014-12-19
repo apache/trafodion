@@ -77,8 +77,19 @@ public class RunningServer  {
 	public long getStartTime() {
 		return startTime;
 	}
+	public Date getStartTimeAsDate() {
+		return new Date(startTime);
+	}
 	public ArrayList<RegisteredServer> getRegistered() {
 		return registeredList;
+	}
+	public RegisteredServer getItem(int index) {
+		LOG.info("getItem [index:" + index + "," + registeredList.get(index) + "]");
+		return registeredList.get(index);
+	}
+	public String getHref() {
+		String href = String.format("<a href=\"http://%s:%d\">%s</a>",hostname,infoPort,hostname);
+		return href;
 	}
 }
 

@@ -49,6 +49,8 @@ then
   exit $errCode
 fi
 
+"$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_BACKUP_MASTERS}" stop master-backup
+
 master=`$bin/dcs --config "${DCS_CONF_DIR}" org.trafodion.dcs.zookeeper.ZkUtil /$USER/dcs/master`
 errCode=$?
 if [ $errCode -ne 0 ]
