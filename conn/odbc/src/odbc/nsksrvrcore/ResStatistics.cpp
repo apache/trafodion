@@ -52,10 +52,4 @@ ResStatistics::ResStatistics()
 
 ResStatistics::~ResStatistics()
 {
-	if (srvrGlobal->resAcctLogger != NULL)
-    {
-		srvrGlobal->resAcctLogger->close_ems();
-		delete srvrGlobal->resAcctLogger;
-		srvrGlobal->resAcctLogger = NULL;
-	}
 }

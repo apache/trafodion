@@ -19,7 +19,7 @@
 // **********************************************************************
 
 #include "OrcFileReader.h"
-#include "HdfsLogger.h"
+#include "QRLogger.h"
 
 // ===========================================================================
 // ===== Class OrcFileReader
@@ -119,7 +119,7 @@ OFR_RetCode OrcFileReader::init()
 //////////////////////////////////////////////////////////////////////////////
 OFR_RetCode OrcFileReader::open(const char* path)
 {
-  HdfsLogger::log(CAT_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::open(%s) called.", path);
+  QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::open(%s) called.", path);
   jstring js_path = jenv_->NewStringUTF(path);
   if (js_path == NULL) 
     return OFR_ERROR_OPEN_PARAM;
@@ -133,7 +133,7 @@ OFR_RetCode OrcFileReader::open(const char* path)
   {
   	const char *my_string = jenv_->GetStringUTFChars(jresult, JNI_FALSE);
   	printf("open error: %s\n", my_string);
-    logError(CAT_ORC_FILE_READER, "OrcFileReader::open()", jresult);
+    logError(CAT_SQL_HDFS_ORC_FILE_READER, "OrcFileReader::open()", jresult);
     return OFR_ERROR_OPEN_EXCEPTION;
   }
   
@@ -145,14 +145,14 @@ OFR_RetCode OrcFileReader::open(const char* path)
 //////////////////////////////////////////////////////////////////////////////
 OFR_RetCode OrcFileReader::getPosition(Int64& pos)
 {
-  HdfsLogger::log(CAT_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::getPosition(%ld) called.", pos);
+  QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::getPosition(%ld) called.", pos);
 
   // long getPosition();
   Int64 result = jenv_->CallLongMethod(javaObj_, JavaMethods_[JM_GETPOS].methodID);
 
   if (result == -1) 
   {
-    logError(CAT_ORC_FILE_READER, "OrcFileReader::getPosition()", getLastError());
+    logError(CAT_SQL_HDFS_ORC_FILE_READER, "OrcFileReader::getPosition()", getLastError());
     return OFR_ERROR_GETPOS_EXCEPTION;
   }
 
@@ -168,7 +168,7 @@ OFR_RetCode OrcFileReader::seeknSync(Int64 pos)
 	Int64 orcPos;
 	
 	orcPos = pos -1;	//When you position in ORC, reading the NEXT row will be one greater than what you wanted.
-  HdfsLogger::log(CAT_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::seeknSync(%ld) called.", pos);
+  QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::seeknSync(%ld) called.", pos);
 
   // String seeknSync(long);
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_SYNC].methodID, orcPos);
@@ -177,7 +177,7 @@ OFR_RetCode OrcFileReader::seeknSync(Int64 pos)
   {
   	const char *my_string = jenv_->GetStringUTFChars(jresult, JNI_FALSE);
   	printf("seeknSync error: %s\n", my_string);
-    logError(CAT_ORC_FILE_READER, "OrcFileReader::seeknSync()", jresult);
+    logError(CAT_SQL_HDFS_ORC_FILE_READER, "OrcFileReader::seeknSync()", jresult);
     return OFR_ERROR_SYNC_EXCEPTION;
   }
   
@@ -189,7 +189,7 @@ OFR_RetCode OrcFileReader::seeknSync(Int64 pos)
 //////////////////////////////////////////////////////////////////////////////
 OFR_RetCode OrcFileReader::isEOF(bool& isEOF)
 {
-  HdfsLogger::log(CAT_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::isEOF() called.");
+  QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::isEOF() called.");
 
   // boolean isEOF();
   bool result = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_ISEOF].methodID);
@@ -209,7 +209,7 @@ OFR_RetCode OrcFileReader::fetchNextRow(char * buffer, long& array_length, long&
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCHROW2].methodID, stopOffset);
   if (jresult==NULL && getLastError()) 
   {
-    logError(CAT_ORC_FILE_READER, "OrcFileReader::fetchNextRow()", getLastError());
+    logError(CAT_SQL_HDFS_ORC_FILE_READER, "OrcFileReader::fetchNextRow()", getLastError());
     return OFR_ERROR_FETCHROW_EXCEPTION;
   }
 
@@ -231,7 +231,7 @@ OFR_RetCode OrcFileReader::fetchNextRow(char * buffer, long& array_length, long&
 	jobject jresult = (jobject)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCHROW2].methodID);
 	if (jresult==NULL && getLastError()) 
   	{
-		  logError(CAT_ORC_FILE_READER, "OrcFileReader::fetchNextRow()", getLastError());
+		  logError(CAT_SQL_HDFS_ORC_FILE_READER, "OrcFileReader::fetchNextRow()", getLastError());
 		  return OFR_ERROR_FETCHROW_EXCEPTION;
   	}
 
@@ -289,7 +289,7 @@ OFR_RetCode OrcFileReader::fetchNextRow(char * buffer, long& array_length, long&
 //////////////////////////////////////////////////////////////////////////////
 OFR_RetCode OrcFileReader::close()
 {
-  HdfsLogger::log(CAT_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::close() called.");
+  QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::close() called.");
   if (javaObj_ == NULL)
   {
     // Maybe there was an initialization error.
@@ -301,7 +301,7 @@ OFR_RetCode OrcFileReader::close()
 
   if (jresult!=NULL) 
   {
-    logError(CAT_ORC_FILE_READER, "OrcFileReader::close()", jresult);
+    logError(CAT_SQL_HDFS_ORC_FILE_READER, "OrcFileReader::close()", jresult);
     return OFR_ERROR_CLOSE_EXCEPTION;
   }
   
@@ -313,7 +313,7 @@ OFR_RetCode OrcFileReader::close()
 //////////////////////////////////////////////////////////////////////////////
 OFR_RetCode OrcFileReader::getRowCount(Int64& count)
 {
-  HdfsLogger::log(CAT_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::getRowCount() called.");
+  QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::getRowCount() called.");
   if (javaObj_ == NULL)
   {
     // Maybe there was an initialization error.
@@ -351,7 +351,7 @@ OFR_RetCode OrcFileReader::fetchRowsIntoBuffer(Int64   stopOffset,
 {
 /*
 Removed until implemented
-  HdfsLogger::log(CAT_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::fetchRowsIntoBuffer(stopOffset: %ld, buffSize: %ld) called.", stopOffset, buffSize);
+  QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::fetchRowsIntoBuffer(stopOffset: %ld, buffSize: %ld) called.", stopOffset, buffSize);
   Int32 maxRowLength = 0;
   char* pos = buffer;
   Int64 limit = buffSize;
@@ -377,7 +377,7 @@ Removed until implemented
     }
   } while (retCode == OFR_OK && bytesRead < limit);
   
-  HdfsLogger::log(CAT_ORC_FILE_READER, LL_DEBUG, "  =>Returning %d, read %ld bytes in %d rows.", retCode, bytesRead, rowsRead);
+  QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "  =>Returning %d, read %ld bytes in %d rows.", retCode, bytesRead, rowsRead);
   return retCode;
 */
 	return (OFR_NOMORE);

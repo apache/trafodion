@@ -55,11 +55,6 @@ CFILES		= `ls *.c`
 
 LIBSTMB         += $(LIBSSB)
 
-ifeq ($(TM_USE_SEAPILOT),1)
-LIBSX		= -L$(LIBEXPDIR) -levlsq
-LIBSTMB         += -levlsq
-endif
-
 ifeq ($(USE_THREADED_IO),1)
 LIBSTM		+= $(LIBSTHX)
 endif

@@ -38,13 +38,10 @@ SQL_W=$(MY_SQROOT)/../sql
     DP2=se
 
 MISC = win misc_sec
-SQ_COMPONENTS := make_sqevlog seabed stfs $(MISC) tm $(SEAMONSTER_TARGET) make_sql make_monitor proxy tools
-SP_COMPONENTS := seapilot-standalone seapilot-seabed-dependent
+SQ_COMPONENTS := make_sqevlog seabed stfs $(MISC) tm $(SEAMONSTER_TARGET) make_sql make_monitor tools
 
 .PHONY: $(SQ_COMPONENTS)
-all: genverhdr setupdir $(SQ_COMPONENTS) $(SP_COMPONENTS)
-
-$(SQ_COMPONENTS): seapilot-standalone
+all: genverhdr setupdir $(SQ_COMPONENTS) 
 
 win: make_sqevlog seabed
 	cd src/win; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
@@ -53,20 +50,7 @@ seabed: make_sqevlog
 	cd src/seabed; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
 
-proxy: seabed make_sqevlog
-	cd src/sp_proxy; $(MAKE) 2>&1 | sed -e "s/$$/	##(SeaPilot)/" ; exit $${PIPESTATUS[0]}
-
-
-.PHONY: seapilot-seabed-dependent
-seapilot-seabed-dependent: seapilot-standalone seabed
-	cd seapilot; $(MAKE) seabed-dependent 2>&1 | sed -e "s/$$/	##(Seabed)/" ; exit $${PIPESTATUS[0]}
-
-.PHONY: seapilot-standalone
-seapilot-standalone:
-	cd seapilot; $(MAKE) standalone 2>&1 | sed -e "s/$$/	##(SeaPilot)/" ; exit $${PIPESTATUS[0]}
-
-
-tm: seapilot seabed make_sqevlog
+tm: seabed make_sqevlog
 	cd src/tm; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
 seamonster: seabed
@@ -76,11 +60,11 @@ smstub:
 	cd ../smstub/src; $(MAKE) 2>&1 | sed -e "s/$$/	##(SMSTUB)/" ; exit $${PIPESTATUS[0]}
 
 
-make_sql: $(SEAMONSTER_TARGET) win seapilot-standalone
+make_sql: $(SEAMONSTER_TARGET) win 
 	cd sql; $(MAKE) WROOT=$(SQL_W) 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 	cd $(MY_SQROOT)/sql/scripts && ./makemsg.ksh 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 
-make_monitor: seapilot stfs make_sqevlog seabed
+make_monitor: stfs make_sqevlog seabed
 	cd monitor/linux; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
 stfs: make_sqevlog
@@ -90,7 +74,7 @@ monitor_ib:
 	-cd monitor/linux && mv $(OUTDIR) $(OUTDIR).tcp && mkdir -p $(OUTDIR) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 	cd monitor/linux; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
-make_sqevlog: seapilot
+make_sqevlog: 
 	cd sqevlog; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
 
 .PHONY: conn
@@ -107,29 +91,25 @@ wms:
 
 clean: setupdir_clean
 	-cd monitor/linux; $(MAKE) clean
-	-cd seapilot; $(MAKE) clean
 	-cd src/seabed; $(MAKE) clean
 	-cd src/stfs; $(MAKE) -f Makefile.stub clean
 	-cd src/win; $(MAKE) clean
 	-cd src/tm; $(MAKE) clean
 	-cd sql; $(MAKE) WROOT=$(SQL_W) clean
-	-cd src/sp_proxy; $(MAKE) clean
 	-cd sqevlog; $(MAKE) clean
 	# from genverhdr.ksh
 	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java
 	# from makemsg.ksh
 	rm -f sql/scripts/SqlciErrors.[gm] export/bin*/mxcierrors.cat
 
-# seapilot/sql uses clean
+# sql uses clean
 cleanall: setupdir_clean
 	-cd monitor/linux; $(MAKE) cleanall
-	-cd seapilot; $(MAKE) clean
 	-cd src/seabed; $(MAKE) cleanall
 	-cd src/stfs; $(MAKE) -f Makefile.stub cleanall
 	-cd src/win; $(MAKE) cleanall
 	-cd src/tm; $(MAKE) cleanall
 	-cd sql; $(MAKE) WROOT=$(SQL_W) clean
-	-cd src/sp_proxy; $(MAKE) cleanall
 	-cd sqevlog; $(MAKE) cleanall
 	# from genverhdr.ksh
 	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java
@@ -143,7 +123,6 @@ cleaner:
 	-cd src/win; $(MAKE) cleaner
 	-cd src/tm; $(MAKE) cleaner
 	-cd sql; $(MAKE) WROOT=$(SQL_W) cleaner
-	-cd src/sp_proxy; $(MAKE) cleaner
 	-cd sqevlog; $(MAKE) cleaner
 
 cleanobjs:
@@ -286,11 +265,11 @@ PKG_TAR_UN = "${PKG_PROD}_${SQ_BUILD_TYPE}.tar"
 SRC_PKG_BIN ?= "../${PKG_PROD}-src.bin"
 SRC_PKG_TAR ?= "../${PKG_PROD}-src.tgz"
 
-PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/limited-support-tools export/share $(UNSUPPORTED_TOOLS) gdb sql/scripts $(EMBEDDED8) sqenvcom.sh opt seapilot/export seapilot/scripts seapilot/spenv.sh seapilot/sp_path.sh tools orig_config src/seatrans/hbase-trx
+PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf src/seatrans/hbase-trx
 
 PKG_BIN_OBJS += trafci
 
-PKG_BIN_DIRS ?= sql seapilot export
+PKG_BIN_DIRS ?= sql export
 PKG_BIN_DIRS += trafci
 
 # Package Regression variables (parser file is for compGeneral/TESTTOK2)

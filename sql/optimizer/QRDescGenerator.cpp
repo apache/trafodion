@@ -54,7 +54,7 @@ Visitor::VisitResult SetRefVisitor::visit(QRElementPtr caller)
     return VR_Continue;
   
   QRElementPtr elem = idHash_.getFirstValue(&ref);
-  assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL, 
+  assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL, 
                      elem != NULL, QRLogicException, 
 		     "Referenced element %s does not exist.", ref.toCharStar());
   caller->setReferencedElement(elem);
@@ -101,7 +101,7 @@ void EqualitySet::determineType()
     {
       // I don't think this should happen.
       // LCOV_EXCL_START :rfi
-      QRLogger::log(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
         "determineType() called for empty EqualitySet.");
       return;
       // LCOV_EXCL_STOP
@@ -388,7 +388,7 @@ QRColumnPtr QRDescGenerator::genQRColumn(ValueId vid,
     {
       // This should be a vegref to an instantiate_null for a LOJ.
       ItemExpr* itemExpr = vid.getItemExpr();
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         isInstNull(itemExpr), QRDescriptorException, 
 			"genQRColumn called for ValueID that is neither column nor "
 			"instantiate_null function");
@@ -608,7 +608,7 @@ static void addFunctionParameters(ItemExpr* ie,
       // functions have not been addressed.
       default:
         deletePtr(param);
-        assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                            FALSE, QRDescriptorException,
 			   "Unhandled function type in addFunctionParameters(): %d",
 			   ie->getOperatorType());
@@ -707,7 +707,7 @@ QRExplicitExprPtr QRDescGenerator::getExprTree(ItemExpr* itemExpr)
           else if (elemType == ET_Function)
             return elem->downCastToQRFunction();
           else
-            assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+            assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                                FALSE, QRDescriptorException,
 			       "Unhandled element type returned from genQRColumn() in getExprTree(): %d",
 			       elemType);
@@ -722,7 +722,7 @@ QRExplicitExprPtr QRDescGenerator::getExprTree(ItemExpr* itemExpr)
             constVal = (static_cast<ConstantParameter*>(itemExpr))->getConstVal();
           else
             {
-              assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+              assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                                  op == ITM_CONSTANT, QRDescriptorException,
                                  "In getExprTree(), expected ITM_CONSTANT but got %d",
                                  op);
@@ -756,7 +756,7 @@ QRExplicitExprPtr QRDescGenerator::getExprTree(ItemExpr* itemExpr)
                   scalar = new (mvqrHeap_) QRStringVal(ADD_MEMCHECK_ARGS(mvqrHeap_));
                 else
                   {
-                    assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+                    assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                                        ((CharType*)type)->getBytesPerChar() == 2, 
                                        QRDescriptorException,
                                        "Unhandled bytes-per-char: %d",
@@ -768,7 +768,7 @@ QRExplicitExprPtr QRDescGenerator::getExprTree(ItemExpr* itemExpr)
                   }
                 break;
               default:
-                QRLogger::log(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+                QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                   "Unhandled data type: %d (%s)",
                   type->getTypeQualifier(), type->getTypeName().toCharStar());
                 scalar = new (mvqrHeap_) QRStringVal(ADD_MEMCHECK_ARGS(mvqrHeap_));
@@ -795,7 +795,7 @@ QRExplicitExprPtr QRDescGenerator::getExprTree(ItemExpr* itemExpr)
       // LCOV_EXCL_START :rfi
       case QR::QRNoElem:
       default:
-        assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                            FALSE, QRDescriptorException,
 			   "Unhandled ExprElement enum value: %d",
 			   itemExpr->getQRExprElem());
@@ -1100,7 +1100,7 @@ QRDescGenerator::processOutputList(const ValueIdSet& normOutputs,
         // If we did not find the ordinal number of the column, throw an 
         // exception now, so that an MV descriptor will not be created.
         Int32 cvid_i = cvid;
-        assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                            found, QRDescriptorException,
                            "No matching MV column found for output item with "
                            "ValueId %d", cvid_i);
@@ -1173,7 +1173,7 @@ QRDescGenerator::processOutputList(const ValueIdSet& normOutputs,
     
   graphString += "}\n"
                  "#ENDJOINORDER\n";
-  QRLogger::log(CAT_QR_DESC_GEN, LL_DEBUG, graphString.data());
+  QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_DEBUG, graphString.data());
 }
 
 // Nonmember helper function for processJBBCList; returns array of join order
@@ -1199,7 +1199,7 @@ static Int32* getJoinOrderInfo(const CANodeIdSet* const const_jbbcs, size_t& arr
   arrSize = maxNodeId + 1;  // assign output param
   Int32* joinOrderGroupNumbers = new(STMTHEAP) Int32[arrSize];
 
-  if (QRLogger::isCategoryInDebug(CAT_QR_DESC_GEN))
+  if (QRLogger::isCategoryInDebug(CAT_SQL_COMP_QR_DESC_GEN))
     logJBBCPredecessorGraph(jbbcs);
 
   while (jbbcs.entries() > 0)
@@ -1246,7 +1246,7 @@ static Int32* getJoinOrderInfo(const CANodeIdSet* const const_jbbcs, size_t& arr
             }
         } // each jbbc
 
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         foundOne || numSkipped == jbbcs.entries(),
                         QRDescriptorException,
                         "One or more nodes not reachable via required predecessor nodes");
@@ -1342,7 +1342,7 @@ void QRDescGenerator::processJBBCList(CANodeIdSet* jbbcNodeIds,
             // LCOV_EXCL_START :rfi
             deletePtr(groupJbb);
             Int32 nodeIdVal = nodeId;
-            assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+            assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                                FALSE, QRDescriptorException,
                                "Unsupported operator: %s",
                                nodeAnalysis->getOriginalExpr()->getText().data());
@@ -1561,7 +1561,7 @@ QRJBBPtr QRDescGenerator::createJbb(JBB* jbb)
   else if (groupJbbcNodeId != NULL_CA_ID)
     {
       RelExpr* relExpr = groupJbbcNodeId.getNodeAnalysis()->getOriginalExpr();
-      assertLogAndThrow1(CAT_QR_DESC_GEN, LL_ERROR,
+      assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_ERROR,
                           relExpr->getOperatorType() == REL_GROUPBY,
                           QRDescriptorException,
                           "Expected grouping JBBC, but op type was %d.",
@@ -1601,7 +1601,7 @@ NABoolean QRDescGenerator::qrNeededForTable(RelExpr* parent, RelExpr* scanExpr)
   // If there are no MVs on the table, no rewrite is possible.
   if (!hasRewriteEnabledMVs(scan->getTableDesc()))
     {
-      QRLogger::log(CAT_QR_DESC_GEN, LL_DEBUG,
+      QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_DEBUG,
         "Omitting single table JBB %s from query descriptor -- no "
                   "rewrite-enabled MVs are defined on it.",
         scan->getTableDesc()->getNATable()->getTableName().getObjectName().data());
@@ -1676,7 +1676,7 @@ NABoolean QRDescGenerator::processJBBs(QRDescriptorPtr descPtr,
   {
     // Don't bother with single table queries in WA mode.
     const CANodeIdSet& allTables = qa->getTables();
-    assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+    assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                       allTables.entries() > 1,
                       QRDescriptorException,
                       "This query has a single table.");
@@ -1715,7 +1715,7 @@ NABoolean QRDescGenerator::processJBBs(QRDescriptorPtr descPtr,
   if (isDumpMvMode())
   {
     Int32 totalJBBs = remainingJBBs + descPtr->getJbbList().entries();
-    assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+    assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                        totalJBBs == 1,
                        QRDescriptorException,
                        "This query has %d JBBs.", totalJBBs);
@@ -1741,7 +1741,7 @@ NABoolean QRDescGenerator::processJBBs(QRDescriptorPtr descPtr,
 
       if (!usesEnabledMVs)
         {
-          QRLogger::log(CAT_QR_DESC_GEN, LL_DEBUG,
+          QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_DEBUG,
               "Query descriptor not generated: no JBBC of any JBB is used in "
               "a rewrite-enabled MV.");
           return FALSE;
@@ -1767,13 +1767,13 @@ NABoolean QRDescGenerator::processJBBs(QRDescriptorPtr descPtr,
             }
           else
             {
-              QRLogger::log(CAT_QR_DESC_GEN, LL_DEBUG,
+              QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_DEBUG,
                 "Omitting JBB #%d from descriptor because it contains "
                 "semijoins, anti-semijoins, or TSJs", currentJBB_->getJBBId());
 
               if (isDumpMvMode())
                 {
-                  assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+                  assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                                    FALSE,
                                    QRDescriptorException,
                                    "SemiJoins are not supported yet.");
@@ -1802,7 +1802,7 @@ NABoolean QRDescGenerator::processJBBs(QRDescriptorPtr descPtr,
       else
         {
           CANodeId nodeId = (CANodeId)(qrJbbPtr->getNodeId());
-          assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+          assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                              nodeId != NULL_CA_ID,
                              QRDescriptorException,
                              "QRJBB at position %d in list had neither a JBB* nor a node id",
@@ -1835,26 +1835,26 @@ void QRDescGenerator::logColumnBitmap(QRTablePtr table,
                                       ElementType predType)
 {
   // Exit immediately if logging is not in DEBUG level.
-  if (!QRLogger::isCategoryInDebug(CAT_QR_DESC_GEN))
+  if (!QRLogger::isCategoryInDebug(CAT_SQL_COMP_QR_DESC_GEN))
     return;
     
   QRTRACER("QRDescGenerator::logColumnBitmap()");
   // Log which bitmap this is.
   if (predType == ET_RangePred)
   {
-    QRLogger::log(CAT_QR_DESC_GEN, LL_DEBUG,
+    QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_DEBUG,
       "For table %s, the following columns have range predicates:",
       table->getTableName().data());
   }
   else if (predType == ET_ResidualPred)
   {
-    QRLogger::log(CAT_QR_DESC_GEN, LL_DEBUG,
+    QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_DEBUG,
       "For table %s, the following columns have residual predicates:",
       table->getTableName().data());
   }
   else
   {
-    QRLogger::log(CAT_QR_DESC_GEN, LL_DEBUG,
+    QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_DEBUG,
       "Table %s has these columns set in bitmap of element type %d:",
                table->getTableName().data(), predType);
   }
@@ -1862,7 +1862,7 @@ void QRDescGenerator::logColumnBitmap(QRTablePtr table,
   // If nothing set, log a message noting that and return.
   if (bitmap.isEmpty())
     {
-      QRLogger::log(CAT_QR_DESC_GEN, LL_DEBUG, "    <none>");
+      QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_DEBUG, "    <none>");
       return;
     }    
                        
@@ -1871,7 +1871,7 @@ void QRDescGenerator::logColumnBitmap(QRTablePtr table,
   const NAColumnArray& colsInTable =
         tblNodeId.getNodeAnalysis()->getTableAnalysis()->getTableDesc()
                                    ->getNATable()->getNAColumnArray();
-  assertLogAndThrow2(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow2(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                      table->getNumCols() == colsInTable.entries(),
                      QRDescriptorException,
                      "logColumnBitmap() expected %d columns, but found %d in list",
@@ -1881,7 +1881,7 @@ void QRDescGenerator::logColumnBitmap(QRTablePtr table,
     {
       if (bitmap.testBit(i))
       {
-        QRLogger::log(CAT_QR_DESC_GEN, LL_DEBUG,
+        QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_DEBUG,
           "    %s", colsInTable[i]->getColName().data());
       }
       
@@ -2045,7 +2045,7 @@ void QRDescGenerator::addJoinPred(QRJBBPtr jbbElem,
     {
       // Since we have only a single hub member and we know there are two or more
       // members, there must be at least one extra-hub member.
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         extraHubJoinPred, QRDescriptorException,
                         "In addJoinPred(): single hub member and no extra-hub");
 
@@ -2196,7 +2196,7 @@ CANodeId QRDescGenerator::getExprNode(ItemExpr* itemExpr)
         return NULL_CA_ID;
       else
         {
-          assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+          assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                             currentJBB_->getGBAnalysis(), QRDescriptorException,
                             "No GBAnalysis for JBB %d, although an aggfn was used",
                             currentJBB_->getJBBId());
@@ -2207,7 +2207,7 @@ CANodeId QRDescGenerator::getExprNode(ItemExpr* itemExpr)
     {
       NAString predText;
       itemExpr->unparse(predText);
-      QRLogger::log(CAT_QR_DESC_GEN, LL_WARN,
+      QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_WARN,
           "Predicate encountered with no columns and no count(*), will treat "
           "as residual predicate -- %s", predText.data());
       return NULL_CA_ID;
@@ -2340,7 +2340,7 @@ void QRDescGenerator::processEqualitySet(QRJBBPtr jbbElem,
         {
           const TableAnalysis* tableAnalysis =
                    ((BaseColumn*)itemExpr)->getTableDesc()->getTableAnalysis();
-          assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+          assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                             tableAnalysis, QRDescriptorException,
                             "TableDesc has null table analysis");
           itemNodeId = tableAnalysis->getNodeAnalysis()->getId();
@@ -2383,7 +2383,7 @@ void QRDescGenerator::processEqualitySet(QRJBBPtr jbbElem,
         {
           // Substitute an itemexpr representing the constant value underlying
           // the parameter.
-          assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+          assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                             !constItem, QRDescriptorException, 
                             "Equality set contains more than one constant");
           constItem = (static_cast<ConstantParameter*>(itemExpr))->getConstVal();
@@ -2512,7 +2512,7 @@ VEGPredicate* QRDescGenerator::getVegPredicate(UInt32 hubJoinPredId)
   QRTRACER("QRDescGenerator::getVegPredicate()");
   ValueId vegRefVid = (ValueId)hubJoinPredId;
   ItemExpr* ie = vegRefVid.getItemExpr();
-  assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                      ie->getOperatorType() == ITM_VEG_REFERENCE,
                      QRDescriptorException,
                      "Hub join pred id is not ValueId of vegref -- %d",
@@ -2562,14 +2562,14 @@ void QRDescGenerator::addEqualityResidPred(QRJBBPtr jbbElem,
 {
   QRTRACER("QRDescGenerator::addEqualityResidPred()");
   ItemExpr* residExpr;
-  assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                     op1, QRDescriptorException,
                     "op1 of equality resid pred is null");
   if (op2)
     residExpr = new(mvqrHeap_) BiRelat(ITM_EQUAL, op1, op2);
   else
     {
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         hubJoinPredId, QRDescriptorException,
                         "Neither op2 nor hubJoinPredId is given");
       residExpr = new(mvqrHeap_) BiRelat(ITM_EQUAL,
@@ -2577,7 +2577,7 @@ void QRDescGenerator::addEqualityResidPred(QRJBBPtr jbbElem,
     }
 
   
-  assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                     relExpr_,
 		    QRDescriptorException, 
 		    "No RelExpr* stored for QRDescGenerator");
@@ -2600,7 +2600,7 @@ void QRDescGenerator::processReferencingPreds(CANodeIdSet* nodeSet,
        nodeSet->advance(node))
     {
       nodeAnalysis = node.getNodeAnalysis();
-      assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                          nodeAnalysis, QRDescriptorException,
                          "No NodeAnalysis found for CA node id %ud", node.toUInt32());
       tableAnalysis = nodeAnalysis->getTableAnalysis();
@@ -2903,7 +2903,7 @@ void QRDescGenerator::addEqPredToEqualitySets(
   QRValueId vid;
   NABoolean moveToTarget[] = {TRUE, TRUE};
 
-  assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                     pred->getOperatorType() == ITM_EQUAL,
 		    QRDescriptorException, 
 		    "addEqPredToEqualitySets() called for non-equality predicate");
@@ -3046,23 +3046,23 @@ void QRDescGenerator::setPredBitmap(QRValueId colVid, ElementType elemType)
         {
           // LCOV_EXCL_START :rfi
           Int32 vidInt = vid;
-          assertLogAndThrow2(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+          assertLogAndThrow2(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                             FALSE, QRDescriptorException,
                             "ValueId %d is not a base col or veg ref -- op type = %d",
                             vidInt, opType);
           // LCOV_EXCL_STOP
         }
     }
-  assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                      elem, QRDescriptorException,
                      "Column id not found in hash table -- %d", (UInt32)colVid);
   QRColumnPtr col = elem->getReferencedElement()->downCastToQRColumn();
   const NAString& tblID = col->getTableID();
   elem = colTblIdHash_.getFirstValue(&tblID);
-  assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                      elem, QRDescriptorException,
                      "Table id not found in hash table -- %s", tblID.data());
-  assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                      elem->getElementType() == ET_Table, QRDescriptorException,
                      "Expected a Table element type, not %d",
                      elem->getElementType());
@@ -3074,7 +3074,7 @@ void QRDescGenerator::setPredBitmap(QRValueId colVid, ElementType elemType)
   else if (elemType == ET_ResidualPred)
     elem->downCastToQRTable()->setResidualBit(col->getColIndex());
   else
-    assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+    assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                        FALSE, QRDescriptorException,
                        "Wrong element type sent to setPredBitmap() -- %d",
                        elemType);

@@ -20,7 +20,7 @@
 #
 
 function LogIt {
-    echo  "`date`: $1" >> $MY_SQROOT/sql/scripts/startup.log
+    echo  "`date`: $1" >> $MY_SQROOT/logs/startup.log
 }
 
 lv_prog_name="cresumeall"

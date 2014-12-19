@@ -359,8 +359,7 @@ void CTmTimer::cancelControlpointEvent()
 
 // --------------------------------------------------------------
 // CTmTimer::addStatsEvent
-// Purpose : Add a Stats Event to drive statistics gathering for
-// SeaPilot.
+// Purpose : Add a Stats Event to drive statistics gathering
 // pv_interval is the interval between event executions in msecs.
 // --------------------------------------------------------------
 void CTmTimer::addStatsEvent(int32 pv_interval)

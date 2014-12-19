@@ -42,6 +42,6 @@
 
 #include "logmxevent_base.h"
 
-			#include "logmxevent_sq.h"
+#include "logmxevent_traf.h"
 
 #endif

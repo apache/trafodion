@@ -32,6 +32,9 @@
 #include "QSData.h"
 #include "NskUtil.h"
 #include <sstream>
+#include <algorithm>
+
+#include "commonFunctions.h"
 using namespace std;
 #define SEP " "
 #define PREPARE 1
@@ -43,6 +46,23 @@ using namespace std;
 #define STATS_ROWTYPE		"statsRowType"
 #define STATS_ROWTYPE_LEN	12
 //
+
+void sendQueryStats(pub_struct_type pub_type, std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQuery_info);
+
+void UpdateStringText(string& textStr)
+{
+	int pos = 0;
+	while (pos != -1)
+	{
+		pos = textStr.find("'", pos);
+		if (pos != -1)
+		{
+			if(textStr.substr(pos, 2).compare("''") != 0)
+				textStr.insert(pos, "'");
+			pos = pos + 2;
+		}
+	}
+}
 
 extern ResStatisticsSession   *resStatSession;
 
@@ -146,6 +166,10 @@ ResStatisticsStatement::ResStatisticsStatement(bool useCLI)
 	bzero(con_rule_name,sizeof(con_rule_name));
 	bzero(cmp_rule_name,sizeof(cmp_rule_name));	
 	bzero(exe_rule_name,sizeof(exe_rule_name));
+
+	pubStarted = false;
+	queryFinished = false;
+	wouldLikeToStart_ts = 0;
 }
 
 
@@ -767,12 +791,13 @@ void ResStatisticsStatement::start(Int32 inState,
 				*flag_21036 = true;
 	        	stringstream ss2;
 	        	ss2 << "File: " << __FILE__ << ", Fuction: " << __FUNCTION__ << ", Line: " << __LINE__ << ", QID: " << queryId;
-				SetQueryStatsInfoSqlText(
+/*				SetQueryStatsInfoSqlText(
 						  (const char *)ss2.str().c_str() //"ResStatisticsStatement::start():"
 						, (const char *)queryId
 						, queryStartTime
 						, (const char *)inSqlStatement
 						);
+*/
 			}
 			delete sqlStatement;
 			sqlStatement = NULL;
@@ -1951,6 +1976,11 @@ void ResStatisticsStatement::endRepository(SRVR_STMT_HDL *pSrvrStmt,
 	if (comp_stats_data.compilerId[0] == 0)
 		strcpy(comp_stats_data.compilerId,"<N/A>");
 
+	if (srvrGlobal->m_statisticsPubType == STATISTICS_AGGREGATED)
+	{
+		if (resStatSession != NULL)
+			resStatSession->accumulateStatistics(this);
+	}
 
 	if (pSrvrStmt->m_bqueryFinish == false) // do not generate message 
 		return;
@@ -2031,106 +2061,9 @@ void ResStatisticsStatement::endRepository(SRVR_STMT_HDL *pSrvrStmt,
 	        	ss << "File: " << __FILE__ << ", Fuction: " << __FUNCTION__ << ", Line: " << __LINE__ << ", QID: " << pSrvrStmt->sqlUniqueQueryID;
 	        	EXEC_OVERFLOW execOverflow = { 0 };
 				memcpy(&execOverflow, &pSrvrStmt->m_execOverflow, sizeof(EXEC_OVERFLOW));
-				SetQueryStatsInfoEndQueryExecution(
-						  (const char *)ss.str().c_str() //"ResStatisticsStatement::endRepository()"
-						, (const char *)srvrGlobal->sessionId						  
-						, (const char *)pSrvrStmt->stmtName
-						, (const char *)pSrvrStmt->sqlUniqueQueryID
-						, (const char *)parentQID
-						, (const char *)transID
-						, (const char *)getStatementType(pSrvrStmt->sqlNewQueryType)
-						, (const char *)resCollectinfo.clientId
-						, (const char *)resCollectinfo.userName
-						, resCollectinfo.userId
-						, (const char *)srvrGlobal->QSRoleName
-						, (const char *)resCollectinfo.applicationId
-						, (const char *)resCollectinfo.nodeName
-						, (const char *)resCollectinfo.cpuPin
-						, (const char *)resCollectinfo.DSName
-						, (const char *)srvrGlobal->QSServiceName
-						, estRowsAccessed
-						, estRowsUsed
-                  , JULIANTIMESTAMP()
-						, pSrvrStmt->queryStartTime
-                  , currentPriority()
-                  , prepareStartTime
-                  , prepareEndTime
-                  , prepareTime
-                  , estTotalMem
-		  , "NO"
-                  , (const char *)pSrvrStmt->sqlString
-                  , resCollectinfo
-                  , pSrvrStmt->cost_info
-                  , pSrvrStmt->comp_stats_info
-                  , &comp_stats_data
-
-						, inexeEndTime
-						, statementEndTime
-						, inqueryElapseTime
-						, inqueryExecutionTime
-						, firstRowReturnTime
-						, rowsReturned
-						, ProcessBusyTime
-						, numSqlProcs
-						, numberOfRows
-						, errorCode
-						, sqlErrorCode
-						, statsErrorCode
-						, AQRlastError
-						, AQRnumRetries
-						, AQRdelayBeforeRetry
-						, WMSstartTS
-						, (const char *)getQueryStateStringRes(queryState).c_str()
-						, (const char *)querySubstate.c_str()
-						, (const char *)getSQLStateStringRes(state).c_str()
-						, execTime
-						, waitTime
-						, holdTime
-						, suspendTime
-						, OpenTime
-						, Opens
-						, NewProcess
-						, NewProcessTime
-						, (const char *)get_WarnLevelStringRes(warnLevel).c_str()
-						, AccessedRows
-						, UsedRows
-						, DiskProcessBusyTime
-	//					, UdrCpuTime				// For post R2.5/SQ
-						, DiskIOs
-						, SpaceTotal
-						, SpaceUsed
-						, HeapTotal
-						, HeapUsed
-						, TotalMemAlloc
-						, MaxMemUsed
-						, Dp2SpaceTotal
-						, Dp2SpaceUsed
-						, Dp2HeapTotal
-						, Dp2HeapUsed
-						, NumMessages
-						, MessagesBytes
-						, reqMsgCnt
-						, reqMsgBytes
-						, replyMsgCnt
-						, replyMsgBytes
-						, LockWaits
-						, Escalations
-						, (const char *)mapEmptyToNA(con_rule_name)
-						, (const char *)mapEmptyToNA(cmp_rule_name)
-						, (const char *)mapEmptyToNA(exe_rule_name)
-						, totalStatementExecutes
-						, 0
-						, execOverflow
-						, pSrvrStmt->m_suspended_ts	//3289
-						, pSrvrStmt->m_released_ts
-						, pSrvrStmt->m_cancelled_ts
-						, numCpus
-						, UdrCpuTime
-						, subQryType
-						, parentSysName
-						, (const char *)getErrorText((char *)sqlWarningOrError, sqlWarningOrErrorLength, MAX_ERROR_TEXT_LENGTH).c_str()
-						, pSrvrStmt->m_pertable_stats
-						);
+				// Send query end message
+				if (srvrGlobal->m_bStatisticsEnabled && ((srvrGlobal->m_statisticsPubType == STATISTICS_QUERY) || pubStarted))
+					SendQueryStats(false, pSrvrStmt, (char *)sqlWarningOrError, sqlWarningOrErrorLength);
 			}
 			else { // non unique select error condition 
 
@@ -2148,105 +2081,9 @@ void ResStatisticsStatement::endRepository(SRVR_STMT_HDL *pSrvrStmt,
 	         	ss << "File: " << __FILE__ << ", Fuction: " << __FUNCTION__ << ", Line: " << __LINE__ << ", QID: " << pSrvrStmt->sqlUniqueQueryID;
 	        	EXEC_OVERFLOW execOverflow = { 0 };
 				memcpy(&execOverflow, &pSrvrStmt->m_execOverflow, sizeof(EXEC_OVERFLOW));
-	        	SetQueryStatsInfoEndQueryExecution(
-					  (const char *)ss.str().c_str() //"ResStatisticsStatement::endRepository()"
-					, (const char *)srvrGlobal->sessionId
-					, (const char *)pSrvrStmt->stmtName
-					, (const char *)pSrvrStmt->sqlUniqueQueryID
-					, (const char *)parentQID
-					, (const char *)transID
-					, (const char *)getStatementType(pSrvrStmt->sqlNewQueryType)
-					, (const char *)resCollectinfo.clientId
-					, (const char *)resCollectinfo.userName
-					, resCollectinfo.userId
-					, (const char *)srvrGlobal->QSRoleName
-					, (const char *)resCollectinfo.applicationId
-					, (const char *)resCollectinfo.nodeName
-					, (const char *)resCollectinfo.cpuPin
-					, (const char *)resCollectinfo.DSName
-					, (const char *)srvrGlobal->QSServiceName
-					, estRowsAccessed
-					, estRowsUsed
-               , JULIANTIMESTAMP()
-					, pSrvrStmt->queryStartTime
-               , currentPriority()
-               , prepareStartTime
-               , prepareEndTime
-               , prepareTime
-               , estTotalMem
-	       , "NO"
-               , (const char *)pSrvrStmt->sqlString
-               , resCollectinfo
-               , pSrvrStmt->cost_info
-               , pSrvrStmt->comp_stats_info
-               , &comp_stats_data
-
-					, inexeEndTime
-					, statementEndTime
-					, inqueryElapseTime
-					, inqueryExecutionTime
-					, -1					//firstRowReturnTime
-					, -1					//rowsReturned
-					, ProcessBusyTime
-					, numSqlProcs
-					, -1					//numberOfRows
-					, errorCode
-					, sqlErrorCode
-					, statsErrorCode
-					, AQRlastError
-					, AQRnumRetries
-					, AQRdelayBeforeRetry
-					, WMSstartTS
-					, (const char *)getQueryStateStringRes(queryState).c_str()
-					, (const char *)querySubstate.c_str()
-					, (const char *)getSQLStateStringRes(state).c_str()
-					, execTime
-					, waitTime
-					, holdTime
-					, suspendTime
-					, OpenTime
-					, Opens
-					, NewProcess
-					, NewProcessTime
-					, (const char *)get_WarnLevelStringRes(warnLevel).c_str()
-					, -1						//AccessedRows
-					, -1						//UsedRows
-					, -1						//DiskProcessBusyTime
-//					, UdrCpuTime				// For post R2.5/SQ
-					, -1						//DiskIOs
-					, -1						//SpaceTotal
-					, -1						//SpaceUsed
-					, -1						//HeapTotal
-					, -1						//HeapUsed
-					, -1						//TotalMemAlloc
-					, -1						//MaxMemUsed
-					, -1						//Dp2SpaceTotal
-					, -1						//Dp2SpaceUsed
-					, -1						//Dp2HeapTotal
-					, -1						//Dp2HeapUsed
-					, -1						//NumMessages
-					, -1						//MessagesBytes
-					, -1						//reqMsgCnt
-					, -1						//reqMsgBytes
-					, -1						//replyMsgCnt
-					, -1						//replyMsgBytes
-					, -1						//LockWaits
-					, -1						//Escalations
-					, (const char *)mapEmptyToNA(con_rule_name)
-					, (const char *)mapEmptyToNA(cmp_rule_name)
-					, (const char *)mapEmptyToNA(exe_rule_name)
-					, -1						//totalStatementExecutes
-					, -1						//pSrvrStmt->m_aggr.TotalAggregates
-		        	, execOverflow
-					, pSrvrStmt->m_suspended_ts	//3289
-					, pSrvrStmt->m_released_ts
-					, pSrvrStmt->m_cancelled_ts
-					, numCpus
-					, UdrCpuTime
-					, subQryType
-					, parentSysName
-					, (const char *)getErrorText((char *)sqlWarningOrError, sqlWarningOrErrorLength, MAX_ERROR_TEXT_LENGTH).c_str()
-					, pSrvrStmt->m_pertable_stats	);
+				// Send query end message
+				if (srvrGlobal->m_bStatisticsEnabled && ((srvrGlobal->m_statisticsPubType == STATISTICS_QUERY) || pubStarted))
+					SendQueryStats(false, pSrvrStmt, (char *)sqlWarningOrError, sqlWarningOrErrorLength);
 			}
 			/* *flag_21036 = false; */
 			pSrvrStmt->m_need_21036_end_msg = false;
@@ -2272,105 +2109,10 @@ void ResStatisticsStatement::endRepository(SRVR_STMT_HDL *pSrvrStmt,
      	ss << "File: " << __FILE__ << ", Fuction: " << __FUNCTION__ << ", Line: " << __LINE__ << ", QID: " << pSrvrStmt->sqlUniqueQueryID;
     	EXEC_OVERFLOW execOverflow = { 0 };
 		memcpy(&execOverflow, &pSrvrStmt->m_execOverflow, sizeof(EXEC_OVERFLOW));
-		SetQueryStatsInfoEndQueryExecution(
-				  (const char *)ss.str().c_str() //"ResStatisticsStatement::endRepository()"
-				, (const char *)srvrGlobal->sessionId
-				, (const char *)pSrvrStmt->stmtName
-				, (const char *)pSrvrStmt->sqlUniqueQueryID
-				, (const char *)parentQID
-				, (const char *)transID
-				, (const char *)getStatementType(pSrvrStmt->sqlNewQueryType)
-				, (const char *)resCollectinfo.clientId
-				, (const char *)resCollectinfo.userName
-				, resCollectinfo.userId
-				, (const char *)srvrGlobal->QSRoleName
-				, (const char *)resCollectinfo.applicationId
-				, (const char *)resCollectinfo.nodeName
-				, (const char *)resCollectinfo.cpuPin
-				, (const char *)resCollectinfo.DSName
-				, (const char *)srvrGlobal->QSServiceName
-				, estRowsAccessed
-				, estRowsUsed
-            , JULIANTIMESTAMP()
-				, pSrvrStmt->queryStartTime
-            , currentPriority()
-            , prepareStartTime
-            , prepareEndTime
-            , prepareTime
-            , estTotalMem
-	    , "NO"
-            , (const char *)pSrvrStmt->sqlString
-            , resCollectinfo
-            , pSrvrStmt->cost_info
-            , pSrvrStmt->comp_stats_info
-            , &comp_stats_data
+		// Send query end message
+		if (srvrGlobal->m_bStatisticsEnabled && ((srvrGlobal->m_statisticsPubType == STATISTICS_QUERY) || pubStarted))
+			SendQueryStats(false, pSrvrStmt, (char *)sqlWarningOrError, sqlWarningOrErrorLength);
 
-				, inexeEndTime
-				, statementEndTime
-				, inqueryElapseTime
-				, inqueryExecutionTime
-				, firstRowReturnTime
-				, rowsReturned
-				, ProcessBusyTime
-				, numSqlProcs
-				, -1					//numberOfRows
-				, errorCode
-				, sqlErrorCode
-				, statsErrorCode
-				, AQRlastError
-				, AQRnumRetries
-				, AQRdelayBeforeRetry
-				, WMSstartTS
-				, (const char *)getQueryStateStringRes(queryState).c_str()
-				, (const char *)querySubstate.c_str()
-				, (const char *)getSQLStateStringRes(state).c_str()
-				, execTime
-				, waitTime
-				, holdTime
-				, suspendTime
-				, OpenTime
-				, Opens
-				, NewProcess
-				, NewProcessTime
-				, (const char *)get_WarnLevelStringRes(warnLevel).c_str()
-				, AccessedRows
-				, UsedRows
-				, DiskProcessBusyTime
-//				, UdrCpuTime				// For post R2.5/SQ
-				, DiskIOs
-				, SpaceTotal
-				, SpaceUsed
-				, HeapTotal
-				, HeapUsed
-				, TotalMemAlloc
-				, MaxMemUsed
-				, Dp2SpaceTotal
-				, Dp2SpaceUsed
-				, Dp2HeapTotal
-				, Dp2HeapUsed
-				, NumMessages
-				, MessagesBytes
-				, reqMsgCnt
-				, reqMsgBytes
-				, replyMsgCnt
-				, replyMsgBytes
-				, LockWaits
-				, Escalations
-				, (const char *)mapEmptyToNA(con_rule_name)
-				, (const char *)mapEmptyToNA(cmp_rule_name)
-				, (const char *)mapEmptyToNA(exe_rule_name)
-				, totalStatementExecutes
-				, 0
-				, execOverflow
-				, pSrvrStmt->m_suspended_ts	//3289
-				, pSrvrStmt->m_released_ts
-				, pSrvrStmt->m_cancelled_ts
-				, numCpus
-				, UdrCpuTime
-				, subQryType
-				, parentSysName
-				, (const char *)getErrorText((char *)sqlWarningOrError, sqlWarningOrErrorLength, MAX_ERROR_TEXT_LENGTH).c_str()
-				, pSrvrStmt->m_pertable_stats );
 		/* *flag_21036 = false; */
 		pSrvrStmt->m_need_21036_end_msg = false;
 	}
@@ -2432,13 +2174,13 @@ void ResStatisticsStatement::toRepository(SRVR_STMT_HDL *pSrvrStmt,
 		// log the start message 21036
     	stringstream ss;
     	ss << "File: " << __FILE__ << ", Fuction: " << __FUNCTION__ << ", Line: " << __LINE__ << ", QID: " << queryId;
-		SetQueryStatsInfoSqlText(
+/*		SetQueryStatsInfoSqlText(
 			  (const char *)ss.str().c_str() //"ResStatisticsStatement::toRepository()"
 			, (const char *)queryId
 			, queryStartTime
 			, (const char *)inSqlStatement
 			);
-
+*/
 		pSrvrStmt->m_need_21036_end_msg = true;
 
 		// now get stats from RMS
@@ -2629,57 +2371,14 @@ char *typeOfStatementList[] = {
 	"SQL_NOT_SUPPORTED"
 };
 
-char* ResStatisticsStatement::getStatementType(Int32	inStmtType)
-{
-	switch(inStmtType)
-	{
-	case SQL_OTHER:
-		return typeOfStatementList[0];
-	case SQL_UNKNOWN:
-		return typeOfStatementList[1];
-	case SQL_SELECT_UNIQUE:
-		return typeOfStatementList[2];
-	case SQL_SELECT_NON_UNIQUE:
-		return typeOfStatementList[3];
-	case SQL_INSERT_UNIQUE:
-		return typeOfStatementList[4];
-	case SQL_INSERT_NON_UNIQUE:
-		return typeOfStatementList[5];
-	case SQL_UPDATE_UNIQUE:
-		return typeOfStatementList[6];
-	case SQL_UPDATE_NON_UNIQUE:
-		return typeOfStatementList[7];
-	case SQL_DELETE_UNIQUE:
-		return typeOfStatementList[8];
-	case SQL_DELETE_NON_UNIQUE:
-		return typeOfStatementList[9];
-	case SQL_CONTROL:
-		return typeOfStatementList[10];
-	case SQL_SET_TRANSACTION:
-		return typeOfStatementList[11];
-	case SQL_SET_CATALOG:
-		return typeOfStatementList[12];
-	case SQL_SET_SCHEMA:
-		return typeOfStatementList[13];
-	case SQL_CALL_NO_RESULT_SETS:
-		return typeOfStatementList[14];
-	case SQL_CALL_WITH_RESULT_SETS:
-		return typeOfStatementList[15];
-	case SQL_SP_RESULT_SET:
-		return typeOfStatementList[16];
-	case SQL_INSERT_RWRS:
-		return typeOfStatementList[17];
-	case SQL_CAT_UTIL:
-		return typeOfStatementList[18];
-	case SQL_EXE_UTIL:
-		return typeOfStatementList[19];
-	case SQL_SELECT_UNLOAD:
-		return typeOfStatementList[20];
-	default:
-		return typeOfStatementList[21];
-	}
-	return typeOfStatementList[21];
+char* ResStatisticsStatement::getStatementType(Int32	 inSqlQType)
+{    
+    if(inSqlQType>=SQL_OTHER && inSqlQType<=SQL_SELECT_UNLOAD)
+        return typeOfStatementList[inSqlQType+1];
+    else 
+        return typeOfStatementList[21];	
 }
+
 //
 // AGGREGATION----------------procedures
 //
@@ -2688,5 +2387,153 @@ const char* ResStatisticsStatement::mapEmptyToNA(char* input)
 {
 	if (input[0] != 0 && input[0] != ' ') return input;
 	return "<N/A>";
+}
+
+void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStmt, char *inSqlError, Int32 inSqlErrorLength)
+{
+	SQL_COMPILATION_STATS_DATA comp_stats_data;
+	comp_stats_data = pSrvrStmt->comp_stats_info.compilationStats;
+
+	std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQuery_info = std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION>(new STATEMENT_QUERYEXECUTION);
+	*pQuery_info = {0};
+
+	long long endtime = 0;
+	if (!bStart)
+		endtime = JULIANTIMESTAMP();
+
+	pQuery_info->m_process_id = srvrGlobal->process_id;
+	pQuery_info->m_thread_id = srvrGlobal->receiveThrId;
+	pQuery_info->m_node_id = srvrGlobal->m_NodeId;
+	pQuery_info->m_ip_address_id = srvrGlobal->IpAddress;
+	pQuery_info->m_process_name = srvrGlobal->m_ProcName;
+	pQuery_info->m_exec_start_utc_ts = queryStartTime;
+	pQuery_info->m_query_id = queryId;
+	pQuery_info->m_user_name = srvrGlobal->userSID;
+	pQuery_info->m_role_name = srvrGlobal->QSRoleName;
+	pQuery_info->m_start_priority = resCollectinfo.startPriority;
+	pQuery_info->m_session_id = srvrGlobal->sessionId;
+	pQuery_info->m_client_name = srvrGlobal->ClientComputerName;
+	pQuery_info->m_application_name = srvrGlobal->ApplicationName;
+	pQuery_info->m_statement_id = statementId;
+	pQuery_info->m_statement_type = getStatementType(pSrvrStmt->sqlQueryType);
+	pQuery_info->m_submit_utc_ts = statementStartTime;
+	if (!pubStarted)
+	{
+	pQuery_info->m_compile_start_utc_ts = comp_stats_data.compileStartTime;
+	pQuery_info->m_compile_end_utc_ts = comp_stats_data.compileEndTime;
+	pQuery_info->m_compile_elapsed_time = comp_stats_data.compileEndTime - comp_stats_data.compileStartTime;
+	pQuery_info->m_cmp_affinity_num = pSrvrStmt->comp_stats_info.affinityNumber;
+	pQuery_info->m_cmp_dop = pSrvrStmt->comp_stats_info.dop;
+	pQuery_info->m_cmp_txn_needed = pSrvrStmt->comp_stats_info.xnNeeded;
+	pQuery_info->m_cmp_mandatory_x_prod = pSrvrStmt->comp_stats_info.mandatoryCrossProduct;
+	pQuery_info->m_cmp_missing_stats = pSrvrStmt->comp_stats_info.missingStats;
+	pQuery_info->m_cmp_num_joins = pSrvrStmt->comp_stats_info.numOfJoins;
+	pQuery_info->m_cmp_full_scan_on_table = pSrvrStmt->comp_stats_info.fullScanOnTable;
+	pQuery_info->m_cmp_rows_accessed_full_scan = max(double(0),pSrvrStmt->comp_stats_info.rowsAccessedForFullScan);
+	pQuery_info->m_est_accessed_rows = estRowsAccessed;
+	pQuery_info->m_est_used_rows = estRowsUsed;
+	pQuery_info->m_cmp_compiler_id = comp_stats_data.compilerId;
+	pQuery_info->m_cmp_cpu_path_length = comp_stats_data.cmpCpuTotal;
+	pQuery_info->m_cmp_cpu_binder = comp_stats_data.cmpCpuBinder;
+	pQuery_info->m_cmp_cpu_normalizer = comp_stats_data.cmpCpuNormalizer;
+	pQuery_info->m_cmp_cpu_analyzer = comp_stats_data.cmpCpuAnalyzer;
+	pQuery_info->m_cmp_cpu_optimizer = comp_stats_data.cmpCpuOptimizer;
+	pQuery_info->m_cmp_cpu_generator = comp_stats_data.cmpCpuGenerator;
+	pQuery_info->m_cmp_metadata_cache_hits = comp_stats_data.metadataCacheHits;
+	pQuery_info->m_cmp_metadata_cache_lookups = comp_stats_data.metadataCacheLookups;
+	pQuery_info->m_cmp_query_cache_status = comp_stats_data.queryCacheState;
+	pQuery_info->m_cmp_histogram_cache_hits = comp_stats_data.histogramCacheHits;
+	pQuery_info->m_cmp_histogram_cache_lookups = comp_stats_data.histogramCacheLookups;
+	pQuery_info->m_cmp_stmt_heap_size = comp_stats_data.stmtHeapSize;
+	pQuery_info->m_cmp_context_heap_size = comp_stats_data.cxtHeapSize;
+	pQuery_info->m_cmp_optimization_tasks = comp_stats_data.optTasks;
+	pQuery_info->m_cmp_optimization_contexts = comp_stats_data.optContexts;
+	pQuery_info->m_cmp_is_recompile = comp_stats_data.isRecompile;
+	pQuery_info->m_est_num_seq_ios = pSrvrStmt->cost_info.numSeqIOs;
+	pQuery_info->m_est_num_rand_ios = pSrvrStmt->cost_info.numRandIOs;
+	pQuery_info->m_est_cost = estimatedCost;
+	pQuery_info->m_est_cardinality = pSrvrStmt->cost_info.cardinality;
+	pQuery_info->m_est_io_time = pSrvrStmt->cost_info.ioTime;
+	pQuery_info->m_est_msg_time = pSrvrStmt->cost_info.msgTime;
+	pQuery_info->m_est_idle_time = pSrvrStmt->cost_info.idleTime;
+	pQuery_info->m_est_cpu_time = pSrvrStmt->cost_info.cpuTime;
+	pQuery_info->m_est_total_time = pSrvrStmt->cost_info.totalTime;
+	pQuery_info->m_est_total_mem = pSrvrStmt->cost_info.estimatedTotalMem;
+	pQuery_info->m_est_resource_usage = pSrvrStmt->cost_info.resourceUsage;
+	//pQuery_info->m_aggregation_option =
+	pQuery_info->m_cmp_number_of_bmos = pSrvrStmt->comp_stats_info.numOfBmos;
+	char overflowmode_str[64];
+	memset(overflowmode_str,0,sizeof(overflowmode_str));
+	sprintf(overflowmode_str,"%u",pSrvrStmt->comp_stats_info.overflowMode);
+	pQuery_info->m_cmp_overflow_mode = string(overflowmode_str);
+	pQuery_info->m_cmp_overflow_size = pSrvrStmt->comp_stats_info.overflowSize;
+	}
+	//pQuery_info->m_aggregate_total =
+	pQuery_info->m_stats_error_code = statsErrorCode;
+	pQuery_info->m_query_elapsed_time = JULIANTIMESTAMP() - queryStartTime;
+	pQuery_info->m_sql_process_busy_time = ProcessBusyTime;
+	pQuery_info->m_disk_process_busy_time = DiskProcessBusyTime;
+	pQuery_info->m_disk_ios = DiskIOs;
+	pQuery_info->m_num_sql_processes = numSqlProcs;
+	pQuery_info->m_sql_space_allocated = SpaceTotal;
+	pQuery_info->m_sql_space_used = SpaceUsed;
+	pQuery_info->m_sql_heap_allocated = HeapTotal;
+	pQuery_info->m_sql_heap_used = HeapUsed;
+	pQuery_info->m_total_mem_alloc = TotalMemAlloc;
+	pQuery_info->m_max_mem_used = MaxMemUsed;
+	pQuery_info->m_transaction_id = transID;
+	pQuery_info->m_num_request_msgs = reqMsgCnt;
+	pQuery_info->m_num_request_msg_bytes = reqMsgBytes;
+	pQuery_info->m_num_reply_msgs = replyMsgCnt;
+	pQuery_info->m_num_reply_msg_bytes = replyMsgBytes;
+	pQuery_info->m_first_result_return_utc_ts = firstRowReturnTime;
+	pQuery_info->m_rows_returned_to_master = rowsReturned;
+	pQuery_info->m_parent_query_id = parentQID;
+	pQuery_info->m_parent_system_name = parentSysName;
+	pQuery_info->m_exec_end_utc_ts = endtime;
+	pQuery_info->m_master_execution_time = queryExecutionTime;
+	pQuery_info->m_master_elapse_time = queryElapseTime;
+	pQuery_info->m_error_code = errorCode;
+	pQuery_info->m_sql_error_code = sqlErrorCode;
+	pQuery_info->m_error_text = getErrorText(inSqlError, inSqlErrorLength, MAX_ERROR_TEXT_LENGTH);
+	pQuery_info->m_query_text = pSrvrStmt->sqlString;
+	UpdateStringText(pQuery_info->m_query_text);
+	if (pSrvrStmt->sqlPlan != NULL)
+	{
+		pQuery_info->m_explain_plan = pSrvrStmt->sqlPlan;
+		UpdateStringText(pQuery_info->m_explain_plan);
+	}
+	pQuery_info->m_last_error_before_aqr = AQRlastError;
+	pQuery_info->m_delay_time_before_aqr_sec = AQRdelayBeforeRetry;
+	pQuery_info->m_total_num_aqr_retries = AQRnumRetries;
+	pQuery_info->m_msg_bytes_to_disk = replyMsgBytes;
+	pQuery_info->m_msgs_to_disk = replyMsgCnt;
+	pQuery_info->m_rows_accessed = AccessedRows;
+	pQuery_info->m_rows_retrieved = rowsReturned;
+	pQuery_info->m_num_rows_iud = NumRowsIUD;
+	pQuery_info->m_processes_created = NewProcess;
+	pQuery_info->m_process_create_busy_time = NewProcessTime;
+	pQuery_info->m_ovf_file_count = ScratchFileCount;
+	pQuery_info->m_ovf_space_allocated = SpaceTotal;
+	pQuery_info->m_ovf_space_used = SpaceUsed;
+	pQuery_info->m_ovf_block_size = ScratchBufferBlockSize;
+	pQuery_info->m_ovf_write_read_count = ScratchBufferReadCount + ScratchBufferWriteCount;
+	pQuery_info->m_ovf_write_count = ScratchBufferWriteCount;
+	pQuery_info->m_ovf_buffer_blocks_written = ScratchBufferBlocksWritten;
+	//pQuery_info->m_ovf_buffer_bytes_written = ;
+	pQuery_info->m_ovf_read_count = ScratchBufferReadCount;
+	pQuery_info->m_ovf_buffer_blocks_read = ScratchBufferBlocksRead;
+	//pQuery_info->m_ovf_buffer_bytes_read = ;
+	//pQuery_info->m_num_nodes = ;
+	pQuery_info->m_udr_process_busy_time = ProcessBusyTime;
+	pQuery_info->m_pertable_stats = perTableRowSize;
+
+	if (!pubStarted)
+		sendQueryStats(PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION, pQuery_info);
+	else
+		sendQueryStats(PUB_TYPE_STATEMENT_UPDATE_QUERYEXECUTION, pQuery_info);
+
+	if (bStart)
+		pubStarted = true;
 }
 

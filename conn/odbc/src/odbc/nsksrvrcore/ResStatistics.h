@@ -45,10 +45,9 @@ using namespace std;
 #include "CommonDiags.h"
 #include "odbcMxSecurity.h"
 #include "CSrvrStmt.h"
-#include "EventMsgs.h"
 #include "odbceventmsgutil.h"
 #include "srvrcommon.h"
-#include "QpidEmsInterface.h"
+#include "PubInterface.h"
 
 #define STATE_LEN 15
 #define MSGATTR_LEN 35

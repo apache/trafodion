@@ -79,12 +79,11 @@ COMMON_OBJS  = $(OUTDIR)/utils.o \
         $(OUTDIR)/marshaling.o \
         $(OUTDIR)/swap.o \
         $(OUTDIR)/ODBCMXTraceMsgs.o \
-        $(OUTDIR)/EventMsgs.o \
-        $(OUTDIR)/EventMsgs_ps.o \
         $(OUTDIR)/Listener_srvr.o \
         $(OUTDIR)/Listener_srvr_ps.o \
         $(OUTDIR)/marshalingsrvr_srvr.o \
-        $(OUTDIR)/marshalingsrvr_drvr.o
+        $(OUTDIR)/marshalingsrvr_drvr.o\
+        $(OUTDIR)/CommonLogger.o
 
 
 
@@ -100,16 +99,12 @@ ODBC_OBJS = $(OUTDIR)/odbcas_drvr.o \
         $(OUTDIR)/SrvrConnect.o \
         $(OUTDIR)/SrvrMain.o \
         $(OUTDIR)/ndcsversion.o \
-        $(OUTDIR)/QpidEmsInterface.o \
+        $(OUTDIR)/PubInterface.o \
         $(OUTDIR)/TimeLogger.o 
 
 OBJS = $(COMMON_OBJS) $(COMPRESS_OBJS) $(DBT_OBJS) $(ODBC_OBJS) $(WMS_OBJS)
 
-#ifdef HWMS_USE_JNI
-INCLUDES     = -I. -I../HwmsApiDll -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include
-#else
-INCLUDES     = -I. -I/home/tools/$(HWMS_DIST)/include -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include
-#endif
+INCLUDES     = -I. -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include -I$(SQ_HOME)/../log4cpp/$(LOG4CPP_VER)/include -I$(SQ_HOME)/commonLogger
 
 
 COMMON_DEFINES = -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DUSE_NEW_PHANDLE -DTIMER_FIXED -w -DNSK_ODBC_SRVR -D__TIME_LOGGER -DTHREADED
@@ -125,7 +120,7 @@ all:$(BINEXPDIR)/mxosrvr
 
 DBT_LIBS = 
 
-COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore 
+COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -llog4cpp
 
 # Produce mxosrvr
 $(BINEXPDIR)/mxosrvr: $(OBJS) $(LIBEXPDIR)/libzookeeper_mt.so

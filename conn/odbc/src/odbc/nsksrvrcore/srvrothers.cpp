@@ -1418,6 +1418,9 @@ odbc_SQLSvc_Execute2_sme_(
 			inErrorCode = 0;
 				inSqlError = NULL;
 				inSqlErrorLength = 0;
+			// For UPSERT statements force it as INSERT if the driver has sent a unknown type.
+			if( inSqlStmtType == TYPE_UNKNOWN && (pSrvrStmt->sqlQueryType == SQL_INSERT_UNIQUE || pSrvrStmt->sqlQueryType == SQL_INSERT_NON_UNIQUE) )
+				inSqlStmtType = TYPE_INSERT;
 		}
 		//end rs
 

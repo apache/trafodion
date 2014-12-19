@@ -215,10 +215,6 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
     //    getDefaults().initAccessOption(   controlTransInfo.accessOption());
     //  schemaDB_->
     //    getDefaults().initIsolationLevel( controlTransInfo.isolationLevel());
-    
-    // Initialize log4cpp members. // Must do this before any use of logging.
-    QRLogger::instance().setModule(QRLogger::QRL_MXCMP);
-    QRLogger::instance().initLog4cpp("log4cpp.mvqr.config");
   }
 
   CloseTMFFile();

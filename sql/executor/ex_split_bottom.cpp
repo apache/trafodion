@@ -701,13 +701,22 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
     if (workState_ == IDLE)
       return WORK_OK;
       
+    // inject events to test log4cpp
+    if (splitBottomTdb().getAbendType() == ComTdbSplitBottom::TEST_LOG4CPP)
+    {
+        Int32 LEN = 100;
+        char espInfo[LEN];
+        snprintf(espInfo, LEN, "Test ESP Event on ESP with instance number (%d)", glob_->getMyInstanceNumber());
+        SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, espInfo, 0);
+    }
+
     // Following code is test for soln 10-081104-7061.  A CQD
     // COMP_INT_39 can be used to force various kinds of abends
     // in the ESP.  We would like to limit the # of ESPs 
     // abending to only one, so we assume that there will always
     // be a fragId of 2 and instance # of 0 in any ESP plan.
     if (splitBottomTdb().getAbendType() != ComTdbSplitBottom::NO_ABEND &&
-        glob_->getMyFragId() == 3 &&
+        glob_->getMyFragId() == 2 &&
         glob_->getMyInstanceNumber() == 0)
     {
       switch (splitBottomTdb().getAbendType())
@@ -782,6 +791,11 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
             }
             break;
             // LCOV_EXCL_STOP
+          }
+        case ComTdbSplitBottom::TEST_LOG4CPP:
+          {
+            // nothing done here - should have been handled above
+            break;
           }
         default:
           {

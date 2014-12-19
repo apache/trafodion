@@ -19,15 +19,13 @@
 // **********************************************************************
 
 #include "JavaObjectInterface.h"
-#include "HdfsLogger.h"
+#include "QRLogger.h"
 #include "Globals.h"
 
 // Changed the default to 1024 to accomodate the increased java object
 // memory requirement with the scan performance improvements
 #define DEFAULT_JVM_MAX_HEAP_SIZE 1024
 #define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
-
-NABoolean loggerStatus = HdfsLogger::instance().initLog4cpp("log4cpp.hdfs.config");
 
 // ===========================================================================
 // ===== Class JavaObjectInterface
@@ -67,7 +65,8 @@ char* JavaObjectInterface::getErrorText(JOI_RetCode errEnum)
 //////////////////////////////////////////////////////////////////////////////
 JavaObjectInterface::~JavaObjectInterface()
 {
-  HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "JavaObjectInterface destructor called.");
+  // commenting out for now - this may cause mxorsvr core during mxsorvr shutdown
+  //QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "JavaObjectInterface destructor called.");
   jenv_->DeleteGlobalRef(javaObj_);
   javaObj_ = NULL;
   isInitialized_ = FALSE;
@@ -102,7 +101,7 @@ int JavaObjectInterface::createJVM()
   char* classPathArg = buildClassPath();
   int numJVMOptions = 0;
   jvm_options[numJVMOptions].optionString = classPathArg;
-  HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "Using classpath: %s", 
+  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Using classpath: %s", 
                  jvm_options[numJVMOptions].optionString);
   numJVMOptions++;
 
@@ -120,7 +119,7 @@ int JavaObjectInterface::createJVM()
   {
     sprintf(maxHeapOptions, "-Xmx%dm", maxHeapEnvvarMB);
     jvm_options[numJVMOptions].optionString = maxHeapOptions;
-    HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG,
+    QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
                     "Max heap option: %s",
                     jvm_options[numJVMOptions].optionString);
     numJVMOptions++;
@@ -135,7 +134,7 @@ int JavaObjectInterface::createJVM()
     {
       sprintf(initHeapOptions, "-Xms%dm", initHeapEnvvarMB);
       jvm_options[numJVMOptions].optionString = initHeapOptions;
-      HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG,
+      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
                     "Init heap option: %s",
                     jvm_options[numJVMOptions].optionString);
       numJVMOptions++;
@@ -162,7 +161,7 @@ int JavaObjectInterface::createJVM()
      else
         strcat(debugOptions, ",suspend=n");
      jvm_options[numJVMOptions].optionString = debugOptions;
-     HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG,
+     QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
                      "Debug options: %s", 
                      jvm_options[numJVMOptions].optionString);
      numJVMOptions++;
@@ -201,7 +200,7 @@ int JavaObjectInterface::createJVM()
 //////////////////////////////////////////////////////////////////////////////
 JOI_RetCode JavaObjectInterface::initJVM()
 {
-  HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "Entering initJVM().");
+  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Entering initJVM().");
   jint result;
   if (jvm_ == NULL)
   {
@@ -224,7 +223,7 @@ JOI_RetCode JavaObjectInterface::initJVM()
       }
         
       needToDetach_ = false;
-      HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "Created a new JVM.");
+      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Created a new JVM.");
     }
   }
   if (jenv_  == NULL)
@@ -234,7 +233,7 @@ JOI_RetCode JavaObjectInterface::initJVM()
   switch (result)
   {
     case JNI_OK:
-      HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "Attached to an existing JVM.");
+      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Attached to an existing JVM.");
       break;
     
     case JNI_EDETACHED:
@@ -243,17 +242,17 @@ JOI_RetCode JavaObjectInterface::initJVM()
         return JOI_ERROR_ATTACH_JVM;
       
       needToDetach_ = true;
-      HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "Attached to an existing JVM from another thread.");
+      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Attached to an existing JVM from another thread.");
       break;
        
     case JNI_EVERSION:
-      HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "Attaching to a JVM of the wrong version.");
+      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Attaching to a JVM of the wrong version.");
       GetCliGlobals()->setJniErrorStr(getErrorText(JOI_ERROR_JVM_VERSION));
       return JOI_ERROR_JVM_VERSION;
       break;
       
     default:
-      HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "Unknown error Attaching to an existing JVM.");
+      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Unknown error Attaching to an existing JVM.");
       GetCliGlobals()->setJniErrorStr(getErrorText(JOI_ERROR_ATTACH_JVM));
       return JOI_ERROR_ATTACH_JVM;
       break;
@@ -308,7 +307,7 @@ JOI_RetCode JavaObjectInterface::init(char *className,
     
   char first[] = "for the first time";
   char again[] = "again";
-  HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "JavaObjectInterface::init() called for class %s %s.", className, (methodsInitialized == TRUE ? again : first));
+  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "JavaObjectInterface::init() called for class %s %s.", className, (methodsInitialized == TRUE ? again : first));
 
   // Make sure the JVM environment is set up correctly.
   jclass lJavaClass;
@@ -324,12 +323,12 @@ JOI_RetCode JavaObjectInterface::init(char *className,
        if (jenv_->ExceptionCheck()) 
        {
           getExceptionDetails();
-          HdfsLogger::log(CAT_JNI_TOP, LL_ERROR, "Exception in FindClass(%s).", className);
+          QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Exception in FindClass(%s).", className);
           return JOI_ERROR_FINDCLASS;
        }
        if (lJavaClass == 0) 
        {
-           HdfsLogger::log(CAT_JNI_TOP, LL_ERROR, "Error in FindClass(%s).", className);
+           QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Error in FindClass(%s).", className);
            return JOI_ERROR_FINDCLASS;
        }
        javaClass = (jclass)jenv_->NewGlobalRef(lJavaClass);
@@ -346,11 +345,11 @@ JOI_RetCode JavaObjectInterface::init(char *className,
         if (JavaMethods[i].methodID == 0 || jenv_->ExceptionCheck())
         { 
           getExceptionDetails();
-          HdfsLogger::log(CAT_JNI_TOP, LL_ERROR, "Error in GetMethod(%s).", JavaMethods[i].jm_name.data());
+          QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Error in GetMethod(%s).", JavaMethods[i].jm_name.data());
           return JOI_ERROR_GETMETHOD;
         }      
         //else
-        //  HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "GetMethod(%s) OK.", JavaMethods[i].jm_name.data());
+        //  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "GetMethod(%s) OK.", JavaMethods[i].jm_name.data());
       }
     }
     
@@ -362,7 +361,7 @@ JOI_RetCode JavaObjectInterface::init(char *className,
       if (jObj == 0 || jenv_->ExceptionCheck())
       { 
         getExceptionDetails();
-        HdfsLogger::log(CAT_JNI_TOP, LL_ERROR, "Error in NewObject() for class %s.", className);
+        QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Error in NewObject() for class %s.", className);
         return JOI_ERROR_NEWOBJ;
       }
       javaObj_ = jenv_->NewGlobalRef(jObj);
@@ -380,20 +379,20 @@ JOI_RetCode JavaObjectInterface::init(char *className,
 void JavaObjectInterface::logError(const char* cat, const char* methodName, const char *result)
 {
     if (result == NULL)
-       HdfsLogger::log(cat, LL_ERROR, "Unknown Java error in %s.", methodName);
+       QRLogger::log(cat, LL_ERROR, "Unknown Java error in %s.", methodName);
     else
-       HdfsLogger::log(cat, LL_ERROR, "%s error: %s.", methodName, result);
+       QRLogger::log(cat, LL_ERROR, "%s error: %s.", methodName, result);
 }
 //
 //////////////////////////////////////////////////////////////////////////////
 void JavaObjectInterface::logError(const char* cat, const char* methodName, jstring jresult)
 {
   if (jresult == NULL)
-    HdfsLogger::log(cat, LL_ERROR, "Unknown Java error in %s.", methodName);
+    QRLogger::log(cat, LL_ERROR, "Unknown Java error in %s.", methodName);
   else
   {
     const char* char_result = jenv_->GetStringUTFChars(jresult, 0);
-    HdfsLogger::log(cat, LL_ERROR, "%s error: %s.", methodName, char_result);
+    QRLogger::log(cat, LL_ERROR, "%s error: %s.", methodName, char_result);
     jenv_->ReleaseStringUTFChars(jresult, char_result);
     jenv_->DeleteLocalRef(jresult);  
   }
@@ -404,7 +403,7 @@ void JavaObjectInterface::logError(const char* cat, const char* methodName, jstr
 //////////////////////////////////////////////////////////////////////////////
 void JavaObjectInterface::logError(const char* cat, const char* file, int line)
 {
-  HdfsLogger::log(cat, LL_ERROR, "Java exception in file %s, line %d.", file, line);
+  QRLogger::log(cat, LL_ERROR, "Java exception in file %s, line %d.", file, line);
 }
 
 NABoolean  JavaObjectInterface::getExceptionDetails(JNIEnv *jenv)

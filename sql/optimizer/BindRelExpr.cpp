@@ -11671,11 +11671,23 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
     {
       // IUD on hbase metadata is only allowed for internal queries.
      *CmpCommon::diags() << DgSqlCode(-1391)
-			 <<  DgString0(naTable->getTableName().getQualifiedNameAsAnsiString());
+			 <<  DgString0(naTable->getTableName().getQualifiedNameAsAnsiString())
+                         << DgString1("metadata");
       bindWA->setErrStatus();
       return this;
     }
-
+  else if ((naTable->isSeabaseTable()) &&
+           (naTable->getTableName().getSchemaName() == SEABASE_REPOS_SCHEMA) &&
+           (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      // IUD on hbase metadata is only allowed for internal queries.
+      *CmpCommon::diags() << DgSqlCode(-1391)
+			 <<  DgString0(naTable->getTableName().getQualifiedNameAsAnsiString())
+                         << DgString1("repository");
+      bindWA->setErrStatus();
+      return this;
+    }
+  
   if ((naTable->isHbaseTable()) &&
       (naTable->isHbaseCellTable() || naTable->isHbaseRowTable()) &&
       (CmpCommon::getDefault(HBASE_NATIVE_IUD) == DF_OFF))

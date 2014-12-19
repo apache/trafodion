@@ -727,27 +727,27 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
 
 
 // Logging the optimization failure indicator.
-      if ( currentPass == 1 ) {
+      NAString msg;
+      if ( currentPass == 1 ) 
+      {
+          // Spit out a more descriptive msg, and then do a longjmp.
+          msg = "SQL compiler : Pass one optimization failed. "  
+                "A previously logged assertion failure may contain " 
+                "more information about the nature of the problem. ";
 
-// Spit out a more descriptive msg, and then do a longjmp.
-     SQLMXLoggingArea::logSQLMXPredefinedEvent(
-		SQLMX_OPT_PASS1_FAILURE,
-		SQLMXLoggingArea::SoftwareFailure
-				);
+          SQLMXLoggingArea::logSQLMXPredefinedEvent(msg.data(), LL_ALERT);
 
           CmpInternalException("Pass1 Failed", __FILE__ , __LINE__).throwException();
       }
       else
 
-      if ( currentPass >= 2 ) {
+      if ( currentPass >= 2 ) 
+      {
+          msg = "SQL compiler: Optimization failed at pass two or higher. " 
+                "Execution will use the plan generated at pass one instead.";
 
-        SQLMXLoggingArea::logSQLMXPredefinedEvent(
-        SQLMX_OPT_PASS2_FAILURE,
-		SQLMXLoggingArea::NonStopGeneral
-				);
-
+          SQLMXLoggingArea::logSQLMXPredefinedEvent(msg.data(), LL_ALERT);
       }
-
 
       // ASSUME : if we're looking at the debugging messages,
       //          we want to see all assertion failures

@@ -669,9 +669,10 @@ ComBoolean CmpSeabaseDDL::isSeabase(const ComObjectName &name)
   return isSeabase(name.getCatalogNamePartAsAnsiString());
 }
 
-NABoolean CmpSeabaseDDL::isSeabaseMD(const NAString &catName,
-                     const NAString &schName,
-                     const NAString &objName)
+NABoolean CmpSeabaseDDL::isSeabaseMD(
+                                     const NAString &catName,
+                                     const NAString &schName,
+                                     const NAString &objName)
 {
   if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
       (NOT catName.isNull()))
@@ -691,11 +692,9 @@ NABoolean CmpSeabaseDDL::isSeabaseMD(const NAString &catName,
 }
 
 NABoolean CmpSeabaseDDL::isSeabaseReservedSchema(
-                                                 const ComObjectName &name)
+                                                 const NAString &catName,
+                                                 const NAString &schName)
 {
-  const NAString &catName = name.getCatalogNamePartAsAnsiString(TRUE);
-  const NAString &schName = name.getSchemaNamePartAsAnsiString(TRUE);
-
   if (NOT catName.isNull())
     {
       NAString seabaseDefCatName = "";
@@ -711,6 +710,15 @@ NABoolean CmpSeabaseDDL::isSeabaseReservedSchema(
     }
 
   return FALSE;
+}
+
+NABoolean CmpSeabaseDDL::isSeabaseReservedSchema(
+                                                 const ComObjectName &name)
+{
+  const NAString &catName = name.getCatalogNamePartAsAnsiString(TRUE);
+  const NAString &schName = name.getSchemaNamePartAsAnsiString(TRUE);
+
+  return isSeabaseReservedSchema(catName, schName);
 }
 
 // ----------------------------------------------------------------------------
@@ -1184,6 +1192,10 @@ short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext)
   if (cliRC < 0)
     return -1;
 
+  cliRC = cliInterface.holdAndSetCQD("traf_no_dtm_xn", "OFF");
+  if (cliRC < 0)
+    return -1;
+
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
 
   Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
@@ -1207,6 +1219,8 @@ void CmpSeabaseDDL::restoreAllControlsAndFlags()
   cliRC = cliInterface.restoreCQD("hide_indexes");
 
   cliRC = cliInterface.restoreCQD("attempt_esp_parallelism");
+
+  cliRC = cliInterface.restoreCQD("traf_no_dtm_xn");
 
   // Restore parser flags settings of cmp and exe context to what they originally were
   Set_SqlParser_Flags (savedCmpParserFlags_);
@@ -5142,6 +5156,10 @@ void CmpSeabaseDDL::initSeabaseMD()
       goto label_error;
     }
 
+  if (createRepos(&cliInterface))
+    {
+      goto label_error;
+    }
   cliRC = cliInterface.restoreCQD("traf_bootstrap_md_mode");
 
   return;
@@ -6440,6 +6458,9 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       (ddlExpr->createMDViews()) ||
       (ddlExpr->dropMDViews()) ||
       (ddlExpr->addSeqTable()) ||
+      (ddlExpr->createRepos()) ||
+      (ddlExpr->dropRepos()) ||
+      (ddlExpr->upgradeRepos()) ||
       (ddlExpr->addSchemaObjects()) ||
       (ddlExpr->updateVersion()))
     ignoreUninitTrafErr = TRUE;
@@ -6499,6 +6520,9 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       (ddlExpr->initAuthorization()) ||
       (ddlExpr->dropAuthorization()) ||
       (ddlExpr->addSeqTable()) ||
+      (ddlExpr->createRepos()) ||
+      (ddlExpr->dropRepos()) ||
+      (ddlExpr->upgradeRepos()) ||
       (ddlExpr->addSchemaObjects()) ||
       (ddlExpr->updateVersion()) ||
       ((ddlNode) &&
@@ -6565,6 +6589,14 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
   else if (ddlExpr->purgedataHbase())
     {
       purgedataHbaseTable(ddlExpr, currCatName, currSchName);
+    }
+  else if ((ddlExpr->createRepos()) ||
+           (ddlExpr->dropRepos()) ||
+           (ddlExpr->upgradeRepos()))
+    {
+      processRepository(ddlExpr->createRepos(), 
+                        ddlExpr->dropRepos(), 
+                        ddlExpr->upgradeRepos());
     }
   else
     {

@@ -20,18 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef TM_USE_SEAPILOT
-#include "common/dtm.perf_stats.pb.h"
-#include "common/dtm.perf_abort_count.pb.h"
-#include "common/dtm.perf_audit_write.pb.h"
-#include "common/dtm.perf_commit_count.pb.h"
-#include "common/dtm.perf_resources.pb.h"
-#include "common/dtm.perf_stats.pb.h"
-#include "common/dtm.perf_tx_begin.pb.h"
-
-#include "wrapper/amqpwrapper.h"
-#endif
-
 // TM includes
 #include "tminfo.h"
 #include "tmlogging.h"
@@ -46,22 +34,11 @@
 #include "seabed/pevents.h"
 #include "seabed/trace.h"
 
-#ifdef TM_USE_SEAPILOT
-#include <qpid/client/Connection.h>
-#include <qpid/client/Session.h>
-#include <qpid/client/AsyncSession.h>
-#include <qpid/client/Message.h>
-#endif
-
 #include <cstdlib>
 #include <ctime>
 #include <cstdio>
 #include <iostream>
 #include <sstream>
-
-#ifdef TM_USE_SEAPILOT
-using namespace qpid;
-#endif
 
 using std::stringstream;
 using std::string;
@@ -652,65 +629,9 @@ void TM_Info::initialize()
      }
        
   // get perf stats mode DTM_PERF_STATS
-    lv_error = tm_reg_get(MS_Mon_ConfigType_Cluster, 
-                          (char *) CLUSTER_GROUP, (char *) "SQ_SEAPILOT_PERF_SUSPENDED", la_value);
-
-    if (lv_error == 0)
-    {
-        int lv_sp_disabled = atoi (la_value);
-        switch (lv_sp_disabled)
-        {
-            case 0:
-            {
-                TMTrace (1, ("Setting PERF_STATS MODE to ON\n"));
-                iv_perf_stats = TM_PERF_STATS_ON;
-                break;
-            }
-            case 1:
-            {
-                TMTrace (1, ("Setting PERF_STATS MODE to OFF\n"));
-                iv_perf_stats = TM_PERF_STATS_OFF;
-                break;
-            }
-            default:
-            {
-                 TMTrace (1, ("Setting PERF_STATS MODE to ON\n"));
-                 iv_perf_stats = TM_PERF_STATS_OFF;
-                 break;
-            }
-        }
-    }
-    else
-        iv_perf_stats = TM_PERF_STATS_OFF;
+    iv_perf_stats = TM_PERF_STATS_OFF;
 
     TMTrace (1, ("Setting PERF STATS mode to %d\n",iv_perf_stats ));
-
- /*   char * lv_spDisabled = getenv("SQ_SEAPILOT_PERF_SUSPENDED");    if (lv_spDisabled)
-    {
-        int lv_sp_disabled = atoi (lv_spDisabled);
-        switch (lv_sp_disabled)
-        {
-            case 0:
-            {
-                TMTrace (1, ("Setting PERF_STATS MODE to ON\n"));
-                iv_perf_stats = TM_PERF_STATS_ON;
-                break;
-            }
-            case 1:
-            {
-                TMTrace (1, ("Setting PERF_STATS MODE to OFF\n"));
-                iv_perf_stats = TM_PERF_STATS_OFF;
-                break;
-            }
-            default:
-            {
-                 TMTrace (1, ("Setting PERF_STATS MODE to ON\n"));
-                 iv_perf_stats = TM_PERF_STATS_OFF;
-                 break;
-            }
-        }
-    }
-*/
 
     // Get the next sequence number block and set the next block range in
     // the registry. SeqNumInterval determines the block size.
@@ -1070,419 +991,27 @@ void TM_Info::init_tracing(bool pv_unique, const char *pp_trace_file, int32 pv_d
 void TM_Info::send_begin_tx(CTmTxBase *pp_tx)
 {
     inc_tx_count();
-#ifdef xUSE_SEAPILOT
-    if (iv_perf_stats == TM_PERF_STATS_OFF)
-       return;
-
-    TMTrace (2, ("send_begin_tx ENTRY\n"));
-
-    int64 lv_begin_count = perf_tx_count();
-    dtm::perf_tx_begin tm_perf_tx_begin;
-    TM_Txid_Internal *lp_tx = NULL;
-
-    tm_perf_tx_begin.set_count(lv_begin_count);
-    tm_perf_tx_begin.set_nid(iv_nid);
-    tm_perf_tx_begin.set_pid(pp_tx->ender_pid());
-    lp_tx = pp_tx->transid();
-
-   // tm_log_event (DTM_TM_REGISTRY_SET_ERROR, SQ_LOG_CRIT, "DTM_TM_REGISTRY_SET_ERROR", 0);
-
-    initAMQPInfoHeader(tm_perf_tx_begin.mutable_header(), 3);
-    AMQPRoutingKey routingKey(SP_PERF_STAT, SP_DTMPACKAGE,  SP_INSTANCE, 
-                              SP_PUBLIC,  SP_GPBPROTOCOL,  "perf_tx_begin"); 
-    try {
-      sendAMQPMessage(false, tm_perf_tx_begin.SerializeAsString(), 
-                      SP_CONTENT_TYPE_APP, routingKey);
-    } catch(...) { }
-    TMTrace (3, ("send_begin_tx count sent : " PFLL ", node %d, ender pid %d, oldest timestamp " PFLL "\n",
-                  lv_begin_count,iv_nid, pp_tx->ender_pid(), pp_tx->timestamp() ));
-
-    TMTrace (2, ("send_begin_tx EXIT\n"));
-#endif
 }
 
 void TM_Info::send_commit_tx(CTmTxBase *pp_tx)
 {
     inc_commit_count();
-#ifdef xUSE_SEAPILOT
-    if (iv_perf_stats == TM_PERF_STATS_OFF)
-       return;
-
-    TMTrace (2, ("send_commit_tx ENTRY\n"));
-
-    int64 lv_commit_count = perf_commit_count();
-    dtm::perf_commit_count tm_perf_commit_count;
-    TM_Txid_Internal *lp_tx = NULL;
-
-    tm_perf_commit_count.set_commit(lv_commit_count);
-    tm_perf_commit_count.set_nid(iv_nid);
-    tm_perf_commit_count.set_pid(pp_tx->ender_pid());
-    lp_tx = pp_tx->transid();
-
-    initAMQPInfoHeader(tm_perf_commit_count.mutable_header(), 3);
-    AMQPRoutingKey routingKey(SP_PERF_STAT, SP_DTMPACKAGE, SP_INSTANCE, 
-                              SP_PUBLIC, SP_GPBPROTOCOL, "perf_commit_count");
-    try {
-      sendAMQPMessage(false, tm_perf_commit_count.SerializeAsString(), 
-                      SP_CONTENT_TYPE_APP, routingKey);
-    } catch(...) { }
-    TMTrace (3, ("send_commit_tx count sent : " PFLL ", node %d, ender pid %d, oldest timestamp " PFLL " \n",
-                  lv_commit_count,iv_nid, pp_tx->ender_pid(), pp_tx->timestamp() ));
-
-    TMTrace (2, ("send_commit_tx EXIT\n"));
-#endif
 }
 
 void TM_Info::send_abort_tx(CTmTxBase *pp_tx)
 {
     inc_abort_count();
-#ifdef xUSE_SEAPILOT
-    if (iv_perf_stats == TM_PERF_STATS_OFF)
-       return;
-
-    TMTrace (2, ("send_abort_tx ENTRY\n"));
-
-    int64 lv_abort_count = perf_abort_count();
-    dtm::perf_abort_count tm_perf_abort_count;
-    TM_Txid_Internal *lp_tx = NULL;
-
-    tm_perf_abort_count.set_abort(lv_abort_count);
-    tm_perf_abort_count.set_nid(iv_nid);
-    tm_perf_abort_count.set_pid(pp_tx->ender_pid());
-    lp_tx = pp_tx->transid();
-
-    initAMQPInfoHeader(tm_perf_abort_count.mutable_header(), 3);
-    AMQPRoutingKey routingKey(SP_PERF_STAT, SP_DTMPACKAGE, SP_INSTANCE, 
-                              SP_PUBLIC, SP_GPBPROTOCOL, "perf_abort_count");
-    try {
-      sendAMQPMessage(false, tm_perf_abort_count.SerializeAsString(),
-                      SP_CONTENT_TYPE_APP, routingKey);
-    } catch (...) { }
-    TMTrace (3, ("send_abort_tx count sent : " PFLL ", node %d, ender pid %d, oldest timestamp " PFLL "\n",
-                  lv_abort_count,iv_nid, pp_tx->ender_pid(), pp_tx->timestamp() ));
-
-    TMTrace (2, ("send_abort_tx EXIT\n"));
-#endif
 }
 
 void TM_Info::send_resource_data()
 {
-#ifdef TM_USE_SEAPILOT
-    TMTrace (2, ("send_resource_data ENTRY\n"));
-    if (iv_perf_stats == TM_PERF_STATS_OFF)
-       return;
-
-    dtm::perf_resources tm_perf_resources_by_node;
- 
-    TMPOOLSTATS lv_tx_pool_stats; 
-    TMPOOLSTATS lv_thread_pool_stats; 
-    transactionPool()->getPoolStats(&lv_tx_pool_stats);
-    threadPool()->getPoolStats(&lv_thread_pool_stats);
-
-    tm_perf_resources_by_node.set_node(iv_nid);
-    tm_perf_resources_by_node.set_tx_poolthresholdeventcounter(lv_tx_pool_stats.iv_poolThresholdEventCounter );
-    tm_perf_resources_by_node.set_tx_poolsizenow (lv_tx_pool_stats.iv_poolSizeNow );
-    tm_perf_resources_by_node.set_tx_inuselistnow (lv_tx_pool_stats.iv_inUseListNow );
-    tm_perf_resources_by_node.set_tx_freelistnow (lv_tx_pool_stats.iv_freeListNow );
-    tm_perf_resources_by_node.set_tx_steadystatelow (lv_tx_pool_stats.iv_steadyStateLow );
-    tm_perf_resources_by_node.set_tx_steadystatehigh (lv_tx_pool_stats.iv_steadyStateHigh );
-    tm_perf_resources_by_node.set_tx_max (lv_tx_pool_stats.iv_max );
-    tm_perf_resources_by_node.set_tx_totalallocs_new (lv_tx_pool_stats.iv_totalAllocs_new );
-    tm_perf_resources_by_node.set_tx_totalallocs_free (lv_tx_pool_stats.iv_totalAllocs_free );
-    tm_perf_resources_by_node.set_tx_totaldeallocs_free (lv_tx_pool_stats.iv_totalDeallocs_free );
-    tm_perf_resources_by_node.set_tx_totaldeallocs_delete (lv_tx_pool_stats.iv_totalDeallocs_delete );
-    tm_perf_resources_by_node.set_thread_poolthresholdeventcounter 
-                                      (lv_thread_pool_stats.iv_poolThresholdEventCounter );
-    tm_perf_resources_by_node.set_thread_poolsizenow (lv_thread_pool_stats.iv_poolSizeNow );
-    tm_perf_resources_by_node.set_thread_inuselistnow (lv_thread_pool_stats.iv_inUseListNow );
-    tm_perf_resources_by_node.set_thread_freelistnow (lv_thread_pool_stats.iv_freeListNow );
-    tm_perf_resources_by_node.set_thread_steadystatelow  (lv_thread_pool_stats.iv_steadyStateLow );
-    tm_perf_resources_by_node.set_thread_steadystatehigh (lv_thread_pool_stats.iv_steadyStateHigh );
-    tm_perf_resources_by_node.set_thread_max (lv_thread_pool_stats.iv_max );
-    tm_perf_resources_by_node.set_thread_totalallocs_new (lv_thread_pool_stats.iv_totalAllocs_new );
-    tm_perf_resources_by_node.set_thread_totalallocs_free (lv_thread_pool_stats.iv_totalAllocs_free );
-    tm_perf_resources_by_node.set_thread_totaldeallocs_free (lv_thread_pool_stats.iv_totalDeallocs_free );
-    tm_perf_resources_by_node.set_thread_totaldeallocs_delete 
-                                       (lv_thread_pool_stats.iv_totalDeallocs_delete );
-    tm_perf_resources_by_node.set_total_tx_count (perf_tx_count() );
-    tm_perf_resources_by_node.set_total_abort_count (perf_abort_count() );
-    tm_perf_resources_by_node.set_total_commit_count ( perf_commit_count());
-    tm_perf_resources_by_node.set_current_tx_count ( perf_current_tx_count());
-
-    TM_Txid_Internal lv_tx;
-    TM_Transid_Type *lp_tx_ex =  (TM_Transid_Type *)&lv_tx;
-    bool lv_found = oldest_timestamp(&lv_tx);
-    if (lv_found)
-    {
-        time_t lv_utcSecTimestamp = (time_t)(lv_tx.iv_timestamp/1000); // seconds in UTC
-        tm lv_localTime;
-        localtime_r(&lv_utcSecTimestamp,&lv_localTime /* out */);  // converts to local time
-        time_t lv_localTimestamp = timegm(&lv_localTime);  // seconds since Jan 1, 1970, LCT
-
-        int64_t lv_utcUsTimestamp = lv_tx.iv_timestamp * 1000;  // microsecond timestamp, in UTC 
-        int64_t lv_lctUsTimestamp = 1000000 * (int64_t)lv_localTimestamp; 
-        lv_lctUsTimestamp+=((int64_t)lv_tx.iv_timestamp % 1000) * 1000; // microsecond timestamp, in LCT
-
-        tm_perf_resources_by_node.set_oldest_transid_timestamp_utc(lv_utcUsTimestamp);
-        tm_perf_resources_by_node.set_oldest_transid_timestamp_lct(lv_lctUsTimestamp);
-        std::string lv_str;
-        convert_tx_to_str(lv_str, lv_tx);
-        tm_perf_resources_by_node.set_oldest_transid_internal (lv_str);
-        tm_perf_resources_by_node.set_oldest_transid (lp_tx_ex->id[0]);
-
-        CTmTxBase *lp_tx_object = (CTmTxBase *) get_tx(&lv_tx);
-        if (lp_tx_object)
-        {
-            tm_perf_resources_by_node.set_oldest_transid_owner_nid(lp_tx_object->ender_nid());
-            tm_perf_resources_by_node.set_oldest_transid_owner_pid(lp_tx_object->ender_pid());
-        }
-    }
-
-    AMQPRoutingKey routingKey(SP_HEALTH_STATE, SP_DTMPACKAGE, SP_INSTANCE, 
-                              SP_PUBLIC, SP_GPBPROTOCOL, "perf_resources");
-    initAMQPInfoHeader(tm_perf_resources_by_node.mutable_header(), 3);
-    try {
-       sendAMQPMessage(true, tm_perf_resources_by_node.SerializeAsString(),
-                       SP_CONTENT_TYPE_APP, routingKey);
-    } catch(...) {}
-
-    TMTrace (3, ("send_resource_data : thread poolsize : %d, thread inuselist : %d, thread freelist %d, thread poolsize : %d, thread inuselist : %d, thread freelist %d \n", lv_thread_pool_stats.iv_poolSizeNow, lv_thread_pool_stats.iv_inUseListNow, lv_thread_pool_stats.iv_freeListNow, lv_tx_pool_stats.iv_poolSizeNow, lv_tx_pool_stats.iv_inUseListNow, lv_tx_pool_stats.iv_freeListNow));
-
-    TMTrace (2, ("send_resource_data EXIT\n"));
-#endif
 }
 void TM_Info::initialize_perf_data()
 {
-#ifdef TM_USE_SEAPILOT
-   TMTrace (2, ("TM_Info::initialize_perf_data: ENTRY\n"));
-   if (iv_perf_stats == TM_PERF_STATS_ON)
-       createAMQPConnection();
-  
-   TMTrace (2, ("TM_Info::initialize_perf_data: EXIT\n"));
-#endif
 }
 
 void TM_Info::send_tx_perf_stats()
 {
-#ifdef TM_USE_SEAPILOT
-    short                      la_results[6];
-    Tm_Perf_Stats_Req_Type     *lp_req = NULL;
-    Tm_Perf_Stats_Rsp_Type     *lp_rsp = NULL;
-    int32                      lv_error = FEOK;
-    int32                      lv_index = 0;
-    int32                      lv_num_sent = 0;
-    pid_msgid_struct           lv_pid_msgid[MAX_NODES];
-    int32                      lv_reqLen = 0;
-    long                       lv_ret;
-    long                       lv_ret2;
-    int32                      lv_rspLen = 0;
-    int                        lv_rsp_rcvd = 0;
-    BMS_SRE_LDONE              lv_sre;
-
-    int64 lv_tx_count = 0;
-    int64 lv_abort_count = 0;
-    int64 lv_commit_count = 0;
-    int64 lv_current_tx_count = 0;
-    int32 lv_tm_abort_count  = 0;
-    int32 lv_hung_tx_count = 0;
-
-    if (iv_perf_stats == TM_PERF_STATS_OFF)
-       return;
-
-    TMTrace (2, ("TM_Info::send_tx_perf_stats: ENTRY\n"));
-
-    // During shutdown the TM processes will be going down, so we don't
-    // want to attempt to gather statistics from them (bug 1635).
-    if (state() != TM_STATE_UP)
-    {
-        TMTrace (2, ("TM_Info::send_tx_perf_stats: EXIT - TM not in up state.\n"));
-        return;
-    }
- 
-    //initialize lv_pid_msgid
-    for (int32 i = 0; i <= tms_highest_index_used(); i++)
-    {
-        lv_pid_msgid[i].iv_tag = 0;
-        lv_pid_msgid[i].iv_msgid = 0;
-        lv_pid_msgid[i].iv_nid = 0;
-    }
-
-    TMTrace (3, ("TM_Info::send_tx_perf_stats Sending Stats request to other TMs.\n"));
-
-     lp_req = new Tm_Perf_Stats_Req_Type [tms_highest_index_used() + 1];  
-     lp_rsp = new Tm_Perf_Stats_Rsp_Type [tms_highest_index_used() + 1];  
-
-     for (int lv_idx = 0; lv_idx <= tms_highest_index_used(); lv_idx++)
-     {
-         if ((lv_idx == iv_nid) ||
-             (iv_open_tms[lv_idx].iv_in_use == false))
-         {
-            lv_pid_msgid[lv_idx].iv_tag = -1;
-         }
-         else 
-         {
-             lv_pid_msgid[lv_idx].iv_tag = lv_idx + 1; // non zero
-             lp_req[lv_idx].iv_msg_hdr.rr_type.request_type = TM_MSG_TYPE_TMPERFSTATS;
-             lp_req[lv_idx].iv_msg_hdr.version.request_version = TM_SQ_MSG_VERSION_CURRENT;
-             lv_pid_msgid[lv_idx].iv_nid = lv_idx;
-         
-             lv_reqLen = sizeof (Tm_Perf_Stats_Req_Type);
-             lv_rspLen = sizeof (Tm_Perf_Stats_Rsp_Type);
-
-             lv_error = link(&(iv_open_tms[lv_idx].iv_phandle),     // phandle,
-                             &lv_pid_msgid[lv_idx].iv_msgid,        // msgid
-                             (char *) &lp_req[lv_idx],    // reqdata
-                             lv_reqLen,                   // reqdatasize
-                             (char *) &lp_rsp[lv_idx],    // replydata
-                             lv_rspLen,                   // replydatamax
-                             lv_pid_msgid[lv_idx].iv_tag, // linkertag
-                             TM_TM_LINK_PRIORITY,         // pri
-                             BMSG_LINK_LDONEQ,            // linkopts
-                             TM_LINKRETRY_RETRIES);       // retry count
-
-             if (lv_error != 0)
-             {
-               //  sprintf(la_buf, "BMSG_LINK_ failed with error %d\n", lv_error);
-               //  tm_log_write(DTM_TM_INFO_LINK_MSG_FAIL, SQ_LOG_CRIT, la_buf);
-                 TMTrace (1, ("TM_Info::send_tx_perf_stats BMSG_LINK_ failed with error %d. failure ignored.\n",lv_error));
-                 // Ignore errors here, we'll retry on the next interval and if there's a bigger problem
-                 // with the TM it'll be picked up elsewhere.
-                 //abort ();
-             }
-             else
-                 lv_num_sent++;
-         }
-      } // for each tm
-
-      // LDONE LOOP
-      while (lv_rsp_rcvd < lv_num_sent)
-      {
-        // wait for an LDONE wakeup 
-        XWAIT(LDONE, -1);
- 
-        do {
-             // we've reached our message reply count, break
-             if (lv_rsp_rcvd >= lv_num_sent)
-                 break;
-
-             lv_ret = BMSG_LISTEN_((short *)&lv_sre, 
-                                    BLISTEN_ALLOW_LDONEM, 0);
-
-             if (lv_ret == BSRETYPE_LDONE)
-             {
-                lv_index = -1;
-                for (int32 lv_idx2 = 0; lv_idx2 <=tms_highest_index_used(); lv_idx2++)
-                {
-                    if (lv_pid_msgid[lv_idx2].iv_tag == lv_sre.sre_linkTag)
-                    {
-                       lv_index = lv_idx2;
-                       break;
-                     }
-                }
-                if (lv_index == -1)
-                {
-                 //   sprintf(la_buf, "No link tag found\n");
-                 //   tm_log_write(DTM_TM_INFO_NO_LTAG, SQ_LOG_CRIT, la_buf);
-                    TMTrace (1, ("TM_Info::send_tx_perf_stats - Link Tag %d not found\n", (int)lv_sre.sre_linkTag));
-                    lv_error = FEDEVDOWN;
-                }
-
-                if (!lv_error)
-                {
-                    lv_ret2 = BMSG_BREAK_(lv_pid_msgid[lv_index].iv_msgid, 
-                                         la_results,
-                                         &(iv_open_tms[lv_pid_msgid[lv_index].iv_nid].iv_phandle)); 
-                    if (lv_ret2 != 0)
-                    {
-                       // sprintf(la_buf, "BMSG_BREAK_ failed with error %ld.\n", lv_ret2);
-                      //  tm_log_write(DTM_TM_INFO_MSGBRK_FAIL, SQ_LOG_CRIT, la_buf);
-                        TMTrace (1, ("TM_Info::send_tx_perf_stats ERROR BMSG_BREAK_ returned %ld, index %d, msgid %d.\n",
-                                lv_ret2, lv_index, lv_pid_msgid[lv_index].iv_msgid));
-                        lv_error = FEDEVDOWN;
-                    }
-                }
-          
-                if (lv_error || lp_rsp[lv_index].iv_error != 0)
-                {
-                   // sprintf(la_buf, "TM stats respond error\n");
-                   // tm_log_write(DTM_TM_INFO_CNTRL_PTRSP_FAIL, SQ_LOG_CRIT, la_buf);
-                    // for now, lets make sure everything succeeded
-                    TMTrace (1, ("TM_Info::send_tx_perf_stats - TM stats respond error\n"));
-                    // not going to kill a TM - error later abort ();
-                }
-                else
-                {
-                    lv_tx_count += lp_rsp[lv_index].iv_tx_count;
-                    lv_abort_count += lp_rsp[lv_index].iv_abort_count;
-                    lv_commit_count += lp_rsp[lv_index].iv_commit_count;
-                    lv_current_tx_count += lp_rsp[lv_index].iv_outstanding_tx_count;;
-                }
-               lv_rsp_rcvd++;
-            }
-          } while (lv_ret == BSRETYPE_LDONE); 
-       }// while (lv_rsp_rcvd < lv_num_sent)
-
-    delete []lp_rsp;
-    delete []lp_req;
-
-    lv_tx_count += perf_tx_count();
-    lv_abort_count += perf_abort_count();
-    lv_commit_count += perf_commit_count();
-    lv_current_tx_count += perf_current_tx_count();
-    lv_tm_abort_count +=  perf_tm_initiated_aborts();
-    lv_hung_tx_count += perf_tx_hung_count();
-
-    dtm::perf_stats tm_perf_stats;
-
-    tm_perf_stats.set_commit_count(lv_commit_count);
-    tm_perf_stats.set_tx_count(lv_tx_count);
-    tm_perf_stats.set_abort_count(lv_abort_count);
-    tm_perf_stats.set_outstanding_tx_count (lv_current_tx_count);
-    tm_perf_stats.set_tm_initiated_aborts(lv_tm_abort_count);
-    tm_perf_stats.set_hung_tx_count (lv_hung_tx_count);
-
-    tm_perf_stats.set_tx_state("ENABLED");
-
-    if(gv_tm_info.state() == TM_STATE_UP)
-       tm_perf_stats.set_tm_state("UP");
-    else
-       tm_perf_stats.set_tm_state("DOWN");
-    
-    TM_Txid_Internal lv_tx;
-    TM_Transid_Type *lp_tx_ex =  (TM_Transid_Type *)&lv_tx;
-    bool lv_found = oldest_timestamp(&lv_tx);
-    if (lv_found)
-    {
-        time_t lv_utcSecTimestamp = (time_t)(lv_tx.iv_timestamp/1000); // seconds in UTC
-        tm lv_localTime;
-        localtime_r(&lv_utcSecTimestamp,&lv_localTime /* out */);  // converts to local time
-        time_t lv_localTimestamp = timegm(&lv_localTime);  // seconds since Jan 1, 1970, LCT
-
-        int64_t lv_utcUsTimestamp = lv_tx.iv_timestamp * 1000;  // microsecond timestamp, in UTC 
-        int64_t lv_lctUsTimestamp = 1000000 * (int64_t)lv_localTimestamp; 
-        lv_lctUsTimestamp+=((int64_t)lv_tx.iv_timestamp % 1000) * 1000; // microsecond timestamp, in LCT
-
-        tm_perf_stats.set_oldest_transid_timestamp_utc(lv_utcUsTimestamp);
-        tm_perf_stats.set_oldest_transid_timestamp_lct(lv_lctUsTimestamp);
-        std::string lv_str;
-        convert_tx_to_str(lv_str, lv_tx);
-        tm_perf_stats.set_oldest_transid_internal (lv_str);
-        tm_perf_stats.set_oldest_transid(lp_tx_ex->id[0]);
-    }
-
-    TMTrace (3, ("send_tx_perf_stats : tx count : " PFLL ", abort count " PFLL ", commit count " PFLL ", current tx count " PFLL ".\n", lv_tx_count, lv_abort_count, lv_commit_count, lv_current_tx_count));
-
-   initAMQPInfoHeader(tm_perf_stats.mutable_header(), 3);
-   AMQPRoutingKey routingKey(SP_PERF_STAT, SP_DTMPACKAGE, SP_INSTANCE, 
-                             SP_PUBLIC, SP_GPBPROTOCOL, "perf_stats");
-   try {
-      sendAMQPMessage(false, tm_perf_stats.SerializeAsString(), SP_CONTENT_TYPE_APP, routingKey);
-   } catch(...) {}
-   // now send resource data from this node
-   send_resource_data();
-
-    TMTrace (2, ("TM_Info::send_tx_perf_stats: EXIT\n"));
-#endif
 }
 
 void TM_Info::send_system_status(TM_STATUSSYS *pp_system_status)

@@ -120,12 +120,6 @@ CHKCI64   = . sq64env.sh
 CHKCIDEB  = x=1
 CHKCIREL  = export SQ_BUILD_TYPE=release
 
-ifdef MY_SPROOT
-  # SeaPilot variables
-  SP_EXPORT                := $(MY_SPROOT)/export
-  SP_EXPORT_INC_COMMON     := $(SP_EXPORT)/include/common
-endif
-
 DEPEXCLUDES = -exclude1 /usr/ -exclude2 /designs/ -exclude3 /opt/ -exclude4 /home/
 ifdef HOMEGCC
   LINKGCC	:= $(shell if test -L /home; then echo "-exclude5 `readlink /home`/"; fi)

@@ -65,7 +65,7 @@ IpcEnvironment* MvQueryRewriteServer::getIpcEnv()
   if (!ipcEnv_)
     {
       if (!heapHasBeenSet_)
-        QRLogger::log(CAT_QR_IPC, LL_INFO,
+        QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO,
           "Heap has not been specified to MvQueryRewriteServer, "
                    "IpcEnvironment being allocated on system heap.");
       ipcEnv_ = new(heap_) IpcEnvironment(heap_, NULL, FALSE,
@@ -118,7 +118,7 @@ char* MvQueryRewriteServer::getProcessName(IpcServerType serverType,
         overridingDefineName = "_MX_QMM_PROCESS_PREFIX";
         break;
       default:
-        assertLogAndThrow1(CAT_QR_IPC, LL_ERROR,
+        assertLogAndThrow1(CAT_SQL_COMP_QR_IPC, LL_ERROR,
                            FALSE, QRLogicException,
                            "Unknown server type in getProcessName(): %d",
                            serverType);
@@ -150,7 +150,7 @@ char* MvQueryRewriteServer::getProcessName(IpcServerType serverType,
             actualPrefix = QMM_PROCESS_PREFIX;
             break;
           default:
-            assertLogAndThrow1(CAT_QR_IPC, LL_ERROR,
+            assertLogAndThrow1(CAT_SQL_COMP_QR_IPC, LL_ERROR,
                                FALSE, QRLogicException,
                                "Unknown server type in getProcessName(): %d",
                                serverType);
@@ -172,7 +172,7 @@ void MvQueryRewriteServer::getSegmentName(Int32 segmentNumber, char* segmentName
   short segmentNameLen;
   short result = NODENUMBER_TO_NODENAME_(segmentNumber, segmentName,
                                          SEGMENT_NAME_LEN, &segmentNameLen);
-  assertLogAndThrow1(CAT_QR_IPC, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_IPC, LL_ERROR,
                      result == 0, QRLogicException,
                      "Failed to get name for segment number %d", segmentNumber);
   segmentName[segmentNameLen] = '\0';
@@ -199,7 +199,7 @@ IpcServer* MvQueryRewriteServer::createServerProcess(IpcServerClass* serverClass
                                               TRUE, 2, NULL, baseProcName);
 
   if (!server)
-    QRLogger::logDiags(diagsArea, CAT_QR_IPC);
+    QRLogger::logDiags(diagsArea, CAT_SQL_COMP_QR_IPC);
   return server;
 }
 
@@ -233,13 +233,13 @@ IpcServer* MvQueryRewriteServer::getQmsServer(DefaultToken publishDest,
       qmsServer_ = createServerProcess(qmsServerClass_, -1, myCpu, TRUE);
       if (qmsServer_)
         {
-          QRLogger::log(CAT_QR_IPC, LL_DEBUG,
+          QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG,
             "QMS process found on cpu #%d", qmsServer_->getServerId().getCpuNum());
           initQms(qmsServer_, heap_);
         }
       else if (publishDest == DF_PRIVATE || publishDest == DF_BOTH)
         {
-          QRLogger::log(CAT_QR_IPC, LL_INFO,
+          QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO,
             "Could not find local QMS, trying to start one...");
           // Can't change allocation method of existing IpcServerClass, need a
           // new one to spawn process.
@@ -254,29 +254,29 @@ IpcServer* MvQueryRewriteServer::getQmsServer(DefaultToken publishDest,
                                                               segmentName, -1);
           if (qmsServer_)
             {
-              QRLogger::log(CAT_QR_IPC, LL_INFO,
+              QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO,
                 "QMS process started on cpu #%d", qmsServer_->getServerId().getCpuNum());
               initQms(qmsServer_, heap_);
             }
           else
             {
               // LCOV_EXCL_START :rfi
-              QRLogger::log(CAT_QR_IPC, LL_ERROR,
+              QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
                 "Failed to allocate server process for QMS");
-              QRLogger::logDiags(diagsArea, CAT_QR_IPC);
+              QRLogger::logDiags(diagsArea, CAT_SQL_COMP_QR_IPC);
               // LCOV_EXCL_STOP
             }
         }
       else
         {
-          QRLogger::log(CAT_QR_IPC, LL_ERROR,
+          QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
             "Could not find local QMS.");
         }
     }
     // LCOV_EXCL_START :rfi
     catch(...)
     {
-      QRLogger::log(CAT_QR_IPC, LL_ERROR,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
         "Exception when allocating server process for QMS");
       return NULL;
     }
@@ -306,7 +306,7 @@ void MvQueryRewriteServer::checkQmsServer()
   if (result)
     {
       qmsServer_ = NULL;
-      QRLogger::log(CAT_QR_IPC, LL_INFO, "A QMS process has died.");
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO, "A QMS process has died.");
     }
 }
 
@@ -333,9 +333,9 @@ IpcServer* MvQueryRewriteServer::getQmmServer()
 
   qmmServer_ = createServerProcess(qmmServerClass, 1, cpu, FALSE);
   if (qmmServer_)
-    QRLogger::log(CAT_QR_IPC, LL_DEBUG, "QMM process found");
+    QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG, "QMM process found");
   else
-    QRLogger::log(CAT_QR_IPC, LL_ERROR,
+    QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
       "Failed to locate server process for QMM on cpu %d ", cpu);
 
   return qmmServer_;
@@ -365,7 +365,7 @@ IpcServer* MvQueryRewriteServer::getQmpServer()
         }
         else
         {
-          QRLogger::log(CAT_QR_IPC, LL_ERROR,
+          QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
             "PROCESSHANDLE_DECOMPOSE_ returned error %d", error);
           cpu = IPC_CPU_DONT_CARE;  // just in case (shouldn't have changed)
         }
@@ -373,10 +373,10 @@ IpcServer* MvQueryRewriteServer::getQmpServer()
       qmpServerClass_ = new(heap_) IpcServerClass(ipcEnv_, IPC_SQLQMP_SERVER);
       qmpServer_ = qmpServerClass_->allocateServerProcess(NULL, NULL, NULL, cpu);
       if (qmpServer_)
-        QRLogger::log(CAT_QR_IPC, LL_INFO,
+        QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO,
           "QMP process started on cpu #%d", qmpServer_->getServerId().getCpuNum());
       else
-        QRLogger::log(CAT_QR_IPC, LL_ERROR,
+        QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
           "Failed to allocate server process for QMP");
     }
   return qmpServer_;
@@ -393,7 +393,7 @@ QRXmlMessageObj* MvQueryRewriteServer::sendMatchMessage(IpcServer* qms,
   QRXmlMessageObj* msgPtr = new QRXmlMessageObj(qryDescText, QR::MATCH_REQUEST);
     
   // Add QMS process as a recipient of the message.
-  assertLogAndThrow(CAT_QR_IPC, LL_ERROR,
+  assertLogAndThrow(CAT_SQL_COMP_QR_IPC, LL_ERROR,
                     qms, QRLogicException,
                     "Null qms passed to sendMatchMessage");
   IpcConnection* conn = qms->getControlConnection();
@@ -429,7 +429,7 @@ QRXmlMessageObj* MvQueryRewriteServer::sendMatchMessage(IpcServer* qms,
 	    {
             QRStatusMessageObj* statusResponse = new QRStatusMessageObj();
               msgStream >> *statusResponse;
-            QRLogger::log(CAT_QR_IPC, LL_DEBUG,
+            QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG,
               "STATUS RESPONSE received: %d\n", (Int32)statusResponse->getStatusCode());
             statusResponse->decrRefCount();
           }
@@ -437,7 +437,7 @@ QRXmlMessageObj* MvQueryRewriteServer::sendMatchMessage(IpcServer* qms,
 
         // LCOV_EXCL_START :rfi
         default:
-          QRLogger::log(CAT_QR_IPC, LL_ERROR, "Unexpected response type: %d.", t);  // LCOV_EXCL_LINE :rfi
+          QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR, "Unexpected response type: %d.", t);  // LCOV_EXCL_LINE :rfi
           break;
         // LCOV_EXCL_STOP
       }
@@ -445,7 +445,7 @@ QRXmlMessageObj* MvQueryRewriteServer::sendMatchMessage(IpcServer* qms,
       if (msgStream.moreObjects())
         {
           // LCOV_EXCL_START :rfi
-          QRLogger::log(CAT_QR_IPC, LL_WARN,
+          QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
             "Match request received one or more extraneous response "
                      "objects, which were discarded");
           msgStream.clearAllObjects();
@@ -455,7 +455,7 @@ QRXmlMessageObj* MvQueryRewriteServer::sendMatchMessage(IpcServer* qms,
   else
     {
       // LCOV_EXCL_START :rfi
-      QRLogger::log(CAT_QR_IPC, LL_WARN,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
         "No response object in message stream from QMS");
       checkQmsServer();
       // LCOV_EXCL_STOP
@@ -467,12 +467,12 @@ QRXmlMessageObj* MvQueryRewriteServer::sendMatchMessage(IpcServer* qms,
 QRRequestResult MvQueryRewriteServer::initQms(IpcServer* qmsServer,
                                               CollHeap* heap)
 {
-  QRLogger::log(CAT_QR_IPC, LL_DEBUG, "INITIALIZE request sent to QMS...");
+  QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG, "INITIALIZE request sent to QMS...");
   QRRequestResult response = sendInitializeMessage(qmsServer, heap);
   if (response == Success)
-    QRLogger::log(CAT_QR_IPC, LL_DEBUG, "...Initialization succeeded");
+    QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG, "...Initialization succeeded");
   else
-    QRLogger::log(CAT_QR_IPC, LL_ERROR, "INITIALIZATION FAILED, result = %d",
+    QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR, "INITIALIZATION FAILED, result = %d",
                   response); // LCOV_EXCL_LINE :rfi
   return response;
 }
@@ -485,7 +485,7 @@ QRRequestResult MvQueryRewriteServer::sendInitializeMessage(IpcServer* qms,
   QRSimpleMessageObj* msgPtr = new QRSimpleMessageObj(QR::INITIALIZE_REQUEST);
     
   // Add QMS process as a recipient of the message.
-  assertLogAndThrow(CAT_QR_IPC, LL_ERROR,
+  assertLogAndThrow(CAT_SQL_COMP_QR_IPC, LL_ERROR,
                     qms, QRLogicException,
                     "Null qms passed to sendInitializeMessage()");
   IpcConnection* conn = qms->getControlConnection();
@@ -513,19 +513,19 @@ QRRequestResult MvQueryRewriteServer::sendInitializeMessage(IpcServer* qms,
           msgStream >> *statusResponse;
           // Must extract the status code before decrementing ref count.
           status = statusResponse->getStatusCode();
-          QRLogger::log(CAT_QR_IPC, LL_DEBUG,
+          QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG,
                         "STATUS RESPONSE received: %d\n", (Int32)status);
           statusResponse->decrRefCount();
         }
       else
         // LCOV_EXCL_START :rfi
-        QRLogger::log(CAT_QR_IPC, LL_ERROR, "Unexpected response type: %d.", t);
+        QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR, "Unexpected response type: %d.", t);
         // LCOV_EXCL_STOP
 
       if (msgStream.moreObjects())
         {
           // LCOV_EXCL_START :rfi
-          QRLogger::log(CAT_QR_IPC, LL_WARN,
+          QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
             "Initialize request received one or more extraneous response "
                      "objects, which were discarded");
           msgStream.clearAllObjects();
@@ -535,7 +535,7 @@ QRRequestResult MvQueryRewriteServer::sendInitializeMessage(IpcServer* qms,
   else
     {
       // LCOV_EXCL_START :rfi
-      QRLogger::log(CAT_QR_IPC, LL_WARN,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
         "No response object in message stream from QMS");
 
       if (qmsServer_)
@@ -655,7 +655,7 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
   // LCOV_EXCL_START :rfi
   if (!descriptorText)
     {
-      QRLogger::log(CAT_QR_IPC, LL_ERROR,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
         "null descriptorText passed to "
                  "MvQueryRewriteServer::sendPublishMessage()");
       return InternalError;
@@ -665,7 +665,7 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
   // LCOV_EXCL_START :rfi
   if (!server)
     {
-      QRLogger::log(CAT_QR_IPC, LL_ERROR,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
         "null server passed to MvQueryRewriteServer::sendPublishMessage()");
       return InternalError;
     }
@@ -691,14 +691,14 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
   msgStream.send();
   msgPtr->decrRefCount();
 
-  QRLogger::log(CAT_QR_IPC, LL_INFO,
+  QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO,
     "Publish message sent, awaiting reply...");
 
   // Read the reply from the server
   msgStream.receive();
   if (!msgStream.moreObjects())
   {
-    QRLogger::log(CAT_QR_IPC, LL_ERROR,
+    QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
       "No response object in message stream from %s", serverName.toCharStar());
     if (!processExists((short *)&(server->getServerId().getPhandle().phandle_)))
       {
@@ -708,7 +708,7 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
         // back up.
         if (server->getServerClass()->getServerType() == IPC_SQLQMS_SERVER)
           {
-            QRLogger::log(CAT_QR_IPC, LL_WARN,
+            QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
               "Can't publish to qms: process does not exist");
             return Unable;
           }
@@ -717,7 +717,7 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
         // have already restarted and found us, so will not create a new qmp.
         // Also, since we were a client of the former qmm, the new one will not
         // receive a system message notifying it of our termination.
-        QRLogger::log(CAT_QR_IPC, LL_INFO,
+        QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO,
           "QMM is gone, trying to connect to new incarnation...");
         server = NULL;
         resetQmmServer(); // so a new one will be looked for
@@ -727,11 +727,11 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
             if (!server)
               {
                 DELAY(1000);
-                QRLogger::log(CAT_QR_IPC, LL_INFO, "Trying again...");
+                QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO, "Trying again...");
               }
           }
 
-        QRLogger::log(CAT_QR_IPC, LL_INFO,
+        QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO,
           "Connection to new QMM established, resending message.");
         return sendPublishMessage(descriptorText, serverName, server, heap);
       }
@@ -740,7 +740,7 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
   else if (msgStream.getNextObjType() != QR::STATUS_RESPONSE)
   {
     // LCOV_EXCL_START :rfi
-    QRLogger::log(CAT_QR_IPC, LL_ERROR,
+    QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
       "Wrong response object returned from %s request", requestName);
     return ProtocolError;
     // LCOV_EXCL_STOP
@@ -751,17 +751,17 @@ MvQueryRewriteServer::sendPublishMessage(const NAString* descriptorText,
     msgStream >> statusObj;
     result = statusObj.getStatusCode();
     if (result == QR::Success)
-      QRLogger::log(CAT_QR_IPC, LL_INFO,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_INFO,
         "%s request succeeded", requestName);
     else
       // LCOV_EXCL_START :rfi
-      QRLogger::log(CAT_QR_IPC, LL_ERROR,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
         "%s request failed with status %d", requestName, result);
       // LCOV_EXCL_STOP
     if (msgStream.moreObjects())
     {
       // LCOV_EXCL_START :rfi
-      QRLogger::log(CAT_QR_IPC, LL_WARN,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_WARN,
         "%s request received one or more extraneous response "
                   "objects, which were discarded", requestName);
       msgStream.clearAllObjects();

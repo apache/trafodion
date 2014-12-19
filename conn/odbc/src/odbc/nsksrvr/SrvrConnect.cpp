@@ -72,7 +72,6 @@
 #include "odbcMxSecurity.h"
 #include "RegValues.h"
 #include "CommonDiags.h"
-#include "EventMsgs.h"
 #include "tdm_odbcSrvrMsg.h"
 #include "RegValues.h"
 #include "tmf_tipapi/ntiperror.h"
@@ -102,6 +101,13 @@ PerformanceMeasure *perf = 0;
 #include "zookeeper/zookeeper.h"
 //extern ZK_GLOBAL_Def zkGlobals;
 
+#include <tr1/memory>
+#include <pthread.h>
+
+#include <queue>
+#include <fstream>
+using namespace std;
+
 extern zhandle_t *zh;
 extern stringstream availSrvrNode;
 extern string regSrvrData;
@@ -113,6 +119,13 @@ extern char zkRootNode[256];
 extern int sdconn;
 extern int clientConnTimeOut;
 extern short stopOnDisconnect;
+extern int aggrInterval;
+extern int queryPubThreshold;
+extern statistics_type statisticsPubType;
+extern bool bStatisticsEnabled;
+extern int myNid;
+extern int myPid;
+extern string myProcName;
 
 extern long maxHeapPctExit;
 extern long initSessMemSize ;
@@ -143,10 +156,44 @@ void sync_string_completion(int rc, const char *name, const void *data)
 		SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
 			srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
 			1, tmpString);
-		exit(0);
+		SRVR::exitServerProcess();
 	}
 //	delete [] (char *)data;
 }
+
+short DO_WouldLikeToExecute(
+	      IDL_char *stmtLabel
+		, Long stmtHandle
+		, IDL_long* returnCode
+		, IDL_long* sqlWarningOrErrorLength
+		, BYTE*& sqlWarningOrError
+		);
+short qrysrvc_ExecuteFinished(
+	      const IDL_char *stmtLabel
+	    , const Long stmtHandle
+		, const bool bCheckSqlQueryType
+		, const short error_code
+		, const bool bFetch
+		, const bool bException = false
+		, const bool bErase = true
+		);
+
+extern char zkHost[256];
+//extern void sendAggrStats(pub_struct_type pub_type, pSESSION_AGGREGATION pAggr_info);
+extern void sendAggrStats(pub_struct_type pub_type, std::tr1::shared_ptr<SESSION_AGGREGATION> pAggr_info);
+//extern void sendSessionEnd(pSESSION_END pSession_info);
+extern void sendSessionEnd(std::tr1::shared_ptr<SESSION_END> pSession_info);
+extern void sendQueryStats(pub_struct_type pub_type, std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQuery_info);
+CEE_handle_def StatisticsTimerHandle;
+SRVR_STMT_HDL * pQueryStmt = NULL;
+
+typedef struct _REPOS_STATS
+{
+	std::tr1::shared_ptr<SESSION_END> m_pSessionStats;
+	std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> m_pQuery_stats;
+	std::tr1::shared_ptr<SESSION_AGGREGATION> m_pAggr_stats;
+	pub_struct_type m_pub_type;
+}REPOS_STATS, *pREPOS_STATS;
 
 #include "dbUserAuth.h" // to get the dbUser ID after authorization
 #include "ndcsversion.h"
@@ -244,6 +291,542 @@ void setPrivMask( short priv, bitmask_type bitMask );
 // QSSYNC registered processes info
 REG_PROC_INFO regProcInfo[256];
 
+pthread_mutex_t Thread_mutex;
+
+template<class T>
+class Repos_Queue
+{
+private:
+    std::queue<T> my_queue;
+    //boost::condition_variable_any cond;
+    pthread_cond_t cond;
+    pthread_mutex_t my_mutex;
+
+public:
+    Repos_Queue(){}
+    ~Repos_Queue()
+    {
+    	pthread_cond_destroy(&cond);
+    }
+
+private:
+    Repos_Queue(const Repos_Queue&);
+    const Repos_Queue& operator=(const Repos_Queue&);
+
+public:
+    void push_task(const T & repos_stats)
+    {
+    //mutex lock
+        //boost::unique_lock<pthread_mutex_t> lock(my_mutex);
+        pthread_mutex_lock(&my_mutex);
+
+        my_queue.push(repos_stats);
+        //Notify other threads
+        //cond.notify_one();
+        pthread_cond_signal(&cond);
+        pthread_mutex_unlock(&my_mutex);
+    }
+    T get_task()
+    {
+        //mutex lock
+        //boost::unique_lock<pthread_mutex_t> lock(my_mutex);
+        pthread_mutex_lock(&my_mutex);
+
+        if(my_queue.size()==0)
+        {
+            //if no task in the queue, waite for mutex
+            //cond.wait(lock);
+            pthread_cond_wait(&cond,&my_mutex);
+        }
+        //point to head of the queue
+        T repos_stats(my_queue.front());
+        //dequeue
+        my_queue.pop();
+        pthread_mutex_unlock(&my_mutex);
+        return repos_stats;
+    }
+    int get_size()
+    {
+        return my_queue.size();
+    }
+};
+
+static Repos_Queue<REPOS_STATS> repos_queue;
+static bool record_session_done = true;
+
+static void* SessionWatchDog(void* arg)
+{
+	pthread_mutex_lock(&Thread_mutex);
+	record_session_done = false;
+	
+	try
+	{
+		SQLCTX_HANDLE thread_context_handle = 0;
+
+		if (WSQL_EXEC_CreateContext(&thread_context_handle, NULL, 0) < 0)
+		{
+			SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+						0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+						1, "Failed to create new SQL context");
+			record_session_done = true;
+			pthread_mutex_unlock(&Thread_mutex);
+			return 0;
+		}
+		SRVR_STMT_HDL *pSrvrStmt = NULL;
+		bool bSwitched = false;
+		stringstream errMsg;
+		ERROR_DESC_def *p_buffer = NULL;
+		int retcode;
+
+		while(!record_session_done)
+		{
+			REPOS_STATS repos_stats = repos_queue.get_task();
+
+			if (!bSwitched) {
+				retcode = WSQL_EXEC_SwitchContext(thread_context_handle, NULL);
+				if (retcode < 0)
+				{
+					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+											0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+											1, "Failed to switch to new SQL context");
+					break;
+				}
+				SQL_EXEC_SetParserFlagsForExSqlComp_Internal(0x20000);
+
+				pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", FALSE);
+				if (pSrvrStmt != NULL)
+					pSrvrStmt->Close(SQL_DROP);
+				pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", TRUE);
+				retcode = pSrvrStmt->ExecDirect(NULL, "CONTROL QUERY DEFAULT traf_no_dtm_xn 'ON'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+				if (retcode < 0)
+				{
+					errMsg.str("");
+					if(pSrvrStmt->sqlError.errorList._length > 0)
+						p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+					else if(pSrvrStmt->sqlWarning._length > 0)
+						p_buffer = pSrvrStmt->sqlWarning._buffer;
+					if(p_buffer != NULL && p_buffer->errorText)
+						errMsg << "Failed to skip transaction - " << p_buffer->errorText;
+					else
+						errMsg << "Failed to skip transaction - " << " no additional information";
+
+					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+											0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+											1, errMsg.str().c_str());
+					break;
+				}
+				bSwitched = true;
+			}
+
+			if (pSrvrStmt == NULL)
+			pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", TRUE);
+
+			stringstream ss;
+			ss.str("");
+			ss.clear();
+
+			if (repos_stats.m_pub_type == PUB_TYPE_SESSION_END)
+			{
+				std::tr1::shared_ptr<SESSION_END> pSessionEnd = repos_stats.m_pSessionStats;
+				if(NULL == pSessionEnd)
+				{
+					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+							0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+							1, "Invalid data pointer founded in SessionWatchDog()");
+					break;
+				}
+
+				ss << "insert into Trafodion.\"_REPOS_\".metric_session_table values(";
+				ss << pSessionEnd->m_instance_id << ",";
+				ss << pSessionEnd->m_tenant_id << ",";
+				ss << pSessionEnd->m_component_id << ",";
+				ss << pSessionEnd->m_process_id << ",";
+				ss << pSessionEnd->m_thread_id << ",";
+				ss << pSessionEnd->m_node_id << ",";
+				ss << pSessionEnd->m_pnid_id << ",";
+				ss << pSessionEnd->m_host_id << ",'";
+				ss << pSessionEnd->m_ip_address_id.c_str() << "',";
+				ss << pSessionEnd->m_sequence_number << ",'";
+				ss << pSessionEnd->m_process_name.c_str() << "','";
+				ss << pSessionEnd->m_sessionId.c_str() << "','";
+				ss << pSessionEnd->m_session_status.c_str() << "',CONVERTTIMESTAMP(";
+				ss << pSessionEnd->m_session_start_utc_ts << "),CONVERTTIMESTAMP(";
+				ss << pSessionEnd->m_session_end_utc_ts << "),";
+				ss << pSessionEnd->m_user_id << ",'";
+				ss << pSessionEnd->m_user_name.c_str() << "','";
+				ss << pSessionEnd->m_role_name.c_str() << "','";
+				ss << pSessionEnd->m_client_name.c_str() << "','";
+				ss << pSessionEnd->m_client_user_name.c_str() << "','";
+				ss << pSessionEnd->m_application_name.c_str() << "',";
+				ss << pSessionEnd->m_total_odbc_exection_time << ",";
+				ss << pSessionEnd->m_total_odbc_elapsed_time << ",";
+				ss << pSessionEnd->m_total_insert_stmts_executed << ",";
+				ss << pSessionEnd->m_total_delete_stmts_executed << ",";
+				ss << pSessionEnd->m_total_update_stmts_executed << ",";
+				ss << pSessionEnd->m_total_select_stmts_executed << ",";
+				ss << pSessionEnd->m_total_catalog_stmts << ",";
+				ss << pSessionEnd->m_total_prepares << ",";
+				ss << pSessionEnd->m_total_executes << ",";
+				ss << pSessionEnd->m_total_fetches << ",";
+				ss << pSessionEnd->m_total_closes << ",";
+				ss << pSessionEnd->m_total_execdirects << ",";
+				ss << pSessionEnd->m_total_errors << ",";
+				ss << pSessionEnd->m_total_warnings << ",";
+				ss << pSessionEnd->m_total_login_elapsed_time_mcsec << ",";
+				ss << pSessionEnd->m_ldap_login_elapsed_time_mcsec << ",";
+				ss << pSessionEnd->m_sql_user_elapsed_time_mcsec << ",";
+				ss << pSessionEnd->m_search_connection_elapsed_time_mcsec << ",";
+				ss << pSessionEnd->m_search_elapsed_time_mcsec << ",";
+				ss << pSessionEnd->m_authentication_connection_elapsed_time_mcsec << ",";
+				ss << pSessionEnd->m_authentication_elapsed_time_mcsec << ")";
+
+			}
+			else if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION)
+			{
+				std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQueryAdd = repos_stats.m_pQuery_stats;
+				if(NULL == pQueryAdd)
+				{
+					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                                        0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                                        1, "Invalid data pointer founded in SessionWatchDog()");
+					break;
+				}
+
+				ss << "insert into Trafodion.\"_REPOS_\".metric_query_table values(";
+				ss << pQueryAdd->m_instance_id << ",";
+				ss << pQueryAdd->m_tenant_id << ",";
+				ss << pQueryAdd->m_component_id << ",";
+				ss << pQueryAdd->m_process_id << ",";
+				ss << pQueryAdd->m_thread_id << ",";
+				ss << pQueryAdd->m_node_id << ",";
+				ss << pQueryAdd->m_pnid_id << ",";
+				ss << pQueryAdd->m_host_id << ",'";
+				ss << pQueryAdd->m_ip_address_id.c_str() << "',";
+				ss << pQueryAdd->m_sequence_number << ",'";
+				ss << pQueryAdd->m_process_name.c_str() << "',CONVERTTIMESTAMP(";
+				ss << pQueryAdd->m_exec_start_utc_ts << "),'";
+				ss << pQueryAdd->m_query_id.c_str() << "','";
+				ss << pQueryAdd->m_user_name.c_str() << "','";
+				ss << pQueryAdd->m_role_name.c_str() << "',";
+				ss << pQueryAdd->m_start_priority << ",'";
+				ss << pQueryAdd->m_master_process_id.c_str() << "','";
+				ss << pQueryAdd->m_session_id.c_str() << "','";
+				ss << pQueryAdd->m_client_name.c_str() << "','";
+				ss << pQueryAdd->m_application_name.c_str() << "','";
+				ss << pQueryAdd->m_statement_id.c_str() << "','";
+				ss << pQueryAdd->m_statement_type.c_str() << "','";
+				ss << pQueryAdd->m_statement_subtype.c_str() << "',";
+				if (pQueryAdd->m_submit_utc_ts > 0)
+					ss << "CONVERTTIMESTAMP(" << pQueryAdd->m_submit_utc_ts << "),";
+				else
+					ss << "NULL,";
+				if (pQueryAdd->m_compile_start_utc_ts > 0)
+					ss << "CONVERTTIMESTAMP(" << pQueryAdd->m_compile_start_utc_ts << "),";
+				else
+					ss << "NULL,";
+				if (pQueryAdd->m_compile_end_utc_ts > 0)
+					ss << "CONVERTTIMESTAMP(" << pQueryAdd->m_compile_end_utc_ts << "),";
+				else
+					ss << "NULL,";
+				ss << pQueryAdd->m_compile_elapsed_time << ",";
+				ss << pQueryAdd->m_cmp_affinity_num << ",";
+				ss << pQueryAdd->m_cmp_dop << ",";
+				ss << pQueryAdd->m_cmp_txn_needed << ",";
+				ss << pQueryAdd->m_cmp_mandatory_x_prod << ",";
+				ss << pQueryAdd->m_cmp_missing_stats << ",";
+				ss << pQueryAdd->m_cmp_num_joins << ",";
+				ss << pQueryAdd->m_cmp_full_scan_on_table << ",";
+				ss << pQueryAdd->m_cmp_rows_accessed_full_scan << ",";
+				ss << pQueryAdd->m_est_accessed_rows << ",";
+				ss << pQueryAdd->m_est_used_rows << ",'";
+				ss << pQueryAdd->m_cmp_compiler_id.c_str() << "',";
+				ss << pQueryAdd->m_cmp_cpu_path_length << ",";
+				ss << pQueryAdd->m_cmp_cpu_binder << ",";
+				ss << pQueryAdd->m_cmp_cpu_normalizer << ",";
+				ss << pQueryAdd->m_cmp_cpu_analyzer << ",";
+				ss << pQueryAdd->m_cmp_cpu_optimizer << ",";
+				ss << pQueryAdd->m_cmp_cpu_generator << ",";
+				ss << pQueryAdd->m_cmp_metadata_cache_hits << ",";
+				ss << pQueryAdd->m_cmp_metadata_cache_lookups << ",";
+				ss << pQueryAdd->m_cmp_query_cache_status << ",";
+				ss << pQueryAdd->m_cmp_histogram_cache_hits << ",";
+				ss << pQueryAdd->m_cmp_histogram_cache_lookups << ",";
+				ss << pQueryAdd->m_cmp_stmt_heap_size << ",";
+				ss << pQueryAdd->m_cmp_context_heap_size << ",";
+				ss << pQueryAdd->m_cmp_optimization_tasks << ",";
+				ss << pQueryAdd->m_cmp_optimization_contexts << ",";
+				ss << pQueryAdd->m_cmp_is_recompile << ",";
+				ss << pQueryAdd->m_est_num_seq_ios << ",";
+				ss << pQueryAdd->m_est_num_rand_ios << ",";
+				ss << pQueryAdd->m_est_cost << ",";
+				ss << pQueryAdd->m_est_cardinality << ",";
+				ss << pQueryAdd->m_est_io_time << ",";
+				ss << pQueryAdd->m_est_msg_time << ",";
+				ss << pQueryAdd->m_est_idle_time << ",";
+				ss << pQueryAdd->m_est_cpu_time << ",";
+				ss << pQueryAdd->m_est_total_time << ",";
+				ss << pQueryAdd->m_est_total_mem << ",";
+				ss << pQueryAdd->m_est_resource_usage << ",'";
+				ss << pQueryAdd->m_aggregation_option.c_str() << "',";
+				ss << pQueryAdd->m_cmp_number_of_bmos << ",'";
+				ss << pQueryAdd->m_cmp_overflow_mode.c_str() << "',";
+				ss << pQueryAdd->m_cmp_overflow_size << ",";
+				ss << pQueryAdd->m_aggregate_total << ",";
+				ss << pQueryAdd->m_stats_error_code << ",";
+				ss << pQueryAdd->m_query_elapsed_time << ",";
+				ss << pQueryAdd->m_sql_process_busy_time << ",";
+				ss << pQueryAdd->m_disk_process_busy_time << ",";
+				ss << pQueryAdd->m_disk_ios << ",";
+				ss << pQueryAdd->m_num_sql_processes << ",";
+				ss << pQueryAdd->m_sql_space_allocated << ",";
+				ss << pQueryAdd->m_sql_space_used << ",";
+				ss << pQueryAdd->m_sql_heap_allocated << ",";
+				ss << pQueryAdd->m_sql_heap_used << ",";
+				ss << pQueryAdd->m_total_mem_alloc << ",";
+				ss << pQueryAdd->m_max_mem_used << ",'";
+				ss << pQueryAdd->m_transaction_id.c_str() << "',";
+				ss << pQueryAdd->m_num_request_msgs << ",";
+				ss << pQueryAdd->m_num_request_msg_bytes << ",";
+				ss << pQueryAdd->m_num_reply_msgs << ",";
+				ss << pQueryAdd->m_num_reply_msg_bytes << ",";
+				if (pQueryAdd->m_first_result_return_utc_ts > 0)
+					ss << "CONVERTTIMESTAMP(" << pQueryAdd->m_first_result_return_utc_ts << "),";
+				else
+					ss << "NULL,";
+				ss << pQueryAdd->m_rows_returned_to_master << ",'";
+				ss << pQueryAdd->m_parent_query_id.c_str() << "','";
+				ss << pQueryAdd->m_parent_system_name.c_str() << "',";
+				if (pQueryAdd->m_exec_end_utc_ts > 0)
+					ss << "CONVERTTIMESTAMP(" << pQueryAdd->m_exec_end_utc_ts << "),";
+				else
+					ss << "NULL,";
+				ss << pQueryAdd->m_master_execution_time << ",";
+				ss << pQueryAdd->m_master_elapse_time << ",";
+				ss << pQueryAdd->m_error_code << ",";
+				ss << pQueryAdd->m_sql_error_code << ",'";
+				ss << pQueryAdd->m_error_text.c_str() << "','";
+				ss << pQueryAdd->m_query_text.c_str() << "','";
+				ss << pQueryAdd->m_explain_plan.c_str() << "',";
+				ss << pQueryAdd->m_last_error_before_aqr << ",";
+				ss << pQueryAdd->m_delay_time_before_aqr_sec << ",";
+				ss << pQueryAdd->m_total_num_aqr_retries << ",";
+				ss << pQueryAdd->m_msg_bytes_to_disk << ",";
+				ss << pQueryAdd->m_msgs_to_disk << ",";
+				ss << pQueryAdd->m_rows_accessed << ",";
+				ss << pQueryAdd->m_rows_retrieved << ",";
+				ss << pQueryAdd->m_num_rows_iud << ",";
+				ss << pQueryAdd->m_processes_created << ",";
+				ss << pQueryAdd->m_process_create_busy_time << ",";
+				ss << pQueryAdd->m_ovf_file_count << ",";
+				ss << pQueryAdd->m_ovf_space_allocated << ",";
+				ss << pQueryAdd->m_ovf_space_used << ",";
+				ss << pQueryAdd->m_ovf_block_size << ",";
+				ss << pQueryAdd->m_ovf_write_read_count << ",";
+				ss << pQueryAdd->m_ovf_write_count << ",";
+				ss << pQueryAdd->m_ovf_buffer_blocks_written << ",";
+				ss << pQueryAdd->m_ovf_buffer_bytes_written << ",";
+				ss << pQueryAdd->m_ovf_read_count << ",";
+				ss << pQueryAdd->m_ovf_buffer_blocks_read << ",";
+				ss << pQueryAdd->m_ovf_buffer_bytes_read << ",";
+				ss << pQueryAdd->m_num_nodes << ",";
+				ss << pQueryAdd->m_udr_process_busy_time << ",";
+				ss << pQueryAdd->m_pertable_stats << ")";
+			}
+			else if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_UPDATE_QUERYEXECUTION)
+			{
+				std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQueryUpdate = repos_stats.m_pQuery_stats;
+				if(NULL == pQueryUpdate)
+				{
+					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                                        0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                                        1, "Invalid data pointer founded in SessionWatchDog()");
+					break;
+				}
+
+				ss << "update Trafodion.\"_REPOS_\".metric_query_table ";
+				ss << "set STATEMENT_TYPE= '" << pQueryUpdate->m_statement_type.c_str() << "',";
+				ss << "STATEMENT_SUBTYPE= '" << pQueryUpdate->m_statement_subtype.c_str() << "',";
+				ss << "AGGREGATE_TOTAL= " << pQueryUpdate->m_aggregate_total << ",";
+				ss << "STATS_ERROR_CODE= " << pQueryUpdate->m_stats_error_code << ",";
+				ss << "QUERY_ELAPSED_TIME= " << pQueryUpdate->m_query_elapsed_time << ",";
+				ss << "SQL_PROCESS_BUSY_TIME= " << pQueryUpdate->m_sql_process_busy_time << ",";
+				ss << "DISK_PROCESS_BUSY_TIME= " << pQueryUpdate->m_disk_process_busy_time << ",";
+				ss << "DISK_IOS= " << pQueryUpdate->m_disk_ios << ",";
+				ss << "NUM_SQL_PROCESSES= " << pQueryUpdate->m_num_sql_processes << ",";
+				ss << "SQL_SPACE_ALLOCATED= " << pQueryUpdate->m_sql_space_allocated << ",";
+				ss << "SQL_SPACE_USED= " << pQueryUpdate->m_sql_space_used << ",";
+				ss << "SQL_HEAP_ALLOCATED= " << pQueryUpdate->m_sql_heap_allocated << ",";
+				ss << "SQL_HEAP_USED= " << pQueryUpdate->m_sql_heap_used << ",";
+				ss << "TOTAL_MEM_ALLOC= " << pQueryUpdate->m_total_mem_alloc << ",";
+				ss << "MAX_MEM_USED= " << pQueryUpdate->m_max_mem_used << ",";
+				ss << "NUM_REQUEST_MSGS= " << pQueryUpdate->m_num_request_msgs << ",";
+				ss << "NUM_REQUEST_MSG_BYTES= " << pQueryUpdate->m_num_request_msg_bytes << ",";
+				ss << "NUM_REPLY_MSGS= " << pQueryUpdate->m_num_reply_msgs << ",";
+				ss << "NUM_REPLY_MSG_BYTES= " << pQueryUpdate->m_num_reply_msg_bytes << ",";
+				if (pQueryUpdate->m_first_result_return_utc_ts > 0)
+					ss << "FIRST_RESULT_RETURN_UTC_TS= CONVERTTIMESTAMP(" << pQueryUpdate->m_first_result_return_utc_ts << "),";
+				ss << "ROWS_RETURNED_TO_MASTER= " << pQueryUpdate->m_rows_returned_to_master << ",";
+				if (pQueryUpdate->m_exec_end_utc_ts > 0)
+					ss << "EXEC_END_UTC_TS= CONVERTTIMESTAMP(" << pQueryUpdate->m_exec_end_utc_ts << "),";
+				ss << "MASTER_EXECUTION_TIME= " << pQueryUpdate->m_master_execution_time << ",";
+				ss << "MASTER_ELAPSED_TIME= " << pQueryUpdate->m_master_elapse_time << ",";
+				ss << "ERROR_CODE= " << pQueryUpdate->m_error_code << ",";
+				ss << "SQL_ERROR_CODE= " << pQueryUpdate->m_sql_error_code << ",";
+				ss << "ERROR_TEXT= '" << pQueryUpdate->m_error_text << "',";
+				ss << "QUERY_TEXT= '" << pQueryUpdate->m_query_text << "',";
+				ss << "EXPLAIN_PLAN= '" << pQueryUpdate->m_explain_plan << "',";
+				ss << "LAST_ERROR_BEFORE_AQR= " << pQueryUpdate->m_last_error_before_aqr << ",";
+				ss << "DELAY_TIME_BEFORE_AQR_SEC= " << pQueryUpdate->m_delay_time_before_aqr_sec << ",";
+				ss << "TOTAL_NUM_AQR_RETRIES= " << pQueryUpdate->m_total_num_aqr_retries << ",";
+				ss << "MSG_BYTES_TO_DISK= " << pQueryUpdate->m_msg_bytes_to_disk << ",";
+				ss << "MSGS_TO_DISK= " << pQueryUpdate->m_msgs_to_disk << ",";
+				ss << "ROWS_ACCESSED= " << pQueryUpdate->m_rows_accessed << ",";
+				ss << "ROWS_RETRIEVED= " << pQueryUpdate->m_rows_retrieved << ",";
+				ss << "NUM_ROWS_IUD= " << pQueryUpdate->m_num_rows_iud << ",";
+				ss << "PROCESSES_CREATED= " << pQueryUpdate->m_processes_created << ",";
+				ss << "PROCESS_CREATE_BUSY_TIME= " << pQueryUpdate->m_process_create_busy_time << ",";
+				ss << "OVF_FILE_COUNT= " << pQueryUpdate->m_ovf_file_count << ",";
+				ss << "OVF_SPACE_ALLOCATED= " << pQueryUpdate->m_ovf_space_allocated << ",";
+				ss << "OVF_SPACE_USED= " << pQueryUpdate->m_ovf_space_used << ",";
+				ss << "OVF_BLOCK_SIZE= " << pQueryUpdate->m_ovf_block_size << ",";
+				ss << "OVF_WRITE_READ_COUNT= " << pQueryUpdate->m_ovf_write_read_count << ",";
+				ss << "OVF_WRITE_COUNT= " << pQueryUpdate->m_ovf_write_count << ",";
+				ss << "OVF_BUFFER_BLOCKS_WRITTEN= " << pQueryUpdate->m_ovf_buffer_blocks_written << ",";
+				ss << "OVF_BUFFER_BYTES_WRITTEN= " << pQueryUpdate->m_ovf_buffer_bytes_written << ",";
+				ss << "OVF_READ_COUNT= " << pQueryUpdate->m_ovf_read_count << ",";
+				ss << "OVF_BUFFER_BLOCKS_READ= " << pQueryUpdate->m_ovf_buffer_blocks_read << ",";
+				ss << "OVF_BUFFER_BYTES_READ= " << pQueryUpdate->m_ovf_buffer_bytes_read << ",";
+				ss << "NUM_NODES= " << pQueryUpdate->m_num_nodes << ",";
+				ss << "UDR_PROCESS_BUSY_TIME= " << pQueryUpdate->m_udr_process_busy_time << ",";
+				ss << "PERTABLE_STATS= " << pQueryUpdate->m_pertable_stats;
+				ss << " where QUERY_ID = '" << pQueryUpdate->m_query_id.c_str() << "'";
+				ss << " and EXEC_START_UTC_TS = CONVERTTIMESTAMP(" << pQueryUpdate->m_exec_start_utc_ts << ")";
+			}
+			else if (repos_stats.m_pub_type == PUB_TYPE_SESSION_START_AGGREGATION)
+			{
+				std::tr1::shared_ptr<SESSION_AGGREGATION> pAggrStat = repos_stats.m_pAggr_stats;
+				if(NULL == pAggrStat)
+				{
+					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                                        0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                                        1, "Invalid data pointer founded in SessionWatchDog()");
+					break;
+				}
+
+				ss << "insert into Trafodion.\"_REPOS_\".metric_query_aggr_table values(";
+				ss << pAggrStat->m_instance_id << ",";
+				ss << pAggrStat->m_tenant_id << ",";
+				ss << pAggrStat->m_component_id << ",";
+				ss << pAggrStat->m_process_id << ",";
+				ss << pAggrStat->m_thread_id << ",";
+				ss << pAggrStat->m_node_id << ",";
+				ss << pAggrStat->m_pnid_id << ",";
+				ss << pAggrStat->m_host_id << ",'";
+				ss << pAggrStat->m_ip_address_id.c_str() << "',";
+				ss << pAggrStat->m_sequence_number << ",'";
+				ss << pAggrStat->m_process_name.c_str() << "','";
+				ss << pAggrStat->m_sessionId.c_str() << "',CONVERTTIMESTAMP(";
+				ss << pAggrStat->m_aggregation_start_utc_ts << "),CONVERTTIMESTAMP(";
+				ss << pAggrStat->m_aggregation_end_utc_ts << "),";
+				ss << pAggrStat->m_user_id << ",'";
+				ss << pAggrStat->m_user_name.c_str() << "','";
+				ss << pAggrStat->m_role_name.c_str() << "','";
+				ss << pAggrStat->m_client_name.c_str() << "','";
+				ss << pAggrStat->m_client_user_name.c_str() << "','";
+				ss << pAggrStat->m_application_name.c_str() << "',";
+				ss << pAggrStat->m_total_est_rows_accessed << ",";
+				ss << pAggrStat->m_total_est_rows_used << ",";
+				ss << pAggrStat->m_total_rows_retrieved << ",";
+				ss << pAggrStat->m_total_num_rows_iud << ",";
+				ss << pAggrStat->m_total_selects << ",";
+				ss << pAggrStat->m_total_inserts << ",";
+				ss << pAggrStat->m_total_updates << ",";
+				ss << pAggrStat->m_total_deletes << ",";
+				ss << pAggrStat->m_delta_estimated_rows_accessed << ",";
+				ss << pAggrStat->m_delta_estimated_rows_used << ",";
+				ss << pAggrStat->m_delta_rows_accessed << ",";
+				ss << pAggrStat->m_delta_rows_retrieved << ",";
+				ss << pAggrStat->m_delta_num_rows_uid << ",";
+				ss << pAggrStat->m_delta_total_selects << ",";
+				ss << pAggrStat->m_delta_total_inserts << ",";
+				ss << pAggrStat->m_delta_total_updates << ",";
+				ss << pAggrStat->m_delta_total_deletes << ")";
+
+			}
+			else if (repos_stats.m_pub_type == PUB_TYPE_SESSION_UPDATE_AGGREGATION || repos_stats.m_pub_type == PUB_TYPE_SESSION_END_AGGREGATION)
+			{
+				std::tr1::shared_ptr<SESSION_AGGREGATION> pAggrStat = repos_stats.m_pAggr_stats;
+				if(NULL == pAggrStat)
+				{
+					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                                        0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                                        1, "Invalid data pointer founded in SessionWatchDog()");
+					break;
+				}
+
+				ss << "update Trafodion.\"_REPOS_\".metric_query_aggr_table ";
+
+				ss << "set AGGREGATION_END_UTC_TS = CONVERTTIMESTAMP(" << pAggrStat->m_aggregation_end_utc_ts << "),";
+				ss << "TOTAL_EST_ROWS_ACCESSED = " << pAggrStat->m_total_est_rows_accessed << ",";
+				ss << "TOTAL_EST_ROWS_USED = " << pAggrStat->m_total_est_rows_used << ",";
+				ss << "TOTAL_ROWS_RETRIEVED = " << pAggrStat->m_total_rows_retrieved << ",";
+				ss << "TOTAL_NUM_ROWS_IUD = " << pAggrStat->m_total_num_rows_iud << ",";
+				ss << "TOTAL_SELECTS = " << pAggrStat->m_total_selects << ",";
+				ss << "TOTAL_INSERTS = " << pAggrStat->m_total_inserts << ",";
+				ss << "TOTAL_UPDATES = " << pAggrStat->m_total_updates << ",";
+				ss << "TOTAL_DELETES = " << pAggrStat->m_total_deletes << ",";
+				ss << "DELTA_ESTIMATED_ROWS_ACCESSED = " << pAggrStat->m_delta_estimated_rows_accessed << ",";
+				ss << "DELTA_ESTIMATED_ROWS_USED = " << pAggrStat->m_delta_estimated_rows_used << ",";
+				ss << "DELTA_ROWS_ACCESSED = " << pAggrStat->m_delta_rows_accessed << ",";
+				ss << "DELTA_ROWS_RETRIEVED = " << pAggrStat->m_delta_rows_retrieved << ",";
+				ss << "DELTA_NUM_ROWS_UID = " << pAggrStat->m_delta_num_rows_uid << ",";
+				ss << "DELTA_TOTAL_SELECTS = " << pAggrStat->m_delta_total_selects << ",";
+				ss << "DELTA_TOTAL_INSERTS = " << pAggrStat->m_delta_total_inserts << ",";
+				ss << "DELTA_TOTAL_UPDATES = " << pAggrStat->m_delta_total_updates << ",";
+				ss << "DELTA_TOTAL_DELETES = " << pAggrStat->m_delta_total_deletes;
+				ss << " where SESSION_ID = '" << pAggrStat->m_sessionId.c_str() << "'";
+
+			}
+			else
+			{
+				break;
+			}
+
+			retcode = pSrvrStmt->ExecDirect(NULL, ss.str().c_str(), INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+			if (retcode < 0)
+			{
+				errMsg.str("");
+				if(pSrvrStmt->sqlError.errorList._length > 0)
+					p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+				else if(pSrvrStmt->sqlWarning._length > 0)
+					p_buffer = pSrvrStmt->sqlWarning._buffer;
+				if(p_buffer != NULL && p_buffer->errorText)
+					errMsg << "Failed to write statistics: " << ss.str().c_str() << "----Error detail - " << p_buffer->errorText;
+				else
+					errMsg << "Failed to write statistics: " << ss.str().c_str() << "----Error detail - " << " no additional information";
+				SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+										0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+										1, errMsg.str().c_str());
+				pSrvrStmt->cleanupAll();
+			}
+		}//End while
+		if (pSrvrStmt != NULL)
+		{
+			pSrvrStmt->cleanupAll();
+			pSrvrStmt->Close(SQL_DROP);
+		}//End while
+
+		WSQL_EXEC_DeleteContext(thread_context_handle);
+	}
+	catch(...)
+	{
+		//Write to Log4cpp the error message..
+	}
+	record_session_done = true;
+	pthread_mutex_unlock(&Thread_mutex);
+}
+
+
 #ifdef __TIME_LOGGER
 void createTimeLoggerFile()
 {
@@ -333,7 +916,7 @@ ImplInit (
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 					srvrGlobal->srvrObjRef, 1, "srvrGlobal");
-			exit(0);
+			exitServerProcess();
 //LCOV_EXCL_STOP
 		}
 	}
@@ -342,9 +925,9 @@ ImplInit (
    srvrGlobal->receiveThrId = getpid();
    timer_register();
 
-
 	CEE_HANDLE_SET_NIL(&srvrGlobal->connIdleTimerHandle);
 	CEE_HANDLE_SET_NIL(&srvrGlobal->srvrIdleTimerHandle);
+	CEE_HANDLE_SET_NIL(&StatisticsTimerHandle);
 
 	srvrGlobal->srvrVersion.componentId = 0; // Unknown
 	if (srvrGlobal->srvrVersion.componentId == 0)
@@ -509,7 +1092,6 @@ ImplInit (
 	srvrGlobal->userID = 0;
 
 	srvrGlobal->resourceStatistics = 0;
-	srvrGlobal->resAcctLogger = NULL;
 	TCPU_DECL(processId);
 
 	int iprocessId;		// for OSS and NT process Ids
@@ -578,7 +1160,7 @@ ImplInit (
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 					srvrGlobal->srvrObjRef, 1, "srvrGlobal->traceLogger");
-			exit(0);
+			exitServerProcess();
 		}
 		srvrGlobal->traceLogger->OpenTraceCollector(srvrGlobal->TraceCollector);
 	}
@@ -632,6 +1214,13 @@ ImplInit (
 	}
 	srvrGlobal->bSkipASTimer = false;
 
+	srvrGlobal->m_NodeId = myNid;
+	strncpy(srvrGlobal->m_ProcName, myProcName.c_str(), MS_MON_MAX_PROCESS_NAME);
+	srvrGlobal->m_statisticsPubType = statisticsPubType;
+	srvrGlobal->m_bStatisticsEnabled = bStatisticsEnabled;
+	srvrGlobal->m_iAggrInterval = aggrInterval;
+	srvrGlobal->m_iQueryPubThreshold = queryPubThreshold;
+	srvrGlobal->sqlPlan = true;
 	CEE_TIMER_CREATE2(DEFAULT_AS_POLLING,0,ASTimerExpired,(CEE_tag_def)NULL, &srvrGlobal->ASTimerHandle,srvrGlobal->receiveThrId);
 
 	resStatSession = NULL;
@@ -645,7 +1234,7 @@ ImplInit (
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 					srvrGlobal->srvrObjRef, 1, "resStatSession");
-			exit(0);
+			exitServerProcess();
 		}
 //LCOV_EXCL_STOP
 
@@ -656,7 +1245,7 @@ ImplInit (
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 					srvrGlobal->srvrObjRef, 1, "resStatStatement");
-			exit(0);
+			exitServerProcess();
 //LCOV_EXCL_STOP
 		}
 
@@ -695,6 +1284,12 @@ ImplInit (
 		}
 #endif
 
+	if (srvrGlobal->m_bStatisticsEnabled)
+	{
+		//boost::thread thrd(&SessionWatchDog);
+		pthread_t thrd;
+		pthread_create(&thrd, NULL, SessionWatchDog, NULL);
+	}
 }
 
 
@@ -720,7 +1315,7 @@ extern void SRVR::RegisterSrvr(char* IpAddress, char* HostName)
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 					srvrGlobal->srvrObjRef, 1, "asCallContext");
-			exit(0);
+			exitServerProcess();
 //LCOV_EXCL_STOP
 		}
 
@@ -1197,7 +1792,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 				SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
 					1, tmpString);
-				exit(0);
+				exitServerProcess();
 			}
 
 			cnt--;
@@ -1259,7 +1854,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 				SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
 					1, "No dialogue ID in registered node. Server exiting.");
-				exit(0);
+				exitServerProcess();
 			}
 
 			// Return error if dialogue ID does not match.
@@ -1282,7 +1877,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 		SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
 			srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
 			1, tmpString);
-		exit(0);
+		exitServerProcess();
 	}
 
 	sdconn = ((CTCPIPSystemSrvr* )objtag_)->m_nSocketFnum;
@@ -1328,7 +1923,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 				SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
 					1, "Security layer returned fatal error. Server exiting.");
-				exit(0);
+				exitServerProcess();
 			}
 			return;
 //LCOV_EXCL_STOP
@@ -1400,7 +1995,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 						SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
 							srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
 							1, "Security layer returned fatal error. Server exiting.");
-						exit(0);
+						exitServerProcess();
 					}
 					return;
 //LCOV_EXCL_STOP
@@ -1433,7 +2028,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 					SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
 						srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
 						1, "Security layer returned fatal error. Server exiting.");
-					exit(0);
+					exitServerProcess();
 //LCOV_EXCL_STOP
 				}
 				return;
@@ -1785,6 +2380,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	else
 		outContext.outContextOptionStringLen = 0;
 
+
 	//  +++ Fix for update stats problem on volatile table. This code was earlier
 	//  just before SET_ODBC_PROCESS connection attr above.
 	//	Have moved the BEGIN_SESSION here to fix an issue with AQR.
@@ -1854,6 +2450,7 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	// For performance reasons, SQL statements to setup the initial context
 	// are executed after responding back to client
 	//
+
 
 	odbc_SQLSvc_InitializeDialogue_ts_res_(objtag_, call_id_, &exception_, &outContext);
 
@@ -2871,6 +3468,16 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	{
 		resStatSession->init();
 		resStatSession->start(&setinit);
+
+		if (srvrGlobal->m_bStatisticsEnabled)
+		{
+			if (CEE_HANDLE_IS_NIL(&StatisticsTimerHandle) == IDL_FALSE)
+			{
+				CEE_TIMER_DESTROY(&StatisticsTimerHandle);
+				CEE_HANDLE_SET_NIL(&StatisticsTimerHandle);
+			}
+			CEE_TIMER_CREATE2(srvrGlobal->m_iAggrInterval, 0, StatisticsTimerExpired, (CEE_tag_def)NULL, &StatisticsTimerHandle, srvrGlobal->receiveThrId);
+		}
 	}
 
 	if (resStatStatement != NULL)
@@ -3173,7 +3780,14 @@ void __cdecl SRVR::SrvrSessionCleanup(void)
 
 	// resource statistics
 	if (resStatSession != NULL)
+	{
 		resStatSession->end();
+		if (CEE_HANDLE_IS_NIL(&StatisticsTimerHandle) == IDL_FALSE)
+		{
+			CEE_TIMER_DESTROY(&StatisticsTimerHandle);
+			CEE_HANDLE_SET_NIL(&StatisticsTimerHandle);
+		}
+	}
 
 	//end rs
 	strcpy(srvrGlobal->sessionId, srvrSessionId);
@@ -3233,8 +3847,6 @@ void __cdecl SRVR::SrvrSessionCleanup(void)
 	srvrGlobal->bConfigurationChanged = false;
 
 	releaseGlobalBuffer();
-
-
 } /* SRVR::SrvrSessionCleanUp() */
 
 bool __cdecl SRVR::CompilerCacheReset(char *errorMsg)
@@ -3431,7 +4043,7 @@ void __cdecl SRVR::srvrIdleTimerExpired(CEE_tag_def timer_tag)
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 					srvrGlobal->srvrObjRef, 1, "asCallContext");
-			exit(0);
+			exitServerProcess();
 //LCOV_EXCL_STOP
 		}
 
@@ -3639,15 +4251,13 @@ BOOL SRVR::updateSrvrState(SRVR_STATE srvrState)
 
 		if( srvrState == SRVR_CONNECT_REJECTED || srvrState == SRVR_CONNECT_FAILED )
 		{
-
 		// Commenting the following code. MXOSRVR remains in this state
 		// for timeout duration (clientConnErrorTimeOut).
 		// Changing the state to AVAILABLE immediately.
 		// Leaving the related code in place (ASTimerExpired)
 		// if this gets revisited.
 		//
-		//	result = updateZKState(CONNECTING, srvrState == SRVR_CONNECT_REJECTED? CONNECT_REJECTED : CONNECT_FAILED);
-
+		//      result = updateZKState(CONNECTING, srvrState == SRVR_CONNECT_REJECTED? CONNECT_REJECTED : CONNECT_FAILED);
 			result = updateZKState(CONNECTING, AVAILABLE);
 		}
 		else
@@ -3885,6 +4495,10 @@ void SRVR::exitServerProcess()
 				      srvrGlobal->sessionId,
 				      "exitServerProcess()",
 				      "0");
+
+	SyncPublicationThread();
+		//mutex lock
+
 	terminateThreads(1);
 	exit(1);
 	SRVRTRACE_EXIT(FILE_AME+16);
@@ -4042,7 +4656,7 @@ odbc_SQLSrvr_Close_ame_(
 	}
 
 
-
+				qrysrvc_ExecuteFinished(stmtLabel, NULL, false, returnCode, false);
 				SRVR_STMT_HDL *pSrvrStmt = SRVR::getSrvrStmt(stmtLabel, FALSE);
 
 				if (pSrvrStmt != NULL)
@@ -4094,7 +4708,7 @@ void SRVR::ENABLE_SERVER_TRACE(IDL_long TraceType)
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 					srvrGlobal->srvrObjRef, 1, "srvrGlobal->traceLogger");
-			exit(0);
+			exitServerProcess();
 //LCOV_EXCL_STOP
 		}
 		srvrGlobal->traceLogger->OpenTraceCollector(srvrGlobal->TraceCollector);
@@ -4417,7 +5031,7 @@ void SRVR::UPDATE_SERVER_CONTEXT(const SRVR_CONTEXT_def *srvrContext)
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 					srvrGlobal->srvrObjRef, 1, "resDescList._buffer");
-			exit(0);
+			exitServerProcess();
 //LCOV_EXCL_STOP
 		}
 		memcpy((void *)(srvrGlobal->srvrContext.resDescList._buffer),
@@ -4439,7 +5053,7 @@ void SRVR::UPDATE_SERVER_CONTEXT(const SRVR_CONTEXT_def *srvrContext)
 				SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 						srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 						srvrGlobal->srvrObjRef, 1, "Action");
-				exit(0);
+				exitServerProcess();
 //LCOV_EXCL_STOP
 			}
 			strcpy(pResValues->Action,pResValuesIn->Action);
@@ -4459,7 +5073,7 @@ void SRVR::UPDATE_SERVER_CONTEXT(const SRVR_CONTEXT_def *srvrContext)
 			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 					srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 					srvrGlobal->srvrObjRef, 1, "envDescList._buffer");
-			exit(0);
+			exitServerProcess();
 //LCOV_EXCL_STOP
 		}
 		memcpy((void *)(srvrGlobal->srvrContext.envDescList._buffer),
@@ -4481,7 +5095,7 @@ void SRVR::UPDATE_SERVER_CONTEXT(const SRVR_CONTEXT_def *srvrContext)
 				SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
 						srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
 						srvrGlobal->srvrObjRef, 1, "VarVal");
-				exit(0);
+				exitServerProcess();
 //LCOV_EXCL_STOP
 			}
 			strcpy(pEnvValues->VarVal,pEnvValuesIn->VarVal);
@@ -6641,7 +7255,7 @@ odbc_SQLSrvr_Fetch_ame_(
 
 		} /* srvrGlobal->srvrType != CORE_SRVR */
 
-
+		qrysrvc_ExecuteFinished(stmtLabel, NULL, false, returnCode, true);
 		if ((resStatStatement != NULL) && (pSrvrStmt->stmtType == EXTERNAL_STMT)) // if statement is on
 			resStatStatement->endRepository(pSrvrStmt,
 						sqlWarningOrErrorLength,
@@ -6769,6 +7383,7 @@ odbc_SQLSrvr_Fetch_ame_(
 		}
 	}
 
+	qrysrvc_ExecuteFinished(NULL, (long)pSrvrStmt, false, returnCode, true);
 	if (pSrvrStmt != NULL) {
 		if ((resStatStatement != NULL) && (pSrvrStmt->stmtType == EXTERNAL_STMT)) // if statement is on
 			resStatStatement->endRepository(pSrvrStmt,
@@ -6998,7 +7613,7 @@ odbc_SQLSrvr_ExecDirect_ame_(
 									if (srvrGlobal->isShapeLoaded == false)
 									{
 
-
+										DO_WouldLikeToExecute(NULL, stmtHandle, &returnCode, &sqlWarningOrErrorLength, sqlWarningOrError);
 										if (returnCode == SQL_SUCCESS || returnCode == SQL_SUCCESS_WITH_INFO)
 										{
 											if(((inputRowCnt > 1) || ((inputRowCnt==1) && (pSrvrStmt->preparedWithRowsets))) && (pSrvrStmt->sqlQueryType != SQL_RWRS_SPECIAL_INSERT))//&& (paramCount > 0))
@@ -7079,7 +7694,7 @@ odbc_SQLSrvr_ExecDirect_ame_(
 			pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
 			if (srvrGlobal->isShapeLoaded == false)
 			{
-
+				DO_WouldLikeToExecute(NULL, stmtHandle, &returnCode, &sqlWarningOrErrorLength, sqlWarningOrError);
 
 				if (returnCode == SQL_SUCCESS)
 				{
@@ -7121,7 +7736,7 @@ odbc_SQLSrvr_ExecDirect_ame_(
 
 cfgerrexit:
 
-
+	qrysrvc_ExecuteFinished(NULL,stmtHandle, true, returnCode, false);
 	if (noRepository == false ) {
 		if ((resStatStatement != NULL) && (pSrvrStmt->stmtType == EXTERNAL_STMT)) // if statement is on
 		/*
@@ -7340,7 +7955,7 @@ odbc_SQLSrvr_Execute2_ame_(
 										( inputRowCnt == 0 && pSrvrStmt != NULL &&
 												(pSrvrStmt->sqlQueryType != SQL_INSERT_UNIQUE &&
 														pSrvrStmt->sqlQueryType != SQL_INSERT_NON_UNIQUE));
-
+					DO_WouldLikeToExecute(NULL, stmtHandle, &returnCode, &sqlWarningOrErrorLength, sqlWarningOrError);
 					if (returnCode == SQL_SUCCESS && pSrvrStmt != NULL)
 					{
 						if(bExecute2withRowsets)
@@ -7380,7 +7995,7 @@ odbc_SQLSrvr_Execute2_ame_(
 	}
 
 
-
+	qrysrvc_ExecuteFinished(NULL,stmtHandle, true, returnCode, false);
 	if (noRepository == false) {
 		if ((resStatStatement != NULL) && (pSrvrStmt->stmtType == EXTERNAL_STMT)) // if statement is on
 		/*	resStatStatement->endRepository(pSrvrStmt->inState,
@@ -8431,4 +9046,171 @@ bailout:
 	return (zk_error == ZOK) ? true : false;
 }
 
+short DO_WouldLikeToExecute(
+		IDL_char *stmtLabel
+		, Long stmtHandle
+		, IDL_long* returnCode
+		, IDL_long* sqlWarningOrErrorLength
+		, BYTE*& sqlWarningOrError
+		)
+{
+	SRVR_STMT_HDL *pSrvrStmt = NULL;
+	if (stmtLabel != NULL && stmtLabel[0] != 0)
+		pSrvrStmt = SRVR::getSrvrStmt(stmtLabel, FALSE);
+	else
+		pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
 
+	if (pSrvrStmt == NULL)
+		return 0;
+
+	if (srvrGlobal->sqlPlan)
+		getSQLInfo( EXPLAIN_PLAN, stmtHandle, stmtLabel );
+
+	if(resStatStatement != NULL)
+	{
+		resStatStatement->wouldLikeToStart_ts = JULIANTIMESTAMP();
+		resStatStatement->pubStarted = false;
+		resStatStatement->queryFinished = false;
+	}
+	pQueryStmt = pSrvrStmt;
+	pSrvrStmt->m_bDoneWouldLikeToExecute = true;
+	return 0;
+}
+
+short qrysrvc_ExecuteFinished(
+		const IDL_char *stmtLabel
+		, const Long stmtHandle
+		, const bool bCheckSqlQueryType
+		, const short error_code
+		, const bool bFetch
+		, const bool bException
+		, const bool bErase
+		)
+{
+	SRVR_STMT_HDL *pSrvrStmt = NULL;
+
+	#define RC_SUCCESS(retcode) \
+		((!bException && (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)) || \
+		 ( bException && (retcode == CEE_SUCCESS)) ? TRUE : FALSE)
+
+	if (stmtLabel != NULL && stmtLabel[0] != 0)
+		pSrvrStmt = SRVR::getSrvrStmt(stmtLabel, FALSE);
+	else
+		pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
+
+	if (pSrvrStmt == NULL)
+		return 0;
+
+	if (pSrvrStmt->m_bDoneWouldLikeToExecute == false)
+		return 0;
+
+	pSrvrStmt->m_bqueryFinish = true;
+
+	if (bCheckSqlQueryType)
+	{
+		if (RC_SUCCESS(error_code) &&
+			(pSrvrStmt->sqlQueryType == SQL_SELECT_NON_UNIQUE ||
+			pSrvrStmt->sqlQueryType == SQL_SELECT_UNIQUE ||
+			pSrvrStmt->sqlQueryType == SQL_CALL_WITH_RESULT_SETS ||
+			pSrvrStmt->sqlQueryType == SQL_SP_RESULT_SET))
+		{
+			pSrvrStmt->m_bqueryFinish = false;
+			return 0;
+		}
+	}
+	else if (bFetch)
+	{
+		if (RC_SUCCESS(error_code))
+		{
+			pSrvrStmt->m_bqueryFinish = false;
+			return 0;
+		}
+	}
+
+	if (resStatStatement != NULL)
+	{
+		resStatStatement->queryFinished = true;
+		resStatStatement->wouldLikeToStart_ts = 0;
+	}
+	pQueryStmt = NULL;
+
+	return 0;
+}
+
+void sendSessionEnd(std::tr1::shared_ptr<SESSION_END> pSession_info)
+{
+	REPOS_STATS session_stats;
+	session_stats.m_pSessionStats = pSession_info;
+	session_stats.m_pub_type = PUB_TYPE_SESSION_END;
+	if (record_session_done)
+	{
+		//boost::thread thrd(&SessionWatchDog);
+		pthread_t thrd;
+		pthread_create(&thrd, NULL, SessionWatchDog, NULL);
+	}
+	repos_queue.push_task(session_stats);
+}
+
+void sendAggrStats(pub_struct_type pub_type, std::tr1::shared_ptr<SESSION_AGGREGATION> pAggr_info)
+{
+	REPOS_STATS aggr_stats;
+	aggr_stats.m_pAggr_stats = pAggr_info;
+	aggr_stats.m_pub_type = pub_type;
+	if (record_session_done)
+	{
+		//boost::thread thrd(&SessionWatchDog);
+		pthread_t thrd;
+		pthread_create(&thrd, NULL, SessionWatchDog, NULL);
+	}
+	repos_queue.push_task(aggr_stats);
+}
+
+void sendQueryStats(pub_struct_type pub_type, std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQuery_info)
+{
+	REPOS_STATS query_stats;
+	query_stats.m_pQuery_stats = pQuery_info;
+	query_stats.m_pub_type = pub_type;
+	if (record_session_done)
+	{
+		//boost::thread thrd(&SessionWatchDog);
+		pthread_t thrd;
+		pthread_create(&thrd, NULL, SessionWatchDog, NULL);
+	}
+	repos_queue.push_task(query_stats);
+}
+
+void __cdecl StatisticsTimerExpired(CEE_tag_def timer_tag)
+{
+	long long timestamp = JULIANTIMESTAMP();
+	//static long long check_session_interval = timestamp;
+
+	if( resStatSession != NULL 
+		&& srvrGlobal->m_statisticsPubType == STATISTICS_AGGREGATED )
+		//&& timestamp - check_session_interval >= aggrInterval * 1000000LL)
+	{
+		resStatSession->update();
+	}
+
+	if(resStatStatement != NULL
+		&& srvrGlobal->m_statisticsPubType != STATISTICS_SESSION
+		&& !resStatStatement->pubStarted 
+		&& !resStatStatement->queryFinished 
+		&& resStatStatement->wouldLikeToStart_ts > 0
+		&& pQueryStmt != NULL 
+		&& timestamp - resStatStatement->wouldLikeToStart_ts >= srvrGlobal->m_iQueryPubThreshold * 1000000LL)
+	{
+		resStatStatement->SendQueryStats(true, pQueryStmt);
+	}
+}
+
+void SyncPublicationThread()
+{
+	if (!record_session_done)
+	{
+		REPOS_STATS exit_stats;
+		exit_stats.m_pub_type = PUB_TYPE_INIT;
+		repos_queue.push_task(exit_stats);
+		pthread_mutex_lock(&Thread_mutex);
+		pthread_mutex_unlock(&Thread_mutex);
+	}
+}

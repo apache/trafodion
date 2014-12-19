@@ -653,12 +653,6 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 		// writer.writeln("CATALOG        ",(sessObj.getSessionCtlg()));
 		handleOutput("COLSEP         ", "\"" + sessObj.getSessionColSep()
 				+ "\"");
-		/*if (sessObj.isDBConnExists())
-		{
-			handleOutput("DATASOURCE     ", sessObj.getSessionDsn(), false);
-		} else {
-			handleOutput("DATASOURCE     ", (this.infoNotAvailable), false);
-		}*/
 		handleOutput("HISTOPT        ", (sessObj.isSessionHistoryAll() ? "ALL"
 				: "DEFAULT [No expansion of script files]"), false);
 		handleOutput("IDLETIMEOUT    ", (sessObj.getSessionIdletime())
@@ -687,13 +681,6 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 			handleOutput("SCHEMA         ", (sessObj.getSessionSchema()), false);
 			handleOutput("SERVER         ", sessObj.getSessionServer()
 					+ sessObj.getSessionPort(), false);
-			try {
-				if ((sessObj.getServiceName() == null)
-						|| (sessObj.getServiceName().equals("Unavailable")))
-					sessObj.setServiceName(getService());
-			} catch (SQLException sqlEx) {
-				sessObj.setServiceName("Unavailable");
-			}
 		} else {
 			handleOutput("SCHEMA         ", (this.infoNotAvailable), false);
 			handleOutput("SERVER         ", (this.infoNotAvailable), false);
@@ -873,22 +860,6 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 			}
 			handleOutput("DISPLAY COLSIZE",
 					String.valueOf(sessObj.getDisplayColSize()));
-			break;
-
-		case SHOW_SERVICE:
-
-			if (parser.hasMoreTokens()) {
-				writeSyntaxError(this.queryStr, parser.getRemainderStr());
-				break;
-			}
-
-			if (sessObj.isDBConnExists()) // Modified  2010-03-01
-			{
-				String svcName = getService();
-				handleOutput("SERVICE NAME", svcName);
-			} else {
-				displayNoConnInfo();
-			}
 			break;
 
 		case SHOW_PROCESSNAME:
@@ -2284,22 +2255,6 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 		}
 	}
 
-	protected String getService() throws IOException, UnKnownInterfaceCommand,
-			UserInterruption, SQLException {
-		String serviceName = null;
-
-		Statement stmt = sessObj.getConnObj().createStatement();
-		ResultSet rs = stmt.executeQuery("get service;");
-		while (rs != null && rs.next()) {
-			serviceName = rs.getString(1).trim();
-		}
-		rs.close();
-		stmt.close();
-
-		envMap.put("SERVICE", serviceName);
-		return serviceName;
-	}
-
 	private void writeSyntaxError(String queryStr, String remainderStr)
 			throws IOException {
 		sessObj.getQuery().setStatusCode(-1); // update the error code to -1
@@ -2535,7 +2490,6 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 					sessObj.setSessionPort(paObj.portNumber);
 					sessObj.setSessionValues();
 					sessObj.setStmtObj(siObj.getStatement(newConn));
-					sessObj.setServiceName(null);
 					sessObj.qsOpen = false;
 					sessObj.setDBConnExists(true);
 
@@ -2662,7 +2616,6 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 				sessObj.setStmtObj(rcSIObj.getStatement(sessObj.getConnObj()));
 				sessObj.qsOpen = false;
 				sessObj.setDBConnExists(true);
-				sessObj.setServiceName(null);
 				writer.writeln();
 				writer.writeln("Connected to Trafodion ");
 				rcPaObj.retryCnt = 0;
@@ -4312,14 +4265,6 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 		envMap.put("SERVER",
 				(sessObj.getSessionServer() + sessObj.getSessionPort()));
 
-		try {
-			if ((sessObj.getServiceName() == null)
-					|| (sessObj.getServiceName().equals("Unavailable")))
-				sessObj.setServiceName(getService());
-		} catch (Exception sqlEx) {
-			sessObj.setServiceName("Unavailable");
-		}
-		envMap.put("SERVICE_NAME", sessObj.getServiceName());
 		envMap.put("SQLTERMINATOR", (sessObj.getSessionSQLTerminator()));
 		envMap.put("STATISTICS", (sessObj.isSessionStatsEnabled() ? "ON"
 				: "OFF"));

@@ -81,10 +81,7 @@ DEFINE_DOVERS(tdm_arkcmp)
 
 #include "CmpISPInterface.h"
 
-
-
-
-
+#include "QRLogger.h"
 
 
 
@@ -201,6 +198,8 @@ Int32 main(Int32 argc, char **argv)
     exit(1);
   }
 
+  IdentifyMyself::SetMyName(I_AM_SQL_COMPILER);
+
   // Instantiate CliGlobals
   CliGlobals *cliGlobals = CliGlobals::createCliGlobals(FALSE);
 
@@ -272,6 +271,9 @@ Int32 main(Int32 argc, char **argv)
 				(IsSecondaryMxcmp ? CmpContext::IS_SECONDARY_MXCMP : 0) |
 				(CmpMainISPConnection ? CmpContext::IS_ISP : 0),
                          cmpContextHeap);
+
+        QRLogger::instance().setModule(QRLogger::QRL_MXCMP);
+        QRLogger::instance().initLog4cpp("log4cpp.trafodion.config");
       }
       catch (...)
       {
@@ -280,9 +282,10 @@ Int32 main(Int32 argc, char **argv)
            ERROR_SEV, FALSE, FALSE, TRUE);
         exit(1);
       }
-	  //  moved down the IdentifyMyself so that it can be determined that the
-	  //  context has not yet been set up
-	  IdentifyMyself::SetMyName(I_AM_SQL_COMPILER);
+
+      //  moved down the IdentifyMyself so that it can be determined that the
+      //  context has not yet been set up
+      //IdentifyMyself::SetMyName(I_AM_SQL_COMPILER);
       context->initContextGlobals();
       context->envs()->cleanup();
       // ## This dump-diags only goes to arkcmp console --

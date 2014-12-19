@@ -111,7 +111,7 @@ void QRQueriesImpl::initializeNodeName()
 void QRQueriesImpl::beginTransaction()
 {
   Lng32 sqlCode = queries_->beginTransaction();
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR, 
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR, 
                      sqlCode==SQL_Success, QRDatabaseException, 
 		    "Error %d performing Begin Transaction.", sqlCode); 
 
@@ -125,7 +125,7 @@ void QRQueriesImpl::beginTransaction()
 void QRQueriesImpl::commitTransaction()
 {
   Lng32 sqlCode = queries_->commitTransaction();
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                      sqlCode==SQL_Success, QRDatabaseException, 
 		    "Error %d performing Commit Transaction.", sqlCode); 
 
@@ -140,7 +140,7 @@ void QRQueriesImpl::commitTransaction()
 void QRQueriesImpl::rollbackTransaction()
 {
   Lng32 sqlCode = queries_->rollbackTransaction();
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success, QRDatabaseException, 
 		    "Error %d performing Rollback Transaction.", sqlCode); 
 
@@ -156,12 +156,12 @@ NABoolean QRQueriesImpl::getSystemDefault(const char* attribute, char* defValue)
   try
   {
     sqlCode = queries_->openSystemDefault(attribute);
-    assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+    assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                       sqlCode==SQL_Success, QRDatabaseException, 
 		      "Error %d performing read from DEFAULTS table.", sqlCode); 
 
     sqlCode = queries_->fetchSystemDefault(defValue);
-    assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+    assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                       sqlCode==SQL_Success || sqlCode==SQL_Eof, QRDatabaseException, 
 		      "Error %d performing read from DEFAULTS table.", sqlCode); 
 
@@ -191,7 +191,7 @@ Lng32 QRQueriesImpl::controlQueryDefault(const NAString& cqdName,
   try
   {
     sqlCode = queries_->controlQueryDefault(cqdName, cqdValue);
-    assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+    assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                       sqlCode==SQL_Success, QRDatabaseException, 
 		      "Error %d performing CONTROL QUERY DEFAULT.", sqlCode); 
   }
@@ -246,7 +246,7 @@ NABoolean QRQueriesImpl::getCollectQMSStatsEnabled()
     return TRUE;
   // LCOV_EXCL_STOP
   else
-    assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,  // LCOV_EXCL_LINE :rfi
+    assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,  // LCOV_EXCL_LINE :rfi
                        FALSE, QRDatabaseException,
                        "Invalid value for MVQR_COLLECT_QMS_STATS system default: %s.", defValue);
 }
@@ -270,7 +270,7 @@ CharInfo::CharSet QRQueriesImpl::getIsoMapping()
     defValue.toUpper();
     if (defValue != "ISO88591")
     {
-      QRLogger::instance().log(CAT_QR_COMMON, LL_WARN,
+      QRLogger::instance().log(CAT_SQL_COMP_QR_COMMON, LL_WARN,
                                "The default attribute ISO_MAPPING is depricated "
                                "and can be set to ISO88591 only. "
                                "Its current default setting in SYSTEM_DEFAULTS is invalid: %s",
@@ -300,7 +300,7 @@ CharInfo::CharSet QRQueriesImpl::getDefaultCharset()
     defValue.toUpper();
     if (defValue != "ISO88591") // This will break when we allow setting DEFAULT_CHARSET
     {
-      QRLogger::instance().log(CAT_QR_COMMON, LL_WARN,
+      QRLogger::instance().log(CAT_SQL_COMP_QR_COMMON, LL_WARN,
                                "The default attribute DEFAULT_CHARSET can be set to ISO88591 only. "
                                "Its current default setting in SYSTEM_DEFAULTS is invalid: %s",
                                defValue.toCharStar());
@@ -363,18 +363,18 @@ Int64 QRQueriesImpl::getCatalogUID(const NAString* catalog)
   _int64 catalogUID = 0;
 
   Lng32 sqlCode = queries_->openCatalogUID(catalog->data());
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success, QRDatabaseException, 
 		    "Error %d performing read catalog UID.", sqlCode); 
 
   sqlCode = queries_->fetchCatalogUID(catalogUID);
 
   // SQL_Eof means the catalog name does not exist.
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode != SQL_Eof, QRDatabaseException, 
 		    "Unable to obtain the UID for catalog %s", catalog); 
   // Otherwise its an SQL error.
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success, QRDatabaseException, 
 		    "Error %d performing read catalog UID.", sqlCode); 
 
@@ -396,7 +396,7 @@ const NAString* QRQueriesImpl::getSchemaVersion(Int64 catalogUID)
   Int32 version = 0;
 
   Lng32 sqlCode = queries_->openVersion(catalogUID);
-  assertLogAndThrow2(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow2(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
      sqlCode==SQL_Success, QRDatabaseException, 
     "Error %d performing get schema version for catalog with IUD %lld.", sqlCode, catalogUID); 
 
@@ -404,7 +404,7 @@ const NAString* QRQueriesImpl::getSchemaVersion(Int64 catalogUID)
   sqlCode = queries_->fetchVersion(version);
 
   // Otherwise its an SQL error.
-  assertLogAndThrow2(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow2(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
      ((sqlCode==SQL_Success) || (sqlCode==SQL_Eof)), QRDatabaseException,
     "Error %d performing get schema version for catalog with IUD %lld.", sqlCode, catalogUID);
 
@@ -434,17 +434,17 @@ const NAString* QRQueriesImpl::getCatalogName(Int64 catalogUID)
 {
   NAString* catalogName = new(heap_) NAString(heap_);
   Lng32 sqlCode = queries_->openCatalogName(catalogUID);
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success, QRDatabaseException, 
 		    "Error %d performing get catalog name.", sqlCode); 
 
   sqlCode = queries_->fetchCatalogName(*catalogName);
   // SQL_Eof means the catalog UID is wrong.
-  assertLogAndThrow(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode != SQL_Eof, QRDatabaseException, 
 		    "Unable to obtain catalog name for UID."); 
   // Otherwise its an SQL error.
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success, QRDatabaseException, 
 		    "Error %d performing get catalog name.", sqlCode); 
 
@@ -495,7 +495,7 @@ NAString* QRQueriesImpl::getMvDescriptor(const NAString& textTable,
   _int64 objectUID = atoInt64(uid);
 
   Lng32 sqlCode = queries_->openMvDescriptorText(textTable, objectUID);
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success || sqlCode==SQL_Eof, QRDatabaseException, 
  	            "Error %d performing get MV descriptor.", sqlCode); 
 
@@ -504,7 +504,7 @@ NAString* QRQueriesImpl::getMvDescriptor(const NAString& textTable,
   while (sqlCode == SQL_Success)
   {
     sqlCode = queries_->fetchMvDescriptorText(data_);
-    assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+    assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                       sqlCode==SQL_Success || sqlCode==SQL_Eof, QRDatabaseException, 
    	              "Error %d performing get MV descriptor.", sqlCode); 
 
@@ -544,14 +544,14 @@ QRMVDefinitionList* QRQueriesImpl::getMvUIDAndDefinitions(const NAString& defini
   QRMVDefinitionList* MVDefinitions = new(heap_) QRMVDefinitionList(heap_);
 
   Lng32 sqlCode = queries_->openMvInformation(definitionSchema);
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success, QRDatabaseException, 
  	            "Error %d performing get MV UIDs.", sqlCode); 
 
   while (sqlCode == SQL_Success)
   {
     sqlCode = queries_->fetchMvInformation(data_);
-    assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+    assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                       sqlCode==SQL_Success || sqlCode==SQL_Eof, QRDatabaseException, 
    	              "Error %d performing get MV UIDs.", sqlCode); 
 
@@ -583,7 +583,7 @@ QRMVDefinitionList* QRQueriesImpl::getMvUIDAndDefinitions(const NAString& defini
 const NAStringList* QRQueriesImpl::getAllCatalogNames()
 {
   Lng32 sqlCode = queries_->openCatalogNames();
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success, QRDatabaseException, 
 		    "Error %d performing get catalog name.", sqlCode); 
 
@@ -592,7 +592,7 @@ const NAStringList* QRQueriesImpl::getAllCatalogNames()
   {
     NAString* catalogName = new(heap_) NAString(heap_);
     sqlCode = queries_->fetchCatalogNames(*catalogName);
-    assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+    assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                       sqlCode==SQL_Success || sqlCode==SQL_Eof, QRDatabaseException, 
    	              "Error %d performing get catalog name.", sqlCode); 
 
@@ -617,7 +617,7 @@ void QRQueriesImpl::fixupDelimitedName(const char * inName, char * outName)
   // Prepare the object name to handle any double quotes
   // within the delimited name
 
-  assertLogAndThrow(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     inName!=NULL && outName!=NULL, QRLogicException, 
 		    "Bad input parameters to fixupDelimitedName()."); 
   
@@ -646,7 +646,7 @@ void QRQueriesImpl::openRewritePublishCursor()
   strcpy(rewriteTable, "MANAGEABILITY.MV_REWRITE.REWRITE_PUBLISH");
 
   Lng32 sqlCode = queries_->openRewritePublish(rewriteTable);
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success || sqlCode==SQL_Eof, QRDatabaseException, 
  	            "Error %d opening REWRITE_PUBLISH table.", sqlCode); 
 }
@@ -658,7 +658,7 @@ NABoolean QRQueriesImpl::fetchRewritePublishCursor(MVQR_Publish* publish)
 {
   // sqlCode 8006 is stream timeout - not an error.
   Lng32 sqlCode = queries_->fetchRewritePublish(publish);
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success || sqlCode==SQL_Eof || sqlCode == -8006, QRDatabaseException, 
  	            "Error %d performing reading REWRITE_PUBLISH table.", sqlCode); 
 
@@ -671,7 +671,7 @@ NABoolean QRQueriesImpl::fetchRewritePublishCursor(MVQR_Publish* publish)
 void QRQueriesImpl::closeRewritePublishCursor()
 {
   Lng32 sqlCode = queries_->closeRewritePublish();
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success || sqlCode==SQL_Eof, QRDatabaseException, 
  	            "Error %d closing REWRITE_PUBLISH table.", sqlCode); 
 }
@@ -684,7 +684,7 @@ NABoolean QRQueriesImpl::collectCatalogMVs(const NAString& catalogName,
                                            NAStringList&   mvNames)
 {
   Lng32 sqlCode = queries_->openMVNames(definitionSchema);
-  assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                     sqlCode==SQL_Success, QRDatabaseException, 
  	            "Error %d performing get MV names.", sqlCode); 
 
@@ -693,7 +693,7 @@ NABoolean QRQueriesImpl::collectCatalogMVs(const NAString& catalogName,
     NAString objectName(heap_);
     NAString schemaName(heap_);
     sqlCode = queries_->fetchMVNames(objectName, schemaName);
-    assertLogAndThrow1(CAT_QR_COMMON, LL_ERROR,
+    assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                       sqlCode==SQL_Success || sqlCode==SQL_Eof, QRDatabaseException, 
    	              "Error %d performing get MV names.", sqlCode); 
 
@@ -713,7 +713,7 @@ NABoolean QRQueriesImpl::collectCatalogMVs(const NAString& catalogName,
   sqlCode = queries_->closeMVNames();
   if (sqlCode)
   {
-    QRLogger::log(CAT_QR_COMMON, LL_ERROR,
+    QRLogger::log(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
       "Error %d closing statement ReDescribeCatalog", sqlCode);
     return FALSE;
   }
@@ -737,13 +737,13 @@ NABoolean QRQueriesImpl::reDescribeMV(const NAString* fullMvName, NABoolean rePu
   Lng32 sqlCode = queries_->reDescribeMV(*fullMvName, rePublish);
   if (sqlCode != SQL_Success)
   {
-    QRLogger::log(CAT_QR_COMMON, LL_ERROR,
+    QRLogger::log(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
       "ReDescribing MV %s failed with error %d.", fullMvName->data(), sqlCode);
     return FALSE;
   }
   else
   {
-    QRLogger::log(CAT_QR_COMMON, LL_DEBUG,
+    QRLogger::log(CAT_SQL_COMP_QR_COMMON, LL_DEBUG,
       "ReDescribing MV %s is OK.", fullMvName->data());
     return TRUE;
   }

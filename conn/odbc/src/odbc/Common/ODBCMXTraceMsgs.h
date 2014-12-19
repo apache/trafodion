@@ -34,7 +34,6 @@
 #include "CommonDiags.h"
 #include "odbcMxSecurity.h"
 #include "CSrvrStmt.h"
-#include "EventMsgs.h"
 #include "odbceventmsgutil.h"
 
 #define ODBCMX_TRACE	  "ODBCMX TRACE"
@@ -50,7 +49,7 @@
 #define COLLECTORTYPE	  "MXCS server trace"
 
 
-class ODBCMXTraceMsg : public ODBCMXEventMsg
+class ODBCMXTraceMsg
 {
   public:
 	int  seqNumber;

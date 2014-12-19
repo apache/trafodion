@@ -199,20 +199,28 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr &tblName,
 		  HbaseStr& row, 
 		  const std::vector<Text> & columns,
+		  NABoolean noXn,
 		  const int64_t timestamp) = 0;
+
+
 
   virtual Lng32 deleteRows(
 		  HbaseStr &tblName,
                   short rowIDLen,
 		  HbaseStr &rowIDs,
+		  NABoolean noXn,
 		  const int64_t timestamp) = 0;
+
 
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
 				  HbaseStr& row, 
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
+                                  NABoolean noXn,
 				  const int64_t timestamp);
+
+
 
   virtual Lng32 deleteColumns(
 		  HbaseStr &tblName,
@@ -230,6 +238,7 @@ class ExpHbaseInterface : public NABasicObject
                   short rowIDLen,
                   HbaseStr &rowIDs,
                   HbaseStr &rows,
+		  NABoolean noXn,
 		  const int64_t timestamp,
 		  NABoolean autoFlush = TRUE) = 0; // by default, flush rows after put
  
@@ -266,7 +275,9 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
+                                  NABoolean noXn,
 				  const int64_t timestamp) = 0;
+
   
   virtual Lng32 checkAndUpdateRow(
 				  HbaseStr &tblName,
@@ -274,8 +285,10 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr& row,
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
-                                  NABoolean noXn,
+                                  NABoolean noXn,				
+                                 
 				  const int64_t timestamp);
+
  
   virtual Lng32 getClose() = 0;
 
@@ -434,20 +447,26 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  HbaseStr &tblName,
 		  HbaseStr &row, 
 		  const std::vector<Text> & columns,
+		  NABoolean noXn,
 		  const int64_t timestamp);
+
 
   virtual Lng32 deleteRows(
 		  HbaseStr &tblName,
                   short rowIDLen,
 		  HbaseStr &rowIDs,
+		  NABoolean noXn,		 		  
 		  const int64_t timestamp);
+
 
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
 				  HbaseStr& row, 
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
+                                  NABoolean noXn,     
 				  const int64_t timestamp);
+
 
   virtual Lng32 deleteColumns(
 		  HbaseStr &tblName,
@@ -465,6 +484,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   short rowIDLen,
                   HbaseStr &rowIDs,
                   HbaseStr &rows,
+		  NABoolean noXn,
 		  const int64_t timestamp,
 		  NABoolean autoFlush = TRUE); // by default, flush rows after put
   
@@ -501,7 +521,9 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
+                                  NABoolean noXn,
 				  const int64_t timestamp);
+
 
 
   virtual Lng32 checkAndUpdateRow(
@@ -510,8 +532,10 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  HbaseStr& row,
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
-                                  NABoolean noXn,
+                                  NABoolean noXn,			
 				  const int64_t timestamp);
+
+
 
   virtual Lng32 coProcAggr(
 			 HbaseStr &tblName,

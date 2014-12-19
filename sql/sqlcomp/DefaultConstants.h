@@ -3578,6 +3578,7 @@ enum DefaultConstants
 
   TRAF_LOAD_MAX_HFILE_SIZE,
 
+
   USTAT_USE_BULK_LOAD,
 
   // if not null, then add this suffix to the original name and select from that hive table.

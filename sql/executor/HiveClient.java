@@ -66,7 +66,7 @@ public class HiveClient {
 
     void setupLog4j() {
         String confFile = System.getenv("MY_SQROOT")
-            + "/logs/log4j.hdfs.config";
+            + "/conf/log4j.hdfs.config";
         PropertyConfigurator.configure(confFile);
     }
 

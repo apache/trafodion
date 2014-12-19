@@ -860,6 +860,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("REPEATABLE",         TOK_REPEATABLE,  FIRST_|SECOND_|NONRESTOKEN_),
   ParKeyWord("REPLACE",            TOK_REPLACE,     POTANS_|RESWORD_),
   ParKeyWord("REPLICATE",          TOK_REPLICATE,   FIRST_|NONRESTOKEN_),
+  ParKeyWord("REPOSITORY",         TOK_REPOSITORY,  NONRESTOKEN_),
   ParKeyWord("REQUEST",            TOK_REQUEST,     FLAGSNONE_),
   ParKeyWord("REQUIRED",           TOK_REQUIRED,    NONRESTOKEN_),
   ParKeyWord("RESET",              TOK_RESET,       NONRESTOKEN_),

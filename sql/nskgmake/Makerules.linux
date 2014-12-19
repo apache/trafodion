@@ -87,6 +87,7 @@ ifeq ($(SQ_BUILD_TYPE),release)
 else
   STUBLIBROOT     = $(NSK_SQ)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/debug
 endif
+LIBROOT         = $(MY_SQROOT)/export/lib$(SQ_MBTYPE)
 LITEROOT        = $(NSK_SQ)/src
 # NSKLIB          = $(NSKROOT)/lib/$(FLAVOR)
 NSKLIB          = $(XMPIROOT)
@@ -167,7 +168,7 @@ DLLS := comexe common executor sort sqlmsg \
 	tdm_sqlmxevents tdm_sqlshare tdm_sqlerrormsg \
 	eh lmcomp \
 	sqlcilib cli porting_layer tdm_sqlmxmsg_intl \
-	log4cpp arkcmp_dll smdio udr_predef
+	arkcmp_dll smdio udr_predef
 
 
 DLLS += sqlcomp ustat sqlcat parser optimizer generator \
@@ -213,15 +214,9 @@ ifdef USE_HADOOP_1
   SYS_DEFS += -DUSE_HADOOP_1
 endif
 
-
-
-SP_INC := $(MY_SQROOT)/seapilot/export/include
-SP_INC_THIRDPARTY := /
-
 SYS_INCLUDES :=
    SYS_INCLUDES += -I$(NSK_SQ)/inc \
 	-I$(NSK_SQ)/export/include \
-	-I$(SP_INC) \
         -I$(PROTOBUFS_INC) \
 	$(LIBHDFS_INC) $(THRIFT_INC)				   \
 	-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
@@ -232,13 +227,13 @@ OTHER_INCLUDES := -include "$(NSK_SQ)/inc/seaquest/sqtypes.h" \
 	-I$(LLVM_INC_ROOT2) \
 	-I$(UDIS86_INC_ROOT) \
 	-I$(NSK_SQ)/../dbsecurity/auth/inc \
-	-I$(TOPDIR)/log4cpp/log4cpp-1.0/include
+	-I$(NSK_SQ)/../log4cpp/$(LOG4CPP_VER)/include \
+	-I$(NSK_SQ)/commonLogger
 
 LOC_LIBS := \
 	-L$(RESULTDIR) \
 	-L$(NSKLIB) \
-	-L$(XMPIROOT)\
-	-L$(SP_EXPORT_LIB)
+	-L$(XMPIROOT)
 
 # Define the correct compilation and linking flags depending on whether
 # this is a debug or release build.

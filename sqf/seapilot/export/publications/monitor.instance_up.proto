@@ -1,8 +1,0 @@
-import "common.info_header.proto";
-
-package monitor;
-
-message instance_up {
-    required common.info_header header = 1;
-}
-

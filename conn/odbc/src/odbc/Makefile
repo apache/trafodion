@@ -24,7 +24,7 @@ all: ndcs bldlnx_drvr
 
 # NDCS targets
 .PHONY:	ndcs
-ndcs: wms nsksrvrcore nsksrvr
+ndcs: nsksrvrcore nsksrvr
 
 .PHONY:	nsksrvrcore
 nsksrvrcore:  
@@ -36,7 +36,7 @@ nsksrvr: nsksrvrcore
 
 # NDCS clean targets
 .PHONY:	cleanndcs
-cleanndcs: cleannsksrvrcore cleannsksrvr cleanwmseventsdll
+cleanndcs: cleannsksrvrcore cleannsksrvr
 
 .PHONY: cleannsksrvrcore
 cleannsksrvrcore:
@@ -48,7 +48,7 @@ cleannsksrvr:
 
 # NDCS cleanall targets
 .PHONY: cleanallndcs
-cleanallndcs:  cleanallnsksrvrcore cleanallnsksrvr cleanallwmseventsdll
+cleanallndcs:  cleanallnsksrvrcore cleanallnsksrvr
 
 .PHONY: cleanallnsksrvrcore
 cleanallnsksrvrcore:
@@ -58,35 +58,11 @@ cleanallnsksrvrcore:
 cleanallnsksrvr:
 	cd nsksrvr; $(MAKE) cleanall
 
-# WMS targets
-.PHONY: wms
-wms: wmseventsdll 
- 
-.PHONY: wmseventsdll
-wmseventsdll:
-	cd WmsEventsDll; $(MAKE)
-	
 .PHONY: clean
-clean: cleanndcs cleanwms cleanlnx_drvr
+clean: cleanndcs cleanlnx_drvr
 
 .PHONY: cleanall
-cleanall: cleanallndcs cleanallwms cleanlnx_drvr
-	
-# WMS clean targets
-.PHONY: cleanwms
-cleanwms: cleanwmseventsdll 
-	
-.PHONY: cleanwmseventsdll
-cleanwmseventsdll:
-	cd WmsEventsDll; $(MAKE) clean
-
-# WMS cleanall targets
-.PHONY: cleanallwms
-cleanallwms:  cleanallwmseventsdll 
-	
-.PHONY: cleanallwmseventsdll
-cleanallwmseventsdll:
-	cd WmsEventsDll; $(MAKE) cleanall
+cleanall: cleanallndcs cleanlnx_drvr
 	
 # Linux ODBC Driver targets
 .PHONY: bldlnx_drvr

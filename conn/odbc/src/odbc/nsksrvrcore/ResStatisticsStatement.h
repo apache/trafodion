@@ -99,7 +99,7 @@ typedef struct _Error_Desc_def {
 class ResStatisticsStatement:public ResStatistics 
 {
 private:
-
+	friend class ResStatisticsSession;
          //   statement variables
           
          char                                    *sqlStatement;
@@ -263,6 +263,10 @@ public:
 		PerTableStats							perTableStats[MAX_PERTABLE_STATS_DESC];
 		short									perTableRowSize;
 
+	bool	pubStarted;
+	bool	queryFinished;
+	int64	wouldLikeToStart_ts;
+
 public:
 
 	int64 getNumMessages() { return NumMessages;}
@@ -329,6 +333,8 @@ public:
 	char *getSubQryType(){return subQryType;}
 	char *getParSysName(){return parentSysName;}
 
+	UInt32 getTotalMemAlloc(){return TotalMemAlloc;}
+	UInt32 getMaxMemUsed(){return MaxMemUsed;}
         /*void start( Int32 inState,
 		Int32 inSqlQueryType,
 		const char *inStmtName,
@@ -422,6 +428,7 @@ public:
 	
 	void init_rms_counters(bool resetAll=false);
 
+	void SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStmt, char *inSqlError = NULL, Int32 inSqlErrorLength = 0);
 
 protected:
 		char *printLongString(char *buffer,char *longStr, Int32 inState,Int32 inSqlQueryType, SRVR_STMT_HDL *pSrvrStmt);

@@ -152,7 +152,7 @@ NAString& QRElement::addEntityRefs(NAString& str, char attrDelim)
   else if (attrDelim == '\'')
     specialChars = "&<'";
   else
-    assertLogAndThrow(CAT_QR_DESC_GEN, LL_ERROR,
+    assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_ERROR,
                       FALSE, QRDescriptorException,
                       "addEntityRefs: attribute delimiter must be ' or \"");
 
@@ -645,7 +645,7 @@ void QRJBB::startElement(void *parser, const char *elementName, const char **att
 // LCOV_EXCL_START :cnu
 void QRJBB::createTableArray(CollIndex maxEntries)
 {
-  assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                      !tableArray_, QRDescriptorException,
 		     "tableArray_ already created for jbb %d", getIDNum());
   maxTableEntries_ = maxEntries;
@@ -655,7 +655,7 @@ void QRJBB::createTableArray(CollIndex maxEntries)
 
 void QRJBB::addTable(QRTablePtr table)
 {
-  assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                      tableCount_ < maxTableEntries_, QRDescriptorException,
 		     "Found more tables than in jbbc list for jbb %d", getIDNum());
   tableArray_[tableCount_++] = table;
@@ -1841,7 +1841,7 @@ void QRWStringVal::charData(void *parser, const char *data, Int32 len)
     {
       // We don't handle the case where the representation of a single char
       // spans 3 calls to this function.
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         len >= 4-danglingCharCount_, 
                         QRDescriptorException,
                         "charData() received buffer that does not complete dangling char");
@@ -2203,7 +2203,7 @@ QRExpr::QRExpr(XMLElementPtr parent, AttributeList atts, NABoolean isResidual,
         ref_ = iter.getValue();
       else if (!strcmp(attrName, "result"))
         {
-          assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+          assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                             isResidual_, QRDescriptorException,
                             "'result' attribute specified for non-residual expr.");
           result_ = encodeResult(iter.getValue());
@@ -2288,7 +2288,7 @@ const NAString& QRExpr::getExprText(NABoolean useColumnName)
  
   if (unparsedText == "")
   {
-    assertLogAndThrow(CAT_QR_COMMON, LL_MVQR_FAIL,
+    assertLogAndThrow(CAT_SQL_COMP_QR_COMMON, LL_MVQR_FAIL,
                       exprRoot_, QRDescriptorException,
                       "QRExpr has null exprRoot_ and no unparsed text");
     exprRoot_->unparse(unparsedText, useColumnName);
@@ -2302,7 +2302,7 @@ const ElementPtrList& QRExpr::getInputColumns(CollHeap* heap,
 {
   if (inputColumns_.entries() == 0)
   {
-    assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+    assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                       exprRoot_, QRDescriptorException,
                       "QRExpr has null exprRoot_ and no input columns");
     exprRoot_->getInputColumns(inputColumns_, heap, useRefedElem);
@@ -2581,10 +2581,10 @@ QRParameter::QRParameter(XMLElementPtr parent, AttributeList atts,
 
 void QRParameter::serializeAttrs(XMLString& xml)
 {
-  assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                     paramName_.length() > 0, QRDescriptorException,
                     "'name' attribute not specified for %s element.", elemName);
-  assertLogAndThrow1(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                     paramValue_.length() > 0, QRDescriptorException,
                     "'value' attribute not specified for %s element.", elemName);
   xml.append("name='").append(paramName_).append("\' ");
@@ -3714,7 +3714,7 @@ void QRPublishDescriptor::initialize(ComPublishMVOperationType opType,
 
     case COM_PUBLISH_MV_UNKNOWN:
     default:
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                         FALSE, QRDescriptorException,
 			"Unhandled MV operation type");
       break;
@@ -3829,7 +3829,7 @@ void QRUpdate::serializeAttrs(XMLString& xml)
 {
   QRElement::serializeAttrs(xml);
 
-  assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+  assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                     type_ != NON_INIT, QRDescriptorException,
                     "Op type has not been set for <Update>");
   xml.append("op='").append(UpdateTypeNames_[type_]).append("' ");
@@ -3846,10 +3846,10 @@ void QRUpdate::serializeAttrs(XMLString& xml)
       break;
 
     case DEFAULT:
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         defaultName_.length() > 0, QRDescriptorException,
                         "Attribute name not available for default operation");
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         defaultValue_.length() > 0, QRDescriptorException,
                         "Attribute value not available for default operation");
 

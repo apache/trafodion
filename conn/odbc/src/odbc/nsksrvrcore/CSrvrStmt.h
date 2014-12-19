@@ -363,4 +363,5 @@ public:
 namespace SRVR {
 	DWORD WINAPI ControlProc(LPVOID pParam);
 }
+
 #endif

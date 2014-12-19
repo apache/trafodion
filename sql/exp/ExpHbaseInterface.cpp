@@ -175,6 +175,7 @@ Lng32 ExpHbaseInterface::checkAndDeleteRow(
 					   HbaseStr &rowID, 
 					   const Text& columnToCheck,
 					   const Text& colValToCheck,
+                                           NABoolean noXn,
 					   const int64_t timestamp)
 {
   Lng32 retcode = 0;
@@ -194,7 +195,9 @@ Lng32 ExpHbaseInterface::checkAndDeleteRow(
   retcode = deleteRow(tblName,
 		      rowID,
 		      columns,
+                      noXn,
 		      timestamp);
+
   
   return retcode;
 }
@@ -576,7 +579,7 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
 				      const Text& stopRow, 
 				      const std::vector<Text> & columns,
 				      const int64_t timestamp,
-				      const NABoolean readUncommitted,
+				      const NABoolean noXn,
 				      const NABoolean cacheBlocks,
 				      const Lng32 numCacheRows,
                                       const NABoolean preFetch,
@@ -592,11 +595,11 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
     return HBASE_OPEN_ERROR;
   }
 
-  Int64 transID = getTransactionIDFromContext();
-  if (readUncommitted)
-    {
-      transID = 0;
-    }
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
   retCode_ = htc_->startScan(transID, startRow, stopRow, columns, timestamp, 
 					  cacheBlocks, numCacheRows, 
                                           preFetch,
@@ -670,7 +673,9 @@ Lng32 ExpHbaseInterface_JNI::deleteRow(
 	  HbaseStr &tblName,
 	  HbaseStr& row, 
 	  const std::vector<Text> & columns,
+	  NABoolean noXn,
 	  const int64_t timestamp)
+
 {
   HTableClient_JNI *htc = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
   if (htc == NULL)
@@ -679,8 +684,16 @@ Lng32 ExpHbaseInterface_JNI::deleteRow(
     return HBASE_OPEN_ERROR;
   }
   
-  Int64 transID = getTransactionIDFromContext();
+
+
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
   retCode_ = htc->deleteRow(transID, row, columns, timestamp);
+
+
 
   client_->releaseHTableClient(htc);
 
@@ -695,6 +708,7 @@ Lng32 ExpHbaseInterface_JNI::deleteRows(
 	  HbaseStr &tblName,
           short rowIDLen,
 	  HbaseStr &rowIDs,
+	  NABoolean noXn,
 	  const int64_t timestamp)
 {
   HTableClient_JNI* htc = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
@@ -704,8 +718,17 @@ Lng32 ExpHbaseInterface_JNI::deleteRows(
     return HBASE_OPEN_ERROR;
   }
   
-  Int64 transID = getTransactionIDFromContext();
+
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
+
+ 
   retCode_ = htc->deleteRows(transID, rowIDLen, rowIDs, timestamp);
+
+
 
   client_->releaseHTableClient(htc);
 
@@ -721,7 +744,9 @@ Lng32 ExpHbaseInterface_JNI::checkAndDeleteRow(
 	  HbaseStr& row, 
 	  const Text& columnToCheck,
 	  const Text& colValToCheck,
+	  NABoolean noXn,
 	  const int64_t timestamp)
+
 {
   HTableClient_JNI* htc = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
   if (htc == NULL)
@@ -730,8 +755,11 @@ Lng32 ExpHbaseInterface_JNI::checkAndDeleteRow(
     return HBASE_OPEN_ERROR;
   }
   
-  Int64 transID = getTransactionIDFromContext();
-  //  retCode_ = (HBC_RetCode)
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
   HTC_RetCode rc = htc->checkAndDeleteRow(transID, row, columnToCheck, colValToCheck,
 					  timestamp);
 
@@ -771,6 +799,7 @@ Lng32 ExpHbaseInterface_JNI::insertRow(
 
   retCode_ = htc->insertRow(transID, rowID, row, timestamp);
 
+
   client_->releaseHTableClient(htc);
 
   if (retCode_ != HBC_OK)
@@ -785,6 +814,7 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
           short rowIDLen,
           HbaseStr &rowIDs,
           HbaseStr &rows,
+	  NABoolean noXn,
 	  const int64_t timestamp,
 	  NABoolean autoFlush)
 {
@@ -795,8 +825,15 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
     return HBASE_OPEN_ERROR;
   }
   
-  Int64 transID = getTransactionIDFromContext();
+
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
   retCode_ = htc->insertRows(transID, rowIDLen, rowIDs, rows, timestamp, autoFlush);
+
+
 
   client_->releaseHTableClient(htc);
 
@@ -992,6 +1029,7 @@ Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
 	  HbaseStr &tblName,
 	  HbaseStr &rowID, 
 	  HbaseStr &row,
+	  NABoolean noXn,
 	  const int64_t timestamp)
 {
   HTableClient_JNI* htc = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
@@ -1001,8 +1039,17 @@ Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
     return HBASE_OPEN_ERROR;
   }
   
-  Int64 transID = getTransactionIDFromContext();
+
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
+ 
+
   HTC_RetCode rc = htc->checkAndInsertRow(transID, rowID, row, timestamp);
+
+
 
   client_->releaseHTableClient(htc);
 
@@ -1024,6 +1071,7 @@ Lng32 ExpHbaseInterface_JNI::checkAndUpdateRow(
 	  const Text& colValToCheck,
           NABoolean noXn,
 	  const int64_t timestamp)
+
 {
   HTableClient_JNI* htc = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
   if (htc == NULL)
@@ -1034,13 +1082,9 @@ Lng32 ExpHbaseInterface_JNI::checkAndUpdateRow(
   
   Int64 transID;
   if (noXn)
-    {
-      transID = 0;
-    }
+    transID = 0;
   else
-    {
-      transID = getTransactionIDFromContext();
-    }
+    transID = getTransactionIDFromContext();
 
   HTC_RetCode rc = htc->checkAndUpdateRow(transID, rowID, row, 
 					  columnToCheck, colValToCheck,

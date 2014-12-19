@@ -48,6 +48,9 @@
 #include <new>
 #include <stdio.h>
 
+#include <list>
+
+#include "CommonLogger.h"
 #include "zookeeper/zookeeper.h"
 // +++ Move below to srvrGlobal if needed
 
@@ -66,6 +69,7 @@ string availSrvrData;
 string regSrvrData;
 char regZnodeName[256];
 char instanceId[8];
+char childId[8];
 char zkHost[256];
 int myNid;
 int myPid;
@@ -76,8 +80,14 @@ int clientConnTimeOut;
 int zkSessionTimeout;
 short stopOnDisconnect;
 char trafIPAddr[20];
+int aggrInterval;
+int queryPubThreshold;
+statistics_type statisticsPubType;
+bool bStatisticsEnabled;
 long maxHeapPctExit;
 long initSessMemSize;
+int portMapToSecs = -1;
+int portBindToSecs = -1;
 
 void watcher(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx);
 bool verifyPortAvailable(const char * idForPort, int portNumber);
@@ -222,6 +232,16 @@ catch(SB_Fatal_Excep sbfe)
     mxosrvr_init_seabed_trace_dll();
 	atexit(mxosrvr_atexit_function);
 
+	// +++ Todo: Duplicating calls here. Should try to persist in srvrGlobal
+	MS_Mon_Process_Info_Type  proc_info;
+	msg_mon_get_process_info_detail(NULL, &proc_info);
+	myNid = proc_info.nid;
+	myPid = proc_info.pid;
+	myProcName = proc_info.process_name;
+
+	char logNamePrefix[32];
+	sprintf( logNamePrefix, "_%d_%d.log", myNid, myPid );
+	CommonLogger::instance().initLog4cpp("log4cpp.trafodion.config", logNamePrefix);
 
     if(retcode == FALSE )
    {
@@ -285,14 +305,10 @@ catch(SB_Fatal_Excep sbfe)
 	else
 	{
 		zk_ip_port << zkHost;
-		sprintf(zkErrStr, "+++++ zk_ip_port is: %s", zk_ip_port.str().c_str());
-		SendEventMsg(  MSG_SET_SRVR_CONTEXT_FAILED,
-						   EVENTLOG_ERROR_TYPE,
-						   processId,
-						   ODBCMX_SERVER,
-						   srvrObjRef,
-						   1,
-						   zkErrStr);
+		sprintf(zkErrStr, "zk_ip_port is: %s", zk_ip_port.str().c_str());
+		SendEventMsg(MSG_SERVER_TRACE_INFO, EVENTLOG_INFORMATION_TYPE,
+					processId, ODBCMX_SERVER,
+					srvrObjRef, 1, zkErrStr);
 	}
 
 	if (initParam.debugFlag & SRVR_DEBUG_BREAK)
@@ -334,6 +350,9 @@ catch(SB_Fatal_Excep sbfe)
 	tkn = strtok(NULL, ":" );
 	if( tkn != NULL )
 		strcpy( instanceId, tkn );
+	tkn = strtok(NULL, ":" );
+	if( tkn != NULL )
+		strcpy( childId, tkn );
 	else
 		;	// +++ Todo handle error
 
@@ -403,13 +422,6 @@ catch(SB_Fatal_Excep sbfe)
 	// moved this here from begining of the function
 	BUILD_OBJECTREF(initParam.asSrvrObjRef, srvrObjRef, "NonStopODBC", initParam.portNumber);
 
-	// +++ Todo: Duplicating calls here. Should try to persist in srvrGlobal
-	MS_Mon_Process_Info_Type  proc_info;
-	msg_mon_get_process_info_detail(NULL, &proc_info);
-	myNid = proc_info.nid;
-	myPid = proc_info.pid;
-	myProcName = proc_info.process_name;
-
 	ss.str("");
 	ss << zkRootNode << "/dcs/servers/registered";
 	string dcsRegistered(ss.str());
@@ -417,16 +429,12 @@ catch(SB_Fatal_Excep sbfe)
 	char realpath[1024];
 	bool zk_error = false;
 
-	if( found )
+ 	if( found )
 	{
-		sprintf(zkErrStr, "+++++ Found master node");
-		SendEventMsg(  MSG_SET_SRVR_CONTEXT_FAILED,
-						   EVENTLOG_ERROR_TYPE,
-						   processId,
-						   ODBCMX_SERVER,
-						   srvrObjRef,
-						   1,
-						   zkErrStr);
+		sprintf(zkErrStr, "Found master node in Zookeeper");
+		SendEventMsg(MSG_SERVER_TRACE_INFO, EVENTLOG_INFORMATION_TYPE,
+					processId, ODBCMX_SERVER,
+					srvrObjRef, 1, zkErrStr);
 
 		found = false;
 		while(!found)
@@ -438,17 +446,122 @@ catch(SB_Fatal_Excep sbfe)
 			if( rc == ZOK )
 			{
 				int i;
-				for(i = startPortNum+2; i < startPortNum+portRangeNum; i++) {
-					if (GTransport.m_listener->verifyPortAvailable("SRVR", i))
-//					if (verifyPortAvailable("SRVR", i))
-						break;
-				}
+				//This section is the original port finding mechanism.
+				//All servers (the herd) start looking for any available port
+				//between starting port number+2 through port range max.
+				//This is mainly for backward compatability for DcsServers
+				//that don't pass PORTMAPTOSECS and PORTBINDTOSECS param
+				if(portMapToSecs == -1 && portBindToSecs == -1) {
+					for(i = startPortNum+2; i < startPortNum+portRangeNum; i++) {
+						if (GTransport.m_listener->verifyPortAvailable("SRVR", i))
+							break;
+					}
 
-				if( i == startPortNum+portRangeNum )
-				{
-					zk_error = true;
-					sprintf(zkErrStr, "***** No ports free");
-					break;
+					if( i == startPortNum+portRangeNum )
+					{
+						zk_error = true;
+						sprintf(zkErrStr, "***** No ports free");
+						break;
+					}
+				} else {
+					//This section is for new port map params, PORTMAPTOSECS and PORTBINDTOSECS,
+					//passed in by DcsServer. DcsMaster writes the port map to data portion of
+					//<username>/dcs/servers/registered znode. Wait PORTMAPTOSECS for port map
+					//to appear in registered znode. When it appears read it and scan looking for
+					//match of instance and child Id.
+					long retryTimeout = 500;//.5 second
+					long long timeout = JULIANTIMESTAMP();
+					bool isPortsMapped = false;
+					char *zkData = new char[1000000];
+					int zkDataLen = 1000000;
+					while(! isPortsMapped) {
+						memset(zkData,0,1000000);
+						rc = zoo_get(zh, dcsRegistered.c_str(), false, zkData, &zkDataLen, &stat);
+						if( rc == ZOK && zkDataLen > 0 ) {
+							sprintf(zkErrStr, "DCS port map = %s", zkData);
+							SendEventMsg(MSG_SERVER_TRACE_INFO, EVENTLOG_INFORMATION_TYPE,
+									processId, ODBCMX_SERVER,
+									srvrObjRef, 1, zkErrStr);
+
+							int myInstanceId = atoi(instanceId);
+							int myChildId = atoi(childId);
+
+							sprintf(zkErrStr, "Searching for my id (%d:%d) in port map",myInstanceId,myChildId);
+							SendEventMsg(MSG_SERVER_TRACE_INFO, EVENTLOG_INFORMATION_TYPE,
+									processId, ODBCMX_SERVER,
+									srvrObjRef, 1, zkErrStr);
+
+							char portMapInstanceId[8];
+							char portMapChildId[8];
+							char portMapPortNum[8];
+							char* saveptr;
+							char* token = strtok_r (zkData,":",&saveptr);
+							while (token != NULL)
+							{
+								if( token != NULL )//instance Id
+									strcpy( portMapInstanceId, token );
+								token = strtok_r(NULL, ":",&saveptr);
+								if( token != NULL )//child id
+									strcpy( portMapChildId, token );
+								token = strtok_r(NULL, ":",&saveptr);
+								if( token != NULL )//port number
+									strcpy( portMapPortNum, token );
+
+								int currPortMapInstanceId = atoi(portMapInstanceId);
+								int currPortMapChildId = atoi(portMapChildId);
+								int currPortMapPortNum = atoi(portMapPortNum);
+
+								if(myInstanceId == currPortMapInstanceId && myChildId == currPortMapChildId) {
+									i = currPortMapPortNum;
+									sprintf(zkErrStr, "Found my port number = %d in port map", i);
+									SendEventMsg(MSG_SERVER_TRACE_INFO, EVENTLOG_INFORMATION_TYPE,
+											processId, ODBCMX_SERVER,
+											srvrObjRef, 1, zkErrStr);
+									break;
+								} else {
+									token = strtok_r (NULL, ":",&saveptr);
+								}
+							}
+
+							timeout = JULIANTIMESTAMP();
+							bool isAvailable = false;
+							while ( isAvailable == false ) {
+								if (GTransport.m_listener->verifyPortAvailable("SRVR", i)) {
+									isAvailable = true;
+								} else {
+									if((JULIANTIMESTAMP() - timeout) > (portBindToSecs * 1000000)) {
+										sprintf(zkErrStr, "Port bind timeout...exiting");
+										zk_error = true;
+										break;
+									} else {
+										sprintf(zkErrStr, "Port = %d is already in use...retrying", i);
+										SendEventMsg(MSG_SERVER_TRACE_INFO, EVENTLOG_INFORMATION_TYPE,
+												processId, ODBCMX_SERVER,
+												srvrObjRef, 1, zkErrStr);
+										DELAY(retryTimeout);
+									}
+								}
+							}
+
+							isPortsMapped = true;
+
+						} else {
+							if((JULIANTIMESTAMP() - timeout) > (portMapToSecs * 1000000)) {
+								sprintf(zkErrStr, "Port map read timeout...exiting");
+								zk_error = true;
+								break;
+							} else {
+								sprintf(zkErrStr, "Waiting for port map");
+								SendEventMsg(MSG_SERVER_TRACE_INFO, EVENTLOG_INFORMATION_TYPE,
+										processId, ODBCMX_SERVER,
+										srvrObjRef, 1, zkErrStr);
+								DELAY(retryTimeout);
+								rc = zoo_exists(zh, dcsRegistered.c_str(), 0, &stat);
+							}
+						}
+					}
+
+					delete[] zkData;
 				}
 
 				initParam.portNumber = i;
@@ -941,7 +1054,7 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 	zkSessionTimeout = 30;	// Default to 30 secs
 	strName[0] = 0;
 	strValue[0] = 0;
-	maxHeapPctExit = 0; 
+	maxHeapPctExit = 0;
 	initSessMemSize = 0;
 	initParam.timeLogger=false;
 	initTcpProcessNameTemp(initParam.TcpProcessName);
@@ -950,6 +1063,10 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 	strcpy(initParam.QSProcessName, DEFAULT_QS_PROCESS_NAME);
 	strcpy(initParam.QSsyncProcessName, DEFAULT_SYNC_PROCESS_NAME);
 	memset(trafIPAddr,0,sizeof(trafIPAddr));
+	aggrInterval = 60;
+	queryPubThreshold = 60;
+	statisticsPubType = STATISTICS_AGGREGATED;
+	bStatisticsEnabled = false;
 
 	initParam.EmsTimeout		= DEFAULT_EMS_TIMEOUT;
 	initParam.initIncSrvr		= DEFAULT_INIT_SRVR;
@@ -961,7 +1078,7 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 	initParam.sql = NULL;
 	initParam.mute = false;//Dashboard testing - no 21036 message
 	initParam.ext_21036 = true; // new extended 21036 msg - for SRPQ
-        initParam.floatIP = false;  // bool which indicates if the script which binds the floating ip address needs to be run
+    initParam.floatIP = false;  // bool which indicates if the script which binds the floating ip address needs to be run
 
 	memset(initParam.neoODBC,0,sizeof(initParam.neoODBC));
 
@@ -1143,7 +1260,110 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 			if (++count < argc && argv[count][0] != '-' )
 			{
 				if( getNumberTemp( argv[count], number ) == TRUE )
-					maxHeapPctExit = number;
+				{
+					if(number > 0)
+						maxHeapPctExit = number;
+				}
+				else
+				{
+					argWrong = TRUE;
+					break;
+				}
+			}
+			else
+			{
+				argEmpty = TRUE;
+				break;
+			}
+		}
+		else
+		if (strcmp(arg, "-STATISTICSINTERVAL") == 0)
+		{
+			if (++count < argc && argv[count][0] != '-' )
+			{
+				if( getNumberTemp( argv[count], number ) == TRUE )
+				{
+					if(number > 0)
+						aggrInterval = number;
+				}
+				else
+				{
+					argWrong = TRUE;
+					break;
+				}
+			}
+			else
+			{
+				argEmpty = TRUE;
+				break;
+			}
+		}
+		else
+		if (strcmp(arg, "-STATISTICSLIMIT") == 0)
+		{
+			if (++count < argc && argv[count][0] != '-' )
+			{
+				if( getNumberTemp( argv[count], number ) == TRUE )
+				{
+					if(number > 0)
+						queryPubThreshold = number;
+				}
+				else
+				{
+					argWrong = TRUE;
+					break;
+				}
+			}
+			else
+			{
+				argEmpty = TRUE;
+				break;
+			}
+		}
+		else
+		if (strcmp(arg, "-STATISTICSTYPE") == 0)
+		{
+			if (++count < argc && argv[count][0] != '-' )
+			{
+				char statisticsOpt[20];
+				if (strlen(argv[count]) < sizeof(statisticsOpt)-1)
+				{
+					memset(statisticsOpt,0,sizeof(statisticsOpt));
+					strcpy(statisticsOpt, argv[count]);
+					if (stricmp(statisticsOpt, "session") == 0)
+						statisticsPubType = STATISTICS_SESSION;
+					else if (stricmp(statisticsOpt, "query") == 0)
+						statisticsPubType = STATISTICS_QUERY;
+					else
+						statisticsPubType = STATISTICS_AGGREGATED;
+				}
+				else
+				{
+					argWrong = TRUE;
+					break;
+				}
+			}
+			else
+			{
+				argEmpty = TRUE;
+				break;
+			}
+		}
+		else
+		if (strcmp(arg, "-STATISTICSENABLE") == 0)
+		{
+			if (++count < argc && argv[count][0] != '-' )
+			{
+				char statisticsEnable[20];
+				if (strlen(argv[count]) < sizeof(statisticsEnable)-1)
+				{
+					memset(statisticsEnable,0,sizeof(statisticsEnable));
+					strcpy(statisticsEnable, argv[count]);
+					if (stricmp(statisticsEnable, "false") == 0)
+						bStatisticsEnabled = false;
+					else
+						bStatisticsEnabled = true;
+				}
 				else
 				{
 					argWrong = TRUE;
@@ -1156,6 +1376,44 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 				break;
 			}
 
+		}
+		else
+		if (strcmp(arg, "-PORTMAPTOSECS") == 0)
+		{
+			if (++count < argc && argv[count][0] != '-' )
+			{
+				if( getNumberTemp( argv[count], number ) == TRUE )
+					portMapToSecs = number;
+				else
+				{
+					argWrong = TRUE;
+					break;
+				}
+			}
+			else
+			{
+				argEmpty = TRUE;
+				break;
+			}
+		}
+		else
+		if (strcmp(arg, "-PORTBINDTOSECS") == 0)
+		{
+			if (++count < argc && argv[count][0] != '-' )
+			{
+				if( getNumberTemp( argv[count], number ) == TRUE )
+					portBindToSecs = number;
+				else
+				{
+					argWrong = TRUE;
+					break;
+				}
+			}
+			else
+			{
+				argEmpty = TRUE;
+				break;
+			}
 		}
 		count++;
 	}

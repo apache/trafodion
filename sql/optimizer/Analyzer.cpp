@@ -1599,7 +1599,7 @@ RelExpr* QueryAnalysis::handleMvQueryRewrite(RelExpr* expr)
   // Anything to warn about?
   if (warningMessage != "")
   {
-    QRLogger::log(CAT_QR_HANDLER, LL_WARN, warningMessage);
+    QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_WARN, warningMessage);
     mvQueryRewriteHandler_->getWarningMessage() = warningMessage;
   }
 

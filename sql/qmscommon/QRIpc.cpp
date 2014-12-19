@@ -81,11 +81,11 @@ void QRMessageStream::actOnSend(IpcConnection *connection)
       char connText[PROCESSNAME_STRING_LEN];
       connection->getOtherEnd().toAscii(connText, PROCESSNAME_STRING_LEN);
       if (state == ERROR_STATE)
-      QRLogger::log(CAT_QR_IPC, LL_ERROR,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
         "Error sending message of type %s from %s to %s",
         msgType, thisEnd_.data(), connText);
     else
-      QRLogger::log(CAT_QR_IPC, LL_DEBUG,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG,
         "Message of type %s was sent from %s to %s",
         msgType, thisEnd_.data(), connText); //otherEnd_.data())
 }
@@ -101,12 +101,12 @@ void QRMessageStream::actOnReceive(IpcConnection *connection)
       connection->getOtherEnd().toAscii(connText, PROCESSNAME_STRING_LEN);
 
       if (state == ERROR_STATE)
-      QRLogger::log(CAT_QR_IPC, LL_ERROR,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_ERROR,
         "Error in %s receiving message of type %s from %s",
         thisEnd_.data(), msgType, connText);
 //                    thisEnd_.data(), msgType, otherEnd_.data())
       else
-      QRLogger::log(CAT_QR_IPC, LL_DEBUG,
+      QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG,
         "Message of type %s was received from %s by %s ",
         msgType, connText, thisEnd_.data());
 //                    msgType, otherEnd_.data(), thisEnd_.data())
@@ -114,7 +114,7 @@ void QRMessageStream::actOnReceive(IpcConnection *connection)
 
 void QRMessageStream::respond(QRMessageObj* responseObj)
 {
-  QRLogger::log(CAT_QR_IPC, LL_DEBUG, "Reached QRMessageStream::respond()");
+  QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG, "Reached QRMessageStream::respond()");
 
   if (!responseObj)
     responseObj = new QRStatusMessageObj(QR::InternalError);

@@ -30,8 +30,8 @@
 #include "odbcsrvrcommon.h"
 #include "odbcMxSecurity.h"
 #include "odbcmxProductName.h"
-#include "EventMsgs.h"
 #include "ceecfg.h"
+#include "PubQueryStats.h"
 
 #define LOCALHOST "localhost"
 #define DEFAULT_ZOOKEEPER_CLIENT_PORT 2181
@@ -84,7 +84,7 @@ class ODBCMXTraceMsg;
 
 #define MAX_NAME_LEN				50
 #include "QSGlobal.h"
-#include "QpidEmsInterface.h"
+#include "PubInterface.h"
 #define DEFAULT_QS_PROCESS_NAME		"$ZWMGR"
 //define DEFAULT_QS_PROCESS_NAME	"$QSMGR"
 #define DEFAULT_SYNC_PROCESS_NAME	"$ZWSYN"
@@ -366,6 +366,8 @@ class ODBCMXTraceMsg;
 #endif
 
 #define SESSION_ID_LEN			MAX_SESSION_ID_LEN
+#define STATISTICS_INTERVAL	60
+#define STATISTICS_LIMIT	60
 
 #ifndef MAX_SESSION_NAME_LEN		// This should be available in sqlcli.h
   #define MAX_SESSION_NAME_LEN	24
@@ -925,6 +927,12 @@ typedef struct _SRVR_GLOBAL_Def
 		cpu = 0;
 		qsOpen = false;
 		bzero(segmentname,sizeof(segmentname));
+		m_statisticsPubType = STATISTICS_AGGREGATED;
+		m_bStatisticsEnabled = true;
+		m_iAggrInterval = STATISTICS_INTERVAL;
+		m_iQueryPubThreshold = STATISTICS_LIMIT;
+		m_NodeId = 0;
+		bzero(m_ProcName,sizeof(m_ProcName));
 		m_bNewConnection = false;
 		m_bNewService = false;
 
@@ -935,7 +943,6 @@ typedef struct _SRVR_GLOBAL_Def
 		bzero(m_query_name,sizeof(m_query_name));
 
 		traceLogger = NULL;
-		resAcctLogger = NULL;
 
 		WmsNid = -1;
 		bConfigurationChanged = false;
@@ -943,6 +950,9 @@ typedef struct _SRVR_GLOBAL_Def
 		bspjTxnJoined = FALSE;
 		spjTxnId = 0;
 		dcsCurrState = INITIAL;
+
+		bzero(srvrObjRef,sizeof(srvrObjRef));
+
 	}
 
 	long				debugFlag;
@@ -1020,7 +1030,6 @@ typedef struct _SRVR_GLOBAL_Def
 										//	- SUPER.SERVICES for SUPER.SERVICES etc.
 	bool				DSG;
 	ODBCMXTraceMsg		*traceLogger;
-	ODBCMXEventMsg		*resAcctLogger;
 	char				sessionId[SESSION_ID_LEN];
 	char				TraceCollector[EXT_FILENAME_LEN];
 	char				RSCollector[EXT_FILENAME_LEN];
@@ -1126,6 +1135,12 @@ typedef struct _SRVR_GLOBAL_Def
 	short	m_aggr_wms_interval;
 	short	m_aggr_exec_interval;
 	short	m_aggr_stats_once;		// perf
+	statistics_type m_statisticsPubType;
+	bool	m_bStatisticsEnabled;
+	int	m_iAggrInterval;
+	int	m_iQueryPubThreshold;
+	int	m_NodeId;
+	char	m_ProcName[MS_MON_MAX_PROCESS_NAME];	
     int     receiveThrId;
     SB_Thread::Errorcheck_Mutex *mutex; // mutex
 

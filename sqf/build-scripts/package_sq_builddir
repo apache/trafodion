@@ -315,7 +315,6 @@ print "\nRemoving specific directories ${newBuildDir} ...\n";
 print "Size before (MB) :  \n";
 dusm $newBuildDir;
 my @removeTheseDirs = ( "sqf/build-scripts/open-src-pkg",
-			"sqf/seapilot/thirdparty_export",
 			"sqf/sql/database",
 			"sql/regress" );
 my $dCtr = 0;

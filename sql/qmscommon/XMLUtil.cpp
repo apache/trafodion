@@ -127,7 +127,7 @@ void XMLElement::toXML(XMLString& xml, NABoolean sameLine, NABoolean noEndTag)
     {
       size_t len = xml.length();
       serializeBody(xml);
-      assertLogAndThrow(CAT_QR_COMMON, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_COMMON, LL_MVQR_FAIL,
                         len == xml.length(), QRLogicException, 
 		        "Tried to omit closing tag, but element has content");
       xml.append("/>");
@@ -248,7 +248,7 @@ void XMLBitmap::initFromHexString(const char* hexChar, UInt32 nBits)
 
 unsigned char XMLBitmap::hexDigitToInt(char c)
 {
-  assertLogAndThrow1(CAT_QR_COMMON, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_QR_COMMON, LL_MVQR_FAIL,
                      (c>='0' && c<='9') || (c>='A' && c<='F'), QRLogicException, 
 		      "input to hexDigitToInt() must be a hex digit, not '%c'.", c);
   if (c <= '9')

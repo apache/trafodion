@@ -112,9 +112,10 @@ public class HBaseTxClient {
    public static final int TM_TX_STATE_LAST = 17;
 
     void setupLog4j() {
-       System.out.println("In setupLog4J");
-        String confFile = System.getenv("MY_SQROOT")
-            + "/logs/log4j.dtm.config";
+       	System.out.println("In setupLog4J");
+		System.setProperty("trafodion.root", System.getenv("MY_SQROOT"));
+	    String confFile = System.getenv("MY_SQROOT")
+            + "/conf/log4j.dtm.config";
         PropertyConfigurator.configure(confFile);
     }
 

@@ -55,7 +55,7 @@ class QRMessageObj : public IpcMessageObj
   public:
     virtual ~QRMessageObj()
       {
-        QRLogger::log(CAT_QR_IPC, LL_DEBUG,
+        QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG,
           "---QRMessageObj dealloc: allocCount_ = %d", --allocCount_);
       }
 
@@ -99,7 +99,7 @@ class QRMessageObj : public IpcMessageObj
     QRMessageObj(IpcMessageObjType objType, IpcMessageObjVersion version)
       : IpcMessageObj(objType, version)
       {
-        QRLogger::log(CAT_QR_IPC, LL_DEBUG,
+        QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG,
           "+++QRMessageObj alloc: allocCount_ = %d", ++allocCount_);
       }
 
@@ -231,7 +231,7 @@ class QRXmlMessageObj : public QRMessageObj
      */
     void log(QRLogger& logger)
       {
-        logger.log(CAT_QR_IPC, LL_DEBUG, xmlText_);
+        logger.log(CAT_SQL_COMP_QR_IPC, LL_DEBUG, xmlText_);
       }
 
   private:
@@ -333,13 +333,13 @@ class QRMessageStream : public IpcMessageStream
         thisEnd_(thisEnd, heap),
         otherEnd_(heap)
       {
-        QRLogger::log(CAT_QR_IPC, LL_DEBUG,
+        QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG,
           "+++QRMessageStream alloc: allocCount_ = %d", ++allocCount_);
       }
     
     ~QRMessageStream()
       {
-        QRLogger::log(CAT_QR_IPC, LL_DEBUG,
+        QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_DEBUG,
           "---QRMessageStream dealloc: allocCount_ = %d", --allocCount_);
       }
 

@@ -110,15 +110,15 @@ INCLUDEPATH += ../eh \
                ../ddl \
                ../dml \
                ../arkcmp \
-               ../log4cpp/log4cpp-1.0/include \
+               ../../log4cpp/log4cpp-1.0/include \
                ../../sqf/export/include
+               ../../sqf/commonLogger
 
 
 INCLUDEPATH += ../../sqf/sql/inc \
                ../../sqf/inc \
                ../../sqf/sql/inc/nq_fs2 \
                ../../sqf/sql/nsk/src \
-               ../../sqf/sql/nsk/inc/seaquest \
-               ../../sqf/seapilot/export/include \
+               ../../sqf/sql/nsk/inc/seaquest 
 
 DEPENDPATH = ../../sqf/export/include

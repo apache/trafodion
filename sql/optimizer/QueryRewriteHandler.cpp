@@ -52,13 +52,13 @@ void MvQueryRewriteHandler::createMvDescriptor(QueryAnalysis* qa, RelExpr* expr,
   // LCOV_EXCL_START :rfi
   catch (QRDescriptorException& ex)
   {
-    QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL,
+    QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
       "A QRDescriptorException occurred while generating MV descriptor: %s", ex.getMessage());
     warningMessage = "Internal error.";
   }
   catch (...)
   {
-    QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL,
+    QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
       "An Unknown exception occurred while generating MV descriptor.");
     warningMessage = "Unknown internal error.";
   }
@@ -113,7 +113,7 @@ static QRRequestResult parseXML(char* xmlText, Int32 xmlLen,
       if (!descriptor)
         {
           // LCOV_EXCL_START :rfi
-          QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL,
+          QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
             "XMLDocument.parse() returned NULL.");
           return XMLParseError;
           // LCOV_EXCL_STOP
@@ -124,19 +124,19 @@ static QRRequestResult parseXML(char* xmlText, Int32 xmlLen,
   // LCOV_EXCL_START :rfi
   catch (XMLException& ex)
     {
-      QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL,
+      QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
         "An XMLException occurred: %s", ex.getMessage());
       return XMLParseError;
     }
   catch (QRDescriptorException& ex)
     {
-      QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL,
+      QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
         "A QRDescriptorException occurred: %s", ex.getMessage());
       return XMLParseError;
     }
   catch (...)
     {
-      QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL,
+      QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
         "An Unknown exception occurred");
       return InternalError;
     }
@@ -162,7 +162,7 @@ NABoolean MvQueryRewriteHandler::rewriteWorthTrying(RelRoot* rootExpr)
 
   if (CURRSTMT_OPTDEFAULTS->optLevel() < OptDefaults::MEDIUM)
     {
-      QRLogger::log(CAT_QR_HANDLER, LL_INFO,
+      QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_INFO,
         "Query rewrite skipped due to optimization level");
       return FALSE;
     }
@@ -211,7 +211,7 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
   if (MVName != "")
   {
   	// Add a log marker with query/MV name.
-    QRLogger::log(CAT_QR_DESC_GEN, LL_INFO, "Log marker for query: %s", MVName.data());
+    QRLogger::log(CAT_SQL_COMP_QR_DESC_GEN, LL_INFO, "Log marker for query: %s", MVName.data());
   }
 
   // Create the query descriptor
@@ -251,7 +251,7 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
   catch(QRDescriptorException e)
   {
     // Just ignore it and leave xmlText_ as NULL to skip the rest of this method.
-    QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL,
+    QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
       "DescriptorException thrown: %s, %s.", e.getMessage(), MVName.data());
     if (rootExpr->isAnalyzeOnly())
       rootExpr = handleAnalyzeOnlyQuery(rootExpr, e.getMessage());
@@ -262,7 +262,7 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
   {
     // This exception was not yet logged.
     // Log it and then skip.
-    QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL,
+    QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
       "Unknown exception thrown during descriptor generation, %s.", MVName.data());
     if (rootExpr->isAnalyzeOnly())
       rootExpr = handleAnalyzeOnlyQuery(rootExpr, "Unknown exception thrown");
@@ -311,7 +311,7 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
           if (!qms)
           {
             // LCOV_EXCL_START :rfi
-            QRLogger::log(CAT_QR_IPC, LL_MVQR_FAIL,
+            QRLogger::log(CAT_SQL_COMP_QR_IPC, LL_MVQR_FAIL,
               "Match failed due to inability to connect to QMS.");
             if (rootExpr->isAnalyzeOnly())
               rootExpr = handleAnalyzeOnlyQuery(rootExpr, "Can't connect to QMS");
@@ -321,8 +321,8 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
 	    
           // Do QMS MATCH protocol here.
           // ============================
-          QRLogger::log(CAT_CMP_XML, LL_DEBUG, "MATCH REQUEST sent:");
-          QRLogger::log1(CAT_CMP_XML, LL_DEBUG, xmlText_->data());
+          QRLogger::log(CAT_SQL_COMP_XML, LL_DEBUG, "MATCH REQUEST sent:");
+          QRLogger::log1(CAT_SQL_COMP_XML, LL_DEBUG, xmlText_->data());
           QRXmlMessageObj* xmlResponse = 
                   MvQueryRewriteServer::sendMatchMessage(qms, xmlText_, STMTHEAP);
 	
@@ -337,8 +337,8 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
               result = parseXML(xmlResponse->getData(),
                                 xmlResponse->getLength(),
                                 responseDescriptor);
-              QRLogger::log(CAT_CMP_XML, LL_DEBUG, "MATCH RESPONSE received:");
-              QRLogger::log1(CAT_CMP_XML, LL_DEBUG, xmlResponse->getData());
+              QRLogger::log(CAT_SQL_COMP_XML, LL_DEBUG, "MATCH RESPONSE received:");
+              QRLogger::log1(CAT_SQL_COMP_XML, LL_DEBUG, xmlResponse->getData());
               xmlResponse->decrRefCount();
             }
           else
@@ -350,7 +350,7 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
             if (responseDescriptor->getElementType() !=  ET_ResultDescriptor)
             {
               // LCOV_EXCL_START :rfi
-              QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL,
+              QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
                           "Response to MATCH request was an XML document with "
                           "document element <%s> instead of <%s>",
                           responseDescriptor->getElementName(), QRResultDescriptor::elemName);
@@ -370,7 +370,7 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
       catch(QRDescriptorException e)
       {
         // Exception has generated mx event, but not mvqr-logged. 
-        QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL, e.getMessage());
+        QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL, e.getMessage());
         delete xmlText_;
         if (rootExpr->isAnalyzeOnly())
           rootExpr = handleAnalyzeOnlyQuery(rootExpr, e.getMessage());
@@ -388,7 +388,7 @@ RelExpr* MvQueryRewriteHandler::handleMvQueryRewrite(QueryAnalysis* qa,
       {
         // This exception was not yet logged.
         // Log it and then skip.
-        QRLogger::log(CAT_QR_HANDLER, LL_MVQR_FAIL,
+        QRLogger::log(CAT_SQL_COMP_QR_HANDLER, LL_MVQR_FAIL,
           "Unknown exception thrown during descriptor generation.");
         delete xmlText_;
         if (rootExpr->isAnalyzeOnly())

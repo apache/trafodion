@@ -60,7 +60,7 @@ const char* QRMessage::getRequestName(QRMessageTypeEnum type)
 {
   Int32 index = type - IPC_MSG_QR_FIRST - 1;
   // Verify that the array contents is in sync with its index.
-  assertLogAndThrow(CAT_QR_IPC, LL_MVQR_FAIL,
+  assertLogAndThrow(CAT_SQL_COMP_QR_IPC, LL_MVQR_FAIL,
                     reqNamesArray_[index].type == type, QRLogicException, 
 		    "reqNamesArray_ is out of sync.");
 

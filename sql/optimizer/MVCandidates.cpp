@@ -132,7 +132,7 @@ GroupByAgg* MVCandidates::getGroupByAggNode(RelExpr* childNode,
                                        	 candidate->getMVName()->getMVName(),
                                          heap));
       else
-        assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                            FALSE, MVCandidateException,
 			   "Unexpected element type for grouping item -- %d",
 			   elemType)
@@ -190,7 +190,7 @@ ItemExpr* MVCandidates::rewriteVegPredicate(const ElementPtrList& mvColumns,
                 break;
 
               default:
-                assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+                assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                    FALSE, MVCandidateException,
                                    "No code for handling element of type %d in "
                                    "vegpred yet", mvColumns[i]->getElementType());
@@ -218,7 +218,7 @@ ItemExpr* MVCandidates::rewriteVegPredicate(const ElementPtrList& mvColumns,
       prevOperand = operand;
     }
 
-  assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+  assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                     andBackbone, MVCandidateException,
                     "rewriteVegPredicate returning NULL");
   return andBackbone;
@@ -310,7 +310,7 @@ ItemExpr* MVCandidates::rewriteItemExpr(const ElementPtrList& mvColumns,
                     // We used to pick the first one, now we only accept one from
                     // the correct node. This should still find a member for any
                     // case where it did before.
-                    assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+                    assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                       !foundOne || foundRightOne,
                                       MVCandidateException,
                                       "Found vegref member, but not one to "
@@ -323,7 +323,7 @@ ItemExpr* MVCandidates::rewriteItemExpr(const ElementPtrList& mvColumns,
                 break;
 
               default:
-                assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+                assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                                    FALSE, MVCandidateException,
                                    "rewriteItemExpr() not ready for element of type %d",
                                    mvColumns[i]->getElementType());
@@ -441,7 +441,7 @@ static OperatorTypeEnum determineAggForRollup(QRMVColumnPtr mvCol)
 	    break;
 
           default: 
-            assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                               FALSE, MVCandidateException,
                                "Can't rewrite this agg func for rollup: %d",
                                itemExpr->getOperatorType());
@@ -494,7 +494,7 @@ void MVCandidates::rewriteRangePreds(QRCandidatePtr candidate,
                   // rather one we need to construct here.
                   // We only do IS NOT NULL range preds for LOJ support.
                   NABoolean isNotNull = (rangePred->getOperatorList().entries() == 0);
-                  assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+                  assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                     isNotNull, MVCandidateException,
                                     "Expecting only IS NOT NULL range predicates to have no ref attributes.");
                   ItemExpr* mvCol = 
@@ -523,7 +523,7 @@ void MVCandidates::rewriteRangePreds(QRCandidatePtr candidate,
                     QRColumnPtr col = rangeItem->getReferencedElement()
                                                 ->downCastToQRColumn();
                     Scan* bjScan = bjScanHash_.getFirstValue(&col->getTableID());
-                    assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+                    assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                       bjScan, MVCandidateException,
                                       "Could not find scan node for back join "
                                       "table.");
@@ -545,7 +545,7 @@ void MVCandidates::rewriteRangePreds(QRCandidatePtr candidate,
                                                heap);
               }
             else
-              assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+              assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                                  FALSE, MVCandidateException,
                                  "Not ready for range item with element type %d",
                                  rangeItem->getElementType())
@@ -557,14 +557,14 @@ void MVCandidates::rewriteRangePreds(QRCandidatePtr candidate,
                 else if (groupBy)
                   groupBy->addSelPredTree(rewrittenRangePredItemExpr);
                 else
-                  QRLogger::log(CAT_MVCAND, LL_DEBUG,
+                  QRLogger::log(CAT_SQL_COMP_MVCAND, LL_DEBUG,
                     "Rewritten range pred contains an aggregate, but "
                                "there is no Group By node -- pred not added.");
               }
             break;
 
           default:
-            assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                                FALSE, MVCandidateException,
                                "Unknown value for result attribute -- %d",
                                rangePred->getResult());
@@ -602,14 +602,14 @@ static RelExpr* getBackJoinNode(const ElementPtrList& inputList,
         }
       else
         {
-          assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+          assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                              elem->getElementType() == ET_Column,
                              MVCandidateException,
                              "getBackJoinNode() -- can't handle element of type %d",
                              elem->getElementType());
           col = elem->getReferencedElement()->downCastToQRColumn();
           bjScan = bjScanHash.getFirstValue(&col->getTableID());
-          assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+          assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                             bjScan, MVCandidateException,
                             "Could not find scan node for back join table.");
           if (mvUsed)
@@ -674,7 +674,7 @@ void MVCandidates::rewriteResidPreds(QRCandidatePtr candidate,
               else if (groupBy)
                 groupBy->addSelPredTree(rewrittenResidPredItemExpr);
               else
-                QRLogger::log(CAT_MVCAND, LL_DEBUG,
+                QRLogger::log(CAT_SQL_COMP_MVCAND, LL_DEBUG,
                   "Rewritten residual pred contains an aggregate, "
                              "but there is no Group By node -- pred not added.");
               deletePtr(visitor);
@@ -682,7 +682,7 @@ void MVCandidates::rewriteResidPreds(QRCandidatePtr candidate,
             break;
 
           default:
-            assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                                FALSE, MVCandidateException,
                                "Unknown value for result attribute -- %d",
                                residPred->getResult());
@@ -771,7 +771,7 @@ void MVCandidates::buildOutputExprs(QRCandidatePtr candidate,
           case QRElement::Provided:
             {
               outputItem = output->getOutputItem();
-              assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+              assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                  outputItem->getElementType() == ET_MVColumn,
                                  MVCandidateException,
                                  "Unexpected element type for output item with "
@@ -799,7 +799,7 @@ void MVCandidates::buildOutputExprs(QRCandidatePtr candidate,
                 }
               else if (outputItemList.entries() > 1)
                 {
-                  assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+                  assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                       FALSE, MVCandidateException,
                                         "Output item list with multiple entries "
                                             "(partial matching) not handled yet")
@@ -808,7 +808,7 @@ void MVCandidates::buildOutputExprs(QRCandidatePtr candidate,
                 {
                   // Output expression is a column requiring a back-join.
                   // There must be a single output item, which is the column.
-                  assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+                  assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                      outputItemList.entries() == 1,
                                      MVCandidateException,
                                      "Output item list for col ref should have "
@@ -825,7 +825,7 @@ void MVCandidates::buildOutputExprs(QRCandidatePtr candidate,
                 }
               else  // The output item must be an <Expr>.
                 {
-                  assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+                  assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                      outputItemList.entries() == 1 &&
                                      outputItemList[0]->getElementType() == ET_Expr,
                                      MVCandidateException,
@@ -868,7 +868,7 @@ void MVCandidates::buildOutputExprs(QRCandidatePtr candidate,
             break;
 
           default:
-            assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                                FALSE, MVCandidateException,
                                "Unknown value for result attribute -- %d",
                                output->getResult());
@@ -906,7 +906,7 @@ void MVCandidates::analyzeCandidateMVs(QRJbbSubsetPtr qrJbbSubset)
 
   if (actualJbbSubset->getJBBCs().entries() == 0 && !handleRewriteOnSingleTable)
     {
-      QRLogger::log(CAT_MVCAND, LL_INFO,
+      QRLogger::log(CAT_SQL_COMP_MVCAND, LL_INFO,
         "JBBSubset has no JBBCs; skipping candidate analysis");
       delete actualJbbSubset;
       return;
@@ -927,7 +927,7 @@ void MVCandidates::analyzeCandidateMVs(QRJbbSubsetPtr qrJbbSubset)
       candidate = (*candidates)[i];
       if (actualJbbSubset->getJBBCs().entries() == 0)
         {
-          assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+          assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                             (handleRewriteOnSingleTable && (queryRoot_->child(0)->getOperator().match(REL_SCAN))), 
                             MVCandidateException,
                             "No JBBCs in jbbsubset analysis");
@@ -950,7 +950,7 @@ void MVCandidates::analyzeCandidateMVs(QRJbbSubsetPtr qrJbbSubset)
           // Throwers of this exception should use one of the macros that logs the
           // exception message with file and line info (e.g., assertLogAndThrow).
           // Here, we just log the fact that the candidate was ignored.
-          QRLogger::log(CAT_MVCAND, LL_MVQR_FAIL,
+          QRLogger::log(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
             "Skipping candidate MV %s due to exception",
                       candidate->getMVName()->getMVName().data());
         }
@@ -974,7 +974,7 @@ ValueId MVCandidates::getRewriteVid(RETDesc* retDesc,
         return retDesc->getValueId(i);
     }
     
-  assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+  assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                     FALSE, MVCandidateException,
                     "Column in <Output> element of result descriptor not found "
                     "in column descriptor list");
@@ -994,7 +994,7 @@ ValueId MVCandidates::getBaseColValueId(QRElementPtr referencingElem)
 
   if (elemIdChar != 'J')
     {
-      assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+      assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                          elemIdChar == 'C',
                         MVCandidateException,
                         "Reference %s does not start with 'J' or 'C'",
@@ -1004,7 +1004,7 @@ ValueId MVCandidates::getBaseColValueId(QRElementPtr referencingElem)
 
   ValueId vegrefVid = referencingElem->getRefNum();
   ItemExpr* ie = vegrefVid.getItemExpr();
-  assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                      ie->getOperatorType() == ITM_VEG_REFERENCE,
                      MVCandidateException,
                      "Reference %s is not to a vegref", ref.data());
@@ -1017,7 +1017,7 @@ ValueId MVCandidates::getBaseColValueId(QRElementPtr referencingElem)
       someMemberId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN) 
     return someMemberId;
 
-  assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+  assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                      FALSE, MVCandidateException,
                      "No base column found in vegref referenced by %s",
                      ref.data());
@@ -1049,7 +1049,7 @@ ValueId MVCandidates::getVegrefValueId(QRElementPtr referencingElem)
     }
   else
     {
-      QRLogger::log(CAT_MVCAND, LL_DEBUG,
+      QRLogger::log(CAT_SQL_COMP_MVCAND, LL_DEBUG,
         "No vegref found for element refed by id %s, using ref id", ref.toCharStar());
       return referencingElem->getRefNum();
     }
@@ -1106,7 +1106,7 @@ void MVCandidates::populateOneVidMap(RelExpr* root,
               vidMap.addMapEntry(vegrefVid, ie->getValueId());
             }
           else
-            assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+            assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                               FALSE, MVCandidateException,
                               "Unable to get vegref for map value id lower value")
           baseColVid = getBaseColValueId(elem);
@@ -1116,7 +1116,7 @@ void MVCandidates::populateOneVidMap(RelExpr* root,
   }
   else
   {
-     assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+     assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                        FALSE, MVCandidateException,
                        "Expecting a base column while constructing map value id lower value")
   }
@@ -1153,7 +1153,7 @@ void MVCandidates::populateVidMap(RelExpr* root,
             {
               // These have already been taken care of and shouldn't be in the
               // top value list.
-              assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+              assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                 FALSE, MVCandidateException,
                                 "Aggregate function found in top value list");
             }
@@ -1169,7 +1169,7 @@ void MVCandidates::populateVidMap(RelExpr* root,
             }
         }
       else
-        assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                           FALSE, MVCandidateException,
                           "Output item is neither Column, MVColumn nor expression")
     }
@@ -1207,7 +1207,7 @@ void MVCandidates::addBackJoins(QRCandidatePtr candidate,
       const ElementPtrList& joinItems =
                 (*joinPredList)[jpInx]->getEqualityList();
       numJoinItems = joinItems.entries();
-      assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                         numJoinItems > 1, MVCandidateException,
                         "Must have at least 2 items in a JoinPred");
       for (CollIndex jiInx=1; jiInx<numJoinItems; jiInx++)
@@ -1241,7 +1241,7 @@ static NABoolean igbColMatchesTableNode(QRElementPtr elem, CANodeId tblNode)
   if (refedElem->getElementType() == ET_Column)
     return (static_cast<QRColumnPtr>(refedElem))->getTableIDNum() == tblNode;
 
-  assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+  assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                      refedElem->getElementType() == ET_JoinPred,
                      MVCandidateException,
                      "Column refs element of type %d",
@@ -1258,7 +1258,7 @@ static NABoolean igbColMatchesTableNode(QRElementPtr elem, CANodeId tblNode)
          // Not sure if it's possible for an item contained in a JoinPred to
          // reference another JoinPred, but let's check for it since it isn't
          // handled.
-         assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+         assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                            refedElem->getElementType() == ET_Column,
                            MVCandidateException,
                            "Column element of JoinPred refs a non-column");
@@ -1326,7 +1326,7 @@ ItemExpr* MVCandidates::getIGBJoinCondOp(QRElementPtr elem,
 {
   // LCOV_EXCL_START :rfi
   if (elem->getElementType() != ET_Column)
-    assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+    assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                        FALSE, MVCandidateException,
                        "Can only handle column join condition operands, not %d",
                        elem->getElementType());
@@ -1355,7 +1355,7 @@ ItemExpr* MVCandidates::getIGBJoinCondOp(QRElementPtr elem,
                                                             mvCol, heap));
             }
         }
-      assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
+      assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,  // LCOV_EXCL_LINE :rfi
                         FALSE, MVCandidateException,
                         "Could not find join operand from fact table for "
                         "indirect Group By query");
@@ -1415,7 +1415,7 @@ void MVCandidates::addIGBDimJoins(QRCandidatePtr candidate,
       const ElementPtrList& joinItems =
                 (*joinPredList)[jpInx]->getEqualityList();
       numJoinItems = joinItems.entries();
-      assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                         numJoinItems > 1, MVCandidateException,
                         "Must have at least 2 items in a JoinPred");
       for (CollIndex jiInx=1; jiInx<numJoinItems; jiInx++)
@@ -1497,7 +1497,7 @@ void MVCandidates::mapDimOutputs(QRJBBPtr jbbElem,
                     if (qColList[qColInx] == colId)
                       {
                         dimScan = dimScanHash.getFirstValue(&tblNodeIdNum);
-                        assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+                        assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                           dimScan, MVCandidateException,
                                           "Dimension scan not found in hash table");
                         const ValueIdList& rColList = dimScan->getTableDesc()
@@ -1506,7 +1506,7 @@ void MVCandidates::mapDimOutputs(QRJBBPtr jbbElem,
                         found = TRUE;
                       }
                   }
-                assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+                assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                    found, MVCandidateException,
                                    "Column value id not found in col desc list: %ud",
                                    colId.toUInt32());
@@ -1547,7 +1547,7 @@ void MVCandidates::mapDimOutputs(QRJBBPtr jbbElem,
             break;
 
           default:
-            assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+            assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                                FALSE, MVCandidateException,
                                "Unexpected element type in findDimOutputs: %d",
                                elem->getElementType());
@@ -1584,7 +1584,7 @@ void MVCandidates::analyzeCandidate(QRCandidatePtr candidate,
   const NAString& mvName = candidate->getMVName()->getMVName();
   if (isForbiddenMV(mvName))
   {
-    QRLogger::log(CAT_MVCAND, LL_DEBUG,
+    QRLogger::log(CAT_SQL_COMP_MVCAND, LL_DEBUG,
       "MV Candidate %s was ignored because this statement writes to it.",
                   mvName.data());
     return;
@@ -1613,14 +1613,14 @@ void MVCandidates::analyzeCandidate(QRCandidatePtr candidate,
   NATable *naTable = bindWA_->getNATable(mvCorrName);
   if (bindWA_->errStatus())
   {
-    QRLogger::log(CAT_MVCAND, LL_DEBUG,
+    QRLogger::log(CAT_SQL_COMP_MVCAND, LL_DEBUG,
       "Skipping candidate MV %s since it does not exist",
       candidate->getMVName()->getMVName().data());
     for (Int32 i=1; i<=CmpCommon::diags()->getNumber(); i++)
     {
       const NAWchar *errorMsg = (*CmpCommon::diags())[i].getMessageText();
       NAString* errorStr = unicodeToChar(errorMsg, NAWstrlen(errorMsg), CharInfo::ISO88591, NULL, TRUE);
-      QRLogger::log(CAT_MVCAND, LL_WARN, "  condition %d: %s", i, errorStr->data());
+      QRLogger::log(CAT_SQL_COMP_MVCAND, LL_WARN, "  condition %d: %s", i, errorStr->data());
       delete errorStr;
     }
     CmpCommon::diags()->rewind(marker, TRUE);
@@ -1632,7 +1632,7 @@ void MVCandidates::analyzeCandidate(QRCandidatePtr candidate,
   MVInfoForDML* mvInfo = naTable->getMVInfo(bindWA_);
   if (mvInfo == NULL || !mvInfo->isInitialized())
   {
-    QRLogger::log(CAT_MVCAND, LL_DEBUG,
+    QRLogger::log(CAT_SQL_COMP_MVCAND, LL_DEBUG,
       "Skipping candidate MV %s since it is not initialized",
                  candidate->getMVName()->getMVName().data());
     return;
@@ -1678,7 +1678,7 @@ void MVCandidates::analyzeCandidate(QRCandidatePtr candidate,
           if (jbbList[jbbInx]->getIDNum() == jbbId)
             jbbElem = jbbList[jbbInx];
         }
-      assertLogAndThrow1(CAT_MVCAND, LL_MVQR_FAIL,
+      assertLogAndThrow1(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                          jbbElem, MVCandidateException,
                          "Could not find JBB with id = %d", jbbId);
       addIGBDimJoins(candidate, jbbSubsetNodes, jbbElem, node, dimScanHash, heap);
@@ -1701,14 +1701,14 @@ void MVCandidates::analyzeCandidate(QRCandidatePtr candidate,
   // LCOV_EXCL_START :rfi
   if (bindWA_->errStatus())
   {
-    QRLogger::log(CAT_MVCAND, LL_MVQR_FAIL,
+    QRLogger::log(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
       "Skipping candidate MV %s -- failed to bind root",
        candidate->getMVName()->getMVName().data());
     for (Int32 i=1; i<=CmpCommon::diags()->getNumber(); i++)
     {
       const NAWchar *errorMsg = (*CmpCommon::diags())[i].getMessageText();
       NAString* errorStr = unicodeToChar(errorMsg, NAWstrlen(errorMsg), CharInfo::ISO88591, NULL, TRUE);
-      QRLogger::log(CAT_MVCAND, LL_WARN, "  condition %d: %s", i, errorStr->data());
+      QRLogger::log(CAT_SQL_COMP_MVCAND, LL_WARN, "  condition %d: %s", i, errorStr->data());
       delete errorStr;
     }
     CmpCommon::diags()->rewind(marker, TRUE);
@@ -1804,7 +1804,7 @@ void MVCandidates::analyzeCandidate(QRCandidatePtr candidate,
     {
        // this is a defensive check, since this same check was done in MVCandidates::analyzeCandidateMVs
        // but just to make sure nothing went wrong in between
-       assertLogAndThrow(CAT_MVCAND, LL_MVQR_FAIL,
+       assertLogAndThrow(CAT_SQL_COMP_MVCAND, LL_MVQR_FAIL,
                        queryRoot_->child(0)->getOperator().match(REL_SCAN),
                        MVCandidateException,
                        "Expecting a SCAN node under the Query Root node while rewriting "

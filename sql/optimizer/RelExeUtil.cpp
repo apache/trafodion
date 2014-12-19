@@ -3562,6 +3562,12 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     hbaseDDLNoUserXn_ = TRUE;
     return boundExpr;
   }
+  else if (createRepos() || dropRepos() || upgradeRepos())
+    {
+      isHbase_ = TRUE;
+      hbaseDDLNoUserXn_ = TRUE;
+      return boundExpr;
+    }
   else if (purgedataHbase_)
   {
     isHbase_ = TRUE;

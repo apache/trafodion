@@ -127,7 +127,6 @@ export RH_MAJ_VERS=$(sed -r 's/^.* release ([0-9]+).[0-9]+ .*/\1/' /etc/redhat-r
 
 export MY_SQROOT=$PWD
 export SQ_HOME=$PWD
-export NVTHOME=$MY_SQROOT/transporter
 
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
 export HBASE_TRX_JAR=hbase-trx-${TRAFODION_VER}.jar
@@ -144,20 +143,6 @@ fi
 
 export MY_MPI_ROOT="$MY_SQROOT"
 export MPI_ROOT="$MY_SQROOT/opt/hpmpi"
-
-
-#set up the seapilot path before adding the seaquest path elements
-if [[ -f seapilot/sp_path.sh ]]; then
-  pushd seapilot >/dev/null
-  source $MY_SQROOT/seapilot/sp_path.sh
-  popd >/dev/null
-fi
-
-if [[ -f postulo/pos_env.sh ]]; then
-  pushd postulo >/dev/null
-  source $MY_SQROOT/postulo/pos_env.sh
-  popd >/dev/null
-fi
 
 unset MPI_CC
 export MPI_CXX=g++
@@ -452,6 +437,8 @@ export MPICH_ROOT=$TOOLSDIR/dest-mpich-3.0.4
 
 export PROTOBUFS=/usr
 
+export LOG4CPP_VER=log4cpp-1.1.1
+
 # ---+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 # end of customization variables
 
@@ -500,14 +487,6 @@ export SQ_WDT_CHECK_CLUSTER_STATE=0
 # Perl libraries used by Seaquest (e.g. sqgen components)
 export PERL5LIB=$MY_SQROOT/export/lib
 
-# Define the location of the harness config files
-export SP_HEALTH_HARNESS1ONECFG=$MY_SQROOT/seapilot/export/conf/vili/vili_1_one.cfg
-export SP_HEALTH_HARNESS5ONECFG=$MY_SQROOT/seapilot/export/conf/vili/vili_5_one.cfg
-export SP_HEALTH_HARNESSBLONECFG=$MY_SQROOT/seapilot/export/conf/vili/vili_baseline_one.cfg
-export SP_HEALTH_HARNESS1ALLCFG=$MY_SQROOT/seapilot/export/conf/vili/vili_1_all.cfg
-export SP_HEALTH_HARNESS5ALLCFG=$MY_SQROOT/seapilot/export/conf/vili/vili_5_all.cfg
-export SP_HEALTH_HARNESSBLALLCFG=$MY_SQROOT/seapilot/export/conf/vili/vili_baseline_all.cfg
-
 # Enable SQ_PIDMAP if you want to get a record of process activity.
 # This can be useful in troubleshooting problems.  There is an overhead cost
 # incurred each time a process is started so do not enable this if performance
@@ -547,22 +526,6 @@ export ENABLE_EMBEDDED_ARKCMP=1
 # make sure we get HUGE pages in cores
 echo "0x73" > /proc/$$/coredump_filter
 
-# Introducing seapilot environment variables
-# this will be needed to build and run the
-# seapilot environment.
-if [[ -f seapilot/spenv.sh ]]; then
-  pushd seapilot >/dev/null
-  source $MY_SQROOT/seapilot/spenv.sh
-  popd >/dev/null
-fi
-
-# After changing the values below, you must source in the appropriate
-# sqXXenvY.sh and run sqgen
-unset SQ_SONAR_SEAPILOT
-export SQ_SONAR_SEAPILOT=0
-unset SQ_START_PROBLEM_MANAGEMENT
-export SQ_START_PROBLEM_MANAGEMENT=1
-
 # The "unset SQ_EVLOG_NONE" command below does nothing when followed by the
 # "export SQ_EVLOG_NONE" command. It comes into play when SeaPilot is
 # enabled, in which case "export SQ_EVLOG_NONE" will be deleted from this
@@ -577,14 +540,10 @@ export SQ_START_PROBLEM_MANAGEMENT=1
 # Change the SQ_EVLOG_NONE export to SQ_EVLOG_STDERR to have events go to
 # STDERR. Alternatively, change the SQ_EVLOG_NONE export to SQ_EVLOG_TMP
 # to use the temporary EVLOG logging mechanism.
-unset SQ_SEAPILOT_SUSPENDED
-unset SQ_SEAPILOT_PERF_SUSPENDED
 unset SQ_EVLOG_NONE
 unset SQ_EVLOG_TMP
 unset SQ_EVLOG_STDERR
 export SQ_EVLOG_NONE=1
-export SQ_SEAPILOT_SUSPENDED=0
-export SQ_SEAPILOT_PERF_SUSPENDED=0
 
 
 function ckillall {
@@ -638,7 +597,7 @@ export PROTOBUFS_INC=$PROTOBUFS/include
 
 ######################
 # Library Path may include local over-rides
-export LD_LIBRARY_PATH=$CC_LIB:$MPI_ROOT/lib/$MPILIB:$MY_SQROOT/export/lib"$SQ_MBTYPE":$HADOOP_LIB_DIR:$LOC_JVMLIBS:$HWMSLIBS:${SP_EXPORT_LIB}:.
+export LD_LIBRARY_PATH=$CC_LIB:$MPI_ROOT/lib/$MPILIB:$MY_SQROOT/export/lib"$SQ_MBTYPE":$HADOOP_LIB_DIR:$LOC_JVMLIBS:.
 
 ######################
 # classpath calculation may include local over-rides

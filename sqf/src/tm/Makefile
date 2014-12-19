@@ -41,10 +41,6 @@ endif
 DTMOBJS		= -DTMOBJS
 
 
-ifeq ($(TM_USE_SEAPILOT), 1)
-DEFINES += -DTM_USE_SEAPILOT
-endif
-
 LIBSTMOBJS = $(OUTDIR)/tmtransid.o \
 			 $(OUTDIR)/tmtransaction.o \
 			 $(OUTDIR)/tmlibtxn.o \
@@ -120,19 +116,14 @@ TMOBJS		= $(OUTDIR)/tmregistry.o \
 	    	  $(OUTDIR)/xaglob.o \
 		      $(OUTDIR)/tmxidmap.o \
 		      $(OUTDIR)/tmxarmmain.o \
-		      $(OUTDIR)/tm.o 
+		      $(OUTDIR)/tm.o \
+		      $(OUTDIR)/CommonLogger.o  
 ALLOBJS	= $(LIBSTMOBJS) \
 		  $(LIBSXATMOBJS) \
 		  $(LIBXARMOBJS) \
 		  $(TMOBJS)
 
 CFILES		= `ls *.c`
-
-ifeq ($(TM_USE_SEAPILOT),1)
-LIBSX		= -L$(LIBEXPDIR) -levlsq
-LIBSTMB         += -levlsq
-LIBSEAPILOT     = -L$(SP_EXPORT_LIB) -lwrappersq
-endif
 
 ifeq ($(USE_THREADED_IO),1)
 LIBSTM		+= $(LIBSTHX)
@@ -148,7 +139,7 @@ all:  $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libstmlib.so $(PROGS) $(LIBEXPDIR
 
 $(OUTDIR)/tm: $(TMOBJS) $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libshbasetmlib.so $(PROGS) $(LIBEXPDIR)/libxarm.so cp_trx_jar
 	@echo "USE_THREADED_IO = " $(USE_THREADED_IO)
-	$(CXX) $(LNK_FLGS) $(LIBJVM) -o $@ $(TMOBJS) $(LIBSTM) $(LIBQPID) $(LIBSEAPILOT) -DTM_BUILD_
+	$(CXX) $(LNK_FLGS) $(LIBJVM) -o $@ $(TMOBJS) $(LIBSTM) -L$(LIBEXPDIR) -llog4cpp -DTM_BUILD_
 
 	cp -fup $(OUTDIR)/tm $(BINEXPDIR)
 
@@ -156,17 +147,20 @@ $(OUTDIR)/ra: $(RAOBJS)
 	$(CXX) $(LNK_FLGS) -o $@ $(RAOBJS) $(LIBSTM) 
 
 $(LIBEXPDIR)/libstmlib.so: $(LIBSTMOBJS) 
-	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBSBMSX) $(LIBJVM) -shared -o $@ $(LIBSTMOBJS)  
+	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBSBMSX) $(LIBJVM) -L$(LIBEXPDIR) -llog4cpp -shared -o $@ $(LIBSTMOBJS)  
 
 $(LIBEXPDIR)/libsxatmlib.so: $(LIBSXATMOBJS) 
-	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBSXATMOBJS)  $(LIBSTMX) $(LIBQPID)  $(LIBSEAPILOT)
+	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBSXATMOBJS) $(LIBSTMX) -L$(LIBEXPDIR) -llog4cpp  
 
 $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSXATMOBJS) cp_trx_jar
 	cd $(HBASETMLIB); $(MAKE)
 
 
 $(LIBEXPDIR)/libxarm.so: $(LIBXARMOBJS) 
-	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBXARMOBJS)$(LIBQPID)  $(LIBSEAPILOT) -DXARM_BUILD_
+	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBXARMOBJS) -L$(LIBEXPDIR) -llog4cpp -DXARM_BUILD_
+
+$(OUTDIR)/CommonLogger.o: $(MY_SQROOT)/commonLogger/CommonLogger.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
 
 hbasetmlib:
 	cd $(HBASETMLIB); $(MAKE)
@@ -177,7 +171,7 @@ setup:
 	cd $(HBASETMLIB); $(MAKE) setup
 
 clean:
-	$(RM) $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libxarm.so $(LIBEXPDIR)/libstmlib.so $(LIBEXPDIR)/libstmtselib.so *.gcda *.gcno *.gcov
+	$(RM) $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libxarm.so $(LIBEXPDIR)/libstmlib.so *.gcda *.gcno *.gcov
 	$(RM)  $(BINEXPDIR)/tm
 	$(RM)  $(ALLOBJS)
 	$(RM)  $(CDEPFILES)

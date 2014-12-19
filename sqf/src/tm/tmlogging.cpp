@@ -17,59 +17,28 @@
 // @@@ END COPYRIGHT @@@
 
 #include <sys/time.h>
-#ifdef TM_USE_SEAPILOT
-#include "wrapper/amqpwrapper.h"
-#include "common/dtm.events.pb.h"
-#endif
 #include "common/evl_sqlog_eventnum.h"
 
 #include "tminfo.h"
 #include "tmlogging.h"
 #include "seabed/logalt.h"
 
+#include "CommonLogger.h"
+
 int gv_dual_logging =1; // Write to both SeaLog and stdout by default
 
 int tm_init_logging()
 {
+	// Log4cpp logging
+	CommonLogger::instance().initLog4cpp("log4cpp.trafodion.config");
+
     ms_getenv_int ("TM_DUAL_LOGGING", &gv_dual_logging);
     return gv_dual_logging; 
 }
 
-#ifdef TM_USE_SEAPILOT
-void tm_init_header (common::event_header *header, int pv_event_id, posix_sqlog_severity_t pv_severity)
-{
-    header->set_event_id(pv_event_id);
-    header->set_event_severity(pv_severity);
-    initAMQPInfoHeader(header->mutable_header(), 3);
-}
-#endif
-
 int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string)
 {
     int    lv_err = 0;
-#ifdef TM_USE_SEAPILOT
-    size_t lv_buf_size = DTM_EVENT_BUF_SIZE;
-    char   lp_event_buf[DTM_EVENT_BUF_SIZE];
-    char  *lp_pbuf = lp_event_buf;
-
-    // init log buffer
-    lv_err = evl_sqlog_init(lp_pbuf, lv_buf_size);
-    if (lv_err)
-        return lv_err;      
-
-    // add our string
-    lv_err = evl_sqlog_add_token(lp_pbuf, TY_STRING, pp_string);
-
-    if (!lv_err)
-    { 
-        // ok to log buffer.
-        // we need to translate category to sql_evl severity
-        // facility is common for sql.
-
-        lv_err = evl_sqlog_write((posix_sqlog_facility_t)SQ_LOG_SEAQUEST, pv_event_type, 
-                                  pv_severity, lp_event_buf);
-    }
-#endif
     return lv_err;
 }
 
@@ -168,84 +137,6 @@ int tm_log_event(int event_id,
                       data, data1, data2, string1, node, msgid2, offset, tm_event_msg, data4);
     }
 
-#ifdef TM_USE_SEAPILOT
-#ifndef XARM_BUILD_
-    if (gv_tm_info.state() == TM_STATE_DOWN ||
-        gv_tm_info.state() == TM_STATE_WAITING_RM_OPEN) {
-        char la_buf[DTM_STRING_BUF_SIZE];
-        strncpy (la_buf, temp_string, DTM_STRING_BUF_SIZE);
-        if(strchr(la_buf,'\n')==NULL) {
-            strcat(la_buf, "\n");
-        }
-        tm_alt_log_write(event_id, severity, la_buf);
-        return 0;
-    }
-
-    if((gv_tm_info.state() == TM_STATE_SHUTDOWN_FAILED) ||
-       (gv_tm_info.state() == TM_STATE_SHUTDOWN_COMPLETED) ||
-       (gv_tm_info.state() == TM_STATE_SHUTTING_DOWN))
-    {
-        return 0;
-    }
-#endif
-    dtm::events event;
-
-    tm_init_header(event.mutable_header(), event_id, severity);
-    if (error_code != -1)
-       event.set_error_code(error_code);
-    if (rmid != -2)
-       event.set_rmid(rmid);
-    if (dtmid != -1)
-       event.set_dtmid(dtmid);
-    if (seq_num != -1)
-       event.set_seq_num(seq_num);
-    if (msgid != -1)
-       event.set_msgid(msgid);
-    if (xa_error != -1)
-       event.set_xa_error(xa_error);
-    if (pool_size != -1)
-       event.set_pool_size(pool_size);
-    if (pool_elems != -1)
-       event.set_pool_elems(pool_elems);
-    if (msg_retries != -1)
-       event.set_msg_retries(msg_retries);
-    if (pool_high != -1)
-       event.set_pool_high(pool_high);
-    if (pool_low != -1)
-       event.set_pool_low(pool_low);
-    if (pool_max != -1)
-       event.set_pool_max(pool_max);
-    if (tx_state != -1)
-       event.set_tx_state(tx_state);
-    if (data != -1)
-       event.set_data(data);
-    if (data1 != -1)
-       event.set_data1(data1);
-    if (data2 != -1)
-       event.set_data2(data2);
-    if (msgid2 != -1)
-       event.set_msgid2(msgid2);
-    if (offset != -1)
-       event.set_offset(offset);
-    if (tm_event_msg != -1)
-       event.set_tm_event_msg(tm_event_msg);
-    if (string1 != NULL)
-       event.set_string1(string1);
-    if (node != -1)
-       event.set_node(node);
-    if (data4 != 0)
-       event.set_data4(data4);
-
-    AMQPRoutingKey routingKey(SP_EVENT, SP_DTMPACKAGE, SP_INSTANCE, 
-                              SP_PUBLIC, SP_GPBPROTOCOL, "events");
-    try {
-      rc = sendAMQPMessage( false, event.SerializeAsString(), 
-                            SP_CONTENT_TYPE_APP, routingKey);
-    } catch (...) {
-      rc = SP_SEND_FAILED;
-    } 
-#endif
-
    return rc;
 }
 
@@ -284,6 +175,8 @@ int tm_log_stdout(int event_id,
     int       my_nid,my_pid;
     int       error;
 
+	logLevel ll_severity = LL_INFO;
+
     current_time = time(NULL);
     ctime_r(&current_time,timestamp);
     timestamp[strlen(timestamp)-1] = '\0';
@@ -308,14 +201,30 @@ int tm_log_stdout(int event_id,
     printf("Event %s(%d), Sev ", temp_string, event_id);
     switch (severity)
     {
-    case SQ_LOG_EMERG: printf("EMERGENCY"); break;
-    case SQ_LOG_ALERT: printf("ALERT"); break;
-    case SQ_LOG_CRIT: printf("CRITICAL"); break;
-    case SQ_LOG_ERR: printf("ERROR"); break;
-    case SQ_LOG_WARNING: printf("WARNING"); break;
-    case SQ_LOG_NOTICE: printf("NOTICE"); break;
-    case SQ_LOG_INFO: printf("INFO"); break;
-    case SQ_LOG_DEBUG: printf("DEBUG"); break;
+    case SQ_LOG_EMERG: printf("EMERGENCY"); 
+		ll_severity = LL_FATAL;
+		break;
+    case SQ_LOG_ALERT: printf("ALERT"); 
+		ll_severity = LL_ALERT;
+		break;
+    case SQ_LOG_CRIT: printf("CRITICAL"); 
+		ll_severity = LL_FATAL;
+		break;
+    case SQ_LOG_ERR: printf("ERROR"); 
+		ll_severity = LL_ERROR;
+		break;
+    case SQ_LOG_WARNING: printf("WARNING"); 
+		ll_severity = LL_WARN;
+		break;
+    case SQ_LOG_NOTICE: printf("NOTICE"); 
+		ll_severity = LL_INFO;
+		break;
+    case SQ_LOG_INFO: printf("INFO"); 
+		ll_severity = LL_INFO;
+		break;
+    case SQ_LOG_DEBUG: printf("DEBUG"); 
+		ll_severity = LL_DEBUG;
+		break;
     default: printf("%d Unknown", severity);
     }
     printf(", ");
@@ -365,6 +274,9 @@ int tm_log_stdout(int event_id,
     if (data4 != 0)
        printf(", data4=%u",data4);
     printf("\n");
+
+	// Log4cpp logging
+	CommonLogger::log("TM", ll_severity, "Node Number: %u, CPU: %u, PIN: %u , Process Name: %s,,, Message: %s", my_nid, my_nid, my_pid, my_name, temp_string);
 
     return error;
 } 

@@ -170,15 +170,6 @@ function sqmd5la {
     eval '$SQPDSHA "cd $MY_SQROOT/export/lib${SQ_MBTYPE}; md5sum $1 2>/dev/null" 2>/dev/null | sort -u'
 }
 
-function sqmd5pb {
-    setup_sqpdsh
-    eval '$SQPDSHA "cd $MY_SQROOT/seapilot/export/bin; md5sum $1 2>/dev/null" 2>/dev/null | cut -f2 -d: | sort -u'
-}
-
-function sqmd5pl {
-    setup_sqpdsh
-    eval '$SQPDSHA "cd $MY_SQROOT/seapilot/export/lib; md5sum $1 2>/dev/null" 2>/dev/null | cut -f2 -d: | sort -u'
-}
 #### End MD5 related functions
 
 function cmapc {
@@ -378,17 +369,6 @@ function collect_cmapt {
     cmapt 16 >> $lv_file_name
 }
 
-function collect_seapilot_routes {
-    lv_file_name='seapilot_routes.out'
-    lv_program="$MY_SQROOT/export/limited-support-tools/getRoutes/fixRoutes"
-    lv_args="-n -v"
-    LogHeader "Output of $(basename $lv_program):"
-    if [ -x $lv_program ]; then
-	$lv_program $lv_args >> $lv_file_name
-    else
-        echo "$0: file is missing or not executable: $lv_program" >> $lv_file_name
-    fi
-}
 
 function collect_sqchkvm {
     lv_file_name='sqchkvm.out'
@@ -461,28 +441,6 @@ function sqsavelogs_compress {
     rm -rf ${lv_node_collection_dir_name}
 
     popd >/dev/null
-}
-
-# Save Health and Problem Management log files, both related to the 'Problem Management' component
-#  Problem Management files are in $PM_CONTEXT_DIR
-#  Health Check files are in one of two places depending on where you are running:
-#    on a cluster:   /home/{squser_id}/context
-#    on workstation: $MY_SQROOT/seapilot/var/checks/context
-# --
-function sqsave_pm {
-
-    lv_logs_collection_dir=$1
-    lv_target=${lv_logs_collection_dir}/pm_context_dir
-
-    # Problem Management files
-    mkdir -p ${lv_target}
-    cp -pr $PM_CONTEXT_DIR ${lv_target}
-
-    # Health Check files
-    # cluster last because it must always be chosen if both are present
-    [ -d $MY_SQROOT/seapilot/var/checks/context ] && lv_source=$MY_SQROOT/seapilot/var/checks/context
-    [ -d ~/context ] && lv_source=~/context
-    [ ! -z "$lv_source" ] && cp -pr $lv_source $lv_target
 }
 
 function sqsave_linux_info {
@@ -599,7 +557,6 @@ function sqcollectlogs {
     
     collect_cfindcore
 
-    collect_seapilot_routes
 
 #   sqgetsem > sqgetsem.out
 
@@ -642,8 +599,6 @@ function sqcollectlogs {
 
     eval '$SQPDSHA "netstat -aep 2>/dev/null" | sort'  > netstat.out
     eval '$SQPDSHA "uptime 2>/dev/null" | sort'  > uptime.out
-
-    sqsave_pm $PWD
 
     lv_pstacks=""
     if [[ $lv_all == 1 ]]; then
@@ -946,8 +901,6 @@ export -f dp2stats
 
 export -f sqmd5b
 export -f sqmd5l
-export -f sqmd5pb
-export -f sqmd5pl
 
 export -f sqchkvm
 export -f sqchksl
@@ -961,7 +914,6 @@ export -f collect_sqchkvm
 export -f sqsavelogs
 export -f sqsavelogs_compress
 export -f sqcollectlogs
-export -f sqsave_pm
 export -f sqsave_linux_info
 export -f sqcollectmetrics
 export -f sqnpstack

@@ -113,9 +113,7 @@ CPPSRC := Allocator.cpp \
         JavaObjectInterface.cpp \
         SequenceFileReader.cpp \
         OrcFileReader.cpp \
-        HBaseClient_JNI.cpp \
-        HdfsLogger.cpp \
-        CommonLogger.cpp 
+        HBaseClient_JNI.cpp 
 CPPSRC += vers_libexecutor.cpp \
 	ssmpipc.cpp \
 	CancelBroker.cpp \
@@ -136,12 +134,12 @@ CPPSRC += vers_libexecutor.cpp \
 INCLUDE_DIRS := sqlutils/SQ_tseInterface
 
 ifneq ($(SP_DIS),)
-EXTERN_LIBS := $(SP_EXPORT_LIB)/libwrappersq.so
+EXTERN_LIBS := $(SP_EXPORT_LIB)/libwrappersq.so 
 endif
-SYS_LIBS := -lrt -lpthread
+SYS_LIBS := -lrt -lpthread 
 SRCPATH := bin executor runtimestats porting_layer qmscommon
-#DEP_LIBS += tdm_sqlcli log4cpp
-DEP_LIBS += log4cpp
+
+EXTERN_LIBS += $(LIBROOT)/liblog4cpp.so
 
 ### Java stuff - for building trafodion-HBaseAccess
 ################################################

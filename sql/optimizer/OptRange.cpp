@@ -64,7 +64,7 @@ OptRangeSpec::OptRangeSpec(QRDescGenerator* descGenerator, CollHeap* heap, logLe
     vid_(NULL_VALUE_ID),
     isIntersection_(FALSE)
 {
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     descGenerator, QRLogicException,
                     "OptRangeSpec constructed for null QRDescGenerator");
 
@@ -93,14 +93,14 @@ ValueId OptRangeSpec::getBaseCol(const ValueId vegRefVid)
     return vegRefVid;
 
   // Get the value id of the first member that is a base column.
-  assertLogAndThrow1(CAT_RANGE, logLevel_,
+  assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                      opType == ITM_VEG_REFERENCE, QRDescriptorException,
                      "OptRangeSpec::getBaseCol() expected value id of a "
                      "vegref, not of op type -- %d", opType);
 
   ValueId baseColVid = getBaseCol(static_cast<VEGReference*>(itemExpr)
                                                 ->getVEG()->getAllValues());
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     baseColVid != NULL_VALUE_ID, QRDescriptorException,
                     "Vegref contains no base columns");
   return baseColVid;
@@ -116,7 +116,7 @@ OptRangeSpec* OptRangeSpec::createRangeSpec(QRDescGenerator* descGenerator,
 
   if (predExpr->getOperatorType() == ITM_RANGE_SPEC_FUNC)
     {
-      assertLogAndThrow(CAT_RANGE, LL_ERROR,
+      assertLogAndThrow(CAT_SQL_COMP_RANGE, LL_ERROR,
                         !createForNormalizer, QRDescriptorException,
                         "RangeSpecRef should not be present if creating for Normalizer");
       RangeSpecRef* rangeIE = static_cast<RangeSpecRef*>(predExpr);
@@ -195,7 +195,7 @@ QRRangePredPtr OptRangeSpec::createRangeElem()
   NABoolean rangeIsOnCol = (rangeJoinPredId_ != NULL_VALUE_ID ||
                             rangeColValueId_ != NULL_VALUE_ID);
 
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     getID()>0, QRDescriptorException,
                     "No id for range element in OptRangeSpec::createRangeElem().");
 
@@ -210,7 +210,7 @@ QRRangePredPtr OptRangeSpec::createRangeElem()
     rangePredElem->setID(getID());
 
   const NAType* typePtr = getType();
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     typePtr, QRDescriptorException,
                     "Call to getType() returned NULL in OptRangeSpec::createRangeElem().");
   const NAType& type = *typePtr;
@@ -225,7 +225,7 @@ QRRangePredPtr OptRangeSpec::createRangeElem()
       if (subrange.startIsMin() || 
           (i==0 && rangeIsOnCol && subrange.isMinForType(type)))
         {
-          assertLogAndThrow1(CAT_RANGE, logLevel_,
+          assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                              i==0, QRDescriptorException,
                              "Subrange other than 1st is unbounded on low side, "
                              "subrange index %d", i);
@@ -236,12 +236,12 @@ QRRangePredPtr OptRangeSpec::createRangeElem()
               // well, return NULL to indicate no range restriction. If NULL is
               // not included in the range, an empty <RangePred> is used to
               // indicate IS NOT NULL.
-              assertLogAndThrow(CAT_RANGE, logLevel_,
+              assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                                 numSubranges==1, QRDescriptorException,
                                 "Range of all values must have a single Subrange.");
               if (nullIncluded_)
                 {
-                  QRLogger::log(CAT_RANGE, LL_INFO,
+                  QRLogger::log(CAT_SQL_COMP_RANGE, LL_INFO,
                     "Range predicate ignored because it spans entire range + NULL.");
                   deletePtr(rangePredElem);
                   return NULL;
@@ -261,7 +261,7 @@ QRRangePredPtr OptRangeSpec::createRangeElem()
                       if ((static_cast<BaseColumn*>(vid.getItemExpr()))
                                               ->getNAColumn()->getNotNullNondroppable())
                         {
-                          QRLogger::log(CAT_RANGE, LL_INFO,
+                          QRLogger::log(CAT_SQL_COMP_RANGE, LL_INFO,
                                         "Range predicate ignored because it spans entire "
                                         "range and has NOT NULL constraint.");
                           deletePtr(rangePredElem);
@@ -286,7 +286,7 @@ QRRangePredPtr OptRangeSpec::createRangeElem()
                (i==numSubranges-1 && rangeIsOnCol
                                   && subrange.isMaxForType(type)))
         {
-          assertLogAndThrow1(CAT_RANGE, logLevel_,
+          assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                              i==numSubranges-1, QRDescriptorException,
 			     "Subrange other than last is unbounded on high side, "
                                  "subrange index %d",
@@ -364,7 +364,7 @@ QRElementPtr OptRangeSpec::genRangeItem()
     elem = descGenerator_->genQRExpr(rangeExpr_, rangeJoinPredId_);
   else
     {
-      assertLogAndThrow(CAT_RANGE, logLevel_,
+      assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                         rangeJoinPredId_ != NULL_VALUE_ID, QRDescriptorException,
                         "All range value ids are null");
       ValueId colVid = getBaseCol(rangeJoinPredId_);
@@ -510,7 +510,7 @@ void OptRangeSpec::addSubrange(ConstValue* start, ConstValue* end,
 {
   QRTRACER("addSubrange");
   const NAType* type = getType();
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     type, QRDescriptorException,
                     "Call to getType() returned NULL in OptRangeSpec::addSubrange().");
                     
@@ -686,7 +686,7 @@ void OptRangeSpec::addSubrange(ConstValue* start, ConstValue* end,
         break;
 
       default:
-        assertLogAndThrow1(CAT_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
                            FALSE, QRDescriptorException, 
                            "Unhandled data type: %d", typeQual);
         break;
@@ -699,7 +699,7 @@ ItemExpr* OptRangeSpec::getCheckConstraintPred(ItemExpr* checkConstraint)
   // LCOV_EXCL_START :rfi
   if (checkConstraint->getOperatorType() != ITM_CASE)
     {
-      QRLogger::log(CAT_RANGE, logLevel_,
+      QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
         "Expected ITM_CASE but found operator %d.",
         checkConstraint->getOperatorType());
       return NULL;
@@ -710,7 +710,7 @@ ItemExpr* OptRangeSpec::getCheckConstraintPred(ItemExpr* checkConstraint)
   ItemExpr* itemExpr = checkConstraint->child(0);
   if (itemExpr->getOperatorType() != ITM_IF_THEN_ELSE)
     {
-      QRLogger::log(CAT_RANGE, logLevel_,
+      QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
         "Expected ITM_IF_THEN_ELSE but found operator %d.",
         itemExpr->getOperatorType());
       return NULL;
@@ -750,7 +750,7 @@ void OptRangeSpec::intersectCheckConstraints(QRDescGenerator* descGen,
   // LCOV_EXCL_START :rfi
   else if (itemExpr->getOperatorType() != ITM_BASECOLUMN)
     {
-      QRLogger::log(CAT_RANGE, logLevel_,
+      QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
         "Nonfatal unexpected result: range column operator type is "
         "%d instead of ITM_BASECOLUMN.", itemExpr->getOperatorType());
       return;
@@ -762,7 +762,7 @@ void OptRangeSpec::intersectCheckConstraints(QRDescGenerator* descGen,
     const CheckConstraintList& checks = tbl->getCheckConstraints();
     for (CollIndex c=0; c<checks.entries(); c++)
       {
-        QRLogger::log(CAT_RANGE, LL_DEBUG,
+        QRLogger::log(CAT_SQL_COMP_RANGE, LL_DEBUG,
           "Check constraint on table %s: %s",
                     tbl->getTableName().getObjectName().data(),
                     checks[c]->getConstraintText().data());
@@ -869,7 +869,7 @@ void OptRangeSpec::intersectTypeConstraint(QRDescGenerator* descGen,
             break;
 
           default:
-            QRLogger::log(CAT_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+            QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
               "No case in intersectTypeConstraint() for "
                         "approximate numeric of type %d",
                         colType.getFSDatatype());
@@ -1171,7 +1171,7 @@ NABoolean OptRangeSpec::buildRange(ItemExpr* predExpr)
                 nullIncluded_ = TRUE;
               else
                 {
-                  assertLogAndThrow(CAT_RANGE, logLevel_, op == ITM_IS_NOT_NULL,
+                  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_, op == ITM_IS_NOT_NULL,
                                     QRLogicException,
                                     "op must be ITM_IS_NOT_NULL here");
                   addSubrange(NULL, NULL, TRUE, TRUE);
@@ -1254,7 +1254,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
           sprintf(constValTextBuffer, PF64, val);
           constValTextStr = constValTextBuffer;
           NumericType* numType = static_cast<NumericType*>(type);
-          assertLogAndThrow(CAT_RANGE, logLevel_, 
+          assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_, 
                             numType->isExact(),
                             QRLogicException,
                             "Expecting exact numeric type in "
@@ -1288,7 +1288,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                                   dtType->getFractionPrecision(), tsFieldValues);
                 dtv.setValue(REC_DATE_YEAR, REC_DATE_DAY,
                              dtType->getFractionPrecision(), tsFieldValues);
-                assertLogAndThrow(CAT_RANGE, logLevel_,
+                assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                                   dtv.isValid(), QRLogicException,
                                   "Invalid date value reconstructed from Julian timestamp");
                 constValTextStr = dtv.getValueAsString(*dtType);
@@ -1312,7 +1312,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                 tsFieldValues[DatetimeValue::HOUR] = (ULng32)val;
                 dtv.setValue(REC_DATE_HOUR, REC_DATE_SECOND,
                               dtType->getFractionPrecision(), tsFieldValues);
-                assertLogAndThrow(CAT_RANGE, logLevel_,
+                assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                                   dtv.isValid(), QRLogicException,
                                   "Invalid time value reconstructed from Int64 value");
                 constValTextStr = dtv.getValueAsString(*dtType);
@@ -1332,7 +1332,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                                                tsFieldValues);
                 dtv.setValue(REC_DATE_YEAR, REC_DATE_SECOND,
                              dtType->getFractionPrecision(), tsFieldValues);
-                assertLogAndThrow(CAT_RANGE, logLevel_,
+                assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                                   dtv.isValid(), QRLogicException,
                                   "Invalid timestamp value reconstructed from Julian timestamp");
                 constValTextStr = dtv.getValueAsString(*dtType);
@@ -1346,7 +1346,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                 break;
 
               default:
-                assertLogAndThrow1(CAT_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+                assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
                                    FALSE, QRLogicException,
                                    "Unknown datetime subtype -- %d",
                                    dtType->getSubtype());
@@ -1400,7 +1400,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                 break;
 
               default:
-                assertLogAndThrow1(CAT_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+                assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
                                   FALSE, QRLogicException,
                                   "Invalid end field for interval type -- %d",
                                   intvlType->getEndField());
@@ -1436,7 +1436,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
           // Any discrepancy in precision between the range column and the
           // constant value should have been dealt with when the value was
           // converted to months or microseconds in getInt64ValueFromInterval().
-          assertLogAndThrow2(CAT_RANGE, logLevel_,
+          assertLogAndThrow2(CAT_SQL_COMP_RANGE, logLevel_,
                              origVal == scaledVal, QRLogicException,
                              "Precision lost in conversion to interval type: "
                                "value in microseconds (or months) = %Ld, "
@@ -1472,7 +1472,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
         break;
 
       default:
-        assertLogAndThrow1(CAT_RANGE, logLevel_, FALSE, QRLogicException,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,  // LCOV_EXCL_LINE :rfi
                            "Type not handled by reconstituteInt64Value() -- %d",
                            typeQual);
         return NULL;
@@ -1489,7 +1489,7 @@ ConstValue* OptRangeSpec::reconstituteDoubleValue(NAType* type, Float64 val) con
   // LCOV_EXCL_START :rfi
   if (typeQual != NA_NUMERIC_TYPE)
     {
-      assertLogAndThrow1(CAT_RANGE, logLevel_, FALSE, QRLogicException,
+      assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,
                          "Type not handled by reconstituteDoubleValue() -- %d",
                          typeQual);
       return NULL;
@@ -1504,7 +1504,7 @@ ConstValue* OptRangeSpec::reconstituteDoubleValue(NAType* type, Float64 val) con
   sprintf(constValTextBuffer, "%g", val);
   constValTextStr = constValTextBuffer;
   NumericType* numType = static_cast<NumericType*>(type);
-  assertLogAndThrow(CAT_RANGE, logLevel_, 
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_, 
                     !numType->isExact(),
                     QRLogicException,
                     "Expecting approximate numeric type in "
@@ -1526,12 +1526,12 @@ ItemExpr* OptRangeSpec::makeSubrangeORBackbone(SubrangeBase* subrange,
   NAType* int64Type = new (mvqrHeap_) SQLLargeInt(TRUE, FALSE );
   type->resetSQLnullFlag();
   type->resetSQLnullHdrSize();
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     type, QRDescriptorException,
                     "Call to getType() returned NULL in "
                     "OptRangeSpec::makeSubrangeOrBackbone().");
   NABuiltInTypeEnum typeQual = type->getTypeQualifier();
-  assertLogAndThrow1(CAT_RANGE, logLevel_,
+  assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                      typeQual == NA_DATETIME_TYPE ||
                        typeQual == NA_INTERVAL_TYPE ||
                        (typeQual == NA_NUMERIC_TYPE && 
@@ -1630,7 +1630,7 @@ ItemExpr* OptRangeSpec::makeSubrangeItemExpr(SubrangeBase* subrange,
   NAType* type = getType()->newCopy(mvqrHeap_);
   type->resetSQLnullFlag();
   type->resetSQLnullHdrSize();
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     type, QRDescriptorException,
                     "Call to getType() returned NULL in "
                     "OptRangeSpec::makeSubrangeItemExpr().");
@@ -1696,7 +1696,7 @@ ItemExpr* OptRangeSpec::makeSubrangeItemExpr(SubrangeBase* subrange,
         break;
 
       default:
-        assertLogAndThrow1(CAT_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,  // LCOV_EXCL_LINE :rfi
                            FALSE, QRDescriptorException, 
                            "Unhandled data type in "
                            "OptRangeSpec::makeSubrangeItemExpr: %d",
@@ -1712,7 +1712,7 @@ ItemExpr* OptRangeSpec::makeSubrangeItemExpr(SubrangeBase* subrange,
 
 void OptRangeSpec::intersectRange(OptRangeSpec* other)
 {
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     sameRangeSubject(other) || !other->rangeSubjectIsSet(),
                     QRDescriptorException,
                     "Intersecting with range on a different col/expr, or range "
@@ -1731,7 +1731,7 @@ void OptRangeSpec::intersectRange(OptRangeSpec* other)
 
 void OptRangeSpec::unionRange(OptRangeSpec* other)
 {
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     sameRangeSubject(other) || !other->rangeSubjectIsSet(),
                     QRDescriptorException,
                     "Unioning with range on a different col/expr, or range "
@@ -1911,12 +1911,12 @@ void OptNormRangeSpec::intersectRange(OptNormRangeSpec* other)
     {
       if (!originalItemExpr_)
       {
-        QRLogger::log(CAT_RANGE, logLevel_,
+        QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
           "OptNormRangeSpec::intersectRange -- originalItemExpr_ is NULL.");
       }
       if (!otherItemExpr)
       {
-        QRLogger::log(CAT_RANGE, logLevel_,
+        QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
           "OptNormRangeSpec::intersectRange -- other op has NULL ItemExpr.");
       }
     }
@@ -1940,12 +1940,12 @@ void OptNormRangeSpec::unionRange(OptNormRangeSpec* other)
     {
       if (!originalItemExpr_)
       {
-        QRLogger::log(CAT_RANGE, logLevel_,
+        QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
           "OptNormRangeSpec::unionRange -- originalItemExpr_ is NULL.");
       }
       if (!otherItemExpr)
       {
-        QRLogger::log(CAT_RANGE, logLevel_,
+        QRLogger::log(CAT_SQL_COMP_RANGE, logLevel_,
           "OptNormRangeSpec::unionRange -- other op has NULL ItemExpr.");
       }
     }
@@ -1998,7 +1998,7 @@ static Int64 getInt64ValueFromDateTime(ConstValue* val,
         break;
 
       default:
-        assertLogAndThrow1(CAT_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
                            FALSE, QRDescriptorException,
                            "Invalid datetime subtype -- %d", constType->getSubtype());
     }
@@ -2071,7 +2071,7 @@ static Int64 getInt64ValueFromInterval(ConstValue* constVal,
         valWasNegative = (i64val < 0);
         break;
       default:
-        assertLogAndThrow1(CAT_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
                            FALSE, QRDescriptorException,
                            "Invalid interval storage length -- %d",
                            storageSize);
@@ -2110,7 +2110,7 @@ static Int64 getInt64ValueFromInterval(ConstValue* constVal,
         i64val *= (Int64)pow(10, 6 - constIntvlType->getFractionPrecision());
         break;
       default:
-        assertLogAndThrow1(CAT_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
                            FALSE, QRDescriptorException,
                            "Invalid end field for interval -- %d",
                            constIntvlType->getEndField());
@@ -2154,7 +2154,7 @@ static Int64 getInt64ValueFromInterval(ConstValue* constVal,
         i64val = i64val / scaleFactor * scaleFactor;
         break;
       default:
-        assertLogAndThrow1(CAT_RANGE, level,  // LCOV_EXCL_LINE :rfi
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,  // LCOV_EXCL_LINE :rfi
                           FALSE, QRDescriptorException,
                           "Invalid end field for interval -- %d",
                           colIntvlType->getEndField());
@@ -2185,7 +2185,7 @@ Int64 getInt64Value(ConstValue* val, const NAType* rangeColType,
                                      static_cast<const IntervalType*>(rangeColType),
                                      truncated, valWasNegative, level);
 
-  assertLogAndThrow1(CAT_RANGE, level,
+  assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                      constValType->getTypeQualifier() == NA_NUMERIC_TYPE,
                      QRDescriptorException,
                      "Unexpected date type -- %d",
@@ -2231,7 +2231,7 @@ Int64 getInt64Value(ConstValue* val, const NAType* rangeColType,
       {
         case 2:
           {
-            assertLogAndThrow1(CAT_RANGE, level,
+            assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                             isExactNumeric, QRDescriptorException,
                             "Constant value of size 2 not exact numeric, type is: %d",
                             constValNumType->getTypeQualifier());
@@ -2297,7 +2297,7 @@ Int64 getInt64Value(ConstValue* val, const NAType* rangeColType,
           break;
         
         default:
-          assertLogAndThrow1(CAT_RANGE, level,
+          assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                             FALSE, QRDescriptorException,
                             "Numeric constant of unexpected size: %d bytes",
                             storageSize);
@@ -2363,7 +2363,7 @@ double getDoubleValue(ConstValue* val, logLevel level)
     {
       case 2:
         {
-          assertLogAndThrow1(CAT_RANGE, level,
+          assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            isExactNumeric, QRDescriptorException,
                            "const value of size 2 not exact numeric: %d",
                            constValType->getTypeQualifier());
@@ -2402,7 +2402,7 @@ double getDoubleValue(ConstValue* val, logLevel level)
           }
       
       default:
-        assertLogAndThrow1(CAT_RANGE, level,
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            FALSE, QRDescriptorException,
                            "Numeric constant of unexpected size: %d bytes",
                            val->getStorageSize());

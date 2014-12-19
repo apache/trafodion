@@ -43,21 +43,13 @@
 #define SQEV_SQL_ABORT 501
 #define SQEV_SQL_ASSERTION_FAILURE 502
 #define SQEV_SQL_OPT_PASS1_FAILURE 503
-#define SQEV_SQL_SQL_OPT_PASS2_FAILURE 504
+#define SQEV_SQL_OPT_PASS2_FAILURE 504
 #define SQEV_SQL_CLI_RECLAIM_OCCURED 506
 #define SQEV_SQL_SRT_INFO 507
 #define SQEV_SQL_EXEC_RT_INFO 508
 #define SQEV_CMP_NQC_RETRY_OCCURED 514
 
-// MX Utility Events
-#define SQEV_UTIL_OP_START                    551
-#define SQEV_UTIL_OP_END                      552
-#define SQEV_UTIL_OP_ERROR                    553
-#define SQEV_UTIL_OP_COMMIT_START             554
-#define SQEV_UTIL_OP_RECOVERY                 555
-#define SQEV_UTIL_OP_AUDCOMPR_ALTER           556
-#define SQEV_UTIL_OP_EXTENTS_ALTER            557
-#define SQEV_UTIL_OP_COMMIT_END               558
+
 
 // QVP
 #define SQEV_QVP_INFO 590
@@ -77,7 +69,3 @@
 #define SQEV_MVREFRESH_INFO 602
 #define SQEV_MVREFRESH_ERROR 603
 
-//POS error
-#define SQEV_SQL_POS_INFO 700
-#define SQEV_SQL_POS_ERROR 701
-#define SQEV_SQL_POS_CREATE_ERROR 702

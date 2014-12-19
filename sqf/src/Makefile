@@ -29,7 +29,6 @@ all:
 	cd tm; $(MAKE)
 	cd $(DP2); $(MAKE)
 	cd stfs; $(MAKE) -f Makefile.stub
-	cd sp_proxy; $(MAKE)
 	cd tools; $(MAKE)
 
 clean:
@@ -37,19 +36,16 @@ clean:
 	cd win; $(MAKE) clean
 	cd tm; $(MAKE) clean
 	cd stfs; $(MAKE) -f Makefile.stub clean
-	cd sp_proxy; $(MAKE) clean
 	cd tools; $(MAKE) clean
 cleanall:
 	cd seabed; $(MAKE) cleanall
 	cd win; $(MAKE) cleanall
 	cd tm; $(MAKE) cleanall
 	cd stfs; $(MAKE) -f Makefile.stub cleanall
-	cd sp_proxy; $(MAKE) cleanall
 	cd tools; $(MAKE) cleanall
 cleaner:
 	cd seabed; $(MAKE) cleaner
 	cd win; $(MAKE) cleaner
 	cd tm; $(MAKE) cleaner
 	cd stfs; $(MAKE) -f Makefile.stub cleaner
-	cd sp_proxy; $(MAKE) cleaner
 	cd tools; $(MAKE) cleaner

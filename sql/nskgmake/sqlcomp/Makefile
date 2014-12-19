@@ -20,9 +20,10 @@
 
 CPPSRC := CmpDescribe.cpp \
 	CmpMain.cpp \
+        CmpSeabaseDDLauth.cpp \
 	CmpSeabaseDDLcommon.cpp \
 	CmpSeabaseDDLindex.cpp \
-        CmpSeabaseDDLauth.cpp \
+	CmpSeabaseDDLrepos.cpp \
 	CmpSeabaseDDLroutine.cpp \
 	CmpSeabaseDDLschema.cpp \
 	CmpSeabaseDDLtable.cpp \

@@ -22,19 +22,10 @@ CPPSRC := logmxevent.cpp
 
 SRCPATH := sqlmxevents
 
-ifeq ($(TARGTYPE),nt)
-DEFS := -DWIN32 -DEVENTS_DLL
-SYS_LIBS := kernel32.lib user32.lib
-DEP_LIBS := tdm_sqlexport
-EXTERN_OBJS := $(YLIBDIR)/tdm_logevent.lib
-else
 DEFS := -DSQLMXEVENTS_LIB
-endif
 
 ifeq ($(TARGTYPE),linux)
 EXTERN_LIBS := $(XMPIROOT)/libevlsq.so
-ifneq ($(SP_DIS),)
-EXTERN_LIBS += $(SP_EXPORT_LIB)/libwrappersq.so
-endif
+#EXTERN_LIBS += $(SP_EXPORT_LIB)/libwrappersq.so
 CPPSRC += vers_libtdm_sqlmxevents.cpp
 endif

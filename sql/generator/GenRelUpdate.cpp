@@ -1320,6 +1320,8 @@ short HbaseDelete::codeGen(Generator * generator)
 
   if (generator->isTransactionNeeded())
     setTransactionRequired(generator);
+  else if (noDTMxn())
+    hbasescan_tdb->setUseHbaseXn(TRUE);
 
   generator->setFoundAnUpdate(TRUE);
 
@@ -2132,6 +2134,21 @@ short HbaseUpdate::codeGen(Generator * generator)
     {
       if (noDTMxn())
         hbasescan_tdb->setUseHbaseXn(TRUE);
+
+#ifdef __ignore
+      // if internal update of the sequence generator table, then do not do the update
+      // within the user Xn. Use hbase xn instead.
+      // This allows seqgen updates to complete without being part of an enclosing
+      // transaction.
+      // See cli/Cli.cpp, method  SeqGenCliInterfaceUpdAndValidate for details.
+      if ((getTableDesc()->getNATable()->isSeabaseMDTable()) &&
+	  (getTableDesc()->getNATable()->getTableName().getObjectName() == SEABASE_SEQ_GEN) &&
+	  (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+	{
+	  hbasescan_tdb->setUseHbaseXn(TRUE);
+	}
+#endif
+
     }
 
   generator->setFoundAnUpdate(TRUE);
@@ -2758,6 +2775,8 @@ short HbaseInsert::codeGen(Generator *generator)
 
   if (generator->isTransactionNeeded())
     setTransactionRequired(generator);
+  else if (noDTMxn())
+    hbasescan_tdb->setUseHbaseXn(TRUE);
 
    generator->setFoundAnUpdate(TRUE);
 

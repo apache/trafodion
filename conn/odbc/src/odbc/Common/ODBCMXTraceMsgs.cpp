@@ -55,8 +55,6 @@ ODBCMXTraceMsg::ODBCMXTraceMsg(DWORD processId, IDL_OBJECT_def objRef)
 	msgBuffer = new char[MAX_MSG_LENGTH+10];
 
 	temp = new char[200];
-
-	collectorType = COLL_TRACE;
 }
 
 // Descructor for ODBC/MXTraceMsg class
@@ -78,7 +76,6 @@ void ODBCMXTraceMsg::OpenTraceCollector(char* collectorName)
 // Closes collector for ODBC/MX Server Trace
 void ODBCMXTraceMsg::CloseTraceCollector()
 {
-	close_ems();
 }
 
 // Traces entry of odbc_SQLSvc_InitializeDialogue_ame

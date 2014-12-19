@@ -16,10 +16,8 @@
 #
 # @@@ END COPYRIGHT @@@
 
-SEAPILOT_INC = $(MY_SPROOT)/export/include
 INC_JAVA=$(JAVA_HOME)/include
 INC_JAVALINUX=$(JAVA_HOME)/include/linux
-TM_USE_SEAPILOT=0
 
 #USE_THREADED_IO = 1 indicates a multithreaded TM build.
 ifndef USE_THREADED_IO
@@ -46,6 +44,10 @@ HBASETMLIB   =  $(MY_SQROOT)/src/seatrans/tm/hbasetmlib2
 
 #xarm
 LIBXARM		= -lxarm
+
+#log4cpp
+LIBLOG4CPP = $(SQ_HOME)/../log4cpp/$(LOG4CPP_VER)/include
+LIBCLOGGER = $(SQ_HOME)/commonLogger
 
 # seabed
 SBROOT		= ..
@@ -89,7 +91,7 @@ ifeq ($(SQ_USE_INTC),0)
 HPCWARN		= -Wno-unused-parameter
 HPCXXWARN	= -Wno-unused-parameter -Wno-non-virtual-dtor
 endif
-INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS)/include -I$(HBASETMLIB) -I$(INC_JAVA) -I$(INC_JAVALINUX)
+INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS)/include -I$(HBASETMLIB) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(LIBLOG4CPP) -I$(LIBCLOGGER)
 #LIBSX		= -lpthread
 LIBSX		= -pthread
 ifeq ($(USE_THREADED_IO),1)

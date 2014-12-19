@@ -19,7 +19,7 @@
 // **********************************************************************
 
 #include "SequenceFileReader.h"
-#include "HdfsLogger.h"
+#include "QRLogger.h"
 
 // ===========================================================================
 // ===== Class SequenceFileReader
@@ -172,7 +172,7 @@ SFR_RetCode SequenceFileReader::init()
 //////////////////////////////////////////////////////////////////////////////
 SFR_RetCode SequenceFileReader::open(const char* path)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::open(%s) called.", path);
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::open(%s) called.", path);
   jstring js_path = jenv_->NewStringUTF(path);
   if (js_path == NULL) 
     return SFR_ERROR_OPEN_PARAM;
@@ -184,7 +184,7 @@ SFR_RetCode SequenceFileReader::open(const char* path)
 
   if (jresult != NULL)
   {
-    logError(CAT_SEQ_FILE_READER, "SequenceFileReader::open()", jresult);
+    logError(CAT_SQL_HDFS_SEQ_FILE_READER, "SequenceFileReader::open()", jresult);
     return SFR_ERROR_OPEN_EXCEPTION;
   }
   
@@ -196,14 +196,14 @@ SFR_RetCode SequenceFileReader::open(const char* path)
 //////////////////////////////////////////////////////////////////////////////
 SFR_RetCode SequenceFileReader::getPosition(Int64& pos)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::getPosition(%ld) called.", pos);
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::getPosition(%ld) called.", pos);
 
   // long getPosition();
   Int64 result = jenv_->CallLongMethod(javaObj_, JavaMethods_[JM_GETPOS].methodID);
 
   if (result == -1) 
   {
-    logError(CAT_SEQ_FILE_READER, "SequenceFileReader::getPosition()", getLastError());
+    logError(CAT_SQL_HDFS_SEQ_FILE_READER, "SequenceFileReader::getPosition()", getLastError());
     return SFR_ERROR_GETPOS_EXCEPTION;
   }
 
@@ -216,14 +216,14 @@ SFR_RetCode SequenceFileReader::getPosition(Int64& pos)
 //////////////////////////////////////////////////////////////////////////////
 SFR_RetCode SequenceFileReader::seeknSync(Int64 pos)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::seeknSync(%ld) called.", pos);
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::seeknSync(%ld) called.", pos);
 
   // String seeknSync(long);
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_SYNC].methodID, pos);
 
   if (jresult != NULL)
   {
-    logError(CAT_SEQ_FILE_READER, "SequenceFileReader::seeknSync()", jresult);
+    logError(CAT_SQL_HDFS_SEQ_FILE_READER, "SequenceFileReader::seeknSync()", jresult);
     return SFR_ERROR_SYNC_EXCEPTION;
   }
   
@@ -235,7 +235,7 @@ SFR_RetCode SequenceFileReader::seeknSync(Int64 pos)
 //////////////////////////////////////////////////////////////////////////////
 SFR_RetCode SequenceFileReader::isEOF(bool& isEOF)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::isEOF() called.");
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::isEOF() called.");
 
   // boolean isEOF();
   bool result = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_ISEOF].methodID);
@@ -276,7 +276,7 @@ SFR_RetCode SequenceFileReader::fetchNextRow(Int64 stopOffset, char* buffer)
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCHROW2].methodID, stopOffset);
   if (jresult==NULL && getLastError()) 
   {
-    logError(CAT_SEQ_FILE_READER, "SequenceFileReader::fetchNextRow()", getLastError());
+    logError(CAT_SQL_HDFS_SEQ_FILE_READER, "SequenceFileReader::fetchNextRow()", getLastError());
     return SFR_ERROR_FETCHROW_EXCEPTION;
   }
 
@@ -297,7 +297,7 @@ SFR_RetCode SequenceFileReader::fetchNextRow(Int64 stopOffset, char* buffer)
 //////////////////////////////////////////////////////////////////////////////
 SFR_RetCode SequenceFileReader::close()
 {
-  HdfsLogger::log(CAT_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::close() called.");
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::close() called.");
   if (javaObj_ == NULL)
   {
     // Maybe there was an initialization error.
@@ -309,7 +309,7 @@ SFR_RetCode SequenceFileReader::close()
 
   if (jresult!=NULL) 
   {
-    logError(CAT_SEQ_FILE_READER, "SequenceFileReader::close()", jresult);
+    logError(CAT_SQL_HDFS_SEQ_FILE_READER, "SequenceFileReader::close()", jresult);
     return SFR_ERROR_CLOSE_EXCEPTION;
   }
   
@@ -387,7 +387,7 @@ SFR_RetCode SequenceFileReader::fetchRowsIntoBuffer(Int64   stopOffset,
                                                     Int64&  bytesRead, 
                                                     char    rowDelimiter)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::fetchRowsIntoBuffer(stopOffset: %ld, buffSize: %ld) called.", stopOffset, buffSize);
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::fetchRowsIntoBuffer(stopOffset: %ld, buffSize: %ld) called.", stopOffset, buffSize);
   Int32 maxRowLength = 0;
   char* pos = buffer;
   Int64 limit = buffSize;
@@ -413,7 +413,7 @@ SFR_RetCode SequenceFileReader::fetchRowsIntoBuffer(Int64   stopOffset,
     }
   } while (retCode == SFR_OK && bytesRead < limit);
   
-  HdfsLogger::log(CAT_SEQ_FILE_READER, LL_DEBUG, "  =>Returning %d, read %ld bytes in %d rows.", retCode, bytesRead, rowsRead);
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "  =>Returning %d, read %ld bytes in %d rows.", retCode, bytesRead, rowsRead);
   return retCode;
 }
 
@@ -522,7 +522,7 @@ SFW_RetCode SequenceFileWriter::init()
 //////////////////////////////////////////////////////////////////////////////
 SFW_RetCode SequenceFileWriter::open(const char* path, SFW_CompType compression)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::open(%s) called.", path);
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::open(%s) called.", path);
   jstring js_path = jenv_->NewStringUTF(path);
   if (js_path == NULL) 
     return SFW_ERROR_OPEN_PARAM;
@@ -534,7 +534,7 @@ SFW_RetCode SequenceFileWriter::open(const char* path, SFW_CompType compression)
 
   if (jresult != NULL)
   {
-    logError(CAT_SEQ_FILE_WRITER, "SequenceFileWriter::open()", jresult);
+    logError(CAT_SQL_HDFS_SEQ_FILE_WRITER, "SequenceFileWriter::open()", jresult);
     return SFW_ERROR_OPEN_EXCEPTION;
   }
   
@@ -546,7 +546,7 @@ SFW_RetCode SequenceFileWriter::open(const char* path, SFW_CompType compression)
 //////////////////////////////////////////////////////////////////////////////
 SFW_RetCode SequenceFileWriter::write(const char* data)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::write(%s) called.", data);
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::write(%s) called.", data);
   jstring js_data = jenv_->NewStringUTF(data);
   if (js_data == NULL) 
     return SFW_ERROR_WRITE_PARAM;
@@ -558,7 +558,7 @@ SFW_RetCode SequenceFileWriter::write(const char* data)
 
   if (jresult != NULL)
   {
-    logError(CAT_SEQ_FILE_WRITER, "SequenceFileWriter::write()", jresult);
+    logError(CAT_SQL_HDFS_SEQ_FILE_WRITER, "SequenceFileWriter::write()", jresult);
     return SFW_ERROR_WRITE_EXCEPTION;
   }
   
@@ -570,7 +570,7 @@ SFW_RetCode SequenceFileWriter::write(const char* data)
 //////////////////////////////////////////////////////////////////////////////
 SFW_RetCode SequenceFileWriter::writeBuffer(char* data, Int64 buffSize, const char* rowDelimiter)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::writeBuffer() called.");
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::writeBuffer() called.");
 
   // Point to the first row.
   char* nextRow = data;
@@ -601,7 +601,7 @@ SFW_RetCode SequenceFileWriter::writeBuffer(char* data, Int64 buffSize, const ch
 //////////////////////////////////////////////////////////////////////////////
 SFW_RetCode SequenceFileWriter::close()
 {
-  HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::close() called.");
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::close() called.");
   if (javaObj_ == NULL)
   {
     // Maybe there was an initialization error.
@@ -613,7 +613,7 @@ SFW_RetCode SequenceFileWriter::close()
 
   if (jresult != NULL)
   {
-    logError(CAT_SEQ_FILE_WRITER, "SequenceFileWriter::close()", jresult);
+    logError(CAT_SQL_HDFS_SEQ_FILE_WRITER, "SequenceFileWriter::close()", jresult);
     return SFW_ERROR_CLOSE_EXCEPTION;
   }
   
@@ -627,7 +627,7 @@ SFW_RetCode SequenceFileWriter::close()
 //////////////////////////////////////////////////////////////////////////////
 SFW_RetCode SequenceFileWriter::hdfsCreate(const char* path, NABoolean compress)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::hdfsCreate(%s) called.", path);
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::hdfsCreate(%s) called.", path);
   jstring js_path = jenv_->NewStringUTF(path);
   if (js_path == NULL)
     return SFW_ERROR_HDFS_CREATE_PARAM;
@@ -642,14 +642,14 @@ SFW_RetCode SequenceFileWriter::hdfsCreate(const char* path, NABoolean compress)
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsCreate()", getLastError());
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsCreate()", getLastError());
     return SFW_ERROR_HDFS_CREATE_EXCEPTION;
   }
 
   if (jresult == false)
   {
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsCreaten()", getLastError());
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsCreaten()", getLastError());
     return SFW_ERROR_HDFS_CREATE_EXCEPTION;
   }
 
@@ -661,7 +661,7 @@ SFW_RetCode SequenceFileWriter::hdfsCreate(const char* path, NABoolean compress)
 //////////////////////////////////////////////////////////////////////////////
 SFW_RetCode SequenceFileWriter::hdfsWrite(const char* data, Int64 len)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::hdfsWrite(%ld) called.", len);
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::hdfsWrite(%ld) called.", len);
 
   //Write the requisite bytes into the file
   jbyteArray jbArray = jenv_->NewByteArray( len);
@@ -680,14 +680,14 @@ SFW_RetCode SequenceFileWriter::hdfsWrite(const char* data, Int64 len)
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsWrite()", getLastError());
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsWrite()", getLastError());
     return SFW_ERROR_HDFS_WRITE_EXCEPTION;
   }
 
   if (jresult == false)
   {
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsWrite()", getLastError());
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsWrite()", getLastError());
     return SFW_ERROR_HDFS_WRITE_EXCEPTION;
   }
 
@@ -699,7 +699,7 @@ SFW_RetCode SequenceFileWriter::hdfsWrite(const char* data, Int64 len)
 //////////////////////////////////////////////////////////////////////////////
 SFW_RetCode SequenceFileWriter::hdfsClose()
 {
-  HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::close() called.");
+  QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::close() called.");
   if (javaObj_ == NULL)
   {
     // Maybe there was an initialization error.
@@ -712,14 +712,14 @@ SFW_RetCode SequenceFileWriter::hdfsClose()
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsClose()", getLastError());
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsClose()", getLastError());
     return SFW_ERROR_HDFS_CLOSE_EXCEPTION;
   }
 
   if (jresult == false)
   {
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsClose()", getLastError());
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsClose()", getLastError());
     return SFW_ERROR_HDFS_CLOSE_EXCEPTION;
   }
 
@@ -729,7 +729,7 @@ SFW_RetCode SequenceFileWriter::hdfsClose()
 
 SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsCleanUnloadPath(%s) called.",
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsCleanUnloadPath(%s) called.",
                                                       uldPath.data());
 
   jstring js_UldPath = jenv_->NewStringUTF(uldPath.c_str());
@@ -741,8 +741,8 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath)
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath(..) => before calling Java.", getLastError());
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath(..) => before calling Java.", getLastError());
     return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
 
@@ -753,14 +753,14 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath)
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath()", getLastError());
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath()", getLastError());
     return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
 
   if (jresult == false)
   {
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath()", getLastError());
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath()", getLastError());
     return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
 
@@ -769,7 +769,7 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath)
 SFW_RetCode SequenceFileWriter::hdfsMergeFiles( const std::string& srcPath,
                                                 const std::string& dstPath)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsMergeFiles(%s, %s) called.",
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsMergeFiles(%s, %s) called.",
                   srcPath.data(), dstPath.data());
 
   jstring js_SrcPath = jenv_->NewStringUTF(srcPath.c_str());
@@ -788,8 +788,8 @@ SFW_RetCode SequenceFileWriter::hdfsMergeFiles( const std::string& srcPath,
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsMergeFiles(..) => before calling Java.", getLastError());
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsMergeFiles(..) => before calling Java.", getLastError());
     return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
   }
 
@@ -802,14 +802,14 @@ SFW_RetCode SequenceFileWriter::hdfsMergeFiles( const std::string& srcPath,
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsMergeFiles()", getLastError());
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsMergeFiles()", getLastError());
     return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
   }
 
   if (jresult == false)
   {
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsMergeFiles()", getLastError());
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsMergeFiles()", getLastError());
     return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
   }
 
@@ -817,7 +817,7 @@ SFW_RetCode SequenceFileWriter::hdfsMergeFiles( const std::string& srcPath,
 }
 SFW_RetCode SequenceFileWriter::hdfsExists( const std::string& uldPath, NABoolean & exist)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsExists(%s) called.",
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsExists(%s) called.",
                                                       uldPath.data());
 
   jstring js_UldPath = jenv_->NewStringUTF(uldPath.c_str());
@@ -828,8 +828,8 @@ SFW_RetCode SequenceFileWriter::hdfsExists( const std::string& uldPath, NABoolea
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsExists(..) => before calling Java.", getLastError());
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsExists(..) => before calling Java.", getLastError());
     return SFW_ERROR_HDFS_EXISTS_EXCEPTION;
   }
 
@@ -842,8 +842,8 @@ SFW_RetCode SequenceFileWriter::hdfsExists( const std::string& uldPath, NABoolea
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "SequenceFileWriter::hdfsExists()", getLastError());
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "SequenceFileWriter::hdfsExists()", getLastError());
     return SFW_ERROR_HDFS_EXISTS_EXCEPTION;
   }
 

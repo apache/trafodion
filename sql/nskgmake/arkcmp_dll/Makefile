@@ -68,13 +68,11 @@ DEP_LIBS := \
 	tdm_sqlexp \
 	porting_layer \
 	lmcomp \
-	qmscommon \
-	log4cpp 
+	qmscommon
 
 ifeq ($(USE_SYSTEM_HEAP), 1)
 DEP_LIBS += sqlcomp
 endif
-
 
 EXTERN_LIBS := \
 	$(STUBLIBROOT)/libtdm_measenty.so \
@@ -86,7 +84,8 @@ EXTERN_LIBS := \
 	$(XMPIROOT)/libsbfs.so \
 	$(XMPIROOT)/libstmlib.so \
 	$(STUBLIBROOT)/libtdm_tmfuser.so \
-	$(XMPIROOT)/libwin.so
+	$(XMPIROOT)/libwin.so \
+	$(LIBROOT)/liblog4cpp.so
 
 
 SYS_LIBS := -lrt -lpthread 
