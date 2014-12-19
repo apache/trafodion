@@ -75,42 +75,44 @@ fi
 #==============================================
 #Check that HBase is installed
 
-for node in $NODE_LIST;
-do
-   ssh $node echo "exit" | hbase shell &> hbaseVersion.txt
-   hbaseInstalled=`grep "Version" hbaseVersion.txt | wc -l`
+#for node in $NODE_LIST;
+#do
+#   ssh -n $node 'echo "exit" | hbase shell &> hbaseVersion.txt'
+#   hbaseInstalled=`ssh -n $node grep "Version" $HOME/hbaseVersion.txt | wc -l`
 
-   if [[ $hbaseInstalled -eq "0" ]]; then
-      echo "***ERROR: Hbase version could not be determined on $node"
-      echo "***ERROR: Please check that HBase is installed on all nodes."
-      echo "***ERROR: Exiting ... "
-      rm hbaseVersion.txt
-      exit -1
-   fi
-done
+#   if [[ $hbaseInstalled -eq "0" ]]; then
+#      echo "***ERROR: Hbase version could not be determined on $node"
+#      echo "***ERROR: Please check that HBase is installed on all nodes."
+#      echo "***ERROR: Exiting ... "
+#      rm hbaseVersion.txt
+#      exit -1
+#   fi
+#done
 
 #==============================================
 #Check for Cloudera 5.2 or Hortonworks 2.2
 
-if [[ $cloudera_installed -gt "0" ]]; then
-   versionInstalled=`grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.2 | wc -l`
-   if [[ $versionInstalled -eq "1" ]]; then
-      echo "***ERROR: Cloudera version 5.2 is not currently supported."
-      echo "***ERROR: Exiting..."
-      exit -1
-   fi
-fi
+#if [[ $cloudera_installed -gt "0" ]]; then
+#   versionInstalled=`grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.2 | wc -l`
+#   if [[ $versionInstalled -eq "1" ]]; then
+#      echo "***ERROR: Cloudera version 5.2 is not currently supported."
+#      echo "***ERROR: Exiting..."
+#      rm hbaseVersion.txt
+#      exit -1
+#   fi
+#fi
 
-if [[ $ambari_installed -gt "0" ]]; then
-   versionInstalled=`grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2 | wc -l`
-   if [[ $versionInstalled -eq "1" ]]; then
-      echo "***ERROR: Hortonworks version 2.2 is not currently supported."
-      echo "***ERROR: Exiting..."
-      exit -1
-   fi
-fi
+#if [[ $ambari_installed -gt "0" ]]; then
+#   versionInstalled=`grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2 | wc -l`
+#   if [[ $versionInstalled -eq "1" ]]; then
+#      echo "***ERROR: Hortonworks version 2.2 is not currently supported."
+#      echo "***ERROR: Exiting..."
+#      rm hbaseVersion.txt
+#      exit -1
+#   fi
+#fi
 
-rm hbaseVersion.txt
+#rm hbaseVersion.txt
 
 #==============================================
 #Check for Correct Java version
