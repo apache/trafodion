@@ -62,6 +62,8 @@ long trace_settings = 0;
 int traceFileFb = 0;
 bool traceOpen = false;
 char traceFileName[MAX_PROCESS_PATH];
+char mpirunOutFileName[MAX_PROCESS_PATH];
+char mpirunErrFileName[MAX_PROCESS_PATH];
 #define TRACE_SHELL_CMD         0x00001
 
 #define MAX_TOKEN   132
@@ -144,6 +146,30 @@ void setCallbacks ( void );
 
 
 PhysicalNodeNameMap_t PhysicalNodeMap;
+
+void MpirunInit( void )
+{
+    // Determine trace file name
+    const char *tmpDir;
+    tmpDir = getenv( "MPI_TMPDIR" );
+
+    if (tmpDir)
+    {
+        sprintf( mpirunOutFileName, "%s/monitor.mpirun.out.%s", tmpDir, MyNode );
+        sprintf( mpirunErrFileName, "%s/monitor.mpirun.err.%s", tmpDir, MyNode );
+    }
+    else
+    {
+        sprintf( mpirunOutFileName, "./monitor.mpirun.out.%s", MyNode );
+        sprintf( mpirunErrFileName, "./monitor.mpirun.err.%s", MyNode );
+    }
+
+    if ( trace_settings & TRACE_SHELL_CMD)
+    {
+        printf( "mpirunOutFileName=%s\n", mpirunOutFileName );
+        printf( "mpirunErrFileName=%s\n", mpirunErrFileName );
+    }
+}
 
 bool init_pnode_map( void )
 {
@@ -384,46 +410,17 @@ MonCwd::~MonCwd()
 // functions
 int mon_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string)
 {
-    
-#if 0 // def USE_EVLOGGING
-    size_t lv_buf_size = MON_EVENT_BUF_SIZE;
-    int   lv_err;
-    char  pp_event_buf[MON_EVENT_BUF_SIZE];
-    char* pp_pbuf = pp_event_buf;
-     
-    sq_common_header_t sq_header;
-    sq_header.comp_id = -1;
-    sq_header.process_id = getpid(); //this is just os level pid
-    sq_header.zone_id = MyPNid;
-    sq_header.thread_id = int((long int)gettid());
-
-    /* The next init function will be called by Monitor only */
-    lv_err = evl_sqlog_init_header(pp_pbuf, lv_buf_size, &sq_header);
-
- 
-    /* add monitor string token */
-    lv_err = evl_sqlog_add_token(pp_pbuf, TY_STRING, pp_string);
-
-    if (!lv_err)
-    { 
-        // log events.
-        lv_err = evl_sqlog_write((posix_sqlog_facility_t)SQ_LOG_SEAQUEST, pv_event_type, pv_severity, pp_event_buf);
-    }
-
-#else
     pv_event_type = pv_event_type;
     pv_severity = pv_severity;
     int lv_err = 0;
-#endif    
 
     fprintf(stderr,"[%s] %s", MyName, pp_string );
-#if 0
-    if (trace_settings & TRACE_EVLOG_MSG)
+
+    if ( trace_settings & TRACE_SHELL_CMD )
     {
         trace_printf("Evlog event: type=%d, severity=%d, text: %s",
                      pv_event_type, pv_severity, pp_string);
     }
-#endif    
 
     return lv_err;
 }
@@ -624,19 +621,20 @@ void TraceInit( int & argc, char **&argv )
     }
 }
 
-void SetupFifo(int orig_fd, char *fifo_name)
+void RedirectFd(int orig_fd, char *fifo_name)
 {
-    int fifo_fd;
-    const char method_name[] = "SetupFifo";
+    int rdir_fd;
+    const char method_name[] = "RedirectFd";
 
     if ( trace_settings & TRACE_SHELL_CMD )
-        trace_printf("%s@%d [%s] opening pipe(%s) for writing via "
-                     "monitor, fd=%d remapped to this pipe\n",
+        trace_printf("%s@%d [%s] opening (%s) for writing, "
+                     "fd=%d remapped to this pipe/file\n",
                      method_name, __LINE__, MyName, fifo_name, orig_fd);
 
-    // Open the fifo for writing.
-    fifo_fd = open (fifo_name, O_WRONLY);
-    if (fifo_fd == -1)
+    // Open for writing.
+    rdir_fd = open( fifo_name, O_CREAT | O_TRUNC | O_WRONLY
+                  , S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
+    if (rdir_fd == -1)
     {
         if ( trace_settings & TRACE_SHELL_CMD )
             trace_printf("%s@%d [%s], fifo open(%s) error, %s.\n",
@@ -645,8 +643,8 @@ void SetupFifo(int orig_fd, char *fifo_name)
         return;
     }
 
-    // Remap fifo file descriptor to desired file descriptor.
-    // Close unneeded fifo file descriptor.
+    // Remap file descriptor to desired file descriptor.
+    // Close unneeded file descriptor.
     if (close(orig_fd))
     {
         if ( trace_settings & TRACE_SHELL_CMD )
@@ -655,19 +653,19 @@ void SetupFifo(int orig_fd, char *fifo_name)
                          strerror(errno));
     }
 
-    if ( dup2(fifo_fd, orig_fd) == -1)
+    if ( dup2(rdir_fd, orig_fd) == -1)
     {
         if ( trace_settings & TRACE_SHELL_CMD )
             trace_printf("%s@%d [%s], dup2(%d, %d) error, %s.\n",
-                         method_name, __LINE__, MyName, fifo_fd, orig_fd,
+                         method_name, __LINE__, MyName, rdir_fd, orig_fd,
                          strerror(errno));
     }
 
-    if (close(fifo_fd))
+    if (close(rdir_fd))
     {
         if ( trace_settings & TRACE_SHELL_CMD )
             trace_printf("%s@%d [%s], close(%d) error, %s.\n",
-                         method_name, __LINE__, MyName, fifo_fd,
+                         method_name, __LINE__, MyName, rdir_fd,
                          strerror(errno) );
     }
 }
@@ -804,7 +802,7 @@ bool attach( int nid, char *name, char *program )
                                  "%d\n", method_name, __LINE__, MyName, MyNid );
                 attached = true;
                 // Connect to monitor via pipes and remap stderr
-                SetupFifo(2, msg->u.reply.u.startup_info.fifo_stderr);
+                RedirectFd(2, msg->u.reply.u.startup_info.fifo_stderr);
             }
             else if (msg->u.reply.u.startup_info.return_code == MPI_ERR_NO_MEM)
             {
@@ -1972,6 +1970,7 @@ void exit_process (void)
     {
         printf ("[%s] Exit process reply invalid, msg tag is %d, count= %d. \n", MyName, status.MPI_TAG, count);
     }
+    fprintf(stderr,"[%s] Exiting\n", MyName );
     if (gp_local_mon_io)
         gp_local_mon_io->release_msg(msg);
 }
@@ -4638,6 +4637,14 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
         argv[idx+3] = (char *) "1";
         idx+=3;
     }
+    env=getenv("SQ_SEAMONSTER");
+    if (env && *env == '1')
+    {
+        argv[idx+1] = (char *) "-env";
+        argv[idx+2] = (char *) "SQ_SEAMONSTER";
+        argv[idx+3] = (char *) "1";
+        idx+=3;
+    }
     argv[idx+1] = (char *) "-env";
     argv[idx+2] = (char *) "MPI_TMPDIR";
     env = getenv ("HOME");
@@ -4925,6 +4932,10 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     {
         // I'm the child process
         close(0);
+        // remap mpirun stdout and stderr
+        RedirectFd(1, mpirunOutFileName);
+        RedirectFd(2, mpirunErrFileName);
+
         if (execvp ("mpirun", argv) == -1)
         {
             printf("[%s] - Error trying to execvp 'mpirun' with program=monitor: %s (%d)\n",MyName, strerror(errno), errno);
@@ -6137,6 +6148,8 @@ int main (int argc, char *argv[])
         }
     }    
 
+    // Initialize mpirun std file settings
+    MpirunInit();
 
     if ( !VirtualNodes )
     {
