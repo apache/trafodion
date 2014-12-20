@@ -195,11 +195,7 @@ public class HBaseTmZK implements Abortable{
               StringTokenizer tok = new StringTokenizer(hostAndPort, ":");
               String hostName = new String(tok.nextElement().toString());
               int portNumber = Integer.parseInt(tok.nextElement().toString());
-              ByteArrayOutputStream lv_bos = new ByteArrayOutputStream();
-              DataOutputStream lv_dos = new DataOutputStream(lv_bos);
-              region.write(lv_dos);
-              lv_dos.flush();
-              byte [] lv_byte_region_info = lv_bos.toByteArray();
+              byte [] lv_byte_region_info = region.toByteArray();
               try{
                  LOG.info("Calling createRecoveryzNode for encoded region: " + region.getEncodedName());
                  createRecoveryzNode(hostName, portNumber, region.getEncodedName(), lv_byte_region_info);
