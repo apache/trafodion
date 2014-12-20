@@ -275,7 +275,13 @@ public class HBaseTxClient {
               LOG.error("Unable to create HBaseTmZK TM-zookeeper class, throwing exception");
               throw new RuntimeException(e);                                             
           }                                                                              
-          recovThread = new RecoveryThread(tLog, tmZK, trxManager, this);
+          recovThread = new RecoveryThread(tLog,
+                                           tmZK,
+                                           trxManager,
+                                           this,
+                                           useForgotten,
+                                           forceForgotten,
+                                           useTlog);
           recovThread.start();                     
       }
       if (LOG.isTraceEnabled()) LOG.trace("Exit init()");
@@ -294,7 +300,13 @@ public class HBaseTxClient {
                if(LOG.isDebugEnabled()) LOG.debug("nodeDown called on a node that already has RecoveryThread running node ID: " + nodeID);
            }
            else {
-               newRecovThread = new RecoveryThread(tLog, new HBaseTmZK(config, (short) nodeID), trxManager);
+               newRecovThread = new RecoveryThread(tLog,
+                                                   new HBaseTmZK(config, (short) nodeID), 
+                                                   trxManager, 
+                                                   this,
+                                                   useForgotten,
+                                                   forceForgotten,
+                                                   useTlog);
                newRecovThread.start();
                mapRecoveryThreads.put(nodeID, recovThread);
                if(LOG.isTraceEnabled()) LOG.trace("nodeDown -- mapRecoveryThreads size: " + mapRecoveryThreads.size());
@@ -602,13 +614,25 @@ public class HBaseTxClient {
              private short tmID;
              private Set<Long> inDoubtList;
              private boolean continueThread = true;
+             private int recoveryIterations = 0;
              private int retryCount = 0;
+             private boolean useForgotten;
+             private boolean forceForgotten;
+             private boolean useTlog;
              HBaseTxClient hbtx;
 
-         public RecoveryThread(TmAuditTlog audit, HBaseTmZK zookeeper,
-                               TransactionManager txnManager, HBaseTxClient hbtx) {
+         public RecoveryThread(TmAuditTlog audit,
+                               HBaseTmZK zookeeper,
+                               TransactionManager txnManager,
+                               HBaseTxClient hbtx,
+                               boolean useForgotten,
+                               boolean forceForgotten,
+                               boolean useTlog) {
              this(audit, zookeeper, txnManager);
              this.hbtx = hbtx;
+             this.useForgotten = useForgotten;
+             this.forceForgotten = forceForgotten;
+             this.useTlog= useTlog;
          }
              /**
               * 
@@ -616,8 +640,10 @@ public class HBaseTxClient {
               * @param zookeeper
               * @param txnManager
               */
-             public RecoveryThread(TmAuditTlog audit, HBaseTmZK zookeeper,
-                             TransactionManager txnManager) {
+             public RecoveryThread(TmAuditTlog audit,
+                                   HBaseTmZK zookeeper,
+                                   TransactionManager txnManager)
+             {
                           this.audit = audit;
                           this.zookeeper = zookeeper;
                           this.txnManager = txnManager;
@@ -682,8 +708,6 @@ public class HBaseTxClient {
                                 new HashMap<Long, TransactionState>();
                         try {
                             regions = zookeeper.checkForRecovery();
-                            if (regions != null)
-                                if (LOG.isTraceEnabled()) LOG.trace("Processing " + regions.size() + " regions");
                         } catch (Exception e) {
                             LOG.error("An ERROR occurred while checking for regions to recover. " + "TM: " + tmID);
                             StringWriter sw = new StringWriter();
@@ -693,6 +717,18 @@ public class HBaseTxClient {
                         }
 
                         if(regions != null) {
+                            if (recoveryIterations == 0) {
+                                if(LOG.isInfoEnabled()) LOG.info ("Starting recovery of " + regions.size() + " regions.");
+                            } 
+                            else {
+                                if(LOG.isDebugEnabled()) LOG.debug("Continuing recovery. Found " + regions.size() +
+                                        " regions. Recovery iterations: " + recoveryIterations);
+                                if(recoveryIterations % 10 == 0) {
+                                if(LOG.isWarnEnabled())LOG.warn("Recovery thread encountered regions to recover" +
+                                                                 " in the last " + recoveryIterations + " iterations");
+                                }
+                            }
+                            recoveryIterations++;
 
                             if (LOG.isDebugEnabled()) LOG.debug("in-doubt region size " + regions.size());
                             for (Map.Entry<String, byte[]> region : regions.entrySet()) {
@@ -733,6 +769,10 @@ public class HBaseTxClient {
                                             LOG.debug("Redriving commit for " + ts.getTransactionId() + " number of regions " + ts.getParticipatingRegions().size() +
                                                     " and tolerating UnknownTransactionExceptions");
                                         txnManager.doCommit(ts, true /*ignore UnknownTransactionException*/);
+                                        if(useTlog && useForgotten) {
+                                            long nextAsn = tLog.getNextAuditSeqNum((int)(ts.getTransactionId() >> 32));
+                                            tLog.putSingleRecord(ts.getTransactionId(), "FORGOTTEN", null, forceForgotten, nextAsn);
+                                        }
                                     } else if (ts.getStatus().equals("ABORTED")) {
                                         if (LOG.isDebugEnabled())
                                             LOG.debug("Redriving abort for " + ts.getTransactionId());
@@ -750,6 +790,12 @@ public class HBaseTxClient {
                                 }
                             }
 
+                        }
+                        else {
+                            if (recoveryIterations > 0) {
+                                if(LOG.isInfoEnabled()) LOG.info("Recovery completed for TM" + tmID);
+                            }
+                            recoveryIterations = 0;
                         }
                         try {
                             if(continueThread) {
