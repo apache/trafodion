@@ -356,7 +356,7 @@ public class TransactionState {
     public void clearState() {
 
       clearTransactionsToCheck();
-      clearWriteOrdering();
+//      clearWriteOrdering();
       clearScanRange();
       clearDeletes();
       clearTags();
