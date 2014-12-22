@@ -14028,9 +14028,9 @@ Lng32 AddNecessaryColumns()
     qry.append(      " AND (REASON='S'");
     qry.append(       " OR  REASON=' ')");
     qry.append(    " ORDER BY COLCOUNT, HISTOGRAM_ID, COL_POSITION");
-    qry.append(    " FOR READ UNCOMMITTED ACCESS");
+    qry.append(    " FOR READ COMMITTED ACCESS");
 
-    HSCursor necStmt;
+    HSCursor necStmt(STMTHEAP, "HS_NECESSARY_COLS_STMT");
     retcode = necStmt.prepareQuery(qry.data(), 0, 5);
     HSLogError(retcode);
     if (retcode < 0)
