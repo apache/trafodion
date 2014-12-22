@@ -1124,7 +1124,8 @@ SQLRETURN CStmt::SendSQLCommand(BOOL SkipProcess, SQLCHAR *StatementText,
 		}		
 		else if (strcmp(token, "SELECT") == 0)
 			m_StmtType = TYPE_SELECT;
-		else if ((strcmp(token, "INSERT") == 0) || (strcmp(token, "INS") == 0))
+		else if ((strcmp(token, "INSERT") == 0) || (strcmp(token, "INS") == 0) ||
+				 (strcmp(token, "UPSERT") == 0)) // added for "UPSERT" support
 			m_StmtType = TYPE_INSERT;
 		else if ((strcmp(token, "UPDATE") == 0) || (strcmp(token, "MERGE") == 0))
 			m_StmtType = TYPE_UPDATE;
