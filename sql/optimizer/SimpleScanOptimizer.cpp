@@ -1507,7 +1507,11 @@ SimpleFileScanOptimizer::categorizeMultiProbes(NABoolean *isAnIndexJoin)
   // partition only or for the group of partitions providing results for
   // the same ESP.
   //
-  probes_ = (getRepeatCount() * getNumActivePartitions()).minCsOne();
+  if (CmpCommon::getDefault(NCM_HBASE_COSTING) == DF_ON)
+    probes_ = (getRepeatCount() *
+               getEstNumActivePartitionsAtRuntimeForHbaseRegions()).minCsOne();
+  else
+    probes_ = (getRepeatCount() * getEstNumActivePartitionsAtRuntime()).minCsOne();
 
   // all the probes that don't have duplicates
   //
@@ -1658,7 +1662,10 @@ SimpleFileScanOptimizer::categorizeProbes(CostScalar& successfulProbes /* out */
     if (allPredHaveConstExpr)
     {
       successfulProbes = probes;
-      uniqueSuccProbes = getNumActivePartitions();
+      if (CmpCommon::getDefault(NCM_HBASE_COSTING) == DF_ON)
+        uniqueSuccProbes = getEstNumActivePartitionsAtRuntimeForHbaseRegions();
+      else
+        uniqueSuccProbes = getNumActivePartitions();
       duplicateSuccProbes = probes - uniqueSuccProbes;
       failedProbes = uniqueFailedProbes = csZero;
       *dataRows = numOuterProbes * getEffectiveTotalRowCount();
@@ -2561,8 +2568,13 @@ SimpleFileScanOptimizer::estimateEffTotalRowCount(
   NodeMap * nodeMapPtr = (NodeMap *)(getContext().getPlan()->
     getPhysicalProperty()->getPartitioningFunction()->getNodeMap());
 
-  effRowCount = MINOF( effRowCount, realRowCount *
-    getNumActivePartitions()/nodeMapPtr->getNumEntries() );
+  CostScalar actPart = getEstNumActivePartitionsAtRuntimeForHbaseRegions();
+
+  if (CmpCommon::getDefault(NCM_HBASE_COSTING) == DF_OFF)
+    actPart = getNumActivePartitions();
+
+  effRowCount = MINOF( effRowCount, 
+                       realRowCount * actPart/nodeMapPtr->getNumEntries() );
 
   return;
 } // SimpleFileScanOptimizer::estimateEffTotalRowCount()
