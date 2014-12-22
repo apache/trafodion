@@ -301,7 +301,7 @@ CoprocessorService, Coprocessor {
   // Transaction state defines
   private static final int COMMIT_OK = 1;
   private static final int COMMIT_OK_READ_ONLY = 2;
-  private static final int COMMIT_UNSUCCESSFUL = 3;
+  private static final int COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR = 3;
   private static final int COMMIT_CONFLICT = 5;
 
   private static final int CLOSE_WAIT_ON_COMMIT_PENDING = 1000;
@@ -1400,6 +1400,7 @@ CoprocessorService, Coprocessor {
     long nextCallSeq = request.getNextCallSeq();
     long count = 0L;
     boolean shouldContinue = true;
+    TransactionalRegionScannerHolder rsh = null;
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - scanner id " + scannerId + ", transaction id " + transId + ", numberOfRows " + numberOfRows + ", nextCallSeq " + nextCallSeq + ", closeScanner is " + closeScanner + ", region is " + regionInfo.getRegionNameAsString());
 
@@ -1481,8 +1482,7 @@ CoprocessorService, Coprocessor {
  
    }
 
-   TransactionalRegionScannerHolder rsh = 
-      scanners.get(scannerId);
+      rsh = scanners.get(scannerId);
 
    nextCallSeq++;
 
@@ -2981,10 +2981,9 @@ CoprocessorService, Coprocessor {
       result = true;
     } else {
       result = false;
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndDelete  setting result is " + result + " row: " + row);
     }
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndDelete  EXIT result is " + result + " row: " + row);
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  checkAndDelete EXIT - returns " + result + ", transId " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row));
 
     return result;
   }
@@ -3012,9 +3011,6 @@ CoprocessorService, Coprocessor {
     get.addColumn(family, qualifier);
     
     Result rs = this.get(transactionId, get);
-    if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: checkAndPut, txid: "
-               + transactionId + ", result is empty " + rs.isEmpty() +
-               ", value is " + Bytes.toString(value));
 
     boolean valueIsNull = value == null ||
                           value.length == 0;
@@ -3038,7 +3034,7 @@ CoprocessorService, Coprocessor {
       result = false;
     }
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  checkAndPut returns " + result + " for row: " + row);
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  checkAndPut EXIT - returns " + result + ", transId " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row));
 
     return result;
   }
@@ -3485,8 +3481,8 @@ CoprocessorService, Coprocessor {
     }
       // may change to indicate a NOTFOUND case  then depends on the TM ts state, if reinstated tx, ignore the exception
       if (state == null) {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest encountered unknown transactionID txId: " + transactionId + " returning COMMIT_UNSUCCESSFUL");
-        return COMMIT_UNSUCCESSFUL;
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest encountered unknown transactionID txId: " + transactionId + " returning COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR");
+        return COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR;
       }
 
     if (LOG.isInfoEnabled()) 
@@ -3512,7 +3508,7 @@ CoprocessorService, Coprocessor {
       if (LOG.isTraceEnabled()) LOG.trace("No conflicts for transaction " + transactionId
 		+ " found in region "
 		+ m_Region.getRegionInfo().getRegionNameAsString()
-		+ ". Voting for commit");
+		+ ". Votes to commit");
 
       // If there are writes we must keep record of the transaction
       putBySequenceStartTime = System.nanoTime();
@@ -3694,15 +3690,17 @@ CoprocessorService, Coprocessor {
     // Check transactions that were committed while we were running
       
     synchronized (commitedTransactionsBySequenceNumber) {
-    for (int i = state.getStartSequenceNumber(); i < nextSequenceId.get(); i++)
-    {
-      TransactionState other = commitedTransactionsBySequenceNumber.get(i);
-      if (other == null) {
-        continue;
+      for (int i = state.getStartSequenceNumber(); i < nextSequenceId.get(); i++)
+      {
+        TransactionState other = commitedTransactionsBySequenceNumber.get(i);
+        if (other == null) {
+          continue;
+        }
+
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: hasConflict state.getStartSequenceNumber  is " + i + ", nextSequenceId.get() is " + nextSequenceId.get() + ", state object is " + state.toString() + ", calling addTransactionToCheck");
+
+        state.addTransactionToCheck(other);
       }
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: has Conflict state.getStartSequenceNumber  is " + i + ", nextSequenceId.get() is " + nextSequenceId.get() + ", state object is " + state.toString() + ", calling addTransactionToCheck");
-      state.addTransactionToCheck(other);
-    }
     }
 
     return state.hasConflict();
