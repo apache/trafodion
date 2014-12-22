@@ -794,7 +794,7 @@ void RelExpr::transformSelectPred(NormWA &   normWARef,
   // so that when the new join introduced and its right child are being
   // transformed, we won't incorrectly use the selection predicates in
   // the subquery to convert left join elsewhere into inner join. This
-  // has been achieved now, so reseting the flag.
+  // has been achieved now, so resetting the flag.
   // ---------------------------------------------------------------------
       if (normWARef.subqUnderExprTree())
         normWARef.restoreSubqUnderExprTreeFlag();
@@ -990,7 +990,7 @@ RelExpr * RelExpr::semanticQueryOptimizeNode(NormWA & normWARef)
 // the RelExpr pointed to by "this" and promoting the outputs
 // of the children of each node so that the "this" node has all columns
 // required to produce the valueids in the parameter outputsNeeded. 
-// If all memebers of outputsNeeded cannot be produced due to the presence 
+// If all members of outputsNeeded cannot be produced due to the presence 
 // of some operator that does not allow outputs from children to flow through 
 // (like groupby or sequence) then this method returns FALSE.
 // Currently, this method is used towards the end of unnesting a tsj node.
@@ -1772,7 +1772,7 @@ void Join::rewriteNode(NormWA & normWARef)
   // -----------------------------------------------------------
   // When NOT_IN_OPTIMIZATION is ON we don't need to call 
   // tryToRewriteJoinPredicate method anymore. 
-  // We may need to remove this call and the method in the future ?Khaled
+  // We may need to remove this call and the method in the future
   if (CmpCommon::getDefault(COMP_BOOL_138) == DF_OFF && 
       CmpCommon::getDefault(NOT_IN_OPTIMIZATION) == DF_OFF) {
     tryToRewriteJoinPredicate(normWARef);
@@ -2049,7 +2049,7 @@ Join * Join::leftLinearizeJoinTree(NormWA & normWARef,
 
   // If we pulled anything up or R1 has a join predicate, we need to 
   // run recursive pushdown at the RelRoot to make sure we don't end up
-  // with predicates on unions and TSJs. This will happend at the end 
+  // with predicates on unions and TSJs. This will happen at the end 
   // of the SQO phase so we don't do any unnecessary tree walks.
   
   if ((!selectionPred().isEmpty() || !R1->joinPred().isEmpty() ) &&
@@ -3155,7 +3155,7 @@ RelExpr* GroupByAgg::nullPreservingTransformation(GroupByAgg* oldGB,
   
   // oldGBgrandchild is going to be the child of the filter from the
   // original tree. We use that references because we know that its
-  // outputs are correct and consistant at this point.
+  // outputs are correct and consistent at this point.
   RelExpr *oldGBgrandchild;
   if (oldGB->child(0)->getOperatorType() == REL_FILTER)
     oldGBgrandchild = oldGB->child(0)->child(0)->castToRelExpr();
@@ -4030,7 +4030,7 @@ NABoolean GroupByAgg::subqueryUnnestFinalize(ValueIdSet& newGrbyGroupExpr,
 }   // GroupByAgg::subqueryUnnestFinalize()
 
 /*----------------------------------------------------------------------------
-// Join::applyInnerKeyedAccessHueristic()
+// Join::applyInnerKeyedAccessHeuristic()
 //
 // Checks to see if the join predicate is on a key column of the inner table
 // and the key column is the leading key column.
@@ -4041,7 +4041,7 @@ NABoolean GroupByAgg::subqueryUnnestFinalize(ValueIdSet& newGrbyGroupExpr,
 // Sideffects: Doesn't change anything.
 -------------------------------------------------------------------------------*/
 
-NABoolean Join::applyInnerKeyedAccessHueristic(const GroupByAgg* newGrby, 
+NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby, 
 					       NormWA & normWARef)
 {
   RelExpr *oldGBgrandchild;
@@ -4052,16 +4052,16 @@ NABoolean Join::applyInnerKeyedAccessHueristic(const GroupByAgg* newGrby,
   else
     oldGBgrandchild = child(1)->child(0)->castToRelExpr();
 
-	// Apply inner table keyed scan hueristic. This hueristic turns off subquery
+	// Apply inner table keyed scan heuristic. This heuristic turns off subquery
 	// unnesting for this tsj if the join predicate is on a key column of the inner table.
-	// The hueristic applies only if the key column is the leading key column 
-	// of a base table or an index. No consideration is made for the selctivity
-	// of the index. This hueristic applies only if
+	// The heuristic applies only if the key column is the leading key column 
+	// of a base table or an index. No consideration is made for the selectivity
+	// of the index. This heuristic applies only if
 	// 1. comp_bool_168 is OFF
 	// 2. Inner side of tsj is a scan (not another subquery)
 	// 3. There is only one level of nesting or this is tree subquery
         // 4. The number of tables below this join is LEQ COMP_INT_46 (default value is 10)
-	// If there are multiple levels of nesting the benefit of this hueristic is 
+	// If there are multiple levels of nesting the benefit of this heuristic is 
 	// doubtful as unnesting the lowest level will allow higher levels to be unnested.
 	if((CmpCommon::getDefault(COMP_BOOL_168) == DF_OFF) &&
 	   (oldGBgrandchild->getOperatorType() == REL_SCAN) &&
@@ -4109,7 +4109,7 @@ NABoolean Join::applyInnerKeyedAccessHueristic(const GroupByAgg* newGrby,
 	}
       }
   return FALSE;
-}   // Join::applyInnerKeyedAccessHueristic()
+}   // Join::applyInnerKeyedAccessHeuristic()
 
 // -----------------------------------------------------------------------
 // Join::semanticQueryOptimizeNode().  This method facilitate the entry 
@@ -4341,7 +4341,7 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
     // the pullUpGroupByTransformation() since we want to cover the
     // the case of a Tree Query and we need to know if the newGrby requires
     // a moveUpGroupBy transformation.
-    if(applyInnerKeyedAccessHueristic((const GroupByAgg*)newGrby,normWARef))
+    if(applyInnerKeyedAccessHeuristic((const GroupByAgg*)newGrby,normWARef))
       return this;
       
     MapValueIds* newMap = NULL ;
@@ -5593,9 +5593,9 @@ RelExpr * Scan::normalizeNode
   // the following block of code can transform an OR predicate into
   //    semijoin(Scan, TupleList)
   // where the Scan is this scan node.
-  // The transformation is in general guarded by tight hueristics
+  // The transformation is in general guarded by tight heuristics
   // so that OR preds can be evaluated using a hash table (code in generator)
-  // selction preds of a scan node can be affected by this code block.
+  // selection preds of a scan node can be affected by this code block.
   ValueIdSet & preds = selectionPred();
   ValueId exprId;
   ItemExprList valuesListIE(normWARef.wHeap());
@@ -5612,9 +5612,9 @@ RelExpr * Scan::normalizeNode
     {
       // it is an OR pred. that meets the basic correctness conditions
       
-      if (!passSemiJoinHueristicCheck(exprId, valuesListIE.entries(), numParams, colVid))
+      if (!passSemiJoinHeuristicCheck(exprId, valuesListIE.entries(), numParams, colVid))
       {
-        continue;  // did not satisfy hueristics
+        continue;  // did not satisfy heuristics
       }
     
       TupleList * tl = new(normWARef.wHeap()) 
@@ -5637,7 +5637,7 @@ RelExpr * Scan::normalizeNode
                   newJoin, getGroupAttr()->getCharacteristicInputs());
      if(!(newJoin->getOperator().match(REL_SEMITSJ)))
        continue ;
-     // is an OR pred that passed the hueristics check
+     // is an OR pred that passed the heuristics check
      preds.remove(exprId);
     }
   }
@@ -5692,7 +5692,7 @@ RelExpr * Scan::normalizeNode
   return ((RelExpr *)newJoin);
 } // Scan::normalizeNode()
 
-/* This method applies a long list of hueristics to determine whether
+/* This method applies a long list of heuristics to determine whether
  its better to use a semijoin to evaluate the OR pred or if we should
  wait till the generator and use the hash table implementation
 OR_PRED_TO_SEMIJOIN = 0 ==> semijoin trans is turned OFF
@@ -5705,17 +5705,17 @@ OR_PRED_TO_JUMPTABLE = 0 ==> hash table trans is turned OFF in generator
 OR_PRED_TO_JUMPTABLE = <val2> ==> hash table implemenation shuts OFF for in lists 
 larger than this size. default value is 5,000
 
-OR_PRED_TO_SEMIJOIN_TABLE_MIN_SIZE : The key column hueristic applies only if table
-has more rows than this setting. Default is 10000. The key column hueristic says that 
+OR_PRED_TO_SEMIJOIN_TABLE_MIN_SIZE : The key column heuristic applies only if table
+has more rows than this setting. Default is 10000. The key column heuristic says that 
 semi join transformation can give a good plan only if number of rows read by probes coming
 in less than small fraction of a big table.
 
-OR_PRED_TO_SEMIJOIN_PROBES_MAX_RATIO : Relevant only to the key column hueristic. 
+OR_PRED_TO_SEMIJOIN_PROBES_MAX_RATIO : Relevant only to the key column heuristic. 
 This default specifies the ratio specified in the previous comment. 
 The default value is 0.10. Currently join preds on key columns and multiple IN 
-lists on key columns are not handled well by the key col hueristic.
+lists on key columns are not handled well by the key col heuristic.
 
-The other hueristic checked here relates to the partioning key. If the in list size 
+The other heuristic checked here relates to the partioning key. If the in list size 
 is less than half the number of partitions and the partitioning key is covered by 
 equality preds then we figue that it is better to do the semijoin transformation and 
 open only a few partitions. Opening a few partitions and sending on avg. one probe to each
@@ -5725,7 +5725,7 @@ is better than opening all the partitions and scanning the entire table once.
 The first argument vid is the giant OR predicate that we already know meets all
 logical criteria for transformation to semijoin.
 */
-NABoolean Scan::passSemiJoinHueristicCheck(ValueId vid, Lng32 numValues, 
+NABoolean Scan::passSemiJoinHeuristicCheck(ValueId vid, Lng32 numValues, 
                                      Lng32 numParams, ValueId colVid) const
 {
   Lng32 orPredToSemiJoin = 
@@ -5787,24 +5787,24 @@ NABoolean Scan::passSemiJoinHueristicCheck(ValueId vid, Lng32 numValues,
 
     if (partKeyColIndex != NULL_COLL_INDEX) // 'a' is a partitioning key column
     {
-      NABoolean applyPartKeyHueristic = FALSE;
+      NABoolean applyPartKeyHeuristic = FALSE;
       if ((numValues <  0.5*(idesc->getNAFileSet()->getCountOfPartitions())) &&
 	  isBigTable && (numValues > orPredToSemiJoin))
       {
         // number of clauses in IN List is less than half the number of partitions
-        applyPartKeyHueristic = TRUE;
+        applyPartKeyHeuristic = TRUE;
       }
       for (CollIndex i =0; 
-          (applyPartKeyHueristic && (i < partKeyCols.entries())); i++)
+          (applyPartKeyHeuristic && (i < partKeyCols.entries())); i++)
       {
         if (i == partKeyColIndex)
           continue ;
         if (!partKeyCols[i].getItemExpr()->doesExprEvaluateToConstant(FALSE,TRUE)) // equality preds on all part key columns, except 'a'
         {
-          applyPartKeyHueristic = FALSE;
+          applyPartKeyHeuristic = FALSE;
         }
       }
-      if (applyPartKeyHueristic)
+      if (applyPartKeyHeuristic)
         return TRUE;
     }
 
@@ -5879,7 +5879,7 @@ NABoolean Scan::passSemiJoinHueristicCheck(ValueId vid, Lng32 numValues,
     }  // end of isBigTable IF block
   } // end of loop over all index paths
 
-  // part key and key column hueristic did not apply
+  // part key and key column heuristic did not apply
   return FALSE;
 }
 
@@ -7855,7 +7855,7 @@ void TupleList::rewriteNode(NormWA & normWARef)
 //    IN : a reference to the location that contains a pointer to
 //         the RelExpr that is currently being processed.
 //
-// This implementation is basicly the same as the RelExpr:transformNode,
+// This implementation is basically the same as the RelExpr:transformNode,
 // but here we need to tranform each member of each ValueIdUnion of
 // transUnionVals().
 //
@@ -7969,7 +7969,7 @@ void Transpose::transformNode(NormWA &normWARef,
 // NormWA & normWARef
 //    IN : a pointer to the normalizer work area
 //
-// This implementation is basicly the same as RelExpr::rewriteNode()
+// This implementation is basically the same as RelExpr::rewriteNode()
 // but here we need to normalize each member of each ValueIdUnion of
 // transUnionVals().
 //

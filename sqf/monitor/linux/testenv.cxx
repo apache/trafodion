@@ -138,7 +138,7 @@ void process_startup (int argc, char *argv[])
     }
 }
 
-void flush_incomming_msgs( void )
+void flush_incoming_msgs( void )
 {
     int count;
     int rc;
@@ -146,7 +146,7 @@ void flush_incomming_msgs( void )
     bool done = false;
     MPI_Status status;
 
-    printf ("[%s] flush incomming event & notices.\n", MyName);
+    printf ("[%s] flush incoming event & notices.\n", MyName);
     fflush (stdout);
     do
     {
@@ -284,7 +284,7 @@ void exit_process (void)
                 ("[%s] Invalid MsgType(%d)/ReplyType(%d) for Exit message\n",
                  MyName, msg->type, msg->u.reply.type);
         }
-        flush_incomming_msgs();
+        flush_incoming_msgs();
         MPI_Comm_disconnect(&Monitor);
     }
     else

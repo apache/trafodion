@@ -68,7 +68,7 @@ char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 //forward procedures
 char *display_error (int err);
-void flush_incomming_msgs( void );
+void flush_incoming_msgs( void );
 int sendrecv (MPI_Comm comm, void *sbuf, int ssize, MPI_Datatype stype, 
               void *rbuf, int rsize, MPI_Datatype rtype, int stag, int rtag, MPI_Status *status=NULL);
 void wait_for_death_notice (void);
@@ -361,7 +361,7 @@ void exit_process (void)
                 printf ("[%s] exit process failed, rc=%s\n", MyName,
                         display_error(msg->u.reply.u.generic.return_code));
             }
-            flush_incomming_msgs ();
+            flush_incoming_msgs ();
         }
         else
         {
@@ -378,7 +378,7 @@ void exit_process (void)
     delete msg;
 }
 
-void flush_incomming_msgs( void )
+void flush_incoming_msgs( void )
 {
     int count;
     int complete = 0;
@@ -386,7 +386,7 @@ void flush_incomming_msgs( void )
     MPI_Status status;
     struct message_def *msg = NULL;
 
-    printf ("[%s] flush incomming event & notices.\n", MyName);
+    printf ("[%s] flush incoming event & notices.\n", MyName);
     fflush (stdout);
     do
     {

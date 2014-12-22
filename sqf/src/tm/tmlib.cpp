@@ -2412,7 +2412,7 @@ void TMLIB::phandle_set (TPT_PTR(pp_phandle), int pv_node)
                                           NULL, // don't care
                                           NULL); //sdon't care
 
-    TMlibTrace(("TMLIB_TRACE : phandle_set, recieved tm pid of %d for node %d\n", 
+    TMlibTrace(("TMLIB_TRACE : phandle_set, received tm pid of %d for node %d\n", 
         ia_tm_phandle[pv_node].iv_pid, pv_node), 3);
 }
 

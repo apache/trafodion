@@ -56,7 +56,7 @@ char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 MPI_Comm Monitor;
 struct message_def *msg;
 
-void flush_incomming_msgs( void );
+void flush_incoming_msgs( void );
 
 FILE *shell_locio_trace_file = NULL;
 
@@ -454,7 +454,7 @@ void exit_process (void)
                         msg->u.reply.u.generic.return_code);
             }
             save_msg = msg;
-            flush_incomming_msgs();
+            flush_incoming_msgs();
             msg = save_msg;
             MPI_Comm_disconnect( &Monitor );
         }
@@ -474,14 +474,14 @@ void exit_process (void)
     gp_local_mon_io->release_msg(msg);
 }
 
-void flush_incomming_msgs( void )
+void flush_incoming_msgs( void )
 {
     int count;
     int complete = 0;
     bool done = false;
     MPI_Status status;
 
-    printf ("[%s] flush incomming event & notices.\n", MyName);
+    printf ("[%s] flush incoming event & notices.\n", MyName);
     fflush (stdout);
     msg = NULL;
     do

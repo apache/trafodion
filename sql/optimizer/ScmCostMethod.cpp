@@ -1302,7 +1302,7 @@ SimpleFileScanOptimizer::scmComputeCostVectorsForHbase()
   tcProdInHCS = getResultSetCardinality();
   tcRcvdByHCS = tcProdInHRS;
 
-  // hueristics to favor serial plans for small queries
+  // heuristics to favor serial plans for small queries
   NABoolean costParPlanSameAsSer = FALSE;
   CostScalar parPlanRcLowerLimit = 2.0 * 
     ActiveSchemaDB()->getDefaults().getAsDouble(NUMBER_OF_ROWS_PARALLEL_THRESHOLD);
@@ -1513,7 +1513,7 @@ SimpleFileScanOptimizer::scmComputeCostVectorsMultiProbesForHbase()
   tcProdInHCS = getResultSetCardinality();
   tcRcvdByHCS = tcProdInHRS;
 
-  // hueristics to favor serial plans for small queries
+  // heuristics to favor serial plans for small queries
   NABoolean costParPlanSameAsSer = FALSE;
   CostScalar parPlanRcLowerLimit = 2.0 *
     ActiveSchemaDB()->getDefaults().getAsDouble(NUMBER_OF_ROWS_PARALLEL_THRESHOLD);

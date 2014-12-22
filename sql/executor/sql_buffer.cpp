@@ -1043,7 +1043,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
 //   Q_SQLERROR control tuples use their matchNo member to generate Q_NO_DATA 
 //   returned tuples.  In this way, the Q_SQLERROR is returned in proper order.
 //   In the following example, VSBB Insert was asked to insert 7 rows,
-//   but an error occured on the 4th.
+//   but an error occurred on the 4th.
 //   Buffer Layout:   E1M3  D1 C1 N2M4   N2M0 
 //   Returned Tuples: (N1M1), (N2M1), (N3M1), (E1M0 DATA DIAGS), 
 //                    (N4M1), (N5M1), (N6M1), (N7M1), (N8M0)
@@ -2560,7 +2560,7 @@ tupp_descriptor * sql_buffer_pool::get_free_tupp_descriptor(Lng32 tupDataSize,
   //SqlBuffer *currBuffer = (SqlBuffer*)getBuffer(neededSpace);
 	// this change is not really related to CIF changes but it may imrove 
 	// performance. I did a similar change to get_free_tuple function 
-	// few years ago and it improved performnace [khaled]
+	// few years ago and it improved performance
   SqlBuffer *currBuffer;
   if (!(currBuffer =getCurrentBuffer(neededSpace)))
   {

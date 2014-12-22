@@ -314,7 +314,7 @@ bool SPX_test3 ()
                                 ((tracing) ? 1: 0), childArgs,
                                 nid, pid, verifier, procName))
     {
-        printf("[%s] *** Error *** sucessfully started second SPX process %s "
+        printf("[%s] *** Error *** successfully started second SPX process %s "
                "(%d, %d:%d) on node 0.\n", MyName, procName, nid, pid, verifier);
         testSuccess = false;
     }
@@ -364,7 +364,7 @@ bool SPX_test4 ()
                                         ((tracing) ? 1: 0), childArgs,
                                         nid, pid, verifier, procName))
             {
-                printf("[%s] *** Error *** sucessfully started second SPX "
+                printf("[%s] *** Error *** successfully started second SPX "
                        "process %s (%d, %d) on physical node %d / logical "
                        "node %d.\n", MyName,
                        procName, nid, pid, nodeData->node[i].pnid,

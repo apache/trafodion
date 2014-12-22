@@ -254,7 +254,7 @@ public class SessionInterface implements SessionDefaults
       // so read the script file first and later can move to console mode
       // set the read mode to script file read mode.
       // for prun its always script file reading
-      // return an exception to the caller if the specified script file is not found or if some error occured
+      // return an exception to the caller if the specified script file is not found or if some error occurred
       
       if (scriptFile != null)
       {
@@ -279,7 +279,7 @@ public class SessionInterface implements SessionDefaults
       // if the log file is specified. log all the results ( errors/warnings and output) to the logfile instead of 
       // console
       // write the header for the log file here..with all blaahhaa.blaah..start time
-      // return to the caller if the log file is not found or io exception occured
+      // return to the caller if the log file is not found or io exception occurred
       if (logFileName != null)
       {
          try
@@ -740,7 +740,7 @@ public class SessionInterface implements SessionDefaults
                 }
                 catch (IOException e)
                 {
-                   System.out.println("IO Exception occured while processing conditional query :"+e);
+                   System.out.println("IO Exception occurred while processing conditional query :"+e);
                 }
 
             }
@@ -873,7 +873,7 @@ public class SessionInterface implements SessionDefaults
                continue;
             }catch (IOException e)
             {
-               System.out.println("IO Exception occured while processing interface query :"+e);
+               System.out.println("IO Exception occurred while processing interface query :"+e);
             }
 
             //Prun not supported in CS mode

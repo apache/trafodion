@@ -55,13 +55,13 @@ public class MultiThreadTest
 
             try
             {
-                stmt1.executeUpdate("drop table mt_employee");  // Remove table if alread present
+                stmt1.executeUpdate("drop table mt_employee");  // Remove table if already present
             }
-            catch (SQLException se1) {}                                 // Will come here if table not present
+            catch (SQLException se1) {}                         // Will come here if table not present
 
-            stmt1.executeUpdate(createEmployee);                       // Now Create new table
+            stmt1.executeUpdate(createEmployee);                // Now Create new table
 
-            stmt1.executeUpdate("insert into mt_employee " +   // Add data to table
+            stmt1.executeUpdate("insert into mt_employee " +    // Add data to table
                                 " values ('1/1/1900', " +
                                          "'John Doe', " +
                                          "1, "          +
@@ -130,7 +130,7 @@ public class MultiThreadTest
                 System.out.println("MultiThreadTest: Vendor Code : " + e.getErrorCode());
                 System.out.println("MultiThreadTest: SQLState : " + e.getSQLState());
             }
-            while ((next = next.getNextException()) != null);             // Retraive next exception if any
+            while ((next = next.getNextException()) != null);             // Retrieve next exception if any
         }
         Thread t;
         for (int i = 1 ; i <= noOfThreads ; i ++)

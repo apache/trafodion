@@ -16,13 +16,13 @@
 #
 # @@@ END COPYRIGHT @@@
 
-Following are the sample Java programs that illustrates the features
+Following are the sample Java programs that illustrate the features
 of Type2 Driver
 
-	T2Sample.java	
+	T2Sample.java
 	HoldCustorSample.java
 	MultiThreadTest.java
-	CreateDataSource.java	
+	CreateDataSource.java
 	TestDataSource.java
 	JdbcRowSetSample.java
 	TestConnectionPool.java
@@ -30,9 +30,9 @@ of Type2 Driver
 	ISO88591Sample.java
 	TransactionMode.java
 
-T2Sample.java 
+T2Sample.java
 -----------------
-This program illustrates the concept of loading the JDBC Type2 driver and 
+This program illustrates the concept of loading the JDBC Type2 driver and
 obtaining a JDBC connection using DriverManager.
 
 To compile this java program, issue the following command:
@@ -40,14 +40,14 @@ To compile this java program, issue the following command:
    javac T2Sample.java
 
 Then, run this Java program using the following command:
-      
+
    Set your CLASSPATH and LD_PRELOAD path
         export CLASSPATH=$MY_SQROOT/export/lib/jdbcT2.jar:.:$CLASSPATH
         export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib64d/libseabasesig.so
 
    java -Dt2jdbc.schema=<defaultCatalog>.<defaultSchema> T2Sample
 
-Where <defaultCatalog> and <defaultSchema> are the users default 
+where <defaultCatalog> and <defaultSchema> are the user's default
 catalog and schema, respectively.  The "-Dt2jdbc.schema" command line
 option can be removed if the default catalog and schema are the desired
 catalog and schema to be used.
@@ -59,53 +59,53 @@ DataSource and thereby avoiding embedding driver specific codes
 in the java programs.
 
 CreateDataSource.java creates the SQLMXDataSource object and registers
-it with Java Naming and Directory Interface (JNDI).  An additional package 
-is required in order to run the CreateDataSource sample. The File 
-System Service Provider package for accessing the file system can be 
+it with Java Naming and Directory Interface (JNDI).  An additional package
+is required in order to run the CreateDataSource sample. The File
+System Service Provider package for accessing the file system can be
 downloaded from the Oracle web site.
 
      1. Go to http://www.oracle.com/technetwork/java/javasebusiness/downloads/java-archive-downloads-java-plat-419418.html
 
      2. Scroll down to the "Download JNDI 1.2.1" section and
-	select "Download".
+        select "Download".
 
-     3. Accept the license agreement and select "File System Service 
-	Provider 1.2 BETA 3". Then download the fscontext-1_2-beta3.zip
-	zip file. 
- 
-     4. Unzip the fscontext-1_2-beta3.zip file. Under the lib directory, which 
-        was created by the unzip, are two jar files that you need to transfer 
-        to the system. These files are fscontext.jar and 
+     3. Accept the license agreement and select "File System Service
+        Provider 1.2 BETA 3". Then download the fscontext-1_2-beta3.zip
+        zip file.
+
+     4. Unzip the fscontext-1_2-beta3.zip file. Under the lib directory, which
+        was created by the unzip, are two jar files that you need to transfer
+        to the system. These files are fscontext.jar and
         providerutil.jar.
 
-     5. Put these files in the directory from which you run the demo and 
-	add these to your CLASSPATH environment variable. 
+     5. Put these files in the directory from which you run the demo and
+        add these to your CLASSPATH environment variable.
 
-Create a directory dataSources/jdbc in any directory before running this 
-program.  The recommended location is your current working directory. 
+Create a directory dataSources/jdbc in any directory before running this
+program.  The recommended location is your current working directory.
 
 To compile these programs, issue the following command:
 
-	javac CreateDataSource.java
-	javac TestDataSource.java
+   javac CreateDataSource.java
+   javac TestDataSource.java
 
 Then, run this Java program using the following command, assuming that
 fscontext.jar and providerutil.jar have been added to CLASSPATH:
 
-        mkdir -p dataSources/jdbc
-        java CreateDataSource `pwd`
-        java TestDataSource `pwd`
+   mkdir -p dataSources/jdbc
+   java CreateDataSource `pwd`
+   java TestDataSource `pwd`
 
-If the directory dataSources/jdbc is not in the current working directory, 
-substitute the correct path name for the `pwd`. 
+If the directory dataSources/jdbc is not in the current working directory,
+substitute the correct path name for the `pwd`.
 
 
 MultiThreadTest.java
 --------------------
 This program demonstrates the non-blocking JDBC Type2 feature. By default, this
-program creates two threads. These threads run concurrently while the JDBC Type2 
+program creates two threads. These threads run concurrently while the JDBC Type2
 driver is configured to run in non-blocking mode. This program displays the
-thread id and status of SQL operation before and after each operation. 
+thread id and status of SQL operation before and after each operation.
 In blocking mode, you will observe only one thread switch due to non-blocking
 BEGINTRANSACTION. In non-blocking mode you will observe many thread switches.
 
@@ -116,7 +116,7 @@ To compile this java program, issue the following command:
 Then, run this Java program using the following command:
 
 For non-blocking mode (default is non-blocking):
-    java MultiThreadTest
+   java MultiThreadTest
 
 For blocking mode :
    java -Dsql_nowait=off MultiThreadTest
@@ -126,7 +126,7 @@ HoldCustorSample.java
 ---------------------
 This program illustrates the holdable cursor support in JDBC Type2 driver.
 It creates a subscriber thread that subscribes to a message queue. When all
-the rows in the message queue are read, the subscriber times out after 5 
+the rows in the message queue are read, the subscriber times out after 5
 seconds.
 
 To compile this java program, issue the following command:
@@ -134,7 +134,7 @@ To compile this java program, issue the following command:
    javac HoldCursorSample.java
 
 Then, run this Java program using the following command:
-   
+
    java HoldCursorSample
 
 
@@ -147,14 +147,14 @@ running this program. See above for instructions to run CreateDataSource.java.
 This program makes a JDBC connection and executes a few SQL statements and
 closes the connection in a loop for 100 times.  Use the 'time' command to
 measure the performance benefits of connection and statement pooling in this
-program. 
+program.
 
 To compile this program, issue the following command:
 
    javac TestConnectionPool.java
 
-Then run this Java program using the following command, assuming that 
-fscontext.jar and providerutil.jar have been added to CLASSPATH (refer to 
+Then run this Java program using the following command, assuming that
+fscontext.jar and providerutil.jar have been added to CLASSPATH (refer to
 the CreateDataSource.java and TestDataSource.java demo information):
 
    time java TestConnectionPool <DataSourceDir> <TestType>
@@ -162,7 +162,7 @@ the CreateDataSource.java and TestDataSource.java demo information):
 Use the same value for <DataSourceDir> that was previously used when the
 CreateDataSource.java demo was executed.
 
-Where <TestType> can be 
+Here <TestType> can be
   0 : Using DataSource - Connection and Statement pooling enabled
   1 : Using DataSource - Connection enabled, but Statement pooling disabled
   2 : Using DataSource - Both Connection and Statement pooling disabled
@@ -180,14 +180,14 @@ To compile this java program, issue the following command:
    javac JdbcRowSetSample.java
 
 Then, run this Java program using the following command:
-   
+
    java JdbcRowSetSample
 
 
 LobSample.java <not currently supported>
 --------------
-This program demonstrates LOB functionality via the JDBC Type2 driver. The 
-program creates the LOB base and data tables, inserts BLOB/CLOB data via 
+This program demonstrates LOB functionality via the JDBC Type2 driver. The
+program creates the LOB base and data tables, inserts BLOB/CLOB data via
 the PreparedStatement interface, inserts an empty BLOB/CLOB row, then
 updates the empty BLOB/CLOB row with data using the blob and clob API
 interfaces.
@@ -197,10 +197,10 @@ To compile this java program, issue the following command:
    javac LobSample.java
 
 Then, run this Java program using the following command:
-   
+
    java -Dt2jdbc.catalog=<catalog> -Dt2jdbc.schema=<schema> LobSample
 
-Where <catalog> and <schema> are the users default Trafodion catalog and schema.
+where <catalog> and <schema> are the user's default Trafodion catalog and schema.
 
 
 ISO88591Sample.java
@@ -212,7 +212,7 @@ To compile this java program, issue the following command:
    javac -encoding Shift_JIS ISO88591Sample.java
 
 Then, run this Java program using the following command:
-   
+
    java -Dt2jdbc.ISO88591=SJIS ISO88591Sample
 
 
@@ -232,13 +232,13 @@ To compile this java program, issue the following command:
    javac TransactionMode.java
 
 Then, run this Java program using the following command:
-   
+
    java TransactionMode <DataSourceDir> <TestType>
 
 Use the same value for <DataSourceDir> that was previously used when the
 CreateDataSource.java demo was executed.
 
-where <TestType> can be:
+Here <TestType> can be:
   1 : Using DataSource - TransactionMode = 'internal'
   2 : Using DataSource - TransactionMode = 'mixed'
   3 : Using DataSource - TransactionMode = 'external'

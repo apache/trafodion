@@ -69,11 +69,11 @@ Benchmark::Benchmark(const char *func_name)
 	TRACE("Benchmark::Benchmark",("function name=%s",func_name));
 	if (!Initalized)
 	{
-		TRACE("Benchmark::Benchmark",("Initalized"));
+		TRACE("Benchmark::Benchmark",("Initialized"));
 		// One time class initialization
 		printf("Warning: Benchmarking active!\n");
 		fflush(stdout);
-		// Initalize jdbcUtil communications
+		// Initialize jdbcUtil communications
 		jdbcUtil = new JdbcUtil();
 		if ((jdbcUtilProcessId=jdbcUtil->addProcess(getpid()))<0)
 		{
@@ -91,7 +91,7 @@ Benchmark::Benchmark(const char *func_name)
 	}
 	// Save function name
 	functionName = func_name;
-	// Initalize benchmark information
+	// Initialize benchmark information
 	next = benchList;
 	benchList = this;
 	benchListSize++;
@@ -148,7 +148,7 @@ void Benchmark::Thread::setCurrentThread(unsigned long thread_id)
 {
 	TRACE("Benchmark::Thread::setCurrentThread",("thread id=%lu",thread_id));
 	unsigned long threadId;
-	
+
 	if (thread_id) threadId = thread_id;
 	else threadId = Benchmark::getThreadId();
 
@@ -173,7 +173,7 @@ void Benchmark::setCurrentTime(unsigned long thread_id)
 	TRACE("Benchmark::setCurrentTime",("function name=%s thread id=%lu",
 		functionName,thread_id));
 	unsigned long threadId;
-	
+
 	if (thread_id) threadId = thread_id;
 	else threadId = getThreadId();
 
@@ -526,7 +526,7 @@ void Benchmark::Report(const char *title, const char *dirname)
 			0,
 			0,
 			0);
-		
+
 	if (title) fprintf(outFile,"Benchmark Report: %s\n",title);
 	fprintf(outFile,"Process Id: %u  Thread Id: %lu\n",getpid(),currentThread->getThreadId());
 	Report(NULL,outFile);
@@ -542,7 +542,7 @@ void Benchmark::Report(const char *title, const char *dirname)
 			benchmark = benchmark->next;
 		}
 		QSort(sortedBenchmark,0,benchListSize-1);
-		for (int i=benchListSize-1; i>=0; i--) 
+		for (int i=benchListSize-1; i>=0; i--)
 			totalFunctionTicks += Report(sortedBenchmark[i],outFile);
 	}
 	fprintf(outFile,"------------------------------------------------------------------------------\n");

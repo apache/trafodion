@@ -32,7 +32,7 @@ class TransactionScannerCallable extends ScannerCallable {
   TransactionScannerCallable(final TransactionState transactionState,
       final HConnection connection, final byte[] tableName, Scan scan) {
 
-	// setting scanner metrics to null, may want to set one up later	  
+	// setting scanner metrics to null, may want to set one up later
     super(connection, tableName,  scan, null);
     this.transactionState = transactionState;
   }
@@ -44,12 +44,12 @@ class TransactionScannerCallable extends ScannerCallable {
 			// server).beginTransaction(transactionState
 			// .getTransactionId(), location.getRegionInfo().getRegionName());
 	  }
-	  // OSB: No server, need to revamp this
-	  // needs to get the ID from just the coprocessor, working on this currently with Joanie
+	  // No server, need to revamp this
+	  // needs to get the ID from just the coprocessor
 	  long id = (long) 0;
 	  //((TransactionalRegionInterface)this.server).openScanner(transactionState.getTransactionId(),
 		//		this.location.getRegionInfo().getRegionName(), this.getScan());
-	  
+
 	  return id;
   }
 }

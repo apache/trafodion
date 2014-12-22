@@ -775,7 +775,7 @@ public:
 					  NormWA & normWARef);
 
   // heuristic to unnest subquery if inner table has keyed access.
-  NABoolean applyInnerKeyedAccessHueristic(const GroupByAgg* newGrby, 
+  NABoolean applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby, 
 					       NormWA & normWARef);
 
 

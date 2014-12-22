@@ -1180,7 +1180,7 @@ short QueryId::process(SqlciEnv * sqlci_env)
   if (!stmtName) 
   // no statement name found Display error.
   {
-    sprintf(sprintfBuf, "No statment found. Enter command with valid statement name.");
+    sprintf(sprintfBuf, "No statement found. Enter command with valid statement name.");
     log->WriteAll(sprintfBuf);
     return 0;
   }

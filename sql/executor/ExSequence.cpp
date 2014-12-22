@@ -70,14 +70,13 @@ char *GetHistoryRowOLAP(void *data, Int32 n,
   if (n < 0) {
 // LCOV_EXCL_START
 // this path in the code is a safe garde and may not be hit
-// maybe we can chage to assert or may be we can remove in the future--Khaled
+// maybe we can chage to assert or may be we can remove in the future
     retcode = -1;   // ERROR condition
     return NULL;
 // LCOV_EXCL_STOP
   } else if (n >= tcb->maxNumberHistoryRows_ && 
              tcb->numberHistoryRows_ == tcb->maxNumberHistoryRows_) {
 // LCOV_EXCL_START
-// khaled
     retcode = -1;   // ERROR condition
     return NULL;
 // LCOV_EXCL_STOP
@@ -180,9 +179,9 @@ char *GetHistoryRow(void *data, Int32 n,
     return tcb->currentHistRowPtr_ - n * tcb->recLen() ; // offset back from first
   }
 // LCOV_EXCL_START
-// this code is used for the legacy sequence functions-- Not sure whther to add a test
-// for this as the sequnce functions are supposed to be replaced by OLAP functions
-// I am hiding this code from code coverage tool for now. -- khaled
+// this code is used for the legacy sequence functions-- Not sure whether to add a test
+// for this as the sequence functions are supposed to be replaced by OLAP functions
+// I am hiding this code from code coverage tool for now.
   // search the previous buffers
   HashBuffer * tmpBuf = tcb->currentOLAPBuffer_->getPrev();
   if (tmpBuf == NULL)
@@ -265,7 +264,7 @@ ExSequenceTcb::ExSequenceTcb (const ExSequenceTdb &  myTdb,
 
 #pragma warn(1506)  // warning elimination 
 
-  // Initilize the machinery for maintaining the row history for
+  // Initialize the machinery for maintaining the row history for
   // computing sequence functions.
   //
 
@@ -1135,7 +1134,7 @@ short ExSequenceTcb::work()
             if (qparent_.down->getHeadIndex() == processedInputs_)
               return WORK_CALL_AGAIN;
 
-            // Postion at the new head of the request queue.
+            // Position at the new head of the request queue.
             //
             pentry_down = qparent_.down->getHeadEntry();
             pstate = (ExSequencePrivateState*) pentry_down->pstate;
@@ -1360,7 +1359,7 @@ void ExSequenceTcb::initializeHistory()
   {
     if (!shrinkOLAPBufferList())
       // LCOV_EXCL_START
-      ex_assert(0,"initilaizeHistory-- can not shrink buffer list");
+      ex_assert(0,"initializeHistory-- can not shrink buffer list");
        // LCOV_EXCL_STOP
   }
 

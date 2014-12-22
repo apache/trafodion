@@ -683,9 +683,9 @@ public:
   inline void setWMSMonitorQuery(NABoolean b) {wmsMonitorQuery_ = b;}
   
  // set the state of a statement. As a side effect the statement
-  // is added or removed from the current contexts openStatementList
+  // is added or removed from the current context's openStatementList.
   // Thus, never set the state directly. Always use this method.
-  // The only "exeception" is the initialization list of the constructor
+  // The only "exception" is the initialization list of the constructor
   // of the statement.
   void setState(State state);
 

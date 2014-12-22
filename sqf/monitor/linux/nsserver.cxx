@@ -76,7 +76,7 @@ char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 void kill_peer (void);
 char *display_error (int err);
-void flush_incomming_msgs( void );
+void flush_incoming_msgs( void );
 int recv (MPI_Comm * comm, void *buf, int size, MPI_Datatype type, int tag, MPI_Status *status);
 void start_backup (int nid);
 bool takeover (void);
@@ -405,7 +405,7 @@ void exit_process (void)
                 printf ("[%s] exit process failed, rc=%s\n", DisplayName,
                         display_error (msg->u.reply.u.generic.return_code));
             }
-            flush_incomming_msgs ();
+            flush_incoming_msgs ();
             MPI_Comm_disconnect(&Monitor);
         }
         else
@@ -425,7 +425,7 @@ void exit_process (void)
 
 }
 
-void flush_incomming_msgs( void )
+void flush_incoming_msgs( void )
 {
     int count;
     int complete = 0;
@@ -433,7 +433,7 @@ void flush_incomming_msgs( void )
     MPI_Status status;
     struct message_def *msg = NULL;
 
-    printf ("[%s] flush incomming event & notices.\n", DisplayName);
+    printf ("[%s] flush incoming event & notices.\n", DisplayName);
     fflush (stdout);
     do
     {

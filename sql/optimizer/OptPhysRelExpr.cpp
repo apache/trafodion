@@ -3533,7 +3533,7 @@ ValueIdList NestedJoin::genWriteOpLeftChildSortReq()
 	if (NOT underCQS)
 	  requireOrderedWrites = FALSE;
       }
-      // for bulk load we require that data is sorted-- I made this change with help from Ravisha
+      // for bulk load we require that data is sorted
       if (updateTableDesc() && updateTableDesc()->getNATable()->isHbaseTable() &&
           getIsForTrafLoadPrep() && !requireOrderedWrites)
         requireOrderedWrites = TRUE;

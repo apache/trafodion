@@ -1485,7 +1485,7 @@ void ExUdrTcb::reportLoadReply(NABoolean loadWasSuccessful)
 // is not NULL then an IPC failure occurred on the connection. If conn
 // is NULL then some other type of error occurred that prevents the
 // TCB from continuing its work. For example, if a LOAD reply reports
-// that the LOAD was not succesful then the TCB cannot continue. The
+// that the LOAD was not successful then the TCB cannot continue. The
 // stream callback will first move diags from the stream into the TCB
 // statement globals area and then call this function with conn set to
 // NULL.
@@ -2994,7 +2994,7 @@ ExWorkProcRetcode ExUdrTcb::workCancel()
         // rows.
         
         // First make sure the server is working in the current
-        // transation
+        // transaction
 
         if (rsInfo_)
           rsInfo_->enterUdrTx(*myExeStmtGlobals());
@@ -3625,7 +3625,7 @@ ExWorkProcRetcode ExUdrTcb::tmudfCheckReceive()
 			  }
 			else
 			  {
-			    ex_assert(FALSE,"Udrserver has not specfied a valid table index");
+			    ex_assert(FALSE,"Udrserver has not specified a valid table index");
 			  }
 			releaseReplyBuffer();				  
 			done = TRUE;

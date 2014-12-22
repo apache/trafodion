@@ -18,18 +18,17 @@
 #
 # @@@ END COPYRIGHT @@@
 #
-#  Script by: Paul Chin
 #  version 0.01   Date: 2012-01-23
 #  version 1.00   Date: 2012-09-20
 #	added quick ping to verify if node is alive
-#       added use "node info" if monitor is up. 
+#       added use "node info" if monitor is up.
 #  This script is to ssh to physical node name via the logical node id
 #  USAGE "sqssh <nid>" to ssh to the physical node
 
 if [ $# -eq 1 ]
 then
     if [ "$1" -eq "$1" ] 2>/dev/null; then
-	
+
 	VARLEN=`expr length $1`
 	if [ `expr length $1` -le "3" ]
 	    then
@@ -37,7 +36,7 @@ then
 		1)
 		    VAR1="00"$1
 		    ;;
-		2)	
+		2)
 		    VAR1="0"$1
 		    ;;
 		*)
@@ -45,18 +44,18 @@ then
 		    ;;
 	    esac
 	    i=2
-	    while [ -z $PINGABLE ] 
+	    while [ -z $PINGABLE ]
 	      do
               #NODE=`echo $MY_NODES | awk '{print $2}'`
 	      NODE=`echo $MY_NODES | cut -d " " -f $i`
               #echo "ping -c 1 -q -W 5 $NODE|grep errors|wc -l"
-	      PINGABLE=`ping -c 1 -q -W 5 $NODE|grep errors|wc -l` 
+	      PINGABLE=`ping -c 1 -q -W 5 $NODE|grep errors|wc -l`
 	      i+=2
 	    done
 	    MYNODE=`pdsh -w $NODE shell -c "node info" |grep Up|grep -v Any|grep " $VAR1 "| awk '{print $9}'`
             #echo $MYNODE
 	    if [ -z $MYNODE ]
-		then 
+		then
 		MYNODE=`pdsh -w $NODE shell -c node|grep "Node\[\`echo $VAR1|sed "s/^[0]//"|sed "s/^[0]//"\`\]"| awk '{print $3}'|cut -d "=" -f 2|cut -d "," -f 1`
                 echo "=========================================="
 		echo "Seaquest Environment has not been started!"
@@ -66,7 +65,7 @@ then
 	    echo "==  ssh to $MYNODE"
 	    echo "=========================================="
 	    ssh $MYNODE
-	    
+
 	else
 	    echo ''
 	    echo 'variable can not be more than 3 characters'

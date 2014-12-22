@@ -46,7 +46,7 @@ public class UstatUtil extends Thread
    static boolean srunStatus=false;
    final static String scriptIndexFile=".scriptIndex";  // script Index property file which contains the list of scripts that can be executed
    static String lineSeperator=System.getProperty("line.separator");
-   
+
 
    public static void runStatsProfile(String arguments,String[] output) throws IOException
    {
@@ -217,7 +217,7 @@ public class UstatUtil extends Thread
                doneflag=true;
             } catch (IOException ote)
             {
-               System.out.println("Error occured in output Thread "+ote);
+               System.out.println("Error occurred in output Thread "+ote);
             }
          }
       };
@@ -247,7 +247,7 @@ public class UstatUtil extends Thread
                }
             }catch (IOException ete)
             {
-               System.out.println(" Error occured in error thread "+ete);
+               System.out.println(" Error occurred in error thread "+ete);
             }
          }
       };
@@ -266,7 +266,7 @@ public class UstatUtil extends Thread
             if (errStr.length() > 0)
             {
                errStr.delete(0, errStr.length());
-	       //     errStr.append("An internal server error has occured. Please contact support.");
+	       //     errStr.append("An internal server error has occurred. Please contact support.");
             }
          }
          int count = errStr.indexOf("/sh:");
@@ -359,7 +359,7 @@ public class UstatUtil extends Thread
          dbaScriptName = "dbonlinedump";
       else if (commandArr[0].equalsIgnoreCase("updatestats"))
          dbaScriptName = "updatestats";
-      
+
       if (dbaScriptName != null)
       {
          switch (len)
@@ -375,7 +375,7 @@ public class UstatUtil extends Thread
                   output[0] = handleExceptions(commandArr[0]);
                break;
             case 3:
-               if (commandArr[1].equalsIgnoreCase("AT")) 
+               if (commandArr[1].equalsIgnoreCase("AT"))
                   p = rt.exec("/usr/bin/sh eval " + dbaScriptName + " AT " + commandArr[2], envList, new File("/usr/tandem/nvscript/dbascripts"));
 
                else
@@ -401,7 +401,7 @@ public class UstatUtil extends Thread
       }
    }
 */
-  
+
    public static String handleExceptions(String str)
    {
 
@@ -415,7 +415,7 @@ public class UstatUtil extends Thread
 DROP PROCEDURE NEO.HP_USTAT.STATS_PROFILE;
 CREATE PROCEDURE NEO.HP_USTAT.STATS_PROFILE
   (
-    IN cmd VARCHAR(4000), 
+    IN cmd VARCHAR(4000),
     OUT response VARCHAR(240)
   )
   EXTERNAL NAME 'UstatUtil.runStatsProfile'

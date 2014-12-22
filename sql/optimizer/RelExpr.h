@@ -99,7 +99,7 @@ class QueryAnalysis;
 class GroupAnalysis;
 ////////////////////
 
-// used in hueristics to limit VSBB and SIDETREE inserts only if number rows
+// used in heuristics to limit VSBB and SIDETREE inserts only if number rows
 // being inserted is larger than this constant. Used in ImplRule.cpp and 
 // GenPreCode.cpp
 const Lng32 MIN_ROWS_FOR_VSBB = 100;

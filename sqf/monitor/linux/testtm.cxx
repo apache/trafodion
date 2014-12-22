@@ -118,7 +118,7 @@ struct sync_buf_def
 
 queue<struct message_def> unsolicited_queue; // unsolicited msg queue
 
-void flush_incomming_msgs( void );
+void flush_incoming_msgs( void );
 
 FILE *shell_locio_trace_file = NULL;
 
@@ -777,7 +777,7 @@ void process_startup (int argc, char *argv[])
     }
 }
 
-void flush_incomming_msgs( void )
+void flush_incoming_msgs( void )
 {
     int count;
    
@@ -786,7 +786,7 @@ void flush_incomming_msgs( void )
     MPI_Status status;
     struct message_def *msg = NULL;
 
-    trace_printf ("[%s] flush incomming event & notices.\n", MyName);
+    trace_printf ("[%s] flush incoming event & notices.\n", MyName);
     fflush (stdout);
     do
     {
@@ -925,7 +925,7 @@ void exit_process (void)
                 trace_printf ("[%s] exit process failed, rc=%d\n", MyName,
                         msg->u.reply.u.generic.return_code);
             }
-            flush_incomming_msgs();
+            flush_incoming_msgs();
             MPI_Comm_disconnect( &Monitor );
         }
         else

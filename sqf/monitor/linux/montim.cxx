@@ -90,7 +90,7 @@ static const string ProcessRequest = "CMonitor::ProcessRequest";
 static const string processrequest = "CMonitor::processrequest";
 static const string CloseProcess = "CMonitor::CloseProcess";
 static const string Close1Process = "CMonitor:CloseProcess";
-static const string Contianer_ExitProcess = "CProcessContianer::ExitProcess";
+static const string Container_ExitProcess = "CProcessContainer::ExitProcess";
 static const string ExitProcess = "CProcessContainer::ExitProcess";
 
 static const string MsgType_Close = " - Close is completed to";
@@ -792,7 +792,7 @@ int main(int argc, char *argv[])
       }
       if (routine == Sent_Event) routine = Send_Event;
       if (routine == Close1Process) routine = CloseProcess;
-      if (routine == Contianer_ExitProcess) routine = ExitProcess;
+      if (routine == Container_ExitProcess) routine = ExitProcess;
       if (routine == Monitor_ShareWithPeers || routine == SharedWithPeer) 
         routine = ShareWithPeers;
       if (!inProcNameList(&routine)) continue;

@@ -2867,7 +2867,7 @@ void CCluster::HandleReintegrateError( int rc, int err,
         break;
 
     case Reintegrate_Err15:
-        snprintf(buf, sizeof(buf), "[%s], no connect acknowlegement "
+        snprintf(buf, sizeof(buf), "[%s], no connect acknowledgement "
                  "for node %d: %s.\n", method_name, pnid,
                  ErrorMsg(rc));
         break;
@@ -3929,7 +3929,7 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                  (events[iEvent].events & EPOLLHUP) ||
                  ( !(events[iEvent].events & (EPOLLIN|EPOLLOUT))) )
             {
-                // An error has occured on this fd, or the socket is not
+                // An error has occurred on this fd, or the socket is not
                 // ready for reading nor writing
                 char buf[MON_STRING_BUF_SIZE];
                 snprintf( buf, sizeof(buf), "[%s@%d] event[i]() error %d\n",

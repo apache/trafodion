@@ -342,7 +342,7 @@ SQLRETURN GetJDBCValues( SQLItemDesc_def *SQLItemDesc,
 
 	if (SQLItemDesc->nullInfo)
 	{
-		// 2-byte boundry
+		// 2-byte boundary
 		totalMemLen = ((totalMemLen + 2 - 1) >> 1) << 1;
 		totalMemLen += sizeof(short) ;
 	}
@@ -766,8 +766,8 @@ SQLRETURN RSgetRSmax(SRVR_STMT_HDL *pSrvrStmt)
 	pSrvrStmt->RSMax = 0;
 
 	// Get RSMax (max SPJ Result Sets that can be returned for this stmt)
-	retcode = CLI_GetStmtAttr((SQLSTMT_ID *)pStmt,			// (IN) SQL statment ID
-		SQL_ATTR_MAX_RESULT_SETS,	// (IN) Request query statment attribute (max RS per stmt)
+	retcode = CLI_GetStmtAttr((SQLSTMT_ID *)pStmt,			// (IN) SQL statement ID
+		SQL_ATTR_MAX_RESULT_SETS,	// (IN) Request query statement attribute (max RS per stmt)
 		&max_num_rs,				// (OUT) Place to store Max resultsets
 		NULL,						// (OUT) Optional string
 		0,							// (IN) Max size of optional string buffer
@@ -1094,7 +1094,7 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 			break;
 
 		case SQL_SELECT_NON_UNIQUE:
-			DEBUG_OUT(DEBUG_LEVEL_CLI,("Non-Unique SELECT statment type."));
+			DEBUG_OUT(DEBUG_LEVEL_CLI,("Non-Unique SELECT statement type."));
 			retcode = CLI_Exec(pStmt, pInputDesc, 0);
 			break;
 
@@ -1544,9 +1544,9 @@ SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt)
 	}
 	else
 	{
-		retcode = CLI_GetStmtAttr( &pSrvrStmt->stmt,		// (IN) SQL statment ID
-			SQL_ATTR_QUERY_TYPE,		// (IN) Request query statment attribute
-			(int*)&SqlQueryStatementType,	// (OUT) Place to store query statment type
+		retcode = CLI_GetStmtAttr( &pSrvrStmt->stmt,		// (IN) SQL statement ID
+			SQL_ATTR_QUERY_TYPE,		// (IN) Request query statement attribute
+			(int*)&SqlQueryStatementType,	// (OUT) Place to store query statement type
 			NULL,					// (OUT) Optional string
 			0,						// (IN) Max size of optional string buffer
 			NULL );					// (IN) Length of item
@@ -2270,9 +2270,9 @@ SQLRETURN PREPARE_FROM_MODULE(SRVR_STMT_HDL* pSrvrStmt)
 	}
 	else
 	{
-		retcode = CLI_GetStmtAttr( &pSrvrStmt->stmt,		// (IN) SQL statment ID
-			SQL_ATTR_QUERY_TYPE,		// (IN) Request query statment attribute
-			&SqlQueryStatementType,	// (OUT) Place to store query statment type
+		retcode = CLI_GetStmtAttr( &pSrvrStmt->stmt,		// (IN) SQL statement ID
+			SQL_ATTR_QUERY_TYPE,		// (IN) Request query statement attribute
+			&SqlQueryStatementType,	// (OUT) Place to store query statement type
 			NULL,					// (OUT) Optional string
 			0,						// (IN) Max size of optional string buffer
 			NULL );					// (IN) Length of item
@@ -3085,9 +3085,9 @@ SQLRETURN PREPAREFORMFC(SRVR_STMT_HDL* pSrvrStmt)
 	}
 	else
 	{
-		retcode = CLI_GetStmtAttr( &pSrvrStmt->stmt,		// (IN) SQL statment ID
-			SQL_ATTR_QUERY_TYPE,		// (IN) Request query statment attribute
-			&SqlQueryStatementType,	// (OUT) Place to store query statment type
+		retcode = CLI_GetStmtAttr( &pSrvrStmt->stmt,		// (IN) SQL statement ID
+			SQL_ATTR_QUERY_TYPE,		// (IN) Request query statement attribute
+			&SqlQueryStatementType,	// (OUT) Place to store query statement type
 			NULL,					// (OUT) Optional string
 			0,						// (IN) Max size of optional string buffer
 			NULL );					// (IN) Length of item

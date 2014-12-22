@@ -608,7 +608,7 @@ short ExExplainTcb::work()
 	  
 	  // Copy the parameters out of the paramsTuple and into buffers
 	  // (modName_ and stmtPattern_) allocated by initParamsTuple().
-	  // This is so that the paramters can be Null Terminated and
+	  // This is so that the parameters can be Null Terminated and
 	  // treated as C-strings
 	  copyParameters();
 	  
@@ -858,7 +858,7 @@ ExExplainTcb::getNextExplainTree()
 	  return 0;
 	}
       
-      // A pointer to the statment being considered for a match
+      // A pointer to the statement being considered for a match
       Statement *stmt;
 
       // Reset the cursor to the beginning of the list of statements.
@@ -916,7 +916,7 @@ ExExplainTcb::getNextExplainTree()
 	      currentStmt_ = stmt;
 
 	      ex_assert(stmt->getRootTdb()->getNodeType() == ComTdb::ex_ROOT,
-			"Invald TDB Tree");
+			"Invalid TDB Tree");
 
 	      // Get the fragment directory of the statement.
 	      ExFragDir *fragDir = 
