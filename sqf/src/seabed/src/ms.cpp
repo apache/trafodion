@@ -1337,11 +1337,11 @@ SB_THROWS_FATAL {
         ms_gather_info(WHERE);
     }
 
-        if (ms_getenv_str(gp_ms_env_assert_chk) == NULL)
-            gv_ms_assert_chk = true;
-        if (gv_ms_trace_enable)
-            trace_where_printf(WHERE, "TCP set, MS_ASSERT_CHK=%d\n",
-                               gv_ms_assert_chk);
+    if (ms_getenv_str(gp_ms_env_assert_chk) == NULL)
+        gv_ms_assert_chk = true;
+    if (gv_ms_trace_enable)
+        trace_where_printf(WHERE, "TCP set, MS_ASSERT_CHK=%d\n",
+                           gv_ms_assert_chk);
 
     msg_mon_init();
 

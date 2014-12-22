@@ -463,12 +463,15 @@ void SB_Trans::Sock_Stream::process_events(int pv_events) {
                 switch (lp_r->iv_section) {
                 case RSECTION_HDR:
                     process_hdr(&lp_md, &lv_cont);
+                    // save in case EWOULDBLOCK
+                    lp_r->ip_md = lp_md;
                     break;
 
                 case RSECTION_CTRL:
                     lp_r->iv_section = RSECTION_DATA;
                     lv_len = lp_hdr->iv_dsize;
                     lp_rd->iv_data_len = lv_len;
+                    lp_md = lp_r->ip_md;
                     process_ctrl(lp_md, &lv_cont);
                     break;
 
@@ -1400,7 +1403,7 @@ void SB_Trans::Sock_Stream::recv_buf_cont(RInfo_Type *pp_r,
                                           la_errno,
                                           sizeof(la_errno)));
         pp_r->iv_state = RSTATE_EOF;
-    } else if (errno == EWOULDBLOCK)
+    } else if (lv_errno == EWOULDBLOCK)
         pp_r->iv_state = RSTATE_RCVING;
     else {
         iv_sock_errored = lv_errno;

@@ -59,42 +59,45 @@ namespace SB_Trans {
         Sock_Controller();
         virtual ~Sock_Controller();
 
-        void epoll_ctl(const char *pp_where,
-                       int         pv_op,
-                       int         pv_fd,
-                       int         pv_event,
-                       void       *pp_data);
-        void epoll_wait(const char *pp_where,
-                        int         pv_timeout);
-        int  set_nodelay(const char *pp_where,
-                         int         pv_sock);
-        int  set_nonblock(const char *pp_where,
-                          int         pv_sock);
-        int  set_reuseaddr(const char *pp_where,
-                           int         pv_sock);
-        int set_size_recv(const char *pp_where,
-                          int         pv_sock,
-                          int         pv_size);
-        int set_size_send(const char *pp_where,
-                          int         pv_sock,
-                          int         pv_size);
+        void        epoll_ctl(const char *pp_where,
+                              int         pv_op,
+                              int         pv_fd,
+                              int         pv_event,
+                              void       *pp_data);
+        void        epoll_wait(const char *pp_where,
+                               int         pv_timeout);
+        void        lock();
+        int         set_nodelay(const char *pp_where,
+                                int         pv_sock);
+        int         set_nonblock(const char *pp_where,
+                                 int         pv_sock);
+        int         set_reuseaddr(const char *pp_where,
+                                  int         pv_sock);
+        int         set_size_recv(const char *pp_where,
+                                  int         pv_sock,
+                                  int         pv_size);
+        int         set_size_send(const char *pp_where,
+                                  int         pv_sock,
+                                  int         pv_size);
         static void shutdown(const char *pp_where);
-        void shutdown_this(const char *pp_where);
-        void sock_add(const char *pp_where,
-                      int         pv_sock,
-                      Sock_EH    *pp_eh);
-        void sock_del(const char *pp_where,
-                      int         pv_sock);
-        void sock_mod(const char *pp_where,
-                      int         pv_sock,
-                      int         pv_events,
-                      Sock_EH    *pp_eh);
+        void        shutdown_this(const char *pp_where);
+        void        sock_add(const char *pp_where,
+                             int         pv_sock,
+                             Sock_EH    *pp_eh);
+        void        sock_del(const char *pp_where,
+                             int         pv_sock);
+        void        sock_mod(const char *pp_where,
+                             int         pv_sock,
+                             int         pv_events,
+                             Sock_EH    *pp_eh);
+        void        unlock();
 
     private:
         friend class Sock_Comp_Thread;
 
         Sock_Comp_Thread  *ip_comp_thread;
         Sock_Shutdown_EH  *ip_shutdown_eh;
+        SB_Thread::ECM     iv_ctlr_mutex;
         int                iv_efd;
     };
 
