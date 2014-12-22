@@ -2418,31 +2418,29 @@ CoprocessorService, Coprocessor {
     TransactionState state = null;
     boolean throwUTE = false;
 
-      state = transactionsById.get(getTransactionalUniqueId(transactionId));
+    String key = getTransactionalUniqueId(transactionId);
+    state = transactionsById.get(key);
 
     if (state == null) 
     {
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getTransactionState Unknown transaction: [" + transactionId + "], throwing UnknownTransactionException");              
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getTransactionState Unknown transaction: [" + transactionId + "], throwing UnknownTransactionException");
         throwUTE = true;
     }
-      else {
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getTransactionState Found transaction: [" + transactionId + "]");              
+    else {
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getTransactionState Found transaction: [" + transactionId + "]");
 
-    try {
-          transactionLeases.renewLease(getTransactionalUniqueId(transactionId));
-    } catch (LeaseException e) {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getTransactionState renewLease failed will try to createLease for transaction: [" + transactionId + "]");              
-          try {
-	    transactionLeases.createLease(
-                                   getTransactionalUniqueId(transactionId),
-				   transactionLeaseTimeout,
-				   new TransactionLeaseListener(transactionId));
-          } catch (LeaseStillHeldException lshe) {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getTransactionState renewLeasefollowed by createLease failed throwing original LeaseException for transaction: [" + transactionId + "]");              
-      throw new RuntimeException(e);
-    }
-        }
+      try {
+         transactionLeases.renewLease(key);
+      } catch (LeaseException e) {
+         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getTransactionState renewLease failed will try to createLease for transaction: [" + transactionId + "]");
+         try {
+            transactionLeases.createLease(key, transactionLeaseTimeout, new TransactionLeaseListener(transactionId));
+         } catch (LeaseStillHeldException lshe) {
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getTransactionState renewLeasefollowed by createLease failed throwing original LeaseException for transaction: [" + transactionId + "]");
+            throw new RuntimeException(e);
+         }
       }
+    }
 
     if (throwUTE)
       throw new UnknownTransactionException();
@@ -2461,7 +2459,7 @@ CoprocessorService, Coprocessor {
              + state.getTransactionId() + "]");              
 
     try {
-      transactionLeases.cancelLease(getTransactionalUniqueId(state.getTransactionId()));
+      transactionLeases.cancelLease(key);
     } catch (LeaseException le) {
       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: retireTransaction: [" 
                + state.getTransactionId() + "] LeaseException");              
@@ -2870,6 +2868,7 @@ CoprocessorService, Coprocessor {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: leaseExpired  Transaction " + s.getTransactionId()
                                 + " expired in COMMIT_PENDING state");
 
+        String key = getTransactionalUniqueId(s.getTransactionId());
         try {
           if (s.getCommitPendingWaits() > MAX_COMMIT_PENDING_WAITS) {
             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: leaseExpired  Checking transaction status in transaction log");
@@ -2879,16 +2878,13 @@ CoprocessorService, Coprocessor {
           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: leaseExpired  renewing lease and hoping for commit");
           s.incrementCommitPendingWaits();
           synchronized (transactionsById) {
-            transactionsById.put(getTransactionalUniqueId(s.getTransactionId()), s);
+            transactionsById.put(key, s);
             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: leaseExpired  Adding transaction: " + s.getTransactionId() + " to list");
           }
           try {
-            transactionLeases.createLease(
-            getTransactionalUniqueId(s.getTransactionId()),
-                                    transactionLeaseTimeout,
-                                    this); 
+            transactionLeases.createLease(key, transactionLeaseTimeout, this);
           } catch (LeaseStillHeldException e) {
-            transactionLeases.renewLease(getTransactionalUniqueId(s.getTransactionId()));
+            transactionLeases.renewLease(key);
           }
           } catch (IOException e) {
             throw new RuntimeException(e);
@@ -3244,11 +3240,9 @@ CoprocessorService, Coprocessor {
   public void beginTransaction(final long transactionId)
      throws IOException {
 
-    TransactionState state = null; 
-
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  beginTransaction -- ENTRY txId: " + transactionId);
     checkClosing(transactionId);
-                
+
     // TBD until integration with recovery 
     if (reconstructIndoubts == 0) {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  RECOV beginTransaction -- ENTRY txId: " + transactionId);
@@ -3258,30 +3252,30 @@ CoprocessorService, Coprocessor {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: Trafodion Recovery: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState);
     }
 
+    TransactionState state;
     synchronized (transactionsById) {
-      if (transactionsById.get(getTransactionalUniqueId(transactionId)) != null) {
-      TransactionState alias = getTransactionState(transactionId);
+//      if (transactionsById.get(getTransactionalUniqueId(transactionId)) != null) {
+//        TransactionState alias = getTransactionState(transactionId);
 
-      LOG.error("TrxRegionEndpoint coprocessor:  beginTransaction - Ignoring - Existing transaction with id ["
-          + transactionId + "] in region ["
-          + m_Region.getRegionInfo().getRegionNameAsString() + "]");
-                         
-      if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  beginTransaction -- EXIT txId: " + transactionId);
+//        LOG.error("TrxRegionEndpoint coprocessor:  beginTransaction - Ignoring - Existing transaction with id ["
+//                   + transactionId + "] in region [" + m_Region.getRegionInfo().getRegionNameAsString() + "]");
 
-      return;
-    }
+//        if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  beginTransaction -- EXIT txId: " + transactionId);
+
+//        return;
+//      }
 
       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  beginTransaction -- creating new TransactionState without coprocessorHost txId: " + transactionId);
 
-      state = new TransactionState(transactionId, 
+      state = new TransactionState(transactionId,
                                 //this.m_Region.getLog().getSequenceNumber(),
                                 nextLogSequenceId.getAndIncrement(),
                                 nextLogSequenceId,
                                 m_Region.getRegionInfo(),
                                 m_Region.getTableDesc(), tHLog, configuredEarlyLogging);
 
-    state.setFullEditInCommit(this.fullEditInCommit);
-    state.setStartSequenceNumber(nextSequenceId.get());
+      state.setFullEditInCommit(this.fullEditInCommit);
+      state.setStartSequenceNumber(nextSequenceId.get());
     }
 
     List<TransactionState> commitPendingCopy = 
@@ -3291,17 +3285,16 @@ CoprocessorService, Coprocessor {
             state.addTransactionToCheck(commitPending);
     }
 
+    String key = getTransactionalUniqueId(transactionId);
     synchronized (transactionsById) {
-      transactionsById.put(getTransactionalUniqueId(transactionId), state);
-                         
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  beginTransaction - Adding transaction: [" + transactionId + "] in region ["
+      transactionsById.put(key, state);
+    }
+
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  beginTransaction - Adding transaction: [" + transactionId + "] in region ["
                 + m_Region.getRegionInfo().getRegionNameAsString() + "]" +
                  " to list");
-
     try {
-	transactionLeases.createLease(getTransactionalUniqueId(transactionId),
-				      transactionLeaseTimeout,
-				      new TransactionLeaseListener(transactionId));
+      transactionLeases.createLease(key, transactionLeaseTimeout, new TransactionLeaseListener(transactionId));
     } catch (LeaseStillHeldException e) {
       LOG.error("TrxRegionEndpoint coprocessor:  beginTransaction - Lease still held for [" + transactionId + "] in region ["
                 + m_Region.getRegionInfo().getRegionNameAsString() + "]");
@@ -3310,7 +3303,6 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  beginTransaction -- EXIT txId: " + transactionId + " transactionsById size: " + transactionsById.size()
     		 + " region ID: " + this.regionInfo.getRegionId());
-  }
   }
 
   /**
@@ -3346,31 +3338,26 @@ CoprocessorService, Coprocessor {
   /**begin transaction if not yet
     * @param transactionId
     * @return true: begin; false: not necessary to begin
-    * @throws IOException 
+    * @throws IOException
    */
-  private TransactionState beginTransIfNotExist(final long transactionId)
-      throws IOException{
+  private TransactionState beginTransIfNotExist(final long transactionId) throws IOException{
 
-    TransactionState stateR = null;
-
-    synchronized (transactionsById) {
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: beginTransIfNotExist, txid: "
               + transactionId + " transactionsById size: "
               + transactionsById.size());
-    TransactionState state = null;
 
-      state = transactionsById.get(getTransactionalUniqueId(transactionId));
-
-    if (state == null) {
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  Begin transaction in beginTransIfNotExist beginning the transaction internally as state was null");
-      this.beginTransaction(transactionId);
-        //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:beginTransaction looking for begin transaction id " + transactionId + ", transactionsById " + transactionsById.size() + ", commitedTransactionsBySequenceNumber " + commitedTransactionsBySequenceNumber.size() + ", commitPendingTransactions " + commitPendingTransactions.size());
+    String key = getTransactionalUniqueId(transactionId);
+    synchronized (transactionsById) {
+      TransactionState state = transactionsById.get(key);
+      if (state == null) {
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  Begin transaction in beginTransIfNotExist beginning the transaction internally as state was null");
+        this.beginTransaction(transactionId);
+        state =  transactionsById.get(key);
+      }
+      return state;
     }
-
-      stateR =  transactionsById.get(getTransactionalUniqueId(transactionId));
-    }
-    return stateR;
   }
+
 
   /**
    * Commits the transaction

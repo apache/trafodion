@@ -427,13 +427,17 @@ public class TransactionState {
         }
         return false;
     }
-    private boolean hasConflict(final TransactionState checkAgainst) {
+    private boolean hasConflict(final TransactionState checkAgainst) throws Exception{
         if (checkAgainst.getStatus().equals(TransactionState.Status.ABORTED)) {
             return false; // Cannot conflict with aborted transactions
         }
 
         for (WriteAction otherUpdate : checkAgainst.writeOrdering) {
+          try {
             byte[] row = otherUpdate.getRow();
+            if (row == null) {
+              LOG.warn("TransactionState hasConflict: row is null - this Transaction [" + this.toString() + "] checkAgainst Transaction [" + checkAgainst.toString() + "] ");
+            }
             if (this.getTransactionId() == checkAgainst.getTransactionId())
             {
               if (LOG.isTraceEnabled()) LOG.trace("TransactionState hasConflict: Continuing - this Transaction [" + this.toString() + "] is the same as the against Transaction [" + checkAgainst.toString() + "]");
@@ -451,8 +455,14 @@ public class TransactionState {
                             + "], scanRange[" + scanRange.toString() + "] ,row[" + Bytes.toString(row) + "]");
                     return true;
                 }
+              }
             }
         }
+          catch (Exception e) {
+              LOG.warn("TransactionState hasConflict: Unable to get row - this Transaction [" + this.toString() + "] checkAgainst Transaction ["
+                       + checkAgainst.toString() + "] " + " Exception: " + e);
+              throw e;
+          }
         }
         return false;
     }
