@@ -364,6 +364,13 @@ void SB_Trans::Sock_Controller::epoll_wait(const char *pp_where,
     }
 }
 
+void SB_Trans::Sock_Controller::lock() {
+    int lv_status;
+
+    lv_status = iv_ctlr_mutex.lock();
+    SB_util_assert_ieq(lv_status, 0); // sw fault
+}
+
 int SB_Trans::Sock_Controller::set_nodelay(const char *pp_where,
                                            int         pv_sock) {
     int lv_err;
@@ -506,6 +513,8 @@ void SB_Trans::Sock_Controller::sock_add(const char *pp_where,
                            pv_sock,
                            EPOLLIN,
                            pp_eh);
+    // need lock - can only have one comp thread
+    gv_sock_ctlr.lock();
     if (ip_comp_thread == NULL) {
         ip_shutdown_eh = new Sock_Shutdown_EH();
         gv_sock_ctlr.epoll_ctl(pp_where,
@@ -519,6 +528,7 @@ void SB_Trans::Sock_Controller::sock_add(const char *pp_where,
             trace_where_printf(WHERE, "starting sock comp thread %s\n", la_name);
         ip_comp_thread->start();
     }
+    gv_sock_ctlr.unlock();
 }
 
 void SB_Trans::Sock_Controller::sock_del(const char *pp_where,
@@ -534,6 +544,13 @@ void SB_Trans::Sock_Controller::sock_mod(const char *pp_where,
                                          int         pv_events,
                                          Sock_EH    *pp_eh) {
     gv_sock_ctlr.epoll_ctl(pp_where, EPOLL_CTL_MOD, pv_sock, pv_events, pp_eh);
+}
+
+void SB_Trans::Sock_Controller::unlock() {
+    int lv_status;
+
+    lv_status = iv_ctlr_mutex.unlock();
+    SB_util_assert_ieq(lv_status, 0); // sw fault
 }
 
 SB_Trans::Sock_EH::Sock_EH() {
