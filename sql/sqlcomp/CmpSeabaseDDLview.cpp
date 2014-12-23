@@ -837,7 +837,8 @@ void CmpSeabaseDDL::createSeabaseView(
     }
 
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+    NATableDB::REMOVE_MINE_ONLY, COM_VIEW_OBJECT);
 
   deallocEHI(ehi); 
   processReturn();
@@ -1010,9 +1011,15 @@ void CmpSeabaseDDL::dropSeabaseView(
       return;
     }
 
+  // clear view definition from my cache only. 
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+    NATableDB::REMOVE_MINE_ONLY, COM_VIEW_OBJECT);
 
+  // clear view from all other caches here. This compensates for a 
+  // scenario where the object UID is not available in removeNATable, 
+  // and the look up failed too.  Solution is just to use the objectUID 
+  // here.
   SQL_QIKEY qiKey;
   qiKey.operation[0] = 'O';
   qiKey.operation[1] = 'R';
@@ -1033,7 +1040,8 @@ void CmpSeabaseDDL::dropSeabaseView(
                   STMTHEAP,
                   tablesRefdList[i].schemaName,
                   tablesRefdList[i].catalogName);
-      ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+        NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
     }
 
   deallocEHI(ehi); 

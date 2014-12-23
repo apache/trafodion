@@ -654,7 +654,8 @@ bool someObjectsCouldNotBeDropped = false;
 // remove NATable entry for this table
 CorrName cn(catalogName,STMTHEAP,schemaName,objectName);
 
-   ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+   ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+     NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
    
    cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
 

@@ -933,7 +933,8 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   deallocEHI(ehi);
 
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
 
   //  processReturn();
   
@@ -1561,14 +1562,17 @@ void CmpSeabaseDDL::dropSeabaseIndex(
 
   // remove NATable for the base table of this index
   CorrName cn(btObjName, STMTHEAP, btSchName, btCatName);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
 
   // remove NATable for this index in its real form as well as in its index_table
   // standalone format
   CorrName cni(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cni);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cni,
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_INDEX_OBJECT);
   cni.setSpecialType(ExtendedQualName::INDEX_TABLE);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cni);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cni,
+    NATableDB::REMOVE_MINE_ONLY, COM_INDEX_OBJECT);
   
   //  processReturn();
 
@@ -1666,7 +1670,12 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
 
   // remove NATable for the base table of this index
   CorrName cn(btObjName, STMTHEAP, btSchName, btCatName);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+  // Also, remove index.
+  CorrName cni(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cni,
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_INDEX_OBJECT);
 
   //  processReturn();
 
@@ -1785,7 +1794,8 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
         return;
     }
     CorrName cn( objectNamePart, STMTHEAP, NAString(schName), NAString(catName));
-    ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+    ActiveSchemaDB()->getNATableDB()->removeNATable(cn, 
+      NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
   }
 
   return ;
