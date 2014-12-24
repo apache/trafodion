@@ -87,6 +87,7 @@ ComSpace::ComSpace(SpaceType type, NABoolean fillUp, char *name)
 NA_EIDPROC
 ComSpace::~ComSpace()
 {
+  destroy();
 }
 
 void Space::setType(SpaceType type, Lng32 initialSize)

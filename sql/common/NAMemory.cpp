@@ -1273,20 +1273,6 @@ void NAMemory::reInitialize()
 
 NAMemory::~NAMemory()
 {
-  switch (derivedClass_)
-  {
-  case NAHEAP_CLASS:
-    break;
-  case COMSPACE_CLASS:
-    ((ComSpace *)this)->destroy();
-    break;
-  case DEFAULTIPCHEAP_CLASS:
-    ((DefaultIpcHeap *)this)->destroy();
-    break;
-  default:
-    assert(0);
-  }
-
 
 }
 
@@ -4317,6 +4303,7 @@ NAHeap::setAllocTrace()
 // Its dstr (defined here) is never explicitly called. 
 DefaultIpcHeap::~DefaultIpcHeap()
 {
+   destroy();
 }
 void DefaultIpcHeap::destroy()
 {

@@ -794,10 +794,10 @@ short ExTransaction::inheritTransaction()
 	  ((retcode == FEOK) && ((currentXnId != exeXnId_))))
         { 
 	  // caller aborted/committed/started a new Xn.
-	  // For each context that has matched tcbref, close all nonholdable
-          // cursors.
-	  // cliGlob_->closeAllOpenCursors(exeXnId_);
-	  
+	  // close all nonholdable cursors for the current context.
+	  cliGlob_->currContext()->closeAllCursors(ContextCli::CLOSE_ALL, 
+                      ContextCli::CLOSE_ENDED_XN);
+          
 	  if (exeStartedXn_)
 	    {
 	      // If executor has previously started the transaction,

@@ -305,7 +305,6 @@ SQLCLI_LIB_FUNC
 
 SQLCLI_LIB_FUNC
 
-  //void closeAllOpenCursors(Int64 transid);
 inline
   short getGlobalSbbCount()
       { return globalSbbCount_; }  
