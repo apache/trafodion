@@ -304,7 +304,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 			String temp = lf.format(lr);
 			connection_.props_.getLogWriter().println(temp);
 		}
-		return new String("Traf Database");
+		return new String("Trafodion");
 	}
 
 	/*

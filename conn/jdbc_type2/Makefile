@@ -56,7 +56,7 @@ OBJS = $(COMMON_OBJS) $(T2_OBJS)
 
 INCLUDES     = -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -Inative -I$(SQ_HOME)/../conn/odbc/src/odbc/dependencies/include -I$(SQ_HOME)/../conn/odbc/src/odbc/dependencies/linux -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../sql/common -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc
 
-COMMON_DEFINES = -D_LP64 -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DUSE_NEW_PHANDLE -DDISABLE_NOWAIT -D_FASTPATH -DTODO -D_SQ64 -w
+COMMON_DEFINES = -DTRAFODION_JDBCT2_VER_MAJOR=$(TRAFODION_VER_MAJOR) -DTRAFODION_JDBCT2_VER_MINOR=$(TRAFODION_VER_MINOR) -D_LP64 -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DUSE_NEW_PHANDLE -DDISABLE_NOWAIT -D_FASTPATH -DTODO -D_SQ64 -w
 
 DEFINES =  $(COMMON_DEFINES)
 
