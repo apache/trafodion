@@ -130,8 +130,9 @@ import org.apache.hadoop.hbase.regionserver.transactional.CleanOldTransactionsCh
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionScannerHolder;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionState;
-import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.TransactionScanner;
-import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.WriteAction;
+import org.apache.hadoop.hbase.regionserver.transactional.TrxTransactionState;
+import org.apache.hadoop.hbase.regionserver.transactional.TrxTransactionState.TransactionScanner;
+import org.apache.hadoop.hbase.regionserver.transactional.TrxTransactionState.WriteAction;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.CommitProgress;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.Status;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
@@ -203,15 +204,15 @@ CoprocessorService, Coprocessor {
   ConcurrentHashMap<String, Object> transactionsByIdTestz = null;
 
   // Collection of active transactions (PENDING) keyed by id.
-  protected ConcurrentHashMap<String, TransactionState> transactionsById = new ConcurrentHashMap<String, TransactionState>();
+  protected ConcurrentHashMap<String, TrxTransactionState> transactionsById = new ConcurrentHashMap<String, TrxTransactionState>();
 
   // Map of recent transactions that are COMMIT_PENDING or COMMITED keyed 
   // by their sequence number
 
-  private SortedMap<Integer, TransactionState> commitedTransactionsBySequenceNumber = Collections.synchronizedSortedMap(new TreeMap<Integer, TransactionState>());
+  private SortedMap<Integer, TrxTransactionState> commitedTransactionsBySequenceNumber = Collections.synchronizedSortedMap(new TreeMap<Integer, TrxTransactionState>());
 
   // Collection of transactions that are COMMIT_PENDING
-  private Set<TransactionState> commitPendingTransactions = Collections.synchronizedSet(new HashSet<TransactionState>());
+  private Set<TrxTransactionState> commitPendingTransactions = Collections.synchronizedSet(new HashSet<TrxTransactionState>());
 
   // an in-doubt transaction list during recovery WALEdit replay
   private Map<Long, List<WALEdit>> indoubtTransactionsById = new TreeMap<Long, List<WALEdit>>();
@@ -1768,8 +1769,8 @@ CoprocessorService, Coprocessor {
                      } 
                      break;
               case 2: // START
-                     List<TransactionState> commitPendingCopy = new ArrayList<TransactionState>(commitPendingTransactions);
-                     for (TransactionState commitPendingTS : commitPendingCopy) {
+                     List<TrxTransactionState> commitPendingCopy = new ArrayList<TrxTransactionState>(commitPendingTransactions);
+                     for (TrxTransactionState commitPendingTS : commitPendingCopy) {
                         long tid = commitPendingTS.getTransactionId();
                           if ((int) (tid >> 32) == tmId) {
                               indoubtTransactions.add(tid);
@@ -2410,12 +2411,12 @@ CoprocessorService, Coprocessor {
   /**
    * Gets the transaction state                   
    * @param long transactionId
-   * @return TransactionState
+   * @return TrxTransactionState
    * @throws UnknownTransactionException
    */
-  protected TransactionState getTransactionState(final long transactionId)
+  protected TrxTransactionState getTransactionState(final long transactionId)
    throws UnknownTransactionException {
-    TransactionState state = null;
+    TrxTransactionState state = null;
     boolean throwUTE = false;
 
     String key = getTransactionalUniqueId(transactionId);
@@ -2450,9 +2451,9 @@ CoprocessorService, Coprocessor {
 
   /**
    * Retires the transaction                        
-   * @param TransactionState state
+   * @param TrxTransactionState state
    */
-  private void retireTransaction(final TransactionState state) {
+  private void retireTransaction(final TrxTransactionState state) {
     String key = getTransactionalUniqueId(state.getTransactionId());
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: retireTransaction: [" 
@@ -2471,7 +2472,7 @@ CoprocessorService, Coprocessor {
       // Ignore
     }
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction clearState for: " + key + " from all its TransactionState lists");
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction clearState for: " + key + " from all its TrxTransactionState lists");
 
     // Clear out the structures in the state object
     state.clearState();
@@ -2485,7 +2486,7 @@ CoprocessorService, Coprocessor {
   public void choreThreadDetectStaleTransactionBranch() {
 
       List<Integer> staleBranchforTMId = new ArrayList<Integer>();
-      List<TransactionState> commitPendingCopy = new ArrayList<TransactionState>(commitPendingTransactions);
+      List<TrxTransactionState> commitPendingCopy = new ArrayList<TrxTransactionState>(commitPendingTransactions);
       int tmid, tm;
       long transactionId;
 
@@ -2498,7 +2499,7 @@ CoprocessorService, Coprocessor {
       byte [] lv_byte_region_info = regionInfo.toByteArray();
       String lv_encoded = regionInfo.getEncodedName();
 
-      for (TransactionState commitPendingTS : commitPendingCopy) {
+      for (TrxTransactionState commitPendingTS : commitPendingCopy) {
             if (commitPendingTS.getCPEpoch() < (controlPointEpoch.get() - 1)) {
                transactionId = commitPendingTS.getTransactionId();
                if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Endpoint CP: stale branch Txn id " + transactionId + " region info bytes " + new String(lv_byte_region_info));
@@ -2605,10 +2606,10 @@ CoprocessorService, Coprocessor {
 
   /**
    * Commits the transaction
-   * @param TransactionState state
+   * @param TrxTransactionState state
    * @throws IOException
    */
-  private void commit(final TransactionState state) throws IOException {
+  private void commit(final TrxTransactionState state) throws IOException {
     long txid = 0;
     WALEdit b = null;
     int num = 0;
@@ -2786,7 +2787,7 @@ CoprocessorService, Coprocessor {
     }
     }
 
-    if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  commit(tstate) -- EXIT TransactionState: " + 
+    if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  commit(tstate) -- EXIT TrxTransactionState: " + 
       state.toString());
 
     if (state.isReinstated()) {
@@ -2824,11 +2825,11 @@ CoprocessorService, Coprocessor {
 
   /**
    * Rssolves the transaction from the log
-   * @param TransactionState transactionState
+   * @param TrxTransactionState transactionState
    * @throws IOException 
    */
   private void resolveTransactionFromLog(
-    final TransactionState transactionState) throws IOException {
+    final TrxTransactionState transactionState) throws IOException {
     LOG.error("TrxRegionEndpoint coprocessor:  Global transaction log is not Implemented. (Optimisticly) assuming transaction commit!");
     commit(transactionState);
   }
@@ -2849,7 +2850,7 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  leaseExpired Transaction [" + this.transactionName
               + "] expired in region ["
               + m_Region.getRegionInfo().getRegionNameAsString() + "]");
-   TransactionState s = null;
+   TrxTransactionState s = null;
    synchronized (transactionsById) {
      s = transactionsById.remove(transactionName);
      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  leaseExpired Removing transaction: " + this.transactionName + " from list");
@@ -2907,7 +2908,7 @@ CoprocessorService, Coprocessor {
   public void delete(final long transactionId, final Delete delete)
     throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: delete -- ENTRY txId: " + transactionId);
-    TransactionState state = this.beginTransIfNotExist(transactionId);
+    TrxTransactionState state = this.beginTransIfNotExist(transactionId);
     state.addDelete(delete);
   }
 
@@ -2922,7 +2923,7 @@ CoprocessorService, Coprocessor {
     throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: deletes[], txid: " + transactionId);
 
-    TransactionState state = this.beginTransIfNotExist(transactionId);
+    TrxTransactionState state = this.beginTransIfNotExist(transactionId);
 
     for (Delete del : deletes) {
       state.addDelete(del);
@@ -2947,7 +2948,7 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: checkAndDelete, txid: "
                 + transactionId);
-    TransactionState state = this.beginTransIfNotExist(transactionId);
+    TrxTransactionState state = this.beginTransIfNotExist(transactionId);
     boolean result = false;
     byte[] rsValue = null;
 
@@ -2999,7 +3000,7 @@ CoprocessorService, Coprocessor {
                             byte[] qualifier, byte[] value, Put put)
     throws IOException {
 
-    TransactionState state = this.beginTransIfNotExist(transactionId);
+    TrxTransactionState state = this.beginTransIfNotExist(transactionId);
     boolean result = false;
     byte[] rsValue = null;
 
@@ -3090,7 +3091,7 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  RegionScanner getScanner -- ENTRY txId: " + transactionId );
 
-    TransactionState state = this.beginTransIfNotExist(transactionId);     
+    TrxTransactionState state = this.beginTransIfNotExist(transactionId);     
 
     state.addScan(scan);
 
@@ -3111,11 +3112,11 @@ CoprocessorService, Coprocessor {
   /**
    * Wraps the transactional scan with a delete filter
    * @param Scan scan
-   * @param TransactionState state
+   * @param TrxTransactionState state
    * @return Scan 
    */
   private Scan wrapWithDeleteFilter(final Scan scan,
-                                    final TransactionState state) {
+                                    final TrxTransactionState state) {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  wrapWithDeleteFilter -- ENTRY");
     FilterBase deleteFilter = new FilterBase() {
 
@@ -3170,7 +3171,7 @@ CoprocessorService, Coprocessor {
     throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: put - txid " + transactionId);
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: put, txid: " + transactionId);
-    TransactionState state = this.beginTransIfNotExist(transactionId);
+    TrxTransactionState state = this.beginTransIfNotExist(transactionId);
 
     state.addWrite(put);
   }
@@ -3201,7 +3202,7 @@ CoprocessorService, Coprocessor {
                       if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint Coprocessor:E11 Region " + regionInfo.getRegionNameAsString() + " process in-doubt transaction " + transactionId);
 
                       //TBD Need to get HLOG ???
-		      TransactionState state = new TransactionState(transactionId, /* 1L my_Region.getLog().getSequenceNumber()*/
+		      TrxTransactionState state = new TrxTransactionState(transactionId, /* 1L my_Region.getLog().getSequenceNumber()*/
                                                                                 nextLogSequenceId.getAndIncrement(), nextLogSequenceId, 
                                                                                 regionInfo, m_Region.getTableDesc(), tHLog, false);
 
@@ -3252,10 +3253,10 @@ CoprocessorService, Coprocessor {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: Trafodion Recovery: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState);
     }
 
-    TransactionState state;
+    TrxTransactionState state;
     synchronized (transactionsById) {
 //      if (transactionsById.get(getTransactionalUniqueId(transactionId)) != null) {
-//        TransactionState alias = getTransactionState(transactionId);
+//        TrxTransactionState alias = getTransactionState(transactionId);
 
 //        LOG.error("TrxRegionEndpoint coprocessor:  beginTransaction - Ignoring - Existing transaction with id ["
 //                   + transactionId + "] in region [" + m_Region.getRegionInfo().getRegionNameAsString() + "]");
@@ -3265,9 +3266,9 @@ CoprocessorService, Coprocessor {
 //        return;
 //      }
 
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  beginTransaction -- creating new TransactionState without coprocessorHost txId: " + transactionId);
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  beginTransaction -- creating new TrxTransactionState without coprocessorHost txId: " + transactionId);
 
-      state = new TransactionState(transactionId,
+      state = new TrxTransactionState(transactionId,
                                 //this.m_Region.getLog().getSequenceNumber(),
                                 nextLogSequenceId.getAndIncrement(),
                                 nextLogSequenceId,
@@ -3278,10 +3279,10 @@ CoprocessorService, Coprocessor {
       state.setStartSequenceNumber(nextSequenceId.get());
     }
 
-    List<TransactionState> commitPendingCopy = 
-        new ArrayList<TransactionState>(commitPendingTransactions);
+    List<TrxTransactionState> commitPendingCopy = 
+        new ArrayList<TrxTransactionState>(commitPendingTransactions);
 
-    for (TransactionState commitPending : commitPendingCopy) {
+    for (TrxTransactionState commitPending : commitPendingCopy) {
             state.addTransactionToCheck(commitPending);
     }
 
@@ -3340,7 +3341,7 @@ CoprocessorService, Coprocessor {
     * @return true: begin; false: not necessary to begin
     * @throws IOException
    */
-  private TransactionState beginTransIfNotExist(final long transactionId) throws IOException{
+  private TrxTransactionState beginTransIfNotExist(final long transactionId) throws IOException{
 
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: beginTransIfNotExist, txid: "
               + transactionId + " transactionsById size: "
@@ -3348,7 +3349,7 @@ CoprocessorService, Coprocessor {
 
     String key = getTransactionalUniqueId(transactionId);
     synchronized (transactionsById) {
-      TransactionState state = transactionsById.get(key);
+      TrxTransactionState state = transactionsById.get(key);
       if (state == null) {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  Begin transaction in beginTransIfNotExist beginning the transaction internally as state was null");
         this.beginTransaction(transactionId);
@@ -3378,7 +3379,7 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit(txId) -- ENTRY txId: " + transactionId +
               " ignoreUnknownTransactionException: " + ignoreUnknownTransactionException);
     CommitProgress commitStatus = CommitProgress.NONE;
-    TransactionState state;
+    TrxTransactionState state;
     try {
       state = getTransactionState(transactionId);
     } catch (UnknownTransactionException e) {
@@ -3434,7 +3435,7 @@ CoprocessorService, Coprocessor {
   public int commitRequest(final long transactionId) throws IOException {
     long txid = 0;
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest -- ENTRY txId: " + transactionId);
-    TransactionState state;
+    TrxTransactionState state;
 
     int lv_totalCommits = 0;
     int lv_timeIndex = 0;
@@ -3670,16 +3671,16 @@ CoprocessorService, Coprocessor {
 
   /**
    * Determines if the transaction has any conflicts
-   * @param TransactionState state
+   * @param TrxTransactionState state
    * @return boolean
    */
-  private boolean hasConflict(final TransactionState state) {
+  private boolean hasConflict(final TrxTransactionState state) {
     // Check transactions that were committed while we were running
       
     synchronized (commitedTransactionsBySequenceNumber) {
       for (int i = state.getStartSequenceNumber(); i < nextSequenceId.get(); i++)
       {
-        TransactionState other = commitedTransactionsBySequenceNumber.get(i);
+        TrxTransactionState other = commitedTransactionsBySequenceNumber.get(i);
         if (other == null) {
           continue;
         }
@@ -3706,7 +3707,7 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: abort transactionId: " + transactionId + " " + m_Region.getRegionInfo().getRegionNameAsString());
 
-    TransactionState state;
+    TrxTransactionState state;
     try {
       state = getTransactionState(transactionId);
     } catch (UnknownTransactionException e) {
@@ -4122,7 +4123,7 @@ CoprocessorService, Coprocessor {
       int numRemoved = 0;
 	 
       synchronized (commitedTransactionsBySequenceNumber) {
-      for (Entry<Integer, TransactionState> entry : new LinkedList<Entry<Integer, TransactionState>>(
+      for (Entry<Integer, TrxTransactionState> entry : new LinkedList<Entry<Integer, TrxTransactionState>>(
         commitedTransactionsBySequenceNumber.entrySet())) {
           if (entry.getKey() >= minStartSeqNumber) {
             break;
@@ -4171,16 +4172,16 @@ CoprocessorService, Coprocessor {
    */
   private Integer getMinStartSequenceNumber() {
 
-    List<TransactionState> transactionStates;
+    List<TrxTransactionState> transactionStates;
 
     synchronized (transactionsById) {
-      transactionStates = new ArrayList<TransactionState>(
+      transactionStates = new ArrayList<TrxTransactionState>(
       transactionsById.values());
     }
 
     Integer min = null;
 
-    for (TransactionState transactionState : transactionStates) {
+    for (TrxTransactionState transactionState : transactionStates) {
       if (min == null || transactionState.getStartSequenceNumber() < min) {
         min = transactionState.getStartSequenceNumber();
       }
