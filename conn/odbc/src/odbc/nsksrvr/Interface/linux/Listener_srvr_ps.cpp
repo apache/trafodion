@@ -28,9 +28,9 @@
 
 #include "Global.h"
 #include "SrvrConnect.h"
-#include <arpa/inet.h>        
+#include <arpa/inet.h>
 #include <sys/socket.h>
-#include <netdb.h> 
+#include <netdb.h>
 #include <ifaddrs.h>
 #include <linux/unistd.h>
 
@@ -69,7 +69,7 @@ bool CNSKListenerSrvr::ListenToPort(int port)
 				m_nListenSocketFnum = socket(AF_INET, SOCK_STREAM, 0);
 			}
 //LCOV_EXCL_STOP
-		} 
+		}
 		else
 			m_nListenSocketFnum = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -83,7 +83,7 @@ bool CNSKListenerSrvr::ListenToPort(int port)
 		}
 
         if(strncmp(m_TcpProcessName,"$ZTC0",5) != 0)
-        { 
+        {
 //LCOV_EXCL_START
 		   /*
 			* bind to a specific interface (m_TcpProcessName is initialized by default to $ztc0)
@@ -130,10 +130,10 @@ bool CNSKListenerSrvr::ListenToPort(int port)
            {
               SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, errorType_, "ListenToPort - no matching interface", O_INIT_PROCESS, F_SOCKET, errno, 0);
               goto bailout;
-           }		   
+           }
 //LCOV_EXCL_STOP
 		}
-		else 
+		else
 		{
 		   /*
 			* bind to all available interfaces
@@ -269,7 +269,7 @@ void* CNSKListenerSrvr::OpenTCPIPSession()
 		goto bailout;
 //LCOV_EXCL_STOP
 	}
-// clear/zero the set	
+// clear/zero the set
 	FD_ZERO(&read_fds_);
         FD_ZERO(&error_fds_);
 
@@ -332,12 +332,12 @@ void * CNSKListenerSrvr::tcpip_listener(void *arg)
    // Persistently wait for input on sockets and then act on it.
    while(listener->m_bTCPThreadKeepRunning)
    {
-      // Wait for ready-to-read on any of the tcpip ports 
+      // Wait for ready-to-read on any of the tcpip ports
       memcpy(&temp_read_fds, &listener->read_fds_, sizeof(temp_read_fds));
       memcpy(&temp_error_fds, &listener->error_fds_, sizeof(temp_error_fds));
 
       numReadyFds = select(listener->max_read_fd_+1, &temp_read_fds, NULL,&temp_error_fds,NULL);
-      
+
       srvrGlobal->mutex->lock();
 
       if (numReadyFds == -1)
@@ -378,7 +378,7 @@ void * CNSKListenerSrvr::tcpip_listener(void *arg)
             {
 
 		   short retries = 0;
-		   do 
+		   do
 		   {
 	               countRead = recv(pnode->m_nSocketFnum,
 	                                pnode->m_IObuffer,
@@ -469,10 +469,10 @@ int CNSKListenerSrvr::runProgram(char* TcpProcessName, long port, int TransportT
       fnum = m_ReceiveFnum;
 
 	  cc = AWAITIOX(&fnum, OMITREF, &countRead, &tag, timeout);
-	  if (_status_lt(cc)) // some error or XCANCEL 
+	  if (_status_lt(cc)) // some error or XCANCEL
 	  {
 //LCOV_EXCL_START
-             error=0; 
+             error=0;
              XFILE_GETINFO_(fnum, &error);
              if (error == 26) // XCANCEL was called
 	    {
@@ -484,7 +484,7 @@ int CNSKListenerSrvr::runProgram(char* TcpProcessName, long port, int TransportT
 	    }
 //LCOV_EXCL_STOP
 	  }
-	  
+
       TRACE_INPUT(fnum,countRead,tag,cc);
 
       if (fnum == m_ReceiveFnum)
@@ -545,7 +545,7 @@ void CNSKListenerSrvr::terminateThreads(int status)
 	  // If we're able to acquire the lock rightaway, it means the tcp/ip thread is
 	  // waiting on a select - we can then safely terminate the thread
 
-      /* 
+      /*
 	if(tcpip_tid != 0 && srvrGlobal->mutex->trylock() == 0)
          tcpip_listener_thr.cancel(tcpip_tid);
       */
@@ -561,7 +561,7 @@ void CNSKListenerSrvr::terminateThreads(int status)
    }
    else
    {
-      // we're in the tcp/ip thread - we can just cancel the outstanding 
+      // we're in the tcp/ip thread - we can just cancel the outstanding
 	  // readupdate posted on $receive and exit the thread
       int cc = XCANCEL(m_ReceiveFnum);
       tcpip_listener_thr.exit(NULL);
@@ -594,8 +594,6 @@ bool CNSKListenerSrvr::verifyPortAvailable(const char * idForPort, int port)
 				  "verifyPortAvailable", O_INIT_PROCESS, F_SOCKET, errno, 0);
 		return false;
 	}
-	sprintf(tmp,"verifyPortAvailable[%d][%d][%d]", port, m_nListenSocketFnum, m_bIPv4 );
-	SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, errorType_, tmp, O_INIT_PROCESS, F_SOCKET, 0, 0);
 
    /*
 	* bind to all available interfaces
@@ -645,8 +643,6 @@ bool CNSKListenerSrvr::verifyPortAvailable(const char * idForPort, int port)
 				  SO_KEEPALIVE);
 		return false;
 	}
-	sprintf(tmp,"verifyPortAvailable:[%d]",port);
-	SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, errorType_, tmp, O_INIT_PROCESS, F_BIND, 0, 0);
 	return true;
 }
 

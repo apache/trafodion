@@ -969,6 +969,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_REPEATABLE_ACCESS   /* Tandem extension */
 %token <tokval> TOK_REPEATABLE_READ
 %token <tokval> TOK_REPLACE
+%token <tokval> TOK_REPOSITORY
 %token <tokval> TOK_REQUEST            
 %token <tokval> TOK_REQUIRED            /* Tandem extension non-reserved word */
 %token <tokval> TOK_RESET
@@ -15760,6 +15761,55 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
                  $$ = de;
 
                }
+
+            | TOK_INITIALIZE TOK_TRAFODION ',' TOK_CREATE TOK_REPOSITORY
+               {
+		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
+							  (char*)stmt->data(),
+							  stmtCharSet);
+
+                 de->setCreateRepos(TRUE);
+
+                 $$ = de;
+               }
+
+           | TOK_INITIALIZE TOK_TRAFODION ',' TOK_DROP TOK_REPOSITORY
+               {
+		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
+							  (char*)stmt->data(),
+							  stmtCharSet);
+
+                 de->setDropRepos(TRUE);
+
+                 $$ = de;
+               }
+
+           | TOK_INITIALIZE TOK_TRAFODION ',' TOK_UPGRADE TOK_REPOSITORY
+               {
+		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
+							  (char*)stmt->data(),
+							  stmtCharSet);
+
+                 de->setUpgradeRepos(TRUE);
+
+                 $$ = de;
+               }
+
              | TOK_INITIALIZE TOK_AUTHORIZATION
                {
 		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
@@ -32010,6 +32060,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_RELOAD
                       | TOK_REMOTE
                       | TOK_RENAME
+                      | TOK_REPOSITORY
                       | TOK_REQUEST // MV
                       | TOK_REQUIRED
                       | TOK_RESET

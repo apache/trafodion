@@ -11,9 +11,6 @@ export/lib*/redist-gcc-*/lib*
 lost+found
 smoketest
 softdoc
-seapilot/export/mibs/.index
-seapilot/export/include/vers/versbin.h
-seapilot/export/include/vers/verslib.h
 sql/database
 sql/nqst
 sql/scripts/*.log

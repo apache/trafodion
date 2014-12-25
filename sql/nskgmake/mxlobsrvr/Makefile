@@ -45,7 +45,6 @@ DEP_LIBS :=  \
 		tdm_ds \
 		tdm_uofs \
 		lmcomp \
-		log4cpp \
 		tdm_sqlshare \
 		arkcmp_dll
 
@@ -67,7 +66,6 @@ DEP_LIBS :=  \
 		sort \
 		tdm_sqlmxevents \
 		lmcomp \
-		log4cpp \
 		tdm_sqlshare \
 		arkcmp_dll
 
@@ -82,6 +80,8 @@ endif
 
 EXTERN_LIBS := $(XMPIROOT)/libsbms.so \
                 $(XMPIROOT)/libstmlib.so 
+
+EXTERN_LIBS += $(LIBROOT)/liblog4cpp.so
 
 EXTRA_LIBS := $(ODBC_LIB)
 

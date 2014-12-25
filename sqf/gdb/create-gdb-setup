@@ -59,9 +59,7 @@ fi
 
 SQLIB_DIRS="\
 $MPI_DIR \
-export/lib$SQ_MBTYPE \
-seapilot/export/lib \
-seapilot/thirdparty_export/lib\
+export/lib$SQ_MBTYPE\
 "
 
 branch=`sqid | grep Release | sed -e 's|^.*branch ||' -e 's|,.*||' -e 's|\/|-|'`

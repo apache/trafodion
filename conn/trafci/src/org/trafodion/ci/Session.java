@@ -695,16 +695,6 @@ static {
       this.fwObj = fwObj;
    }
 
-   public String getServiceName()
-   {
-      return serviceName;
-   }
-
-   public void setServiceName(String serviceName)
-   {
-      this.serviceName = serviceName;
-   }
-
    public String getStrDisplayFormat()
    {
       return strDisplayFormat;

@@ -136,7 +136,7 @@ GenericUpdate(const CorrName &name,
     uniqueRowsetHbaseOper_(FALSE),
     canDoCheckAndUpdel_(FALSE),
     noDTMxn_(FALSE),
-     noCheck_(FALSE)
+    noCheck_(FALSE)
   {}
 
   // copy ctor

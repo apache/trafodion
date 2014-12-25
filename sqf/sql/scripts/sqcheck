@@ -32,7 +32,7 @@ function Usage {
     echo 
     echo "-i <nn>  Number of times the check for SQ processes be done (Default $max_checks)"
     echo "-d <nn>  Duration of sleep (in seconds) between each check  (Default $sleep_duration)"
-    echo "-c <cc>  Which component to check: [all | dtm | mxcs | rms ] (Default $sqck_component)"
+    echo "-c <cc>  Which component to check: [all | dtm | dcs | rms ] (Default $sqck_component)"
     echo "-f       fast - (it's like running $0 -i 1 -d 0)"
     echo "-r       reset the iteration counter if the process count increases (as compared to the count in the last iteration)"
     echo "-h       Help"
@@ -53,7 +53,7 @@ function GetOpts {
           (
               [ $t_ck == "all" ] || 
               [ $t_ck == "dtm" ] ||
-              [ $t_ck == "mxcs" ] ||
+              [ $t_ck == "dcs" ] ||
               [ $t_ck == "rms" ]
           ); then 
               sqck_component=${OPTARG}
@@ -131,16 +131,21 @@ declare -i sq_up
 
 declare -i cfg_dtm_cnt
 declare -i cfg_rms_cnt
+declare -i cfg_mxo_cnt
 declare -i cfg_lnode_cnt
 declare -i cfg_pnode_cnt
 
 let act_dtm_cnt=0
 let act_rms_cnt=0
+let act_mxo_cnt=0
 
 let act_lnode_down_cnt=0
 let act_pnode_down_cnt=0
 let act_lnode_up_cnt=0
 let act_pnode_up_cnt=0
+
+let cfg_mxo_cnt=0
+let act_mxo_down_cnt=0
 
 let last_dtm_cnt=0
 let last_rms_cnt=0
@@ -206,6 +211,16 @@ for dtms in `cat $sq_tmp_dtms_names`; do
 done
 #echo ${cfg_dtms[*]}
 rm -f $sq_tmp_dtms_names
+
+### CONFIGURED MXOSRVR
+if [ -z ${DCS_INSTALL_DIR} ]; then
+   let cfg_mxo_cnt=0
+else
+  if [ -f ${DCS_INSTALL_DIR}/conf/servers ]; then
+     let cfg_mxo_cnt=`cat $DCS_INSTALL_DIR/conf/servers|awk '{if ($2=="") k=1;else k=$2;cnt+=k} END {print cnt}'`
+  fi
+fi
+
 
 ### CONFIGURED RMSs 
 if [[ $SQ_START_RMS == "1" ]]; then
@@ -277,7 +292,13 @@ do
           fi
       done
   fi
- 
+
+  #MXOSRVR
+  let act_mxo_cnt=`< $sq_tmp_ps egrep -a -i ' mxosrvr' | wc -l`
+  if ( [ "$act_mxo_cnt" '!=' "$cfg_mxo_cnt" ] ); then 
+    let act_mxo_down_cnt=act_mxo_cnt-cfg_mxo_cnt
+  fi 
+
   #RMS
   let act_rms_cnt=`< $sq_tmp_ps egrep -a -i ' mxssmp| mxsscp' | wc -l`
   if [ $reset_counter '==' 1 ]; then
@@ -360,20 +381,8 @@ do
       else
           let cmp_result=(act_rms_cnt '==' cfg_rms_cnt)
       fi
-  elif [[ $sqck_component == "mxcs" ]]; then
-      let act_oas_cnt=`< $sq_tmp_ps grep -a -i mxoas | wc -l`
-      let act_ocf_cnt=`< $sq_tmp_ps grep -a -i mxocfg | wc -l`
-      let act_osr_cnt=`< $sq_tmp_ps grep -a -i mxosrvr | wc -l`
-      let cmp_result=(act_oas_cnt '>' 0 '&&' act_ocf_cnt '>' 0 '&&' act_osr_cnt '>' 0)
-      if [ $cmp_result '==' 1 ]; then
-          echo
-          echo "MXCS processes are up!"
-          echo
-      else
-          echo
-          echo "MXCS processes are not up."
-          echo
-      fi
+  elif [[ $sqck_component == "dcs" ]]; then
+       let cmp_result=(act_mxo_cnt '>' 0 )
   fi
 
   if [ $debug_display '==' 1 ]; then
@@ -427,18 +436,19 @@ if [[ $sqck_component == "all" ]]; then
     fi
 fi
 
-if [[ $sqck_component != "mxcs" ]]; then
-       echo
-       echo -e "Process\t\tConfigured\tActual\t    Down"
-       echo -e "-------\t\t----------\t------\t    ----"
-fi
+echo
+echo -e "Process\t\tConfigured\tActual\t    Down"
+echo -e "-------\t\t----------\t------\t    ----"
 if [[ $sqck_component == "all" ]]; then
     echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}"
-    echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}\n"
+    echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}"
+    echo -e "MXOSRVR\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt#-}\n"
 elif [[ $sqck_component == "dtm" ]]; then
     echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}\n"
 elif [[ $sqck_component == "rms" ]]; then
     echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}\n"
+elif [[ $sqck_component == "dcs" ]]; then
+    echo -e "MXOSRVR\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt#-}\n"
 fi
 
 if [ $sq_up '==' 1 ]; then

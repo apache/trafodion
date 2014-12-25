@@ -2282,7 +2282,7 @@ SQL_EXEC_Fetch(&__SQL_id0,&__SQL_id1,2,&(defaultValue[0]),(long)0,
    
   if (SQLCODE == 0)
   {
-    assertLogAndThrow(CAT_QR_COMMON, LL_ERROR,
+    assertLogAndThrow(CAT_SQL_COMP_QR_COMMON, LL_ERROR,
                       textSize < MAX_DEFAULTS_VALUE, QRDatabaseException,
                       "System default value is too large");
     memcpy(value, defaultValue, textSize);

@@ -31,7 +31,7 @@
 #include "SQLTypeDefs.h"
 
 #include "ExpHbaseInterface.h"
-#include "HdfsLogger.h"
+#include "QRLogger.h"
 
 #include  "cli_stdh.h"
 #include "exp_function.h"

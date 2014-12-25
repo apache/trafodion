@@ -36,7 +36,6 @@ DEP_LIBS := tdm_sqlcli \
 		sort \
 		tdm_sqlmxevents \
 		lmcomp \
-		log4cpp \
 		tdm_sqlshare \
 		arkcmp_dll
 
@@ -45,3 +44,5 @@ DEP_LIBS := tdm_sqlcli \
 # ifneq (,$(PROFILE))
 
 SRCPATH := bin cli catman smdio export runtimestats porting_layer
+
+EXTERN_LIBS += $(LIBROOT)/liblog4cpp.so

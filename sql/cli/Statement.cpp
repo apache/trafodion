@@ -1592,31 +1592,29 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 #ifdef _DEBUG
   if (getenv("TEST_INFO_EVENT"))
     {
+
+      SQLMXLoggingArea::logSQLMXEventForError(0000, "Dummy Error with Dummy SQCode and QID", "DummyQID", FALSE);
+
       SQLMXLoggingArea::logExecRtInfo("Statement.cpp",999,"Testing info event", 999);
-      SQLMXLoggingArea::logSQLMXPredefinedEvent(503,SQLMXLoggingArea::TraceData);
-      SQLMXLoggingArea::logSQLMXPredefinedEvent(504,SQLMXLoggingArea::TraceData);
+      
       SQLMXLoggingArea::logSQLMXAbortEvent("Statement.cpp",888, "testing abort event");
       SQLMXLoggingArea::logSQLMXAssertionFailureEvent("Statement.cpp",777,"testing assertion failure");
       SQLMXLoggingArea::logSQLMXDebugEvent("debug event" ,69);
-      SQLMXLoggingArea::logPOSInfoEvent("pos info event");
-      SQLMXLoggingArea::logPOSErrorEvent(1150,"pos msg1", "pos msg2", "pos msgg3");
-      SQLMXLoggingArea::logPOSErrorEvent(1154,"pos msg1", "pos msg2", "pos msgg3");
-      SQLMXLoggingArea::logMVQRInfoEvent("mvqr info event");
-
-      SQLMXLoggingArea::logMVQRErrorEvent("mvqr error event");
-
-      SQLMXLoggingArea::logMVQRFailureEvent("mvqr failure");
+      
       SQLMXLoggingArea::logMVRefreshInfoEvent("mv refresh info");
       SQLMXLoggingArea::logMVRefreshErrorEvent("mv refresh error");
 
       SQLMXLoggingArea::logCliReclaimSpaceEvent(100,200,300,400);
+
+      SQLMXLoggingArea::logCompNQCretryEvent("select * from t1 where a > 10");
+      SQLMXLoggingArea::logSortDiskInfo("disk101", 25, 2080);
+
+      const char msgT[] = "SQL compiler: Optimization failed at pass two or higher. " 
+                          "Execution will use the plan generated at pass one instead.";
+
+      SQLMXLoggingArea::logSQLMXPredefinedEvent(msgT, LL_ALERT);
     }
-  if (getenv("TEST_EVENT_97"))
-    {
-      Int32 rcode = 97;
-      SQLMXLoggingArea::logErr97Event(rcode);
-    }
-#endif
+ #endif
   
   if (passed_gen_code)
     {

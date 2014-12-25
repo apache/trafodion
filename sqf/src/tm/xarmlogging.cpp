@@ -19,8 +19,6 @@
 // @@@ END COPYRIGHT @@@
 
 #include <sys/time.h>
-#include "wrapper/amqpwrapper.h"
-#include "common/dtm.events.pb.h"
 #include "common/evl_sqlog_eventnum.h"
 
 #include "tminfo.h"
@@ -34,39 +32,10 @@ int tm_init_logging()
     ms_getenv_int ("TM_DUAL_LOGGING", &gv_dual_logging);
     return gv_dual_logging; 
 }
-void tm_init_header (common::event_header *header, int pv_event_id, posix_sqlog_severity_t pv_severity)
-{
-    header->set_event_id(pv_event_id);
-    header->set_event_severity(pv_severity);
-    initAMQPInfoHeader(header->mutable_header(), 3);
-}
 
 int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string)
 {
     int    lv_err = 0;
-#ifdef TM_USE_SEAPILOT
-    size_t lv_buf_size = DTM_EVENT_BUF_SIZE;
-    char   lp_event_buf[DTM_EVENT_BUF_SIZE];
-    char  *lp_pbuf = lp_event_buf;
-
-    // init log buffer
-    lv_err = evl_sqlog_init(lp_pbuf, lv_buf_size);
-    if (lv_err)
-        return lv_err;      
-
-    // add our string
-    lv_err = evl_sqlog_add_token(lp_pbuf, TY_STRING, pp_string);
-
-    if (!lv_err)
-    { 
-        // ok to log buffer.
-        // we need to translate category to sql_evl severity
-        // facility is common for sql.
-
-        lv_err = evl_sqlog_write((posix_sqlog_facility_t)SQ_LOG_SEAQUEST, pv_event_type, 
-                                  pv_severity, lp_event_buf);
-    }
-#endif
     return lv_err;
 }
 
@@ -164,63 +133,6 @@ int tm_log_event(int event_id,
                       pool_size, pool_elems, msg_retries, pool_high, pool_low, pool_max, tx_state,
                       data, data1, data2, string1, node, msgid2, offset, tm_event_msg, data4);
     }
-
-    dtm::events event;
-
-    tm_init_header(event.mutable_header(), event_id, severity);
-    if (error_code != -1)
-       event.set_error_code(error_code);
-    if (rmid != -2)
-       event.set_rmid(rmid);
-    if (dtmid != -1)
-       event.set_dtmid(dtmid);
-    if (seq_num != -1)
-       event.set_seq_num(seq_num);
-    if (msgid != -1)
-       event.set_msgid(msgid);
-    if (xa_error != -1)
-       event.set_xa_error(xa_error);
-    if (pool_size != -1)
-       event.set_pool_size(pool_size);
-    if (pool_elems != -1)
-       event.set_pool_elems(pool_elems);
-    if (msg_retries != -1)
-       event.set_msg_retries(msg_retries);
-    if (pool_high != -1)
-       event.set_pool_high(pool_high);
-    if (pool_low != -1)
-       event.set_pool_low(pool_low);
-    if (pool_max != -1)
-       event.set_pool_max(pool_max);
-    if (tx_state != -1)
-       event.set_tx_state(tx_state);
-    if (data != -1)
-       event.set_data(data);
-    if (data1 != -1)
-       event.set_data1(data1);
-    if (data2 != -1)
-       event.set_data2(data2);
-    if (msgid2 != -1)
-       event.set_msgid2(msgid2);
-    if (offset != -1)
-       event.set_offset(offset);
-    if (tm_event_msg != -1)
-       event.set_tm_event_msg(tm_event_msg);
-    if (string1 != NULL)
-       event.set_string1(string1);
-    if (node != -1)
-       event.set_node(node);
-    if (data4 != 0)
-       event.set_data4(data4);
-
-    AMQPRoutingKey routingKey(SP_EVENT, SP_DTMPACKAGE, SP_INSTANCE, 
-                              SP_PUBLIC, SP_GPBPROTOCOL, "events");
-    try {
-      rc = sendAMQPMessage( false, event.SerializeAsString(), 
-                            SP_CONTENT_TYPE_APP, routingKey);
-    } catch (...) {
-      rc = SP_SEND_FAILED;
-    } 
    return rc;
 }
 

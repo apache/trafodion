@@ -73,6 +73,7 @@ DEFINE_DOVERS(tdm_arkesp)
 #include "rosetta/rosgen.h"
 
 #include "Context.h"
+#include "StmtCompilationMode.h"
 
 #if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
 // -----------------------------------------------------------------------
@@ -82,6 +83,7 @@ DEFINE_DOVERS(tdm_arkesp)
 #include "rosetta/rosgen.h"
 #include "nsk/nskprocess.h"
 #include "zsysc.h"
+#include "QRLogger.h"
 
 class EspGuaControlConnection : public GuaReceiveControlConnection
 {
@@ -201,16 +203,25 @@ Int32 main(Int32 argc, char **argv)
 {
   dovers(argc, argv);
 
+  IdentifyMyself::SetMyName(I_AM_ESP);
   msg_debug_hook("arkesp", "esp.hook");
+
   try {
     file_init(&argc, &argv);
   }
   catch (SB_Fatal_Excep &e) {
-    SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, e.what(), 0);
     exit(1);
   }
   try {
     file_mon_process_startup(true);
+
+    // setup log4cpp, need to be done here so initLog4cpp can have access to 
+    // process information since it is needed to compose the log name
+    // the log name for the ESP should be based on the master process information
+    // since the master and all its subordinate processes log to the same
+    // log4cpp file
+    QRLogger::instance().setModule(QRLogger::QRL_ESP);
+    QRLogger::instance().initLog4cpp("log4cpp.trafodion.config");
   }
   catch (SB_Fatal_Excep &e) {
     SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, e.what(), 0);
@@ -243,6 +254,7 @@ Int32 main(Int32 argc, char **argv)
   else
     retCode = runESP(argc,argv);
   ENDTRANSACTION();
+
   return retCode;
 
 }

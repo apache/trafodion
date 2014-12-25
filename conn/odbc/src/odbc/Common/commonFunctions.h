@@ -46,5 +46,8 @@ extern BOOL isNeoBlades();
 extern void terminateThreads(int exitcode);
 extern bool RegisterProcessDeathMessage(char *processName);
 
+extern bool isUTF8(const char *str);
+extern char* strcpyUTF8(char *dest, const char *src, size_t destSize, size_t copySize=0);
 
+void escSingleQuotes(string &str);
 #endif

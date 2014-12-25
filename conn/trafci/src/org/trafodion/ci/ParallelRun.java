@@ -770,7 +770,6 @@ public class ParallelRun extends Thread
          sessObjt.setSessionPrompt(this.sessObj.getPrompt());
          sessObjt.setSessionTiming(this.sessObj.isSessionTimingOn());
          sessObjt.setSessionTime(this.sessObj.isSessionTimeOn());
-         sessObjt.setServiceName(this.sessObj.getServiceName());
          sessObjt.setSessionColSep(this.sessObj.getSessionColSep());
          sessObjt.setListCount(this.sessObj.getListCount());
          sessObjt.setStrDisplayFormat(this.sessObj.getStrDisplayFormat());

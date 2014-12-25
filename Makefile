@@ -24,7 +24,7 @@
 include macros.gmk
 
 # Make Targets
-.PHONY: all dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr
+.PHONY: all log4cpp dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr
 .PHONY: package package-all pkg-product pkg-sql-regress
 
 ################
@@ -32,7 +32,7 @@ include macros.gmk
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar
+all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar
 
 package: pkg-product pkg-client
 
@@ -58,6 +58,9 @@ smstub: mpistub
 verhdr:
 	cd sqf && $(MAKE) genverhdr
 
+log4cpp: $(MPI_TARGET)
+	cd log4cpp/$(LOG4CPP_VER)/src && $(MAKE) liblog4cpp.so 2>&1 | sed -e "s/$$/	##(Log4cpp)/";exit $${PIPESTATUS[0]}
+
 dbsecurity: $(MPI_TARGET)
 	cd dbsecurity && $(MAKE) all 2>&1 | sed -e "s/$$/	##(Security)/";exit $${PIPESTATUS[0]}
 
@@ -82,6 +85,7 @@ jdbc_type2_jar: ndcs
 clean: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd $(SEAMONSTER_TARGET)/src &&	$(MAKE) clean
+	cd log4cpp/$(LOG4CPP_VER)/src &&	$(MAKE) clean
 	cd dbsecurity &&		$(MAKE) clean
 	cd sqf &&			$(MAKE) clean
 	cd conn/odbc/src/odbc &&	$(MAKE) clean
@@ -92,6 +96,7 @@ clean: sqroot
 
 cleanall: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
+	cd log4cpp/$(LOG4CPP_VER)/src &&	$(MAKE) cleanall
 	cd dbsecurity &&		$(MAKE) cleanall
 	cd sqf &&			$(MAKE) cleanall
 	cd conn/odbc/src/odbc &&	$(MAKE) cleanall

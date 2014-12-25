@@ -171,6 +171,7 @@ SRVR_STMT_HDL::SRVR_STMT_HDL()
 	m_aggPriority = 0;
 	m_bSkipWouldLikeToExecute = false;
 	m_bDoneWouldLikeToExecute = false;
+	m_bqueryFinish = false;
 
 	m_result_set = NULL;
 	m_curRowsFetched = 0;
@@ -1069,4 +1070,6 @@ void  SRVR_STMT_HDL::setclientLCID(UInt32 value)
 	SRVRTRACE_EXIT(FILE_CSTMT+26);
 	return;
 }
+
+
 

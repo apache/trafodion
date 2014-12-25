@@ -149,16 +149,10 @@ echo "SEAQUEST_NO_ROLLBACK_TXN=0"
 echo "SQLMX_MESSAGEFILE=\$MY_SQROOT/export/bin\$SQ_MBTYPE/mxcierrors.cat"
 echo "YYERROR_QUIET=1"
 echo ""
-echo "NVT_MESSAGEDIR=\$MY_SQROOT/export/bin\$SQ_MBTYPE"
-echo "NVTHOME=\$MY_SQROOT/transporter"
-echo ""
 echo "# this is purely for measure use case analysis at this point"
 echo "SQL_MEASURE_ENABLE=0"
 echo "#SQ_STATS_ESP=0"
 echo ""
-echo ""
-echo "# qpid connection node port"
-echo "QPID_NODE_PORT=$QPID_NODE_PORT"
 echo ""
 echo "# property file for tdm_arkcmp"
 echo "SQ_PROPS_TDM_ARKCMP=tdm_arkcmp.env"
@@ -198,9 +192,6 @@ if [ ! -d $cacertsdir ]; then
     mkdir --mode=700 $cacertsdir 2>/dev/null
 fi
 echo "CACERTS_DIR=$cacertsdir"
-
-echo ""
-echo "MY_SPROOT=\$MY_SQROOT/seapilot"
 
 echo ""
 echo ""

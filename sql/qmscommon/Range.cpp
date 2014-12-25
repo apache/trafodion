@@ -47,7 +47,7 @@ RangeSpec::RangeSpec(QRRangePredPtr rangePred, CollHeap* heap, logLevel ll)
     isDumpMvMode_(FALSE),
     logLevel_(ll)
 {
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     rangePred, QRLogicException,
                     "RangeSpec constructed for null QRRangePredPtr");
 
@@ -72,12 +72,12 @@ RangeSpec::RangeSpec(QRRangePredPtr rangePred, CollHeap* heap, logLevel ll)
               rangeJoinPredId_ = colValueId = refNum;
             else
               {
-                assertLogAndThrow(CAT_RANGE, logLevel_,
+                assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                                   refChar=='C', QRLogicException,
                                   "ref attribute had unexpected element type -- %c");
                 rangeColValueId_ = colValueId = refNum;
               }
-            assertLogAndThrow1(CAT_RANGE, logLevel_,
+            assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                                rangeItem->getReferencedElement() != rangeItem,
                                QRLogicException,
                                "ref attribute present, but references self: %s",
@@ -90,7 +90,7 @@ RangeSpec::RangeSpec(QRRangePredPtr rangePred, CollHeap* heap, logLevel ll)
         break;
 
       default:
-        assertLogAndThrow1(CAT_RANGE, logLevel_,
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                            FALSE, QRLogicException,
                            "Invalid element type for range item -- %d",
                            elemType);
@@ -150,7 +150,7 @@ RangeSpec::RangeSpec(QRRangePredPtr rangePred, CollHeap* heap, logLevel ll)
             break;
 
           default:
-            assertLogAndThrow1(CAT_RANGE, logLevel_,
+            assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                                FALSE, QRLogicException,
                                "Invalid range operator, element type = %d",
                                rangeOpType);
@@ -220,7 +220,7 @@ NABoolean RangeSpec::operator==(const RangeSpec& other) const
 NABoolean RangeSpec::subsumes(const RangeSpec* other) const
 {
   QRTRACER("subsumes");
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     typeCompatible(other), QRLogicException,
                     "RangeSpec::subsumes() called with RangeSpec of incompatible type");
 
@@ -379,7 +379,7 @@ void RangeSpec::placeSubrange(Subrange<T>* sub)
       insertionPoint = j;
     }
 
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     insertionPoint < UINT_MAX, QRLogicException,
                     "Forgot to assign insertionPoint");
 
@@ -525,7 +525,7 @@ void RangeSpec::addSubrange(QRScalarValuePtr startVal, QRScalarValuePtr endVal,
           // Need this to avoid link errors.
           Subrange<RangeWString>* charSubrange =
                         new(mvqrHeap_) Subrange<RangeWString>(logLevel_);
-          assertLogAndThrow1(CAT_RANGE, logLevel_,
+          assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                             FALSE, QRLogicException,
                             "Unhandled value type, element type = %d",
                             valueElemType);
@@ -544,7 +544,7 @@ void RangeSpec::getPrecScale(const char* openParen, Lng32& prec, Lng32& scale) c
     sscanf(openParen, "(%d,%d)", &prec, &scale);
   else
     {
-      assertLogAndThrow1(CAT_RANGE, logLevel_,
+      assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                         delim, QRLogicException,
                         "No ',' or ')' found in numeric/decimal type string -- %s",
                         openParen);
@@ -587,7 +587,7 @@ rec_datetime_field RangeSpec::getIntervalFieldFromName(const char* name, Int32 l
     }
 
   // If we found it, we would have returned already.
-  assertLogAndThrow1(CAT_RANGE, logLevel_,
+  assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                      FALSE, QRLogicException, "Unknown interval field -- %s", name);
 }
 
@@ -640,7 +640,7 @@ void RangeSpec::addDenormalizedSubrange(const char* typeText,
 {
   QRTRACER("addDenormalizedSubrange");
 
-  QRLogger::log(CAT_RANGE, LL_DEBUG,
+  QRLogger::log(CAT_SQL_COMP_RANGE, LL_DEBUG,
     "Type description for normalized range item: %s", typeText);
   NABoolean isSigned = strstr(typeText, "UNSIGNED") == NULL;
   Lng32 prec, scale = 0;  // default scale for numeric types
@@ -688,7 +688,7 @@ void RangeSpec::addDenormalizedSubrange(const char* typeText,
     intvlType = parseIntervalTypeText(typeText + typeNameLen);
   // LCOV_EXCL_START :rfi
   else
-    assertLogAndThrow1(CAT_RANGE, logLevel_,
+    assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                        FALSE, QRLogicException,
                        "Invalid data type for normalized range pred item -- %s",
                        typeText);
@@ -750,7 +750,7 @@ void RangeSpec::addDenormalizedSubrange(const char* typeText,
         addSubrange(value, typeBoundaryValue, TRUE, TRUE);
         break;
       default:
-        assertLogAndThrow1(CAT_RANGE, logLevel_,
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                            FALSE, QRLogicException,
                            "Invalid inequality op in addDenormalizedSubrange() -- %d",
                            rangeOpType);
@@ -778,11 +778,11 @@ void RangeSpec::log()
   // For now, avoid routine logging of range predicate details. This will be
   // replaced with a leveling feature for QRLogger that can distinguish between
   // normal debug logging, and logging to indicate an exceptional event.
-  if (QRLogger::isCategoryInDebug(CAT_RANGE))
+  if (QRLogger::isCategoryInDebug(CAT_SQL_COMP_RANGE))
   {
     ostringstream os;
     os << *this << '\0';
-    QRLogger::log(CAT_RANGE, LL_DEBUG, "%s", os.str().c_str());
+    QRLogger::log(CAT_SQL_COMP_RANGE, LL_DEBUG, "%s", os.str().c_str());
   }
 }
 
@@ -806,10 +806,10 @@ void RangeSpec::intersectRange(RangeSpec* other)
   CollIndex thisInx = 0, otherInx = 0;
   SubrangeBase *thisSubrange, *otherSubrange;
   
-  QRLogger::log(CAT_RANGE, LL_DEBUG,
+  QRLogger::log(CAT_SQL_COMP_RANGE, LL_DEBUG,
     "=== Entering intersectRange() ===\nRange to be modified:");
   log();  // write current state of this range
-  QRLogger::log(CAT_RANGE, LL_DEBUG,
+  QRLogger::log(CAT_SQL_COMP_RANGE, LL_DEBUG,
     "Range that will be ANDed to the above range:");
   other->log();
 
@@ -859,7 +859,7 @@ void RangeSpec::intersectRange(RangeSpec* other)
                   otherInx++;         //   intersects other, move to next other
                   break;
                 default:
-                  assertLogAndThrow1(CAT_RANGE, logLevel_,
+                  assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                                      FALSE, QRLogicException,
                                      "Unhandled RelativeLocation enum value -- %d",
 				     startLocation);
@@ -886,13 +886,13 @@ void RangeSpec::intersectRange(RangeSpec* other)
                   thisInx++;
                   break;
                 case rel_loc_before:
-                  assertLogAndThrow(CAT_RANGE, logLevel_,
+                  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                                     FALSE, QRLogicException,
 				    "compareTo returned inconsistent results -- "
 				    "start is within, but end is before");
                   break;
                 default:
-                  assertLogAndThrow1(CAT_RANGE, logLevel_,
+                  assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                                      FALSE, QRLogicException,
 				     "Unhandled RelativeLocation enum value -- %d",
 				     startLocation);
@@ -901,7 +901,7 @@ void RangeSpec::intersectRange(RangeSpec* other)
             break;
             
           default:
-            assertLogAndThrow1(CAT_RANGE, logLevel_,
+            assertLogAndThrow1(CAT_SQL_COMP_RANGE, logLevel_,
                                FALSE, QRLogicException,
 			       "Unhandled RelativeLocation enum value -- %d",
 			       startLocation);
@@ -909,7 +909,7 @@ void RangeSpec::intersectRange(RangeSpec* other)
         }
     }
 
-  QRLogger::log(CAT_RANGE, LL_DEBUG,
+  QRLogger::log(CAT_SQL_COMP_RANGE, LL_DEBUG,
     "Original range after intersection:");
   log();
 }  // RangeSpec::intersectRange()
@@ -918,7 +918,7 @@ void RangeSpec::unionRange(RangeSpec* other)
 {
   QRTRACER("unionRange");
   //@ZX -- should the ranges be required to be on the same column?
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     typeCompatible(other), QRLogicException,
                     "Attempt to union RangeSpecs of incompatible types");
 
@@ -1008,7 +1008,7 @@ Int64 SubrangeBase::getTotalDistinctValues(CollHeap* heap, const NAType* type)
 
 static Int64 intervalMaxIntegerValue(const NAType& naType, logLevel level)
 {
-  assertLogAndThrow1(CAT_RANGE, level,
+  assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                      naType.getTypeQualifier() == NA_INTERVAL_TYPE,
                      QRLogicException,
                      "intervalMaxIntegerValue() called for non-interval type -- %d",
@@ -1095,7 +1095,7 @@ static Int64 intervalMaxIntegerValue(const NAType& naType, logLevel level)
 
       // LCOV_EXCL_START :rfi
       default:
-        assertLogAndThrow1(CAT_RANGE, level,
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                           FALSE, QRLogicException,
                           "Invalid end field for interval type -- %d",
                           type.getEndField());
@@ -1131,7 +1131,7 @@ void SubrangeBase::getExactNumericMinMax(const NAType& type,
 
               // LCOV_EXCL_START :rfi
               default:
-                assertLogAndThrow1(CAT_RANGE, level,
+                assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                                   FALSE, QRLogicException,
                                   "No case in getExactNumericMinMax() for "
                                   "binary exact numeric of type %d",
@@ -1169,7 +1169,7 @@ void SubrangeBase::getExactNumericMinMax(const NAType& type,
             typeMin = SUBRANGE_TIMESTAMP_MIN; 
             break;
           default:
-            assertLogAndThrow1(CAT_RANGE, level,
+            assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                                FALSE, QRLogicException,
                                "Invalid datetime subtype -- %d", dtType.getSubtype());
         }
@@ -1184,7 +1184,7 @@ void SubrangeBase::getExactNumericMinMax(const NAType& type,
     }
   // LCOV_EXCL_START :rfi
   else
-    assertLogAndThrow1(CAT_RANGE, level,
+    assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                        FALSE, QRLogicException,
                        "Type not handled by getExactNumericMinMax() -- %d", type.getTypeQualifier());
   // LCOV_EXCL_STOP
@@ -1276,7 +1276,7 @@ Int64 SubrangeBase::getStepSize(const NAType* type, logLevel level)
               break;
             // LCOV_EXCL_START :rfi
             default:
-              assertLogAndThrow1(CAT_RANGE, level,
+              assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                                  FALSE, QRDescriptorException,
                                  "unexpected end field for datetime type -- %d",
                                  dtiType->getEndField());
@@ -1308,7 +1308,7 @@ Int64 SubrangeBase::getStepSize(const NAType* type, logLevel level)
               break;
             // LCOV_EXCL_START :rfi
             default:
-              assertLogAndThrow1(CAT_RANGE, level,
+              assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                                  FALSE, QRDescriptorException,
                                  "unexpected end field for datetime type -- %d",
                                  dtiType->getEndField());
@@ -1318,7 +1318,7 @@ Int64 SubrangeBase::getStepSize(const NAType* type, logLevel level)
 
       // LCOV_EXCL_START :rfi
       default:
-        assertLogAndThrow1(CAT_RANGE, level,
+        assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            FALSE, QRDescriptorException,
                            "getStepSize() called for incorrect type -- %d",
                            typeQual);
@@ -1736,7 +1736,7 @@ SubrangeBase* Subrange<T>::splitAtEndOf(const SubrangeBase* other, CollHeap* hea
 {
   Subrange<T>* otherSubrange = (Subrange<T>*)other;
   Subrange<T>* newSubrange;
-  assertLogAndThrow(CAT_RANGE, logLevel_,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                     otherSubrange->endsWithin(this),
 		    QRLogicException,
 		    "Can't split subrange on end of passed subrange; it does not "
@@ -1821,7 +1821,7 @@ void Subrange<Int64>::initSpecifiedValueCount()
 template <class T> inline
 void Subrange<T>::makeStartInclusive(const NAType* type, NABoolean& overflowed)
 {
-  assertLogAndThrow(CAT_RANGE, logLevel_, FALSE, QRLogicException,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,
                     "makeStartInclusive() called for non-Int64-based type");
 }
 // LCOV_EXCL_STOP
@@ -1863,7 +1863,7 @@ void Subrange<Int64>::makeStartInclusive(const NAType* type,
 template <class T> inline
 void Subrange<T>::makeEndInclusive(const NAType* type, NABoolean& overflowed)
 {
-  assertLogAndThrow(CAT_RANGE, logLevel_, FALSE, QRLogicException,
+  assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_, FALSE, QRLogicException,
                     "makeEndInclusive() called for non-Int64-based type");
 }
 // LCOV_EXCL_STOP

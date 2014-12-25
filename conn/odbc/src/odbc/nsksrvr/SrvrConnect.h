@@ -342,4 +342,6 @@ bool checkSyntaxGetPrivileges(char* sqlString, short& idx);
 bool isInfoDisk(char*& sqlString, const IDL_char *stmtLabel, short& error, char *errBuf );
 bool checkSyntaxInfoDisk(char* sqlString, char *diskName);
 
+void __cdecl StatisticsTimerExpired(CEE_tag_def timer_tag);
+void SyncPublicationThread();
 #endif

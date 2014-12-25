@@ -287,7 +287,7 @@ class OptRangeSpec : public RangeSpec
      */
     void setRangeSubject(OptRangeSpec* otherRange)
       {
-        assertLogAndThrow(CAT_RANGE, logLevel_,
+        assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,
                           !rangeSubjectIsSet(), QRLogicException,
                           "setRangeSubject(): range already has a subject");
         rangeColValueId_ = otherRange->rangeColValueId_;

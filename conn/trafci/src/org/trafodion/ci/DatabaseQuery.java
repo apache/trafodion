@@ -943,7 +943,6 @@ public class DatabaseQuery extends QueryWrapper
 
             case SessionDefaults.SET_SERVICE:
                executeQuery(true);
-               sessObj.setServiceName(null);
                break;
          
                

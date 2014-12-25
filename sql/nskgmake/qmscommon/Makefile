@@ -34,6 +34,10 @@ CPPSRC= xmlparse.cpp \
 	vers_libqmscommon.cpp
         
 SRCPATH := common qmscommon qmscommon/expat qms sqlmsg \
-	tdm_sqlerrormsg tdm_sqlexp tdm_sqlexport
+	tdm_sqlerrormsg tdm_sqlexp tdm_sqlexport 
 
-DEP_LIBS := log4cpp
+SRCPATH += ../sqf/commonLogger
+
+INCLUDE_DIRS += ../sqf/commonLogger
+
+EXTERN_LIBS += $(LIBROOT)/liblog4cpp.so

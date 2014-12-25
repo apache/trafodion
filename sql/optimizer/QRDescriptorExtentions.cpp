@@ -49,7 +49,7 @@
 ItemExpr* QRExplicitExpr::findItemExpr()
 {
   CollIndex id = getRefNum();
-  assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL, 
+  assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL, 
                     id!=0, QRLogicException, 
                     "findItemExpr() called with zero ValueID.");
   ValueId vid(id);
@@ -102,7 +102,7 @@ ItemExpr* QRScalarValue::toItemExpr(const NAString& mvName, CollHeap* heap,
     cv = ((ConstantParameter*)ie)->getConstVal();
   else
   {
-    assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL, op == ITM_CONSTANT, 
+    assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL, op == ITM_CONSTANT, 
                       QRLogicException, "Expecting a ConstValue object.");
     cv = (ConstValue*)ie;
   }
@@ -188,7 +188,7 @@ ItemExpr* QRFunction::toItemExpr(const NAString& mvName, CollHeap* heap,
   {
     // In a Rollup case, we generate a new aggregate function,
     // so it does not have a ref attribute.
-    assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+    assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                       isAnAggregate(), QRLogicException, 
                       "Only Aggregate functions are allowed not to reference a ValueID.");
     OperatorTypeEnum ieEnum = NO_OPERATOR_TYPE;

@@ -761,6 +761,14 @@ void logAnMXEventForError( ComCondition & condition, SQLMXLoggingArea::Experienc
             }
         }
 
+      // when logging using log4cpp these are the only tokens used
+      SQLMXLoggingArea::logSQLMXEventForError( sqlcodeToEventId,
+                                               buf,
+                                               condition.getSqlID(),
+                                               isWarning);
+
+/*
+      // when logging using seapilot more tokens can be used
       SQLMXLoggingArea::logSQLMXEventForError( sqlcodeToEventId, 
 						localEMSExperienceLevel,
 						localEMSSeverity,
@@ -793,6 +801,7 @@ void logAnMXEventForError( ComCondition & condition, SQLMXLoggingArea::Experienc
 						condition.getRowNumber(),
 					        condition.getNskCode(),
 					        isWarning);
+*/
     }
 }
 #endif // CLI_PRIV_SRL

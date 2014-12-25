@@ -30,8 +30,6 @@ include ../macros.gmk       # odbc level
 OBJS  = $(OUTDIR)/CommonDiags.o \
         $(OUTDIR)/CommonNSKFunctions.o \
         $(OUTDIR)/DrvrSrvr.o \
-        $(OUTDIR)/EventMsgs.o \
-        $(OUTDIR)/EventMsgs_ps.o \
         $(OUTDIR)/RegValues.o \
         $(OUTDIR)/csrvrstmt.o \
         $(OUTDIR)/NskUtil.o \
@@ -47,7 +45,7 @@ OBJS  = $(OUTDIR)/CommonDiags.o \
         $(OUTDIR)/srvrothers.o \
         $(OUTDIR)/libmxocore_version.o
 
-INCLUDES = -I. -I../Common -I../EventMsgs -I../SrvrMsg -I../dependencies/include -I../dependencies/linux -I../Krypton/generated_incs  -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi  -I$(SQ_HOME)/inc  -I$(SQ_HOME)/export/include -I$(SQ_HOME)/sql/nq_w/common -I../OssCfgCl/src -I../CmdCfgDll -I$(SQ_HOME)/seapilot/export/include/common -I$(SQ_HOME)/seapilot/export/include -I$(PROTOBUFS_INC) -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(SQ_HOME)/../mpi/src/include/intern
+INCLUDES = -I. -I../Common -I../EventMsgs -I../SrvrMsg -I../dependencies/include -I../dependencies/linux -I../Krypton/generated_incs  -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi  -I$(SQ_HOME)/inc  -I$(SQ_HOME)/export/include -I$(SQ_HOME)/sql/nq_w/common -I../OssCfgCl/src -I../CmdCfgDll -I$(PROTOBUFS_INC) -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(SQ_HOME)/../mpi/src/include/intern
 
 DEFINES =  -DNA_LINUX -DSIZEOF_LONG_INT=4 -DUSE_NEW_PHANDLE -DSQ_GUARDIAN_CALL -D_M_DG -DINC_QPID_EVENT -w
 
@@ -58,9 +56,6 @@ CODEGEN = -fPIC
 libmxocore.so: $(OBJS)
 	$(CXX) -shared $(GCCMODE) -o $@ $(DBG_FLGS) -L$(LIBEXPDIR) -levlsq -lqpidclient  -lsqauth -lsqcert $(OBJS)
 	cp -up $@ $(LIBEXPDIR)
-
-# Please add the following line when SeaPilot is enabled
-# -L$(PROTOBUFS_LIB) -lprotobuf -L$(SP_EXPORT_LIB) -lwrappersq  -lpublications
 
 $(OUTDIR)/libmxocore_version.o: $(MY_SQROOT)/export/include/SCMBuildStr.h
 

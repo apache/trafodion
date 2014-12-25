@@ -167,18 +167,6 @@ fi
 
 ./gensqstatem2lenv > $SQETC_DIR/sqstatem2l.env
 
-
-
-if [[ -f $MY_SQROOT/seapilot/spenv.sh ]]; then
-  pushd $MY_SQROOT/seapilot >/dev/null
-  source spenv.sh
-  popd >/dev/null
-else
-  echo "$MY_SQROOT/seapilot/spenv.sh not found. Exiting."
-  exit 1
-fi
-
-
 # Create configuration database tables
 rm -f sqconfig.db
 sqlite3 -init createConfigDb sqconfig.db <<eof 
@@ -274,26 +262,3 @@ else
    echo
    exit 1
 fi
-
-
-# Copy log4cpp and log4j configuration files to sqf/logs
-# For debugging, edit them there.
-echo "Copying the log4j and log4cpp configuration files"
-cp $MY_SQROOT/orig_config/log4j.hdfs.config $MY_SQROOT/logs
-cp $MY_SQROOT/orig_config/log4j.dtm.config   $MY_SQROOT/logs
-cp $MY_SQROOT/orig_config/log4cpp.hdfs.config $MY_SQROOT/logs
-cp $MY_SQROOT/orig_config/log4cpp.mvqr.config $MY_SQROOT/logs
-cp $MY_SQROOT/orig_config/log4cpp.qms.config $MY_SQROOT/logs
-cp $MY_SQROOT/orig_config/log4cpp.qmm.config $MY_SQROOT/logs
-cp $MY_SQROOT/orig_config/log4cpp.qmp.config $MY_SQROOT/logs
-if [ -e $SQ_PDCP ]; then
-    echo "Copying the log4j and log4cpp configuration files"
-    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4j.hdfs.config $MY_SQROOT/logs
-    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4j.dtm.config   $MY_SQROOT/logs
-    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4cpp.hdfs.config $MY_SQROOT/logs
-    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4cpp.mvqr.config $MY_SQROOT/logs
-    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4cpp.qms.config $MY_SQROOT/logs
-    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4cpp.qmm.config $MY_SQROOT/logs
-    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4cpp.qmp.config $MY_SQROOT/logs
-fi
-

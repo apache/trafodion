@@ -41,7 +41,6 @@
 #include "SQLWrapper.h"
 
 #include "CommonDiags.h"  
-#include "EventMsgs.h"
 #include "tdm_odbcSrvrMsg.h"
 #include "TransportBase.h"
 #include "ResStatisticsStatement.h"

@@ -151,3 +151,7 @@ $(OUTDIR)/%.o: ../../../Common/%.cpp
 	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
 
+# Common logger
+$(OUTDIR)/%.o: $(SQ_HOME)/commonLogger/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<

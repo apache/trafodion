@@ -375,7 +375,7 @@
 1388 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not exist in hive metadata.
 1389 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 does not exist in Trafodion.
 1390 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 already exists in Trafodion.
-1391 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 is a metadata object and cannot be updated.
+1391 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 is a $1~String1 object and cannot be updated.
 1392 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion is already initialized on this system. No action is needed.
 1393 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion is not initialized on this system. Do 'initialize trafodion' to initialize it.
 1394 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion needs to be reinitialized on this system due to missing or corrupted metadata objects. Do 'initialize trafodion, drop' followed by 'initialize trafodion' to reinitialize Trafodion. This will delete all metadata and user objects from the Trafodion database and recreate metadata.

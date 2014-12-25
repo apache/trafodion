@@ -163,6 +163,10 @@ class CmpSeabaseDDL
   static NABoolean isUserUpdatableSeabaseMD(const NAString &catName,
 			       const NAString &schName,
 			       const NAString &objName);
+
+  static NABoolean isSeabaseReservedSchema(
+                                           const NAString &catName,
+                                           const NAString &schName);
  
   NABoolean isAuthorizationEnabled();
 
@@ -957,6 +961,12 @@ class CmpSeabaseDDL
 
   void purgedataHbaseTable(DDLExpr * ddlExpr,
 			   NAString &currCatName, NAString &currSchName);
+
+  short createRepos(ExeCliInterface * cliInterface);
+  short dropRepos(ExeCliInterface * cliInterface);
+  short upgradeRepos(ExeCliInterface * cliInterface);
+
+  void processRepository(NABoolean createR, NABoolean dropR, NABoolean upgradeR);
 
   short updateSeabaseVersions(ExeCliInterface * cliInterface, const char * sysCat,
 			      Lng32 majorVersion = -1);

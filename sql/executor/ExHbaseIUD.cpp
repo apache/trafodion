@@ -152,7 +152,9 @@ ExWorkProcRetcode ExHbaseAccessDeleteTcb::work()
 	    retcode = ehi_->deleteRow(table_,
 				      rowId_, 
 				      columns,
+                                      hbaseAccessTdb().useHbaseXn(),
 				      hgr_->colTS_);
+
 	    if (setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -371,7 +373,9 @@ ExWorkProcRetcode ExHbaseAccessDeleteSubsetTcb::work()
 	    retcode = ehi_->deleteRow(table_,
 				      rowId_, 
 				      columns,
+                                      hbaseAccessTdb().useHbaseXn(),
 				      colTS_);
+
 	    if (setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -554,8 +558,9 @@ ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
 	    retcode = ehi_->insertRow(table_,
 				      rowID, 
 				      row_,
-				      FALSE,
+                                      hbaseAccessTdb().useHbaseXn(),
 				      *insColTS_);
+
 	    if (setupError(retcode, "ExpHbaseInterface::insertRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -721,9 +726,11 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
                 retcode = ehi_->insertRow(table_,
 					  rowID,
 					  row_,
-					  FALSE,
+                                          hbaseAccessTdb().useHbaseXn(),
+					  
 					  -1 //*insColTS_
 					  );
+
 		if (setupError(retcode, "ExpHbaseInterface::insertRow"))
 		  {
 		    step_ = HANDLE_ERROR;
@@ -908,7 +915,9 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
             retcode = ehi_->checkAndInsertRow(table_,
                                               rowID,
 	                                      row_,
+                                              hbaseAccessTdb().useHbaseXn(),
                                               insColTSval_);
+
 	    if (retcode == HBASE_DUP_ROW_ERROR) // row exists, return error
 	      {
 		ComDiagsArea * diagsArea = NULL;
@@ -947,8 +956,10 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
             retcode = ehi_->insertRow(table_,
 				      rowID,
 				      row_,
-				      FALSE,
+                                      hbaseAccessTdb().useHbaseXn(),
 				      insColTSval_);
+
+
 
 	    if (getHbaseAccessStats())
 	      getHbaseAccessStats()->incUsedRows();
@@ -1254,6 +1265,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
                                        hbaseAccessTdb().getRowIDLen(),
 				       rowIDs_,
                                        rows_,
+				       hbaseAccessTdb().useHbaseXn(),
                                        insColTSval_,
                                        hbaseAccessTdb().getIsTrafLoadAutoFlush());
 	    
@@ -2007,9 +2019,11 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 						     tcb_->row_,
 						     columnToCheck,
 						     colValToCheck,
-                                                     (tcb_->hbaseAccessTdb().useHbaseXn() ? TRUE : FALSE),
+
+                                                     tcb_->hbaseAccessTdb().useHbaseXn(),
 						     -1 //colTS_,
 						     );
+
 
 	    if (retcode == HBASE_ROW_NOTFOUND_ERROR)
 	      {
@@ -2066,8 +2080,10 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	    retcode =  tcb_->ehi_->checkAndInsertRow(tcb_->table_,
                                                      rowID,
                                                      tcb_->row_,
-                                                     -1 // colTS_
+                                                     tcb_->hbaseAccessTdb().useHbaseXn(),
+						     -1 // colTS_
                                                      );
+
 	    if (retcode == HBASE_DUP_ROW_ERROR)
 	      {
 		ComDiagsArea * diagsArea = NULL;
@@ -2117,8 +2133,12 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
             retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
                                              rowID,
 	                                     columns,
+                                             tcb_->hbaseAccessTdb().useHbaseXn(),
+ 
                                              -1 //colTS_
                                              );
+
+
 
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
@@ -2161,8 +2181,13 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
                                                      rowID,
 						     columnToCheck, 
 						     colValToCheck,
+                                                     tcb_->hbaseAccessTdb().useHbaseXn(),
+
+
 						     -1 //colTS_
 						     );
+
+
 
 	    if (retcode == HBASE_ROW_NOTFOUND_ERROR)
 	      {
@@ -2551,8 +2576,12 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
             retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
                                              rowID,
                                              tcb_->deletedColumns_,
+                                             tcb_->hbaseAccessTdb().useHbaseXn(),
+ 
                                              -1 //colTS_
                                              );
+
+
 
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
@@ -2581,9 +2610,12 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
                 retcode =  tcb_->ehi_->insertRow(tcb_->table_,
                                                  rowID,
                                                  tcb_->row_,
-						 FALSE,
+
+                                                 tcb_->hbaseAccessTdb().useHbaseXn(),
+    
                                                  -1 // colTS_
                                                  );
+
 		if ( tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 		  {
 		    step_ = HANDLE_ERROR;
@@ -2840,9 +2872,10 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 	    retcode = tcb_->ehi_->insertRow(tcb_->table_,
 					    rowID,
 					    tcb_->row_,
-					    FALSE,
+                                            tcb_->hbaseAccessTdb().useHbaseXn(),
 					    -1 // colTS_
 					    );
+
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 	    {
 		step_ = HANDLE_ERROR;
@@ -2876,8 +2909,12 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 	    retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
 					     rowID,
 					     columns,
+                                             tcb_->hbaseAccessTdb().useHbaseXn(),
+
+
 					     -1 //colTS_
 					     );
+
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -3237,9 +3274,11 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 		retcode = tcb_->ehi_->insertRow(tcb_->table_,
 						tcb_->rowId_,
 						tcb_->row_,
-						FALSE,
+                                                tcb_->hbaseAccessTdb().useHbaseXn(),						
+					
 						-1 // colTS_
 						);
+
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 		  {
 		    step_ = HANDLE_ERROR;
@@ -3261,8 +3300,11 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 	    retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
 					     tcb_->rowId_,
 					     tcb_->deletedColumns_,
+                                             tcb_->hbaseAccessTdb().useHbaseXn(),
+
 					     -1 //colTS_
 					     );
+
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -3812,8 +3854,11 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    retcode = ehi_->deleteRows(table_,
                                        hbaseAccessTdb().getRowIDLen(),
                                        rowIDs_,
+                                       hbaseAccessTdb().useHbaseXn(),
 				       -1 // ColTS_
 				       );
+
+
 
 	    if (setupError(retcode, "ExpHbaseInterface::deleteRows"))
 	      {
@@ -3900,7 +3945,9 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 				       hbaseAccessTdb().getRowIDLen(),
                                        rowIDs_,
                                        rows_,
+                                       hbaseAccessTdb().useHbaseXn(),
 				       -1);
+
 	    
 	    if (setupError(retcode, "ExpHbaseInterface::insertRows"))
 	      {

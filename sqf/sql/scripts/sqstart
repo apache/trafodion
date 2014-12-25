@@ -22,7 +22,7 @@
 #SQ Startup Driver Script. Use sqgen prior to this to generate various files required for startup.
 
 function LogIt {
-    echo  "`date`: $1" >> $MY_SQROOT/sql/scripts/startup.log
+    echo  "`date`: $1" >> $MY_SQROOT/logs/startup.log
 }
 
 function Usage {
@@ -501,7 +501,6 @@ do
 done
 
 if [ $lv_startup_status '==' 0 ]; then
-#   Sleep because we need to give the qpid brokers time to start
 #   Minimize the wait time as much as possible by regularly checking,
 #   but don't wait forever either
     let lv_done=0

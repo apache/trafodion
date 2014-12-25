@@ -122,7 +122,7 @@
 
 // Interval timers default in minutes!!!!
 #define TM_CP_DEFAULT 2     // Control Point interval (Lead TM only)
-#define TM_STATS_DEFAULT 1   // SeaPilot Statistics gathering
+#define TM_STATS_DEFAULT 1  
 #define TM_RMRETRY_DEFAULT 1 // RM open retry interval  
 
 // TM failure restart retry interval in seconds.

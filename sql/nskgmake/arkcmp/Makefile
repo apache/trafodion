@@ -74,8 +74,7 @@ DEP_LIBS := \
 	porting_layer \
 	lmcomp \
         smdio \
-	qmscommon \
-	log4cpp 
+	qmscommon 
 
 
 
@@ -91,11 +90,12 @@ EXTERN_LIBS := \
 	$(XMPIROOT)/libsbfs.so \
 	$(XMPIROOT)/libstmlib.so \
 	$(STUBLIBROOT)/libtdm_tmfuser.so \
-	$(XMPIROOT)/libwin.so
+	$(XMPIROOT)/libwin.so \
+	$(LIBROOT)/liblog4cpp.so
 
 
 
-SYS_LIBS := -lrt -lpthread 
+SYS_LIBS := -lrt -lpthread
 
 
 INCLUDE_DIRS := sqlcmpdbg sqlco sqludr

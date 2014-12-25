@@ -33,7 +33,7 @@ function Usage {
 }
 
 function LogIt {
-    echo  "`date`: $1" >> $MY_SQROOT/sql/scripts/startup.log
+    echo  "`date`: $1" >> $MY_SQROOT/logs/startup.log
 }
 
 function echoLog {
@@ -219,7 +219,7 @@ if (test -n "${CLUSTERNAME}"); then
 					unbindip=`echo "$match_ip_interface"|awk '{print $2}'`
 					unbindlb=`echo "$match_ip_interface"|awk '{print $NF}'`
 					echoLog "pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb"
-					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $MY_SQROOT/sql/scripts/ndcsunbind.log
+					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $MY_SQROOT/logs/ndcsunbind.log
 				fi
 	       done
 	   done
@@ -234,7 +234,7 @@ if (test -n "${CLUSTERNAME}"); then
 					unbindip=`echo "$match_ip_interface"|awk '{print $2}'`
 					unbindlb=`echo "$match_ip_interface"|awk '{print $NF}'`
 					echoLog "pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb"
-					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $MY_SQROOT/sql/scripts/ndcsunbind.log
+					pdsh $cmd_timeout -S -w $curnode sudo ip addr del $unbindip dev $myinterface label $unbindlb >> $MY_SQROOT/logs/ndcsunbind.log
 			   fi
 		   done
 	   done

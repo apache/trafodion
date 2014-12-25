@@ -38,7 +38,8 @@
 class CompilerTrackingInfo
 
 Singleton class to collect information about this compiler 
-and to be logged into the repository on some interval (every N minutes)
+and to be logged into a file or a private user table on some interval 
+(every N minutes)
 
 ************************************************************************/
 class CompilerTrackingInfo
@@ -205,17 +206,9 @@ protected:
 
   // log to a user table
   void logIntervalInPrivateTable();
-  //
-  // don't do this on Windows since repository tables won't exist
-  Int32 logIntervalInRepository();
 
-  // manageability API - QPID
-  inline NABoolean isAMQPConnectionEstablished()   
-    { return AMQPConnectionEstablished_; }
-
-  // manageability API - QPID
-  inline void AMQPConnectionEstablished(NABoolean connState) 
-    { AMQPConnectionEstablished_ = connState; }
+  // log to a log4cpp appender
+  void logIntervalInLog4Cpp();
 
 private:
   ~CompilerTrackingInfo();
@@ -277,8 +270,5 @@ private:
   //
   // the heap created on
   CollHeap *heap_;
-  
-  // track whether we have a transducer QPID connection
-  NABoolean AMQPConnectionEstablished_;
 };
 #endif

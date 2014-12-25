@@ -32,4 +32,4 @@
  ****************************************************************************/
 #include "Platform.h"
 
-    	  #include "logmxevent_sq.cpp"
+#include "logmxevent_traf.cpp"

@@ -16,11 +16,9 @@
 #
 # @@@ END COPYRIGHT @@@
 
-SEAPILOT_INC = $(MY_SPROOT)/export/include
 TMINC=$(MY_SQROOT)/src/tm
 INC_JAVA=$(JAVA_HOME)/include
 INC_JAVALINUX=$(JAVA_HOME)/include/linux
-TM_USE_SEAPILOT=1
 TMOS_TRACE=0
 #USE_THREADED_IO = 1 indicates a multithreaded TM build.
 ifndef USE_THREADED_IO

@@ -110,7 +110,6 @@ my $dir_lib = "export/lib" . $sq_mbtype;
 find_elfs($dir_lib, 0);
 my $dir_bin = "export/bin" . $sq_mbtype;
 find_elfs($dir_bin, 0);
-find_elfs("seapilot/export/lib" . $sq_mbtype, 0);
 
 # deal with jars
 find_jars("export/lib");

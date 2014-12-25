@@ -18,12 +18,10 @@
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
 #include "CompilerTracking.h"
+#include "QRLogger.h"
 #ifdef _MSC_VER
 #undef _MSC_VER
 #endif
-#include "common/sql.tracking_compilers.pb.h"
-#include "common/evl_sqlog_eventnum.h"
-#include "wrapper/amqpwrapper.h"
 /************************************************************************
  getCompilerTrackingLogFilename
 
@@ -67,7 +65,6 @@ CompilerTrackingInfo::CompilerTrackingInfo(CollHeap*  heap)
     caughtExceptionCount_(0),
     sessionCount_(0),
     prevInterval_(0),
-    AMQPConnectionEstablished_(FALSE),
     heap_(heap)
 {
   compilerInfo_[0] = '\0';
@@ -126,25 +123,14 @@ CompilerTrackingInfo::logCompilerStatusOnInterval(Int32 intervalLengthMins)
 
     //
     // log directly to a private table using dynamic SQL 
-    // instead of using the Repository infrastructure to
-    // populate repository table
     if (CmpCommon::getDefault(COMPILER_TRACKING_LOGTABLE) == DF_ON)
     {
        logIntervalInPrivateTable();    
     }
 
-//
-// This table doesn't exist on Windows, so don't log there
-    // always log to the repository table
-    Int32 rc = logIntervalInRepository();    
-    if (rc)
-    {
-       // raise a warning that compiler process is unable to log 
-       // its status and health information to the repository
-       *CmpCommon::diags() << DgSqlCode(2242);
-    }
-
-    //
+    // always log to log4cpp log
+    logIntervalInLog4Cpp();
+        
     // since the interval is expired, reset to begin tracking new interval
     resetInterval();        
   }
@@ -707,171 +693,16 @@ CompilerTrackingInfo::logIntervalInPrivateTable()
 }
 
 /************************************************************************
+method CompilerTrackingInfo::logIntervalInLog4Cpp
 
-method CompilerTrackingInfo::logIntervalInRepository
-log the interval data into a repository table 
-
-The repository table used is: 
-        MANAGEABILITY.INSTANCE_REPOSITORY.STATE_TRACKING_COMPILERS_TABLE
+helper to simply print the tracker info into a log4cpp appender
 
 ************************************************************************/
-
-// Don't log this on Windows since the repository table does not exist
-Int32 CompilerTrackingInfo::logIntervalInRepository()
+void
+CompilerTrackingInfo::logIntervalInLog4Cpp()
 {
-#ifdef SP_DIS
-   return 0;
-#else
-   // declare a stack variable and populate
-   sql::tracking_compilers trc_row;
-
-   Int32 rc;
-   if (!isAMQPConnectionEstablished())
-   {
-      rc = createAMQPConnection (NULL, -1);
-      if (rc)
-         return rc;
-      AMQPConnectionEstablished(TRUE);
-      
-   }
-
-   // the pointer to the process info for this tracker
-   CmpProcess *p = processInfo_;
-   CMPASSERT( NULL != p );
-
-   // ============================================
-   // -- start filling up the message structure --
-   // ============================================
-  
-   // -- compiler Id
-   char compilerId[COMPILER_ID_LEN];
-   memset (compilerId, '\0', COMPILER_ID_LEN);
-   p->getCompilerId(compilerId);
-   trc_row.set_compiler_id(compilerId);
-
-   // interval start time
-   trc_row.set_interval_start_lct_ts(beginIntervalTimeUEpoch());
-
-   // -- the CPU usage of this interval
-   trc_row.set_interval_path_len(cpuPathLength());
-
-   // -- longest CPU path length for single compile
-   // -- within this interval
-   trc_row.set_longest_compile_path(longestCompile());
-
-   // -- age of compiler being tracked
-   trc_row.set_compiler_age(compilerAge());
-
-   // -- number of sessions during this interval
-   trc_row.set_num_sessions(sessionCount());
-
-   // -- largest size of the statement heap so far
-   trc_row.set_stmt_heap_hwtr_mark(stmtHeapIntervalWaterMark());
-
-   // -- number of bytes currently allocated for the
-   // -- context heap of this process
-   trc_row.set_context_heap_size(cxtHeapCurrentSize());
-
-   // -- largest size of the context heap so far
-   trc_row.set_context_heap_hwtr_mark(cxtHeapIntervalWaterMark());
-
-   // -- number of bytes currently allocated for the
-   // -- system heap of this process
-   trc_row.set_system_heap_size(p->getCurrentSystemHeapSize());
-
-   // -- largest size of the system heap so far
-   trc_row.set_system_heap_hwtr_mark(systemHeapIntervalWaterMark());
-
-   // -- number of bytes currently allocated for the
-   // -- metadata cache
-   trc_row.set_metadata_cache_size(metaDataCacheCurrentSize());
-
-   // -- largest size of the metadata cache so far
-   trc_row.set_metadata_cache_hwtr_mark(metaDataCacheIntervalWaterMark());
-
-   // -- number of hits on the metadata cache
-   trc_row.set_metadata_cache_hits(metaDataCacheHits());
-
-   // -- number of misses on the metadata cache
-   trc_row.set_metadata_cache_lookups(metaDataCacheLookups());
-
-   // -- number of bytes currently allocated for the
-   // -- query cache
-   trc_row.set_query_cache_size(qCacheCurrentSize());
-
-   // -- largest size of the query cache so far
-   trc_row.set_query_cache_hwtr_mark(qCacheIntervalWaterMark());
-
-   // -- number of hits on the query cache
-   trc_row.set_query_cache_hits(qCacheHits());
-
-   // -- number of misses on the query cache
-   trc_row.set_query_cache_lookups(qCacheLookups());
-
-   // -- number of bytes currently allocated for the
-   // -- histogram cache
-   trc_row.set_histogram_cache_size(hCacheCurrentSize());
-
-   // -- largest size of the histogram cache so far
-   trc_row.set_histogram_cache_hwtr_mark(hCacheIntervalWaterMark());
-
-   // -- number of hits on the histogram cache
-   trc_row.set_histogram_cache_hits(hCacheHits());
-
-   // -- number of misses on the histogram cache
-   trc_row.set_histogram_cache_lookups(hCacheLookups());
-
-   // -- number of compiled queries (DDL and DML)
-   trc_row.set_num_queries_compiled(successfulQueryCount());
-
-   // -- number of failed compilations
-   trc_row.set_num_failed_queries(failedQueryCount());
-
-   // -- number of queries compiled successfully
-   // -- but with warnings (2053 and 2078)
-   trc_row.set_num_caught_exceptions(caughtExceptionCount());
-
-   // -- the number of recompiles
-   trc_row.set_num_recompiles(qCacheRecompiles());
-
-   // -- extend any new counters
-   trc_row.set_compiler_info(compilerInfo());
-
-   // ============================================
-   //  -- done filling up the message structure --
-   // ============================================
-  
-   // populate the info header
-   common::info_header *infoHeader = NULL;
-   infoHeader = trc_row.mutable_header();
-   rc =  initAMQPInfoHeader(infoHeader, SQEVL_SQL);
-   if (rc)
-   {
-      closeAMQPConnection();
-      AMQPConnectionEstablished(FALSE);
-      return rc;
-      
-   }
-
-   // set the routing key and send the message
-   AMQPRoutingKey routingKey (SP_HEALTH_STATE, SP_SQLPACKAGE, SP_INSTANCE, SP_PUBLIC, 
-                              SP_GPBPROTOCOL, "tracking_compilers");
-   try {
-     rc = sendAMQPMessage (true, trc_row.SerializeAsString(), 
-                           SP_CONTENT_TYPE_APP, routingKey);
-   
-     if (rc) throw 1;
-   } catch (...) {
-     if (rc == SP_SUCCESS) rc = SP_SEND_FAILED; 
-     closeAMQPConnection();
-     AMQPConnectionEstablished(FALSE);
-   }
-  
-   return rc;
-#endif
+   QRLogger::log(CAT_SQL_COMP, LL_MVQR_FAIL, "dumping a CompilerTrackingInfo event");
 }
-
-       // doesn't exist. Use CQD to log to a private table instead if needed
 
 /************************************************************************
 method CompilerTrackingInfo::printToFile

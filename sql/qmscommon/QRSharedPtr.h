@@ -259,7 +259,7 @@ class QRMemCheckMarker : public NABasicObject
       {
         if (marked_)
           {
-            QRLogger::log(CAT_MEMORY, LL_WARN,
+            QRLogger::log(CAT_SQL_MEMORY, LL_WARN,
               ">>> !!! %s instance deleted more than once: line %d in %s",
 			className(), delLineNumber, delFileName);
           }
@@ -271,7 +271,7 @@ class QRMemCheckMarker : public NABasicObject
       {
         if (marked_)
           {
-            QRLogger::log(CAT_MEMORY, LL_WARN,
+            QRLogger::log(CAT_SQL_MEMORY, LL_WARN,
               ">>> !!! Pointer to %s instance used after deletion", className());
           }
       }
@@ -378,12 +378,12 @@ class QRMemCheckDeleter
 #endif
             if (!clsName)
               {
-                QRLogger::log(CAT_MEMORY, LL_ERROR,
+                QRLogger::log(CAT_SQL_MEMORY, LL_ERROR,
                                           ">>> !!! memory leak");
               }
               else
               {
-                QRLogger::log(CAT_MEMORY, LL_ERROR,
+                QRLogger::log(CAT_SQL_MEMORY, LL_ERROR,
                   ">>> !!! Instance of %s created at line %d in %s was leaked",
                   clsName, ptr->getAllocLineNumber(), ptr->getAllocFileName().data());
               }

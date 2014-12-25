@@ -188,7 +188,7 @@ public:
     isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
     isDrop_(FALSE), isAlter_(FALSE),
     isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
-      isLibrary_(FALSE), isRoutine_(FALSE),
+    isLibrary_(FALSE), isRoutine_(FALSE),
     isUstat_(FALSE),
     isHbase_(FALSE),
     isNative_(FALSE),
@@ -354,12 +354,27 @@ public:
   {(v ? flags_ |= GET_MD_VERSION : flags_ &= ~GET_MD_VERSION); }
   NABoolean getMDVersion() { return (flags_ & GET_MD_VERSION) != 0;}
 
+  void setCreateRepos(NABoolean v)
+  {(v ? flags_ |= CREATE_REPOS : flags_ &= ~CREATE_REPOS); }
+  NABoolean createRepos() { return (flags_ & CREATE_REPOS) != 0;}
+
+  void setDropRepos(NABoolean v)
+  {(v ? flags_ |= DROP_REPOS : flags_ &= ~DROP_REPOS); }
+  NABoolean dropRepos() { return (flags_ & DROP_REPOS) != 0;}
+
+  void setUpgradeRepos(NABoolean v)
+  {(v ? flags_ |= UPGRADE_REPOS : flags_ &= ~UPGRADE_REPOS); }
+  NABoolean upgradeRepos() { return (flags_ & UPGRADE_REPOS) != 0;}
+
  protected:
   enum Flags
   {
     CREATE_MD_VIEWS      = 0x0001,
     DROP_MD_VIEWS          = 0x0002,
-    GET_MD_VERSION        = 0x0004
+    GET_MD_VERSION        = 0x0004,
+    CREATE_REPOS            = 0x0008,
+    DROP_REPOS                = 0x0010,
+    UPGRADE_REPOS            = 0x0020
   };
 
   // is this a DDL operation to work on SQL/MP tables?

@@ -1810,11 +1810,23 @@ else
     <property>
      <name>dcs.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
     </property>
+    <property>
+     <name>dcs.server.user.program.statistics.enabled</name> <value>false</value>
+    </property>
   </configuration>
 EOF
   echo "$(hostname -f) 4" > servers
 fi
 # end of DCS setup
+
+# begin of trafci setup
+
+TRAFCI_BIN_DIR=$MY_SQROOT/trafci/bin
+mv $TRAFCI_BIN_DIR/trafci  $TRAFCI_BIN_DIR/trafci.orig
+sed -e "s@localhost:37800@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci
+chmod +x $TRAFCI_BIN_DIR/trafci
+
+# end of trafci set up
 
 if [[ -d $PHX_SRC ]]; then
   echo "Phoenix files already exist, skipping Phoenix setup" | tee -a ${MY_LOG_FILE}

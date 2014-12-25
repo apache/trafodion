@@ -643,7 +643,7 @@ class QRElement : public XMLElement
      */
     virtual char getIDFirstChar()
       {
-        assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                           FALSE, QRDescriptorException, 
                           "QRElement subclass must supply a definition for getIDFirstChar() "
                           "to use the id attribute.");
@@ -772,7 +772,7 @@ class QRElement : public XMLElement
       return referencedElement_;
     }
 
-    #define THROW_DOWNCAST_EXCEPTION assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL, FALSE, QRLogicException, "Down cast to wrong element type.");
+    #define THROW_DOWNCAST_EXCEPTION assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL, FALSE, QRLogicException, "Down cast to wrong element type.");
 
     // LCOV_EXCL_START :rfi
     // Methods for easy downcasting to specific classes.
@@ -1922,7 +1922,7 @@ class QRTable : public QRElement
      */
     virtual void setID(NumericID idNum)
       {
-        assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                           FALSE, QRDescriptorException, 
                           "setAndRegisterID() must be used instead of setID() "
                           "for element QRTable");
@@ -2557,7 +2557,7 @@ class QRColumn : public QRExplicitExpr
      */
     virtual void setID(NumericID idNum)
       {
-        assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                           FALSE, QRDescriptorException, 
                           "setAndRegisterID() must be used instead of setID() "
                           "for element QRColumn");
@@ -3096,7 +3096,7 @@ class QRJoinPred : public QRElementList
      */
     virtual void setID(NumericID idNum)
       {
-        assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                           FALSE, QRDescriptorException, 
                           "setAndRegisterID() must be used instead of setID() "
                           "for element QRJoinPred");
@@ -4429,7 +4429,7 @@ class QRWStringVal : public QRScalarValue
      */
     virtual void setValue(const NAString& value)
       {
-        assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                           FALSE, QRDescriptorException, 
                           "setWideValue() must be used instead of setValue() "
                           "for element QRWStringVal");
@@ -4486,7 +4486,7 @@ class QRWStringVal : public QRScalarValue
      */
     virtual const NAString& getValue() const
       {
-        assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                           FALSE, QRDescriptorException, 
                           "getWideValue() must be used instead of getValue() "
                           "for element QRWStringVal");
@@ -4508,7 +4508,7 @@ class QRWStringVal : public QRScalarValue
      */
     virtual void setStringRep(const NAString& value)
       {
-        assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                           FALSE, QRDescriptorException, 
                           "setWStringRep() must be used instead of setStringRep() "
                           "for element QRWStringVal");
@@ -6063,7 +6063,7 @@ class QRExpr : public QRElement
      */
     virtual void setID(NumericID idNum)
       {
-        assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                           FALSE, QRDescriptorException, 
                           "setAndRegisterID() must be used instead of setID() "
                           "for element QRExpr");
@@ -6152,7 +6152,7 @@ class QRExpr : public QRElement
      */
     ExprResult getResult() const
       {
-        assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                           isResidual_, QRDescriptorException,
                           "getResult() only valid for expr used as residual pred.");
         return result_;
@@ -6164,7 +6164,7 @@ class QRExpr : public QRElement
      */
     void setResult(ExprResult result)
       {
-        assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+        assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                           isResidual_, QRDescriptorException,
                           "setResult() only valid for expr used as residual pred.");
         result_ = result;
@@ -7284,7 +7284,7 @@ class QRPublishDescriptor : public QRElement
           return name_->getMVName();
 	else
 	{
-	  assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+	  assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                             mvDesc_ != NULL, QRDescriptorException,
 			    "In Publish descriptor, expecting <MV> When <MVName> not supplied.");
 	  return mvDesc_->getTable()->getTableName();
@@ -7488,7 +7488,7 @@ class QRUpdate : public QRElement
 
     const NAString& getRefreshTimestamp()
     {
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         type_ == REFRESH || type_ == RECOMPUTE, QRDescriptorException,
 			"Refresh timestamp can only be used in Refresh or Recompute Update elements.");
       return timestamp_;
@@ -7496,7 +7496,7 @@ class QRUpdate : public QRElement
 
     void setRefreshTimestamp(const NAString& ts)
     {
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         type_ == REFRESH || type_ == RECOMPUTE, QRDescriptorException,
 			"Refresh timestamp can only be used in Refresh or Recompute Update elements.");
       timestamp_ = ts;
@@ -7504,7 +7504,7 @@ class QRUpdate : public QRElement
 
     const NAString& getNewName()
     {
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         type_ == RENAME, QRDescriptorException,
 			"MV new name can only be used in Rename Update elements.");
       return newName_;
@@ -7512,7 +7512,7 @@ class QRUpdate : public QRElement
 
     void setNewName(const NAString& name)
     {
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         type_ == RENAME, QRDescriptorException,
 			"MV new name can only be used in Rename Update elements.");
       newName_ = name;
@@ -7521,7 +7521,7 @@ class QRUpdate : public QRElement
     // LCOV_EXCL_START :cnu
     const NABoolean getIgnoreChanges()
     {
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         type_ == ALTER, QRDescriptorException,
 			"Ignore changes flag can only be used in Alter Update elements.");
       return hasIgnoreChanges_;
@@ -7530,7 +7530,7 @@ class QRUpdate : public QRElement
 
     void setIgnoreChanges(NABoolean ic)
     {
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         type_ == ALTER, QRDescriptorException,
 			"Ignore changes flag can only be used in Alter Update elements.");
       hasIgnoreChanges_ = ic;
@@ -7538,7 +7538,7 @@ class QRUpdate : public QRElement
 
     void setDefaultValue(const NAString& name, const NAString& value)
     {
-      assertLogAndThrow(CAT_QR_DESC_GEN, LL_MVQR_FAIL,
+      assertLogAndThrow(CAT_SQL_COMP_QR_DESC_GEN, LL_MVQR_FAIL,
                         type_ == DEFAULT, QRDescriptorException,
 			"Defaults can only be used in Default Update elements.");
       defaultName_  = name;

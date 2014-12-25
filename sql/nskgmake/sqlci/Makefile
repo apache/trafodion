@@ -21,12 +21,14 @@
 CPPSRC := SqlciMain.cpp \
 	MxciEHCallBack.cpp
 
-EARLY_DLLS:= -ljsig
+EARLY_DLLS:= -ljsig 
 
-DEP_LIBS += tdm_sqlcli sqlcilib log4cpp arkcmp_dll
+DEP_LIBS += tdm_sqlcli sqlcilib arkcmp_dll
 
 CPPSRC += vprocsqlci.cpp
 
 INCLUDE_DIRS += sqlutils/inc
 
 SRCPATH := sqlci bin
+
+EXTERN_LIBS += $(LIBROOT)/liblog4cpp.so
