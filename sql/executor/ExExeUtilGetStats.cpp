@@ -1202,13 +1202,13 @@ short ExExeUtilGetStatisticsTcb::work()
 	      getSubstrInfo(statsRow_, statsRowlen_, "UsedRows:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, statsRowlen_, "HbaseCalls:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "HbaseSumIOCalls:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-10s", sstrbuf);
 
 	      getSubstrInfo(statsRow_, statsRowlen_, "MessagesBytes:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, statsRowlen_, "TimeWaitingOnHbase:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "HbaseSumIOTime:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 	    }
             else if (getStatsTdb().oldFormat())
@@ -3051,7 +3051,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
         moveRowToUpQueue(statsBuf_);
 	str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
 		"Estimated/Actual", "Estimated/Actual", "IOs", "IO MBytes",
-                "Elapsed Time", "Max Time");
+                "Sum Time", "Max Time");
         moveRowToUpQueue(statsBuf_);
         isHeadingDisplayed_ = TRUE;
         step_ = FORMAT_AND_RETURN_HBASE_STATS_;

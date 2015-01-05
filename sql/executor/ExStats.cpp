@@ -3033,7 +3033,7 @@ void ExHbaseAccessStats::getVariableStatsInfo(char * dataBuffer,
   buf += *((short *) dataLen);
 
   str_sprintf (buf, 
-	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HbaseCalls: %Ld TimeWaitingOnHbase: %Ld MaxHbaseIOTime: %Ld",
+	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HbaseSumIOCalls: %Ld HbaseSumIOTime: %Ld HbaseMaxIOTime: %Ld",
 	       (char*)tableName_,
 	       numBytesRead(), //lobStats()->bytesRead,
 	       rowsAccessed(),

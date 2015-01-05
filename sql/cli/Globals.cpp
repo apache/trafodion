@@ -976,29 +976,6 @@ Lng32 CliGlobals::resetContext(ContextCli *theContext, void *contextMsg)
 }
 //LCOV_EXCL_STOP
 
-//LCOV_EXCL_STOP
-/*
-void CliGlobals::closeAllOpenCursors(Int64 tcbref) {
-  // This function goes through each context and check if the context transid
-  // matches the param transid.  If there is a match, it looks for statements 
-  // that have open non-holdable cursors and close them.
-
-  contextList_->position();
-
-  ContextCli * cntxt;
-
-  while (cntxt = (ContextCli *)contextList_->getNext())
-  {
-    ExTransaction *trans = cntxt->getTransaction();
-    Int64 contextTcbref = trans->getExeXnId();
-    if (contextTcbref == tcbref)
-      {
-  	  // match transid, close all nonholdable cursors.
-        cntxt->closeAllCursors(ContextCli::CLOSE_ALL, ContextCli::CLOSE_ENDED_XN);
-      }
-  }
-}
-*/
 //ss_cc_change POS featue no longer used
 //LCOV_EXCL_START
 void CliGlobals::clearQualifiedDiskInfo()
