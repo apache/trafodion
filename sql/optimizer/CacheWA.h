@@ -211,6 +211,15 @@ class CacheWA : public NABasicObject
 
   LIST(Int32) &getConstParamPositionsInSql() { return sqlStmtConstParamPos_; }
   LIST(Int32) &getSelParamPositionsInSql() { return sqlStmtSelParamPos_; }
+  LIST(Int32) &getHQCConstPositionsInSql() { return hqcSqlConstPos_; }
+
+  void bindConstant2SQC(BaseColumn* base, ConstantParameter* cParameter)
+  { 
+     if (HQCKey_&& HQCKey_->isCacheable())
+        HQCKey_->bindConstant2SQC(base, cParameter, hqcSqlConstPos_); 
+  }
+
+  void setHQCKey(HQCParseKey * key) { HQCKey_ = key;}
 
   // return current query's formal parameter types
   const ParameterTypeList* getFormalParamTypes();
@@ -309,6 +318,8 @@ class CacheWA : public NABasicObject
 private:
   typedef TableDesc*  TableDescPtr;
 
+  HQCParseKey* HQCKey_; //collect histogram info for a Hybrid Cache Key during NormalizeForCache.
+  
   Int32 numberOfExprs_; // number of ExprNodes in current query
   // a query with more than N ExprNodes is not cacheable
   
@@ -347,6 +358,9 @@ private:
                       // list of positions in sql stmt
                       // that each constant occurs. Each is replaced 
                       // by a selParameter
+  LIST(Int32) hqcSqlConstPos_;
+                      // used by the HQC logic to keep track of the correct
+                      // order of the query constants
   UInt32              posCounter_; 
   // used for keeping track of positions of aliased SelParams & ParamTypes
   // valid positions are 1 up to count of SelParams & ConstantParameters

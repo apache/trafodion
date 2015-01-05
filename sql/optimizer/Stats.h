@@ -827,6 +827,13 @@ public:
   void reduceNumHistInts(Criterion reductionCriterion, 
                                  Source invokedFrom = AFTER_FETCH);
 
+  // compute the extended boundaries of an interval when compared to its neighbors. The method does not
+  // have any side affect on the interval or its neighbors . This is used by the HQC logic
+  void computeExtendedIntRange (Interval& currentInt, Criterion& reductionCriterion, 
+                                EncodedValue& hiBound, EncodedValue& loBound, 
+                                NABoolean& hiBoundInclusive, NABoolean& loBoundInclusive);
+
+
   // ----------------------------------------------------------------------------
   // Method to reduce the number of histogram intervals based on query predicates
   // example predicates
@@ -1453,6 +1460,7 @@ public:
 	maxFreq_ = -1.0;
 
     avgVarcharSize_ = 0;
+    afterFetchIntReductionAttempted_ = FALSE;
 
     //NB: flags' values *must* be set by set* functions
     setUnique        (FALSE) ;
@@ -1894,6 +1902,10 @@ public:
                                      const NAColumn * column,
                                      NABoolean ignoreHistogramCachingFlag=FALSE);
 
+  // tracks whether a reduction of histograms after fetch histograms was attempted on this colStats
+  NABoolean afterFetchIntReductionAttempted () {return afterFetchIntReductionAttempted_; }
+  void setAfterFetchIntReductionAttempted () { afterFetchIntReductionAttempted_ = TRUE;}
+
   //reduce the number of histogram intervals in the histogram
   //referenced by this ColStats object. The reduction criterion
   //depends on parameters invokedFrom, and reductionCriterion
@@ -2147,6 +2159,9 @@ private:
 
   Int32 avgVarcharSize_;         // average number of chars in columns[0], if
                                // it is of VARCHAR type. 
+
+  NABoolean afterFetchIntReductionAttempted_; // was an attempted made after histogram fetch 
+                                              // to reduce the number of intervals for this colStats
 
   NAMemory* heap_;           // the NAMemory* for dynamic allocation.
 }; // ColStats

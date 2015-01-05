@@ -73,6 +73,7 @@
 
 #include "ItemFuncUDF.h"
 #include "CmpSeabaseDDL.h"
+#include "QCache.h"
 #include <stack>
 
 
@@ -1113,6 +1114,12 @@ ItemExpr* ItemExpr::performImplicitCasting(CharInfo::CharSet cs, BindWA *bindWA)
            new_cv->changeType(newType);
         }
 
+        ConstValue* new_chld_cv = dynamic_cast<ConstValue*>(new_chld_ie);
+
+        CURRENTQCACHE->getHQC()
+             ->collectBinderRetConstVal4HQC
+                 ((ConstValue*)(child(i)->castToItemExpr()), new_chld_cv);
+        
         result->setChild(i, new_chld_ie);
 
         continue; //Go on to deal with next child
@@ -8096,7 +8103,12 @@ ItemExpr *ConstValue::bindNode(BindWA *bindWA)
   buf[len++] = '\0';
   NAString fabricatedName(buf,len,bindWA->wHeap());
   delete [] buf;
-  return ItemExpr::bindUserInput(bindWA,type,fabricatedName);
+  ItemExpr * result = ItemExpr::bindUserInput(bindWA,type,fabricatedName);
+  ConstValue* cv = dynamic_cast<ConstValue*>(result);
+  CURRENTQCACHE->getHQC()
+             ->collectBinderRetConstVal4HQC(this, cv);
+             
+  return result;
 } // ConstValue::bindNode()
 
 // -----------------------------------------------------------------------

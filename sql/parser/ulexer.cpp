@@ -3219,3 +3219,23 @@ void yyULexer::addTokenToGlobalQueue(NABoolean isComment)
                           isComment);
   ParScannedTokenPos += YYLeng();
 }
+
+NABoolean yyULexer::isDynamicParameter(Int32 tokCod)
+{
+    return (tokCod == PARAMETER);
+}
+
+NABoolean yyULexer::isLiteral4HQC(Int32 tokCod) 
+{
+     if(tokCod == NUMERIC_LITERAL_EXACT_NO_SCALE
+        ||tokCod == NUMERIC_LITERAL_EXACT_WITH_SCALE
+        ||tokCod == NUMERIC_LITERAL_APPROX
+        ||tokCod == TOK_MBYTE_LITERAL
+        ||tokCod == TOK_SBYTE_LITERAL
+        ||tokCod == QUOTED_STRING
+        ||tokCod == TOK_NULL)
+        return TRUE;
+    else
+        return FALSE;
+}
+

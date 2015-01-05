@@ -147,6 +147,7 @@ Parser::Parser(const CmpContext* cmpContext)
  
   clearHasOlapFunctions();
 
+  HQCKey_ = NULL;
 }
 
 Parser::~Parser()
@@ -1627,6 +1628,56 @@ void Parser::ResetLexer(void)
   ParScannedTokenOffset = 0;
   ParScannedInputCharset = SQLCHARSETCODE_UTF8;
   ParNameLocListPtr  = NULL;
+}
+
+void HQCParseKey::addTokenToNormalizedString(Int32 & tokCod)
+{
+  if(SqlParser_CurrentParser->getLexer()->isLiteral4HQC(tokCod))
+  {
+     keyText_ += "#np# ";
+     NAString* literal = unicodeToChar(SqlParser_CurrentParser->YYText(), SqlParser_CurrentParser->YYLeng(), (Lng32)ParScannedInputCharset, heap_);
+     CMPASSERT(literal);
+     getParams().getNPLiterals().insert(*literal);
+  }
+  else
+  {  
+     NAString* tok = unicodeToChar(SqlParser_CurrentParser->YYText(), SqlParser_CurrentParser->YYLeng(), (Lng32)ParScannedInputCharset, heap_);
+     if(tok) {
+        //for first token which is select/insert/update/delete, it might be HQC cacheable.
+        tok->toLower(); //make case insensitive
+        if(nOfTokens_ == 0 
+           && ( strncmp(tok->data(), "select", 6) == 0
+              ||strncmp(tok->data(), "insert", 6) == 0
+              ||strncmp(tok->data(), "update", 6) == 0
+              ||strncmp(tok->data(), "delete", 6) == 0) 
+          )  
+          setIsCacheable(TRUE);
+        
+         if(SqlParser_CurrentParser->getLexer()->isDynamicParameter(tokCod)) {
+            NABoolean FoundInList = FALSE;
+            for(CollIndex i = 0; i < HQCDynParamMap_.entries(); i++) {
+                if(HQCDynParamMap_[i].original_ ==  *tok)
+                {
+                    keyText_ += HQCDynParamMap_[i].normalized_ + " ";
+                    FoundInList = TRUE;
+                    break;
+                }
+            }
+            if(!FoundInList) {
+                NAString param = "?";
+                param += "param" + UnsignedToNAString(HQCDynParamMap_.entries()+1);
+                keyText_ += param + " ";
+                HQCDynParamMap_.insert(HQCDParamPair(*tok, param));
+            }
+            //not support dynamic parameter
+            setIsCacheable(FALSE);
+         }
+         else
+           keyText_ += *tok + " ";
+     }
+   }
+   nOfTokens_++;
+   isStringNormalized_ = FALSE;
 }
 
 /* JWP

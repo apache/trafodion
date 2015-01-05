@@ -116,6 +116,8 @@ public:
   enum Step
   {
     BUILD_INPUT_BUFFER_,
+    PROCESS_GETNEXT_,
+    PROCESS_REQUEST_,
     SEND_INPUT_BUFFER_,
     GET_REPLY_BUFFER_,
     RETURN_ROWS_,

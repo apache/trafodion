@@ -158,7 +158,12 @@ public:
     void setInputPos(Int32 i);
 
     void setReturnAllChars()   { returnAllChars_ = TRUE; }
-    void resetReturnAllChars() { returnAllChars_ = FALSE; }
+    void resetReturnAllChars() { returnAllChars_ = FALSE; }	
+    
+    NABoolean isDynamicParameter(Int32 tokCod);
+
+    NABoolean isLiteral4HQC(Int32 tokCod);
+
 protected:
     void yyULexer_ctor(const NAWchar *str, Int32 charCount);
     Int32 input_pos_; // used only by {set|get}InputPos()
@@ -196,7 +201,7 @@ protected:
       yy_hold_char_ = *currChar_; *currChar_ = '\0'; yy_c_buf_p_ = currChar_; }
 
     // un-null terminate yytext_. used in scanning compound tokens.
-    void undoBeforeAction() { *currChar_ = yy_hold_char_; }
+    void undoBeforeAction() { *yy_c_buf_p_ = yy_hold_char_; }
 
     // useful after an advance()
     Int32 YYLengNow()	{ return (Int32)(currChar_ - beginRun_); }

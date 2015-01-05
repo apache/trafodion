@@ -47,6 +47,8 @@
 #include "ExSqlComp.h"
 
 #include "ErrorMessage.h"
+#include "CmpStatement.h"
+#include "CmpStoredProc.h"
 
 ex_tcb * ExStoredProcTdb::build(ex_globals * glob)
 { 
@@ -250,9 +252,124 @@ short ExStoredProcTcb::work()
 		      } // move input data
 		  } // more entries in down queue
 	      } // while not done
-
-	    // Ship the request to ARKCMP.
-	    step_ = SEND_INPUT_BUFFER_;
+              //CmpCommon::getDefault(PROCESS_ISP_LOCALLY) == DF_ON
+              if (spTdb().isExecuteInLocalProcess())
+                step_ = PROCESS_REQUEST_;
+              else
+	        // Ship the request to ARKCMP.
+	        step_ = SEND_INPUT_BUFFER_;
+	  }
+	  break;
+	case PROCESS_REQUEST_:
+	  {
+	    //construct request
+	    ULng32 sz = inputBuffer_->get_buffer_size();
+            inputBuffer_->drivePack();
+            inputBuffer_->setBufferStatus(SqlBuffer::IN_USE);
+            // The request is dynamically allocated here instead of using stack variable, 
+            // because it is owned by a CmpStatementISP inside compileDirect,
+            // and will be deleted in destructor of CmpStatementISP.
+            // refer to ExCmpMessage::actOnReceive()
+	    CmpMessageISPRequest* ispRequest = new (getHeap()) CmpMessageISPRequest((char *)spTdb().spName_,
+                                            spTdb().extractInputExpr_, 
+                                            spTdb().extractInputExpr_->getLength(), 
+                                            spTdb().moveOutputExpr_,
+                                            spTdb().moveOutputExpr_->getLength(),
+                                            0, 0, 
+                                            (void *)inputBuffer_, sz,
+                                            spTdb().outputRowlen_, sz, 
+                                            getHeap(),
+                                            master_glob->getStatement()->getUniqueStmtId(), 
+                                            master_glob->getStatement()->getUniqueStmtIdLen());
+            //save requestId in case there may be getNext
+            requestId_ = ispRequest->id();
+            //allocate returnedBuffer
+            returnedBuffer_ = pool_->get_free_buffer(0);
+            if (returnedBuffer_ == NULL)
+	       return WORK_POOL_BLOCKED;
+            ULng32 returnedBuflen = returnedBuffer_->get_buffer_size();
+            UInt32 dummyDatalen = 0; //not used here
+            Int32 dummyCharSet = 0; //not used here
+            Int32 cpStatus;
+            ComDiagsArea *cpDiagsArea = ComDiagsArea::allocate(getHeap());
+            //pass request and returnedBuffer_ to compileDirect
+            cpStatus = CmpCommon::context()->compileDirect(
+                                 (char*)ispRequest, dummyDatalen,
+                                 master_glob->getStatement()->getContext()->exHeap(),
+                                 dummyCharSet,
+                                 CmpMessageObj::INTERNALSP_REQUEST,
+                                 (char* &)returnedBuffer_, returnedBuflen,
+                                 master_glob->getStatement()->getContext()->getSqlParserFlags(),
+                                 cpDiagsArea);
+            if(cpStatus != 0)//FAILURE
+            {
+               //replied length exceeds the return buffer length, this will abort an dump the core
+               if(returnedBuflen > returnedBuffer_->get_buffer_size())
+                  ex_assert(FALSE, "Replied length exceeds receiving buffer length.");
+                  
+               if(cpDiagsArea->mainSQLCODE() != 0) {
+                  ComDiagsArea *mainDiags = getGlobals()->castToExExeStmtGlobals()->getDiagsArea();
+                  if (mainDiags == NULL)  {
+                     mainDiags = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+                     getGlobals()->castToExExeStmtGlobals()->setGlobDiagsArea(mainDiags);
+                     mainDiags->decrRefCount();
+                  }
+                  mainDiags->mergeAfter(*cpDiagsArea);
+               }
+               cpDiagsArea->decrRefCount();
+               return WORK_BAD_ERROR;
+            }
+            cpDiagsArea->decrRefCount();
+            returnedBuffer_->driveUnpack();
+            //on success, returned rows are copied to returnedBuffer_ in compileDirect
+	    step_ = RETURN_ROWS_;
+	  }
+	  break;
+	case PROCESS_GETNEXT_:
+	  {
+	     //getNext request can be allocated in stack, because it's not own by CmpStatementISP
+	     //refer to ExCmpMessage::actOnReceive()
+             CmpMessageISPGetNext ispRequestGetNext(returnedBuffer_->get_buffer_size(), requestId_, 0, 0);
+             returnedBuffer_ = pool_->get_free_buffer(0);
+             if (returnedBuffer_ == NULL)
+	          return WORK_POOL_BLOCKED;
+             ULng32 returnedBuflen = returnedBuffer_->get_buffer_size();
+             UInt32 dummyDatalen = 0; //not used here
+             Int32 dummyCharSet = 0; //not used here
+             Int32 cpStatus;
+             ComDiagsArea *cpDiagsArea = ComDiagsArea::allocate(getHeap());
+             cpStatus = CmpCommon::context()->compileDirect(
+                                 (char*)&ispRequestGetNext, dummyDatalen,
+                                 master_glob->getStatement()->getContext()->exHeap(),
+                                 dummyCharSet,
+                                 CmpMessageObj::INTERNALSP_GETNEXT,
+                                 (char* &)returnedBuffer_, returnedBuflen,
+                                 master_glob->getStatement()->getContext()->getSqlParserFlags(),
+                                 cpDiagsArea);
+                                 
+             if(cpStatus != 0)//FAILURE
+             {
+                 //replied length exceeds the return buffer length, this will abort an dump the core
+                 if(returnedBuflen > returnedBuffer_->get_buffer_size())
+                    ex_assert(FALSE, "Replied length exceeds receiving buffer length.");
+                    
+                 if(cpDiagsArea->mainSQLCODE() != 0) {
+                    ComDiagsArea *mainDiags = getGlobals()->castToExExeStmtGlobals()->getDiagsArea();
+                    if (mainDiags == NULL)  {
+                       mainDiags = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+                       getGlobals()->castToExExeStmtGlobals()->setGlobDiagsArea(mainDiags);
+                       mainDiags->decrRefCount();
+                    }
+                    mainDiags->mergeAfter(*cpDiagsArea);
+                 }
+                 cpDiagsArea->decrRefCount();
+                 return WORK_BAD_ERROR;
+             }
+         
+             cpDiagsArea->decrRefCount();
+             returnedBuffer_->driveUnpack();
+             //on success, returned rows are copied to returnedBuffer_ in compileDirect
+	     step_ = RETURN_ROWS_;	    
 	  }
 	  break;
 	  
@@ -460,13 +577,15 @@ short ExStoredProcTcb::work()
 		  {
 		    // still more input requests. Get the
 		    // next buffer from arkcmp.
-		    step_ = GET_REPLY_BUFFER_;
+                  if (spTdb().isExecuteInLocalProcess())
+                      step_ = PROCESS_GETNEXT_;
+		    else
+		        step_ = GET_REPLY_BUFFER_;
 		  }
 		else
 		  {
 		    // done with all the inputs. 
 		    inputBuffer_->init(inputBuffer_->get_buffer_size());
-
 		    step_ = BUILD_INPUT_BUFFER_;
 		  }
 		return WORK_CALL_AGAIN;

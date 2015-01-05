@@ -146,6 +146,23 @@ const NAString RelInternalSP::getText() const
   return name;
 }
 
+NABoolean RelInternalSP::isQueryCacheVirtualTable() const 
+{
+    //for query cache virtual table ISPs, 
+    //and they have 2 parameters and following ISP names.
+    return ( getProcAllParamsVids().entries() == 2 && 
+    ( procName_.compareTo("QUERYCACHE", NAString::ignoreCase)==0  || 
+      procName_.compareTo("QUERYCACHEENTRIES", NAString::ignoreCase)==0 ));
+}
+
+NABoolean RelInternalSP::isHybridQueryCacheVirtualTable() const 
+{
+    //for query hybrid cache virtual table ISPs, 
+    //and they have 2 parameters and following ISP names.
+    return ( getProcAllParamsVids().entries() == 2 && 
+    ( procName_.compareTo("HYBRIDQUERYCACHE", NAString::ignoreCase)==0  || 
+      procName_.compareTo("HYBRIDQUERYCACHEENTRIES", NAString::ignoreCase)==0 ));
+}
 
 RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
 {
@@ -195,6 +212,52 @@ RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
 	  return 0;
 	}      
 
+       //This is for (hybrid)query cache ISP, like querycache('user'|'meta'|'all', 'remote'|'local')
+       //the first param specifying instance(USER, META) to get,
+       //the second specifying location the ISP will be executed, first param should be extracted in sp_process()
+       //local -- within local process
+       //remote  -- if running in embedded compiler exec ISP locally,
+       // if in remote compiler send to remote arkcmp
+      if( isQueryCacheVirtualTable() ||isHybridQueryCacheVirtualTable())
+      {
+          //extract the location parameter
+          const NAString locationParam = getProcAllParamsVids()[1].getItemExpr()->getText();
+          if(locationParam.compareTo("'local'", NAString::ignoreCase)==0)
+          {
+              //set execute in local process
+             arkcmpInfo_ |= executeInLocalProcess;
+          }
+          else//if the second param is not 'local', take as 'remote'
+          {
+              //clear execute in local bit
+             arkcmpInfo_ &= ~executeInLocalProcess;
+          }
+
+          //if this location string is different from previously set one, error
+          const NAString preLoc = bindWA->getISPExecLocation();
+          if(preLoc.isNull()) { //set first time
+              bindWA->setISPExecLocation(locationParam);
+          }
+          //preceding string is not identical to here now
+          else if(preLoc.compareTo(locationParam, NAString::ignoreCase)!=0)
+          {
+             bindWA->setErrStatus();
+             //"The location $0~string0 for $1~string1 does not match with another location $2~string2 specified. All location specifications must be identical.", 
+             *(bindWA->currentCmpContext()->diags()) 
+               << DgSqlCode(-1197) 
+               << DgString0(locationParam.data())
+               << DgString1(procName_.data())
+               << DgString2(preLoc.data());
+             return NULL;
+          }
+      }
+      else 
+      {//for other ISPs, without location parameter, 
+       //which is default situation, executing in local process, 
+       //see ExStoredProcTcb::work()  
+          arkcmpInfo_ |= executeInLocalProcess;
+      }
+      
       // get the ItemExpr for input paramters.
       procTypesTree_ = inputFormat.itemExpr();
       procTypesTree_->convertToValueIdList(procTypes_,bindWA,ITM_ITEM_LIST);

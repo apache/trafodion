@@ -418,6 +418,9 @@ void ControlDB::setControlDefault(ControlQueryDefault *def)
   case QUERY_CACHE_MAX_VICTIMS:
     CURRENTQCACHE->setMaxVictims(getDefaultAsLong(QUERY_CACHE_MAX_VICTIMS));
     break;
+  case HQC_MAX_VALUES_PER_KEY:
+    CURRENTQCACHE->setHQCMaxValuesPerKey(getDefaultAsLong(HQC_MAX_VALUES_PER_KEY));
+    break;
   case QUERY_CACHE_REQUIRED_PREFIX_KEYS:
   case QUERY_CACHE_STATISTICS_FILE:
     // the above CQD changes do not affect compiler plan quality

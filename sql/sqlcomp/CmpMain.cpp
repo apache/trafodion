@@ -90,6 +90,7 @@
 
 #define   SQLPARSERGLOBALS_NADEFAULTS
 #include "SqlParserGlobalsCmn.h"
+#define SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
 #include "SqlParserGlobals.h"           // should be last #include
 
 #include "CompException.h"
@@ -428,7 +429,9 @@ void CmpMain::sqlcompCleanup(const char *input_str,
                              NABoolean endTran)
 {
   CURRCONTEXT_HISTCACHE->resetAfterStatement();
-
+  
+  CURRENTQCACHE->getHQC()->setPlanNoAQROrHiveAccess(FALSE);
+  CURRENTQCACHE->getHQC()->setCurrKey(NULL);
   if (input_str)                // pass in as NULL if success cleanup
     if (CmpCommon::diags() &&
         CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) <= 0)
@@ -676,7 +679,14 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
   ExprNode *expr;
   Set_SqlParser_Flags(DELAYED_RESET);	// sqlcompCleanup resets for us
   Parser parser(CmpCommon::context());
-
+  //set a reference to construct hybrid cache key during parsing 
+  if(CmpCommon::getDefault(HYBRID_QUERY_CACHE) == DF_ON)
+  {
+      HQCParseKey* key = new (STMTHEAP)  HQCParseKey (new (STMTHEAP) CompilerEnv(STMTHEAP, PARSE, getStmtAttributes()), STMTHEAP);
+      parser.setHQCKey(key);
+      CURRENTQCACHE->getHQC()->setCurrKey(key);
+  }
+  
   if (input.isNullText()) {
     sqlcompCleanup("", queryExpr, FALSE);
     return PARSERERROR;
@@ -906,7 +916,13 @@ CmpMain::ReturnStatus CmpMain::sqlcompStatic
   ExprNode *parseTree;
   Set_SqlParser_Flags(DELAYED_RESET);   // sqlcompCleanup resets for us
   Parser parser(CmpCommon::context());
-
+  //set a reference to construct hybrid cache key during parsing 
+  if(CmpCommon::getDefault(HYBRID_QUERY_CACHE) == DF_ON)
+  {
+      HQCParseKey* key = new (STMTHEAP)  HQCParseKey (new (STMTHEAP) CompilerEnv(STMTHEAP, PARSE, getStmtAttributes()), STMTHEAP);
+      parser.setHQCKey(key);
+  }
+  
   CompilationMode mode = CmpCommon::context()->GetMode();
   #ifdef _DEBUG
     CMPASSERT(mode == STMT_DYNAMIC);
@@ -1443,8 +1459,11 @@ NABoolean CmpMain::compileFromCache
   CData * cachedData = NULL;
   bPatchOK = FALSE; // until proven otherwise
   NABoolean textCached = FALSE;
-  if (CURRENTQCACHE->isCachingOn()) {
-    CmpPhase phase = cachewa.getPhase();
+
+  if (!CURRENTQCACHE->isCachingOn()) 
+    return FALSE;
+
+  CmpPhase phase = cachewa.getPhase();
     
     // do not do pre-binding cache if public schema is used
     NAString pubSchema = "";
@@ -1498,12 +1517,43 @@ NABoolean CmpMain::compileFromCache
           //return TRUE; // a successful cache hit
         }
       }
-    }
-    else { // after parser
+    } else { // after parser
       // is this query cacheable after parsing or binding?
       cachewa.resetNofExprs();
       //cachewa.resetCacheable();
-      if (queryExpr && queryExpr->isCacheableExpr(cachewa)) {
+
+      CacheKey *ckey = NULL;
+      CacheData *cdata;
+      CacheEntry *entry;
+
+      NABoolean hqcHit = FALSE;
+
+      ostream* hqc_ostream=CURRENTQCACHE->getHQCLogFile();
+      HQCParseKey* hkey = NULL;
+
+      // Post Parser Caching: HQC first so that we can avoid expensive
+      // call to normalizeForCache() if there is a HQC hit.
+      if(CmpCommon::getDefault(HYBRID_QUERY_CACHE) == DF_ON &&
+         phase == PARSE)
+      {
+        hkey = SqlParser_CurrentParser->getHQCKey();
+        if(hkey && hkey->isCacheable()){
+          hkey->getNormalizedQueryString();
+          cachewa.setHQCKey(hkey);
+          hqcHit = CURRENTQCACHE->HQCLookUp(hkey, ckey);
+
+          if ( hqc_ostream ) {
+             if (hqcHit) {
+                *hqc_ostream  << "\nFound in HQC:" << endl ;
+                *hqc_ostream  << "SQL query=" << sText << endl
+                              << "HQC key=" << hkey->getKey() << endl;
+             }
+          }
+        }
+      }
+
+      // Post Parser Cache: simple insert 
+      if (!hqcHit && queryExpr && queryExpr->isCacheableExpr(cachewa)) {
         cachewa.setCacheable();
         // parameterize query
         queryExpr = queryExpr->normalizeForCache(cachewa, bindWA);
@@ -1516,31 +1566,49 @@ NABoolean CmpMain::compileFromCache
         if (cachewa.hasParameterizedPred()) {
           ((RelRoot*)queryExpr)->setMVQRqueryNonCacheable();
         }
-        // get its key into cachewa
-        cachewa.generateCacheKey(queryExpr, sText, charset, 
+        if (op != CmpMessageObj::SQLTEXT_RECOMPILE &&
+            op != CmpMessageObj::SQLTEXT_STATIC_RECOMPILE)
+        {
+            // get its key into cachewa
+            cachewa.generateCacheKey(queryExpr, sText, charset, 
                                  bindWA.getViewsUsed());
-        CacheKey *ckey = cachewa.getCacheKey(getStmtAttributes());
-        if (ckey) {
-          CacheData *cdata;
-          CacheEntry *entry;
-          if ((op == CmpMessageObj::SQLTEXT_RECOMPILE)
-              || (op == CmpMessageObj::SQLTEXT_STATIC_RECOMPILE)) {
+
             // fix for genesis case 10-090514-3953 soln 10-090514-1580:
             // Do NOT try to actively decache. Otherwise, SPJ trigger 
             // tests will leave saveabend files and QA open more cases.
             // Leave the outdated entries alone. They will eventually 
             // age out of the cache.
-          }
-          // look up query in cache
-          else if (CURRENTQCACHE->lookUp(ckey, cdata, entry, phase)) {
+            ckey = cachewa.getCacheKey(getStmtAttributes());
+        }
+     } 
+
+     // look up query in domain cache
+     if (ckey && CURRENTQCACHE->lookUp(ckey, cdata, entry, phase)) {
             // backpatch parameters in plan
             char *params; ULng32 parmSize;
-            bPatchOK = cdata->backpatchParams
-              (cachewa.getConstParams(), cachewa.getSelParams(),
-               cachewa.getConstParamPositionsInSql(),
-               cachewa.getSelParamPositionsInSql(),
-               bindWA, params, parmSize);
+            if (hqcHit) // HQC case
+               bPatchOK = cdata->backpatchParams
+                  (hkey->getParams().getConstantList(),
+                   hkey->getParams().getDynParamList(),
+                   bindWA, params, parmSize);
+            else // non-HQC case (inserts)
+               bPatchOK = cdata->backpatchParams
+                 (cachewa.getConstParams(), cachewa.getSelParams(),
+                  cachewa.getConstParamPositionsInSql(),
+                  cachewa.getSelParamPositionsInSql(),
+                  bindWA, params, parmSize);
             if (bPatchOK) {
+
+              if ( hqcHit && hqc_ostream ) {
+               *hqc_ostream << "\nHQC backpatch OK:" << endl 
+                            << "SQL query=" << sText << endl
+                            << "HQC key=" << hkey->getKey() << endl;
+              }
+              else if(!hqcHit && hkey == NULL && hqc_ostream)
+              {//usually, a query in SQC, it should have an entry in HQC, let's see why it is not
+               *hqc_ostream << "\nNot in HQC but in SQC:" << endl 
+                            << "SQL query=" << sText << endl;
+              }
 
               // if the previously generated plan did not have auto qry retry
 	      // enabled, then we cannot use text cached data for this query.
@@ -1552,6 +1620,8 @@ NABoolean CmpMain::compileFromCache
 		  ComTdbRoot * rootTdb = (ComTdbRoot *)cdata->getPlan()->getPlan();
 		  if ((NOT rootTdb->aqrEnabled())||(rootTdb->hiveAccess()))
 		  {
+		    if(hqcHit)
+		        CURRENTQCACHE->getHQC()->setPlanNoAQROrHiveAccess(TRUE);
 		    bPatchOK = FALSE;
 		    return FALSE;
 		  }
@@ -1569,18 +1639,13 @@ NABoolean CmpMain::compileFromCache
               }
             }
             }
+       else 
+           return FALSE; //back patch failed
 	    cachedData = cdata;
 	    retcode = TRUE; // a successful cache hit
-            //return TRUE; // a successful cache hit
-          }
-        }
       }
-/*      {                 make 'vi' happy */
-//      } else {
-//        cachewa.resetCacheable();
-//      }
     }
-  }
+  
   if ((retcode) &&
       (textCached) &&
       (bPatchOK) &&
@@ -1855,15 +1920,43 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
     || inExplain) 
      bindWA.initializeOverrideSchema();
 
-  // try to compile query via (after parse stage) cache hit
   CacheWA cachewa(CmpCommon::statementHeap());
+
+
   NABoolean bPatchOK=FALSE;
   if (useQueryCache && phase == END) {
     cachewa.setPhase(PARSE);
+    TaskMonitor hqcCmpBackPatch;
+    hqcCmpBackPatch.enter();
     if (compileFromCache(input_str, charset, queryExpr, bindWA, cachewa,
                          gen_code, gen_code_len, (NAHeap*)heap, op,
                          bPatchOK, *begTime)) {
-      if (cacheable) *cacheable = cachewa.isCacheable();
+      if (cacheable) 
+        *cacheable = cachewa.isCacheable();
+      hqcCmpBackPatch.exit();
+      //Added, this is crucial for authorization to work right.
+      sqlcompCleanup(NULL/*i.e. success*/, queryExpr, TRUE);
+      EXITMAIN_TASK_MONITOR( queryAnalysis->compilerMonitor() );  
+
+      NABoolean onlyLogCompilerAllTime = (CmpCommon::getDefault(COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY) == DF_ON);
+
+      if (CURRSTMT_OPTDEFAULTS->compileTimeMonitor() && !onlyLogCompilerAllTime)
+      {
+        const char * fname = getCOMPILE_TIME_MONITOR_OUTPUT_FILEname();
+
+        if (fname)
+        {
+          ofstream fileout(fname, ios::app);
+
+          fileout<<"Query : \n"<<input_str<<endl;
+          fileout<<"----------------"<<endl;
+
+          fileout<<"\tCompiler all: "<<queryAnalysis->compilerMonitor()<<endl;
+          fileout<<"\tParser      : "<<queryAnalysis->parserMonitor()<<endl;
+          fileout<<"\tbackPatch   : "<<hqcCmpBackPatch <<endl;
+          fileout<<"--------------------------------------------"<<endl;
+        }
+      }
       return bPatchOK ? retval : QCACHINGERROR;
     }
   }
@@ -2060,8 +2153,11 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
   // -------------------------------------------------------------------
   // try to compile query via (after BIND stage) cache hit
   // -------------------------------------------------------------------
-  if (useQueryCache && phase == END) {
+  if (!CURRENTQCACHE->getHQC()->isPlanNoAQROrHiveAccess()
+      && useQueryCache && phase == END) {
     cachewa.setPhase(BIND);
+    TaskMonitor hqcCmpBackPatch;
+    hqcCmpBackPatch.enter();
     if (compileFromCache(input_str, charset, queryExpr, bindWA, cachewa,
                          gen_code, gen_code_len, (NAHeap*)heap, op,
                          bPatchOK, *begTime)) {
@@ -2076,7 +2172,27 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
         retval = QCACHINGERROR;
       }
       else {
-        sqlcompCleanup(NULL/*i.e. success*/, queryExpr, TRUE);
+         hqcCmpBackPatch.exit();
+         sqlcompCleanup(NULL/*i.e. success*/, queryExpr, TRUE);
+         EXITMAIN_TASK_MONITOR( queryAnalysis->compilerMonitor() );
+
+         NABoolean onlyLogCompilerAllTime = (CmpCommon::getDefault(COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY) == DF_ON);
+
+         if (CURRSTMT_OPTDEFAULTS->compileTimeMonitor() && !onlyLogCompilerAllTime)
+         {
+           const char * fname = getCOMPILE_TIME_MONITOR_OUTPUT_FILEname();
+
+           if (fname)
+           {
+             ofstream fileout(fname, ios::app);
+
+             fileout<<"\tCompiler all: "<<queryAnalysis->compilerMonitor()<<endl;
+             fileout<<"\tParser      : "<<queryAnalysis->parserMonitor()<<endl;
+             fileout<<"\tBinder      : "<<binderTime<<endl;
+             fileout<<"\tbackPatch   : "<<hqcCmpBackPatch <<endl;
+             fileout<<"--------------------------------------------"<<endl;
+           }
+         }
       }
       return retval;
     }
@@ -2321,7 +2437,8 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
       // fix 10-061128-0744 (SQL statement does not compile first time but
       // compiles sec). Do not cache a plan if there are SQL errors in the
       // diag. area.
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0 
+          && !CURRENTQCACHE->getHQC()->isPlanNoAQROrHiveAccess())
       {
         CacheKey *ckey = cachewa.getCacheKey(getStmtAttributes());
         if (ckey && cachewa.isCacheable()) {
@@ -2331,6 +2448,9 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
           CacheData data(&generator,
                          *cachewa.getFormalParamTypes(),
                          *cachewa.getFormalSelParamTypes(),
+                         cachewa.getConstParamPositionsInSql(),
+                         cachewa.getSelParamPositionsInSql(),
+                         cachewa.getHQCConstPositionsInSql(),
                          generator.getPlanId(), input_str, charset,
                          CmpCommon::statementHeap());
           // backpatch parameters in query plan
@@ -2347,8 +2467,46 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
             if (!generator.isNonCacheableMVQRplan()) {
               tkey = 
                 cachewa.getTextKey(input_str, charset, getStmtAttributes());
-              CURRENTQCACHE->addEntry(tkey,
-                                   ckey, &data, *begTime, params, paramSize);
+
+              // cKeyInQCache, if not NULL, points at the domain cache key
+              // allocated on CmpContext heap. It is safe to use it in HQC.
+              CacheKey* ckeyInQCache = 
+                          CURRENTQCACHE->addEntry(tkey,
+                                    ckey, &data, *begTime, params, paramSize);
+              //add a HybridQueryKey to cache, corresponding ckey is added internally.
+              HQCParseKey* hkey = SqlParser_CurrentParser->getHQCKey();
+
+              if ( CmpCommon::getDefault(HYBRID_QUERY_CACHE) == DF_ON && 
+                   hkey && ckeyInQCache )
+              {
+                hkey->verifyCacheability(ckeyInQCache);
+
+                ostream* hqc_ostream=CURRENTQCACHE->getHQCLogFile(); 
+                if ( hqc_ostream ) 
+                {
+                    if(!hkey->isCacheable())
+                      *hqc_ostream << "\nNot HQC Cacheable but added to SQC:" << endl
+                                            << "SQL query=" << input_str << endl
+                                            << "HQC key=" << hkey->getKey() << endl;
+                }
+
+
+                if ( hkey->isCacheable() )
+                {
+                   NAString hqcAddResult = "failed";
+                   if (CURRENTQCACHE->HQCAddEntry(hkey, ckeyInQCache))
+                      hqcAddResult = "passed";
+                   
+                   ostream* hqc_ostream=CURRENTQCACHE->getHQCLogFile();
+
+                   if ( hqc_ostream ) 
+                   {
+                      *hqc_ostream << "\nHQC::AddEntry(): " << hqcAddResult << endl
+                                   << "SQL query=" << input_str << endl
+                                   << "HQC key=" << hkey->getKey() << endl;
+                   }
+                }
+              }
             }
           }
           else { // backpatch failed!
@@ -2556,7 +2714,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
                      <<(*CURRSTMT_OPTGLOBALS->cascadesTasksMonitor[0])<<endl;
               fileout<<"\tOptimize Expr Task : "
                      <<(*CURRSTMT_OPTGLOBALS->cascadesTasksMonitor[1])<<endl;
-              fileout<<"\tApply Rule Task    : )"
+              fileout<<"\tApply Rule Task    : "
                      <<(*CURRSTMT_OPTGLOBALS->cascadesTasksMonitor[2])<<endl;
               fileout<<"\tCreate Plan Task   : "
                      <<(*CURRSTMT_OPTGLOBALS->cascadesTasksMonitor[3])<<endl;

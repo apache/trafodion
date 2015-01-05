@@ -2692,6 +2692,8 @@ friend class NAHashDictionaryIterator<K,V>;
   // return byte size of one NAHashBucketEntry
   static Lng32 getBucketEntrySize() { return sizeof(NAHashBucketEntry<K,V>); }
 
+  ULng32 getNumBuckets() { return hashSize_; }
+
 private:
   // --------------------------------------------------------------------
   // Helper function for creating a hash table

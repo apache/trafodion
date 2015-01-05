@@ -28,6 +28,7 @@
 #include "Collections.h"
 #include "stringBuf.h"
 #include "charinfo.h"
+#include "QCache.h"
 
 // forward refs
 class CmpContext;
@@ -163,7 +164,12 @@ ItemExpr *get_w_ItemExprTree(const NAWchar * str,
 
   // part of interface to Unicode lexer
   yyULexer *getLexer() { return lexer; }
-  Int32 yylex(YYSTYPE *lvalp ) { return lexer ? lexer->yylex(lvalp) : 0; }
+  Int32 yylex(YYSTYPE *lvalp ) 
+  { 
+    Int32 retCode = lexer ? lexer->yylex(lvalp) : 0;
+    addTokenToNormalizedString(retCode);
+    return retCode;
+  }
   const NAWchar* YYText() { return lexer ? lexer->YYText() : WIDE_(""); }
   Int32 YYLeng() { return lexer ? lexer->YYLeng() : 0; }
 
@@ -232,17 +238,34 @@ ItemExpr *get_w_ItemExprTree(const NAWchar * str,
   NABoolean popHasTDFunctions() { return hasTDFunctions_.removeAt( hasTDFunctions_.entries() - 1 ); }
   void clearHasTDFunctions() {hasTDFunctions_.clear();}
   Int32 hasTDFunctionsEntries() { return hasTDFunctions_.entries(); }
+
+  HQCParseKey* getHQCKey()  { return HQCKey_; }
   
- 
+  void setHQCKey(HQCParseKey* k)  { HQCKey_ = k;  }
+  
+  void addTokenToNormalizedString(Int32 & tokCod) 
+    { if(HQCKey_)HQCKey_->addTokenToNormalizedString(tokCod); }
+
+  void collectItem4HQC(ItemExpr* itm)
+    { if(HQCKey_)HQCKey_->collectItem4HQC(itm); }
+  
+  void setIsHQCCacheable(NABoolean b)
+    { if(HQCKey_)HQCKey_->setIsCacheable(b);  }
+
+  NABoolean isHQCCacheable()
+    { return HQCKey_?HQCKey_->isCacheable():FALSE;  }
+
 private:
 
+  HQCParseKey* HQCKey_;
+  
   // See notes in .C file.
   CmpContext  *cmpContext_;
   Parser      *prevParser_;
 
   NAHeap *wHeap_;             // Pointer to the NAHeap 
   NABoolean hasInternalHeap_; // Did Parser allocate this heap?
-  
+
   // private methods for internal usage.
 
   // parseUtilISPCommand parse the input query for utility keyword and 

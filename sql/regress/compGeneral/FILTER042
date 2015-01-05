@@ -1,0 +1,68 @@
+#! /bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+# Like the pattern-masking of QACOMP, here we filter out such stuff as
+# timestamps and generated identifiers.  Called by the runregr script
+# before doing diff.
+
+fil=$1
+if [ "$fil" = "" ]; then
+  echo "Usage: $0 filename"
+  exit 1
+fi
+
+# Remove following types of lines: 
+#   Lines started with "Start Time", "End Time", "Elapsed Time", 
+#                      "Execution Time", "Table ID: ddddddddd", and  
+#                      "Hist ID: ddddddddd"
+sed "
+/Start Time.*/d
+" $fil |
+sed "/End Time.*/d" |
+sed "/Elapsed Time.*/d" |
+sed "/Execution Time.*/d" |
+sed "/Table ID.*/d" |
+sed "/Hist ID.*/d" |
+awk '
+{
+# we are looking for a less than 1 ms compile time
+#   but we accept time up to 1.4 ms because of other loads
+#   when the test is being run
+# Acceptable compile time is less than 00:00:01.001399
+# Examples of patterns to classify:
+#  1.  "Compile Time 00:00:01.001047" --> FAILED (at least one second)
+#  2.  "Compile Time 00:00:00.001470" --> FAILED (more than 1ms)
+#  3.  "Compile Time 00:00:00.000870" --> SUCCESS(less than 1ms)
+#  3.  "Compile Time 00:00:00.001200" --> SUCCESS(less than 1ms)
+   if ( $1 == "Compile"  && $2 == "Time" ) { \
+     split($3, a, "."); \
+     if ( !match(a[1], "00:00:00") ) \
+       print "FAIL (at least one second)", $0; \
+     else { \
+              split(a[2], b, ""); \
+              if ((b[1] == 0) && (b[2]==0) &&  \
+                  ((b[3] == 0) || ((b[3] == 1) && (b[4] <4)))) \
+                  print "SUCCESS (less than 1ms)"; \
+              else \
+                  print "FAIL (at least 1ms)", $0; \
+     }; \
+   } else \
+     print; \
+}
+'

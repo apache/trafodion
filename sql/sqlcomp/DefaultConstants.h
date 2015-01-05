@@ -1261,6 +1261,8 @@ enum DefaultConstants
   QUERY_CACHE_STATEMENT_PINNING,
   QUERY_CACHE_STATISTICS,
   QUERY_CACHE_STATISTICS_FILE,
+  QUERY_CACHE_USE_CONVDOIT_FOR_BACKPATCH,
+
 
   // -------------------------------------------------------------------------
   // If set to TRUE, this indicates that a select query will not be updated
@@ -3554,6 +3556,11 @@ enum DefaultConstants
 
   HBASE_DATA_BLOCK_ENCODING_OPTION,
   HBASE_COMPRESSION_OPTION,
+  HQC_LOG,
+  HQC_LOG_FILE, // specify the HQC log file name
+  HYBRID_QUERY_CACHE,
+  HQC_MAX_VALUES_PER_KEY,
+  HQC_CONVDOIT_DISABLE_NUMERIC_CHECK, // TEMPORARY CQD - SHOULD REMOVE
 
   // if ON limits DoP of Hbase scan to number of partitions
   LIMIT_HBASE_SCAN_DOP,

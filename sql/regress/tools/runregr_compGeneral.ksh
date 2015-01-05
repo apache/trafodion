@@ -223,7 +223,7 @@ fi
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST001 TEST004 TEST005 TEST006 TEST011 TEST012 TEST013 TEST015 TEST071 TESTTOK TESTTOK2"
+  sbtestfiles="TEST001 TEST004 TEST005 TEST006 TEST011 TEST012 TEST013 TEST015 TEST071 TEST042 TESTTOK TESTTOK2"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do
@@ -395,6 +395,9 @@ echo "copying $MAKESCRIPT to $REGRRUNDIR"
 cp $scriptsdir/tools/runmxcmp.ksh $REGRRUNDIR 2>$NULL
 cp $scriptsdir/tools/runmxsqlc.ksh $REGRRUNDIR 2>$NULL
 cp $scriptsdir/tools/runmxci.ksh $REGRRUNDIR 2>$NULL
+
+echo "copying FILTER042 to $REGRRUNDIR"
+cp $REGRTSTDIR/FILTER042 $REGRRUNDIR 2>$NULL
 
 if [ $diffOnly -eq 0 ]; then
    if [ "$REGRTSTDIR" != "$REGRRUNDIR" ]; then
