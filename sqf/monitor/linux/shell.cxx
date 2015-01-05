@@ -632,8 +632,8 @@ void RedirectFd(int orig_fd, char *fifo_name)
                      method_name, __LINE__, MyName, fifo_name, orig_fd);
 
     // Open for writing.
-    rdir_fd = open( fifo_name, O_CREAT | O_TRUNC | O_WRONLY
-                  , S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
+    rdir_fd = open( fifo_name, O_CREAT | O_TRUNC | O_WRONLY,
+                    S_IRUSR | S_IWUSR );
     if (rdir_fd == -1)
     {
         if ( trace_settings & TRACE_SHELL_CMD )
