@@ -350,8 +350,8 @@ public class VariableLengthPKTest extends BaseTest {
         printTestDescription();
 
         String query = null;
-        if (tgtPH()) query = "SELECT HOST FROM PTSDB WHERE INST='abc' AND DATE>=TO_DATE('1970-01-01 00:00:00') AND DATE <TO_DATE('2015-01-01 00:00:00')";
-        else if (tgtSQ()||tgtTR()) query = "SELECT HOST1 FROM PTSDB WHERE INST='abc' AND DATE1>=TIMESTAMP '1970-01-01 00:00:00' AND DATE1 <TIMESTAMP '2015-01-01 00:00:00'";
+        if (tgtPH()) query = "SELECT HOST FROM PTSDB WHERE INST='abc' AND DATE>=TO_DATE('1970-01-01 00:00:00') AND DATE <TO_DATE('2115-01-01 00:00:00')";
+        else if (tgtSQ()||tgtTR()) query = "SELECT HOST1 FROM PTSDB WHERE INST='abc' AND DATE1>=TIMESTAMP '1970-01-01 00:00:00' AND DATE1 <TIMESTAMP '2115-01-01 00:00:00'";
 
         try {
             initTableValues();
