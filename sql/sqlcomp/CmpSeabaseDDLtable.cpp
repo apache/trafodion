@@ -6068,14 +6068,18 @@ short CmpSeabaseDDL::getSpecialTableInfo
 {
   Lng32 cliRC = 0;
   tableInfo = NULL;
+  NABoolean switched = FALSE;
   if (CmpCommon::getDefault(TRAF_BOOTSTRAP_MD_MODE) == DF_OFF)
     {
       ExeCliInterface cliInterface(STMTHEAP);
-      
+
+      if (switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+        return -1;
+
       cliRC = cliInterface.holdAndSetCQD("traf_bootstrap_md_mode", "ON");
       if (cliRC < 0)
         {
-          return -1;
+          goto label_error_return;
         }
 
       Int32 objectOwner = NA_UserIdDefault;
@@ -6085,7 +6089,9 @@ short CmpSeabaseDDL::getSpecialTableInfo
                                            objType, objectOwner, schemaOwner);
       cliRC = cliInterface.restoreCQD("traf_bootstrap_md_mode");
       if (objUID <= 0)
-        return -1;
+        goto label_error_return;
+
+      switchBackCompiler();
 
       tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
       tableInfo->tableName = extTableName.data();
@@ -6100,6 +6106,12 @@ short CmpSeabaseDDL::getSpecialTableInfo
     }
 
   return 0;
+
+ label_error_return:
+
+  switchBackCompiler();
+
+  return -1;
 }
 
 desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(
@@ -7365,20 +7377,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
         }
       else
         {
-          // use metadata compiler
-          NABoolean switched = FALSE;
-          CmpContext* currContext = CmpCommon::context();
-          if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
-            if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(
-                                     CmpContextInfo::CMPCONTEXT_TYPE_META))
-              {
-                // failed to switch/create metadata CmpContext
-                // continue using current compiler
-              }
-             else
-              switched = TRUE;
-
-          if (sendAllControlsAndFlags(currContext))
+          if (switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
             return NULL;
 
           if (objType == COM_SEQUENCE_GENERATOR_OBJECT)
@@ -7387,23 +7386,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
             tDesc = getSeabaseUserTableDesc(catName, schName, objName, 
                                             objType, includeInvalidDefs);
 
-          // save existing diags info
-          ComDiagsArea * tempDiags = ComDiagsArea::allocate(heap_);
-
-          tempDiags->mergeAfter(*CmpCommon::diags());
-
-          restoreAllControlsAndFlags();
-
-          // ignore new (?) and restore old diags
-          CmpCommon::diags()->clear();
-          CmpCommon::diags()->mergeAfter(*tempDiags);
-          tempDiags->clear();
-          tempDiags->deAllocate();
-
-          // switch back the internal commpiler, ignore error for now
-          if (switched == TRUE)
-            SQL_EXEC_SWITCH_BACK_COMPILER();
-
+          switchBackCompiler();
         }
     }
 
@@ -7476,40 +7459,13 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDesc(const NAString &catName,
                                       const NAString &objName)
 {
    desc_struct *result = NULL;
-   NABoolean switched = FALSE;
-   CmpContext* currContext = CmpCommon::context();
 
-   // use metadata compiler
-   if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
-     if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(
-                              CmpContextInfo::CMPCONTEXT_TYPE_META))
-       {
-          // failed to switch/create metadata CmpContext
-          // continue using current compiler 
-       }
-      else
-       switched = TRUE;
-
-   if (sendAllControlsAndFlags(currContext))
+   if (switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
      return NULL;
 
    result = getSeabaseRoutineDescInternal(catName, schName, objName);
 
-   // save existing diags info
-   ComDiagsArea * tempDiags = ComDiagsArea::allocate(heap_);
-   tempDiags->mergeAfter(*CmpCommon::diags());
-
-   restoreAllControlsAndFlags();
-
-   // ignore new (?) and restore old diags
-   CmpCommon::diags()->clear();
-   CmpCommon::diags()->mergeAfter(*tempDiags);
-   tempDiags->clear();
-   tempDiags->deAllocate();
-
-   // switch back the internal compiler, ignore error for now
-   if (switched == TRUE)
-     SQL_EXEC_SWITCH_BACK_COMPILER();
+   switchBackCompiler();
 
    return result;
 }

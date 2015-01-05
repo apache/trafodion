@@ -42,6 +42,7 @@
 #include "PrivMgrDefs.h"
 #include "PrivMgrMD.h"
 #include "ElemDDLHbaseOptions.h"
+#include "CmpContext.h"
 
 class ExpHbaseInterface;
 class ExeCliInterface;
@@ -308,6 +309,10 @@ class CmpSeabaseDDL
                      const char * inObjType,
                      const char * inObjTypeStr = NULL,
                      char * outObjType = NULL);
+
+   short switchCompiler(Int32 cntxtType = CmpContextInfo::CMPCONTEXT_TYPE_META);
+
+   short switchBackCompiler();
 
  protected:
 
@@ -1105,6 +1110,7 @@ class CmpSeabaseDDL
 
   const char * param_[NUM_MAX_PARAMS];
 
+  NABoolean cmpSwitched_;
 };
 
 #endif // _CMP_SEABASE_DDL_H_
