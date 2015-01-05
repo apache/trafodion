@@ -213,10 +213,10 @@ static const QueryString getComponentPrivilegesForUser[] =
 static const QueryString getTrafTablesInSchemaQuery[] =
 {
   {" select object_name  from "},
-  {"   %s.\"%s\".%s T "},
-  {"  where T.catalog_name = '%s' and "},
-  {"        T.schema_name = '%s'  and "},
-  {"        T.object_type = 'BT'  "},
+  {"   %s.\"%s\".%s "},
+  {"  where catalog_name = '%s' and "},
+  {"        schema_name = '%s'  and "},
+  {"        object_type = 'BT'  "},
   {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
@@ -225,10 +225,10 @@ static const QueryString getTrafTablesInSchemaQuery[] =
 static const QueryString getTrafIndexesInSchemaQuery[] =
 {
   {" select object_name  from "},
-  {"   %s.\"%s\".%s T "},
-  {"  where T.catalog_name = '%s' and "},
-  {"        T.schema_name = '%s'  and "},
-  {"        T.object_type = 'IX'  "},
+  {"   %s.\"%s\".%s "},
+  {"  where catalog_name = '%s' and "},
+  {"        schema_name = '%s'  and "},
+  {"        object_type = 'IX'  "},
   {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
@@ -306,10 +306,10 @@ static const QueryString getTrafProceduresForLibraryQuery[] =
 static const QueryString getTrafSequencesInSchemaQuery[] =
 {
   {" select object_name  from "},
-  {"   %s.\"%s\".%s T "},
-  {"  where T.catalog_name = '%s' and "},
-  {"        T.schema_name = '%s'  and "},
-  {"        T.object_type = 'SG' "},
+  {"   %s.\"%s\".%s "},
+  {"  where catalog_name = '%s' and "},
+  {"        schema_name = '%s'  and "},
+  {"        object_type = 'SG' "},
   {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
@@ -318,9 +318,9 @@ static const QueryString getTrafSequencesInSchemaQuery[] =
 static const QueryString getTrafSequencesInCatalogQuery[] =
 {
   {" select trim(schema_name) || '.' || object_name  from "},
-  {"   %s.\"%s\".%s T "},
-  {"  where T.catalog_name = '%s' and "},
-  {"        T.object_type = 'SG' "},
+  {"   %s.\"%s\".%s "},
+  {"  where catalog_name = '%s' and "},
+  {"        object_type = 'SG' "},
   {"  for read uncommitted access "},
   {"  order by 1 "},
   {"  ; "}
@@ -328,11 +328,11 @@ static const QueryString getTrafSequencesInCatalogQuery[] =
 
 static const QueryString getTrafViewsInCatalogQuery[] =
 {
-  {" select T.schema_name || '.' || "},
-  {" T.object_name from "},
-  {"   %s.\"%s\".%s T,  %s.\"%s\".%s V "},
-  {"  where V.view_uid = T.object_uid and "},
-  {"            T.catalog_name = '%s' "},
+  {" select schema_name || '.' || "},
+  {" object_name from "},
+  {"   %s.\"%s\".%s,  %s.\"%s\".%s "},
+  {"  where view_uid = object_uid and "},
+  {"            catalog_name = '%s' "},
   {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
@@ -340,11 +340,11 @@ static const QueryString getTrafViewsInCatalogQuery[] =
 
 static const QueryString getTrafViewsInSchemaQuery[] =
 {
-  {" select T.object_name from "},
-  {"   %s.\"%s\".%s T,  %s.\"%s\".%s V "},
-  {"  where V.view_uid = T.object_uid and "},
-  {"             T.catalog_name = '%s' and "},
-  {"             T.schema_name = '%s' "},
+  {" select object_name from "},
+  {"   %s.\"%s\".%s,  %s.\"%s\".%s "},
+  {"  where view_uid = object_uid and "},
+  {"             catalog_name = '%s' and "},
+  {"             schema_name = '%s' "},
   {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
@@ -386,10 +386,10 @@ static const QueryString getTrafViewsOnObjectQuery[] =
 
 static const QueryString getTrafSchemasInCatalogQuery[] =
 {
-  {" select T.schema_name "},
-  {"   from %s.\"%s\".%s T "},
-  {"  where T.catalog_name = '%s' "},
-  {"        and (T.object_type = 'PS' or T.object_type = 'SS') "},
+  {" select schema_name "},
+  {"   from %s.\"%s\".%s "},
+  {"  where catalog_name = '%s' "},
+  {"        and (object_type = 'PS' or object_type = 'SS') "},
   {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
@@ -409,9 +409,9 @@ static const QueryString getTrafSchemasForAuthIDQuery[] =
 
 static const QueryString getTrafUsers[] = 
 {
-  {" select distinct T.auth_db_name "},
-  {"   from %s.\"%s\".%s T "},
-  {"  where T.auth_type = '%s' "},
+  {" select distinct auth_db_name "},
+  {"   from %s.\"%s\".%s "},
+  {"  where auth_type = '%s' "},
   {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
@@ -419,9 +419,9 @@ static const QueryString getTrafUsers[] =
 
 static const QueryString getTrafRoles[] = 
 {
-  {" select distinct T.auth_db_name "},
-  {"   from %s.\"%s\".%s T "},
-  {"  where T.auth_type = 'R' "},
+  {" select distinct auth_db_name "},
+  {"   from %s.\"%s\".%s "},
+  {"  where auth_type = 'R' "},
   {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}

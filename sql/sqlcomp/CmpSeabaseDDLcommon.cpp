@@ -108,6 +108,7 @@ CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
   savedCmpParserFlags_ = 0;
   savedCliParserFlags_ = 0;
   heap_ = heap;
+  cmpSwitched_ = FALSE;
 
   if ((syscatInit) && (ActiveSchemaDB()))
     {
@@ -116,6 +117,56 @@ CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
       seabaseSysCat_ = sysCat;
       CONCAT_CATSCH(seabaseMDSchema_,sysCat,SEABASE_MD_SCHEMA);
     }
+}
+
+// RETURN: -1, if error. 0, if context switched successfully.
+short CmpSeabaseDDL::switchCompiler(Int32 cntxtType)
+{
+  cmpSwitched_ = FALSE;
+  CmpContext* currContext = CmpCommon::context();
+  if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
+    {
+      if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(cntxtType))
+        {
+          // failed to switch/create compiler context.
+          return -1;
+        }
+  
+      cmpSwitched_ = TRUE;
+    }
+
+  if (sendAllControlsAndFlags(currContext))
+    {
+      switchBackCompiler();
+      return -1;
+    }
+
+  return 0;
+}
+
+short CmpSeabaseDDL::switchBackCompiler()
+{
+  if (NOT cmpSwitched_)
+    return 0;
+
+  // save existing diags info
+  ComDiagsArea * tempDiags = ComDiagsArea::allocate(heap_);
+  tempDiags->mergeAfter(*CmpCommon::diags());
+  
+  restoreAllControlsAndFlags();
+  
+  // ignore new (?) and restore old diags
+  CmpCommon::diags()->clear();
+  CmpCommon::diags()->mergeAfter(*tempDiags);
+  tempDiags->clear();
+  tempDiags->deAllocate();
+  
+  // switch back the original commpiler, ignore error for now
+  SQL_EXEC_SWITCH_BACK_COMPILER();
+
+  cmpSwitched_ = FALSE;
+
+  return 0;
 }
 
 // Return:  TRUE, table desc found. FALSE, not found or error.

@@ -307,15 +307,19 @@ ContextCli::~ContextCli()
 void ContextCli::deleteMe()
 {
   ComDiagsArea & diags = cliGlobals_->currContext()->diags();
-  // drop volatile schema, if one exists
-  short rc =
-    ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
-    (this, NULL, exCollHeap());
-  SQL_EXEC_ClearDiagnostics(NULL);
 
-  rc =
-    ExExeUtilCleanupVolatileTablesTcb::dropVolatileTables
-    (this, exCollHeap());
+  if (volatileSchemaCreated())
+    {
+      // drop volatile schema, if one exists
+      short rc =
+        ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
+        (this, NULL, exCollHeap());
+      SQL_EXEC_ClearDiagnostics(NULL);
+      
+      rc =
+        ExExeUtilCleanupVolatileTablesTcb::dropVolatileTables
+        (this, exCollHeap());
+    }
 
   volTabList_ = 0;
 
