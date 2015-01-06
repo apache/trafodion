@@ -4109,7 +4109,7 @@ CoprocessorService, Coprocessor {
   /**
    * Removes unneeded committed transactions                               
    */
-    synchronized public void removeUnNeededCommitedTransactions() {
+  synchronized public void removeUnNeededCommitedTransactions() {
 
       Integer minStartSeqNumber = getMinStartSequenceNumber();
 
@@ -4118,49 +4118,43 @@ CoprocessorService, Coprocessor {
       }
 
       int numRemoved = 0;
-	 
+      int key;
       synchronized (commitedTransactionsBySequenceNumber) {
       for (Entry<Integer, TrxTransactionState> entry : new LinkedList<Entry<Integer, TrxTransactionState>>(
         commitedTransactionsBySequenceNumber.entrySet())) {
-          if (entry.getKey() >= minStartSeqNumber) {
+          key = entry.getKey();
+          if (key >= minStartSeqNumber) {
             break;
-	  }
-	  numRemoved = numRemoved
-			+ (commitedTransactionsBySequenceNumber.remove(entry
-			.getKey()) == null ? 0 : 1);
-	  numRemoved++;
-	}
+          }
+          numRemoved += (commitedTransactionsBySequenceNumber.remove(key) == null ? 0 : 1);
+        }
       }
 
-/*
-	StringBuilder traceMessage = new StringBuilder();
-	if (numRemoved > 0) {
-	  traceMessage.append("Removed [").append(numRemoved)
-		      .append("] commited transactions");
+      if (LOG.isTraceEnabled()) {
+         StringBuilder traceMessage = new StringBuilder();
+         if (numRemoved > 0) {
+            traceMessage.append("Removed [").append(numRemoved).append("] commited transactions");
 
-          if (minStartSeqNumber == Integer.MAX_VALUE) {
-            traceMessage.append(" with any sequence number.");
-	  } else {
-	    traceMessage.append(" with sequence lower than [")
-	                .append(minStartSeqNumber).append("].");
-	  }
+            if (minStartSeqNumber == Integer.MAX_VALUE) {
+              traceMessage.append(" with any sequence number.");
+            } else {
+               traceMessage.append(" with sequence lower than [").append(minStartSeqNumber).append("].");
+            }
 
-	  if (!commitedTransactionsBySequenceNumber.isEmpty()) {
-	      traceMessage.append(" Still have [")
-                          .append(commitedTransactionsBySequenceNumber.size())
+             if (!commitedTransactionsBySequenceNumber.isEmpty()) {
+                traceMessage.append(" Still have [").append(commitedTransactionsBySequenceNumber.size())
                           .append("] left.");
-	  } else {
-	    traceMessage.append(" None left.");
-	  }
-	    if (LOG.isTraceEnabled()) LOG.trace(traceMessage.toString());
-        } else if (commitedTransactionsBySequenceNumber.size() > 0) {
-          traceMessage.append("Could not remove any transactions, and still have ")
-		        .append(commitedTransactionsBySequenceNumber.size())
-		        .append(" left");
-          if (LOG.isTraceEnabled()) LOG.trace(traceMessage.toString());
-        }
-*/
-
+             } else {
+                traceMessage.append(" None left.");
+             }
+             LOG.trace(traceMessage.toString());
+         } else if (commitedTransactionsBySequenceNumber.size() > 0) {
+            traceMessage.append("Could not remove any transactions, and still have ")
+                         .append(commitedTransactionsBySequenceNumber.size())
+                         .append(" left");
+            LOG.trace(traceMessage.toString());
+         }
+      }
   }
 
   /**
