@@ -64,6 +64,10 @@ class SQLTest(unittest.TestCase):
         global cnxn
         connect_str = 'DSN=' + dsn + ';UID=' + usr + ';PWD=' + pwd + ';'
         cnxn = pyodbc.connect(connect_str, autocommit=True)
+        try:
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
+        except:
+            pass
         cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
         pass
 
@@ -75,9 +79,11 @@ class SQLTest(unittest.TestCase):
     def test21(self):
         #global cnxn
         try:
-            cnxn.execute('DROP TABLE T21')
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
         except:
-            pass           
+            pass
+        cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
+        cnxn.execute('DROP TABLE IF EXISTS T21')
         cnxn.execute('CREATE TABLE T21 (C1 INT NOT NULL, C2 CHAR(10), PRIMARY KEY(C1))')
         cursor = cnxn.execute('GET TABLES')
         found = 0
@@ -93,9 +99,11 @@ class SQLTest(unittest.TestCase):
         global cnxn
         cursor = cnxn.cursor()
         try:
-            cursor.execute('DROP TABLE EMP')
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
         except:
             pass
+        cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
+        cursor.execute('DROP TABLE IF EXISTS EMP')
         cursor.execute('CREATE TABLE EMP (EMPNUM INT NOT NULL, EMPNAME VARCHAR(20), PRIMARY KEY(EMPNUM))')
         cursor.execute('INSERT INTO EMP VALUES (20001, \'VITTAL RAO\')')
         cursor.execute('SELECT * FROM EMP')
@@ -112,9 +120,11 @@ class SQLTest(unittest.TestCase):
         global cnxn
         cursor = cnxn.cursor()
         try:
-            cursor.execute('DROP TABLE EMP')
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
         except:
             pass
+        cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
+        cursor.execute('DROP TABLE IF EXISTS EMP')
         cursor.execute('CREATE TABLE EMP (EMPNUM INT NOT NULL, EMPNAME VARCHAR(20), PRIMARY KEY(EMPNUM))')
         cursor.execute('INSERT INTO EMP VALUES (20001, \'VITTAL RAO\')')
         cursor.execute('SELECT * FROM EMP')
@@ -131,9 +141,11 @@ class SQLTest(unittest.TestCase):
         global cnxn
         cursor = cnxn.cursor()
         try:
-            cursor.execute('DROP TABLE T24')
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
         except:
             pass
+        cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
+        cursor.execute('DROP TABLE IF EXISTS T24')
         cursor.execute('CREATE TABLE T24(C INT)')
         cursor.execute('INSERT INTO T24 VALUES (1), (-200), (3467), (0)')
         cursor.execute('SELECT * FROM T24 ORDER BY 1')
@@ -147,9 +159,11 @@ class SQLTest(unittest.TestCase):
         global cnxn
         cursor = cnxn.cursor()
         try:
-            cursor.execute('DROP TABLE T25')
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
         except:
             pass
+        cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
+        cursor.execute('DROP TABLE IF EXISTS T25')
         cursor.execute('CREATE TABLE T25(C INT)')
         cursor.execute('INSERT INTO T25 VALUES (1), (-200), (3467), (0)')
         x = 200
@@ -164,9 +178,11 @@ class SQLTest(unittest.TestCase):
         global cnxn
         cursor = cnxn.cursor()
         try:
-            cursor.execute('DROP TABLE T26')
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
         except:
             pass
+        cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
+        cursor.execute('DROP TABLE IF EXISTS T26')
         cursor.execute('CREATE TABLE T26(C INT)')
         cursor.execute('INSERT INTO T26 VALUES (1), (-200), (3467), (0)')
         x = 200
@@ -177,9 +193,11 @@ class SQLTest(unittest.TestCase):
         global cnxn
         cursor = cnxn.cursor()
         try:
-            cursor.execute('DROP TABLE T27')
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
         except:
             pass
+        cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
+        cursor.execute('DROP TABLE IF EXISTS T27')
         cursor.execute('CREATE TABLE T27(C INT)')
         cursor.execute('INSERT INTO T27 VALUES (1), (-200), (3467), (0)')
         x = 200
@@ -189,9 +207,11 @@ class SQLTest(unittest.TestCase):
         global cnxn
         cursor = cnxn.cursor()
         try:
-            cursor.execute('DROP TABLE T28')
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
         except:
             pass
+        cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
+        cursor.execute('DROP TABLE IF EXISTS T28')
         cursor.execute('CREATE TABLE T28(C INT)')
         cursor.execute('INSERT INTO T28 VALUES (1), (-200), (3467), (0)')
         x = 0
@@ -207,9 +227,11 @@ class SQLTest(unittest.TestCase):
         global cnxn
         cursor = cnxn.cursor()
         try:
-            cursor.execute('DROP TABLE T29')
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
         except:
             pass
+        cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
+        cursor.execute('DROP TABLE IF EXISTS T29')
         cursor.execute("CREATE TABLE T29(C1 INT NOT NULL, C2 CHAR(10), PRIMARY KEY(C1))")
         cursor.execute("INSERT INTO T29 VALUES (1, 'abc'), (-200, 'xyz'), (3467, 'pqr')")
         cursor.execute("UPSERT INTO T29 VALUES (1, 'xyz'), (-200, 'xyz'), (3467, 'xyz')")
@@ -229,6 +251,10 @@ class DataTest(unittest.TestCase):
         global cnxn
         connect_str = 'DSN=' + dsn + ';UID=' + usr + ';PWD=' + pwd + ';'
         cnxn = pyodbc.connect(connect_str, autocommit=True)
+        try:
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
+        except:
+            pass
         cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
         pass
 
@@ -239,9 +265,11 @@ class DataTest(unittest.TestCase):
 
     def test31(self):
         try:
-            cnxn.execute('DROP TABLE TDATA')
+            cnxn.execute('CREATE SCHEMA ' + catalog + '.' + schema + ';')
         except:
-            pass           
+            pass
+        cnxn.execute('SET SCHEMA ' + catalog + '.' + schema + ';')
+        cnxn.execute('DROP TABLE IF EXISTS TDATA')
         cnxn.execute("""
         CREATE TABLE TDATA (
         C1 INT NOT NULL, C2 CHAR(10), C3 VARCHAR(1000),

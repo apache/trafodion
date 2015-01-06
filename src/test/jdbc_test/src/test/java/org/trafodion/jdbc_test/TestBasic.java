@@ -1,22 +1,22 @@
 /*
-# @@@ START COPYRIGHT @@@
-#
-# (C) Copyright 2013 Hewlett-Packard Development Company, L.P.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-#
-# @@@ END COPYRIGHT @@@
-*/
+# @@@ START COPYRIGHT @@@   
+#   
+# (C) Copyright 2013 Hewlett-Packard Development Company, L.P.   
+#   
+#  Licensed under the Apache License, Version 2.0 (the "License");   
+#  you may not use this file except in compliance with the License.   
+#  You may obtain a copy of the License at   
+#   
+#      http://www.apache.org/licenses/LICENSE-2.0   
+#   
+#  Unless required by applicable law or agreed to in writing, software   
+#  distributed under the License is distributed on an "AS IS" BASIS,   
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   
+#  See the License for the specific language governing permissions and   
+#  limitations under the License.   
+#   
+# @@@ END COPYRIGHT @@@   
+*/ 
 
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -30,7 +30,9 @@ public class TestBasic
 	@Test
 	public void JDBCBasic1() throws InterruptedException, SQLException
 	{
-		System.out.println("JDBCUpdate..");
+//		System.out.println("JDBCUpdate..");
+        //int randomNumber = ( int )( Math.random() * 9999 );
+	  	//String tableName="qatabupd" + randomNumber;
 		String tableName="qatabupd";
 	    try{
 	     	Connection  connection = Utils.getUserConnection();
@@ -44,6 +46,7 @@ public class TestBasic
 	        String updqry = "update " + tableName + " set b = ? where c > ?";              
 	        long startTime = System.currentTimeMillis();
 	        PreparedStatement pstmt = connection.prepareStatement(updqry);
+	        //pstmt.setInt(1,554);
 	        pstmt.setString(1,"Moe");
 	        pstmt.setInt(2, 890);
          	assertEquals("Rows updated", 2, pstmt.executeUpdate());
@@ -51,7 +54,7 @@ public class TestBasic
 	        long elapsedTime = (endTime - startTime)/1000; //in seconds
    	   		stmt.executeUpdate("drop table " + tableName);
             connection.close();
-			System.out.println("JDBCUpdate passed");
+			System.out.println("JDBCUpdate : Passed");
 		} catch (Exception ex) {
             ex.printStackTrace();
 			fail("Exception in test JDBCUpdate.." + ex.getMessage());
@@ -61,7 +64,9 @@ public class TestBasic
 	@Test
 	public void JDBCBasic2() throws InterruptedException, SQLException
 	{
-		System.out.println("JDBCSelectCount*..");
+//		System.out.println("JDBCSelectCount*..");
+        //int randomNumber = ( int )( Math.random() * 9999 );
+	  	//String tableName="qatabups" + randomNumber;
 		String tableName="qatabups";
 	    try{
 	     	Connection  connection = Utils.getUserConnection();
@@ -86,7 +91,7 @@ public class TestBasic
 	        long elapsedTime = (endTime - startTime)/1000; //in seconds
    	   		stmt.executeUpdate("drop table " + tableName);
             connection.close();
-			System.out.println("JDBCSelectCount* passed");
+			System.out.println("JDBCSelectCount* : Passed");
 		} catch (Exception ex) {
             ex.printStackTrace();
 			fail("Exception in test JDBCSelectCount*.." + ex.getMessage());
@@ -96,7 +101,9 @@ public class TestBasic
 	@Test
 	public void JDBCBasic3() throws InterruptedException, SQLException 
 	{
-		System.out.println("JDBCMeta..");
+//		System.out.println("JDBCMeta..");
+        //int randomNumber = ( int )( Math.random() * 9999 );
+	  	//String tableName="qatabmeta" + randomNumber;
 		String tableName="qatabmeta";
 		try {
 		    Connection conn = Utils.getUserConnection();
@@ -131,7 +138,7 @@ public class TestBasic
          	rs.close();
    	   		stmt.executeUpdate("drop table " + tableName);
          	conn.close();
-			System.out.println("JDBCMeta passed");
+			System.out.println("JDBCMeta : Passed");
 		} catch (Exception ex) {
             ex.printStackTrace();
 			fail("Exception in test JDBCMeta.." + ex.getMessage());
@@ -141,11 +148,13 @@ public class TestBasic
 	@Test
 	public void JDBCBasic4 () throws InterruptedException, SQLException
 	{
-		System.out.println("JDBCDelete..");
+//		System.out.println("JDBCDelete..");
 		try{
 			Connection  connection = Utils.getUserConnection();
 			Statement stmt = connection.createStatement();            
 			stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
+	        //int randomNumber = ( int )( Math.random() * 9999 );
+		  	//String tableName="qatabdel" + randomNumber;
 			String tableName="qatabdel";
 			try{
 				stmt.executeUpdate("drop table " + tableName);
@@ -162,10 +171,12 @@ public class TestBasic
 			
 			long endTime = System.currentTimeMillis();
 			long elapsedTime = (endTime - startTime)/1000; //in seconds
+			//System.out.println("Total time required to delete records using PreparedStatement using executeUpdate() is :" + elapsedTime + " sec(s)");
+			//log.info("Total time required to delete records using PreparedStatement using executeUpdate() is :" + elapsedTime + " sec(s)");
 			      
    	   		stmt.executeUpdate("drop table  " + tableName);
 			connection.close();
-			System.out.println("JDBCDelete passed");
+			System.out.println("JDBCDelete : Passed");
 		} catch (Exception ex) {
             ex.printStackTrace();
 			fail("Exception in test JDBCDelete.." + ex.getMessage());
@@ -175,7 +186,9 @@ public class TestBasic
 	@Test
 	public void JDBCBasic5 () throws SQLException, ClassNotFoundException 
 	{
-		System.out.println("JDBCDelim..");
+//		System.out.println("JDBCDelim..");
+        //int randomNumber = ( int )( Math.random() * 9999 );
+	  	//String tableName="qatabdelim" + randomNumber;
 		String tableName="qatabdelim";
 
         try {
@@ -217,7 +230,7 @@ public class TestBasic
        	   	rs.close();
    	   		stmt.executeUpdate("drop table " + tableName);
    	   		conn.close();
-   	   		System.out.println("JDBCDelim passed");
+   	   		System.out.println("JDBCDelim : Passed");
         } catch (Exception ex)
         {
         	ex.printStackTrace();
@@ -228,8 +241,10 @@ public class TestBasic
 	@Test
 	public void JDBCBasic6() throws SQLException, ClassNotFoundException 
 	{
-		System.out.println("JDBCInsert..");
+//		System.out.println("JDBCInsert..");
 	    int rowNo = 0, rowsDeleted = 0, rowsUpdated=0;
+        //int randomNumber = ( int )( Math.random() * 9999 );
+	  	//String tableName="qatabins" + randomNumber;
 	    String tableName="qatabins";
 
 		try {
@@ -265,7 +280,7 @@ public class TestBasic
          	assertEquals("Rows deleted", 2, rowsDeleted);
    	   		stmt.executeUpdate("drop table " + tableName);
             conn.close();
-			System.out.println("JDBCInsert passed");
+			System.out.println("JDBCInsert : Passed");
         } catch (Exception ex)
         {
             ex.printStackTrace();
@@ -276,7 +291,7 @@ public class TestBasic
 	@Test
     public void TestBasic7() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBCUpsert..");
+//		System.out.println("JDBCUpsert..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -330,7 +345,7 @@ public class TestBasic
             rowsUpserted = stmt.executeUpdate("upsert into " + tableName2 + " select * from " + tableName);
         	assertEquals("Rows upserted", (Integer)3, (Integer)rowsUpserted);
   	       	conn.close();
-			System.out.println("JDBCUpsert passed");
+			System.out.println("JDBCUpsert : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -341,7 +356,7 @@ public class TestBasic
 	@Test
     public void TestBasic8() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Catalogs..");
+//		System.out.println("JDBC Get Catalogs..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -355,10 +370,11 @@ public class TestBasic
            	DatabaseMetaData dbmd = conn.getMetaData();
            	rs = dbmd.getCatalogs();
            	while(rs.next()) {
+           		//System.out.println(rs.getString(1));
             	assertEquals("Traf catalog", "TRAFODION", rs.getString(1));
            	}
   	       	conn.close();
-			System.out.println("JDBC get Catalogs passed");
+			System.out.println("JDBC get Catalogs : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -368,7 +384,7 @@ public class TestBasic
 	@Test
     public void TestBasic9() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Table Types..");
+//		System.out.println("JDBC Get Table Types..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -384,11 +400,12 @@ public class TestBasic
            	rs = dbmd.getTableTypes();
            	int i = 0;
            	while(rs.next()) {
+           		//System.out.println(rs.getString(1));
             	assertEquals("Traf Table types", tabTypes[i], rs.getString(1));
             	i++;
            	}
   	       	conn.close();
-			System.out.println("JDBC Get Table types passed");
+			System.out.println("JDBC Get Table types : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -398,7 +415,7 @@ public class TestBasic
 	@Test
     public void TestBasic10() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Columns..");
+//		System.out.println("JDBC Get Columns..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -426,12 +443,14 @@ public class TestBasic
            	int i = 0;
        		while(rs.next()){
        		    i++;
+           		//System.out.println("Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6));
        		    String strCol = "Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6);
             	assertEquals("getColumns" + i, strexpCols[i-1], strCol);
        		}
-        	assertEquals("Number of Columns", i, expCols);
+			//System.out.println("Number of columns: " + i);
+        	assertEquals("Number of Columns", expCols, i);
   	       	conn.close();
-			System.out.println("JDBC Get Columns passed");
+			System.out.println("JDBC Get Columns : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -442,7 +461,7 @@ public class TestBasic
 	@Test
     public void TestBasic11() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Columns 2..");
+//		System.out.println("JDBC Get Columns 2..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -470,12 +489,14 @@ public class TestBasic
            	int i = 0;
        		while(rs.next()){
        		    i++;
+           		//System.out.println("Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6));
        		    String strCol = "Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6);
             	assertEquals("getColumns" + i, strexpCols[i-1], strCol);
        		}
-        	assertEquals("Number of Columns", i, expCols);
+			//System.out.println("Number of columns: " + i);
+        	assertEquals("Number of Columns", expCols, i);
   	       	conn.close();
-			System.out.println("JDBC Get Columns 2 passed");
+			System.out.println("JDBC Get Columns 2 : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -486,7 +507,7 @@ public class TestBasic
 	@Test
     public void TestBasic12() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Columns 3..");
+//		System.out.println("JDBC Get Columns 3..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -514,12 +535,14 @@ public class TestBasic
            	int i = 0;
        		while(rs.next()){
        		    i++;
+           		//System.out.println("Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6));
        		    String strCol = "Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6);
             	assertEquals("getColumns" + i, strexpCols[i-1], strCol);
        		}
-        	assertEquals("Number of Columns", i, expCols);
+			//System.out.println("Number of columns: " + i);
+        	assertEquals("Number of Columns", expCols, i);
   	       	conn.close();
-			System.out.println("JDBC Get Columns 3 passed");
+			System.out.println("JDBC Get Columns 3 : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -530,7 +553,7 @@ public class TestBasic
 	@Test
     public void TestBasic13() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Columns 4..");
+//		System.out.println("JDBC Get Columns 4..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -558,12 +581,14 @@ public class TestBasic
            	int i = 0;
        		while(rs.next()){
        		    i++;
+           		//System.out.println("Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6));
        		    String strCol = "Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6);
             	assertEquals("getColumns" + i, strexpCols[i-1], strCol);
        		}
-        	assertEquals("Number of Columns", i, expCols);
+			//System.out.println("Number of columns: " + i);
+        	assertEquals("Number of Columns", expCols, i);
   	       	conn.close();
-			System.out.println("JDBC Get Columns 4 passed");
+			System.out.println("JDBC Get Columns 4 : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -574,7 +599,7 @@ public class TestBasic
 	@Test
     public void TestBasic14() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Columns 5..");
+//		System.out.println("JDBC Get Columns 5..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -602,12 +627,14 @@ public class TestBasic
            	int i = 0;
        		while(rs.next()){
        		    i++;
+           		//System.out.println("Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6));
        		    String strCol = "Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6);
             	assertEquals("getColumns" + i, strexpCols[i-1], strCol);
        		}
+			//System.out.println("Number of columns: " + i);
         	assertEquals("Number of Columns", expCols, i);
   	       	conn.close();
-			System.out.println("JDBC Get Columns 5 passed");
+			System.out.println("JDBC Get Columns 5 : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -618,7 +645,7 @@ public class TestBasic
 	@Test
     public void TestBasic14a() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Columns delimited..");
+//		System.out.println("JDBC Get Columns delimited..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -646,12 +673,14 @@ public class TestBasic
            	int i = 0;
        		while(rs.next()){
        		    i++;
+           		//System.out.println("Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6));
        		    String strCol = "Column " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4) + " Datatype: " + rs.getInt(5) + ", " + rs.getString(6);
             	assertEquals("getColumns" + i, strexpCols[i-1], strCol);
        		}
-        	assertEquals("Number of Columns", i, expCols);
+			//System.out.println("Number of columns: " + i);
+        	assertEquals("Number of Columns", expCols, i);
   	       	conn.close();
-			System.out.println("JDBC Get Columns delimited passed");
+			System.out.println("JDBC Get Columns delimited : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -662,7 +691,7 @@ public class TestBasic
 	@Test
     public void TestBasic15() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Tables..");
+//		System.out.println("JDBC Get Tables..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -684,12 +713,14 @@ public class TestBasic
            	int i = 0;
        		while(rs.next()){
        		    i++;
+           		//System.out.println("Table " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + " - " + rs.getString(4));
        		    String actTab = "Table " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + " - " + rs.getString(4);
             	assertEquals("Get tables", expTab, actTab);
        		}
+			//System.out.println("Number of tables: " + i);
         	assertEquals("Number of tables", countTab, i);
   	       	conn.close();
-			System.out.println("JDBC Get Tables passed");
+			System.out.println("JDBC Get Tables : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -700,7 +731,7 @@ public class TestBasic
 	@Test
     public void TestBasic15a() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Tables delimited..");
+//		System.out.println("JDBC Get Tables delimited..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -725,9 +756,10 @@ public class TestBasic
        		    String actTab = "Table " + i + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + " - " + rs.getString(4);
             	assertEquals("Get tables", expTab, actTab);
        		}
+			//System.out.println("Number of tables: " + i);
         	assertEquals("Number of tables", countTab, i);
   	       	conn.close();
-			System.out.println("JDBC Get Tables delimited passed");
+			System.out.println("JDBC Get Tables delimited : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -738,7 +770,7 @@ public class TestBasic
 	@Test
     public void TestBasic16() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Type Info..");
+//		System.out.println("JDBC Get Type Info..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -792,12 +824,14 @@ public class TestBasic
            	int i = 0;
        		while(rs.next()){
        		    i++;
+           		//System.out.println(i + ": " + "TYPE_NAME - " + rs.getString(1) + " DATA_TYPE - " + rs.getInt(2) + " PRECISION - " + rs.getInt(3));
        		    String strType = i + ": " + "TYPE_NAME - " + rs.getString(1) + " DATA_TYPE - " + rs.getInt(2) + " PRECISION - " + rs.getInt(3);
             	assertEquals("getColumns" + i, strExpTypes[i-1], strType);
        		}
-        	assertEquals("Number of datatypes", i, expTypes);
+        	assertEquals("Number of datatypes", expTypes, i);
+			//System.out.println("Number of datatypes: " + i);
   	       	conn.close();
-			System.out.println("JDBC Get Type Info passed");
+			System.out.println("JDBC Get Type Info : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -808,14 +842,14 @@ public class TestBasic
 	@Test
     public void TestBasic17() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get User Connection..");
+//		System.out.println("JDBC Get User Connection..");
         Connection conn = null;
 
         try {
         	conn = Utils.getUserConnection();
 			System.out.println("Connected using getUserConnection");
   	       	conn.close();
-			System.out.println("JDBC Get User Connection passed");
+			System.out.println("JDBC Get User Connection : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -826,14 +860,14 @@ public class TestBasic
 	@Test
     public void TestBasic18() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Properties Connection..");
+//		System.out.println("JDBC Get Properties Connection..");
         Connection conn = null;
 
         try {
         	conn = Utils.getPropertiesConnection();
 			System.out.println("Connected using getPropertiesConnection");
   	       	conn.close();
-			System.out.println("JDBC Get Properties Connection passed");
+			System.out.println("JDBC Get Properties Connection : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -844,7 +878,7 @@ public class TestBasic
 	@Test
     public void TestBasic19() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get Primary Keys..");
+//		System.out.println("JDBC Get Primary Keys..");
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -872,11 +906,11 @@ public class TestBasic
        		while(rs.next()){
        		    i++;
            		String strActKey = rs.getShort(5) + ":" + rs.getString(1) + "." + rs.getString(2) + "." + rs.getString(3) + "." + rs.getString(4);
-           		assertEquals("Primary key " + i, strActKey, strExpKeys[i-1]);
+           		assertEquals("Primary key " + i, strExpKeys[i-1], strActKey);
        		}
-			assertEquals("Number of columns in PK: ", i, expKeys);
+			assertEquals("Number of columns in PK: ", expKeys, i);
   	       	conn.close();
-			System.out.println("JDBC Get Primary Keys passed");
+			System.out.println("JDBC Get Primary Keys : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -887,16 +921,18 @@ public class TestBasic
 	@Test
     public void TestBasic20() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get DB product name..");
+//		System.out.println("JDBC Get DB product name..");
         Connection conn = null;
 
         try {
         	conn = Utils.getUserConnection();
 			String	prodName = conn.getMetaData().getDatabaseProductName();
-			System.out.println("DB product name : " + prodName);
-			assertEquals("DB Product Name", prodName, "Traf Database");
+			//System.out.println("DB product name : " + prodName);
+			//T2 returned Trafodion and T4 returns Traf Database
+			//assertEquals("DB Product Name", "Traf", prodName);
+			assertTrue("DB Product Name", prodName.contains("Traf"));
   	       	conn.close();
-			System.out.println("JDBC Get DB product name passed");
+			System.out.println("JDBC Get DB product name : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -907,16 +943,16 @@ public class TestBasic
 	@Test
     public void TestBasic21() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get DB product version..");
+//		System.out.println("JDBC Get DB product version..");
         Connection conn = null;
 
         try {
         	conn = Utils.getUserConnection();
 			String	prodVer = conn.getMetaData().getDatabaseProductVersion();
 			System.out.println("DB product version : " + prodVer);
-			assertEquals("DB Product Version", prodVer, "0.9");
+			assertEquals("DB Product Version", "0.9", prodVer);
   	       	conn.close();
-			System.out.println("JDBC Get DB product version passed");
+			System.out.println("JDBC Get DB product version : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -927,16 +963,16 @@ public class TestBasic
 	@Test
     public void TestBasic22() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get DB major version..");
+//		System.out.println("JDBC Get DB major version..");
         Connection conn = null;
 
         try {
         	conn = Utils.getUserConnection();
 			int	majorVer = conn.getMetaData().getDatabaseMajorVersion();
-			System.out.println("DB major version : " + majorVer);
-			assertEquals("DB major Version", majorVer, 0);
+			//System.out.println("DB major version : " + majorVer);
+			assertEquals("DB major Version", 0, majorVer);
   	       	conn.close();
-			System.out.println("JDBC Get DB major version passed");
+			System.out.println("JDBC Get DB major version : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -947,16 +983,16 @@ public class TestBasic
 	@Test
     public void TestBasic23() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get DB minor version..");
+//		System.out.println("JDBC Get DB minor version..");
         Connection conn = null;
 
         try {
         	conn = Utils.getUserConnection();
 			int	minorVer = conn.getMetaData().getDatabaseMinorVersion();
-			System.out.println("DB minor version : " + minorVer);
-			assertEquals("DB Minor Version", minorVer, 9);
+			//System.out.println("DB minor version : " + minorVer);
+			assertEquals("DB Minor Version", 9, minorVer);
   	       	conn.close();
-			System.out.println("JDBC Get DB minor version passed");
+			System.out.println("JDBC Get DB minor version : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -967,16 +1003,17 @@ public class TestBasic
 	@Test
     public void TestBasic24() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get driver name..");
+//		System.out.println("JDBC Get driver name..");
         Connection conn = null;
 
         try {
         	conn = Utils.getUserConnection();
 			String driverName = conn.getMetaData().getDriverName();
-			System.out.println("Driver Name : " + driverName);
-			assertEquals("Driver Name", driverName, "org.trafodion.jdbc.t4.T4Driver");
+			//System.out.println("Driver Name : " + driverName);
+			//assertEquals("Driver Name", "org.trafodion.jdbc.t4.T4Driver", driverName);
+			assertTrue("Driver Name", driverName.contains("org.trafodion.jdbc.t"));
   	       	conn.close();
-			System.out.println("JDBC Get Driver Name passed");
+			System.out.println("JDBC Get Driver Name : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -987,17 +1024,16 @@ public class TestBasic
 	@Test
     public void TestBasic25() throws SQLException, ClassNotFoundException 
     {
-		System.out.println("JDBC Get driver version..");
         Connection conn = null;
 
         try {
         	conn = Utils.getUserConnection();
 			String	driverVer = conn.getMetaData().getDriverVersion();
-			System.out.println("Driver Version : " + driverVer);
+			//System.out.println("Driver Version : " + driverVer);
 			//assertTrue("Driver version", actualString.contains(wantedString));
-			assertTrue("Driver version", driverVer.contains("Traf_JDBC_Type4"));
+			assertTrue("Driver version", driverVer.contains("Traf_JDBC_Type"));
 			conn.close();
-			System.out.println("JDBC Get Driver version passed");
+			System.out.println("JDBC Get Driver version : Passed");
        } catch (Exception ex)
        {
            	ex.printStackTrace();
@@ -1014,24 +1050,26 @@ public class TestBasic
         String update = null;
         PreparedStatement pStmt = null;
         String ISTBL = "BATCHTBL1";
-        int totalQA = 20;
-        int totalDev = 20;
-        int totalMgr = 20;
+        int totalQA = 2000;
+        int totalDev = 2000;
+        int totalMgr = 2000;
         int totalPoints = 99999;
         long startTime = 0;
         long endTime = 0;
         int[] insertCount = null;
         int[] updateCount = null;
-        int TOTALUPDATECOUNT = 60;
+        int TOTALUPDATECOUNT = 6000;
         boolean pass = true;
         String IN1 = "BATCHTBL1";
         String IN2 = null;
+        /*
         int[] insertCountTemplate = { -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
         		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
         		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
         		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
         		-2, -2 };
         int[] updateCountTemplate = { -2 };
+        */
 		try{
 			Connection conn = Utils.getUserConnection();
 
@@ -1109,10 +1147,16 @@ public class TestBasic
         	try {
         		insertCount = pStmt.executeBatch();
         		// Check the return status code for each row
+        		/*
+        		System.out.println("insertcount length = " + insertCount.length);
         		for (int i = 0; i < insertCount.length; i++) {
-        			if (insertCount[i] != insertCountTemplate[i]) {
+       				System.out.println("insertCount[" + i + "] : " + insertCount[i]);
+        		}
+        		*/
+        		for (int i = 0; i < insertCount.length; i++) {
+        			if ((insertCount[i] != -2) && (insertCount[i] != 1)) {
         				pass = false;
-        				System.out.println("Batch1 : ERROR: Expecting return code for " + i + "th command: " + insertCountTemplate[i]);
+        				System.out.println("Batch1 : ERROR: Unexpected return code (should be -2 or 1) for " + i + "th command: " + insertCount[i]);
         			}
         		}
         	} catch (BatchUpdateException bue) {
@@ -1124,11 +1168,16 @@ public class TestBasic
         	java.sql.SQLWarning sw = pStmt.getWarnings();
         	int totalW = 0;
         	while (sw != null) {
+//        		System.out.println("SQLMessage : " + sw.getMessage());
+//        		System.out.println("SQLState : " + sw.getSQLState());
+//        		System.out.println("ErrorCode : " + sw.getErrorCode());
         		totalW++;
         		sw = sw.getNextWarning();
         	}
+//        	System.out.println("Batch1 : Total of " + totalW + " warning retrieved!!");
         	// Check the update count
         	int updateRowCount = pStmt.getUpdateCount();
+//        	System.out.println("Batch1 : Update count :" + updateRowCount);
         	if (updateRowCount != TOTALUPDATECOUNT) {
         		System.out.println("Batch1: ERROR: Expecting updateRowCount to be "	+ TOTALUPDATECOUNT);
         		pass = false;
@@ -1142,8 +1191,12 @@ public class TestBasic
         		ResultSetMetaData rsMD = rs.getMetaData();
         		while (rs.next()) {
         			totalI++;
+        			// for (int j=1; j <= rsMD.getColumnCount(); j++)
+        			// System.out.println("Column " + j + ":" +
+        			// rs.getObject(j));
         		}
         		rs.close();
+//        		System.out.println("Batch1 : total of " + totalI + " rows inserted");
         	}
         	if (totalI != TOTALUPDATECOUNT) {
         		pass = false;
@@ -1158,14 +1211,23 @@ public class TestBasic
         	pStmt.setString(2, "MGR");
         	pStmt.addBatch();
 
+ //       	System.out.println("Batch1 : Done adding update to batch.....");
+
         	try {
         		updateCount = pStmt.executeBatch();
 
         		// Check the return status code for each row
+        		/*
+        		System.out.println("updatecount length = " + updateCount.length);
         		for (int i = 0; i < updateCount.length; i++) {
-        			if (updateCount[i] != updateCountTemplate[i]) {
+       				System.out.println("updateCount[" + i + "] : " + updateCount[i]);
+        		}
+        		*/
+        		for (int i = 0; i < updateCount.length; i++) {
+        			//System.out.println("Batch1 : return code for " + i + "th command: " + updateCount[i]);
+        			if ((updateCount[i] != -2) && (updateCount[i] != 2)) {
         				pass = false;
-        				System.out.println("Batch1 : ERROR: Expecting return code for " + i + "th command: " + updateCountTemplate[i]);
+        				System.out.println("Batch1 : ERROR: Unexpected return code (should be -2 or 1) for " + i + "th command: " + updateCount[i]);
         			}
         		}
         	} catch (BatchUpdateException bue) {
@@ -1175,6 +1237,7 @@ public class TestBasic
 
         	// Check the update count
         	updateRowCount = pStmt.getUpdateCount();
+//        	System.out.println("Batch1 : Update count :" + updateRowCount);
         	if (updateRowCount != totalMgr) {
         		System.out.println("Batch1: ERROR: Expecting updateRowCount to be " + totalMgr);
         		pass = false;
@@ -1185,6 +1248,7 @@ public class TestBasic
         	if (rs != null) {
         		while (rs.next()) {
         			ret = rs.getInt("POINTS");
+//        			System.out.println("Batch1: points for MGR is : " + ret);
         			if (ret != 9) {
         				pass = false;
         				System.out.println("Batch1: ERROR: points for MGR is not updated: " + ret);
@@ -1202,8 +1266,13 @@ public class TestBasic
         	e.printStackTrace();
         	System.out.println(e.getMessage());
         } finally {
-        	System.out.println("Batch1");
-        	assertEquals(pass, true);
+        	/**/
+        	if (pass)
+        		System.out.println("Batch1 :  Passed");
+        	else
+        		System.out.println("Batch1 : FAILED");
+        	/**/
+        	assertEquals(true, pass);
         }
 	}
 
@@ -1216,24 +1285,26 @@ public class TestBasic
         String update = null;
         PreparedStatement pStmt = null;
         String ISTBL = "BATCHTBL";
-        int totalQA = 2000;
-        int totalDev = 2000;
-        int totalMgr = 2000;
+        int totalQA = 20000;
+        int totalDev = 20000;
+        int totalMgr = 20000;
         int totalPoints = 999999;
         long startTime = 0;
         long endTime = 0;
         int[] insertCount = null;
         int[] updateCount = null;
-        int TOTALUPDATECOUNT = 6000;
+        int TOTALUPDATECOUNT = 60000;
         boolean pass = true;
         String IN1 = "BATCHTBL";
         String IN2 = null;
+        /*
         int[] insertCountTemplate = { -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
         		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
         		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
         		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
         		-2, -2 };
         int[] updateCountTemplate = { -2 };
+        */
 		try{
 			Connection conn = Utils.getUserConnection();
 
@@ -1311,12 +1382,18 @@ public class TestBasic
         	try {
         		insertCount = pStmt.executeBatch();
         		// Check the return status code for each row
+        		/*
+        		System.out.println("insertcount length = " + insertCount.length);
+        		for (int i = 0; i < insertCount.length; i++) {
+       				System.out.println("insertCount[" + i + "] : " + insertCount[i]);
+        		}
+        		*/
         		for (int i = 0; i < insertCount.length; i++) {
         			//if (insertCount[i] != insertCountTemplate[i]) 
-        			if (insertCount[i] != -2)
+        			if ((insertCount[i] != -2) && (insertCount[i] != 1))
         			{
         				pass = false;
-        				System.out.println("Batch : ERROR: Expecting return code for " + i + "th command: -2");
+        				System.out.println("Batch : ERROR: Unexpected return code (should be -2 or 1) for " + i + "th command: " + insertCount[i]);
         			}
         		}
         	} catch (BatchUpdateException bue) {
@@ -1328,13 +1405,18 @@ public class TestBasic
         	java.sql.SQLWarning sw = pStmt.getWarnings();
         	int totalW = 0;
         	while (sw != null) {
+//        		System.out.println("SQLMessage : " + sw.getMessage());
+//        		System.out.println("SQLState : " + sw.getSQLState());
+//        		System.out.println("ErrorCode : " + sw.getErrorCode());
         		totalW++;
         		sw = sw.getNextWarning();
         	}
+//        	System.out.println("Batch : Total of " + totalW + " warning retrieved!!");
         	// Check the update count
         	int updateRowCount = pStmt.getUpdateCount();
+//        	System.out.println("Batch : Update count :" + updateRowCount);
         	if (updateRowCount != TOTALUPDATECOUNT) {
-        		System.out.println("Batch: ERROR: Expecting updateRowCount to be "	+ TOTALUPDATECOUNT);
+        		System.out.println("Batch: ERROR: Expecting updateRowCount to be " + TOTALUPDATECOUNT + " but it is " + updateRowCount);
         		pass = false;
         	}
 
@@ -1346,12 +1428,16 @@ public class TestBasic
         		ResultSetMetaData rsMD = rs.getMetaData();
         		while (rs.next()) {
         			totalI++;
+        			// for (int j=1; j <= rsMD.getColumnCount(); j++)
+        			// System.out.println("Column " + j + ":" +
+        			// rs.getObject(j));
         		}
         		rs.close();
+        		System.out.println("Batch : total of " + totalI + " rows inserted");
         	}
         	if (totalI != TOTALUPDATECOUNT) {
         		pass = false;
-        		System.out.println("Batch : ERROR: Expecting total of " + totalI + " rows inserted");
+        		System.out.println("Batch : ERROR: Expected rows inserted : " + totalI + " actual: " + TOTALUPDATECOUNT);
         	}
         	pStmt.close();
         	pStmt = null;
@@ -1362,14 +1448,22 @@ public class TestBasic
         	pStmt.setString(2, "MGR");
         	pStmt.addBatch();
 
+ //       	System.out.println("Batch : Done adding update to batch.....");
+
         	try {
         		updateCount = pStmt.executeBatch();
-
+        		/*
+        		System.out.println("updatecount length = " + updateCount.length);
+        		for (int i = 0; i < updateCount.length; i++) {
+       				System.out.println("updateCount[" + i + "] : " + updateCount[i]);
+        		}
+        		 */
         		// Check the return status code for each row
         		for (int i = 0; i < updateCount.length; i++) {
-        			if (updateCount[i] != updateCountTemplate[i]) {
+        			//System.out.println("Batch : return code for " + i + "th command: " + updateCount[i]);
+        			if ((updateCount[i] != -2) && (updateCount[i] != 2)) {
         				pass = false;
-        				System.out.println("Batch : ERROR: Expecting return code for " + i + "th command: " + updateCountTemplate[i]);
+        				System.out.println("Batch : ERROR: Unexpected return code (should be -2 or 1) for " + i + "th command: " + updateCount[i]);
         			}
         		}
         	} catch (BatchUpdateException bue) {
@@ -1379,6 +1473,7 @@ public class TestBasic
 
         	// Check the update count
         	updateRowCount = pStmt.getUpdateCount();
+//        	System.out.println("Batch : Update count :" + updateRowCount);
         	if (updateRowCount != totalMgr) {
         		System.out.println("Batch: ERROR: Expecting updateRowCount to be " + totalMgr);
         		pass = false;
@@ -1389,6 +1484,7 @@ public class TestBasic
         	if (rs != null) {
         		while (rs.next()) {
         			ret = rs.getInt("POINTS");
+//        			System.out.println("Batch: points for MGR is : " + ret);
         			if (ret != 9) {
         				pass = false;
         				System.out.println("Batch: ERROR: points for MGR is not updated: " + ret);
@@ -1408,12 +1504,11 @@ public class TestBasic
         } finally {
         	/**/
         	if (pass)
-        		System.out.println("Batch :  PASSED");
+        		System.out.println("Batch :  Passed");
         	else
         		System.out.println("Batch : FAILED");
         	/**/
-        	System.out.println("Batch");
-        	assertEquals(pass, true);
+        	assertEquals(true, pass);
         }
 	}
 
@@ -1463,6 +1558,7 @@ public class TestBasic
 	        startTime = System.currentTimeMillis();
 	
 	        // Insert lines with unique id
+	
 
         	try {
     	        for (int j = 1; j <= total; j++) {
@@ -1470,6 +1566,16 @@ public class TestBasic
     	        	pStmt.addBatch();
     	        }
         		insertCount = pStmt.executeBatch();
+        		// Check the return status code for each row
+        		for (int i = 0; i < insertCount.length; i++) 
+        		{
+        			//if (insertCount[i] != insertCountTemplate[i]) 
+        			if ((insertCount[i] != -2) && (insertCount[i] != 1))
+        			{
+        				pass = false;
+        				System.out.println("Batch All : ERROR: Expecting return code for " + i + "th command: -2 or 1, but got : " + insertCount[i]);
+        			}
+        		}
         	} catch (BatchUpdateException bue) {
         		System.out.println("Batch All : ERROR: Exception in insert batch mode.....");
             	bue.printStackTrace();
@@ -1481,11 +1587,16 @@ public class TestBasic
         	java.sql.SQLWarning sw = pStmt.getWarnings();
         	int totalW = 0;
         	while (sw != null) {
+//        		System.out.println("SQLMessage : " + sw.getMessage());
+//        		System.out.println("SQLState : " + sw.getSQLState());
+//        		System.out.println("ErrorCode : " + sw.getErrorCode());
         		totalW++;
         		sw = sw.getNextWarning();
         	}
+//        	System.out.println("Batch All : Total of " + totalW + " warning retrieved!!");
         	// Check the update count
         	int updateRowCount = pStmt.getUpdateCount();
+//        	System.out.println("Batch All : Update count :" + updateRowCount);
         	if (updateRowCount != TOTALUPDATECOUNT) {
         		System.out.println("Batch All: ERROR: Expecting updateRowCount to be "	+ TOTALUPDATECOUNT + " but got " + updateRowCount);
         		pass = false;
@@ -1499,8 +1610,12 @@ public class TestBasic
         		ResultSetMetaData rsMD = rs.getMetaData();
         		while (rs.next()) {
         			totalI++;
+        			// for (int j=1; j <= rsMD.getColumnCount(); j++)
+        			// System.out.println("Column " + j + ":" +
+        			// rs.getObject(j));
         		}
         		rs.close();
+//        		System.out.println("Batch All : total of " + totalI + " rows inserted");
         	}
         	if (totalI != TOTALUPDATECOUNT) {
         		pass = false;
@@ -1520,427 +1635,11 @@ public class TestBasic
         } finally {
         	/**/
         	if (pass)
-        		System.out.println("Batch All :  PASSED");
+        		System.out.println("Batch All :  Passed");
         	else
         		System.out.println("Batch All : FAILED");
         	/**/
-        	System.out.println("Batch All");
-        	assertEquals(pass, true);
-        }
-	}
-
-	@Test
-	public void JDBCBatch22() throws InterruptedException, SQLException {
-		Connection conn = null;
-        Statement stmt = null;
-        String cat = null;
-        String sch = null;
-        String url = null;
-        String IN1 = null;
-        String IN2 = null;
-        String DEPT = null;
-        String insert = null;
-        String delete = null;
-        PreparedStatement pStmt = null;
-        String ISTBL = "BATCHTBL22";
-        int totalQA = 20;
-        int totalDev = 20;
-        int totalMgr = 20;
-        int totalPoints = 99999;
-        long startTime = 0;
-        long endTime = 0;
-        int[] insertCount = null;
-        int[] deleteCount = null;
-        int TOTALUPDATECOUNT = 60;
-        boolean pass = true;
-        int[] insertCountTemplate = { -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-        		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-        		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-        		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-        		-2, -2 };
-        int[] deleteCountTemplate = { -2 };
-
-        try {
-        	conn = Utils.getUserConnection();
-        	IN1 = ISTBL;
-        	Utils.dropTable(conn, IN1);
-        	Utils.createTable(conn, IN1);
-
-        	insert = "insert into " + IN1 + " values(?, ?,?,?)";
-        	pStmt = conn.prepareStatement(insert);
-
-        	startTime = System.currentTimeMillis();
-
-        	// Insert lines with unique id
-
-        	int points = totalPoints;
-        	int toggle = 1;
-        	for (int j = 1; j <= totalQA; j++) {
-        		if (toggle == 1)
-        			DEPT = "JDBC";
-        		else if (toggle == 2)
-        			DEPT = "ODBC";
-        		else
-        			DEPT = "DBADMIN";
-
-        		pStmt.setString(1, "QA");
-        		pStmt.setInt(2, j);
-        		pStmt.setInt(3, points);
-        		pStmt.setString(4, DEPT);
-        		points--;
-        		toggle++;
-        		if (toggle > 3)
-        			toggle = 1;
-        		pStmt.addBatch();
-        	}
-
-        	points = totalPoints;
-        	toggle = 1;
-        	for (int j = (totalQA + 1); j <= (totalDev + totalQA); j++) {
-        		if (toggle == 1)
-        			DEPT = "JDBC";
-        		else if (toggle == 2)
-        			DEPT = "ODBC";
-        		else
-        			DEPT = "DBADMIN";
-        		pStmt.setString(1, "DEV");
-        		pStmt.setInt(2, j);
-        		pStmt.setInt(3, points);
-        		pStmt.setString(4, DEPT);
-        		points--;
-        		points--;
-        		toggle++;
-        		if (toggle > 3)
-        			toggle = 1;
-        		pStmt.addBatch();
-        	}
-
-        	points = totalPoints;
-        	for (int j = (totalQA + totalDev + 1); j <= (totalDev + totalQA + totalMgr); j++) {
-        		if (toggle == 1)
-        			DEPT = "JDBC";
-        		else if (toggle == 2)
-        			DEPT = "ODBC";
-        		else
-        			DEPT = "DBADMIN";
-        		pStmt.setString(1, "MGR");
-        		pStmt.setInt(2, j);
-        		pStmt.setInt(3, points);
-        		pStmt.setString(4, DEPT);
-        		points--;
-        		toggle++;
-        		if (toggle > 3)
-        			toggle = 1;
-        		pStmt.addBatch();
-        	}
-
-        	try {
-        		insertCount = pStmt.executeBatch();
-        		// Check the return status code for each row
-        		for (int i = 0; i < insertCount.length; i++) {
-        			if (insertCount[i] != insertCountTemplate[i]) {
-        				pass = false;
-        				System.out.println("Batch22 : ERROR: Expecting return code for " + i + "th command: " + insertCountTemplate[i]);
-        			}
-        		}
-        	} catch (BatchUpdateException bue) {
-        		System.out.println("Batch22 : ERROR: Exception in insert batch mode.....");
-        		handleBatchUpdateException(bue);
-        	}
-
-        	// Check the SQLWarning
-        	java.sql.SQLWarning sw = pStmt.getWarnings();
-        	int totalW = 0;
-        	while (sw != null) {
-        		System.out.println("SQLMessage : " + sw.getMessage());
-        		System.out.println("SQLState : " + sw.getSQLState());
-        		System.out.println("ErrorCode : " + sw.getErrorCode());
-        		totalW++;
-        		sw = sw.getNextWarning();
-        	}
-        	if (totalW > 0)
-        		System.out.println("Batch22 : Total of " + totalW + " warning retrieved!!");
-        	// Check the update count
-        	int updateRowCount = pStmt.getUpdateCount();
-        	if (updateRowCount != TOTALUPDATECOUNT) {
-        		System.out.println("Batch22: ERROR: Expecting updateRowCount to be " + TOTALUPDATECOUNT);
-        		pass = false;
-        	}
-
-        	int total = 0;
-        	stmt = conn.createStatement();
-        	ResultSet rs = stmt.executeQuery("select * from " + IN1 + " where TITLE = 'MGR'");
-        	if (rs != null) {
-        		while (rs.next())
-        			total++;
-        		rs.close();
-        	}
-        	if (total != totalMgr) {
-        		pass = false;
-        		System.out.println("Batch22: ERROR: Rows of MGR are not inserted correctly: " + total);
-        	} 
-        	
-        	pStmt.close();
-        	pStmt = null;
-
-        	// Now delete the rows
-        	delete = "delete from " + IN1 + " where TITLE = ? ";
-        	pStmt = conn.prepareStatement(delete);
-        	pStmt.setString(1, "MGR");
-        	pStmt.addBatch();
-
-        	try {
-        		deleteCount = pStmt.executeBatch();
-
-        		// Check the return status code for each row
-        		for (int i = 0; i < deleteCount.length; i++) {
-        			if (deleteCount[i] != deleteCountTemplate[i]) {
-        				pass = false;
-        				System.out.println("Batch22 : ERROR: Expecting return code for " + i + "th command: " + deleteCountTemplate[i]);
-        			}
-        		}
-        	} catch (BatchUpdateException bue) {
-        		System.out.println("Batch22 : ERROR: Exception in delete batch mode.....");
-        		handleBatchUpdateException(bue);
-        	}
-
-        	// Check the update count
-        	updateRowCount = pStmt.getUpdateCount();
-        	if (updateRowCount != totalMgr) {
-        		System.out.println("Batch22: ERROR: Expecting updateRowCount to be " + totalMgr);
-        		pass = false;
-        	}
-
-        	total = 0;
-        	rs = stmt.executeQuery("select * from " + IN1 + " where TITLE = 'MGR'");
-        	if (rs != null) {
-        		while (rs.next())
-        			total++;
-        		rs.close();
-        	}
-
-        	if (total != 0) {
-        		pass = false;
-        		System.out.println("Batch22: ERROR: Rows of MGR are not deleted: " + total);
-        	}
-
-        	pStmt.close();
-        	stmt.close();
-        	conn.close();
-        }// end of try
-        catch (Exception e) {
-        	pass = false;
-        	e.printStackTrace();
-        	System.out.println(e.getMessage());
-        } finally {
-        	System.out.println("Batch22");
-        	assertEquals(pass, true);
-        }
-	}
-	
-	@Test
-	public void JDBCBatch11() throws InterruptedException, SQLException {
-        Statement stmt = null;
-        ResultSet rs = null;
-        String DEPT = null;
-        String insert = null;
-        String update = null;
-        PreparedStatement pStmt = null;
-        String ISTBL = "BATCHTBL11";
-        int totalQA = 20;
-        int totalDev = 20;
-        int totalMgr = 20;
-        int totalPoints = 99999;
-        long startTime = 0;
-        long endTime = 0;
-        int[] insertCount = null;
-        int[] updateCount = null;
-        int TOTALUPDATECOUNT = 60;
-        boolean pass = true;
-        String IN1 = "BATCHTBL11";
-        String IN2 = null;
-        int[] insertCountTemplate = { -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-        		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-        		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-        		-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-        		-2, -2 };
-        int[] updateCountTemplate = { -2 };
-		try{
-			Connection conn = Utils.getUserConnection();
-
-	        Utils.dropTable(conn, IN1);
-	        Utils.createTable(conn, IN1);
-	
-	        insert = "insert into " + IN1 + " values(?,?,?,?)";
-	        pStmt = conn.prepareStatement(insert);
-	
-	        startTime = System.currentTimeMillis();
-	
-	        // Insert lines with unique id
-	
-	        int points = totalPoints;
-	        int toggle = 1;
-	        for (int j = 1; j <= totalQA; j++) {
-	        	if (toggle == 1)
-	        		DEPT = "JDBC";
-	        	else if (toggle == 2)
-	        		DEPT = "ODBC";
-	        	else
-	        		DEPT = "DBADMIN";
-	
-	        	pStmt.setString(1, "QA");
-	        	pStmt.setInt(2, j);
-	        	pStmt.setInt(3, points);
-	        	pStmt.setString(4, DEPT);
-	        	points--;
-	        	toggle++;
-	        	if (toggle > 3)
-	        		toggle = 1;
-	        	pStmt.addBatch();
-	        }
-	
-	    	points = totalPoints;
-	    	toggle = 1;
-	    	for (int j = (totalQA + 1); j <= (totalDev + totalQA); j++) {
-	    		if (toggle == 1)
-	    			DEPT = "JDBC";
-	    		else if (toggle == 2)
-	    			DEPT = "ODBC";
-	    		else
-	    			DEPT = "DBADMIN";
-	    		pStmt.setString(1, "DEV");
-	    		pStmt.setInt(2, j);
-	    		pStmt.setInt(3, points);
-	    		pStmt.setString(4, DEPT);
-	    		points--;
-	    		points--;
-	    		toggle++;
-	    		if (toggle > 3)
-	    			toggle = 1;
-	    		pStmt.addBatch();
-	    	}
-
-        	points = totalPoints;
-        	for (int j = (totalQA + totalDev + 1); j <= (totalDev + totalQA + totalMgr); j++) {
-        		if (toggle == 1)
-        			DEPT = "JDBC";
-        		else if (toggle == 2)
-        			DEPT = "ODBC";
-        		else
-        			DEPT = "DBADMIN";
-        		pStmt.setString(1, "MGR");
-        		pStmt.setInt(2, j);
-        		pStmt.setInt(3, points);
-        		pStmt.setString(4, DEPT);
-        		points--;
-        		toggle++;
-        		if (toggle > 3)
-        			toggle = 1;
-        		pStmt.addBatch();
-        	}
-
-        	try {
-        		insertCount = pStmt.executeBatch();
-        		// Check the return status code for each row
-        		for (int i = 0; i < insertCount.length; i++) {
-        			if (insertCount[i] != insertCountTemplate[i]) {
-        				pass = false;
-        				System.out.println("Batch11 : ERROR: Expecting return code for " + i + "th command: " + insertCountTemplate[i]);
-        			}
-        		}
-        	} catch (BatchUpdateException bue) {
-        		System.out.println("Batch1 : ERROR: Exception in insert batch mode.....");
-        		handleBatchUpdateException(bue);
-        	}
-
-        	// Check the SQLWarning
-        	java.sql.SQLWarning sw = pStmt.getWarnings();
-        	int totalW = 0;
-        	while (sw != null) {
-        		System.out.println("SQLMessage : " + sw.getMessage());
-        		System.out.println("SQLState : " + sw.getSQLState());
-        		System.out.println("ErrorCode : " + sw.getErrorCode());
-        		totalW++;
-        		sw = sw.getNextWarning();
-        	}
-        	// Check the update count
-        	int updateRowCount = pStmt.getUpdateCount();
-        	if (updateRowCount != TOTALUPDATECOUNT) {
-        		System.out.println("Batch11: ERROR: Expecting updateRowCount to be "	+ TOTALUPDATECOUNT);
-        		pass = false;
-        	}
-
-        	// Verify the inserted rows
-        	stmt = conn.createStatement();
-        	int totalI = 0;
-        	rs = stmt.executeQuery("select * from " + IN1);
-        	if (rs != null) {
-        		ResultSetMetaData rsMD = rs.getMetaData();
-        		while (rs.next()) {
-        			totalI++;
-        		}
-        		rs.close();
-        	}
-        	if (totalI != TOTALUPDATECOUNT) {
-        		pass = false;
-        		System.out.println("Batch11 : ERROR: Expecting total of " + totalI + " rows inserted");
-        	}
-        	pStmt.close();
-        	pStmt = null;
-
-        	// Now update the rows
-        	update = "update " + IN1 + " set points  = ? where TITLE = ? ";
-        	pStmt = conn.prepareStatement(update);
-        	pStmt.setInt(1, 9);
-        	pStmt.setString(2, "MGR");
-        	pStmt.addBatch();
-
-        	try {
-        		updateCount = pStmt.executeBatch();
-
-        		// Check the return status code for each row
-        		for (int i = 0; i < updateCount.length; i++) {
-        			if (updateCount[i] != updateCountTemplate[i]) {
-        				pass = false;
-        				System.out.println("Batch11 : ERROR: Expecting return code for " + i + "th command: " + updateCountTemplate[i]);
-        			}
-        		}
-        	} catch (BatchUpdateException bue) {
-        		System.out.println("Batch11 : ERROR: Exception in update batch mode.....");
-        		handleBatchUpdateException(bue);
-        	}
-
-        	// Check the update count
-        	updateRowCount = pStmt.getUpdateCount();
-        	if (updateRowCount != totalMgr) {
-        		System.out.println("Batch11: ERROR: Expecting updateRowCount to be " + totalMgr);
-        		pass = false;
-        	}
-
-        	int ret = 0;
-        	rs = stmt.executeQuery("select POINTS from " + IN1 + " where TITLE = 'MGR'");
-        	if (rs != null) {
-        		while (rs.next()) {
-        			ret = rs.getInt("POINTS");
-        			if (ret != 9) {
-        				pass = false;
-        				System.out.println("Batch11: ERROR: points for MGR is not updated: " + ret);
-        			}
-        		}
-        		rs.close();
-        	}
-        	pStmt.close();
-        	stmt.close();
-        	conn.close();
-
-        }// end of try
-        catch (Exception e) {
-        	pass = false;
-        	e.printStackTrace();
-        	System.out.println(e.getMessage());
-        } finally {
-        	System.out.println("Batch11");
-        	assertEquals(pass, true);
+        	assertEquals(true, pass);
         }
 	}
 
