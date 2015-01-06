@@ -271,7 +271,6 @@ SQLCLI_LIB_FUNC
                           NABoolean calledFromDrop = FALSE);
   ContextTidMap * getThreadContext(pid_t tid);
   Lng32 switchContext(ContextCli*newContext);
-  Lng32 switchTransaction(ContextCli *newContext);
 
   //
   // Context management functions added to implement user-defined routines
@@ -595,7 +594,6 @@ private:
   HashQueue *tidList_;
   CLISemaphore *cliSemaphore_;
   ExProcessStats *processStats_;
-  Int64 suspendTransId_;
 };
 #pragma warn(1506)   // warning elimination
 

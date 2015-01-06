@@ -105,7 +105,6 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        savedPriority_(148) // Set it to some valid priority to start with
        , tidList_(NULL)
        , cliSemaphore_(NULL)
-       , suspendTransId_(-1)
        , defaultContext_(NULL)
 {
   globalsAreInitialized_ = FALSE;
@@ -692,15 +691,6 @@ ContextTidMap * CliGlobals::getThreadContext(pid_t tid)
   return NULL;
 }
 
-Lng32 CliGlobals::switchTransaction(ContextCli *newContext)
-{
-  short retcode;
-  retcode = ExTransaction::suspendTransaction((short *)&suspendTransId_);
-  if (retcode == FEOK)
-    retcode = newContext->getTransaction()->resumeTransaction(); 
-  return retcode;
-}
-
 Lng32 CliGlobals::switchContext(ContextCli * newContext)
 {
   Lng32 retcode;
@@ -713,6 +703,9 @@ Lng32 CliGlobals::switchContext(ContextCli * newContext)
         tsCurrentContextMap != NULL && 
            newContext == tsCurrentContextMap->context_)
      return 0;
+  retcode = currContext()->getTransaction()->suspendTransaction();
+  if (retcode != 0)
+     return retcode;
   cliSemaphore_->get();
   tidList_->position((char*)&tid, sizeof(pid_t));
   ContextTidMap *contextTidMap;
@@ -734,7 +727,7 @@ Lng32 CliGlobals::switchContext(ContextCli * newContext)
      tsCurrentContextMap = contextTidMap;
   }
   cliSemaphore_->release();
-  retcode = switchTransaction(newContext);
+  retcode = currContext()->getTransaction()->resumeTransaction();
   return retcode;
 }
 
@@ -1154,8 +1147,6 @@ void CliGlobals::deleteContexts()
 
 void SQ_CleanupThread(void *arg)
 {
-  if (tsCurrentContextMap != NULL && tsCurrentContextMap->context_ != NULL)
-     cli_globals->switchTransaction(NULL);
   HBaseClient_JNI::deleteInstance();
   HiveClient_JNI::deleteInstance();
 }

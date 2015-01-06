@@ -65,7 +65,7 @@ public:
   // operations.
   //////////////////////////////////////////////////////////////
   short beginTransaction();
-  static short suspendTransaction(short *transId);
+  short suspendTransaction();
   short resumeTransaction();
 
   //////////////////////////////////////////////////////////////

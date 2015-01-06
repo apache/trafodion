@@ -441,18 +441,22 @@ short ExTransaction::beginTransaction()
   return 0;
 }
 
-short ExTransaction::suspendTransaction(short *transId)
+short ExTransaction::suspendTransaction()
 {
-  short retcode = RESUMETRANSACTION(0);
-  if (retcode == FENOTRANSID)
-     retcode = FEOK;
+  short retcode = FEOK;
+  if (transid_ != -1 && transtag_ != -1)
+  {
+     retcode = RESUMETRANSACTION(0);
+     if (retcode == FENOTRANSID)
+        retcode = FEOK;
+  }
   return retcode; 
 }
 
 short ExTransaction::resumeTransaction()
 {
   short retcode = 0;
-  if (transid_ != -1)
+  if (transid_ != -1 && transtag_ != -1)
   {
      retcode = RESUMETRANSACTION(transtag_);
   }
