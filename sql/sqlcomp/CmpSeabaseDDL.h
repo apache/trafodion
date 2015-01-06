@@ -978,11 +978,12 @@ class CmpSeabaseDDL
 
   short getSpecialTableInfo
     (
+     NAMemory * heap,
      const NAString &catName, 
      const NAString &schName, 
      const NAString &objName,
      const NAString &extTableName,
-     const ComObjectType objType, 
+     const ComObjectType &objType, 
      ComTdbVirtTableTableInfo* &tableInfo
      );
 
@@ -1026,6 +1027,7 @@ class CmpSeabaseDDL
 					NABoolean includeInvalidDefs);
  
   static NABoolean getMDtableInfo(const NAString &objName,
+                                  ComTdbVirtTableTableInfo* &tableInfo,
 				  Lng32 &colInfoSize,
 				  const ComTdbVirtTableColumnInfo* &colInfo,
 				  Lng32 &keyInfoSize,
