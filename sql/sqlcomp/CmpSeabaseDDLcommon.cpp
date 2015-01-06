@@ -5777,7 +5777,8 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
 
   CorrName cn(seqNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   cn.setSpecialType(ExtendedQualName::SG_TABLE);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn, 
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_SEQUENCE_GENERATOR_OBJECT);
 
   return;
 }
@@ -5875,7 +5876,8 @@ void  CmpSeabaseDDL::dropSeabaseSequence(StmtDDLDropSequence  * dropSequenceNode
 
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   cn.setSpecialType(ExtendedQualName::SG_TABLE);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_SEQUENCE_GENERATOR_OBJECT);
  
   return;
 }

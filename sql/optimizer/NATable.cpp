@@ -8245,7 +8245,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
   return table;
 }
 
-void NATableDB::removeNATable(CorrName &corrName, NABoolean global)
+void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
+                              ComObjectType ot)
 {
   const ExtendedQualName* toRemove = &(corrName.getExtendedQualNameObj());
   NAHashDictionaryIterator<ExtendedQualName,NATable> iter(*this); 
@@ -8308,7 +8309,7 @@ void NATableDB::removeNATable(CorrName &corrName, NABoolean global)
     }
 
     // clear out the other users' caches too.
-    if (global)
+    if (qiScope == REMOVE_FROM_ALL_USERS)
     {
       // There are some scenarios where the affected object
       // does not have an NATable cache entry. Need to get one and 
@@ -8317,7 +8318,7 @@ void NATableDB::removeNATable(CorrName &corrName, NABoolean global)
       {
         Int64 ouid = lookupObjectUid(
                        toRemove->getQualifiedNameObj(), 
-                       COM_BASE_TABLE_OBJECT); 
+                       ot); 
         if (ouid > 0)
           objectUIDs.insert(ouid);
       }

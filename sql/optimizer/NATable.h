@@ -1313,7 +1313,9 @@ public:
   NATable * get(CorrName& corrName, BindWA * bindWA,
                 desc_struct *inTableDescStruct);
 
-  void removeNATable(CorrName &corrName, NABoolean global = TRUE);
+  enum QiScope { REMOVE_FROM_ALL_USERS = 100, REMOVE_MINE_ONLY };
+  void removeNATable(CorrName &corrName, QiScope qiScope, 
+                     ComObjectType ot);
   
   void RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx );
   static void remove_entries_marked_for_removal();
