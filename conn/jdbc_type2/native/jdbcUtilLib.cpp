@@ -102,7 +102,7 @@ int JdbcUtil::getErrorCode(void)
 bool JdbcUtil::getSemaphores(bool create)
 {
 	setError(NULL);
-	
+
 	if (semaphoreId == -1)
 	{
 		int semid;
@@ -130,7 +130,7 @@ bool JdbcUtil::getSemaphores(bool create)
 bool JdbcUtil::lockSemaphore(unsigned short sem_idx, bool lock)
 {
 	setError(NULL);
-	
+
 	if (lock && !getSemaphores(false)) return false;
 
 	const char *lock_str;
@@ -161,7 +161,7 @@ bool JdbcUtil::lockSemaphore(unsigned short sem_idx, bool lock)
 bool JdbcUtil::removeSemaphores(void)
 {
 	setError(NULL);
-	
+
 	if (semaphoreId!=-1)
 	{
 		if (semctl(semaphoreId, 0, IPC_RMID) == -1)
@@ -216,7 +216,7 @@ bool JdbcUtil::getMemory(bool create)
 bool JdbcUtil::attachMemory(void)
 {
 	setError(NULL);
-	
+
 	// If we have not accessed the memory, get it
 	//   only if it has already been created.
 	if ((sharedMemoryId==-1) &&
@@ -247,7 +247,7 @@ bool JdbcUtil::attachMemory(void)
 bool JdbcUtil::detachMemory(void)
 {
 	setError(NULL);
-	
+
 	if (sharedMemory)
 	{
 		// Detach the memory segment
@@ -264,14 +264,14 @@ bool JdbcUtil::detachMemory(void)
 bool JdbcUtil::removeMemory(void)
 {
 	setError(NULL);
-	
+
 	if (!getMemory(false))
 	{
 		// If not found, it does not exist
 		if (errorCode == ENOENT) return true;
 		return false;
 	}
-	
+
 	// deactivate the old memory in case some still has it attached
 	if (attachMemory())
 	{
@@ -305,7 +305,7 @@ bool JdbcUtil::memoryInit(void)
 		int err = errno;
 		removeMemory();
 		removeSemaphores();
-		setPerror(err,"Cannot initalize semaphore value");
+		setPerror(err,"Cannot initialize semaphore value");
 		return false;
 	}
 	return true;

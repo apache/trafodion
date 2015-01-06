@@ -40,11 +40,11 @@
 #define qrysrvc_Com_QueueCntZero_exn_				13
 #define qrysrvc_UnknownUser_exn_					14
 #define qrysrvc_Com_InvalidUser_exn_				15
-#define qrysrvc_Com_NoServicesFound_exn_			16	
-#define qrysrvc_Com_NoThresholdsFound_exn_			17		 
+#define qrysrvc_Com_NoServicesFound_exn_			16
+#define qrysrvc_Com_NoThresholdsFound_exn_			17
 #define qrysrvc_Com_IncorrectVersion_exn_			18
 #define qrysrvc_Com_ConfigError_exn_				19
-#define qrysrvc_QueryCanceled_exn_					20		 
+#define qrysrvc_QueryCanceled_exn_					20
 #define qrysrvc_QS_XATransaction_exn_				21
 
 #define qrysrvc_QS_UnknownQueue_detail_				1
@@ -95,8 +95,8 @@
 #define qrysrvc_HoldQueryTimeout_			"Hold Query Timeout occurred"
 #define qrysrvc_QS_SetServiceEnvError_		"Error setting service defaults"
 #define qrysrvc_QS_IncorrectVersion_		"Version mismatch between NDCS and WMS"
-#define qrysrvc_QS_BINSEM_LOCK_error_		"BINSEM_LOCK_ error occured"
-#define qrysrvc_QS_BINSEM_UNLOCK_error_		"BINSEM_UNLOCK_ error occured"
+#define qrysrvc_QS_BINSEM_LOCK_error_		"BINSEM_LOCK_ error occurred"
+#define qrysrvc_QS_BINSEM_UNLOCK_error_		"BINSEM_UNLOCK_ error occurred"
 #define qrysrvc_QS_RejectedCompRule_error_	"Query Rejected by Comp Rules"
 #define qrysrvc_QS_SQL_CMD_error_error_		"Query assigned by WMS failed"
 #define qrysrvc_QS_IncorrectQueryState_		"Incorrect Query state"

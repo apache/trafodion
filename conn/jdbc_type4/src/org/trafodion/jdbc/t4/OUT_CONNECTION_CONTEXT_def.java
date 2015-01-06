@@ -43,7 +43,7 @@ class OUT_CONNECTION_CONTEXT_def {
 	String _roleName;
 	boolean _enforceISO;
 	boolean _ignoreCancel;
-	
+
 	byte [] certificate;
 
 	void extractFromByteArray(LogicalByteArray buf, InterfaceConnection ic) throws SQLException,
@@ -70,7 +70,7 @@ class OUT_CONNECTION_CONTEXT_def {
 			try {
 				this.decodeExtraOptions(ic.decodeBytes(buf.extractString(), InterfaceUtilities.SQLCHARSETCODE_UTF8));
 			} catch (Exception e) {
-				ic.t4props_.logger.warning("An error occured parsing OutConnectionContext: " + e.getMessage());
+				ic.t4props_.logger.warning("An error occurred parsing OutConnectionContext: " + e.getMessage());
 			}
 		}
 	}

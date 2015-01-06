@@ -605,7 +605,7 @@ ItemExpr * Between::transformIntoTwoComparisons()
                                  pDirectionVector_ == NULL);
                                 
 
-  // THE DEFUALT BEHAVIOUR
+  // THE DEFAULT BEHAVIOUR
   if (TRUE == leftBoundryIncluded_)
   {
     leftBoundryOp = ITM_GREATER_EQ;
@@ -1712,7 +1712,7 @@ static NABoolean switchLeftAndRightChildren(ItemExpr* leftChild,
   rightChild->getLeafValueIds(rightLeafValues);
 
   // Do the transformation when the left child contains constants only
-  // and the right child contains atleast one column
+  // and the right child contains at least one column
   for (exprId = leftLeafValues.init();
        leftLeafValues.next(exprId);
        leftLeafValues.advance(exprId))
@@ -3739,7 +3739,7 @@ ItemExpr * QuantifiedComp::getBlackBoxExpr(NormWA & normWARef, ValueIdSet & blac
                  UnLogic(ITM_NOT,pred);
 
         // the code below is not required anymore after implementing the NOT IN optimization 
-        // and may be removed in the future (maybe in R2.6) ?Khaled
+        // and may be removed in the future (maybe in R2.6)
 	if ( (CmpCommon::getDefault(COMP_BOOL_139) == DF_ON)
            && (otype == ITM_NOT_EQUAL))
         {

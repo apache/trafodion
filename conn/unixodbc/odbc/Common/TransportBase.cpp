@@ -1271,7 +1271,7 @@ DecodeERRNOErrors(int error)
 	case 4200:
 		msg = "Too many symbolic links during path name resolution";break;
 	case 4201:
-		msg = "Fileset catalog internal consistancy error";break;
+		msg = "Fileset catalog internal consistency error";break;
 	case 4202:
 		msg = "Root fileset is not mounted";break;
 	case 4203:

@@ -30,7 +30,7 @@ int __thread_model_ ;
 
 extern TSLX_func_ptr tslxe_cond_destroy;
 extern TSLX_func_ptr tslxe_cond_init;
-extern TSLX_func_ptr tslxe_cond_wait; 
+extern TSLX_func_ptr tslxe_cond_wait;
 extern TSLX_func_ptr tslxe_cond_signal;
 extern TSLX_func_ptr tslxe_pthread_self;
 extern TSLX_func_ptr tslxe_regFileIOHandler;
@@ -124,7 +124,7 @@ if (get_ptr(&tslxe_ABORTTRANSACTION, "SPT_ABORTTRANSACTION"))
 int initialize_for_thread_library ( void )
 {
 
-   
+
    if (get_ptr(&tslxe_cond_destroy, "pthread_cond_destroy"))
       return 0;
    if (get_ptr(&tslxe_cond_init, "pthread_cond_init"))
@@ -146,7 +146,7 @@ int initialize_for_thread_library ( void )
    if (get_ptr(&tslxe_mutex_unlock, "_TSLX_mutex_unlock"))
       return 0;
 
-   
+
 if (get_ptr(&tslxe_ABORTTRANSACTION, "_TSLX_ABORTTRANSACTION"))
       return 0;
    if (get_ptr(&tslxe_BEGINTRANSACTION, "_TSLX_BEGINTRANSACTION"))
@@ -155,7 +155,7 @@ if (get_ptr(&tslxe_ABORTTRANSACTION, "_TSLX_ABORTTRANSACTION"))
 	   return 0;
    if (get_ptr(&tslxe_ENDTRANSACTION, "_TSLX_ENDTRANSACTION"))
       return 0;
-  
+
    if (_CMATHREADS) {
 	   /*Place holder for PUT*/
 	   /*Since it is not supported now, we will initialize to un threaded*/
@@ -163,11 +163,11 @@ if (get_ptr(&tslxe_ABORTTRANSACTION, "_TSLX_ABORTTRANSACTION"))
 	   if (get_ptr(&tslxe_regFileIOHandler, "put_regFileIOHandler"))
          return 0;
       if (get_ptr(&tslxe_TMF_Init, "PUT_TMF_Init"))
-         
+
         return 0;
-    
+
    } else if (_SPTHREADS) {
-//	   printf("Initilizing with SPT threads\n");
+//	   printf("Initializing with SPT threads\n");
       if (get_ptr(&tslxe_regFileIOHandler, "spt_regFileIOHandler"))
          return 0;
       if (get_ptr(&tslxe_TMF_Init, "SPT_TMF_Init"))
@@ -204,7 +204,7 @@ int client_initialization ( void )
    if (test_ptr == NULL) {
     //  dlclose(TSLX_dlopen_handle);
 	  __thread_model_ =1;
-//	  	  printf("TSLX symbols not found\n");
+//		  printf("TSLX symbols not found\n");
 	  Result=initialize_for_H23();
 
      // return 1;                        /* Function not found */
@@ -237,7 +237,7 @@ int client_initialization ( void )
 		Result = 1;
 
 		}
-		else 
+		else
 		{
 		//	printf("Unthreaded threads\n");
 		//__thread_model = Unthreaded;
@@ -245,7 +245,7 @@ int client_initialization ( void )
 		__thread_model_ =0;
 		Result = 1;
 		}
-   
+
    }
    return Result;
 }

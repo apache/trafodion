@@ -42,7 +42,7 @@ class InterfaceResultSet {
 
 	/* DECIMAL */
 	static final int SQLTYPECODE_DECIMAL = 3;
-	
+
 	static final int SQLTYPECODE_DECIMAL_UNSIGNED = -301;
 	static final int SQLTYPECODE_DECIMAL_LARGE = -302;
 	static final int SQLTYPECODE_DECIMAL_LARGE_UNSIGNED = -303;
@@ -84,7 +84,7 @@ class InterfaceResultSet {
 	/* VARCHAR/CHARACTER VARYING */
 	static final int SQLTYPECODE_VARCHAR = 12;
 
-	/* SQL/MP stype VARCHAR with length prefix: 
+	/* SQL/MP stype VARCHAR with length prefix:
 	 * */
 	static final int SQLTYPECODE_VARCHAR_WITH_LENGTH = -601;
 
@@ -462,7 +462,7 @@ class InterfaceResultSet {
 								nanoSeconds = 0;
 
 							String formatStr = "";
-							for(int i=0;i<desc.sqlPrecision_;i++) 
+							for(int i=0;i<desc.sqlPrecision_;i++)
 								formatStr += "0";
 
 							StringBuffer sb = new StringBuffer();
@@ -475,7 +475,7 @@ class InterfaceResultSet {
 							sb.append('.');
 							format = new DecimalFormat(formatStr);
 							format.format(nanoSeconds, sb, new FieldPosition(0));
-							
+
 							retObj = sb.toString();
 						} else {
 							retObj = Time.valueOf(String.valueOf(hour) + ":" + String.valueOf(minute) + ":"
@@ -775,7 +775,7 @@ class InterfaceResultSet {
 		switch (fr.returnCode) {
 		case TRANSPORT.CEE_SUCCESS:
 		case TRANSPORT.SQL_SUCCESS_WITH_INFO:
-			
+
 			// do warning processing
 			if (fr.errorList.length != 0) {
 				HPT4Messages.setSQLWarning(rs.connection_.props_, rs, fr.errorList);
@@ -856,7 +856,7 @@ class InterfaceResultSet {
 			default:
 				if (ic_.t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 					Object p[] = T4LoggingUtilities.makeParams(rs_.connection_.props_);
-					String temp = "UnknownException occured during close.";
+					String temp = "UnknownException occurred during close.";
 					rs_.connection_.props_.t4Logger_.logp(Level.FINEST, "InterfaceResultSet", "close", temp, p);
 				}
 				throw HPT4Messages.createSQLException(rs_.connection_.props_, ic_.getLocale(),

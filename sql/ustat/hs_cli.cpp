@@ -1438,7 +1438,7 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, Int64 &actualRows, NABoolean isEst
 
           if (!objDef->isVolatile())
           {
-            // alter the table to dropable before the drop
+            // alter the table to droppable before the drop
             NAString alterdroppableStmt;
             alterdroppableStmt = "ALTER TABLE ";
             alterdroppableStmt += table ;
@@ -1531,7 +1531,7 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, char reason, NAString &table,
     // IUS sample table only assumption.
 
       // sel_stmt.fetch() will set 'tempTabName' to a persistent table name,
-      // requstedRows to requested rows, sampleRows to sampled rows, and
+      // requestedRows to requested rows, sampleRows to sampled rows, and
       // sampleRate to percent, if one is found.  Otherwise 'table'
       // is set to "" and requestdRows, sampleRows and sampleRate
       // are not set.
@@ -5171,7 +5171,7 @@ NAString HSSample::getTempTablePartitionInfo(NABoolean unpartitionedSample,
         // partitions as needed.
         // 2. If case 1. is not true, (i.e. data in sample table will not fit on
         // node, if we have HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
-        // bytes of data in each partition and 1 partition per disk) we hueristically
+        // bytes of data in each partition and 1 partition per disk) we heuristically
         // multiply HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
         // by 3 and see if the sample table will now fit in the local node. If it
         // does we set POS to LOCAL_NODE and provide POS with the sample table size.

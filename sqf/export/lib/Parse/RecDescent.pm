@@ -3964,7 +3964,7 @@ which are equivalent to:
         | identifier
 
         identifier: /[a-z]+/i
-            { "identifer_node"->new(@item[1]) }
+            { "identifier_node"->new(@item[1]) }
     });
 
 Note that, if a production already ends in an action, no autoaction is appended
@@ -4064,7 +4064,7 @@ the appropriate class).
 Normally, if a subrule appears in some production, but no rule of that
 name is ever defined in the grammar, the production which refers to the
 non-existent subrule fails immediately. This typically occurs as a
-result of misspellings, and is a sufficiently common occurance that a
+result of misspellings, and is a sufficiently common occurrence that a
 warning is generated for such situations.
 
 However, when prototyping a grammar it is sometimes useful to be

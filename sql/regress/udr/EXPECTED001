@@ -187,10 +187,10 @@ ORDINAL      FIBONACCI_NUMBER
 >>-- negative tests
 >>select * from udf(sessionize_err('abc')) XOX(a);
 
-*** ERROR[11246] An error occurred locating function 'SESSIONIZE_NON_EXISTENT' in library '/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST001.dll'.
+*** ERROR[11246] An error occurred locating function 'SESSIONIZE_NON_EXISTENT' in library '/home/jenkins/workspace/core-regress-udr-cdh5.1/rundir/udr/TEST001.dll'.
 
 *** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
-/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST001.dll: undefined symbol: SESSIONIZE_NON_EXISTENT.
+/home/jenkins/workspace/core-regress-udr-cdh5.1/rundir/udr/TEST001.dll: undefined symbol: SESSIONIZE_NON_EXISTENT.
 
 --- 0 row(s) selected.
 >>-- expect errors 11246 and 11248

@@ -64,7 +64,7 @@ public class ISO88591Sample
 		// Do nothing
 	    }
 
-	    // Create table 
+	    // Create table
 	    sql = "create table " + TBLNAME +
 		" (col1 int not null not droppable, " +
 		"col2 varchar(8), " +

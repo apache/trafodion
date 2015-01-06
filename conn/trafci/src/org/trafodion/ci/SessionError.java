@@ -25,7 +25,7 @@ public interface SessionError
        ErrorObject CONSOLE_READER_ERR = new ErrorObject("29400", "Could not initialize the console reader.");
        ErrorObject CONSOLE_WRITER_ERR =  new ErrorObject("29401", "Could not initialize the console writer.");
        ErrorObject CMD_LINE_ARGS_ERR = new ErrorObject("29402", "Invalid Number of arguments passed.");
-       ErrorObject SCRIPT_FILE_NOT_FOUND = new ErrorObject("29403", "Could not find the script file specfied.");
+       ErrorObject SCRIPT_FILE_NOT_FOUND = new ErrorObject("29403", "Could not find the script file specified.");
        ErrorObject DRIVER_INIT_ERR = new ErrorObject("29404", "Could not instantiate the driver class.");
        ErrorObject DRIVER_INIT_ILLEGAL_ERR = new ErrorObject("29405", "Could not instantiate the driver class because of an IllegalAccessException.");
        ErrorObject DRIVER_CLASS_ERR = new ErrorObject("29406", "Could not find JDBC Type 4 Driver in the classpath.");

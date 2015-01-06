@@ -2631,7 +2631,7 @@ public class Installer
                dl.setURL(defaultPythonJythonURL);
                downloadFileCmdMode(dl);
                if(installJython(dl.getFilename())){
-                   System.out.println("Sucessfully Installed Jython.");
+                   System.out.println("Successfully Installed Jython.");
                    
                    if(setEnvironmentVariable("Python"))
                        System.out.println("Successfully added settings.py");

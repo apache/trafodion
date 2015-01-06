@@ -1340,7 +1340,7 @@ void tm_process_req_ax_reg (CTmTxMessage * pp_msg)
          else // Not an error - ax_reg from XARM library and should contain the rmid.
               // but not yet implemented!
          {
-            TMTrace(1, ("tm_process_req_ax_reg, Recieved unexpected ax_reg from non-TSE"
+            TMTrace(1, ("tm_process_req_ax_reg, Received unexpected ax_reg from non-TSE"
                     " process (%d, %d), PTYPE %d assuming this was an XARM request!?, ignored!\n",
                     lv_nid, lv_pid, lv_ptype));
             tm_log_event(DTM_AX_REG_XARM_NOTSUPPORTED, SQ_LOG_CRIT, "DTM_AX_REG_XARM_NOTSUPPORTED", 
@@ -1601,7 +1601,7 @@ void tm_recipient_sync_commit (Tm_Sync_Data *pp_sync_data)
         case TM_STATE_RESYNC:
         {
 
-            TMTrace(3, ("tm_recipient_sync_commit - TM_STATE_RESYNC sync recieved.\n"));
+            TMTrace(3, ("tm_recipient_sync_commit - TM_STATE_RESYNC sync received.\n"));
             gv_tm_info.node_being_recovered(pp_sync_data->u.iv_state_resync.iv_index,
                                             pp_sync_data->u.iv_state_resync.iv_node_being_recovered);
             gv_tm_info.down_without_sync( pp_sync_data->u.iv_state_resync.iv_index,
@@ -1613,7 +1613,7 @@ void tm_recipient_sync_commit (Tm_Sync_Data *pp_sync_data)
         case TM_RECOVERY_START:
         {
             tm_log_event(DTM_TM_START_NODE_RECOVERY, SQ_LOG_INFO, "DTM_TM_START_NODE_RECOVERY");
-            TMTrace(1, ("tm_recipient_sync_commit - RECOVERY START sync recieved.\n"));
+            TMTrace(1, ("tm_recipient_sync_commit - RECOVERY START sync received.\n"));
             // The lead TM can not receive this sync. Issue an event and shutdown the cluster
             if (gv_tm_info.lead_tm())
             {
@@ -1640,7 +1640,7 @@ void tm_recipient_sync_commit (Tm_Sync_Data *pp_sync_data)
         case TM_RECOVERY_END:
         {
             tm_log_event(DTM_TM_END_NODE_RECOVERY, SQ_LOG_INFO, "DTM_TM_END_NODE_RECOVERY");
-            TMTrace(1, ("tm_recipient_sync_commit - RECOVERY END sync recieved.\n"));
+            TMTrace(1, ("tm_recipient_sync_commit - RECOVERY END sync received.\n"));
             if (pp_sync_data->u.iv_to_data.iv_down_node == -1)
             {
                 tm_log_event(DTM_TM_END_NODE_RECOVERY, SQ_LOG_CRIT, "DTM_TM_END_NODE_RECOVERY");
@@ -1986,7 +1986,7 @@ void tm_originating_sync_abort(int32 pv_tag)
             }
             case TM_STATE_RESYNC:
             {
-                TMTrace(3, ("tm_originating_sync_abort - TM_STATE_RESYNC sync recieved.\n"));
+                TMTrace(3, ("tm_originating_sync_abort - TM_STATE_RESYNC sync received.\n"));
                 send_state_resync (gv_tm_info.nid(),
                                        gv_tm_info.down_without_sync(lp_data->u.iv_node_to_takeover),
                                        gv_tm_info.node_being_recovered(lp_data->u.iv_node_to_takeover),

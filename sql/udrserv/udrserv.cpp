@@ -1103,7 +1103,7 @@ static void displayUsageInfo()
   fprintf(stdout, "    <method> : Name of Java method or C function.\n");
   fprintf(stdout, "    <file> : Name of Java class file or C DLL.\n");
   fprintf(stdout, "    <path> : Location of <file>.\n");
-  fprintf(stdout, "    [args] : Arguments seperated by spaces.\n");
+  fprintf(stdout, "    [args] : Arguments separated by spaces.\n");
   fprintf(stdout, "\n");
   fprintf(stdout, "  mxudr -obey <filename>\n");
   fprintf(stdout, "    Processes commands from a text file <filename>\n");

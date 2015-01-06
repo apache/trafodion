@@ -74,7 +74,7 @@ bool NoticeMsgRecv = false;
 bool Test_Initialized = false;
 bool TestShutdown = false;
 
-void flush_incomming_msgs( void );
+void flush_incoming_msgs( void );
 
 FILE *shell_locio_trace_file = NULL;
 
@@ -401,7 +401,7 @@ void process_startup( int argc, char *argv[] )
     }
 }
 
-void flush_incomming_msgs( void )
+void flush_incoming_msgs( void )
 {
     int count;
 
@@ -410,7 +410,7 @@ void flush_incomming_msgs( void )
     MPI_Status status;
     struct message_def *msg = NULL;
 
-    printf( "[%s] flush incomming event & notices.\n", MyName );
+    printf( "[%s] flush incoming event & notices.\n", MyName );
     fflush( stdout );
     do
     {
@@ -549,7 +549,7 @@ void exit_process (void)
                 printf( "[%s] exit process failed, rc=%d\n", MyName,
                         msg->u.reply.u.generic.return_code );
             }
-            flush_incomming_msgs( );
+            flush_incoming_msgs( );
             MPI_Comm_disconnect( &Monitor );
         }
         else

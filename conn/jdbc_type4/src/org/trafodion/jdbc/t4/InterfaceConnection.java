@@ -541,7 +541,7 @@ class InterfaceConnection {
 
 				if (sc == s1 || sc == s2 || sc == s3) {
 					if (t4props_.t4Logger_.isLoggable(Level.INFO)) {
-						String temp = "A socket exception occured: " + se.getMessage();
+						String temp = "A socket exception occurred: " + se.getMessage();
 						t4props_.t4Logger_.logp(Level.INFO, "InterfaceConnection", "connect", temp, t4props_);
 					}
 
@@ -549,7 +549,7 @@ class InterfaceConnection {
 					seSave = se;
 				} else {
 					if (t4props_.t4Logger_.isLoggable(Level.INFO)) {
-						String temp = "A non-socket fatal exception occured: " + se.getMessage();
+						String temp = "A non-socket fatal exception occurred: " + se.getMessage();
 						t4props_.t4Logger_.logp(Level.INFO, "InterfaceConnection", "connect", temp, t4props_);
 					}
 
@@ -573,7 +573,7 @@ class InterfaceConnection {
 				} else if (idr.exception_nr == odbc_SQLSvc_InitializeDialogue_exc_.odbc_SQLSvc_InitializeDialogue_SQLError_exn_ || 
 						idr.exception_nr == odbc_SQLSvc_InitializeDialogue_exc_.odbc_SQLSvc_InitializeDialogue_InvalidUser_exn_) {
 					if (t4props_.t4Logger_.isLoggable(Level.INFO)) {
-						String temp = "A SQL Warning or Error occured during initDiag: " + idr.SQLError;
+						String temp = "A SQL Warning or Error occurred during initDiag: " + idr.SQLError;
 						t4props_.t4Logger_.logp(Level.INFO, "InterfaceConnection", "connect", temp, t4props_);
 					}
 
@@ -1007,7 +1007,7 @@ class InterfaceConnection {
 		} catch (SQLException tex) {
 			if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(conn.props_, attr, valueNum, valueString);
-				String temp = "NDCS or SQLException occured.";
+				String temp = "NDCS or SQLException occurred.";
 				t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "setConnectionAttr", temp, p);
 			}
 			throw tex;
@@ -1029,14 +1029,14 @@ class InterfaceConnection {
 		case odbc_SQLSvc_SetConnectionOption_exc_.odbc_SQLSvc_SetConnectionOption_SQLError_exn_:
 			if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(conn.props_, attr, valueNum, valueString);
-				String temp = "odbc_SQLSvc_SetConnectionOption_SQLError_exn_ occured.";
+				String temp = "odbc_SQLSvc_SetConnectionOption_SQLError_exn_ occurred.";
 				t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "setConnectionAttr", temp, p);
 			}
 			HPT4Messages.throwSQLException(t4props_, scr_.m_p1.errorList);
 		default:
 			if (t4props_.t4Logger_.isLoggable(Level.FINEST) == true) {
 				Object p[] = T4LoggingUtilities.makeParams(conn.props_, attr, valueNum, valueString);
-				String temp = "UnknownException occured.";
+				String temp = "UnknownException occurred.";
 				t4props_.t4Logger_.logp(Level.FINEST, "InterfaceConnection", "setConnectionAttr", temp, p);
 			}
 			throw HPT4Messages.createSQLException(conn.props_, locale, "ids_unknown_reply_error", null);

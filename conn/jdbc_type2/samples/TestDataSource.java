@@ -18,11 +18,11 @@
 //
 // Filename : TestDataSource.java
 //
-// This program demostrates the use of javax.sql.DataSource interface
+// This program demonstrates the use of javax.sql.DataSource interface.
 // DataSource separates out the driver dependent information from the
 // application.
 //
-// You need to run CreateDataSource java program before running this program
+// You need to run CreateDataSource java program before running this program.
 // Refer to CreateDataSource.java program for instructions.
 //
 import javax.naming.*;
@@ -90,10 +90,10 @@ public class TestDataSource
             }
             catch (SQLException e)
             {
-                System.out.println("TestDataSource: getConnection/createStatemnet: Exception Occuured");
-                System.out.println("TestDataSource: getConnection/createStatemnet: " + e.getMessage());
-                System.out.println("TestDataSource: getConnection/createStatemnet: " + e.getSQLState());
-                System.out.println("TestDataSource: getConnection/createStatemnet: " + e.getErrorCode());
+                System.out.println("TestDataSource: getConnection/createStatement: Exception Occurred");
+                System.out.println("TestDataSource: getConnection/createStatement: " + e.getMessage());
+                System.out.println("TestDataSource: getConnection/createStatement: " + e.getSQLState());
+                System.out.println("TestDataSource: getConnection/createStatement: " + e.getErrorCode());
             }
             stmt.executeUpdate("drop table tdata");
             stmt.close();
@@ -102,7 +102,7 @@ public class TestDataSource
         }
         catch ( Exception e)
         {
-            System.out.println("TestDataSource: executeUpdate: Exception Occuured");
+            System.out.println("TestDataSource: executeUpdate: Exception Occurred");
             System.out.println("TestDataSource: Message: " + e.getMessage());
             System.out.println("TestDataSource: Class: " + e.getClass());
         }

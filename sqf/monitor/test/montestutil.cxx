@@ -95,7 +95,7 @@ const char *MessageTypeString( MSGTYPE type )
 
 
 //////////////////////////////////////////////////////////////////////////////
-// Monitor test utility 
+// Monitor test utility
 //////////////////////////////////////////////////////////////////////////////
 void MonTestUtil::processArgs( int argc, char *argv[] )
 {
@@ -142,7 +142,7 @@ void MonTestUtil::processArgs( int argc, char *argv[] )
     gv_ms_su_verif = verifier_ = atoi(argv[9]);
     strcpy( processName_, argv[5] );
     strcpy (ga_ms_su_c_port, argv[6]);
-    
+
     XMPI_Open_port( MPI_INFO_NULL, port_ );
 
     if ( trace_ )
@@ -843,7 +843,7 @@ void get_shutdown (char *my_name)
 
 bool MonTestUtil::requestProcInfo( const char *processName
                                  , int &nid
-                                 , int &pid 
+                                 , int &pid
                                  , Verifier_t &verifier )
 {
     int count;
@@ -1749,7 +1749,7 @@ bool MonTestUtil::closeProcess ( MPI_Comm &comm )
 //       server.cxx
 //       testspx.cxx
 //       testtm.cxx
-// flush_incomming_msgs (s.b "incoming")
+// flush_incoming_msgs
 //    => I used testspx.cxx variation, added parameter
 //    same implementation in:
 //       client.cxx

@@ -691,7 +691,7 @@ void CIntCloneProcReq::performRequest()
                 char buf[MON_STRING_BUF_SIZE];
                 snprintf(buf, sizeof(buf),
                          "[%s], Process %s (%d, %d) did not "
-                         "startup sucessfully.\n",
+                         "startup successfully.\n",
                          method_name, process->GetName(), process->GetNid(),
                          process->GetPid());
                 mon_log_write(MON_PROCESSCONT_EXITPROCESS_2, SQ_LOG_ERR, buf);

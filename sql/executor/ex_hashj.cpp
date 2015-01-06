@@ -39,7 +39,7 @@
 // with a hybrid hash join
 //
 
-// begining of regular compilation
+// beginning of regular compilation
 
 #include "ex_stdh.h"
 #include "ComTdb.h"
@@ -1035,7 +1035,7 @@ ExWorkProcRetcode ex_hashj_tcb::workUp() {
       ex_assert( rc_ , "Missing error code"); 
       // we ran into a serious runtime error. Create Condition and
       // pass it to parent. rc_ has the error code and
-      // oldState_ tells us in which state the error occured
+      // oldState_ tells us in which state the error occurred
       ComDiagsArea *da = downParentEntry->getDiagsArea();
       if (!da  ||  !da->contains((Lng32) -rc_))
         {
@@ -1689,11 +1689,11 @@ short ex_hashj_tcb::workReadInner() {
           // checkInnerNullExpr_ used in the case of hash anti semi join (transformation 
           // of NOT IN subquery). The checkInnerNullExpr_ expression tests if the value of the 
           // right child is null. the first null encountered while reading
-          // from the inner table causes the opration to be canceled. 
+          // from the inner table causes the operation to be canceled. 
           // The value 666654765 is the hash 
           // value of NULL and is used here as an optimization so that we do not
           // execute the checkInnerNullExpr_ expression if we are sure that the inner value 
-          // is not a NULL value ?Khaled
+          // is not a NULL value
           if (checkInnerNullExpr_ && 
             hashValue_ == ExHDPHash::nullHashValue /*666654765*/)
           {
@@ -2972,7 +2972,7 @@ void ex_hashj_tcb::workReadOuterCluster() {
 	oCluster->testBitMap()) {
       // Skip all matching rows that have been returned in a
       // a prior hash loop indicated by a bit set in bitMap.
-      // Apparantly testBitMap will be always FALSE in the first
+      // Apparently testBitMap will be always FALSE in the first
       // round of outer cluster loop.
       row = (HashRow *)(oCluster->advance());
       oCluster->incReadCount();
