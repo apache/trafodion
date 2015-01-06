@@ -3446,17 +3446,14 @@ CoprocessorService, Coprocessor {
       }
     }
 
-    long commitCheckStartTime = 0;
+    boolean returnPending = false;
     long commitCheckEndTime = 0;
     long hasConflictStartTime = 0;
     long hasConflictEndTime = 0;
     long putBySequenceStartTime = 0;
     long putBySequenceEndTime = 0;
     long writeToLogEndTime = 0;
-
-    boolean returnPending = false;
-
-    commitCheckStartTime = System.nanoTime();
+    long commitCheckStartTime = System.nanoTime();
 
     try {
       state = getTransactionState(transactionId);
