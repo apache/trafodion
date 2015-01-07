@@ -6079,11 +6079,12 @@ void CmpSeabaseDDL::dropNativeHbaseTable(
 //////////////////////////////////////////////////////////////////////////
 short CmpSeabaseDDL::getSpecialTableInfo
 (
+ NAMemory * heap,
  const NAString &catName, 
  const NAString &schName, 
  const NAString &objName,
  const NAString &extTableName,
- const ComObjectType  objType,
+ const ComObjectType  &objType,
  ComTdbVirtTableTableInfo* &tableInfo)
 {
   Lng32 cliRC = 0;
@@ -6113,8 +6114,9 @@ short CmpSeabaseDDL::getSpecialTableInfo
 
       switchBackCompiler();
 
-      tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
-      tableInfo->tableName = extTableName.data();
+      tableInfo = new(heap) ComTdbVirtTableTableInfo[1];
+      tableInfo->tableName = new(heap) char[extTableName.length() + 1];
+      strcpy((char*)tableInfo->tableName, (char*)extTableName.data());
       tableInfo->createTime = 0;
       tableInfo->redefTime = 0;
       tableInfo->objUID = objUID;
@@ -6150,6 +6152,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(
   ComObjectName coName(catName, schNameL, objName);
   NAString extTableName = coName.getExternalName(TRUE);
 
+  ComTdbVirtTableTableInfo * tableInfo = NULL;
   Lng32 colInfoSize;
   const ComTdbVirtTableColumnInfo * colInfo;
   Lng32 keyInfoSize;
@@ -6158,15 +6161,11 @@ desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(
   Lng32 indexInfoSize = 0;
   const ComTdbVirtTableIndexInfo * indexInfo = NULL;
   if (NOT CmpSeabaseMDupgrade::getMDtableInfo(objName,
+                                              tableInfo,
                                               colInfoSize, colInfo,
                                               keyInfoSize, keyInfo,
                                               indexInfoSize, indexInfo,
                                               objType))
-    return NULL;
-
-  ComTdbVirtTableTableInfo * tableInfo = NULL;
-  if (getSpecialTableInfo(catName, schName, objName,
-                          extTableName, objType, tableInfo))
     return NULL;
 
   tableDesc =
@@ -6261,7 +6260,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
   constrInfo->checkConstrText = NULL;
 
   ComTdbVirtTableTableInfo * tableInfo = NULL;
-  if (getSpecialTableInfo(catName, schName, objName,
+  if (getSpecialTableInfo(STMTHEAP, catName, schName, objName,
                           extTableName, COM_BASE_TABLE_OBJECT, tableInfo))
     return NULL;
 

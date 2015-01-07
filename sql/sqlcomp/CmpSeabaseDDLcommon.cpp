@@ -171,6 +171,7 @@ short CmpSeabaseDDL::switchBackCompiler()
 
 // Return:  TRUE, table desc found. FALSE, not found or error.
 NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
+                                        ComTdbVirtTableTableInfo* &tableInfo,
                                         Lng32 &colInfoSize,
                                         const ComTdbVirtTableColumnInfo* &colInfo,
                                         Lng32 &keyInfoSize,
@@ -179,6 +180,8 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
                                         const ComTdbVirtTableIndexInfo* &indexInfo,
                                         const ComObjectType objType)
 {
+  tableInfo = NULL;
+
   indexInfoSize = 0;
   indexInfo = NULL;
 
@@ -223,6 +226,21 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
             }
           else
             return FALSE;
+
+          if (mddi.tableInfo == NULL)
+            {
+              const NAString catName(TRAFODION_SYSCAT_LIT);
+              const NAString schName(SEABASE_MD_SCHEMA);
+              NAString extTableName = catName + "." + "\"" + schName + "\"" + "." + objName;
+
+              CmpSeabaseDDL cmpSBD(STMTHEAP);
+              if (cmpSBD.getSpecialTableInfo(CTXTHEAP,
+                                             catName, schName, objName, extTableName, 
+                                             objType, tableInfo) == 0)
+                mddi.tableInfo = (ComTdbVirtTableTableInfo*)tableInfo;
+              else
+                return FALSE; // error
+            }
 
           return TRUE;
         }
