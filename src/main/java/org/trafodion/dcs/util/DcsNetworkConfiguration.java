@@ -131,7 +131,7 @@ public class DcsNetworkConfiguration {
 		LOG.info("Checking Cloud environment");
 		String cloudCommand = conf.get(Constants.DCS_CLOUD_COMMAND, Constants.DEFAULT_DCS_CLOUD_COMMAND);
 		ScriptContext scriptContext = new ScriptContext();
-		scriptContext.setScriptName("sys_shell.py");
+		scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
 		scriptContext.setCommand(cloudCommand);
 		LOG.info(scriptContext.getScriptName() + " exec [" + scriptContext.getCommand() + "]");
 		ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running

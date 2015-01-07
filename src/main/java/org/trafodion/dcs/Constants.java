@@ -42,7 +42,6 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.ArrayUtils;
-//import org.apache.hadoop.hbase.ipc.HRegionInterface;
 import org.trafodion.dcs.util.Bytes;
 
 /**
@@ -106,7 +105,7 @@ public final class Constants {
   public static final String DCS_SERVER_USER_PROGRAM_COMMAND = "dcs.server.user.program.command";
 
   /** Default value for DCS server user program command */
-  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND = "";
+  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND = "cd ${dcs.user.program.home};. sqenv.sh;mxosrvr -ZKHOST -RZ -ZKPNODE -CNGTO -ZKSTO -EADSCO -TCPADD -MAXHEAPPCT -STATISTICSINTERVAL -STATISTICSLIMIT -STATISTICSTYPE -STATISTICSENABLE -PORTMAPTOSECS -PORTBINDTOSECS";
   
   /** Configuration key for DCS server user program connecting timeout */
   public static final String DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT = "dcs.server.user.program.connecting.timeout";
@@ -118,21 +117,56 @@ public final class Constants {
   public static final String DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT = "dcs.server.user.program.zookeeper.session.timeout";
   
   /** Default value for DCS server user program zookeeper session timeout */
-  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT = 30000;  
+  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT = 180;  
  
   /** Configuration key for DCS server user program exit after disconnect */
   public static final String DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT = "dcs.server.user.program.exit.after.disconnect";
   
   /** Default value for DCS server user program exit after disconnect */
   public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT = 0;  
-   
+
   /** Configuration key for DCS server user program exit when heap size becomes too large */
   public static final String  DCS_SERVER_USER_PROGRAM_MAX_HEAP_PCT_EXIT= "dcs.server.user.program.max.heap.pct.exit";
-  
+
   /** Default value for DCS server user program exit when heap size becomes too large */
   public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_MAX_HEAP_PCT_EXIT = 0;  
- 
- 
+
+  /** Configuration key for DCS server user program statistics interval time */
+  public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_INTERVAL_TIME = "dcs.server.user.program.statistics.interval.time";
+
+  /** Default value for DCS server user program statistics interval time */
+  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_INTERVAL_TIME = 60;
+
+  /** Configuration key for DCS server user program statistics limit time */
+  public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME = "dcs.server.user.program.statistics.limit.time";
+
+  /** Default value for DCS server user program statistics limit time */
+  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME = 60;
+
+  /** Configuration key for DCS server user program statistics type */
+  public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE = "dcs.server.user.program.statistics.type";
+
+  /** Default value for DCS server user program statistics type */
+  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE = "aggregated";
+  
+  /** Configuration key for DCS server user program statistics enable */
+  public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "dcs.server.user.program.statistics.enabled";
+
+  /** Default value for DCS server user program statistics enable */
+  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "true";
+  
+  /** Configuration key for DCS server user program port map timeout seconds */
+  public static final String DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS = "dcs.server.user.program.port.map.timeout.seconds";
+  
+  /** Default value for DCS server user program port map timeout seconds */
+  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS = 60; 
+
+  /** Configuration key for DCS server user program port bind timeout seconds */
+  public static final String DCS_SERVER_USER_PROGRAM_PORT_BIND_TIMEOUT_SECONDS = "dcs.server.user.program.port.bind.timeout.seconds";
+  
+  /** Default value for DCS server tcp bind max retries */
+  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_BIND_TIMEOUT_SECONDS = 30; 
+  
   /** Name of ZooKeeper quorum configuration parameter. */
   public static final String ZOOKEEPER_QUORUM = "dcs.zookeeper.quorum";
 
@@ -148,7 +182,7 @@ public final class Constants {
 
   /**
    * The ZK client port key in the ZK properties map. The name reflects the
-   * fact that this is not an HBase configuration key.
+   * fact that this is not an DCS configuration key.
    */
   public static final String CLIENT_PORT_STR = "clientPort";
 
@@ -169,6 +203,7 @@ public final class Constants {
   public static final String ZOOKEEPER_ZNODE_PARENT = "zookeeper.znode.parent";
   public static final String DEFAULT_ZOOKEEPER_ZNODE_PARENT = "/dcs";
   public static final String DEFAULT_ZOOKEEPER_ZNODE_MASTER = DEFAULT_ZOOKEEPER_ZNODE_PARENT + "/master";
+  public static final String DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER = DEFAULT_ZOOKEEPER_ZNODE_PARENT + "/leader";
   public static final String DEFAULT_ZOOKEEPER_ZNODE_SERVERS = DEFAULT_ZOOKEEPER_ZNODE_PARENT + "/servers";
   public static final String DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING = DEFAULT_ZOOKEEPER_ZNODE_SERVERS + "/running";
   public static final String DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED = DEFAULT_ZOOKEEPER_ZNODE_SERVERS + "/registered";
@@ -273,8 +308,128 @@ public final class Constants {
   /** DCS cloud command */
   public static final String DCS_CLOUD_COMMAND = "dcs.cloud.command";
   /** Default value for DCS cloud command */
-  public static final String DEFAULT_DCS_CLOUD_COMMAND = "nova list | grep -v '^+' | grep -w `hostname` | sed 's/.*=\\([0-9.]*\\), \\([0-9.]*\\).*$/\\1,\\2/'";
 
+  public static final String DEFAULT_DCS_CLOUD_COMMAND = "nova list | grep -v '^+' | grep -w `hostname` | sed 's/.*=\\([0-9.]*\\), \\([0-9.]*\\).*$/\\1,\\2/'";
+  
+  /** User program feature is enabled */
+  public static final String DCS_TRAFODION_HOME = "dcs.trafodion.home";
+  
+  /** The sys_shell script name */
+  public static final String SYS_SHELL_SCRIPT_NAME = "sys_shell.py";
+  
+  /** DcsMaster Trafodion log feature */
+  public static final String DCS_MASTER_TRAFODION_LOGS = "dcs.master.trafodion.logs";
+
+  /** DcsMaster Trafodion logs is not enabled */
+  public static final boolean DCS_MASTER_TRAFODION_LOGS_IS_NOT_ENABLED = false;
+
+  /** DcsMaster Trafodion logs is enabled */
+  public static final boolean DCS_MASTER_TRAFODION_LOGS_IS_ENABLED = true;
+  
+  /** Default value for DcsMaster Trafodion logs feature */
+  public static final boolean DEFAULT_DCS_MASTER_TRAFODION_LOGS = DCS_MASTER_TRAFODION_LOGS_IS_NOT_ENABLED;
+  
+  /** DcsMaster Trafodion repository feature */
+  public static final String DCS_MASTER_TRAFODION_REPOSITORY = "dcs.master.trafodion.repository";
+
+  /** DcsMaster Trafodion repository is not enabled */
+  public static final boolean DCS_MASTER_TRAFODION_REPOSITORY_IS_NOT_ENABLED = false;
+
+  /** DcsMaster Trafodion repository is enabled */
+  public static final boolean DCS_MASTER_TRAFODION_REPOSITORY_IS_ENABLED = true;
+
+  /** Default value for DcsMaster Trafodion repostiory feature */
+  public static final boolean DEFAULT_DCS_MASTER_TRAFODION_REPOSITORY = DCS_MASTER_TRAFODION_REPOSITORY_IS_NOT_ENABLED;
+  
+ /** Names of the trafodion repository tables */
+  public static final String TRAFODION_REPOS_CATALOG = "TRAFODION";
+  public static final String TRAFODION_REPOS_SCHEMA = "_REPOS_";
+  public static final String TRAFODION_REPOS_CATALOG_SCHEMA = TRAFODION_REPOS_CATALOG + "." + TRAFODION_REPOS_SCHEMA;
+  public static final String TRAFODION_REPOS_METRIC_SESSION_TABLE = TRAFODION_REPOS_CATALOG + "." + TRAFODION_REPOS_SCHEMA + "." + "METRIC_SESSION_TABLE";
+  public static final String TRAFODION_REPOS_METRIC_QUERY_TABLE = TRAFODION_REPOS_CATALOG + "." + TRAFODION_REPOS_SCHEMA + "." + "METRIC_QUERY_TABLE";
+  public static final String TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE = TRAFODION_REPOS_CATALOG + "." + TRAFODION_REPOS_SCHEMA + "." + "METRIC_QUERY_AGGR_TABLE";
+
+  /** T2 Driver name */
+  public static final String T2_DRIVER_CLASS_NAME = "org.trafodion.jdbc.t2.T2Driver";
+  /** T2 Driver URL */
+  public static final String T2_DRIVER_URL = "jdbc:t2jdbc:"; 
+  /** CQD to turn table stats off */
+  public static final String CQD_ESTIMATE_HBASE_ROW_COUNT_OFF = "CONTROL QUERY DEFAULT estimate_hbase_row_count 'OFF'";
+
+  /** T4 Driver name */
+  public static final String T4_DRIVER_CLASS_NAME = "org.trafodion.jdbc.t4.T4Driver";
+  /** T4 Driver URL */
+  public static final String T4_DRIVER_URL = "jdbc:t4jdbc:"; 
+  
+  /** DcsMaster base64 encoded username:password used in JdbcT4Util */
+  public static final String T4_DRIVER_USERNAME_PASSWORD = "org.trafodion.jdbc.t4.T4Driver.username.password";
+
+  /** DcsMaster default base64 encoded username:password used in JdbcT4Util */
+  public static final String DEFAULT_T4_DRIVER_USERNAME_PASSWORD = "dHJhZm9kaW9uOnRyYWYxMjMK";
+  
+
+  /** Query for trafodion._REPOS_.metric_session_table */
+  public static final String TRAFODION_REPOS_METRIC_SESSION_TABLE_QUERY = "trafodion.repos.metric.session.table.query";
+  /** Default query for trafodion._REPOS_.metric_session_table */
+  public static final String DEFAULT_TRAFODION_REPOS_METRIC_SESSION_TABLE_QUERY = 
+					"SELECT " +
+					"session_id," +
+					"user_name," +
+					"total_execution_time," +
+					"total_elapsed_time," +
+					"total_prepares," +
+					"total_executes," +
+					"total_fetches " +
+					"FROM \"_REPOS_\".metric_session_table";
+  
+  /** Query for trafodion._REPOS_.metric_query_table */
+  public static final String TRAFODION_REPOS_METRIC_QUERY_TABLE_QUERY = "trafodion.repos.metric_query.table.query";
+  /** Default query for trafodion._REPOS_.metric_query_table */
+  public static final String DEFAULT_TRAFODION_REPOS_METRIC_QUERY_TABLE_QUERY = 
+					"SELECT " +
+					"query_id," +
+					"user_name," +
+					"client_name," +
+					"application_name," +
+					"submit_utc_ts," +
+					"query_elapsed_time," +
+					"sql_process_busy_time," +
+					"total_mem_alloc," +
+					"max_mem_used " +
+					"FROM \"_REPOS_\".metric_query_table";
+  
+  /** Query for trafodion._REPOS_.metric_query_aggr_table */
+  public static final String TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE_QUERY = "trafodion.repos.metric_query_aggr.table.query";
+  /** Default query for trafodion._REPOS_.metric_query_aggr_table */
+  public static final String DEFAULT_TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE_QUERY = 
+	  				"SELECT " +
+	  				"session_id," +
+	  				"user_name," +
+	  				"role_name," +
+	  				"client_name," +
+	  				"application_name," +
+	  				"total_selects," +
+	  				"total_inserts," +
+	  				"total_updates," +
+	  				"total_deletes," +
+	  				"delta_total_deletes," +
+	  				"delta_total_inserts," +
+	  				"delta_total_updates," +
+	  				"delta_total_deletes " + 
+	  				"FROM \"_REPOS_\".metric_query_aggr_table";
+  
+  /** DcsMaster authorization feature */
+  public static final String DCS_MASTER_AUTHORIZATION = "dcs.master.authorization";
+
+  /** DcsMaster authorization is not enabled */
+  public static final boolean DCS_MASTER_AUTHORIZATION_IS_NOT_ENABLED = false;
+
+  /** DcsMaster authorization is enabled */
+  public static final boolean DCS_MASTER_AUTHORIZATION_IS_ENABLED = true;
+  
+  /** Default value for DcsMaster authorization feature */
+  public static final boolean DEFAULT_DCS_MASTER_AUTHORIZATION = DCS_MASTER_AUTHORIZATION_IS_NOT_ENABLED;
+  
   private Constants() {
     // Can't be instantiated with this ctor.
   }

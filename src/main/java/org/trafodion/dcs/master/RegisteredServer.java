@@ -68,6 +68,9 @@ public class RegisteredServer  {
 		else
 			return "NO";
 	}
+	public String getIsRegistered() {
+		return isRegistered();
+	}
 	public void setState(String value) {
 		state = value;
 	}

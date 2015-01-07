@@ -43,8 +43,15 @@
 # The java implementation to use.  Java 1.6 required.
 # export JAVA_HOME=/usr/java/jdk1.6.0/
 
+# Add Trafodion to the classpath
+if [ "$MY_SQROOT" != "" ]; then
+  if [ -d $MY_SQROOT ]; then
+    export DCS_CLASSPATH=${CLASSPATH}:
+  fi
+fi
+
 # Extra Java CLASSPATH elements.  Optional.
-# export DCS_CLASSPATH=
+# export DCS_CLASSPATH=${DCS_CLASSPATH}:
 
 # The maximum amount of heap to use, in MB. Default is 128.
 # export DCS_HEAPSIZE=128

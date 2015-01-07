@@ -37,9 +37,7 @@ package org.trafodion.dcs.master;
 
 import java.io.IOException;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -47,8 +45,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.trafodion.dcs.tmpl.master.MasterStatusTmpl;
+import org.trafodion.dcs.Constants;
 
 /**
  * The servlet responsible for rendering the index page of the
@@ -65,9 +63,10 @@ public class MasterStatusServlet extends HttpServlet {
     DcsMaster master = (DcsMaster) getServletContext().getAttribute(DcsMaster.MASTER);
     assert master != null : "No Master in context!";
     
-    Configuration conf = master.getConfiguration();
     List<RunningServer> servers = master.getServerManager().getServersList();
-
+     
+   	master.getServerManager().getServersList();
+    
     response.setContentType("text/html");
     MasterStatusTmpl tmpl = new MasterStatusTmpl() 
       .setServers(servers);

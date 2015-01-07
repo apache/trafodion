@@ -78,6 +78,7 @@ public final class DcsServer implements Runnable {
     private ServerManager serverManager;
     private ExecutorService pool=null;
     private JVMShutdownHook jvmShutdownHook;
+	private static String trafodionHome;
     
     private class JVMShutdownHook extends Thread {
     	public void run() {
@@ -118,6 +119,8 @@ public final class DcsServer implements Runnable {
 			LOG.error("Could not parse: ", e);
 			System.exit(1);
 		}
+		
+		trafodionHome = System.getProperty(Constants.DCS_TRAFODION_HOME);
 
 		try {
 			zkc = new ZkClient();	   
@@ -220,6 +223,14 @@ public final class DcsServer implements Runnable {
 	
 	public String getZKParentZnode() {
 		return serverManager.getZKParentZnode();
+	}
+	
+	public String getUserProgramHome() {
+		return serverManager.getUserProgramHome();
+	}
+	
+	public String getTrafodionHome() {
+		return trafodionHome;
 	}
 	
 	public static void main(String [] args) {

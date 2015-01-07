@@ -47,13 +47,11 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.logging.impl.Log4JLogger;
-import org.apache.log4j.Level;
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.Bytes;
 
 public class ZkUtil {
-	private static final Log LOG = LogFactory.getLog(ZkUtil.class.getName());
+	private static final Log LOG = LogFactory.getLog(ZkUtil.class);
 	
 	public static void main(String [] args) throws Exception {
 
@@ -77,13 +75,6 @@ public class ZkUtil {
 
 		try {
 			String znode = cmd.getArgList().get(0).toString();
-			
-			//Turn off INFO level logging for ZK classes
-			//so we don't see them in the script output.
-		    ((Log4JLogger)LogFactory.getLog("org.apache.zookeeper.ZooKeeper"))
-		      .getLogger().setLevel(Level.WARN);
-		    ((Log4JLogger)LogFactory.getLog("org.apache.zookeeper.ClientCnxn"))
-		      .getLogger().setLevel(Level.WARN);
 		    
 			ZkClient zkc = new ZkClient();
 			zkc.connect();

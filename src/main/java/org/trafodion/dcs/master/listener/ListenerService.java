@@ -149,6 +149,7 @@ public class ListenerService extends Thread{
 	public void run () {
 		try {
 			selector = SelectorProvider.provider().openSelector();
+			LOG.debug("ServerSocketChannel.open()");
 			server = ServerSocketChannel.open();
 			server.configureBlocking(false);
 //			InetSocketAddress isa = new InetSocketAddress(ia, port);
@@ -201,13 +202,13 @@ public class ListenerService extends Thread{
 						if (!key.isValid()) continue;
 
 						if ((key.readyOps() & SelectionKey.OP_ACCEPT) == SelectionKey.OP_ACCEPT) {
-							LOG.info("Ready to process ACCEPT");
+							LOG.debug("Ready to process ACCEPT");
 							processAccept(key);
 						} else if ((key.readyOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
-							LOG.info("Ready to process READ");
+							LOG.debug("Ready to process READ");
 							processRead(key);
 						} else if ((key.readyOps() & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE) {
-							LOG.info("Ready to process WRITE");
+							LOG.debug("Ready to process WRITE");
 							processWrite(key);
 						}
 					}
@@ -222,15 +223,15 @@ public class ListenerService extends Thread{
 						  SocketChannel client = (SocketChannel) key.channel();
 						  Socket s = client.socket();
 						  if ((key.interestOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ){
-							  LOG.info("Read from client timeouted[" + timeout + " seconds] from: " + s.getRemoteSocketAddress());
+							  LOG.debug("Read from client timeouted[" + timeout + " seconds] from: " + s.getRemoteSocketAddress());
 							  if(metrics != null) metrics.listenerReadTimeout();
 						  }
 						  else if ((key.interestOps() & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE) {
-							  LOG.info("Write to client timeouted[" + timeout + " seconds] from: " + s.getRemoteSocketAddress());
+							  LOG.debug("Write to client timeouted[" + timeout + " seconds] from: " + s.getRemoteSocketAddress());
 							  if(metrics != null) metrics.listenerWriteTimeout();
 						  }
 						  else {
-							  LOG.info("Client timeouted[" + timeout + " seconds] from: " + s.getRemoteSocketAddress());
+							  LOG.debug("Client timeouted[" + timeout + " seconds] from: " + s.getRemoteSocketAddress());
 							  if(metrics != null) metrics.listenerRequestRejected();
 						  }
 						  try {
@@ -271,11 +272,11 @@ public class ListenerService extends Thread{
 			Socket s = client.socket();
 			// Accept the request
 			this.metrics.listenerStartRequest(System.nanoTime());
-			LOG.info("Received an incoming connection from: " + s.getRemoteSocketAddress());
+			LOG.debug("Received an incoming connection from: " + s.getRemoteSocketAddress());
 			client.configureBlocking( false );
 			SelectionKey clientkey = client.register( selector, SelectionKey.OP_READ );
 			clientkey.attach(new ClientData(s.getRemoteSocketAddress()));
-			LOG.info(s.getRemoteSocketAddress() + ": " + "Accept processed");
+			LOG.debug(s.getRemoteSocketAddress() + ": " + "Accept processed");
 		} catch (IOException ie) {
 			LOG.error("Cannot Accept connection: " + ie.getMessage());
 		}
@@ -297,7 +298,7 @@ public class ListenerService extends Thread{
 		try {
 			while ((readLength = client.read(clientData.buf)) > 0) {
 				clientData.total_read += readLength;
-				LOG.info(s.getRemoteSocketAddress() + ": " + "Read readLength  " + readLength + "  total " + clientData.total_read);
+				LOG.debug(s.getRemoteSocketAddress() + ": " + "Read readLength  " + readLength + "  total " + clientData.total_read);
 			}
 			if (readLength == -1 ){
 				throw new IOException(s.getRemoteSocketAddress() + ": " + "Connection closed by peer on READ");
@@ -307,7 +308,7 @@ public class ListenerService extends Thread{
 				key.interestOps(key.interestOps() | SelectionKey.OP_READ);
 				key.attach(clientData);
 				timeouts.put(key, System.currentTimeMillis());
-				LOG.info(s.getRemoteSocketAddress() + ": " + "Read length less than HEADER size. Added timeout on READ");
+				LOG.debug(s.getRemoteSocketAddress() + ": " + "Read length less than HEADER size. Added timeout on READ");
 				return;
 			}
 
@@ -324,7 +325,7 @@ public class ListenerService extends Thread{
 				key.interestOps(key.interestOps() | SelectionKey.OP_READ);
 				key.attach(clientData);
 				timeouts.put(key, System.currentTimeMillis());
-				LOG.info(s.getRemoteSocketAddress() + ": " + "Total length less than in read HEADER. Added timeout on READ");
+				LOG.debug(s.getRemoteSocketAddress() + ": " + "Total length less than in read HEADER. Added timeout on READ");
 				return;
 			}
 			if (clientData.total_read > (clientData.hdr.getTotalLength() + ListenerConstants.HEADER_SIZE)){
@@ -332,7 +333,7 @@ public class ListenerService extends Thread{
 			}
 			key.attach(clientData);
 			this.worker.processData(this, key);
-			LOG.info(s.getRemoteSocketAddress() + ": " + "Read processed");
+			LOG.debug(s.getRemoteSocketAddress() + ": " + "Read processed");
 
 		} catch (IOException ie){
 			LOG.error("IOException: " + s.getRemoteSocketAddress() + ": " + ie.getMessage());
@@ -375,7 +376,7 @@ public class ListenerService extends Thread{
 				key.attach(clientData);
 				key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
 				timeouts.put(key, System.currentTimeMillis());
-				LOG.info(s.getRemoteSocketAddress() + ": " + "Write length less than total write length. Added timeout on WRITE");
+				LOG.debug(s.getRemoteSocketAddress() + ": " + "Write length less than total write length. Added timeout on WRITE");
 			} else {
 				client.close();
 				clientData.header = null;
@@ -386,7 +387,7 @@ public class ListenerService extends Thread{
 				key.attach(null);
 				key.cancel();
 				if(metrics != null)metrics.listenerEndRequest(System.nanoTime());
-				LOG.info(s.getRemoteSocketAddress() + ": " + "Write processed");
+				LOG.debug(s.getRemoteSocketAddress() + ": " + "Write processed");
 			}
 		} catch (IOException ie){
 			LOG.error("IOException: " + s.getRemoteSocketAddress() + ": " + ie.getMessage());

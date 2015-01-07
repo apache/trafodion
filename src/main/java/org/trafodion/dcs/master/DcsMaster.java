@@ -24,6 +24,7 @@ import java.net.NetworkInterface;
 import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -53,18 +54,20 @@ import org.trafodion.dcs.util.VersionInfo;
 import org.trafodion.dcs.zookeeper.ZkClient;
 import org.trafodion.dcs.zookeeper.ZKConfig;
 import org.trafodion.dcs.master.listener.ListenerService;
+import org.trafodion.dcs.rest.DcsRest;
 
 public class DcsMaster implements Runnable {
 	private static  final Log LOG = LogFactory.getLog(DcsMaster.class);
 	private Thread thrd;
-	private ZkClient zkc=null;
+	private ZkClient zkc = null;
     private Configuration conf;
     private DcsNetworkConfiguration netConf;
 	private String[] args;
-	private String instance=null;
+	private String instance = null;
 	private int port;
 	private int portRange;
 	private InfoServer infoServer;
+	private DcsRest restServer;
 	private String serverName;
 	private int infoPort;
 	private long startTime;
@@ -75,6 +78,10 @@ public class DcsMaster implements Runnable {
     private String parentZnode;
     private ExecutorService pool = null;
     private JVMShutdownHook jvmShutdownHook;
+	private static String trafodionHome;
+	private CountDownLatch isLeader = new CountDownLatch(1);
+	
+    private MasterLeaderElection mle = null;
     
     private class JVMShutdownHook extends Thread {
     	public void run() {
@@ -90,7 +97,8 @@ public class DcsMaster implements Runnable {
 	   	conf = DcsConfiguration.create();
 	   	port = conf.getInt(Constants.DCS_MASTER_PORT,Constants.DEFAULT_DCS_MASTER_PORT);
 	   	portRange = conf.getInt(Constants.DCS_MASTER_PORT_RANGE,Constants.DEFAULT_DCS_MASTER_PORT_RANGE);
-		parentZnode = conf.get(Constants.ZOOKEEPER_ZNODE_PARENT,Constants.DEFAULT_ZOOKEEPER_ZNODE_PARENT);	 
+		parentZnode = conf.get(Constants.ZOOKEEPER_ZNODE_PARENT,Constants.DEFAULT_ZOOKEEPER_ZNODE_PARENT);	
+		trafodionHome = System.getProperty(Constants.DCS_TRAFODION_HOME);
 		jvmShutdownHook = new JVMShutdownHook();
 		Runtime.getRuntime().addShutdownHook(jvmShutdownHook);
 		thrd = new Thread(this);
@@ -104,7 +112,11 @@ public class DcsMaster implements Runnable {
 		CommandLine cmd;
 		try {
 			cmd = new GnuParser().parse(opt, args);
-			instance = cmd.getArgList().get(0).toString();
+			String s = cmd.getArgList().get(0).toString();
+			Integer i = Integer.parseInt(s);  
+			instance = s;
+		} catch(NumberFormatException nfe) {  
+			instance = "1";  
 		} catch (NullPointerException e) {
 			LOG.error("No args found: ", e);
 			System.exit(1);
@@ -136,6 +148,10 @@ public class DcsMaster implements Runnable {
 			if(stat == null) {
 				zkc.create(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER,new byte[0],ZooDefs.Ids.OPEN_ACL_UNSAFE,CreateMode.PERSISTENT);
 			}
+			stat = zkc.exists(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER,false);
+			if(stat == null) {
+				zkc.create(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER,new byte[0],ZooDefs.Ids.OPEN_ACL_UNSAFE,CreateMode.PERSISTENT);
+			}
 			stat = zkc.exists(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS,false);
 			if(stat == null) {
 				zkc.create(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS,new byte[0],ZooDefs.Ids.OPEN_ACL_UNSAFE,CreateMode.PERSISTENT);
@@ -156,16 +172,20 @@ public class DcsMaster implements Runnable {
 		} 
 		
 		metrics = new Metrics();
-		startTime=System.currentTimeMillis();
+		startTime = System.currentTimeMillis();
 
 		try {
 		   	netConf = new DcsNetworkConfiguration(conf);
 			serverName = netConf.getHostName();
 
+			//Wait to become the leader of all DcsMasters
+			mle = new MasterLeaderElection(this);
+			isLeader.await();
+
 			String path = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER + "/" + netConf.getHostName() + ":" + port + ":" + portRange + ":" + startTime; 
 			zkc.create(path,new byte[0],ZooDefs.Ids.OPEN_ACL_UNSAFE,CreateMode.EPHEMERAL);
 			LOG.info("Created znode [" + path + "]");
-			
+	
 		   	int requestTimeout = conf.getInt(Constants.DCS_MASTER_LISTENER_REQUEST_TIMEOUT,Constants.DEFAULT_LISTENER_REQUEST_TIMEOUT);
 		   	int selectorTimeout = conf.getInt(Constants.DCS_MASTER_LISTENER_SELECTOR_TIMEOUT,Constants.DEFAULT_LISTENER_SELECTOR_TIMEOUT);
 			ls = new ListenerService(zkc,netConf,port,portRange,requestTimeout,selectorTimeout,metrics,parentZnode);
@@ -240,7 +260,23 @@ public class DcsMaster implements Runnable {
 		return metrics.toString();
 	}
 	
-	public static void main(String [] args) {
+	public String getTrafodionHome(){
+		return trafodionHome;
+	}
+	
+    public ZkClient getZkClient(){
+    	return zkc;
+    }
+    
+    public String getInstance(){
+    	return instance;
+    }
+    
+    public void setIsLeader() {
+		isLeader.countDown();
+    }
+    
+ 	public static void main(String [] args) {
 		DcsMaster server = new DcsMaster(args);
 	}
 }

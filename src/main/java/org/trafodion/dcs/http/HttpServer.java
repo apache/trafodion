@@ -60,6 +60,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 //import org.apache.hadoop.conf.ConfServlet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
@@ -79,6 +80,12 @@ import org.mortbay.jetty.handler.ContextHandler;
 import org.mortbay.jetty.handler.ContextHandlerCollection;
 import org.mortbay.jetty.nio.SelectChannelConnector;
 import org.mortbay.jetty.security.SslSocketConnector;
+import org.mortbay.jetty.security.BasicAuthenticator; 
+import org.mortbay.jetty.security.Constraint; 
+import org.mortbay.jetty.security.ConstraintMapping; 
+import org.mortbay.jetty.security.HashUserRealm; 
+import org.mortbay.jetty.security.SecurityHandler; 
+import org.mortbay.jetty.security.UserRealm; 
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.DefaultServlet;
 import org.mortbay.jetty.servlet.FilterHolder;
@@ -90,6 +97,8 @@ import org.mortbay.thread.QueuedThreadPool;
 import org.mortbay.util.MultiException;
 
 import com.sun.jersey.spi.container.servlet.ServletContainer;
+
+import org.trafodion.dcs.Constants;
 
 /**
  * Create a Jetty embedded server to answer http requests. The primary goal
@@ -130,8 +139,13 @@ public class HttpServer implements FilterContainer {
     listener.setPort(port);
     
     webServer.addConnector(listener);
-
-    webServer.setThreadPool(new QueuedThreadPool());
+    
+    //webServer.setThreadPool(new QueuedThreadPool());
+	int maxThreads = conf.getInt("dcs.info.threads.max", 100);
+	int minThreads = conf.getInt("dcs.info.threads.min", 2);
+	QueuedThreadPool threadPool = new QueuedThreadPool(maxThreads);
+	threadPool.setMinThreads(minThreads);
+	webServer.setThreadPool(threadPool);
 
     final String appDir = getWebAppsPath();
     ContextHandlerCollection contexts = new ContextHandlerCollection();
@@ -144,11 +158,36 @@ public class HttpServer implements FilterContainer {
 //  webAppContext.setWar(appDir + "/" + name);
     webAppContext.setWar("dcs-webapps" + "/" + name);
     webAppContext.getServletContext().setAttribute(CONF_CONTEXT_ATTRIBUTE, conf);
+    
+    boolean isSecurity = conf.getBoolean(Constants.DCS_MASTER_AUTHORIZATION,Constants.DEFAULT_DCS_MASTER_AUTHORIZATION);
+    if(isSecurity) {
+    	LOG.info("DCS authorization is enabled");
+    	Constraint constraint = new Constraint();
+    	constraint.setName(Constraint.__BASIC_AUTH);;
+    	constraint.setRoles(new String[]{"user","admin"});
+    	constraint.setAuthenticate(true);
+
+    	ConstraintMapping cm = new ConstraintMapping();
+    	cm.setPathSpec("/*");
+    	cm.setConstraint(constraint);
+
+    	SecurityHandler sh = new SecurityHandler();
+    	sh.setUserRealm(new HashUserRealm("Trafodion WebUI",System.getProperty("dcs.conf.dir")+"/realm.properties"));
+    	sh.setConstraintMappings(new ConstraintMapping[]{cm});
+    	
+    	webAppContext.addHandler(sh); 
+    }
+
     webServer.addHandler(webAppContext);
+    
+    //if(security)
+    //	addFilter("DummyFilter", DummyServletFilter.class.getName(), null);
 
     addDefaultApps(contexts, appDir);
     
     addDefaultServlets();
+ 
+  
   }
 
   /**
@@ -187,6 +226,17 @@ public class HttpServer implements FilterContainer {
       logContext.getInitParams().put(
             "org.mortbay.jetty.servlet.Default.aliases", "true");
       logContext.setDisplayName("logs");
+      setContextAttributes(logContext);
+      defaultContexts.put(logContext, true);
+    }
+    logDir = System.getProperty(Constants.DCS_TRAFODION_HOME);
+    if (logDir != null) {
+      Context logContext = new Context(parent, "/TrafodionLogs");
+      logContext.setResourceBase(logDir + "/logs");
+      logContext.addServlet(DefaultServlet.class, "/");
+      logContext.getInitParams().put(
+            "org.mortbay.jetty.servlet.Default.aliases", "true");
+      logContext.setDisplayName("trafodion logs");
       setContextAttributes(logContext);
       defaultContexts.put(logContext, true);
     }
@@ -575,131 +625,164 @@ public class HttpServer implements FilterContainer {
    * all of the servlets resistant to cross-site scripting attacks.
    */
   public static class QuotingInputFilter implements Filter {
-    private FilterConfig config;
+	  private FilterConfig config;
 
-    public static class RequestQuoter extends HttpServletRequestWrapper {
-      private final HttpServletRequest rawRequest;
-      public RequestQuoter(HttpServletRequest rawRequest) {
-        super(rawRequest);
-        this.rawRequest = rawRequest;
-      }
-      
-      /**
-       * Return the set of parameter names, quoting each name.
-       */
-      @SuppressWarnings("unchecked")
-      @Override
-      public Enumeration<String> getParameterNames() {
-        return new Enumeration<String>() {
-          private Enumeration<String> rawIterator = 
-            rawRequest.getParameterNames();
-          @Override
-          public boolean hasMoreElements() {
-            return rawIterator.hasMoreElements();
-          }
+	  public static class RequestQuoter extends HttpServletRequestWrapper {
+		  private final HttpServletRequest rawRequest;
+		  public RequestQuoter(HttpServletRequest rawRequest) {
+			  super(rawRequest);
+			  this.rawRequest = rawRequest;
+		  }
 
-          @Override
-          public String nextElement() {
-            return HtmlQuoting.quoteHtmlChars(rawIterator.nextElement());
-          }
-        };
-      }
-      
-      /**
-       * Unquote the name and quote the value.
-       */
-      @Override
-      public String getParameter(String name) {
-        return HtmlQuoting.quoteHtmlChars(rawRequest.getParameter
-                                     (HtmlQuoting.unquoteHtmlChars(name)));
-      }
-      
-      @Override
-      public String[] getParameterValues(String name) {
-        String unquoteName = HtmlQuoting.unquoteHtmlChars(name);
-        String[] unquoteValue = rawRequest.getParameterValues(unquoteName);
-        String[] result = new String[unquoteValue.length];
-        for(int i=0; i < result.length; ++i) {
-          result[i] = HtmlQuoting.quoteHtmlChars(unquoteValue[i]);
-        }
-        return result;
-      }
+		  /**
+		   * Return the set of parameter names, quoting each name.
+		   */
+		  @SuppressWarnings("unchecked")
+		  @Override
+		  public Enumeration<String> getParameterNames() {
+			  return new Enumeration<String>() {
+				  private Enumeration<String> rawIterator = 
+					  rawRequest.getParameterNames();
+				  @Override
+				  public boolean hasMoreElements() {
+					  return rawIterator.hasMoreElements();
+				  }
 
-      @SuppressWarnings("unchecked")
-      @Override
-      public Map<String, String[]> getParameterMap() {
-        Map<String, String[]> result = new HashMap<String,String[]>();
-        Map<String, String[]> raw = rawRequest.getParameterMap();
-        for (Map.Entry<String,String[]> item: raw.entrySet()) {
-          String[] rawValue = item.getValue();
-          String[] cookedValue = new String[rawValue.length];
-          for(int i=0; i< rawValue.length; ++i) {
-            cookedValue[i] = HtmlQuoting.quoteHtmlChars(rawValue[i]);
-          }
-          result.put(HtmlQuoting.quoteHtmlChars(item.getKey()), cookedValue);
-        }
-        return result;
-      }
-      
-      /**
-       * Quote the url so that users specifying the HOST HTTP header
-       * can't inject attacks.
-       */
-      @Override
-      public StringBuffer getRequestURL(){
-        String url = rawRequest.getRequestURL().toString();
-        return new StringBuffer(HtmlQuoting.quoteHtmlChars(url));
-      }
-      
-      /**
-       * Quote the server name so that users specifying the HOST HTTP header
-       * can't inject attacks.
-       */
-      @Override
-      public String getServerName() {
-        return HtmlQuoting.quoteHtmlChars(rawRequest.getServerName());
-      }
-    }
+				  @Override
+				  public String nextElement() {
+					  return HtmlQuoting.quoteHtmlChars(rawIterator.nextElement());
+				  }
+			  };
+		  }
 
-    @Override
-    public void init(FilterConfig config) throws ServletException {
-      this.config = config;
-    }
+		  /**
+		   * Unquote the name and quote the value.
+		   */
+		  @Override
+		  public String getParameter(String name) {
+			  return HtmlQuoting.quoteHtmlChars(rawRequest.getParameter
+					  (HtmlQuoting.unquoteHtmlChars(name)));
+		  }
 
-    @Override
-    public void destroy() {
-    }
+		  @Override
+		  public String[] getParameterValues(String name) {
+			  String unquoteName = HtmlQuoting.unquoteHtmlChars(name);
+			  String[] unquoteValue = rawRequest.getParameterValues(unquoteName);
+			  String[] result = new String[unquoteValue.length];
+			  for(int i=0; i < result.length; ++i) {
+				  result[i] = HtmlQuoting.quoteHtmlChars(unquoteValue[i]);
+			  }
+			  return result;
+		  }
 
-    @Override
-    public void doFilter(ServletRequest request, 
-                         ServletResponse response,
-                         FilterChain chain
-                         ) throws IOException, ServletException {
-      HttpServletRequestWrapper quoted = 
-        new RequestQuoter((HttpServletRequest) request);
-      HttpServletResponse httpResponse = (HttpServletResponse) response;
+		  @SuppressWarnings("unchecked")
+		  @Override
+		  public Map<String, String[]> getParameterMap() {
+			  Map<String, String[]> result = new HashMap<String,String[]>();
+			  Map<String, String[]> raw = rawRequest.getParameterMap();
+			  for (Map.Entry<String,String[]> item: raw.entrySet()) {
+				  String[] rawValue = item.getValue();
+				  String[] cookedValue = new String[rawValue.length];
+				  for(int i=0; i< rawValue.length; ++i) {
+					  cookedValue[i] = HtmlQuoting.quoteHtmlChars(rawValue[i]);
+				  }
+				  result.put(HtmlQuoting.quoteHtmlChars(item.getKey()), cookedValue);
+			  }
+			  return result;
+		  }
 
-      String mime = inferMimeType(request);
-      if (mime == null || mime.equals("text/html")) {
-        // no extension or HTML with unspecified encoding, we want to
-        // force HTML with utf-8 encoding
-        // This is to avoid the following security issue:
-        // http://openmya.hacker.jp/hasegawa/security/utf7cs.html
-        httpResponse.setContentType("text/html; charset=utf-8");
-      }
-      chain.doFilter(quoted, httpResponse);
-    }
+		  /**
+		   * Quote the url so that users specifying the HOST HTTP header
+		   * can't inject attacks.
+		   */
+		  @Override
+		  public StringBuffer getRequestURL(){
+			  String url = rawRequest.getRequestURL().toString();
+			  return new StringBuffer(HtmlQuoting.quoteHtmlChars(url));
+		  }
 
-    /**
-     * Infer the mime type for the response based on the extension of the request
-     * URI. Returns null if unknown.
-     */
-    private String inferMimeType(ServletRequest request) {
-      String path = ((HttpServletRequest)request).getRequestURI();
-      ContextHandler.SContext sContext = (ContextHandler.SContext)config.getServletContext();
-      MimeTypes mimes = sContext.getContextHandler().getMimeTypes();
-      Buffer mimeBuffer = mimes.getMimeByExtension(path);
-      return (mimeBuffer == null) ? null : mimeBuffer.toString();
-    }
+		  /**
+		   * Quote the server name so that users specifying the HOST HTTP header
+		   * can't inject attacks.
+		   */
+		  @Override
+		  public String getServerName() {
+			  return HtmlQuoting.quoteHtmlChars(rawRequest.getServerName());
+		  }
+	  }
+
+	  @Override
+	  public void init(FilterConfig config) throws ServletException {
+		  this.config = config;
+	  }
+
+	  @Override
+	  public void destroy() {
+	  }
+
+	  @Override
+	  public void doFilter(ServletRequest request, 
+			  ServletResponse response,
+			  FilterChain chain
+	  ) throws IOException, ServletException {
+		  HttpServletRequestWrapper quoted = 
+			  new RequestQuoter((HttpServletRequest) request);
+		  HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+		  String mime = inferMimeType(request);
+		  if (mime == null || mime.equals("text/html")) {
+			  // no extension or HTML with unspecified encoding, we want to
+			  // force HTML with utf-8 encoding
+			  // This is to avoid the following security issue:
+			  // http://openmya.hacker.jp/hasegawa/security/utf7cs.html
+			  httpResponse.setContentType("text/html; charset=utf-8");
+		  }
+		  chain.doFilter(quoted, httpResponse);
+	  }
+
+	  /**
+	   * Infer the mime type for the response based on the extension of the request
+	   * URI. Returns null if unknown.
+	   */
+	  private String inferMimeType(ServletRequest request) {
+		  String path = ((HttpServletRequest)request).getRequestURI();
+		  ContextHandler.SContext sContext = (ContextHandler.SContext)config.getServletContext();
+		  MimeTypes mimes = sContext.getContextHandler().getMimeTypes();
+		  Buffer mimeBuffer = mimes.getMimeByExtension(path);
+		  return (mimeBuffer == null) ? null : mimeBuffer.toString();
+	  }
+  }
+
+  public static class DummyServletFilter implements Filter {
+	  private FilterConfig config;
+
+	  public static class RequestChecker extends HttpServletRequestWrapper {
+		  private final HttpServletRequest rawRequest;
+		  public RequestChecker(HttpServletRequest rawRequest) {
+			  super(rawRequest);
+			  this.rawRequest = rawRequest;
+		  }
+	  }
+
+	  @Override
+	  public void init(FilterConfig config) throws ServletException {
+		  this.config = config;
+	  }
+
+	  @Override
+	  public void destroy() {
+	  }
+
+	  @Override
+	  public void doFilter(ServletRequest request, 
+			  ServletResponse response,
+			  FilterChain chain
+	  ) throws IOException, ServletException {
+		  HttpServletRequestWrapper checked = 
+			  new RequestChecker((HttpServletRequest) request);
+		  HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+		  chain.doFilter(checked, httpResponse);
+	  }
   }
 }

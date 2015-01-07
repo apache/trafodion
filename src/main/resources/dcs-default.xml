@@ -80,7 +80,7 @@
     <description>The bind address for the DcsMaster web UI
     </description>
   </property>
-  <property>
+  <property>      
     <name>dcs.master.server.restart.handler.attempts</name>
     <value>3</value>
     <description>
@@ -108,29 +108,6 @@
         Listener Selector timeout. Default 10 seconds.
     </description>
   </property>  
-  <property>
-    <name>dcs.server.user.program</name>
-    <value>true</value>
-    <description>
-        Default setting for user program feature.
-    </description>
-  </property>
-  <property>
-    <name>dcs.server.user.program.command</name>
-    <value>cd ${dcs.user.program.home};. sqenv.sh;mxosrvr</value>
-    <description>
-        Commands to start user program. Keep on one line and separate with semi-colon.
-        $DCS_USER_PROGRAM_HOME must be set in conf/dcs-env.sh prior to startup.
-    </description>
-  </property> 
-  <property>
-    <name>dcs.server.user.program.connecting.timeout</name>
-    <value>60</value>
-    <description>
-        Length of time user program waits for client to connect.
-        Default 60 seconds.
-    </description>
-  </property>
   <property>
     <name>dcs.server.user.program.max.heap.pct.exit</name>
     <value>0</value>
@@ -191,6 +168,29 @@
         configuration.        
     </description>
   </property>
+  <property>
+    <name>dcs.info.threads.max</name>
+    <value>100</value>
+    <description>
+        The maximum number of threads of the info server thread pool.
+        Threads in the pool are reused to process requests. This
+        controls the maximum number of requests processed concurrently.
+        It may help to control the memory used by the info server to
+        avoid out of memory issues. If the thread pool is full, incoming requests
+        will be queued up and wait for some free threads. The default
+        is 100.
+    </description>
+  </property>
+  <property>
+    <name>dcs.info.threads.min</name>
+    <value>2</value>
+    <description>
+        The minimum number of threads of the info server thread pool.
+        The thread pool always has at least these number of threads so
+        the info server is ready to serve incoming requests. The default
+        is 2.
+    </description>
+  </property>  
   <property>
     <name>dcs.zookeeper.dns.interface</name>
     <value>default</value>
@@ -372,6 +372,39 @@
     <description>
         Time in seconds between refresh of the REST server page. Set to 0
         to disable automatic refresh. The default is 5.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.user.program.statistics.interval.time</name>
+    <value>60</value>
+    <description>
+        Time in seconds between update of aggregation statistics.The default is 60.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.user.program.statistics.limit.time</name>
+    <value>60</value>
+    <description>
+        Time in seconds for long running query threshold. If query executes longer 
+        than the value, it will be regarded as rogue query. The default is 60.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.user.program.statistics.type</name>
+    <value>aggregated</value>
+    <description>
+        Type of statistics to be published. User can set it as 'query', 'session' 
+        or 'aggregated'. By 'aggregated', session stats and aggregation stats will 
+        be published. For query stats, only long running queries will be recorded. 
+        By 'session', only session stats will be published. By 'query', only 
+        session stats and query stats will be published. The default is 'aggregated'.
+    </description>
+  </property>
+  <property>
+    <name>dcs.server.user.program.statistics.enabled</name>
+    <value>true</value>
+    <description>
+        If statistics publication is enabled. The default is true. Set false to disable.
     </description>
   </property>
 </configuration>

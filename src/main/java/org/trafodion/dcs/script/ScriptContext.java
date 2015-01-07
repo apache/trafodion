@@ -33,14 +33,6 @@ public final class ScriptContext {
 	private StringBuilder stdOut = new StringBuilder();
 	private StringBuilder stdErr = new StringBuilder();
 
-	public ScriptContext(){
-	}
-	public void setDebug(boolean value){
-		debug = value;
-	}
-	public boolean isDebug(){
-		return debug;
-	}
 	public void setScriptName(String value){
 		this.scriptName=value;
 	}
@@ -77,8 +69,8 @@ public final class ScriptContext {
 		sb.append("\nCommand[" + getCommand() + "]");
 		sb.append("\nHost name[" + getHostName() + "]");
 		sb.append("\nExit code[" + getExitCode() + "]");
-		sb.append("\nStandard out[" + getStdOut().toString() + "]");
-		sb.append("\nStandard error[" + getStdErr().toString() + "]");
+		sb.append("\nStdOut[" + getStdOut().toString() + "]");
+		sb.append("\nStdErr[" + getStdErr().toString() + "]");
 		return sb.toString();
 	}
 }

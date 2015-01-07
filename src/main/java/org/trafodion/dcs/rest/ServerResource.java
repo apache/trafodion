@@ -32,6 +32,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.trafodion.dcs.rest;
 
 import java.io.*;
@@ -51,13 +52,18 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.Stat;
+
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.Bytes;
+import org.trafodion.dcs.zookeeper.ZkClient;
 import org.trafodion.dcs.rest.RestConstants;
+import org.trafodion.dcs.rest.model.ServerModel;
 
-@Path("/")
-public class RootResource extends ResourceBase {
-	private static final Log LOG = LogFactory.getLog(RootResource.class);
+public class ServerResource extends ResourceBase {
+	private static final Log LOG =
+		LogFactory.getLog(ServerResource.class);
 
 	static CacheControl cacheControl;
 	static {
@@ -66,49 +72,81 @@ public class RootResource extends ResourceBase {
 		cacheControl.setNoTransform(false);
 	}
 
-	public RootResource() throws IOException {
+	/**
+	 * Constructor
+	 * @throws IOException
+	 */
+	public ServerResource() throws IOException {
 		super();
 	}
-	
+
 	@GET
 	@Produces({MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON})
 	public Response get(final @Context UriInfo uriInfo) {
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("GET " + uriInfo.getAbsolutePath());
 		}
-		
+
 		try {
-			return new WorkloadResource().get(uriInfo);
+			List<String> master = servlet.getMaster();
+			List<String> running = servlet.getRunning();
+			List<String> registered = servlet.getRegistered();
+		    
+			ZkClient zkc = servlet.getZk();
+			Stat stat = null;
+			
+		    ServerModel model = new ServerModel();
+		    
+			String data = null;
+
+			if(master != null){
+				for(String znode: master) {
+					data = null;
+					try {
+						data = Bytes.toString(zkc.getData(servlet.getParentZnode() + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER + "/" + znode, false, stat));
+					} catch (Exception e) {
+						LOG.error(e);
+					}
+
+					ServerModel.DcsMaster dcsMaster = model.addDcsMaster(znode,data);
+
+					if(running != null){
+						Collections.sort(running);
+						data = null;
+						for(String znodeRun: running) {
+							try {
+								data = Bytes.toString(zkc.getData(servlet.getParentZnode() + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING + "/" + znodeRun, false, stat));
+							} catch (Exception e) {
+								LOG.error(e);
+							}
+							
+							ServerModel.DcsServer dcsServer = dcsMaster.addDcsServer(znodeRun,data);
+
+							if(registered != null){
+								Collections.sort(registered);
+								data = null;
+								for(String znodeReg: registered) {
+									try {
+										data = Bytes.toString(zkc.getData(servlet.getParentZnode() + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + "/" + znodeReg, false, stat));
+									} catch (Exception e) {
+										LOG.error(e);
+									}
+									
+									dcsServer.addTrafodionServer(znodeReg,data);
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			ResponseBuilder response = Response.ok(model);
+			response.cacheControl(cacheControl);
+			return response.build();
 		} catch (IOException e) {
 			return Response.status(Response.Status.SERVICE_UNAVAILABLE)
 			.type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
 			.build();
 		}
-
 	}
-
-	@Path("/v1/servers")
-	public ServerResource getServerResource() throws IOException {
-		//To test:
-		//curl -v -X GET -H "Accept: application/json" http://<DcsMaster IP address>:8080/v1/servers
-		//
-		return new ServerResource();
-	}
-	
-	@Path("/v1/workloads")
-	public WorkloadResource getWorkloadResource() throws IOException { 
-		//To test:
-		//curl -v -X GET -H "Accept: application/json" http://<DcsMaster IP address>:8080/v1/workloads
-		//
-		return new WorkloadResource();
-	}
-
-	@Path("/v1/version")
-	public VersionResource getVersionResource() throws IOException {
-		//To test:
-		//curl -v -X GET -H "Accept: application/json" http://<DcsMaster IP address>:8080/v1/version
-		//
-		return new VersionResource();
-	}
-
 }
