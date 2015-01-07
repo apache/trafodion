@@ -23,7 +23,7 @@
 #==============================================
 # Default values
 typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
-
+NODE_LIST=""
 #==============================================
 # Parse input parameters
 while [[ $# -gt 0 ]]; do
@@ -37,7 +37,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --nodes)
-            NODE_LIST=$2
+            NODES=$2
             shift
             ;;
         --clustername)
@@ -57,6 +57,89 @@ while [[ $# -gt 0 ]]; do
 done
 
 #==============================================
+#Check to make sure node names have no special characters
+
+nodeName=`echo $NODES | sed 's/[^a-zA-Z0-9\ \.\-]//g'`
+
+if [[ "$nodeName" != "$NODES" ]]; then
+   echo "***ERROR: Nodes are not named properly."
+   echo "***ERROR: Nodes can have no special characters other than '-' and '.'"
+   exit -1
+fi
+
+for node in $NODES
+do
+   if [[ "$node" =~ ^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$ ]]; then
+      echo "***ERROR: Nodes are not named properly."
+      echo "***ERROR: IP addresses are not supported. Please use node names."
+      exit -1 
+   fi
+done
+
+#=============================================
+#Check hostname config
+
+#Check that hostname -f and hostname -s are not returning the same value. 
+#If they are then /etc/hosts may need the FQDNs added to it.
+if [[ $(hostname -f) == $(hostname -s) ]]; then
+   echo "***ERROR: Hostname configuration error."
+   echo "***ERROR: 'hostname -f' and 'hostname -s' are returning the same result."
+   echo "***ERROR: 'hostname -f' must return FQDN and 'hostname -s' must return short name."   
+   exit -1
+fi
+
+#Check to make sure hostname -f does return a FQDN. This check is probably
+#not needed due to the check above but this prevents odd configurations.
+fullName=`echo $(hostname -f) | grep -r "\." | wc -l`
+
+if [[ "$fullName" -ne "1" ]]; then
+   echo "***ERROR: Hostname configuration error."
+   echo "***ERROR: 'hostname -f' must return FQDN."   
+   exit -1
+fi
+
+FQDN=`echo $(hostname) | grep -r "\." | wc -l`
+nodeListFQDN=`echo $NODES | grep -r "\." | wc -l`
+
+if [[ "$FQDN" -eq "0" ]] && [[ "$nodeListFQDN" -ge "1" ]] ; then 
+   echo "***ERROR: Node names must be in the same format as 'hostname'"
+   echo "***ERROR: Please run trafodion_setup using short names for nodes"
+   echo "***ERROR: Example: trafoidon_setup --nodes \"$(hostname) $(hostname)2\""
+   exit -1 
+fi
+
+if [[ "$FQDN" -ge "1" ]] && [[ "$nodeListFQDN" -eq "0" ]]; then
+   for node in $NODES 
+   do
+       nodeAndDomain=$node.$(hostname -d)
+       NODE_LIST="$nodeAndDomain $NODE_LIST"
+   done
+   echo "***INFO: Added domain to all nodes"
+   echo "***INFO: $NODE_LIST"
+   echo
+
+elif [[ "$FQDN" -ge "1" ]] && [[ "$nodeListFQDN" -gt "0" ]]; then
+     for node in $NODES
+     do
+        dots=`echo $node | grep -o "\." | wc -l`
+        if [[ $dots -gt "0" ]] && [[ $dots -lt "3" ]]; then
+           echo "***ERROR: Node names are not named properly"
+           echo "***ERROR: Node name can not include a '.' that is not the domain"
+           exit -1
+        elif [[ $dots -eq "0" ]]; then
+           nodeAndDomain=$node.$(hostname -d)
+           NODE_LIST="$nodeAndDomain $NODE_LIST"
+           echo "***INFO: Added domain to $node"
+           echo "***INFO: $nodeAndDomain"
+        else
+           NODE_LIST="$node $NODE_LIST"
+        fi   
+     done
+else
+   NODE_LIST="$NODES"
+fi
+
+#==============================================
 #Check for Cloudera parcels of packages.
 
 cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
@@ -67,7 +150,6 @@ if [[ $cloudera_installed -gt 0 ]]; then
    if [[ $parcelsInstalled -gt "0" ]]; then
       echo "***ERROR: Cloudera parcels installed"
       echo "***ERROR: Trafodion only supports Cloudera packages at this time."
-      echo "***ERROR: Exiting..."
       exit -1
    fi
 fi
@@ -75,44 +157,45 @@ fi
 #==============================================
 #Check that HBase is installed
 
-#for node in $NODE_LIST;
-#do
-#   ssh -n $node 'echo "exit" | hbase shell &> hbaseVersion.txt'
-#   hbaseInstalled=`ssh -n $node grep "Version" $HOME/hbaseVersion.txt | wc -l`
+for node in $NODE_LIST;
+do
+   ssh $node -n 'echo "exit" | hbase shell &> hbaseVersion.txt'
+   hbaseInstalled=`ssh -n $node grep "Version" $HOME/hbaseVersion.txt | wc -l`
 
-#   if [[ $hbaseInstalled -eq "0" ]]; then
-#      echo "***ERROR: Hbase version could not be determined on $node"
-#      echo "***ERROR: Please check that HBase is installed on all nodes."
-#      echo "***ERROR: Exiting ... "
-#      rm hbaseVersion.txt
-#      exit -1
-#   fi
-#done
+   if [[ $hbaseInstalled -eq "0" ]]; then
+      echo "***ERROR: Hbase version could not be determined on $node"
+      echo "***ERROR: Please check that HBase is installed on all nodes."
+      exit -1
+   fi
+done
 
 #==============================================
-#Check for Cloudera 5.2 or Hortonworks 2.2
+#Check for Cloudera 5.2/5.3 or Hortonworks 2.2
 
-#if [[ $cloudera_installed -gt "0" ]]; then
-#   versionInstalled=`grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.2 | wc -l`
-#   if [[ $versionInstalled -eq "1" ]]; then
-#      echo "***ERROR: Cloudera version 5.2 is not currently supported."
-#      echo "***ERROR: Exiting..."
-#      rm hbaseVersion.txt
-#      exit -1
-#   fi
-#fi
+if [[ $cloudera_installed -gt "0" ]]; then
+   versionInstalled=`grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.2 | wc -l`
+   if [[ $versionInstalled -eq "1" ]]; then
+      echo "***ERROR: Cloudera version 5.2 is not currently supported."
+      exit -1
+   fi
+   versionInstalled=`grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.3 | wc -l` 
+   
+   if [[ $versionInstalled -eq "1" ]]; then
+      echo "***ERROR: Cloudera version 5.3 is not currently supported."
+      exit -1
+   fi 
 
-#if [[ $ambari_installed -gt "0" ]]; then
-#   versionInstalled=`grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2 | wc -l`
-#   if [[ $versionInstalled -eq "1" ]]; then
-#      echo "***ERROR: Hortonworks version 2.2 is not currently supported."
-#      echo "***ERROR: Exiting..."
-#      rm hbaseVersion.txt
-#      exit -1
-#   fi
-#fi
+fi
 
-#rm hbaseVersion.txt
+if [[ $ambari_installed -gt "0" ]]; then
+   versionInstalled=`grep "Version" $HOME/hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2 | wc -l`
+   if [[ $versionInstalled -eq "1" ]]; then
+      echo "***ERROR: Hortonworks version 2.2 is not currently supported."
+      exit -1
+   fi
+fi
+
+rm $HOME/hbaseVersion.txt
 
 #==============================================
 #Check for Correct Java version
@@ -140,78 +223,9 @@ if [[ -n $error ]]; then
    echo "***ERROR: Your existing JAVA_HOME is less than $REQ_VER"
    echo "***ERROR: Your Java Version = $THIS_JVM_VER"
    echo "***ERROR: Required java version should be greater than $REQ_VER"
-   echo "***ERROR: Exiting..."
    exit -1
 fi
 
-#==============================================
-#Test Clustername for any syntax errors.
-
-clusterName=`echo $CLUSTERNAME | grep [A-Z]`
-
-if [ "$?" == "0" ]; then
-   echo "***ERROR: Cluster name is not named properly."
-   echo "***ERROR: Rename cluster to not include capital letters. Exiting..."
-   exit -1
-fi
-
-nodeName=`echo $NODE_LIST | grep [A-Z]`
-
-if [ "$?" == "0" ]; then
-   echo "***ERROR: Nodes are not named properly."
-   echo "***ERROR: Node names can not have capital letters. Exiting..."
-   exit -1
-fi
-
-
-clusterName=`echo $CLUSTERNAME | sed 's/[\,\!\@\~\`\#\$\%\^\&\*\(\)\+\=\:\;\<\>\?\/]//g'`
-
-if [[ "$clusterName" != "$CLUSTERNAME" ]]; then
-   echo "***ERROR: Cluster name is not named properly."
-   echo "***ERROR: Rename cluster to not include any special characters other than '-'."
-   echo "***ERROR: Exiting..."
-   exit -1
-fi
-
-nodeName=`echo $NODE_LIST | sed 's/[\.\,\!\@\~\%\^\&\*\+\=\:\;\<\>\?\/]//g'`
-
-if [[ "$nodeName" != "$NODE_LIST" ]]; then
-   echo "***ERROR: Nodes are not named properly."
-   echo "***ERROR: Node names can not include any special characters other than '-'."
-   echo "***ERROR: Exiting..."
-   exit -1
-fi
-
-
-clusterName=`echo $CLUSTERNAME | grep [\']`
-
-if [ "$?" == "0" ]; then
-   echo "***ERROR: Cluster name is not named properly."
-   echo "***ERROR: Rename cluster to not include any special characters other than '-'."
-   echo "***ERROR: Exiting..."
-   exit -1
-fi
-
-nodeName=`echo $NODE_LIST | grep [\']`
-
-if [ "$?" == "0" ]; then
-   echo "***ERROR: Nodes are not named properly."
-   echo "***ERROR: Node names can not include any special characters other than '-'."
-   echo "***ERROR: Exiting..."
-   exit -1
-fi
-
-
-firstChar="$(echo $CLUSTERNAME | head -c 1)"
-
-clusterName=`echo $firstChar | grep [0-9]`
-
-if [ "$?" == "0" ]; then
-   echo "***ERROR: Cluster name is not named properly."
-   echo "***ERROR: Rename cluster to not begin with a number."
-   echo "***ERROR: Exiting..."
-   exit -1
-fi
 #==============================================
 #Test if home directory is on a NFS disk
 
@@ -220,7 +234,6 @@ diskType="$( df -P -T $HOME_DIR | tail -n +2 | awk '{print $2}')"
 if [ $diskType == "nfs" ]; then
    echo "***ERROR: Home directory is on an NFS disk: $HOME_DIR"
    echo "***ERROR: Please choose a different directory to install on."
-   echo "***ERROR: Exiting..."
    exit -1
 fi
 
