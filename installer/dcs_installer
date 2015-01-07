@@ -160,9 +160,22 @@ else
    ZOOKEEPER_NODES=$(hostname -s)   
 fi
 
-# add property to end of configuration
+# add zookeeper quorum property to end of configuration
 rm dcs-site.temp 2>/dev/null
 cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.zookeeper.quorum</name>\n    <value>$ZOOKEEPER_NODES</value>\n  </property>\n  <property>\n    <name>dcs.server.user.program.statistics.enabled</name>\n    <value>false</value>\n  </property>\n</configuration>@" > dcs-site.temp
+cp dcs-site.temp dcs-site.xml
+rm dcs-site.temp 2>/dev/null
+
+# get external network interface
+EXTERNAL_NETWORK=$(netstat -rn | grep "^0.0.0.0" | awk '{print $8}')
+if [ -z "$EXTERNAL_NETWORK" ]; then
+   echo "***ERROR: Unable to determine external network interface"
+   exit -1;
+fi
+
+# add network interface property to end of configuration
+rm dcs-site.temp 2>/dev/null
+cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.dns.interface</name>\n    <value>$EXTERNAL_NETWORK</value>\n  </property>\n</configuration>@" > dcs-site.temp
 cp dcs-site.temp dcs-site.xml
 rm dcs-site.temp 2>/dev/null
 
