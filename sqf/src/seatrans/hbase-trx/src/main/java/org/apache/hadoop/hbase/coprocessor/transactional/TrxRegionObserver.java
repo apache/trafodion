@@ -394,11 +394,11 @@ public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
 
 public void replayCommittedTransaction(long transactionId, ArrayList<WALEdit> editList) throws IOException {
 
-   if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP:RRR " + regionInfo.getRegionNameAsString() + " replay commit for transaction: " + transactionId);
+   if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: " + regionInfo.getRegionNameAsString() + " replay commit for transaction: " + transactionId);
    
    int num  = editList.size();
    if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP:R00 " + regionInfo.getRegionNameAsString() + " replay commit for transaction: "
-                                     + transactionId + " with number of edit kvs list size " + num);
+                                     + transactionId + " with editList size is " + num);
    for ( int i = 0; i < num; i++){
    WALEdit val = editList.get(i);
    for (KeyValue kv : val.getKeyValues()) {

@@ -2358,7 +2358,8 @@ CoprocessorService, Coprocessor {
     this.t_Region = (TransactionalRegion) tmp_env.getRegion();
     zkw1 = rss.getZooKeeper();
 
-    this.configuredEarlyLogging = conf.getBoolean("hbase.regionserver.region.transactional.earlylogging", false);
+    this.configuredEarlyLogging = tmp_env.getConfiguration().getBoolean("hbase.regionserver.region.transactional.earlylogging", false);
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: early logging setting is " + this.configuredEarlyLogging);
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: get the reference from Region CoprocessorEnvironment ");
 

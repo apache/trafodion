@@ -710,11 +710,13 @@ public class HBaseTxClient {
                         try {
                             regions = zookeeper.checkForRecovery();
                         } catch (Exception e) {
-                            LOG.error("An ERROR occurred while checking for regions to recover. " + "TM: " + tmID);
-                            StringWriter sw = new StringWriter();
-                            PrintWriter pw = new PrintWriter(sw);
-                            e.printStackTrace(pw);
-                            LOG.error(sw.toString());
+                            if (regions != null) { // ignore no object returned by zookeeper.checkForRecovery
+                               LOG.error("An ERROR occurred while checking for regions to recover. " + "TM: " + tmID);
+                               StringWriter sw = new StringWriter();
+                               PrintWriter pw = new PrintWriter(sw);
+                               e.printStackTrace(pw);
+                               LOG.error(sw.toString());
+                            }
                         }
 
                         if(regions != null) {
@@ -735,7 +737,7 @@ public class HBaseTxClient {
                             for (Map.Entry<String, byte[]> region : regions.entrySet()) {
                                 List<Long> TxRecoverList = new ArrayList<Long>();
                                 if (LOG.isDebugEnabled())
-                                    LOG.debug("BBB Processing region: " + new String(region.getValue()));
+                                    LOG.debug("Recovery Thread Processing region: " + new String(region.getValue()));
                                 String hostnamePort = region.getKey();
                                 byte[] regionInfo = region.getValue();
                                 try {
