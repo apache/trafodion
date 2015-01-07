@@ -120,11 +120,20 @@ all:$(BINEXPDIR)/mxosrvr
 
 DBT_LIBS = 
 
+EARLY_LIBS = -ljsig
+
 COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -llog4cpp
+
+ifeq ($(SQ_MTYPE),64)
+LOC_JSIG=$(JAVA_HOME)/jre/lib/amd64/server
+else
+LOC_JSIG=$(JAVA_HOME)/jre/lib/i386/server
+endif
+
 
 # Produce mxosrvr
 $(BINEXPDIR)/mxosrvr: $(OBJS) $(LIBEXPDIR)/libzookeeper_mt.so
-	$(CXX) $(GCCMODE) -o $@ $(DBG_FLGS)  -L$(LIBEXPDIR) -D_SQ64 $(COMMON_LIBS) $(DBT_LIBS) -lzookeeper_mt $(HADOOP_LIBS) $(OBJS) -lz
+	$(CXX) $(GCCMODE) -o $@ $(DBG_FLGS)  -L$(LIBEXPDIR) -D_SQ64 -L$(LOC_JSIG) $(EARLY_LIBS) $(COMMON_LIBS) $(DBT_LIBS) -lzookeeper_mt $(HADOOP_LIBS) $(OBJS) -lz
 
 $(OUTDIR)/ndcsversion.o: $(MY_SQROOT)/export/include/SCMBuildStr.h 
 
