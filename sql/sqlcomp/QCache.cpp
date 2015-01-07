@@ -4091,7 +4091,7 @@ static NABoolean initializeISPCaches(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR 
            }
     }
   }           
-  return TRUE;
+  return qcache != NULL;
 }
 
 QueryCacheStatsISPIterator::QueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
@@ -4109,7 +4109,7 @@ QueryCacheEntriesISPIterator::QueryCacheEntriesISPIterator(SP_ROW_DATA  inputDat
       //iterator start with preparser cache entries of first query cache, if any
       if(currCacheIndex_ == -1 && currQCache_)
          SQCIterator_ = currQCache_->beginPre();
-      else
+      else if(currCacheIndex_ == 0)
          SQCIterator_ = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->beginPre();
 }
 
@@ -4132,7 +4132,7 @@ HybridQueryCacheEntriesISPIterator::HybridQueryCacheEntriesISPIterator(SP_ROW_DA
     initializeISPCaches( inputData, eFunc, error, ctxs, currQCache_, currCacheIndex_);
     if(currCacheIndex_ == -1 && currQCache_)
        HQCIterator_ = new (heap_) HQCHashTblItor (currQCache_->getHQC()->begin());
-    else
+    else if(currCacheIndex_ == 0)
        HQCIterator_ = new (heap_) HQCHashTblItor (ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->getHQC()->begin());
 }
 
@@ -4149,6 +4149,11 @@ NABoolean QueryCacheStatsISPIterator::getNext(QueryCacheStats & stats)
    //fetch QueryCaches of all CmpContexts
    if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
    {
+      if(ctxInfos_[currCacheIndex_]->isSameClass("USTATS"))
+      {//ignore USTATS context
+        currCacheIndex_++;
+        return getNext(stats);
+      }
       ctxInfos_[currCacheIndex_++]->getCmpContext()->getQueryCache()->getCacheStats(stats);
       return TRUE;
    }
@@ -4176,6 +4181,12 @@ NABoolean QueryCacheEntriesISPIterator::getNext(QueryCacheDetails & details)
    //fetch QueryCaches of all CmpContexts
    if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
    {
+        if(ctxInfos_[currCacheIndex_]->isSameClass("USTATS"))
+        {//ignore USTATS context
+          currCacheIndex_++;
+          return getNext(details);
+        }
+        
         QueryCache * qcache = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache();
         if(SQCIterator_ == qcache->endPre()) {
               // end of preparser cache, continue with postparser entries
@@ -4214,6 +4225,11 @@ NABoolean HybridQueryCacheStatsISPIterator::getNext(HybridQueryCacheStats & stat
    //fetch QueryCaches of all CmpContexts
    if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
    {
+      if(ctxInfos_[currCacheIndex_]->isSameClass("USTATS"))
+      {//ignore USTATS context
+        currCacheIndex_++;
+        return getNext(stats);
+      }
       ctxInfos_[currCacheIndex_++]->getCmpContext()->getQueryCache()->getHQCStats(stats);
       return TRUE;
    }
@@ -4246,6 +4262,12 @@ NABoolean HybridQueryCacheEntriesISPIterator::getNext(HybridQueryCacheDetails & 
    //fetch QueryCaches of all CmpContexts
    if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
    {
+      if(ctxInfos_[currCacheIndex_]->isSameClass("USTATS"))
+      {//ignore USTATS context
+          currCacheIndex_++;
+          return getNext(details);
+      }
+      
       if( currEntryIndex_ >= currEntriesPerKey_ )
       {
          //get next key-value pair
