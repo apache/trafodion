@@ -210,6 +210,26 @@ sub printInitialLines {
     printScript(1, "#!/bin/sh \n");
     printTime;
 
+    $smenv = "$ENV{'SQETC_DIR'}/seamonster.env";
+    if ( -e $smenv ) {
+      print "\nThe SeaMonster environment variable file $smenv exists.\n";
+      print "The file will not be re-generated.\n\n";
+    } else {
+      print "\nGenerating SeaMonster environment variable file: $smenv\n\n";
+      #Create SeaMonster environment variable file
+      open (ETC,">>$smenv")
+          or die("unable to open $smenv");
+      if ($bVirtualNodes == 1) {
+          print ETC "SM_VIRTUALNODE=1\n";
+      }
+      if (!$ENV{'SHARED_HARDWARE'} || $ENV{SHARED_HARDWARE} eq 'YES') {
+          print ETC "SM_PIPEDEPTH=6\n";
+          print ETC "SM_LOWATER=3\n";
+          print ETC "SM_BUFFSIZE=102400\n";
+          print ETC "SM_THRESHOLD_NBYTES=51200\n";
+      }
+      close(ETC);
+    }
 
     $msenv = "$ENV{'SQETC_DIR'}/ms.env";
     $mirroringoff_string = "TSE_MIRRORING_OFF=1\n";

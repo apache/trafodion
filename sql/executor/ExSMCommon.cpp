@@ -109,7 +109,7 @@ int32_t ExSM_Initialize(ExSMGlobals *smGlobals,
   ExSMEvent::add(ExSMEvent::Init);
       
   // Initialize SeaMonster
-  int32_t rc = SM_init(0, smGlobals->getSQNodeNum());
+  int32_t rc = SM_init(0, smGlobals->getSQNodeNum(), 0);
   char buf[30];
   SM_strerror_r(rc, buf, sizeof(buf));
   EXSM_TRACE(EXSM_TRACE_INIT|EXSM_TRACE_SM_CALLS, "SM_init(%d) returned %s",

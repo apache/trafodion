@@ -19,7 +19,7 @@
 #include "sm.h"
 
 int
-SM_init(int channel, int32_t node)
+SM_init(int channel, int node, int verifier)
 {
     return SM_ERR_INTERNAL;
 }

@@ -50,10 +50,10 @@ typedef char * sm_handle_t;
 
 typedef struct {
 	sm_id_t	id;
-	int32_t	node;
+	int		node;
 	pid_t	pid;
-	int32_t tag;
-	uint32_t hdr_payload;
+	int		verifier;
+	int		tag;
 } sm_target_t;
 
 #define SM_FLAG_PREPOST				1	// SM_put()
@@ -88,6 +88,7 @@ typedef struct {
 	sm_target_t	tgt;
 	char		*buff;
 	char		*handle;
+	uint64_t	hdr_payload;
 	uint32_t	size;
 	int16_t		errcode;
 	uint16_t	flags;
@@ -98,7 +99,7 @@ typedef struct {
 #define SM_GET_MAXNONPP	2
 #define SM_GET_MAXINTRABUFFSIZE 3
 
-extern int SM_init(int channel, int32_t node);
+extern int SM_init(int channel, int node, int verifier);
 extern int SM_finalize(int channel);
 
 extern int SM_register(int channel, sm_id_t id);
