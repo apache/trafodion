@@ -1410,8 +1410,8 @@ NABoolean CacheData::backpatchParams
            offset += varCharLenSize;
            
            // is this an empty string
-           if (constVal->isEmptyString())
-              varCharLenSize = 0;
+           //if (constVal->isEmptyString())
+           //   varCharLenSize = 0;
         }
   
         if (DFS2REC::isAnyCharacter(targetType->getFSDatatype()))
@@ -3291,7 +3291,9 @@ void HQCParseKey::bindConstant2SQC(BaseColumn* base, ConstantParameter* cParamet
    }
 
    //if this constant doesn't need histogram info, the work is done.
-   if (!base)  return;
+   if (!base)  
+     return;
+   CMPASSERT(base->getOperatorType()==ITM_BASECOLUMN);
    //then get histogram info for it.
        
    // check if there exists a histogram for the column
@@ -3901,7 +3903,7 @@ NABoolean HQCParams::isApproximatelyEqualTo (HQCParams& otherParam)
         
         if(!this->getNPLiterals()[i].isNull())
         {   //return FALSE if non-parameterized literal is not identical
-            if(otherParam.getNPLiterals()[i].compareTo(this->getNPLiterals()[i], NAString::ignoreCase))
+            if(otherParam.getNPLiterals()[i].compareTo(this->getNPLiterals()[i], NAString::exact))
                 return FALSE;
                 
             //ConstValue might also be created for non-parameterized literal.
@@ -4031,7 +4033,8 @@ NABoolean HQCCacheData::removeEntry (CacheKey* sqcCacheKey)
 
 static NABoolean initializeISPCaches(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, SP_ERROR_STRUCT* error, 
                                   const NAArray<CmpContextInfo*> & ctxs, //input 
-                                  QueryCache* & qcache, //out set initial query cache in array of CmpContextInfos
+                                  QueryCache* & qcache,//out 
+                                  NAString & contextName, 
                                   Int32 & index           //out, set initial index in arrary of CmpContextInfos
                                   ) 
 {
@@ -4045,8 +4048,10 @@ static NABoolean initializeISPCaches(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR 
       return FALSE;
   }
    //choose context
-   //for 'ALL' option, set index to 0 and increase it as traverse ctxs, and always keep qcache NULL unless exit.
-   //for 'USER', 'META', and remote compile case, index is always -1, set qcache to desired qurey cache.
+   // 1. Search ctxInfos_ for all context with specified name('USER', 'META', 'USTATS'),
+   //    'ALL' option will fetch all context in ctxInfos_, index is set to 0, qcache is always NULL, 
+   // 2. For remote arkcmp, which has 0 context in ctxInfos_, index is always -1, 
+   //    set qcache to CURRENTQCACHE, and set to NULL after fetch one row.
   NAString qCntxt = receivingField;
   qCntxt.toLower();
   //the receivingField is of pattern xxx$trafodion.yyy, 
@@ -4059,53 +4064,46 @@ static NABoolean initializeISPCaches(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR 
     if( (dollarIdx==3 && strncmp(qCntxt.data(), "all", dollarIdx)==0) 
      ||(dollarIdx==4 && strncmp(qCntxt.data(), "user", dollarIdx)==0) )
       qcache = CURRENTQCACHE;
+      index = -1;
   }
   else
   {
     if(dollarIdx==3 && strncmp(qCntxt.data(), "all", dollarIdx)==0)
-    {//add caches of all contexts to list
+    {
+       contextName = "ALL";
        index = 0;
     }
     else if(dollarIdx==4 && strncmp(qCntxt.data(), "user", dollarIdx)==0)
-    {//add user query cache to list
-       for(Int32 i = 0; i < ctxs.entries(); i++ )
-           if(ctxs[i]->isSameClass("NONE")){
-               qcache = ctxs[i]->getCmpContext()->getQueryCache();
-               break;
-           }
+    {
+       contextName = "NONE";
+       index = 0;
     }
     else if(dollarIdx==4 && strncmp(qCntxt.data(), "meta", dollarIdx)==0)
-    {//add metadata query cache to list
-       for(Int32 i = 0; i < ctxs.entries(); i++ )
-           if(ctxs[i]->isSameClass("META")){
-               qcache = ctxs[i]->getCmpContext()->getQueryCache();
-               break;
-           }
+    {
+       contextName = "META";
+       index = 0;
     }
     else if(dollarIdx==6 && strncmp(qCntxt.data(), "ustats", dollarIdx)==0)
-    {//add ustats query cache to list
-       for(Int32 i = 0; i < ctxs.entries(); i++ )
-           if(ctxs[i]->isSameClass("USTATS")){
-               qcache = ctxs[i]->getCmpContext()->getQueryCache();
-               break;
-           }
+    {
+       contextName = "USTATS";
+       index = 0;
     }
   }           
-  return qcache != NULL;
+  return TRUE;
 }
 
 QueryCacheStatsISPIterator::QueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
                                            SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
 : ISPIterator(ctxs, h)
 {
-    initializeISPCaches(inputData, eFunc, error, ctxs, currQCache_, currCacheIndex_);
+    initializeISPCaches(inputData, eFunc, error, ctxs, currQCache_, contextName_, currCacheIndex_);
 }
 
 QueryCacheEntriesISPIterator::QueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
                                              SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
 : ISPIterator(ctxs, h), counter_(0)
 {
-     initializeISPCaches( inputData, eFunc, error, ctxs, currQCache_, currCacheIndex_);
+     initializeISPCaches( inputData, eFunc, error, ctxs, currQCache_, contextName_, currCacheIndex_);
       //iterator start with preparser cache entries of first query cache, if any
       if(currCacheIndex_ == -1 && currQCache_)
          SQCIterator_ = currQCache_->beginPre();
@@ -4117,7 +4115,7 @@ HybridQueryCacheStatsISPIterator::HybridQueryCacheStatsISPIterator(SP_ROW_DATA  
                                                       SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
  : ISPIterator(ctxs, h)
 {
-    initializeISPCaches( inputData, eFunc, error, ctxs, currQCache_, currCacheIndex_);
+    initializeISPCaches( inputData, eFunc, error, ctxs, currQCache_, contextName_, currCacheIndex_);
 }
 
 HybridQueryCacheEntriesISPIterator::HybridQueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
@@ -4129,7 +4127,7 @@ HybridQueryCacheEntriesISPIterator::HybridQueryCacheEntriesISPIterator(SP_ROW_DA
 , currValueList_(NULL)
 , HQCIterator_(NULL)
 {
-    initializeISPCaches( inputData, eFunc, error, ctxs, currQCache_, currCacheIndex_);
+    initializeISPCaches( inputData, eFunc, error, ctxs, currQCache_, contextName_, currCacheIndex_);
     if(currCacheIndex_ == -1 && currQCache_)
        HQCIterator_ = new (heap_) HQCHashTblItor (currQCache_->getHQC()->begin());
     else if(currCacheIndex_ == 0)
@@ -4139,20 +4137,22 @@ HybridQueryCacheEntriesISPIterator::HybridQueryCacheEntriesISPIterator(SP_ROW_DA
 //if currCacheIndex_ is set 0, currQCache_ is not used and should always be NULL
 NABoolean QueryCacheStatsISPIterator::getNext(QueryCacheStats & stats)
 {
-   //just fetch specified one QueryCache
+   //Only for remote tdm_arkcmp with 0 context
    if(currCacheIndex_ == -1 && currQCache_)
    {
       currQCache_->getCacheStats(stats);
       currQCache_ = NULL;
       return TRUE;
    }
-   //fetch QueryCaches of all CmpContexts
+   
+   //fetch QueryCaches of all CmpContexts with name equal to contextName_
    if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
    {
-      if(ctxInfos_[currCacheIndex_]->isSameClass("USTATS"))
-      {//ignore USTATS context
-        currCacheIndex_++;
-        return getNext(stats);
+      if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
+       && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
+      {// go to next context in ctxInfos_
+          currCacheIndex_++;
+          return getNext(stats);
       }
       ctxInfos_[currCacheIndex_++]->getCmpContext()->getQueryCache()->getCacheStats(stats);
       return TRUE;
@@ -4163,27 +4163,32 @@ NABoolean QueryCacheStatsISPIterator::getNext(QueryCacheStats & stats)
 
 NABoolean QueryCacheEntriesISPIterator::getNext(QueryCacheDetails & details)
 {
-   //just fetch entries of specified one QueryCache
+   //Only for remote tdm_arkcmp with 0 context
    if( currCacheIndex_ == -1 && currQCache_ )
    {
-         if (SQCIterator_ == currQCache_->endPre()) {
-              // end of preparser cache, continue with postparser entries
-             SQCIterator_ = currQCache_->begin();
-         }
-         if (SQCIterator_ != currQCache_->end())
-             currQCache_->getEntryDetails(SQCIterator_++, details);
-         else
-             return FALSE; //all entries are fetched, we are done!
+       if (SQCIterator_ == currQCache_->endPre()) {
+           // end of preparser cache, continue with postparser entries
+           SQCIterator_ = currQCache_->begin();
+       }
+       if (SQCIterator_ != currQCache_->end())
+           currQCache_->getEntryDetails(SQCIterator_++, details);
+       else
+           return FALSE; //all entries are fetched, we are done!
              
-         return TRUE;
+       return TRUE;
    }
 
-   //fetch QueryCaches of all CmpContexts
+   //fetch QueryCaches of all CmpContexts with name equal to contextName_
    if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
    {
-        if(ctxInfos_[currCacheIndex_]->isSameClass("USTATS"))
-        {//ignore USTATS context
+        if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
+         && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
+        {// go to next context in ctxInfos_
           currCacheIndex_++;
+          if(currCacheIndex_ < ctxInfos_.entries()){
+              //initialize iterator to first cache entry of next query cache, if any
+              SQCIterator_ = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->beginPre();
+          }
           return getNext(details);
         }
         
@@ -4199,7 +4204,7 @@ NABoolean QueryCacheEntriesISPIterator::getNext(QueryCacheDetails & details)
         }
         else
         {
-            //end of this query cache, try to get rows from next one
+            //end of this query cache, try to get from next in ctxInfos_
             currCacheIndex_++;
             if(currCacheIndex_ < ctxInfos_.entries()){
                 //initialize iterator to first cache entry of next query cache, if any
@@ -4215,20 +4220,21 @@ NABoolean QueryCacheEntriesISPIterator::getNext(QueryCacheDetails & details)
 
 NABoolean HybridQueryCacheStatsISPIterator::getNext(HybridQueryCacheStats & stats)
 {
-   //just fetch specified one QueryCache
+   //Only for remote tdm_arkcmp with 0 context
    if(currCacheIndex_ == -1 && currQCache_)
    {
       currQCache_->getHQCStats(stats);
       currQCache_ = NULL;
       return TRUE;
    }
-   //fetch QueryCaches of all CmpContexts
+   //fetch QueryCaches of all CmpContexts with name equal to contextName_
    if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
    {
-      if(ctxInfos_[currCacheIndex_]->isSameClass("USTATS"))
-      {//ignore USTATS context
-        currCacheIndex_++;
-        return getNext(stats);
+      if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
+       && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
+      {// go to next context in ctxInfos_
+          currCacheIndex_++;
+          return getNext(stats);
       }
       ctxInfos_[currCacheIndex_++]->getCmpContext()->getQueryCache()->getHQCStats(stats);
       return TRUE;
@@ -4239,7 +4245,7 @@ NABoolean HybridQueryCacheStatsISPIterator::getNext(HybridQueryCacheStats & stat
 
 NABoolean HybridQueryCacheEntriesISPIterator::getNext(HybridQueryCacheDetails & details)
 {
-   //just fetch entries of specified one QueryCache
+   //Only for remote tdm_arkcmp with 0 context
    if( currCacheIndex_ == -1 && currQCache_ )
    {
       if( currEntryIndex_ >= currEntriesPerKey_ )
@@ -4259,12 +4265,20 @@ NABoolean HybridQueryCacheEntriesISPIterator::getNext(HybridQueryCacheDetails & 
       return TRUE;
    }
  
-   //fetch QueryCaches of all CmpContexts
+   //fetch QueryCaches of all CmpContexts with name equal to contextName_
    if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
    {
-      if(ctxInfos_[currCacheIndex_]->isSameClass("USTATS"))
-      {//ignore USTATS context
+      if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
+       && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
+      {// go to next context in ctxInfos_
           currCacheIndex_++;
+          if(currCacheIndex_ < ctxInfos_.entries())
+          {  //initialize HQCIterator to begin of next query cache, if any
+             if(HQCIterator_)
+               delete HQCIterator_;
+             HQCIterator_ = NULL;
+             HQCIterator_ = new (heap_) HQCHashTblItor (ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->getHQC()->begin());
+          }
           return getNext(details);
       }
       

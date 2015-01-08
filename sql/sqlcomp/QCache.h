@@ -1916,6 +1916,7 @@ public:
   ISPIterator(const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
   : currCacheIndex_(-1)
   , currQCache_(NULL)
+  , contextName_(h)
   , ctxInfos_(ctxs)
   , heap_(h) 
   {}
@@ -1923,6 +1924,7 @@ public:
 protected:
   Int32 currCacheIndex_;
   QueryCache* currQCache_;
+  NAString contextName_;
   const NAArray<CmpContextInfo*> & ctxInfos_;
   CollHeap * heap_;
   
