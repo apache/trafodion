@@ -243,11 +243,11 @@ public class TrxTransactionState  extends TransactionState{
     public void clearState() {
 
       clearTransactionsToCheck();
-//      clearWriteOrdering();
+      clearWriteOrdering();
       clearScanRange();
       clearDeletes();
       clearTags();
-      //clearWALEdit();
+      clearWALEdit();
     }
 
     public void clearTransactionsToCheck() {
@@ -287,8 +287,8 @@ public class TrxTransactionState  extends TransactionState{
           }
         }
       }
-    //  if (e.size() > 0) 
-    //    if (LOG.isTraceEnabled()) LOG.trace("TrxTransactionState clearWALEdit:  Possible leak with kvs entries in WALEDIT, for transaction "+ this.transactionId + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "], e is " + e.toString());
+      if (e.size() > 0) 
+        if (LOG.isTraceEnabled()) LOG.trace("TrxTransactionState clearWALEdit:  Possible leak with kvs entries in WALEDIT, for transaction "+ this.transactionId + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "], e is " + e.toString());
     }
 
     public void addTransactionToCheck(final TrxTransactionState transaction) {

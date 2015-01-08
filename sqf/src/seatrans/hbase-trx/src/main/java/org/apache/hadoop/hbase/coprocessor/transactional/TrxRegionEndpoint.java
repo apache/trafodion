@@ -2468,8 +2468,8 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction clearState for: " + key + " from all its TrxTransactionState lists");
 
-    // Clear out the structures in the state object
-    state.clearState();
+    // Clear out transactions to check 
+    state.clearTransactionsToCheck();
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction calling remove entry for: " + key + " , from transactionById map ");
       transactionsById.remove(key);
@@ -4105,13 +4105,14 @@ CoprocessorService, Coprocessor {
   synchronized public void removeUnNeededCommitedTransactions() {
 
       Integer minStartSeqNumber = getMinStartSequenceNumber();
+      TrxTransactionState state = null;
+      int numRemoved = 0;
+      int key = 0;
 
       if (minStartSeqNumber == null) {
         minStartSeqNumber = Integer.MAX_VALUE;  
       }
 
-      int numRemoved = 0;
-      int key;
       synchronized (commitedTransactionsBySequenceNumber) {
       for (Entry<Integer, TrxTransactionState> entry : new LinkedList<Entry<Integer, TrxTransactionState>>(
         commitedTransactionsBySequenceNumber.entrySet())) {
@@ -4119,7 +4120,14 @@ CoprocessorService, Coprocessor {
           if (key >= minStartSeqNumber) {
             break;
           }
-          numRemoved += (commitedTransactionsBySequenceNumber.remove(key) == null ? 0 : 1);
+
+          state = commitedTransactionsBySequenceNumber.remove(key);
+  
+          if (state != null) {
+            state.clearState();
+            numRemoved++;
+            //if (LOG.isTraceEnabled()) LOG.trace("removeUnNeededCommitedTransactions: Transaction - entry key " + key + ", " + state.toString());
+          }
         }
       }
 
