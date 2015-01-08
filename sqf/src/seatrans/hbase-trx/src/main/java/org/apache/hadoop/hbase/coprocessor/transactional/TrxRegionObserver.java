@@ -18,56 +18,42 @@
 
 package org.apache.hadoop.hbase.coprocessor.transactional;
 
-import org.apache.hadoop.hbase.util.Bytes; 
-import java.io.*;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
-import org.apache.hadoop.hbase.Tag;
+import org.apache.hadoop.hbase.CoprocessorEnvironment;
+import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.KeyValue;
-import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.ServerName;
+import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.HRegionInfo;
-import org.apache.hadoop.hbase.ServerName;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
 import org.apache.hadoop.hbase.coprocessor.ObserverContext;
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment;
 import org.apache.hadoop.hbase.regionserver.HRegion;
 import org.apache.hadoop.hbase.regionserver.RegionServerServices;
-import org.apache.hadoop.hbase.regionserver.wal.HLogKey;
+import org.apache.hadoop.hbase.regionserver.transactional.TrxTransactionState;
 import org.apache.hadoop.hbase.regionserver.wal.HLog;
+import org.apache.hadoop.hbase.regionserver.wal.HLogKey;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
-import org.apache.hadoop.hbase.regionserver.transactional.TransactionState;
-import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.Status;
-import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.zookeeper.ZKUtil;
+import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
 import org.apache.zookeeper.KeeperException;
 
 public class TrxRegionObserver extends BaseRegionObserver {
@@ -95,6 +81,9 @@ private Map<Integer, Integer> indoubtTransactionsCountByTmid = new TreeMap<Integ
 
 // Map for Transactional Region to exchange data structures between Region Observer coprocessor and Endpoint Coprocessor
 static ConcurrentHashMap<String, Object> transactionsRefMap = new ConcurrentHashMap<String, Object>();
+
+private ConcurrentHashMap<String, TrxTransactionState> transactionsById = new ConcurrentHashMap<String, TrxTransactionState>();
+private Set<TrxTransactionState> commitPendingTransactions = Collections.synchronizedSet(new HashSet<TrxTransactionState>());
 
 HRegion my_Region;
 HRegionInfo regionInfo;
@@ -146,10 +135,54 @@ public void start(CoprocessorEnvironment e) throws IOException {
    zkw1 = rss.getZooKeeper();
 
    String regionName = my_Region.getRegionNameAsString();
-   if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: HRegion " + regionName + " starts to put transactional data lists into reference map ... ");
+   if (LOG.isTraceEnabled()) {
+       LOG.trace("Trafodion Recovery Region Observer CP: HRegion " + regionName + " starts to put transactional data lists into reference map ... ");
+       if(transactionsRefMap.isEmpty()) {
+           LOG.trace("Empty Shared Map, will put objects -- TrxRegionObserver.");
+       }
+   }
 
-   transactionsRefMap.put(regionName+trxkeypendingTransactionsById, pendingTransactionsById);
-   transactionsRefMap.put(regionName+trxkeyindoubtTransactionsCountByTmid, indoubtTransactionsCountByTmid);
+   @SuppressWarnings("unchecked")
+   SortedMap<Long, List<WALEdit>> pendingTransactionsByIdCheck = (SortedMap<Long, List<WALEdit>>)transactionsRefMap
+                                                                 .get(regionName+trxkeypendingTransactionsById);
+   if(pendingTransactionsByIdCheck != null) {
+       this.pendingTransactionsById = pendingTransactionsByIdCheck;
+   }
+   else {
+       transactionsRefMap.put(regionName+trxkeypendingTransactionsById, this.pendingTransactionsById);
+   }
+
+   @SuppressWarnings("unchecked")
+   Map<Integer, Integer> indoubtTransactionsCountByTmidCheck = (Map<Integer, Integer>)transactionsRefMap
+                                                               .get(regionName+trxkeyindoubtTransactionsCountByTmid);
+   if(indoubtTransactionsCountByTmidCheck != null) {
+       this.indoubtTransactionsCountByTmid = indoubtTransactionsCountByTmidCheck;
+   }
+   else {
+       transactionsRefMap.put(regionName+trxkeyindoubtTransactionsCountByTmid, this.indoubtTransactionsCountByTmid);
+   }
+
+   @SuppressWarnings("unchecked")
+   ConcurrentHashMap<String, TrxTransactionState> transactionsByIdCheck = (ConcurrentHashMap<String, TrxTransactionState>)
+                                                                       transactionsRefMap
+                                                                       .get(regionName+trxkeytransactionsById);
+   if(transactionsByIdCheck != null) {
+       this.transactionsById = transactionsByIdCheck;
+   }
+   else {
+       transactionsRefMap.put(regionName+trxkeytransactionsById, this.transactionsById);
+   }
+
+   @SuppressWarnings("unchecked")
+   Set<TrxTransactionState> commitPendingTransactionsCheck = (Set<TrxTransactionState>)transactionsRefMap
+                                                          .get(regionName+trxkeycommitPendingTransactions);
+   if(commitPendingTransactionsCheck != null) {
+       this.commitPendingTransactions = commitPendingTransactionsCheck;
+   }
+   else {
+       transactionsRefMap.put(regionName+trxkeycommitPendingTransactions,
+                              this.commitPendingTransactions);
+   }
 
     if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: trxRegionObserver load start complete");
 
@@ -463,5 +496,28 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
           }
        }
 } // end of createRecoveryzNode
+
+    @Override
+    public void preSplit(ObserverContext<RegionCoprocessorEnvironment> c, byte[] splitRow) throws IOException {
+        HRegion region = c.getEnvironment().getRegion();
+        int sleepCounter = 0;
+        boolean delayed = false;
+        if(LOG.isTraceEnabled()) LOG.trace("preSplit -- ENTRY region: " + region.getRegionNameAsString());
+
+        while(!(transactionsById.isEmpty() && commitPendingTransactions.isEmpty())) {
+               try {
+                       delayed = true;
+                       Thread.sleep(60000);
+                       sleepCounter++;
+                       if(LOG.isDebugEnabled()) LOG.debug("Delaying split due to transactions present. Delayed : " + sleepCounter +
+                                       " minute(s) on " + region.getRegionNameAsString());
+               } catch(InterruptedException e) {
+                       LOG.warn("Problem while calling sleep(), " + e);
+               }
+        }
+        if(delayed) if(LOG.isDebugEnabled()) LOG.debug("Continuing with split operation, no transactions on: " + region.getRegionNameAsString());
+
+        if(LOG.isTraceEnabled()) LOG.trace("preSplit -- EXIT region: " + region.getRegionNameAsString());
+    }
 
 } // end of TrxRegionObserver Class

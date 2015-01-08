@@ -2360,24 +2360,56 @@ CoprocessorService, Coprocessor {
     if (tmp_env.getSharedData().isEmpty())
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: shared map is empty ");
     else
-       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: shared map is NOT empty Yes ... ");
+       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: shared map is NOT empty");
 
     transactionsByIdTestz = TrxRegionObserver.getRefMap();
 
-    if (transactionsByIdTestz.isEmpty())
+    if (transactionsByIdTestz.isEmpty()) {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: reference map is empty ");
-    else
-       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: reference map is NOT empty Yes ... ");
-
+    }
+    else  {
+       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: reference map is NOT empty ");
+    }
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: Region " + this.m_Region.getRegionNameAsString() + " check indoubt list from reference map ");
-   
-    indoubtTransactionsById = (TreeMap<Long, List<WALEdit>>)transactionsByIdTestz.get(
-                               this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeypendingTransactionsById);
 
-    indoubtTransactionsCountByTmid = (TreeMap<Integer,Integer>)transactionsByIdTestz.get(
-                               this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeyindoubtTransactionsCountByTmid);
-    if (indoubtTransactionsCountByTmid != null) {
-       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:OOO successfully get the reference from Region CoprocessorEnvironment ");
+    Map<Long, List<WALEdit>> indoubtTransactionsByIdCheck = (TreeMap<Long, List<WALEdit>>)transactionsByIdTestz.get(
+            this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeypendingTransactionsById);
+    if(indoubtTransactionsByIdCheck != null) {
+        this.indoubtTransactionsById = indoubtTransactionsByIdCheck;
+    }
+    else {
+        transactionsByIdTestz.put(this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeypendingTransactionsById,
+                                  this.indoubtTransactionsById);
+    }
+
+    Map<Integer, Integer> indoubtTransactionsCountByTmidCheck = (TreeMap<Integer,Integer>)transactionsByIdTestz.get(
+            this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeyindoubtTransactionsCountByTmid);
+    if(indoubtTransactionsCountByTmidCheck != null) {
+        this.indoubtTransactionsCountByTmid = indoubtTransactionsCountByTmidCheck;
+    }
+    else {
+        transactionsByIdTestz.put(this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeyindoubtTransactionsCountByTmid,
+                                  this.indoubtTransactionsCountByTmid);
+    }
+
+    Set<TrxTransactionState> commitPendingTransactionsCheck = (Set<TrxTransactionState>)transactionsByIdTestz.get(
+            this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeycommitPendingTransactions);
+    if(commitPendingTransactionsCheck != null) {
+        this.commitPendingTransactions = commitPendingTransactionsCheck;
+    }
+    else {
+        transactionsByIdTestz.put(this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeycommitPendingTransactions,
+                this.commitPendingTransactions);
+    }
+
+    ConcurrentHashMap<String, TrxTransactionState> transactionsByIdCheck = (ConcurrentHashMap<String, TrxTransactionState>) transactionsByIdTestz.get(
+            this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeytransactionsById);
+    if(transactionsByIdCheck != null) {
+        this.transactionsById = transactionsByIdCheck;
+    }
+    else {
+        transactionsByIdTestz.put(this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeytransactionsById,
+                                  this.transactionsById);
     }
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: start");
