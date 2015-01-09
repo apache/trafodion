@@ -1122,7 +1122,7 @@ ItemExpr* ItemList::normalizeListForCache
                        (ConstValue*)leftC);
 		 //HQC collect histogram for column
 		 ItemExpr * cParameter = child(x);
-        cwa.bindConstant2SQC((BaseColumn*)leftC, (ConstantParameter*)cParameter);
+        cwa.bindConstant2SQC((BaseColumn*)rightC, (ConstantParameter*)cParameter);
       }
       else if (leftO == ITM_ITEM_LIST && rightO == ITM_ITEM_LIST) {
         child(x) = ((ItemList*)leftC)->normalizeListForCache

@@ -31,7 +31,7 @@ exit;
 ?section test_ddl
 create schema TRAFODION.ORDERENTRY;
 set schema TRAFODION.ORDERENTRY;
-drop table t042_ORDERLINE;
+drop table if exists t042_ORDERLINE;
 create table t042_ORDERLINE
   (
     OL_O_ID                          INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -71,6 +71,125 @@ cqd HIST_LOW_UEC_THRESHOLD '1';
 
 update statistics for table t042_orderline on every column generate 1 intervals;
 
+-- DDL for LP Bug: 1408148
+drop table if exists t042_t1;
+create table t042_t1 (a char(10), b char(10));
+insert into t042_t1 values ('BOOK','row1'), ('book','row2');
+
+-- DDL for LP Bug: 1408485
+drop table if exists t042_BTA1P006;
+Create Table t042_BTA1P006
+(
+sbin0_4 Integer not null,
+varchar0_uniq VarChar(8) not null,
+sdec0_100 Numeric(9,0) not null,
+sdec1_20 Numeric(5,0) not null,
+udec1_nuniq Numeric(4,0) unsigned,
+
+char2_2 Char(2) not null,
+sbin2_nuniq Largeint ,
+sdec2_500 Numeric(9,0) signed not null,
+udec3_n100 Numeric(9,0) unsigned,
+ubin3_n2000 Numeric(4,0) unsigned,
+char3_4 Char(8) not null,
+
+sdec4_n20 Numeric(4,0) ,
+sbin4_n1000 Smallint ,
+char4_n10 Char(8) ,
+char5_n20 Char(8) ,
+sdec5_10 Numeric(9,0) signed not null,
+ubin5_n500 Numeric(9,0) unsigned ,
+
+sbin6_nuniq Largeint ,
+sdec6_4 Numeric(4,0) signed not null,
+char6_n100 Char(8) ,
+sbin7_n20 Smallint ,
+char7_500 Char(8) not null,
+udec7_n10 Numeric(4,0) unsigned,
+
+ubin8_10 Numeric(4,0) unsigned not null,
+char8_n1000 Char(8) ,
+sdec8_4 Numeric(9,0) unsigned not null,
+sdec9_uniq Numeric(18,0) signed not null,
+char9_100 Char(2) not null,
+
+char10_nuniq Char(8) ,
+udec10_uniq Numeric(9,0) unsigned not null,
+udec11_2000 Numeric(9,0) unsigned not null,
+sbin11_100 Integer not null,
+char11_uniq Char(8) not null,
+
+ubin12_2 Numeric(4,0) unsigned not null,
+sdec12_n1000 Numeric(18,0) signed ,
+char12_n2000 Char(8) ,
+udec13_500 Numeric(9,0) unsigned not null,
+
+char13_1000 Char(8) not null,
+
+sbin14_1000 Integer not null,
+udec14_100 Numeric(4,0) unsigned not null,
+char14_n500 Char(8) ,
+sbinneg15_nuniq Largeint ,
+sdecneg15_100 Numeric(9,0) signed not null,
+char15_100 VarChar(8) not null,
+
+ubin16_n10 Numeric(4,0) unsigned ,
+sdec16_uniq Numeric(18,0) signed not null,
+char16_n20 Char(5) ,
+sbin17_uniq Largeint not null,
+sdec17_nuniq Numeric(18,0) ,
+char17_2 VarChar(7) not null
+
+, primary key ( sdec9_uniq ASC
+, sdec0_100 DESC
+, sdec1_20 ASC )
+);
+
+Insert Into t042_BTA1P006
+Values (
+-0, 'CJAAAAAC', -81, -2, 1973,
+'AA', -702, -202, 81, 81, 'BAAAAAAA',
+-4, -724, NULL , 'BDAAAAAA', -3, 473, -- (5)
+-702, -2, 'CCAAAAAA', -1, 'ABAAEAAA', NULL ,
+4, 'GFAAFAAA', 0, -201, 'BX',
+'CJAAAAAC', 702, 81, -81, 'AAAAMAAB', -- (10)
+0, -724, 'GFAAFAAA', 473, 'GEAAKAAA',
+-702, 2, 'CGAAAAAA', -4081, -81, 'BGAAAAAA', -- (15)
+NULL , -4724, 'AEAA', -76757, -1973, 'BAAA'
+),(
+-1, 'AEAAJAAB', -44, -6, 60,
+'AA', -3766, -266, 44, 344, 'AAAAAAAA',
+-9, -509, NULL , 'AAAAAAAA', -0, 60, -- (5)
+-3766, -2, 'CQAAAAAA', -4, 'EAAAGAAA', NULL ,
+9, 'DBAAAAAA', 1, -200, 'AK',
+'AEAAJAAB', 3766, 344, -44, 'EKAACAAE', -- (10)
+1, -509, 'DBAAAAAB', 60, 'EFAAIAAA',
+-766, 66, 'AGAAEAAA', -4344, -44, 'ATAAAAA', -- (15)
+NULL , -2509, 'BE ', -37055, -60, 'AAAA'
+),(
+-2, 'CCAAFAAC', -52, -12, 2086,
+'AA', -772, -272, 52, 1552, 'AAAAAAAA',
+-18, -678, NULL , 'CBAAAAAA', -6, 86, -- (5)
+-772, -0, 'AWAAAAAA', -12, 'DAAAGAAA', NULL ,
+8, 'DEAAMAAA', 2, -101, 'CL',
+'CCAAFAAC', 772, 1552, -52, 'DKAADAAC', -- (10)
+0, -678, 'DEAAMAAA', 86, 'AHAAGAAA',
+-772, 72, 'CEAAHAAA', -3552, -52, 'ACAAAAAA', -- (15)
+NULL , -3678, 'AB', -49700, -2086, 'AAAAAA'
+),(
+-2, 'AIAALAAA', -89, -5, 812,
+'BA', -2065, -65, 89, 389, 'BAAAAAAA',
+-14, -594, NULL , 'ACAAAAAA', -2, 312, -- (5)
+-2065, -1, 'BPAAAAAA', -9, 'CFAAEAAA', NULL ,
+4, 'FKAAIAAA', 2, -100, 'AM',
+'AIAALAAA', 2065, 389, -89, 'CCAAKAAE', -- (10)
+0, -594, 'FKAAIAAA', 312, 'AJAAGAAA',
+-65, 65, 'ABAAEAAA', -2389, -89, 'BOAAAAA',
+NULL , -1594, 'AA', -15935, -812, 'AAAAAAA' -- (15)
+)
+;
+
+
 ?section test_dml
 set schema TRAFODION.ORDERENTRY;
 log LOG042 clear;
@@ -78,7 +197,9 @@ showstats for table t042_orderline on ol_o_id detail;
 
 cqd HYBRID_QUERY_CACHE 'off';
 -- avoid caching the metadata queries
-prepare xx from select * from t042_orderline ;
+prepare xx from select * from t042_t1;
+prepare xx from select * from t042_BTA1P006;
+prepare xx from select * from t042_orderline;
 
 cqd HQC_LOG 'on';
 cqd HQC_LOG_FILE 'hqc.log';
@@ -361,6 +482,40 @@ execute xx;
 sh cat hqc.log >> LOG042;
 sh rm hqc.log;
 
+-- LaunchPad bug: 1408148
+select '0123456789' from t042_t1;
+select '' from t042_t1;
+-- Non-parameterized literals should be compared case sensitively.
+-- query 1: should return row1
+select b from t042_t1 where a like 'BOO_%';
+-- query 2: should return row2
+select b from t042_t1 where a like 'boo_%';
+-- query 3: should return row1
+select b from t042_t1 where a like 'BOO%';
+-- query 4: should return row2
+select b from t042_t1 where a like 'boo%';
+-- query 5: should return row2
+select * from t042_t1 where a = 'book' or b = 'ROW1';
+-- query 6: should return zero 
+select * from t042_t1 where a = 'Book' or b = 'ROW2';
+-- query 7: should return row1
+select * from t042_t1 where a = 'BOOK' or b = 'ROW2';
+
+-- LaunchPad bug: 1408485
+select t.varchar0_uniq as t_varchar0_uniq
+, t.char2_2 as t_char2_2
+, t.char3_4 as t_char3_4
+, u.varchar0_uniq as u_varchar0_uniq
+, u.char2_2 as u_char2_2
+from t042_BTA1P006 t, t042_BTA1P006 u
+where (t.char2_2, 'AA', t.char3_4 ,'CJAAAAAC')
+=('AA' ,u.char2_2 , 'AAAAAAAA' , u.varchar0_uniq)
+order by 1, 2
+;
+
+sh cat hqc.log >> LOG042;
+sh rm hqc.log;
+
 -- test compile time
 
 set statistics on;
@@ -379,22 +534,26 @@ sh rm hqc.log;
 set statistics off;
 
 --Stats in Query Cache
-select num_entries, num_plans from table(querycache('user', 'local'));
-select num_entries, num_plans from table(querycache('meta', 'local'));
-select num_entries, num_plans from table(querycache('all', 'local'));
+select num_entries, text_entries, num_plans from table(querycache('user', 'local'));
+select num_entries, text_entries, num_plans from table(querycache('meta', 'local'));
+select num_entries, text_entries, num_plans from table(querycache('ustats', 'local'));
+select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
 
 select  plan_length, num_hits, num_params from table(querycacheentries('user', 'local')) order by 1;
 select  plan_length, num_hits, num_params from table(querycacheentries('meta', 'local')) order by 1;
+select  plan_length, num_hits, num_params from table(querycacheentries('ustats', 'local')) order by 1;
 select  plan_length, num_hits, num_params from table(querycacheentries('all', 'local')) order by 1;
 
 
 --Stats in Hybrid Query Cache
 select * from table(hybridquerycache('user', 'local'));
 select * from table(hybridquerycache('meta', 'local'));
+select * from table(hybridquerycache('ustats', 'local'));
 select * from table(hybridquerycache('all', 'local'));
 
 select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('user', 'local')) order by 1;
 select char_length(hkey), num_hits,  num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('meta', 'local')) order by 1;
+select char_length(hkey), num_hits,  num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1;
 select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('all', 'local')) order by 1;
 
 
