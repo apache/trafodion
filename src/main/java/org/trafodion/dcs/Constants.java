@@ -159,13 +159,13 @@ public final class Constants {
   public static final String DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS = "dcs.server.user.program.port.map.timeout.seconds";
   
   /** Default value for DCS server user program port map timeout seconds */
-  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS = 60; 
+  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS = -1; 
 
   /** Configuration key for DCS server user program port bind timeout seconds */
   public static final String DCS_SERVER_USER_PROGRAM_PORT_BIND_TIMEOUT_SECONDS = "dcs.server.user.program.port.bind.timeout.seconds";
   
   /** Default value for DCS server tcp bind max retries */
-  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_BIND_TIMEOUT_SECONDS = 30; 
+  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_BIND_TIMEOUT_SECONDS = -1; 
   
   /** Name of ZooKeeper quorum configuration parameter. */
   public static final String ZOOKEEPER_QUORUM = "dcs.zookeeper.quorum";
