@@ -207,6 +207,12 @@ public:
                   logLevel    level,
                   const char* logMsgTemplate ...);
 
+  static void log(const char* cat,
+                  logLevel    level,
+                  int         sqlCode,
+                  const char* queryId,
+                  const char* logMsgTemplate ...);
+
 
   /**
     * Returns a reference to the %QRLogger singelton instance in use.

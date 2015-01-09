@@ -649,7 +649,7 @@ HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
 //////////////////////////////////////////////////////////////////////////////
 HBC_RetCode HBaseClient_JNI::releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::releaseHBulkLOadClient() called.");
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::releaseHBulkLoadClient() called.");
 
   jobject j_hblc = hblc->getJavaObject();
 
