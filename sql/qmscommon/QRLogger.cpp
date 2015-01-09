@@ -369,8 +369,8 @@ void QRLogger::logDiags(ComDiagsArea* diagsArea, const char* cat)
         diagMsg = condition->getMessageText();
         diagStr = unicodeToChar(diagMsg, NAWstrlen(diagMsg),
                                           CharInfo::ISO88591, NULL, TRUE);
-        log(cat, LL_ERROR,
-          "  condition %d: sqlcode %d, %s", i, condition->getSQLCODE(), diagStr->data());
+        log(cat, LL_ERROR, condition->getSQLCODE(), "",
+          "  err condition %d: %s", i, diagStr->data());
         delete diagStr;
       }
 
@@ -381,8 +381,8 @@ void QRLogger::logDiags(ComDiagsArea* diagsArea, const char* cat)
         diagMsg = condition->getMessageText();
         diagStr = unicodeToChar(diagMsg, NAWstrlen(diagMsg),
                                           CharInfo::ISO88591, NULL, TRUE);
-        log(cat, LL_WARN,
-          "  condition %d: sqlcode %d, %s", i, condition->getSQLCODE(), diagStr->data());
+        log(cat, LL_WARN, condition->getSQLCODE(), "",
+          "  warn condition %d: %s", i, diagStr->data());
         delete diagStr;
       }
 }
@@ -448,9 +448,9 @@ CommonTracer::~CommonTracer()
 // The generic message logging method for any message type and length.
 // adds information about the current process
 // **************************************************************************
-void QRLogger::log(const char* cat,
-                                logLevel    level,
-                                const char* logMsgTemplate...)
+void QRLogger::log(const char  *cat,
+                   logLevel    level,
+                   const char  *logMsgTemplate...)
 {
   log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
   if (myCat.getPriority() < level)
@@ -461,7 +461,8 @@ void QRLogger::log(const char* cat,
 
   char* buffer = buildMsgBuffer(cat, level, logMsgTemplate, args);
   NAString logData = QRLogger::instance().getMyProcessInfo();
-  logData += ",";
+  // SQLCode and Query id are not provided in this flavor
+  logData += ",,,";
   logData += buffer;
   log1(cat, level, logData.data());
   delete [] buffer;
@@ -469,4 +470,41 @@ void QRLogger::log(const char* cat,
   va_end(args);
 }
 
+
+void QRLogger::log(const char  *cat,
+                   logLevel    level,
+                   int         sqlCode,
+                   const char  *queryId,
+                   const char  *logMsgTemplate...)
+{
+  log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
+  if (myCat.getPriority() < level)
+    return;
+
+  va_list args ;
+  va_start(args, logMsgTemplate);
+
+  char* buffer = buildMsgBuffer(cat, level, logMsgTemplate, args);
+  NAString logData = QRLogger::instance().getMyProcessInfo();
+  char sqlCodeBuf[30];
+  snprintf(sqlCodeBuf, sizeof(sqlCodeBuf), "%d", sqlCode);
+  logData += ",";
+  if (sqlCode != 0)
+    {
+      logData += " SQLCODE: ";
+      logData += sqlCodeBuf;
+    }
+  logData += ",";
+  if (queryId != NULL && queryId[0] != '\0')
+    {
+      logData += " QID: ";
+      logData += queryId;
+    }
+  logData += ", ";
+  logData += buffer;
+  log1(cat, level, logData.data());
+  delete [] buffer;
+
+  va_end(args);
+}
 

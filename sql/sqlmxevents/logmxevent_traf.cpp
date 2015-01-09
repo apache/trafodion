@@ -129,7 +129,7 @@ Int32 SQLMXLoggingArea::logSQLMXEventForError( ULng32 sqlcode,
   Int32 rc = 0;
   logLevel level = isWarning ? LL_INFO : LL_ERROR;
 
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), level, " SQLCODE: %d, QID: %s, %s", sqlcode, sqlId, msgTxt);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), level, sqlcode, sqlId, "%s", msgTxt);
 
   if (lockedMutex)
     unlockMutex();
@@ -142,8 +142,7 @@ void SQLMXLoggingArea::logCompNQCretryEvent(const char *stmt)
 {
   bool lockedMutex = lockMutex();
 
-  // the extra commas are for the missing tokens (query id and sqlcode)
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_ALERT, ",, Statement was compiled as if query plan caching were off: %s", stmt);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_ALERT, "Statement was compiled as if query plan caching were off: %s", stmt);
 
   if (lockedMutex)
     unlockMutex();
@@ -155,8 +154,7 @@ void SQLMXLoggingArea::logExecRtInfo(const char *fileName,
 {
   bool lockedMutex = lockMutex();
 
-  // the extra commas are for the missing tokens (query id and sqlcode)
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_INFO, ",, %s  Explain Sequence Numer: %d FILE: %s LINE: %d", msgTxt, explainSeqNum, fileName, lineNo);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_INFO, "%s  Explain Sequence Numer: %d FILE: %s LINE: %d", msgTxt, explainSeqNum, fileName, lineNo);
 
   if (lockedMutex)
     unlockMutex();
@@ -246,8 +244,7 @@ void SQLMXLoggingArea::logSQLMXPredefinedEvent(const char *msg, logLevel level)
 {
   bool lockedMutex = lockMutex();
  
-  // the extra commas are for the missing tokens (query id and sqlcode)
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), level, ",, %s ", msg);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), level, "%s ", msg);
 
   if (lockedMutex)
     unlockMutex();
@@ -257,8 +254,7 @@ void SQLMXLoggingArea::logSQLMXDebugEvent(const char *msg, short errorcode, bool
 {
   bool lockedMutex = lock ? lockMutex() : false;
   
-  // the extra commas are for the missing tokens (query id and sqlcode)
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_DEBUG, ",, %s ", msg);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_DEBUG, "%s ", msg);
 
   if (lockedMutex)
     unlockMutex();
@@ -276,8 +272,7 @@ SQLMXLoggingArea::logSQLMXAbortEvent(const char* file, Int32 line, const char* m
     file_name = file;
   }
 
-  // the extra commas are for the missing tokens (query id and sqlcode)
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_FATAL, ",, %s in FILE: %s LINE: %d ", msgTxt, file_name, line);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_FATAL, "%s in FILE: %s LINE: %d ", msgTxt, file_name, line);
 
   if (lockedMutex)
     unlockMutex();
@@ -324,8 +319,7 @@ SQLMXLoggingArea::logSQLMXAssertionFailureEvent(const char* file, Int32 line, co
     str_cpy_all (msg+sTotalLen, condStr, sLen);
   }
 
-  // the extra commas are for the missing tokens (query id and sqlcode)
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_FATAL, ",, %s", msg);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_FATAL, "%s", msg);
 
   if (lockedMutex)
     unlockMutex();
@@ -336,8 +330,7 @@ void SQLMXLoggingArea::logMVRefreshInfoEvent(const char *msg)
 {
   bool lockedMutex = lockMutex();
   
-  // the extra commas are for the missing tokens (query id and sqlcode)
-  QRLogger::log(CAT_SQL_COMP_MV_REFRESH, LL_INFO, ",, %s", msg);
+  QRLogger::log(CAT_SQL_COMP_MV_REFRESH, LL_INFO, "%s", msg);
 
   if (lockedMutex)
     unlockMutex();
@@ -347,8 +340,7 @@ void SQLMXLoggingArea::logMVRefreshErrorEvent(const char *msg)
 {
   bool lockedMutex = lockMutex();
   
-  // the extra commas are for the missing tokens (query id and sqlcode)
-  QRLogger::log(CAT_SQL_COMP_MV_REFRESH, LL_ERROR, ",, %s", msg);
+  QRLogger::log(CAT_SQL_COMP_MV_REFRESH, LL_ERROR, "%s", msg);
 
   if (lockedMutex)
     unlockMutex();
@@ -364,8 +356,7 @@ void SQLMXLoggingArea::logCliReclaimSpaceEvent(Lng32 freeSize, Lng32 totalSize,
   char msg[8192];
   memset(msg, 0, LEN);
 
-  // the extra commas are for the missing tokens (query id and sqlcode)
-  str_sprintf(msg, ",, CLI reclaim space event. Free Size: %d, Total Size: %d, Total Contexts: %d, Total Statements: %d", freeSize, totalSize, totalContexts, totalStatements);
+  str_sprintf(msg, "CLI reclaim space event. Free Size: %d, Total Size: %d, Total Contexts: %d, Total Statements: %d", freeSize, totalSize, totalContexts, totalStatements);
   QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_INFO, msg);
   
   if (lockedMutex)
