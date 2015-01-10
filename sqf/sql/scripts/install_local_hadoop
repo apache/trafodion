@@ -1821,10 +1821,17 @@ fi
 
 # begin of trafci setup
 
+echo "Updating trafci port number" | tee -a ${MY_LOG_FILE}
 TRAFCI_BIN_DIR=$MY_SQROOT/trafci/bin
-mv $TRAFCI_BIN_DIR/trafci  $TRAFCI_BIN_DIR/trafci.orig
-sed -e "s@localhost:37800@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci
-chmod +x $TRAFCI_BIN_DIR/trafci
+if [[ -f $TRAFCI_BIN_DIR/trafci ]]
+then
+  mv $TRAFCI_BIN_DIR/trafci  $TRAFCI_BIN_DIR/trafci.orig | tee -a ${MY_LOG_FILE}
+  sed -e "s@localhost:37800@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
+  chmod +x $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
+  echo "Modified trafci port number to $MY_DCS_MASTER_PORT" | tee -a ${MY_LOG_FILE}
+else 
+  echo "$TRAFCI_BIN_DIR not found" | tee -a ${MY_LOG_FILE}
+fi
 
 # end of trafci set up
 
