@@ -536,6 +536,8 @@ fi
 
 # Start the DCS Service
 dcsstart
+sleep 10
+sqcheck | tee -a $SQMON_LOG
 # Start the LOB Service
 lobstart
 
