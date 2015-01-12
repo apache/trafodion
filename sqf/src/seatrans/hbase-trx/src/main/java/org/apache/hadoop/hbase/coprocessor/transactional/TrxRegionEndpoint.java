@@ -317,6 +317,10 @@ CoprocessorService, Coprocessor {
   public static final int TS_ABORT = 3;
   public static final int TS_CONTROL_POINT_COMMIT = 4;
 
+  public static final int REGION_STATE_RECOVERING = 0;
+  public static final int REGION_STATE_START = 2;
+ 
+
   // TrxRegionService methods
     
   @Override
@@ -1751,10 +1755,7 @@ CoprocessorService, Coprocessor {
       List<Long> indoubtTransactions = new ArrayList<Long>();
       if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: region " + regionInfo.getEncodedName() + " receives recovery request from TM " + tmId  + " with region state " + regionState);
       switch(regionState) {
-              case 1: // INIT, assume open the TRegion if necessary
-                     regionState = 1;  //Note. ??? should we call openHRegion directly here
-                     break;
-              case 0: // RECOVERING, already create a list of in-doubt txn, but still in the state of resolving them,
+              case REGION_STATE_RECOVERING: // RECOVERING, already create a list of in-doubt txn, but still in the state of resolving them,
                            // retrieve all in-doubt txn from rmid and return them into a long a
                     for (Entry<Long, List<WALEdit>> entry : indoubtTransactionsById.entrySet()) {
                           long tid = entry.getKey();
@@ -1764,24 +1765,27 @@ CoprocessorService, Coprocessor {
                           }
                      } 
                      break;
-              case 2: // START
+              case REGION_STATE_START: // START
                      List<TrxTransactionState> commitPendingCopy = new ArrayList<TrxTransactionState>(commitPendingTransactions);
                      for (TrxTransactionState commitPendingTS : commitPendingCopy) {
                         long tid = commitPendingTS.getTransactionId();
                           if ((int) (tid >> 32) == tmId) {
                               indoubtTransactions.add(tid);
                               LOG.info("Trafodion Recovery: region " + regionInfo.getEncodedName() + " in-doubt transaction " + tid + " has been added into the recovery reply to TM " + tmId + " during start ");
-       }
+                          }
                      }
                      // now remove the ZK node after TM has initiated the ecovery request   
-            String lv_encoded = m_Region.getRegionInfo().getEncodedName();
-            try {
+                    String lv_encoded = m_Region.getRegionInfo().getEncodedName();
+                    try {
                          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: recovery request  Trafodion Recovery: delete recovery zNode TM " + tmId + " region encoded name " + lv_encoded + " for 0 in-doubt transaction");
-              deleteRecoveryzNode(tmId, lv_encoded);
-            } catch (IOException e) {
-            LOG.error("Trafodion Recovery: delete recovery zNode failed");
-            }
-                     break;
+                        deleteRecoveryzNode(tmId, lv_encoded);
+                    } catch (IOException e) {
+                    LOG.error("Trafodion Recovery: delete recovery zNode failed");
+                    }
+                    break;
+                default:
+                    LOG.error("Trafodion Recovery: encounter incorrect region state " + regionState);
+                    break;
       }
 
       // Placeholder response forced to zero for now
@@ -2626,7 +2630,7 @@ CoprocessorService, Coprocessor {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  Trafodion Recovery: region " + recoveryTrxPath + " has " + indoubtTransactionsById.size() + " in-doubt transactions and edits are archived.");
     else
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  Trafodion Recovery: region " + recoveryTrxPath + " has 0 in-doubt transactions and edits are archived.");
-    regionState = 2; 
+    regionState = REGION_STATE_START; 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  Trafodion Recovery: region " + m_Region.getRegionInfo().getEncodedName() + " is STARTED.");
   }
 
@@ -3206,7 +3210,7 @@ CoprocessorService, Coprocessor {
       synchronized (recoveryCheckLock) {
             if ((indoubtTransactionsById == null) || (indoubtTransactionsById.size() == 0)) {
               if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint Coprocessor: Region " + regionInfo.getRegionNameAsString() + " has no in-doubt transaction, set region START ");
-              regionState = 2; // region is started for transactional access
+              regionState = REGION_STATE_START; // region is started for transactional access
               reconstructIndoubts = 1; 
               try {
               startRegionAfterRecovery();
@@ -3274,8 +3278,18 @@ CoprocessorService, Coprocessor {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  RECOV beginTransaction -- ENTRY txId: " + transactionId);
        constructIndoubtTransactions();
     }
-    if (regionState != 2) {
-       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: Trafodion Recovery: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState);
+    if (regionState != REGION_STATE_START) {
+       // print out all the in-doubt transaction at this moment
+        if ((indoubtTransactionsById == null) || (indoubtTransactionsById.size() == 0))
+           regionState = REGION_STATE_START;
+        else {
+           LOG.warn("TrxRegionEndpoint coprocessor: Trafodion Recovery: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState);
+           for (Entry<Long, List<WALEdit>> entry : indoubtTransactionsById.entrySet()) {
+               long tid = entry.getKey();
+               LOG.warn("Trafodion Recovery: region " + regionInfo.getEncodedName() + " still has in-doubt transaction " + tid + " when new transaction arrives ");
+           }
+           //throw new IOException("NewTransactionStartedBeforeRecoveryCompleted");
+        }
     }
 
     TrxTransactionState state;
