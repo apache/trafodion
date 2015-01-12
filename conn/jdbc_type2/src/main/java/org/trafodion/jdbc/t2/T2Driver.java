@@ -150,8 +150,8 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 		try {
 			if (JdbcDebugCfg.traceActive)
 				debug[methodId_getMajorVersion].methodReturn(Integer
-						.toString(DriverInfo.JdbcMajorVersion));
-			return DriverInfo.JdbcMajorVersion;
+						.toString(databaseMajorVersion_));
+			return databaseMajorVersion_;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_getMajorVersion].methodExit();
@@ -164,8 +164,8 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 		try {
 			if (JdbcDebugCfg.traceActive)
 				debug[methodId_getMinorVersion].methodReturn(Integer
-						.toString(DriverInfo.JdbcMinorVersion));
-			return DriverInfo.JdbcMinorVersion;
+						.toString(databaseMinorVersion_));
+			return databaseMinorVersion_;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_getMinorVersion].methodExit();
