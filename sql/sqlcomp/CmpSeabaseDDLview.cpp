@@ -55,6 +55,7 @@
 // for privilege checking
 #include "PrivMgrCommands.h"
 #include "PrivMgrDefs.h"
+#include "PrivMgrPrivileges.h"
 #include <bitset>
 
 #include "ComCextdecs.h"
@@ -345,9 +346,9 @@ short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewN
 {
   // set all bits to true initially, we will be ANDing with privileges
   // from all referenced objects 
-  // TODO:  only set privileges valid for views
-  privilegesBitmap.set();
-  grantableBitmap.set();
+  // default table and view privileges are the same, set up default values
+  PrivMgrPrivileges::setTablePrivs(privilegesBitmap);
+  PrivMgrPrivileges::setTablePrivs(grantableBitmap);
 
   if (!isAuthorizationEnabled())
     return 0;
@@ -355,71 +356,68 @@ short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewN
   const ParViewUsages &vu = createViewNode->getViewUsages();
   const ParTableUsageList &vtul = vu.getViewTableUsageList();
 
-  // generate the lists of privileges and grantable privileges
-  // a side effect is to return an error if basic privileges are not granted
-  for (CollIndex i = 0; i < vtul.entries(); i++)
+  // If DB__ROOT, no need to gather privileges
+  if (!ComUser::isRootUserID())
     {
-      ComObjectName usedObjName(vtul[i].getQualifiedNameObj()
-                                .getQualifiedNameAsAnsiString(),
-                                vtul[i].getAnsiNameSpace());
-
-      const NAString catalogNamePart = usedObjName.getCatalogNamePartAsAnsiString();
-      const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
-      const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
-      const NAString extUsedObjName = usedObjName.getExternalName(TRUE);
-      CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
-
-      // Grab privileges from the NATable structure
-      BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
-      NATable *naTable = bindWA.getNATable(cn);
-      if (naTable == NULL)
+      // generate the lists of privileges and grantable privileges
+      // a side effect is to return an error if basic privileges are not granted
+      for (CollIndex i = 0; i < vtul.entries(); i++)
         {
-          *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                              << DgString0(__FILE__)
-                              << DgInt0(__LINE__)
-                              << DgString1("gather view privleges");
-          return -1; 
-        }
+          ComObjectName usedObjName(vtul[i].getQualifiedNameObj()
+                                    .getQualifiedNameAsAnsiString(),
+                                    vtul[i].getAnsiNameSpace());
 
-      PrivMgrUserPrivs *privs = naTable->getPrivInfo();
-      if (privs == NULL) 
-        {         
-          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
-           return -1;
-        }
+          const NAString catalogNamePart = usedObjName.getCatalogNamePartAsAnsiString();
+          const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
+          const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
+          const NAString extUsedObjName = usedObjName.getExternalName(TRUE);
+          CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
 
-      // Requester must have at least select privilege
-      if ( !privs->hasSelectPriv() )
-        {
-           *CmpCommon::diags() << DgSqlCode( -4481 )
-                               << DgString0( "SELECT" )
-                               << DgString1( extUsedObjName.data());
+          // Grab privileges from the NATable structure
+          BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+          NATable *naTable = bindWA.getNATable(cn);
+          if (naTable == NULL)
+            {
+              SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in gather view privileges");
+              return -1; 
+            }
+
+          PrivMgrUserPrivs *privs = naTable->getPrivInfo();
+          if (privs == NULL) 
+            {         
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+               return -1;
+            }
+
+          // Requester must have at least select privilege
+          if ( !privs->hasSelectPriv() )
+            {
+               *CmpCommon::diags() << DgSqlCode( -4481 )
+                                   << DgString0( "SELECT" )
+                                   << DgString1( extUsedObjName.data());
  
-            return -1;
+                return -1;
+            }
+
+          // Summarize privileges
+          privilegesBitmap &= privs->getObjectBitmap();
+          grantableBitmap &= privs->getGrantableBitmap();
         }
+    }
 
-      // retrieve bitmaps for current object
-      PrivMgrBitmap privBMap = privs->getObjectBitmap();
-      PrivMgrBitmap WGOBMap  = privs->getGrantableBitmap();
+  // If view is not updatable or insertable, turn off privs in bitmaps
+  if (!createViewNode->getIsUpdatable())
+    {
+      privilegesBitmap.set(UPDATE_PRIV,false);
+      grantableBitmap.set(UPDATE_PRIV, false);
+      privilegesBitmap.set(DELETE_PRIV,false);
+      grantableBitmap.set(DELETE_PRIV, false);
+    }
 
-      // If view is not updatable or insertable, turn off privs in bitmaps
-      if (!createViewNode->getIsUpdatable())
-        {
-          privBMap.set(UPDATE_PRIV,false);
-          WGOBMap.set(UPDATE_PRIV, false); 
-          privBMap.set(DELETE_PRIV,false);
-          WGOBMap.set(DELETE_PRIV, false); 
-        }
-
-      if (!createViewNode->getIsInsertable())
-        {
-          privBMap.set(INSERT_PRIV,false);
-          WGOBMap.set(INSERT_PRIV, false); 
-        }
-
-      // Summarize privileges
-      privilegesBitmap &= privBMap;
-      grantableBitmap &= WGOBMap;
+  if (!createViewNode->getIsInsertable())
+    {
+      privilegesBitmap.set(INSERT_PRIV,false);
+      grantableBitmap.set(INSERT_PRIV, false);
     }
 
   return 0;
@@ -452,7 +450,12 @@ short CmpSeabaseDDL::getListOfReferencedTables(
   
   // If unexpected error - return
   if (retcode < 0)
-    return -1;
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        SEABASEDDL_INTERNAL_ERROR("getting list of referenced tables");
+      return -1;
+    }
+   
 
   // For each view in the list, call getReferencedTables recursively
   for (CollIndex i = 0; i < tempRefdList.entries(); i++)
@@ -522,7 +525,7 @@ short CmpSeabaseDDL::getListOfDirectlyReferencedObjects (
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return cliRC;
+      return -1;
     }
 
   // set up an objectRefdByMe struct for each returned row
@@ -1323,6 +1326,8 @@ short CmpSeabaseDDL::dropMetadataViews(ExeCliInterface * cliInterface)
       if (cliRC < 0)
 	{
 	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          if (xnInProgress(cliInterface) && xnWasStartedHere)
+            cliRC = cliInterface->rollbackXn();
 	  return -1;
 	}
       

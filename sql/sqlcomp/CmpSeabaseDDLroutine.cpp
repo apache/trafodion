@@ -60,6 +60,7 @@
 #include "CmpDDLCatErrorCodes.h"
 
 #include "PrivMgrComponentPrivileges.h"
+#include "PrivMgrCommands.h"
 #include "ComUser.h"
 
 #include "NumericType.h"
@@ -569,6 +570,38 @@ void CmpSeabaseDDL::createSeabaseRoutine(
       deallocEHI(ehi); 
       processReturn();
       return;
+    }
+
+  // Verify that current user has authority to create the routine
+  // User must be DB__ROOT or have privileges
+  if (isAuthorizationEnabled() && !ComUser::isRootUserID())
+    {
+
+      // For now, go get privileges directly.  If we ever cache routines, then
+      // make sure privileges are stored in the cache.
+      NAString privMgrMDLoc;
+      CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+      PrivMgrCommands privInterface(privMgrMDLoc.data(), CmpCommon::diags());
+      PrivMgrUserPrivs privs;
+      PrivStatus retcode = privInterface.getPrivileges(libUID, ComUser::getCurrentUser(), privs);
+      if (retcode != STATUS_GOOD)
+        {
+          if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+            SEABASEDDL_INTERNAL_ERROR("checking routine privilege");
+          processReturn();
+          return;
+        }
+
+      // Requester must have USAGE privilege on the library
+      NABoolean hasPriv = TRUE;
+      if ( !privs.hasUsagePriv() )
+        {
+          *CmpCommon::diags() << DgSqlCode( -4481 )
+                              << DgString0( "USAGE" )
+                              << DgString1( extLibraryName.data());
+          processReturn();
+          return;
+        }
     }
 
   ElemDDLParamDefArray &routineParamArray =

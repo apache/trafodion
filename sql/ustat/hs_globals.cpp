@@ -3634,8 +3634,7 @@ void HSSample::makeTableName(NABoolean isPersSample)
     // update statistics command is being issued from.
     // For SeaQuest (COM_VERSION >= 2500), the PUBLIC_ACCESS_SCHEMA is guaranteed
     // to exist, so don't call the function that checks for it.
-    if (!objDef->isVolatile() &&
-        (HSGlobalsClass::schemaVersion >= COM_VERS_2500 || objDef->publicSchemaExists()))
+    if (!objDef->isVolatile() && objDef->publicSchemaExists())
     {
       sampleTable  = objDef->getCatName(HSTableDef::EXTERNAL_FORMAT);
       sampleTable += ".PUBLIC_ACCESS_SCHEMA.";

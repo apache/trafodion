@@ -165,7 +165,6 @@ PrivMgr::~PrivMgr()
 // ----------------------------------------------------------------------------
 PrivMDStatus PrivMgr::authorizationEnabled()
 {
-//TODO: Should cache this setting in CLI globals.
 // Will require QI to reset on INITIALIZE AUTHORIZATION [,DROP]
   // get the list of tables from the schema
   // if the catalog name ever allows an embedded '.', this code will need 
@@ -1216,6 +1215,7 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
   std::string objectMDTable = trafMetadataLocation_ + ".OBJECTS o";
   std::string viewUsageMDTable = trafMetadataLocation_ + ".VIEWS_USAGE u";
   std::string viewsMDTable = trafMetadataLocation_ + ".VIEWS v";
+  std::string roleUsageMDTable = metadataLocation_ + ".ROLE_USAGE";
 
   // Select all the views that are referenced by the table or view owned by the objectOwner
   std::string selectStmt = "select o.object_uid, o.object_owner, o.catalog_name, o.schema_name, o.object_name, v.is_insertable, v.is_updatable from ";
@@ -1228,9 +1228,17 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
   selectStmt += UIDToString(objectUsage.objectUID);
   selectStmt += " and u.using_view_uid = o.object_uid ";
   selectStmt += "and o.object_uid = v.view_uid";
-  //selectStmt += " and o.object_owner = ";
-  //selectStmt += std::to_string((long long int)objectUsage.objectOwner);
-  selectStmt += " order by o.create_time ";
+
+  // only return rows where user owns the view either directly or through one of
+  // their granted roles
+  selectStmt += " and (o.object_owner = ";
+  selectStmt += UIDToString(objectUsage.objectOwner);
+  selectStmt += "  or o.object_owner in (select role_id from ";
+  selectStmt += roleUsageMDTable;
+  selectStmt += " where grantee_id = ";
+  selectStmt += UIDToString(objectUsage.objectOwner);
+
+  selectStmt += ")) order by o.create_time ";
 
   ExeCliInterface cliInterface(STMTHEAP);
   Queue * objectsQueue = NULL;
@@ -1262,15 +1270,15 @@ int32_t diagsMark = pDiags_->mark();
     OutputInfo * pCliRow = (OutputInfo*)objectsQueue->getNext();
     ViewUsage viewUsage;
 
-    // column 1:  object uid
+    // column 0:  object uid
     pCliRow->get(0,ptr,len);
     viewUsage.viewUID = *(reinterpret_cast<int64_t*>(ptr));
 
-    // column 2: object owner
+    // column 1: object owner
     pCliRow->get(1,ptr,len);
     viewUsage.viewOwner = *(reinterpret_cast<int32_t*>(ptr));
 
-    // column 3: catalog name
+    // column 2: catalog name
     pCliRow->get(2,ptr,len);
     assert (len < 257);
     strncpy(value, ptr, len);
@@ -1278,7 +1286,7 @@ int32_t diagsMark = pDiags_->mark();
     std::string viewName(value);
     viewName += ".";
 
-    // column 4:  schema name
+    // column 3:  schema name
     pCliRow->get(3,ptr,len);
     assert (len < 257);
     strncpy(value, ptr, len);
@@ -1286,7 +1294,7 @@ int32_t diagsMark = pDiags_->mark();
     viewName += value;
     viewName += ".";
 
-    // column 5:  object name
+    // column 4:  object name
     pCliRow->get(4,ptr,len);
     assert (len < 257);
     strncpy(value, ptr, len);
@@ -1294,11 +1302,11 @@ int32_t diagsMark = pDiags_->mark();
     viewName += value;
     viewUsage.viewName = viewName;
 
-    // column 6: is insertable
+    // column 5: is insertable
     pCliRow->get(5,ptr,len);
     viewUsage.isInsertable = (ptr == 0) ? false : true;
 
-    // column 7: is updatable
+    // column 6: is updatable
     pCliRow->get(6,ptr,len);
     viewUsage.isUpdatable = (*ptr == 0) ? false : true;
 
@@ -1322,7 +1330,10 @@ PrivStatus PrivMgrMDAdmin::getObjectsThatViewReferences (
   std::string viewUsageMDTable = trafMetadataLocation_ + ".VIEWS_USAGE u";
 
   // Select all the objects that are referenced by the view
-  std::string selectStmt = "select o.object_uid, o.object_owner from ";
+  std::string selectStmt = "select o.object_uid, o.object_owner, ";
+  selectStmt += "trim(o.catalog_name) || '.\"' || ";
+  selectStmt += "trim (o.schema_name) || '\".\"' ||";
+  selectStmt += "trim (o.object_name)|| '\"' from ";
   selectStmt += objectMDTable;
   selectStmt += ", ";
   selectStmt += viewUsageMDTable;
@@ -1361,13 +1372,103 @@ int32_t diagsMark = pDiags_->mark();
     OutputInfo * pCliRow = (OutputInfo*)objectsQueue->getNext();
     ObjectReference *pObjectReference = new ObjectReference;
 
-    // column 1:  object uid
+    // column 0:  object uid
     pCliRow->get(0,ptr,len);
     pObjectReference->objectUID = *(reinterpret_cast<int64_t*>(ptr));
 
-    // column 2: object owner
+    // column 1: object owner
     pCliRow->get(1,ptr,len);
     pObjectReference->objectOwner = *(reinterpret_cast<int32_t*>(ptr));
+
+    // column 2: object name
+    pCliRow->get(2,ptr,len);
+    strncpy(value, ptr, len);
+    value[len] = 0;
+    pObjectReference->objectName = value;
+
+    objectReferences.push_back(pObjectReference);
+  }
+
+  return STATUS_GOOD;
+}
+
+// ****************************************************************************
+// method:  getUdrsThatReferenceLibrary
+//
+// This method gets the list of objects (functions & procedures) that are 
+// referenced by the library.
+//
+// **************************************************************************** 
+PrivStatus PrivMgrMDAdmin::getUdrsThatReferenceLibrary(
+  const ObjectUsage &objectUsage,
+  std::vector<ObjectReference *> &objectReferences )
+{
+  std::string objectMDTable = trafMetadataLocation_ + ".OBJECTS o";
+  std::string librariesUsageMDTable = trafMetadataLocation_ + ".LIBRARIES_USAGE u";
+  std::string roleUsageMDTable = metadataLocation_ + ".ROLE_USAGE r";
+
+  // Select all the objects that are referenced by the library
+  std::string selectStmt = "select o.object_uid, o.object_owner, ";
+  selectStmt += "trim(o.catalog_name) || '.\"' || ";
+  selectStmt += "trim (o.schema_name) || '\".\"' ||";
+  selectStmt += "trim (o.object_name)|| '\"' from ";
+  selectStmt += objectMDTable;
+  selectStmt += ", ";
+  selectStmt += librariesUsageMDTable;
+  selectStmt += " where u.using_library_uid = ";
+  selectStmt += UIDToString(objectUsage.objectUID);
+  selectStmt += " and u.used_udr_uid = o.object_uid ";
+  selectStmt += " and (o.object_owner = ";
+  selectStmt += UIDToString(objectUsage.objectOwner);
+  selectStmt += "  or o.object_owner in (select role_id from ";
+  selectStmt += roleUsageMDTable;
+  selectStmt += " where grantee_id = ";
+  selectStmt += UIDToString(objectUsage.objectOwner);
+  selectStmt += ")) order by o.create_time ";
+
+  ExeCliInterface cliInterface(STMTHEAP);
+  Queue * objectsQueue = NULL;
+
+  // set pointer in diags area
+  int32_t diagsMark = pDiags_->mark();
+
+  int32_t cliRC =  cliInterface.fetchAllRows(objectsQueue, (char *)selectStmt.c_str(), 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(pDiags_);
+    return STATUS_ERROR;
+  }
+
+  if (cliRC == 100) // did not find the row
+  {
+    pDiags_->rewind(diagsMark);
+    return STATUS_NOTFOUND;
+  }
+
+  char * ptr = NULL;
+  Int32 len = 0;
+  char value[MAX_SQL_IDENTIFIER_NAME_LEN + 1];
+
+  // For each row returned, add it to the objectReferences structure.
+  objectsQueue->position();
+  for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
+  {
+    OutputInfo * pCliRow = (OutputInfo*)objectsQueue->getNext();
+    ObjectReference *pObjectReference = new ObjectReference;
+
+    // column 0:  object uid
+    pCliRow->get(0,ptr,len);
+    pObjectReference->objectUID = *(reinterpret_cast<int64_t*>(ptr));
+
+    // column 1: object owner
+    pCliRow->get(1,ptr,len);
+    pObjectReference->objectOwner = *(reinterpret_cast<int32_t*>(ptr));
+
+    // column 2: object name
+    pCliRow->get(2,ptr,len);
+    strncpy(value, ptr, len);
+    value[len] = 0;
+    pObjectReference->objectName = value;
 
     objectReferences.push_back(pObjectReference);
   }
@@ -1435,7 +1536,10 @@ PrivStatus PrivMgrMDAdmin::getReferencingTablesForConstraints (
 
   // Select all the constraints that are referenced by the table
   // create_time is included to order by the oldest to newest
-  std::string selectStmt = "select distinct o.object_uid, o.object_owner, o.create_time from ";
+  std::string selectStmt = "select distinct o.object_uid, o.object_owner, o.create_time, ";
+  selectStmt += "trim(o.catalog_name) || '.\"' || ";
+  selectStmt += "trim (o.schema_name) || '\".\"' ||";
+  selectStmt += "trim (o.object_name)|| '\"' from ";
   selectStmt += tblConstraintsMDTable + std::string(", ") + objectsMDTable;
   selectStmt += " where o.object_uid = t.table_uid and t.constraint_uid in ";
   selectStmt += "(select foreign_constraint_uid from ";
@@ -1465,6 +1569,7 @@ int32_t diagsMark = pDiags_->mark();
 
   char * ptr = NULL;
   Int32 len = 0;
+  char value[MAX_SQL_IDENTIFIER_NAME_LEN + 1];
   objectsQueue->position();
 
   // Set up an objectReference for any objects found, the caller manages
@@ -1474,13 +1579,19 @@ int32_t diagsMark = pDiags_->mark();
     OutputInfo * pCliRow = (OutputInfo*)objectsQueue->getNext();
     ObjectReference *pObjectReference = new ObjectReference;
 
-    // column 1:  object uid
+    // column 0:  object uid
     pCliRow->get(0,ptr,len);
     pObjectReference->objectUID = *(reinterpret_cast<int64_t*>(ptr));
 
-    // column 2: object owner
+    // column 1: object owner
     pCliRow->get(1,ptr,len);
     pObjectReference->objectOwner = *(reinterpret_cast<int32_t*>(ptr));
+
+    // column 2: object name
+    pCliRow->get(2,ptr,len);
+    strncpy(value, ptr, len);
+    value[len] = 0;
+    pObjectReference->objectName = value;
 
     objectReferences.push_back(pObjectReference);
   }

@@ -59,6 +59,7 @@ typedef struct {
 typedef struct {
   int64_t objectUID;
   int32_t objectOwner;
+  std::string objectName;
   PrivMgrDesc updatedPrivs;
 } ObjectReference;
 
@@ -264,13 +265,13 @@ class PrivMgrMDAdmin : public PrivMgr
       const ObjectUsage &objectUsage,
       std::vector<ObjectReference *> &objectReferences );
 
+    PrivStatus getUdrsThatReferenceLibrary(
+      const ObjectUsage &objectUsage,
+      std::vector<ObjectReference *> &objectReferences );
+
     PrivStatus getViewsThatReferenceObject(
       const ObjectUsage &objectUsage, 
       std::vector<ViewUsage> &viewUsages);
-
-    PrivStatus getRIConstraintName(
-      const ObjectReference *pObj, 
-      std::string &constraintName);
 
     bool isAuthorized (void);
     std::string deriveTableName(const char *name)

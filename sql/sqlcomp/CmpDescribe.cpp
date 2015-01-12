@@ -2480,6 +2480,18 @@ short CmpDescribeSeabaseTable (
   // emit an initial newline
   outputShortLine(space, " ");
 
+  // Verify that user can perform the describe command
+  // No need to check privileges for create like operations (type 3)
+  // since the create code performs authorization checks
+  if (type != 3)
+    {
+      if (!CmpDescribeIsAuthorized(naTable->getPrivInfo()))
+      {
+        *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+        return -1;
+      }
+    }
+
   if ((type == 2) && (isView))
     {
       NAString viewtext(naTable->getViewText());
@@ -2488,13 +2500,6 @@ short CmpDescribeSeabaseTable (
       viewtext += " ;";
 
       outputLongLine(space, viewtext, 0);
-
-      // Verify user can perform SHOWDDL statements
-      if (!CmpDescribeIsAuthorized(naTable->getPrivInfo()))
-      {
-        *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
-        return -1;
-      }
 
       // Display grant statements
       if (CmpCommon::context()->isAuthorizationEnabled())
@@ -2768,7 +2773,7 @@ short CmpDescribeSeabaseTable (
           char authName[MAX_DBUSERNAME_LEN + 1];
           int32_t length;
           
-          Int16 retCode = ComUser::getAuthNameFromAuthID(naTable->getOwner(),
+          Int16 retCode = ComUser::getAuthNameFromAuthID(ComUser::getCurrentUser(),
                                                          authName,
                                                          sizeof(authName),
                                                          length);
@@ -3066,13 +3071,6 @@ short CmpDescribeSeabaseTable (
   // If SHOWDDL and authorization is enabled, display GRANTS
   if (type == 2)
   {
-    // Verify user can perform SHOWDDL statements
-    if (!CmpDescribeIsAuthorized(naTable->getPrivInfo()))
-    {
-      *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
-      return -1;
-    }
-
     if (CmpCommon::context()->isAuthorizationEnabled())
     {
       // now get the grant stmts
