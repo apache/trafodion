@@ -355,17 +355,6 @@ CmpContext::~CmpContext()
   HSGlobalsClass::resetJitLogThresholdHash();
 }
 
-void CmpContext::deleteInstance(NAHeap *parentHeap)
-{
-   if (cmpCurrentContext != NULL)
-   {
-      NAHeap *cmpContextHeap = cmpCurrentContext->heap();
-      NADELETE(cmpCurrentContext, CmpContext, cmpContextHeap);
-      NADELETE(cmpContextHeap, NAHeap, parentHeap);
-   } 
-   cmpCurrentContext = NULL;
-}
-
 NABoolean CmpContext::initContextGlobals()
 {
   NABoolean rtnStatus = TRUE ;      // assume the best

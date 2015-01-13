@@ -8347,7 +8347,7 @@ void NATableDB::resetAfterStatement(){
   //Variable used to point to a table's heap. Only delete the heap if it is
   // neither the context nor the statement heap (i.e., allocated from the
   // C++ system heap). The CmpContext heap is deleted in 
-  // CmpContext::deleteInstance() called from ContextCli::deleteMe().
+  // in ContextCli::deleteMe().
   // The statement heap is deleted in the destructor of class CmpStatement. 
 
   NAMemory * tableHeap = NULL;

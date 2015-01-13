@@ -378,7 +378,16 @@ void ContextCli::deleteMe()
     {
       CmpContextInfo *cci = cmpContextInfo_[i];
       cmpContextInfo_.remove(i);
-      exCollHeap()->deallocateMemory(cci);
+      NAHeap *heap;
+      CmpContext *cmpContext = cci->getCmpContext();
+      heap = cmpContext->heap();
+      // Set the current cmp Context as the one that is being deleted
+      // because CmpContext destructor expects it that way
+      cmpCurrentContext = cmpContext;
+      NADELETE(cmpContext, CmpContext, heap); 
+      NADELETE(heap, NAHeap, &exHeap_);
+      NADELETE(cci, CmpContextInfo, &exHeap_);
+      cmpCurrentContext = NULL;
     }
 
   // CLI context should only be destructed outside recursive CmpContext calls
@@ -394,15 +403,6 @@ void ContextCli::deleteMe()
 
   arkcmpInitFailed_.clear();
 
-#ifdef NA_CMPDLL
-      // cleanup embedded compiler
-  if(isEmbeddedArkcmpInitialized())
-    {
-      arkcmp_main_exit();
-      setEmbeddedArkcmpIsInitialized(FALSE);
-      setEmbeddedArkcmpContext(NULL);
-    }
-#endif
   if (espManager_ != NULL)
      NADELETE(espManager_, ExEspManager, ipcHeap_);
   if (udrServerManager_ != NULL)
@@ -424,7 +424,6 @@ void ContextCli::deleteMe()
     delete exeTraceInfo_;
     exeTraceInfo_ = NULL;
   }
-  CmpContext::deleteInstance(&exHeap_);
   NADELETE(env_, IpcEnvironment, ipcHeap_);
   NAHeap *parentHeap = cliGlobals_->getProcessIpcHeap();
   NADELETE(ipcHeap_, NAHeap, parentHeap);

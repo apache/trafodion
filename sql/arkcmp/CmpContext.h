@@ -364,7 +364,6 @@ public :
 
   ARRAY(const char *) *getHosts() { return &hosts_; }
 #endif // NA_CMPDLL
-  void static deleteInstance(NAHeap *parentHeap);
 
   NABoolean getParserResetIsNeeded() { return parserResetIsNeeded_ ; }
   void      setParserResetIsNeeded( NABoolean resetIsNeeded )
