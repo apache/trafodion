@@ -1587,6 +1587,59 @@ short CmpSeabaseDDL::autoCommit(ExeCliInterface *cliInterface, NABoolean v)
   return cliRC;
 }
 
+short CmpSeabaseDDL::beginXnIfNotInProgress(ExeCliInterface *cliInterface, 
+                                            NABoolean &xnWasStartedHere)
+{
+  Int32 cliRC = 0;
+
+  xnWasStartedHere = FALSE;
+  if (NOT xnInProgress(cliInterface))
+    {
+      cliRC = cliInterface->beginXn();
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+      
+      xnWasStartedHere = TRUE;
+    }
+
+  return 0;
+}
+
+short CmpSeabaseDDL::endXnIfStartedHere(ExeCliInterface *cliInterface, 
+                                        NABoolean &xnWasStartedHere, Int32 cliRC)
+{
+  if (xnWasStartedHere)
+    {
+      xnWasStartedHere = FALSE;
+
+      if (NOT xnInProgress(cliInterface))
+        return cliRC;
+
+      if (cliRC < 0)
+        {
+          // rollback transaction and return original error cliRC.
+          // Ignore rollback errors.
+          cliInterface->rollbackXn();
+
+          return cliRC;
+        }
+      else
+        {
+          cliRC = cliInterface->commitXn();
+          if (cliRC < 0)
+            {
+              cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+              return cliRC;
+            }
+        }
+    }
+
+  return cliRC;
+}
+
 short CmpSeabaseDDL::populateKeyInfo(ComTdbVirtTableKeyInfo &keyInfo,
                                      OutputInfo * oi, NABoolean isIndex)
 {
@@ -3296,7 +3349,7 @@ short CmpSeabaseDDL::updateSeabaseMDObjectsTable(
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return -1;
+      return cliRC;
     }
     
   return 0;
@@ -5092,18 +5145,9 @@ void CmpSeabaseDDL::initSeabaseMD()
   NAString installJar(getenv("MY_SQROOT"));
   installJar += "/export/lib/trafodion-UDR-0.7.0.jar";
 
-  if (NOT xnInProgress(&cliInterface))
-    {
-      cliRC = cliInterface.beginXn();
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          goto label_error;
-        }
+  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+    goto label_error;
 
-      xnWasStartedHere = TRUE;
-    }    
-    
   cliRC = cliInterface.holdAndSetCQD("traf_bootstrap_md_mode", "ON");
   if (cliRC < 0)
     {
@@ -5201,16 +5245,8 @@ void CmpSeabaseDDL::initSeabaseMD()
   updateSeabaseVersions(&cliInterface, sysCat);
   updateSeabaseAuths(&cliInterface, sysCat);
 
-  if (xnWasStartedHere)
-    {
-      cliRC = cliInterface.commitXn();
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          return;
-        }
-      xnWasStartedHere = FALSE;
-    }
+  if (endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0) < 0)
+    return;
 
   CmpCommon::context()->setIsUninitializedSeabase(FALSE);
   CmpCommon::context()->uninitializedSeabaseErrNum() = 0;
@@ -5225,20 +5261,18 @@ void CmpSeabaseDDL::initSeabaseMD()
       goto label_error;
     }
 
-  if (createRepos(&cliInterface))
-    {
-      goto label_error;
-    }
+ if (createRepos(&cliInterface))
+   {
+     goto label_error;
+   }
+
   cliRC = cliInterface.restoreCQD("traf_bootstrap_md_mode");
 
   return;
 
  label_error:
-  if (xnWasStartedHere)
-    {
-      cliRC = cliInterface.rollbackXn();
-    }
- 
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+
   return;
 }
 
@@ -5310,37 +5344,37 @@ short CmpSeabaseDDL::createSchemaObjects(ExeCliInterface *cliInterface)
 
 {
 
-Lng32 retcode = 0;
-Lng32 cliRC = 0;
-char buf[4000];
-
-   str_sprintf(buf,"SELECT DISTINCT TRIM(CATALOG_NAME), TRIM(SCHEMA_NAME) FROM %s.%s ",
-               getMDSchema(),SEABASE_OBJECTS);
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+  char buf[4000];
   
-Queue * queue = NULL;
-
-   cliRC = cliInterface->fetchAllRows(queue,buf,0,false,false,true);
-
-   if (cliRC < 0)
-   {
+  str_sprintf(buf,"SELECT DISTINCT TRIM(CATALOG_NAME), TRIM(SCHEMA_NAME) FROM %s.%s ",
+              getMDSchema(),SEABASE_OBJECTS);
+  
+  Queue * queue = NULL;
+  
+  cliRC = cliInterface->fetchAllRows(queue,buf,0,false,false,true);
+  
+  if (cliRC < 0)
+    {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
       return -1;
-   }
-   
-   if (cliRC == 100) // did not find the row
-   {
+    }
+  
+  if (cliRC == 100) // did not find the row
+    {
       cliInterface->clearGlobalDiags();
       return 0;
-   }
+    }
   
-   if (queue == NULL)
-      return -1;
-
-std::vector<QualifiedSchema> schemaNames;
-
-   queue->position();
-   for (size_t r = 0; r < queue->numEntries(); r++)
-   {
+  if (queue == NULL)
+    return -1;
+  
+  std::vector<QualifiedSchema> schemaNames;
+  
+  queue->position();
+  for (size_t r = 0; r < queue->numEntries(); r++)
+    {
       OutputInfo * cliInterface = (OutputInfo*)queue->getNext();
       QualifiedSchema qualifiedSchema;
       char *ptr;
@@ -5352,7 +5386,7 @@ std::vector<QualifiedSchema> schemaNames;
       strncpy(value,ptr,length);
       value[length] = 0;
       strcpy(qualifiedSchema.catalogName,value);
-
+      
       // column 2:  SCHEMA_NAME
       cliInterface->get(1,ptr,length);
       strncpy(value,ptr,length);
@@ -5360,73 +5394,58 @@ std::vector<QualifiedSchema> schemaNames;
       strcpy(qualifiedSchema.schemaName,value);
       
       schemaNames.push_back(qualifiedSchema);
-   } 
-    
-bool xnWasStartedHere = false;
+    } 
+  
+  NABoolean xnWasStartedHere = false;
+  
+  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+    return -1;
 
-   if (!xnInProgress(cliInterface))
-   {
-     cliRC = cliInterface->beginXn();
-     if (cliRC < 0)
-     {
-        cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-        return -1;
-     }
-     xnWasStartedHere = true;
-   }
-   
-   // save the current parserflags setting
-   ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
-   Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
-   
-   for (size_t s = 0; s < schemaNames.size(); s++)
-   {
+  // save the current parserflags setting
+  ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+  Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+  
+  for (size_t s = 0; s < schemaNames.size(); s++)
+    {
       QualifiedSchema schemaEntry = schemaNames[s];
       // Ignore if entry already exists.
       if (existsInSeabaseMDTable(cliInterface,schemaEntry.catalogName,
                                  schemaEntry.schemaName, 
                                  SEABASE_SCHEMA_OBJECTNAME)) 
-         continue;     
+        continue;     
       
       // Catalog or schema names could be delimited names.  Surround them
       // in quotes to avoid scanning problems.     
       
       NAString quotedCatalogName;
       
-         quotedCatalogName = '\"';
-         quotedCatalogName += schemaEntry.catalogName;
-         quotedCatalogName += '\"';
-         
+      quotedCatalogName = '\"';
+      quotedCatalogName += schemaEntry.catalogName;
+      quotedCatalogName += '\"';
+      
       NAString quotedSchemaName;
-
-         quotedSchemaName = '\"';
-         quotedSchemaName += schemaEntry.schemaName;
-         quotedSchemaName += '\"';
-              
+      
+      quotedSchemaName = '\"';
+      quotedSchemaName += schemaEntry.schemaName;
+      quotedSchemaName += '\"';
+      
       ComSchemaName schemaName(quotedCatalogName,quotedSchemaName);
-
-    
+      
       if (addSchemaObject(*cliInterface,schemaName,
                           COM_SCHEMA_CLASS_SHARED,SUPER_USER)) 
-      {
-         // Restore parser flags settings to what they originally were
-         Assign_SqlParser_Flags(savedParserFlags);
-         return -1;
-      }
-   }
-   
-   // Restore parser flags settings to what they originally were
-   Assign_SqlParser_Flags(savedParserFlags);
-   
-   if (xnWasStartedHere)
-   {
-      cliRC = cliInterface->commitXn();
-      if (cliRC < 0)
-      {
-         cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-         return -1;
-      }
-   }
+        {
+          // Restore parser flags settings to what they originally were
+          Assign_SqlParser_Flags(savedParserFlags);
+          return -1;
+        }
+    }
+  
+  // Restore parser flags settings to what they originally were
+  Assign_SqlParser_Flags(savedParserFlags);
+
+  if (endXnIfStartedHere(cliInterface, xnWasStartedHere, 0) < 0)
+    return -1;
+  
    return 0;  
   
 }
@@ -5479,39 +5498,23 @@ short CmpSeabaseDDL::createSeqTable(ExeCliInterface *cliInterface)
               param_[0], param_[1]);
 
   NABoolean xnWasStartedHere = FALSE;
-  if (NOT xnInProgress(cliInterface))
-    {
-      cliRC = cliInterface->beginXn();
-      if (cliRC < 0)
-        {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-          return -1;
-        }
-      
-      xnWasStartedHere = TRUE;
-    }
+  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+    return -1;
 
   cliRC = cliInterface->executeImmediate(queryBuf);
   if (cliRC == -1390)  // already exists
     {
-      // ignore the error.
+      // ignore error.
+      cliRC = 0;
     }
   else if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return -1;
     }
   
-  if (xnWasStartedHere)
-    {
-      cliRC = cliInterface->commitXn();
-      if (cliRC < 0)
-        {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-          return -1;
-        }
-    }
-  
+  if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
+    return -1;
+
   return 0;
 }
 
@@ -6192,35 +6195,20 @@ void CmpSeabaseDDL::updateVersion()
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VERSIONS,
               softMajorVersion, softMinorVersion,
               updateTime);
-  NABoolean xnWasStartedHere = FALSE;
-  if (NOT xnInProgress(&cliInterface))
-    {
-      cliRC = cliInterface.beginXn();
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          return;
-        }
-      
-      xnWasStartedHere = TRUE;
-    }
 
+  NABoolean xnWasStartedHere = FALSE;
+  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+    return;
+  
   cliRC = cliInterface.executeImmediate(queryBuf);
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
     }
   
-  if (xnWasStartedHere)
-    {
-      cliRC = cliInterface.commitXn();
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          return;
-        }
-    }
+  if (endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC) < 0)
+    return;
+
 }
 
 void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
@@ -6599,6 +6587,9 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       ((ddlNode) &&
        ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
         (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
+        (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_SET_SG_OPTION) ||
+        (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
+        (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
         ((ddlNode->getOperatorType() == DDL_CREATE_TABLE) &&
          ((ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable()->getAddConstraintUniqueArray().entries() > 0) ||
           (ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable()->getAddConstraintRIArray().entries() > 0) ||
@@ -6608,17 +6599,10 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       startXn = FALSE;
     }
 
-  if ((NOT xnInProgress(&cliInterface)) &&
-      (startXn))
+  if (startXn)
     {
-      cliRC = beginXn(&cliInterface);
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          goto label_return;
-        }
-
-      xnWasStartedHere = TRUE;
+      if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+        goto label_return;
     }
 
   if (ddlExpr->initHbase()) 
@@ -7012,24 +6996,11 @@ label_return:
   restoreAllControlsAndFlags();
 
   if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
-    {
-      if (xnWasStartedHere)
-        cliRC = rollbackXn(&cliInterface);
-      
-      return -1;
-    }
+    cliRC = -1;
 
-  if (xnWasStartedHere)
-    {
-      cliRC = commitXn(&cliInterface);
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          
-          return -1;
-        }
-    }
-
+  if (endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC) < 0)
+    return -1;
+  
   return 0;
 }
 

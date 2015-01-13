@@ -42,6 +42,11 @@ short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
 
   char queryBuf[20000];
 
+  NABoolean xnWasStartedHere = FALSE;
+
+  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+    return -1;
+
   // Create the _REPOS_ schema
   str_sprintf(queryBuf, "create schema %s.\"%s\" ; ",
               getSystemCatalog(),SEABASE_REPOS_SCHEMA);
@@ -49,13 +54,16 @@ short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
   cliRC = cliInterface->executeImmediate(queryBuf);
   if (cliRC == -1022)  // schema already exists
     {
-      // ignore the error.
+      // ignore error.
+      cliRC = 0;
     }
   else if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return -1;
     }
+
+  if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
+    return -1;
 
   for (Int32 i = 0; i < sizeof(allReposTablesInfo)/sizeof(ReposTableInfo); i++)
     {
@@ -87,19 +95,25 @@ short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
 
       str_sprintf(queryBuf, gluedQuery, param_[0], param_[1]);
 
+      if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+        return -1;
+      
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC == -1390)  // table already exists
 	{
-	  // ignore the error.
+	  // ignore error.
+          cliRC = 0;
 	}
       else if (cliRC < 0)
 	{
 	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-	  return -1;
 	}
+
+      if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
+        return -1;
       
     } // for
-
+  
   return 0;
 }
 
@@ -150,9 +164,43 @@ short CmpSeabaseDDL::dropRepos(ExeCliInterface * cliInterface)
   return 0;
 }
 
+short CmpSeabaseMDupgrade::dropReposTables(ExpHbaseInterface *ehi,
+                                           NABoolean oldRepos)
+{
+  Lng32 retcode = 0;
+  Lng32 errcode = 0;
+
+  for (Int32 i = 0; i < sizeof(allReposTablesInfo)/sizeof(ReposTableInfo); i++)
+    {
+      const ReposTableInfo &rti = allReposTablesInfo[i];
+
+      if (! rti.tableName)
+        continue;
+
+      HbaseStr hbaseTable;
+      NAString extNameForHbase = TRAFODION_SYSCAT_LIT;
+      extNameForHbase += ".";
+      extNameForHbase += SEABASE_REPOS_SCHEMA;
+      extNameForHbase +=  ".";
+      extNameForHbase += rti.tableName;
+	
+      hbaseTable.val = (char*)extNameForHbase.data();
+      hbaseTable.len = extNameForHbase.length();
+      
+      retcode = dropHbaseTable(ehi, &hbaseTable);
+      if (retcode < 0)
+	{
+	  errcode = -1;
+	}
+      
+    } // for
+  
+  return errcode;
+}
+
 short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface)
 {
-  return -1;
+  return 0;
 }
 
 void CmpSeabaseDDL::processRepository(

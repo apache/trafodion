@@ -838,8 +838,14 @@ void CmpSeabaseDDL::createSeabaseIndex(
     return;
   }
   tableInfo->hbaseCreateOptions = (hco.isNull() ? NULL : hco.data());
-  
+
+  NABoolean xnWasStartedHere = FALSE;
   Int64 objUID = -1;
+  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+    {
+      goto label_error;
+    }
+
   if (updateSeabaseMDTable(&cliInterface, 
 			 catalogNamePart, schemaNamePart, objectNamePart,
 			 COM_INDEX_OBJECT,
@@ -855,56 +861,37 @@ void CmpSeabaseDDL::createSeabaseIndex(
                          tableInfo->schemaOwnerID,
                          objUID))
     {
-      deallocEHI(ehi); 
-
-      processReturn();
-
-      return;
+      goto label_error;
     }
+
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
 
   if (createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY, NULL, 
                        NULL, &hbaseCreateOptions, numSplits, keyLength, 
                        encodedKeysBuffer) == -1)
     {
-      deallocEHI(ehi); 
-      processReturn();
-      return;
+      goto label_error_drop_index;
     }
 
   if (NOT createIndexNode->isNoPopulateOptionSpecified())
     {
       NABoolean useLoad = (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_INDEXES) == DF_ON);
-    // populate index
+      // populate index
       if (populateSeabaseIndexFromTable(&cliInterface,
 					createIndexNode->isUniqueSpecified(),
 					extIndexName, 
                                         isVolatileTable ? volTabName : tableName, 
                                         selColList,
                                         useLoad))
-	{
-	  if (dropSeabaseObject(ehi, createIndexNode->getIndexName(),
-				currCatName, currSchName, COM_INDEX_OBJECT))
-	    {
-	      processReturn();
-	      return;
-	    }
-
-	  deallocEHI(ehi); 
-
-	  processReturn();
-
-	  return;
+	{ 
+          goto label_error_drop_index;
 	}
       
       if (updateObjectAuditAttr(&cliInterface, 
 			       catalogNamePart, schemaNamePart, objectNamePart,
 				TRUE, COM_INDEX_OBJECT_LIT))
 	{
-	  deallocEHI(ehi); 
-
-	  processReturn();
-
-	  return;
+          goto label_error_drop_index;
 	}
 
       if (updateObjectValidDef(&cliInterface, 
@@ -912,11 +899,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 			       COM_INDEX_OBJECT_LIT,
 			       "Y"))
 	{
-	  deallocEHI(ehi); 
-
-	  processReturn();
-
-	  return;
+          goto label_error_drop_index;
 	}
     }
 
@@ -924,11 +907,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
                             btCatalogNamePart, btSchemaNamePart, btObjectNamePart,
                             COM_BASE_TABLE_OBJECT_LIT))
     {
-      processReturn();
-
-      deallocEHI(ehi);
-
-      return;
+      goto label_error_drop_index;
     }
 
   deallocEHI(ehi);
@@ -936,8 +915,26 @@ void CmpSeabaseDDL::createSeabaseIndex(
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
     NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
 
-  //  processReturn();
+  return;
+
+ label_error:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+
+  deallocEHI(ehi);
   
+  return;
+
+ label_error_drop_index:
+  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+    return;
+  
+  dropSeabaseObject(ehi, createIndexNode->getIndexName(),
+                    currCatName, currSchName, COM_INDEX_OBJECT);
+  
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
+
+  deallocEHI(ehi);
+
   return;
 }
 
@@ -1208,7 +1205,6 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 	  if (isValid)
 	    continue;
 
-
 	  NAList<NAString> selColList;
 
 	  for (Lng32 ii = 0; ii < naf->getAllColumns().entries(); ii++)
@@ -1228,8 +1224,9 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 	    {
 	      processReturn();
 	      
-	      return;
+              goto label_return;
 	    }
+
 	  NABoolean useLoad = (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_INDEXES) == DF_ON);
 	  if (populateSeabaseIndexFromTable(&cliInterface,
 					    naf->uniqueIndex(),
@@ -1244,7 +1241,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 
 	      processReturn();
 
-	      return;
+              goto label_return;
 	    }
 	}
       
@@ -1254,7 +1251,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 	{
 	  processReturn();
 	  
-	  return;
+          goto label_return;
 	}
       
       if (updateObjectValidDef(&cliInterface, 
@@ -1264,11 +1261,12 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 	{
 	  processReturn();
 
-	  return;
+          goto label_return;
 	}
     } // for
 
-  //  processReturn();
+ label_return:
+  processReturn();
       
   return;
 }

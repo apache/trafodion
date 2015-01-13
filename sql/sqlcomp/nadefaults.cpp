@@ -1952,7 +1952,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HQC_LOG, "OFF"),
   DD_____(HQC_LOG_FILE,    ""),
   DDui1_10(HQC_MAX_VALUES_PER_KEY, "5"), 
-  DDkwd__(HYBRID_QUERY_CACHE, "ON"),
+  DDkwd__(HYBRID_QUERY_CACHE, "OFF"),
   DDkwd__(IF_LOCKED,				"WAIT"),
 
     // ignore_duplicate_keys is no more valid. It is still

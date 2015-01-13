@@ -1706,6 +1706,18 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
+  if (CmpCommon::context()->isUninitializedSeabase())
+    {
+      if (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398)
+        *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())
+                            << DgInt0(CmpCommon::context()->hbaseErrNum())
+                            << DgString0(CmpCommon::context()->hbaseErrStr());
+      else
+        *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum());
+      
+      GenExit();
+    }
+
   // Assumption (for now): retrievedCols contains ALL columns from
   // the table/index. This is because this operator does
   // not support projection of columns. Add all columns from this table

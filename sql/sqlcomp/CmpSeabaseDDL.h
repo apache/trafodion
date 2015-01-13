@@ -407,6 +407,10 @@ class CmpSeabaseDDL
   short commitXn(ExeCliInterface *cliInterface);
   short rollbackXn(ExeCliInterface *cliInterface);
   short autoCommit(ExeCliInterface *cliInterface, NABoolean v);
+  short beginXnIfNotInProgress(ExeCliInterface *cliInterface, 
+                               NABoolean &xnWasStartedHere);
+  short endXnIfStartedHere(ExeCliInterface *cliInterface, 
+                           NABoolean &xnWasStartedHere, Int32 cliRC);
 
   short dropSeabaseObject(ExpHbaseInterface *ehi,
 			  const NAString &objName,

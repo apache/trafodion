@@ -1246,46 +1246,23 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
 		  param_[15], param_[16], param_[17], param_[18]);
 
       NABoolean xnWasStartedHere = FALSE;
-      if (NOT xnInProgress(cliInterface))
-	{
-	  cliRC = cliInterface->beginXn();
-	  if (cliRC < 0)
-	    {
-	      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-	      return -1;
-	    }
-	  
-	  xnWasStartedHere = TRUE;
-	}
+      if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+        return -1;
 
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC == -1390)  // view already exists
 	{
 	  // ignore the error.
+          cliRC = 0;
 	}
       else if (cliRC < 0)
 	{
 	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
 	}
       
-      if (xnWasStartedHere)
-	{
-          if (cliRC < 0)
-            {
-              cliRC = cliInterface->rollbackXn();
-              return -1;
-            }
-          else
-            {
-              cliRC = cliInterface->commitXn();
-              if (cliRC < 0)
-                {
-                  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-                  return -1;
-                }
-            }
-	}
-
+      if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
+        return -1;
+      
     } // for
 
   return 0;
@@ -1310,37 +1287,18 @@ short CmpSeabaseDDL::dropMetadataViews(ExeCliInterface * cliInterface)
 		  mdi.viewName);
 
       NABoolean xnWasStartedHere = FALSE;
-      if (NOT xnInProgress(cliInterface))
-	{
-	  cliRC = cliInterface->beginXn();
-	  if (cliRC < 0)
-	    {
-	      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-	      return -1;
-	    }
-	  
-	  xnWasStartedHere = TRUE;
-	}
+      if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
+        return -1;
 
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC < 0)
 	{
 	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-          if (xnInProgress(cliInterface) && xnWasStartedHere)
-            cliRC = cliInterface->rollbackXn();
-	  return -1;
 	}
       
-      if (xnWasStartedHere)
-	{
-	  cliRC = cliInterface->commitXn();
-	  if (cliRC < 0)
-	    {
-	      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-	      return -1;
-	    }
-	}
-
+      if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
+        return -1;
+      
     } // for
 
   return 0;
