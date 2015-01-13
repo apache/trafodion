@@ -164,8 +164,7 @@ fi
 # For now, don't run these tests                      --
 # Add list of tests to script in "skipTheseTests"     --
 #-------------------------------------------------------
-#skipTheseTests="TEST140"
-skipTheseTests=""
+skipTheseTests="TEST138"
 
 #skip these tests for Seabase
 if [ "$seabase" -ne 0 ]; then
