@@ -206,7 +206,7 @@ char ComUser::getAuthType(Int32 authID)
    if (authID == SYSTEM_USER)
       return AUTH_SYSTEM;
 
-   if (authID > SUPER_USER && authID < MAX_USERID)
+   if (authID >= MIN_USERID && authID <= MAX_USERID)
       return AUTH_USER;
 
    if (authID >= MAX_USERID && authID <= MAX_ROLEID)

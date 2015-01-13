@@ -796,6 +796,75 @@ PrivStatus PrivMgrPrivileges::dealWithConstraints(
 }
  
 // ****************************************************************************
+// method:  dealWithUdrs
+//
+// This method finds all the udrs associated with the library and 
+// determines if any are adversely affected by the privilege change.
+//
+// Params:
+//   objectUsage - the affected object
+//   listOfAffectedObjects - returns the list of affected objects
+//
+// Returns: PrivStatus                                               
+//    STATUS_GOOD: No problems were encountered
+//              *: Errors were encountered, ComDiags area is set up
+//                                                                
+// ****************************************************************************
+PrivStatus PrivMgrPrivileges::dealWithUdrs(
+  const ObjectUsage &objectUsage,
+  std::vector<ObjectUsage *> &listOfAffectedObjects)
+{
+  PrivStatus retcode = STATUS_GOOD;
+
+  // udrs (functions and procedures) can only be defined for in libraries
+  if (objectUsage.objectType != COM_LIBRARY_OBJECT)
+    return STATUS_GOOD;
+
+  // get the udrs that reference the library for the grantee
+  std::vector<ObjectReference *> objectList;
+  PrivMgrMDAdmin admin(trafMetadataLocation_, metadataLocation_, pDiags_);
+  retcode = admin.getUdrsThatReferenceLibrary(objectUsage, objectList);
+  if (retcode == STATUS_ERROR)
+    return retcode;
+
+ // objectList contain ObjectReferences for all udrs that reference the
+  // ObjectUsage (object losing privilege) through a library
+  PrivMgrDesc originalPrivs;
+  PrivMgrDesc currentPrivs;
+  if (objectList.size() > 0)
+  {
+    // if the grantee owns any udrs, get the summarized original and  current
+    // privs for the library
+    // current privs contains any adjustments
+    bool withRoles = true;
+    retcode = summarizeCurrentAndOriginalPrivs(objectUsage.objectUID,
+                                               objectUsage.objectOwner,
+                                               withRoles,
+                                               listOfAffectedObjects,
+                                               originalPrivs,
+                                               currentPrivs);
+    if (retcode != STATUS_GOOD)
+      return retcode;
+
+    // If the udr can no longer be created due to lack of USAGE privilege,
+    // return a dependency error.
+    PrivMgrCoreDesc thePrivs = objectUsage.updatedPrivs.getTablePrivs();
+    if (!thePrivs.getPriv(USAGE_PRIV))
+    {
+      // There could be multiple udrs, just pick the first one in the list
+      // for the error message.
+      ObjectReference *pObj = objectList[0];
+      *pDiags_ << DgSqlCode (-CAT_DEPENDENT_OBJECTS_EXIST)
+               << DgString0 (pObj->objectName.c_str());
+      return STATUS_ERROR;
+    }
+  }
+
+  return STATUS_GOOD;
+}
+
+
+// ****************************************************************************
 // method:  dealWithViews
 //
 // This method finds all the views that referenced the object.
@@ -843,22 +912,6 @@ PrivStatus PrivMgrPrivileges::dealWithViews(
     retcode = gatherViewPrivileges(viewUsage, listOfAffectedObjects);
     if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
       return retcode;
-
-    // Performance optimization:
-    // If this is a revoke restrict and the view no longer has SELECT privilege
-    // return an error.  Don't continue searching
-    if (command == PrivCommand::REVOKE_OBJECT_RESTRICT )
-    {
-      PrivMgrCoreDesc thePrivs = objectUsage.updatedPrivs.getTablePrivs();
-
-      // If view no longer has select privilege, throw an error
-      if (!thePrivs.getPriv(SELECT_PRIV))
-      {
-         *pDiags_ << DgSqlCode (-CAT_DEPENDENT_OBJECTS_EXIST)
-                  << DgString0 (viewUsage.viewName.c_str());
-         return STATUS_ERROR;
-      }
-    }
 
     // check to see if privileges changed
     if (viewUsage.originalPrivs == viewUsage.updatedPrivs)
@@ -943,10 +996,27 @@ PrivStatus PrivMgrPrivileges::gatherViewPrivileges(
     if (retcode != STATUS_GOOD)
       return retcode;
 
+    // If user no longer has select privilege on referenced object
+    // returns an error
+    // When cascade is supported, then referenced objects will be removed
+    //if (command == PrivCommand::REVOKE_OBJECT_RESTRICT )
+    //{
+      PrivMgrCoreDesc thePrivs = currentPrivs.getTablePrivs();
+      if (!thePrivs.getPriv(SELECT_PRIV))
+      {
+         *pDiags_ << DgSqlCode (-CAT_DEPENDENT_OBJECTS_EXIST)
+                  << DgString0 (viewUsage.viewName.c_str());
+         return STATUS_ERROR;
+      }
+    //}
+
     // add the returned privilege to the summarized privileges
     // for all objects
     summarizedOriginalPrivs.intersectionOfPrivs(originalPrivs);
     summarizedCurrentPrivs.intersectionOfPrivs(currentPrivs);
+
+    originalPrivs.resetTablePrivs();
+    currentPrivs.resetTablePrivs();
   }
 
   // Update view usage with summarized privileges
@@ -991,6 +1061,10 @@ PrivStatus PrivMgrPrivileges::getAffectedObjects(
   if (command != PrivCommand::GRANT_OBJECT)  
   {
     retcode = dealWithConstraints (objectUsage, listOfAffectedObjects);
+    if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
+     return retcode;
+
+    retcode = dealWithUdrs (objectUsage, listOfAffectedObjects);
     if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
      return retcode;
   }

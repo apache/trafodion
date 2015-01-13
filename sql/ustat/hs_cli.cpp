@@ -405,7 +405,7 @@ Lng32 CreateSeabaseHist(const HSGlobalsClass* hsGlobal)
                "  , V6             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
               "  , constraint "HBASE_HIST_PK" primary key"
                 "  (TABLE_UID ASC, HISTOGRAM_ID ASC, COL_POSITION ASC)"
-               " ) ATTRIBUTE BY DB__ROOT;");
+               " ); ");
 
     LM->StartTimer("Create Trafodion HISTOGRAMS table");
     Lng32 retcode = HSFuncExecQuery(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
@@ -447,7 +447,7 @@ Lng32 CreateSeabaseHistint(const HSGlobalsClass* hsGlobal)
                "  , V6                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE NOT SERIALIZED"
                "  , constraint "HBASE_HISTINT_PK" primary key"
               "     (TABLE_UID ASC, HISTOGRAM_ID ASC, INTERVAL_NUMBER ASC)"
-               " ) ATTRIBUTE BY DB__ROOT;");
+               " ) ;");
 
     LM->StartTimer("Create Trafodion HISTOGRAM_INTERVALS table");
     Lng32 retcode = HSFuncExecQuery(ddl.data(), - UERR_INTERNAL_ERROR, NULL,

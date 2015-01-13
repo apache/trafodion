@@ -152,8 +152,6 @@ short Describe::codeGen(Generator * generator)
   generator->setNeedsReadWriteTransaction(TRUE);
 
   // don't need a transaction for showtransaction statement.
-  if (format_ != TRANSACTION_)
-    generator->setTransactionFlag(-1);
 
   if (maybeInMD())
   {

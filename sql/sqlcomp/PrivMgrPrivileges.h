@@ -70,6 +70,16 @@ public:
              objectType == COM_SEQUENCE_GENERATOR_OBJECT);
    }
 
+   // Set default privileges for a bitmap based on a table or view
+   static void setTablePrivs(PrivMgrBitmap &bitmap)
+   {
+      bitmap.reset();
+      bitmap.set(SELECT_PRIV);
+      bitmap.set(DELETE_PRIV);
+      bitmap.set(INSERT_PRIV);
+      bitmap.set(UPDATE_PRIV);
+      bitmap.set(REFERENCES_PRIV);
+   }
  enum ChosenPrivs { ORIGINAL_PRIVS, CURRENT_PRIVS };
 
  //
@@ -209,6 +219,10 @@ private:
     std::vector<PrivMgrMDRow *> &rowList );
 
   PrivStatus dealWithConstraints (
+    const ObjectUsage &objectUsage,
+    std::vector<ObjectUsage *> &listOfAffectedObjects);
+
+  PrivStatus dealWithUdrs (
     const ObjectUsage &objectUsage,
     std::vector<ObjectUsage *> &listOfAffectedObjects);
 

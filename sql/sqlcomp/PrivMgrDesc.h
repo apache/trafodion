@@ -455,6 +455,7 @@ public:
 
    void setGrantee(const int32_t&);
    void setTablePrivs(const PrivMgrCoreDesc &privs) { tableLevel_ = privs; }
+   void resetTablePrivs() { tableLevel_.setAllPrivAndWgo(0); }
 
    //void setColumnPrivs(const CatColPrivsList& privs);
 
