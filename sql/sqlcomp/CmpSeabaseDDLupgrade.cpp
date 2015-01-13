@@ -107,7 +107,13 @@ short CmpSeabaseMDupgrade::dropMDtables(ExpHbaseInterface *ehi,
       
     } // for
   
-  return errcode;
+  Lng32 reposErrcode = dropReposTables(ehi, oldTbls);
+  if (errcode)
+    return errcode;
+  else if (reposErrcode)
+    return reposErrcode;
+  else
+    return 0;
 }
 
 short CmpSeabaseMDupgrade::restoreOldMDtables(ExpHbaseInterface *ehi)
@@ -863,6 +869,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		      break;
 		    }
 
+                  CmpCommon::context()->setIsUninitializedSeabase(FALSE);
+                  CmpCommon::context()->uninitializedSeabaseErrNum() = 0;
+
 		  // After initialize, VERSIONS table contain the new metadata version
 		  // values. Delete these values since the upgrade process is not yet done.
 		  // At the end of upgrade, VERSIONS table will be updated with the
@@ -881,12 +890,14 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			      TRAFODION_SYSCAT_LIT,
 			      SEABASE_MD_SCHEMA,
 			      SEABASE_VERSIONS);
-		  cliRC = cliInterface.executeImmediate(buf);
+                  cliRC = cliInterface.executeImmediate(buf);
 
 		  if (cliRC < 0)
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		      
+		      *CmpCommon::diags() << DgSqlCode(-9999);
+
 		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
 		      mdui.setSubstep(0);
 		      break;
@@ -1828,6 +1839,54 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    }
 		  
 		  mdui.setMsg("Update Priv Mgr: done");
+		  mdui.setStep(UPDATE_REPOS);
+		  mdui.setSubstep(0);
+		  mdui.setEndStep(TRUE);
+
+		  return 0;
+		}
+		break;
+	      } // case
+
+          }
+          break;
+
+        case UPDATE_REPOS:
+          {
+	    switch (mdui.subStep())
+	      {
+	      case 0:
+		{
+		  mdui.setMsg("Update Repository: started");
+		  mdui.subStep()++;
+		  mdui.setEndStep(FALSE);
+
+		  return 0;
+		}
+		break;
+		
+	      case 1:
+		{
+		  if (xnInProgress(&cliInterface))
+		    {
+		      *CmpCommon::diags() << DgSqlCode(-20123);
+
+		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui.setSubstep(0);
+
+		      break;
+		    }
+		  
+		  cliRC = upgradeRepos(&cliInterface);
+		  if (cliRC != 0)
+		    {
+		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui.setSubstep(0);
+
+		      break;
+		    }
+
+		  mdui.setMsg("Update Repository: done");
 		  mdui.setStep(UPDATE_VERSION);
 		  mdui.setSubstep(0);
 		  mdui.setEndStep(TRUE);

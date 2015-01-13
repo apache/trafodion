@@ -6090,7 +6090,21 @@ short CmpSeabaseDDL::getSpecialTableInfo
   Lng32 cliRC = 0;
   tableInfo = NULL;
   NABoolean switched = FALSE;
-  if (CmpCommon::getDefault(TRAF_BOOTSTRAP_MD_MODE) == DF_OFF)
+
+  Int32 objectOwner = NA_UserIdDefault;
+  Int32 schemaOwner = NA_UserIdDefault;
+  Int64 objUID = 1; // dummy value
+
+  NABoolean createTableInfo = FALSE;
+  NABoolean isUninit = FALSE;
+  if (CmpCommon::context()->isUninitializedSeabase())
+    {
+      isUninit = TRUE;
+      createTableInfo = TRUE;
+    }
+
+  if ((NOT isUninit) && 
+      (CmpCommon::getDefault(TRAF_BOOTSTRAP_MD_MODE) == DF_OFF))
     {
       ExeCliInterface cliInterface(STMTHEAP);
 
@@ -6103,17 +6117,21 @@ short CmpSeabaseDDL::getSpecialTableInfo
           goto label_error_return;
         }
 
-      Int32 objectOwner = NA_UserIdDefault;
-      Int32 schemaOwner = NA_UserIdDefault;
-      Int64 objUID = getObjectUIDandOwners(&cliInterface, 
-                                           catName.data(), schName.data(), objName.data(), 
-                                           objType, objectOwner, schemaOwner);
+      objUID = getObjectUIDandOwners(&cliInterface, 
+                                     catName.data(), schName.data(), objName.data(), 
+                                     objType, objectOwner, schemaOwner);
       cliRC = cliInterface.restoreCQD("traf_bootstrap_md_mode");
       if (objUID <= 0)
         goto label_error_return;
 
       switchBackCompiler();
 
+      createTableInfo = TRUE;
+
+    }
+
+  if (createTableInfo)
+    {
       tableInfo = new(heap) ComTdbVirtTableTableInfo[1];
       tableInfo->tableName = new(heap) char[extTableName.length() + 1];
       strcpy((char*)tableInfo->tableName, (char*)extTableName.data());
@@ -7351,6 +7369,19 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
+
+  if ((CmpCommon::context()->isUninitializedSeabase()) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+     {
+      if (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398)
+        *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())
+                            << DgInt0(CmpCommon::context()->hbaseErrNum())
+                            << DgString0(CmpCommon::context()->hbaseErrStr());
+      else
+        *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum());
+
+      return NULL;
+    }
 
   desc_struct *tDesc = NULL;
   if (isSeabaseMD(catName, schName, objName))

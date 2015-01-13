@@ -450,6 +450,7 @@ class CmpSeabaseMDupgrade : public CmpSeabaseDDL
     OLD_MD_TABLES_HBASE_DELETE,
     UPDATE_MD_VIEWS,
     UPDATE_PRIV_MGR,
+    UPDATE_REPOS,
     UPDATE_VERSION,
     OLD_MD_DROP_POST,
     METADATA_UPGRADED,
@@ -470,6 +471,8 @@ class CmpSeabaseMDupgrade : public CmpSeabaseDDL
 
   short dropMDtables(ExpHbaseInterface *ehi, NABoolean oldTbls,
 		     NABoolean useOldNameForNewTables = FALSE);
+
+  short dropReposTables(ExpHbaseInterface *ehi, NABoolean oldTbls);
 
   short restoreOldMDtables(ExpHbaseInterface *ehi);
 
