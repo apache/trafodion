@@ -2649,7 +2649,7 @@ short CmpDescribeSeabaseTable (
                                space, buf, TRUE, TRUE);
         }
       
-      if ((isSalted) && (withPartns) && !withoutSalt)
+      if ((isSalted) && !withoutSalt)
         {
           Lng32 currPartitions = naf->getCountOfPartitions();
           Lng32 numPartitions = naTable->numSaltPartns();
