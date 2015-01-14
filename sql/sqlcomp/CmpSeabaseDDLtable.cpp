@@ -973,20 +973,6 @@ void CmpSeabaseDDL::createSeabaseTable(
   Int32 schemaOwnerID = SUPER_USER;
   ComSchemaClass schemaClass;
 
-  retcode = verifyDDLCreateOperationAuthorized(&cliInterface,
-                                               SQLOperation::CREATE_TABLE,
-                                               catalogNamePart, 
-                                               schemaNamePart,
-                                               schemaClass,
-                                               objectOwnerID,
-                                               schemaOwnerID);
-  if (retcode != 0)
-  {
-     handleDDLCreateAuthorizationError(retcode,catalogNamePart,schemaNamePart);
-     processReturn();
-     return;
-  }
-
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
     {
@@ -1037,6 +1023,21 @@ void CmpSeabaseDDL::createSeabaseTable(
 
       return;
     }
+
+  retcode = verifyDDLCreateOperationAuthorized(&cliInterface,
+                                               SQLOperation::CREATE_TABLE,
+                                               catalogNamePart, 
+                                               schemaNamePart,
+                                               schemaClass,
+                                               objectOwnerID,
+                                               schemaOwnerID);
+  if (retcode != 0)
+  {
+     handleDDLCreateAuthorizationError(retcode,catalogNamePart,schemaNamePart);
+     deallocEHI(ehi); 
+     processReturn();
+     return;
+  }
 
   if (createTableNode->getIsLikeOptionSpecified())
     {

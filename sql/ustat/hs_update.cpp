@@ -83,15 +83,6 @@ Lng32 ShowStats(const char* input, char* &outBuf,
     HSGlobalsClass hs_globals_obj(*ptrDiags);
     hs_globals_y = &hs_globals_obj;
 
-    // check privileges
-    NABoolean isShowStats = TRUE;
-    if (!hs_globals_obj.isAuthorized(isShowStats))
-      {
-        HSFuncMergeDiags(-UERR_NO_PRIVILEGE, hs_globals_obj.user_table->data());
-        retcode = -1;
-        HSExitIfError(retcode);
-      }
-
     NAString displayData("\n");
     
     // Do not show missing histogram warnings
@@ -111,6 +102,15 @@ Lng32 ShowStats(const char* input, char* &outBuf,
     // Parse showstats statement.
     retcode = HSFuncParseStmt();
     HSExitIfError(retcode);
+
+    // check privileges
+    NABoolean isShowStats = TRUE;
+    if (!hs_globals_obj.isAuthorized(isShowStats))
+      {
+        HSFuncMergeDiags(-UERR_NO_PRIVILEGE, hs_globals_obj.user_table->data());
+        retcode = -1;
+        HSExitIfError(retcode);
+      }
 
     // histogram versioning
     if (hs_globals_obj.tableFormat == SQLMX) 

@@ -192,7 +192,7 @@ Tom                                                 White Socks
 >>
 >>create table t133_t1 (c1 int not null primary key, c2 int);
 
-*** ERROR[1003] Schema TRAFODION.PRIVMGR_MD does not exist.
+*** ERROR[1118] Creating object TRAFODION.PRIVMGR_MD.T133_T1 is not allowed in a reserved system schema.
 
 --- SQL operation failed with errors.
 >>create view t133_v1 as select * from t133_t1;
@@ -207,7 +207,7 @@ Tom                                                 White Socks
 --- SQL operation failed with errors.
 >>create table t133_t2 like t133_t1;
 
-*** ERROR[1003] Schema TRAFODION.PRIVMGR_MD does not exist.
+*** ERROR[1118] Creating object TRAFODION.PRIVMGR_MD.T133_T2 is not allowed in a reserved system schema.
 
 --- SQL operation failed with errors.
 >>
