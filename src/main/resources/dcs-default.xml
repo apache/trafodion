@@ -407,4 +407,11 @@
         If statistics publication is enabled. The default is true. Set false to disable.
     </description>
   </property>
+  <property>
+    <name>dcs.server.class.name</name>
+    <value>org.trafodion.dcs.server.DcsServer</value>
+    <description>
+        The classname of the DcsServer to start. Used for development of new architecture
+    </description>
+  </property>
 </configuration>

@@ -247,7 +247,7 @@ elif [ "$COMMAND" = "master" ] ; then
     DCS_OPTS="$DCS_OPTS $DCS_MASTER_OPTS"
   fi
 elif [ "$COMMAND" = "server" ] ; then
-  CLASS='org.trafodion.dcs.server.DcsServer'
+  CLASS=`$bin/dcs --config "${DCS_CONF_DIR}" org.trafodion.dcs.util.DcsConfTool dcs.server.class.name`
   if [ "$1" != "stop" ] ; then
     DCS_OPTS="$DCS_OPTS $DCS_SERVER_OPTS"
   fi

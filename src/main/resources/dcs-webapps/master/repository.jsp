@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 --%>
-<%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ page contentType="text/html;charset=UTF-8"
   import="java.io.*"
   import="java.util.*"
@@ -37,94 +36,74 @@
   String masterServerName = master.getServerName();
   int masterInfoPort = master.getInfoPort();
   String trafodionHome = master.getTrafodionHome();
-  boolean trafodionLogs = conf.getBoolean(Constants.DCS_MASTER_TRAFODION_LOGS, Constants.DEFAULT_DCS_MASTER_TRAFODION_LOGS);
-  List<JSONObject> metricSessionList = master.getServerManager().getRepositoryItemList(Constants.TRAFODION_REPOS_METRIC_SESSION_TABLE);
-  List<JSONObject> metricQueryList = master.getServerManager().getRepositoryItemList(Constants.TRAFODION_REPOS_METRIC_QUERY_TABLE);
-  List<JSONObject> metricQueryAggrList = master.getServerManager().getRepositoryItemList(Constants.TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE);
   String type = request.getParameter("type");
 %>
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- Commenting out DOCTYPE so our blue outline shows on hadoop 0.20.205.0, etc.
-     See tail of HBASE-2110 for explaination.
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
--->
 <html xmlns="http://www.w3.org/1999/xhtml">
-<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
 <title>Repository: <%= type %></title>
+<!--
 <link rel="stylesheet" type="text/css" href="/static/dcs.css" />
+-->
+    <title>Trafodion Repository</title>
+    <link rel="stylesheet" type="text/css" href="css/stylesheet.css" />
+    <link rel="stylesheet" type="text/css" href="jquery-ui/jquery-ui.css" />
+    <script type="text/javascript" src="js/lib/jquery-1.11.0.js"></script>
+    <script type="text/javascript" src="jquery-ui/jquery-ui.js"> </script> 
+        
+    <script type="text/javascript">
+    $(function() {
+        $("#tabs").tabs({
+            ajaxOptions: {
+                eror: function(xhr, status, index, anchor) {
+                    $(anchor.hash).html("Failed to load this tab!");
+                }
+            }
+        });
+
+        $('#tabs div.ui-tabs-panel').height(function() {
+            return $('#tabs-container').height()
+                   - $('#tabs-container #tabs ul.ui-tabs-nav').outerHeight(true)
+                   - ($('#tabs').outerHeight(true) - $('#tabs').height())
+                                   // visible is important here, sine height of an invisible panel is 0
+                   - ($('#tabs div.ui-tabs-panel:visible').outerHeight(true)  
+                      - $('#tabs div.ui-tabs-panel:visible').height());
+        });
+    });
+    </script>
+
+    <style type="text/css">
+        .ui-tabs .ui-tabs-panel {
+            overflow: auto;
+        }
+    </style>        
 </head>
 <body>
-<h1 id="page_title">Repository: <%= type %></h1>
-<p id="links_menu">
-  <a href="http://<%= masterServerName %>:<%= masterInfoPort %>">Home</a>,
-  <a href="/logs/">Dcs local logs</a><% if(! trafodionHome.isEmpty()) { %><% if(trafodionLogs) { %>, <a href="/TrafodionLogs/">Trafodion local logs</a><% } %><% } %>
-</p>
-<hr id="head_rule" />
-<h2>Table: <%= Constants.TRAFODION_REPOS_METRIC_SESSION_TABLE %></h2>
-<br>
-    <jsp:scriptlet> request.setAttribute( "metricSessionList", metricSessionList ); </jsp:scriptlet>
-    <display:table name="metricSessionList" id="metricSession" pagesize="50">
-    <%
-    if(metricSessionList != null && ! metricSessionList.isEmpty()) {
-        try {
-            JSONObject aJsonObject = metricSessionList.get(0);
-            Iterator itr = aJsonObject.keys(); 
-            while(itr.hasNext()) {
-                Object element = itr.next();
-    %>
-                <display:column title="<%= (String)element %>" sortable="true"><%= ((JSONObject)metricSessionList.get(metricSession_rowNum - 1)).getString((String)element) %></display:column> 
-    <%
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    %>
-    </display:table>
-   
-<h2>Table: <%= Constants.TRAFODION_REPOS_METRIC_QUERY_TABLE %></h2>
-<br>
-    <jsp:scriptlet> request.setAttribute( "metricQueryList", metricQueryList ); </jsp:scriptlet>
-    <display:table name="metricQueryList" id="metricQuery" pagesize="50">
-    <%
-    if(metricQueryList != null && ! metricQueryList.isEmpty()) {
-        try {
-            JSONObject aJsonObject = metricQueryList.get(0);
-            Iterator itr = aJsonObject.keys(); 
-            while(itr.hasNext()) {
-                Object element = itr.next();
-    %>
-                <display:column title="<%= (String)element %>" sortable="true"><%= ((JSONObject)metricQueryList.get(metricQuery_rowNum - 1)).getString((String)element) %></display:column> 
-    <%
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    %>
-    </display:table>
-    
-<h2>Table: <%= Constants.TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE %></h2>
-<br>
-    <jsp:scriptlet> request.setAttribute( "metricQueryAggrList", metricQueryAggrList ); </jsp:scriptlet>
-    <display:table name="metricQueryAggrList" id="metricQueryAggr" pagesize="50">
-    <%
-    if(metricQueryAggrList != null && ! metricQueryAggrList.isEmpty()) {
-        try {
-            JSONObject aJsonObject = metricQueryAggrList.get(0);
-            Iterator itr = aJsonObject.keys(); 
-            while(itr.hasNext()) {
-                Object element = itr.next();
-    %>
-                <display:column title="<%= (String)element %>" sortable="true"><%= ((JSONObject)metricQueryAggrList.get(metricQueryAggr_rowNum - 1)).getString((String)element) %></display:column> 
-    <%
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }            
-    %>
-    </display:table>
+
+        <div class="bannerArea">
+            <div class="container1">
+                <div style="padding-bottom: 5px; font-weight: bold; font-size: 28px; position: absolute;left:5px;top: 5px; color: #FFF; font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif; font-style: italic;">
+                    <span id="Label1">Trafodion Repository</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="tabs-container" style="height:1000px; border:1px #aaa solid;">
+            <div id="tabs">
+                <ul>
+                    <li><a href="explain.html">Query Plan</a></li>
+                    <li><a href="querystats.html">Query Statistics</a></li>
+                    <li><a href="sessions.html">Sessions</a></li>
+                    <li><a href="aggr_querystats.html">Aggregated Query Statistics</a></li>
+                </ul>
+            </div>        
+        </div>
+
+        <script>
+            $(document).ready(function() {
+                $("#tabs").tabs().css({'height': '100%','overflow': 'auto'})
+            });
+        </script>
 </body>
 </html>        

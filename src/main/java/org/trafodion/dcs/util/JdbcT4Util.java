@@ -19,10 +19,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-
 import java.util.*;
-
-import java.sql.*;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.math.BigDecimal;
 
 import org.apache.commons.cli.CommandLine;
@@ -30,28 +33,26 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.HelpFormatter;
-
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.hadoop.conf.Configuration;
-
 import org.trafodion.dcs.util.DcsConfiguration;
 import org.trafodion.dcs.Constants;
+import org.trafodion.jdbc.t4.TrafT4Connection;
+import org.trafodion.jdbc.t4.TrafT4PreparedStatement;
+import org.trafodion.jdbc.t4.HPT4DataSource;
 
 public final class JdbcT4Util
 {
 	private static final Log LOG = LogFactory.getLog(JdbcT4Util.class);
     private Configuration conf;
     private DcsNetworkConfiguration netConf;
-	private ConnectionContext connContext = null;
+	private HPT4DataSource cpds = null;
  
-	static
-	{
+	static	{
 		try {
 			Class.forName(Constants.T4_DRIVER_CLASS_NAME);
 		} catch (ClassNotFoundException e) {
@@ -60,100 +61,25 @@ public final class JdbcT4Util
 				LOG.error(e.getMessage());
 		}
 	}
-	
-	class ConnectionContext {
-		java.sql.Connection conn = null;
-		java.sql.Statement stmt = null;
-		java.sql.ResultSet rs = null; 
-		String url = Constants.T4_DRIVER_URL + "//" + netConf.getHostName() + ":" + conf.getInt(Constants.DCS_MASTER_PORT,Constants.DEFAULT_DCS_MASTER_PORT) + "/:";
-		String user = null;
-		String password = null;
-		
-		private void open() throws SQLException {
-			if(LOG.isDebugEnabled())
-				LOG.debug("Begin ConnectionContext.open()");
-			
-			if((conn == null) || (conn.isClosed())) {
-				if(LOG.isDebugEnabled())
-					LOG.debug("DriverManager.getConnection(" + "url=" + url + ",user=" + user + ",password=" + password + ")");
-				conn = DriverManager.getConnection(url,user,password);
-				stmt = conn.createStatement();
-				if(LOG.isDebugEnabled())
-					LOG.debug("new connection created");
-			} else {
-				if(LOG.isDebugEnabled())
-					LOG.debug("using existing connection");
-			}
-			
-			if(LOG.isDebugEnabled())
-				LOG.debug("End ConnectionContext.open()");
-		}
-		
-		private void close() throws SQLException {
-			if(LOG.isDebugEnabled())
-				LOG.debug("Begin ConnectionContext.close()");
-			stmt = null;
-			conn = null;
-			if(LOG.isDebugEnabled())
-				LOG.debug("Begin ConnectionContext.close()");
-		}
-		
-		boolean exec(String text) {
-			if(LOG.isDebugEnabled())
-				LOG.debug("Begin ConnectionContext.exec()");
 
-			boolean result = true;
-
-			try {
-				open();
-				if(LOG.isDebugEnabled())
-					LOG.debug("stmt.executeQuery(" + text + ")");
-				rs = stmt.executeQuery(text);
-			} catch (SQLException e) {
-				SQLException nextException = e;
-				StringBuilder sb = new StringBuilder();
-				do {
-					sb.append(nextException.getMessage());
-					sb.append("\nSQLState   " + nextException.getSQLState());
-					sb.append("\nError Code " + nextException.getErrorCode());
-				} while ((nextException = nextException.getNextException()) != null);
-				if(LOG.isErrorEnabled()) 
-					LOG.error("SQLException [" + sb.toString() + "]");	
-				result = false;
-			}
-
-			if(LOG.isDebugEnabled())
-				LOG.debug("End ConnectionContext.exec()");
-
-			return result;
-		}
-		
-		public void setUserPassword(String value) {
-			LOG.debug("value=" + value);
-			
-			String base64UserPassword = null;
-			if (value != null) 
-				base64UserPassword = value.trim();
-			LOG.debug("base64UserPassword=" + base64UserPassword);
-			String userPassword = new String(Base64.decode(base64UserPassword));
-			LOG.debug("userPassword=" + userPassword);
-			final String[] values = userPassword.split(":",2);
-			this.user = values[0];
-			this.password = values[1];
-			LOG.debug("user=" + user + ",password=" + password);
-		}
-
-		java.sql.ResultSet getResultSet(){
-			return rs;
-		}
-	}
-	
-	public void init(Configuration conf,DcsNetworkConfiguration netConf) {
+	public void init(Configuration conf,DcsNetworkConfiguration netConf) throws SQLException {
 		this.conf = conf;
 		this.netConf = netConf;
-		connContext = new ConnectionContext();
-    	String s = conf.get(Constants.T4_DRIVER_USERNAME_PASSWORD,Constants.DEFAULT_T4_DRIVER_USERNAME_PASSWORD);
-    	connContext.setUserPassword(s);
+	   	cpds = new HPT4DataSource();
+		String url = Constants.T4_DRIVER_URL + "//" + netConf.getHostName() + ":" + conf.getInt(Constants.DCS_MASTER_PORT,Constants.DEFAULT_DCS_MASTER_PORT) + "/:";
+		cpds.setURL(url);
+		cpds.setMinPoolSize(conf.getInt(Constants.T4_DRIVER_MIN_POOL_SIZE,Constants.DEFAULT_T4_DRIVER_MIN_POOL_SIZE));
+		cpds.setMaxPoolSize(conf.getInt(Constants.T4_DRIVER_MAX_POOL_SIZE,Constants.DEFAULT_T4_DRIVER_MAX_POOL_SIZE));   	
+		String s = conf.get(Constants.T4_DRIVER_USERNAME_PASSWORD,Constants.DEFAULT_T4_DRIVER_USERNAME_PASSWORD);
+    	String base64UserPassword = null;
+		if (s != null) 
+			base64UserPassword = s.trim();
+		//LOG.debug("base64UserPassword=" + base64UserPassword);
+		String userPassword = new String(Base64.decode(base64UserPassword));
+		//LOG.debug("userPassword=" + userPassword);
+		final String[] values = userPassword.split(":",2);
+		cpds.setUser(values[0]);
+		cpds.setPassword(values[1]);
 	}
 	
 	public JdbcT4Util() throws Exception {
@@ -162,43 +88,15 @@ public final class JdbcT4Util
 		init(conf,netConf);
 	}
 	
-	public JdbcT4Util(Configuration conf,DcsNetworkConfiguration netConf) {
+	public JdbcT4Util(Configuration conf,DcsNetworkConfiguration netConf) throws SQLException {
 		init(conf,netConf);
 	}
-	
-	public synchronized JSONArray exec(String command){
-		if(LOG.isDebugEnabled())
-			LOG.debug("Begin exec()");
 
-		JSONArray js = null;
-
-		int retryCount = 2;
-		while(retryCount > 0) {
-			try	{
-				if(connContext.exec(command)) {
-					js = new JSONArray();
-					js = convertResultSetToJSON(connContext.getResultSet());
-					retryCount = 0;
-				} else {
-					retryCount--;
-				}
-			} catch (Exception e) {
-				StringBuilder sb = new StringBuilder();
-				e.printStackTrace();
-				sb.append(e.getMessage());
-				if(LOG.isErrorEnabled()) 
-					LOG.error("Exception [" + sb.toString() + "]");
-				retryCount--;
-			}
-		}
-
-		if(LOG.isDebugEnabled())
-			LOG.debug("End exec()");
-
-		return js;
+	public java.sql.Connection getConnection() throws SQLException {
+		return cpds.getConnection();
 	}
 	
-	private synchronized JSONArray convertResultSetToJSON(java.sql.ResultSet rs) throws Exception {
+	public static JSONArray convertResultSetToJSON(java.sql.ResultSet rs) throws Exception {
 		if(LOG.isDebugEnabled())
 			LOG.debug("Begin convertResultSetToJSON");
 		
@@ -269,6 +167,19 @@ public final class JdbcT4Util
 				json.put(obj); 
 
 			}//end while 
+			
+			if(json.length() == 0){
+
+				int numColumns = rsmd.getColumnCount(); 
+				JSONObject obj = new JSONObject(); 
+
+				for (int i=1; i<numColumns+1; i++) { 
+
+					String column_name = rsmd.getColumnName(i);
+					obj.put(column_name, "");
+				}
+				json.put(obj);
+			}
 
 		} catch (SQLException e) { 
 			e.printStackTrace(); 
@@ -289,16 +200,14 @@ public final class JdbcT4Util
 	}
 
 	
-	public static void main(String args[])
-	{
+	public static void main(String args[]) {
 		Options options = new Options();
 		options.addOption("h","help",false,"print this message");
-		options.addOption("c","command",true,"SQL query to execute");
+		options.addOption("q","queryText",true,"SQL query text to execute");
 		HelpFormatter formatter = new HelpFormatter();
 			  
 		CommandLine commandLine;
-		String command = null;
-		
+		String queryText = null;
 		StringBuilder sb = new StringBuilder();
 		
 		try {
@@ -307,10 +216,10 @@ public final class JdbcT4Util
 				formatter.printHelp("JdbcT4Util",options);
 				System.exit(0);
 			}
-			if (commandLine.hasOption("command")) {
-				command = commandLine.getOptionValue("c");
+			if (commandLine.hasOption("queryText")) {
+				queryText = commandLine.getOptionValue("q");
 			}
-			if (command == null) {
+			if (queryText == null) {
 				formatter.printHelp("JdbcT4Util",options);
 				System.exit(-1);
 			}
@@ -320,18 +229,47 @@ public final class JdbcT4Util
 		}
 
 		try	{
-			JdbcT4Util JdbcT4Util = new JdbcT4Util();
-			JSONArray js = JdbcT4Util.exec(command);
-			if(LOG.isDebugEnabled())
-				LOG.debug("JSONArray [" + js.toString() + "]");
+			JdbcT4Util jdbcT4Util = new JdbcT4Util();
+			TrafT4Connection connection = (TrafT4Connection) jdbcT4Util.getConnection();
+			
+			//Regular Statement
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(queryText);
+			JSONArray js = new JSONArray();
+			js = convertResultSetToJSON(rs);
+			if(LOG.isErrorEnabled()) 
+				LOG.error(js.toString());
+			rs.close();
+			stmt.close();
+			
+			//PreparedStatement with explain
+			TrafT4PreparedStatement pStmt = (TrafT4PreparedStatement) connection.prepareStatement(queryText, "SQL_CURSOR_DEMO");
+			rs = pStmt.executeQuery("SELECT * FROM TABLE(explain(null, 'SQL_CURSOR_DEMO'))");
+			js = new JSONArray();
+			js = convertResultSetToJSON(rs);
+			if(LOG.isErrorEnabled()) 
+				LOG.error(js.toString());
+			rs.close();
+			stmt.close();
+
 			System.exit(0);
+		} catch (SQLException e) {
+			SQLException nextException = e;
+			do {
+				sb.append(nextException.getMessage());
+				sb.append("\nSQLState   " + nextException.getSQLState());
+				sb.append("\nError Code " + nextException.getErrorCode());
+			} while ((nextException = nextException.getNextException()) != null);
+			if(LOG.isErrorEnabled()) 
+				LOG.error("SQLException [" + sb.toString() + "]");	
+			System.exit(1);
 		} catch (Exception e) {
 			e.printStackTrace();
 			sb.append(e.getMessage());
 			if(LOG.isDebugEnabled())
 				LOG.debug("Exception [" + sb.toString() + "]");
 			System.exit(1);
-		}
+		} 
 	}
 	
 }

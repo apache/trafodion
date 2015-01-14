@@ -358,6 +358,7 @@ public final class Constants {
 
   /** T4 Driver name */
   public static final String T4_DRIVER_CLASS_NAME = "org.trafodion.jdbc.t4.T4Driver";
+ 
   /** T4 Driver URL */
   public static final String T4_DRIVER_URL = "jdbc:t4jdbc:"; 
   
@@ -367,12 +368,23 @@ public final class Constants {
   /** DcsMaster default base64 encoded username:password used in JdbcT4Util */
   public static final String DEFAULT_T4_DRIVER_USERNAME_PASSWORD = "dHJhZm9kaW9uOnRyYWYxMjMK";
   
-
+  /** DcsMaster minPoolSize used in JdbcT4Util */
+  public static final String T4_DRIVER_MIN_POOL_SIZE = "t4.driver.min.pool.size";
+  
+  /** DcsMaster minPoolSize used in JdbcT4Util */
+  public static final int DEFAULT_T4_DRIVER_MIN_POOL_SIZE = 1;
+  
+  /** DcsMaster minPoolSize used in JdbcT4Util */
+  public static final String T4_DRIVER_MAX_POOL_SIZE = "t4.driver.max.pool.size";
+  
+  /** DcsMaster minPoolSize used in JdbcT4Util */
+  public static final int DEFAULT_T4_DRIVER_MAX_POOL_SIZE = 2;
+  
   /** Query for trafodion._REPOS_.metric_session_table */
   public static final String TRAFODION_REPOS_METRIC_SESSION_TABLE_QUERY = "trafodion.repos.metric.session.table.query";
   /** Default query for trafodion._REPOS_.metric_session_table */
   public static final String DEFAULT_TRAFODION_REPOS_METRIC_SESSION_TABLE_QUERY = 
-					"SELECT " +
+					"SELECT [first 500] " +
 					"session_id," +
 					"user_name," +
 					"total_execution_time," +
@@ -386,7 +398,7 @@ public final class Constants {
   public static final String TRAFODION_REPOS_METRIC_QUERY_TABLE_QUERY = "trafodion.repos.metric_query.table.query";
   /** Default query for trafodion._REPOS_.metric_query_table */
   public static final String DEFAULT_TRAFODION_REPOS_METRIC_QUERY_TABLE_QUERY = 
-					"SELECT " +
+					"SELECT [first 500] " +
 					"query_id," +
 					"user_name," +
 					"client_name," +
@@ -395,14 +407,15 @@ public final class Constants {
 					"query_elapsed_time," +
 					"sql_process_busy_time," +
 					"total_mem_alloc," +
-					"max_mem_used " +
+					"max_mem_used," +
+					"query_text " +
 					"FROM \"_REPOS_\".metric_query_table";
   
   /** Query for trafodion._REPOS_.metric_query_aggr_table */
   public static final String TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE_QUERY = "trafodion.repos.metric_query_aggr.table.query";
   /** Default query for trafodion._REPOS_.metric_query_aggr_table */
   public static final String DEFAULT_TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE_QUERY = 
-	  				"SELECT " +
+	  				"SELECT [first 500] " +
 	  				"session_id," +
 	  				"user_name," +
 	  				"role_name," +
@@ -429,7 +442,7 @@ public final class Constants {
   
   /** Default value for DcsMaster authorization feature */
   public static final boolean DEFAULT_DCS_MASTER_AUTHORIZATION = DCS_MASTER_AUTHORIZATION_IS_NOT_ENABLED;
-  
+
   private Constants() {
     // Can't be instantiated with this ctor.
   }

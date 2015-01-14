@@ -648,11 +648,12 @@ public class ServerManager implements Callable {
 			sb.append(conf.get(Constants.TRAFODION_REPOS_METRIC_QUERY_TABLE_QUERY,Constants.DEFAULT_TRAFODION_REPOS_METRIC_QUERY_TABLE_QUERY));
 		} else if (command.equals(Constants.TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE)) {
 			sb.append(conf.get(Constants.TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE_QUERY,Constants.DEFAULT_TRAFODION_REPOS_METRIC_QUERY_AGGR_TABLE_QUERY));
-		}
+		} else
+			sb.append(command);
 		
 		if(LOG.isDebugEnabled())
 			LOG.debug("command [" + sb.toString() + "]");
-		reposList = jdbcT4Util.exec(sb.toString());
+		//reposList = jdbcT4Util.executeQuery(sb.toString());
 
 		if(LOG.isDebugEnabled())
 			LOG.debug("End getRepositoryListT4Driver()");
@@ -666,6 +667,10 @@ public class ServerManager implements Callable {
 	
     public ZkClient getZkClient(){
     	return zkc;
+    }
+    
+    public JdbcT4Util getJdbcT4Util(){
+    	return jdbcT4Util;
     }
 }
 
