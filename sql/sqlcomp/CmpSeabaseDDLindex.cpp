@@ -1188,7 +1188,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
       
       if ((populateIndexNode->populateAll()) ||
 	  (extIndexName == nafIndexName))
-	{
+      {
           if (populateIndexNode->populateAll())
           {
             objectNamePart= qn.getObjectName().data();
@@ -1243,7 +1243,6 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 
               goto label_return;
 	    }
-	}
       
       if (updateObjectAuditAttr(&cliInterface, 
 				catalogNamePart, schemaNamePart, objectNamePart,
@@ -1263,6 +1262,8 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 
           goto label_return;
 	}
+
+      }
     } // for
 
  label_return:

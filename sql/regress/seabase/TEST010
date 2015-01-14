@@ -393,6 +393,31 @@ order by 3
 ;
 
 create index t010t5idx1 on t010t5(c3) salt like table ;
+
+-- begin testcase for lp 1396793.
+
+create index t010t5idx2 on t010t5(c2) no populate ;
+
+create index t010t5idx3 on t010t5(c1) no populate ;
+
+create index t010t5idx4 on t010t5(c3) no populate ;
+
+populate index t010t5idx2 on t010t5;
+
+populate index t010t5idx3 on t010t5;
+
+populate index t010t5idx4 on t010t5;
+
+set parserflags 1;
+
+select count(*) from table(index_table t010t5idx2);
+
+select count(*) from table(index_table t010t5idx3);
+
+select count(*) from table(index_table t010t5idx4);
+
+-- end testcase for lp 1396793.
+
 set parserflags 1;
 
 prepare s from
