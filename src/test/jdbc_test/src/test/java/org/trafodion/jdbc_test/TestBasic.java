@@ -928,9 +928,7 @@ public class TestBasic
         	conn = Utils.getUserConnection();
 			String	prodName = conn.getMetaData().getDatabaseProductName();
 			//System.out.println("DB product name : " + prodName);
-			//T2 returned Trafodion and T4 returns Traf Database
-			//assertEquals("DB Product Name", "Traf", prodName);
-			assertTrue("DB Product Name", prodName.contains("Traf"));
+			assertEquals("DB Product Name", "Trafodion", prodName);
   	       	conn.close();
 			System.out.println("JDBC Get DB product name : Passed");
        } catch (Exception ex)
@@ -950,7 +948,7 @@ public class TestBasic
         	conn = Utils.getUserConnection();
 			String	prodVer = conn.getMetaData().getDatabaseProductVersion();
 			System.out.println("DB product version : " + prodVer);
-			assertEquals("DB Product Version", "0.9", prodVer);
+			assertEquals("DB Product Version", "1.0", prodVer);
   	       	conn.close();
 			System.out.println("JDBC Get DB product version : Passed");
        } catch (Exception ex)
@@ -970,7 +968,7 @@ public class TestBasic
         	conn = Utils.getUserConnection();
 			int	majorVer = conn.getMetaData().getDatabaseMajorVersion();
 			//System.out.println("DB major version : " + majorVer);
-			assertEquals("DB major Version", 0, majorVer);
+			assertEquals("DB major Version", 1, majorVer);
   	       	conn.close();
 			System.out.println("JDBC Get DB major version : Passed");
        } catch (Exception ex)
@@ -990,7 +988,7 @@ public class TestBasic
         	conn = Utils.getUserConnection();
 			int	minorVer = conn.getMetaData().getDatabaseMinorVersion();
 			//System.out.println("DB minor version : " + minorVer);
-			assertEquals("DB Minor Version", 9, minorVer);
+			assertEquals("DB Minor Version", 0, minorVer);
   	       	conn.close();
 			System.out.println("JDBC Get DB minor version : Passed");
        } catch (Exception ex)
