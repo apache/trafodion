@@ -1438,6 +1438,16 @@ void ProxyFunc::populateColumnDesc(char *tableNam,
                             FALSE, FALSE, NULL,
                             CmpCommon::statementHeap());
 
+   for (size_t colNum = 0; colNum < colArray.entries(); colNum++)
+   {
+     char buf[128];
+     str_sprintf(buf, "C%d", (Int32) colNum + 1);
+     const char *colName = &buf[0];
+     char * col_name = new(STMTHEAP) char[strlen(colName) + 1];
+     strcpy(col_name, (char*)colName);
+     colInfoArray[colNum].colName = col_name;
+   }
+
    colDescs = cmpSBD.convertVirtTableColumnInfoArrayToDescStructs(&tableName,
                                                                   colInfoArray,
                                                                   numCols) ;
