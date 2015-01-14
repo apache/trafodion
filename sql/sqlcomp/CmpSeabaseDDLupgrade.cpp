@@ -419,13 +419,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		{
 		  ehi = allocEHI(&ActiveSchemaDB()->getDefaults());
 		  
+		  Int64 mdCurrMajorVersion;
+		  Int64 mdCurrMinorVersion;
 		  Int64 sysSWMajorVersion;
 		  Int64 sysSWMinorVersion;
                   Int64 sysSWUpdVersion;
                   Int64 mdSWMajorVersion;
                   Int64 mdSWMinorVersion;
 		  retcode = validateVersions(&ActiveSchemaDB()->getDefaults(), ehi,
-                                             NULL, NULL,
+					     &mdCurrMajorVersion,
+					     &mdCurrMinorVersion,
 					     &sysSWMajorVersion,
 					     &sysSWMinorVersion,
                                              &sysSWUpdVersion,
@@ -454,8 +457,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    }
                   else
                     {
-                      str_sprintf(msgBuf, " Error %d returned while accessing metadata. Fix that error before running this command.",
-                                  retcode);
+                      if (retcode == -1395)
+                        str_sprintf(msgBuf, "   Metadata need to be upgraded or reinitialized (Current Version %Ld.%Ld, Expected Version %Ld.%Ld).",
+                                    mdCurrMajorVersion, mdCurrMinorVersion,
+                                    METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION);   
+                      else
+                        str_sprintf(msgBuf, " Error %d returned while accessing metadata. Fix that error before running this command.",
+                                    retcode);
 
                       mdui.setSubstep(4);
 
@@ -896,8 +904,6 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		      
-		      *CmpCommon::diags() << DgSqlCode(-9999);
-
 		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
 		      mdui.setSubstep(0);
 		      break;
