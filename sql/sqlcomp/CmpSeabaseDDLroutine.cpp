@@ -211,6 +211,38 @@ static void getExecutionModeLit(ComRoutineExecutionMode val, NAString& result)
         result = COM_ROUTINE_FAST_EXECUTION_LIT;
   }
 
+short CmpSeabaseDDL::getUsingRoutines(ExeCliInterface *cliInterface,
+                                     Int64 objUID,
+                                     Queue * & usingRoutinesQueue)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  char buf[4000];
+  str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name), object_type "
+                   "from %s.\"%s\".%s T, %s.\"%s\".%s LU "
+                   "where LU.using_library_uid = %Ld and "
+                   "T.object_uid = LU.used_udr_uid  and T.valid_def = 'Y' ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
+              objUID);
+
+  usingRoutinesQueue = NULL;
+  cliRC = cliInterface->fetchAllRows(usingRoutinesQueue, buf, 0, 
+                                     FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return cliRC;
+    }
+ 
+  if (usingRoutinesQueue->numEntries() == 0)
+    return 100;
+
+
+  return 0;
+}
+
 
 void CmpSeabaseDDL::createSeabaseLibrary(
 				      StmtDDLCreateLibrary * createLibraryNode,
@@ -439,26 +471,42 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
      return;
   }
   
-  NAString usingObjName;
-  cliRC = getUsingRoutine(&cliInterface, objUID, usingObjName);
+  Queue * usingRoutinesQueue = NULL;
+  cliRC = getUsingRoutines(&cliInterface, objUID, usingRoutinesQueue);
   if (cliRC < 0)
     {
       deallocEHI(ehi); 
       processReturn();
       return;
     }
-
-  if (cliRC != 100) // found an object
+  // If RESTRICT and the library is being used, return an error
+  if (cliRC != 100 && dropLibraryNode->getDropBehavior() == COM_RESTRICT_DROP_BEHAVIOR) 
     {
-      *CmpCommon::diags() << DgSqlCode(-1366) ;
-        // << DgTableName(usingObjName);
+      *CmpCommon::diags() << DgSqlCode(-CAT_DEPENDENT_ROUTINES_EXIST);
 
       deallocEHI(ehi); 
       processReturn();
       return;
     }
- 
+    
+  for (size_t i = 0; i < usingRoutinesQueue->numEntries(); i++)
+  { 
+     usingRoutinesQueue->position();
+     OutputInfo * rou = (OutputInfo*)usingRoutinesQueue->getNext(); 
+     
+     char * routineName = rou->get(0);
+     ComObjectType objectType = PrivMgr::ObjectLitToEnum(rou->get(1));
 
+     if (dropSeabaseObject(ehi, routineName,
+                           currCatName, currSchName, objectType,
+                           TRUE, FALSE))
+     {
+       deallocEHI(ehi); 
+       processReturn();
+       return;
+     }
+   }
+ 
   // can get a slight perf. gain if we pass in objUID
   if (dropSeabaseObject(ehi, objName,
                         currCatName, currSchName, COM_LIBRARY_OBJECT,

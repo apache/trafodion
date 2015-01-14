@@ -2405,7 +2405,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
     }
   else if (dropTableNode->getDropBehavior() == COM_CASCADE_DROP_BEHAVIOR)
     {
-      cliRC = getUsingViews(&cliInterface, extTableName, TRUE, usingViewsQueue);
+      cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
       if (cliRC < 0)
         {
           processReturn();
@@ -3126,9 +3126,21 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
 
+  Int64 objUID = getObjectUID(&cliInterface,
+                              catalogNamePart.data(), schemaNamePart.data(), 
+                              objectNamePart.data(),
+                              COM_BASE_TABLE_OBJECT_LIT);
+  if (objUID < 0)
+    {
+
+      processReturn();
+
+      return;
+    }
+
   // cannot rename if views are using this table
   Queue * usingViewsQueue = NULL;
-  cliRC = getUsingViews(&cliInterface, extTableName, TRUE, usingViewsQueue);
+  cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
   if (cliRC < 0)
     {
       processReturn();
@@ -3142,18 +3154,6 @@ void CmpSeabaseDDL::renameSeabaseTable(
                           << DgString0("Reason: Dependent views exist.");
       
       processReturn();
-      return;
-    }
-
-  Int64 objUID = getObjectUID(&cliInterface,
-                              catalogNamePart.data(), schemaNamePart.data(), 
-                              objectNamePart.data(),
-                              COM_BASE_TABLE_OBJECT_LIT);
-  if (objUID < 0)
-    {
-
-      processReturn();
-
       return;
     }
 

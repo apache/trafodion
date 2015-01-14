@@ -40,6 +40,7 @@ obey TEST138(test_create);
 obey TEST138(test_alter);
 obey TEST138(test_view);
 obey TEST138(test_sequence);
+obey TEST138(test_drop);
 log;
 obey TEST138(clean_up);
 exit;
@@ -50,7 +51,7 @@ drop sequence user1_seq1;
 drop sequence user1_seq2;
 -- drop database
 drop schema t138sch cascade;
-
+drop schema sch138c cascade;
 -- removes privilege metadata, including all component privilege grants
 initialize authorization, drop;
 
@@ -66,6 +67,7 @@ revoke component privilege "ALTER_TABLE" on SQL_OPERATIONS from sql_user2;
 revoke component privilege "DROP" on SQL_OPERATIONS from sql_user2;
 revoke component privilege DROP_SEQUENCE on SQL_OPERATIONS from sql_user2;
 revoke component privilege "DROP_VIEW" on SQL_OPERATIONS from sql_user2;
+
 ?section test_create
 -- =================================================================
 -- run tests to make sure table related operations are 
@@ -208,6 +210,35 @@ revoke component privilege DROP_SEQUENCE on SQL_OPERATIONS from sql_user2;
 revoke component privilege CREATE_SEQUENCE on SQL_OPERATIONS from sql_user1;
 get privileges on component sql_operations for sql_user1;
 get privileges on component sql_operations for sql_user2;
+
+?section test_drop
+create schema sch138c;
+set schema sch138c;
+-- Setup libraries, procedures and functions
+create library t138_l1 file 'udrtest135.dll';
+
+create function t138_ADD2(int,int) returns (ADD2 int)
+language c parameter style sql external name 'add2'
+library t138_l1
+deterministic no sql final call allow any parallelism state area size 1024 ;
+-- Procedure creation not working
+--sh sh $$scriptsdir$$/tools/java-compile.ksh TEST138.java 2> LOG138-SECONDARY | tee -a LOG138;
+--sh sh $$scriptsdir$$/tools/java-archive.ksh TEST138.jar TEST138.class 2>> LOG138-SECONDARY | tee -a LOG138;
+--create procedure p138(in cmd char(1000),out status char(60))
+--language java parameter style java modifies sql data
+--external name 'TEST101.Xact' library t138_l1;
+
+create table t138 (a int not null primary key);
+create view v138 as select * from T138;
+create sequence sq138;
+
+select count (*) from TRAFODION."_MD_".OBJECTS WHERE schema_name = 'SCH138C';
+
+drop schema SCH138C;
+select count (*) from TRAFODION."_MD_".OBJECTS WHERE schema_name = 'SCH138C';
+
+drop schema SCH138C cascade;
+select count (*) from TRAFODION."_MD_".OBJECTS WHERE schema_name = 'SCH138C';
 
 ?section create_tbl
 set schema t138sch;

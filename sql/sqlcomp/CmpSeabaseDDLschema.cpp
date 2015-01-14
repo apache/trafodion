@@ -54,7 +54,8 @@ static bool dropOneTable(
    ExeCliInterface & cliInterface,
    const char * catalogName, 
    const char * schemaName, 
-   const char * objectName);
+   const char * objectName,
+   bool isVolatile);
 
 // *****************************************************************************
 // *                                                                           *
@@ -392,6 +393,8 @@ ComObjectType objectType;
    if (getObjectTypeandOwner(&cliInterface,catName.data(),schName.data(),
                              SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwnerID))
    {
+      // A Trafodion schema does not exist if the schema object row is not
+      // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
                           << DgSchemaName(schemaName.getExternalName().data());
       return;
@@ -416,25 +419,25 @@ ComObjectName objName(catName,schName,NAString("dummy"),COM_TABLE_NAME,TRUE);
    
 bool isVolatile = (memcmp(schName.data(),"VOLATILE_SCHEMA",strlen("VOLATILE_SCHEMA")) == 0);
 
+// Can't drop a schema whose name begins with VOLATILE_SCHEMA unless the 
+// keyword VOLATILE was specified in the DROP SCHEMA command. 
    if (isVolatile && !dropSchemaNode->isVolatile())
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_RESERVED_METADATA_SCHEMA_NAME)
                           << DgTableName(schName);
       return;
    }
-//TODO: get all object.  Remove object_type checks, add object_name <> SEABASE_SCHEMA_OBJECTNAME.
+
+// Get a list of all objects in the schema, excluding the schema object itself.
 char query[4000];
 
-   str_sprintf(query,"select trim(object_name), trim(object_type) "
-                     "from %s.\"%s\".%s "
-                     "where catalog_name = '%s' and schema_name = '%s' and "
-                     "      (object_type = '%s' or "
-                     "       object_type = '%s' or "
-                     "       object_type = '%s') "
-                     "for read committed access ",
+   str_sprintf(query,"SELECT TRIM(object_name), TRIM(object_type) "
+                     "FROM %s.\"%s\".%s "
+                     "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
+                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"'" 
+                     "FOR READ COMMITTED ACCESS",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
-               (char*)catName.data(),(char*)schName.data(), 
-               COM_BASE_TABLE_OBJECT_LIT,COM_INDEX_OBJECT_LIT,COM_VIEW_OBJECT_LIT);
+               (char*)catName.data(),(char*)schName.data());
   
 Queue * objectsQueue = NULL;
 
@@ -458,29 +461,87 @@ Queue * objectsQueue = NULL;
 
 bool someObjectsCouldNotBeDropped = false;
 
-// drop views 
+// Drop libraries, sequence generators, procedures (SPJs), UDFs (functions) and views 
    objectsQueue->position();
    for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
    {
       OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
 
       char * objName = vi->get(0);
-      NAString objType = vi->get(1);
-    
-      if (objType == COM_VIEW_OBJECT_LIT)
+      NAString objectTypeLit = vi->get(1);
+      ComObjectType objectType = PrivMgr::ObjectLitToEnum(objectTypeLit.data());
+      char buf[1000];
+      NAString objectTypeString;
+      NAString cascade = " ";
+      
+      switch (objectType)
       {
-         char buf [1000];
+         // These object types are handled later and can be ignored for now.
+         case COM_BASE_TABLE_OBJECT:
+         case COM_INDEX_OBJECT:
+         case COM_CHECK_CONSTRAINT_OBJECT:
+         case COM_NOT_NULL_CONSTRAINT_OBJECT:
+         case COM_PRIMARY_KEY_CONSTRAINT_OBJECT:
+         case COM_REFERENTIAL_CONSTRAINT_OBJECT:
+         case COM_UNIQUE_CONSTRAINT_OBJECT:
+         {
+            continue;
+         }
+         case COM_LIBRARY_OBJECT:
+         {
+            objectTypeString = "LIBRARY";
+            cascade = "CASCADE";
+            break;
+         }
+         case COM_SEQUENCE_GENERATOR_OBJECT:
+         {
+            objectTypeString = "SEQUENCE";
+            break;
+         }
+         case COM_STORED_PROCEDURE_OBJECT:
+         {
+            objectTypeString = "PROCEDURE";
+            break;
+         }
+         case COM_USER_DEFINED_ROUTINE_OBJECT:
+         {
+            objectTypeString = "FUNCTION";
+            break;
+         }
+         case COM_VIEW_OBJECT:
+         {
+            objectTypeString = "VIEW";
+            cascade = "CASCADE";
+            break;
+         }
+         // These object types should not be seen.
+         case COM_MV_OBJECT: 
+         case COM_MVRG_OBJECT:    
+         case COM_TRIGGER_OBJECT:
+         case COM_LOB_TABLE_OBJECT:
+         case COM_TRIGGER_TABLE_OBJECT:
+         case COM_SYNONYM_OBJECT:
+         case COM_PRIVATE_SCHEMA_OBJECT:
+         case COM_SHARED_SCHEMA_OBJECT:
+         case COM_EXCEPTION_TABLE_OBJECT:
+         case COM_LOCK_OBJECT:
+         case COM_MODULE_OBJECT:
+         default:
+            SEABASEDDL_INTERNAL_ERROR("Unrecognized object type in schema");
+            return;
+      }
          
-         str_sprintf(buf, "drop view \"%s\".\"%s\".\"%s\" cascade",
-                     (char*)catName.data(), (char*)schName.data(), objName);
+      str_sprintf(buf, "drop %s \"%s\".\"%s\".\"%s\" %s",
+                  objectTypeString.data(),(char*)catName.data(),(char*)schName.data(), 
+                  objName,cascade.data());
          
-         cliRC = cliInterface.executeImmediate(buf);
-         if (cliRC < 0 && cliRC != -1389)
-            someObjectsCouldNotBeDropped = TRUE;
-      } 
+      cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+         someObjectsCouldNotBeDropped = true;
    } 
 
-// drop tables 
+// Drop all tables in the schema.  This will also drop any associated constraints. 
+// Drop of histogram tables is deferred.
 bool histExists = false;
 
    objectsQueue->position();
@@ -497,7 +558,8 @@ bool histExists = false;
          if (!(objName == HBASE_HIST_NAME || objName == HBASE_HISTINT_NAME))
          {
             if (dropOneTable(cliInterface,(char*)catName.data(), 
-                            (char*)schName.data(),(char*)objName.data()))
+                             (char*)schName.data(),(char*)objName.data(),
+                             isVolatile))
                someObjectsCouldNotBeDropped = true;
          }
          else
@@ -505,13 +567,14 @@ bool histExists = false;
       } 
    } 
 
-// drop indexes
-   str_sprintf(query,"select trim(object_name), trim(object_type) "
-                     "from %s.\"%s\".%s "
-                     "where catalog_name = '%s' and "
-                     "      schema_name = '%s' and "
+// Drop any remaining indexes.
+
+   str_sprintf(query,"SELECT TRIM(object_name), TRIM(object_type) "
+                     "FROM %s.\"%s\".%s "
+                     "WHERE catalog_name = '%s' AND "
+                     "      schema_name = '%s' AND "
                      "      object_type = '%s' "
-                     "for read committed access ",
+                     "FOR READ COMMITTED ACCESS ",
                getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
                (char*)catName.data(),(char*)schName.data(), 
                COM_INDEX_OBJECT_LIT);
@@ -535,29 +598,29 @@ bool histExists = false;
       {
          char buf [1000];
 
-         str_sprintf(buf, "drop index \"%s\".\"%s\".\"%s\" cascade",
+         str_sprintf(buf, "DROP INDEX \"%s\".\"%s\".\"%s\" CASCADE",
                      (char*)catName.data(), (char*)schName.data(), objName);
          cliRC = cliInterface.executeImmediate(buf);
 
-         if (cliRC < 0 &&cliRC != -1389)
-            someObjectsCouldNotBeDropped = TRUE;
+         if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+            someObjectsCouldNotBeDropped = true;
       }  
    }  
 
-// for volatile schemas, sometimes only the objects get dropped    
-// if the dropObjectsOnly flag is set, just exit now, we are done
-  if (dropSchemaNode->dropObjectsOnly())
-    return;
+// For volatile schemas, sometimes only the objects get dropped.    
+// If the dropObjectsOnly flag is set, just exit now, we are done.
+   if (dropSchemaNode->dropObjectsOnly())
+      return;
 
-// now drop histogram objects
+// Now drop any histogram objects
    if (histExists)
    {
-      if (dropOneTable(cliInterface, 
-                       (char*)catName.data(), (char*)schName.data(), (char*)HBASE_HISTINT_NAME))
+      if (dropOneTable(cliInterface,(char*)catName.data(),(char*)schName.data(), 
+                      (char*)HBASE_HISTINT_NAME,false))
          someObjectsCouldNotBeDropped = true;
       
-      if (dropOneTable(cliInterface, 
-                       (char*)catName.data(), (char*)schName.data(), (char*)HBASE_HIST_NAME))
+      if (dropOneTable(cliInterface,(char*)catName.data(),(char*)schName.data(), 
+                       (char*)HBASE_HIST_NAME,false))
          someObjectsCouldNotBeDropped = true;
    }
 
@@ -569,6 +632,8 @@ bool histExists = false;
                           << DgSchemaName(catName + "." + schName);
       return;
    }
+   
+// If all objects in the schema have been dropped, drop the schema object itself.
     
 char buf [1000];
 
@@ -614,6 +679,8 @@ char buf [1000];
 // *  <objectName>                    const char *                    In       *
 // *    is the name of the table to drop.                                      *
 // *                                                                           *
+// *  <isVolatile>                    bool                            In       *
+// *    is true if the object is volatile or part of a volatile schema.        *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -627,7 +694,8 @@ static bool dropOneTable(
    ExeCliInterface & cliInterface,
    const char * catalogName, 
    const char * schemaName, 
-   const char * objectName)
+   const char * objectName,
+   bool isVolatile)
    
 {
 
@@ -644,8 +712,13 @@ Lng32 cliRC = cliInterface.holdAndSetCQD("TRAF_RELOAD_NATABLE_CACHE", "ON");
 
 bool someObjectsCouldNotBeDropped = false;
 
-   str_sprintf(buf,"drop table \"%s\".\"%s\".\"%s\" cascade",
-               catalogName,schemaName,objectName);
+char volatileString[20] = {0};
+
+   if (isVolatile)
+      strcpy(volatileString,"VOLATILE");
+
+   str_sprintf(buf,"DROP %s TABLE \"%s\".\"%s\".\"%s\" CASCADE",
+               volatileString,catalogName,schemaName,objectName);
    cliRC = cliInterface.executeImmediate(buf);
    
    if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
@@ -656,7 +729,6 @@ CorrName cn(catalogName,STMTHEAP,schemaName,objectName);
 
    ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
      NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
-   
    cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
 
    return someObjectsCouldNotBeDropped;

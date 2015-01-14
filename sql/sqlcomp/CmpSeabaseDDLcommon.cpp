@@ -2987,42 +2987,6 @@ short CmpSeabaseDDL::getUsingObject(ExeCliInterface *cliInterface,
   return 0;
 }
 
-short CmpSeabaseDDL::getUsingRoutine(ExeCliInterface *cliInterface,
-                                     Int64 objUID,
-                                     NAString &usingObjName)
-{
-  Lng32 retcode = 0;
-  Lng32 cliRC = 0;
-  
-  char buf[4000];
-  str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name) from %s.\"%s\".%s T, %s.\"%s\".%s LU where LU.using_library_uid = %Ld and T.object_uid = LU.used_udr_uid  and T.valid_def = 'Y' ",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
-              objUID);
-
-  Queue * usingRoutinesQueue = NULL;
-  cliRC = cliInterface->fetchAllRows(usingRoutinesQueue, buf, 0, 
-                                     FALSE, FALSE, TRUE);
-  
-  if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return cliRC;
-    }
-    
-  if (usingRoutinesQueue->numEntries() == 0)
-    return 100;
-
-  usingRoutinesQueue->position();
-  OutputInfo * rou = (OutputInfo*)usingRoutinesQueue->getNext(); 
-  
-  char * routineName = rou->get(0);
-
-  usingObjName = routineName;
-
-  return 0;
-}
-
 short CmpSeabaseDDL::getBaseTable(ExeCliInterface *cliInterface,
                                   const NAString &indexCatName,
                                   const NAString &indexSchName,
@@ -3082,23 +3046,22 @@ short CmpSeabaseDDL::getBaseTable(ExeCliInterface *cliInterface,
 }
 
 short CmpSeabaseDDL::getUsingViews(ExeCliInterface *cliInterface,
-                                    const NAString &usedObjName,
-                                    NABoolean isTable,
-                                    Queue * &usingViewsQueue)
+                                   Int64 objectUID,
+                                   Queue * &usingViewsQueue)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
   char buf[4000];
-  char tableOrView[20];
-  if (isTable)
-    strcpy(tableOrView, "table");
-  else
-    strcpy(tableOrView, "view");
-
-  str_sprintf(buf, "select trim(a) from (get all views on %s %s, no header, return full names) x(a) ",
-              tableOrView,
-              (char*)usedObjName.data());
+              
+  str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name) "
+                   "from %s.\"%s\".%s T, %s.\"%s\".%s VU "
+                   "where T.object_uid = VU.using_view_uid  and "
+                   "T.valid_def = 'Y' and VU.used_object_uid = %Ld ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
+              objectUID);
+              
 
   cliRC = cliInterface->fetchAllRows(usingViewsQueue, buf, 0, FALSE, FALSE, TRUE);
   if (cliRC < 0)
