@@ -88,8 +88,8 @@ public class TrxTransactionState  extends TransactionState{
 
         @Override
         public String toString() {
-            return "startRow: " + (startRow == null ? "null" : Bytes.toString(startRow)) + ", endRow: "
-                    + (endRow == null ? "null" : Bytes.toString(endRow));
+            return "startRow: " + (startRow == null ? "null" : Bytes.toStringBinary(startRow)) + ", endRow: "
+                    + (endRow == null ? "null" : Bytes.toStringBinary(endRow));
         }
     }
     private List<ScanRange> scans = Collections.synchronizedList(new LinkedList<ScanRange>());
@@ -339,10 +339,21 @@ public class TrxTransactionState  extends TransactionState{
                 if (scanRange != null && scanRange.contains(row)) {
                     LOG.warn("Transaction [" + this.toString() + "] has scan which conflicts with ["
                             + checkAgainst.toString() + "]: region [" + regionInfo.getRegionNameAsString()
-                            + "], scanRange[" + scanRange.toString() + "] ,row[" + Bytes.toString(row) + "]");
+                            + "], scanRange[" + scanRange.toString() + "] ,row[" + Bytes.toStringBinary(row) + "]");
                     return true;
                 }
+                //else {
+                //    LOG.trace("Transaction [" + this.toString() + "] has scanRange checked against ["
+                //            + checkAgainst.toString() + "]: region [" + regionInfo.getRegionNameAsString()
+                //            + "], scanRange[" + scanRange.toString() + "] ,row[" + Bytes.toStringBinary(row) + "]");
+                //}
               }
+            }
+            else {
+             if (this.scans == null)
+               LOG.trace("Transaction [" + this.toString() + "] scans was equal to null");
+             else 
+               LOG.trace("Transaction [" + this.toString() + "] scans was empty ");
             }
         }
           catch (Exception e) {
@@ -383,9 +394,9 @@ public class TrxTransactionState  extends TransactionState{
 
     public synchronized void addScan(final Scan scan) {
         ScanRange scanRange = new ScanRange(scan.getStartRow(), scan.getStopRow());
-        if (LOG.isTraceEnabled()) LOG.trace(String.format("Adding scan for transaction [%s], from [%s] to [%s]", transactionId,
-            scanRange.startRow == null ? "null" : Bytes.toString(scanRange.startRow), scanRange.endRow == null ? "null"
-                    : Bytes.toString(scanRange.endRow)));
+        if (LOG.isTraceEnabled()) LOG.trace(String.format("Adding scan for transaction [%s], from startRow [%s] to endRow [%s]", transactionId,
+            scanRange.startRow == null ? "null" : Bytes.toStringBinary(scanRange.startRow), scanRange.endRow == null ? "null"
+                    : Bytes.toStringBinary(scanRange.endRow)));
         scans.add(scanRange);
     }
 
