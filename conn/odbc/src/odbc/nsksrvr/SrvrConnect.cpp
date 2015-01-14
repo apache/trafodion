@@ -87,8 +87,8 @@
 #include <dlfcn.h>
 #include "secsrvrmxo.h"
 
-#include <sys/types.h>   
-#include <sys/stat.h>   
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 
 #ifdef PERF_TEST	// Added for performance testing
@@ -358,7 +358,7 @@ static void* SessionWatchDog(void* arg)
 {
 	pthread_mutex_lock(&Thread_mutex);
 	record_session_done = false;
-	
+
 	try
 	{
 		SQLCTX_HANDLE thread_context_handle = 0;
@@ -1283,13 +1283,6 @@ ImplInit (
 			createTimeLoggerFile();
 		}
 #endif
-
-	if (srvrGlobal->m_bStatisticsEnabled)
-	{
-		//boost::thread thrd(&SessionWatchDog);
-		pthread_t thrd;
-		pthread_create(&thrd, NULL, SessionWatchDog, NULL);
-	}
 }
 
 
@@ -1552,7 +1545,7 @@ long getMemSize(char *sessionPhase)
                			SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
                        			srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
                       			1, tmpString);
-			} else 
+			} else
 				sscanf(dataBuf, "%*ld %ld ", &memSize);
 			}
 		} else {
@@ -1563,9 +1556,9 @@ long getMemSize(char *sessionPhase)
                 		SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
                        			srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
                        			1, tmpString);
-			} else 
+			} else
 				sscanf(dataBuf, "%*ld %ld ", &memSize);
-		
+
 
 	}
 
@@ -3464,6 +3457,16 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	else
 		srvrGlobal->m_FetchBufferSize = inContext->rowSetSize*1024;
 
+	// Moved watch dog thread creation from ImplInit() to below to avoid some initialization issues
+	static bool sessionWatchDogStarted = false;
+	if (srvrGlobal->m_bStatisticsEnabled && !sessionWatchDogStarted)
+	{
+		//boost::thread thrd(&SessionWatchDog);
+		pthread_t thrd;
+		pthread_create(&thrd, NULL, SessionWatchDog, NULL);
+		sessionWatchDogStarted = true;
+	}
+
 	if (resStatSession != NULL)
 	{
 		resStatSession->init();
@@ -3623,7 +3626,7 @@ odbc_SQLSvc_TerminateDialogue_ame_(
 	odbc_SQLSvc_MonitorCall_exc_	monitorException_={0,0};
 
 	exception_.exception_nr = CEE_SUCCESS;
-    
+
     long exitSesMemSize = 0;
 
     char tmpStringEnv[1024];
@@ -3709,15 +3712,15 @@ odbc_SQLSvc_TerminateDialogue_ame_(
                 srvrGlobal->dialogueId = -1;
 	}
 
-	exitSesMemSize = 0; 
+	exitSesMemSize = 0;
 	if( maxHeapPctExit != 0 && initSessMemSize != 0 )
-		exitSesMemSize = getMemSize("Terminate"); 
+		exitSesMemSize = getMemSize("Terminate");
 
 	if((exitSesMemSize - initSessMemSize) > initSessMemSize*maxHeapPctExit/100   )
 		heapSizeExit = true;
 	else
 		heapSizeExit = false;
-	
+
 
 	if( heapSizeExit == false ){
 		if( !updateZKState(CONNECTED, AVAILABLE) )
@@ -3731,7 +3734,7 @@ odbc_SQLSvc_TerminateDialogue_ame_(
 
 	odbc_SQLSvc_TerminateDialogue_ts_res_(objtag_, call_id_, &exception_);
 
-        if( heapSizeExit == true ) 
+        if( heapSizeExit == true )
 	{
 		odbc_SQLSvc_StopServer_exc_ StopException;
 		StopException.exception_nr=0;
@@ -3925,10 +3928,10 @@ void __cdecl SRVR::BreakDialogue(CEE_tag_def monitor_tag)
 		exitServerProcess();
 	}
 
-	
-	exitSesMemSize = 0; 
+
+	exitSesMemSize = 0;
 	if( maxHeapPctExit != 0  && initSessMemSize != 0 )
-		exitSesMemSize = getMemSize("Break"); 
+		exitSesMemSize = getMemSize("Break");
 
 	if((exitSesMemSize - initSessMemSize) > initSessMemSize*maxHeapPctExit/100   )
 	{
@@ -9184,7 +9187,7 @@ void __cdecl StatisticsTimerExpired(CEE_tag_def timer_tag)
 	long long timestamp = JULIANTIMESTAMP();
 	//static long long check_session_interval = timestamp;
 
-	if( resStatSession != NULL 
+	if( resStatSession != NULL
 		&& srvrGlobal->m_statisticsPubType == STATISTICS_AGGREGATED )
 		//&& timestamp - check_session_interval >= aggrInterval * 1000000LL)
 	{
@@ -9193,10 +9196,10 @@ void __cdecl StatisticsTimerExpired(CEE_tag_def timer_tag)
 
 	if(resStatStatement != NULL
 		&& srvrGlobal->m_statisticsPubType != STATISTICS_SESSION
-		&& !resStatStatement->pubStarted 
-		&& !resStatStatement->queryFinished 
+		&& !resStatStatement->pubStarted
+		&& !resStatStatement->queryFinished
 		&& resStatStatement->wouldLikeToStart_ts > 0
-		&& pQueryStmt != NULL 
+		&& pQueryStmt != NULL
 		&& timestamp - resStatStatement->wouldLikeToStart_ts >= srvrGlobal->m_iQueryPubThreshold * 1000000LL)
 	{
 		resStatStatement->SendQueryStats(true, pQueryStmt);
