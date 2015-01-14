@@ -324,6 +324,7 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
         tOffset offset = 0;
         tSize bufLen = sampleBufferSize;
         char* buffer = new (heap_) char[bufLen+1];
+
         buffer[bufLen] = 0; // extra null at the end to protect strchr()
                             // to run over the buffer.
    
@@ -331,44 +332,52 @@ void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
    
         Int32 totalSamples = 10;
         Int32 totalLen = 0;
+        Int32 recordPrefixLen = 0;
    
         while (!sampleDone) {
    
            tSize szRead = hdfsPread(fs, file, offset, buffer, bufLen);
+
+           if ( szRead <= 0 )
+              break;
+
+           CMPASSERT(szRead <= bufLen);
       
            char* pos = NULL;
    
-           if ( szRead > 0 ) {
-                
              //if (isSequenceFile && offset==0 && memcmp(buffer, "SEQ6", 4) == 0)
              //   isSequenceFile_ = TRUE;
    
-             char* start = buffer;
+           char* start = buffer;
    
-             for (Int32 i=0; i<totalSamples; i++ ) {
+
+           for (Int32 i=0; i<totalSamples; i++ ) {
    
                 if ( (pos=strchr(start, recordTerminator)) ) {
    
-                  totalLen += pos - start + 1 + offset;
+                  totalLen += pos - start + 1 + recordPrefixLen;
                   samples++;
    
                   start = pos+1;
    
-                  if ( start > buffer + bufLen ) {
+                  if ( start > buffer + szRead ) {
                      sampleDone = TRUE;
                      break;
                   }
-                } else 
+
+                  recordPrefixLen = 0;
+
+                } else {
+                  recordPrefixLen += szRead - (start - buffer + 1);
                   break;
-             }
+                }
+           }
+
    
-             if ( samples > 0 )
-               break;
-             else
-               offset += bufLen;
-     
-           } else  
-              break; // fail to read any bytes. Bail out. 
+           if ( samples > 0 )
+             break;
+           else
+             offset += szRead;
        }
    
        NADELETEBASIC(buffer, heap_);
