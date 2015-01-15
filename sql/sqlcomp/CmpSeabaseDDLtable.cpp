@@ -6679,7 +6679,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
   char query[4000];
   ExeCliInterface cliInterface(STMTHEAP);
-
+  
   desc_struct * tableDesc = NULL;
 
   Int32 objectOwner =  0 ;
@@ -6864,16 +6864,30 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
               objUID,
               (includeInvalidDefs ? " " : " and O.valid_def = 'Y' "));
 
+  //Turn off CQDs MERGE_JOINS and HASH_JOINS to avoid a full table scan of 
+  //SEABASE_OBJECTS table. Full table scan of SEABASE_OBJECTS table causes
+  //simultaneous DDL operations to run into conflict.
+  //Make sure to restore the CQDs after this query including error paths.            
+  cliInterface.holdAndSetCQD("MERGE_JOINS", "OFF");
+  cliInterface.holdAndSetCQD("HASH_JOINS", "OFF");
+  
   Queue * indexInfoQueue = NULL;
   cliRC = cliInterface.fetchAllRows(indexInfoQueue, query, 0, FALSE, FALSE, TRUE);
+  
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
       processReturn();
-
-      return NULL;
+    
     }
+  
+  //restore CQDs.
+  cliInterface.restoreCQD("MERGE_JOINS");
+  cliInterface.restoreCQD("HASH_JOINS");
+  
+  if (cliRC < 0)
+    return NULL;
 
   ComTdbVirtTableIndexInfo * indexInfoArray = NULL;
   if (indexInfoQueue->numEntries() > 0)
