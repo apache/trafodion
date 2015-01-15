@@ -586,13 +586,18 @@ Lng32 ExHbaseScanSQTaskTcb::getProbeResult(char* &keyData)
 {
   Lng32 retcode = 0;
   Lng32 rc = 0;
+  Lng32 probeSize = 100; // using fewer rows results in intermittent wrong 
+  //results. Using the hbase default scan size of 100 as a workarorund.
+  if (tcb_->hbaseAccessTdb().getHbasePerfAttributes()->useMinMdamProbeSize())
+    probeSize = 1; // if performance is vital, comp_bool_184 can be set to ON 
+  // to choose this path.
 
   retcode = tcb_->ehi_->scanOpen(tcb_->table_, 
 				 tcb_->beginRowId_, tcb_->endRowId_,
 				 tcb_->columns_, -1,
 				 tcb_->hbaseAccessTdb().readUncommittedScan(),
 				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
-				 2, // for the probe we want only two rows. Using one row results in intermittent wrong results.
+				 probeSize,
 				 TRUE, NULL, NULL, NULL);
   if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
     {

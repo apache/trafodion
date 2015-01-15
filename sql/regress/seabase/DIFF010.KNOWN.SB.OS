@@ -1,8 +1,6 @@
-3675c3675
-< STATEMENT ................ select * from t010t1 where a=1;
+603d602
+< 4 a 1 4a1
+605c604
+< --- 5 row(s) selected.
 ---
-> STATEMENT ................ select * from t010t1 where a = 2;
-6870c6870
-< STATEMENT ................ select * from t010t1 where a=1;
----
-> STATEMENT ................ select * from t010t1 where a = 2;
+> --- 4 row(s) selected.
