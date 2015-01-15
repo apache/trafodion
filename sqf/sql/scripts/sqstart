@@ -443,33 +443,33 @@ do
       fi
       lv_process_count_last=lv_process_count_curr
 
-      lv_TM0_started=`cstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | grep TM | wc -l`
+#      lv_TM0_started=`cstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | grep TM | wc -l`
 
-      if [ $lv_TM0_started '!=' 0 ]; then
-      let lv_num_checks=0
-         lv_recovery_tx_cnt=`sqshell -c show | grep -v 'Configuration Change Notice' | grep DTM_RECOVERING_TX_COUNT | cut -d= -f2 | sed -e 's/^[[:space:]]*//'`
-         if [ "$lv_recovery_tx_cnt" -gt "0" ]; then
-            echo -ne "\r# of Transactions being recovered: $lv_recovery_tx_cnt "
-         else
-            if [ "$lv_tm_svc_ready" -eq 0 ]; then
-               echo -ne "\r# of Transactions being recovered: $lv_recovery_tx_cnt "
-               sqregck -r SQ_TXNSVC_READY -d 5 -i 5
-               lv_tm_svc_ready=$?
-            else
-               if [ $tx_srvc_ready_printed -eq 0 ]; then
-                 echo -ne "\rTransaction Services Ready          "
-                 tx_srvc_ready_printed=1
-               fi
-               let lv_tm_svc_ready=1
-            fi
-         fi
-      else
+#      if [ $lv_TM0_started '!=' 0 ]; then
+#         let lv_num_checks=0
+#         lv_recovery_tx_cnt=`sqshell -c show | grep -v 'Configuration Change Notice' | grep DTM_RECOVERING_TX_COUNT | cut -d= -f2 | sed -e 's/^[[:space:]]*//'`
+#         if [ "$lv_recovery_tx_cnt" -gt "0" ]; then
+#            echo -ne "\r# of Transactions being recovered: $lv_recovery_tx_cnt "
+#         else
+#            if [ "$lv_tm_svc_ready" -eq 0 ]; then
+#               echo -ne "\r# of Transactions being recovered: $lv_recovery_tx_cnt "
+#               sqregck -r SQ_TXNSVC_READY -d 5 -i 5
+#               lv_tm_svc_ready=$?
+#            else
+#               if [ $tx_srvc_ready_printed -eq 0 ]; then
+#                 echo -ne "\rTransaction Services Ready          "
+#                 tx_srvc_ready_printed=1
+#               fi
+#               let lv_tm_svc_ready=1
+#            fi
+#         fi
+#      else
          if [ $lv_num_checks '==' 0 ]; then
             echo -ne "\r# of SQ processes: $lv_process_count_last "
          else
             echo -n "."
          fi
-      fi
+#      fi
 
       getJobInfo SQStartProcesses
       if [ -z "$gv_job_pid" ]; then
