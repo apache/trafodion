@@ -2945,21 +2945,35 @@ short CmpSeabaseDDL::getUsingObject(ExeCliInterface *cliInterface,
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
-
+  
   char buf[4000];
   str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name) from %s.\"%s\".%s T, %s.\"%s\".%s VU where VU.used_object_uid = %Ld and T.object_uid = VU.using_view_uid  and T.valid_def = 'Y' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
               objUID);
 
+  //Turn off CQDs MERGE_JOINS and HASH_JOINS to avoid a full table scan of 
+  //SEABASE_OBJECTS table. Full table scan of SEABASE_OBJECTS table causes
+  //simultaneous DDL operations to run into conflict.
+  //Make sure to restore the CQDs after this query including error paths.
+  cliInterface->holdAndSetCQD("MERGE_JOINS", "OFF");
+  cliInterface->holdAndSetCQD("HASH_JOINS", "OFF");
+
   Queue * usingViewsQueue = NULL;
   cliRC = cliInterface->fetchAllRows(usingViewsQueue, buf, 0, FALSE, FALSE, TRUE);
+  
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return cliRC;
     }
- 
+  
+  //restore CQDs.
+  cliInterface->restoreCQD("MERGE_JOINS");
+  cliInterface->restoreCQD("HASH_JOINS");
+  
+  if (cliRC < 0)
+     return cliRC; 
+  
   if (usingViewsQueue->numEntries() == 0)
     return 100;
 
@@ -2979,22 +2993,36 @@ short CmpSeabaseDDL::getUsingRoutine(ExeCliInterface *cliInterface,
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
-
+  
   char buf[4000];
   str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name) from %s.\"%s\".%s T, %s.\"%s\".%s LU where LU.using_library_uid = %Ld and T.object_uid = LU.used_udr_uid  and T.valid_def = 'Y' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
               objUID);
 
+  //Turn off CQDs MERGE_JOINS and HASH_JOINS to avoid a full table scan of 
+  //SEABASE_OBJECTS table. Full table scan of SEABASE_OBJECTS table causes
+  //simultaneous DDL operations to run into conflict.
+  //Make sure to restore the CQDs after this query including error paths.
+  cliInterface->holdAndSetCQD("MERGE_JOINS", "OFF");
+  cliInterface->holdAndSetCQD("HASH_JOINS", "OFF");
+  
   Queue * usingRoutinesQueue = NULL;
   cliRC = cliInterface->fetchAllRows(usingRoutinesQueue, buf, 0, 
                                      FALSE, FALSE, TRUE);
+  
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return cliRC;
     }
- 
+    
+  //restore CQDs.
+  cliInterface->restoreCQD("MERGE_JOINS");
+  cliInterface->restoreCQD("HASH_JOINS");
+  
+  if(cliRC < 0)
+    return cliRC;
+  
   if (usingRoutinesQueue->numEntries() == 0)
     return 100;
 
