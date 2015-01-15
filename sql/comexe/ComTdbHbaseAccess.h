@@ -256,10 +256,17 @@ public:
     {(v ? flags_ |= CACHE_BLOCKS : flags_ &= ~CACHE_BLOCKS); };
     NABoolean cacheBlocks() { return (flags_ & CACHE_BLOCKS) != 0; };
     
+    void setUseMinMdamProbeSize(NABoolean v)
+    {(v ? flags_ |= USE_MIN_MDAM_PROBE_SIZE : 
+      flags_ &= ~USE_MIN_MDAM_PROBE_SIZE); };
+    NABoolean useMinMdamProbeSize() 
+    { return (flags_ & USE_MIN_MDAM_PROBE_SIZE) != 0; };
+
   private:
     enum
     {
-      CACHE_BLOCKS               = 0x0001
+      CACHE_BLOCKS               = 0x0001,
+      USE_MIN_MDAM_PROBE_SIZE    = 0x0002
     };
     
     UInt32 flags_;
