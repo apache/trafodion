@@ -1504,6 +1504,36 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 9:
 		{
+		  mdui.setMsg("  Start: Create Schema Objects");
+		  mdui.subStep()++;
+
+		  return 0;
+		}
+		break;
+
+	      case 10:
+		{
+                  cliRC = createSchemaObjects(&cliInterface);
+ 		  if (cliRC < 0)
+		    {
+		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui.setSubstep(0);
+
+		      break;
+		    }
+
+		  if (mdui.step() != CUSTOMIZE_NEW_MD)
+		    break;
+                  
+		  mdui.setMsg("  End: Create Schema Objects");
+		  mdui.subStep()++;
+                  
+		  return 0;
+		}
+		break;
+
+	      case 11:
+		{
 		  mdui.setMsg("Customize New Metadata: done");
 		  mdui.setStep(OLD_TABLES_MD_DELETE);
 		  mdui.setSubstep(0);
