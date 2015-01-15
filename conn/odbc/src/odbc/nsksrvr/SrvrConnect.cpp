@@ -9212,8 +9212,33 @@ void SyncPublicationThread()
 	{
 		REPOS_STATS exit_stats;
 		exit_stats.m_pub_type = PUB_TYPE_INIT;
-		repos_queue.push_task(exit_stats);
-		pthread_mutex_lock(&Thread_mutex);
+
+		// Fix for bug 1404108 where mxosrvr processes do not stop when sqstop is called
+		// Will loop until the SessionWatchDog thread exits, which is holding on to Thread_mutex
+		bool mDone = false;
+		int mReturn = 0;
+		while(!mDone)
+		{
+			repos_queue.push_task(exit_stats);
+			mReturn = pthread_mutex_trylock(&Thread_mutex);
+
+			char tmpstr[256];
+			sprintf( tmpstr, "pthread_mutex_trylock()...returned...%d", mReturn );
+			SendEventMsg(MSG_SERVER_TRACE_INFO,
+							  EVENTLOG_INFORMATION_TYPE,
+							  srvrGlobal->nskASProcessInfo.processId,
+							  ODBCMX_SERVICE,
+							  srvrGlobal->srvrObjRef,
+							  3,
+							  srvrGlobal->sessionId,
+							  tmpstr,
+							  "0");
+
+			if( mReturn == 0 )
+				mDone = true;
+			else
+				sleep(1);
+		}
 		pthread_mutex_unlock(&Thread_mutex);
 	}
 }
