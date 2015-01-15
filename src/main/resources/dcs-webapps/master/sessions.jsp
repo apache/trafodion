@@ -32,7 +32,12 @@ import="java.io.*"
   import="org.codehaus.jettison.json.JSONObject"
  %>
 <% 
- try {
+
+  java.sql.Connection connection = null;
+  java.sql.Statement stmt = null;
+  java.sql.ResultSet rs = null;
+  
+  try {
      DcsMaster master = (DcsMaster)getServletContext().getAttribute(DcsMaster.MASTER);
      Configuration conf = master.getConfiguration();
      boolean readOnly = conf.getBoolean("dcs.master.ui.readonly", false);
@@ -43,9 +48,9 @@ import="java.io.*"
      String queryText = conf.get(Constants.TRAFODION_REPOS_METRIC_SESSION_TABLE_QUERY,Constants.DEFAULT_TRAFODION_REPOS_METRIC_SESSION_TABLE_QUERY);
      JSONArray metricSessionJson = null;
      JdbcT4Util jdbcT4Util = master.getServerManager().getJdbcT4Util();
-     java.sql.Connection connection = jdbcT4Util.getConnection();
-     java.sql.Statement stmt = connection.createStatement();
-     java.sql.ResultSet rs = stmt.executeQuery(queryText);
+     connection = jdbcT4Util.getConnection();
+     stmt = connection.createStatement();
+     rs = stmt.executeQuery(queryText);
      metricSessionJson = jdbcT4Util.convertResultSetToJSON(rs);
      rs.close();
      stmt.close();
@@ -63,9 +68,16 @@ import="java.io.*"
       response.setContentType("text/plain");
       response.setStatus(response.SC_INTERNAL_SERVER_ERROR);
       response.getWriter().print(sb.toString());
-   } catch (Exception e) {
+  } catch (Exception e) {
       response.setContentType("text/plain");
       response.setStatus(response.SC_INTERNAL_SERVER_ERROR);
       response.getWriter().print(e.getMessage());
+  } finally {
+      if (rs != null)
+        rs.close();
+      if (stmt != null)
+        stmt.close();
+      if (connection != null)
+        connection.close();
   }  
 %>

@@ -329,17 +329,17 @@ public final class Constants {
   /** Default value for DcsMaster Trafodion logs feature */
   public static final boolean DEFAULT_DCS_MASTER_TRAFODION_LOGS = DCS_MASTER_TRAFODION_LOGS_IS_NOT_ENABLED;
   
-  /** DcsMaster Trafodion repository feature */
-  public static final String DCS_MASTER_TRAFODION_REPOSITORY = "dcs.master.trafodion.repository";
+  /** DcsMaster Trafodion query tools feature */
+  public static final String DCS_MASTER_TRAFODION_QUERY_TOOLS = "dcs.master.trafodion.query.tools";
 
-  /** DcsMaster Trafodion repository is not enabled */
-  public static final boolean DCS_MASTER_TRAFODION_REPOSITORY_IS_NOT_ENABLED = false;
+  /** DcsMaster Trafodion query tools is not enabled */
+  public static final boolean DCS_MASTER_TRAFODION_QUERY_TOOLS_IS_NOT_ENABLED = false;
 
-  /** DcsMaster Trafodion repository is enabled */
-  public static final boolean DCS_MASTER_TRAFODION_REPOSITORY_IS_ENABLED = true;
+  /** DcsMaster Trafodion query tools is enabled */
+  public static final boolean DCS_MASTER_TRAFODION_QUERY_TOOLS_IS_ENABLED = true;
 
-  /** Default value for DcsMaster Trafodion repostiory feature */
-  public static final boolean DEFAULT_DCS_MASTER_TRAFODION_REPOSITORY = DCS_MASTER_TRAFODION_REPOSITORY_IS_NOT_ENABLED;
+  /** Default value for DcsMaster Trafodion query tools feature */
+  public static final boolean DEFAULT_DCS_MASTER_TRAFODION_QUERY_TOOLS = DCS_MASTER_TRAFODION_QUERY_TOOLS_IS_NOT_ENABLED;
   
  /** Names of the trafodion repository tables */
   public static final String TRAFODION_REPOS_CATALOG = "TRAFODION";

@@ -82,7 +82,7 @@ public class ServerManager implements Callable {
 	private final ArrayList<String> registeredServers = new ArrayList<String>();
 	private final Queue<RestartHandler> restartQueue = new LinkedList<RestartHandler>();
 	private final ArrayList<ServerItem> serverItemList = new ArrayList<ServerItem>();
-	private boolean trafodionRepositoryEnabled;
+	private boolean trafodionQueryToolsEnabled;
 	private JdbcT4Util jdbcT4Util = null;
 	
 	public ServerManager(Configuration conf, ZkClient zkc,
@@ -95,8 +95,8 @@ public class ServerManager implements Callable {
 			this.metrics = metrics;
 			maxRestartAttempts = conf.getInt(Constants.DCS_MASTER_SERVER_RESTART_HANDLER_ATTEMPTS,Constants.DEFAULT_DCS_MASTER_SERVER_RESTART_HANDLER_ATTEMPTS);
 			retryIntervalMillis = conf.getInt(Constants.DCS_MASTER_SERVER_RESTART_HANDLER_RETRY_INTERVAL_MILLIS,Constants.DEFAULT_DCS_MASTER_SERVER_RESTART_HANDLER_RETRY_INTERVAL_MILLIS);
-			trafodionRepositoryEnabled = conf.getBoolean(Constants.DCS_MASTER_TRAFODION_REPOSITORY,Constants.DEFAULT_DCS_MASTER_TRAFODION_REPOSITORY);
-			if(trafodionRepositoryEnabled)
+			trafodionQueryToolsEnabled = conf.getBoolean(Constants.DCS_MASTER_TRAFODION_QUERY_TOOLS,Constants.DEFAULT_DCS_MASTER_TRAFODION_QUERY_TOOLS);
+			if(trafodionQueryToolsEnabled)
 				jdbcT4Util = new JdbcT4Util(conf,netConf);
 			retryCounterFactory = new RetryCounterFactory(maxRestartAttempts, retryIntervalMillis);
 			parentZnode = conf.get(Constants.ZOOKEEPER_ZNODE_PARENT,Constants.DEFAULT_ZOOKEEPER_ZNODE_PARENT);

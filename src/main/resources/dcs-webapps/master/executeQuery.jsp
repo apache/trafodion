@@ -33,6 +33,11 @@
   import="org.codehaus.jettison.json.JSONObject"
  %>
 <% 
+
+  java.sql.Connection connection = null;
+  java.sql.Statement stmt = null;
+  java.sql.ResultSet rs = null;
+  
   try {
       DcsMaster master = (DcsMaster)getServletContext().getAttribute(DcsMaster.MASTER);
       Configuration conf = master.getConfiguration();
@@ -61,15 +66,15 @@
       JSONArray result = null;
  
       JdbcT4Util jdbcT4Util = master.getServerManager().getJdbcT4Util();
-      java.sql.Connection connection = jdbcT4Util.getConnection();
-      java.sql.Statement stmt = connection.createStatement();
+      connection = jdbcT4Util.getConnection();
+      stmt = connection.createStatement();
       for (String controlText : controlStatements) {
          stmt.execute(controlText);
       }
       stmt.close();
       
       stmt = connection.createStatement();
-      java.sql.ResultSet rs = stmt.executeQuery(sQuery);
+      rs = stmt.executeQuery(sQuery);
       result = jdbcT4Util.convertResultSetToJSON(rs);
       rs.close();
       stmt.close();
@@ -91,5 +96,12 @@
       response.setContentType("text/plain");
       response.setStatus(response.SC_INTERNAL_SERVER_ERROR);
       response.getWriter().print(e.getMessage());
-  }
+  } finally {
+      if (rs != null)
+        rs.close();
+      if (stmt != null)
+        stmt.close();
+      if (connection != null)
+        connection.close();
+  }  
   %>

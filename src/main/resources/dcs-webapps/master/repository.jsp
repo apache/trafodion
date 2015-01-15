@@ -46,7 +46,7 @@
 <!--
 <link rel="stylesheet" type="text/css" href="/static/dcs.css" />
 -->
-    <title>Trafodion Repository</title>
+    <title>Trafodion Query Tools</title>
     <link rel="stylesheet" type="text/css" href="css/stylesheet.css" />
     <link rel="stylesheet" type="text/css" href="jquery-ui/jquery-ui.css" />
     <script type="text/javascript" src="js/lib/jquery-1.11.0.js"></script>
@@ -84,7 +84,7 @@
         <div class="bannerArea">
             <div class="container1">
                 <div style="padding-bottom: 5px; font-weight: bold; font-size: 28px; position: absolute;left:5px;top: 5px; color: #FFF; font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif; font-style: italic;">
-                    <span id="Label1">Trafodion Repository</span>
+                    <span id="Label1">Trafodion Query Tools</span>
                 </div>
             </div>
         </div>

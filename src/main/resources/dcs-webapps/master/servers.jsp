@@ -50,7 +50,7 @@
   String metrics = master.getMetrics();
   String trafodionHome = master.getTrafodionHome();
   boolean trafodionLogs = conf.getBoolean(Constants.DCS_MASTER_TRAFODION_LOGS, Constants.DEFAULT_DCS_MASTER_TRAFODION_LOGS);
-  boolean trafodionRepository = conf.getBoolean(Constants.DCS_MASTER_TRAFODION_REPOSITORY, Constants.DEFAULT_DCS_MASTER_TRAFODION_REPOSITORY);
+  boolean trafodionQueryTools = conf.getBoolean(Constants.DCS_MASTER_TRAFODION_QUERY_TOOLS, Constants.DEFAULT_DCS_MASTER_TRAFODION_QUERY_TOOLS);
   String type = request.getParameter("type");
   boolean pageSizeSelected = false;
   String pageSize = request.getParameter("pagesize");
@@ -94,7 +94,7 @@
 <h1 id="page_title">DcsMaster: <%= masterServerName %>:<%= masterInfoPort %></h1>
 <p id="links_menu">
   <a href="http://<%= masterServerName %>:<%= masterInfoPort %>?pagesize=<%= pageSize %>">Home</a>,
-  <a href="/logs/">Dcs local logs</a><% if(! trafodionHome.isEmpty()) { %><% if(trafodionLogs) { %>, <a href="/TrafodionLogs/">Trafodion local logs</a><% } %><% if(trafodionRepository) { %>, <a href="repository.jsp?type=<%= Constants.TRAFODION_REPOS_CATALOG_SCHEMA %>">Trafodion repository</a><% } %><% } %>
+  <a href="/logs/">Dcs local logs</a><% if(! trafodionHome.isEmpty()) { %><% if(trafodionLogs) { %>, <a href="/TrafodionLogs/">Trafodion local logs</a><% } %><% if(trafodionQueryTools) { %>, <a href="repository.jsp?type=<%= Constants.TRAFODION_REPOS_CATALOG_SCHEMA %>">Trafodion query tools</a><% } %><% } %>
 </p>
 <hr id="head_rule" />
 <h2>Attributes</h2>

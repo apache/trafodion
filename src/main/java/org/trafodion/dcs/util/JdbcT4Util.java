@@ -69,7 +69,7 @@ public final class JdbcT4Util
 		String url = Constants.T4_DRIVER_URL + "//" + netConf.getHostName() + ":" + conf.getInt(Constants.DCS_MASTER_PORT,Constants.DEFAULT_DCS_MASTER_PORT) + "/:";
 		cpds.setURL(url);
 		cpds.setMinPoolSize(conf.getInt(Constants.T4_DRIVER_MIN_POOL_SIZE,Constants.DEFAULT_T4_DRIVER_MIN_POOL_SIZE));
-		cpds.setMaxPoolSize(conf.getInt(Constants.T4_DRIVER_MAX_POOL_SIZE,Constants.DEFAULT_T4_DRIVER_MAX_POOL_SIZE));   	
+		cpds.setMaxPoolSize(conf.getInt(Constants.T4_DRIVER_MAX_POOL_SIZE,Constants.DEFAULT_T4_DRIVER_MAX_POOL_SIZE));   
 		String s = conf.get(Constants.T4_DRIVER_USERNAME_PASSWORD,Constants.DEFAULT_T4_DRIVER_USERNAME_PASSWORD);
     	String base64UserPassword = null;
 		if (s != null) 

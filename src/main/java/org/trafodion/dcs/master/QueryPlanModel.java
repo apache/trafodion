@@ -154,18 +154,30 @@ public class QueryPlanModel {
 		} catch (SQLException e) {
 			if(LOG.isErrorEnabled())
 				LOG.error("Explain failed: " + e.getMessage());
+			try {
+				if (stmt != null)
+					stmt.close();
+				if (connection != null)
+					connection.close();
+			} catch (SQLException sqle) {}	
 			throw new Exception(e.getMessage());
 		} catch (Exception e) {
 			if(LOG.isErrorEnabled())
 				LOG.error("Explain failed: " + e.getMessage());
+			try {
+				if (stmt != null)
+					stmt.close();
+				if (connection != null)
+					connection.close();
+			} catch (SQLException sqle) {}
 			throw new Exception(e.getMessage());
 		} finally {
 			try {
 				if (stmt != null)
 					stmt.close();
-			} catch (SQLException e) {
-
-			}
+				if (connection != null)
+					connection.close();
+			} catch (SQLException e) {}
 		}
 
 		return planArray;
