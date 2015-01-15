@@ -848,7 +848,7 @@ $1~String1 --------------------------------
 3108 42000 99999 BEGINNER MAJOR DBADMIN The LIKE clause and STORE BY clause cannot coexist in the same statement.
 3109 42000 99999 BEGINNER MAJOR DBADMIN Duplicate STORE BY clauses were specified.
 3110 42000 99999 BEGINNER MAJOR DBADMIN The LIKE clause and ATTRIBUTE(S) clause cannot coexist in the same statement.
-3111 42000 99999 BEGINNER MAJOR DBADMIN The LIKE clause and LOCATION clause cannot coexist in the same statement.
+3111 42000 99999 BEGINNER MAJOR DBADMIN The LIKE clause and $0~string0 clause cannot coexist in the same statement.
 3112 42000 99999 BEGINNER MAJOR DBADMIN The LIKE clause and PARTITION clause cannot coexist in the same statement.
 3113 42000 99999 BEGINNER MAJOR DBADMIN Error in CONTROL statement: $0~string0
 3114 25000 99999 BEGINNER MAJOR DBADMIN Transaction access mode READ WRITE is incompatible with isolation level READ UNCOMMITTED.

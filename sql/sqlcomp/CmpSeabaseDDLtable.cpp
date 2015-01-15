@@ -244,6 +244,43 @@ void CmpSeabaseDDL::createSeabaseTableLike(
         }
 
       keyClause += ")";
+
+      // NOTE: This is not currently supported
+      *CmpCommon::diags() << DgSqlCode(-3111)
+                          << DgString0("PRIMARY KEY/STORE BY");
+      return;
+    }
+
+  // Check for other common options that are currently not supported
+  // with CREATE TABLE LIKE. Those could all be passed into
+  // CmpDescribeSeabaseTable as strings if we wanted to support them.
+  if (createTableNode->isPartitionSpecified() ||
+      createTableNode->isPartitionBySpecified())
+    {
+      *CmpCommon::diags() << DgSqlCode(-3111)
+                          << DgString0("PARTITION BY");
+      return;
+    }
+
+  if (createTableNode->isDivisionClauseSpecified())
+    {
+      *CmpCommon::diags() << DgSqlCode(-3111)
+                          << DgString0("DIVISION BY");
+      return;
+    }
+
+  if (createTableNode->isHbaseOptionsSpecified())
+    {
+      *CmpCommon::diags() << DgSqlCode(-3111)
+                          << DgString0("HBASE table options");
+      return;
+    }
+
+  if (createTableNode->getSaltOptions())
+    {
+      *CmpCommon::diags() << DgSqlCode(-3111)
+                          << DgString0("SALT");
+      return;
     }
 
   ParDDLLikeOptsCreateTable &likeOptions = createTableNode->getLikeOptions();
