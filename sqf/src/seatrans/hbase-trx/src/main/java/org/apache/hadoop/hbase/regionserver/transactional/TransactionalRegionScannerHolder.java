@@ -24,16 +24,27 @@ import org.apache.hadoop.hbase.regionserver.RegionScanner;
     public long nextCallSeq;
     public long numberOfRows;
     public long rowsRemaining;
+    public long transId;
+    public long scannerId;
     public boolean hasMore;
 
-    public TransactionalRegionScannerHolder(RegionScanner s, 
+    public TransactionalRegionScannerHolder(long transId,
+                                            long scannerId,
+                                            RegionScanner s, 
                                             HRegion r) {
+      this.transId = transId;
+      this.scannerId = scannerId;
       this.s = s;
       this.r = r;
       this.nextCallSeq = 0L;
       this.numberOfRows = 0L;
       this.rowsRemaining = 0L;
       this.hasMore = false;
+    }
+
+    public void cleanHolder() {
+      this.r = null;
+      this.s = null;
     }
   }
 

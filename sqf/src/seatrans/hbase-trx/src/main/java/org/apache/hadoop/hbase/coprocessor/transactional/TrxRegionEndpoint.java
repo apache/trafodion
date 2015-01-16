@@ -217,6 +217,9 @@ CoprocessorService, Coprocessor {
   // an in-doubt transaction list during recovery WALEdit replay
   private Map<Long, List<WALEdit>> indoubtTransactionsById = new TreeMap<Long, List<WALEdit>>();
 
+  // list of transactions to check for stale scanners
+     private List<Long> cleanScannersForTransactions = Collections.synchronizedList(new LinkedList<Long>());
+    
   // an in-doubt transaction list count by TM id
   private Map<Integer, Integer> indoubtTransactionsCountByTmid = new TreeMap<Integer,Integer>();
 
@@ -1293,7 +1296,7 @@ CoprocessorService, Coprocessor {
         if (scanner != null) {
           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: openScanner - txId " + transId + ", called getScanner, scanner is " + scanner);
           // Add the scanner to the map
-          scannerId = addScanner(scanner, this.m_Region);
+          scannerId = addScanner(transId, scanner, this.m_Region);
           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: openScanner - txId " + transId + ", called addScanner, scanner id " + scannerId + ", regionName " + regionInfo.getRegionNameAsString());
         }
         else
@@ -1422,7 +1425,7 @@ CoprocessorService, Coprocessor {
 
             if (count == numberOfRows || !hasMore)
               shouldContinue = false;
-            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", count is " + count + ", hasMore is " + hasMore + ", result " + result.isEmpty() + ", row " + result.getRow()); 
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", count is " + count + ", hasMore is " + hasMore + ", result " + result.isEmpty() + ", row " + Bytes.toStringBinary(result.getRow()) + ", row in hex " + Hex.encodeHexString(result.getRow()));
           }
         }
         else
@@ -1445,6 +1448,7 @@ CoprocessorService, Coprocessor {
          try {
            if (closeScanner) {
              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", close scanner was true, closing the scanner" + ", closeScanner is " + closeScanner + ", region is " + regionInfo.getRegionNameAsString());
+             removeScanner(scannerId);
              scanner.close();
 /*
              try {
@@ -1464,7 +1468,7 @@ CoprocessorService, Coprocessor {
  
    }
 
-      rsh = scanners.get(scannerId);
+   rsh = scanners.get(scannerId);
 
    nextCallSeq++;
 
@@ -1476,7 +1480,7 @@ CoprocessorService, Coprocessor {
    }
    else
    {
-   rsh.nextCallSeq = nextCallSeq;
+     rsh.nextCallSeq = nextCallSeq;
 
      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", regionName " + regionInfo.getRegionNameAsString() +
 ", nextCallSeq " + nextCallSeq + ", rsh.nextCallSeq " + rsh.nextCallSeq + ", close scanner is " + closeScanner);
@@ -2471,7 +2475,7 @@ CoprocessorService, Coprocessor {
    * Retires the transaction                        
    * @param TrxTransactionState state
    */
-  private void retireTransaction(final TrxTransactionState state) {
+  private void retireTransaction(final TrxTransactionState state, final boolean clear) {
     String key = getTransactionalUniqueId(state.getTransactionId());
     long transId = state.getTransactionId();
 
@@ -2492,11 +2496,23 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: retireTransaction clearTransactionsToCheck for: " + key + " from all its TrxTransactionState lists");
 
-    // Clear out transactions to check 
-    state.clearTransactionsToCheck();
+    // Clear out transaction state
+      
+    if (clear == true) {
+      state.clearState();
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: retireTransaction clearState for: " + key + " from all its TrxTransactionState lists");
+    }
+    else {
+      state.clearTransactionsToCheck();	
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: retireTransaction clearTransactionsToCheck for: " + key);
+    }
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: retireTransaction calling remove entry for: " + key + " , from transactionById map ");
       transactionsById.remove(key);
+
+    synchronized (cleanScannersForTransactions) {
+      cleanScannersForTransactions.add(transId);
+    }
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:retireTransaction " + key + ", looking for retire transaction id " + transId + ", transactionsById " + transactionsById.size() + ", commitedTransactionsBySequenceNumber " + commitedTransactionsBySequenceNumber.size() + ", commitPendingTransactions " + commitPendingTransactions.size());
 
@@ -2665,7 +2681,7 @@ CoprocessorService, Coprocessor {
               catch (Exception e) {
                  if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Trafodion Recovery: Executing put caught an exception " + e.toString());
                  state.setStatus(Status.ABORTED);
-                 retireTransaction(state);
+                 retireTransaction(state, true);
                  throw new IOException(e.toString());
               }
      	     } else if (CellUtil.isDelete(kv))  {
@@ -2682,7 +2698,7 @@ CoprocessorService, Coprocessor {
                catch (Exception e) {
                  if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Trafodion Recovery: Executing delete caught an exception " + e.toString());
                  state.setStatus(Status.ABORTED);
-                 retireTransaction(state);
+                 retireTransaction(state, true);
                  throw new IOException(e.toString());
                 }
    	     }
@@ -2707,7 +2723,7 @@ CoprocessorService, Coprocessor {
            catch (Exception e) {
               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Executing put caught an exception " + e.toString());
               state.setStatus(Status.ABORTED);
-              retireTransaction(state);
+              retireTransaction(state, true);
               throw new IOException(e.toString());
            }
          }
@@ -2724,7 +2740,7 @@ CoprocessorService, Coprocessor {
            catch (Exception e) {
               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit  - txId " + transactionId + ", Executing delete caught an exception " + e.toString());
               state.setStatus(Status.ABORTED);
-              retireTransaction(state);
+              retireTransaction(state, true);
               throw new IOException(e.toString());
            }
          }
@@ -2837,7 +2853,7 @@ CoprocessorService, Coprocessor {
       }
     }
     state.setCommitProgress(CommitProgress.COMMITED);
-    retireTransaction(state);
+    retireTransaction(state, false);
   }
 
   /**
@@ -2884,7 +2900,7 @@ CoprocessorService, Coprocessor {
      case PENDING:
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: leaseExpired transaction " + transactionId + " was PENDING, calling retireTransaction");
        s.setStatus(Status.ABORTED);  
-       retireTransaction(s);
+       retireTransaction(s, true);
        break;
       case COMMIT_PENDING:
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: leaseExpired  Transaction " + transactionId
@@ -3512,7 +3528,7 @@ CoprocessorService, Coprocessor {
           totalConflictTime += hasConflictTimes[lv_timeIndex];
         }
         state.setStatus(Status.ABORTED);
-        retireTransaction(state);
+        retireTransaction(state, true);
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest encountered conflict txId: " + transactionId + "returning COMMIT_CONFLICT");
         return COMMIT_CONFLICT;
       }
@@ -3697,7 +3713,7 @@ CoprocessorService, Coprocessor {
 
     // Otherwise we were read-only and commitable, so we can forget it.
     state.setStatus(Status.COMMITED);
-    retireTransaction(state);
+    retireTransaction(state, true);
     if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest READ ONLY -- EXIT txId: " + transactionId);
     return COMMIT_OK_READ_ONLY;
   }
@@ -3841,7 +3857,7 @@ CoprocessorService, Coprocessor {
        }
      }
 
-   retireTransaction(state);
+   retireTransaction(state, true);
 
    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: abortTransaction looking for abort transaction " + transactionId + ", transactionsById " + transactionsById.size() + ", commitedTransactionsBySequenceNumber " + commitedTransactionsBySequenceNumber.size() + ", commitPendingTransactions" + commitPendingTransactions.size());
    }
@@ -3980,18 +3996,18 @@ CoprocessorService, Coprocessor {
 
       RegionScanner scanner = null;
 
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getScanner  - scanners map is " + scanners + ", count is "  + scanners.size() + ", scanner id is " + scannerId);
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getScanner - scanner id " + scannerId + ", count is "  + scanners.size());
 
       TransactionalRegionScannerHolder rsh = 
         scanners.get(scannerId);
 
       if (rsh != null)
       {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getScanner  - rsh is " + rsh + "rsh.s is "  + rsh.s );
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  getScanner - rsh is " + rsh + "rsh.s is "  + rsh.s );
       }
       else
       {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getScanner  - rsh is null");
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  getScanner - rsh is null");
           throw new UnknownScannerException(
             "TrxRegionEndpoint getScanner - scanner id " + scannerId + ", already closed?");
       }
@@ -4026,14 +4042,16 @@ CoprocessorService, Coprocessor {
     protected synchronized RegionScanner removeScanner(long scannerId) 
       throws UnknownScannerException {
 
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeScanner - scanner id " + scannerId + ", scanners map is " + scanners + ", count is "  + scanners.size());
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeScanner - scanner id " + scannerId + ", before count is "  + scanners.size());
       TransactionalRegionScannerHolder rsh = 
         scanners.remove(scannerId);
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeScanner - scanner id " + scannerId + ", scanners map is " + scanners + ", count is "  + scanners.size());
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeScanner - scanner id " + scannerId + ", after count is "  + scanners.size());
       if (rsh != null)
       {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeScanner - scanner id " + scannerId + ", rsh is " + rsh + "rsh.s is"  + rsh.s );
-        return rsh.s;
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeScanner - scanner id " + scannerId + ", rsh is " + rsh + ", rsh.s is " + rsh.s );
+        RegionScanner s = rsh.s;
+        rsh.cleanHolder();
+        return s;
       }
       else
       {
@@ -4050,12 +4068,12 @@ CoprocessorService, Coprocessor {
    * @return long 
    * @throws LeaseStillHeldException 
    */
-  protected synchronized long addScanner(RegionScanner s, HRegion r)
+  protected synchronized long addScanner(long transId, RegionScanner s, HRegion r)
      throws LeaseStillHeldException {
     long scannerId = performScannerId.getAndIncrement();
 
     TransactionalRegionScannerHolder rsh = 
-      new TransactionalRegionScannerHolder(s,r);
+      new TransactionalRegionScannerHolder(transId, scannerId, s, r);
 
     if (rsh != null)
       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: addScanner - scanner id " + scannerId + ", rsh is " + rsh);
@@ -4065,7 +4083,7 @@ CoprocessorService, Coprocessor {
     TransactionalRegionScannerHolder existing =
       scanners.putIfAbsent(scannerId, rsh);
 
-    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: addScanner - scanner id " + scannerId + ", scanners map is " + scanners + ", count is "  + scanners.size());
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: addScanner - scanner id " + scannerId + ", count is " + scanners.size());
 
 /*
     scannerLeases.createLease(getScannerLeaseId(scannerId),
@@ -4197,6 +4215,72 @@ CoprocessorService, Coprocessor {
             LOG.trace(traceMessage.toString());
          }
       }
+  }
+
+  /**
+   * Removes unneeded TransactionalRegionScannerHolder objects             
+   */
+
+  synchronized public void removeUnNeededStaleScanners() {
+
+    long scannerId = 0L;
+    long transId = 0L;
+    long listSize = 0L;
+    long scannerSize = 0L;
+    Long transactionId = 0L;
+    TransactionalRegionScannerHolder rsh = null;
+    Iterator<Long> transIter = null;
+    Iterator<Map.Entry<Long, TransactionalRegionScannerHolder>> scannerIter = null;
+    synchronized (cleanScannersForTransactions) {
+
+      listSize = cleanScannersForTransactions.size();
+
+      if (listSize == 0)
+        return;
+
+      if (scanners == null || scanners.isEmpty())
+        return;
+
+      scannerSize = scanners.size();
+      scannerIter = scanners.entrySet().iterator();
+
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeUnNeededStaleScanners - transactions list count is " + listSize + ", scanners size is " + scannerSize);
+
+      for (transIter = cleanScannersForTransactions.iterator(); transIter.hasNext();) {
+
+        transactionId = transIter.next();
+
+        while(scannerIter.hasNext()){
+
+          Map.Entry<Long, TransactionalRegionScannerHolder> entry = scannerIter.next();
+          rsh = entry.getValue();
+
+          if (rsh != null) {
+            transId = rsh.transId;
+            scannerId = rsh.scannerId;
+
+            if (transId == transactionId) {
+
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeUnNeededStaleScanners - txId " + transactionId + ", scannerId " + scannerId + ", Removing stale scanner ");
+
+              try {
+                if (rsh.s != null)
+                  rsh.s.close();
+                rsh.s = null;
+                rsh.r = null;
+                scannerIter.remove();
+              }
+              catch (Exception e) {
+                if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeUnNeededStaleScanners - txId " + transactionId + ", scannerId " + scannerId + ", Caught exception " + e.toString());
+              }
+            }
+          }
+        }
+      }  // End of for loop
+
+      cleanScannersForTransactions.clear();
+
+    }  // End of synchronization
   }
 
   /**

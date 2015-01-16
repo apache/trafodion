@@ -276,6 +276,7 @@ public class TrxTransactionState  extends TransactionState{
         DataInputBuffer in = new DataInputBuffer();
         try {
           e.readFields(in);
+          e.getKeyValues().clear();
         } catch (java.io.EOFException eeof) { 
           // DataInputBuffer was empty, successfully emptied kvs
         } catch (Exception e) { 
