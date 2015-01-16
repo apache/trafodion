@@ -1425,7 +1425,7 @@ CoprocessorService, Coprocessor {
 
             if (count == numberOfRows || !hasMore)
               shouldContinue = false;
-            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", count is " + count + ", hasMore is " + hasMore + ", result " + result.isEmpty() + ", row " + Bytes.toStringBinary(result.getRow()) + ", row in hex " + Hex.encodeHexString(result.getRow()));
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", count is " + count + ", hasMore is " + hasMore + ", result " + result.isEmpty());
           }
         }
         else
