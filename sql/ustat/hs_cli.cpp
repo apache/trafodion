@@ -327,18 +327,14 @@ Lng32 HSFuncExecDDL( const char *dml
   if (!tabDef && hs_globals) tabDef = hs_globals->objDef;
   if (!tabDef) return -1;
 
-  // Whenever a request is made from MX catalog manager, we must always start
-  // a transaction prior to the request. If we do not, a transaction will be
-  // started and never committed. But for Trafodion, DDL is not allowed in
-  // a transaction.
+  // Whenever a DDL request is made we must always start a transaction prior 
+  // to the request. If we do not, in certain cases, a transaction will be 
+  // started and never committed. See LP bug 1404442 
   HSTranMan *TM;
   NABoolean startedTrans = FALSE;
-  if (tabDef->getTblOrigin() == HSTableDef::SQ_TBL)
-    {
-      TM = HSTranMan::Instance();
-      startedTrans = (((retcode = TM->Begin("DDL")) == 0) ? TRUE : FALSE);
-      HSHandleError(retcode);
-    }
+  TM = HSTranMan::Instance();
+  startedTrans = (((retcode = TM->Begin("DDL")) == 0) ? TRUE : FALSE);
+  HSHandleError(retcode);
 
   //Special parser flags needed to use the NO AUDIT option.
   retcode = HSFuncExecQuery(dml, sqlcode, rowsAffected, errorToken,
@@ -408,8 +404,9 @@ Lng32 CreateSeabaseHist(const HSGlobalsClass* hsGlobal)
                " ); ");
 
     LM->StartTimer("Create Trafodion HISTOGRAMS table");
-    Lng32 retcode = HSFuncExecQuery(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                                    "Create SeaBase histograms table", NULL, NULL, TRUE);
+
+    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
+                            "Create SeaBase histograms table", NULL);
     LM->StopTimer();
     if (retcode < 0 && LM->LogNeeded())
       {
@@ -450,8 +447,8 @@ Lng32 CreateSeabaseHistint(const HSGlobalsClass* hsGlobal)
                " ) ;");
 
     LM->StartTimer("Create Trafodion HISTOGRAM_INTERVALS table");
-    Lng32 retcode = HSFuncExecQuery(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                                    "Create SeaBase histogram intervals table", NULL, NULL, TRUE);
+    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
+                                    "Create SeaBase histogram intervals table", NULL);
     LM->StopTimer();
     if (retcode < 0 && LM->LogNeeded())
       {
