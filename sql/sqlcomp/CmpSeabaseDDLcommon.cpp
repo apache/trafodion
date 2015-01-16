@@ -3000,13 +3000,6 @@ short CmpSeabaseDDL::getUsingRoutine(ExeCliInterface *cliInterface,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
               objUID);
 
-  //Turn off CQDs MERGE_JOINS and HASH_JOINS to avoid a full table scan of 
-  //SEABASE_OBJECTS table. Full table scan of SEABASE_OBJECTS table causes
-  //simultaneous DDL operations to run into conflict.
-  //Make sure to restore the CQDs after this query including error paths.
-  cliInterface->holdAndSetCQD("MERGE_JOINS", "OFF");
-  cliInterface->holdAndSetCQD("HASH_JOINS", "OFF");
-  
   Queue * usingRoutinesQueue = NULL;
   cliRC = cliInterface->fetchAllRows(usingRoutinesQueue, buf, 0, 
                                      FALSE, FALSE, TRUE);
@@ -3014,15 +3007,9 @@ short CmpSeabaseDDL::getUsingRoutine(ExeCliInterface *cliInterface,
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return cliRC;
     }
     
-  //restore CQDs.
-  cliInterface->restoreCQD("MERGE_JOINS");
-  cliInterface->restoreCQD("HASH_JOINS");
-  
-  if(cliRC < 0)
-    return cliRC;
-  
   if (usingRoutinesQueue->numEntries() == 0)
     return 100;
 
