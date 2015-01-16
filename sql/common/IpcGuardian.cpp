@@ -3429,36 +3429,6 @@ MXTRC_FUNC("GRCC::initiateReceive");
 
 void GuaReceiveControlConnection::switchToUserTransid()
 {
-  // When a message is received on $RECEIVE, there are two options: 
-  //
-  //   - to activate the transaction initiated by this process, invoke
-  //     RESUMETRANSACTION.
-  //   - to activate the transaction initiated by the sender (or client)
-  //     process, invoke ACTIVATERECEIVETRANSID.
-  //
-  if (beginTransTag_ != -1)
-    {
-      // We should come here only if this is an esp process and the
-      // transaction was initiated by the esp itself (not the master). this
-      // can happen if we are running operations such as LRU.
-      RESUMETRANSACTION(beginTransTag_);
-    }
-  else if (userTransReplyTag_ != GuaInvalidReplyTag)
-  {
-     if (userTransReplyTag_ != activeTransReplyTag_)
-     {
-        BACTIVATERECEIVETRANSID(userTransReplyTag_);
-        activeTransReplyTag_ = userTransReplyTag_;
-     }  
-  }
-  else if (implicitTransReplyTag_ != GuaInvalidReplyTag)
-  {
-     if (implicitTransReplyTag_ != activeTransReplyTag_)
-     {
-        BACTIVATERECEIVETRANSID(implicitTransReplyTag_);
-        activeTransReplyTag_ = implicitTransReplyTag_;
-     }
-  }
 }
 
 void GuaReceiveControlConnection::setOriginalTransaction(short *txHandle)
