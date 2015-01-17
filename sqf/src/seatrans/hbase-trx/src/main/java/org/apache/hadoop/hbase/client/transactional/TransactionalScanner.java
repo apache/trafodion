@@ -12,14 +12,15 @@ import org.apache.hadoop.hbase.client.AbstractClientScanner;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CloseScannerRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CloseScannerResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.OpenScannerRequest;
-import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.OpenScannerResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PerformScanRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PerformScanResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService;
 import org.apache.hadoop.hbase.ipc.BlockingRpcCallback;
+import org.apache.hadoop.hbase.ipc.CoprocessorRpcChannel;
 import org.apache.hadoop.hbase.ipc.ServerRpcController;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -83,45 +84,26 @@ public class TransactionalScanner extends AbstractClientScanner {
             if(LOG.isTraceEnabled()) LOG.trace("close()  already closed -- EXIT txID: " + ts.getTransactionId());
             return;
         }
-         Batch.Call<TrxRegionService, CloseScannerResponse> callable =
-                    new Batch.Call<TrxRegionService, CloseScannerResponse>() {
-                  ServerRpcController controller = new ServerRpcController();
-                  BlockingRpcCallback<CloseScannerResponse> rpcCallback =
-                    new BlockingRpcCallback<CloseScannerResponse>();
-
-                  @Override
-                  public CloseScannerResponse call(TrxRegionService instance) throws IOException {
-                    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CloseScannerRequest.Builder builder = CloseScannerRequest.newBuilder();
-                    builder.setTransactionId(ts.getTransactionId());
-                    builder.setScannerId(scannerID);
-                    builder.setRegionName(ByteString.copyFromUtf8(""));
-
-                    instance.closeScanner(controller, builder.build(), rpcCallback);
-                    return rpcCallback.get();
-                  }
-                };
-
-                Map<byte[], CloseScannerResponse> result = null;
-
-                try {
-                    result = ttable.coprocessorService(TrxRegionService.class,
-                                                     currentBeginKey, 
-                                                     currentEndKey,
-                                                     callable);
-                } catch (Throwable e) {
-                    LOG.error("CloseScannerResponse exception " + e.toString());
-                }
-
-                if(result != null) {
-                    for (CloseScannerResponse cresponse : result.values()) {
-                        boolean hasException = cresponse.getHasException();
-                        String exception = cresponse.getException();
-                        if (hasException) {
-                            // Following ClientScanner class and not throwing Exception on close
-                            LOG.error("CloseScannerResponse exception " + exception);
-                        }
-                    }
-                }
+        TrxRegionProtos.CloseScannerRequest.Builder requestBuilder = CloseScannerRequest.newBuilder();
+        requestBuilder.setTransactionId(ts.getTransactionId());
+        requestBuilder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
+        requestBuilder.setScannerId(scannerID);
+        TrxRegionProtos.CloseScannerRequest closeRequest = requestBuilder.build();
+        try {
+            CoprocessorRpcChannel channel = ttable.coprocessorService(this.currentBeginKey);
+            TrxRegionService.BlockingInterface trxService = TrxRegionService.newBlockingStub(channel);
+            TrxRegionProtos.CloseScannerResponse response = trxService.closeScanner(null, closeRequest);
+            String exception = response.getException();
+            if(response.getHasException()) {
+                String errMsg = "closeScanner encountered Exception txID: " +
+                        ts.getTransactionId() + " Exception: " + exception;
+                    LOG.error(errMsg);
+            }
+        }
+        catch (Throwable e) {
+            String errMsg = "CloseScanner error on coprocessor call, scannerID: " + this.scannerID + " " + e;
+            LOG.error(errMsg);
+        }
 
         this.closed = true;
         if(LOG.isTraceEnabled()) LOG.trace("close() -- EXIT txID: " + ts.getTransactionId());
@@ -159,47 +141,28 @@ public class TransactionalScanner extends AbstractClientScanner {
 
         this.closed = false;
 
-        Batch.Call<TrxRegionService, OpenScannerResponse> callable =
-            new Batch.Call<TrxRegionService, OpenScannerResponse>() {
-          ServerRpcController controller = new ServerRpcController();
-          BlockingRpcCallback<OpenScannerResponse> rpcCallback =
-            new BlockingRpcCallback<OpenScannerResponse>();
-
-          @Override
-          public OpenScannerResponse call(TrxRegionService instance) throws IOException {
-            org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.OpenScannerRequest.Builder builder = OpenScannerRequest.newBuilder();
-            builder.setTransactionId(ts.getTransactionId());
-            builder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
-            builder.setScan(ProtobufUtil.toScan(scan));
-
-            instance.openScanner(controller, builder.build(), rpcCallback);
-            return rpcCallback.get();
+      TrxRegionProtos.OpenScannerRequest.Builder requestBuilder = OpenScannerRequest.newBuilder();
+      requestBuilder.setTransactionId(ts.getTransactionId());
+      requestBuilder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
+      requestBuilder.setScan(ProtobufUtil.toScan(scan));
+      TrxRegionProtos.OpenScannerRequest openRequest = requestBuilder.build();
+      try {
+          CoprocessorRpcChannel channel = ttable.coprocessorService(this.currentBeginKey);
+          TrxRegionService.BlockingInterface trxService = TrxRegionService.newBlockingStub(channel);
+          TrxRegionProtos.OpenScannerResponse response = trxService.openScanner(null, openRequest);
+          String exception = response.getException();
+          if(response.getHasException()) {
+              String errMsg = "nextScanner encountered Exception txID: " +
+                      ts.getTransactionId() + " Exception: " + exception;
+                  LOG.error(errMsg);
+                  throw new IOException(errMsg);
           }
-        };
-        Map<byte[], OpenScannerResponse> result;
-        try {
-          result = ttable.coprocessorService(TrxRegionService.class,
-                                               this.currentBeginKey,
-                                               this.currentEndKey,
-                                               callable);
-        } catch (Throwable e) {
+          this.scannerID = response.getScannerId();
+      }
+      catch (Throwable e) {
           String errMsg = "OpenScanner error on coprocessor call, scannerID: " + this.scannerID;
           LOG.error(errMsg);
           throw new IOException(errMsg);
-        }
-
-      for (OpenScannerResponse oresponse : result.values())
-      {
-        String exception = oresponse.getException();
-        boolean hasException = oresponse.getHasException();
-        if (hasException) {
-            String errMsg = "nextScanner encountered Exception txID: " +
-                ts.getTransactionId() + " Exception: " + exception;
-            LOG.error(errMsg);
-            throw new IOException(errMsg);
-        }
-        this.scannerID = oresponse.getScannerId();
-        if(LOG.isTraceEnabled()) LOG.trace("  OpenScannerResponse scannerId is " + this.scannerID );
       }
         this.nextCallSeq = 0;
         if(LOG.isTraceEnabled()) LOG.trace("nextScanner() -- EXIT -- returning true txID: " + ts.getTransactionId());
@@ -215,71 +178,56 @@ public class TransactionalScanner extends AbstractClientScanner {
                 if (LOG.isTraceEnabled())
                     LOG.trace("next() before coprocessor PerformScan call txID: " + ts.getTransactionId());
                 final long nextCallSeqInput = this.nextCallSeq;
-                Batch.Call<TrxRegionService, PerformScanResponse> callable =
-                        new Batch.Call<TrxRegionService, PerformScanResponse>() {
-                            ServerRpcController controller = new ServerRpcController();
-                            BlockingRpcCallback<PerformScanResponse> rpcCallback =
-                                    new BlockingRpcCallback<PerformScanResponse>();
-
-                            @Override
-                            public PerformScanResponse call(TrxRegionService instance) throws IOException {
-                                org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PerformScanRequest.Builder builder = PerformScanRequest.newBuilder();
-                                builder.setTransactionId(ts.getTransactionId());
-                                builder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
-                                builder.setScannerId(scannerID);
-                                builder.setNumberOfRows(nbRows);
-                                if (doNotCloseOnLast)
-                                    builder.setCloseScanner(false);
-                                else
-                                    builder.setCloseScanner(true);
-                                builder.setNextCallSeq(nextCallSeqInput);
-
-                                instance.performScan(controller, builder.build(), rpcCallback);
-                                return rpcCallback.get();
-                            }
-                        };
-
-                Map<byte[], PerformScanResponse> presult;
-                org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result[] results;
-
+                TrxRegionProtos.PerformScanRequest.Builder requestBuilder = PerformScanRequest.newBuilder();
+                requestBuilder.setTransactionId(ts.getTransactionId());
+                requestBuilder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
+                requestBuilder.setScannerId(scannerID);
+                requestBuilder.setNumberOfRows(nbRows);
+                if (doNotCloseOnLast)
+                    requestBuilder.setCloseScanner(false);
+                else
+                    requestBuilder.setCloseScanner(true);
+                requestBuilder.setNextCallSeq(nextCallSeqInput);
+                TrxRegionProtos.PerformScanRequest perfScanRequest = requestBuilder.build();
+                TrxRegionProtos.PerformScanResponse response;
                 try {
-                    presult = ttable.coprocessorService(TrxRegionService.class, currentBeginKey, currentEndKey, callable);
-                } catch (Throwable e) {
-                    String errMsg = "ERROR when calling PerformScan coprocessor" + e.toString();
+                    CoprocessorRpcChannel channel = ttable.coprocessorService(this.currentBeginKey);
+                    TrxRegionService.BlockingInterface trxService = TrxRegionService.newBlockingStub(channel);
+                    response = trxService.performScan(null, perfScanRequest);
+                    String exception = response.getException();
+                    if(response.getHasException()) {
+                        String errMsg = "peformScan encountered Exception txID: " +
+                                ts.getTransactionId() + " Exception: " + exception;
+                            LOG.error(errMsg);
+                            throw new IOException(errMsg);
+                    }
+                }
+                catch (Throwable e) {
+                    String errMsg = "PerformScan error on coprocessor call, scannerID: " + this.scannerID;
                     LOG.error(errMsg);
                     throw new IOException(errMsg);
                 }
                 int count;
                 org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result result;
 
-                for (PerformScanResponse presponse : presult.values()) {
-                    if (presponse.getHasException()) {
-                        String errMsg = "PerformScanResponse exception " + presponse.getException();
-                        LOG.error(errMsg);
-                        throw new IOException(errMsg);
-                    } else {
-                        this.nextCallSeq = presponse.getNextCallSeq();
-                        count = presponse.getResultCount();
-                        if (LOG.isTraceEnabled()) LOG.trace("next() nextCallSeq: " + this.nextCallSeq +
-                                " count: " + count);
-                        results =
-                                new org.apache.hadoop.hbase.protobuf.generated.ClientProtos.Result[count];
-                        if(count == 0) {
-                            this.hasMore = false;
+                this.nextCallSeq = response.getNextCallSeq();
+                count = response.getResultCount();
+                if (LOG.isTraceEnabled()) LOG.trace("next() nextCallSeq: " + this.nextCallSeq +
+                        " count: " + count);
+                if(count == 0) {
+                    this.hasMore = false;
+                }
+                else {
+                    for (int i = 0; i < count; i++) {
+                        result = response.getResult(i);
+                        if (result != null) {
+                            cache.add(ProtobufUtil.toResult(result));
                         }
-                        else {
-                            for (int i = 0; i < count; i++) {
-                                result = presponse.getResult(i);
-                                if (result != null) {
-                                    cache.add(ProtobufUtil.toResult(result));
-                                }
-                                this.hasMore = presponse.getHasMore();
-                                results[i] = result;
-                                if (LOG.isTraceEnabled())
-                                    LOG.trace("  PerformScan response count " + count + ", hasMore is " + hasMore + ", result " + results[i]);
-                            }
-                        }
+                        this.hasMore = response.getHasMore();
+                        if (LOG.isTraceEnabled())
+                            LOG.trace("  PerformScan response count " + count + ", hasMore is " + hasMore + ", result " + result);
                     }
+
                 }
             }
             else {
