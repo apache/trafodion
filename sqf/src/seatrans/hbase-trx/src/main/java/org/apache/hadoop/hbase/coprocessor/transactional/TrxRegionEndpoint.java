@@ -2522,41 +2522,57 @@ CoprocessorService, Coprocessor {
 
       List<Integer> staleBranchforTMId = new ArrayList<Integer>();
       List<TrxTransactionState> commitPendingCopy = new ArrayList<TrxTransactionState>(commitPendingTransactions);
+      Map<Long, List<WALEdit>> indoubtTransactionsMap = new TreeMap<Long, List<WALEdit>>(indoubtTransactionsById);
       int tmid, tm;
-      long transactionId = 0L;
 
-      // selected printout for CP 
+      // selected printout for CP
       long currentEpoch = controlPointEpoch.get();
       if ((currentEpoch < 10) || ((currentEpoch % 10) == 1)) {
-         //if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Endpoint CP: Region " +regionInfo.getRegionNameAsString() + " ChoreThread CP Epoch " + controlPointEpoch.get());
-   }
+         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:choreThreadDetectStaleTransactionBranch: Region "
+             + regionInfo.getRegionNameAsString() + " ChoreThread CP Epoch " + controlPointEpoch.get());
+      }
 
       byte [] lv_byte_region_info = regionInfo.toByteArray();
       String lv_encoded = regionInfo.getEncodedName();
 
-      for (TrxTransactionState commitPendingTS : commitPendingCopy) {
+      long transactionId;
+      if ((indoubtTransactionsById != null) && (indoubtTransactionsById.size() > 0) && (this.regionState != REGION_STATE_START)) {
+         for (Entry<Long, List<WALEdit>> entry : indoubtTransactionsMap.entrySet()) {
+               transactionId = entry.getKey();
+               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:choreThreadDetectStaleTransactionBranch: indoubt branch Txn id "
+                       + transactionId + " region info bytes " + new String(lv_byte_region_info));
+               tmid = (int) (transactionId >> 32);
+               if (!staleBranchforTMId.contains(tmid)) {staleBranchforTMId.add(tmid);}
+         }
+      }
+      else { // region has started
+         for (TrxTransactionState commitPendingTS : commitPendingCopy) {
             if (commitPendingTS.getCPEpoch() < (controlPointEpoch.get() - 1)) {
                transactionId = commitPendingTS.getTransactionId();
-               if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: retireTransaction - txId " + transactionId + ", Trafodion Recovery Region Endpoint CP: stale branch Txn id " + transactionId + " region info bytes " + new String(lv_byte_region_info));
+               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:choreThreadDetectStaleTransactionBranch: stale branch Txn id "
+                  + transactionId + " region info bytes " + new String(lv_byte_region_info));
                tmid = (int) (transactionId >> 32);
-               staleBranchforTMId.add(tmid);
+               if (!staleBranchforTMId.contains(tmid)) {staleBranchforTMId.add(tmid);}
             }
+         }
       }
-    
+
       if (!staleBranchforTMId.isEmpty()) {
             for (int i = 0; i < staleBranchforTMId.size(); i++) {
                try {
                    tm = staleBranchforTMId.get(i);
-                   if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: retireTransaction - txId " + transactionId + ", Trafodion Recovery Region Endpoint CP: ZKW Create Recovery zNode TM " + tm + " region encoded name " + lv_encoded + " region info bytes " + new String(lv_byte_region_info));
+                   if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:choreThreadDetectStaleTransactionBranch: ZKW Create Recovery zNode TM "
+                            + tm + " region encoded name " + lv_encoded + " region info bytes " + new String(lv_byte_region_info));
                    createRecoveryzNode(tm, lv_encoded, lv_byte_region_info);
                    } catch (IOException exp) {
-                   LOG.error("TrxRegionEndpoint coprocessor: retireTransaction - Trafodion Recovery Region Endpoint CP: ZKW Create recovery zNode failed");
+                   LOG.error("TrxRegionEndpoint coprocessor:choreThreadDetectStaleTransactionBranch: ZKW Create recovery zNode failed " + exp);
                }
             } // for
       } // if block
 
       controlPointEpoch.getAndIncrement();
       commitPendingCopy.clear();
+      indoubtTransactionsMap.clear();
       staleBranchforTMId.clear();
   }
 
@@ -3296,7 +3312,7 @@ CoprocessorService, Coprocessor {
                long tid = entry.getKey();
                LOG.warn("Trafodion Recovery: region " + regionInfo.getEncodedName() + " still has in-doubt transaction " + tid + " when new transaction arrives ");
            }
-           //throw new IOException("NewTransactionStartedBeforeRecoveryCompleted");
+           throw new IOException("NewTransactionStartedBeforeRecoveryCompleted");
         }
     }
 

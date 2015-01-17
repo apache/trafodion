@@ -54,6 +54,7 @@ import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.ServerName;
+import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.trafodion.dtm.HBaseTmZK;
 import org.trafodion.dtm.TmAuditTlog;
@@ -615,7 +616,7 @@ public class HBaseTxClient {
              private short tmID;
              private Set<Long> inDoubtList;
              private boolean continueThread = true;
-             private int recoveryIterations = 0;
+             private int recoveryIterations = -1;
              private int retryCount = 0;
              private boolean useForgotten;
              private boolean forceForgotten;
@@ -720,69 +721,145 @@ public class HBaseTxClient {
                         }
 
                         if(regions != null) {
-                            if (recoveryIterations == 0) {
-                                if(LOG.isInfoEnabled()) LOG.info ("Starting recovery of " + regions.size() + " regions.");
-                            } 
-                            else {
-                                if(LOG.isDebugEnabled()) LOG.debug("Continuing recovery. Found " + regions.size() +
-                                        " regions. Recovery iterations: " + recoveryIterations);
-                                if(recoveryIterations % 10 == 0) {
-                                if(LOG.isWarnEnabled())LOG.warn("Recovery thread encountered regions to recover" +
-                                                                 " in the last " + recoveryIterations + " iterations");
-                                }
-                            }
                             recoveryIterations++;
 
                             if (LOG.isDebugEnabled()) LOG.debug("in-doubt region size " + regions.size());
-                            for (Map.Entry<String, byte[]> region : regions.entrySet()) {
+                            for (Map.Entry<String, byte[]> regionEntry : regions.entrySet()) {
                                 List<Long> TxRecoverList = new ArrayList<Long>();
+                                String hostnamePort = regionEntry.getKey();
+                                byte[] regionBytes = regionEntry.getValue();
                                 if (LOG.isDebugEnabled())
-                                    LOG.debug("Recovery Thread Processing region: " + new String(region.getValue()));
-                                String hostnamePort = region.getKey();
-                                byte[] regionInfo = region.getValue();
-                                try {
-                                    TxRecoverList = txnManager.recoveryRequest(hostnamePort, regionInfo, tmID);
-                                } catch (Exception e) {
-                                    LOG.error("Error calling recoveryRequest " + new String(regionInfo) + " TM " + tmID);
-                                    e.printStackTrace();
+                                    LOG.debug("Recovery Thread Processing region: " + new String(regionBytes));
+                                if (recoveryIterations == 0) {
+                                   if(LOG.isWarnEnabled()) {
+                                      //  Let's get the host name
+                                      final byte [] delimiter = ",".getBytes();
+                                      String[] hostname = hostnamePort.split(new String(delimiter), 3);
+                                      if (hostname.length < 2) {
+                                         throw new IllegalArgumentException("hostnamePort format is incorrect");
+                                      }
+
+                                      LOG.warn ("Starting recovery with " + regions.size() +
+                                           " regions to recover.  First region hostnamet: " + hostname +
+                                           " Recovery iterations: " + recoveryIterations);
+                                   }
                                 }
-                                for (Long txid : TxRecoverList) {
-                                    TransactionState ts = transactionStates.get(txid);
-                                    if (ts == null) {
-                                        ts = new TransactionState(txid);
-                                    }
-				                   try {
-				                    		 this.addRegionToTS(hostnamePort, regionInfo, ts);
-				                    	 } catch (Exception e) {
-				                    		 LOG.error("Unable to add region to TransactionState" +
-				                    		 		"region info: "/* + new String(regionBytes)*/);
-				                    		 e.printStackTrace();
-				                    	 }
-                                    transactionStates.put(txid, ts);
+                                else {
+                                   if(recoveryIterations % 10 == 0) {
+                                      if(LOG.isWarnEnabled()) {
+                                         //  Let's get the host name
+                                         final byte [] delimiter = ",".getBytes();
+                                         String[] hostname = hostnamePort.split(new String(delimiter), 3);
+                                         if (hostname.length < 2) {
+                                            throw new IllegalArgumentException("hostnamePort format is incorrect");
+                                         }
+                                         LOG.warn("Recovery thread encountered " + regions.size() +
+                                           " regions to recover.  First region hostname: " + hostname +
+                                           " Recovery iterations: " + recoveryIterations);
+                                      }
+                                   }
+                                }
+                                try {
+                                    TxRecoverList = txnManager.recoveryRequest(hostnamePort, regionBytes, tmID);
+                                }catch (NotServingRegionException e) {
+                                   TxRecoverList = null;
+                                   LOG.error("NotServingRegionException calling recoveryRequest. regionBytes: " + new String(regionBytes) +
+                                             " TM: " + tmID + " hostnamePort: " + hostnamePort);
+
+                                   try {
+                                      // First delete the zookeeper entry
+                                      LOG.error("recoveryRequest. Deleting region entry Entry: " + regionEntry);
+                                      zookeeper.deleteRegionEntry(regionEntry);
+                                   }
+                                   catch (Exception e2) {
+                                      LOG.error("Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
+                                      new String(regionEntry.getValue()) + " exception: " + e2);
+                                   }
+                                   try {
+                                      // Create a local HTable object using the regionInfo
+                                      HTable table = new HTable(config, HRegionInfo.parseFrom(regionBytes).getTable().getNameAsString());
+                                      try {
+                                         // Repost a zookeeper entry for all current regions in the table
+                                         zookeeper.postAllRegionEntries(table);
+                                      }
+                                      catch (Exception e2) {
+                                         LOG.error("Error calling postAllRegionEntries. table: " + new String(table.getTableName()) + " exception: " + e2);
+                                      }
+                                   }// try
+                                   catch (Exception e1) {
+                                      LOG.error("recoveryRequest exception in new HTable " + HRegionInfo.parseFrom(regionBytes).getTable().getNameAsString() + " Exception: " + e1);
+                                   }
+                                }// NotServingRegionException
+                                catch (TableNotFoundException tnfe) {
+                                   // In this case there is nothing to recover.  We just need to delete the region entry.
+                                   try {
+                                      // First delete the zookeeper entry
+                                      LOG.warn("TableNotFoundException calling txnManager.recoveryRequest. " + "TM: " +
+                                              tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. \n exception: " + tnfe);
+                                      zookeeper.deleteRegionEntry(regionEntry);
+                                   }
+                                   catch (Exception e2) {
+                                      LOG.error("Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
+                                      new String(regionEntry.getValue()) + " exception: " + e2);
+                                   }
+
+                                }// TableNotFoundException
+                                catch (DeserializationException de) {
+                                   // We are unable to parse the region info from ZooKeeper  We just need to delete the region entry.
+                                   try {
+                                      // First delete the zookeeper entry
+                                      LOG.warn("DeserializationException calling txnManager.recoveryRequest. " + "TM: " +
+                                              tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. \n exception: " + de);
+                                      zookeeper.deleteRegionEntry(regionEntry);
+                                   }
+                                   catch (Exception e2) {
+                                      LOG.error("Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
+                                      new String(regionEntry.getValue()) + " exception: " + e2);
+                                   }
+
+                                }// DeserializationException
+                                catch (Exception e) {
+                                   LOG.error("An ERROR occurred calling txnManager.recoveryRequest. " + "TM: " +
+                                              tmID + " regionBytes: [" + regionBytes + "] exception: " + e);
+                                }
+                                if (TxRecoverList != null) {
+                                   for (Long txid : TxRecoverList) {
+                                      TransactionState ts = transactionStates.get(txid);
+                                      if (ts == null) {
+                                         ts = new TransactionState(txid);
+                                      }
+                                      try {
+                                         this.addRegionToTS(hostnamePort, regionBytes, ts);
+                                      } catch (Exception e) {
+                                         LOG.error("Unable to add region to TransactionState, region info: " + new String(regionBytes));
+                                         e.printStackTrace();
+                                      }
+                                      transactionStates.put(txid, ts);
+                                   }
                                 }
                             }
                             for (Map.Entry<Long, TransactionState> tsEntry : transactionStates.entrySet()) {
                                 TransactionState ts = tsEntry.getValue();
-                                Long txID = tsEntry.getKey();
+                                Long txID = ts.getTransactionId();
                                 // TransactionState ts = new TransactionState(txID);
                                 try {
                                     audit.getTransactionState(ts);
                                     if (ts.getStatus().equals("COMMITTED")) {
                                         if (LOG.isDebugEnabled())
-                                            LOG.debug("Redriving commit for " + ts.getTransactionId() + " number of regions " + ts.getParticipatingRegions().size() +
+                                            LOG.debug("Redriving commit for " + txID + " number of regions " + ts.getParticipatingRegions().size() +
                                                     " and tolerating UnknownTransactionExceptions");
                                         txnManager.doCommit(ts, true /*ignore UnknownTransactionException*/);
                                         if(useTlog && useForgotten) {
-                                            long nextAsn = tLog.getNextAuditSeqNum((int)(ts.getTransactionId() >> 32));
-                                            tLog.putSingleRecord(ts.getTransactionId(), "FORGOTTEN", null, forceForgotten, nextAsn);
+                                            long nextAsn = tLog.getNextAuditSeqNum((int)(txID >> 32));
+                                            tLog.putSingleRecord(txID, "FORGOTTEN", null, forceForgotten, nextAsn);
                                         }
                                     } else if (ts.getStatus().equals("ABORTED")) {
                                         if (LOG.isDebugEnabled())
-                                            LOG.debug("Redriving abort for " + ts.getTransactionId());
+                                            LOG.debug("Redriving abort for " + txID);
                                         txnManager.abort(ts);
                                     } else {
                                         if (LOG.isDebugEnabled())
-                                            LOG.debug("Redriving abort for " + ts.getTransactionId());
+                                            LOG.debug("Redriving abort for " + txID);
                                         LOG.warn("Recovering transaction " + txID + ", status is not set to COMMITTED or ABORTED. Aborting.");
                                         txnManager.abort(ts);
                                     }
@@ -798,7 +875,7 @@ public class HBaseTxClient {
                             if (recoveryIterations > 0) {
                                 if(LOG.isInfoEnabled()) LOG.info("Recovery completed for TM" + tmID);
                             }
-                            recoveryIterations = 0;
+                            recoveryIterations = -1;
                         }
                         try {
                             if(continueThread) {
