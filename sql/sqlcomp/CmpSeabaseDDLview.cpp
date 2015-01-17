@@ -967,7 +967,7 @@ void CmpSeabaseDDL::dropSeabaseView(
     }
   else if (dropViewNode->getDropBehavior() == COM_CASCADE_DROP_BEHAVIOR)
     {
-      cliRC = getUsingViews(&cliInterface, extViewName, FALSE, usingViewsQueue);
+      cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
       if (cliRC < 0)
 	{
 	  deallocEHI(ehi); 

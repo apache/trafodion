@@ -512,14 +512,13 @@ class CmpSeabaseDDL
 		       Int64 objUID,
 		       NAString &usingObjName);
 
-  short getUsingRoutine(ExeCliInterface *cliInterface,
-                        Int64 objUID,
-                        NAString &usingObjName);
+  short getUsingRoutines(ExeCliInterface *cliInterface,
+                         Int64 objUID,
+                         Queue * & usingRoutinesQueue);
   
   short getUsingViews(ExeCliInterface *cliInterface,
-		      const NAString &usedObjName,
-		      NABoolean isTable,
-		      Queue * &usingViewsQueue);
+                      Int64 objectUID,
+                      Queue * &usingViewsQueue);
   
   void handleDDLCreateAuthorizationError(
      int32_t SQLErrorCode,

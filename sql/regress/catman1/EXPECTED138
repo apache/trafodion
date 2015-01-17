@@ -1624,4 +1624,74 @@ End of MXCI Session
 
 --- SQL operation complete.
 >>
+>>obey TEST138(test_drop);
+>>create schema sch138c;
+
+--- SQL operation complete.
+>>set schema sch138c;
+
+--- SQL operation complete.
+>>-- Setup libraries, procedures and functions
+>>create library t138_l1 file 'udrtest135.dll';
+
+--- SQL operation complete.
+>>
+>>create function t138_ADD2(int,int) returns (ADD2 int)
++>language c parameter style sql external name 'add2'
++>library t138_l1
++>deterministic no sql final call allow any parallelism state area size 1024 ;
+
+--- SQL operation complete.
+>>-- Procedure creation not working
+>>--sh sh $$scriptsdir$$/tools/java-compile.ksh TEST138.java 2> LOG138-SECONDARY | tee -a LOG138;
+>>--sh sh $$scriptsdir$$/tools/java-archive.ksh TEST138.jar TEST138.class 2>> LOG138-SECONDARY | tee -a LOG138;
+>>--create procedure p138(in cmd char(1000),out status char(60))
+>>--language java parameter style java modifies sql data
+>>--external name 'TEST101.Xact' library t138_l1;
+>>
+>>create table t138 (a int not null primary key);
+
+--- SQL operation complete.
+>>create view v138 as select * from T138;
+
+--- SQL operation complete.
+>>create sequence sq138;
+
+--- SQL operation complete.
+>>
+>>select count (*) from TRAFODION."_MD_".OBJECTS WHERE schema_name = 'SCH138C';
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>>
+>>drop schema SCH138C;
+
+*** ERROR[1028] The schema must be empty.  It contains at least one object SQ138.
+
+--- SQL operation failed with errors.
+>>select count (*) from TRAFODION."_MD_".OBJECTS WHERE schema_name = 'SCH138C';
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>>
+>>drop schema SCH138C cascade;
+
+--- SQL operation complete.
+>>select count (*) from TRAFODION."_MD_".OBJECTS WHERE schema_name = 'SCH138C';
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
 >>log;
