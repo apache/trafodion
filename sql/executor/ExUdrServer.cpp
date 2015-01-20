@@ -283,12 +283,22 @@ ExUdrServer::ExUdrServerStatus ExUdrServer::start(ComDiagsArea **diags,
     }
 
     NABoolean waitedCreation = TRUE;
+    // co-locate the tdm_udrserv with the executor process (master or ESP)
+    // This is done for a couple of reasons: One is that since the ESPs
+    // are evenly balanced across the CPUs, this ensures an even distribution
+    // of the tdm_udrservs as well, probably better than a random distribution.
+    // The second reason is that for certain maintenance UDFs (only example
+    // so far is udf(event_log_reader())), we must ensure that we run one
+    // tdm_udrserv on each node of the cluster, and we do that by starting
+    // one ESP per node.
+    IpcCpuNum collocatedCPU =
+      myIpcEnv()->getMyOwnProcessId(IPC_DOM_GUA_PHANDLE).getCpuNum();
 
     ipcServer_ =
       udrServerClass_->allocateServerProcess(diags,
                                              diagsHeap,
                                              nodeName,
-                                             IPC_CPU_DONT_CARE,
+                                             collocatedCPU,
                                              IPC_PRIORITY_DONT_CARE,
                                              1,   // espLevel (not relevant for UDR servers) 
                                              usesTransactions,
