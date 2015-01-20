@@ -70,7 +70,7 @@ SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
     myNodeNumber, myNodeName, myNodeNameLen, myStartTime, myProcessNameString);
   ex_assert(error == 0,"Error in ComRtGetProgramInfo");
 
-   pri = 0;
+  pri = 0;
   error = statsGlobals_->getStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode,
                                           FALSE /*shouldTimeout*/);
   ex_assert(error == 0, "getStatsSemaphore() returned an error");
@@ -83,10 +83,24 @@ SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
   statsGlobals_->setSscpTimestamp(myStartTime);
   statsGlobals_->sscpProcSemId_ = semId_;
   statsGlobals->setSscpInitialized(TRUE);
+  NAHeap *statsHeap = (NAHeap *)statsGlobals_->
+        statsHeap_.allocateHeapMemory(sizeof *statsHeap, FALSE);
+
+  // The following assertion may be hit if the RTS shared memory
+  // segment is full.  
+  ex_assert(statsHeap, "allocateHeapMemory returned NULL.");
+
+  // This next allocation, a placement "new" will not fail.
+  statsHeap = new (statsHeap, &statsGlobals_->statsHeap_)
+       NAHeap("Process Stats Heap", &statsGlobals_->statsHeap_,
+               8192,
+               0);
+  statsGlobals_->addProcess(myPin_, statsHeap);
+
   statsGlobals_->releaseStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode);
   CliGlobals *cliGlobals = GetCliGlobals();
   cliGlobals->setSemId(semId_);
-
+  cliGlobals->setStatsHeap(statsHeap);
   char defineName[24+1];
   short zeroMeansNo;
   str_cpy_all (defineName, "=_MX_RTS_LOG_KILL_SERVER", 24);
