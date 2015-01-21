@@ -725,7 +725,7 @@ char volatileString[20] = {0};
       someObjectsCouldNotBeDropped = true;
    
 // remove NATable entry for this table
-CorrName cn(catalogName,STMTHEAP,schemaName,objectName);
+   CorrName cn(objectName,STMTHEAP,schemaName,catalogName);
 
    ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
      NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
