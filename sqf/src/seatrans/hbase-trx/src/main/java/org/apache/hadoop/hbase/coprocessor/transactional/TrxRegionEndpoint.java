@@ -1112,6 +1112,7 @@ CoprocessorService, Coprocessor {
     RegionScanner scanner = null;
     Throwable t = null;
     Exception ge = null;
+    IOException gioe = null;
     WrongRegionException wre = null;
     org.apache.hadoop.hbase.client.Result result2 = null;
     long transactionId = request.getTransactionId();
@@ -1183,7 +1184,16 @@ CoprocessorService, Coprocessor {
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.GetTransactionalResponse.Builder getResponseBuilder = GetTransactionalResponse.newBuilder();
 
-   getResponseBuilder.setResult(ProtobufUtil.toResult(result2));
+   if (result2 != null)
+   {
+     getResponseBuilder.setResult(ProtobufUtil.toResult(result2));
+   }
+   else
+   {
+     if (t == null && wre == null && ge == null)
+       gioe = new IOException("TrxRegionEndpoint coprocessor: get - result2 was null");
+     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: get - txId " + transactionId + ", result2 was null ");
+   }
       
    getResponseBuilder.setHasException(false);
 
@@ -1198,11 +1208,17 @@ CoprocessorService, Coprocessor {
      getResponseBuilder.setHasException(true);
      getResponseBuilder.setException(wre.toString());
    }
-      
+
    if (ge != null)
    {
      getResponseBuilder.setHasException(true);
      getResponseBuilder.setException(ge.toString());
+   }
+      
+   if (gioe != null)
+   {
+     getResponseBuilder.setHasException(true);
+     getResponseBuilder.setException(gioe.toString());
    }
 
    GetTransactionalResponse gresponse = getResponseBuilder.build();
