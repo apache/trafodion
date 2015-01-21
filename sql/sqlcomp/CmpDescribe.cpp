@@ -2787,7 +2787,7 @@ short CmpDescribeSeabaseTable (
           outputShortLine(space, buf);
         }
 
-      if ((naTable->hbaseCreateOptions()) &&
+      if (!isView && (naTable->hbaseCreateOptions()) &&
           (naTable->hbaseCreateOptions()->entries() > 0))
         {
           outputShortLine(space, "  HBASE_OPTIONS ");
