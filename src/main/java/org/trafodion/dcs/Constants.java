@@ -153,7 +153,7 @@ public final class Constants {
   public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "dcs.server.user.program.statistics.enabled";
 
   /** Default value for DCS server user program statistics enable */
-  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "false";
+  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "true";
   
   /** Configuration key for DCS server user program port map timeout seconds */
   public static final String DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS = "dcs.server.user.program.port.map.timeout.seconds";
@@ -378,7 +378,7 @@ public final class Constants {
   public static final String T4_DRIVER_MAX_POOL_SIZE = "t4.driver.max.pool.size";
   
   /** DcsMaster minPoolSize used in JdbcT4Util */
-  public static final int DEFAULT_T4_DRIVER_MAX_POOL_SIZE = 2;
+  public static final int DEFAULT_T4_DRIVER_MAX_POOL_SIZE = 0;
   
   /** Query for trafodion._REPOS_.metric_session_table */
   public static final String TRAFODION_REPOS_METRIC_SESSION_TABLE_QUERY = "trafodion.repos.metric.session.table.query";
