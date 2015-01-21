@@ -823,6 +823,19 @@ public class HBaseTxClient {
                                               tmID + " regionBytes: [" + regionBytes + "] exception: " + e);
                                 }
                                 if (TxRecoverList != null) {
+                                    if (LOG.isTraceEnabled()) LOG.trace("size of TxRecoverList " + TxRecoverList.size());
+                                    if (TxRecoverList.size() == 0) {
+                                      try {
+                                         // First delete the zookeeper entry
+                                         LOG.warn("Leftover Znode  calling txnManager.recoveryRequest. " + "TM: " +
+                                                 tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. ");
+                                         zookeeper.deleteRegionEntry(regionEntry);
+                                      }
+                                      catch (Exception e2) {
+                                         LOG.error("Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
+                                         new String(regionEntry.getValue()) + " exception: " + e2);
+                                      }
+                                   }
                                    for (Long txid : TxRecoverList) {
                                       TransactionState ts = transactionStates.get(txid);
                                       if (ts == null) {
@@ -837,6 +850,7 @@ public class HBaseTxClient {
                                       transactionStates.put(txid, ts);
                                    }
                                 }
+                                else if (LOG.isDebugEnabled()) LOG.debug("size od TxRecoverList is NULL ");
                             }
                             for (Map.Entry<Long, TransactionState> tsEntry : transactionStates.entrySet()) {
                                 TransactionState ts = tsEntry.getValue();

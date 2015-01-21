@@ -1740,7 +1740,7 @@ CoprocessorService, Coprocessor {
       org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.RecoveryRequestResponse.Builder recoveryResponseBuilder = RecoveryRequestResponse.newBuilder();
 
       List<Long> indoubtTransactions = new ArrayList<Long>();
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: recoveryRequest - txId " + transactionId + ", Trafodion Recovery: region " + regionInfo.getEncodedName() + " receives recovery request from TM " + tmId  + " with region state " + regionState);
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: recoveryRequest Trafodion Recovery: region " + regionInfo.getEncodedName() + " receives recovery request from TM " + tmId  + " with region state " + regionState);
       switch(regionState) {
               case REGION_STATE_RECOVERING: // RECOVERING, already create a list of in-doubt txn, but still in the state of resolving them,
                            // retrieve all in-doubt txn from rmid and return them into a long a
@@ -1750,7 +1750,17 @@ CoprocessorService, Coprocessor {
                               indoubtTransactions.add(tid);
                               if (LOG.isInfoEnabled()) LOG.info("TrxRegionEndpoint coprocessor: recoveryRequest - txId " + transactionId + ", Trafodion Recovery: region " + regionInfo.getEncodedName() + " in-doubt transaction " + tid + " has been added into the recovery reply to TM " + tmId + " during recovery ");
                           }
-                     } 
+                     }
+                     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: recoveryRequest " + indoubtTransactions.size());
+                     if (indoubtTransactions.size() == 0) {
+                       String lv_encoded = m_Region.getRegionInfo().getEncodedName();
+                       try {
+                           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: recoveryRequest - Trafodion Recovery: delete recovery zNode TM " + tmId + " region encoded name " + lv_encoded + " for 0 in-doubt transaction");
+                           deleteRecoveryzNode(tmId, lv_encoded);
+                       } catch (IOException e) {
+                          LOG.error("TrxRegionEndpoint coprocessor: recoveryRequest - Trafodion Recovery: delete recovery zNode failed");
+                       }
+                     }
                      break;
               case REGION_STATE_START: // START
                      List<TrxTransactionState> commitPendingCopy = new ArrayList<TrxTransactionState>(commitPendingTransactions);
@@ -1764,7 +1774,7 @@ CoprocessorService, Coprocessor {
                      // now remove the ZK node after TM has initiated the ecovery request   
                     String lv_encoded = m_Region.getRegionInfo().getEncodedName();
                     try {
-                         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: recoveryRequest - txId " + transactionId + ", Trafodion Recovery: delete recovery zNode TM " + tmId + " region encoded name " + lv_encoded + " for 0 in-doubt transaction");
+                         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: recoveryRequest - Trafodion Recovery: delete recovery zNode TM " + tmId + " region encoded name " + lv_encoded + " for 0 in-doubt transaction");
                         deleteRecoveryzNode(tmId, lv_encoded);
                     } catch (IOException e) {
                         LOG.error("TrxRegionEndpoint coprocessor: recoveryRequest - Trafodion Recovery: delete recovery zNode failed");

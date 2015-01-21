@@ -848,7 +848,7 @@ public class TransactionManager {
         
     	final String regionName = regionInfo.getRegionNameAsString();
     	final int tmID = tmid;
-        if (LOG.isTraceEnabled()) LOG.trace("TransactionManager:recoveryRequest regionInfo encoded name: [" + regionInfo.getEncodedName() + "]");
+        if (LOG.isTraceEnabled()) LOG.trace("TransactionManager:recoveryRequest regionInfo encoded name: [" + regionInfo.getEncodedName() + "]" + " hostname " + hostnamePort);
         Batch.Call<TrxRegionService, RecoveryRequestResponse> callable = 
                 new Batch.Call<TrxRegionService, RecoveryRequestResponse>() {
               ServerRpcController controller = new ServerRpcController();
