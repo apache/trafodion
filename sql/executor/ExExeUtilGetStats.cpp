@@ -3046,8 +3046,8 @@ short ExExeUtilGetRTSStatisticsTcb::work()
         str_sprintf(statsBuf_, "%15s", "Table Name");
 	moveRowToUpQueue(statsBuf_);
         str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
-		"Records Accessed", "Records Used", "Hbase/Hive", "Hbase/Hive", 
-                "Hbas/Hivee IO", "Hbase/Hive IO");
+		"Records Accessed", "Records Used", "HBase/Hive", "HBase/Hive", 
+                "HBase/Hive IO", "HBase/Hive IO");
         moveRowToUpQueue(statsBuf_);
 	str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
 		"Estimated/Actual", "Estimated/Actual", "IOs", "IO MBytes",
@@ -3180,8 +3180,8 @@ short ExExeUtilGetRTSStatisticsTcb::work()
         str_sprintf(statsBuf_, "%15s", "Table Name");
 	moveRowToUpQueue(statsBuf_);
         str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
-		"Records Accessed", "Records Used", "Hbase/Hive", "Hbase/Hive", 
-                "Hbase/Hive IO", "Hbase/Hive IO");
+		"Records Accessed", "Records Used", "HBase/Hive", "HBase/Hive", 
+                "HBase/Hive IO", "HBase/Hive IO");
         moveRowToUpQueue(statsBuf_);
 	str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
 		"Estimated/Actual", "Estimated/Actual", "IOs", "IO MBytes",

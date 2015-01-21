@@ -128,9 +128,9 @@ ExEspFragInstanceDir::ExEspFragInstanceDir(CliGlobals *cliGlobals,
       error = statsGlobals_->getStatsSemaphore(semId_, pid_,savedPriority, savedStopMode,
                       FALSE /*shouldTimeout*/);
       ex_assert(error == 0, "getStatsSemaphore() returned an error");
-      statsHeap_ = (NAHeap *)statsGlobals->statsHeap_.allocateHeapMemory(sizeof *statsHeap_);
-      statsHeap_ = new (statsHeap_, &statsGlobals->statsHeap_) 
-        NAHeap("Process Stats Heap", &statsGlobals->statsHeap_,
+      statsHeap_ = (NAHeap *)statsGlobals->getStatsHeap()->allocateHeapMemory(sizeof *statsHeap_);
+      statsHeap_ = new (statsHeap_, statsGlobals->getStatsHeap()) 
+        NAHeap("Process Stats Heap", statsGlobals->getStatsHeap(),
         8192,
         0);
       // We need to set up the cliGlobals, since addProcess will call getRTSSemaphore

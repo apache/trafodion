@@ -35,6 +35,8 @@
 #include "ComQueue.h"
 #include "ComPackDefs.h"
 
+extern NABoolean checkIfRTSSemaphoreLocked();
+
 template<> Long Q_EntryPtr::pack(void *space, short isSpacePtr)
 {
   // Q_EntryPtr doesn't pack or unpack the Q_Entry referenced by the pointer.
@@ -789,3 +791,45 @@ void HashQueue::removeLastReturned()
   entries_--;  
   lastReturned_ = NULL;
 }
+
+SyncHashQueue::SyncHashQueue(CollHeap * heap,
+		     ULng32 hashTableSize)
+   : HashQueue(heap, hashTableSize)
+{
+}
+void SyncHashQueue::position(const char * data, ULng32 dataLength) {
+   if (! checkIfRTSSemaphoreLocked())
+      abort();
+   HashQueue::position(data, dataLength);
+}
+
+void SyncHashQueue::position() {
+   if (! checkIfRTSSemaphoreLocked())
+      abort();
+   HashQueue::position();
+}
+
+void SyncHashQueue::remove() {
+   if (! checkIfRTSSemaphoreLocked())
+      abort();
+   HashQueue::remove();
+}
+
+void SyncHashQueue::remove(void *entry) {
+   if (! checkIfRTSSemaphoreLocked())
+      abort();
+   HashQueue::remove(entry);
+}
+
+void SyncHashQueue::remove(const char *data, ULng32 dataLength, void *entry) {
+   if (! checkIfRTSSemaphoreLocked())
+      abort();
+   HashQueue::remove(data, dataLength, entry);
+}
+
+void SyncHashQueue::insert(const char *data, ULng32 dataLength, void *entry) {
+   if (! checkIfRTSSemaphoreLocked())
+      abort();
+   HashQueue::insert(data, dataLength, entry);
+}
+

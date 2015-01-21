@@ -264,11 +264,7 @@ void runServer(Int32 argc, char **argv)
     cliGlobals->setSharedMemId(shmid);
     cliGlobals->setStatsGlobals(statsGlobals);
   }
-#ifdef SQ_NEW_PHANDLE
-  XPROCESSHANDLE_GETMINE_(&statsGlobals->sscpProcHandle_);
-#else
-  XPROCESSHANDLE_GETMINE_(statsGlobals->sscpProcHandle_);
-#endif
+  XPROCESSHANDLE_GETMINE_(statsGlobals->getSscpProcHandle());
   NAHeap *sscpHeap = cliGlobals->getExecutorMemory();
   cliGlobals->setJmpBufPtr(&sscpJmpBuf);
   if (setjmp(sscpJmpBuf))

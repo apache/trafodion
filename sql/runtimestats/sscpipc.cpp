@@ -76,23 +76,23 @@ SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
   ex_assert(error == 0, "getStatsSemaphore() returned an error");
   // ProcessHandle wrapper in porting layer library
   NAProcessHandle sscpPhandle;
-  error = sscpPhandle.getmine(&(statsGlobals->sscpProcHandle_));
+  error = sscpPhandle.getmine(statsGlobals->getSscpProcHandle());
 
   statsGlobals_->setSscpPid(myPin_);
   statsGlobals_->setSscpPriority(pri);
   statsGlobals_->setSscpTimestamp(myStartTime);
-  statsGlobals_->sscpProcSemId_ = semId_;
+  statsGlobals_->setSscpProcSemId(semId_);
   statsGlobals->setSscpInitialized(TRUE);
-  NAHeap *statsHeap = (NAHeap *)statsGlobals_->
-        statsHeap_.allocateHeapMemory(sizeof *statsHeap, FALSE);
+  NAHeap *statsHeap = (NAHeap *)statsGlobals_->getStatsHeap()->
+        allocateHeapMemory(sizeof *statsHeap, FALSE);
 
   // The following assertion may be hit if the RTS shared memory
   // segment is full.  
   ex_assert(statsHeap, "allocateHeapMemory returned NULL.");
 
   // This next allocation, a placement "new" will not fail.
-  statsHeap = new (statsHeap, &statsGlobals_->statsHeap_)
-       NAHeap("Process Stats Heap", &statsGlobals_->statsHeap_,
+  statsHeap = new (statsHeap, statsGlobals_->getStatsHeap())
+       NAHeap("Process Stats Heap", statsGlobals_->getStatsHeap(),
                8192,
                0);
   statsGlobals_->addProcess(myPin_, statsHeap);
@@ -271,7 +271,7 @@ void SscpNewIncomingConnectionStream::processStatsReq(IpcConnection *connection)
         short error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
                 sscpGlobals->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
         ex_assert(error == 0, "getStatsSemaphore() returned an error");
-        HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
+        SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
         StmtStats *stmtStats = statsGlobals->getStmtStats(qid, str_len(qid));
         ExStatisticsArea *stats;
         ExStatisticsArea *mergedStats = NULL;
@@ -422,7 +422,7 @@ void SscpNewIncomingConnectionStream::processCpuStatsReq(IpcConnection *connecti
     short error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
             sscpGlobals->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
     ex_assert(error == 0, "getStatsSemaphore() returned an error");
-    HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
+    SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
     stmtStatsList->position();
     if (reqType == SQLCLI_STATS_REQ_ET_OFFENDER)
     {
@@ -457,7 +457,7 @@ void SscpNewIncomingConnectionStream::processCpuStatsReq(IpcConnection *connecti
     rmsStats->setStatsHeapWaterMark(statsHeap->getHighWaterMark());
     rmsStats->setNoOfStmtStats(statsGlobals->getStmtStatsList()->numEntries());
     rmsStats->setSemPid(statsGlobals->getSemPid());
-    rmsStats->setNumQueryInvKeys(statsGlobals->recentSikeys_->entries());
+    rmsStats->setNumQueryInvKeys(statsGlobals->getRecentSikeys()->entries());
     mergedStats->insert(rmsStats);
     if (request->getNoOfQueries() == RtsCpuStatsReq::INIT_RMS_STATS_)
         statsGlobals->getRMSStats()->reset();
@@ -530,7 +530,7 @@ void SscpNewIncomingConnectionStream::processKillServersReq()
                   savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
   ex_assert(error == 0, "getStatsSemaphore() returned an error");
 
-  HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
+  SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
   stmtStatsList->position(qid, qidLen);
 
   StmtStats *kqStmtStats = NULL;
@@ -708,7 +708,7 @@ void SscpNewIncomingConnectionStream::suspendActivateSchedulers()
                   savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
   ex_assert(error == 0, "getStatsSemaphore() returned an error");
 
-  HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
+  SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
   stmtStatsList->position(qid, qidLen);
 
   StmtStats *kqStmtStats = NULL;
@@ -813,7 +813,7 @@ void SscpNewIncomingConnectionStream::processSecInvReq()
     if (revokeTimer)
       timer.start();
 
-    HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
+    SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
     StmtStats *kqStmtStats = NULL;
     stmtStatsList->position();
     // Look at each StmtStats

@@ -161,7 +161,7 @@ void runServer(Int32 argc, char **argv)
   statsGlobals->setSsmpPid(cliGlobals->myPin());
   statsGlobals->setSsmpTimestamp(cliGlobals->myStartTime());
   short error = statsGlobals->openStatsSemaphore(
-                                    statsGlobals->ssmpProcSemId_);
+                                    statsGlobals->getSsmpProcSemId());
   ex_assert(error == 0, "Error in opening the semaphore");
 
   cliGlobals->setStatsGlobals(statsGlobals);
@@ -172,12 +172,12 @@ void runServer(Int32 argc, char **argv)
   // a manual unit test, but it is not possible to cover this easily in
   // an automated test.
   // LCOV_EXCL_START
-  if (statsGlobals->semPid_ != -1)
+  if (statsGlobals->getSemPid() != -1)
   {
     NAProcessHandle prevSsmpPhandle((SB_Phandle_Type *)
-                            &statsGlobals->ssmpProcHandle_);
+                            statsGlobals->getSsmpProcHandle());
     prevSsmpPhandle.decompose();
-    if (statsGlobals->semPid_ == prevSsmpPhandle.getPin())
+    if (statsGlobals->getSemPid() == prevSsmpPhandle.getPin())
     {
       NAProcessHandle myPhandle;
       myPhandle.getmine();
@@ -185,7 +185,7 @@ void runServer(Int32 argc, char **argv)
       short savedPriority, savedStopMode;
       short error =
            statsGlobals->releaseAndGetStatsSemaphore(
-                     statsGlobals->ssmpProcSemId_,
+                     statsGlobals->getSsmpProcSemId(),
                      (pid_t) myPhandle.getPin(),
                      (pid_t) prevSsmpPhandle.getPin(),
                      savedPriority, savedStopMode,
@@ -194,7 +194,7 @@ void runServer(Int32 argc, char **argv)
                "releaseAndGetStatsSemaphore() returned error");
 
       statsGlobals->releaseStatsSemaphore(
-                     statsGlobals->ssmpProcSemId_,
+                     statsGlobals->getSsmpProcSemId(),
                      (pid_t) myPhandle.getPin(),
                      savedPriority, savedStopMode);
     }
@@ -209,17 +209,17 @@ void runServer(Int32 argc, char **argv)
       myPhandle.decompose();
       char processName[50];
       Int32 loopCnt = 0;
-      while (statsGlobals->semPid_ != -1)
+      while (statsGlobals->getSemPid() != -1)
       {
-        pid_t tempPid = statsGlobals->semPid_;
+        pid_t tempPid = statsGlobals->getSemPid();
         Int32 ln_error = msg_mon_get_process_name(myPhandle.getCpu(),
-                                          statsGlobals->semPid_, processName);
+                                          statsGlobals->getSemPid(), processName);
         ex_assert(ln_error != XZFIL_ERR_INVALIDSTATE,
           "msg_mon_get_process_name shouldn't be called after "
           "msg_mon_process_shutdown");
         if (ln_error == XZFIL_ERR_NOSUCHDEV)
           {
-            statsGlobals->seabedError_ = ln_error;
+            statsGlobals->setSeabedError(ln_error);
             statsGlobals->cleanup_SQL(tempPid, myPhandle.getPin());
           }
         else if (ln_error == XZFIL_ERR_OK)
@@ -238,11 +238,7 @@ void runServer(Int32 argc, char **argv)
   }
   // LCOV_EXCL_STOP
 
-#ifdef SQ_NEW_PHANDLE
-  XPROCESSHANDLE_GETMINE_(&statsGlobals->ssmpProcHandle_);
-#else
-  XPROCESSHANDLE_GETMINE_(statsGlobals->ssmpProcHandle_);
-#endif
+  XPROCESSHANDLE_GETMINE_(statsGlobals->getSsmpProcHandle());
 
   NAHeap *ssmpHeap = cliGlobals->getExecutorMemory();
   cliGlobals->setJmpBufPtr(&ssmpJmpBuf);

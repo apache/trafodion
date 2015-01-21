@@ -420,6 +420,17 @@ NA_EIDPROC
   void removeLastReturned();
 };
 
+class SyncHashQueue : public HashQueue {
+public:
+  SyncHashQueue(CollHeap * heap, ULng32 hashTableSize = 513);
+  void position(const char * data, ULng32 dataLength);
+  void position();
+  void remove(void * entry);
+  void remove();
+  void remove(const char *data, ULng32 dataLength, void *entry);
+  void insert(const char * data, ULng32 dataLength, void * entry);
+};
+
 
 #endif
 

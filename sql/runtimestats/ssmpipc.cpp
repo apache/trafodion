@@ -243,16 +243,16 @@ SsmpGlobals::SsmpGlobals(NAHeap *ssmpheap, IpcEnvironment *ipcEnv,  StatsGlobals
   ex_assert(error == 0, "getStatsSemaphore() returned an error");
   NAProcessHandle phandle;
 
-  (void)phandle.getmine(&statsGlobals->ssmpProcHandle_);
+  (void)phandle.getmine(statsGlobals->getSsmpProcHandle());
   statsGlobals_->setSsmpPid(myPin_);
   statsGlobals_->setSsmpPriority(pri);
   statsGlobals_->setSsmpTimestamp(myStartTime);
   statsGlobals_->setStoreSqlSrcLen(storeSqlSrcLen_);
-  statsGlobals_->ssmpProcSemId_ = semId_;
+  statsGlobals_->setSsmpProcSemId(semId_);
   cliGlobals->setSemId(semId_);
-  statsHeap_ = (NAHeap *)statsGlobals->statsHeap_.allocateHeapMemory(sizeof *statsHeap_);
-  statsHeap_ = new (statsHeap_, &statsGlobals->statsHeap_)
-          NAHeap("Process Stats Heap", &statsGlobals->statsHeap_,
+  statsHeap_ = (NAHeap *)statsGlobals->getStatsHeap()->allocateHeapMemory(sizeof *statsHeap_);
+  statsHeap_ = new (statsHeap_, statsGlobals->getStatsHeap())
+          NAHeap("Process Stats Heap", statsGlobals->getStatsHeap(),
           8192,
           0);
   statsGlobals_->setSscpOpens(0);
@@ -650,7 +650,7 @@ bool SsmpGlobals::getQidFromPid( Int32 pid,         // IN
          savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
   ex_assert(error == 0, "getStatsSemaphore() returned an error");
 
-  HashQueue *ssList = statsGlobals->getStmtStatsList();
+  SyncHashQueue *ssList = statsGlobals->getStmtStatsList();
   ssList->position();
   StmtStats *ss = (StmtStats *)ssList->getNext();
 
@@ -957,7 +957,7 @@ bool SsmpGlobals::activateFromQid(
               savedPriority, savedStopMode, FALSE);
   ex_assert(error == 0, "getStatsSemaphore() returned an error");
 
-  HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
+  SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
   stmtStatsList->position(qid, qidLen);
 
   StmtStats *kqStmtStats = NULL;
@@ -1421,7 +1421,7 @@ void SsmpNewIncomingConnectionStream::actOnSuspendQueryReq(
                     savedPriority, savedStopMode, FALSE);
         ex_assert(error == 0, "getStatsSemaphore() returned an error");
 
-        HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
+        SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
         stmtStatsList->position(qid, qidLen);
 
         StmtStats *kqStmtStats = NULL;
@@ -1968,7 +1968,7 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
       rmsStats->setSemPid(statsGlobals->getSemPid());
       rmsStats->setSscpOpens(ssmpGlobals_->getNumAllocatedServers());
       rmsStats->setSscpDeletedOpens(ssmpGlobals_->getNumDeallocatedServers());
-      rmsStats->setNumQueryInvKeys(statsGlobals->recentSikeys_->entries());
+      rmsStats->setNumQueryInvKeys(statsGlobals->getRecentSikeys()->entries());
       cpuStats->insert(rmsStats);
       if (request->getNoOfQueries() == RtsCpuStatsReq::INIT_RMS_STATS_)
         statsGlobals->getRMSStats()->reset();
@@ -1983,7 +1983,7 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
        short error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
             ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE);
        ex_assert(error == 0, "getStatsSemaphore() returned an error");
-       HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
+       SyncHashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
        stmtStatsList->position();
        Int64 currTimestamp = NA_JulianTimestamp();
        while ((stmtStats = (StmtStats *)stmtStatsList->getNext()) != NULL)
@@ -2014,7 +2014,7 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
       short error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
                         ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
       ex_assert(error == 0, "getStatsSemaphore() returned an error");
-      HashQueue * stmtStatsList = statsGlobals->getStmtStatsList();
+      SyncHashQueue * stmtStatsList = statsGlobals->getStmtStatsList();
       stmtStatsList->position();
      switch (noOfQueries)
       {

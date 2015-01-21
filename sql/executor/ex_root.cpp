@@ -3090,11 +3090,11 @@ void ex_root_tcb::dumpCb()
           FALSE /*shouldTimeout*/);
   bool doDump = false;
   Int64 timenow = NA_JulianTimestamp();
-  if ((timenow - statsGlobals->ssmpDumpedTimestamp_) > 
+  if ((timenow - statsGlobals->getSsmpDumpTimestamp()) > 
        5*60*1000*1000) // 5 minutes
   {
     doDump = true;
-    statsGlobals->ssmpDumpedTimestamp_ = timenow;
+    statsGlobals->setSsmpDumpTimestamp(timenow);
   }
   statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
                       cliGlobals->myPin(),savedPriority, savedStopMode);

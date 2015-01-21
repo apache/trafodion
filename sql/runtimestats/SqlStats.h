@@ -52,6 +52,7 @@ void *getRmsSharedMemoryAddr();
 class ExStatisticsArea;
 class ProcessStats;
 class HashQueue;
+class SyncHashQueue;
 class ExMasterStats;
 class ExRMSStats;
 class RecentSikey;
@@ -180,6 +181,16 @@ public:
     (v ? flags_ |= WMS_MONITORED_CLI_QUERY_ : flags_ &= ~WMS_MONITORED_CLI_QUERY_);
   }
   
+  NABoolean calledFromRemoveQuery()
+  {
+    return (flags_ & CALLED_FROM_REMOVE_QUERY) != 0; 
+  }
+
+  void setCalledFromRemoveQuery(NABoolean v)      
+  {
+    (v ? flags_ |= CALLED_FROM_REMOVE_QUERY : flags_ &= ~CALLED_FROM_REMOVE_QUERY);
+  }
+
   char *getQueryId() { return queryId_; }
   Lng32 getQueryIdLen() { return queryIdLen_; }
   ExMasterStats *getMasterStats();
@@ -201,7 +212,8 @@ private:
     STMT_STATS_USED_ = 0x0010, // Unused Flag
     IS_DELETE_ERROR_ = 0x0020,
     AQR_IN_PROGRESS_ = 0x0040,
-    WMS_MONITORED_CLI_QUERY_=0x0080 // Is this a CLI query monitored by WMS
+    WMS_MONITORED_CLI_QUERY_=0x0080, // Is this a CLI query monitored by WMS
+    CALLED_FROM_REMOVE_QUERY = 0x0100
   };
 
   NAHeap *heap_;
@@ -363,7 +375,7 @@ public:
        short &savedStopMode, NABoolean shouldTimeout = FALSE);
   void cleanupDanglingSemaphore(NABoolean checkForSemaphoreHolder);
   void checkForDeadProcesses(pid_t myPid);
-  HashQueue *getStmtStatsList() { return stmtStatsList_; }
+  SyncHashQueue *getStmtStatsList() { return stmtStatsList_; }
   ExStatisticsArea *getStatsArea(char *queryId, Lng32 queryIdLen);
   StmtStats *getMasterStmtStats(char *queryId, Lng32 queryIdLen, short activeQueryNum);
   StmtStats *getStmtStats(char *queryId, Lng32 queryIdLen);
@@ -429,6 +441,10 @@ public:
   inline pid_t getSemPid() { return semPid_; }
   inline pid_t getSsmpPid();
   inline Int64 getSsmpTimestamp();
+  inline void setSsmpDumpTimestamp(Int64 dumpTime) 
+          { ssmpDumpedTimestamp_ = dumpTime; }
+  inline Int64 getSsmpDumpTimestamp() 
+          { return ssmpDumpedTimestamp_; }
 #ifndef __EID
   Int64 getLastGCTime();
   void setLastGCTime(Int64 gcTime) ;
@@ -476,7 +492,14 @@ public:
   void setShmDirty() { isBeingUpdated_ = TRUE; }
   void cleanup_SQL(pid_t pidToCleanup, pid_t myPid);
   void updateMemStats(pid_t pid, NAHeap *exeMem, NAHeap *ipcHeap);
-public:
+  SB_Phandle_Type *getSsmpProcHandle() { return &ssmpProcHandle_; }
+  SB_Phandle_Type *getSscpProcHandle() { return &sscpProcHandle_; }
+  SyncHashQueue *getRecentSikeys() { return recentSikeys_; }
+  void setSsmpProcSemId(Long semId) { ssmpProcSemId_ = semId; } 
+  Long &getSsmpProcSemId() { return ssmpProcSemId_; } 
+  void setSscpProcSemId(Long semId) { sscpProcSemId_ = semId; } 
+  void setSeabedError(Int32 error) { seabedError_ = error; }
+private:
   void *statsSharedSegAddr_;
   Lng32 version_;             // A field used to prevent downrev compiler or other 
                              // incompatible programs to store objects in the
@@ -486,7 +509,7 @@ public:
   Long ssmpProcSemId_;
   SB_Phandle_Type ssmpProcHandle_;
   GlobalStatsArray *statsArray_;
-  HashQueue *stmtStatsList_;
+  SyncHashQueue *stmtStatsList_;
   short cpu_;
   pid_t semPid_;    // Pid of the process that holds semaphore lock - This element is used for debugging purpose only
   Int64 semPidCreateTime_; // Creation timestamp - pid recycle workaround. 
@@ -508,7 +531,7 @@ public:
                           // cleanupDanglingSemaphore detected the semaphore
                           // holding process is gone, but its pid was 
                           // recycled.
-  HashQueue *recentSikeys_;
+  SyncHashQueue *recentSikeys_;
   Int64 newestRevokeTimestamp_;  // Allows CLI call w/o use if a semaphore.
   NABoolean isBeingUpdated_;
   pid_t pidToCheck_;

@@ -272,7 +272,7 @@ void CliGlobals::init( NABoolean espProcess,
         ex_assert(error == 0, "getStatsSemaphore() returned an error");
 
         statsHeap_ = (NAHeap *)statsGlobals_->
-               statsHeap_.allocateHeapMemory(sizeof *statsHeap_, FALSE);
+               getStatsHeap()->allocateHeapMemory(sizeof *statsHeap_, FALSE);
 
         // The following assertion may be hit if the RTS shared memory
         // segment is full.  The stop catcher code will be responsible
@@ -280,8 +280,8 @@ void CliGlobals::init( NABoolean espProcess,
         ex_assert(statsHeap_, "allocateHeapMemory returned NULL.");
 
         // This next allocation, a placement "new" will not fail.
-	statsHeap_ = new (statsHeap_, &statsGlobals_->statsHeap_) 
-	  NAHeap("Process Stats Heap", &statsGlobals_->statsHeap_,
+	statsHeap_ = new (statsHeap_, statsGlobals_->getStatsHeap()) 
+	  NAHeap("Process Stats Heap", statsGlobals_->getStatsHeap(),
 		 8192,
 		 0);
 	statsGlobals_->addProcess(myPin_, statsHeap_);

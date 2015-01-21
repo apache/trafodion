@@ -47,6 +47,8 @@
 #include "seabed/fserr.h"
 #include "ComDistribution.h"
 
+extern NABoolean checkIfRTSSemaphoreLocked();
+
 void *StatsGlobals::operator new (size_t size, void* loc)
 {
   if (loc)
@@ -112,9 +114,9 @@ void StatsGlobals::init()
                                 FALSE /*shouldTimeout*/);
   ex_assert(error == 0, "getStatsSemaphore() returned an error");
   
-  stmtStatsList_ = new (&statsHeap_) HashQueue(&statsHeap_, 512);
+  stmtStatsList_ = new (&statsHeap_) SyncHashQueue(&statsHeap_, 512);
   rmsStats_ = new (&statsHeap_) ExRMSStats(&statsHeap_);
-  recentSikeys_ = new (&statsHeap_) HashQueue(&statsHeap_, 512);
+  recentSikeys_ = new (&statsHeap_) SyncHashQueue(&statsHeap_, 512);
   rmsStats_->setCpu(cpu_);
   rmsStats_->setRmsVersion(version_);
   rmsStats_->setRmsEnvType(rtsEnvType_);
@@ -711,6 +713,7 @@ short StatsGlobals::removeQuery(pid_t pid, StmtStats *stmtStats,
        if (!stmtStats->isDeleteError()) 
        {
          stmtStats->setDeleteError(TRUE);
+         stmtStats->setCalledFromRemoveQuery(TRUE);
          if (globalScan)
            stmtStatsList_->remove();
          else
@@ -1315,6 +1318,10 @@ StmtStats::~StmtStats()
 
 void StmtStats::deleteMe()
 {
+   if (! checkIfRTSSemaphoreLocked())
+      abort();
+   if (! calledFromRemoveQuery())
+      abort();
 // in case of Linux, create tempStats to do fixup
 // since vptr table will vary from one instance to another
 // of the same program (mxssmp)
@@ -1728,7 +1735,7 @@ SB_Phandle_Type *getMySsmpPhandle()
 {
   CliGlobals *cliGlobals = GetCliGlobals();
   if (cliGlobals->getStatsGlobals())
-     return &cliGlobals->getStatsGlobals()->ssmpProcHandle_;
+     return cliGlobals->getStatsGlobals()->getSsmpProcHandle();
   else
      return NULL;
 }
@@ -1746,12 +1753,13 @@ short getRTSSemaphore()
     statsGlobals = cliGlobals->getStatsGlobals();
   if (statsGlobals)
   {
-     if (statsGlobals->semPid_ != cliGlobals->myPin())
+     if (statsGlobals->getSemPid() != cliGlobals->myPin())
      { 
        error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
             cliGlobals->myPin(), savedPriority, savedStopMode, FALSE); 
        ex_assert(error == 0, "getStatsSemaphore() returned an error");
        retcode = 1;
+
      }
   }
   return retcode;
@@ -1779,7 +1787,7 @@ void releaseRTSSemaphore()
     statsGlobals = cliGlobals->getStatsGlobals();
   if (statsGlobals)
   {
-    if (statsGlobals->semPid_ == cliGlobals->myPin())
+    if (statsGlobals->getSemPid() == cliGlobals->myPin())
     {
       // Though the semPid_ is saved in abortedSemPid_, you need to look at
       // the stack trace if the process is being aborted. releaseRTSSemaphore
@@ -1802,7 +1810,7 @@ NABoolean checkIfRTSSemaphoreLocked()
     statsGlobals = cliGlobals->getStatsGlobals();
   if (statsGlobals)
   {
-    if (statsGlobals->semPid_ == cliGlobals->myPin())
+    if (statsGlobals->getSemPid() == cliGlobals->myPin())
     {
       statsGlobals->setShmDirty();
       retcode = TRUE;
