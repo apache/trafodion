@@ -283,9 +283,9 @@ sub version_elf ($$) {
 		if ($ver =~ /([a-zA-Z0-9_]*)_CV(\d*)_(\d*)_(\d*)_PV(\d*)_(\d*)_(\d*)_BV(\w*)_BR([\w\-\.\/]*)_DT(\w*)_SV(.*)/) {
 			$has_version = 1;
 			my $verstr = "Release $5.$6.$7 (Build $8 [$11], branch $9, date $10)";
-			my $brstr = $9;
+			my $bldstr = $11;
 			if ($utt) {
-				utt_add($dir, $elf, $verstr, $brstr);
+				utt_add($dir, $elf, $verstr, $bldstr);
 			} else {
 				print "$elf $1 Version $2.$3.$4 $verstr\n";
 			}
@@ -315,14 +315,14 @@ sub version_jar ($$) {
 			my $v2 = $2;
 			my $v3 = $3;
 			my $verstr = $4;
-			my $brstr;
-			if ($verstr =~ /branch ([a-zA-Z0-9\/_-]*),.*/) {
-				$brstr = $1;
+			my $bldstr;
+			if ($verstr =~ /\(Build [a-z]+ \[([a-zA-Z0-9_-]*)\].*/) {
+				$bldstr = $1;
 			} else {
-				$brstr = $verstr;
+				$bldstr = $verstr;
 			}
 			if ($utt) {
-				utt_add($dir, $jar, $verstr, $brstr);
+				utt_add($dir, $jar, $verstr, $bldstr);
 			} else {
 				print "$jar Version $v1.$v2.$v3 $verstr\n";
 			}
@@ -338,9 +338,9 @@ sub version_jar ($$) {
 # Add utt to version_table_utt
 #
 sub utt_add ($$$$) {
-	my ($dir, $elf, $vers, $branch) = @_;
+	my ($dir, $elf, $vers, $buildid) = @_;
 
-	if ($branch =~ /[0-9]*-(patch\/[a-zA-Z0-9\/_-]*).*/) {
+	if ($buildid =~ /(BUGFIX_[0-9_-]+)/) {
 		my $patch = $1;
 		my $node_patch;
 		if (exists $version_table_patch{$patch}) {
