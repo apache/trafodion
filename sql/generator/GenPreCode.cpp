@@ -5243,13 +5243,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
   // part of the enclosing user Xn.
   // When we have support for local transactions and repeatable read, we
   // will then run this update in local transactional mode.
-  if ((getTableDesc()->getNATable()->isSeabaseMDTable()) &&
-      (getTableDesc()->getNATable()->getTableName().getObjectName() == SEABASE_SEQ_GEN) &&
-      (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
-    {
-      noDTMxn() = TRUE;
-    }
-  else if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
+  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
     noDTMxn() = TRUE;
 
   // if unique oper with no index maintanence and autocommit is on, then

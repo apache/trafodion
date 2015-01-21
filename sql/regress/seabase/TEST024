@@ -198,7 +198,7 @@ execute s;
 
 -- select from metadata sequences view
 invoke trafodion."_MD_".sequences_view;
-select * from trafodion."_MD_".sequences_view where schema_name = 'SEQSCH';
+select catalog_name, schema_name, seq_name, start_value, increment, max_value, min_value, cycle_option, cache_option, cache_size, next_value from trafodion."_MD_".sequences_view where schema_name = 'SEQSCH';
 
 ?section error_cases
 create sequence error_seq maxvalue -1;
