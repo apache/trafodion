@@ -475,17 +475,27 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
         fflush(stdout);
       }
 
-    // parse the file name to see whether this is a file we want to look at
-    if ((strstr(dirEntry->d_name, "mxosrvr_") == dirEntry->d_name ||
-         strstr(dirEntry->d_name, "tmf") == dirEntry->d_name ||
-         strstr(dirEntry->d_name, "master_exec_") == dirEntry->d_name ||
-         strstr(dirEntry->d_name, eventLogFileName.data()) == 
-         dirEntry->d_name ||
-         strstr(dirEntry->d_name, "tm.log") == dirEntry->d_name) &&
-        strcmp(strstr(dirEntry->d_name, ".log"), ".log") == 0)
+    const char *fileName = dirEntry->d_name;
+    size_t nameLen = strlen(fileName);
+    const char *suffix =  NULL;
+    const char *expectedSuffix = ".log";
+    size_t expectedSuffixLen = strlen(expectedSuffix);
+
+    if (nameLen > expectedSuffixLen)
+      suffix = &fileName[nameLen-expectedSuffixLen];
+
+    // parse the file name to see whether this is a file we want to look at,
+    // allow some fixed string values as well as any name configured in
+    // the config file
+    if (suffix && strcmp(suffix, expectedSuffix) == 0 &&
+        (strstr(fileName, "mxosrvr_")              == fileName ||
+         strstr(fileName, "tmf")                   == fileName ||
+         strstr(fileName, "master_exec_")          == fileName ||
+         strstr(fileName, eventLogFileName.data()) == fileName ||
+         strstr(fileName, "tm.log")                == fileName))
       {
 
-        logFileName = logDirName + "/" + dirEntry->d_name;
+        logFileName = logDirName + "/" + fileName;
 
         /* Open the input file */
         infile = fopen(logFileName.data(), "r");
@@ -494,7 +504,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
             status = errno;
             strncpy(sqlstate, "38001", 6);
             snprintf(msgtext, SQLUDR_MSGTEXT_SIZE, "Error %d returned when opening log file %s",
-                     status, dirEntry->d_name);
+                     status, fileName);
             return SQLUDR_ERROR;
           }
 
@@ -509,7 +519,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
             // set file name output column (same for all lines of this file)
             setVarCharOutputColumn(output_row,
                                    log_file_name_param,
-                                   dirEntry->d_name,
+                                   fileName,
                                    NULL); // no truncation warning for this metadata column
           }
 
