@@ -1810,9 +1810,6 @@ else
     <property>
      <name>dcs.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
     </property>
-    <property>
-     <name>dcs.server.user.program.statistics.enabled</name> <value>false</value>
-    </property>
   </configuration>
 EOF
   echo "$(hostname -f) 4" > servers
