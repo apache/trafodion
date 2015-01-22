@@ -251,47 +251,49 @@ SB_Thread::ECM                gv_fs_filenum_table_mutex;
 const int                     gv_fs_receive_fname_len  = 8;
 bool                          gv_fs_shutdown           = false;
 
-static void  fs_int_fd_cleanup_add(int pv_filenum);
-static void  fs_int_fd_cleanup_remove(int pv_filenum);
-static short fs_int_fs_file_awaitiox_fs(FS_Fd_Type      *pp_fd,
-                                        MS_Md_Type      *pp_md,
-                                        short           *pp_filenum,
-                                        void           **ppp_buf,
-                                        int             *pp_xfercount,
-                                        SB_Tag_Type     *pp_tag,
-                                        int              pv_timeout,
-                                        short           *pp_segid,
-                                        SB_Comp_Queue   *pp_fs_comp_q);
-static short fs_int_fs_file_awaitiox_fs_head(FS_Fd_Type     **ppp_fd,
-                                             bool            *pp_complete,
-                                             short           *pp_filenum,
-                                             void           **ppp_buf,
-                                             int             *pp_xfercount,
-                                             SB_Tag_Type     *pp_tag,
-                                             int              pv_timeout,
-                                             short           *pp_segid,
-                                             SB_Comp_Queue   *pp_fs_comp_q);
-static short fs_int_fs_file_awaitiox_fs_list(FS_Fd_Type      *pp_fd,
-                                             bool            *pp_complete,
-                                             short           *pp_filenum,
-                                             void           **ppp_buf,
-                                             int             *pp_xfercount,
-                                             SB_Tag_Type     *pp_tag,
-                                             int              pv_timeout,
-                                             short           *pp_segid,
-                                             SB_Comp_Queue   *pp_fs_comp_q);
-static short fs_int_fs_file_awaitiox_ms(FS_Fd_Type      *pp_fd,
-                                        bool            *pp_complete,
-                                        short           *pp_filenum,
-                                        void           **ppp_buf,
-                                        int             *pp_xfercount,
-                                        SB_Tag_Type     *pp_tag,
-                                        int              pv_timeout,
-                                        short           *pp_segid);
+static void        fs_int_fd_cleanup_add(int pv_filenum);
+static void        fs_int_fd_cleanup_remove(int pv_filenum);
+static short       fs_int_fs_file_awaitiox_fs(FS_Fd_Type      *pp_fd,
+                                              MS_Md_Type      *pp_md,
+                                              short           *pp_filenum,
+                                              void           **ppp_buf,
+                                              int             *pp_xfercount,
+                                              SB_Tag_Type     *pp_tag,
+                                              int              pv_timeout,
+                                              short           *pp_segid,
+                                              SB_Comp_Queue   *pp_fs_comp_q);
+static short       fs_int_fs_file_awaitiox_fs_head(FS_Fd_Type     **ppp_fd,
+                                                   bool            *pp_complete,
+                                                   short           *pp_filenum,
+                                                   void           **ppp_buf,
+                                                   int             *pp_xfercount,
+                                                   SB_Tag_Type     *pp_tag,
+                                                   int              pv_timeout,
+                                                   short           *pp_segid,
+                                                   SB_Comp_Queue   *pp_fs_comp_q);
+static short       fs_int_fs_file_awaitiox_fs_list(FS_Fd_Type      *pp_fd,
+                                                   bool            *pp_complete,
+                                                   short           *pp_filenum,
+                                                   void           **ppp_buf,
+                                                   int             *pp_xfercount,
+                                                   SB_Tag_Type     *pp_tag,
+                                                   int              pv_timeout,
+                                                   short           *pp_segid,
+                                                   SB_Comp_Queue   *pp_fs_comp_q);
+static short       fs_int_fs_file_awaitiox_ms(FS_Fd_Type      *pp_fd,
+                                              bool            *pp_complete,
+                                              short           *pp_filenum,
+                                              void           **ppp_buf,
+                                              int             *pp_xfercount,
+                                              SB_Tag_Type     *pp_tag,
+                                              int              pv_timeout,
+                                              short           *pp_segid);
 static short       fs_int_fs_file_open_ph2(FS_Fd_Type *pp_fd,
                                            const char *pp_filename,
                                            bool        pv_self);
 
+static void        fs_int_fs_format_tcbref(char     *pp_formatted,
+                                           Tcbref_t *pp_tcbref);
 static const char *fs_int_fs_get_dialect_type(uint16 pv_dialect_type);
 static const char *fs_int_fs_get_req_type(uint16 pv_request_type);
 
@@ -2240,13 +2242,16 @@ short fs_int_fs_file_awaitiox_ms(FS_Fd_Type      *pp_fd,
         switch (lp_wr_ctrl_req->request_type) {
         case FS_FS_WRITE:
             lp_req_type = "write";
-            if (gv_fs_trace) {
+            if (gv_fs_trace || gv_fs_trace_params) {
                 SB_Buf_Line la_sender;
+                char        la_transid[100];
                 fs_int_fs_format_sender(la_sender,
                                         reinterpret_cast<short *>(&lp_wr_ctrl_req->sender.phandle));
-                trace_where_printf(WHERE, "Received WRITE message, sender=%s, file=%d, uid=%d\n",
+                fs_int_fs_format_tcbref(la_transid, &lp_wr_ctrl_req->tcbref);
+                trace_where_printf(WHERE, "Received WRITE message, sender=%s, file=%d, tcbref=%s, uid=%d\n",
                                    la_sender,
                                    lp_wr_ctrl_req->sender.first_word.filenum,
+                                   la_transid,
                                    lp_wr_ctrl_req->userid);
             }
             if (TRANSID_IS_VALID(lp_wr_ctrl_req->tcbref)) {
@@ -2264,13 +2269,16 @@ short fs_int_fs_file_awaitiox_ms(FS_Fd_Type      *pp_fd,
 
         case FS_FS_WRITEREAD:
             lp_req_type = "writeread";
-            if (gv_fs_trace) {
+            if (gv_fs_trace || gv_fs_trace_params) {
                 SB_Buf_Line la_sender;
+                char        la_transid[100];
                 fs_int_fs_format_sender(la_sender,
                                         reinterpret_cast<short *>(&lp_wr_ctrl_req->sender.phandle));
-                trace_where_printf(WHERE, "Received WRITEREAD message, sender=%s, file=%d, uid=%d\n",
+                fs_int_fs_format_tcbref(la_transid, &lp_wr_ctrl_req->tcbref);
+                trace_where_printf(WHERE, "Received WRITEREAD message, sender=%s, file=%d, tcbref=%s, uid=%d\n",
                                    la_sender,
                                    lp_wr_ctrl_req->sender.first_word.filenum,
+                                   la_transid,
                                    lp_wr_ctrl_req->userid);
             }
             if (TRANSID_IS_VALID(lp_wr_ctrl_req->tcbref)) {
@@ -2360,13 +2368,15 @@ short fs_int_fs_file_awaitiox_ms(FS_Fd_Type      *pp_fd,
                 if (lp_stream != NULL) {
                     char *lp_from = lp_stream->get_name();
                     if (lv_sre.sre_flags & XSRE_MON)
-                        trace_where_printf(WHERE, "Received message from=%s, msgid=%d, type=mon-%s, tag=" PFTAG "\n",
+                        trace_where_printf(WHERE, "Received message from=%s, msgid=%d, type=mon-%s, tag=" PFTAG ", msg-num=%d\n",
                                            lp_from, lv_sre.sre_msgId,
-                                           lp_req_type, lp_ru->iv_tag);
+                                           lp_req_type, lp_ru->iv_tag,
+                                           gv_fs_ri_msg_tag);
                     else
-                        trace_where_printf(WHERE, "Received message from=%s, msgid=%d, type=fs-%s, tag=" PFTAG "\n",
+                        trace_where_printf(WHERE, "Received message from=%s, msgid=%d, type=fs-%s, tag=" PFTAG ", msg-num=%d\n",
                                            lp_from, lv_sre.sre_msgId,
-                                           lp_req_type, lp_ru->iv_tag);
+                                           lp_req_type, lp_ru->iv_tag,
+                                           gv_fs_ri_msg_tag);
                 }
             }
         }
@@ -3375,6 +3385,17 @@ void fs_int_fs_format_sender(char *pp_formatted, short *pp_sender) {
             lp_sender[6],
             lp_sender[7],
             la_sender);
+}
+
+//
+// Purpose: format tcbref
+//
+void fs_int_fs_format_tcbref(char *pp_formatted, Tcbref_t *pp_tcbref) {
+    sprintf(pp_formatted, "%lld.%lld.%lld.%lld",
+            pp_tcbref->id[0],
+            pp_tcbref->id[1],
+            pp_tcbref->id[2],
+            pp_tcbref->id[3]);
 }
 
 //
