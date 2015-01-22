@@ -2,7 +2,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -223,7 +223,7 @@ fi
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST001 TEST004 TEST005 TEST006 TEST011 TEST012 TEST013 TEST015 TEST071 TESTTOK TESTTOK2 TEST062"
+  sbtestfiles="TEST001 TEST004 TEST005 TEST006 TEST011 TEST012 TEST013 TEST015 TEST071 TEST042 TESTTOK TESTTOK2 TEST062"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do

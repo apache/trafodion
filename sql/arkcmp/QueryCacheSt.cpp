@@ -435,37 +435,30 @@ SP_STATUS QueryCacheDeleteStoredProcedure::sp_Process(
   SP_HANDLE spObj,
   SP_ERROR_STRUCT *error)
 {
-  struct InfoStruct
-  {
-    ULng32 counter;
-  };
-
   SP_STATUS status = SP_SUCCESS;
-  InfoStruct *is = NULL;
-
   switch (action)
   {
   case SP_PROC_OPEN:
-    // No inputs to process
-    is = new InfoStruct;
-    is->counter = 0;
-    *spProcHandle = is;
-    break;
-
-  case SP_PROC_FETCH:
-    is = (InfoStruct*)(*spProcHandle);
-    if (is == NULL )
     {
-      status = SP_FAIL;
-      break;
+      QueryCacheDeleter* deleter = new (GetCliGlobals()->exCollHeap()) QueryCacheDeleter(inputData, eFunc, error, 
+                                   GetCliGlobals()->currContext()->getCmpContextInfo(), GetCliGlobals()->exCollHeap());
+      *spProcHandle = deleter;
     }
-
-    //clear out QueryCache
-    CURRENTQCACHE->makeEmpty();
     break;
-
+  case SP_PROC_FETCH:
+    {
+      QueryCacheDeleter* deleter = (QueryCacheDeleter*)(*spProcHandle);
+      if (deleter == NULL )
+      {
+        status = SP_FAIL;
+        break;
+      }
+      //clear all specified QueryCache
+      deleter->doDelete();
+    }
+    break;
   case SP_PROC_CLOSE:
-    delete (InfoStruct*) (*spProcHandle);
+    NADELETEBASIC((QueryCacheDeleter *)(*spProcHandle), GetCliGlobals()->exCollHeap());
     break;
   }
   return status;
@@ -482,6 +475,27 @@ void QueryCacheDeleteStoredProcedure::Initialize(SP_REGISTER_FUNCPTR regFunc)
           sp_Process,
           0,
 	  CMPISPVERSION);
+}
+
+SP_STATUS QueryCacheDeleteStoredProcedure::sp_InputFormat(SP_FIELDDESC_STRUCT *inputFieldFormat,
+                                  Lng32 numFields,
+                                  SP_COMPILE_HANDLE spCompileObj,
+                                  SP_HANDLE spObj,
+                                  SP_ERROR_STRUCT *error)
+{
+    if ( numFields != 2 )
+    {
+      //accepts 2 input columns
+      error->error = arkcmpErrorISPWrongInputNum;
+      strcpy(error->optionalString[0], "QueryCacheDelete");
+      error->optionalInteger[0] = 2;
+      return SP_FAIL;
+    }
+
+   //column as input parameter for ISP, specifiy query cache of metadata or user context
+   strcpy(&((inputFieldFormat++)->COLUMN_DEF[0]), "instance    char(16) not null");
+   strcpy(&((inputFieldFormat++)->COLUMN_DEF[0]), "location    char(16) not null"); 
+   return SP_SUCCESS;
 }
 
 //------------------------Hybrid Query Cache Stat--------------------------//
@@ -732,31 +746,31 @@ SP_STATUS HybridQueryCacheEntriesStoredProcedure::sp_Process(SP_PROCESS_ACTION a
     return SP_SUCCESS;
 }
 
-NABoolean ISPIterator::initializeISPCaches(SP_ROW_DATA  inputData, 
-                                           SP_EXTRACT_FUNCPTR  eFunc, 
-                                           SP_ERROR_STRUCT* error, 
-                                           const NAArray<CmpContextInfo*> & ctxs, //input 
-                                           NAString & contextName,  // out
-                                           Int32 & index           //out, set initial index in arrary of CmpContextInfos
-                                           ) 
+
+NABoolean ISPIterator::initializeISPCaches(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, SP_ERROR_STRUCT* error, 
+                                  const NAArray<CmpContextInfo*> & ctxs, //input 
+                                  NAString & contextName, 
+                                  Int32 & index           //output, set initial index in arrary of CmpContextInfos
+                                  ) 
 {
-//extract ISP input, find specified context
+//extract ISP input, find QueryCache belonging to specified context
 //and use it for fetch later
   Lng32 maxSize = 16;
   char receivingField[maxSize+1];
-  if (eFunc (0, inputData, maxSize, receivingField, FALSE) == SP_ERROR_EXTRACT_DATA)
+  if (eFunc (0, inputData, (Lng32)maxSize, receivingField, FALSE) == SP_ERROR_EXTRACT_DATA)
   {
       error->error = arkcmpErrorISPFieldDef;
       return FALSE;
   }
    //choose context
    // 1. Search ctxInfos_ for all context with specified name('USER', 'META', 'USTATS'),
-   //    'ALL' option will fetch all context in ctxInfos_, index is set to 0. 
+   //    'ALL' option will fetch all context in ctxInfos_, index is set to 0, qcache is always NULL, 
    // 2. For remote arkcmp, which has 0 context in ctxInfos_, index is always -1, 
+
   NAString qCntxt = receivingField;
   qCntxt.toLower();
   //the receivingField is of pattern xxx$trafodion.yyy, 
-  //where xxx is the desired input string (user, all, meta, etc.).
+  //where xxx is the desired input string.
   Int32 dollarIdx = qCntxt.index("$");
   CMPASSERT(dollarIdx > 0);
   //find the specified context
@@ -788,253 +802,7 @@ NABoolean ISPIterator::initializeISPCaches(SP_ROW_DATA  inputData,
        contextName = "USTATS";
        index = 0;
     }
-    else
-    {
-      error->error = arkcmpErrorISPFieldDef;
-      return FALSE; 
-    }
   }           
   return TRUE;
-}
-
-QueryCacheStatsISPIterator::QueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                                                       SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
-: ISPIterator(ctxs, h)
-{
-    initializeISPCaches(inputData, eFunc, error, ctxs, contextName_, currCacheIndex_);
-    if (currCacheIndex_ == -1)
-      currQCache_ = CURRENTQCACHE;
-}
-
-QueryCacheEntriesISPIterator::QueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                                             SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
-: ISPIterator(ctxs, h), counter_(0)
-{
-     initializeISPCaches( inputData, eFunc, error, ctxs, contextName_, currCacheIndex_);
-     if (currCacheIndex_ == -1)
-      currQCache_ = CURRENTQCACHE;
-
-      //iterator start with preparser cache entries of first query cache, if any
-      if(currCacheIndex_ == -1 && currQCache_)
-         SQCIterator_ = currQCache_->beginPre();
-      else if(currCacheIndex_ == 0)
-         SQCIterator_ = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->beginPre();
-}
-
-HybridQueryCacheStatsISPIterator::HybridQueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                                                      SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
- : ISPIterator(ctxs, h)
-{
-    initializeISPCaches( inputData, eFunc, error, ctxs, contextName_, currCacheIndex_);
-    if (currCacheIndex_ == -1)
-      currQCache_ = CURRENTQCACHE;
-}
-
-HybridQueryCacheEntriesISPIterator::HybridQueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                                                        SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
-: ISPIterator(ctxs, h)
-, currEntryIndex_(-1)
-, currEntriesPerKey_(-1)
-, currHKeyPtr_(NULL)
-, currValueList_(NULL)
-, HQCIterator_(NULL)
-{
-    initializeISPCaches( inputData, eFunc, error, ctxs, contextName_, currCacheIndex_);
-    if (currCacheIndex_ == -1)
-      currQCache_ = CURRENTQCACHE;
-
-    if(currCacheIndex_ == -1 && currQCache_)
-       HQCIterator_ = new (heap_) HQCHashTblItor (currQCache_->getHQC()->begin());
-    else if(currCacheIndex_ == 0)
-       HQCIterator_ = new (heap_) HQCHashTblItor (ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->getHQC()->begin());
-}
-
-//if currCacheIndex_ is set 0, currQCache_ is not used and should always be NULL
-NABoolean QueryCacheStatsISPIterator::getNext(QueryCacheStats & stats)
-{
-   //Only for remote tdm_arkcmp with 0 context
-   if(currCacheIndex_ == -1 && currQCache_)
-   {
-      currQCache_->getCacheStats(stats);
-      currQCache_ = NULL;
-      return TRUE;
-   }
-   
-   //fetch QueryCaches of all CmpContexts with name equal to contextName_
-   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
-   {
-      if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
-       && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
-      {// go to next context in ctxInfos_
-          currCacheIndex_++;
-          return getNext(stats);
-      }
-      ctxInfos_[currCacheIndex_++]->getCmpContext()->getQueryCache()->getCacheStats(stats);
-      return TRUE;
-   }
-   //all entries of all caches are fetched, we are done!
-   return FALSE;
-}
-
-NABoolean QueryCacheEntriesISPIterator::getNext(QueryCacheDetails & details)
-{
-   //Only for remote tdm_arkcmp with 0 context
-   if( currCacheIndex_ == -1 && currQCache_ )
-   {
-       if (SQCIterator_ == currQCache_->endPre()) {
-           // end of preparser cache, continue with postparser entries
-           SQCIterator_ = currQCache_->begin();
-       }
-       if (SQCIterator_ != currQCache_->end())
-           currQCache_->getEntryDetails(SQCIterator_++, details);
-       else
-           return FALSE; //all entries are fetched, we are done!
-             
-       return TRUE;
-   }
-
-   //fetch QueryCaches of all CmpContexts with name equal to contextName_
-   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
-   {
-        if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
-         && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
-        {// go to next context in ctxInfos_
-          currCacheIndex_++;
-          if(currCacheIndex_ < ctxInfos_.entries()){
-              //initialize iterator to first cache entry of next query cache, if any
-              SQCIterator_ = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->beginPre();
-          }
-          return getNext(details);
-        }
-        
-        QueryCache * qcache = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache();
-        if(SQCIterator_ == qcache->endPre()) {
-              // end of preparser cache, continue with postparser entries
-             SQCIterator_ = qcache->begin();
-        }
-        
-        if(SQCIterator_ != qcache->end()){
-             qcache->getEntryDetails( SQCIterator_++, details);
-             return TRUE;
-        }
-        else
-        {
-            //end of this query cache, try to get from next in ctxInfos_
-            currCacheIndex_++;
-            if(currCacheIndex_ < ctxInfos_.entries()){
-                //initialize iterator to first cache entry of next query cache, if any
-                SQCIterator_ = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->beginPre();
-            }
-            //let deeper getNext() decide.
-            return getNext(details);
-        }
-   }
-   //no more query caches, we are done.
-   return FALSE;
-}
-
-NABoolean HybridQueryCacheStatsISPIterator::getNext(HybridQueryCacheStats & stats)
-{
-   //Only for remote tdm_arkcmp with 0 context
-   if(currCacheIndex_ == -1 && currQCache_)
-   {
-      currQCache_->getHQCStats(stats);
-      currQCache_ = NULL;
-      return TRUE;
-   }
-   //fetch QueryCaches of all CmpContexts with name equal to contextName_
-   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
-   {
-      if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
-       && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
-      {// go to next context in ctxInfos_
-          currCacheIndex_++;
-          return getNext(stats);
-      }
-      ctxInfos_[currCacheIndex_++]->getCmpContext()->getQueryCache()->getHQCStats(stats);
-      return TRUE;
-   }
-   //all entries of all caches are fetched, we are done!
-   return FALSE;
-}
-
-NABoolean HybridQueryCacheEntriesISPIterator::getNext(HybridQueryCacheDetails & details)
-{
-   //Only for remote tdm_arkcmp with 0 context
-   if( currCacheIndex_ == -1 && currQCache_ )
-   {
-      if( currEntryIndex_ >= currEntriesPerKey_ )
-      {
-          //get next key-value pair
-          HQCIterator_->getNext(currHKeyPtr_, currValueList_);
-          if(currHKeyPtr_ && currValueList_ && currQCache_->isCachingOn())
-          {
-             currEntryIndex_ = 0;
-             currEntriesPerKey_ = currValueList_->entries();
-          }
-          else//interator == end, all entries fetched, we are done!
-          {
-            if(HQCIterator_) 
-              delete HQCIterator_; 
-            HQCIterator_ = NULL;
-            return FALSE;
-          }
-      }
-      //just get next entry in previous valueList
-      currQCache_->getHQCEntryDetails(currHKeyPtr_, (*currValueList_)[currEntryIndex_++], details);
-      return TRUE;
-   }
- 
-   //fetch QueryCaches of all CmpContexts with name equal to contextName_
-   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
-   {
-      if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
-       && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
-      {// go to next context in ctxInfos_
-          currCacheIndex_++;
-          if(currCacheIndex_ < ctxInfos_.entries())
-          {  //initialize HQCIterator to begin of next query cache, if any
-             if(HQCIterator_)
-               delete HQCIterator_;
-             HQCIterator_ = NULL;
-             HQCIterator_ = new (heap_) HQCHashTblItor (ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->getHQC()->begin());
-          }
-          return getNext(details);
-      }
-      
-      if( currEntryIndex_ >= currEntriesPerKey_ )
-      {
-         //get next key-value pair
-         HQCIterator_->getNext(currHKeyPtr_, currValueList_);
-         QueryCache * tmpCache = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache();
-         if(currHKeyPtr_ && currValueList_ && tmpCache->isCachingOn())
-         {
-            currEntryIndex_ = 0;
-            currEntriesPerKey_ = currValueList_->entries();
-         }
-         else//interator == end
-         {  
-            currCacheIndex_++;
-            if(currCacheIndex_ < ctxInfos_.entries())
-            {  //initialize HQCIterator to begin of next query cache, if any
-               if(HQCIterator_)
-                 delete HQCIterator_;
-               HQCIterator_ = NULL;
-               HQCIterator_ = new (heap_) HQCHashTblItor (ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->getHQC()->begin());
-            }
-            //let deeper getNext() decide.
-            return getNext(details);
-         }
-      }
-      //just get next entry in previous valueList
-      QueryCache * qcache = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache();
-      qcache->getHQCEntryDetails(currHKeyPtr_, (*currValueList_)[currEntryIndex_++], details);
-      return TRUE;
-   }
-   //no more query caches, we are done.
-   if(HQCIterator_) 
-     delete HQCIterator_; 
-   HQCIterator_ = NULL;
-   return FALSE;
 }
 

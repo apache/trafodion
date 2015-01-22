@@ -57,6 +57,7 @@
 #include "OptimizerSimulator.h"
 
 #include "hs_log.h"
+#include "cli_stdh.h"
 
 extern THREAD_P CmpMemoryMonitor *cmpMemMonitor;
 
@@ -399,8 +400,14 @@ void ControlDB::setControlDefault(ControlQueryDefault *def)
   case QUERY_CACHE:
     {
       ULng32 newsiz = getDefaultInK(QUERY_CACHE);
-      if (newsiz <= 0) CURRENTQCACHE->clearStats();
-      CURRENTQCACHE->resizeCache(newsiz);
+      const NAArray<CmpContextInfo *> & cmpCtxInfo = 
+              GetCliGlobals()->currContext()->getCmpContextInfo();
+      for (short i = 0; i < cmpCtxInfo.entries(); i++)
+      {
+        QueryCache * qc = cmpCtxInfo[i]->getCmpContext()->getQueryCache();
+        if (newsiz <= 0) qc->clearStats();
+        qc->resizeCache(newsiz);
+      }
     }
     break;
   case QUERY_CACHE_MPALIAS:

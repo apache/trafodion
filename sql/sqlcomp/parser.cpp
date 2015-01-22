@@ -1647,7 +1647,11 @@ void HQCParseKey::addTokenToNormalizedString(Int32 & tokCod)
         tok->toLower(); //make case insensitive
         if(nOfTokens_ == 0 
            && ( strncmp(tok->data(), "select", 6) == 0
-              ||strncmp(tok->data(), "insert", 6) == 0
+              //HQC does not cache insert statement as SQC already did this before bind. 
+              //SQC does strict NAType checking on constants while HQC does not for Insert,  
+              //this will cause inconsistency. 
+              //Fix launchpad bug 1421374
+              //||strncmp(tok->data(), "insert", 6) == 0
               ||strncmp(tok->data(), "update", 6) == 0
               ||strncmp(tok->data(), "delete", 6) == 0) 
           )  

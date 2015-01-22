@@ -152,7 +152,8 @@ NABoolean RelInternalSP::isQueryCacheVirtualTable() const
     //and they have 2 parameters and following ISP names.
     return ( getProcAllParamsVids().entries() == 2 && 
     ( procName_.compareTo("QUERYCACHE", NAString::ignoreCase)==0  || 
-      procName_.compareTo("QUERYCACHEENTRIES", NAString::ignoreCase)==0 ));
+      procName_.compareTo("QUERYCACHEENTRIES", NAString::ignoreCase)==0 ||
+      procName_.compareTo("QUERYCACHEDELETE", NAString::ignoreCase)==0 ));
 }
 
 NABoolean RelInternalSP::isHybridQueryCacheVirtualTable() const 
