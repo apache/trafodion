@@ -686,7 +686,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	          }
                   
                 if (hdfsStats_)
-                  hdfsStats_->getTimer().stop();
+                  hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getTimer().stop());
 	          
 	        if (retcode < 0)
 	          {
