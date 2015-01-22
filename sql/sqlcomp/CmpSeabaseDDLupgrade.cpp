@@ -1382,7 +1382,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 6:
 		{
-                  str_sprintf(buf, "update %s.\"%s\".%s set text_type = 1 where text not like 'CREATE VIEW %%' and text not like 'HBASE_OPTIONS=>%%' ",
+                  str_sprintf(buf, "update %s.\"%s\".%s set text_type = 1 where text not like 'CREATE VIEW %%' and text not like 'HBASE_OPTIONS=>%%' and NOT (text_type = 4 and text like 'HASH2PARTFUNC%%' ) ",
                               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT);
                   cliRC = cliInterface.executeImmediate(buf);
                   
