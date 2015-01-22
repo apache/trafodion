@@ -46,6 +46,8 @@
 extern ResStatisticsSession   *resStatSession;
 extern ResStatisticsStatement *resStatStatement;
 
+// Fix for bug 1410928
+extern SRVR_STMT_HDL * pQueryStmt;
 using namespace SRVR; 
 
 short qrysrvcExecuteFinished(
@@ -302,6 +304,9 @@ void SRVR::removeSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
 				if (pSrvrSession->pCurrentSrvrStmt == lpSrvrStmt)
 					pSrvrSession->pCurrentSrvrStmt = NULL;
 				delete lpSrvrStmt;
+				// Fix for bug 1410928. Set the global pQueryStmt to NULL so that the statistics timer thread is aware that the
+				// statement no longer exists.
+				pQueryStmt = NULL;
 				if( trace_memory ) LogDelete("delete lpSrvrStmt;",(void**)&lpSrvrStmt,lpSrvrStmt);
 				delete pSrvrStmtList;
 				if( trace_memory ) LogDelete("delete pSrvrStmtList;",(void**)&pSrvrStmtList,pSrvrStmtList);
