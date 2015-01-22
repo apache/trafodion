@@ -3877,6 +3877,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
                }
 
                // collect all ColReference objects into hbaseSaltColumnList.
+               CMPASSERT(saltExpr != NULL);
                saltExpr->findAll(ITM_REFERENCE, hbaseSaltColumnList, FALSE, FALSE);
 
             }
