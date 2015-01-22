@@ -1378,7 +1378,7 @@ int main(int argc, char *argv[])
                 << " while attempting to attach to Monitor, exiting." << endl;
             exit(-2);
         }
-        lv_error = msg_mon_process_startup(false); 
+        lv_error = msg_mon_process_startup3(false, false); 
         if (lv_error)
         {
             cout << "** Error " << lv_error
