@@ -359,10 +359,10 @@ CoprocessorService, Coprocessor {
       try {
         abortTransaction(transactionId);
       } catch (UnknownTransactionException u) {
-        if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:abort - txId " + transactionId + ", Caught UnknownTransactionException after internal abortTransaction call" + u.getMessage() + " " + stackTraceToString(u));
+        if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:abort - txId " + transactionId + ", Caught UnknownTransactionException after internal abortTransaction call - " + u.getMessage() + " " + stackTraceToString(u));
        ute = u;
       } catch (IOException e) {
-        if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:abort - txId " + transactionId + ", Caught IOException after internal abortTransaction call" + e.getMessage() + " " + stackTraceToString(e));
+        if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:abort - txId " + transactionId + ", Caught IOException after internal abortTransaction call - " + e.getMessage() + " " + stackTraceToString(e));
         ioe = e;
       }
     }
@@ -604,7 +604,7 @@ CoprocessorService, Coprocessor {
       try {
         status = commitRequest(transactionId);
       } catch (UnknownTransactionException u) {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught UnknownTransactionException after internal commitRequest call" + u.toString());
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught UnknownTransactionException after internal commitRequest call - " + u.toString());
         ute = u;
       } catch (IOException e) {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught IOException after internal commitRequest call " + e.toString());
@@ -823,7 +823,7 @@ CoprocessorService, Coprocessor {
                request.getValue().toByteArray(),
                put);
            } catch (Throwable e) {
-             if (LOG.isInfoEnabled()) LOG.info("TrxRegionEndpoint coprocessor: checkAndPut - txId " + transactionId + ", Caught exception after internal checkAndPut call"
+             if (LOG.isInfoEnabled()) LOG.info("TrxRegionEndpoint coprocessor: checkAndPut - txId " + transactionId + ", Caught exception after internal checkAndPut call - "
                           + e.getMessage() + " " + stackTraceToString(e));
              t = e;
            }
@@ -1760,6 +1760,7 @@ CoprocessorService, Coprocessor {
       switch(regionState) {
               case REGION_STATE_RECOVERING: // RECOVERING, already create a list of in-doubt txn, but still in the state of resolving them,
                            // retrieve all in-doubt txn from rmid and return them into a long a
+                    if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV:recoveryRequest in region starting" + regionInfo.getEncodedName() + " has in-doubt transaction " + indoubtTransactionsById.size());
                     for (Entry<Long, List<WALEdit>> entry : indoubtTransactionsById.entrySet()) {
                           long tid = entry.getKey();
                           if ((int) (tid >> 32) == tmId) {
@@ -1780,6 +1781,7 @@ CoprocessorService, Coprocessor {
                      break;
               case REGION_STATE_START: // START
                      List<TrxTransactionState> commitPendingCopy = new ArrayList<TrxTransactionState>(commitPendingTransactions);
+                     if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV:recoveryRequest in region started" + regionInfo.getEncodedName() + " has in-doubt transaction " + commitPendingCopy.size());
                      for (TrxTransactionState commitPendingTS : commitPendingCopy) {
                         long tid = commitPendingTS.getTransactionId();
                           if ((int) (tid >> 32) == tmId) {
@@ -2799,8 +2801,9 @@ CoprocessorService, Coprocessor {
             tagList.add(commitTag);
             WALEdit e1 = state.getEdit();
             WALEdit e = new WALEdit();
-            if (e1.isEmpty() || e1.getKeyValues().size() <= 0)
-               if (LOG.isInfoEnabled()) LOG.info("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Encountered empty TS WAL Edit list during commit, HLog txid " + txid);
+            if (e1.isEmpty() || e1.getKeyValues().size() <= 0) {
+               if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV EPCP: commit - txId " + transactionId + ", Encountered empty TS WAL Edit list during commit, HLog txid " + txid);
+               }
             else {
                  Cell c = e1.getKeyValues().get(0);
                  KeyValue kv = new KeyValue(c.getRowArray(), c.getRowOffset(), (int)c.getRowLength(),
@@ -2817,12 +2820,13 @@ CoprocessorService, Coprocessor {
                     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Write commit HLOG seq " + txid);
                  }
                  catch (IOException exp1) {
-                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Writing to HLOG : Threw an exception " + exp1.toString());
+                    if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV EPCP: commit - txId " + transactionId + ", Writing to HLOG : Threw an exception " + exp1.toString());
                     throw exp1;
                  }
             } // e1 is not empty
          } // not full edit write in commit record during phase 2
         else { //do this for  rollover case
+           if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV EPCP:commit -- HLOG rollover txId: " + transactionId);
            commitTag = state.formTransactionalContextTag(TS_CONTROL_POINT_COMMIT);
            tagList.add(commitTag);
            WALEdit e1 = state.getEdit();
@@ -2843,7 +2847,7 @@ CoprocessorService, Coprocessor {
                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Y11 write commit HLOG seq " + txid);
             }
             catch (IOException exp1) {
-               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Writing to HLOG : Threw an exception " + exp1.toString());
+               if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV EPCP: commit - txId " + transactionId + ", Writing to HLOG : Threw an exception " + exp1.toString());
                throw exp1;
              }
             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commit -- EXIT txId: " + transactionId + " HLog seq " + txid);
@@ -3031,32 +3035,50 @@ CoprocessorService, Coprocessor {
     boolean result = false;
     byte[] rsValue = null;
 
-    Get get = new Get(row);
-    get.addColumn(family, qualifier);
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndDelete - txId " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row) + ", hostname " + lv_hostName + ", port " + lv_port + ", startKey " + Bytes.toStringBinary(this.regionInfo.getStartKey()) + ", endKey " + Bytes.toStringBinary(this.regionInfo.getEndKey()));
 
-    Result rs = this.get(transactionId, get);
+    if(!this.m_Region.rowIsInRange(this.regionInfo, row)) {
+      throw new WrongRegionException("Requested row out of range for " +
+       "checkAndDelete for txid " + transactionId +
+       ", on HRegion " + this + ", startKey='" +
+       Bytes.toStringBinary(this.regionInfo.getStartKey()) + 
+       "', getEndKey()='" +
+       Bytes.toStringBinary(this.regionInfo.getEndKey()) + "', row='" +
+       Bytes.toStringBinary(row) + "'");
+    }
+
+    try {
+
+      Get get = new Get(row);
+      get.addColumn(family, qualifier);
+
+      Result rs = this.get(transactionId, get);
     
-    boolean valueIsNull = value == null ||
-                          value.length == 0;
+      boolean valueIsNull = value == null ||
+                            value.length == 0;
 
-    if (rs.isEmpty() && valueIsNull) {
-      this.delete(transactionId, delete);
-      result = true;
-    } else if (!rs.isEmpty() && valueIsNull) {
-      rsValue = rs.getValue(family, qualifier);
-      if (rsValue != null && rsValue.length == 0) {
+      if (rs.isEmpty() && valueIsNull) {
         this.delete(transactionId, delete);
         result = true;
-      }
-      else
+      } else if (!rs.isEmpty() && valueIsNull) {
+        rsValue = rs.getValue(family, qualifier);
+        if (rsValue != null && rsValue.length == 0) {
+          this.delete(transactionId, delete);
+          result = true;
+        }
+        else
+          result = false;
+      } else if ((!rs.isEmpty())
+                && !valueIsNull
+                && (Bytes.equals(rs.getValue(family, qualifier), value))) {
+        this.delete(transactionId, delete);
+        result = true;
+      } else {
         result = false;
-    } else if ((!rs.isEmpty())
-              && !valueIsNull
-              && (Bytes.equals(rs.getValue(family, qualifier), value))) {
-      this.delete(transactionId, delete);
-      result = true;
-    } else {
-      result = false;
+      }
+    } catch (Exception e) {
+      if (LOG.isWarnEnabled()) LOG.warn("TrxRegionEndpoint coprocessor: checkAndDelete - txid " + transactionId + ", Caught internal exception " + e.toString() + ", returning false");
+     throw new IOException("TrxRegionEndpoint coprocessor: checkAndDelete - " + e.toString());
     }
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndDelete EXIT - returns " + result + ", transId " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row));
@@ -3083,31 +3105,51 @@ CoprocessorService, Coprocessor {
     boolean result = false;
     byte[] rsValue = null;
 
-    Get get = new Get(row);
-    get.addColumn(family, qualifier);
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndPut - txId " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row) + ", hostname " + lv_hostName + ", port " + lv_port + ", startKey " + Bytes.toStringBinary(this.regionInfo.getStartKey()) + ", endKey " + Bytes.toStringBinary(this.regionInfo.getEndKey()));
+
+    if(!this.m_Region.rowIsInRange(this.regionInfo, row)) {
+      throw new WrongRegionException("Requested row out of range for " +
+       "checkAndPut for txid " + transactionId + ", on HRegion " + 
+       this + ", startKey='" + 
+       Bytes.toStringBinary(this.regionInfo.getStartKey()) + 
+       "', getEndKey()='" +     
+       Bytes.toStringBinary(this.regionInfo.getEndKey()) + "', row='" +
+       Bytes.toStringBinary(row) + "'");
+    } 
+
+    try {
+      Get get = new Get(row);
+      get.addColumn(family, qualifier);
     
-    Result rs = this.get(transactionId, get);
+      Result rs = this.get(transactionId, get);
 
-    boolean valueIsNull = value == null ||
-                          value.length == 0;
+      boolean valueIsNull = value == null ||
+                            value.length == 0;
 
-    if (rs.isEmpty() && valueIsNull) {
-      this.put(transactionId, put);
-      result = true;
-    } else if (!rs.isEmpty() && valueIsNull) {
-      rsValue = rs.getValue(family, qualifier);
-      if (rsValue != null && rsValue.length == 0) {
+      if (rs.isEmpty() && valueIsNull) {
         this.put(transactionId, put);
         result = true;
-      }
-      else
+      } else if (!rs.isEmpty() && valueIsNull) {
+        rsValue = rs.getValue(family, qualifier);
+        if (rsValue != null && rsValue.length == 0) {
+          this.put(transactionId, put);
+          result = true;
+        }
+        else {
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndPut - txid " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row) + ", first check setting result to false");
+          result = false;
+        }
+      } else if ((!rs.isEmpty()) && !valueIsNull   
+                && (Bytes.equals(rs.getValue(family, qualifier), value))) {
+         this.put(transactionId, put);
+         result = true;
+      } else {
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndPut - txid " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row) + ", second check setting result to false");
         result = false;
-    } else if ((!rs.isEmpty()) && !valueIsNull   
-              && (Bytes.equals(rs.getValue(family, qualifier), value))) {
-       this.put(transactionId, put);
-       result = true;
-    } else {
-      result = false;
+      }
+    } catch (Exception e) {
+      if (LOG.isWarnEnabled()) LOG.warn("TrxRegionEndpoint coprocessor: checkAndPut - txid " + transactionId + ", Caught internal exception " + e.toString() + ", returning false");
+      throw new IOException("TrxRegionEndpoint coprocessor: checkAndPut - " + e.toString());
     }
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkAndPut EXIT - returns " + result + ", transId " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row));
@@ -3258,7 +3300,7 @@ CoprocessorService, Coprocessor {
 
       synchronized (recoveryCheckLock) {
             if ((indoubtTransactionsById == null) || (indoubtTransactionsById.size() == 0)) {
-              if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint Coprocessor: Region " + regionInfo.getRegionNameAsString() + " has no in-doubt transaction, set region START ");
+              if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV Endpoint Coprocessor: Region " + regionInfo.getRegionNameAsString() + " has no in-doubt transaction, set region START ");
               regionState = REGION_STATE_START; // region is started for transactional access
               reconstructIndoubts = 1; 
               try {
@@ -3333,10 +3375,10 @@ CoprocessorService, Coprocessor {
         if ((indoubtTransactionsById == null) || (indoubtTransactionsById.size() == 0))
            regionState = REGION_STATE_START;
         else {
-           LOG.warn("TrxRegionEndpoint coprocessor: Trafodion Recovery: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState);
+           LOG.warn("TRAF RCOV coprocessor: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState + " indoubt tx size " + indoubtTransactionsById.size() );
            for (Entry<Long, List<WALEdit>> entry : indoubtTransactionsById.entrySet()) {
                long tid = entry.getKey();
-               LOG.warn("Trafodion Recovery: region " + regionInfo.getEncodedName() + " still has in-doubt transaction " + tid + " when new transaction arrives ");
+               if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: region " + regionInfo.getEncodedName() + " still has in-doubt transaction " + tid + " when new transaction arrives ");
            }
            throw new IOException("NewTransactionStartedBeforeRecoveryCompleted");
         }

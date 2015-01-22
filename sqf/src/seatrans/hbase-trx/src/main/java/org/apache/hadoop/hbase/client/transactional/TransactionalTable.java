@@ -345,26 +345,13 @@ public class TransactionalTable extends HTable {
       }
       
       Collection<CheckAndDeleteResponse> results = result.values();
-      CheckAndDeleteResponse[] resultArray = new CheckAndDeleteResponse[results.size()];
-      results.toArray(resultArray);
       
-      if(resultArray.length == 0) 
+      if(results.size() == 0) 
     	  throw new IOException("Problem with calling coprocessor, no regions returned result");
-      // Should only be one result, if more than one. Can't handle.
-      return resultArray[0].getResult();
-
-      
-    // TODO: Need to fix the exception checking and return, but for now need it 
-    //       to work so commenting out 
-      
-      /*
-      if(results.size() != 1)
-        throw new IOException("Incorrect number of results from coprocessor call");
-      CheckAndDeleteResponse[] resultArray = (CheckAndDeleteResponse[]) results.toArray();
-      if (resultArray[0].hasException())
-        throw new IOException(resultArray[0].getException());
-        */
-     
+     CheckAndDeleteResponse response = results.iterator().next();
+      if(response.hasException())
+          throw new IOException(response.getException());
+      return response.getResult();
    }
     
 	public boolean checkAndPut(final TransactionState transactionState,
@@ -426,14 +413,13 @@ public class TransactionalTable extends HTable {
         throw new IOException("ERROR while calling coprocessor " + sw.toString());       
       }
       Collection<CheckAndPutResponse> results = result.values();
-      // Should only be one result, if more than one. Can't handle.      
-      CheckAndPutResponse[] resultArray = new CheckAndPutResponse[results.size()];
-      results.toArray(resultArray);
-      if(resultArray.length == 0) 
+      if(results.size() == 0) 
     	  throw new IOException("Problem with calling coprocessor, no regions returned result");
-    	
-      return resultArray[0].getResult();      
-	}
+      CheckAndPutResponse response = results.iterator().next();
+      if(response.hasException())
+          throw new IOException(response.getException());
+      return response.getResult();          
+    }
 
        /**
    	 * Looking forward to TransactionalRegion-side implementation

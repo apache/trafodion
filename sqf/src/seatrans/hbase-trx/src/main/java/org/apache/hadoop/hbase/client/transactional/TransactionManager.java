@@ -353,7 +353,6 @@ public class TransactionManager {
             break;
           case TransactionalReturn.COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR:
             if (LOG.isTraceEnabled()) LOG.trace("Received COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR return code from requestCommit " + commitStatus + " for transaction " + transactionId);
-              throw new CommitUnsuccessfulException("Received COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR return code from prepareCommit: " + commitStatus);
           case TransactionalReturn.COMMIT_CONFLICT:
           case TransactionalReturn.COMMIT_UNSUCCESSFUL:
              canCommit = false;

@@ -723,13 +723,13 @@ public class HBaseTxClient {
                         if(regions != null) {
                             recoveryIterations++;
 
-                            if (LOG.isDebugEnabled()) LOG.debug("in-doubt region size " + regions.size());
+                            if (LOG.isDebugEnabled()) LOG.debug("TRAF RCOV THREAD: in-doubt region size " + regions.size());
                             for (Map.Entry<String, byte[]> regionEntry : regions.entrySet()) {
                                 List<Long> TxRecoverList = new ArrayList<Long>();
                                 String hostnamePort = regionEntry.getKey();
                                 byte[] regionBytes = regionEntry.getValue();
                                 if (LOG.isDebugEnabled())
-                                    LOG.debug("Recovery Thread Processing region: " + new String(regionBytes));
+                                    LOG.debug("TRAF RCOV THREAD:Recovery Thread Processing region: " + new String(regionBytes));
                                 if (recoveryIterations == 0) {
                                    if(LOG.isWarnEnabled()) {
                                       //  Let's get the host name
@@ -739,7 +739,7 @@ public class HBaseTxClient {
                                          throw new IllegalArgumentException("hostnamePort format is incorrect");
                                       }
 
-                                      LOG.warn ("Starting recovery with " + regions.size() +
+                                      LOG.warn ("TRAF RCOV THREAD:Starting recovery with " + regions.size() +
                                            " regions to recover.  First region hostnamet: " + hostname +
                                            " Recovery iterations: " + recoveryIterations);
                                    }
@@ -753,7 +753,7 @@ public class HBaseTxClient {
                                          if (hostname.length < 2) {
                                             throw new IllegalArgumentException("hostnamePort format is incorrect");
                                          }
-                                         LOG.warn("Recovery thread encountered " + regions.size() +
+                                         LOG.warn("TRAF RCOV THREAD:Recovery thread encountered " + regions.size() +
                                            " regions to recover.  First region hostname: " + hostname +
                                            " Recovery iterations: " + recoveryIterations);
                                       }
@@ -763,16 +763,16 @@ public class HBaseTxClient {
                                     TxRecoverList = txnManager.recoveryRequest(hostnamePort, regionBytes, tmID);
                                 }catch (NotServingRegionException e) {
                                    TxRecoverList = null;
-                                   LOG.error("NotServingRegionException calling recoveryRequest. regionBytes: " + new String(regionBytes) +
+                                   LOG.error("TRAF RCOV THREAD:NotServingRegionException calling recoveryRequest. regionBytes: " + new String(regionBytes) +
                                              " TM: " + tmID + " hostnamePort: " + hostnamePort);
 
                                    try {
                                       // First delete the zookeeper entry
-                                      LOG.error("recoveryRequest. Deleting region entry Entry: " + regionEntry);
+                                      LOG.error("TRAF RCOV THREAD:recoveryRequest. Deleting region entry Entry: " + regionEntry);
                                       zookeeper.deleteRegionEntry(regionEntry);
                                    }
                                    catch (Exception e2) {
-                                      LOG.error("Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
+                                      LOG.error("TRAF RCOV THREAD:Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
                                       new String(regionEntry.getValue()) + " exception: " + e2);
                                    }
                                    try {
@@ -783,23 +783,23 @@ public class HBaseTxClient {
                                          zookeeper.postAllRegionEntries(table);
                                       }
                                       catch (Exception e2) {
-                                         LOG.error("Error calling postAllRegionEntries. table: " + new String(table.getTableName()) + " exception: " + e2);
+                                         LOG.error("TRAF RCOV THREAD:Error calling postAllRegionEntries. table: " + new String(table.getTableName()) + " exception: " + e2);
                                       }
                                    }// try
                                    catch (Exception e1) {
-                                      LOG.error("recoveryRequest exception in new HTable " + HRegionInfo.parseFrom(regionBytes).getTable().getNameAsString() + " Exception: " + e1);
+                                      LOG.error("TRAF RCOV THREAD:recoveryRequest exception in new HTable " + HRegionInfo.parseFrom(regionBytes).getTable().getNameAsString() + " Exception: " + e1);
                                    }
                                 }// NotServingRegionException
                                 catch (TableNotFoundException tnfe) {
                                    // In this case there is nothing to recover.  We just need to delete the region entry.
                                    try {
                                       // First delete the zookeeper entry
-                                      LOG.warn("TableNotFoundException calling txnManager.recoveryRequest. " + "TM: " +
+                                      LOG.warn("TRAF RCOV THREAD:TableNotFoundException calling txnManager.recoveryRequest. " + "TM: " +
                                               tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. \n exception: " + tnfe);
                                       zookeeper.deleteRegionEntry(regionEntry);
                                    }
                                    catch (Exception e2) {
-                                      LOG.error("Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
+                                      LOG.error("TRAF RCOV THREAD:Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
                                       new String(regionEntry.getValue()) + " exception: " + e2);
                                    }
 
@@ -808,31 +808,31 @@ public class HBaseTxClient {
                                    // We are unable to parse the region info from ZooKeeper  We just need to delete the region entry.
                                    try {
                                       // First delete the zookeeper entry
-                                      LOG.warn("DeserializationException calling txnManager.recoveryRequest. " + "TM: " +
+                                      LOG.warn("TRAF RCOV THREAD:DeserializationException calling txnManager.recoveryRequest. " + "TM: " +
                                               tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. \n exception: " + de);
                                       zookeeper.deleteRegionEntry(regionEntry);
                                    }
                                    catch (Exception e2) {
-                                      LOG.error("Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
+                                      LOG.error("TRAF RCOV THREAD:Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
                                       new String(regionEntry.getValue()) + " exception: " + e2);
                                    }
 
                                 }// DeserializationException
                                 catch (Exception e) {
-                                   LOG.error("An ERROR occurred calling txnManager.recoveryRequest. " + "TM: " +
+                                   LOG.error("TRAF RCOV THREAD:An ERROR occurred calling txnManager.recoveryRequest. " + "TM: " +
                                               tmID + " regionBytes: [" + regionBytes + "] exception: " + e);
                                 }
                                 if (TxRecoverList != null) {
-                                    if (LOG.isTraceEnabled()) LOG.trace("size of TxRecoverList " + TxRecoverList.size());
+                                    if (LOG.isDebugEnabled()) LOG.trace("TRAF RCOV THREAD:size of TxRecoverList " + TxRecoverList.size());
                                     if (TxRecoverList.size() == 0) {
                                       try {
                                          // First delete the zookeeper entry
-                                         LOG.warn("Leftover Znode  calling txnManager.recoveryRequest. " + "TM: " +
+                                         LOG.warn("TRAF RCOV THREAD:Leftover Znode  calling txnManager.recoveryRequest. " + "TM: " +
                                                  tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. ");
                                          zookeeper.deleteRegionEntry(regionEntry);
                                       }
                                       catch (Exception e2) {
-                                         LOG.error("Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
+                                         LOG.error("TRAF RCOV THREAD:Error calling deleteRegionEntry. regionEntry key: " + regionEntry.getKey() + " regionEntry value: " +
                                          new String(regionEntry.getValue()) + " exception: " + e2);
                                       }
                                    }
@@ -844,14 +844,15 @@ public class HBaseTxClient {
                                       try {
                                          this.addRegionToTS(hostnamePort, regionBytes, ts);
                                       } catch (Exception e) {
-                                         LOG.error("Unable to add region to TransactionState, region info: " + new String(regionBytes));
+                                         LOG.error("TRAF RCOV THREAD:Unable to add region to TransactionState, region info: " + new String(regionBytes));
                                          e.printStackTrace();
                                       }
                                       transactionStates.put(txid, ts);
                                    }
                                 }
-                                else if (LOG.isDebugEnabled()) LOG.debug("size od TxRecoverList is NULL ");
+                                else if (LOG.isDebugEnabled()) LOG.debug("TRAF RCOV THREAD:size od TxRecoverList is NULL ");
                             }
+                            if (LOG.isDebugEnabled()) LOG.debug("TRAF RCOV THREAD: in-doubt transaction size " + transactionStates.size());
                             for (Map.Entry<Long, TransactionState> tsEntry : transactionStates.entrySet()) {
                                 TransactionState ts = tsEntry.getValue();
                                 Long txID = ts.getTransactionId();
@@ -860,7 +861,7 @@ public class HBaseTxClient {
                                     audit.getTransactionState(ts);
                                     if (ts.getStatus().equals("COMMITTED")) {
                                         if (LOG.isDebugEnabled())
-                                            LOG.debug("Redriving commit for " + txID + " number of regions " + ts.getParticipatingRegions().size() +
+                                            LOG.debug("TRAF RCOV THREAD:Redriving commit for " + txID + " number of regions " + ts.getParticipatingRegions().size() +
                                                     " and tolerating UnknownTransactionExceptions");
                                         txnManager.doCommit(ts, true /*ignore UnknownTransactionException*/);
                                         if(useTlog && useForgotten) {
@@ -869,11 +870,11 @@ public class HBaseTxClient {
                                         }
                                     } else if (ts.getStatus().equals("ABORTED")) {
                                         if (LOG.isDebugEnabled())
-                                            LOG.debug("Redriving abort for " + txID);
+                                            LOG.debug("TRAF RCOV THREAD:Redriving abort for " + txID);
                                         txnManager.abort(ts);
                                     } else {
                                         if (LOG.isDebugEnabled())
-                                            LOG.debug("Redriving abort for " + txID);
+                                            LOG.debug("TRAF RCOV THREAD:Redriving abort for " + txID);
                                         LOG.warn("Recovering transaction " + txID + ", status is not set to COMMITTED or ABORTED. Aborting.");
                                         txnManager.abort(ts);
                                     }

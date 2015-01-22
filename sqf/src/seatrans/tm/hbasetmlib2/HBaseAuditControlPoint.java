@@ -302,19 +302,19 @@ public class HBaseAuditControlPoint {
          Scan s = new Scan();
          s.setCaching(10);
          s.setCacheBlocks(false);
-         if (LOG.isDebugEnabled()) LOG.debug("getNextAuditSeqNum resultScanner");
+         if (LOG.isTraceEnabled()) LOG.trace("getNextAuditSeqNum resultScanner");
          ResultScanner ss = table.getScanner(s);
          try {
             long currValue;
             String rowKey;
-            if (LOG.isDebugEnabled()) LOG.debug("getNextAuditSeqNum entering for loop" );
+            if (LOG.isTraceEnabled()) LOG.trace("getNextAuditSeqNum entering for loop" );
             for (Result r : ss) {
                rowKey = new String(r.getRow());
-               if (LOG.isDebugEnabled()) LOG.debug("getNextAuditSeqNum rowKey is " + rowKey );
+               if (LOG.isTraceEnabled()) LOG.trace("getNextAuditSeqNum rowKey is " + rowKey );
                currValue =  Long.parseLong(Bytes.toString(r.value()));
-               if (LOG.isDebugEnabled()) LOG.debug("getNextAuditSeqNum value is " + currValue);
+               if (LOG.isTraceEnabled()) LOG.trace("getNextAuditSeqNum value is " + currValue);
                if (currValue > highValue) {
-                  if (LOG.isDebugEnabled()) LOG.debug("getNextAuditSeqNum Setting highValue to " + currValue);
+                  if (LOG.isTraceEnabled()) LOG.trace("getNextAuditSeqNum Setting highValue to " + currValue);
                   highValue = currValue;
                }
             }

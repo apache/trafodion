@@ -244,7 +244,7 @@ public class TmAuditTlog {
          String controlPointFlush = System.getenv("TM_TLOG_FLUSH_CONTROL_POINT");
          if (controlPointFlush != null){
             forceControlPoint = (Integer.parseInt(controlPointFlush) != 0);
-            if (LOG.isDebugEnabled()) LOG.debug("controlPointFlush != null");
+            if (LOG.isTraceEnabled()) LOG.trace("controlPointFlush != null");
          }
       }
       catch (Exception e) {
@@ -257,7 +257,7 @@ public class TmAuditTlog {
          String autoFlush = System.getenv("TM_TLOG_AUTO_FLUSH");
          if (autoFlush != null){
             useAutoFlush = (Integer.parseInt(autoFlush) != 0);
-            if (LOG.isDebugEnabled()) LOG.debug("autoFlush != null");
+            if (LOG.isTraceEnabled()) LOG.trace("autoFlush != null");
          }
       }
       catch (Exception e) {
@@ -270,7 +270,7 @@ public class TmAuditTlog {
          String ageCommittedRecords = System.getenv("TM_TLOG_AGE_COMMITTED_RECORDS");
          if (ageCommittedRecords != null){
             ageCommitted = (Integer.parseInt(ageCommittedRecords) != 0);
-            if (LOG.isDebugEnabled()) LOG.debug("ageCommittedRecords != null");
+            if (LOG.isTraceEnabled()) LOG.trace("ageCommittedRecords != null");
          }
       }
       catch (Exception e) {
@@ -304,7 +304,7 @@ public class TmAuditTlog {
          String blockCacheString = System.getenv("TM_TLOG_DISABLE_BLOCK_CACHE");
          if (blockCacheString != null){
             disableBlockCache = (Integer.parseInt(blockCacheString) != 0);
-            if (LOG.isDebugEnabled()) LOG.debug("disableBlockCache != null");
+            if (LOG.isTraceEnabled()) LOG.trace("disableBlockCache != null");
          }
       }
       catch (Exception e) {
@@ -383,7 +383,7 @@ public class TmAuditTlog {
       long lvAsn = 0;
 
       try {
-         if (LOG.isDebugEnabled()) LOG.debug("try new HBaseAuditControlPoint");
+         if (LOG.isTraceEnabled()) LOG.trace("try new HBaseAuditControlPoint");
          tLogControlPoint = new HBaseAuditControlPoint(config);
       }
       catch (Exception e) {
@@ -411,14 +411,14 @@ public class TmAuditTlog {
          tlogAuditLock[i]      = new Object();
          String lv_tLogName = new String(TLOG_TABLE_NAME + "_LOG_" + Integer.toHexString(i));
          boolean lvTlogExists = admin.tableExists(lv_tLogName);
-         if (LOG.isDebugEnabled()) LOG.debug("Tlog table " + lv_tLogName + (lvTlogExists? " exists" : " does not exist" ));
+         if (LOG.isTraceEnabled()) LOG.trace("Tlog table " + lv_tLogName + (lvTlogExists? " exists" : " does not exist" ));
          HTableDescriptor desc = new HTableDescriptor(TableName.valueOf(lv_tLogName));
          desc.addFamily(hcol);
 
           if (lvTlogExists == false) {
             // Need to prime the asn for future writes
             try {
-               if (LOG.isDebugEnabled()) LOG.debug("Creating the table " + lv_tLogName);
+               if (LOG.isTraceEnabled()) LOG.trace("Creating the table " + lv_tLogName);
                admin.createTable(desc);
                asn.set(1L);  // TLOG didn't exist previously, so start asn at 1
             }
@@ -427,7 +427,7 @@ public class TmAuditTlog {
             }
          }
          try {
-            if (LOG.isDebugEnabled()) LOG.debug("try new HTable index " + i);
+            if (LOG.isTraceEnabled()) LOG.trace("try new HTable index " + i);
             table[i] = new HTable(config, desc.getName());
          }
          catch(Exception e){
@@ -442,7 +442,7 @@ public class TmAuditTlog {
       lvAsn = asn.get();
       // This control point write needs to be delayed until after recovery completes, 
       // but is here as a placeholder
-      if (LOG.isDebugEnabled()) LOG.debug("Starting a control point with asn value " + lvAsn);
+      if (LOG.isTraceEnabled()) LOG.trace("Starting a control point with asn value " + lvAsn);
       tLogControlPointNum = tLogControlPoint.doControlPoint(lvAsn);
 
       if (LOG.isTraceEnabled()) LOG.trace("Exit constructor()");
@@ -660,16 +660,16 @@ public class TmAuditTlog {
             tableString.append(name);
          }
       }
-      if (LOG.isDebugEnabled()) LOG.debug("formatRecord table names " + tableString.toString());
+      if (LOG.isTraceEnabled()) LOG.trace("formatRecord table names " + tableString.toString());
       Put p;
 
       //create our own hashed key
       long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
-      if (LOG.isDebugEnabled()) LOG.debug("key: " + key + " hex: " + Long.toHexString(key));
+      if (LOG.isTraceEnabled()) LOG.trace("key: " + key + " hex: " + Long.toHexString(key));
       p = new Put(Bytes.toBytes(key));
       lvAsn = asn.getAndIncrement();
       lvTxState = lvTx.getStatus();
-      if (LOG.isDebugEnabled()) LOG.debug("formatRecord transid: " + lvTransid + " state: " + lvTxState + " ASN: " + lvAsn);
+      if (LOG.isTraceEnabled()) LOG.trace("formatRecord transid: " + lvTransid + " state: " + lvTxState + " ASN: " + lvAsn);
       p.add(TLOG_FAMILY, ASN_STATE, Bytes.toBytes(String.valueOf(lvAsn) + "," + transidString + "," + 
             lvTxState + tableString.toString()));
 
@@ -720,13 +720,13 @@ public class TmAuditTlog {
          Get g;
          //create our own hashed key
          long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
-         if (LOG.isDebugEnabled()) LOG.debug("key: " + key + " hex: " + Long.toHexString(key));
+         if (LOG.isTraceEnabled()) LOG.trace("key: " + key + " hex: " + Long.toHexString(key));
          g = new Get(Bytes.toBytes(key));
          try {
             Result r = table[lv_lockIndex].get(g);
             byte [] value = r.getValue(TLOG_FAMILY, ASN_STATE);
             stateString =  new String (Bytes.toString(value));
-            if (LOG.isDebugEnabled()) LOG.debug("stateString is " + stateString);
+            if (LOG.isTraceEnabled()) LOG.trace("stateString is " + stateString);
             if (stateString.compareTo("COMMITTED") == 0){
                lvTxState = TM_TX_STATE_COMMITTED;
             }
@@ -785,7 +785,7 @@ public class TmAuditTlog {
                lvTxState = -1;
             }
 
-            if (LOG.isDebugEnabled()) LOG.debug("transid: " + lvTransid + " state: " + lvTxState);
+            if (LOG.isTraceEnabled()) LOG.trace("transid: " + lvTransid + " state: " + lvTxState);
          }
          catch (IOException e){
              LOG.error("getRecord IOException");
@@ -814,7 +814,7 @@ public class TmAuditTlog {
          Get g;
          //create our own hashed key
          long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
-         if (LOG.isDebugEnabled()) LOG.debug("key: " + key + " hex: " + Long.toHexString(key));
+         if (LOG.isTraceEnabled()) LOG.trace("key: " + key + " hex: " + Long.toHexString(key));
          g = new Get(Bytes.toBytes(key));
          try {
             Result r = table[lv_lockIndex].get(g);
@@ -823,7 +823,7 @@ public class TmAuditTlog {
             String asnToken = st.nextElement().toString();
             String transidToken = st.nextElement().toString();
             lvTxState = st.nextElement().toString();
-            if (LOG.isDebugEnabled()) LOG.debug("transid: " + transidToken + " state: " + lvTxState);
+            if (LOG.isTraceEnabled()) LOG.trace("transid: " + transidToken + " state: " + lvTxState);
          } catch (IOException e){
              LOG.error("getRecord IOException");
              throw e;
@@ -845,9 +845,9 @@ public class TmAuditTlog {
          Delete d;
          //create our own hashed key
          long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
-         if (LOG.isDebugEnabled()) LOG.debug("key: " + key + " hex: " + Long.toHexString(key));
+         if (LOG.isTraceEnabled()) LOG.trace("key: " + key + " hex: " + Long.toHexString(key));
          d = new Delete(Bytes.toBytes(key));
-         if (LOG.isDebugEnabled()) LOG.debug("deleteRecord  (" + lvTransid + ") ");
+         if (LOG.isTraceEnabled()) LOG.trace("deleteRecord  (" + lvTransid + ") ");
          table[lv_lockIndex].delete(d);
       }
       catch (Exception e) {
@@ -940,7 +940,7 @@ public class TmAuditTlog {
            finally {
               ss.close();
            }
-           if (LOG.isDebugEnabled()) LOG.debug("attempting to delete list with " + deleteList.size() + " elements");
+           if (LOG.isTraceEnabled()) LOG.trace("attempting to delete list with " + deleteList.size() + " elements");
            try {
               deleteTable.delete(deleteList);
            }
@@ -1100,7 +1100,7 @@ public class TmAuditTlog {
          String transidString = new String(String.valueOf(lvTransid));
          Get g;
          long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
-         if (LOG.isDebugEnabled()) LOG.debug("key: " + key + ", hexkey: " + Long.toHexString(key) + ", transid: " +  lvTransid);
+         if (LOG.isTraceEnabled()) LOG.trace("key: " + key + ", hexkey: " + Long.toHexString(key) + ", transid: " +  lvTransid);
          g = new Get(Bytes.toBytes(key));
          int lvTxState = TM_TX_STATE_NOTX;
          String stateString = "";
@@ -1108,20 +1108,20 @@ public class TmAuditTlog {
          try {
             Result r = unknownTransactionTable.get(g);
             if (r == null) {
-               if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: tLog result is null: " + transidString);
+               if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: tLog result is null: " + transidString);
             }
             if (r.isEmpty()) {
-               if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: tLog empty result: " + transidString);
+               if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: tLog empty result: " + transidString);
             }
             byte [] value = r.getValue(TLOG_FAMILY, ASN_STATE);
             if (value == null) {
                ts.setStatus(TM_TX_STATE_NOTX);
-               if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: tLog value is null: " + transidString);
+               if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: tLog value is null: " + transidString);
                return;
             }
             if (value.length == 0) {
                ts.setStatus(TM_TX_STATE_NOTX);
-               if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: tLog transaction not found: " + transidString);
+               if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: tLog transaction not found: " + transidString);
                return;
             }
             ts.clearParticipatingRegions();
@@ -1131,7 +1131,7 @@ public class TmAuditTlog {
                String asnToken = st.nextElement().toString() ;
                transidToken = st.nextElement().toString() ;
                stateString = st.nextElement().toString() ;
-               if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: transaction: " + transidToken + " stateString is: " + stateString);
+               if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: transaction: " + transidToken + " stateString is: " + stateString);
             }
             if (stateString.compareTo("COMMITTED") == 0){
                lvTxState = TM_TX_STATE_COMMITTED;
@@ -1160,18 +1160,18 @@ public class TmAuditTlog {
                   String stringValue = new String(CellUtil.cloneValue(element));
                   st = new StringTokenizer(stringValue, ",");
                   if (st.hasMoreElements()) {
-                     if (LOG.isDebugEnabled()) LOG.debug("Performing secondary search on (" + transidToken + ")");
+                     if (LOG.isTraceEnabled()) LOG.trace("Performing secondary search on (" + transidToken + ")");
                      String asnToken = st.nextElement().toString() ;
                      transidToken = st.nextElement().toString() ;
                      String stateToken = st.nextElement().toString() ;
                      if ((stateToken.compareTo("COMMITTED") == 0) || (stateToken.compareTo("ABORTED") == 0)) {
                          String rowKey = new String(r.getRow());
-                         if (LOG.isDebugEnabled()) LOG.debug("Secondary search found record for (" + transidToken + ") with state: " + stateToken);
+                         if (LOG.isTraceEnabled()) LOG.trace("Secondary search found record for (" + transidToken + ") with state: " + stateToken);
                          lvTxState = (stateToken.compareTo("COMMITTED") == 0 ) ? TM_TX_STATE_COMMITTED : TM_TX_STATE_ABORTED;
                          break;
                      }
                      else {
-                         if (LOG.isDebugEnabled()) LOG.debug("Secondary search skipping entry for (" + 
+                         if (LOG.isTraceEnabled()) LOG.trace("Secondary search skipping entry for (" + 
                                     transidToken + ") with state: " + stateToken );
                      }
                   }
@@ -1229,7 +1229,7 @@ public class TmAuditTlog {
                while(it.hasNext()) { // iterate entries.
                   NavigableMap.Entry<HRegionInfo, ServerName> pairs = it.next();
                   HRegionInfo regionKey = pairs.getKey();
-                  if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: transaction: " + transidToken + " adding region: " + regionKey.getRegionNameAsString());
+                  if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: transaction: " + transidToken + " adding region: " + regionKey.getRegionNameAsString());
                   ServerName serverValue = regions.get(regionKey);
                   String hostAndPort = new String(serverValue.getHostAndPort());
                   StringTokenizer tok = new StringTokenizer(hostAndPort, ":");
@@ -1241,7 +1241,7 @@ public class TmAuditTlog {
             }
             ts.setStatus(lvTxState);
 
-            if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: returning transid: " + ts.getTransactionId() + " state: " + lvTxState);
+            if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: returning transid: " + ts.getTransactionId() + " state: " + lvTxState);
          } catch (Exception e){
              LOG.error("getTransactionState Exception " + Arrays.toString(e.getStackTrace()));
              throw e;
