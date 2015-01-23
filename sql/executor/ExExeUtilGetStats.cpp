@@ -3046,8 +3046,8 @@ short ExExeUtilGetRTSStatisticsTcb::work()
         str_sprintf(statsBuf_, "%15s", "Table Name");
 	moveRowToUpQueue(statsBuf_);
         str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
-		"Records Accessed", "Records Used", "Hbase", "Hbase", 
-                "Hbase IO ", "Hbase IO");
+		"Records Accessed", "Records Used", "Hbase/Hive", "Hbase/Hive", 
+                "Hbas/Hivee IO", "Hbase/Hive IO");
         moveRowToUpQueue(statsBuf_);
 	str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
 		"Estimated/Actual", "Estimated/Actual", "IOs", "IO MBytes",
@@ -3116,6 +3116,140 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             break;
           case SQLSTATS_HBASE_IO_MAX_TIME:
             str_sprintf(Int64Val, "%Ld", hbaseStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
+            break;
+          default:
+            break;
+          }
+        }
+        if (moveRowToUpQueue(statsBuf_, strlen(statsBuf_), &rc) == -1)
+          return rc;
+        step_ = GET_NEXT_STATS_DESC_ENTRY_;
+      }
+      break;
+    case GET_HIVE_STATS_ENTRY_:
+      {
+        if (hiveStatsItems_ == NULL)
+        {
+          maxHiveStatsItems_ = 9;
+          hiveStatsItems_ = new (getGlobals()->getDefaultHeap()) 
+                  SQLSTATS_ITEM[maxHiveStatsItems_];
+          initSqlStatsItems(hiveStatsItems_, maxHiveStatsItems_, FALSE);
+          hiveStatsItems_[0].statsItem_id = SQLSTATS_TABLE_ANSI_NAME;
+          hiveStatsItems_[1].statsItem_id = SQLSTATS_EST_ROWS_ACCESSED;
+          hiveStatsItems_[2].statsItem_id = SQLSTATS_EST_ROWS_USED;
+          hiveStatsItems_[3].statsItem_id = SQLSTATS_ACT_ROWS_ACCESSED;
+          hiveStatsItems_[4].statsItem_id = SQLSTATS_ACT_ROWS_USED;
+          hiveStatsItems_[5].statsItem_id = SQLSTATS_HIVE_IOS;
+          hiveStatsItems_[6].statsItem_id = SQLSTATS_HIVE_IO_BYTES;
+          hiveStatsItems_[7].statsItem_id = SQLSTATS_HIVE_IO_ELAPSED_TIME;
+          hiveStatsItems_[8].statsItem_id = SQLSTATS_HIVE_IO_MAX_TIME;
+          // maxHiveStatsItems_ is set to 9
+          // SQLSTATS_TABLE_ANSI_NAME
+          hiveStatsItems_[0].str_value = new (getGlobals()->getDefaultHeap())
+            char[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+1];
+          hiveStatsItems_[0].str_max_len = ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES;
+        }
+        else
+          initSqlStatsItems(hiveStatsItems_, maxHiveStatsItems_, TRUE);
+        cliRC = SQL_EXEC_GetStatisticsItems(getStatsTdb().statsReqType_,
+                getStatsTdb().stmtName_,
+                getStatsTdb().stmtName_ ? str_len(getStatsTdb().stmtName_) : 0,
+                maxHiveStatsItems_,
+                hiveStatsItems_);
+        if (cliRC < 0)
+        {
+          step_ = HANDLE_ERROR_;
+        }
+        else
+        {
+          if (! isHeadingDisplayed_)
+            step_ = DISPLAY_HIVE_STATS_HEADING_;
+          else
+            step_ = FORMAT_AND_RETURN_HIVE_STATS_;
+        }
+      }
+      break;
+    case DISPLAY_HIVE_STATS_HEADING_:
+      {
+        if ((qparent_.up->getSize() - qparent_.up->getLength()) < 5)
+	      return WORK_CALL_AGAIN;
+        moveRowToUpQueue(" ");
+        str_sprintf(statsBuf_, "%15s", "Table Name");
+	moveRowToUpQueue(statsBuf_);
+        str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
+		"Records Accessed", "Records Used", "Hbase/Hive", "Hbase/Hive", 
+                "Hbase/Hive IO", "Hbase/Hive IO");
+        moveRowToUpQueue(statsBuf_);
+	str_sprintf(statsBuf_, "%-19s%-19s%-13s%-13s%-19s%-19s",
+		"Estimated/Actual", "Estimated/Actual", "IOs", "IO MBytes",
+                "Sum Time", "Max Time");
+        moveRowToUpQueue(statsBuf_);
+        isHeadingDisplayed_ = TRUE;
+        step_ = FORMAT_AND_RETURN_HIVE_STATS_;
+      }
+      break;
+    case FORMAT_AND_RETURN_HIVE_STATS_:
+      {
+        for (; currStatsItemEntry_ < maxHiveStatsItems_; currStatsItemEntry_++)
+        {
+          i = (short)currStatsItemEntry_;
+          if (hiveStatsItems_[i].error_code != 0)
+            continue;
+          switch (hiveStatsItems_[i].statsItem_id)
+          {
+          case SQLSTATS_TABLE_ANSI_NAME:
+            hiveStatsItems_[i].str_value[hiveStatsItems_[i].str_ret_len] = '\0';
+            str_sprintf(statsBuf_, "%s", hiveStatsItems_[i].str_value);
+            if (moveRowToUpQueue(statsBuf_, strlen(statsBuf_), &rc) == -1)
+              return rc;
+            break;
+          case SQLSTATS_EST_ROWS_ACCESSED:
+            FormatFloat(formattedFloatVal, intSize, valSize, hiveStatsItems_[i].double_value,
+			FALSE, TRUE);
+            str_sprintf(statsBuf_, "%-19s", formattedFloatVal);
+            break;
+          case SQLSTATS_EST_ROWS_USED:
+            FormatFloat(formattedFloatVal, intSize, valSize, hiveStatsItems_[i].double_value,
+			FALSE, TRUE);
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", formattedFloatVal);
+            if (moveRowToUpQueue(statsBuf_, strlen(statsBuf_), &rc) == -1)
+              return rc;
+            break;
+          case SQLSTATS_ACT_ROWS_ACCESSED:
+            str_sprintf(Int64Val, "%Ld", hiveStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(statsBuf_, "%-19s", Int64Val);
+            break;          
+          case SQLSTATS_ACT_ROWS_USED:
+            str_sprintf(Int64Val, "%Ld", hiveStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
+            break;
+          case SQLSTATS_HIVE_IOS:
+           str_sprintf(Int64Val, "%Ld", hiveStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-13s", Int64Val);
+            break;
+          case SQLSTATS_HIVE_IO_BYTES:
+            str_sprintf(Int64Val, "%Ld", hiveStatsItems_[i].int64_value/1024/1024);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-13s", Int64Val);
+            break;
+          case SQLSTATS_HIVE_IO_ELAPSED_TIME:
+            str_sprintf(Int64Val, "%Ld", hiveStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
+            break;
+          case SQLSTATS_HIVE_IO_MAX_TIME:
+            str_sprintf(Int64Val, "%Ld", hiveStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);

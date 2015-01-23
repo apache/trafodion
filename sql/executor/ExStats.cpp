@@ -2655,6 +2655,7 @@ void ExHdfsScanStats::init()
   numBytesRead_ = 0;
   accessedRows_ = 0;
   usedRows_     = 0;
+  maxHdfsIOTime_ = 0;
 }
 
 ExHdfsScanStats::~ExHdfsScanStats()
@@ -2677,6 +2678,7 @@ UInt32 ExHdfsScanStats::packedLength()
   size += sizeof(numBytesRead_);
   size += sizeof(accessedRows_);
   size += sizeof(usedRows_);
+  size += sizeof(maxHdfsIOTime_);
   return size;
 }
 
@@ -2692,6 +2694,7 @@ UInt32 ExHdfsScanStats::pack(char *buffer)
   size += packIntoBuffer(buffer, numBytesRead_);
   size += packIntoBuffer(buffer, accessedRows_);
   size += packIntoBuffer(buffer, usedRows_);
+  size += packIntoBuffer(buffer, maxHdfsIOTime_);
 
   return size;
 }
@@ -2708,6 +2711,7 @@ void ExHdfsScanStats::unpack(const char* &buffer)
   unpackBuffer(buffer, numBytesRead_);
   unpackBuffer(buffer, accessedRows_);
   unpackBuffer(buffer, usedRows_);
+  unpackBuffer(buffer, maxHdfsIOTime_);
 }
 
 void ExHdfsScanStats::merge(ExHdfsScanStats *other)
@@ -2718,6 +2722,8 @@ void ExHdfsScanStats::merge(ExHdfsScanStats *other)
   numBytesRead_ += other->numBytesRead_;
   accessedRows_ += other->accessedRows_;
   usedRows_     += other->usedRows_;
+  if (maxHdfsIOTime_ < other->maxHdfsIOTime_) // take the larger value
+    maxHdfsIOTime_ = other->maxHdfsIOTime_;
 }
 
 void ExHdfsScanStats::copyContents(ExHdfsScanStats *other)
@@ -2738,6 +2744,7 @@ void ExHdfsScanStats::copyContents(ExHdfsScanStats *other)
   numBytesRead_ = other->numBytesRead_;
   accessedRows_ = other->accessedRows_;
   usedRows_     = other->usedRows_;
+  maxHdfsIOTime_ = other->maxHdfsIOTime_;
 }
 
 ExOperStats * ExHdfsScanStats::copyOper(NAMemory * heap)
@@ -2767,6 +2774,10 @@ const char *ExHdfsScanStats::getNumValTxt(Int32 i) const
       return "AccessedRows";
     case 5:
       return "UsedRows";
+    case 6:
+      return "NumHdfsCalls";
+    case 7:
+      return "MaxHdfsIOTime";
     }
   return NULL;
 }
@@ -2785,6 +2796,10 @@ Int64 ExHdfsScanStats::getNumVal(Int32 i) const
       return accessedRows_;
     case 5:
       return usedRows_;
+    case 6:
+      return lobStats_.numReadReqs;
+    case 7:
+      return maxHdfsIOTime_;
     }
   return 0;
 }
@@ -2802,19 +2817,104 @@ void ExHdfsScanStats::getVariableStatsInfo(char * dataBuffer,
   buf += *((short *) dataLen);
 
   str_sprintf (buf, 
-	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld  DiskIOs: %Ld ProcessBusyTime: %Ld ",
+	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HiveIOCalls: %Ld HiveSumIOTime: %Ld HdfsMaxIOTime: %Ld",
 	       (char*)tableName_,
 	       numBytesRead(), //lobStats()->bytesRead,
 	       rowsAccessed(),
 	       rowsUsed(),
 	       lobStats()->numReadReqs, 
-	       lobStats()->hdfsAccessLayerTime/1000 
-	       //	       lobStats()->CumulativeReadTime/1000 
+	       timer_.getTime(),
+	       maxHdfsIOTime_
 	       );
   buf += str_len(buf);
   
  *(short*)dataLen = (short) (buf - dataBuffer);
 }
+
+Lng32 ExHdfsScanStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
+{
+  sqlStats_item->error_code = 0;
+  Int32 len;
+  Int32 len1;
+  const char *tableName;
+  char tmpBuf[100];
+
+  switch (sqlStats_item->statsItem_id)
+  {
+  case SQLSTATS_TABLE_ANSI_NAME:
+    if (sqlStats_item->str_value != NULL)
+    {
+      if (tableName_ != NULL)
+        tableName = tableName_;
+      else
+        tableName = "NO_NAME_YET";
+      len = str_len(tableName);
+      if (len > sqlStats_item->str_max_len)
+      {
+        len = sqlStats_item->str_max_len;
+        sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
+      }
+      str_cpy(sqlStats_item->str_value, tableName, len);
+      sqlStats_item->str_ret_len = len;
+    }
+    break;
+  case SQLSTATS_EST_ROWS_ACCESSED:
+    sqlStats_item->double_value = getEstRowsAccessed();
+    break;
+  case SQLSTATS_EST_ROWS_USED:
+    sqlStats_item->double_value = getEstRowsUsed();
+    break;
+  case SQLSTATS_ACT_ROWS_ACCESSED:
+    sqlStats_item->int64_value = accessedRows_;
+    break;
+  case SQLSTATS_ACT_ROWS_USED:
+    sqlStats_item->int64_value = usedRows_;
+    break;
+  case SQLSTATS_HIVE_IOS:
+    sqlStats_item->int64_value = lobStats()->numReadReqs;
+    break;
+  case SQLSTATS_HIVE_IO_BYTES:
+    sqlStats_item->int64_value = numBytesRead_;
+    break;
+  case SQLSTATS_HIVE_IO_ELAPSED_TIME:
+    sqlStats_item->int64_value = timer_.getTime();
+    break;
+  case SQLSTATS_HIVE_IO_MAX_TIME:
+    sqlStats_item->int64_value = maxHdfsIOTime();
+    break;
+  case SQLSTATS_DETAIL:
+    if (sqlStats_item->str_value != NULL)
+    {
+      if (tableName_ != NULL)
+      {
+        len = str_len(tableName_);
+        if (len > sqlStats_item->str_max_len)
+        {
+           sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
+           str_cpy_all(sqlStats_item->str_value, tableName_, sqlStats_item->str_max_len);
+        }
+        else
+           str_cpy_all(sqlStats_item->str_value, tableName_, len);
+      }
+      else 
+        len = 0; 
+      str_sprintf(tmpBuf, "|%Ld|%Ld", accessedRows_,
+               numBytesRead_);
+      len1 = str_len(tmpBuf);
+      if ((len+len1) > sqlStats_item->str_max_len)
+        sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
+      else
+        str_cpy(sqlStats_item->str_value+len, tmpBuf, len1);
+      sqlStats_item->str_ret_len = len+len1;
+    }
+    break;
+  default:
+    ExOperStats::getStatsItem(sqlStats_item);
+    break;
+  }
+  return 0;
+}
+  
 
 //////////////////////////////////////////////////////////////////
 // class ExHbaseAccessStats

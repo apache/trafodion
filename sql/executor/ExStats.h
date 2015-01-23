@@ -2609,6 +2609,7 @@ NA_EIDPROC
 NA_EIDPROC
   inline void incUsedRows() {++usedRows_;}
 
+  inline void incMaxHdfsIOTime(Int64 v) {maxHdfsIOTime_ += v;}
 NA_EIDPROC
   Int64 numBytesRead() const {return numBytesRead_;}
 
@@ -2617,6 +2618,8 @@ NA_EIDPROC
 
 NA_EIDPROC
   Int64 rowsUsed() const {return usedRows_;}
+
+  Int64 maxHdfsIOTime() const {return maxHdfsIOTime_;}
 
 NA_EIDPROC
   ExHdfsScanStats * castToExHdfsScanStats();
@@ -2632,6 +2635,8 @@ NA_EIDPROC
                                     char * datalen,
                                     Lng32 maxLen);
 
+  Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
+  
   ExLobStats * lobStats() { return &lobStats_;}
 
 private:
@@ -2644,6 +2649,7 @@ private:
   Int64  numBytesRead_;
   Int64  accessedRows_;
   Int64  usedRows_;
+  Int64  maxHdfsIOTime_;
 };
 
 /////////////////////////////////////////////////////////////////
