@@ -3929,13 +3929,6 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
             event.data.fd = socks_[iPeer];
             event.events = EPOLLIN | EPOLLOUT | EPOLLET;
             EpollCtl( epollFD_, EPOLL_CTL_ADD, socks_[iPeer], &event );
-if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
-{
-    trace_printf( "%s@%d - EpollCtl( epollFD_, EPOLL_CTL_ADD, socks_[%d]=%d)\n"
-                , method_name, __LINE__
-                , iPeer
-                , socks_[iPeer] );
-}
         }
     }
 
