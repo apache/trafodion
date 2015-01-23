@@ -2505,7 +2505,7 @@ void tm_process_monitor_msg(BMS_SRE *pp_sre, char *pp_buf)
         // Check failed RMs to see if any came up in this node.
         // Note we are checking all failed RMs as they may have moved to this
         // node.
-        gv_tm_info.CheckFailed_RMs();
+        //gv_tm_info.CheckFailed_RMs();
         break;
     }
     case MS_MsgType_ProcessDeath:
