@@ -6645,16 +6645,9 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 	}
 Handle_Return:
 
-	if( option == MODE_SPECIAL_1 ) {
-		sprintf(sqlQuery,"control query default showcontrol_show_all 'OFF'");
-		QrySrvrStmt->ExecDirect(NULL, sqlQuery, INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
-		// We need to do a commit work here since SQL is starting a Txn when we issue
-		// the CQD to get the mode SPECIAL_1 and since the auto commit is off at this
-		// time the Txn is not committed by SQL.
-		sprintf(sqlQuery,"COMMIT WORK");
-		iqqcode = QrySrvrStmt->ExecDirect(NULL, sqlQuery, INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
-	}
-	else  if (option == NESTED_JOINS || option == DEFAULT_SCHEMA_ACCESS_ONLY)
+	if (option == MODE_SPECIAL_1 ||
+	    option == NESTED_JOINS ||
+	    option == DEFAULT_SCHEMA_ACCESS_ONLY)
 	{
 		sprintf(sqlQuery,"control query default showcontrol_show_all 'OFF'");
 		QrySrvrStmt->ExecDirect(NULL, sqlQuery, INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
