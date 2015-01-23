@@ -4383,8 +4383,13 @@ CoprocessorService, Coprocessor {
     Integer min = null;
 
     for (TrxTransactionState transactionState : transactionStates) {
-      if (min == null || transactionState.getStartSequenceNumber() < min) {
-        min = transactionState.getStartSequenceNumber();
+      try {
+         if (min == null || transactionState.getStartSequenceNumber() < min) {
+            min = transactionState.getStartSequenceNumber();
+         }
+      }
+      catch(NullPointerException npe){
+         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getMinStartSequenceNumber ignoring NullPointerException ");
       }
     }
 
