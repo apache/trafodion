@@ -289,7 +289,6 @@ void * timerThread_main(void *arg)
                tmTimer_stats();
                break;
             case TM_MSG_TXINTERNAL_RMRETRY:
-               //tmTimer_RMRetry();
                break;
             case TM_MSG_TXINTERNAL_TMRESTART_RETRY:
                // If this is the first and only event or the last of several - then service it.  If 

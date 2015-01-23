@@ -91,6 +91,7 @@ extern char *ErrorMsg (int error_code);
 const char *JoiningPhaseString( JOINING_PHASE phase);
 const char *StateString( STATE state);
 const char *SyncStateString( SyncState state);
+const char *RedirEpollEventString( __uint32_t events );
 
 void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealth )
 {
@@ -2641,6 +2642,10 @@ void CCluster::InitializeConfigCluster( void )
         }
     }
 
+    // Kill the MPICH hydra_pmi_proxy to prevent it from killing all
+    // processes in cluster when mpirun or monitor processes are killed
+    kill( getppid(), SIGKILL );
+
     TRACE_EXIT;
 }
 
@@ -3329,6 +3334,21 @@ void CCluster::ReIntegrateSock( int initProblem )
             // Set bit indicating node is up
             upNodes_.upNodes[i/64] |= (1ull << i);
 
+            if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
+            {
+                trace_printf( "%s@%d socks_[%d]=%d\n"
+                            , method_name, __LINE__
+                            , i, socks_[i]);
+                for ( int i =0; i < MAX_NODE_MASKS ; i++ )
+                {
+                    trace_printf( "%s@%d Integrating node %s (pnid=%d) "
+                                  "sees set[%d]: %llx\n"
+                                , method_name, __LINE__
+                                , MyNode->GetName(), MyPNID
+                                , i, upNodes_.upNodes[i] );
+                }
+            }
+
             haveCreatorSocket = true;
         }
         else if ( nodeInfo[i].nodeName[0] != 0 && nodeInfo[i].commPort[0]  != 0 )
@@ -3418,6 +3438,21 @@ void CCluster::ReIntegrateSock( int initProblem )
             // Set bit indicating node is up
             upNodes_.upNodes[i/64] |= (1ull << i);
 
+            if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
+            {
+                trace_printf( "%s@%d socks_[%d]=%d\n"
+                            , method_name, __LINE__
+                            , i, socks_[i]);
+                for ( int i =0; i < MAX_NODE_MASKS ; i++ )
+                {
+                    trace_printf( "%s@%d Integrating node %s (pnid=%d) "
+                                  "sees set[%d]: %llx\n"
+                                , method_name, __LINE__
+                                , MyNode->GetName(), MyPNID
+                                , i, upNodes_.upNodes[i] );
+                }
+            }
+
             mem_log_write(CMonLog::MON_REINTEGRATE_6, MyPNID, i);
         }
         else if ( i != MyPNID)
@@ -3437,8 +3472,25 @@ void CCluster::ReIntegrateSock( int initProblem )
         }
     }
 
-    if (trace_settings & (TRACE_SYNC | TRACE_RECOVERY | TRACE_INIT))
+    if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
     {
+        for (int i=0; i<cfgPNodes_; i++)
+        {
+            trace_printf( "%s@%d - Port info for pnid=%d\n"
+                          "Node[%d] name=%s\n"
+                          "Node[%d] commPort=%s\n"
+                          "Node[%d] syncPort=%s\n"
+                        , method_name, __LINE__, i
+                        , i, Node[i]->GetName()
+                        , i, Node[i]->GetCommPort()
+                        , i, Node[i]->GetSyncPort() );
+        }
+        for ( int i =0; i < cfgPNodes_; i++ )
+        {
+            trace_printf( "%s@%d socks_[%d]=%d\n"
+                        , method_name, __LINE__
+                        , i, socks_[i]);
+        }
         for ( int i =0; i < MAX_NODE_MASKS ; i++ )
         {
             trace_printf( "%s@%d Integrating node %s (pnid=%d) "
@@ -3877,6 +3929,13 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
             event.data.fd = socks_[iPeer];
             event.events = EPOLLIN | EPOLLOUT | EPOLLET;
             EpollCtl( epollFD_, EPOLL_CTL_ADD, socks_[iPeer], &event );
+if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
+{
+    trace_printf( "%s@%d - EpollCtl( epollFD_, EPOLL_CTL_ADD, socks_[%d]=%d)\n"
+                , method_name, __LINE__
+                , iPeer
+                , socks_[iPeer] );
+}
         }
     }
 
@@ -3932,8 +3991,12 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                 // An error has occurred on this fd, or the socket is not
                 // ready for reading nor writing
                 char buf[MON_STRING_BUF_SIZE];
-                snprintf( buf, sizeof(buf), "[%s@%d] event[i]() error %d\n",
-                    method_name, __LINE__, events[iEvent].events );
+                snprintf( buf, sizeof(buf)
+                        , "[%s@%d] error event[%d]=%s peer=%d\n"
+                        , method_name, __LINE__
+                        , iEvent
+                        , RedirEpollEventString(events[iEvent].events)
+                        , iPeer );
                 mon_log_write( MON_CLUSTER_ALLGATHERSOCK_3, SQ_LOG_CRIT, buf );
                 stats[iPeer].MPI_ERROR = MPI_ERR_EXITED;
                 err = MPI_ERR_IN_STATUS;
@@ -3980,10 +4043,12 @@ read_again:
                     else
                     {
                         // error, down socket
+                        int err = errno;
                         char buf[MON_STRING_BUF_SIZE];
-                        snprintf( buf, sizeof(buf),
-                            "[%s@%d] recv[%d]() error %d\n",
-                            method_name, __LINE__, iPeer, nr );
+                        snprintf( buf, sizeof(buf)
+                                , "[%s@%d] recv[%d](%d) error %d (%s)\n"
+                                , method_name, __LINE__
+                                , iPeer, nr , err, strerror(err) );
                         mon_log_write( MON_CLUSTER_ALLGATHERSOCK_4, SQ_LOG_CRIT, buf );
                         peer->p_receiving = false;
                         nrecv++;
@@ -4057,9 +4122,12 @@ read_again:
                 if ( ns <= 0 )
                 {
                     // error, down socket
+                    int err = errno;
                     char buf[MON_STRING_BUF_SIZE];
-                    snprintf( buf, sizeof(buf), "[%s@%d] send[%d]() error %d\n",
-                        method_name, __LINE__, iPeer, ns );
+                    snprintf( buf, sizeof(buf)
+                            , "[%s@%d] send[%d](%d) error=%d (%s)\n"
+                            , method_name, __LINE__
+                            , iPeer, ns, err, strerror(err) );
                     mon_log_write( MON_CLUSTER_ALLGATHERSOCK_6, SQ_LOG_CRIT, buf );
                     peer->p_sending = false;
                     nsent++;
@@ -4577,6 +4645,20 @@ void CCluster::UpdateClusterState( bool &doShutdown,
         if (noComm
          || status[pnid].MPI_ERROR != MPI_SUCCESS)
         {
+            if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
+            {
+                if (!noComm)
+                {
+                    trace_printf( "%s@%d - Communication error from node %d:\n"
+                                  "                node_state=%d\n"
+                                  "                change_nid=%d\n"
+                                  "                seq_num=#%lld\n"
+                                , method_name, __LINE__, pnid
+                                , recvBuf->nodeInfo.node_state
+                                , recvBuf->nodeInfo.change_nid
+                                , seqNum_ );
+                }
+            }
             // Not an active node, set default values
             nodestate[pnid].node_state = State_Unknown;
             nodestate[pnid].change_nid = -1;

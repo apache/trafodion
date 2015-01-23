@@ -2501,11 +2501,6 @@ void tm_process_monitor_msg(BMS_SRE *pp_sre, char *pp_buf)
         if (gv_tm_info.lead_tm()) {
            gv_tm_info.restart_tm_process(lv_msg.u.up.nid);
         }
-
-        // Check failed RMs to see if any came up in this node.
-        // Note we are checking all failed RMs as they may have moved to this
-        // node.
-        //gv_tm_info.CheckFailed_RMs();
         break;
     }
     case MS_MsgType_ProcessDeath:

@@ -155,13 +155,13 @@ void MpirunInit( void )
 
     if (tmpDir)
     {
-        sprintf( mpirunOutFileName, "%s/monitor.mpirun.out.%s", tmpDir, MyNode );
-        sprintf( mpirunErrFileName, "%s/monitor.mpirun.err.%s", tmpDir, MyNode );
+        sprintf( mpirunOutFileName, "%s/monitor.mpirun.out", tmpDir );
+        sprintf( mpirunErrFileName, "%s/monitor.mpirun.err", tmpDir );
     }
     else
     {
-        sprintf( mpirunOutFileName, "./monitor.mpirun.out.%s", MyNode );
-        sprintf( mpirunErrFileName, "./monitor.mpirun.err.%s", MyNode );
+        sprintf( mpirunOutFileName, "./monitor.mpirun.out" );
+        sprintf( mpirunErrFileName, "./monitor.mpirun.err" );
     }
 
     if ( trace_settings & TRACE_SHELL_CMD)
