@@ -4656,7 +4656,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       return; 
     }
 
-  if (CmpCommon::getDefault(TRAF_NO_CONSTR_VALIDATION) == DF_OFF)
+  if ((CmpCommon::getDefault(TRAF_NO_CONSTR_VALIDATION) == DF_OFF) &&
+      (constraintNode->isEnforced()))
     {
       // validate data for RI constraint.
       // generate a "select" statement to validate the constraint.  For example:
