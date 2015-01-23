@@ -2032,8 +2032,10 @@ bool CProcess::Create (CProcess *parent, int & result)
         }
 
         // Unmask all allowed signals in the child
+        // except SIGUSR1
         sigset_t              mask;
         sigemptyset(&mask);
+        sigaddset(&mask, SIGUSR1);
         rc = pthread_sigmask(SIG_SETMASK, &mask, NULL);
         if (rc != 0)
         {
