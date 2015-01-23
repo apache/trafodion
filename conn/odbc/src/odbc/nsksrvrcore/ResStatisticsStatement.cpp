@@ -2259,17 +2259,11 @@ inline string ResStatisticsStatement::getErrorText(char *inSqlError, size_t inSq
 	
 	if (inSqlErrorLength > 0 && inSqlError != NULL)
 	{
-/*		
-		if (inSqlErrorLength <= inMaxSqlErrorLength)
-			s1.assign(inSqlError, 0, inSqlErrorLength);
-		else
-			s1.assign(inSqlError, 0, inMaxSqlErrorLength);
-*/ 
 		err_desc_def *error = (err_desc_def*)inSqlError;
-		s1.assign(inSqlError + 16, _min(inMaxSqlErrorLength, error->length));
+		s1.assign(inSqlError + 16, _min(inMaxSqlErrorLength, error->length-1));
 	}
-	else
-		s1.assign("<N/A>");
+	else		
+		s1.assign("<N/A>");	
 	
 	return s1;
 }
@@ -2416,7 +2410,9 @@ void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStm
 	pQuery_info->m_application_name = srvrGlobal->ApplicationName;
 	pQuery_info->m_statement_id = statementId;
 	pQuery_info->m_statement_type = getStatementType(pSrvrStmt->sqlQueryType);
-	pQuery_info->m_submit_utc_ts = statementStartTime;
+	//SUBMIT_UTC_TS=EXEC_START_UTC_TS for now
+	//Will fix it once wms is brought in 
+	pQuery_info->m_submit_utc_ts = pQuery_info->m_exec_start_utc_ts;
 	if (!pubStarted)
 	{
 	pQuery_info->m_compile_start_utc_ts = comp_stats_data.compileStartTime;
@@ -2496,8 +2492,12 @@ void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStm
 	pQuery_info->m_error_code = errorCode;
 	pQuery_info->m_sql_error_code = sqlErrorCode;
 	pQuery_info->m_error_text = getErrorText(inSqlError, inSqlErrorLength, MAX_ERROR_TEXT_LENGTH);
-	pQuery_info->m_query_text = pSrvrStmt->sqlString;
-	UpdateStringText(pQuery_info->m_query_text);
+	UpdateStringText(pQuery_info->m_error_text);
+	if(pSrvrStmt->sqlString!=NULL) 
+	{
+		pQuery_info->m_query_text =pSrvrStmt->sqlString;
+		UpdateStringText(pQuery_info->m_query_text);
+	}
 	if (pSrvrStmt->sqlPlan != NULL)
 	{
 		pQuery_info->m_explain_plan = pSrvrStmt->sqlPlan;
