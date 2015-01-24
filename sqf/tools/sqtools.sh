@@ -203,13 +203,6 @@ function tneprog {
     cmapc END $lv_prog | pdsh_counter
 }
 
-function dp2stats {
-   lv_ncurr=`ndp2`
-   lv_nbegin=`tnbprog dp2`
-   lv_nend=`tneprog dp2`
-   echo "`date`;DP2s running currently: $lv_ncurr; Total started: $lv_nbegin;  Total exitted: $lv_nend;"
-}
-
 function espstats {
    lv_ncurr=`nesp`
    lv_nbegin=`tnbprog tdm_arkesp`
@@ -268,18 +261,6 @@ function nmxos {
 function ndbm {
     setup_sqpdsh
     eval '$SQPDSHA "df -h | grep database" 2>/dev/null | wc -l'
-}
-
-function nlm {
-    nprocpn_us lunmgr | pdsh_counter
-}
-
-function ndp2 {
-    nprocpn_us dp2 | pdsh_counter
-}
-
-function nbo {
-    nprocpn_us backout | pdsh_counter
 }
 
 # check the startup log and sort the interesting even chronologically
@@ -388,23 +369,23 @@ function sqsavelogs {
     
     sqcollectmonmemlog 2>/dev/null
 
-    cp -p $MY_SQROOT/logs/sqmo*.log ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/pstart*.log ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/tm*.log ${lv_copy_to_dir}
+    cp -p $MY_SQROOT/logs/master_exec*.log ${lv_copy_to_dir}
     cp -p $MY_SQROOT/logs/mon.*.log ${lv_copy_to_dir}
     cp -p $MY_SQROOT/logs/monmem.*.log ${lv_copy_to_dir}
+    cp -p $MY_SQROOT/logs/pstart*.log ${lv_copy_to_dir}
+    cp -p $MY_SQROOT/logs/smstats.*.log ${lv_copy_to_dir}
+    cp -p $MY_SQROOT/logs/sqmo*.log ${lv_copy_to_dir}
+    cp -p $MY_SQROOT/logs/trafodion.dtm.log* ${lv_copy_to_dir}
+    cp -p $MY_SQROOT/logs/tm*.log ${lv_copy_to_dir}
     cp -p $MY_SQROOT/logs/wdt.*.log ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/lunmgr.log ${lv_copy_to_dir}/lunmgr.${lv_node}.log
-    cp -p $MY_SQROOT/logs/se*.log ${lv_copy_to_dir}
+
     cp -p $MY_SQROOT/tmp/monitor.map.[0-9]*.* ${lv_copy_to_dir}
     cp -p $MY_SQROOT/tmp/monitor.trace* ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/sql/scripts/startup.log ${lv_copy_to_dir}/startup.${lv_node}.log
-    cp -p $MY_SQROOT/logs/smstats.*.log ${lv_copy_to_dir}
 
     lv_stdout_dir_name=${lv_copy_to_dir}/stdout_${lv_node}
     mkdir -p ${lv_stdout_dir_name}
+    cp -p $MY_SQROOT/sql/scripts/startup.log ${lv_copy_to_dir}/startup.${lv_node}.log
     cp -p $MY_SQROOT/sql/scripts/stdout_* ${lv_stdout_dir_name}
-    cp -p $MY_SQROOT/sql/scripts/trafodion.dtm.log* ${lv_stdout_dir_name}
     cp -p $MY_SQROOT/sql/scripts/hs_err_pid*.log ${lv_stdout_dir_name}
 
     lv_config_dir_name=${lv_copy_to_dir}/sqconfig_db
@@ -547,7 +528,6 @@ function sqcollectlogs {
     collect_cstat
     espstats > esp_stats.out
     mxosstats > mxos_stats.out
-    dp2stats > dp2_stats.out
     cmpstats > cmp_stats.out
 
     collect_cmapt
@@ -563,10 +543,10 @@ function sqcollectlogs {
 #   begin configuration info
     mkdir config
     cd config
-    sqinfo > sqinfo.out
-    sqvers > sqvers.out
-    sqvers -u > sqvers_u.out
-    sqid > sqid.out
+    sqinfo > sqinfo.out 2>/dev/null
+    sqvers > sqvers.out 2>/dev/null
+    sqvers -u > sqvers_u.out 2>/dev/null
+    sqid > sqid.out 2>/dev/null
 
     cp -p $MY_SQROOT/sqenv.sh .
     cp -p $MY_SQROOT/sqenvcom.sh .
@@ -574,8 +554,8 @@ function sqcollectlogs {
     cp -p $MY_SQROOT/sql/scripts/gomon.cold .
     cp -p $MY_SQROOT/sql/scripts/gomon.warm .
     cp -p $MY_SQROOT/sql/scripts/sqconfig .
-    cp -p $MY_SQROOT/sql/scripts/mon.env .
-    cp -p $MY_SQROOT/sql/scripts/shell.env .
+    cp -p $MY_SQROOT/sql/scripts/mon.env . 2>/dev/null
+    cp -p $MY_SQROOT/sql/scripts/shell.env . 2>/dev/null
     cd ..
 #   end configuration info
 
@@ -897,7 +877,6 @@ export -f espstats
 export -f sqlcistats
 export -f cmpstats
 export -f mxosstats
-export -f dp2stats
 
 export -f sqmd5b
 export -f sqmd5l
