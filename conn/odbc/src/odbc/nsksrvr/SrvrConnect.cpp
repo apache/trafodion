@@ -672,9 +672,9 @@ static void* SessionWatchDog(void* arg)
 				ss << "MASTER_ELAPSED_TIME= " << pQueryUpdate->m_master_elapse_time << ",";
 				ss << "ERROR_CODE= " << pQueryUpdate->m_error_code << ",";
 				ss << "SQL_ERROR_CODE= " << pQueryUpdate->m_sql_error_code << ",";
-				ss << "ERROR_TEXT= '" << pQueryUpdate->m_error_text << "',";
-				ss << "QUERY_TEXT= '" << pQueryUpdate->m_query_text << "',";
-				ss << "EXPLAIN_PLAN= '" << pQueryUpdate->m_explain_plan << "',";
+				ss << "ERROR_TEXT= '" << pQueryUpdate->m_error_text.c_str()<< "',";
+				ss << "QUERY_TEXT= '" << pQueryUpdate->m_query_text.c_str() << "',";
+				ss << "EXPLAIN_PLAN= '" << pQueryUpdate->m_explain_plan.c_str() << "',";
 				ss << "LAST_ERROR_BEFORE_AQR= " << pQueryUpdate->m_last_error_before_aqr << ",";
 				ss << "DELAY_TIME_BEFORE_AQR_SEC= " << pQueryUpdate->m_delay_time_before_aqr_sec << ",";
 				ss << "TOTAL_NUM_AQR_RETRIES= " << pQueryUpdate->m_total_num_aqr_retries << ",";
