@@ -422,7 +422,7 @@ void HistogramCache::getHistograms(NATable& table)
       invalidateCache();
 } //1//
 #pragma warn(770)  // warning elimination
-
+  
 //----------------------------------------------------------------------------
 // HistogramCache::createColStatsList()
 // This method actually puts the statistics for columns that require statistics
@@ -468,6 +468,7 @@ void HistogramCache::createColStatsList
 (NATable& table, HistogramsCacheEntry* cachedHistograms)
 {
   StatsList& colStatsList = *(table.getColStats());
+
   NAColumnArray& colArray = const_cast<NAColumnArray&>
     (table.getNAColumnArray());
   NABoolean isSQLMPTable = table.isSQLMPTable();
@@ -633,11 +634,13 @@ void HistogramCache::createColStatsList
         // look up the cache and get a reference to statistics for this table
         cachedHistograms = lookUp(table);
 
+
         // get statistics from the cache
         coveredList = getStatsListFromCache
           (colStatsList, colArray, cachedHistograms, singleColsFound);
       }
   }
+
 
   if(CURRSTMT_OPTDEFAULTS->reduceBaseHistograms())
     colStatsList.reduceNumHistIntsAfterFetch(table);
@@ -675,6 +678,12 @@ Int32 HistogramCache::getStatsListFromCache
 
   // counts columns whose histograms are in cache or not needed
   UInt32 columnsCovered = 0;
+
+  // Collect the mc stats with this temporary list. If the 
+  // mc stats objects are stored in the middle of the output 'list', 
+  // IndexDescHistograms::appendHistogramForColumnPosition() will
+  // abort, because "There must be a ColStatDesc for every key column!".
+  StatsList mcStatsList(CmpCommon::statementHeap());
 
     //iterate over all the columns in the colArray
   for(UInt32 i=0;i<colArray.entries();i++)
@@ -739,12 +748,18 @@ Int32 HistogramCache::getStatsListFromCache
       // insert all multicolumns referencing column
       // use singleColsFound to avoid duplicates
       cachedHistograms->getMCStatsForColFromCacheIntoList
-        (list, *column, singleColsFound);
+        (mcStatsList, *column, singleColsFound);
     }
 	
     // if column was added, then add it to the duplist
     if (colAdded) singleColsFound += colPos;
   }
+
+  // append the mc stats at the end of the output lit.
+  for (Lng32 i=0; i<mcStatsList.entries(); i++ ) {
+     list.insertAt(list.entries(), mcStatsList[i]);
+  }
+
   return columnsCovered;
 }
 #pragma warn(1506)  // warning elimination
@@ -1172,27 +1187,42 @@ HistogramsCacheEntry::getMCStatsForColFromCacheIntoList
         continue; // avoid dup
  
       // create "fat" representation of multi-column histogram
-      ComUID id(mcHist->id());
-      CostScalar uec(mcHist->uec());
-      CostScalar rows(mcHist->rows());
-      ColStatsSharedPtr mcStat = new (STMTHEAP) ColStats 
-        (id, uec, rows, rows, FALSE, FALSE, NULL, FALSE,
-         1.0, 1.0, 0, STMTHEAP, FALSE);
-      
-      // populate its NAColumnArray with mcCols
-      (*mcStat).populateColumnArray(mcHist->cols(), col.getNATable());
 
-      // set up its histogram interval
-      HistogramSharedPtr histogram = new(STMTHEAP) Histogram(heap);
-      HistInt loInt;
-      NABoolean boundaryInclusive = TRUE;
-      HistInt hiInt(1, NULL, (*mcStat).statColumns(), 
-                    rows, uec, boundaryInclusive, 0);
-      histogram->insert(loInt);
-      histogram->insert(hiInt);
-      mcStat->setHistogram(histogram);
-      MCSkewedValueList * mcSkewedValueList = new (STMTHEAP) MCSkewedValueList (*(mcHist->getMCSkewedValueList()), STMTHEAP);
-      mcStat->setMCSkewedValueList(*mcSkewedValueList);
+      ColStatsSharedPtr mcStat;
+      if (col.getNATable()->isHbaseTable() && col.isPrimaryKey()) {
+
+        // For mcStats covering a key column of a HBASE table, 
+        // create a colStat object with multi-intervals, which will
+        // be useful in allowing better stats-based split.
+        mcStat = new (STMTHEAP) ColStats(*(mcHist->getColStatsPtr()), 
+                                         STMTHEAP, TRUE);
+
+      } else {
+
+        ComUID id(mcHist->id());
+        CostScalar uec(mcHist->uec());
+        CostScalar rows(mcHist->rows());
+
+        mcStat = new (STMTHEAP) ColStats 
+          (id, uec, rows, rows, FALSE, FALSE, NULL, FALSE,
+           1.0, 1.0, 0, STMTHEAP, FALSE);
+      
+        // populate its NAColumnArray with mcCols
+        (*mcStat).populateColumnArray(mcHist->cols(), col.getNATable());
+
+        // set up its histogram interval
+        HistogramSharedPtr histogram = new(STMTHEAP) Histogram(heap);
+        HistInt loInt;
+        NABoolean boundaryInclusive = TRUE;
+        HistInt hiInt(1, NULL, (*mcStat).statColumns(), 
+                      rows, uec, boundaryInclusive, 0);
+        histogram->insert(loInt);
+        histogram->insert(hiInt);
+        mcStat->setHistogram(histogram);
+
+        MCSkewedValueList * mcSkewedValueList = new (STMTHEAP) MCSkewedValueList (*(mcHist->getMCSkewedValueList()), STMTHEAP);
+        mcStat->setMCSkewedValueList(*mcSkewedValueList);
+      }
 
       // append to list the mcStat
       list.insertAt(list.entries(), mcStat);
@@ -5941,7 +5971,8 @@ NATable::getStatistics()
       // the range partitioning function)
       //-----------------------------------------------------------------------------------
 
-      if (CmpCommon::getDefault(HBASE_RANGE_PARTITIONING_MC_SPLIT) == DF_ON)
+      if (CmpCommon::getDefault(HBASE_RANGE_PARTITIONING_MC_SPLIT) == DF_ON && 
+          !(*colStats_).allFakeStats())
       {
          CollIndex currentMaxsize = 1;
          Int32 posMCtoUse = -1;
@@ -5963,6 +5994,7 @@ NATable::getStatistics()
             CollIndex colNum = statsCols.entries();
    
             CollIndex j = 0;
+                
             NABoolean potentialMatch = TRUE;
             if ((colNum > currentMaxsize) && 
                 (!(*colStats_)[i]->isSingleIntHist()) && // no SIH -- number of histograms is large enough to do splitting

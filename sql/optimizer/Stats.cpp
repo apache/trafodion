@@ -8121,9 +8121,7 @@ MultiColumnHistogramList::~MultiColumnHistogramList()
 
 // add this multi-colum histogram to this list 
 // (avoid adding any duplicate multi-column histograms)
-void
-MultiColumnHistogramList::addMultiColumnHistogram
-(const ColStats & mcStat, ColumnSet * singleColPositions)
+
 //mcStat is "fat" STMTHEAP representation of multi-column histogram.
 //singleColPositions is the set of columns whose single-column histograms
 //that have already been processed (ie, added to HistogramsCacheEntry).
@@ -8137,6 +8135,10 @@ MultiColumnHistogramList::addMultiColumnHistogram
 //histograms: {b}, {a,b}, {b,c}, {a,b,c}
 //Therefore to avoid duplicated multicolumn stats being inserted
 //we pass down the list of single columns for which we have stats
+
+void
+MultiColumnHistogramList::addMultiColumnHistogram
+(const ColStats & mcStat, ColumnSet * singleColPositions)
 {
   if (mcStat.getStatColumns().entries() > 1)
   {
@@ -8156,9 +8158,14 @@ MultiColumnHistogramList::addMultiColumnHistogram
       ComUID id(mcStat.getHistogramId());
       CostScalar uec = mcStat.getTotalUec();
       CostScalar rows = mcStat.getRowcount();
+
       MCSkewedValueList * mcSkewedValueList = new (heap_) MCSkewedValueList (mcStat.getMCSkewedValueList(), heap_);
+
+      ColStatsSharedPtr mcStatsCopy = ColStats::deepCopy(mcStat, heap_); 
+
       MultiColumnHistogram *mcHistogram = new(heap_) 
-        MultiColumnHistogram(columns, uec, rows, id, mcSkewedValueList, heap_);
+        MultiColumnHistogram(columns, uec, rows, id, mcSkewedValueList, mcStatsCopy, heap_);
+
       insertAt(entries(), mcHistogram);
     }
   }

@@ -272,10 +272,12 @@ class MultiColumnHistogram : public NABasicObject
      CostScalar& rows,
      ComUID&     id,
      MCSkewedValueList *mcSkewedValueList,
+     ColStatsSharedPtr colStatsPtr,
      NAMemory*   heap
      ) 
     : columns_(columns, heap), uec_(uec), rows_(rows)
-    , histogramID_(id), mcSkewedValueList_(mcSkewedValueList), heap_(heap) {}
+    , histogramID_(id), mcSkewedValueList_(mcSkewedValueList)
+    , colStatsPtr_(colStatsPtr), heap_(heap) {}
 
   ~MultiColumnHistogram() {columns_.clear();}
 
@@ -285,6 +287,8 @@ class MultiColumnHistogram : public NABasicObject
 
   const ColumnSet& cols() const { return columns_; }
   const MCSkewedValueList *getMCSkewedValueList() const { return mcSkewedValueList_; }
+
+  ColStatsSharedPtr getColStatsPtr()   const { return colStatsPtr_; }
 
   void display() const;
   void print( FILE* ofd=stdout, NATable* table=NULL) const;
@@ -297,6 +301,7 @@ class MultiColumnHistogram : public NABasicObject
   CostScalar rows_;
   ComUID     histogramID_;
   MCSkewedValueList *mcSkewedValueList_;
+  ColStatsSharedPtr colStatsPtr_;
   NAMemory  *heap_;
 };
 
