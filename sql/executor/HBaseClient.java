@@ -59,7 +59,7 @@ import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.regionserver.BloomType; 
 //import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
 import org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy;
-//import org.apache.hadoop.hbase.client.Durability;
+import org.apache.hadoop.hbase.client.Durability;
 import org.trafodion.sql.HBaseAccess.HTableClient;
 
 import org.apache.hadoop.hbase.ServerLoad;
@@ -296,8 +296,8 @@ public class HBaseClient {
                         colDesc.setDataBlockEncoding(DataBlockEncoding.NONE);
                     else if (tableOption.equalsIgnoreCase("PREFIX"))
                         colDesc.setDataBlockEncoding(DataBlockEncoding.PREFIX);
-             /*     else if (tableOption.equalsIgnoreCase("PREFIX_TREE"))
-                    colDesc.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE); */
+                  else if (tableOption.equalsIgnoreCase("PREFIX_TREE"))
+                    colDesc.setDataBlockEncoding(DataBlockEncoding.PREFIX_TREE);
                     break ;
                 case HBASE_CACHE_BLOOMS_ON_WRITE:
                     if (tableOption.equalsIgnoreCase(trueStr))
@@ -354,15 +354,13 @@ public class HBaseClient {
                         (Long.parseLong(tableOption));
                     break ;
                 case HBASE_COMPACT:
-                    // Available in HBase 0.97
-                    /*  if (tableOptiont(i).equalsIgnoreCase(trueStr))
+                   if (tableOption.equalsIgnoreCase(trueStr))
                         desc.setCompactionEnabled(true);
                     else
-                    desc.setCompactionEnabled(false); */
+                    desc.setCompactionEnabled(false); 
                     break ;
                 case HBASE_DURABILITY:
-                    // Available in HBase 0.97
-                    /*     if (tableOption.equalsIgnoreCase("ASYNC_WAL"))
+                    if (tableOption.equalsIgnoreCase("ASYNC_WAL"))
                         desc.setDurability(Durability.ASYNC_WAL);
                     else if (tableOption.equalsIgnoreCase("FSYNC_WAL"))
                         desc.setDurability(Durability.FSYNC_WAL);
@@ -371,7 +369,7 @@ public class HBaseClient {
                     else if (tableOption.equalsIgnoreCase("SYNC_WAL"))
                         desc.setDurability(Durability.SYNC_WAL);
                     else if (tableOption.equalsIgnoreCase("USE_DEFAULT"))
-                    desc.setDurability(Durability.USE_DEFAULT); */
+                    desc.setDurability(Durability.USE_DEFAULT); 
                     break ;
                 case HBASE_MEMSTORE_FLUSH_SIZE:
                     desc.setMemStoreFlushSize
