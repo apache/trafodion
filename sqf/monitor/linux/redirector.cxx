@@ -59,7 +59,7 @@ extern CReplicate Replicator;
 extern CMonStats *MonStats;
 extern CReqQueue ReqQueue;
 
-const char *RedirEpollEventString( __uint32_t events )
+const char *EpollEventString( __uint32_t events )
 {
     static char str[80] = {0};
     
@@ -97,6 +97,29 @@ const char *RedirEpollEventString( __uint32_t events )
         strncat( str, "EPOLLONESHOT ", sizeof(str) );
     }
     strncat( str, ")", sizeof(str) );
+
+    return( str );
+}
+
+const char *EpollOpString( int op )
+{
+    static char str[15] = {0};
+
+    switch (op)
+    {
+        case EPOLL_CTL_ADD:
+            strcpy( str, "EPOLL_CTL_ADD" );
+            break;
+        case EPOLL_CTL_MOD:
+            strcpy( str, "EPOLL_CTL_MOD" );
+            break;
+        case EPOLL_CTL_DEL:
+            strcpy( str, "EPOLL_CTL_DEL" );
+            break;
+        default:
+            strcpy( str, "Invalid OP" );
+            break;
+    }
 
     return( str );
 }
@@ -1888,7 +1911,7 @@ void CRedirector::redirectThread()
                 if (trace_settings & TRACE_REDIRECTION)
                     trace_printf("%s@%d for fd=%d, events=%d %s\n",
                                  method_name, __LINE__, fd, events, 
-                                 RedirEpollEventString(events));
+                                 EpollEventString(events));
 
                 // Acquire lock to prevent memory modifications during
                 // fork/exec (see uses of OFED_MUTEX define)

@@ -381,6 +381,8 @@ typedef struct nodeId_s
     char nodeName[MPI_MAX_PROCESSOR_NAME];
     char commPort[MPI_MAX_PORT_NAME];
     char syncPort[MPI_MAX_PORT_NAME];
+    int  pnid;
+    int  creatorPNid;
     int  creatorShellPid;
     Verifier_t creatorShellVerifier;
     bool creator;  // NEW monitor set to true to tell creator it is the CREATOR

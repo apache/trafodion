@@ -91,7 +91,8 @@ extern char *ErrorMsg (int error_code);
 const char *JoiningPhaseString( JOINING_PHASE phase);
 const char *StateString( STATE state);
 const char *SyncStateString( SyncState state);
-const char *RedirEpollEventString( __uint32_t events );
+const char *EpollEventString( __uint32_t events );
+const char *EpollOpString( int op );
 
 void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealth )
 {
@@ -1213,8 +1214,16 @@ int CCluster::MarkUp( int pnid, char *node_name )
             node->SetState( State_Joining );
             
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-               trace_printf( "%s@%d" " - New monitor %s, pnid=%d, state=%s" "\n"
-                           , method_name, __LINE__, node->GetName(), node->GetPNid(), StateString( node->GetState() ) );
+            {
+                trace_printf( "%s@%d" " - New monitor %s, pnid=%d, state=%s" "\n"
+                            , method_name, __LINE__, node->GetName(), node->GetPNid(), StateString( node->GetState() ) );
+                for ( int i =0; i < cfgPNodes_; i++ )
+                {
+                    trace_printf( "%s@%d socks_[%d]=%d\n"
+                                , method_name, __LINE__
+                                , i, socks_[i]);
+                }
+            }
             if ( MyNode->IsCreator() )
             {
                 SQ_theLocalIOToClient->putOnNoticeQueue( MyNode->GetCreatorPid()
@@ -2520,9 +2529,23 @@ void CCluster::InitializeConfigCluster( void )
                 nodeStatus[i] = false;
             }
 
-            // Collect port info from other monitors
-            char *portNums = new char[worldSize * MPI_MAX_PORT_NAME];
-            rc = MPI_Allgather (MyCommPort, MPI_MAX_PORT_NAME, MPI_CHAR, portNums,
+            // Collect comm port info from other monitors
+            char *commPortNums = new char[worldSize * MPI_MAX_PORT_NAME];
+            rc = MPI_Allgather (MyCommPort, MPI_MAX_PORT_NAME, MPI_CHAR, commPortNums,
+                                MPI_MAX_PORT_NAME, MPI_CHAR, MPI_COMM_WORLD);
+            if (rc != MPI_SUCCESS)
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf(buf, sizeof(buf), "[%s@%d] MPI_Allgather error=%s\n",
+                         method_name, __LINE__, ErrorMsg(rc));
+                mon_log_write(MON_CLUSTER_INITCONFIGCLUSTER_2, SQ_LOG_CRIT, buf);
+
+                MPI_Abort(MPI_COMM_SELF,99);
+            }
+
+            // Collect sync port info from other monitors
+            char *syncPortNums = new char[worldSize * MPI_MAX_PORT_NAME];
+            rc = MPI_Allgather (MySyncPort, MPI_MAX_PORT_NAME, MPI_CHAR, syncPortNums,
                                 MPI_MAX_PORT_NAME, MPI_CHAR, MPI_COMM_WORLD);
             if (rc != MPI_SUCCESS)
             {
@@ -2559,18 +2582,22 @@ void CCluster::InitializeConfigCluster( void )
                 node = Nodes->GetNode( nodeName );
                 if ( node )
                 {
-                    node->SetCommPort( &portNums[ i * MPI_MAX_PORT_NAME] );
+                    node->SetCommPort( &commPortNums[ i * MPI_MAX_PORT_NAME] );
+                    node->SetSyncPort( &syncPortNums[ i * MPI_MAX_PORT_NAME] );
                     rankToPnid[i] = node->GetPNid();
                     nodeStatus[rankToPnid[i]] = true;
 
                     if (trace_settings & TRACE_INIT)
                     {
-                        trace_printf( "%s@%d rankToPnid[%d]=%d (%s:%s)"
-                                      "(node=%s,port=%s)\n"
+                        trace_printf( "%s@%d rankToPnid[%d]=%d (%s:%s:%s)"
+                                      "(node=%s,commPort=%s,syncPort=%s)\n"
                                     , method_name, __LINE__, i, rankToPnid[i]
-                                    , node->GetName(), node->GetCommPort()
+                                    , node->GetName()
+                                    , node->GetCommPort()
+                                    , node->GetSyncPort()
                                     , &nodeNames[ i * MPI_MAX_PROCESSOR_NAME]
-                                    , &portNums[ i * MPI_MAX_PORT_NAME]);
+                                    , &commPortNums[ i * MPI_MAX_PORT_NAME]
+                                    , &syncPortNums[ i * MPI_MAX_PORT_NAME]);
                     }
                 }
                 else
@@ -2585,7 +2612,8 @@ void CCluster::InitializeConfigCluster( void )
                     mon_log_write(MON_CLUSTER_INITCONFIGCLUSTER_4, SQ_LOG_CRIT, buf);
                 }
             }
-            delete [] portNums;
+            delete [] commPortNums;
+            delete [] syncPortNums;
 
             int TmLeaderPNid = LNode[TmLeaderNid]->GetNode()->GetPNid();
 
@@ -3213,10 +3241,6 @@ void CCluster::ReIntegrateSock( int initProblem )
     int existingCommFd;
     int existingSyncFd;
 
-    nodeId_t myNodeInfo;
-    strcpy(myNodeInfo.nodeName, MyNode->GetName());
-    strcpy(myNodeInfo.commPort, MyNode->GetCommPort());
-    strcpy(myNodeInfo.syncPort, MyNode->GetSyncPort());
     // Set bit indicating my node is up
     upNodes_.upNodes[MyPNID/64] |= (1ull << MyPNID);
 
@@ -3253,12 +3277,18 @@ void CCluster::ReIntegrateSock( int initProblem )
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
-        trace_printf("%s@%d Connected to creator monitor, sending id\n",
+        trace_printf("%s@%d Connected to creator monitor, sending my node info\n",
                      method_name, __LINE__); 
     }
 
     // Send this node's name and port number so creator monitor 
     // knows who we are, and set flag to let creator monitor it is the CREATOR.
+    nodeId_t myNodeInfo;
+    strcpy(myNodeInfo.nodeName, MyNode->GetName());
+    strcpy(myNodeInfo.commPort, MyNode->GetCommPort());
+    strcpy(myNodeInfo.syncPort, MyNode->GetSyncPort());
+    myNodeInfo.pnid = MyNode->GetPNid();
+    myNodeInfo.creatorPNid = -1;
     myNodeInfo.creator = true;
     myNodeInfo.creatorShellPid = CreatorShellPid;
     myNodeInfo.creatorShellVerifier = CreatorShellVerifier;
@@ -3272,14 +3302,21 @@ void CCluster::ReIntegrateSock( int initProblem )
 
     TEST_POINT( TP012_NODE_UP );
 
-    nodeId_t *nodeInfo = new nodeId_t[cfgPNodes_];
-
     mem_log_write(CMonLog::MON_REINTEGRATE_3, MyPNID);
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf("%s@%d Getting all node info from creator monitor\n",
+                     method_name, __LINE__);
+    }
 
     // Obtain node names & port numbers of existing monitors from
     // the creator monitor.
+    nodeId_t *nodeInfo;
+    size_t nodeInfoSize = (sizeof(nodeId_t) * cfgPNodes_);
+    nodeInfo = (nodeId_t *) new char[nodeInfoSize];
     rc = Monitor->ReceiveSock( (char *)nodeInfo
-                             , sizeof(nodeId_t)*cfgPNodes_
+                             , nodeInfoSize
                              , joinSock_ );
     if ( rc )
     {
@@ -3297,14 +3334,17 @@ void CCluster::ReIntegrateSock( int initProblem )
     {
         for (int i=0; i<cfgPNodes_; i++)
         {
-            trace_printf( "%s@%d - Port info for pnid=%d\n"
-                          "nodeInfo[%d].nodeName=%s\n"
-                          "nodeInfo[%d].commPort=%s\n"
-                          "nodeInfo[%d].syncPort=%s\n"
-                        , method_name, __LINE__, i
-                        , i, nodeInfo[i].nodeName
-                        , i, nodeInfo[i].commPort
-                        , i, nodeInfo[i].syncPort );
+            trace_printf( "%s@%d - Node info for pnid=%d:\n"
+                          "        nodeName=%s\n"
+                          "        commPort=%s\n"
+                          "        syncPort=%s\n"
+                          "        creatorPNid=%d\n"
+                        , method_name, __LINE__
+                        , nodeInfo[i].pnid
+                        , nodeInfo[i].nodeName
+                        , nodeInfo[i].commPort
+                        , nodeInfo[i].syncPort
+                        , nodeInfo[i].creatorPNid );
         }
     }
     // Connect to each of the other existing monitors and let them know 
@@ -3315,14 +3355,49 @@ void CCluster::ReIntegrateSock( int initProblem )
     myNodeInfo.creatorShellVerifier = -1;
     for (int i=0; i<cfgPNodes_; i++)
     {
-        if (strcmp(nodeInfo[i].commPort, IntegratingMonitorPort) == 0)
+        if ( nodeInfo[i].creatorPNid != -1 && nodeInfo[i].creatorPNid == i )
         {
+            // Get acknowledgement that creator monitor is ready to
+            // integrate this node.
+            int creatorpnid = -1;
+            rc = Monitor->ReceiveSock( (char *) &creatorpnid
+                                     , sizeof(creatorpnid)
+                                     , joinSock_ );
+            if ( rc || creatorpnid != nodeInfo[i].creatorPNid )
+            {
+                HandleReintegrateError( rc, Reintegrate_Err15, i, NULL,
+                                        false );
+                SendReIntegrateStatus( State_Down, Reintegrate_Err14 );
+            }
+
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "%s@%d - Received ready indication from creator "
+                              "node %d nodeInfo[%d].nodeName=%s\n"
+                            , method_name, __LINE__
+                            , creatorpnid, i , nodeInfo[i].nodeName);
+            }
+
             otherMonRank_[i] = 0;
             ++CurNodes;
 
+            Node[i]->SetCommPort( nodeInfo[i].commPort );
             Node[i]->SetSyncPort( nodeInfo[i].syncPort );
             Node[i]->SetState( State_Up );
 
+            // Tell creator we are ready to accept its connection
+            int mypnid = MyPNID;
+            rc = Monitor->SendSock( (char *) &mypnid
+                                  , sizeof(mypnid)
+                                  , joinSock_ );
+            if ( rc )
+            {
+                HandleReintegrateError( rc, Reintegrate_Err4, i, &nodeInfo[i],
+                                        false );
+                SendReIntegrateStatus( State_Down, Reintegrate_Err14 );
+            }
+
+            // Connect to creator monitor
             existingSyncFd = AcceptSyncSock();
             if ( existingSyncFd < 0 )
             {
@@ -3336,6 +3411,10 @@ void CCluster::ReIntegrateSock( int initProblem )
 
             if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
             {
+                trace_printf( "%s@%d Connected to creator node %d (%s)\n"
+                            , method_name, __LINE__
+                            , nodeInfo[i].creatorPNid
+                            , nodeInfo[i].nodeName );
                 trace_printf( "%s@%d socks_[%d]=%d\n"
                             , method_name, __LINE__
                             , i, socks_[i]);
@@ -3382,7 +3461,7 @@ void CCluster::ReIntegrateSock( int initProblem )
 
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             {
-                trace_printf("%s@%d Connected to node %d (%s), sending id\n",
+                trace_printf("%s@%d Connected to node %d (%s), sending my node name\n",
                              method_name, __LINE__,i,nodeInfo[i].nodeName); 
             }
 
@@ -3403,11 +3482,11 @@ void CCluster::ReIntegrateSock( int initProblem )
             // race condition where the creator monitor could signal
             // the monitors in the cluster to integrate the new node
             // before one or more was ready to do the integration.
-            int readyFlag;
-            rc = Monitor->ReceiveSock( (char *) &readyFlag
-                                     , sizeof(readyFlag)
+            int remotepnid = -1;
+            rc = Monitor->ReceiveSock( (char *) &remotepnid
+                                     , sizeof(remotepnid)
                                      , existingCommFd );
-            if ( rc )
+            if ( rc || remotepnid != i )
             {
                 HandleReintegrateError( rc, Reintegrate_Err15, i, NULL,
                                         false );
@@ -3416,16 +3495,19 @@ void CCluster::ReIntegrateSock( int initProblem )
 
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             {
-                trace_printf( "%s@%d - Received ready-flag from node %d (%s)\n",
-                              method_name, __LINE__, i,
-                             nodeInfo[i].nodeName); 
+                trace_printf( "%s@%d - Received ready indication from "
+                              "node %d nodeInfo[%d].nodeName=%s\n"
+                            , method_name, __LINE__
+                            , remotepnid, i , nodeInfo[i].nodeName);
             }
 
             otherMonRank_[i] = 0;
             ++CurNodes;
-            Node[i]->SetSyncPort(nodeInfo[i].syncPort );
+            Node[i]->SetCommPort( nodeInfo[i].commPort );
+            Node[i]->SetSyncPort( nodeInfo[i].syncPort );
             Node[i]->SetState( State_Up );
 
+            // Connect to existing monitor
             existingSyncFd = AcceptSyncSock();
             if ( existingSyncFd < 0 )
             {
@@ -3465,7 +3547,8 @@ void CCluster::ReIntegrateSock( int initProblem )
                               "nodeInfo[%d].syncPort=%s\n"
                               "IntegratingMonitorPort=%s\n"
                             , method_name, __LINE__
-                            , i, i, nodeInfo[i].commPort
+                            , i
+                            , i, nodeInfo[i].commPort
                             , i, nodeInfo[i].syncPort
                             , IntegratingMonitorPort);
             }
@@ -3476,14 +3559,16 @@ void CCluster::ReIntegrateSock( int initProblem )
     {
         for (int i=0; i<cfgPNodes_; i++)
         {
-            trace_printf( "%s@%d - Port info for pnid=%d\n"
-                          "Node[%d] name=%s\n"
-                          "Node[%d] commPort=%s\n"
-                          "Node[%d] syncPort=%s\n"
-                        , method_name, __LINE__, i
-                        , i, Node[i]->GetName()
+            trace_printf( "%s@%d - Node info for pnid=%d (%s)\n"
+                          "        Node[%d] commPort=%s\n"
+                          "        Node[%d] syncPort=%s\n"
+                          "        Node[%d] creatorPNid=%d\n"
+                        , method_name, __LINE__
+                        , Node[i]->GetPNid()
+                        , Node[i]->GetName()
                         , i, Node[i]->GetCommPort()
-                        , i, Node[i]->GetSyncPort() );
+                        , i, Node[i]->GetSyncPort()
+                        , i, nodeInfo[i].creatorPNid);
         }
         for ( int i =0; i < cfgPNodes_; i++ )
         {
@@ -3985,11 +4070,13 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                 // ready for reading nor writing
                 char buf[MON_STRING_BUF_SIZE];
                 snprintf( buf, sizeof(buf)
-                        , "[%s@%d] error event[%d]=%s peer=%d\n"
+                        , "[%s@%d] Error: peer=%d, events[%d].data.fd=%d, event[%d]=%s\n"
                         , method_name, __LINE__
+                        , iPeer
                         , iEvent
-                        , RedirEpollEventString(events[iEvent].events)
-                        , iPeer );
+                        , events[iEvent].data.fd
+                        , iEvent
+                        , EpollEventString(events[iEvent].events) );
                 mon_log_write( MON_CLUSTER_ALLGATHERSOCK_3, SQ_LOG_CRIT, buf );
                 stats[iPeer].MPI_ERROR = MPI_ERR_EXITED;
                 err = MPI_ERR_IN_STATUS;
@@ -4027,7 +4114,7 @@ read_again:
                     nr = recv( fd, r, n2get, 0 );
                     if ( nr >= 0 || errno == EINTR ) break;
                 }
-                if ( nr <= 0 )
+                if ( nr < 0 )
                 {
                     if ( nr < 0 && eagain_ok && errno == EAGAIN )
                     {
@@ -4066,7 +4153,7 @@ read_again:
                     {
                         if ( peer->p_received == hdrSize )
                         {
-                            // complete header, get buffer size
+                            // got the complete header, get buffer size
                             struct sync_buffer_def *sb;
                             sb = (struct sync_buffer_def *)peer->p_buff;
                             peer->p_n2recv = sb->msgInfo.msg_offset;
@@ -4112,7 +4199,7 @@ read_again:
                     ns = send( fd, s, n2send, 0 );
                     if ( ns >= 0 || errno != EINTR ) break;
                 }
-                if ( ns <= 0 )
+                if ( ns < 0 )
                 {
                     // error, down socket
                     int err = errno;
@@ -4138,7 +4225,7 @@ read_again:
                     peer->p_sent += ns;
                     if ( peer->p_sent == nbytes )
                     {
-                        // finsished sending to this destination
+                        // finished sending to this destination
                         peer->p_sending = false;
                         nsent++;
                         stateChange = true;
@@ -4150,22 +4237,26 @@ early_exit:
             {
                 struct epoll_event event;
                 event.data.fd = socks_[iPeer];
-                int op;
+                int op = 0;
                 if ( !peer->p_sending && !peer->p_receiving )
                 {
                     op = EPOLL_CTL_DEL;
+                    event.events = 0;
                 }
                 else if ( peer->p_sending )
                 {
                     op = EPOLL_CTL_MOD;
                     event.events = EPOLLOUT | EPOLLET;
                 }
-                else
+                else if ( peer->p_receiving )
                 {
                     op = EPOLL_CTL_MOD;
                     event.events = EPOLLIN | EPOLLET;
                 }
-                EpollCtl( epollFD_, op, fd, &event );
+                if ( op == EPOLL_CTL_DEL || op == EPOLL_CTL_MOD )
+                {
+                    EpollCtl( epollFD_, op, fd, &event );
+                }
             }
         }
     }
@@ -6648,19 +6739,21 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd)
     int     error = 0;
     int     readCount = 0;
     int     received = 0;
+    int     sizeCount = size;
     
     do
     {
         readCount = (int) recv( sockFd
                               , buf
-                              , size 
+                              , sizeCount
                               , 0 );
     
         if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d - recv(), readCount=%d\n"
+            trace_printf( "%s@%d - Count read %d = recv(%d)\n"
                         , method_name, __LINE__
-                        , readCount );
+                        , readCount
+                        , sizeCount );
         }
     
         if ( readCount > 0 )
@@ -6673,11 +6766,13 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd)
             }
             else
             {
+                sizeCount -= received;
                 readAgain = true;
             }
         }
         else if ( readCount == 0 )
         { // EOF
+             error = ENODATA;
              readAgain = false;
         }
         else

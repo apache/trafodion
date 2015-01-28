@@ -698,6 +698,8 @@
 #define MON_COMMACCEPT_14                   101320114
 #define MON_COMMACCEPT_15                   101320115
 #define MON_COMMACCEPT_16                   101320116
+#define MON_COMMACCEPT_17                   101320117
+#define MON_COMMACCEPT_18                   101320118
 
 /* Module: reqnodedown.cxx = 33 */
 #define MON_EXT_NODEDOWN_REQ                101330101
