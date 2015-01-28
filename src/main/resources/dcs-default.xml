@@ -402,9 +402,9 @@
   </property>
   <property>
     <name>dcs.server.user.program.statistics.enabled</name>
-    <value>true</value>
+    <value>false</value>
     <description>
-        If statistics publication is enabled. The default is true. Set false to disable.
+        If statistics publication is enabled. The default is false. Set true to enable.
     </description>
   </property>
   <property>

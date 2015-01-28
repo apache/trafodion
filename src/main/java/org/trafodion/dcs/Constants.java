@@ -153,7 +153,7 @@ public final class Constants {
   public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "dcs.server.user.program.statistics.enabled";
 
   /** Default value for DCS server user program statistics enable */
-  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "true";
+  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "false";
   
   /** Configuration key for DCS server user program port map timeout seconds */
   public static final String DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS = "dcs.server.user.program.port.map.timeout.seconds";

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
 /**
-  *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+  *(C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@
            </inlinemediaobject>
     </subtitle>
    <copyright>
-       <year>2014</year>
+       <year>2014-2015</year>
        <holder>Hewlett-Packard Development Company, L.P.
         <para> 
         The information contained herein is subject to change without notice. 
@@ -136,7 +136,7 @@ a distributed, ODBC, JDBC connectivity component of <link xlink:href="http://www
 	<section xml:id="client">
 	 <title>Client</title>
      <para>The Trafodion ODBC/JDBC Type 4 client drivers connect to MXOSRVRs through the DCS Master.
-    </para>
+     </para>
 	</section>
 	
     <section xml:id="master"><title>DcsMaster</title>
@@ -165,10 +165,14 @@ a distributed, ODBC, JDBC connectivity component of <link xlink:href="http://www
                each client with an registered MXOSRVR found in Zookeeper. A default port
                is configured but this may be changed in the configuration.               
              See <xref linkend="dcs.master.port" /> and <xref linkend="dcs.master.port.range" /> properties.
-           </para>
+         </para>
+       </section>
+       <section xml:id="master.processes.server.manager"><title>ServerManager</title>
+           <para>The server manager thread is responsible for monitoring and restarting its child DcsServers. It  
+             runs a server handler for each DcsServer found in <filename>conf/servers</filename>.
+          </para>        
        </section>
        </section>
-
      </section>
      <section xml:id="server.arch"><title>DcsServer</title>
        <para><code>DcsServer</code> is the server implementation. It is responsible for starting and keeping
@@ -180,16 +184,27 @@ a distributed, ODBC, JDBC connectivity component of <link xlink:href="http://www
        </section>
        <section xml:id="server.runtime"><title>Runtime Impact</title>
          <para>The DcsServer can continue to function if the DcsMaster goes down. the cluster can still function in a "steady 
-         state." However, the Master controls critical functions such as DcsServer failure and.  
-         So while the cluster can still run <emphasis>for a time</emphasis> without the Master, 
-         the Master should be restarted as soon as possible.     
+         state." However, the DcsMaster controls critical functions such as DcsServer failure and.  
+         So while the cluster can still run <emphasis>for a time</emphasis> without the DcsMaster, 
+         the DcsMaster should be restarted as soon as possible.     
          </para>
        </section>
        <section xml:id="server.arch.processes"><title>Processes</title>
          <para>The DcsServer runs a variety of background threads:</para>
+         <section xml:id="server.processes.server.manager"><title>ServerManager</title>
+           <para>The server manager thread is responsible for monitoring and restarting its child MXOSRVRs. It  
+             runs a server handler for each MXOSRVR found after the hostname in <filename>conf/servers</filename>.
+          </para>        
+         </section>
+         <section xml:id="server.processes.script.manager"><title>ScriptManager</title>
+          <para>The script manager thread is responsible for readng and compiling the script used to run the MXOSRVR. It  
+             can detect a change in any script found in <filename>bin/scripts</filename>. If any file changes it will
+             reload and compile the changed script.
+         </para>        
        </section>
-    </section>  <!--  server -->
-    
+       </section>
+     </section>  <!--  server -->
+
  </chapter>   <!--  architecture -->
   
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="external_apis.xml" />

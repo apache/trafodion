@@ -9,7 +9,7 @@
       xmlns:db="http://docbook.org/ns/docbook">
 <!-- 
 /**
-  *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+  *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -71,10 +71,9 @@ to ensure well-formedness of your document after an edit session.
     <section xml:id="java">
         <title>Java</title>
 
-        <para>DCS requires java 6 from <link
+        <para>DCS requires java 7 from <link
         xlink:href="http://www.java.com/download/" xlink:show="new">Oracle</link>. Usually
-        you'll want to use the latest version available except the problematic
-        u18 (u24 is the latest version as of this writing).</para>
+        you'll want to use the latest version available (7u7 is the latest version as of this writing).</para>
     </section>
     <section xml:id="os">
         <title>Operating System</title>        
@@ -173,7 +172,7 @@ to ensure well-formedness of your document after an edit session.
          modify <filename>conf/servers</filename>. The
          <filename>servers</filename> file
          lists all hosts that you would have running
-         <application>DcsServer</application>s, one host per line or the host name followed by the number of servers. 
+         <application>DcsServer</application>s, one host per line or the host name followed by the number of master executor servers. 
          All servers listed in this file will be started and stopped
          when DCS start or stop is run.</para>
         </section>
@@ -502,8 +501,8 @@ ${DCS_HOME}/bin/dcs-daemons.sh {start,stop} zookeeper
         <section xml:id="servers">
           <title><filename>servers</filename></title>
 
-          <para>In this file, you list the nodes that will run servers. In this case, 
-          there are two servers per node:
+          <para>In this file, you list the nodes that will run DcsServers. In this case, 
+          there are two DcsServrs per node each starting a single mxosrvr:
           </para>
 
           <programlisting>
@@ -517,7 +516,7 @@ ${DCS_HOME}/bin/dcs-daemons.sh {start,stop} zookeeper
   example4
           </programlisting>
 
-          <para>Alternatively, you can list the nodes followed by the number of servers:
+          <para>Alternatively, you can list the nodes followed by the number of mxosrvrs:
           </para>
 
           <programlisting>
@@ -543,7 +542,7 @@ diff --git a/conf/dcs-env.sh b/conf/dcs-env.sh
 index e70ebc6..96f8c27 100644
 --- a/conf/dcs-env.sh
 +++ b/conf/dcs-env.sh
-@@ -31,7 +31,7 @@ export JAVA_HOME=/usr/lib//jvm/java-6-sun/
+@@ -31,7 +31,7 @@ export JAVA_HOME=/usr/java/jdk1.7.0/
  # export DCS_CLASSPATH=
  
  # The maximum amount of heap to use, in MB. Default is 128.
@@ -577,23 +576,21 @@ index e70ebc6..96f8c27 100644
       </section>
 
       <section xml:id="recommended_configurations"><title>Recommended Configurations</title>
-      <section xml:id="dcs.server.user.program"><title><varname>dcs.server.user.program</varname></title>
-          <para>The default value is true. When true the DcsServer will always start the
-              user program (MXOSRVR) using the commands found in property <varname>dcs.server.user.program.command</varname>.
-              When false DcsServer will not execute the commands. This is useful mainly for debugging or isolating
-              a problem in DCS vs. the user program.
+      <section xml:id="dcs.master.port"><title><varname>dcs.master.port</varname></title>
+          <para>The default value is 37800. This is the port the DcsMaster listener binds to
+              waiting for JDBC/ODBC T4 client connections. The value may need to be changed
+              if this port number conflicts with other ports in use on your cluster.
           </para> 
           
-      <para>To change this configuration, edit <filename>dcs-site.xml</filename>,
+      <para>To change this configuration, edit <filename>conf/dcs-site.xml</filename>,
           copy the changed file around the cluster and restart.</para>
 
       </section>     
  
-      <section xml:id="dcs.server.user.program.command"><title><varname>dcs.server.user.program.command</varname></title>
-          <para>The default value is <command>cd ${dcs.user.program.home};. sqenv.sh</command>. 
-              This is the command that the DcsServer executes to start the user program (MXOSRVR).
-              You may enter any additional switches. There is no validation done on the command. It's wise to
-              test your commands using a shell outside of DCS prior to overiding the value of this property. 
+      <section xml:id="dcs.master.port.range"><title><varname>dcs.master.port.range</varname></title>
+          <para>The default value is 100. This is the total number of ports that MXOSRVRs will scan trying
+              to find an available port to use. You must ensure the value is large enough to support the
+              number of MXOSRVRs configured in <filename>conf/servers</filename>. 
           </para> 
           
       <para>To change this configuration, edit <filename>dcs-site.xml</filename>,
