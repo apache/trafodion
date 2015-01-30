@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -573,4 +573,61 @@ class Utility {
 
 	static final BigDecimal long_maxbd = BigDecimal.valueOf(Long.MAX_VALUE);
 	static final BigDecimal long_minbd = BigDecimal.valueOf(Long.MIN_VALUE);
+
+    static private final char DEFAULT_TRIM_WHITESPACE = ' ';
+
+    static public String trimRight(final String string)
+    {
+        return trimRight(string, DEFAULT_TRIM_WHITESPACE);
+    }
+
+    static public String trimRight(final String string, final char trimChar)
+    {
+        final int lastChar = string.length() - 1;
+        int i;
+
+        for (i = lastChar; i >= 0 && string.charAt(i) == trimChar; i--) {
+            /* Decrement i until it is equal to the first char that does not
+             * match the trimChar given. */
+        }
+        
+        if (i < lastChar) {
+            // the +1 is so we include the char at i
+            return string.substring(0, i+1);
+        } else {
+            return string;
+        }
+    }
+    static public String trimLeft(String string)
+    {
+        return trimLeft( string, DEFAULT_TRIM_WHITESPACE );
+    }
+
+    static public String trimLeft(final String string, final char trimChar)
+    {
+        final int stringLength = string.length();
+        int i;
+        
+        for (i = 0; i < stringLength && string.charAt(i) == trimChar; i++) {
+            /* increment i until it is at the location of the first char that
+             * does not match the trimChar given. */
+        }
+
+        if (i == 0) {
+            return string;
+        } else {
+            return string.substring(i);
+        }
+    }
+    static public String trimRightZeros(String x) {
+    	byte[] input = x.getBytes();
+    	int i = input.length;
+   	
+		while (i-- > 0 && input[i] == 0) {}
+	
+		byte[] output = new byte[i+1];
+		System.arraycopy(input, 0, output, 0, i+1);
+		return new String(output);
+    }
+
 } // end class Utility

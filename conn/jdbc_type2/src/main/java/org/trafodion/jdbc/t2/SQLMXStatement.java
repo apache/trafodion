@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -367,9 +367,10 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			debug[methodId_executeQuery].methodEntry();
 		try {
 			validateExecDirectInvocation(sql);
-			if (!isSelect_)
+			if (!isSelect_){
 				throw Messages.createSQLException(connection_.locale_,
 						"non_select_invalid", null);
+			}
 			try {
 				// Correlate JDBC SQL statements and STMTIDs if enableLog
 				// property is enabled

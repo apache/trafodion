@@ -1,7 +1,7 @@
 
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -159,6 +159,8 @@ class InputOutput {
 						// reused if connection
 						// is lost.
 						m_socket.setSoTimeout(0);
+                        // disable/enable Nagle's algorithm
+                        m_socket.setTcpNoDelay(this.m_addr.m_t4props.getTcpNoDelay());
 						//
 						// Note, I have not set a timeout here for either the
 						// conneciton or for

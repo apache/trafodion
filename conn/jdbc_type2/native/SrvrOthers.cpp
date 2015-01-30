@@ -1,7 +1,7 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -670,7 +670,6 @@ odbc_SQLSvc_ExecDirect_sme_(
 		exception_->u.SQLInvalidHandle.sqlcode = sqlcode;
 		FUNCTION_RETURN_VOID(("createSrvrStmt() Failed"));
 	}
-
 	pSrvrStmt->resultSetObject = (jobject) resultSet;
 	rc = pSrvrStmt->ExecDirect(cursorName, sqlString, stmtType, sqlStmtType, holdability, queryTimeout);
 	switch (rc)

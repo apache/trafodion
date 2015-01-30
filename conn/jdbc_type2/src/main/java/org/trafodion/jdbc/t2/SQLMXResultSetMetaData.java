@@ -460,4 +460,247 @@ public class SQLMXResultSetMetaData implements java.sql.ResultSetMetaData
 		// TODO Auto-generated method stub
 		return false;
 	}
+    public int getSqlCharset(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].sqlCharset_;
+        }
+        finally
+        {
+        }
+    }
+    public int getOdbcCharset(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].odbcCharset_;
+        }
+        finally
+        {
+        }
+    }
+    public int getSqlDataType(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].sqlDataType_;
+        }
+        finally
+        {
+        }
+    }
+    public int getDataType(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].dataType_;
+        }
+        finally
+        {
+        }
+    }
+    public short getSqlPrecision(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].sqlPrecision_;       
+        }
+        finally
+        {
+        }
+    }
+    public int getOdbcPrecision(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].odbcPrecision_;
+        }
+        finally
+        {
+        }
+    }
+    public short getSqlDatetimeCode(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].sqlDatetimeCode_;        
+        }
+        finally
+        {
+        }
+    }
+    public int getSqlOctetLength(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].sqlOctetLength_;     
+        }
+        finally
+        {
+        }
+    }
+    public int getMaxLen(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].maxLen_;     
+        }
+        finally
+        {
+        }
+    }
+    public int getIsNullable(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].isNullable_;     
+        }
+        finally
+        {
+        }
+    }
+    public boolean getIsSigned(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].isSigned_;       
+        }
+        finally
+        {
+        }
+    }
+    public boolean getIsCurrency(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].isCurrency_;     
+        }
+        finally
+        {
+        }
+    }
+    public boolean getIsCaseSensitive(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].isCaseSensitive_;        
+        }
+        finally
+        {
+        }
+    }
+    public int getFsDataType(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].fsDataType_;     
+        }
+        finally
+        {
+        }
+    }
+    public int getIntLeadPrec(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].intLeadPrec_;        
+        }
+        finally
+        {
+        }
+    }
+    public int getMode(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].paramMode_;      
+        }
+        finally
+        {
+        }
+    }
+    public int getIndex(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].paramIndex_;     
+        }
+        finally
+        {
+        }
+    }
+    public int getPos(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].paramPos_;       
+        }
+        finally
+        {
+        }
+    }
+    public int getDisplaySize(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].displaySize_;        
+        }
+        finally
+        {
+        }
+    }
+    public String getName(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].name_;
+        }
+        finally
+        {
+        }
+    }
+    public String getLabel(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].columnLabel_;
+        }
+        finally
+        {
+        }
+    }
+    public String getClassName(int column) throws SQLException {
+        try
+        {
+            if (column > outputDesc_.length) 
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return outputDesc_[column - 1].columnClassName_;
+        }
+        finally
+        {
+        }
+    }
+//---------------------------------------------------------
 }

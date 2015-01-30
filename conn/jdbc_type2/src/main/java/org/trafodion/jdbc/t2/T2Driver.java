@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 			Connection connect = null;
 			String key;
 			SQLMXDataSource ds = null;
-
+			
 			String delimiter = "|";
 			if (acceptsURL(url)) {
 				weakConnection.gcConnections();

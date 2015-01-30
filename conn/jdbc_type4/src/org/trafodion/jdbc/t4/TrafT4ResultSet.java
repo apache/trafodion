@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1983,6 +1983,7 @@ public class TrafT4ResultSet extends HPT4Handle implements java.sql.ResultSet {
 				// the
 				// a negative sign or if number is positive, it is just an extra
 				// space
+				data = Utility.trimRightZeros(data);
 				if (!data.startsWith(hyphen_string)) {
 					data = data.substring(1);
 				}

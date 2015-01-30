@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -504,5 +504,9 @@ public class TPreparedStatement extends TStatement implements
 	public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	public SQLMXPreparedStatement getSqlPreparedStatement(){
+		return (SQLMXPreparedStatement)stmt_;
 	}
 }
