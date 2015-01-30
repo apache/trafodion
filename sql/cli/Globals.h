@@ -353,6 +353,9 @@ inline
   char * myNodeName() { return myNodeName_; }
   Int32 myCpu() { return myCpu_; };
   Int32 myPin() { return myPin_; };
+#ifdef SQ_PHANDLE_VERIFIER
+  SB_Verif_Type myVerifier() const {return myVerifier_;}
+#endif
 
   Lng32 myNodeNumber() { return myNodeNumber_; };
   Int64 myStartTime() { return myStartTime_; };
@@ -543,6 +546,9 @@ private:
   // node, cpu and pin this process is running at.
   char myNodeName_[8];
   Int32 myCpu_;
+#ifdef SQ_PHANDLE_VERIFIER
+  SB_Verif_Type myVerifier_;
+#endif
   pid_t myPin_;
   Lng32  myNodeNumber_;
 

@@ -59,6 +59,8 @@ void processAccumulatedStatsReq(SsmpNewIncomingConnectionStream *ssmpMsgStream, 
 Int32 main(Int32 argc, char **argv)
 {
   dovers(argc, argv);
+  msg_debug_hook("mxssmp", "mxssmp.hook");
+
   try {
     file_init(&argc, &argv);
     file_mon_process_startup(true);
@@ -197,43 +199,6 @@ void runServer(Int32 argc, char **argv)
                      statsGlobals->getSsmpProcSemId(),
                      (pid_t) myPhandle.getPin(),
                      savedPriority, savedStopMode);
-    }
-    else
-    {
-      // Handle possibility that the process which last got the semaphore
-      // is no longer executing.  Normally, the cleanup would have
-      // happened when MXSSMP processes a ZSYS_VAL_SMSG_PROCDEATH message,
-      // but it could be that this was sent between instances of MXSSMP.
-      NAProcessHandle myPhandle;
-      myPhandle.getmine();
-      myPhandle.decompose();
-      char processName[50];
-      Int32 loopCnt = 0;
-      while (statsGlobals->getSemPid() != -1)
-      {
-        pid_t tempPid = statsGlobals->getSemPid();
-        Int32 ln_error = msg_mon_get_process_name(myPhandle.getCpu(),
-                                          statsGlobals->getSemPid(), processName);
-        ex_assert(ln_error != XZFIL_ERR_INVALIDSTATE,
-          "msg_mon_get_process_name shouldn't be called after "
-          "msg_mon_process_shutdown");
-        if (ln_error == XZFIL_ERR_NOSUCHDEV)
-          {
-            statsGlobals->setSeabedError(ln_error);
-            statsGlobals->cleanup_SQL(tempPid, myPhandle.getPin());
-          }
-        else if (ln_error == XZFIL_ERR_OK)
-          break;
-        else
-          {
-            // Let this process stop - maybe the next MXSSMP will
-            // have better luck....
-            DELAY(300);
-            if (++loopCnt >= 3)
-              ex_assert(ln_error == XZFIL_ERR_OK,
-                        "Too many errors from msg_mon_get_process_name")
-          }
-      }
     }
   }
   // LCOV_EXCL_STOP

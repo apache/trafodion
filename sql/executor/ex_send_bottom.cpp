@@ -194,7 +194,12 @@ ex_send_bottom_tcb::ex_send_bottom_tcb(
 
     const GuaProcessHandle &phandle = otherEnd.getPhandle();
     Int32 otherCPU, otherPID, otherNode;
-    phandle.decompose2(otherCPU, otherPID, otherNode);
+    SB_Int64_Type seqNum = 0;
+    phandle.decompose2(otherCPU, otherPID, otherNode
+#ifdef SQ_PHANDLE_VERIFIER
+                      , seqNum
+#endif
+                      );
     
     // Seaquest Node num == old cpuNum
     smTarget_.node = ExSM_GetNodeID(otherCPU);

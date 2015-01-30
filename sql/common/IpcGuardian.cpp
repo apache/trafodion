@@ -185,7 +185,11 @@ IpcStartupMsg::IpcStartupMsg()
 
 #if (defined (NA_LINUX) && defined (SQ_NEW_PHANDLE))
 Lng32 GuaProcessHandle::decompose(Int32 &cpu, Int32 &pin,
-                                  Int32 &nodeNumber) const
+                                  Int32 &nodeNumber
+#ifdef SQ_PHANDLE_VERIFIER
+                  , SB_Int64_Type &seqNum
+#endif
+                   ) const
 #else
 Lng32 GuaProcessHandle::decompose(short &cpu, short &pin,
                                   Int32 &nodeNumber) const
@@ -200,16 +204,25 @@ Lng32 GuaProcessHandle::decompose(short &cpu, short &pin,
     cpu = phandle.getCpu();
     pin = phandle.getPin();
     nodeNumber = phandle.getNodeNumber();
+#ifdef SQ_PHANDLE_VERIFIER
+    seqNum = phandle.getSeqNum();
+#endif
   }
   
   return result;
 }
 
-// This decompose function has the same signature on all
-// platforms. Callers can use this function without ifdef's.
-Int32 GuaProcessHandle::decompose2(Int32 &cpu, Int32 &pin, Int32 &node) const
+Int32 GuaProcessHandle::decompose2(Int32 &cpu, Int32 &pin, Int32 &node
+#ifdef SQ_PHANDLE_VERIFIER
+                  , SB_Int64_Type &seqNum
+#endif
+                  ) const
 {
-  return decompose(cpu, pin, node);
+  return decompose(cpu, pin, node
+#ifdef SQ_PHANDLE_VERIFIER
+                  , seqNum
+#endif
+                  );
 }
 
 NABoolean GuaProcessHandle::compare(const GuaProcessHandle &other) const
@@ -352,8 +365,10 @@ GuaConnectionToServer::GuaConnectionToServer(
      Int32 *openCompletionScheduled
      ,
      NABoolean dataConnectionToEsp
+#ifndef SQ_PHANDLE_VERIFIER
      , time_t childCreationTimeSec
      , long childCreationTimenSec
+#endif
      )
      : IpcConnection(env,procId,eye)
 {
@@ -384,8 +399,10 @@ GuaConnectionToServer::GuaConnectionToServer(
   guaErrorInfo_             = GuaOK;
   dataConnectionToEsp_      = dataConnectionToEsp;
   self_                     = FALSE; // Set at openPhandle time
+#ifndef SQ_PHANDLE_VERIFIER
   childCreationTime_.tv_sec = childCreationTimeSec;
   childCreationTime_.tv_nsec = childCreationTimenSec;
+#endif
   openRetries_              = 0;
   beginOpenTime_.tv_sec     = 0;
   beginOpenTime_.tv_nsec    = 0;
@@ -463,6 +480,8 @@ NABoolean GuaConnectionToServer::moreWaitsAllowed()
 WaitReturnStatus GuaConnectionToServer::wait(IpcTimeout timeout, UInt32 *eventConsumed, IpcAwaitiox *ipcAwaitiox)
 {
   Int32 cpu, pin, nodeNumber;
+  SB_Int64_Type seqNum = -1;
+
   GuaProcessHandle *otherEnd;
   if (getState() != OPENING)
   {
@@ -878,8 +897,12 @@ WaitReturnStatus GuaConnectionToServer::wait(IpcTimeout timeout, UInt32 *eventCo
         }
         short fsError = BFILE_CLOSE_(openFile_); // Don't retain unopened ACB
         otherEnd = (GuaProcessHandle *)&getOtherEnd().getPhandle().phandle_;
-        otherEnd->decompose(cpu, pin, nodeNumber);
-        getEnvironment()->closeTrace(__LINE__, openFile_, cpu, pin, nodeNumber);
+        otherEnd->decompose(cpu, pin, nodeNumber
+#ifdef SQ_PHANDLE_VERIFIER
+                           , seqNum
+#endif
+                           );
+        getEnvironment()->closeTrace(__LINE__, openFile_, cpu, pin, seqNum);
         openFile_ = -1; // Don't leave valid file number in object!
         if (guaErrorInfo_ == XZFIL_ERR_NOSUCHDEV && getState() == OPENING && getOpenRetries() < 8 && dataConnectionToEsp_)
         {
@@ -906,12 +929,15 @@ WaitReturnStatus GuaConnectionToServer::wait(IpcTimeout timeout, UInt32 *eventCo
       *openCompletionScheduled_ = 1;
     fileNumForIOCompletion_ = openFile_;
 
+#ifndef SQ_PHANDLE_VERIFIER
+    // Fix for 7128
     // this method can set the state to error, if the newly opened 
     // process' create timestamp differs from the create timestamp
     // which was recorded when the process was created. When ALM CR
     // 4780 is addressed, this check can be removed.
     if (childProcessPidRecycled())
       return WAIT_OK;
+#endif
 
   // use setmode 74 to turn off the automatic CANCEL upon AWAITIOX timeout
     stat = BSETMODE(openFile_,74,-1);
@@ -964,12 +990,15 @@ WaitReturnStatus GuaConnectionToServer::wait(IpcTimeout timeout, UInt32 *eventCo
           }
       }
 
+#ifndef SQ_PHANDLE_VERIFIER
+    // Fix for 7128
     // this method can set the state to error, if the newly opened
     // process' create timestamp differs from the create timestamp
     // which was recorded when the process was created. When ALM CR
     // 4780 is addressed, this check can be removed.
     if (childProcessPidRecycled())
      return WAIT_OK;
+#endif
 
     // the connection is established now
     setState(ESTABLISHED);
@@ -982,10 +1011,18 @@ void GuaConnectionToServer::openRetryCleanup()
 {
   char msgBuf[100];
   Int32 cpu, pin, nodeNumber;
+  SB_Int64_Type seqNum = -1;
   if (getOpenRetries())
   {
-    ((GuaProcessHandle *)&getOtherEnd().getPhandle().phandle_)->decompose(cpu, pin, nodeNumber);
-    sprintf(msgBuf, "GuaConnectionToServer: BFILE_OPEN %d,%d error 14 retry count = %d\n", cpu, pin, getOpenRetries());
+    ((GuaProcessHandle *)&getOtherEnd().getPhandle().phandle_)->
+       decompose(cpu, pin, nodeNumber
+#ifdef SQ_PHANDLE_VERIFIER
+       , seqNum
+#endif
+       );
+    str_sprintf(msgBuf,
+      "GuaConnectionToServer: BFILE_OPEN %d,%d,%Ld "
+      "error 14 retry count = %d\n", cpu, pin, seqNum, getOpenRetries());
     SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, msgBuf, 0);
      setOpenRetries(0);
   }
@@ -1482,36 +1519,25 @@ void GuaConnectionToServer::openPhandle(char * processName, NABoolean parallelOp
       char *srcName = (char *) lp_phandle;
       //    strncpy(procFileName, (char *) lp_phandle->verifierF(), 8);
 #if (defined (NA_LINUX) && defined (SQ_NEW_PHANDLE))
-      strncpy(procFileName, &srcName[4], 32);
+      NAProcessHandle phandle((SB_Phandle_Type *)
+                              &(getOtherEnd().getPhandle().phandle_));
+      phandle.decompose();
+      procFileNameLen = phandle.getPhandleStringLen();
+      strncpy(procFileName, phandle.getPhandleString(), procFileNameLen);
 #else
       strncpy(procFileName, &srcName[8], 8);
-#endif // NA_LINUX
       procFileNameLen = strlen(procFileName);
+#endif
     MXTRC_1("GCTS::openPhandle procFileName=%s\n", procFileName);
 #pragma nowarn(1506)   // warning elimination 
    NABoolean isEsp = getEnvironment()->getAllConnections()->getPendingIOs().isEsp();
-     timeval tv1, tv2;
-    Int64 elapsedTime;
-    Int32 retcode;
-  //  retcode = gettimeofday(&tv1, 0);
-     getEnvironment()->setLdoneConsumed(TRUE);
+   getEnvironment()->setLdoneConsumed(TRUE);
     // multi fragment esp 
-   static bool lv_GotMyProcessName = false;
-   static char la_MyProcessName[512];
-
-   if (! lv_GotMyProcessName) {
-     memset(la_MyProcessName, 0, sizeof(la_MyProcessName));
-     Int32 lv_RetVal = msg_mon_get_my_process_name(la_MyProcessName,
-						 sizeof(la_MyProcessName) - 1);
-     if (lv_RetVal == 0) {
-       lv_GotMyProcessName = true;
-     }
-   }
    ESP_TRACE2("GCTS: OpenPhandle: %s ", procFileName);
    clock_gettime(CLOCK_REALTIME, &beginOpenTime_);
 
-   if ((lv_GotMyProcessName) && 
-       (strcmp(la_MyProcessName, procFileName) == 0)) {
+   if (strcmp(getEnvironment()->myProcessName(), 
+              procFileName) == 0) {
      ESP_TRACE1("SELF");
      guaErrorInfo_ = BFILE_OPEN_SELF_(&openFile_,
 				      0, // open for read/write access
@@ -1609,9 +1635,14 @@ void GuaConnectionToServer::openPhandle(char * processName, NABoolean parallelOp
         {
           short fsError = BFILE_CLOSE_(openFile_);
           Int32 cpu, pin, nodeNumber;
+          SB_Int64_Type seqNum = -1;
           GuaProcessHandle *otherEnd = (GuaProcessHandle *)&getOtherEnd().getPhandle().phandle_;
-          otherEnd->decompose(cpu, pin, nodeNumber);
-          env->closeTrace(__LINE__, openFile_, cpu, pin, nodeNumber);
+          otherEnd->decompose(cpu, pin, nodeNumber
+#ifdef SQ_PHANDLE_VERIFIER
+                             , seqNum
+#endif
+                             );
+          env->closeTrace(__LINE__, openFile_, cpu, pin, seqNum);
           openFile_ = -1; // Don't leave valid file number in object!
           setErrorInfo(-1);
           setState(ERROR_STATE);
@@ -1758,9 +1789,15 @@ void GuaConnectionToServer::closePhandle()
           GuaProcessHandle *otherEnd = (GuaProcessHandle *)&getOtherEnd().getPhandle().phandle_;
           env->setPersistentOpenInfo(persistentIndex, otherEnd, openFile_);
           Int32 cpu, pin, nodeNumber;
+          SB_Int64_Type seqNum = -1;
           otherEnd = (GuaProcessHandle *)&getOtherEnd().getPhandle().phandle_;
-          otherEnd->decompose(cpu, pin, nodeNumber);
-          env->closeTrace(__LINE__, openFile_, cpu, pin, nodeNumber); // Persistent open simulated close
+          otherEnd->decompose(cpu, pin, nodeNumber
+#ifdef SQ_PHANDLE_VERIFIER
+                             , seqNum
+#endif
+                             );
+          env->closeTrace(__LINE__, openFile_, cpu, pin, 
+                           seqNum); // Persistent open simulated close
         }
       }
       else
@@ -1777,8 +1814,13 @@ void GuaConnectionToServer::closePhandle()
         }
         BFILE_CLOSE_(openFile_);
         Int32 cpu, pin, nodeNumber;
+        SB_Int64_Type seqNum = -1;
         GuaProcessHandle *otherEnd = (GuaProcessHandle *)&getOtherEnd().getPhandle().phandle_;
-        otherEnd->decompose(cpu, pin, nodeNumber);
+        otherEnd->decompose(cpu, pin, nodeNumber
+#ifdef SQ_PHANDLE_VERIFIER
+                           , seqNum
+#endif
+        );
         env->closeTrace(__LINE__, openFile_, cpu, pin, nodeNumber);
       }
 
@@ -1963,6 +2005,7 @@ void GuaConnectionToServer::cleanUpActiveIOEntry(ActiveIOQueueEntry &entry)
   numOutstandingIOs_--;
 }
 
+#ifndef SQ_PHANDLE_VERIFIER
 bool GuaConnectionToServer::childProcessPidRecycled()
 {
   // Fix for CR 7128 - Guard against this scenario:
@@ -2063,6 +2106,7 @@ bool GuaConnectionToServer::childProcessPidRecycled()
     }
   return false;
 }
+#endif
 
 void GuaConnectionToServer::dumpAndStopOtherEnd(bool dump, bool stop) const
 {
@@ -2758,7 +2802,13 @@ WaitReturnStatus GuaReceiveControlConnection::wait(IpcTimeout timeout, UInt32 *e
   if (systemMessageReceived && (msgType == ZSYS_VAL_SMSG_CLOSE))
   {
     Int32 cpu, pin, nodeNumber;
-    receiveInfo.phandle_.decompose(cpu, pin, nodeNumber);
+    SB_Int64_Type seqNum = -1;
+    receiveInfo.phandle_.decompose(cpu, pin, nodeNumber
+#ifdef SQ_PHANDLE_VERIFIER
+       , seqNum
+#endif
+       );
+
     env_->closeTrace(__LINE__, receiveInfo.clientFileNumber_, cpu, pin, nodeNumber);
   }
 
@@ -2855,8 +2905,14 @@ WaitReturnStatus GuaReceiveControlConnection::wait(IpcTimeout timeout, UInt32 *e
     if (conn)
 	{
       Int32 cpu, pin, nodeNumber;
-      receiveInfo.phandle_.decompose(cpu, pin, nodeNumber);
-      env_->closeTrace(__LINE__, receiveInfo.clientFileNumber_, cpu, pin, nodeNumber); // Persistent open simulated close
+      SB_Int64_Type seqNum = -1;
+      receiveInfo.phandle_.decompose(cpu, pin, nodeNumber
+#ifdef SQ_PHANDLE_VERIFIER
+       , seqNum
+#endif
+       );
+      env_->closeTrace(__LINE__, receiveInfo.clientFileNumber_, 
+                       cpu, pin, seqNum); // Persistent open simulated close
       conn->close();
       clientConnections_ -= conn->getId();
       //delete conn;
@@ -3605,8 +3661,11 @@ IpcGuardianServer::IpcGuardianServer(
   nowaitedEspStartup_.procCreateError_ = &procCreateError_;
   nowaitedEspStartup_.newPhandle_ = &newPhandle_;
   nowaitedEspStartup_.nowaitedStartupCompleted_ = &nowaitedStartupCompleted_;
+#ifndef SQ_PHANDLE_VERIFIER
+  // ALM 4528
   creationTime_.tv_sec = 0;
   creationTime_.tv_nsec = 0;
+#endif
   unhooked_ = false;
 }
 
@@ -3644,6 +3703,9 @@ void IpcGuardianServer::stop()
     
     if (!guaRetcode)
     { 
+#ifdef SQ_PHANDLE_VERIFIER
+      msg_mon_stop_process_name(phandle.getPhandleString());
+#else
       memcpy(procName, phandle.getPhandleString(), phandle.getPhandleStringLen() + 1);
       procName[phandle.getPhandleStringLen()] = 0; // null-terminate
       msg_mon_get_process_info (procName, &nid, &pid);
@@ -3677,6 +3739,7 @@ void IpcGuardianServer::stop()
       }
       else
         ;  // Normal case would be error 14.
+#endif
     }
   }
 }
@@ -3792,6 +3855,7 @@ void IpcGuardianServer::acceptSystemMessage(const char *sysMsg,
 	    // process was successfully created, now create a connection to it
 	    IpcProcessId serverProcId(
 		 (const GuaProcessHandle &) processCreateNowaitMsg->z_phandle);
+#ifndef SQ_PHANDLE_VERIFIER
            MS_Mon_Process_Info_Type procInfo;
            char espName[32];
            Int32 espNameLen = serverProcId.getPhandle().toAscii(
@@ -3809,7 +3873,7 @@ void IpcGuardianServer::acceptSystemMessage(const char *sysMsg,
              return;
            }
            creationTime_ = procInfo.creation_time;
-	    
+#endif
 	    NABoolean useGuaIpc = TRUE;
 	    if (useGuaIpc)
               {
@@ -3820,9 +3884,13 @@ void IpcGuardianServer::acceptSystemMessage(const char *sysMsg,
                                         usesTransactions_,
                                         nowaitDepth_,
                                         eye_GUA_CONNECTION_TO_SERVER,
-                                        parallelOpens_, NULL, FALSE,
-                                        creationTime_.tv_sec,
-                                        creationTime_.tv_nsec);
+                                        parallelOpens_, NULL, FALSE
+#ifndef SQ_PHANDLE_VERIFIER
+                                        , creationTime_.tv_sec
+                                        , creationTime_.tv_nsec
+#endif
+                   );
+
                 if (controlConnection_->getState() == IpcConnection::ERROR_STATE)
                   guardianError_ = controlConnection_->castToGuaConnectionToServer()->getGuardianError();
               }
@@ -4356,80 +4424,87 @@ void IpcGuardianServer::useProcess(ComDiagsArea **diags,
   }
   else
     tmpProcessName = (char *)processName_;
-  short gprc = 0;
-  procHandle = get_phandle_with_retry(tmpProcessName, &gprc);
-  if (procHandle != NULL)
-     rc = 0;
-  else
-     rc = gprc;
-  if ((rc != 0) || (procHandle == NULL))
-  {
-    serverState_ = ERROR_STATE;
-    guardianError_ = rc;
-    if (diags)
-    {
-      IpcAllocateDiagsArea(*diags,diagsHeap);
-      (**diags) << DgSqlCode(-2024) << DgString0(processName_) 
-        << DgInt0(rc);
-		
-    }
-    return;
-  }
-  else
-  {
-    //Phandle wrapper in porting layer
-    NAProcessHandle phandle(procHandle);
 
-    rc = phandle.decompose();
-    if (rc != 0)
+  GuaErrorNumber guaError = 0;
+  short i = 0;
+  while (i < 3)
+  {
+    short gprc = 0;
+    procHandle = get_phandle_with_retry(tmpProcessName, &gprc);
+    if (procHandle != NULL)
+      rc = 0;
+    else
+      rc = gprc;
+    if ((rc != 0) || (procHandle == NULL))
     {
       serverState_ = ERROR_STATE;
       guardianError_ = rc;
       if (diags)
       {
         IpcAllocateDiagsArea(*diags,diagsHeap);
-        (**diags) << DgSqlCode(-2024) << DgString0(processName_)
+        (**diags) << DgSqlCode(-2024) << DgString0(processName_) 
           << DgInt0(rc);
+		
       }
       return;
     }
-  }
-  memcpy(&procHandleCopy, procHandle, sizeof(NSK_PORT_HANDLE));
-  IpcProcessId serverProcId(
-       (const GuaProcessHandle &)procHandleCopy);
-	      
-  short i = 0;
+    else
+    {
+      //Phandle wrapper in porting layer
+      NAProcessHandle phandle(procHandle);
 
-  while (i < 3)
-  {
-    NABoolean useGuaIpc = TRUE;
-    if (useGuaIpc)
-      controlConnection_ = new(getServerClass()->getEnv()->getHeap())
+      rc = phandle.decompose();
+      if (rc != 0)
+      {
+        serverState_ = ERROR_STATE;
+        guardianError_ = rc;
+        if (diags)
+        {
+          IpcAllocateDiagsArea(*diags,diagsHeap);
+          (**diags) << DgSqlCode(-2024) << DgString0(processName_)
+            << DgInt0(rc);
+        }
+        return;
+      }
+    }
+
+    memcpy(&procHandleCopy, procHandle, sizeof(NSK_PORT_HANDLE));
+    IpcProcessId serverProcId(
+         (const GuaProcessHandle &)procHandleCopy);
+	      
+    controlConnection_ = new(getServerClass()->getEnv()->getHeap())
       GuaConnectionToServer(getServerClass()->getEnv(),
 			  serverProcId,
 			  usesTransactions_,
 			  nowaitDepth_);
-     if (controlConnection_->getState() == IpcConnection::ERROR_STATE)
-     {
-        i++;
-        delete controlConnection_;
-        controlConnection_ = NULL;
-        DELAY(10);
-     }
-     else
-       break;
+    if (controlConnection_->getState() == IpcConnection::ERROR_STATE)
+    {
+      i++;
+      guaError = controlConnection_->
+          castToGuaConnectionToServer()->getGuardianError();
+      delete controlConnection_;
+      controlConnection_ = NULL;
+      // clear phandle cache -- ALM CR8248
+      msg_set_phandle((char *)processName_, NULL); 
+      msg_mon_close_process(procHandle);
+      DELAY(10);
+    }
+    else
+      break;
   }
+
   if (controlConnection_ != NULL)
-  // Theprocess is ready for use
+    // Theprocess is ready for use
     serverState_ = READY;
   else
   {
     serverState_ = ERROR_STATE;
+    guardianError_ = guaError;
     if (diags)
     {
       IpcAllocateDiagsArea(*diags,diagsHeap);
       (**diags) << DgSqlCode(-2024) << DgString0(processName_)
-        << DgInt0(serverState_);
+        << DgInt0(guardianError_);
     }
   }
 }

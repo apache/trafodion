@@ -969,7 +969,12 @@ void ExMasterStmtGlobals::insertExtractEsp(const IpcProcessId &pid)
   short cpu = -1, pin = -1;
 #endif // NA_LINUX
   Int32 nodeNumber = -1;
-  Lng32 guaError = phandle.decompose(cpu, pin, nodeNumber);
+  SB_Int64_Type seqNum = 0;
+  Lng32 guaError = phandle.decompose(cpu, pin, nodeNumber
+#ifdef SQ_PHANDLE_VERIFIER
+                                    , seqNum
+#endif
+                                    );
   if (guaError != 0)
   {
     char msg[100];
@@ -981,6 +986,11 @@ void ExMasterStmtGlobals::insertExtractEsp(const IpcProcessId &pid)
   str_cpy_all(esp->phandleText_, pidBuf, len + 1);
   esp->cpu_ = cpu;
   esp->nodeNumber_ = nodeNumber;
+#ifdef SQ_PHANDLE_VERIFIER
+  // tbd - parallel extract - extract master executor will need to use 
+  // verifier as part of process name. Need to test this and see if it 
+  // is happening correctly. Maybe defer until we support parallel extract.
+#endif
 }
 
 void ExMasterStmtGlobals::insertExtractSecurityKey(const char *key)

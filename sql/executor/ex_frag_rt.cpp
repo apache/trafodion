@@ -2115,15 +2115,22 @@ void ExRtFragTable::dumpSMRouteTable()
         int node = 0;
         int cpu = 0;
         int pin = 0;
+        SB_Int64_Type seqNum = 0;
         
         ExRtFragInstance *inst = fragEntry.assignedEsps_[i];
         const IpcProcessId &processId =
           inst->usedEsp_->getIpcServer()->getServerId();
 
-        processId.getPhandle().decompose(cpu, pin, node);
+        processId.getPhandle().decompose(cpu, pin, node
+#ifdef SQ_PHANDLE_VERIFIER
+                                        , seqNum
+#endif
+                                        );
         node = ExSM_GetNodeID(cpu);
 
-        EXSM_TRACE(EXSM_TRACE_TAG, "    ESP %d:%d", node, pin);
+        EXSM_TRACE(EXSM_TRACE_TAG, "    ESP %d:%d:%" PRId64, 
+                   node, pin, seqNum);
+
       }
 
     } // ESP fragment

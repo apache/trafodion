@@ -1586,25 +1586,25 @@ void CmpMessageStream::actOnSend(IpcConnection*)
      sqlcomp_->outstandingSendBuffers_.ioStatus_ = ExSqlComp::FINISHED;
      sqlcomp_->badConnection_ = TRUE;
      sqlcomp_->breakReceived_ = TRUE;
-    char procName[200];
-    short procNameLen = 200;
+    NAProcessHandle phandle((SB_Phandle_Type *)
+      &(sqlcomp_->server_->getServerId().getPhandle().phandle_));
+    Int32 guaRetcode = phandle.decompose();
+    if (XZFIL_ERR_OK == guaRetcode)
+    {
+#ifdef SQ_PHANDLE_VERIFIER
+      msg_mon_stop_process_name(phandle.getPhandleString());
+#else
     Int32 nid = 0;
     Int32 pid = 0;
-    short result = 0;
-
-    //Phandle wrapper in porting layer
-    NAProcessHandle phandle((SB_Phandle_Type *)&(sqlcomp_->server_->getServerId().getPhandle().phandle_));
-    Int32 guaRetcode = phandle.decompose();
-    if (!guaRetcode)
-    {
-       memcpy(procName, phandle.getPhandleString(), phandle.getPhandleStringLen() + 1);
-       msg_mon_get_process_info (procName, &nid, &pid);
-       msg_mon_stop_process(procName, nid, pid);
+    msg_mon_get_process_info(phandle.getPhandleString(),
+                             &nid, &pid);
+    msg_mon_stop_process(phandle.getPhandleString(), nid, pid);
+#endif
     }
-     delete sqlcomp_->sqlcompMessage_;
-     sqlcomp_->getDiags() ->setRollbackTransaction(-1);
-     sqlcomp_->sqlcompMessage_ = NULL;
-     sqlcomp_->doRefreshEnvironment_ = TRUE;
+    delete sqlcomp_->sqlcompMessage_;
+    sqlcomp_->getDiags() ->setRollbackTransaction(-1);
+    sqlcomp_->sqlcompMessage_ = NULL;
+    sqlcomp_->doRefreshEnvironment_ = TRUE;
   }
 }
 
@@ -1666,22 +1666,24 @@ void CmpMessageStream::actOnReceive(IpcConnection*)
 	  sqlcomp_->outstandingSendBuffers_.ioStatus_ = ExSqlComp::FINISHED;
           if (getState() == BREAK_RECEIVED)
             {
-
-    char procName[200];
-    short procNameLen = 200;
-    Int32 nid = 0;
-    Int32 pid = 0;
-    short result = 0;
-
-    //Phandle wrapper in porting layer
-    NAProcessHandle phandle((SB_Phandle_Type *)&(sqlcomp_->server_->getServerId().getPhandle().phandle_));
-    Int32 guaRetcode = phandle.decompose();
-    if (!guaRetcode)
-    {
-       memcpy(procName, phandle.getPhandleString(), phandle.getPhandleStringLen());
-       msg_mon_get_process_info (procName, &nid, &pid);
-       msg_mon_stop_process(procName, nid, pid);
-    }
+              Int32 nid = 0;
+              Int32 pid = 0;
+              NAProcessHandle phandle((SB_Phandle_Type *)
+                &(sqlcomp_->server_->getServerId().getPhandle().phandle_));
+              Int32 guaRetcode = phandle.decompose();
+              if (XZFIL_ERR_OK == guaRetcode)
+              {
+#ifdef SQ_PHANDLE_VERIFIER
+                msg_mon_stop_process_name(phandle.getPhandleString());
+#else
+                Int32 nid = 0;
+                Int32 pid = 0;
+                msg_mon_get_process_info(phandle.getPhandleString(),
+                                         &nid, &pid);
+                msg_mon_stop_process(phandle.getPhandleString(), 
+                                         nid, pid);
+#endif
+              }
               delete sqlcomp_->sqlcompMessage_;
               sqlcomp_->sqlcompMessage_ = NULL;
               sqlcomp_->getDiags() ->setRollbackTransaction(-1);
