@@ -3588,11 +3588,17 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 							} else
 								txid = connection_.getTxid_();
 						}
-
+						
 						close(connection_.server_,
 								connection_.getDialogueId_(), txid,
 								connection_.autoCommit_,
 								connection_.transactionMode_, stmtId_, dropStmt);
+
+						//Do not reuse a statement for a new query.
+						//In SQL we do not support reusing the statement id for a new statement.
+						if(dropStmt){
+							this.stmt_.stmtId_ = 0;
+						}
 					}// End sync
 				} finally {
 					isClosed_ = true;

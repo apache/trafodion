@@ -647,11 +647,6 @@ odbc_SQLSvc_ExecDirect_sme_(
 		FUNCTION_RETURN_VOID(("sqlString ==  NULL"));
 	}
 
-        // do not reuse a statement for a new query before
-        // dropping the statement.  In SQL we do not support reusing the
-        // statement id for a new statement witout dropping it.
-        currentStmtId = 0;
-
 	// Need to validate the stmtLabel
 	// Given a label find out the SRVR_STMT_HDL
 	pSrvrStmt = createSrvrStmt(dialogueId,
@@ -704,25 +699,45 @@ odbc_SQLSvc_ExecDirect_sme_(
 		break;
 	case ODBC_RG_ERROR:
 	case SQL_ERROR:
-		ERROR_DESC_def *error_desc_def;
+		ERROR_DESC_def *out_error_desc_def;
+		ERROR_DESC_def *stmt_error_desc_def;
 		*stmtId = (long)pSrvrStmt;
-		error_desc_def = pSrvrStmt->sqlError.errorList._buffer;
+		stmt_error_desc_def = pSrvrStmt->sqlError.errorList._buffer;
 		if (pSrvrStmt->sqlError.errorList._length != 0 &&
-			(error_desc_def->sqlcode == -8007 || error_desc_def->sqlcode == -8007))
+			(stmt_error_desc_def->sqlcode == -8007 || stmt_error_desc_def->sqlcode == -8007))
 		{
 			exception_->exception_nr = odbc_SQLSvc_ExecDirect_SQLQueryCancelled_exn_;
-			exception_->u.SQLQueryCancelled.sqlcode = error_desc_def->sqlcode;
+			exception_->u.SQLQueryCancelled.sqlcode = stmt_error_desc_def->sqlcode;
 		}
 		else
 		{
+			int listLen = pSrvrStmt->sqlError.errorList._length;
 			exception_->exception_nr = odbc_SQLSvc_ExecDirect_SQLError_exn_;
-			exception_->u.SQLError.errorList._length = pSrvrStmt->sqlError.errorList._length;
-			exception_->u.SQLError.errorList._buffer = pSrvrStmt->sqlError.errorList._buffer;
+			exception_->u.SQLError.errorList._length = listLen;
+			MEMORY_ALLOC_ARRAY(exception_->u.SQLError.errorList._buffer, ERROR_DESC_def, listLen);
+			out_error_desc_def = exception_->u.SQLError.errorList._buffer;
+			for(int i=0; i<listLen; i++, out_error_desc_def++, stmt_error_desc_def++) {
+				int errTxtLen = strlen(stmt_error_desc_def->errorText) + 1;
+				out_error_desc_def->errorText = new char[errTxtLen];
+				out_error_desc_def->sqlcode = stmt_error_desc_def->sqlcode;
+				out_error_desc_def->rowId = stmt_error_desc_def->rowId;
+				out_error_desc_def->errorDiagnosticId= stmt_error_desc_def->errorDiagnosticId;
+				out_error_desc_def->operationAbortId = stmt_error_desc_def->operationAbortId;
+				out_error_desc_def->errorCodeType = stmt_error_desc_def->errorCodeType;
+				strcpy(out_error_desc_def->errorText, stmt_error_desc_def->errorText);
+				strcpy(out_error_desc_def->sqlstate, stmt_error_desc_def->sqlstate);
+			}
 		}
+		out_error_desc_def = NULL;
+		stmt_error_desc_def = NULL;
+		//SRVR_STMT_HDL Should be drop when error
+		pSrvrStmt->Close(SQL_DROP);
 		break;
 	case PROGRAM_ERROR:
 		exception_->exception_nr = odbc_SQLSvc_ExecDirect_ParamError_exn_;
 		exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECDIRECT_FAILED;
+		//SRVR_STMT_HDL Should be drop when error
+		pSrvrStmt->Close(SQL_DROP);
 	default:
 		break;
 	}
