@@ -103,6 +103,9 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        currRootTcb_(NULL),
        processStats_(NULL),
        savedPriority_(148) // Set it to some valid priority to start with
+#ifdef SQ_PHANDLE_VERIFIER
+       , myVerifier_(-1)
+#endif
        , tidList_(NULL)
        , cliSemaphore_(NULL)
        , defaultContext_(NULL)
@@ -155,7 +158,12 @@ void CliGlobals::init( NABoolean espProcess,
 				  myCpu_, myPin_, 
 				  myNodeNumber_, myNodeName_, nodeNameLen, 
 				  myStartTime_, myProcessNameString_,
-				  parentProcessNameString_);
+				  parentProcessNameString_
+#ifdef SQ_PHANDLE_VERIFIER
+                                  , &myVerifier_
+#endif
+                                 );
+
   if (retcomrt)
   {
     char errStr[128];//LCOV_EXCL_LINE

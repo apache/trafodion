@@ -1177,7 +1177,12 @@ void ExEspControlMessage::actOnReceive(IpcConnection *connection)
                 const GuaProcessHandle &phandle =
                   conn->getOtherEnd().getPhandle();
                 int otherCPU, otherPID, otherNode_unused;
-                phandle.decompose(otherCPU, otherPID, otherNode_unused);
+                SB_Int64_Type seqNum = -1;
+                phandle.decompose(otherCPU, otherPID, otherNode_unused
+#ifdef SQ_PHANDLE_VERIFIER
+                                 , seqNum
+#endif
+                                 );
                 
                 sm_target_t target;
                 memset(&target, 0, sizeof(target));
@@ -1185,13 +1190,16 @@ void ExEspControlMessage::actOnReceive(IpcConnection *connection)
                 // Note: Seaquest node number is the old CPU number
                 target.node = ExSM_GetNodeID(otherCPU);
                 target.pid = otherPID;
+                target.verifier = seqNum;
                 target.id = (smQueryID > 0 ? smQueryID :
                              ExSMGlobals::getExeInternalSMID());
                 
                 EXSM_TRACE(EXSM_TRACE_MAIN_THR,
-                           "Sending FIXUP REPLY to node %d pid %d id %" PRId64,
-                           (int) target.node, (int) target.pid, target.id);
-                
+                           "Sending FIXUP REPLY to node %d pid %d "
+                           "seqNum %" PRId64 "id %" PRId64,
+                           (int) target.node, (int) target.pid, 
+                           seqNum, target.id);
+
                 ExSMShortMessage m;
                 m.setTarget(target);
                 m.setNumValues(1);

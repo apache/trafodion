@@ -187,6 +187,9 @@ Lng32 ComRtGetProgramInfo(char * pathName,    /* out */
 			 Int64  &processCreateTime,
 			  char *processNameString,
 			  char *parentProcessNameString = NULL
+#ifdef SQ_PHANDLE_VERIFIER
+                         , SB_Verif_Type *verifier = NULL
+#endif
 			 );
 
 // OUT: processPriority: current priority of process

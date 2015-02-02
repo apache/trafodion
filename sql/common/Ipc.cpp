@@ -164,27 +164,18 @@ NABoolean GuaProcessHandle::operator == (const GuaProcessHandle &other) const
 
 void GuaProcessHandle::dumpAndStop(bool doDump, bool doStop) const
 {
-  char procName[200];
-  short procNameLen = 200;
   char coreFile[1024];
-  Int32 nid = 0;
-  Int32 pid = 0;
-  short result_gpi = 0;
   NAProcessHandle phandle((SB_Phandle_Type *)&phandle_);
   phandle.decompose();
-  char *phandleString = phandle.getPhandleString();
-  short phandleStrLen =  phandle.getPhandleStringLen();
-  memcpy(procName, phandleString, phandleStrLen + 1);
-  procName[phandleStrLen] = 0; // null-terminate
-  result_gpi = msg_mon_get_process_info(procName, &nid, &pid);
-  if (result_gpi == XZFIL_ERR_OK)
-  {
-    if (doDump)
-      msg_mon_dump_process_id(NULL, nid, pid, coreFile);
-    if (doStop)
-      msg_mon_stop_process(procName, nid, pid); 
-  }
-
+  if (doDump)
+    msg_mon_dump_process_name(NULL, phandle.getPhandleString(), coreFile);
+  if (doStop)
+#ifdef SQ_PHANDLE_VERIFIER
+    msg_mon_stop_process_name(phandle.getPhandleString()); 
+#else
+    msg_mon_stop_process(phandle.getPhandleString(), 
+                         phandle.getCpu(), phandle.getPin());
+#endif
 }
 
 // -----------------------------------------------------------------------
@@ -1176,19 +1167,15 @@ void IpcConnection::reportBadMessage()
   {
     if (*envvar == '2')
     {
-      char coreFile[1024];
-      Int32 nid = 0;
-      Int32 pid = 0;
-      if (XZFIL_ERR_OK == msg_mon_get_my_info (&nid,&pid,NULL,0,
-                                               NULL,NULL,NULL,NULL))
-      {
-        UInt32 seconds = (pid % 100) * 5; // Lowest low order two digits is first in line
-        if (seconds >= 250)               // 50 same as 00, etc
-          seconds -= 250;
-        sleep(seconds);
+      NAProcessHandle phandle;
+      phandle.getmine();
+      phandle.decompose();
+      UInt32 seconds = (phandle.getPin() % 100) * 5;
+      if (seconds >= 250)
+        seconds -= 250;
+      sleep(seconds);
 
-        msg_mon_dump_process_id(NULL, nid, pid, coreFile);
-      }
+      genLinuxCorefile(NULL);
     }
     dumpAndStopOtherEnd(true, (*envvar == '2'));
     if (*envvar == '2')
@@ -1368,6 +1355,8 @@ Int32 IpcAllConnections::printConnTrace(Int32 lineno, char *buf)
       const char * stateName = "UNKNOWN";
       const char * eyeCatcher = "UNKN";
       Int32 cpu = 0, node, pin = 0;
+      SB_Int64_Type seqNum = -1;
+
       if ((IpcConnection::INITIAL <=  c->getState()) && (c->getState() <= IpcConnection::CLOSED))
           stateName = IpcConnStateName[c->getState()];
       if ((char *)NULL != c->getEyeCatcher())
@@ -1377,10 +1366,14 @@ Int32 IpcAllConnections::printConnTrace(Int32 lineno, char *buf)
         {
           GuaProcessHandle *otherEnd = (GuaProcessHandle *)&(c->getOtherEnd().getPhandle().phandle_);
           if (otherEnd)
-            otherEnd->decompose(cpu, pin, node);
+            otherEnd->decompose(cpu, pin, node
+#ifdef SQ_PHANDLE_VERIFIER
+                               , seqNum
+#endif
+                               );
         }
-      rv = sprintf(buf, "%.4d  %8p  %.4s  %.3d,%.8d  %s\n",
-                   lineno, c, eyeCatcher, cpu, pin,
+      rv = sprintf(buf, "%.4d  %8p  %.4s  %.3d,%.8d %" PRId64 " %s\n",
+                   lineno, c, eyeCatcher, cpu, pin, seqNum,
                    stateName);
     }
   return rv;
@@ -5014,7 +5007,11 @@ short getDefineShort( char * defineName )
 }
 
 
-IpcEnvironment::IpcEnvironment(CollHeap *heap, UInt32 *eventConsumed,
+// -----------------------------------------------------------------------
+// Methods for IpcEnvironment
+// -----------------------------------------------------------------------
+
+ IpcEnvironment::IpcEnvironment(CollHeap *heap, UInt32 *eventConsumed,
                                NABoolean breakEnabled, IpcServerType serverType, NABoolean useGuaIpcAtRuntime
                                , NABoolean persistentProcess
                               ) :
@@ -5148,6 +5145,8 @@ IpcEnvironment::IpcEnvironment(CollHeap *heap, UInt32 *eventConsumed,
     }
   }
 
+  memset(myProcessName_, 0, sizeof(myProcessName_));
+
   closeTraceArray_ = (CloseTraceEntry (*) [closeTraceEntries])heap_->allocateMemory(sizeof(CloseTraceEntry) * closeTraceEntries);
   for (Int32 i = 0; i < closeTraceEntries; i++)
   {
@@ -5156,7 +5155,7 @@ IpcEnvironment::IpcEnvironment(CollHeap *heap, UInt32 *eventConsumed,
     (*closeTraceArray_)[i].clientFileNumber_ = 0;
     (*closeTraceArray_)[i].cpu_ = 0;
     (*closeTraceArray_)[i].pin_ = 0;
-    (*closeTraceArray_)[i].nodeNumber_ = 0;
+    (*closeTraceArray_)[i].seqNum_ = -1;
   }
   closeTraceIndex_ = closeTraceEntries - 1;
   bawaitioxTraceArray_ = (BawaitioxTraceEntry (*) [bawaitioxTraceEntries])heap_->allocateMemory(sizeof(BawaitioxTraceEntry) * bawaitioxTraceEntries);
@@ -5190,7 +5189,7 @@ IpcEnvironment::IpcEnvironment(CollHeap *heap, UInt32 *eventConsumed,
                                   short clientFileNumber,
                                   Int32 cpu,
                                   Int32 pin,
-                                  Int32 nodeNumber)
+                                  SB_Int64_Type seqNum)
 {
   unsigned short i = closeTraceIndex_ == closeTraceEntries - 1 ? 0 : closeTraceIndex_ + 1;
   (*closeTraceArray_)[i].count_ = (*closeTraceArray_)[closeTraceIndex_].count_ + 1;
@@ -5198,7 +5197,7 @@ IpcEnvironment::IpcEnvironment(CollHeap *heap, UInt32 *eventConsumed,
   (*closeTraceArray_)[i].clientFileNumber_ = clientFileNumber;
   (*closeTraceArray_)[i].cpu_ = cpu;
   (*closeTraceArray_)[i].pin_ = pin;
-  (*closeTraceArray_)[i].nodeNumber_ = nodeNumber;
+  (*closeTraceArray_)[i].seqNum_ = seqNum;
   closeTraceIndex_ = i;
 }
   void IpcEnvironment::bawaitioxTrace(IpcSetOfConnections *ipcSetOfConnections,
@@ -5587,6 +5586,22 @@ Int32 IpcEnvironment::printAnIpcEntry(Int32 lineno, char *buf)
   return rv;
 }
 
+char const *IpcEnvironment::myProcessName()
+{
+  if (myProcessName_[0] == '\0')
+    if (getCliGlobals())
+      strcpy(myProcessName_, getCliGlobals()->myProcessNameString());
+    else {
+      NAProcessHandle myPhandle;
+      myPhandle.getmine();
+      myPhandle.decompose();
+      strcpy(myProcessName_, myPhandle.getPhandleString());
+      return myProcessName_;
+    }
+  return myProcessName_;
+ 
+}
+
 void IpcAllocateDiagsArea(ComDiagsArea *&diags, CollHeap *diagsHeap)
 {
   if ( NOT diags)
@@ -5753,6 +5768,7 @@ void IpcAllConnections::printConnTraceLine(char *buffer, int *rsp_len, IpcConnec
 {
       Int32 lineLen;
       Int32 cpu, node, pin;
+      SB_Int64_Type seqNum = -1;
       IpcNetworkDomain domain;
       cpu = pin;
       domain = conn->getOtherEnd().getDomain();
@@ -5761,7 +5777,11 @@ void IpcAllConnections::printConnTraceLine(char *buffer, int *rsp_len, IpcConnec
       {
         GuaProcessHandle *otherEnd = (GuaProcessHandle *)&(conn->getOtherEnd().getPhandle().phandle_);
         if (otherEnd)
-          otherEnd->decompose(cpu, pin, node);
+          otherEnd->decompose(cpu, pin, node
+#ifdef SQ_PHANDLE_VERIFIER
+                             , seqNum
+#endif
+                             );
       }
 
       if (!memcmp(conn->getEyeCatcher(), "STBL", 4))
@@ -5774,15 +5794,19 @@ void IpcAllConnections::printConnTraceLine(char *buffer, int *rsp_len, IpcConnec
         sm_id_t smQueryId = ((SMConnection *)conn)->getSMTarget().id;
         Int32 smTag = ((SMConnection *)conn)->getSMTarget().tag;
         *rsp_len = sprintf(buffer + *rsp_len,
-                           "%.4s %s %.3d,%.8d,%.8" PRId64 ",%.8d\n",
+                           "%.4s %s %.3d,%.8d,%.8" PRId64 
+                           ",%.8" PRId64 ",%.8d\n",
                            conn->getEyeCatcher(),
                            IpcConnStateName[conn->getState()],
-                           cpu, pin, smQueryId, smTag);
+                           cpu, pin, seqNum, smQueryId, smTag);
       }
       else
       {
-        *rsp_len  = sprintf(buffer, "%.4s %s %.3d,%.8d\n",
-                          conn->getEyeCatcher(), IpcConnStateName[conn->getState()], cpu, pin);
+        *rsp_len  = sprintf(buffer, "%.4s %s %.3d,%.8d,%.8" PRId64 "\n",
+                          conn->getEyeCatcher(), 
+                          IpcConnStateName[conn->getState()], 
+                          cpu, pin, seqNum);
+
       }
 }
 

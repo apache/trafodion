@@ -37,7 +37,7 @@
 #include	<stdlib.h>
 
 #include "Platform.h"
-
+#include "PortProcessCalls.h"
 #include "Int64.h"
 #include "ComVersionDefs.h"
 #include "IpcSockets.h"
@@ -285,13 +285,20 @@ struct GuaProcessHandle
   Int32 toAscii(char *ascii, Int32 asciiLen) const;
 #endif
 #if (defined (NA_LINUX) && defined(SQ_NEW_PHANDLE))
-  Lng32 decompose(Int32 &cpu, Int32 &pin, Int32 &nodeNumber) const;
+  Lng32 decompose(Int32 &cpu, Int32 &pin, Int32 &nodeNumber
+#ifdef SQ_PHANDLE_VERIFIER
+                  , SB_Int64_Type &seqNum
+#endif
+                  ) const;
 #else
   Lng32 decompose(short &cpu, short &pin, Int32 &nodeNumber) const;
 #endif // NA_LINUX
 
-  // A platform-independent decompose method
-  Int32 decompose2(Int32 &cpu, Int32 &pin, Int32 &node) const;
+  Int32 decompose2(Int32 &cpu, Int32 &pin, Int32 &node
+#ifdef SQ_PHANDLE_VERIFIER
+                  , SB_Int64_Type &seqNum
+#endif
+                  ) const;
 
   void dumpAndStop(bool doDump, bool doStop) const;
 };
@@ -345,7 +352,7 @@ struct CloseTraceEntry
   short clientFileNumber_;
   Int32 cpu_;
   Int32 pin_;
-  Int32 nodeNumber_;
+  SB_Int64_Type seqNum_;
 };
 struct PersistentOpenEntry
 {
@@ -1080,17 +1087,18 @@ class GuaConnectionToServer : public IpcConnection
 
 public:
 
-  GuaConnectionToServer(IpcEnvironment *env,
-			const IpcProcessId &procId,
-			NABoolean usesTransactions,
-			unsigned short nowaitDepth,
-                        const char *eye = eye_GUA_CONNECTION_TO_SERVER,
-			NABoolean parallelOpen = FALSE,
-			Int32 *openCompletionScheduled = NULL
-                        ,
-                        NABoolean dataConnectionToEsp = FALSE
+  GuaConnectionToServer(  IpcEnvironment *env
+			, const IpcProcessId &procId
+			, NABoolean usesTransactions
+			, unsigned short nowaitDepth
+			, const char *eye = eye_GUA_CONNECTION_TO_SERVER
+			, NABoolean parallelOpen = FALSE
+			, Int32 *openCompletionScheduled = NULL
+                        , NABoolean dataConnectionToEsp = FALSE
+#ifndef SQ_PHANDLE_VERIFIER
                         , time_t childCreationTimeSec = 0
                         , long childCreationTimenSec = 0
+#endif
                         );
 
   virtual ~GuaConnectionToServer();
@@ -1180,7 +1188,10 @@ private:
   void handleIOErrorForStream(IpcMessageStreamBase *msgStream);
   void handleIOErrorForEntry(ActiveIOQueueEntry &entry);
   void cleanUpActiveIOEntry(ActiveIOQueueEntry &entry);
+#ifndef SQ_PHANDLE_VERIFIER
+  // Fix for CR 7128
   bool childProcessPidRecycled();
+#endif
 
   // ---------------------------------------------------------------------
   // The send and receive queues of a Guardian connection to a server are
@@ -1271,10 +1282,13 @@ private:
   Int32             openRetries_;
   struct timespec   beginOpenTime_;
   struct timespec   completeOpenTime_;
+#ifndef SQ_PHANDLE_VERIFIER
+                    // Fix for CR 7128
                     // this childCreationTime_ is non-zero only for
                     // control connections from master to servers that
                     // the master created.
   struct timespec   childCreationTime_;
+#endif
   NABoolean         tscoOpen_;
 #if 0
   char *sentMsgHdr_;
@@ -2926,12 +2940,14 @@ private:
   // when sending messages, don't delete the message until the I/O completed
   char        * activeMessage_;
 
+#ifndef SQ_PHANDLE_VERIFIER
   // When stopping an ESP by name, check the ESPs creation timestamp 
   // to see if the ESP was started by this master.  Helps when process
   // names are reused.  See ALM CR 4528.  When SQF is enhanced to 
   // handle this problem (see enhancement CR 4780) we can remove this 
   // work-around logic.
  struct timespec creationTime_;
+#endif
  NABoolean unhooked_;
 };
 #endif /* NA_GUARDIAN_IPC */
@@ -3363,7 +3379,7 @@ public:
   inline void incrNumOpensInProgress() { numOpensInProgress_ += 1; }
   inline void decrNumOpensInProgress() { numOpensInProgress_ -= 1; }
   inline short getNumOpensInProgress() const { return numOpensInProgress_; }
-  void closeTrace(unsigned short, short, Int32, Int32, Int32);
+  void closeTrace(unsigned short, short, Int32, Int32, SB_Int64_Type);
   void bawaitioxTrace(IpcSetOfConnections *ipcSetOfConnections,
                       ULng32 recursionCount,
                       CollIndex firstConnectionIndex,
@@ -3395,6 +3411,7 @@ public:
   bool getLogTimeIpcConnectionState() const 
                                     { return logTimeIpcConnectionState_; }
   bool smEnabled() { return seamonsterEnabled_; }
+  char const *myProcessName();
 
   // trace for data send and receive
   enum IpcMsgOper
@@ -3479,6 +3496,7 @@ private:
   bool logEspGotCloseMsg_;
   bool logTimeIpcConnectionState_;
   bool seamonsterEnabled_;
+  char myProcessName_[PhandleStringLen];
 };
 
 // -----------------------------------------------------------------------

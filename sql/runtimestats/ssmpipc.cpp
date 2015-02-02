@@ -1057,12 +1057,31 @@ void SsmpGuaReceiveControlConnection::actOnSystemMessage(
         SB_Phandle_Type  *phandle = (SB_Phandle_Type *)&msg->z_phandle;
         Int32 cpu;
         pid_t pid;
+#ifdef SQ_PHANDLE_VERIFIER
+        SB_Int64_Type seqNum = 0;
+        if (XZFIL_ERR_OK == XPROCESSHANDLE_DECOMPOSE_(
+              phandle, &cpu, &pid
+              , NULL   // nodeNumber
+              , NULL   // nodeName
+              , 0      // nodeNameLen input
+              , NULL   // nodeNameLen output
+              , NULL   // processName
+              , 0      // processNameLen input
+              , NULL   // processNameLen output
+              , &seqNum
+          ))            
+        {
+          if (cpu == ssmpGlobals_->myCpu())
+            ssmpGlobals_->getStatsGlobals()->verifyAndCleanup(pid, seqNum);
+        }
+#else
         if (XPROCESSHANDLE_DECOMPOSE_(phandle, &cpu, &pid) == 0)
         {
            if (cpu == ssmpGlobals_->myCpu())
              ssmpGlobals_->getStatsGlobals()->cleanup_SQL(
                          pid, ssmpGlobals_->myPin());
         }
+#endif
       }
       break;
     case ZSYS_VAL_SMSG_CPUDOWN:

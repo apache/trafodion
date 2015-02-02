@@ -102,6 +102,9 @@ NAProcessHandle::NAProcessHandle(const SB_Phandle_Type *phandle)
 short NAProcessHandle::decompose()
 {
   Int32 err = 0;
+  char processName[PhandleStringLen];
+  processName[0] = '\0';
+  short processNameLen = 0;
 
   err = XPROCESSHANDLE_DECOMPOSE_((SB_Phandle_Type *)&(this->phandle_)
                                   ,&this->cpu_
@@ -110,11 +113,20 @@ short NAProcessHandle::decompose()
                                   ,this->nodeName_
                                   ,NodeNameLen
                                   ,&this->nodeNameLen_
-                                  ,this->phandleString_
+                                  ,processName
                                   ,PhandleStringLen
-                                  ,&this->phandleStringLen_
+                                  ,&processNameLen
                                    ,(SB_Int64_Type *)&this->seqNum_
                                   );
+  processName[processNameLen] = '\0';
+#ifdef SQ_PHANDLE_VERIFIER
+  this->phandleStringLen_ = sprintf(this->phandleString_, "%s:%ld",
+                                    processName, this->seqNum_);
+#else
+  this->phandleStringLen_ = strlen(processName);
+  strcpy(this->phandleString_, processName);
+  this->phandleString_[this->phandleStringLen_] = '\0';
+#endif
 
   return err;
 }

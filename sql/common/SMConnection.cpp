@@ -28,6 +28,7 @@
 #include "ex_exe_stmt_globals.h"
 #include "ExpErrorEnums.h"
 #include "NAAssert.h"
+#include "PortProcessCalls.h"
 
 // -----------------------------------------------------------------------
 // Methods for class SMConnection
@@ -1131,6 +1132,24 @@ bool SMConnection::getAckArrived()
 void SMConnection::dumpAndStopOtherEnd(bool doDump, bool doStop) const
 {
   char coreFile[1024];
+#ifdef SQ_PHANDLE_VERIFIER
+  char processName[MS_MON_MAX_PROCESS_NAME+1];
+  char seqName[PhandleStringLen];
+  if (XZFIL_ERR_OK == msg_mon_get_process_name2(smTarget_.node,
+                                                smTarget_.pid,
+                                                smTarget_.verifier,
+                                                processName))
+  {
+
+    sprintf(seqName, "%s:%d", processName, smTarget_.verifier);
+
+     if (doDump)
+       msg_mon_dump_process_name(NULL, seqName, coreFile);
+
+     if (doStop)
+       msg_mon_stop_process_name(seqName);
+  }
+#else
   if (doDump)
     msg_mon_dump_process_id(NULL, smTarget_.node, smTarget_.pid, 
                             coreFile);
@@ -1141,4 +1160,5 @@ void SMConnection::dumpAndStopOtherEnd(bool doDump, bool doStop) const
                                                  smTarget_.pid, pname))
     msg_mon_stop_process(pname, smTarget_.node, smTarget_.pid);
   }
+#endif
 }

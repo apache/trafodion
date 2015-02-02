@@ -706,6 +706,13 @@ ExUdrServer::ExUdrServerStatus ExUdrServer::kill(ComDiagsArea *diags)
   {
     if (serverProcessId_.getDomain() == IPC_DOM_GUA_PHANDLE)
     {
+#ifdef SQ_PHANDLE_VERIFIER
+    NAProcessHandle serverPhandle(
+        (SB_Phandle_Type *) &(serverProcessId_.getPhandle().phandle_));
+    Int32 guaRetcode = serverPhandle.decompose();
+    if (XZFIL_ERR_OK == guaRetcode)
+      msg_mon_stop_process_name(serverPhandle.getPhandleString());
+#else
     char procName[200];
     short procNameLen = 200;
     Int32 nid = 0;
@@ -724,6 +731,7 @@ ExUdrServer::ExUdrServerStatus ExUdrServer::kill(ComDiagsArea *diags)
        msg_mon_get_process_info (procName, &nid, &pid);
        msg_mon_stop_process(procName, nid, pid);
     }
+#endif
       UdrDebug1("  PROCESS_STOP_ returned %d", (Int32) result);
       if (diags != NULL)
       {

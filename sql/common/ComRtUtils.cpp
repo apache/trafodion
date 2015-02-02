@@ -702,33 +702,38 @@ Lng32 ComRtGetProgramInfo(char * pathName,    /* out */
 			 short  &nodeNameLen,
 			 Int64  &processCreateTime,
 			 char *processNameString,
-			 char *parentProcessNameString)
+			 char *parentProcessNameString
+#ifdef SQ_PHANDLE_VERIFIER
+                         , SB_Verif_Type *verifier
+#endif
+)
 {
   Lng32 retcode = 0;
 
   processType = 2;
   strcpy(nodeName, "NSK");
   nodeNameLen = strlen("NSK");
-  SB_Phandle_Type procHandle;
-  Int32 lc_pin;
-  Int32 lc_cpu;
-  XPROCESSHANDLE_GETMINE_(&procHandle);
-  XPROCESSHANDLE_DECOMPOSE_ (&procHandle, &lc_cpu, &lc_pin);
-  cpu = lc_cpu;
-  pin = lc_pin;
+  NAProcessHandle myPhandle;
+  myPhandle.getmine();
+  myPhandle.decompose();
+  cpu = myPhandle.getCpu();
+  pin = myPhandle.getPin();
+#ifdef SQ_PHANDLE_VERIFIER
+  if (verifier)
+    *verifier = myPhandle.getSeqNum();
+#endif
+
   // Map the node number to cpu
-  nodeNumber = lc_cpu;
+  nodeNumber = cpu;
+  strcpy(processNameString, myPhandle.getPhandleString());
   MS_Mon_Process_Info_Type processInfo;
-  char processName[MS_MON_MAX_PROCESS_NAME];
-  if ((retcode = msg_mon_get_process_name(lc_cpu, lc_pin, processName))
-                        != XZFIL_ERR_OK)
-     return retcode;  
-  strcpy(processNameString, processName);   
-  if ((retcode = msg_mon_get_process_info_detail(processName, &processInfo))
+  if ((retcode = msg_mon_get_process_info_detail(
+     processNameString, &processInfo))
                         != XZFIL_ERR_OK)
      return retcode;
   processCreateTime = ComRtGetJulianFromUTC(processInfo.creation_time);
-  if (processInfo.parent_nid != -1 && processInfo.parent_pid != -1 && parentProcessNameString)
+  if (processInfo.parent_nid != -1 && 
+      processInfo.parent_pid != -1 && parentProcessNameString)
     strcpy(parentProcessNameString, processInfo.parent_name);
   else
     parentProcessNameString = NULL;
@@ -874,24 +879,21 @@ NABoolean ComRtGetCpuStatus(char *nodeName, short cpuNum)
 
 void genLinuxCorefile(const char *eventMsg)
 {
-//LCOV_EXCL_START
-// I unit tested this code with the test case in QC 1387 and by faking
-// errors from msg_mon_get_my_info, msg_mon_get_process_info_detail and
-// gethostname in a gdb session. - 3/22/2012.
-  Int32 nid = 0;
-  Int32 pid = 0;
-  char *progFileName = (char *) "noname";
-  char pName[MS_MON_MAX_PROCESS_NAME];
-  if (XZFIL_ERR_OK == msg_mon_get_my_info(&nid, &pid, &pName[0],
-                        sizeof(pName), NULL, NULL, NULL, NULL))
-  {
-    // use msg_mon_dump_process_id - 5/28/2013
-    char coreFile[1024];
-    msg_mon_dump_process_id(NULL, nid, pid, coreFile);
-  }
   if (eventMsg)
     SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, eventMsg, 0);
-//LCOV_EXCL_STOP
+  NAProcessHandle myPhandle;
+  myPhandle.getmine();
+  myPhandle.decompose();
+
+  char coreFile[PATH_MAX];
+  msg_mon_dump_process_name(NULL, myPhandle.getPhandleString(),
+                              coreFile);
+
+  char coreLocationMessage[PATH_MAX + 200];
+  sprintf(coreLocationMessage, 
+            "Core-file for this process created at %s.", coreFile);
+  SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__,
+                                    coreLocationMessage, 0);
 }
 
 #ifdef _DEBUG
