@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1010,19 +1010,20 @@ INT_PTR CALLBACK ConnectDriverKWDialogProc(
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		connectFieldItems = (CONNECT_FIELD_ITEMS *)lParam;
-		SetWindowLongPtr(hwndDlg,GWLP_USERDATA,(long)connectFieldItems);
+		connectFieldItems = (CONNECT_FIELD_ITEMS*)GetWindowLongPtr(hwndDlg,DWLP_USER);
+		if(connectFieldItems==NULL)
+			return FALSE;
 	    retCode = SetDlgItemText(hwndDlg, IDC_DKW_SERVER, connectFieldItems->server);
   		retCode = SetDlgItemText(hwndDlg, IDC_DKW_LOGIN_ID, connectFieldItems->loginId);
   		retCode = SetDlgItemText(hwndDlg, IDC_DKW_PASSWORD, connectFieldItems->password);
   		retCode = SetDlgItemText(hwndDlg, IDC_DKW_CATALOG, connectFieldItems->catalog);
   		retCode = SetDlgItemText(hwndDlg, IDC_DKW_SCHEMA, connectFieldItems->schema);
-		// Set the Dialog Window Pos
+		// Set the Dialog Window Pos  
 		// Get the owner window and dialog box rectangles. 
-// 	    if ((hwndOwner = GetParent(hwndDlg)) == NULL) 
-//      {
+ 	    if ((hwndOwner = GetParent(hwndDlg)) == NULL) 
+	    {
             hwndOwner = GetDesktopWindow(); 
-//      }
+		}
 
         GetWindowRect(hwndOwner, &rcOwner); 
         GetWindowRect(hwndDlg, &rcDlg); 
@@ -1054,7 +1055,9 @@ INT_PTR CALLBACK ConnectDriverKWDialogProc(
         } 
   		return TRUE;
 	case WM_COMMAND:
-		connectFieldItems = (CONNECT_FIELD_ITEMS*)GetWindowLongPtr(hwndDlg,GWLP_USERDATA);
+		connectFieldItems = (CONNECT_FIELD_ITEMS*)GetWindowLongPtr(hwndDlg,DWLP_USER);
+		if(connectFieldItems==NULL)
+			return FALSE;
 		switch (LOWORD(wParam))
 		{
 		case IDOK:
@@ -1073,16 +1076,14 @@ INT_PTR CALLBACK ConnectDriverKWDialogProc(
             if (!GetDlgItemText(hwndDlg, IDC_DKW_SCHEMA, connectFieldItems->schema,
 						sizeof(connectFieldItems->schema)))
 					connectFieldItems->schema[0] = '\0';
-			if (connectFieldItems->server[0] != '\0')
-				EndDialog(hwndDlg, TRUE);
-			else
-			{
+			if (connectFieldItems->server[0] == '\0'){
 				MessageBox(hwndDlg, MSG_SERVERID_EMPTY, ODBCMX_ERROR_MSGBOX_TITLE, MB_OK | MB_ICONEXCLAMATION );
 				SetFocus(GetDlgItem(hwndDlg, IDC_DKW_SERVER)); 
             }
+			PostMessage(hwndDlg,WM_QUIT,0,0);
 			break;
 		case IDCANCEL:
-			EndDialog(hwndDlg, FALSE);
+			PostMessage(hwndDlg,WM_QUIT,0,0);
 			break;
 		}
 		return TRUE;
@@ -1646,6 +1647,7 @@ SQLRETURN CConnect::DriverConnect(SQLHWND WindowHandle,
 	char					lcConnectionString[2048+1];
 	int						DialogRetCode;
 	char					ServerNameNTS[MAX_SQL_IDENTIFIER_LEN+1];
+	ServerNameNTS[0]=0;
 
 	clearError();
 
@@ -1732,20 +1734,47 @@ SQLRETURN CConnect::DriverConnect(SQLHWND WindowHandle,
 //		EnterCriticalSection(&m_CSObject);
 
 		if (DSNType == DRIVER_KW_DSN) {
-			//DialogRetCode = DialogBoxParam(gDrvrGlobal.gModuleHandle,
-			//	 MAKEINTRESOURCE(IDD_CONNECT_DRIVER_KW_DIALOG),
-			//	 WindowHandle, ConnectDriverKWDialogProc, (long)&connectFieldItems);
+			DialogRetCode=TRUE;
 			HINSTANCE hinst = LoadLibrary(ODBC_RESOURCE_DLL);
 			if (hinst != NULL) {
-				DialogRetCode = DialogBoxParam(hinst,
+				BOOL b=EnableWindow(WindowHandle,FALSE);
+				HWND hWndDlg=CreateDialog(hinst,
 				   MAKEINTRESOURCE(IDD_CONNECT_DRIVER_KW_DIALOG),
-				   WindowHandle, ConnectDriverKWDialogProc, (long)&connectFieldItems);
+				   WindowHandle, ConnectDriverKWDialogProc);
+				SetWindowLongPtr(hWndDlg,DWLP_USER,(LONG_PTR)&connectFieldItems);
+				SendMessage(hWndDlg,WM_INITDIALOG,0,0);
+				ShowWindow(hWndDlg,SW_SHOW);
+				MSG msg;
+				while (GetMessage(&msg,hWndDlg,0,0)) {
+				 if (!IsWindow(hWndDlg) || !IsDialogMessage(hWndDlg,&msg)){
+					 TranslateMessage(&msg);
+					 DispatchMessage(&msg);
+				 }
+				}
+				DestroyWindow(hWndDlg);
+				EnableWindow(WindowHandle,!b);
+
 				FreeLibrary(hinst);
 			 }
 			 else {
-				DialogRetCode = DialogBoxParam(gDrvrGlobal.gModuleHandle,
-					 MAKEINTRESOURCE(IDD_CONNECT_DRIVER_KW_DIALOG),
-					 WindowHandle, ConnectDriverKWDialogProc, (long)&connectFieldItems);
+				BOOL b=EnableWindow(WindowHandle,FALSE);
+				HWND hWndDlg=CreateDialog(gDrvrGlobal.gModuleHandle,
+				   MAKEINTRESOURCE(IDD_CONNECT_DRIVER_KW_DIALOG),
+				   WindowHandle, ConnectDriverKWDialogProc);
+				SetWindowLongPtr(hWndDlg,DWLP_USER,(LONG_PTR)&connectFieldItems);
+				SendMessage(hWndDlg,WM_INITDIALOG,0,0);
+				ShowWindow(hWndDlg,SW_SHOW);  
+				MSG msg;
+				while (GetMessage(&msg,hWndDlg,0,0)) {
+				 if (!IsWindow(hWndDlg) || !IsDialogMessage(hWndDlg,&msg)){
+					 TranslateMessage(&msg);
+					 DispatchMessage(&msg);
+				 }
+				}
+				DestroyWindow(hWndDlg);
+				EnableWindow(WindowHandle,!b);
+
+				FreeLibrary(hinst);
 			 }
 
 		}
@@ -1780,7 +1809,6 @@ SQLRETURN CConnect::DriverConnect(SQLHWND WindowHandle,
 	}
 	// Update the m_DSValue with what is in the connectionString and dialogbox 
 	m_DSValue.updateDSValues(DSNType, &connectFieldItems, (CONNECT_KEYWORD_TREE *)&KeywordTree);
-
 	rc = Connect((SQLCHAR *)ServerNameNTS,
 			SQL_NTS,
 			(SQLCHAR *)connectFieldItems.loginId,
