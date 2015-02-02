@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -4173,7 +4173,7 @@ SQLRETURN CStmt::GetData(SQLUSMALLINT ColumnNumber,
 	SQLSMALLINT		SQLUnsigned=0;
 
 	short			SQLDataInd=0;
-	short			SQLDataLength=0;
+	int			SQLDataLength=0;
 	BYTE*			SQLDataRow; 
 	BYTE*			SQLDataValue;
 	unsigned long	offset=0;

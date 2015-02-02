@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2494,7 +2494,7 @@ SQLRETURN CDesc::CopyData(CHandle	*pHandle,
 	SQLSMALLINT		CDataType;
 
 	short			SQLDataInd=0;
-	short			SQLDataLength=0;
+	int			SQLDataLength=0;
 	BYTE*			SQLDataRow;
 	BYTE*			SQLDataValue;
 	unsigned long	IndexOffset; // Added this since Buffer pointers are not getting reset back in the driver when fetching locally.
@@ -2664,8 +2664,14 @@ SQLRETURN CDesc::CopyData(CHandle	*pHandle,
 							if (maxLength > 0)
 							{
 								//SQLDataLength-3 to account for length(2 bytes) and null terminator(1 byte)
-								SQLDataLength = ((SQLDataLength-3)>maxLength)?maxLength + 3:SQLDataLength;
-								*(USHORT *)SQLDataValue = SQLDataLength - 3;
+								if(IRD->m_DescRecCollect[ColumnCount]->m_SQLMaxLength<=32767){
+									SQLDataLength = ((SQLDataLength-3)>maxLength)?maxLength + 3:SQLDataLength;
+									*(short *)SQLDataValue = SQLDataLength - 3;
+								}
+								else{
+									SQLDataLength = ((SQLDataLength-5)>maxLength)?maxLength + 5:SQLDataLength;
+									*(int *)SQLDataValue = SQLDataLength - 5;
+								}
 								break;
 							}
 						}
@@ -2809,6 +2815,7 @@ SQLRETURN CDesc::CopyData(CHandle	*pHandle,
 											IRDDescRecPtr->m_ODBCScale,
 											IRDDescRecPtr->m_DescUnsigned,
 											IRDDescRecPtr->m_SQLCharset,
+											IRDDescRecPtr->m_SQLMaxLength,
 											descRecPtr->m_DescConciseType, 
 											DataPtr, 
 											descRecPtr->m_DescOctetLength, 
@@ -2932,7 +2939,7 @@ SQLRETURN CDesc::ExtendedCopyData(CHandle *pHandle,
 	SQLSMALLINT		SQLUnsigned=0;
 
 	short			SQLDataInd=0;
-	short			SQLDataLength=0;
+	int			SQLDataLength=0;
 	BYTE*			SQLDataRow;
 	BYTE*			SQLDataValue;
 	unsigned long	IndexOffset; // Added this since Buffer pointers are not getting reset back in the driver when fetching locally. 
@@ -3050,8 +3057,14 @@ SQLRETURN CDesc::ExtendedCopyData(CHandle *pHandle,
 						if (maxLength2 > 0)
 						{
 							//SQLDataLength-3 to account for length(2 bytes) and null terminator(1 byte)
-							SQLDataLength = ((SQLDataLength-3)>maxLength2)?maxLength2 + 3:SQLDataLength;
-							*(USHORT *)SQLDataValue = SQLDataLength - 3;
+							if(IRD->m_DescRecCollect[ColumnCount]->m_SQLMaxLength<=32767){
+								SQLDataLength = ((SQLDataLength-3)>maxLength2)?maxLength2 + 3:SQLDataLength;
+								*(short *)SQLDataValue = SQLDataLength - 3;
+							}
+							else{
+								SQLDataLength = ((SQLDataLength-5)>maxLength2)?maxLength2 + 5:SQLDataLength;
+								*(int *)SQLDataValue = SQLDataLength - 5;
+							}
 							break;
 						}
 					}
@@ -3194,6 +3207,7 @@ SQLRETURN CDesc::ExtendedCopyData(CHandle *pHandle,
 											IRDDescRecPtr->m_ODBCScale,
 											IRDDescRecPtr->m_DescUnsigned,
 											IRDDescRecPtr->m_SQLCharset,
+											IRDDescRecPtr->m_SQLMaxLength,
 											descRecPtr->m_DescConciseType, 
 											DataPtr, 
 											descRecPtr->m_DescOctetLength, 
@@ -3324,6 +3338,7 @@ unsigned long CDesc::GetData(SQLValue_def *SQLValue,
 								descRecPtr->m_ODBCScale,
 								descRecPtr->m_DescUnsigned,
 								descRecPtr->m_SQLCharset,
+								descRecPtr->m_SQLMaxLength,
 								TargetType,
 								TargetValuePtr, 
 								BufferLength,
