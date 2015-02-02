@@ -77,7 +77,10 @@ void InitSchemaDB()
 // members would be time bombs, since their internal heap pointers would be
 // invalid.
 SchemaDB::SchemaDB(ReadTableDef *rtd)
-  : tableDB_(CmpCommon::contextHeap()),
+  : tableDB_(
+          new CTXTHEAP NAHeap("NATable Heap", (NAHeap *)CTXTHEAP, 
+          16 * 1024,
+          0)),
     routineDB_(CmpCommon::contextHeap()),
     actionRoutineDB_(CmpCommon::contextHeap()),
     valueDArray_(),

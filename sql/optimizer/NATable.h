@@ -1272,7 +1272,7 @@ class NATableDB : public NAKeyLookup<ExtendedQualName,NATable>
   friend class NATableCacheDeleteStoredProcedure;
           
 public:
-  NATableDB(NAMemory *h = 0) :
+  NATableDB(NAMemory *h) :
     heap_(h),
     statementTableList_(h),
     statementCachedTableList_(h),
@@ -1296,10 +1296,11 @@ public:
     hiveMetaDB_(NULL)
   {}
 
-  NATableDB (const NATableDB & orig, NAMemory * h=0) :
+  NATableDB (const NATableDB & orig, NAMemory * h) :
        NAKeyLookup<ExtendedQualName,NATable> (orig, h)
   {}
 
+  NAHeap *getHeap() { return (NAHeap *)heap_; }
   // Obtain a list of table identifiers for the current statement.
   // Allocate the list on the heap passed.
   const LIST(CollIndex) & getStmtTableIdList(NAMemory *heap) const;

@@ -195,7 +195,10 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
     // globals for Optimizer -- also causes NADefaults table to be read in
     schemaDB_ = new(heap_) SchemaDB(readTableDef_);
 
-    size_t memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_HISTCACHE_UPPER_KB);
+    size_t memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_NATABLECACHE_UPPER_KB);
+    schemaDB_->getNATableDB()->getHeap()->setUpperLimit(memLimit);
+
+    memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_HISTCACHE_UPPER_KB);
     const Lng32 initHeapSize = 16 * 1024;    // ## 16K
     NAHeap *histogramCacheHeap = new (heap_) 
                                  NAHeap("HistogramCache Heap",
