@@ -1,7 +1,7 @@
 -- Test: TEST0106 (Executor)
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -1252,6 +1252,7 @@ CURRENT_TIME (6) from (values (1)) as t1;
 set session default CANCEL_ESCALATION_INTERVAL '5';
 log;
 log GET_STATS106 clear;
+set session default RTS_TIMEOUT '10';
 obey get_stats_cmd;
 log;
 sh cat GET_STATS106 >> cumulative_GET_STATS106;
