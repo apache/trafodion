@@ -45,4 +45,4 @@ CXXFLAGS	+= $(DEFINES) $(CXXWARN) -fcheck-new $(CODEGEN)
 # Modules in current directory
 $(OUTDIR)/%.o: %.cpp
 	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+	$(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
