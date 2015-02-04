@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -778,6 +778,43 @@ public:
   NABoolean applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby, 
 					       NormWA & normWARef);
 
+  // Detect whether rows coming from the ith child contain multi-column skew for
+  // a set of join predicates. The output argument vidOfEquiJoinWithSkew is the
+  // valueId of a particular join predicate chosen by the method for use by the
+  // skew buster.
+  NABoolean childNodeContainMultiColumnSkew(
+                        CollIndex i,                 // IN: which child
+                        const ValueIdSet& joinPreds, // IN: the join predicate
+                        double mc_threshold,         // IN: the mc skew threshold
+                        double sc_threshold,         // IN: the single column skew
+                        Lng32 countOfPipelines,      // IN: countofpipelines
+                                                     // threshold
+                        SkewedValueList** skLis,     // OUT: the skew list
+                        ValueId& vidOfEquiJoinWithSkew // OUT
+                                 ) const;
+
+   // This method assumes a MC skew list is available at child i and
+   // filters out those skew values which frequencies are below the threshold.
+   // Each item in skList contains the run-time version of hash for the MC skew.
+   NABoolean childNodeContainMultiColumnSkew(
+                      CollIndex i,                 // IN: which child to work on
+                      const ValueIdSet& joinPreds, // IN: the join predicate
+                      double mc_threshold,         // IN: multi-column threshold
+                      Lng32 countOfPipelines,      // IN:
+                      SkewedValueList** skList     // OUT: the skew list
+                               ) ;
+
+
+  // Detect whether rows coming from the ith child contain skew for a
+  // join predicate. This method assumes that there is only one join
+  // predicate.
+  NABoolean childNodeContainSkew(
+                        CollIndex i,                 // IN: which child
+                        const ValueIdSet& joinPreds, // IN: the join predicate
+                        double sc_threshold,         // IN: the single column skew
+                                                     // threshold
+                        SkewedValueList** skLis      // OUT: the skew list
+                                 ) const;
 
   const MergeType getMergeTypeToBeUsedForSynthLogProperties();
   const MCSkewedValueList * getMCSkewedValueListForJoinPreds(ValueIdList & colGroup);
@@ -1633,7 +1670,10 @@ public:
      PlanWorkSpace *pws=NULL,
      Lng32 planNumber=0);
 
-
+  // Test whether the skewed values exist in the output of the left
+  // child of this join. If so, the pointer to skew value list is returned
+  // in argument x.
+  virtual NABoolean isSkewBusterFeasible( SkewedValueList** x, Lng32 countOfPipelines, ValueId&);
 
   //NOT IN optimization methods - start
   inline ValueIdSet& getCheckInnerNullExpr() 

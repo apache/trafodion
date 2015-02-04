@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1997-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -3692,6 +3692,7 @@ CostMethodExchange::produceCostVectors(
              OR myPartFunc->isAHash2PartitioningFunction()
              OR myPartFunc->isAHashDistPartitioningFunction()
 	     OR myPartFunc->isARangePartitioningFunction() 
+	     OR myPartFunc->isASkewedDataPartitioningFunction() 
              ))
   {
     if ( CmpCommon::getDefault(COMP_BOOL_97) == DF_OFF )
@@ -4203,6 +4204,7 @@ CostMethodExchange::produceCostVectorsWithControlDataMessages(
              OR myPartFunc->isAHash2PartitioningFunction()
              OR myPartFunc->isAHashDistPartitioningFunction()
 	     OR myPartFunc->isARangePartitioningFunction() 
+             OR myPartFunc->isASkewedDataPartitioningFunction()
              ))
   {
     if ( CmpCommon::getDefault(COMP_BOOL_97) == DF_OFF )

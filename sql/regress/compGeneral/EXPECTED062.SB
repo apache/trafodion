@@ -1,0 +1,1574 @@
+>>
+>>
+>>obey TEST062(skew_summary_setup);
+>>
+>>prepare summarize_act_rows from
++>select
++>avg(act_rows) as "AVG_ACT_ROWS",
++>  case when stddev(act_rows) > 5
++>            then 'SKEWED'
++>            else 'NORMAL'
++>            end                                    as skewness,
++>  'FUNKY_OPT_UNIQUE'                               as filtered,
++>  cast (max(act_rows) - min(act_rows) as integer)    as range,
++>  cast(stddev(act_rows) as numeric (7,2))           as std_dev
++>       from table(statistics(NULL,'XX'))
++>where TDB_NAME = 'EX_HASHJ';
+
+--- SQL command prepared.
+>>
+>>
+>>obey TEST062(default_cqds);
+>>
+>>control query default POS 'off';
+
+--- SQL operation complete.
+>>control query default COMP_BOOL_68 'off';
+
+--- SQL operation complete.
+>> -- enable SkewBuster for small tables
+>>
+>>cqd PARALLEL_NUM_ESPS '4';
+
+--- SQL operation complete.
+>>
+>>cqd HIST_MISSING_STATS_WARNING_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>-- no index scan to avoid the display of index names on NSK that
+>>-- are non-deterministic
+>>control query default HIDE_INDEXES 'ALL';
+
+--- SQL operation complete.
+>>
+>>-- If a value whose frequency is at least 1% of the totalRowCount, then
+>>-- it is considered skewed
+>>control query default SKEW_SENSITIVITY_THRESHOLD '0';
+
+--- SQL operation complete.
+>>control query default SKEW_ROWCOUNT_THRESHOLD '0';
+
+--- SQL operation complete.
+>>
+>>--control query default NESTED_JOINS 'OFF';
+>>control query default MERGE_JOINS 'OFF';
+
+--- SQL operation complete.
+>>
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>control query default CACHE_HISTOGRAMS 'off';
+
+--- SQL operation complete.
+>>
+>>control query default COMP_INT_44 '1';
+
+--- SQL operation complete.
+>> -- pick up any skews
+>>control query default COMP_INT_70 '10';
+
+--- SQL operation complete.
+>> -- 
+>>control query default COMP_INT_7  '11';
+
+--- SQL operation complete.
+>> -- 
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>
+>>
+>>obey TEST062(simple_tests);
+>>
+>>-------------- salted --------
+>>log off;
+>>
+>>
+>>obey TEST062(createdb_salted);
+>>CREATE TABLE T062_SK (sid int not null, ssn largeint NOT NULL) STORE BY (sid) 
++>salt using 4 partitions;
+
+--- SQL operation complete.
+>>
+>>create table T062_dm1 (ssn integer not null,  age int not null) STORE BY (age) 
++>salt using 4 partitions;
+
+--- SQL operation complete.
+>>
+>>create table t062_seed(a int not null, primary key(a));
+
+--- SQL operation complete.
+>>
+>>-----------------
+>>obey TEST062(loaddb);
+>>
+>>insert into t062_seed values(1);
+
+--- 1 row(s) inserted.
+>>
+>>insert into t062_SK 
++>(
++>select c10,c1 from t062_seed
++>  transpose 1,1,1,1,1,1,1,1,0,0 as c1
++>  transpose 0,1,2,3,4,5,6,7,8,9 as c2
++>  transpose 0,1,2,3,4,5,6,7,8,9 as c3
++>  transpose 0,1,2,3,4,5,6,7,8,9 as c10
++>);
+
+--- 10000 row(s) inserted.
+>>
+>>insert into T062_DM1 
++>(
++>select c1, c4 from t062_seed
++>  transpose 0,1,2,3,4,5,6,7,8,9 as c1
++>  transpose 0,1,2,3,4,5,6,7,8,9 as c2
++>  transpose 0,1,2,3,4,5,6,7,8,9 as c3
++>  transpose 0,1,2,3,4,5,6,7,8,9 as c4
++>);
+
+--- 10000 row(s) inserted.
+>>
+>>
+>>log LOG062;
+>>
+>>update statistics for table T062_SK on every column;
+
+--- SQL operation complete.
+>>update statistics for table T062_DM1 on every column;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>
+>>obey TEST062(run_simple_test);
+>>---------------------------------------------------------------------------
+>>-- should get mixed hash join plans
+>>---------------------------------------------------------------------------
+>>
+>>
+>>prepare xx from
++>select t062_sk.ssn, t062_sk.sid from t062_sk, t062_dm1 
++>where t062_sk.ssn = t062_dm1.ssn order by t062_sk.ssn;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+7    .    8    root                                                  1.00E+007
+6    .    7    esp_exchange                    1:4(h2-ud) (m)        1.00E+007
+5    .    6    sort                                                  1.00E+007
+4    2    5    hybrid_hash_join                                      1.00E+007
+3    .    4    esp_exchange                    4(h2-ud):4(hash2)     1.00E+004
+.    .    3    trafodion_scan                  T062_SK               1.00E+004
+1    .    2    esp_exchange                    4(h2-br):4(hash2)     1.00E+004
+.    .    1    trafodion_scan                  T062_DM1              1.00E+004
+
+--- SQL operation complete.
+>>
+>>
+>>-- equi left-join
+>>
+>>-- for LINUX. the cost does not prefer a parallel plan.
+>>#ifLINUX
+>>control query shape esp_exchange(cut);
+
+--- SQL operation complete.
+>>#ifLINUX
+>>
+>>prepare xx from
++>select t062_sk.ssn, sid from t062_sk left join t062_dm1 
++>on t062_sk.ssn = t062_dm1.ssn;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                                                  1.00E+007
+5    .    6    esp_exchange                    1:4(h2-ud)            1.00E+007
+4    2    5    left_hybrid_hash_joi                                  1.00E+007
+3    .    4    esp_exchange                    4(h2-ud):4(hash2)     1.00E+004
+.    .    3    trafodion_scan                  T062_SK               1.00E+004
+1    .    2    esp_exchange                    4(h2-br):4(hash2)     1.00E+004
+.    .    1    trafodion_scan                  T062_DM1              1.00E+004
+
+--- SQL operation complete.
+>>
+>>-- equi natural-left-join
+>>prepare xx from
++>select ssn, sid from t062_sk natural left join t062_dm1;
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                                                  1.00E+007
+5    .    6    esp_exchange                    1:4(h2-ud)            1.00E+007
+4    2    5    left_hybrid_hash_joi                                  1.00E+007
+3    .    4    esp_exchange                    4(h2-ud):4(hash2)     1.00E+004
+.    .    3    trafodion_scan                  T062_SK               1.00E+004
+1    .    2    esp_exchange                    4(h2-br):4(hash2)     1.00E+004
+.    .    1    trafodion_scan                  T062_DM1              1.00E+004
+
+--- SQL operation complete.
+>>
+>>
+>>---------------------------------------------------------------------------
+>>-- negative test - non-equil join
+>>---------------------------------------------------------------------------
+>>prepare xx from
++>select t062_sk.ssn from t062_sk, t062_dm1 where t062_sk.ssn >= t062_dm1.ssn;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  3.33E+007
+4    .    5    esp_exchange                    1:4(hash2)            3.33E+007
+3    2    4    hybrid_hash_join                                      3.33E+007
+.    .    3    trafodion_scan                  T062_SK               1.00E+004
+1    .    2    esp_exchange                    4(rep-b):4(hash2)     1.00E+004
+.    .    1    trafodion_scan                  T062_DM1              1.00E+004
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>-- negative test - right join 
+>>---------------------------------------------------------------------------
+>>
+>>cqd join_order_by_user 'on';
+
+--- SQL operation complete.
+>>prepare xx from
++>select ssn from t062_sk natural right join t062_dm1;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                                                  1.00E+007
+5    .    6    esp_exchange                    1:4(h2-ud)            1.00E+007
+4    2    5    left_hybrid_hash_joi                                  1.00E+007
+3    .    4    esp_exchange                    4(h2-ud):4(hash2)     1.00E+004
+.    .    3    trafodion_scan                  T062_DM1              1.00E+004
+1    .    2    esp_exchange                    4(h2-br):4(hash2)     1.00E+004
+.    .    1    trafodion_scan                  T062_SK               1.00E+004
+
+--- SQL operation complete.
+>>
+>>#ifLINUX
+>>control query shape cut;
+
+--- SQL operation complete.
+>>#ifLINUX
+>>
+>>cqd join_order_by_user reset;
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>-- full groupby in ESPs on a skew column is not allowed. Here we enforce
+>>-- a plan which does not have an exchange node between the grouby and
+>>-- a de-skew hash join. It should fail.
+>>---------------------------------------------------------------------------
+>>
+>>-- CQS 
+>>control query shape esp_exchange(groupby(hash_join(cut, cut)));
+
+--- SQL operation complete.
+>>control query default join_order_by_user 'on';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select sum(t062_sk.ssn) from t062_sk , t062_dm1 
++>where t062_sk.ssn = t062_dm1.ssn group by t062_sk.ssn;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>---------------------------------------------------------------------------
+>>-- add an exchange in between the groupby and the hashjoin. The plan should
+>>-- succeed
+>>---------------------------------------------------------------------------
+>>control query shape esp_exchange(groupby(esp_exchange(hash_join(cut, cut))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select sum(t062_sk.ssn) from t062_sk , t062_dm1 
++>where t062_sk.ssn = t062_dm1.ssn group by t062_sk.ssn;
+
+--- SQL command prepared.
+>>
+>>control query shape off;
+
+--- SQL operation complete.
+>>control query default join_order_by_user 'reset';
+
+--- SQL operation complete.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  2.00E+000
+7    .    8    esp_exchange                    1:4(hash2)            2.00E+000
+6    .    7    hash_groupby                                          2.00E+000
+5    .    6    esp_exchange                    4(hash2):4(h2-ud)     1.00E+007
+4    2    5    hybrid_hash_join                                      1.00E+007
+3    .    4    esp_exchange                    4(h2-ud):4(hash2)     1.00E+004
+.    .    3    trafodion_scan                  T062_SK               1.00E+004
+1    .    2    esp_exchange                    4(h2-br):4(hash2)     1.00E+004
+.    .    1    trafodion_scan                  T062_DM1              1.00E+004
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>-- groupby in ESPs as the either immediate child of a skew buster hash join
+>>-- is not allowed
+>>---------------------------------------------------------------------------
+>>
+>>-- test right child
+>>control query shape esp_exchange(hash_join(cut, groupby(esp_exchange(cut))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select t062_sk.ssn from t062_sk, (select age mx from t062_dm1 group by age) x
++>where t062_sk.ssn = x.mx;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>control query shape off;
+
+--- SQL operation complete.
+>>
+>>-- test left child
+>>control query shape esp_exchange(hash_join(groupby(esp_exchange(cut)), cut));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select t062_sk.ssn from (select age mx from t062_dm1 group by age) x, t062_sk
++>where t062_sk.ssn = x.mx;
+
+--- SQL command prepared.
+>>
+>>control query shape off;
+
+--- SQL operation complete.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+004
+7    .    8    esp_exchange                    1:4(hash2)            1.00E+004
+6    2    7    hybrid_hash_join                                      1.00E+004
+5    .    6    hash_partial_groupby                                  1.00E+001
+4    .    5    esp_exchange                    4(hash2):4(hash2)     1.00E+001
+3    .    4    hash_partial_groupby                                  1.00E+001
+.    .    3    trafodion_scan                  T062_DM1              1.00E+004
+1    .    2    esp_exchange                    4(hash2):4(hash2)     1.00E+004
+.    .    1    trafodion_scan                  T062_SK               1.00E+004
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>-- transpose in ESPs immediate as the right child of a skew buster 
+>>-- hash join is not allowed
+>>---------------------------------------------------------------------------
+>>-- test right child
+>>control query shape esp_exchange(hash_join(cut, transpose(esp_exchange(cut))));
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select t062_sk.ssn from t062_sk, (select * from t062_dm1 transpose age as c1) x;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>control query shape off;
+
+--- SQL operation complete.
+>>
+>>
+>>----------------------
+>>obey TEST062(clnup);
+>>drop table T062_sk;
+
+--- SQL operation complete.
+>>drop table T062_dm1;
+
+--- SQL operation complete.
+>>drop table t062_seed;
+
+--- SQL operation complete.
+>>
+>>
+>>-----------------
+>>
+>>-----------------
+>>obey TEST062(run_char_test);
+>>----------------------
+>>
+>>-- turn on the char-type extension
+>>control query default COMP_BOOL_93 'on';
+
+--- SQL operation complete.
+>>
+>>-- turn on VEG formation for vchars
+>>control query default COMP_BOOL_158 'on';
+
+--- SQL operation complete.
+>>
+>>---------- ISO88591 ----------------
+>>
+>>------------------ case 1 ----------
+>>
+>>
+>>log off;
+>>
+>>create table skc(name char(30) not null,
++>                 userId char(30) not null
++>                )
++>               store by (name);
+
+--- SQL operation complete.
+>>
+>>create table dm2c( name varchar(20) not null,
++>                   salary float (40) not null)
++>               store by (name);
+
+--- SQL operation complete.
+>>
+>>obey test062(doit);
+>>obey test062(loadit);
+>>delete from skc;
+
+--- 0 row(s) deleted.
+>>delete from dm2c;
+
+--- 0 row(s) deleted.
+>>
+>>-- Special note: trailing spaces in these values are added purposely. 
+>>-- Please do not remove them.
+>>-- Some of the 'YS' string is padded with spaces so that the total length
+>>-- is over 20 characters. The number of such instances is over 5 which is
+>>-- the lower limit above which the skew-normal indicator will turn SKEW.
+>>insert into skc values
++>-------------------012345678901234567890123456789
++>('john', 'JBL'), ('YS              ', '8#RTG'),
++>                 ('YS', '8#RTG'), 
++>                 ('YS', '8#RTG'), 
++>                 ('Johnson                     ', 'MNKJ'),
++>('john', 'JBL'), ('YS   ', '8#RTG'),
++>                 ('YS                          ', '8#RTG'), 
++>                 ('YS                          ', '8#RTG'), 
++>                 ('Johnson ', 'MNKJ'),
++>('john', 'JBL'), ('YS                           ', '8#RTG'),
++>                 ('YS                           ', '8#RTG'), 
++>                 ('YS', '8#RTG'), 
++>                 ('Johnson                      ', 'MNKJ'),
++>('john', 'JBL'), ('YS ', '8#RTG'),
++>                 ('YS            ', '8#RTG'), 
++>                 ('YS             ', '8#RTG'), 
++>                 ('Johnson     ', 'MNKJ'),
++>('john', 'JBL'), ('YS                         ', '8#RTG'),
++>                 ('YS            ', '8#RTG'), 
++>                 ('YS             ', '8#RTG'), 
++>                 ('Johnson  ', 'MNKJ'),
++>('martin', 'Perl'),
++>('martin', 'variance'),
++>('martin', 'AS');
+
+--- 28 row(s) inserted.
+>>
+>>-------------------------01234567890123456789
+>>insert into dm2c values('Johnson   ', 12450);
+
+--- 1 row(s) inserted.
+>>insert into dm2c values('0123456789012345678', 12450);
+
+--- 1 row(s) inserted.
+>>insert into dm2c values('martin    ', 40088), ('YS   ', 9990);
+
+--- 2 row(s) inserted.
+>>
+>>
+>>obey TEST062(run_char);
+>>
+>>update statistics for table skc  on name generate 20 intervals;
+
+--- SQL operation complete.
+>>update statistics for table dm2c on name generate 20 intervals;
+
+--- SQL operation complete.
+>>
+>>obey TEST062(default_cqds);
+>>
+>>control query default POS 'off';
+
+--- SQL operation complete.
+>>control query default COMP_BOOL_68 'off';
+
+--- SQL operation complete.
+>> -- enable SkewBuster for small tables
+>>
+>>cqd PARALLEL_NUM_ESPS '4';
+
+--- SQL operation complete.
+>>
+>>cqd HIST_MISSING_STATS_WARNING_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>-- no index scan to avoid the display of index names on NSK that
+>>-- are non-deterministic
+>>control query default HIDE_INDEXES 'ALL';
+
+--- SQL operation complete.
+>>
+>>-- If a value whose frequency is at least 1% of the totalRowCount, then
+>>-- it is considered skewed
+>>control query default SKEW_SENSITIVITY_THRESHOLD '0';
+
+--- SQL operation complete.
+>>control query default SKEW_ROWCOUNT_THRESHOLD '0';
+
+--- SQL operation complete.
+>>
+>>--control query default NESTED_JOINS 'OFF';
+>>control query default MERGE_JOINS 'OFF';
+
+--- SQL operation complete.
+>>
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>control query default CACHE_HISTOGRAMS 'off';
+
+--- SQL operation complete.
+>>
+>>control query default COMP_INT_44 '1';
+
+--- SQL operation complete.
+>> -- pick up any skews
+>>control query default COMP_INT_70 '10';
+
+--- SQL operation complete.
+>> -- 
+>>control query default COMP_INT_7  '11';
+
+--- SQL operation complete.
+>> -- 
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>select count(skc.name) from 
++>skc <<+ cardinality 10e5 >>, dm2c <<+ cardinality 10e4 >> 
++>where skc.name = dm2c.name ;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+000
+7    .    8    sort_partial_aggr_ro                                  1.00E+000
+6    .    7    esp_exchange                    1:4(h2-ud)            1.00E+000
+5    .    6    sort_partial_aggr_le                                  1.00E+000
+4    2    5    hybrid_hash_join                                      2.50E+010
+3    .    4    esp_exchange                    4(h2-ud):1 (m)        1.00E+006
+.    .    3    trafodion_scan                  SKC                   1.00E+006
+1    .    2    esp_exchange                    4(h2-br):1 (m)        1.00E+005
+.    .    1    trafodion_scan                  DM2C                  1.00E+005
+
+--- SQL operation complete.
+>>
+>>execute xx;
+
+(EXPR)              
+--------------------
+
+                  23
+
+--- 1 row(s) selected.
+>>
+>>execute summarize_act_rows;
+
+AVG_ACT_ROWS          SKEWNESS  FILTERED          RANGE        STD_DEV
+--------------------  --------  ----------------  -----------  ------------
+
+                   5  NORMAL    FUNKY_OPT_UNIQUE            1           .50
+
+--- 1 row(s) selected.
+>>
+>>
+>>------------------------------------
+>>
+>>
+>>----------------- 
+>>
+>>------------------ case 2 ----------
+>>drop table skc;
+
+--- SQL operation complete.
+>>create table skc(name varchar(30) not casespecific not null,
++>                 userId varchar(30) not casespecific not null
++>                )
++>               store by (name);
+
+--- SQL operation complete.
+>>
+>>drop table dm2c;
+
+--- SQL operation complete.
+>>create table dm2c( name char(20) not casespecific not null,
++>                   salary float (40) not null)
++>               store by (name);
+
+--- SQL operation complete.
+>>
+>>obey test062(doit);
+>>obey test062(loadit);
+>>delete from skc;
+
+--- 0 row(s) deleted.
+>>delete from dm2c;
+
+--- 0 row(s) deleted.
+>>
+>>-- Special note: trailing spaces in these values are added purposely. 
+>>-- Please do not remove them.
+>>-- Some of the 'YS' string is padded with spaces so that the total length
+>>-- is over 20 characters. The number of such instances is over 5 which is
+>>-- the lower limit above which the skew-normal indicator will turn SKEW.
+>>insert into skc values
++>-------------------012345678901234567890123456789
++>('john', 'JBL'), ('YS              ', '8#RTG'),
++>                 ('YS', '8#RTG'), 
++>                 ('YS', '8#RTG'), 
++>                 ('Johnson                     ', 'MNKJ'),
++>('john', 'JBL'), ('YS   ', '8#RTG'),
++>                 ('YS                          ', '8#RTG'), 
++>                 ('YS                          ', '8#RTG'), 
++>                 ('Johnson ', 'MNKJ'),
++>('john', 'JBL'), ('YS                           ', '8#RTG'),
++>                 ('YS                           ', '8#RTG'), 
++>                 ('YS', '8#RTG'), 
++>                 ('Johnson                      ', 'MNKJ'),
++>('john', 'JBL'), ('YS ', '8#RTG'),
++>                 ('YS            ', '8#RTG'), 
++>                 ('YS             ', '8#RTG'), 
++>                 ('Johnson     ', 'MNKJ'),
++>('john', 'JBL'), ('YS                         ', '8#RTG'),
++>                 ('YS            ', '8#RTG'), 
++>                 ('YS             ', '8#RTG'), 
++>                 ('Johnson  ', 'MNKJ'),
++>('martin', 'Perl'),
++>('martin', 'variance'),
++>('martin', 'AS');
+
+--- 28 row(s) inserted.
+>>
+>>-------------------------01234567890123456789
+>>insert into dm2c values('Johnson   ', 12450);
+
+--- 1 row(s) inserted.
+>>insert into dm2c values('0123456789012345678', 12450);
+
+--- 1 row(s) inserted.
+>>insert into dm2c values('martin    ', 40088), ('YS   ', 9990);
+
+--- 2 row(s) inserted.
+>>
+>>
+>>obey TEST062(run_char);
+>>
+>>update statistics for table skc  on name generate 20 intervals;
+
+--- SQL operation complete.
+>>update statistics for table dm2c on name generate 20 intervals;
+
+--- SQL operation complete.
+>>
+>>obey TEST062(default_cqds);
+>>
+>>control query default POS 'off';
+
+--- SQL operation complete.
+>>control query default COMP_BOOL_68 'off';
+
+--- SQL operation complete.
+>> -- enable SkewBuster for small tables
+>>
+>>cqd PARALLEL_NUM_ESPS '4';
+
+--- SQL operation complete.
+>>
+>>cqd HIST_MISSING_STATS_WARNING_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>-- no index scan to avoid the display of index names on NSK that
+>>-- are non-deterministic
+>>control query default HIDE_INDEXES 'ALL';
+
+--- SQL operation complete.
+>>
+>>-- If a value whose frequency is at least 1% of the totalRowCount, then
+>>-- it is considered skewed
+>>control query default SKEW_SENSITIVITY_THRESHOLD '0';
+
+--- SQL operation complete.
+>>control query default SKEW_ROWCOUNT_THRESHOLD '0';
+
+--- SQL operation complete.
+>>
+>>--control query default NESTED_JOINS 'OFF';
+>>control query default MERGE_JOINS 'OFF';
+
+--- SQL operation complete.
+>>
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>control query default CACHE_HISTOGRAMS 'off';
+
+--- SQL operation complete.
+>>
+>>control query default COMP_INT_44 '1';
+
+--- SQL operation complete.
+>> -- pick up any skews
+>>control query default COMP_INT_70 '10';
+
+--- SQL operation complete.
+>> -- 
+>>control query default COMP_INT_7  '11';
+
+--- SQL operation complete.
+>> -- 
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>select count(skc.name) from 
++>skc <<+ cardinality 10e5 >>, dm2c <<+ cardinality 10e4 >> 
++>where skc.name = dm2c.name ;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+000
+7    .    8    sort_partial_aggr_ro                                  1.00E+000
+6    .    7    esp_exchange                    1:4(h2-ud)            1.00E+000
+5    .    6    sort_partial_aggr_le                                  1.00E+000
+4    2    5    hybrid_hash_join                                      2.50E+010
+3    .    4    esp_exchange                    4(h2-ud):1 (m)        1.00E+006
+.    .    3    trafodion_scan                  SKC                   1.00E+006
+1    .    2    esp_exchange                    4(h2-br):1 (m)        1.00E+005
+.    .    1    trafodion_scan                  DM2C                  1.00E+005
+
+--- SQL operation complete.
+>>
+>>execute xx;
+
+(EXPR)              
+--------------------
+
+                  23
+
+--- 1 row(s) selected.
+>>
+>>execute summarize_act_rows;
+
+AVG_ACT_ROWS          SKEWNESS  FILTERED          RANGE        STD_DEV
+--------------------  --------  ----------------  -----------  ------------
+
+                   5  NORMAL    FUNKY_OPT_UNIQUE            1           .50
+
+--- 1 row(s) selected.
+>>
+>>
+>>------------------------------------
+>>
+>>
+>>----------------- 
+>>
+>>------------ UCS2 -------------------
+>>
+>>------------------ case 1 ----------
+>>drop table skc;
+
+--- SQL operation complete.
+>>create table skc(name varchar(20) character set UCS2 not casespecific not null,
++>                 userId varchar(20) character set UCS2 not casespecific not null
++>                )
++>               store by (name);
+
+--- SQL operation complete.
+>>
+>>
+>>drop table dm2c;
+
+--- SQL operation complete.
+>>create table dm2c( name char(30) character set UCS2 not null,
++>                   salary float (40) not null)
++>               store by (name);
+
+--- SQL operation complete.
+>>
+>>obey test062(doitr_ucs2);
+>>obey test062(loaditr_ucs2);
+>>delete from skc;
+
+--- 0 row(s) deleted.
+>>delete from dm2c;
+
+--- 0 row(s) deleted.
+>>
+>>-- Special note: trailing spaces in these values are added purposely.
+>>-- Please do not remove them.
+>>-- Some of the 'YS' string is padded with spaces so that the total length
+>>-- is over 20 characters. The number of such instances is over 5 which is
+>>-- the lower limit above which the skew-normal indicator will turn SKEW.
+>>insert into skc values
++>-------------------01234567890123456789
++>(_ucs2'john', _ucs2'JBL'), (_ucs2'YS              ', _ucs2'8#RTG'),
++>(_ucs2'YS', _ucs2'8#RTG'), (_ucs2'YS', _ucs2'8#RTG'),
++>(_ucs2'Johnson            ', _ucs2'MNKJ'), (_ucs2'john', _ucs2'JBL'), 
++>(_ucs2'YS   ', _ucs2'8#RTG'),
++>                 (_ucs2'YS                 ', _ucs2'8#RTG'),
++>                 (_ucs2'YS                 ', _ucs2'8#RTG'),
++>                 (_ucs2'Johnson ', _ucs2'MNKJ'),
++>(_ucs2'john', _ucs2'JBL'), (_ucs2'YS               ', _ucs2'8#RTG'),
++>                 (_ucs2'YS               ', _ucs2'8#RTG'),
++>                 (_ucs2'YS', _ucs2'8#RTG'),
++>                 (_ucs2'Johnson      ', _ucs2'MNKJ'),
++>(_ucs2'john', _ucs2'JBL'), (_ucs2'YS ', _ucs2'8#RTG'),
++>                 (_ucs2'YS            ', _ucs2'8#RTG'),
++>                 (_ucs2'YS             ', _ucs2'8#RTG'),
++>                 (_ucs2'Johnson     ', _ucs2'MNKJ'),
++>(_ucs2'john', _ucs2'JBL'), (_ucs2'YS               ', _ucs2'8#RTG'),
++>                 (_ucs2'YS            ', _ucs2'8#RTG'),
++>                 (_ucs2'YS             ', _ucs2'8#RTG'),
++>                 (_ucs2'Johnson  ', _ucs2'MNKJ'),
++>(_ucs2'martin', _ucs2'Perl'),
++>(_ucs2'martin', _ucs2'variance'),
++>(_ucs2'martin', _ucs2'AS');
+
+--- 28 row(s) inserted.
+>>
+>>-------------------------012345678901234567890123456789
+>>insert into dm2c values(_ucs2'YS                       ', 12450);
+
+--- 1 row(s) inserted.
+>>insert into dm2c values(_ucs2'0123456789012345678', 12450);
+
+--- 1 row(s) inserted.
+>>insert into dm2c values(_ucs2'martin    ', 40088), (_ucs2'johnson', 9990);
+
+--- 2 row(s) inserted.
+>>
+>>obey TEST062(run_char);
+>>
+>>update statistics for table skc  on name generate 20 intervals;
+
+--- SQL operation complete.
+>>update statistics for table dm2c on name generate 20 intervals;
+
+--- SQL operation complete.
+>>
+>>obey TEST062(default_cqds);
+>>
+>>control query default POS 'off';
+
+--- SQL operation complete.
+>>control query default COMP_BOOL_68 'off';
+
+--- SQL operation complete.
+>> -- enable SkewBuster for small tables
+>>
+>>cqd PARALLEL_NUM_ESPS '4';
+
+--- SQL operation complete.
+>>
+>>cqd HIST_MISSING_STATS_WARNING_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>-- no index scan to avoid the display of index names on NSK that
+>>-- are non-deterministic
+>>control query default HIDE_INDEXES 'ALL';
+
+--- SQL operation complete.
+>>
+>>-- If a value whose frequency is at least 1% of the totalRowCount, then
+>>-- it is considered skewed
+>>control query default SKEW_SENSITIVITY_THRESHOLD '0';
+
+--- SQL operation complete.
+>>control query default SKEW_ROWCOUNT_THRESHOLD '0';
+
+--- SQL operation complete.
+>>
+>>--control query default NESTED_JOINS 'OFF';
+>>control query default MERGE_JOINS 'OFF';
+
+--- SQL operation complete.
+>>
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>control query default CACHE_HISTOGRAMS 'off';
+
+--- SQL operation complete.
+>>
+>>control query default COMP_INT_44 '1';
+
+--- SQL operation complete.
+>> -- pick up any skews
+>>control query default COMP_INT_70 '10';
+
+--- SQL operation complete.
+>> -- 
+>>control query default COMP_INT_7  '11';
+
+--- SQL operation complete.
+>> -- 
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>select count(skc.name) from 
++>skc <<+ cardinality 10e5 >>, dm2c <<+ cardinality 10e4 >> 
++>where skc.name = dm2c.name ;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+000
+7    .    8    sort_partial_aggr_ro                                  1.00E+000
+6    .    7    esp_exchange                    1:4(h2-ud)            1.00E+000
+5    .    6    sort_partial_aggr_le                                  1.00E+000
+4    2    5    hybrid_hash_join                                      2.50E+010
+3    .    4    esp_exchange                    4(h2-ud):1 (m)        1.00E+006
+.    .    3    trafodion_scan                  SKC                   1.00E+006
+1    .    2    esp_exchange                    4(h2-br):1 (m)        1.00E+005
+.    .    1    trafodion_scan                  DM2C                  1.00E+005
+
+--- SQL operation complete.
+>>
+>>execute xx;
+
+(EXPR)              
+--------------------
+
+                  18
+
+--- 1 row(s) selected.
+>>
+>>execute summarize_act_rows;
+
+AVG_ACT_ROWS          SKEWNESS  FILTERED          RANGE        STD_DEV
+--------------------  --------  ----------------  -----------  ------------
+
+                   4  NORMAL    FUNKY_OPT_UNIQUE            2          1.00
+
+--- 1 row(s) selected.
+>>
+>>
+>>------------------------------------
+>>
+>>
+>>
+>>
+>>------------------ case 2 ----------
+>>drop table skc;
+
+--- SQL operation complete.
+>>create table skc(name varchar(20) character set UCS2 not casespecific not null,
++>                 userId varchar(20) character set UCS2 not casespecific not null
++>                )
++>               store by (name);
+
+--- SQL operation complete.
+>>
+>>
+>>drop table dm2c;
+
+--- SQL operation complete.
+>>create table dm2c( name varchar(30) character set UCS2 not null,
++>                   salary float (40) not null)
++>               store by (name);
+
+--- SQL operation complete.
+>>
+>>obey test062(doitr_ucs2);
+>>obey test062(loaditr_ucs2);
+>>delete from skc;
+
+--- 0 row(s) deleted.
+>>delete from dm2c;
+
+--- 0 row(s) deleted.
+>>
+>>-- Special note: trailing spaces in these values are added purposely.
+>>-- Please do not remove them.
+>>-- Some of the 'YS' string is padded with spaces so that the total length
+>>-- is over 20 characters. The number of such instances is over 5 which is
+>>-- the lower limit above which the skew-normal indicator will turn SKEW.
+>>insert into skc values
++>-------------------01234567890123456789
++>(_ucs2'john', _ucs2'JBL'), (_ucs2'YS              ', _ucs2'8#RTG'),
++>(_ucs2'YS', _ucs2'8#RTG'), (_ucs2'YS', _ucs2'8#RTG'),
++>(_ucs2'Johnson            ', _ucs2'MNKJ'), (_ucs2'john', _ucs2'JBL'), 
++>(_ucs2'YS   ', _ucs2'8#RTG'),
++>                 (_ucs2'YS                 ', _ucs2'8#RTG'),
++>                 (_ucs2'YS                 ', _ucs2'8#RTG'),
++>                 (_ucs2'Johnson ', _ucs2'MNKJ'),
++>(_ucs2'john', _ucs2'JBL'), (_ucs2'YS               ', _ucs2'8#RTG'),
++>                 (_ucs2'YS               ', _ucs2'8#RTG'),
++>                 (_ucs2'YS', _ucs2'8#RTG'),
++>                 (_ucs2'Johnson      ', _ucs2'MNKJ'),
++>(_ucs2'john', _ucs2'JBL'), (_ucs2'YS ', _ucs2'8#RTG'),
++>                 (_ucs2'YS            ', _ucs2'8#RTG'),
++>                 (_ucs2'YS             ', _ucs2'8#RTG'),
++>                 (_ucs2'Johnson     ', _ucs2'MNKJ'),
++>(_ucs2'john', _ucs2'JBL'), (_ucs2'YS               ', _ucs2'8#RTG'),
++>                 (_ucs2'YS            ', _ucs2'8#RTG'),
++>                 (_ucs2'YS             ', _ucs2'8#RTG'),
++>                 (_ucs2'Johnson  ', _ucs2'MNKJ'),
++>(_ucs2'martin', _ucs2'Perl'),
++>(_ucs2'martin', _ucs2'variance'),
++>(_ucs2'martin', _ucs2'AS');
+
+--- 28 row(s) inserted.
+>>
+>>-------------------------012345678901234567890123456789
+>>insert into dm2c values(_ucs2'YS                       ', 12450);
+
+--- 1 row(s) inserted.
+>>insert into dm2c values(_ucs2'0123456789012345678', 12450);
+
+--- 1 row(s) inserted.
+>>insert into dm2c values(_ucs2'martin    ', 40088), (_ucs2'johnson', 9990);
+
+--- 2 row(s) inserted.
+>>
+>>obey TEST062(run_char);
+>>
+>>update statistics for table skc  on name generate 20 intervals;
+
+--- SQL operation complete.
+>>update statistics for table dm2c on name generate 20 intervals;
+
+--- SQL operation complete.
+>>
+>>obey TEST062(default_cqds);
+>>
+>>control query default POS 'off';
+
+--- SQL operation complete.
+>>control query default COMP_BOOL_68 'off';
+
+--- SQL operation complete.
+>> -- enable SkewBuster for small tables
+>>
+>>cqd PARALLEL_NUM_ESPS '4';
+
+--- SQL operation complete.
+>>
+>>cqd HIST_MISSING_STATS_WARNING_LEVEL '0';
+
+--- SQL operation complete.
+>>
+>>-- no index scan to avoid the display of index names on NSK that
+>>-- are non-deterministic
+>>control query default HIDE_INDEXES 'ALL';
+
+--- SQL operation complete.
+>>
+>>-- If a value whose frequency is at least 1% of the totalRowCount, then
+>>-- it is considered skewed
+>>control query default SKEW_SENSITIVITY_THRESHOLD '0';
+
+--- SQL operation complete.
+>>control query default SKEW_ROWCOUNT_THRESHOLD '0';
+
+--- SQL operation complete.
+>>
+>>--control query default NESTED_JOINS 'OFF';
+>>control query default MERGE_JOINS 'OFF';
+
+--- SQL operation complete.
+>>
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>control query default CACHE_HISTOGRAMS 'off';
+
+--- SQL operation complete.
+>>
+>>control query default COMP_INT_44 '1';
+
+--- SQL operation complete.
+>> -- pick up any skews
+>>control query default COMP_INT_70 '10';
+
+--- SQL operation complete.
+>> -- 
+>>control query default COMP_INT_7  '11';
+
+--- SQL operation complete.
+>> -- 
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>
+>>---------------------------------------------------------------------------
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>
+>>prepare xx from 
++>select count(skc.name) from 
++>skc <<+ cardinality 10e5 >>, dm2c <<+ cardinality 10e4 >> 
++>where skc.name = dm2c.name ;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+000
+7    .    8    sort_partial_aggr_ro                                  1.00E+000
+6    .    7    esp_exchange                    1:4(h2-ud)            1.00E+000
+5    .    6    sort_partial_aggr_le                                  1.00E+000
+4    2    5    hybrid_hash_join                                      2.50E+010
+3    .    4    esp_exchange                    4(h2-ud):1 (m)        1.00E+006
+.    .    3    trafodion_scan                  SKC                   1.00E+006
+1    .    2    esp_exchange                    4(h2-br):1 (m)        1.00E+005
+.    .    1    trafodion_scan                  DM2C                  1.00E+005
+
+--- SQL operation complete.
+>>
+>>execute xx;
+
+(EXPR)              
+--------------------
+
+                  18
+
+--- 1 row(s) selected.
+>>
+>>execute summarize_act_rows;
+
+AVG_ACT_ROWS          SKEWNESS  FILTERED          RANGE        STD_DEV
+--------------------  --------  ----------------  -----------  ------------
+
+                   4  NORMAL    FUNKY_OPT_UNIQUE            2          1.00
+
+--- 1 row(s) selected.
+>>
+>>
+>>------------------------------------
+>>
+>>
+>>
+>>
+>>
+>>----------------- 
+>>obey TEST062(run_numeric_test);
+>>
+>>obey TEST062(run_numeric_9_4_test);
+>>obey TEST062(create_and_load_9_4);
+>>
+>>log off;
+>>
+>>CREATE TABLE table1k (ssn largeint not null,
++>                      sixteen numeric(9,4) NOT NULL,
++>                      four numeric(6, 4) NOT NULL)
++>                STORE BY (ssn)
++>salt using 4 partitions
++>;
+
+--- SQL operation complete.
+>>
+>>
+>>insert into table1k values
++>     (1, 11000.8611, 1.1111),
++>
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), 
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
++>
++>     (6, 6.9998, 6.6666), (7, 497.9398, 7.7777),
++>     (8, 47.998, 7.7777), (9, 4.3998, 7.7777),
++>     (9, 4.3998, 7.7777), (9, 4.3998, 7.7777),
++>     (9, 4.3998, 7.7777);
+
+--- 112 row(s) inserted.
+>>
+>>
+>>update statistics for table table1k on every column;
+
+--- SQL operation complete.
+>>
+>>--------------------------------------
+>>obey TEST062(do_numeric_test);
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>control query default SKEW_ROWCOUNT_THRESHOLD '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select min(t1.sixteen) from
++> table1k t1 <<+ cardinality 10e5 >>,
++> table1k t2 <<+ cardinality 10e5 >>
++>where t1.sixteen=t2.sixteen;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+000
+7    .    8    sort_partial_aggr_ro                                  1.00E+000
+6    .    7    esp_exchange                    1:4(h2-ud)            1.00E+000
+5    .    6    sort_partial_aggr_le                                  1.00E+000
+4    2    5    hybrid_hash_join                                      8.63E+011
+3    .    4    esp_exchange                    4(h2-ud):4(hash2)     1.00E+006
+.    .    3    trafodion_scan                  TABLE1K               1.00E+006
+1    .    2    esp_exchange                    4(h2-br):4(hash2)     1.00E+006
+.    .    1    trafodion_scan                  TABLE1K               1.00E+006
+
+--- SQL operation complete.
+>>execute xx;
+
+(EXPR)      
+------------
+
+      4.3998
+
+--- 1 row(s) selected.
+>>
+>>execute summarize_act_rows;
+
+AVG_ACT_ROWS          SKEWNESS  FILTERED          RANGE        STD_DEV
+--------------------  --------  ----------------  -----------  ------------
+
+                2709  NORMAL    FUNKY_OPT_UNIQUE            3          1.41
+
+--- 1 row(s) selected.
+>>
+>>-- negative test. Columns sixteen and four have different precision and
+>>-- scale. No SB plan.
+>>prepare xx from
++>select min(t1.sixteen) from
++> table1k t1 <<+ cardinality 10e5 >>,
++> table1k t2 <<+ cardinality 10e5 >>
++>where t1.sixteen=t2.four;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+000
+7    .    8    sort_partial_aggr_ro                                  1.00E+000
+6    .    7    esp_exchange                    1:4(hash2)            1.00E+000
+5    .    6    sort_partial_aggr_le                                  1.00E+000
+4    2    5    hybrid_hash_join                                      1.66E+011
+3    .    4    esp_exchange                    4(hash2):4(hash2)     1.00E+006
+.    .    3    trafodion_scan                  TABLE1K               1.00E+006
+1    .    2    esp_exchange                    4(hash2):4(hash2)     1.00E+006
+.    .    1    trafodion_scan                  TABLE1K               1.00E+006
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------------
+>>drop table table1k;
+
+--- SQL operation complete.
+>>
+>>
+>>-------------------------------
+>>------------------------------------
+>>
+>>obey TEST062(run_skewed_nulls_test);
+>>-------------------------------
+>>
+>>log off;
+>>
+>>create table t062_seed(a int not null, primary key(a));
+
+--- SQL operation complete.
+>>
+>>create table t062A
++>  (uniq largeint not null,
++>   c10K largeint,
++>   c1K   int,
++>   c100  int,
++>   c10   int,
++>   c1    int,
++>   primary key (uniq)
++>  )
++>  salt using 4 partitions ;
+
+--- SQL operation complete.
+>>
+>>create table t062B
++>  (uniq smallint unsigned not null,
++>   c10K  smallint unsigned ,
++>   c1K   int,
++>   c100  int,
++>   c10   int,
++>   c1    int,
++>   primary key (uniq)
++>  )
++>  salt using 4 partitions ;
+
+--- SQL operation complete.
+>>
+>>insert into  t062_seed values (1);
+
+--- 1 row(s) inserted.
+>>
+>>insert into t062A
++>  select * from (
++>  select
++>  0 + (10000 * x10000) + (1000 * x1000) + (100 * x100) + (10 * x10) + +( 1 * x1) as uniq,
++>  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
++>  0 + (100 * x100) + (10 * x10) + (1 * x1),
++>  0 + (10 * x10) + (1 * x1),
++>  0 + (1 * x1),
++>  0
++>  from t062_seed
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>  ) as src where src.uniq < 10921;
+
+--- 10921 row(s) inserted.
+>>
+>>
+>>prepare s2 from
++>insert into t062b select
++>   uniq + ?p,
++>   uniq,
++>   c1K,
++>   c100,
++>   c10,
++>   c1
++>  from t062A;
+
+--- SQL command prepared.
+>>
+>>set param ?p 10922;
+>> execute s2;
+
+--- 10921 row(s) inserted.
+>>set param ?p 21845;
+>> execute s2;
+
+--- 10921 row(s) inserted.
+>>
+>>update t062a set c10k = 1 where uniq < 21843;
+
+--- 10921 row(s) updated.
+>>update t062b set c1k = 1;
+
+--- 21842 row(s) updated.
+>>
+>>update statistics for table t062a on c10k;
+
+--- SQL operation complete.
+>>update statistics for table t062b on uniq;
+
+--- SQL operation complete.
+>>update statistics for table t062b on c1k;
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are ("_SALT_"),(UNIQ),("_SALT_", UNIQ).
+
+--- SQL operation completed with warnings.
+>>update statistics for table t062b on c100;
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are ("_SALT_"),(UNIQ),("_SALT_", UNIQ),(C1K).
+
+--- SQL operation completed with warnings.
+>>update statistics for table t062b on c10;
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are ("_SALT_"),(UNIQ),("_SALT_", UNIQ),(C1K),(C100).
+
+--- SQL operation completed with warnings.
+>>
+>>
+>>control query default detailed_statistics 'ALL';
+
+--- SQL operation complete.
+>>control query default SKEW_ROWCOUNT_THRESHOLD '0';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select max(fact.uniq) from
++>t062a fact left join t062b dm1
++>on fact.c10k = dm1.uniq
++>left join t062b dm2 <<+ cardinality 10e6 >> 
++>on dm1.c1k = dm2.c100;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+12   .    13   root                                                  1.00E+000
+11   .    12   sort_partial_aggr_ro                                  1.00E+000
+10   .    11   esp_exchange                    1:4(h2-ud)            1.00E+000
+9    .    10   sort_partial_aggr_le                                  1.00E+000
+8    2    9    left_hybrid_hash_joi                                  1.09E+009
+7    .    8    esp_exchange                    4(h2-ud):4(h2-ud)     1.09E+004
+6    4    7    left_hybrid_hash_joi                                  1.09E+004
+5    .    6    esp_exchange                    4(h2-ud):4(hash2)     1.09E+004
+.    .    5    trafodion_scan                  T062A                 1.09E+004
+3    .    4    esp_exchange                    4(h2-br):4(hash2)     2.18E+004
+.    .    3    trafodion_scan                  T062B                 2.18E+004
+1    .    2    esp_exchange                    4(h2-br):4(hash2)     1.00E+007
+.    .    1    trafodion_scan                  T062B                 1.00E+007
+
+--- SQL operation complete.
+>>execute xx;
+
+(EXPR)              
+--------------------
+
+               10920
+
+--- 1 row(s) selected.
+>>execute summarize_act_rows;
+
+AVG_ACT_ROWS          SKEWNESS  FILTERED          RANGE        STD_DEV
+--------------------  --------  ----------------  -----------  ------------
+
+                2730  NORMAL    FUNKY_OPT_UNIQUE            3          1.28
+
+--- 1 row(s) selected.
+>>
+>>
+>>------------------------------------
+>>--obey TEST062(run_mcsb_with_mcskews_test);
+>>log;

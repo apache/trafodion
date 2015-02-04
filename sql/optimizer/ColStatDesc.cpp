@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -3222,6 +3222,7 @@ ColStatDescList::getCardOfBusiestStream(const PartitioningFunction* partFunc,
   //   2) the round robin partitioning scheme is used.
   //   3) the skew buster partitioning scheme is used.
   if ( (partKey.isEmpty()) ||
+       (partFunc->isASkewedDataPartitioningFunction()) ||
        (partFunc->isARoundRobinPartitioningFunction()) )
   {
 	 Lng32 availableCpus = MINOF( numOfParts , countOfCPUs );
@@ -11762,6 +11763,7 @@ ColStatDescList::getCardOfBusiestStreamForUnderNJ(
   // if number of partitions is 1, return rowcount
 
   if ( ( numOfParts == 1) ||
+       (partFunc->isASkewedDataPartitioningFunction()) ||
 	   ( partFunc->isASinglePartitionPartitioningFunction() ) )
   {
 	return (rowCount).minCsOne();
@@ -11773,6 +11775,7 @@ ColStatDescList::getCardOfBusiestStreamForUnderNJ(
   //   2) the round robin partitioning scheme is used.
   //   3) the skew buster partitioning scheme is used.
   if ( (partKey.isEmpty()) ||
+       (partFunc->isASkewedDataPartitioningFunction()) ||
        (partFunc->isARoundRobinPartitioningFunction()) )
   {
 	 Lng32 availableCpus = MINOF( numOfParts , countOfCPUs );

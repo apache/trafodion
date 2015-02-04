@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ class RequireHash;
 class RequireHash2;
 class RequireHive;
 class RequireHashDist;
+class RequireSkewed;
 class RequireRange;
 class RequireRoundRobin;
 
@@ -130,6 +131,10 @@ public:
   RequireHash2*
                    castToRequireHash2() const;
 
+  virtual const
+  RequireSkewed*
+                   castToRequireSkewed() const;
+
 
   virtual const
   RequireRange*
@@ -185,6 +190,8 @@ public:
   virtual NABoolean isRequirementHash() const
     { return FALSE; }
 
+  virtual NABoolean isRequirementSkewed() const
+    { return FALSE; }
 
   virtual NABoolean isRequirementRange() const
     { return FALSE; }
@@ -193,6 +200,9 @@ public:
   virtual NABoolean isRequirementRoundRobin() const
     { return FALSE; }
   // LCOV_EXCL_STOP
+
+  virtual NABoolean isRequirementSkewBusterBroadcast() const
+    { return FALSE; };
 
 
   virtual NABoolean isRequirementHive() const
@@ -325,6 +335,10 @@ public:
 
   virtual void display() const;
 
+  // helper function on skew property
+  virtual const skewProperty& getSkewProperty() const { return skewProperty_; };
+  virtual void setSkewProperty(const skewProperty& sk) { skewProperty_ = sk; };
+
 protected:
 
   // ---------------------------------------------------------------------
@@ -335,23 +349,27 @@ protected:
                                const ValueIdSet& partitioningKeyColumns,
                                Lng32 numberOfPartitions = 
                                       ANY_NUMBER_OF_PARTITIONS
+                               ,const skewProperty& sk = ANY_SKEW_PROPERTY
                                )
      : PartitioningRequirement(FUZZY_PART_REQ),
        requirementType_ (rType),
        partitioningKeyColumns_(partitioningKeyColumns),
        partitioningKeyIsSpecified_(TRUE),
        numberOfPartitions_ (numberOfPartitions)
+     ,skewProperty_(sk)
   {
   }
 
   FuzzyPartitioningRequirement(const FuzzyPartReqTypeEnum rType,
                                Lng32 numberOfPartitions = 
                                       ANY_NUMBER_OF_PARTITIONS
+                               ,const skewProperty& sk = ANY_SKEW_PROPERTY
                                )
      : PartitioningRequirement(FUZZY_PART_REQ),
        requirementType_ (rType),
        partitioningKeyIsSpecified_(FALSE),
        numberOfPartitions_ (numberOfPartitions)
+     ,skewProperty_(sk)
   {
   }
 
@@ -361,6 +379,7 @@ protected:
        partitioningKeyColumns_(other.partitioningKeyColumns_),
        partitioningKeyIsSpecified_(other.partitioningKeyIsSpecified_),
        numberOfPartitions_ (other.numberOfPartitions_)
+     ,skewProperty_(other.skewProperty_)
   {
   }
 
@@ -370,7 +389,7 @@ private :
   ValueIdSet partitioningKeyColumns_;
   NABoolean partitioningKeyIsSpecified_;
   Lng32 numberOfPartitions_;
-
+  skewProperty skewProperty_;
 }; // class FuzzyPartitioningRequirement
 
 
@@ -443,6 +462,7 @@ public:
     }
   // LCOV_EXCL_STOP
 
+  virtual NABoolean isRequirementSkewBusterBroadcast() const;
 
   // --------------------------------------------------------------------
   // Method used by the optimizer for replacing a partitioning
@@ -516,6 +536,7 @@ public:
                                    Lng32 numberOfPartitions = 
                                           ANY_NUMBER_OF_PARTITIONS,
                                    NABoolean requireHash2Only = FALSE
+                                   ,const skewProperty& sk = ANY_SKEW_PROPERTY
                                    );
 
   RequireApproximatelyNPartitions (float numOfPartsAllowedDeviation = 
@@ -523,6 +544,7 @@ public:
                                    Lng32 numberOfPartitions = 
                                           ANY_NUMBER_OF_PARTITIONS,
                                    NABoolean requireHash2Only = FALSE
+                                   ,const skewProperty& sk = ANY_SKEW_PROPERTY
                                    );
 
   RequireApproximatelyNPartitions
@@ -761,6 +783,7 @@ public:
      : FullySpecifiedPartitioningRequirement(partFunc)
   {
     CMPASSERT(partFunc->isAHashPartitioningFunction());
+    CMPASSERT(NOT partFunc->isASkewedDataPartitioningFunction());
   }
 
   RequireHash (const RequireHash& other)
@@ -800,6 +823,7 @@ public:
      : FullySpecifiedPartitioningRequirement(partFunc)
   {
     CMPASSERT(partFunc->isAHashDistPartitioningFunction());
+    CMPASSERT(NOT partFunc->isASkewedDataPartitioningFunction());
   }
 
   RequireHashDist (const RequireHashDist& other)
@@ -841,6 +865,7 @@ public:
      : FullySpecifiedPartitioningRequirement(partFunc)
   {
     CMPASSERT(partFunc->isAHash2PartitioningFunction());
+    CMPASSERT(NOT partFunc->isASkewedDataPartitioningFunction());
   }
 
   RequireHash2 (const RequireHash2& other)
@@ -873,6 +898,61 @@ public:
 
 }; // class RequireHash2
 
+class RequireSkewed : public FullySpecifiedPartitioningRequirement
+{
+public:
+
+  RequireSkewed (PartitioningFunction* partFunc)
+     : FullySpecifiedPartitioningRequirement(partFunc)
+  {
+    CMPASSERT(partFunc->isASkewedDataPartitioningFunction());
+  }
+
+  RequireSkewed (const RequireSkewed& other)
+    :  FullySpecifiedPartitioningRequirement (other)
+  {
+  }
+
+  const ValueIdSet& getPartialPartitioningKey() const;
+
+  NABoolean isRequirementSkewed() const { return TRUE; }
+
+  COMPARE_RESULT 
+  comparePartReqToReq(const PartitioningRequirement* other) const;
+
+  virtual NABoolean partReqAndFuncCompatible
+                           (const PartitioningFunction* other) const;
+
+  NABoolean isReplicate() const { return getSkewProperty().isBroadcasted(); }
+
+  // ---------------------------------------------------------------------
+  // Perform a type-safe pointer cast.
+  // ---------------------------------------------------------------------
+  virtual const
+  RequireSkewed* castToRequireSkewed() const;
+
+  // --------------------------------------------------------------------
+  // A method for copying the partitioning function.
+  // --------------------------------------------------------------------
+  virtual PartitioningRequirement* copy() const;
+
+  // Compare skew data property contained in this object with those
+  // contained in a partitioning function
+  NABoolean compareSkewRequirement(const PartitioningFunction& other) const;
+
+  virtual const skewProperty& getSkewProperty() const;
+
+  // ---------------------------------------------------------------------
+  // Print.
+  // ---------------------------------------------------------------------
+  virtual void print( FILE* ofd = stdout,
+                      const char* indent = DEFAULT_INDENT,
+                      const char* title = "RequireSkewed") const;
+
+  virtual void display() const;
+
+protected:
+}; // class RequireSkewed
 
 class RequireRange : public FullySpecifiedPartitioningRequirement
 {

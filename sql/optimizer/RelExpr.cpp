@@ -1,7 +1,7 @@
 /***********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -5538,6 +5538,10 @@ Int32 Join::getParallelJoinType(ParallelJoinTypeDetail *optionalDetail) const
       {
         // the regular TYPE1 join (including SkewBuster)
         result = 1;
+
+        if (opf->isASkewedDataPartitioningFunction())
+          detailedType = PAR_SB;
+
       }
   }
 
@@ -14980,6 +14984,37 @@ void RelExpr::setCascadesTraceInfo(RelExpr *src)
   memoExprId_ = CURRSTMT_OPTDEFAULTS->updateGetMemoExprCount();
 }
 
+NABoolean Join::childNodeContainSkew(
+                      CollIndex i,                 // IN: which child
+                      const ValueIdSet& joinPreds, // IN: the join predicate
+                      double threshold,            // IN: the threshold
+                      SkewedValueList** skList      // OUT: the skew list
+                               ) const
+{
+   // Can not deal with multicolumn skew in this method.
+   if ( joinPreds.entries() != 1 )
+      return FALSE;
+
+   NABoolean statsExist; // a place holder
+
+   Int32 skews = 0;
+   for(ValueId vid = joinPreds.init(); joinPreds.next(vid); joinPreds.advance(vid)) {
+      *skList = child(i).getGroupAttr()-> getSkewedValues(vid, threshold,
+                    statsExist,
+                    (*GLOBAL_EMPTY_INPUT_LOGPROP),
+                    isLeftJoin()/* include skewed NULLs only for left outer join */
+                                                         );
+
+      if (*skList == NULL || (*skList)->entries() == 0)
+         break;
+      else
+         skews++;
+    }
+
+   return ( skews == joinPreds.entries() );
+}
+
+
 // 
 // Check if some join column is of a SQL type whose run-time
 // implementation has a limitation for SB to work.
@@ -15063,6 +15098,322 @@ NABoolean Join::multiColumnjoinPredOKforSB(ValueIdSet& joinPreds)
         return FALSE;
    }
    return TRUE;
+}
+
+// The new way to capture MC skews. All such skews have been computed during
+// update stats. 
+NABoolean Join::childNodeContainMultiColumnSkew(
+                      CollIndex i,                 // IN: which child to work on
+                      const ValueIdSet& joinPreds, // IN: the join predicate
+                      double mc_threshold,         // IN: multi-column threshold
+                      Lng32 countOfPipelines,      // IN:
+                      SkewedValueList** skList     // OUT: the skew list
+                               ) 
+{
+   if (joinPreds.entries() <= 1)
+       return FALSE;
+
+   const ColStatDescList& theColList =
+          child(i).outputLogProp((*GLOBAL_EMPTY_INPUT_LOGPROP))->colStats();
+
+
+  ValueId col;
+  ValueIdSet lhsCols;
+
+  CollIndex index = NULL_COLL_INDEX;
+
+  const ValueIdSet& joiningCols = (i==0) ? 
+            getEquiJoinExprFromChild0() : getEquiJoinExprFromChild1() ;
+
+  for (col = joiningCols.init();
+             joiningCols.next(col);
+             joiningCols.advance(col) )
+  {
+    theColList.getColStatDescIndex(index, col);
+    if (index != NULL_COLL_INDEX)
+       lhsCols.insert(theColList[index]->getColumn());
+  }
+
+
+   ValueIdList dummyList;
+
+   const MCSkewedValueList* mcSkewList =
+          ((ColStatDescList&)theColList).getMCSkewedValueListForCols(lhsCols, dummyList);
+
+   if ( mcSkewList == NULL )
+      return FALSE;
+
+   // Apply the frequency threshold to each MC skew and store those passing
+   // the thredhold test to the new skList 
+
+   CostScalar rc = child(i).getGroupAttr()->getResultCardinalityForEmptyInput();
+
+   CostScalar thresholdFrequency = rc * mc_threshold;
+
+   *skList = new (CmpCommon::statementHeap()) 
+                  SkewedValueList((CmpCommon::statementHeap()));
+
+   for ( CollIndex i=0; i<mcSkewList->entries(); i++ ) {
+      MCSkewedValue* itm = mcSkewList->at(i);
+
+      if ( itm->getFrequency() >= thresholdFrequency ) {
+
+        // Use an EncodedValue object to represent the current MC skew
+        // and transfer the hash value to it. The hash value is 
+        // computed in EncodedValue::computeRunTimeHashValue() and is 
+        // the run-time version! No modification should be done to it 
+        // from this point on. 
+        EncodedValue mcSkewed = itm->getHash();
+
+        (*skList)->insertInOrder(mcSkewed);
+      }
+   }
+
+   // Set the run-time hash status flag so that we will not try to build
+   // the run-time hash again in 
+   // SkewedDataPartitioningFunction::buildHashListForSkewedValues().
+   (*skList)->setComputeFinalHash(FALSE);
+   
+   if ( (*skList)->entries() == 0)
+     return FALSE;
+
+   return TRUE;
+}
+
+// The old way to guess MC skews and repartition the data stream on one
+// of the columns with least skews.
+NABoolean Join::childNodeContainMultiColumnSkew(
+                      CollIndex i,                 // IN: which child to work on
+                      const ValueIdSet& joinPreds, // IN: the join predicate
+                      double mc_threshold,         // IN: multi-column threshold
+                      double sc_threshold,         // IN: single-column threshold
+                      Lng32 countOfPipelines,     // IN: 
+                      SkewedValueList** skList,    // OUT: the skew list
+                      ValueId& vidOfEquiJoinWithSkew // OUT: the valueId of the column
+                                                     // whose skew list is returned
+                               ) const
+{
+   if (joinPreds.entries() <= 1)
+     return FALSE;
+
+   typedef SkewedValueList* SkewedValueListPtr;
+
+   SkewedValueList** skewLists;
+   skewLists =
+          new(CmpCommon::statementHeap()) SkewedValueListPtr[joinPreds.entries()];
+
+   CostScalar* skewFactors =
+          new(CmpCommon::statementHeap()) CostScalar[joinPreds.entries()];
+
+   // A list of valueIdSets, each valueIdSet element contains a set of 
+   // columns from the join predicates. Each set has all columns from the
+   // same table participating in the join predicates.
+   ARRAY(ValueIdSet) mcArray(joinPreds.entries());
+
+   Int32 skews = 0, leastSkewList = 0;
+   EncodedValue mostFreqVal;
+
+   CostScalar productOfSkewFactors = csOne;
+   CostScalar productOfUecs = csOne;
+   CostScalar minOfSkewFactor = csMinusOne;
+   CostScalar rc = csMinusOne;
+   CostScalar currentSkew;
+   CollIndex j = 0;
+   NABoolean statsExist;
+
+   for(ValueId vid = joinPreds.init(); joinPreds.next(vid); joinPreds.advance(vid))
+   {
+      // Get the skew values for the join predicate in question. 
+      skewLists[skews] = child(i).getGroupAttr()-> getSkewedValues(vid, sc_threshold,
+                    statsExist,
+                    (*GLOBAL_EMPTY_INPUT_LOGPROP),
+                    isLeftJoin() /* include skewed NULLs only for left outer join */
+                                                                   );
+
+      // When the skew list is null, there are two possibilities. 
+      // 1. No stats exists, here we assume the worse (stats has not been updated), and
+      // move to the next join predicate.
+      // 2. The stats is present but we could not detect skews (e.g., the skews are
+      // too small to pass the threshold test). We return FALSE to indicate that the
+      // column is good enough to smooth out the potential skews in other columns.
+      if ( skewLists[skews] == NULL ) {
+        if ( !statsExist )
+          continue;
+        else
+          return FALSE; // no stats exist
+      }
+
+      // Pick the shortest skew list seen so far. The final shortest skew list
+      // will be used for run-time skew detection.
+      if ( skews == 0 ||
+           (skewLists[skews] && 
+           skewLists[skews] -> entries() < skewLists[leastSkewList] -> entries()
+           )
+         ) 
+      {
+
+        // Obtain the colstat for the child of the join predicate on 
+        // the other side of the join.
+        CollIndex brSide = (i==0) ? 1 : 0;
+        ColStatsSharedPtr colStats = child(brSide).getGroupAttr()->
+              getColStatsForSkewDetection(vid, (*GLOBAL_EMPTY_INPUT_LOGPROP));
+
+        if ( colStats == NULL )
+          return FALSE; // no stats exist for the inner. assume the worst
+
+        // get the skew list 
+        const FrequentValueList & skInner = colStats->getFrequentValues();
+
+        CollIndex index = 0;
+        const SkewedValueList& newList = *skewLists[skews];
+
+        CostScalar totalFreq = csZero;
+
+        const NAType* nt = newList.getNAType();
+        NABoolean useHash = nt->useHashRepresentation();
+
+        for (CollIndex index = 0; index < skInner.entries(); index++)
+        {
+
+           const FrequentValue& fv = skInner[index];
+
+          EncodedValue skew = ( useHash ) ? fv.getHash() :  fv.getEncodedValue();
+
+           if ( nt->getTypeQualifier() == NA_NUMERIC_TYPE &&
+                nt->getTypeName() == LiteralNumeric ) {
+
+             skew = fv.getEncodedValue().computeHashForNumeric((SQLNumeric*)nt);
+           }
+
+           if ( newList.contains(skew) )
+             //totalFreq += fv.getFrequency() * fv.getProbability();
+             totalFreq += fv.getFrequency() ;
+     
+        }
+
+        CostScalar totalInnerBroadcastInBytes =
+               totalFreq * child(brSide).getGroupAttr()->getRecordLength() *
+               countOfPipelines ; 
+
+        if (totalInnerBroadcastInBytes >= 
+            ActiveSchemaDB()->getDefaults()
+              .getAsLong(MC_SKEW_INNER_BROADCAST_THRESHOLD))
+          // ACX QUERY 5 and 8 have skews on the inner side. Better
+          // to bet on partitioning on all columns to handle the dual skews.
+          // This has been proved by the performance run on 3/21/2012: a 
+          // 6% degradation when partition on the remaining non-skew column.
+          return FALSE; 
+     
+
+        leastSkewList = skews;
+        vidOfEquiJoinWithSkew = vid;
+      }
+
+
+      // Get the skew factor for the join predicate in question.
+      skewFactors[skews] = currentSkew = child(i).getGroupAttr()->
+                        getSkewnessFactor(vid, mostFreqVal, (*GLOBAL_EMPTY_INPUT_LOGPROP));
+
+      // We compute SFa * SFb * SFc ... here
+      productOfSkewFactors *= currentSkew;
+
+      // Obtain the colstat for the ith child of the join predicate.
+      ColStatsSharedPtr colStats = child(i).getGroupAttr()->
+                     getColStatsForSkewDetection(vid, (*GLOBAL_EMPTY_INPUT_LOGPROP));
+     
+      if ( colStats == NULL )
+          return FALSE; // no stats exist. Can not make the decision. return FALSE. 
+
+      // Compute UECa * UECb * UECc ... here
+      productOfUecs *= colStats->getTotalUec();
+
+      // get the RC of the table
+      if ( rc == csMinusOne )
+         rc = colStats->getRowcount();
+
+      // Compute the minimal of the skew factors seen so far
+      if ( currentSkew.isGreaterThanZero() ) {
+        if ( minOfSkewFactor == csMinusOne || minOfSkewFactor > currentSkew )
+           minOfSkewFactor = currentSkew;
+      }
+
+      skews++;
+
+     // Collect join columns in this predicate into joinColumns data structure.
+     ValueIdSet joinColumns;
+     vid.getItemExpr() -> findAll(ITM_BASECOLUMN, joinColumns, TRUE, FALSE);
+
+     // Separate out columns in the join predicates and group them per table.
+     //
+     // For example, if join predicates are t.a=s.b and t.b=s.b and t.c = s.c,
+     // we will have 
+     //
+     //              mcArray[0] = {t.a, t.b, t.c},
+     //              mcArray[1] = {s.a, s.b, s.c},
+     //
+     // at the end of the loop over join predicates.
+     //
+     j = 0;
+     for(ValueId x = joinColumns.init(); joinColumns.next(x); joinColumns.advance(x))
+     {
+        if ( !mcArray.used(j) )
+           mcArray.insertAt(j, x);
+        else {
+           ValueIdSet& mcSet = mcArray[j];
+           mcSet.insert(x);
+        }
+
+        j++;
+     }
+   } // end of the loop of join predicates
+
+                
+   // Now we can find the multi-column UEC, using one of the two multi-column 
+   // ValueIdSets (one for each side of the equi-join predicate). The colstats
+   // list for the side of the child contains the stats (including the mc ones).
+   // one of the mc ones is what we are looking for.
+   // 
+   ColStatDescList colStatDescList =
+         child(i).getGroupAttr()->
+                    outputLogProp((*GLOBAL_EMPTY_INPUT_LOGPROP))->getColStats();
+   
+   CostScalar mcUec = csMinusOne;
+
+   const MultiColumnUecList* uecList = colStatDescList.getUecList();
+
+   for(j=0; j < mcArray.entries() && mcUec == csMinusOne && uecList; j++)
+   {
+       const ValueIdSet& mc = mcArray[j];
+
+       // Do a look up with mc.
+       if ( uecList )
+          mcUec = uecList->lookup(mc);
+   }
+
+   //
+   // Compute the final value of 
+   //  min( (SFa * SFb * ... *min(UECa * UECb..,RC))/UEC(abc..), 
+   //        SFa, SFb, ..., )
+   //  = min(productOfSkewFactors * min(productOfUecs, RC)/mcUEC, 
+   //        minOfSkewFactor)   
+   // 
+   //  min(productOfUecs, RC)/mcUEC = 1 when mcUEC is not found
+   // 
+   CostScalar mcSkewFactor;
+   if ( mcUec == csMinusOne || mcUec == csZero )
+     mcSkewFactor = MINOF(productOfSkewFactors, minOfSkewFactor);
+   else 
+     mcSkewFactor = MINOF( 
+               productOfSkewFactors * MINOF(productOfUecs, rc) / mcUec,
+               minOfSkewFactor
+                      );
+
+   if ( mcSkewFactor > mc_threshold ) 
+   {
+       *skList = skewLists[leastSkewList];
+       return TRUE;
+   } else
+       return FALSE;
 }
 
 //

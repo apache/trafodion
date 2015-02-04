@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -175,6 +175,18 @@ public:
 
   virtual void setPlanVersion(UInt32 value)     { planVersion_ = value; }
 
+  NABoolean useSkewBuster() const
+                      { return (splitBottomFlags_ & SKEWBUSTER) != 0; }
+
+  void setUseSkewBuster(NABoolean v)
+  { (v ? splitBottomFlags_ |= SKEWBUSTER : splitBottomFlags_ &= ~SKEWBUSTER); }
+
+  NABoolean doBroadcastSkew() const
+                      {  return (splitBottomFlags_ & SKEW_BROADCAST) != 0; }
+
+  void setBroadcastSkew(NABoolean v)
+  { (v ? splitBottomFlags_ |= SKEW_BROADCAST :
+         splitBottomFlags_ &= ~SKEW_BROADCAST); }
 
   NABoolean getBroadcastOneRow() const   
                       {  return (splitBottomFlags_ & ONE_ROW_BROADCAST) != 0; }

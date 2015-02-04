@@ -223,7 +223,7 @@ fi
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST001 TEST004 TEST005 TEST006 TEST011 TEST012 TEST013 TEST015 TEST071 TESTTOK TESTTOK2"
+  sbtestfiles="TEST001 TEST004 TEST005 TEST006 TEST011 TEST012 TEST013 TEST015 TEST071 TESTTOK TESTTOK2 TEST062"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do

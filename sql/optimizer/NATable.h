@@ -1293,7 +1293,8 @@ public:
     NAKeyLookup<ExtendedQualName,NATable> (NATableDB_INIT_SIZE,
                                            NAKeyLookupEnums::KEY_INSIDE_VALUE,
                                            h),
-    hiveMetaDB_(NULL)
+    hiveMetaDB_(NULL),
+    replacementCursor_(0)
   {}
 
   NATableDB (const NATableDB & orig, NAMemory * h) :

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -305,6 +305,42 @@ ex_split_bottom_tcb::ex_split_bottom_tcb (
 
   glob->getScheduler()->setRootTcb(this);
 
+  const SplitBottomSkewInfoPtr sbSkewInfoP = splitBottomTdb.skewInfo_;
+  if (sbSkewInfoP)
+    {
+      // Allocate the collision chain skewLinks_.
+      skewLinks_ = new(glob->getSpace())
+        Int32[  sbSkewInfoP->getNumSkewHashValues() ];
+
+      // Initialize all collision links to noLink_ (-1 or 0xffffffff),
+      // to indicate the end of the chain.
+      memset((char *) skewLinks_, 0xff,
+             sizeof(Int32) * sbSkewInfoP->getNumSkewHashValues());
+
+      // Initialize all indexes in skewHdrs_ to noLink_ (-1 or 0xffffffff),
+      // to indicate that there is no skew key yet on the
+      // collision chain.
+      memset((char *) skewHdrs_, 0xff, sizeof(skewHdrs_));
+
+      // Populate the skewHdrs_ and skewLinks_ with the skew keys.
+      for (Int32 skewArrayIdx=0;
+           skewArrayIdx < sbSkewInfoP->getNumSkewHashValues();
+           skewArrayIdx++)
+      {
+        Int64 sv = sbSkewInfoP->getSkewHashValues()[skewArrayIdx];
+        Int32 slot = (Int32) (sv % numSkewHdrs_);
+        if (skewHdrs_[slot] == noLink_)
+        {
+          skewHdrs_[slot] = skewArrayIdx;
+        }
+        else
+        {
+          skewLinks_[skewArrayIdx] = skewHdrs_[slot];
+          skewHdrs_[slot] = skewArrayIdx;
+        }
+      }
+    }
+  else
     skewLinks_ = NULL;
 
   uniformDistributionType_ = RoundRobin_;
@@ -1000,6 +1036,80 @@ ExWorkProcRetcode ex_split_bottom_tcb::workUp()
 		  partNumInfo_.calculatedPartNum_ = 0;
 		}
 
+              if (splitBottomTdb().useSkewBuster() )
+                {
+                  ex_assert (splitBottomTdb().combineRequests_, 
+                             "Skew buster used without combining requests.");
+                  // Apply the skew-buster.  The partNumInfo_.partHash_ 
+                  // has been side-effected by partFunc->eval.  See if this
+                  // partitioning key's hash key is in our hash table.
+
+                  // Start off assuming that partNumInfo_.partHash_ is not
+                  // in the hash table.
+                  NABoolean skewedValueFound = FALSE;
+
+                  // Find the collision chain.
+                  Int32 slot = (Int32) (partNumInfo_.partHash_ % numSkewHdrs_);
+                  Int32 skewArrayIdx = skewHdrs_[slot];
+
+                  while (skewArrayIdx != noLink_)
+                    {
+                      if ( partNumInfo_.partHash_ ==
+                           splitBottomTdb().skewInfo_->
+                               getSkewHashValues()[skewArrayIdx] )
+                        {
+                          skewedValueFound = TRUE;
+                          break;
+                        }
+                      // Get next on collision chain.
+                      skewArrayIdx = skewLinks_[skewArrayIdx];
+                    }
+
+                  if (skewedValueFound)
+                    {
+                      if (splitBottomTdb().doBroadcastSkew())
+                        broadcastThisRow_ = TRUE;
+                      else
+                        {
+                          if (uniformDistributionType_ == RoundRobin_)
+                            {
+                              partNumInfo_.calculatedPartNum_ = roundRobinRecipient_;
+                              roundRobinRecipient_ += 1;
+
+                              const UInt32 initialRoundRobin = 
+                                        splitBottomTdb().getInitialRoundRobin();
+                              const UInt32 finalRoundRobin =
+                                        splitBottomTdb().getFinalRoundRobin();
+
+                              if (initialRoundRobin <= finalRoundRobin)
+                              {
+                                if (roundRobinRecipient_ > finalRoundRobin)
+                                  roundRobinRecipient_ = initialRoundRobin;
+                              }
+                              else
+                              {
+                                if (roundRobinRecipient_ >= 
+                                                           sendNodes_.entries())
+                                  roundRobinRecipient_ = 0;
+                                else
+                                if (roundRobinRecipient_ == finalRoundRobin + 1)
+                                  roundRobinRecipient_ = initialRoundRobin;
+                              }
+                            }
+                          else
+                              partNumInfo_.calculatedPartNum_ = 
+                                  localSendBotttom_;
+                        }
+                    }
+                  
+                  if (splitBottomTdb().doBroadcastSkew() &&
+                      broadcastOneRow_)
+                  {
+                    broadcastThisRow_ = TRUE;
+                    // stop brodcasting after first one
+                    broadcastOneRow_ = FALSE;
+                  }
+                }
 
               if (splitBottomTdb().isMWayRepartition())
                 // calculated parent number has to be in the parent number range
@@ -1610,6 +1720,26 @@ void ex_split_bottom_tcb::testAllQueues()
 // test this).
 void ex_split_bottom_tcb::setLocalSendBottom(CollIndex s)
 {
+  if (splitBottomTdb().useSkewBuster() &&
+      splitBottomTdb().doBroadcastSkew() == FALSE &&
+      splitBottomTdb().forceSkewRoundRobin() == FALSE)
+    {
+      if (localSendBotttom_ != NULL_COLL_INDEX)
+        {
+          // If we have >1 co-located ESP, then just use
+          // round-robin.  If >1 consumer ESPs per CPU
+          // were an important scenario, then in the future
+          // we could round-robin among them.
+          uniformDistributionType_ = RoundRobin_;
+          localSendBotttom_ = NULL_COLL_INDEX;
+        }
+      else if (splitBottomTdb().bottomNumESPs_ >=
+               splitBottomTdb().topNumESPs_)
+        {
+          uniformDistributionType_ = CoLocated_;
+          localSendBotttom_ = s;
+        }
+    }
 }
 
 void ex_split_bottom_tcb::cpuLimitExceeded()

@@ -2300,10 +2300,13 @@ enum DefaultConstants
   // Enable 'ON' or disable 'OFF' merge join overflow
   MJ_OVERFLOW,
 
+  SKEW_EXPLAIN,            // embed skew-buster plan details in EXPLAIN output
+  SKEW_ROWCOUNT_THRESHOLD, // minimal row count for skew-buster to be active
 
   // Percentage of BMO memory quota "equal share" used by merge join.
   MJ_BMO_QUOTA_PERCENT,
 
+  SKEW_SENSITIVITY_THRESHOLD, // skew threshold value
 
   // Enable use of internal sorting/grouping for Update Stats instead of doing
   // it in a query.
@@ -2331,6 +2334,7 @@ enum DefaultConstants
   // the table.
   USTAT_FREQ_SIZE_PERCENT,
 
+  MAX_SKEW_VALUES_DETECTED,
 
   CREATE_OBJECTS_IN_METADATA_ONLY,
 
@@ -3183,6 +3187,7 @@ enum DefaultConstants
   // Control creation of column privileges for object-level privileges
   CAT_REDUNDANT_COLUMN_PRIVS,
   
+  MC_SKEW_SENSITIVITY_THRESHOLD, // multi-column skew threshold value
 
   MTD_MDAM_NJ_UEC_THRESHOLD, // the threshold of the UEC of predicate-less 
                              // leading key columns of a MTD table, above
@@ -3196,6 +3201,10 @@ enum DefaultConstants
 
   DOP_REDUCTION_ROWCOUNT_THRESHOLD, // the threshold below which dop can 
                                     // be reduced
+
+  MC_SKEW_INNER_BROADCAST_THRESHOLD, // MC-SB inner side broadcast threshold
+                                     // in bytes
+
   NESTED_JOIN_CACHE_PREDS,
   //Temporary fix to bypass volatile schema name checking for non-table objects - ALM Case#4764
   BYPASS_CHECK_FOR_VOLATILE_SCHEMA_NAME, 

@@ -1,0 +1,708 @@
+-- Test: TEST062 (CompGeneral)
+-- Owner: Optimizer Team
+-- Functionality: Tests skew-insensitive parallel hash joins for skewed data
+-- Expected files: EXPECTED062
+-- Limitations: Sections which are presently being ignored need to be revisited
+-- Revision history:
+--     (8/3/06):   Test created 
+
+
+-- Can not use $$TEST_SCHEMA$$ for this test because we can not pass the schema
+-- name to the fake hist perl script. Have to use cat.sch.
+
+-- when robust_query_optimization is system, test062's histogram populate 
+-- step can get:
+-- "*** WARNING[6004] The metadata table HISTOGRAM_INTERVALS for column 
+-- #CAT.#SCH.SK.SSN do not have intervals 7 and 8 in order. If you have 
+-- manually modified the metadata table, then you should undo your changes 
+-- using the CLEAR option in UPDATE STATISTICS and regenerate the statistics."
+-- For now, let's avoid this problem by running test062 with this setting:
+--
+-- (11/3/2008): remove the dependency on faking stats. HPIT mini-chunk 
+-- tests are turned off.
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+control query default robust_query_optimization 'minimum';
+
+create schema sch;
+set schema sch;
+
+
+log LOG062 clear;
+
+
+obey TEST062(skew_summary_setup);
+obey TEST062(default_cqds);
+
+
+obey TEST062(simple_tests);
+obey TEST062(run_char_test);
+obey TEST062(run_numeric_test);
+obey TEST062(run_skewed_nulls_test);
+--obey TEST062(run_mcsb_with_mcskews_test);
+log;
+
+exit;
+
+?section simple_tests
+
+-------------- salted --------
+log off;
+obey TEST062(clnup);
+log LOG062;
+
+
+obey TEST062(createdb_salted);
+obey TEST062(loaddb);
+
+obey TEST062(run_simple_test);
+obey TEST062(clnup);
+
+-----------------
+?section clnup
+drop table T062_sk;
+drop table T062_dm1;
+drop table t062_seed;
+
+
+-----------------
+?section createdb
+CREATE TABLE T062_SK ( sid int not null, ssn largeint NOT NULL) STORE BY (sid) ;
+create table T062_dm1 (ssn integer not null,  age int not null) STORE BY (age) ;
+create table t062_seed(a int not null, primary key(a));
+
+-----------------
+?section createdb_salted
+CREATE TABLE T062_SK (sid int not null, ssn largeint NOT NULL) STORE BY (sid) 
+salt using 4 partitions;
+
+create table T062_dm1 (ssn integer not null,  age int not null) STORE BY (age) 
+salt using 4 partitions;
+
+create table t062_seed(a int not null, primary key(a));
+
+-----------------
+?section loaddb
+
+insert into t062_seed values(1);
+
+insert into t062_SK 
+(
+select c10,c1 from t062_seed
+  transpose 1,1,1,1,1,1,1,1,0,0 as c1
+  transpose 0,1,2,3,4,5,6,7,8,9 as c2
+  transpose 0,1,2,3,4,5,6,7,8,9 as c3
+  transpose 0,1,2,3,4,5,6,7,8,9 as c10
+);
+
+insert into T062_DM1 
+(
+select c1, c4 from t062_seed
+  transpose 0,1,2,3,4,5,6,7,8,9 as c1
+  transpose 0,1,2,3,4,5,6,7,8,9 as c2
+  transpose 0,1,2,3,4,5,6,7,8,9 as c3
+  transpose 0,1,2,3,4,5,6,7,8,9 as c4
+);
+
+
+log LOG062;
+
+update statistics for table T062_SK on every column;
+update statistics for table T062_DM1 on every column;
+
+---------------------------------------------------------------------------
+?section skew_summary_setup
+
+prepare summarize_act_rows from
+select
+avg(act_rows) as "AVG_ACT_ROWS",
+  case when stddev(act_rows) > 5
+            then 'SKEWED'
+            else 'NORMAL'
+            end                                    as skewness,
+  'FUNKY_OPT_UNIQUE'                               as filtered,
+  cast (max(act_rows) - min(act_rows) as integer)    as range,
+  cast(stddev(act_rows) as numeric (7,2))           as std_dev
+       from table(statistics(NULL,'XX'))
+where TDB_NAME = 'EX_HASHJ';
+
+
+?section default_cqds
+
+control query default POS 'off';
+control query default COMP_BOOL_68 'off'; -- enable SkewBuster for small tables
+
+cqd PARALLEL_NUM_ESPS '4';
+
+cqd HIST_MISSING_STATS_WARNING_LEVEL '0';
+
+-- no index scan to avoid the display of index names on NSK that
+-- are non-deterministic
+control query default HIDE_INDEXES 'ALL';
+
+-- If a value whose frequency is at least 1% of the totalRowCount, then
+-- it is considered skewed
+control query default SKEW_SENSITIVITY_THRESHOLD '0';
+control query default SKEW_ROWCOUNT_THRESHOLD '0';
+
+--control query default NESTED_JOINS 'OFF';
+control query default MERGE_JOINS 'OFF';
+
+control query default query_cache '0';
+control query default CACHE_HISTOGRAMS 'off';
+
+control query default COMP_INT_44 '1'; -- pick up any skews
+control query default COMP_INT_70 '10'; -- 
+control query default COMP_INT_7  '11'; -- 
+
+control query default detailed_statistics 'ALL';
+
+---------------------------------------------------------------------------
+?section run_simple_test 
+---------------------------------------------------------------------------
+-- should get mixed hash join plans
+---------------------------------------------------------------------------
+
+
+prepare xx from
+select t062_sk.ssn, t062_sk.sid from t062_sk, t062_dm1 
+where t062_sk.ssn = t062_dm1.ssn order by t062_sk.ssn;
+
+explain options 'f' xx;
+
+
+-- equi left-join
+
+-- for LINUX. the cost does not prefer a parallel plan.
+#ifLINUX
+control query shape esp_exchange(cut);
+#ifLINUX
+
+prepare xx from
+select t062_sk.ssn, sid from t062_sk left join t062_dm1 
+on t062_sk.ssn = t062_dm1.ssn;
+explain options 'f' xx;
+
+-- equi natural-left-join
+prepare xx from
+select ssn, sid from t062_sk natural left join t062_dm1;
+explain options 'f' xx;
+
+
+---------------------------------------------------------------------------
+-- negative test - non-equil join
+---------------------------------------------------------------------------
+prepare xx from
+select t062_sk.ssn from t062_sk, t062_dm1 where t062_sk.ssn >= t062_dm1.ssn;
+
+explain options 'f' xx;
+
+---------------------------------------------------------------------------
+-- negative test - right join 
+---------------------------------------------------------------------------
+
+cqd join_order_by_user 'on';
+prepare xx from
+select ssn from t062_sk natural right join t062_dm1;
+
+explain options 'f' xx;
+
+#ifLINUX
+control query shape cut;
+#ifLINUX
+
+cqd join_order_by_user reset;
+
+---------------------------------------------------------------------------
+-- full groupby in ESPs on a skew column is not allowed. Here we enforce
+-- a plan which does not have an exchange node between the grouby and
+-- a de-skew hash join. It should fail.
+---------------------------------------------------------------------------
+  
+-- CQS 
+control query shape esp_exchange(groupby(hash_join(cut, cut)));
+control query default join_order_by_user 'on';
+
+prepare xx from
+select sum(t062_sk.ssn) from t062_sk , t062_dm1 
+where t062_sk.ssn = t062_dm1.ssn group by t062_sk.ssn;
+
+ 
+---------------------------------------------------------------------------
+-- add an exchange in between the groupby and the hashjoin. The plan should
+-- succeed
+---------------------------------------------------------------------------
+control query shape esp_exchange(groupby(esp_exchange(hash_join(cut, cut))));
+
+prepare xx from
+select sum(t062_sk.ssn) from t062_sk , t062_dm1 
+where t062_sk.ssn = t062_dm1.ssn group by t062_sk.ssn;
+
+control query shape off;
+control query default join_order_by_user 'reset';
+
+explain options 'f' xx;
+
+---------------------------------------------------------------------------
+-- groupby in ESPs as the either immediate child of a skew buster hash join
+-- is not allowed
+---------------------------------------------------------------------------
+
+-- test right child
+control query shape esp_exchange(hash_join(cut, groupby(esp_exchange(cut))));
+
+prepare xx from
+select t062_sk.ssn from t062_sk, (select age mx from t062_dm1 group by age) x
+where t062_sk.ssn = x.mx;
+
+control query shape off;
+
+-- test left child
+control query shape esp_exchange(hash_join(groupby(esp_exchange(cut)), cut));
+
+prepare xx from
+select t062_sk.ssn from (select age mx from t062_dm1 group by age) x, t062_sk
+where t062_sk.ssn = x.mx;
+
+control query shape off;
+
+explain options 'f' xx;
+
+---------------------------------------------------------------------------
+-- transpose in ESPs immediate as the right child of a skew buster 
+-- hash join is not allowed
+---------------------------------------------------------------------------
+-- test right child
+control query shape esp_exchange(hash_join(cut, transpose(esp_exchange(cut))));
+
+prepare xx from
+select t062_sk.ssn from t062_sk, (select * from t062_dm1 transpose age as c1) x;
+
+control query shape off;
+
+
+----------------------
+?section run_char_test
+----------------------
+
+-- turn on the char-type extension
+control query default COMP_BOOL_93 'on';
+
+-- turn on VEG formation for vchars
+control query default COMP_BOOL_158 'on';
+
+---------- ISO88591 ----------------
+
+------------------ case 1 ----------
+
+
+log off;
+drop table skc;
+drop table dm2c;
+log LOG062;
+
+create table skc(name char(30) not null,
+                 userId char(30) not null
+                )
+               store by (name);
+
+create table dm2c( name varchar(20) not null,
+                   salary float (40) not null)
+               store by (name);
+                  
+obey test062(doit);
+
+------------------ case 2 ----------
+drop table skc;
+create table skc(name varchar(30) not casespecific not null,
+                 userId varchar(30) not casespecific not null
+                )
+               store by (name);
+
+drop table dm2c;
+create table dm2c( name char(20) not casespecific not null,
+                   salary float (40) not null)
+               store by (name);
+
+obey test062(doit);
+
+------------ UCS2 -------------------
+
+------------------ case 1 ----------
+drop table skc;
+create table skc(name varchar(20) character set UCS2 not casespecific not null,
+                 userId varchar(20) character set UCS2 not casespecific not null
+                )
+               store by (name);
+
+
+drop table dm2c;
+create table dm2c( name char(30) character set UCS2 not null,
+                   salary float (40) not null)
+               store by (name);
+
+obey test062(doitr_ucs2);
+
+
+------------------ case 2 ----------
+drop table skc;
+create table skc(name varchar(20) character set UCS2 not casespecific not null,
+                 userId varchar(20) character set UCS2 not casespecific not null
+                )
+               store by (name);
+
+
+drop table dm2c;
+create table dm2c( name varchar(30) character set UCS2 not null,
+                   salary float (40) not null)
+               store by (name);
+
+obey test062(doitr_ucs2);
+
+
+
+----------------- 
+?section doit
+obey test062(loadit);
+obey TEST062(run_char);
+
+
+----------------- 
+?section doitr_ucs2
+obey test062(loaditr_ucs2);
+obey TEST062(run_char);
+
+
+?section loadit -- 30-20 combination
+delete from skc;
+delete from dm2c;
+
+-- Special note: trailing spaces in these values are added purposely. 
+-- Please do not remove them.
+-- Some of the 'YS' string is padded with spaces so that the total length
+-- is over 20 characters. The number of such instances is over 5 which is
+-- the lower limit above which the skew-normal indicator will turn SKEW.
+insert into skc values
+-------------------012345678901234567890123456789
+('john', 'JBL'), ('YS              ', '8#RTG'),
+                 ('YS', '8#RTG'), 
+                 ('YS', '8#RTG'), 
+                 ('Johnson                     ', 'MNKJ'),
+('john', 'JBL'), ('YS   ', '8#RTG'),
+                 ('YS                          ', '8#RTG'), 
+                 ('YS                          ', '8#RTG'), 
+                 ('Johnson ', 'MNKJ'),
+('john', 'JBL'), ('YS                           ', '8#RTG'),
+                 ('YS                           ', '8#RTG'), 
+                 ('YS', '8#RTG'), 
+                 ('Johnson                      ', 'MNKJ'),
+('john', 'JBL'), ('YS ', '8#RTG'),
+                 ('YS            ', '8#RTG'), 
+                 ('YS             ', '8#RTG'), 
+                 ('Johnson     ', 'MNKJ'),
+('john', 'JBL'), ('YS                         ', '8#RTG'),
+                 ('YS            ', '8#RTG'), 
+                 ('YS             ', '8#RTG'), 
+                 ('Johnson  ', 'MNKJ'),
+('martin', 'Perl'),
+('martin', 'variance'),
+('martin', 'AS');
+
+-------------------------01234567890123456789
+insert into dm2c values('Johnson   ', 12450);
+insert into dm2c values('0123456789012345678', 12450);
+insert into dm2c values('martin    ', 40088), ('YS   ', 9990);
+
+
+?section loaditr_ucs2 -- 20-30 combination
+delete from skc;
+delete from dm2c;
+
+-- Special note: trailing spaces in these values are added purposely.
+-- Please do not remove them.
+-- Some of the 'YS' string is padded with spaces so that the total length
+-- is over 20 characters. The number of such instances is over 5 which is
+-- the lower limit above which the skew-normal indicator will turn SKEW.
+insert into skc values
+-------------------01234567890123456789
+(_ucs2'john', _ucs2'JBL'), (_ucs2'YS              ', _ucs2'8#RTG'),
+(_ucs2'YS', _ucs2'8#RTG'), (_ucs2'YS', _ucs2'8#RTG'),
+(_ucs2'Johnson            ', _ucs2'MNKJ'), (_ucs2'john', _ucs2'JBL'), 
+(_ucs2'YS   ', _ucs2'8#RTG'),
+                 (_ucs2'YS                 ', _ucs2'8#RTG'),
+                 (_ucs2'YS                 ', _ucs2'8#RTG'),
+                 (_ucs2'Johnson ', _ucs2'MNKJ'),
+(_ucs2'john', _ucs2'JBL'), (_ucs2'YS               ', _ucs2'8#RTG'),
+                 (_ucs2'YS               ', _ucs2'8#RTG'),
+                 (_ucs2'YS', _ucs2'8#RTG'),
+                 (_ucs2'Johnson      ', _ucs2'MNKJ'),
+(_ucs2'john', _ucs2'JBL'), (_ucs2'YS ', _ucs2'8#RTG'),
+                 (_ucs2'YS            ', _ucs2'8#RTG'),
+                 (_ucs2'YS             ', _ucs2'8#RTG'),
+                 (_ucs2'Johnson     ', _ucs2'MNKJ'),
+(_ucs2'john', _ucs2'JBL'), (_ucs2'YS               ', _ucs2'8#RTG'),
+                 (_ucs2'YS            ', _ucs2'8#RTG'),
+                 (_ucs2'YS             ', _ucs2'8#RTG'),
+                 (_ucs2'Johnson  ', _ucs2'MNKJ'),
+(_ucs2'martin', _ucs2'Perl'),
+(_ucs2'martin', _ucs2'variance'),
+(_ucs2'martin', _ucs2'AS');
+
+-------------------------012345678901234567890123456789
+insert into dm2c values(_ucs2'YS                       ', 12450);
+insert into dm2c values(_ucs2'0123456789012345678', 12450);
+insert into dm2c values(_ucs2'martin    ', 40088), (_ucs2'johnson', 9990);
+
+?section run_char
+
+update statistics for table skc  on name generate 20 intervals;
+update statistics for table dm2c on name generate 20 intervals;
+
+obey TEST062(default_cqds);
+
+control query default detailed_statistics 'ALL';
+
+prepare xx from 
+select count(skc.name) from 
+skc <<+ cardinality 10e5 >>, dm2c <<+ cardinality 10e4 >> 
+where skc.name = dm2c.name ;
+
+explain options 'f' xx;
+
+execute xx;
+
+execute summarize_act_rows;
+
+
+------------------------------------
+?section run_numeric_test
+
+obey TEST062(run_numeric_9_4_test);
+------------------------------------
+
+?section create_and_load_9_4;
+
+log off;
+control query default DETAILED_STATISTICS 'reset';
+
+drop table table1k;
+log LOG062;
+
+CREATE TABLE table1k (ssn largeint not null,
+                      sixteen numeric(9,4) NOT NULL,
+                      four numeric(6, 4) NOT NULL)
+                STORE BY (ssn)
+salt using 4 partitions
+;
+
+
+insert into table1k values
+     (1, 11000.8611, 1.1111),
+
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), 
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+     (2, 4562.1234, 2.2222), (2, 4562.1234, 2.2222),
+
+     (6, 6.9998, 6.6666), (7, 497.9398, 7.7777),
+     (8, 47.998, 7.7777), (9, 4.3998, 7.7777),
+     (9, 4.3998, 7.7777), (9, 4.3998, 7.7777),
+     (9, 4.3998, 7.7777);
+
+
+update statistics for table table1k on every column;
+
+--------------------------------------
+?section do_numeric_test;
+control query default detailed_statistics 'ALL';
+control query default SKEW_ROWCOUNT_THRESHOLD '0';
+
+prepare xx from
+select min(t1.sixteen) from
+ table1k t1 <<+ cardinality 10e5 >>,
+ table1k t2 <<+ cardinality 10e5 >>
+where t1.sixteen=t2.sixteen;
+
+explain options 'f' xx;
+execute xx;
+
+execute summarize_act_rows;
+
+-- negative test. Columns sixteen and four have different precision and
+-- scale. No SB plan.
+prepare xx from
+select min(t1.sixteen) from
+ table1k t1 <<+ cardinality 10e5 >>,
+ table1k t2 <<+ cardinality 10e5 >>
+where t1.sixteen=t2.four;
+
+explain options 'f' xx;
+
+
+-------------------------------
+?section run_numeric_9_4_test;
+obey TEST062(create_and_load_9_4);
+obey TEST062(do_numeric_test);
+drop table table1k;
+
+
+-------------------------------
+?section run_skewed_nulls_test;
+-------------------------------
+
+log off;
+drop table t062A;
+drop table t062B;
+drop table t062_seed;
+log LOG062;
+
+create table t062_seed(a int not null, primary key(a));
+
+create table t062A
+  (uniq largeint not null,
+   c10K largeint,
+   c1K   int,
+   c100  int,
+   c10   int,
+   c1    int,
+   primary key (uniq)
+  )
+  salt using 4 partitions ;
+
+create table t062B
+  (uniq smallint unsigned not null,
+   c10K  smallint unsigned ,
+   c1K   int,
+   c100  int,
+   c10   int,
+   c1    int,
+   primary key (uniq)
+  )
+  salt using 4 partitions ;
+
+insert into  t062_seed values (1);
+
+insert into t062A
+  select * from (
+  select
+  0 + (10000 * x10000) + (1000 * x1000) + (100 * x100) + (10 * x10) + +( 1 * x1) as uniq,
+  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (10 * x10) + (1 * x1),
+  0 + (1 * x1),
+  0
+  from t062_seed
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ) as src where src.uniq < 10921;
+  ;
+
+prepare s2 from
+insert into t062b select
+   uniq + ?p,
+   uniq,
+   c1K,
+   c100,
+   c10,
+   c1
+  from t062A;
+
+set param ?p 10922; execute s2;
+set param ?p 21845; execute s2;
+
+update t062a set c10k = 1 where uniq < 21843;
+update t062b set c1k = 1;
+
+update statistics for table t062a on c10k;
+update statistics for table t062b on uniq;
+update statistics for table t062b on c1k;
+update statistics for table t062b on c100;
+update statistics for table t062b on c10;
+
+
+control query default detailed_statistics 'ALL';
+control query default SKEW_ROWCOUNT_THRESHOLD '0';
+
+prepare xx from
+select max(fact.uniq) from
+t062a fact left join t062b dm1
+on fact.c10k = dm1.uniq
+left join t062b dm2 <<+ cardinality 10e6 >> 
+on dm1.c1k = dm2.c100;
+
+explain options 'f' xx;
+execute xx;
+execute summarize_act_rows;
+
+
+------------------------------------
+?section run_mcsb_with_mcskews_test;
+
+-- TEST the new MCSB (skews are detected via MC-stats)
+cqd HJ_NEW_MCSB_PLAN 'on';
+
+obey mcsb(int_test);
+obey mcsb(char_test);
+
+
+log off;
+
+drop table t062A;
+drop table t062B;
+drop table t062_seed;
+
+drop table t062_mc_f;
+drop table t062_mc_d1;
+drop table t062_mc_d3;
+drop table t062_mc_seed;

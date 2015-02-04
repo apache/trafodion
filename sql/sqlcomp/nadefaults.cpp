@@ -2105,6 +2105,26 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   DDui1__(MAX_ROWS_LOCKED_FOR_STABLE_ACCESS,	"1"),
 
+  // The max number of skewed values detected - skew buster
+  DDui1__(MAX_SKEW_VALUES_DETECTED,             "10000"),
+
+  // multi-column skew inner table broadcast threashold in bytes (=1 MB)
+  DDui___(MC_SKEW_INNER_BROADCAST_THRESHOLD,    "1000000"),
+
+  // multi-column skew sensitivity threshold
+  //
+  // For new MCSB (that is, we utilize MC skews directly),
+  //  apply the MC skew buster when
+  //    frequency of MC skews > MC_SKEW_SENSITIVITY_THRESHOLD / count_of_cpus
+  //
+  // For old MCSB (that is, we guess MC skews from SC skews),
+  //  apply the MC skew buster when
+  //   SFa,b... * countOfPipeline > MC_SKEW_SENSITIVITY_THRESHOLD
+  //   SFa,b ... is the skew factor for multi column a,b,...
+  //
+  XDDflt__(MC_SKEW_SENSITIVITY_THRESHOLD,        "0.1"),
+
+
   DDflt0_(MDAM_CPUCOST_NET_OVH,			"2000."),
 
 
@@ -3093,6 +3113,14 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
 
   DDkwd__(SIMILARITY_CHECK,			"ON "),
   DDkwd__(SIMPLE_COST_MODEL,                    "ON"),
+
+ XDDkwd__(SKEW_EXPLAIN,                         "ON"),
+ XDDflt__(SKEW_ROWCOUNT_THRESHOLD,              "1000000"), // Column row count
+                                                           // threshold below
+                                                           // which skew
+                                                           // buster is disabled.
+ XDDflt__(SKEW_SENSITIVITY_THRESHOLD,           "0.1"),
+
   DDkwd__(SKIP_METADATA_VIEWS,			"OFF"),
   DDkwd__(SKIP_TRANSLATE_SYSCAT_DEFSCH_NAMES,	"ON"),
   DDkwd__(SKIP_UNAVAILABLE_PARTITION,		"OFF"),

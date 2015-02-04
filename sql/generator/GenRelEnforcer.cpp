@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -662,6 +662,111 @@ short Exchange::codeGenForESP(Generator * generator)
         
         topPartExprAsList.insert(cast->getValueId());
       
+          const SkewedDataPartitioningFunction* skpf =
+           topPartFunc->castToSkewedDataPartitioningFunction();
+ 
+          // Process getSkewProperty.
+          skewProperty::skewDataHandlingEnum skew = 
+              (skpf) ? skpf->getSkewProperty().getIndicator() :
+                       skewProperty::ANY;
+
+          if ( skpf AND 
+               (skew == skewProperty::BROADCAST || 
+               skew == skewProperty::UNIFORM_DISTRIBUTE) )
+            {
+
+              // 1. Add the hashing expression (to return hash value
+              //    only) to the topPartExprAsList.
+             
+              ItemExpr * hashExpr = topPartFunc->getHashingExpression();
+
+              GenAssert( hashExpr != NULL, 
+                  "getHashingExpression returned NULL");
+
+              ItemExpr * hashExprResult = new (generator->wHeap()) 
+                Cast( hashExpr, 
+                     new (generator->wHeap()) 
+                     SQLLargeInt(TRUE, // allow negative values.
+                                 FALSE // no nulls.
+                          ));
+
+              hashExprResult->bindNode(generator->getBindWA());
+              topPartExprAsList.insert(hashExprResult ->getValueId());
+
+              expectedPartInfoLength += sizeof(Int64) // hash value 
+                                         + 4;          // alignment
+
+              // 2. Prepare the array of hash values which 
+              //    indicate possible skewed partitioning keys.
+
+#if 0
+              // Please note that I never reserved COMP_BOOL_154 
+              // and just added this for my private build. 
+              if (CmpCommon::getDefault(COMP_BOOL_154) == DF_ON)
+                {
+                  // Test limit of 10000.  Don't care that they
+                  // are actual skewed values.
+
+                  numSkewHashValues = 10000;     
+                  skewHashValues = new (space) Int64[numSkewHashValues];
+                  for (Int32 sv = 0; sv < numSkewHashValues; sv++)
+                    skewHashValues[sv] = (Int64) sv;
+                  skewInfo = new (space) 
+                      SplitBottomSkewInfo(numSkewHashValues, skewHashValues);
+                }
+              else
+#else
+                {
+                  Int64List *partFuncSkewedValues = 
+                      ((SkewedDataPartitioningFunction*)topPartFunc)->
+                          buildHashListForSkewedValues();
+
+                  GenAssert(partFuncSkewedValues != NULL,
+                        "NULL returned from buildHashListForSkewedValues");
+
+                  numSkewHashValues = partFuncSkewedValues->entries();
+
+                  GenAssert(numSkewHashValues > 0,
+                  "buildHashListForSkewedValues returned zero or fewer values");
+
+                  skewHashValues = new (space) Int64[numSkewHashValues];
+
+                  for (Int32 sv = 0; sv < numSkewHashValues; sv++)
+                    skewHashValues[sv] = (*partFuncSkewedValues)[sv];
+
+                  skewInfo = new (space) 
+                      SplitBottomSkewInfo(numSkewHashValues, skewHashValues);
+                }
+#endif
+
+              // 3. Prepare the skew properties for ComTdbSplitBottom.
+              
+              useSkewBuster = TRUE;
+              broadcastOneRow = FALSE;
+              if (skew == skewProperty::BROADCAST)
+              {
+                broadcastSkew = TRUE;
+                broadcastOneRow = skpf->getSkewProperty().getBroadcastOneRow();
+              }
+              else
+                broadcastSkew = FALSE;
+              srand((UInt32) JULIANTIMESTAMP(3));
+              initialRoundRobin = rand() % numTopEsps;
+              Int32 antiSkewESPs = skpf->getSkewProperty().getAntiSkewESPs();
+              if (antiSkewESPs <= 0)
+                {
+                  // For hash join, make sure all consumer ESPs get the 
+                  // the skewed value rows.
+                  antiSkewESPs = numTopEsps;
+                }
+              else
+                {
+                  // For NJ OCR skewbuster, just use the CQD.
+                }
+
+              finalRoundRobin = (initialRoundRobin + antiSkewESPs - 1)
+                               % numTopEsps;
+            }
           
           expGen->generateContiguousMoveExpr(
                       topPartExprAsList,
@@ -797,6 +902,10 @@ short Exchange::codeGenForESP(Generator * generator)
     // and then sendBottom to get the tdbId 
     generator->initTdbFields(splitBottom);
     generator->initTdbFields(sendBottom);
+
+    splitBottom->setUseSkewBuster(useSkewBuster);
+    splitBottom->setBroadcastSkew(broadcastSkew);
+
     splitBottom->setInitialRoundRobin(initialRoundRobin);
     splitBottom->setFinalRoundRobin(finalRoundRobin);
     splitBottom->setBroadcastOneRow(broadcastOneRow);

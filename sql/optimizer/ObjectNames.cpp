@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1548,8 +1548,8 @@ ostream& operator<< (ostream& out, TaskMonitor t)
   out.precision(6);
 
   return out<< "Time = " <<
-  (1000000.0 * t.timer()) / CLOCKS_PER_SEC
-  << " ms" <<
+  ((double) t.timer()) / CLOCKS_PER_SEC
+  << " us (microsecond)" <<
 //#if defined(NA_LINUX)
    //"\tET = " << out.fixed << out.precision(6) << t.elapsed_time() << " s" << 
    "\tET = " << t.elapsed_time() << " s" << 

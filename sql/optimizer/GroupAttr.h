@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -704,6 +704,16 @@ ValueIdList recommendedOrderForNJProbing(
 	       EncodedValue & mostFreqVal,
 	       const EstLogPropSharedPtr& inLP = (*GLOBAL_EMPTY_INPUT_LOGPROP));
 
+  // This method will return a list of skew values associated with the
+  // left child of the equal predicate such that formula
+  // rowcount/totalRowCount > threshold holds for eaceh such value.
+  // vId is the value Id of the equal predicate.
+  SkewedValueList* getSkewedValues(const ValueId& vId,
+               double threshold,
+               NABoolean& statsExist,
+               const EstLogPropSharedPtr& inLP = (*GLOBAL_EMPTY_INPUT_LOGPROP),
+               NABoolean includeNullIfSkewed = FALSE
+                                  );
   
  double getAverageVarcharSize(const ValueId vId,
                              const EstLogPropSharedPtr& inLP = (*GLOBAL_EMPTY_INPUT_LOGPROP));

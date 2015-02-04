@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1085,6 +1085,7 @@ NABoolean RelExpr::rppRequiresEnforcer
   if ((partReqForMe != NULL) AND
       (
        partReqForMe->isRequirementReplicateViaBroadcast() 
+       OR partReqForMe->isRequirementSkewBusterBroadcast()
       )
      )
     return TRUE;
@@ -2709,6 +2710,43 @@ Exchange::synthPhysicalPropertyESP(const Context *myContext)
   myPartFunc = myPartFunc->copy();
 
 
+  // Double check or memorize the skewness handling requirement
+  // in the part func for exchange so that the right code can be
+  // generated for it.
+  //
+  // We do this only for partfuncs that can deal with skewed values. For
+  // others, they will fail the :satisfied() method because they are not
+  // SkewedDataPartFunc
+  if ( myPartReq -> isRequirementFuzzy() AND
+       myPartFunc -> castToSkewedDataPartitioningFunction()
+  ) {
+    if (NOT (myPartReq ->castToFuzzyPartitioningRequirement()->
+               getSkewProperty()).isAnySkew())
+    {
+      CMPASSERT(myPartFunc->castToSkewedDataPartitioningFunction()->
+                 getSkewProperty() ==
+              myPartReq->castToFuzzyPartitioningRequirement()->
+                 getSkewProperty());
+    } else {
+      // "Any" skew can be present in myPartReq if this exchange node
+      // receives an ApproxNPart requirement and is located immediately
+      // above a skew insensitive hash join node. For exmaple, the following
+      // query
+      //
+      //    select name, mysk.ssn, age from mysk, mydm1
+      //     where mysk.ssn = mydm1.ssn order by mysk.ssn;
+      //
+      // will place a SORT node on top of the de-skewing exchange node.
+      // Since no skew requirement is present in myPartReq, we set the
+      // skew property for my partfunc to "Any". This can save the effort
+      // to repartition the skew data.
+       ((SkewedDataPartitioningFunction*)(myPartFunc)) ->
+           setSkewProperty(myPartReq->castToFuzzyPartitioningRequirement()->getSkewProperty());
+    }
+  }
+
+
+
   // --------------------------------------------------------------------
   // If the partitioning requirement is a fully specified part func,
   // then use its nodeMap, otherwise, replace the partitioning
@@ -3644,6 +3682,14 @@ isOneToOneMatchHashPartitionJoinPossible(NestedJoin* nj,
     }
   } else {
 
+    // If it is a skewed data part func, get the partition func for the
+    // unskewed data.
+    if ( leftPartFunc->castToSkewedDataPartitioningFunction() ) {
+       leftPartFunc = leftPartFunc->
+                        castToSkewedDataPartitioningFunction()->
+                            getPartialPartitioningFunction();
+    }
+
 
     // Check whether this is hash2 partitioning. If not, return FALSE.
     if ( leftPartFunc->castToHash2PartitioningFunction() == NULL )
@@ -3683,7 +3729,18 @@ isOneToOneMatchHashPartitionJoinPossible(NestedJoin* nj,
             )
           )
         ) {
+        if ( origLeftHashPartFunc->castToSkewedDataPartitioningFunction() ) {
+
+              // Require the inner to be rep-n so that both the non-skewed and
+              // skewed rows from the outer table can be distributed to the
+              // right partitions. Note that the non-skewed and the skewed can
+              // reach different partitions, hence the need for a rep-n part func.
+              result = new (CmpCommon::statementHeap() )
+                ReplicateNoBroadcastPartitioningFunction
+                  (rightPartFunc->getCountOfPartitions());
+        } else {
           result = mappedLeftPartFunc;
+        } 
       } 
       return result;
     }
@@ -4968,6 +5025,38 @@ Context* NestedJoin::createContextForAChild(Context* myContext,
              scaleNumberOfPartitions(childNumPartsRequirement) == FALSE ) 
            rightPartFunc = innerTablePartFunc;
 
+         Int32 antiskewSkewEsps =
+            (Int32)CmpCommon::getDefaultNumeric(NESTED_JOINS_ANTISKEW_ESPS);
+
+         if ( antiskewSkewEsps > 0 ) {
+            ValueIdSet joinPreds = getOriginalEquiJoinExpressions().getTopValues();
+
+            double threshold = defs.getAsDouble(SKEW_SENSITIVITY_THRESHOLD) / rppForMe->getCountOfPipelines();
+
+            SkewedValueList* skList = NULL;
+
+            // If the join is on a skewed set of columns from the left child,
+            // then generate the skew data partitioning requirement to deal
+            // with skew.
+
+            // We ignore whether the nested join probe cache is applicable here
+            // because we want to deal with both the ESP and DP2 skew, Probe
+            // cache can deal with DP2 skew, but not the ESP skew.
+            if ( childNodeContainSkew(0, joinPreds, threshold, &skList) )
+            {
+              Lng32 cop = rightPartFunc->getCountOfPartitions();
+
+              antiskewSkewEsps = MINOF(cop, antiskewSkewEsps);
+
+              rightPartFunc = new (CmpCommon::statementHeap())
+                     SkewedDataPartitioningFunction(
+                         rightPartFunc,
+                         skewProperty(skewProperty::UNIFORM_DISTRIBUTE,
+                                      skList, antiskewSkewEsps)
+                                                   );
+            }
+         }
+
          
          // Produce the part requirement for the outer child from
          // the part function of the inner child.
@@ -6171,6 +6260,29 @@ NABoolean NestedJoin::OCRJoinIsFeasible(const Context* myContext)  const
         return FALSE;
   }
 
+  Lng32 antiskewSkewEsps =
+       ActiveSchemaDB()->getDefaults().getAsLong(NESTED_JOINS_ANTISKEW_ESPS);
+
+  if ( antiskewSkewEsps > 0 )
+     return TRUE; // the skew busting for OCR is enabled. No more check.
+
+  //
+  // If the join is on a skewed set of columns from the left child and the
+  // nested join probing cache is not applicable, then do not try OCR.
+  //
+  if ( isProbeCacheApplicable(rppForMe->getPlanExecutionLocation()) == FALSE ) {
+     ValueIdSet joinPreds = getOriginalEquiJoinExpressions().getTopValues();
+
+      double threshold =
+       (ActiveSchemaDB()->getDefaults().getAsDouble(SKEW_SENSITIVITY_THRESHOLD))                             /
+       rppForMe->getCountOfPipelines();
+
+     SkewedValueList* skList = NULL;
+
+     if ( childNodeContainSkew(0, joinPreds, threshold, &skList) == TRUE )
+        return FALSE;
+  }
+
 
   return TRUE;
 }
@@ -6847,6 +6959,25 @@ PartitioningFunction* NestedJoin::mapPartitioningFunction(
   ValueIdMap map(getOriginalEquiJoinExpressions());
   PartitioningFunction* newPartFunc =
       partFunc->copyAndRemap(map,rewriteForChild0);
+
+  SkewedDataPartitioningFunction* oldSKpf = NULL;
+  SkewedDataPartitioningFunction* newSKpf = NULL;
+
+  if ( rewriteForChild0 == FALSE /* map for child 1 */ AND
+       (oldSKpf=(SkewedDataPartitioningFunction*)
+                  (partFunc->castToSkewedDataPartitioningFunction())) AND
+       (newSKpf=(SkewedDataPartitioningFunction*)
+                  (newPartFunc->castToSkewedDataPartitioningFunction()))
+     )
+  {
+     if ( oldSKpf->getSkewProperty().isUniformDistributed() ) {
+       skewProperty newSK(oldSKpf->getSkewProperty());
+       newSK.setIndicator(skewProperty::BROADCAST);
+       newSKpf->setSkewProperty(newSK);
+     }
+  } else {
+       // map for child 0. Do nothing
+  }
 
 
   return newPartFunc;
@@ -8132,6 +8263,26 @@ PartitioningFunction* HashJoin::mapPartitioningFunction(
   PartitioningFunction* newPartFunc =
       partFunc->copyAndRemap(map,rewriteForChild0);
 
+  SkewedDataPartitioningFunction* oldSKpf = NULL;
+  SkewedDataPartitioningFunction* newSKpf = NULL;
+
+  if ( rewriteForChild0 == FALSE /* map for child 1 */ AND
+       (oldSKpf=(SkewedDataPartitioningFunction*)
+                  (partFunc->castToSkewedDataPartitioningFunction())) AND
+       (newSKpf=(SkewedDataPartitioningFunction*)
+                  (newPartFunc->castToSkewedDataPartitioningFunction()))
+     )
+  {
+     if ( oldSKpf->getSkewProperty().isUniformDistributed() ) {
+       skewProperty newSK(oldSKpf->getSkewProperty());
+       newSK.setIndicator(skewProperty::BROADCAST);
+       newSKpf->setSkewProperty(newSK);
+     }
+  } else {
+       // map for child 0. Do nothing
+  }
+
+
 
   return newPartFunc;
 } // end HashJoin::mapPartitioningFunction()
@@ -8259,6 +8410,63 @@ NABoolean HashJoin::isBigMemoryOperatorSetRatio(const Context* context,
 
 // <pb>
 
+NABoolean
+HashJoin::isSkewBusterFeasible(SkewedValueList** skList, Lng32 countOfPipelines,
+                               ValueId& vidOfEquiPredWithSkew)
+{
+   CMPASSERT(skList != NULL);
+
+   double threshold =
+       (ActiveSchemaDB()->getDefaults().getAsDouble(SKEW_SENSITIVITY_THRESHOLD))                             / countOfPipelines;
+
+   // Disable skew buster if the threshold is less than 0. A value of -1 is set
+   if ( threshold < 0 )
+      return FALSE;
+
+   // skew buster is not allowed for Full Outer Join, since it involves
+   // broadcasting the inner rows.
+
+   if (isFullOuterJoin())
+     return FALSE;
+
+   ValueIdSet joinPreds = getEquiJoinPredicates();
+
+   if ( joinPreds.entries() > 1 ) {
+
+     double mc_threshold =
+         (ActiveSchemaDB()->getDefaults().getAsDouble(MC_SKEW_SENSITIVITY_THRESHOLD))
+        / countOfPipelines ;
+                         
+     if ( mc_threshold < 0 )
+        return FALSE;
+
+     if ( !multiColumnjoinPredOKforSB(joinPreds) )
+        return FALSE;
+
+       vidOfEquiPredWithSkew = NULL_VALUE_ID;
+
+       // First try to detect the true MC skews directly.   
+       NABoolean ok =  CmpCommon::getDefault(HJ_NEW_MCSB_PLAN) == DF_ON &&
+                       childNodeContainMultiColumnSkew(0, joinPreds, mc_threshold, 
+                                                       countOfPipelines, skList);
+
+       if ( ok )
+          return TRUE;
+       else
+          // If fail, we go the old way of guessing the MC skews from the SC 
+          // skew exist at the participating columns of the multi-column join 
+          // predicate.   
+          return childNodeContainMultiColumnSkew(0, joinPreds, mc_threshold, 
+                                             threshold, countOfPipelines,
+                                             skList, vidOfEquiPredWithSkew);
+
+   } 
+
+   // single column SB
+   return ( singleColumnjoinPredOKforSB(joinPreds) &&
+            childNodeContainSkew(0, joinPreds, threshold, skList)
+          );
+}
 
 void HashJoin::addNullToSkewedList(SkewedValueList** skList)
 {
@@ -8545,7 +8753,7 @@ Context* HashJoin::createContextForAChild(Context* myContext,
     broadcastOneRow  = FALSE;
     notInLeftChildOptimization = FALSE;
     ValueId vidOfEquiPredWithSkew = NULL_VALUE_ID;
-
+        
     // Here, we consult our histogram data to identify potential skew values
     // for the left side, when ESP parallel plans (plan 1 and 2) are
     // sought for. In the 1st phase of the Mixed Hybrid HashJoin Project,
@@ -8555,6 +8763,24 @@ Context* HashJoin::createContextForAChild(Context* myContext,
 
     if (planNumber == 1 OR planNumber == 2)
     {
+
+      if( isSkewBusterFeasible(&skList, MAXOF(1, rppForMe->getCountOfPipelines()),
+                               vidOfEquiPredWithSkew) == TRUE )
+      {
+        considerMixedHashJoin = TRUE;
+
+        if ( CmpCommon::getDefault(COMP_BOOL_101) == DF_OFF  )
+          considerHashJoinPlan2 = FALSE;
+      }
+
+      // When adding null value the next time isSkewBusterFeasible will return true even
+      // if there are no skew values. Note that this has to do with an executor optimization
+      // for anti-semijoins used for NOT IN. If the subquery has at least one NULL value,
+      // then the entire NOT IN predicate returns NULL. Handling this requires special
+      // logic in the executor. When we have a parallel TYPE1 anti-semijoin, then we
+      // use SkewBuster to broadcast all inner NULL values to all the joins, to be able
+      // to handle this case correctly.
+
 
       if (getIsNotInSubqTransform())
       {
@@ -8836,6 +9062,9 @@ Context* HashJoin::createContextForAChild(Context* myContext,
         rg.addNumOfPartitions(childNumPartsRequirement,
                               childNumPartsAllowedDeviation);
 
+        if ( considerMixedHashJoin == TRUE )
+           rg.addSkewRequirement(skewProperty::UNIFORM_DISTRIBUTE, skList, broadcastOneRow);
+
       } // end if ok to try parallelism
 
       // Produce the requirements and make sure they are feasible.
@@ -8885,6 +9114,17 @@ Context* HashJoin::createContextForAChild(Context* myContext,
 
         RequirementGenerator rg (child(1),rppForMe);
 
+        // ignore single part func case since run-time skew does not exist.
+        if ( notInLeftChildOptimization &&
+             !childPartFuncRewritten->isASinglePartitionPartitioningFunction())
+        {
+          skewProperty skp (skewProperty::BROADCAST, skList);
+          skp.setBroadcastOneRow(broadcastOneRow);
+          //rg.addSkewRequirement(skewProperty::BROADCAST, skList, broadcastOneRow);
+          childPartFuncRewritten = new SkewedDataPartitioningFunction(childPartFuncRewritten, skp);
+        }
+
+
 
         PartitioningRequirement* partReqForChild =
           childPartFuncRewritten->makePartitioningRequirement();
@@ -8901,6 +9141,33 @@ Context* HashJoin::createContextForAChild(Context* myContext,
         // Remove any parent partitioning requirements, since we
         // have already enforced this on the left child.
         rg.removeAllPartitioningRequirements();
+
+        // Double check broadcasting skewed data requirment for the right child
+        // if my left child will produce randomly distributed skewed values,
+        // and the partfunc for the right child can do so and both partfuncs
+        // are of same type. The last check is necessary to avoid
+        // hash2-random_distribute on left side and some other non-hash2
+        // broadcast on right side.
+        //
+        // The above called HashJoin::mapPartitioningFunction() should perform
+        // the mapping from UNIFORM DISTRIBUTED to BROADCAST.
+        const SkewedDataPartitioningFunction* skpf = NULL;
+        if (childPartFunc->getPartitioningFunctionType() ==
+            childPartFuncRewritten->getPartitioningFunctionType() AND
+            (skpf=childPartFunc->castToSkewedDataPartitioningFunction()) AND
+            skpf->getSkewProperty().isUniformDistributed()
+           )
+        {
+           const SkewedDataPartitioningFunction* otherSKpf =
+              (SkewedDataPartitioningFunction*)childPartFuncRewritten;
+
+           CMPASSERT(
+              otherSKpf->getPartialPartitioningFunction()->canHandleSkew()
+                AND
+              otherSKpf->getSkewProperty().isBroadcasted()
+                    );
+           //rg.addSkewRequirement(skewProperty::BROADCAST, skList);
+        }
 
 
         // Now, add in the Join's partitioning requirement for the
@@ -9645,6 +9912,7 @@ HashJoin::synthPhysicalProperty(const Context* myContext,
   setInnerAccessOnePartition(sppOfRightChild->getAccessOnePartition());
 
   delete sppTemp;
+
   return sppForMe;
 
 } // HashJoin::synthPhysicalProperty()

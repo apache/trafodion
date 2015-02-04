@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -90,6 +90,9 @@ const RequireHash2*
 PartitioningRequirement::castToRequireHash2() const
   { return NULL; }
 
+const RequireSkewed*
+PartitioningRequirement::castToRequireSkewed() const
+  { return NULL; }
 
 const RequireRange*
 PartitioningRequirement::castToRequireRange() const
@@ -498,10 +501,12 @@ RequireApproximatelyNPartitions::RequireApproximatelyNPartitions(
      float numOfPartsAllowedDeviation,
      Lng32 numberOfPartitions,
      NABoolean requireHash2Only
+     ,const skewProperty& sk
                                                                  )
      : FuzzyPartitioningRequirement(APPROXIMATELY_N_PART_REQ,
                                     partitioningKeyColumns,
                                     numberOfPartitions
+                                    , sk
                                     ),
        numOfPartsAllowedDeviation_ (numOfPartsAllowedDeviation),
        requireHash2Only_ (requireHash2Only)
@@ -518,9 +523,10 @@ RequireApproximatelyNPartitions::RequireApproximatelyNPartitions(
      float numOfPartsAllowedDeviation,
      Lng32 numberOfPartitions,
      NABoolean requireHash2Only
+     ,const skewProperty& sk
                                                                  )
      : FuzzyPartitioningRequirement(APPROXIMATELY_N_PART_REQ,
-                                    numberOfPartitions
+                                    numberOfPartitions, sk
                                     ),
        numOfPartsAllowedDeviation_ (numOfPartsAllowedDeviation),
        requireHash2Only_ (requireHash2Only)
@@ -578,8 +584,22 @@ RequireApproximatelyNPartitions::partReqAndFuncCompatible
     // no required part key columns
     return TRUE;
 
+  if ( getSkewProperty().isAnySkew() ) {
+     // If no specific skew requirement is present, requiring the partkey has
+     // the complete containment relationship with the partition func.
+     return (getPartitioningKey().contains(other->getPartitioningKey()));
+  } else {
+
+     // If the skew requirement is present, requiring that the skew property
+     // matches
+     if ((NOT other->isASkewedDataPartitioningFunction()) OR
+         (NOT (getSkewProperty() ==
+            other->castToSkewedDataPartitioningFunction()->getSkewProperty()))
+        )
+       return FALSE;
 
     return (getPartialPartitioningKey() == other->getPartialPartitioningKey());
+  }
 
   return FALSE;
   
@@ -657,6 +677,14 @@ RequireApproximatelyNPartitions::comparePartReqToReq
     // the fuzzy requirement requires LESS than the fully specified req.
     else 
       result = combine_compare_results(result,LESS);
+
+    // specifically check when the other is a required Skew requirement
+    if ( other->isRequirementSkewed() AND
+         NOT (getSkewProperty() ==
+              ((const RequireSkewed*)(other))->getSkewProperty()
+             )
+       )
+       result = combine_compare_results(result, INCOMPATIBLE);
 
 
     // If the fuzzy requirement requires hash2 and the part func
@@ -805,6 +833,12 @@ RequireApproximatelyNPartitions::comparePartReqToReq
       // I have required part key columns, but the other does not -
       // so I require more.
       result = combine_compare_results(result,MORE);
+
+    if ( NOT (getSkewProperty() ==
+              ((const FuzzyPartitioningRequirement*)(other))->getSkewProperty()
+             )
+       )
+       result = combine_compare_results(result, INCOMPATIBLE);
 
 
     // The other's requireHash2Only_ flag.
@@ -1017,9 +1051,21 @@ PartitioningFunction * RequireApproximatelyNPartitions::realize(
   // need to make sure that if we can produce a grouping of the soft
   // requirements that we actually do it.
 
- if (softRequirements AND
-     softRequirements->castToFullySpecifiedPartitioningRequirement() AND
-     partKey == softRequirements->getPartitioningKey())
+// if (softRequirements AND
+//     softRequirements->castToFullySpecifiedPartitioningRequirement() AND
+//     partKey == softRequirements->getPartitioningKey())
+
+  if (softRequirements AND
+      softRequirements->castToFullySpecifiedPartitioningRequirement()
+      AND
+       (
+        (getSkewProperty().isAnySkew() AND
+         partKey.contains(softRequirements->getPartitioningKey()))
+         ||
+        (!getSkewProperty().isAnySkew() AND
+         partKey == softRequirements->getPartitioningKey())
+       )
+     )
   {
     // try to use the (fully specified) partitioning function of the
     // soft requirements or a scaled version of it
@@ -1066,10 +1112,20 @@ PartitioningFunction * RequireApproximatelyNPartitions::realize(
     {
       // allright, the fully specified soft part reqs. will do the job
 
+      // If skew requirement is present, make sure the spf can deal with it
+      // or spf is a singlePartFunc. Otherwise do not use the spf.
+      if (NOT getSkewProperty().isAnySkew()) {
+         if (spf->canHandleSkew() AND !isRequireHash2Only()) {
+            spf = new (STMTHEAP) SkewedDataPartitioningFunction(
+                   spf->copy(),
+                   getSkewProperty()
+                               );
+            return spf;
+         }
 
          if (spf->isASinglePartitionPartitioningFunction()) 
             return spf;
-      else {
+      } else {
          spf = spf -> copy();
          return spf;
       }
@@ -1098,9 +1154,17 @@ PartitioningFunction * RequireApproximatelyNPartitions::realize(
          spf->isASinglePartitionPartitioningFunction())) 
     {
 
+      if (NOT getSkewProperty().isAnySkew()) {
+         if (spf->canHandleSkew() AND !isRequireHash2Only()) {
+            spf = new (STMTHEAP) SkewedDataPartitioningFunction(
+                       spf,
+                       getSkewProperty());
+            return spf;
+         }
+
          if (spf->isASinglePartitionPartitioningFunction()) 
              return spf;
-      else
+      } else
          return spf;
     }
   }
@@ -1128,6 +1192,23 @@ PartitioningFunction * RequireApproximatelyNPartitions::realize(
   // All these hash partfuncs can deal with skew.
   Lng32 hash_type = CmpCommon::getDefaultLong(SOFT_REQ_HASH_TYPE);
   PartitioningFunction* newPartFunc = NULL;
+
+  if ( NOT (getSkewProperty().isAnySkew()) AND !isRequireHash2Only() ) {
+
+     // Exclusively use hash2 for skew buster. This is necessary because
+     // for CHAR typed join column, we compute an surrogate representation
+     // for each skew character literal and stored it in the skew list. This
+     // reprentation is computed by using the hash2 hashing function. Without
+     // the exclusive use of hash2, we need to compute three reprentations.
+     // Besides, hash2 is always better than hash0 and hash1.
+
+     newPartFunc = new(CmpCommon::statementHeap())
+        Hash2PartitioningFunction(partKey, partKey, numOfParts);
+
+     newPartFunc = new (STMTHEAP)
+         SkewedDataPartitioningFunction(newPartFunc, getSkewProperty());
+  } else {
+
 
 
      // Check if requireHash2Only_ flag is set AND hash_type is 2 i.e. hash2. 
@@ -1163,6 +1244,7 @@ PartitioningFunction * RequireApproximatelyNPartitions::realize(
          CMPASSERT(hash_type >= 0 && hash_type <= 3);
          return NULL; // Required to prevent a compiler warning.
      }
+  }
 
   return newPartFunc;
 
@@ -1488,6 +1570,77 @@ void RequireHash2::print(FILE* ofd, const char* indent,
 void RequireHash2::display() const  { print(); }
 // LCOV_EXCL_STOP
 
+//===========
+// -----------------------------------------------------------------------
+// RequireSkewed
+// -----------------------------------------------------------------------
+const ValueIdSet& RequireSkewed::getPartialPartitioningKey() const
+{  
+   return getPartitioningFunction() ->
+             castToSkewedDataPartitioningFunction()->
+                getPartialPartitioningFunction()->getPartitioningKey(); 
+}
+
+COMPARE_RESULT
+RequireSkewed::comparePartReqToReq(const PartitioningRequirement* other) const
+{
+   COMPARE_RESULT result = 
+      FullySpecifiedPartitioningRequirement::comparePartReqToReq(other);
+
+   if ( other -> isRequirementSkewed() ) {
+     if ( NOT (getSkewProperty() ==
+             other->castToRequireSkewed()->getSkewProperty()) )
+      result = combine_compare_results(result,INCOMPATIBLE);
+   } else {
+     if ( NOT (other -> isRequirementFuzzy()) OR 
+         (NOT (getSkewProperty() ==
+               other->castToFuzzyPartitioningRequirement()->getSkewProperty()))
+        )
+      result = combine_compare_results(result,INCOMPATIBLE);
+   }
+
+   return result;
+}
+
+const skewProperty& RequireSkewed::getSkewProperty() const
+{
+  return getPartitioningFunction()-> 
+             castToSkewedDataPartitioningFunction()->
+                getSkewProperty();
+}
+
+NABoolean
+RequireSkewed::partReqAndFuncCompatible(const PartitioningFunction* other) const
+{
+  const PartitioningFunction *thisPartFunc = getPartitioningFunction();
+  CMPASSERT(thisPartFunc->castToSkewedDataPartitioningFunction());
+  return (thisPartFunc->comparePartFuncToFunc(*other) == SAME );
+} // RequireSkewed::partReqAndFuncCompatible()
+
+// -----------------------------------------------------------------------
+// Method for performing a pointer type cast
+// -----------------------------------------------------------------------
+const RequireSkewed*
+RequireSkewed::castToRequireSkewed() const
+  { return this; }
+
+PartitioningRequirement*
+RequireSkewed::copy() const
+{
+  return new (CmpCommon::statementHeap()) RequireSkewed(*this);
+}
+
+// LCOV_EXCL_START
+void RequireSkewed::print(FILE* ofd, const char* indent,
+                        const char* title) const
+{
+  FullySpecifiedPartitioningRequirement::print(ofd, indent, title);
+}
+
+void RequireSkewed::display() const  { print(); }
+// LCOV_EXCL_STOP
+
+
 // -----------------------------------------------------------------------
 // RequireRange
 // -----------------------------------------------------------------------
@@ -1633,4 +1786,12 @@ NABoolean LogicalPartitioningRequirement::satisfied(
   return TRUE;
 }
 
+NABoolean
+FullySpecifiedPartitioningRequirement::isRequirementSkewBusterBroadcast() const
+{
+  const SkewedDataPartitioningFunction *skpf =
+    getPartitioningFunction()->castToSkewedDataPartitioningFunction();
+
+   return (skpf AND skpf->getSkewProperty().isBroadcasted());
+}
 

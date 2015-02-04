@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2443,6 +2443,176 @@ CostScalar GroupAttributes::getSkewnessFactor(const ValueId vId,
 
 // LCOV_EXCL_START
 
+SkewedValueList* GroupAttributes::getSkewedValues(const ValueId& vId,
+                                              double threshold,
+                                              NABoolean& statsExist,
+					      const EstLogPropSharedPtr& inLP,
+                                              NABoolean includeNullIfSkewed
+                                                 )
+{
+  ColStatDescSharedPtr colStatDesc;
+  ValueIdSet vidSet;
+  SkewedValueList* svList = NULL;
+
+  if ( cachedSkewValuesPtr_ == NULL )
+    cachedSkewValuesPtr_ = new (STMTHEAP) 
+                      NAHashDictionary<ValueId,SkewedValueList>
+                      (valueIdHashKeyFunc, /* hash func defined above*/
+                       20 /*number of buckets*/, 
+                       TRUE, /* enforce uniqueness*/
+                       STMTHEAP 
+                      );
+  else {
+    svList = cachedSkewValuesPtr_ -> getFirstValue(&vId);
+    if ( svList ) {
+      statsExist = TRUE;
+
+      // if no useful skewed values in the list, return NULL
+      if ( svList->entries() > 0 )
+        return svList;
+      else
+        return NULL;
+
+    }
+  }
+    
+  // get the output logical properties from group attributes for 
+  // input logical properties
+  ColStatsSharedPtr colStats = getColStatsForSkewDetection(vId, inLP);
+
+  // if no stats ptr or the stats is a faked one (i.e.  no stats updated for the
+  // the column in question, then we bail out.
+  if (colStats == NULL || colStats->isOrigFakeHist() )
+  {
+    statsExist = FALSE;
+    return NULL;
+  } else
+    statsExist = TRUE;
+
+
+  ItemExpr* iePtr = vId.getItemExpr();
+
+  if (iePtr->getOperatorType() == ITM_INSTANTIATE_NULL) {
+     iePtr = iePtr -> child(0);
+  }
+
+  switch (iePtr->getOperatorType()) {
+     case ITM_EQUAL: // this case is used to handle char type when
+                     // no VEG is formed for a char predicate, 
+                     // or joins involving subqueries.
+     case ITM_VEG_PREDICATE:
+     case ITM_VEG_REFERENCE:
+
+       // We only care columns of type ITM_BASECOLUMN (columns belonging to 
+       // base tables or table-valued stored procedures, see comment on class
+       // BaseColumn).
+       iePtr->findAll(ITM_BASECOLUMN, vidSet, TRUE, TRUE);
+
+       // If no such columns can be found. Do not bother to continue further,
+       // as only base table columns have the potential to be big and skewed. 
+       if ( vidSet.entries() == 0 )
+          return NULL;
+
+       break;
+
+     default:
+       return NULL;
+  }
+
+  // get the first column id in the set
+  ValueId colVid((CollIndex)0); vidSet.next(colVid);
+
+
+  NADefaults &defs = ActiveSchemaDB()->getDefaults();
+
+  const double total_rowcount_threshold = 
+     defs.getAsDouble(SKEW_ROWCOUNT_THRESHOLD);
+
+  // wide rowlength should lower skew_rowcount_threshold
+  CostScalar factor =  MAXOF(getRecordLength() / 1000, 1.0);
+  CostScalar modifiedCard = colStats->getRowcount() * factor;
+  CostScalar modifiedMaxCard = getResultMaxCardinalityForEmptyInput() * factor;
+
+  // Do not activate skew Buster if the max. cardinality is 10 times
+  // less than, or total rowcount on the column is less than
+  // SKEW_ROWCOUNT_THRESHOLD.
+  if ((modifiedMaxCard < 10 * total_rowcount_threshold)
+       OR
+       (modifiedCard < total_rowcount_threshold)
+       )
+    return NULL;
+
+  // Create a new skew value list for newly founded skew values.
+  svList = new (STMTHEAP) SkewedValueList(colVid.getType().newCopy(STMTHEAP), STMTHEAP, 20);
+
+  // Add the value list to the hash table, keyed by the vid of the 
+  // joining column
+  cachedSkewValuesPtr_ -> insert(new (STMTHEAP) ValueId(vId), svList);
+
+  // Figure out which representation should be used in the skew list.
+  const NAType* naType = svList->getNAType(); 
+  NABoolean useHashValue = naType->useHashRepresentation();
+
+
+  if ( (!colStats->isOrigFakeHist()) )
+  {
+    const FrequentValueList & frequentValueList = colStats->getFrequentValues();
+    CostScalar thresholdAdFrequency = 
+                  threshold * (colStats->getRowcount()).getValue();
+
+    for (CollIndex j = 0; j < frequentValueList.entries(); j++)
+    {
+      const FrequentValue & frequentValue = frequentValueList[j];
+      EncodedValue skewed;
+                  
+      if ( frequentValue.getFrequency() * frequentValue.getProbability() 
+           < thresholdAdFrequency )
+        continue;		  
+
+      if (svList->entries() >= CURRSTMT_OPTDEFAULTS->maxSkewValuesDetected())
+        break;
+
+      if (frequentValue.getEncodedValue().isNullValue())
+      {
+         if(includeNullIfSkewed)
+            skewed.setValueToNull();
+         else
+           continue;
+      } else {
+         if ( useHashValue == FALSE ) {
+
+             skewed = frequentValueList[j].getEncodedValue(); // for SHORT, INTEGER and LARGEINT
+         }  else { 
+
+            const NAType& nt = colVid.getType();
+
+            if (
+                 nt.getTypeQualifier() == NA_NUMERIC_TYPE &&
+                 nt.getTypeName() == LiteralNumeric
+            ) {
+                skewed = 
+                   frequentValueList[j].getEncodedValue().
+                         computeHashForNumeric((SQLNumeric*)&nt); // for numeric
+            } else
+                skewed = frequentValueList[j].getHash(); // for CHAR 
+	   }
+     }
+
+     svList->insertInOrder(skewed);
+     if (skewed.isNullValue())
+     {
+        svList->setIsNullInList(TRUE);
+        svList->setIsNullSkewed(TRUE);
+     }
+    } // for all skewed values of this ColStat
+  } 
+  
+  // if no useful skewed values in the list, return NULL
+  if ( svList->entries() > 0 )
+    return svList;
+  else
+    return NULL;
+} // GroupAttributes::getSkewedValues
 
 double GroupAttributes::getAverageVarcharSize(const ValueId vId,
                                              const EstLogPropSharedPtr& inLP)

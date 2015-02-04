@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -148,9 +148,14 @@ const RoundRobinPartitioningFunction*
 PartitioningFunction::castToRoundRobinPartitioningFunction() const
                                                           { return NULL; }
 
+const SkewedDataPartitioningFunction*
+PartitioningFunction::castToSkewedDataPartitioningFunction() const
+                                                          { return NULL; };
+
 const HivePartitioningFunction* 
 PartitioningFunction::castToHivePartitioningFunction() const 
                                                           { return NULL; };
+
 
 
 // ---------------------------------------------------------------------
@@ -309,6 +314,9 @@ PartitioningFunction::isKnownReplicaPartFunc() const
 {
   return
     (
+         (isASkewedDataPartitioningFunction() &&
+      ((SkewedDataPartitioningFunction*)this)->getSkewProperty().isBroadcasted())
+     ||
      isAReplicateViaBroadcastPartitioningFunction()
      ||
      isAReplicateNoBroadcastPartitioningFunction());
@@ -1685,8 +1693,11 @@ ItemExpr* TableHashPartitioningFunction::createPartitioningExpression()
 ItemExpr* 
 TableHashPartitioningFunction::createPartitioningExpressionImp(NABoolean doVarCharCast)
 {
-  if (getExpression())      // already constructed?
+  // already constructed with the same doVarCharCast argument?
+  if (getExpression() && doVarCharCast == doVarCharCast_ )
     return getExpression(); // reuse it!
+
+  doVarCharCast_ = doVarCharCast;
 
   ValueIdList typedKeyCols;
 
@@ -2769,6 +2780,282 @@ PartitioningFunction::getCastedItemExpre(ItemExpr* iv, const NAType& oType, Coll
    return c;
 }
 
+
+// ***********************************************************************
+// SkewedDataPartitioningFunction
+// ***********************************************************************
+  
+SkewedDataPartitioningFunction::SkewedDataPartitioningFunction(
+        PartitioningFunction* partFuncForUnskewed,
+                              const skewProperty& sk,
+                              NAMemory* heap
+                                )
+: PartitioningFunction(SKEWEDDATA_PARTITIONING_FUNCTION, NULL, heap), 
+  partialPartFunc_(partFuncForUnskewed), skewProperty_(sk),
+  skewHashList_(NULL)
+{
+  CMPASSERT(NOT sk.isAnySkew());
+  CMPASSERT(partFuncForUnskewed->canHandleSkew());
+  ValueIdList pivl;
+  ValueIdSet pivs;
+
+  // Create the partition input variable and partitioning key for this
+  // function. The main purpose of this is to produce a partitioning key.
+  // The skew buster partitioning function doesn't have a real
+  // partitioning key. So, one cannot really decide from a row in
+  // which partition it is (at least not for a skew element row).
+  // Because we need to have some partitioning key, we basically say
+  // "you have to know the partition number in order to compute the
+  // partition number". This is another way of saying that the
+  // partition number cannot be computed from the row. We achieve this
+  // by making the PIV the partitioning key.
+  // If needed, we can also make the PIV the partitioning expression. We
+  // cannot make a partitioning key expression with this method, however.
+  createPIV(pivl);
+  pivs = pivl;
+  setPartKey(pivs);
+}
+
+void SkewedDataPartitioningFunction::createPIV(ValueIdList &partInputValues)
+{
+  // Create a single partition input value
+  //
+  ItemExpr *dummyPIV = new (CmpCommon::statementHeap())
+    HostVar("_sys_dummySkewBusterPartNo",
+	    new (CmpCommon::statementHeap()) SQLInt(FALSE, FALSE),
+	    TRUE);
+  dummyPIV->synthTypeAndValueId();
+
+  // the partition input value is one integer, which is also used as
+  // the partitioning key
+  partInputValues.insert(dummyPIV->getValueId());
+
+  // Store the partition input values.
+  //
+  storePartitionInputValues(partInputValues);
+}
+
+void SkewedDataPartitioningFunction::replacePivs(
+       const ValueIdList& newPivs,
+       const ValueIdSet& newPartKeyPreds)
+{
+    partialPartFunc_ -> replacePivs(newPivs, newPartKeyPreds);
+}
+
+SkewedDataPartitioningFunction::SkewedDataPartitioningFunction(
+    const SkewedDataPartitioningFunction& other, NAMemory* heap)
+: PartitioningFunction(other, heap), 
+  skewHashList_(NULL),                      // recompute this
+  partialPartFunc_(other.partialPartFunc_), // may need a deep copy
+  skewProperty_(other.skewProperty_)        // share the skew property
+{
+}
+
+Lng32 SkewedDataPartitioningFunction::getCountOfPartitions() const
+{
+   return partialPartFunc_->getCountOfPartitions();
+}
+
+void SkewedDataPartitioningFunction::createPartitioningKeyPredicates()
+{
+  // do nothing, there aren't any partitioning key preds for a skew
+  // partition
+  storePartitioningKeyPredicates(ValueIdSet());
+  partialPartFunc_ -> createPartitioningKeyPredicates();
+}
+
+PartitioningRequirement*
+SkewedDataPartitioningFunction::makePartitioningRequirement()
+{
+  return new (CmpCommon::statementHeap()) RequireSkewed(this);
+}
+
+PartitioningFunction*
+SkewedDataPartitioningFunction::copy() const
+{
+  SkewedDataPartitioningFunction *result;
+
+  result = new (CmpCommon::statementHeap())
+    SkewedDataPartitioningFunction(*this);
+  result->partialPartFunc_ = partialPartFunc_->copy();
+
+  return result;
+}
+
+// -----------------------------------------------------------------------
+// Method for debugging.
+// -----------------------------------------------------------------------
+const NAString SkewedDataPartitioningFunction::getText() const
+{
+  NAString result = partialPartFunc_->getText();
+
+  // SKEW_EXPLAIN = off --> do no display any details on skew-processing
+  // method or skew value list.
+  if ( CmpCommon::getDefault(SKEW_EXPLAIN) == DF_OFF )
+    return result;
+
+  NAString pat, suffix;
+
+  switch ( skewProperty_.getIndicator() ) {
+     case skewProperty::UNIFORM_DISTRIBUTE:
+       suffix = "-ud";
+       break;
+     case skewProperty::BROADCAST:
+       suffix = "-br";
+       break;
+     default:
+       break;
+  }
+
+  switch (partialPartFunc_ -> getPartitioningFunctionType()) {
+    case HASH_PARTITIONING_FUNCTION:
+       pat = "hash";
+       break;
+    case HASH_DIST_PARTITIONING_FUNCTION:
+       pat = "hash1";
+       break;
+    case HASH2_PARTITIONING_FUNCTION:
+       pat = "hash2";
+       break;
+    default:
+       break;
+  }
+  size_t loc = result.index(pat);
+
+  if ( loc != NA_NPOS ) {
+     result.insert(loc+pat.length(), suffix);
+  }
+
+  result += skewProperty_.getText();
+
+  return result;
+}
+
+// LCOV_EXCL_START
+void SkewedDataPartitioningFunction::print(FILE* ofd, const char* indent,
+                                         const char* title) const
+{
+  PartitioningFunction::print(ofd, indent, "SkewedDataPartitioningFunction");
+}  
+// LCOV_EXCL_STOP
+
+// -----------------------------------------------------------------------
+// SkewedDataPartitioningFunction::comparePartFuncToFunc(): Compare this
+// partitioning function to another hash2 function. To be 'SAME'
+// must have the same number and order of partitioning key columns and
+// the same number of scaled partitions.
+// -----------------------------------------------------------------------
+COMPARE_RESULT
+SkewedDataPartitioningFunction::
+comparePartFuncToFunc(const PartitioningFunction &other) const
+{
+  // the other has to be a SkewedDataPartitioningFunction
+  const SkewedDataPartitioningFunction *oth =
+    other.castToSkewedDataPartitioningFunction();
+
+  if(!oth) return INCOMPATIBLE;
+
+  // compare the two partial partfuncs.
+  COMPARE_RESULT c = partialPartFunc_->comparePartFuncToFunc(
+                         *(oth->getPartialPartitioningFunction())
+                                                            );
+
+  if (c != SAME) return INCOMPATIBLE;
+
+  // compare the skew property last.
+  if ( NOT (skewProperty_ == oth->skewProperty_) )
+    return INCOMPATIBLE;
+
+
+  return SAME;
+
+} // SkewedDataPartitioningFunction::comparePartFuncToFunc()
+
+// -----------------------------------------------------------------------
+// SkewedDataPartitioningFunction::scaleNumberOfPartitions()
+// -----------------------------------------------------------------------
+
+// LCOV_EXCL_START
+
+//::scaleNUmberOfPartitions() are called in following locations
+//
+//  OptPhysRelExpr.cpp
+//	3536 NJ::genLeftChild()
+//	4892 NJ:createContextForChild() (rightPartFunc->)
+//	14166 and 14262	synthDP2PhysicalProperty()
+//
+//  GP.cpp
+//	955 GroupAttributes::recommendedOrderForNJProbing()
+//
+//As a result, the following version will not be called.
+
+PartitioningFunction *
+SkewedDataPartitioningFunction::
+scaleNumberOfPartitions(Lng32 &suggestedNewNumberOfPartitions,
+                        PartitionGroupingDistEnum partGroupDist)
+{
+   PartitioningFunction *mayBeNewPartfunc = 
+                      partialPartFunc_->scaleNumberOfPartitions(
+                         suggestedNewNumberOfPartitions, partGroupDist);
+
+   if ( mayBeNewPartfunc != partialPartFunc_ )
+      partialPartFunc_ = mayBeNewPartfunc;
+   
+    return this;
+
+} // SkewedDataPartitioningFunction::scaleNumberOfPartitions()
+// LCOV_EXCL_STOP
+
+// -----------------------------------------------------------------------
+// SkewedDataPartitioningFunction::isAGroupingOf()
+// -----------------------------------------------------------------------
+NABoolean
+SkewedDataPartitioningFunction::isAGroupingOf(const PartitioningFunction &other,
+                                            Lng32* maxPartsPerGroup) const
+{
+   return FALSE;
+} // SkewedDataPartitioningFunction::isAGroupingOf()
+
+// -----------------------------------------------------------------------
+// SkewedDataPartitioningFunction::copyAndRemap()
+// -----------------------------------------------------------------------
+PartitioningFunction*
+SkewedDataPartitioningFunction::copyAndRemap
+                         (ValueIdMap& map, NABoolean mapItUp) const
+{
+  SkewedDataPartitioningFunction *newPartFunc =
+    (SkewedDataPartitioningFunction *)
+    copy()->castToSkewedDataPartitioningFunction();
+
+  CMPASSERT(skewProperty_.getIndicator() != skewProperty::BROADCAST);
+
+  newPartFunc->remapIt(this, map, mapItUp);
+  newPartFunc->partialPartFunc_->remapIt(partialPartFunc_, map, mapItUp);
+
+  return newPartFunc;
+
+} // SkewedDataPartitioningFunction::copyAndRemap()
+
+void
+SkewedDataPartitioningFunction::preCodeGen(const ValueIdSet& availableValues)
+{
+   PartitioningFunction::preCodeGen(availableValues);
+   partialPartFunc_->preCodeGen(availableValues);
+}
+
+ItemExpr* SkewedDataPartitioningFunction::createPartitioningExpression()
+{
+   CMPASSERT(partialPartFunc_ -> isAHash2PartitioningFunction() == TRUE);
+
+   // cast to TableHashPartitioningFunction class (the parent class
+   // of Hash2PartitioningFunction) which has the method 
+   // createPartitioningExpressionImp() defined.
+   ItemExpr* partExpr = ((TableHashPartitioningFunction*)partialPartFunc_)
+        -> createPartitioningExpressionImp(TRUE /*do varchar cast*/);
+
+   storeExpression(partExpr);
+   return partExpr;
+}
 
 // ***********************************************************************
 // RangePartitionBoundaries
@@ -5913,6 +6200,146 @@ void RoundRobinPartitioningFunction::print(
 
 // LCOV_EXCL_STOP
 
+const skewProperty ANY_SKEW_PROPERTY(skewProperty::ANY, NULL);
+  
+NABoolean skewProperty::operator==(const skewProperty& other) const
+{
+   if ( indicator_  != other.indicator_ )
+       return FALSE;
+
+   if (broadcastOneRow_ != other.broadcastOneRow_)
+     return FALSE;
+
+   if ( skewValues_ == other.skewValues_ )
+     return TRUE;
+
+    if ( skewValues_ != NULL && other.skewValues_ != NULL &&
+         NOT (*skewValues_ == *(other.skewValues_)) )
+       return FALSE;
+
+   if ( numESPs_ == other.numESPs_ )
+     return TRUE;
+
+   return FALSE;
+}
+
+const NAString skewProperty::getText(NABoolean abbre) const
+{
+  NAString result;
+  char esps[20];
+  NAString suffix;
+
+  if ( abbre == FALSE && getAntiSkewESPs() > 0 ) {
+    suffix += "(via ";
+    str_itoa(getAntiSkewESPs(), esps);
+    suffix += esps;
+    suffix += " ESP(s)) ";
+  }
+
+  switch ( getIndicator() )
+   {
+     case skewProperty::UNIFORM_DISTRIBUTE:
+
+        if ( abbre == FALSE ) {
+          result += " - uniformly distribute ";
+          result += suffix;
+          result += "skewed ";
+                  
+          if ( skewValues_ ) 
+             result += skewValues_->getText();
+        } else {
+           result += "-ud";
+        }
+        break;
+
+     case skewProperty::BROADCAST:
+
+        if ( abbre == FALSE ) {
+           result += " - broadcast "; 
+           result += suffix;
+           result += "skewed "; 
+
+           if ( skewValues_ ) 
+              result += skewValues_->getText();
+
+	   if (getBroadcastOneRow())
+	     result += " and one row ";
+        } else {
+           result += "-br";
+        }
+        break;
+
+    default:
+      break;
+  }
+
+  return result;
+}
+
+Int64List* 
+SkewedDataPartitioningFunction::buildHashListForSkewedValues()
+{
+  if ( skewHashList_ )
+    return skewHashList_;
+
+  const SkewedValueList* svlist = getSkewProperty().getSkewValues();
+
+  if ( svlist == NULL )
+    return NULL;
+
+  skewHashList_ = new (STMTHEAP) Int64List(STMTHEAP, svlist->entries());
+  CollHeap *heap = CmpCommon::statementHeap();
+  char data[10]; Int32 len = 0;
+
+  ConstValue* cvExp = NULL;
+  ItemExpr* expForSkewedValue = NULL;
+  ValueIdList exprs;
+  UInt32 hashval;
+
+  if ( !svlist->needToComputeFinalHash() ) {
+
+     // for TRUE MC-SB. hash value for the composite skew value is pre-computed.
+     for (CollIndex i = 0; i < svlist->entries(); i++) {
+        hashval = (UInt32)((*svlist)[i].getDblValue());
+        skewHashList_ -> insertAt(i, hashval);
+     }
+
+  } else {
+
+     const NAType* naType = svlist->getNAType(); 
+     NABoolean useHash = naType->useHashRepresentation();
+     UInt32 flags = ExHDPHash::NO_FLAGS;
+
+     for (CollIndex i = 0; i < svlist->entries(); i++) 
+     {
+        if ( (*svlist)[i].getValue().isNull() ) {
+           // an untyped NULL constant. All null values hash to this constant.
+           // Ref. module exp_function.cpp, method ExHDPHash::eval() and
+           // ex_function_hash::eval().
+           hashval =  ExHDPHash::nullHashValue; //666654765;
+        } else {
+   
+            if ( useHash ) {
+              // The skew value for any character or exact numeric data type is 
+              // the hash itself. So here we just copy and cast it back to UInt32.
+              hashval = (UInt32)((*svlist)[i].getDblValue());
+            } else {
+   
+             // If we hit this branch, it means the boundary values are stored in
+             // the skew list. We can assume these values can be safely casted
+             // back (without loosing precision). Otherwise, storing-hash- 
+             // value method should be used.
+              (*svlist)[i].outputToBufferToComputeRTHash(naType,data,len,flags);
+              hashval = computeHashValue(data, flags, len);
+            }
+        }
+        skewHashList_ -> insertAt(i, hashval);
+     }
+
+  }
+
+  return skewHashList_;
+}
 
 //============================
 

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -63,6 +63,8 @@ RequirementGenerator::RequirementGenerator(
    removeStartLocation_                 (FALSE),
    addedSortOrderTypeReq_               (NO_SOT),
    addedDp2SortOrderPartReq_            (NULL),
+   addedSkewProperty_                   (ANY_SKEW_PROPERTY),
+   skewPropertyAdded_                   (FALSE),
    requireNoESPExchange_                (FALSE),
    requireHash2Only_                    (FALSE)
 {
@@ -814,6 +816,83 @@ void RequirementGenerator::addPartRequirement(
     }
 } // addPartRequirement
 
+void
+RequirementGenerator::makeSkewReqFeasible(PartitioningRequirement* partR)
+{
+  if ( skewPropertyAdded_ == FALSE || partR == NULL )
+      return;
+
+  // check part requirement partR. If it is fuzzy, nothing we can check
+  // other than set the skew property
+  // to it.
+  if (partR -> isRequirementFuzzy() ) {
+     const skewProperty& skInFuzzyR =
+          ((FuzzyPartitioningRequirement*)partR)->getSkewProperty();
+
+     if ( skInFuzzyR.isAnySkew() ) {
+        ((FuzzyPartitioningRequirement*)partR) ->
+              setSkewProperty(addedSkewProperty_);
+     } else {
+        if ( NOT (skInFuzzyR == addedSkewProperty_) )
+           stillFeasible_ = FALSE;
+     }
+
+     return;
+  } else {
+    // check the part func contained in the (fully specified) partR
+    const FullySpecifiedPartitioningRequirement* fs_req =
+         partR->castToFullySpecifiedPartitioningRequirement();
+
+    if ( fs_req ) {
+
+         PartitioningFunction* partFunc = fs_req->getPartitioningFunction();
+         if ( partFunc != NULL ) {
+
+           const SkewedDataPartitioningFunction* skpf =
+              partFunc->castToSkewedDataPartitioningFunction();
+
+           // The contained partfunc should be a SkewedData partfunc.
+           // If not, declare it not feasible right here
+           if ( skpf == NULL )
+               stillFeasible_ = FALSE;
+           else {
+               // Make sure its skew property is the same as the
+               // one set to the ReqGen.
+               if (NOT (skpf->getSkewProperty() == addedSkewProperty_ ))
+                 stillFeasible_ = FALSE;
+            }
+         }
+     }
+  }
+}
+
+void
+RequirementGenerator::addSkewRequirement(skewProperty::skewDataHandlingEnum x,
+                                         SkewedValueList* skList,
+					 NABoolean broadcastOneRow)
+{
+  if ( skewPropertyAdded_ == TRUE ) {
+     skewProperty tempSk;
+     tempSk.setIndicator(x);
+     tempSk.setBroadcastOneRow(broadcastOneRow);
+     tempSk.setSkewValues(skList);
+
+     if (NOT (tempSk == addedSkewProperty_)) {
+       stillFeasible_ = FALSE;
+       return;
+     }
+  }
+
+  addedSkewProperty_.setIndicator(x);
+  addedSkewProperty_.setBroadcastOneRow(broadcastOneRow);
+  addedSkewProperty_.setSkewValues(skList);
+  skewPropertyAdded_ = TRUE;
+
+  if ( generatedPartitioningReqIsValid_ == TRUE AND
+       generatedPartitioningRequirement_
+     )
+    makeSkewReqFeasible(generatedPartitioningRequirement_);
+}
 
 void RequirementGenerator::addLocationRequirement(
      PlanExecutionEnum loc)
@@ -1234,6 +1313,12 @@ void RequirementGenerator::producePartitioningRequirements()
     generatedPartitioningRequirement_ = NULL;
   }
 
+  if ( skewPropertyAdded_ == TRUE ) {
+    if ( generatedPartitioningRequirement_ )
+       makeSkewReqFeasible(generatedPartitioningRequirement_);
+    else
+       stillFeasible_ = FALSE;
+  }
 
   generatedPartitioningReqIsValid_ = TRUE;
 } // producePartitioningRequirements

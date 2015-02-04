@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -58,6 +58,8 @@ class RangePartitioningFunction;
 class LogPhysPartitioningFunction;
 class RoundRobinPartitioningFunction;
 class HivePartitioningFunction;
+class SkewedDataPartitioningFunction;
+
 
 // ----------------------------------------------------------------------
 // forward declarations
@@ -92,6 +94,91 @@ enum PartitionGroupingDistEnum
 };
 
 
+// A class representing skew property
+class skewProperty : public NABasicObject {
+
+public:
+
+  // -----------------------------------------------------------------------
+  // literals for skew data handling 
+  // -----------------------------------------------------------------------
+  enum skewDataHandlingEnum
+  { ANY,                  // Any skew
+    UNIFORM_DISTRIBUTE,   // skewed values are uniformly distributed 
+                          // (e.g., through round-robin)
+    BROADCAST             // skewed values are broadcasted
+  };
+
+  skewProperty(enum skewDataHandlingEnum x = ANY, 
+               SkewedValueList* v= NULL,
+               Int32 numEsps = -1,
+               NAMemory* heap = CmpCommon::statementHeap()
+               ): 
+      indicator_(x), skewValues_(v), heap_(heap), numESPs_(numEsps),
+      broadcastOneRow_(FALSE){};
+
+  skewProperty(const skewProperty& sk): 
+      indicator_(sk.indicator_), skewValues_(sk.skewValues_), heap_(sk.heap_),
+      numESPs_(sk.numESPs_),
+      broadcastOneRow_(sk.broadcastOneRow_) {}
+
+  ~skewProperty() {};
+
+  enum skewDataHandlingEnum getIndicator() const { return indicator_; }; 
+  void setIndicator(enum skewDataHandlingEnum x) { indicator_ = x; }; 
+
+  NABoolean getBroadcastOneRow() const { return broadcastOneRow_; }; 
+  void setBroadcastOneRow(NABoolean x) { broadcastOneRow_ = x; }; 
+
+
+  const SkewedValueList* getSkewValues() const { return skewValues_; };
+  void setSkewValues(const SkewedValueList* v) { skewValues_ = v; };
+
+  void set(skewProperty& sk) 
+  { 
+    setIndicator(sk.getIndicator()); 
+    setSkewValues(sk.getSkewValues()); 
+    setBroadcastOneRow(sk.getBroadcastOneRow());
+  };
+
+  NABoolean operator ==(const skewProperty&) const;
+
+  // If abbre. form 
+  //   = FALSE: skewed distribution method name and values are returned
+  //   = TRUE:  only the abbreviation of the skewed distribution method 
+  //            is returned
+  const NAString getText(NABoolean inAbbreviatedForm = FALSE) const;
+
+  NABoolean isAnySkew() const { return indicator_ == skewProperty::ANY; };
+
+  NABoolean isUniformDistributed() const { return indicator_ == skewProperty::UNIFORM_DISTRIBUTE; };
+  NABoolean isBroadcasted() const { return indicator_ == skewProperty::BROADCAST; };
+
+  NABoolean hasSkewValues() const
+  { return skewValues_ AND skewValues_->entries() > 0; };
+
+  Int32 getAntiSkewESPs() const { return numESPs_; };
+
+  NABoolean skewedListHasOnlyNonSkewedNull() const
+  {
+    return skewValues_->hasOnlyNonSkewedNull();
+  }
+protected:
+  enum skewDataHandlingEnum indicator_; // How the data is skewed
+  const SkewedValueList* skewValues_;   // The skewed values. Multiple skew
+                                        // property objects can share 
+                                        // a single skew value list
+  NAMemory * heap_; // the heap    
+
+  NABoolean broadcastOneRow_;
+
+  // the number of ESPs that will deal with skew. -1 means "use all"
+  Int32 numESPs_;
+};
+
+// Define one useful object: the any-skew object
+extern const skewProperty ANY_SKEW_PROPERTY;
+
 
 // -----------------------------------------------------------------------
 // PartitioningFunction
@@ -125,6 +212,7 @@ protected:
       RANGE_PARTITIONING_FUNCTION,
       LOGPHYS_PARTITIONING_FUNCTION,
       ROUND_ROBIN_PARTITIONING_FUNCTION,
+      SKEWEDDATA_PARTITIONING_FUNCTION,
       HIVE_PARTITIONING_FUNCTION
     };
 
@@ -236,6 +324,8 @@ public:
   virtual const
   RoundRobinPartitioningFunction* castToRoundRobinPartitioningFunction() const;
 
+  virtual const
+  SkewedDataPartitioningFunction* castToSkewedDataPartitioningFunction() const;
 
   virtual const
   HivePartitioningFunction* castToHivePartitioningFunction() const;
@@ -297,6 +387,8 @@ public:
                { return (functionType_ == LOGPHYS_PARTITIONING_FUNCTION); }
   inline NABoolean isARoundRobinPartitioningFunction() const
          { return (functionType_ == ROUND_ROBIN_PARTITIONING_FUNCTION); }
+  inline NABoolean isASkewedDataPartitioningFunction() const
+                { return (functionType_ == SKEWEDDATA_PARTITIONING_FUNCTION); }
   inline NABoolean isAHivePartitioningFunction() const
                 { return (functionType_ == HIVE_PARTITIONING_FUNCTION); }
   inline NABoolean isARandomPartitioningFunction() const
@@ -1233,6 +1325,7 @@ protected:
 // -----------------------------------------------------------------------
 class TableHashPartitioningFunction : public PartitioningFunction
 {
+  friend class SkewedDataPartitioningFunction;
 
 public:
   // --------------------------------------------------------------------
@@ -1246,7 +1339,8 @@ public:
        numberOfOrigHashPartitions_(numberOfHashPartitions),
        numberOfPartitions_(numberOfHashPartitions),
        setupForStatement_(FALSE),
-       resetAfterStatement_(FALSE)
+       resetAfterStatement_(FALSE),
+       doVarCharCast_(FALSE)
   {}
 
   TableHashPartitioningFunction(const PartitioningFunctionTypeEnum ftype,
@@ -1264,7 +1358,8 @@ public:
        numberOfOrigHashPartitions_(numberOfHashPartitions),
        numberOfPartitions_(numberOfHashPartitions),
        setupForStatement_(FALSE),
-       resetAfterStatement_(FALSE)
+       resetAfterStatement_(FALSE),
+       doVarCharCast_(FALSE)
   {
     // MUST be given some partitioning keys and a hash table size.
     CMPASSERT((NOT getPartitioningKey().isEmpty()) AND
@@ -1280,7 +1375,8 @@ public:
       numberOfOrigHashPartitions_(other.numberOfOrigHashPartitions_),
       numberOfPartitions_(other.numberOfPartitions_),
       setupForStatement_(other.setupForStatement_),
-      resetAfterStatement_(other.resetAfterStatement_)
+      resetAfterStatement_(other.resetAfterStatement_),
+      doVarCharCast_(other.doVarCharCast_)
   {
     // MUST be given some partitioning keys and a hash table size.
     CMPASSERT((NOT getPartitioningKey().isEmpty()) AND
@@ -1406,6 +1502,8 @@ private:
                        ItemExpr *numParts) const = 0;
 
   ItemExpr* createPartitioningExpressionImp(NABoolean doVarCharCast) ;
+
+  NABoolean doVarCharCast_;
 }; // class TableHashPartitioningFunction
 
 
@@ -1577,6 +1675,133 @@ private :
 }; // class Hash2PartitioningFunction
 
 
+// -----------------------------------------------------------------------
+// SkewedDataPartitioningFunction 
+//
+//  A partitioning function describing the partitioning of skew data.
+//
+//  One unique feature of this function is that its partitioning key 
+//  contains a special value such that this function will
+//  not match with any other non skeweddata partfunc. 
+//
+//  In addition, this partitioning function contains a partital 
+//  partitioning function describing the non-skewed data 
+//  portion. This function is accessable through the virtual method 
+//  getPartialPartitioningFunction(). All other non-skew partitioning functions 
+//  implement this method by returning their original partitioning keys
+//  (i.e., getPartitioningKey() == getPartialPartitioningKey() for all non-skew
+//  partfuncs.
+//
+//  Most required methods for this class are deligated to the contained 
+//  partial partitioning function. 
+// -----------------------------------------------------------------------
+class SkewedDataPartitioningFunction : public PartitioningFunction
+{
+public:
+  // --------------------------------------------------------------------
+  // Constructor functions
+  // --------------------------------------------------------------------
+  SkewedDataPartitioningFunction(PartitioningFunction* partFuncForUnskewed,
+                              const skewProperty& sk,
+                              NAMemory* heap = CmpCommon::statementHeap()
+                                );
+
+  SkewedDataPartitioningFunction(const SkewedDataPartitioningFunction& other,
+                              NAMemory* heap = CmpCommon::statementHeap());
+
+  // --------------------------------------------------------------------
+  // Destructor functions
+  // --------------------------------------------------------------------
+  virtual ~SkewedDataPartitioningFunction() {};
+
+  // get the partition key for the non-skewed data 
+  const ValueIdSet& getPartialPartitioningKey() const 
+  { return partialPartFunc_ -> getPartitioningKey(); }
+
+  // get the partition function for the non-skewed data 
+  const PartitioningFunction* getPartialPartitioningFunction() const 
+  { return partialPartFunc_; }
+
+  void createPartitioningKeyPredicates();
+  Lng32 getCountOfPartitions() const;
+  void createPIV(ValueIdList &partInputValues);
+
+  void replacePivs(const ValueIdList& newPivs,
+                   const ValueIdSet& newPartKeyPreds);
+
+  // ---------------------------------------------------------------------
+  // see base class for explanations of the virtual methods
+  // ---------------------------------------------------------------------
+  virtual const
+  SkewedDataPartitioningFunction* castToSkewedDataPartitioningFunction() const
+  { return this; };
+
+  virtual PartitioningRequirement* makePartitioningRequirement();
+
+  virtual PartitioningFunction* copyAndRemap
+                           (ValueIdMap& map, NABoolean mapItUp) const;
+
+  ItemExpr* createPartitioningExpression();
+
+  virtual void preCodeGen(const ValueIdSet& availableValues);
+  virtual short codeGen(Generator* generator, Lng32 partInputDataLength);
+
+  virtual PartitioningFunction* copy() const;
+
+  virtual const NAString getText() const;
+  virtual void print( FILE* ofd = stdout,
+                      const char* indent = DEFAULT_INDENT,
+                      const char* title = "PartitioningFunction") const;
+
+
+  virtual COMPARE_RESULT comparePartFuncToFunc
+                               (const PartitioningFunction &other) const;
+
+  virtual PartitioningFunction *
+  scaleNumberOfPartitions(Lng32 &suggestedNewNumberOfPartitions,
+                          PartitionGroupingDistEnum partGroupDist =
+                            DEFAULT_PARTITION_GROUPING);
+
+  virtual NABoolean isAGroupingOf(const PartitioningFunction &other,
+                                  Lng32* maxPartsPerGroup = NULL) const;
+
+  // Helper functions on skewed values
+  const skewProperty& getSkewProperty() const { return skewProperty_; };
+  void setSkewProperty(const skewProperty& sk) { skewProperty_ = sk; };
+
+  // A virtual method returning the hash value list for skewed values.
+  // Used during run-time to identify input rows containing any skew
+  // values.
+  virtual Int64List* buildHashListForSkewedValues();
+
+  // A virtual method returning a run-time hashing expression that hashes a
+  // skew value into a hash value. Called during codeGen phase.
+  ItemExpr *getHashingExpression() const 
+  { return partialPartFunc_-> getHashingExpression(); };
+
+  // A method returns the hash for a skew value
+  UInt32 computeHashValue(char* data, UInt32 flags,  Int32 len)
+  { return partialPartFunc_-> computeHashValue(data, flags, len); };
+
+  // A virtual method returning a compiler-time hashing expression that
+  // hashes a skew value into a hash value. Called during codeGen phase.
+  ItemExpr *buildHashingExpressionForExpr(ItemExpr* ie) const
+  { return partialPartFunc_-> buildHashingExpressionForExpr(ie); };
+
+
+protected:
+
+  // the partfunc describes the non-skewed part of the data
+  PartitioningFunction* partialPartFunc_;
+
+  // the description of the skewed part of the data
+  skewProperty skewProperty_;
+
+  // a hash list for skewed values to help speedy identification of skew 
+  // values during run-time.
+  Int64List* skewHashList_;
+
+}; // class SkewedDataPartitioningFunction
 
 // -----------------------------------------------------------------------
 // hiveHashPartitioningFunction

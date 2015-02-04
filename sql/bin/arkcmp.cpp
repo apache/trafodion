@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -169,19 +169,16 @@ static ofstream* initializeArkcmpCoutCerr()
 
 
 
-
-
 //extern void bloom_filter_test();
 //extern void  hdfs_list_test(int argc, char **argv);
 
 // argv[1] : <n> as in CHAR(<n>)
 // argv[2]:  input file name, in which each line is a string 
 //           at least <n> bytes long
-      
+
 
 Int32 main(Int32 argc, char **argv)
 {
-
 
 
   dovers(argc, argv);

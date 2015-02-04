@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -214,6 +214,12 @@ short Hash2PartitioningFunction::codeGen(Generator *generator,
 
   generator->setGenObj(NULL, (ComTdb*)generatedObject);
   return 0;
+}
+
+short SkewedDataPartitioningFunction::codeGen(Generator *generator,
+                                            Lng32 partInputDataLength)
+{
+  return partialPartFunc_ -> codeGen(generator, partInputDataLength);
 }
 
 
