@@ -2,7 +2,7 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -22,159 +22,38 @@
 #==========================================
 # Install Trafodion build on a Cluster System
 #==========================================
-
-function print_usage {
-cat << EOF
-This script will install a specified Trafodion build.
-
-Usage: $(basename $0) [options]
-
-Options:
-    --help                Print this message and exit.
-    --build <file>        Full pathname to the Trafodion build tar file.
-    --dcs_build <file>    Full pathname to the DCS build tar file.
-    --install_path <dir>  Full pathname to the install directory location.
-    --nostart             This will install but not start Trafodion
-    --init_trafodion      Run init_trafodion after sqstart (ignored for --nostart)
-    --config <file>       Full pathname of sqconfig. (default $HOME/sqconfig)
-    --dcs_servers <count>     Total number of DCS servers to start.  These
-                              will be allocated in a round-robin fashion on
-                              all nodes. (default, 1 per node)
-    --userid              username if not chosen will default to admin 
-    --password            password if not chosen will default to admin
-    --url                 url:port if not chosen will default to distribution default
-
-EOF
-}
-
-#============================================
 # Default values
 
 # This is the directory where all the Trafodion install scripts and
 # tar files are initially downloaded to
-typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
-
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+echo $TRAF_WORKDIR
 # input parameter defaults
-typeset BUILD_FILE=""
-typeset SQ_ROOT="$HOME/trafodion"
 typeset NODES="$HOSTNAME"
-typeset DCS_BUILD="$HOME/dcs_build.tgz"
-typeset INIT_TRAFODION="N"
-typeset NOSTART="N"
-typeset SQCONFIG=""
 typeset DCS_SERVERS_PARM=""
-typeset USER_NAME="admin"
-typeset PASSWORD="admin"
 typeset timestamp=$(date +%F-%H-%M-%S)
 typeset INSTALL_LOG="/var/log/trafodion/trafodion_install_$timestamp.log"
+
+TRAF_CONFIG=/etc/trafodion/trafodion_config
+source $TRAF_CONFIG
 #============================================
 
-CLOUDERA=$(rpm -qa | grep cloudera | wc -l)
-AMBARI=$(rpm -qa | grep ambari | wc -l)
-
-if [[ $CLOUDERA -ne 0 ]]; then
-   typeset URL_PORT=$(hostname --long):7180
-fi
-
-if [[ $AMBARI -ne 0 ]]; then
-   typeset URL_PORT=$(hostname --long):8080   
-fi
-#============================================
-
-# Parse input parameters
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --build)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1." | tee -a $INSTALL_LOG
-                print_usage
-                exit -1
-            fi
-            BUILD_FILE="$( readlink -f $2 )"
-            shift
-            ;;
-        --install_path)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1." | tee -a $INSTALL_LOG
-                print_usage
-                exit -1
-            fi
-            SQ_ROOT="$( readlink -f $2 )"
-            shift
-            ;;
-        --dcs_build)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1." | tee -a $INSTALL_LOG
-                print_usage
-                exit -1
-            fi
-            DCS_BUILD="$( readlink -f $2 )"
-            shift
-            ;;
-        --config)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1." | tee -a $INSTALL_LOG
-                print_usage
-                exit -1
-            fi
-            SQCONFIG="$( readlink -f $2 )"
-            shift
-            ;;
-        --dcs_servers)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1." | tee -a $INSTALL_LOG
-                print_usage
-                exit -1
-            fi
-            DCS_SERVERS_PARM="--dcs_servers $2"
-            shift
-            ;;
-        --init_trafodion)
-            INIT_TRAFODION="Y"
-            ;;
-        --nostart)
-            NOSTART="Y"
-            ;;
-        --userid)
-          shift
-          USER_NAME=$1
-          ;;
-        --password)
-          shift
-          PASSWORD=$1
-          ;;
-        --url)
-          shift
-          URL_PORT=$1
-          ;;
-        --help)
-            print_usage
-            exit -1 
-            ;;
-        *)
-            print_usage
-            exit -1 
-    esac
-    shift
-done
-
-#============================================
 #Info for log file
 
-echo "***INFO: Log file location /var/log/trafodion"
+echo "***INFO: Log file location $INSTALL_LOG"
 
-echo "***Log File: trafodion_installer script***" >> $INSTALL_LOG
+echo "***INFO: ***Log File: traf_installer script***" >> $INSTALL_LOG
 echo >> $INSTALL_LOG
-echo "Working directory: $TRAF_WORKDIR" >> $INSTALL_LOG
-echo "Build: $BUILD_FILE" >> $INSTALL_LOG
-echo "Install Path: $SQ_ROOT" >> $INSTALL_LOG
-echo "DCS Build: $DCS_BUILD" >> $INSTALL_LOG
-echo "Path to SQCONFIG: $SQCONFIG" >> $INSTALL_LOG
-echo "Number of DCS Servers: $DCS_SERVERS_PARM" >> $INSTALL_LOG
-echo "Run init_trafodion: $INIT_TRAFODION" >> $INSTALL_LOG
-echo "Start Trafodion: $NOSTART" >> $INSTALL_LOG
-echo "User Id: $USER_NAME" >> $INSTALL_LOG
-echo "URL: $URL_PORT" >> $INSTALL_LOG
+echo "***INFO: Working directory: $TRAF_WORKDIR" >> $INSTALL_LOG
+echo "***INFO: Build: $BUILD_FILE" >> $INSTALL_LOG
+echo "***INFO: Install Path: $SQ_ROOT" >> $INSTALL_LOG
+echo "***INFO: DCS Build: $DCS_BUILD" >> $INSTALL_LOG
+echo "***INFO: Path to SQCONFIG: $SQCONFIG" >> $INSTALL_LOG
+echo "***INFO: Number of DCS Servers: $DCS_SERVERS_PARM" >> $INSTALL_LOG
+echo "***INFO: Run init_trafodion: $INIT_TRAFODION" >> $INSTALL_LOG
+echo "***INFO: Start Trafodion: $START" >> $INSTALL_LOG
+echo "***INFO: User Id: $USER_NAME" >> $INSTALL_LOG
+echo "***INFO: Hadoop UI URL: $URL_PORT" >> $INSTALL_LOG
 echo >> $INSTALL_LOG
 
 #============================================
@@ -190,62 +69,28 @@ if [[ "$userId" != "trafodion" ]]; then
 fi
 
 #============================================
-timestamp=$(date +%F-%H-%M-%S)
 echo "***INFO: Starting Trafodion installer ($timestamp)" | tee -a $INSTALL_LOG
 
-if [ $CLOUDERA -ne 0 -o $AMBARI -ne 0 ]; then
-  #===========================================
-  # Check that Cloudera or Ambari username, password, and url are correct.
-  # Will not get a cluster name if these are not correct. Skip this for
-  # MapR and other clusters.
-
-  CLUSTER_NAME=$(curl -su $USER_NAME:$PASSWORD http://$URL_PORT/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
-
-  if [ -z $CLUSTER_NAME ]; then
-    echo
-    echo "***ERROR: Please check userid, password, and url and try again. " | tee -a $INSTALL_LOG
-    echo
-    exit -1
-  fi
-fi
-
-node_count=$(echo $NODE_LIST | wc -w)
 #============================================
 # Check if an existing instance is up
 process_count=$(cstat -noheader 2>/dev/null | wc -l)
 if [ "$process_count" -ne 0 ]; then
-    echo "***ERROR: Trafodion processes are still running. Please stop the current" | tee -a $INSTALL_LOG
-    echo "***ERROR: instance with sqstop before installing a new Trafodion build." | tee -a $INSTALL_LOG
+    echo "***ERROR: There appears to be $process_count Trafodion processes still running." | tee -a $INSTALL_LOG
+    echo "***ERROR: You can verify this with the 'cstat' command." | tee -a $INSTALL_LOG
+    echo "***ERROR: Please stop the current instance with sqstop before" | tee -a $INSTALL_LOG
+    echo "***ERROR: installing a new Trafodion build." | tee -a $INSTALL_LOG
     exit -1
 fi
 
 #============================================
 # Create install directory
 mkdir -p $SQ_ROOT
+echo $SQ_ROOT
 cd $SQ_ROOT
 
-# Did the user specify a buildfile? if not apply defaults
-if [ "$BUILD_FILE" == "" ]; then
-
-    # Look for any Trafodion_server*.tgz file first
-    # and take the newest one, if any
-    file_list=$(ls -rt $HOME/trafodion_server*.tgz 2>/dev/null)
-    if [ "$file_list" != "" ]; then
-        for build in $file_list
-        do
-            BUILD_FILE=$build
-            break;
-        done
-
-    else
-        # Otherwise use this as the default
-        BUILD_FILE="$HOME/trafodion_build.tgz"
-    fi
-fi
-
 # untar Trafodion build into install directory
-echo "***INFO: untarring build file $BUILD_FILE to $SQ_ROOT" | tee -a $INSTALL_LOG
-tar -xzf $BUILD_FILE
+echo "***INFO: untarring build file $TRAF_BUILD to $SQ_ROOT" | tee -a $INSTALL_LOG
+tar -xzf $TRAF_BUILD 2>&1 | tee -a $INSTALL_LOG
 if [ "$?" != "0" ]; then
     echo "***ERROR: There was a problem untarring the Trafodion build file.  Check install log files for details." | tee -a $INSTALL_LOG
     exit -1;
@@ -279,7 +124,7 @@ else
 fi
 #============================================
 
-echo "***INFO: modifying .bashrc to set SQ_HOME, TOOLSDIR, MY_NODES and NODE_LIST" | tee -a $INSTALL_LOG
+echo "***INFO: modifying .bashrc to set Trafodion environment variables" | tee -a $INSTALL_LOG
 cd $HOME
 cp .bashrc bashrc_temp
 # NOTE: have to use '@' as delimiter because the usual slash '/' doesn't work
@@ -337,17 +182,6 @@ fi
 
 cd $SQ_ROOT
 
-# if Cloudera installed, modify SQ_CLASSPATH
-cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
-if [ $cloudera_installed -ge 1 ]; then
-    echo "***INFO: Modifying sqenvcom.sh for Cloudera distro" | tee -a $INSTALL_LOG
-    cp $MY_SQROOT/sqenvcom.sh sqenvcom.sh_temp
-    sed -e "s@^SQ_CLASSPATH=\$@SQ_CLASSPATH=$MY_SQROOT/conf@" <sqenvcom.sh_temp >$MY_SQROOT/sqenvcom.sh
-
-    # re-source .bashrc to pick up these changes
-    source ~/.bashrc
-fi
-
 #=================================================
 
 if [ "$node_count" -ne "1" ]; then
@@ -373,25 +207,7 @@ fi
 #==========================================
 # install dcs
 
-# did the user specify a dcs build file? if not apply defaults
-if [ "$DCS_BUILD" == "" ]; then
-
-    # look for any dcs-*.tgz file first
-    # and take the newest one, if any
-    file_list=$(ls -rt $HOME/dcs-*.tgz)
-    if [ "$file_list" != "" ]; then
-        for build in $file_list
-        do
-            BUILD_FILE=$HOME/$build
-            break;
-        done
-
-    else
-        # otherwise use this as the default
-        BUILD_FILE="$HOME/dcs_build.tgz"
-    fi
-fi
-$TRAF_WORKDIR/dcs_installer --dcs_build $DCS_BUILD $DCS_SERVERS_PARM
+$TRAF_WORKDIR/installer/dcs_installer --dcs_build $DCS_BUILD --dcs_servers $DCS_SERVERS_PARM
 if [ "$?" != "0" ]; then
     echo "***ERROR: DCS install failed.  Check install log files for details." | tee -a $INSTALL_LOG
     exit -1;
@@ -409,8 +225,8 @@ if [ "$node_count" -ne "1" ]; then
    fi
 fi
 
-if [ "$NOSTART" == "Y" ]; then
-    echo "***INFO: --nostart was specified, skipping sqstart." | tee -a $INSTALL_LOG
+if [ "$START" == "N" ]; then
+    echo "***INFO: Trafodion will not be started, skipping sqstart." | tee -a $INSTALL_LOG
 else
     echo "***INFO: starting Trafodion instance" | tee -a $INSTALL_LOG
 
@@ -421,25 +237,43 @@ else
     SQSTART_RC=$?
     if [ "$SQSTART_RC" != "0" ]; then
         echo "***ERROR: sqstart failed with RC=$SQSTART_RC. Check $MY_SQROOT/sqmon.log file for details." | tee -a $INSTALL_LOG
+        echo "***ERROR: Consider running trafodion_scanner, to assist in debugging." | tee -a $INSTALL_LOG
         exit -1;
     fi
 
     # Do init_trafodion if specified
-    if [ "$INIT_TRAFODION" == "Y" ]; then
-        ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci"
+    if [ "$INIT_TRAFODION" == "Y" ] && [ "$UPGRADE_TRAF" == "false" ]; then
+        ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci" | tee -a initializeErrors.txt
+        foundError=$(grep "ERROR" initializeErrors.txt | wc -l)
+        if [ "$foundError" -ge "1" ]; then
+           ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize Trafodion, upgrade;\" | sqlci"
+        fi
+        
+        if [ "$?" != "0" ]; then 
+           echo "***ERROR: initialize Trafodion failed.  Check install log files for details." | tee -a $INSTALL_LOG
+           exit -1;
+        fi
+    fi
+     # Do init_trafodion, upgrade if specified
+    if [ "$INIT_TRAFODION" == "Y" ] && [ "$UPGRADE_TRAF" == "true" ]; then
+        ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize Trafodion, upgrade;\" | sqlci" | tee -a initializeErrors.txt
+        foundError=$(grep "ERROR" initializeErrors.txt | wc -l)
+        if [ "$foundError" -ge "1" ];then 
+           ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci"
+        fi
         if [ "$?" != "0" ]; then
             echo "***ERROR: initialize Trafodion failed.  Check install log files for details." | tee -a $INSTALL_LOG
             exit -1;
         fi
     fi
+ 
 
-    # stop/start DCS (not needed now that sqstart will start dcs
-    echo "***INFO: skipping start-dcs.sh as DCS should be autostarted by sqstart, now." | tee -a $INSTALL_LOG
-    #DCS_VERSION=$(ls $MY_SQROOT | grep dcs)
-    #$MY_SQROOT/$DCS_VERSION/bin/stop-dcs.sh
-    #$MY_SQROOT/$DCS_VERSION/bin/start-dcs.sh
+    # Check that DCS has been started and start it if it hasn't
+    echo "***INFO: skipping dcsstart as DCS should be autostarted by sqstart." | tee -a $INSTALL_LOG
+    #$MY_SQROOT/sql/scripts/dcsstop
+    #$MY_SQROOT/sql/scripts/dcsstart
     #if [ "$?" != "0" ]; then
-    #    echo "***ERROR: start-dcs.sh failed.  Check install log files for details."
+    #    echo "***ERROR: dcsstart failed.  Check install log files for details."
     #    exit -1;
     #fi
 fi

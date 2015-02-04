@@ -2,7 +2,7 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -23,105 +23,8 @@
 #=========================================
 # Default values
 typeset TRAF_GROUP="trafodion"
-typeset TRAF_USER="trafodion"
-typeset TRAF_USER_PASSWORD="traf123"   # 8 char max, 6 char min
-typeset NODE_LIST="$HOSTNAME"
-typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
-typeset CLUSTERNAME="$HOSTNAME"
 typeset QPIDPORT="65500"
-typeset HOME_DIR="/home"
 #=========================================
-function print_usage {
-cat << EOF
-This script will add a Trafodion instance userid
-
-Usage: $(basename $0) [options]
-
-Options:
-    --help                Print this message and exit.
-
-    --username <user>     Trafodion user name (default "$TRAF_USER")
-    --password <password> Password for the Trafodion user name (default "$TRAF_USER_PASSWORD")
-    --nodes "<node_list>" Blank separated list of nodes (within quotes)
-                          in this Trafodion environment.  This defaults
-                          to the the single node $CLUSTERNAME
-    --clustername <name>  Name of Trafodion cluster. Defaults to $CLUSTERNAME
-    --home_dir <path>     Path to Trafodion home directory. (default /home)
-EOF
-}
-
-#==============================================
-# Parse input parameters
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --username)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1."
-                print_usage
-                exit -1
-            fi
-            TRAF_USER=$2
-            shift
-            ;;
-        --password)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1."
-                print_usage
-                exit -1
-            fi
-            TRAF_USER_PASSWORD=$2
-            shift
-            ;;
-        --nodes)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1."
-                print_usage
-                exit -1
-            fi
-            NODE_LIST=$2
-            shift
-            ;;
-        --clustername)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1."
-                print_usage
-                exit -1
-            fi
-            CLUSTERNAME=$2
-            shift
-            ;;
-        --home_dir)
-            if [[ -z "$2" ]]; then
-               echo "***ERROR: No value passed to param $1."
-               print_usage
-               exit -1
-            fi
-            HOME_DIR=$2
-            shift
-            ;;
-        --help)
-            print_usage
-            exit -1
-            ;;
-        *)
-            echo "***ERROR: unknown parameter '$1'"
-            print_usage
-            exit -1
-    esac
-    shift
-done
-
-# check password length: min dictated by vncserver, max by Linux
-password_error="***ERROR: Trafodion password must be from 6 - 8 characters long."
-if [ ${#TRAF_USER_PASSWORD} -lt 6 ]; then
-    echo $password_error
-    exit -1
-fi
-if [ ${#TRAF_USER_PASSWORD} -gt 8 ]; then
-    echo $password_error
-    exit -1
-fi
-
 # get the default $HOME directory for this system
 if [[ $HOME_DIR == "/home" ]]; then
    default_home=$(sudo cat /etc/default/useradd | grep -E "^HOME=" | sed -e "s@HOME=@@" )
@@ -134,24 +37,19 @@ if [ "$default_home" == "" ]; then
 fi
 typeset TRAF_USER_DIR="$default_home/$TRAF_USER"
 
+echo "***INFO: Trafodion userid's ($TRAF_USER) home directory: $TRAF_USER_DIR"
 echo "$TRAF_USER" > $TRAF_WORKDIR/trafodion_userid
 
 #============================
 # check that we are running from a userid with sudo access
 sudo echo "***INFO: testing sudo access"
 if [ $? -ne 0 ]; then
-    echo "***ERROR: This script must be ran from userid with sudo access."
+    echo "***ERROR: This script must be run from userid with sudo access."
     exit -1
 fi
 
 # create MY_NODES (used for pdsh/pdcp) from NODE_LIST
-MY_NODES=""
-for node in $NODE_LIST
-do
-    MY_NODES="$MY_NODES -w $node"
-done
 
-node_count=$(echo $NODE_LIST | wc -w)
 if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""
 else
@@ -254,8 +152,7 @@ sudo su $TRAF_USER --command="echo $QPIDPORT > $TRAF_USER_DIR/.qpidports"
 # Create .bashrc for this user
 echo "***INFO: creating .bashrc file"
 sed -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" <$TRAF_WORKDIR/installer/bashrc_default >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
-sed -e "s@export CLUSTERNAME=.*@export CLUSTERNAME=\"$CLUSTERNAME\"@" <$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1 >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2
-sed -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" <$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2 >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
+sed -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" <$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1 >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2
 
 if [ "$userid_already_exists" == "Y" ]; then
     if [ -f $TRAF_USER_DIR/bashrc_backup ]; then
@@ -265,55 +162,12 @@ if [ "$userid_already_exists" == "Y" ]; then
         sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/bashrc_backup
     fi
 fi
-sudo cp $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1 $TRAF_USER_DIR/.bashrc
+sudo cp $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2 $TRAF_USER_DIR/.bashrc
 sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/.bashrc
+rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
 rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2
 
 #=================================================
-# Create initial sqconfig file only if we have more than one node.
-# If only one node, then we'll use the sqconfig included in the Trafodion build
-echo "***INFO: creating sqconfig file"
-sqconfig=$TRAF_WORKDIR/sqconfig_${CLUSTERNAME}_${TRAF_USER}
-rm $sqconfig &> /dev/null
-if [ "$node_count" -ne "1" ]; then
-    # NOTE: the lscpu command lists the cores of a two core cpu as
-    #       0,1 and for >two cores as 0-n.  Trafodion's sqconfig
-    #       file requires a range instead of a comma separated list.
-    #       So, we convert the comma to a dash to cover this case.
-    cores=$(lscpu | grep "CPU(s) list" | awk '{print $4}' | sed -e "s@,@-@" )
-    maxCores=`echo $cores | sed 's/.*\-//'`
-    if [[ "$maxCores" -gt "15" ]]; then
-       cores="0-15"
-    fi 
-    processors=$(lscpu | grep "Socket(s)" | awk '{print $2}')
-
-    # On some VMs it seems that "Socket(s)" is not listed in
-    # lscpu so, we will default processors=1 in that case
-    if [ "$processors" == "" ]; then
-       processors=$(lscpu | grep "CPU socket(s)" | awk '{print $3}')
-       if [ "$processors" == "" ]; then
-          echo "***WARNING: unable to determine number of sockets with 'lscpu'..."
-          echo "***WARNING: ...defaulting sqconfig 'processors=1'"
-          processors="1"
-       fi
-    fi
-    echo "# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P." > $sqconfig
-    echo "#" >> $sqconfig
-    echo "# This sqconfig file is for the Trafodion open source version" >> $sqconfig
-    echo "#" >> $sqconfig
-    echo "begin node" >> $sqconfig
-    node_id=0
-    for node in $NODE_LIST
-    do
-        echo "node-id=$node_id;node-name=$node;cores=$cores;processors=$processors;roles=connection,aggregation,storage" >> $sqconfig
-        ((node_id++))
-    done
-
-    echo "end node" >> $sqconfig
-    sudo cp $sqconfig $TRAF_USER_DIR/sqconfig
-    sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/sqconfig
-fi
-
 # copy TRAF_USER_DIR to all other nodes if more than one
 if [ "$node_count" -ne 1 ]; then
     # Have to copy in a round-about way since passwordless

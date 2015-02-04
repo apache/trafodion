@@ -2,7 +2,7 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -30,6 +30,14 @@ fi
 cd $HOME
 
 #-------------------------------------------
+# Execute the trafodion_config script
+#-------------------------------------------
+
+if [ -f /etc/trafodion/trafodion_config ]; then
+   source /etc/trafodion/trafodion_config
+fi
+
+#-------------------------------------------
 # full path of your Trafodion installation
 #-------------------------------------------
 export SQ_HOME=XXXXXX
@@ -39,9 +47,6 @@ export MY_SQROOT=$SQ_HOME
 # other env vars needed by Trafodion
 #-------------------------------------------
 
-# name of your cluster
-export CLUSTERNAME=$HOSTNAME
-
 # These env vars define all nodes in the cluster
 export NODE_LIST=XXXXX
 export MY_NODES=XXXXX
@@ -49,7 +54,7 @@ export MY_NODES=XXXXX
 # directory where needed libraries can be found
 export TOOLSDIR=XXXXX
 
-export JAVA_HOME="/usr/lib/jvm/java"
+export JAVA_HOME="$JAVA_HOME"
 
 #-------------------------------------------
 # Execute the sqenv.sh script if it exists.

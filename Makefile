@@ -1,7 +1,7 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 #  * Installer version number (starting from 1 for each Trafodion version)
 #
 # "v000" indicates an internal/development version of installer
-RELEASE_VER ?= 0.9.0_v000
+RELEASE_VER ?= 1.0.0_v002
 
 all: pkg-installer 
 

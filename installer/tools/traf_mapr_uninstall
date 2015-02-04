@@ -1,7 +1,7 @@
 #!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -38,5 +38,9 @@ sudo rm -rf /opt/mapr
 #Delete /opt/storagefile and /opt/mapr-setup
 sudo rm -rf /opt/storagefile
 sudo rm -rf /opt/mapr-setup
+
+#Delete any cached repos
+sudo rm -rf /var/cache/yum/x86_64/6/mapr*
+sudo yum clean all
 
 #==============================================

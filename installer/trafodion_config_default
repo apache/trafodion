@@ -1,0 +1,139 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+# Trafodion Configuration File
+# This file contains default values for the installer.
+
+# Users can also edit this file and provide values for all parameters
+# and then specify this file on the run line of trafodion_install.
+# Example:
+# ./trafodion_install --config_file <Trafodion-config-file>
+#
+# NOTE: most parameters specified through the config file are not checked
+#       for validity.  Please make sure all values supplied here are correct.
+#       It is suggested the the user first run the trafodion_install script and
+#       answer all the prompts, then take all the values from
+#       /etc/trafodion/trafodion_config and copy them into a copy of this file.
+#=====================================================
+
+
+#=====================================================
+
+# The working directory where Trafodion installer untars files, etc.
+# do not change this unless you really know what you are doing
+export TRAF_WORKDIR="/usr/lib/trafodion"
+
+# temporary directory to untar the Trafodion package to
+# this is typically $TRAF_WORKDIR/<package-filename>
+# i.e. $TRAF_WORKDIR/trafodion-1.0.0  or $TRAF_WORKDIR/trafodion-20150116_0830
+export UNTAR_DIR="$TRAF_WORKDIR/<package-filename>"
+
+# This is the directory where the installer scripts were untarred to
+export LOCAL_WORKDIR="$HOME/installer"
+
+# The maximum number of dcs servers, i.e. client connections
+export DCS_SERVERS_PARM="2"
+
+# "true" if this is an upgrade
+export UPGRADE_TRAF="false"
+
+# Trafodion userid, This is the userid the Trafodion instance will run under
+export TRAF_USER="trafodion"
+
+# Trafodion userid's password
+export TRAF_USER_PASSWORD="traf123"
+
+# the Trafodion version
+export TRAF_VERSION="1.0.0"
+
+# the HBase java version
+# NOTE: this is NOT the same as what you get with a java -version command
+export JAVA_VERSION="1.7"
+
+# a blank separated list of nodes in your cluster
+# node names should include full domain names
+export NODE_LIST=""
+
+# count of nodes in node list
+export node_count=""
+
+# another list of the same nodes in NODE_LIST but specified in a pdsh usable format
+# i.e.  "-w centos-cdh[1-6]"  or "-w node1 -w node2 -w node3"
+export MY_NODES=""
+
+# the directory prefix for the trafodion userid's $HOME directory
+# i.e. /opt/home, not /opt/home/trafodion
+export HOME_DIR="/home"
+
+# set to 1 if installing on an openstack VM
+export OPENSTACK_VM="0"
+
+# If your machine doesn't have external internet access then you must
+# specify the location of the EPEL rpm, otherwise leave blank and it
+# will be installed from the internet
+export EPEL_RPM=""
+
+# full path of the Trafodion package tar file
+export TRAF_PACKAGE=""
+
+# if TRAF_PACKAGE wasn't specified then these two values must be specified
+# TRAF_BUILD is the trafodion_server tar file
+# DCS_BUILD is the DCS tar file
+export TRAF_BUILD=""
+export DCS_BUILD=""
+
+# Either "cloudera" or "hortonworks" (all lowercase)
+export HADOOP_TYPE=""
+
+# The URL for the Hadoop distro's REST API (i.e. node1.hp.com:8080)
+export URL=""
+
+# Hadoop UI admin's userid and password
+export ADMIN="admin"
+export PASSWORD="admin"
+
+# hadoop cluster name
+export CLUSTER_NAME=""
+
+# the Hadoop HDFS userid
+export HDFS_USER="hdfs"
+
+# the Hadoop HBase userid and group
+export HBASE_USER="hbase"
+export HBASE_GROUP="hbase"
+
+# The hadoop HBase service name
+export HBASE="hbase"
+
+# the version string from hbase shell
+export hbaseVersion="0.98.0.2.1.1.0"
+
+# full path of where to isntall Trafodion to
+export SQ_ROOT="$HOME_DIR/$TRAF_USER/traf"
+
+# Start Trafodion after install completes
+export START="N"
+
+# initialize trafodion after starting
+export INIT_TRAFODION="N"
+
+# full path to the sqconfig file
+export SQCONFIG=""
+
+export CONFIG_COMPLETE="true"

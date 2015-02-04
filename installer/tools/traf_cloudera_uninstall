@@ -1,7 +1,7 @@
 #!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ sudo rm -Rf /var/log/zookeeper* /var/log/hadoop* /var/log/hive* /var/log/sqoop* 
 
 sudo rm -Rf /etc/zookeeper* /etc/hadoop* /etc/hive* /etc/sqoop* /etc/flume* /etc/hbase* /etc/hcatalog* /etc/webhcat* /etc/pig* /etc/oozie*
   
-sudo rm -Rf /usr/lib/hadoop* /usr/lib/hive* /usr/lib/oozie* /usr/lib/hcatalog* /usr/lib/parquet* 
+sudo rm -Rf /usr/lib/hadoop* /usr/lib/hive* /usr/lib/oozie* /usr/lib/hcatalog* /usr/lib/parquet* /usr/lib/hbase* 
 
 sudo rm -Rf /usr/lib/alternatives/hadoop*
 

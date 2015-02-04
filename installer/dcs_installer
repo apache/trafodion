@@ -2,7 +2,7 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 function print_usage {
 cat << EOF
 This script will install/configure the specified DCS build.
-While this script can be ran manually, it is normally
+While this script can be run manually, it is normally
 executed from the Trafodion installer.
 
 Usage: $(basename $0) [options]
@@ -153,16 +153,18 @@ rm dcs-env.temp 2>/dev/null
 echo "***INFO: modifying $DCS_DIR/conf/dcs-site.xml"
 # get zookeeper quorum
 
-if [ "$node_count" -ne "1" ]; then 
-   ZOOKEEPER_NODES=$(pdsh $MY_NODES ps --no-header -C java -o pid,cmd 2>/dev/null | grep QuorumPeerMain | awk '{print $1}' | sort)
-   ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
+if [ "$node_count" -ne "1" ]; then
+   lineNumber=$(grep -n "zookeeper\.quorum" /etc/hbase/conf/hbase-site.xml | sed 's/\:.*//')
+   lineNumber=$((lineNumber+1))
+
+   ZOOKEEPER_NODES=`sed "$lineNumber!d" /etc/hbase/conf/hbase-site.xml | sed 's/\/value.*//' | sed 's/.*>//' | sed 's/.$//'`
 else
    ZOOKEEPER_NODES=$(hostname -s)   
 fi
 
 # add zookeeper quorum property to end of configuration
 rm dcs-site.temp 2>/dev/null
-cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.zookeeper.quorum</name>\n    <value>$ZOOKEEPER_NODES</value>\n  </property>\n  </configuration>@" > dcs-site.temp
+cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.zookeeper.quorum</name>\n    <value>$ZOOKEEPER_NODES</value>\n  </property>\n </configuration>@" > dcs-site.temp
 cp dcs-site.temp dcs-site.xml
 rm dcs-site.temp 2>/dev/null
 

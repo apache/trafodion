@@ -1,7 +1,7 @@
 #!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -31,22 +31,21 @@ Options:
 
     --all                   This will remove Trafodion completely, including the
                             the Trafodion userid and its $HOME directory.
-                            This must be ran from a userid with sudo access.
+                            This must be run from a userid with sudo access.
 
 EOF
 }
 
-TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
-echo $TRAF_WORKDIR
+#=========================================
+#source trafodion_config file 
+
+TRAF_CONFIG=/etc/trafodion/trafodion_config
+source $TRAF_CONFIG
+
 #=========================================
 # define defaults
-TRAF_USER=$(cat $TRAF_WORKDIR/trafodion_userid)
-echo $TRAF_USER
-NODE_LIST=$(cat $TRAF_WORKDIR/node_list)
-MY_NODES=$(cat $TRAF_WORKDIR/my_nodes)
-CLUSTERNAME="$HOSTNAME"
 TRAF_GROUP="trafodion"
-HBASE_TRX="hbase_jdk1_6-trx-0.94.6.jar"
+HBASE_TRX="hbase-trx*"
 
 UNINSTALL_ALL="N"
 UNINSTALL_DIR=""
@@ -88,10 +87,9 @@ fi
 
 # create logs directory and logfile name
 timestamp=$(date +%F-%H-%M-%S)
-logsdir="var/log/trafodion"
+logsdir="/var/log/trafodion"
 logfile="$logsdir/uninstall_$timestamp.log"
 
-node_count=$(echo $NODE_LIST | wc -w)
 if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""
 else
@@ -118,7 +116,7 @@ else
     # check sudo access which is required for "--all" option
     sudo echo "***INFO: testing sudo access"
     if [ $? -ne 0 ]; then
-        echo "***ERROR: The '--all' option requires this script be ran from a userid with sudo access."
+        echo "***ERROR: The '--all' option requires this script be run from a userid with sudo access."
         exit -1
     fi
 
@@ -132,22 +130,28 @@ else
 
     echo "***INFO: restoring linux system files that were changed"
     if [ $node_count -eq 1 ]; then
-        sudo cp $TRAF_WORKDIR/etc_selinux_config_ORIGINAL /etc/selinux/config
-        sudo cp $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL /etc/security/limits.conf
+        sudo cp $LOCAL_WORKDIR/etc_selinux_config_ORIGINAL /etc/selinux/config
+        sudo cp $LOCAL_WORKDIR/etc_security_limits.conf_ORIGINAL /etc/security/limits.conf
         sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null
+        sudo rm /usr/lib/hbase/lib/$HBASE_TRX 2>/dev/null
     else
-        pdsh $MY_NODES sudo cp $TRAF_WORKDIR/etc_selinux_config_ORIGINAL /etc/selinux/config
-        pdsh $MY_NODES sudo cp $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL /etc/security/limits.conf
+        pdsh $MY_NODES sudo cp $LOCAL_WORKDIR/etc_selinux_config_ORIGINAL /etc/selinux/config
+        pdsh $MY_NODES sudo cp $LOCAL_WORKDIR/etc_security_limits.conf_ORIGINAL /etc/security/limits.conf
         pdsh $MY_NODES "sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null"
+        pdsh $MY_NODES "sudo rm /usr/lib/hbase/lib/$HBASE_TRX 2>/dev/null"
     fi
 
     echo "***INFO remove the Trafodion userid and group"
     $TRAF_PDSH sudo rm -rf $TRAF_WORKDIR/$TRAF_USER
+    $TRAF_PDSH sudo rm -rf $LOCAL_WORKDIR/$TRAF_USER
     $TRAF_PDSH sudo /usr/sbin/userdel --force --remove $TRAF_USER
     $TRAF_PDSH sudo /usr/sbin/groupdel $TRAF_GROUP 2>/dev/null
+   
+    $TRAF_PDSH sudo rm -rf /usr/lib/trafodion*
+    $TRAF_PDSH sudo rm -rf /var/log/trafodion*
 
-    # remove all download files
-    echo "***DEBUG: skipping deleting downloaded directory"
-#    sudo rm -rf $TRAF_WORKDIR
+    $TRAF_PDSH sudo rm -rf /etc/trafodion*
+    $TRAF_PDSH sudo rm -rf $LOCAL_WORKDIR/trafodion_config
+
 fi
 
