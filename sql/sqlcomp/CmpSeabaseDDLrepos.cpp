@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -94,6 +94,7 @@ short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
       param_[1] = SEABASE_REPOS_SCHEMA;
 
       str_sprintf(queryBuf, gluedQuery, param_[0], param_[1]);
+      NADELETEBASIC(gluedQuery, STMTHEAP);
 
       if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
         return -1;

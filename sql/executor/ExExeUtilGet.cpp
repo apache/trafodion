@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2050,7 +2050,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 			 param_[0], param_[1], param_[2], param_[3], param_[4],
 			 param_[5], param_[6], param_[7], param_[8], param_[9],
 			 param_[10], param_[11], param_[12], param_[13], param_[14], param_[15]);
-	     
+             NADELETEBASIC(gluedQuery, getMyHeap());	     
 	     step_ = FETCH_ALL_ROWS_;
 	  }
 	  break;
@@ -3155,6 +3155,7 @@ short ExExeUtilGetMetadataInfoVersionTcb::work()
 			param_[8], param_[9], param_[10], param_[11],
 			param_[12], param_[13], param_[14]);
 
+            NADELETEBASIC(gluedQuery, getMyHeap());
 	    step_ = FETCH_ALL_ROWS_;
 	  }
 	break;

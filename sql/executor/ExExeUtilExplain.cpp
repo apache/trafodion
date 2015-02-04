@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -118,6 +118,11 @@ ExExeUtilDisplayExplainTcb::~ExExeUtilDisplayExplainTcb()
 
   if (optFOutput)
     NADELETEBASIC(optFOutput, getMyHeap());
+  if (explainQuery_)
+    {
+      NADELETEBASIC(explainQuery_, getMyHeap());
+      explainQuery_ = NULL;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -320,12 +325,20 @@ short ExExeUtilDisplayExplainTcb::work()
 	      strcat(explArg2, "__EXPL_STMT_NAME__");
 	    strcat(explArg2, "'");
 	    
-	    explainQuery_ = new (getMyHeap())
+	    if (explainQuery_)
+              {
+                // need to cleanup from previous execution
+                NADELETEBASIC(explainQuery_, getMyHeap());
+              }
+
+            explainQuery_ = new (getMyHeap())
 	      char[gluedQuerySize + strlen(explArg1) +
 		  strlen(explArg2) + 10];
 	    
 	    
 	    str_sprintf(explainQuery_, gluedQuery, explArg1, explArg2);
+
+            NADELETEBASIC(gluedQuery, getMyHeap());
 	    
 	    pstate.step_ = FETCH_PROLOGUE_;
 	  }

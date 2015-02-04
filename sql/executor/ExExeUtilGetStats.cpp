@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -972,6 +972,7 @@ short ExExeUtilGetStatisticsTcb::work()
                 if (s == NULL)
                   s = "CURRENT";
                 str_sprintf(statsQuery_, gluedQuery, s, getStatsTdb().statsMergeType_);
+                NADELETEBASIC(gluedQuery, getMyHeap());
             }
 	    step_ = FETCH_PROLOGUE_;
 	  }
