@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1236,6 +1236,7 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
 	}
       else
 	{
+          NADELETEBASIC(gluedQuery, STMTHEAP);
 	  continue;
 	}
 
@@ -1244,6 +1245,8 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
 		  param_[5], param_[6], param_[7], param_[8], param_[9],
 		  param_[10], param_[11], param_[12], param_[13], param_[14],
 		  param_[15], param_[16], param_[17], param_[18]);
+
+      NADELETEBASIC(gluedQuery, STMTHEAP);
 
       NABoolean xnWasStartedHere = FALSE;
       if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))

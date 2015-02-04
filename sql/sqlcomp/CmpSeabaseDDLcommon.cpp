@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -401,6 +401,9 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
 
   exprNode = parser.parseDML((const char*)gluedQuery, strlen(gluedQuery), 
                              CharInfo::ISO88591);
+
+  NADELETEBASIC(gluedQuery, STMTHEAP);
+
   if (! exprNode)
     return resetCQDs(hbaseSerialization, hbVal, -1);
   
@@ -5474,6 +5477,7 @@ short CmpSeabaseDDL::createSeqTable(ExeCliInterface *cliInterface)
 
   str_sprintf(queryBuf, gluedQuery,
               param_[0], param_[1]);
+  NADELETEBASIC(gluedQuery, STMTHEAP);
 
   NABoolean xnWasStartedHere = FALSE;
   if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
