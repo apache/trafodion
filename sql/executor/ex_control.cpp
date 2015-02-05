@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -200,7 +200,7 @@ short ExControlTcb::work()
       {
          
         NAHeap *arkcmpHeap = currCtxt->exHeap();
-	ComDiagsArea *da = ComDiagsArea::allocate(arkcmpHeap);
+	ComDiagsArea *da = ComDiagsArea::allocate(getHeap());
         cmpStatus = CmpCommon::context()->compileDirect(
                                (char *) data, dataLen, arkcmpHeap,
                                SQLCHARSETCODE_UTF8,
@@ -215,11 +215,12 @@ short ExControlTcb::work()
             SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, emsText, 0);
             ExHandleArkcmpErrors(qparent_, pentry_down, 0,
                                  getGlobals(), da);
-	    da->clear();
+	    // da->clear();
           }
         else
           saveControl = TRUE; // need to save control to exe ControlInfoTable
 
+        da->decrRefCount();
         if (dummyReply != NULL)
           {
             arkcmpHeap->deallocateMemory((void*)dummyReply);
