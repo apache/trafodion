@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -56,7 +56,8 @@ class PhysicalFastExtract;
       STOP_AFTER_N_ERRORS_,
       NO_OUTPUT_,
       COMPRESS_,
-      ONE_FILE_
+      ONE_FILE_,
+      USE_SNAPSHOT_SCAN_
     };
     UnloadOption(UnloadOptionType option, Lng32 numericVal, char * stringVal, char * stringVal2 = NULL )
     : option_(option), numericVal_(numericVal), stringVal_(stringVal)

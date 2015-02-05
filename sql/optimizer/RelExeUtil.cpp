@@ -5516,6 +5516,8 @@ RelExpr * ExeUtilHBaseBulkUnLoad::copyTopNode(RelExpr *derivedNode, CollHeap* ou
   result->extractLocation_ = extractLocation_;
   result->mergePath_ = mergePath_;
   result->overwriteMergeFile_ = overwriteMergeFile_;
+  result->snapSuffix_= snapSuffix_;
+  result->scanType_ = scanType_;
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
@@ -5747,6 +5749,22 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<UnloadOption*>  *
 
       }
       break;
+      case UnloadOption::USE_SNAPSHOT_SCAN_:
+      {
+        if (scanType_ == REGULAR_SCAN_)
+          scanType_ = (ScanType)lo->numericVal_;
+        else
+        {
+          *da << DgSqlCode(-4376) << DgString0("SNAPSHOT SCAN");
+          return 1;
+        }
+
+        if (lo->stringVal_ != NULL)
+          snapSuffix_ = lo->stringVal_;
+        else
+          snapSuffix_ = CmpCommon::getDefaultString(TRAF_TABLE_SNAPSHOT_SCAN_SNAP_SUFFIX);
+      }
+      break;
       default:
       {
         CMPASSERT(0);
@@ -5754,6 +5772,8 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<UnloadOption*>  *
       }
       }
     }
+    if (snapSuffix_.length() == 0)
+      snapSuffix_ = CmpCommon::getDefaultString(TRAF_TABLE_SNAPSHOT_SCAN_SNAP_SUFFIX);
 
     if (getOneFile())
     {

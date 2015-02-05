@@ -10003,7 +10003,8 @@ HbaseAccess::HbaseAccess(CorrName &corrName,
              selectionPredicates, disjuncts,
              generatedCCPreds,
              otype),
-    listOfSearchKeys_(oHeap)
+    listOfSearchKeys_(oHeap),
+    useSnapshotScan_(FALSE)
 {
   accessType_ = SELECT_;
   //setTableDesc(tableDesc);
@@ -10018,7 +10019,8 @@ HbaseAccess::HbaseAccess(CorrName &corrName,
   : FileScan(corrName, NULL, NULL, REL_HBASE_ACCESS, oHeap),
     isRW_(isRW),
     isCW_(isCW),
-    listOfSearchKeys_(oHeap)
+    listOfSearchKeys_(oHeap),
+    useSnapshotScan_(FALSE)
 {
   accessType_ = SELECT_;
 
@@ -10029,7 +10031,8 @@ HbaseAccess::HbaseAccess(CorrName &corrName,
 HbaseAccess::HbaseAccess( OperatorTypeEnum otype,
 			  CollHeap *oHeap)
   : FileScan(CorrName(), NULL, NULL, otype, oHeap),
-    listOfSearchKeys_(oHeap)
+    listOfSearchKeys_(oHeap),
+    useSnapshotScan_(FALSE)
 {
   accessType_ = SELECT_;
 

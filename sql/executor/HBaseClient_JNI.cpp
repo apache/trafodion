@@ -1875,7 +1875,7 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_GET_ERROR  ].jm_name      = "getLastError";
     JavaMethods_[JM_GET_ERROR  ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_SCAN_OPEN  ].jm_name      = "startScan";
-    JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[B[Ljava/lang/Object;JZI[Ljava/lang/Object;[Ljava/lang/Object;[Ljava/lang/Object;FZ)Z";
+    JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[B[Ljava/lang/Object;JZI[Ljava/lang/Object;[Ljava/lang/Object;[Ljava/lang/Object;FZZILjava/lang/String;Ljava/lang/String;I)Z";
     JavaMethods_[JM_GET_OPEN   ].jm_name      = "startGet";
     JavaMethods_[JM_GET_OPEN   ].jm_signature = "(J[B[Ljava/lang/Object;J)Z";
     JavaMethods_[JM_GETS_OPEN  ].jm_name      = "startGet";
@@ -1937,8 +1937,12 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 					const TextVec *inColNamesToFilter, 
 					const TextVec *inCompareOpList,
 					const TextVec *inColValuesToCompare,
-					Float32 samplePercent)
-
+					Float32 samplePercent,
+					NABoolean useSnapshotScan,
+					Lng32 snapTimeout,
+					char * snapName ,
+					char * tmpLoc,
+					Lng32 espNum)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::startScan() called.");
   int len = startRowID.size();
@@ -1987,6 +1991,8 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
   currentRowNum_ = -1;
   currentRowCellNum_ = -1;
   
+
+
   jobjectArray j_colnamestofilter = NULL;
   if ((inColNamesToFilter) && (!inColNamesToFilter->empty()))
   {
@@ -2044,21 +2050,41 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
         return HTC_ERROR_SCANOPEN_PARAM;
      }
   }
-
   jfloat j_smplPct = samplePercent;
+  jboolean j_useSnapshotScan = useSnapshotScan;
+  jint j_snapTimeout = snapTimeout;
+  jint j_espNum = espNum;
+
+  jstring js_snapName = jenv_->NewStringUTF(snapName != NULL ? snapName : "Dummy");
+   if (js_snapName == NULL)
+   {
+     GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_SCANOPEN_PARAM));
+     return HTC_ERROR_SCANOPEN_PARAM;
+   }
+  jstring js_tmp_loc = jenv_->NewStringUTF(tmpLoc != NULL ? tmpLoc : "Dummy");
+   if (js_tmp_loc == NULL)
+   {
+     GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_SCANOPEN_PARAM));
+     //delete the previous string in case of error
+     jenv_->DeleteLocalRef(js_snapName);
+     return HTC_ERROR_SCANOPEN_PARAM;
+   }
 
   if (hbs_)
-    hbs_->getTimer().start();
+  {
+    //these 2 lines seem to get changed when doing the merge. putting them back
+    hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+    hbs_->incHbaseCalls();
+  }
+
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
             JavaMethods_[JM_SCAN_OPEN].methodID, 
             j_tid, jba_startRowID, jba_stopRowID, j_cols, j_ts, j_cb, j_ncr,
             j_colnamestofilter, j_compareoplist, j_colvaluestocompare, 
-            j_smplPct, j_preFetch);
+            j_smplPct, j_preFetch, j_useSnapshotScan,
+            j_snapTimeout, js_snapName, js_tmp_loc, j_espNum);
   if (hbs_)
-    {
       hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
-      hbs_->incHbaseCalls();
-    }
 
   jenv_->DeleteLocalRef(jba_startRowID);  
   jenv_->DeleteLocalRef(jba_stopRowID);  
@@ -2070,8 +2096,10 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
      jenv_->DeleteLocalRef(j_compareoplist);
   if (j_colvaluestocompare != NULL)
      jenv_->DeleteLocalRef(j_colvaluestocompare);
-  
-
+  if (js_tmp_loc!= NULL)
+    jenv_->DeleteLocalRef(js_tmp_loc);
+  if (js_snapName!= NULL)
+    jenv_->DeleteLocalRef(js_snapName);
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();

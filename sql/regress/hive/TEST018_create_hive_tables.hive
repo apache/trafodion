@@ -78,6 +78,15 @@ create external table unload_customer
 row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
 location '/user/hive/exttables/unload_customer';
 
+drop table unload_customer_name;
+create external table unload_customer_name
+(
+    c_first_name              string,
+    c_last_name               string
+)
+row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
+location '/user/hive/exttables/unload_customer_name';
+
 drop table unload_customer_and_address;
 create external table unload_customer_and_address
 (

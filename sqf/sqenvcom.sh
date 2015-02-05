@@ -299,7 +299,8 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
 			  /usr/lib/hbase/lib/htrace-core.jar
                           /usr/lib/hbase/lib/zookeeper.jar
                           /usr/lib/hbase/lib/protobuf-*.jar
-                         /usr/lib/hbase/lib/snappy-java-*.jar "
+                         /usr/lib/hbase/lib/snappy-java-*.jar 
+                         /usr/lib/hbase/lib/high-scale-lib-*.jar "
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
   export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
 
@@ -338,7 +339,10 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
                           /usr/lib/hbase/lib/htrace-core*.jar
                           /usr/lib/hbase/lib/zookeeper.jar
                           /usr/lib/hbase/lib/protobuf-*.jar
-                         /usr/lib/hbase/lib/snappy-java-*.jar "
+                         /usr/lib/hbase/lib/snappy-java-*.jar 
+                         /usr/lib/hbase/lib/high-scale-lib-*.jar 
+                         /usr/lib/hbase/lib/hbase-hadoop-compat-*-hadoop2.jar "
+                         
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
   export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core*.jar"
 

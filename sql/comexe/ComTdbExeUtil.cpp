@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2610,7 +2610,10 @@ ComTdbExeUtilHBaseBulkUnLoad::ComTdbExeUtilHBaseBulkUnLoad(char * tableName,
       uldQuery_(uldStmtStr),
       flags_(0),
       compressType_(0),
-      extractLocation_(extractLocation)
+      extractLocation_(extractLocation),
+      scanType_(0),
+      snapshotSuffix_(NULL),
+      tempBaseLocation_(NULL)
     {
     setNodeType(ComTdb::ex_HBASE_UNLOAD);
     }
@@ -2624,6 +2627,11 @@ Long ComTdbExeUtilHBaseBulkUnLoad::pack(void * space)
     mergePath_.pack(space);
   if (extractLocation_)
     extractLocation_.pack(space);
+  if (snapshotSuffix_)
+    snapshotSuffix_.pack(space);
+  if (tempBaseLocation_)
+    tempBaseLocation_.pack(space);
+
 
   return ComTdbExeUtil::pack(space);
 }
@@ -2636,6 +2644,10 @@ Lng32 ComTdbExeUtilHBaseBulkUnLoad::unpack(void * base, void * reallocator)
     return -1;
   if(extractLocation_.unpack(base))
       return -1;
+  if(snapshotSuffix_.unpack(base))
+      return -1;
+  if(tempBaseLocation_.unpack(base))
+       return -1;
   return ComTdbExeUtil::unpack(base, reallocator);
 }
 void ComTdbExeUtilHBaseBulkUnLoad::displayContents(Space * space,ULng32 flag)
@@ -2670,7 +2682,7 @@ void ComTdbExeUtilHBaseBulkUnLoad::displayContents(Space * space,ULng32 flag)
           space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
         }
 
-
+/////NEED TO ADD rthe remaning INFO
     }
 
   if (flag & 0x00000001)

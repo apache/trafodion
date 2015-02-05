@@ -3487,7 +3487,9 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   // Constructor
   ExExeUtilHBaseBulkUnLoadTcb(const ComTdbExeUtil & exe_util_tdb,
                             ex_globals * glob = 0);
+  ~ExExeUtilHBaseBulkUnLoadTcb();
 
+  void freeResources();
 
   virtual short work();
 
@@ -3511,7 +3513,28 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 
+  short getTrafodionScanTables();
+
+  short resetExplainSettings();
+
+  char * setSnapshotScanId(char * str2)
+  {
+    assert (str2 != NULL);
+    char  str[30];
+    time_t t;
+    time(&t);
+    struct tm * curgmtime = gmtime(&t);
+    strftime(str, 30, "%Y%m%d%H%M%S", curgmtime);
+    srand(getpid());
+    sprintf (str2,"%s_%d", str, rand()% 1000);
+    return str2;
+  }
  private:
+  struct snapshotStruct
+  {
+    NAString * fullTableName;
+    NAString * snapshotName;
+  };
   void createHdfsFileError(Int32 sfwRetCode);
   enum Step
     {
@@ -3527,10 +3550,28 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
       RETURN_STATUS_MSG_,
       DONE_,
       HANDLE_ERROR_,
-      UNLOAD_ERROR_
+      UNLOAD_ERROR_,
+      CREATE_SNAPSHOTS_,
+      VERIFY_SNAPSHOTS_,
+      DELETE_SNAPSHOTS_
     };
 
-
+  void setEmptyTarget( NABoolean v)
+  {
+    emptyTarget_ = v;
+  }
+  NABoolean getEmptyTarget() const
+  {
+    return emptyTarget_;
+  }
+  void setOneFile( NABoolean v)
+  {
+    oneFile_ = v;
+  }
+  NABoolean getOneFile() const
+  {
+    return oneFile_;
+  }
   Step step_;
   Step nextStep_;
 
@@ -3539,7 +3580,11 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   Int64 rowsAffected_;
   char statusMsgBuf_[BUFFER_SIZE];
 
+  char tmpLocation_ [PATH_MAX];
   SequenceFileWriter* sequenceFileWriter_;
+  NAList<struct snapshotStruct *> * snapshotsList_;
+  NABoolean emptyTarget_;
+  NABoolean oneFile_;
 };
 
 class ExExeUtilHbaseUnLoadPrivateState : public ex_tcb_private_state

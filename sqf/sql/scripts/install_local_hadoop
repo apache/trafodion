@@ -918,6 +918,10 @@ EOF
          <value>${MY_HOST_1}:${MY_HADOOP_DN_IPC_PORT_NUM}</value>
      </property> 
 
+     <property>
+         <name>dfs.namenode.acls.enabled</name>
+         <value>true</value>
+     </property>
 </configuration>
 EOF
 

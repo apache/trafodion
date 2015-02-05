@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1125,6 +1125,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           ComDiagsArea * da = getDiagsArea();
           *da << DgSqlCode(-8111);
           step_ = LOAD_ERROR_;
+          break;
         }
 
         if (setStartStatusMsgAndMoveToUpQueue("LOAD", &rc))
@@ -1699,13 +1700,177 @@ ExExeUtilHBaseBulkUnLoadTcb::ExExeUtilHBaseBulkUnLoadTcb(
      : ExExeUtilTcb( exe_util_tdb, NULL, glob),
        step_(INITIAL_),
        nextStep_(INITIAL_),
-       rowsAffected_(0)
+       rowsAffected_(0),
+       snapshotsList_(NULL),
+       emptyTarget_(FALSE),
+       oneFile_(FALSE)
 {
   sequenceFileWriter_ = NULL;
   qparent_.down->allocatePstate(this);
 
 }
+void ExExeUtilHBaseBulkUnLoadTcb::freeResources()
+{
+  if (snapshotsList_)
+  {
+    for ( ; snapshotsList_->entries(); )
+    {
+      snapshotStruct *snp = snapshotsList_->at(0);
+      snapshotsList_->removeAt(0);
+      NADELETEBASIC(snp->fullTableName, getMyHeap());
+      NADELETEBASIC(snp->snapshotName, getMyHeap());
+      NADELETEBASIC( snp, getMyHeap());
+      snp->fullTableName = NULL;
+      snp->snapshotName = NULL;
+      snp = NULL;
+    }
+    NADELETEBASIC (snapshotsList_, getMyHeap());
+    snapshotsList_ = NULL;
+  }
 
+  if (sequenceFileWriter_)
+  {
+    NADELETEBASIC(sequenceFileWriter_, getMyHeap());
+    sequenceFileWriter_ = NULL;
+  }
+
+
+}
+ExExeUtilHBaseBulkUnLoadTcb::~ExExeUtilHBaseBulkUnLoadTcb()
+{
+  freeResources();
+}
+short ExExeUtilHBaseBulkUnLoadTcb::resetExplainSettings()
+{
+  if (cliInterface()->executeImmediate("control session reset 'EXPLAIN';") < 0)
+  {
+    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    return -1;
+  }
+  if (restoreCQD("generate_explain") < 0)
+  {
+    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    return -1;
+  }
+  return 0;
+}
+short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
+{
+  // Variables
+  SQLMODULE_ID * module = NULL;
+  SQLSTMT_ID   * stmt = NULL;
+  SQLDESC_ID   * sql_src = NULL;
+  SQLDESC_ID   * input_desc = NULL;
+  SQLDESC_ID   * output_desc = NULL;
+  char         * outputBuf = NULL;
+
+  assert (snapshotsList_ != NULL);
+
+  Lng32 cliRC = 0;
+
+  if (holdAndSetCQD("generate_explain", "ON") < 0)
+  {
+    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    resetExplainSettings();
+    return -1;
+  }
+  // tell mxcmp that this prepare is for explain.
+  cliRC = cliInterface()->executeImmediate("control session 'EXPLAIN' 'ON';");
+  if (cliRC < 0)
+  {
+    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    resetExplainSettings();
+    return cliRC;
+  }
+  cliInterface()->clearGlobalDiags();
+  cliRC = cliInterface()->allocStuff(module, stmt, sql_src, input_desc, output_desc, "__EXPL_STMT_NAME__");
+  if (cliRC < 0)
+  {
+    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    resetExplainSettings();
+    return cliRC;
+  }
+
+  char * stmtStr = hblTdb().uldQuery_;
+  cliRC = cliInterface()->prepare(stmtStr, module, stmt, sql_src, input_desc, output_desc, NULL);
+  if (cliRC < 0)
+  {
+    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    cliInterface()->deallocStuff(module, stmt, sql_src, input_desc, output_desc);
+    resetExplainSettings();
+    return cliRC;
+  }
+
+  resetExplainSettings();
+
+  NAString qry_str = "";
+  qry_str = qry_str + "SELECT DISTINCT ";
+  qry_str = qry_str + "CASE ";
+  qry_str = qry_str + "WHEN (POSITION('full_table_name:' IN description) = 0 ) OR (POSITION('snapshot_name:' IN description) = 0) ";
+  qry_str = qry_str + "THEN NULL ";
+  qry_str = qry_str + "ELSE ";
+  qry_str = qry_str + "TRIM(SUBSTRING (description from POSITION('full_table_name:' IN description) + CHAR_LENGTH('full_table_name:') ";
+  qry_str = qry_str + "FOR  POSITION('snapshot_name:' IN description) - ";
+  qry_str = qry_str + "     POSITION('full_table_name:' IN description) - CHAR_LENGTH('full_table_name:'))) ";
+  qry_str = qry_str + "END AS full_table_name, ";
+  qry_str = qry_str + "CASE  ";
+  qry_str = qry_str + "WHEN (POSITION('snapshot_temp_location:' IN description) = 0 ) OR ( POSITION('snapshot_name:' IN description) = 0)  ";
+  qry_str = qry_str + "THEN  NULL ";
+  qry_str = qry_str + "ELSE ";
+  qry_str = qry_str + "TRIM(SUBSTRING (description from POSITION('snapshot_name:' IN description) + CHAR_LENGTH('snapshot_name:') ";
+  qry_str = qry_str + "  FOR  POSITION('snapshot_temp_location:' IN description) - ";
+  qry_str = qry_str + "  POSITION('snapshot_name:' IN description) - CHAR_LENGTH('snapshot_name:'))) ";
+  qry_str = qry_str + "END AS snapshot_name ";
+  qry_str = qry_str + "FROM TABLE (EXPLAIN (NULL,'__EXPL_STMT_NAME__'))  WHERE TRIM(OPERATOR) LIKE 'TRAFODION%SCAN%' ; ";
+
+  Queue * tbls = NULL;
+  cliRC = cliInterface()->fetchAllRows(tbls, (char*)qry_str.data(), 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+  {
+    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    cliInterface()->deallocStuff(module, stmt, sql_src, input_desc, output_desc);
+    return cliRC;
+  }
+
+  if (tbls)
+  {
+
+    if (tbls->numEntries() == 0)
+    {
+      cliRC = cliInterface()->deallocStuff(module, stmt, sql_src, input_desc, output_desc);
+      if (cliRC < 0)
+      {
+        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        return cliRC;
+      }
+    }
+
+    tbls->position();
+    for (int idx = 0; idx < tbls->numEntries(); idx++)
+    {
+      OutputInfo * idx = (OutputInfo*) tbls->getNext();
+      snapshotStruct * snap = new (getMyHeap()) snapshotStruct();
+      snap->fullTableName = new (getMyHeap()) NAString(idx->get(0),getMyHeap());
+      snap->snapshotName =  new (getMyHeap()) NAString(idx->get(1),getMyHeap());
+
+      //remove trailing spaces
+      snap->fullTableName->strip(NAString::trailing, ' ');
+      snap->snapshotName->strip(NAString::trailing, ' ');
+      ex_assert(snap->fullTableName->length()>0 &&
+                snap->snapshotName->length()>0 ,
+                "full table name and snapshot name cannot be empty");
+      snapshotsList_->insert(snap);
+    }
+  }
+
+  cliRC = cliInterface()->deallocStuff(module, stmt, sql_src, input_desc, output_desc);
+  if (cliRC < 0)
+  {
+    cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+    return cliRC;
+  }
+  return snapshotsList_->entries();
+}
 //////////////////////////////////////////////////////
 // work() for ExExeUtilHbaseLoadTcb
 //////////////////////////////////////////////////////
@@ -1729,270 +1894,446 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
   ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
 
   ExTransaction *ta = getGlobals()->castToExExeStmtGlobals()->
-    castToExMasterStmtGlobals()->getStatement()->getContext()->getTransaction();
+      castToExMasterStmtGlobals()->getStatement()->getContext()->getTransaction();
 
   while (1)
   {
     switch (step_)
     {
-      case INITIAL_:
+    case INITIAL_:
+    {
+      NABoolean xnAlreadyStarted = ta->xnInProgress();
+      if (xnAlreadyStarted  )
       {
-        NABoolean xnAlreadyStarted = ta->xnInProgress();
-        if (xnAlreadyStarted  )
-        {
-          //8111 - Transactions are not allowed with Bulk unload.
-          ComDiagsArea * da = getDiagsArea();
-          *da << DgSqlCode(-8111);
-          step_ = UNLOAD_ERROR_;
-        }
-        if (!sequenceFileWriter_)
-        {
-          sequenceFileWriter_ = new(getSpace())
-                       SequenceFileWriter((NAHeap *)getSpace());
-          sfwRetCode = sequenceFileWriter_->init();
-          if (sfwRetCode != SFW_OK)
-            {
-             createHdfsFileError(sfwRetCode);
-             step_ = UNLOAD_END_ERROR_;
-            break;
-            }
-        }
-        if (!hblTdb().getOverwriteMergeFile() &&  hblTdb().getMergePath() != NULL)
-        {
-          NABoolean exists = FALSE;
-          sfwRetCode = sequenceFileWriter_->hdfsExists( hblTdb().getMergePath(), exists);
-          if (sfwRetCode != SFW_OK)
-          {
-            createHdfsFileError(sfwRetCode);
-            step_ = UNLOAD_END_ERROR_;
-            break;
-          }
-          if (exists)
-          {
-            //EXE_UNLOAD_FILE_EXISTS
-            ComDiagsArea * da = getDiagsArea();
-            *da << DgSqlCode(- EXE_UNLOAD_FILE_EXISTS)
-                  << DgString0(hblTdb().getMergePath());
-            step_ = UNLOAD_END_ERROR_;
-           break;
-          }
-        }
-        if (holdAndSetCQD("COMP_BOOL_226", "ON") < 0)
-        {
-          step_ = UNLOAD_END_ERROR_;
-          break;
-        }
-        if (holdAndSetCQD("TRAF_UNLOAD_BYPASS_LIBHDFS", "ON") < 0)
-        {
-          step_ = UNLOAD_END_ERROR_;
-          break;
-        }
-        if (hblTdb().getSkipWriteToFiles())
-        {
-          hblTdb().setEmptyTarget(FALSE);
-          hblTdb().setOneFile(FALSE);
-        }
-        if (setStartStatusMsgAndMoveToUpQueue("UNLOAD", &rc))
-          return rc;
-
-       if (hblTdb().getCompressType() == 0)
-         cliRC = holdAndSetCQD("TRAF_UNLOAD_HDFS_COMPRESS", "0");
-       else
-         cliRC = holdAndSetCQD("TRAF_UNLOAD_HDFS_COMPRESS", "1");
-        if (cliRC < 0)
-        {
-          step_ = UNLOAD_END_ERROR_;
-          break;
-        }
-        step_ = UNLOAD_;
-        if (hblTdb().getEmptyTarget())
-          step_ = EMPTY_TARGET_;
-      }
+        //8111 - Transactions are not allowed with Bulk unload.
+        ComDiagsArea * da = getDiagsArea();
+        *da << DgSqlCode(-8111);
+        step_ = UNLOAD_ERROR_;
         break;
-      case EMPTY_TARGET_:
-       {
-
-         if (setStartStatusMsgAndMoveToUpQueue(" EMPTY TARGET ", &rc, 0, TRUE))
-           return rc;
-
-         std::string uldPath = std::string( hblTdb().getExtractLocation());
-
-         sfwRetCode = sequenceFileWriter_->hdfsCleanUnloadPath( uldPath);
-         if (sfwRetCode != SFW_OK)
-           {
-            createHdfsFileError(sfwRetCode);
-            step_ = UNLOAD_END_ERROR_;
-           break;
-           }
-         step_ = UNLOAD_;
-
-         setEndStatusMsg(" EMPTY TARGET ", 0, TRUE);
-       }
-       break;
-
-      case UNLOAD_:
-      {
-
-        if (setStartStatusMsgAndMoveToUpQueue(" EXTRACT ", &rc, 0, TRUE))
-          return rc;
-
-        rowsAffected_ = 0;
-        cliRC = cliInterface()->executeImmediate(hblTdb().uldQuery_,
-                                                 NULL,
-                                                 NULL,
-                                                 TRUE,
-                                                 &rowsAffected_);
-        if (cliRC < 0)
-        {
-          rowsAffected_ = 0;
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = UNLOAD_END_ERROR_;
-          break;
-        }
-        step_ = UNLOAD_END_;
-
-        if (hblTdb().getOneFile())
-          step_ = MERGE_FILES_;
-
-        if (hblTdb().getSkipWriteToFiles())
-          sprintf(statusMsgBuf_,"       Rows Processed but NOT Written to Disk: %ld %c",rowsAffected_, '\n' );
-        else
-          sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
-        int len = strlen(statusMsgBuf_);
-        setEndStatusMsg(" EXTRACT ", len, TRUE);
-
       }
-        break;
-
-      case MERGE_FILES_:
+      setEmptyTarget(hblTdb().getEmptyTarget());
+      setOneFile(hblTdb().getOneFile());
+      if (!sequenceFileWriter_)
       {
-        if (setStartStatusMsgAndMoveToUpQueue(" MERGE FILES ", &rc, 0, TRUE))
-          return rc;
-
-        std::string srcPath = std::string( hblTdb().getExtractLocation());
-        std::string dstPath = std::string( hblTdb().getMergePath());
-        sfwRetCode = sequenceFileWriter_->hdfsMergeFiles( srcPath, dstPath);
+        sequenceFileWriter_ = new(getMyHeap())
+                           SequenceFileWriter((NAHeap *)getMyHeap());
+        sfwRetCode = sequenceFileWriter_->init();
         if (sfwRetCode != SFW_OK)
+        {
+          createHdfsFileError(sfwRetCode);
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+      }
+      if (!hblTdb().getOverwriteMergeFile() &&  hblTdb().getMergePath() != NULL)
+      {
+        NABoolean exists = FALSE;
+        sfwRetCode = sequenceFileWriter_->hdfsExists( hblTdb().getMergePath(), exists);
+        if (sfwRetCode != SFW_OK)
+        {
+          createHdfsFileError(sfwRetCode);
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+        if (exists)
+        {
+          //EXE_UNLOAD_FILE_EXISTS
+          ComDiagsArea * da = getDiagsArea();
+          *da << DgSqlCode(- EXE_UNLOAD_FILE_EXISTS)
+                      << DgString0(hblTdb().getMergePath());
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+      }
+      if (holdAndSetCQD("COMP_BOOL_226", "ON") < 0)
+      {
+        step_ = UNLOAD_END_ERROR_;
+        break;
+      }
+      if (holdAndSetCQD("TRAF_UNLOAD_BYPASS_LIBHDFS", "ON") < 0)
+      {
+        step_ = UNLOAD_END_ERROR_;
+        break;
+      }
+      if (hblTdb().getSkipWriteToFiles())
+      {
+        setEmptyTarget(FALSE);
+        setOneFile(FALSE);
+      }
+      if (setStartStatusMsgAndMoveToUpQueue("UNLOAD", &rc))
+        return rc;
+
+      if (hblTdb().getCompressType() == 0)
+        cliRC = holdAndSetCQD("TRAF_UNLOAD_HDFS_COMPRESS", "0");
+      else
+        cliRC = holdAndSetCQD("TRAF_UNLOAD_HDFS_COMPRESS", "1");
+      if (cliRC < 0)
+      {
+        step_ = UNLOAD_END_ERROR_;
+        break;
+      }
+
+      if (hblTdb().getScanType()== ComTdbExeUtilHBaseBulkUnLoad::REGULAR_SCAN)
+        cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN", "OFF");
+      else
+        cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN", "ON");
+      if (cliRC < 0)
+      {
+        step_ = UNLOAD_END_ERROR_;
+        break;
+      }
+      if (hblTdb().getSnapshotSuffix() != NULL)
+      {
+        cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN_SNAP_SUFFIX", hblTdb().getSnapshotSuffix());
+        if (cliRC < 0)
+        {
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+      }
+      if (hblTdb().getScanType() ==ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_CREATE ||
+          hblTdb().getScanType() ==ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_EXISTING)
+      {
+        memset (tmpLocation_, '\0', sizeof(tmpLocation_));
+        char str2[60];
+        setSnapshotScanId(str2);
+        snprintf(tmpLocation_,sizeof(tmpLocation_) - 1,  "%s%s/",hblTdb().getTempBaseLocation(), str2 );
+        cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION", tmpLocation_);  
+         if (cliRC < 0)
+         {
+           step_ = UNLOAD_END_ERROR_;
+           break;
+         }
+      }
+
+      step_ = UNLOAD_;
+      if (hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_CREATE )
+        step_ = CREATE_SNAPSHOTS_;
+      else if (hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_EXISTING )
+        step_ = VERIFY_SNAPSHOTS_;
+      if (getEmptyTarget())
+        step_ = EMPTY_TARGET_;
+    }
+    break;
+    case EMPTY_TARGET_:
+    {
+
+      if (setStartStatusMsgAndMoveToUpQueue(" EMPTY TARGET ", &rc, 0, TRUE))
+        return rc;
+
+      NAString uldPath ( hblTdb().getExtractLocation());
+
+      sfwRetCode = sequenceFileWriter_->hdfsCleanUnloadPath( uldPath);
+      if (sfwRetCode != SFW_OK)
+      {
+        createHdfsFileError(sfwRetCode);
+        step_ = UNLOAD_END_ERROR_;
+        break;
+      }
+      step_ = UNLOAD_;
+      if (hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_CREATE) //SNAPSHOT_SCAN_CREATE_ = 1
+        step_ = CREATE_SNAPSHOTS_;
+      else if (hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_EXISTING )
+        step_ = VERIFY_SNAPSHOTS_;
+
+      setEndStatusMsg(" EMPTY TARGET ", 0, TRUE);
+    }
+    break;
+
+    case CREATE_SNAPSHOTS_:
+    case VERIFY_SNAPSHOTS_:
+    {
+      NABoolean createSnp = (step_ == CREATE_SNAPSHOTS_)? TRUE : FALSE;
+      NAString msg(createSnp ? " CREATE SNAPSHOTS " : " VERIFY SNAPSHOTS ");
+      NAString msg2 (createSnp ? "created" : "verified");
+      if (setStartStatusMsgAndMoveToUpQueue( msg.data() , &rc, 0, TRUE))
+        return rc;
+
+      assert (snapshotsList_ == NULL);
+      snapshotsList_ = new (getMyHeap()) NAList<struct snapshotStruct *> (getMyHeap());
+      Lng32 rc = getTrafodionScanTables();
+      if (rc < 0)
+      {
+        step_ = UNLOAD_END_ERROR_;
+        break;
+      }
+
+      for ( int i = 0 ; i < snapshotsList_->entries(); i++)
+      {
+        if (createSnp)
+          sfwRetCode = sequenceFileWriter_->createSnapshot( *snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName);
+        else
+        {
+          NABoolean exist = FALSE;
+          sfwRetCode = sequenceFileWriter_->verifySnapshot(*snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName, exist);
+          if ( sfwRetCode == SFW_OK && !exist)
           {
-           createHdfsFileError(sfwRetCode);
-           step_ = UNLOAD_END_;
-          break;
+            ComDiagsArea * da = getDiagsArea();
+            *da << DgSqlCode(-8112)
+                << DgString0(snapshotsList_->at(i)->snapshotName->data())
+                << DgString1(snapshotsList_->at(i)->fullTableName->data());
+            step_ = UNLOAD_END_ERROR_;
+            break;
           }
+        }
+        if (sfwRetCode != SFW_OK)
+        {
+          createHdfsFileError(sfwRetCode);
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+      }
+      if (step_ == UNLOAD_END_ERROR_)
+        break;
+
+      step_ = UNLOAD_;
+      sprintf(statusMsgBuf_,"       Snapshots %s: %d %c",msg2.data(), (int)snapshotsList_->entries(), '\n' );
+      int len = strlen(statusMsgBuf_);
+      setEndStatusMsg(msg.data(), len, TRUE);
+    }
+    break;
+
+    case UNLOAD_:
+    {
+      if (setStartStatusMsgAndMoveToUpQueue(" EXTRACT ", &rc, 0, TRUE))
+        return rc;
+
+      rowsAffected_ = 0;
+      cliRC = cliInterface()->executeImmediate(hblTdb().uldQuery_,
+          NULL,
+          NULL,
+          TRUE,
+          &rowsAffected_);
+      if (cliRC < 0)
+      {
+        rowsAffected_ = 0;
+        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        step_ = UNLOAD_END_ERROR_;
+        break;
+      }
+      step_ = UNLOAD_END_;
+
+      if (getOneFile())
+        step_ = MERGE_FILES_;
+      if (hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_CREATE ) 
+          step_ = DELETE_SNAPSHOTS_;
+
+      if (hblTdb().getSkipWriteToFiles())
+        sprintf(statusMsgBuf_,"       Rows Processed but NOT Written to Disk: %ld %c",rowsAffected_, '\n' );
+      else
+        sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
+      int len = strlen(statusMsgBuf_);
+      setEndStatusMsg(" EXTRACT ", len, TRUE);
+
+    }
+    break;
+
+    case DELETE_SNAPSHOTS_:
+    {
+      if (setStartStatusMsgAndMoveToUpQueue(" DELETE SNAPSHOTS ", &rc, 0, TRUE))
+        return rc;
+      for ( int i = 0 ; i < snapshotsList_->entries(); i++)
+      {
+        sfwRetCode = sequenceFileWriter_->deleteSnapshot( *snapshotsList_->at(i)->snapshotName);
+        if (sfwRetCode != SFW_OK)
+        {
+          createHdfsFileError(sfwRetCode);
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+      }
+      if (step_ == UNLOAD_END_ERROR_)
+        break;
+
+      step_ = UNLOAD_END_;
+      if (getOneFile())
+        step_ = MERGE_FILES_;
+
+      sprintf(statusMsgBuf_,"       Snapshots deleted: %d %c",(int)snapshotsList_->entries(), '\n' );
+      int len = strlen(statusMsgBuf_);
+      setEndStatusMsg(" DELETE SNAPSHOTS ", len, TRUE);
+    }
+    break;
+
+    case MERGE_FILES_:
+    {
+      if (setStartStatusMsgAndMoveToUpQueue(" MERGE FILES ", &rc, 0, TRUE))
+        return rc;
+
+      NAString srcPath ( hblTdb().getExtractLocation());
+      NAString dstPath ( hblTdb().getMergePath());
+      sfwRetCode = sequenceFileWriter_->hdfsMergeFiles( srcPath, dstPath);
+      if (sfwRetCode != SFW_OK)
+      {
+        createHdfsFileError(sfwRetCode);
         step_ = UNLOAD_END_;
-
-        setEndStatusMsg(" MERGE FILES ", 0, TRUE);
-      }
-      break;
-
-      case UNLOAD_END_:
-      case UNLOAD_END_ERROR_:
-      {
-//        if (restoreCQD("HDFS_IO_BUFFERSIZE") < 0)
-//        {
-//          step_ = UNLOAD_ERROR_;
-//          break;
-//        }
-        if (restoreCQD("COMP_BOOL_226") < 0)
-        {
-          step_ = UNLOAD_ERROR_;
-          break;
-        }
-        if (restoreCQD("TRAF_UNLOAD_BYPASS_LIBHDFS") < 0)
-        {
-          step_ = UNLOAD_ERROR_;
-          break;
-        }
-       if ( restoreCQD("TRAF_UNLOAD_HDFS_COMPRESS") < 0)
-       {
-         step_ = UNLOAD_ERROR_;
-         break;
-       }
-       if (step_ == UNLOAD_END_)
-         step_ = DONE_;
-       else
-         step_ = UNLOAD_ERROR_;
-      }
-
-      break;
-      case RETURN_STATUS_MSG_:
-      {
-        if (moveRowToUpQueue(statusMsgBuf_,0,&rc))
-          return rc;
-
-        step_ = nextStep_;
-      }
-      break;
-
-      case DONE_:
-      {
-        if (qparent_.up->isFull())
-          return WORK_OK;
-
-        // Return EOF.
-        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-
-        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-        up_entry->upState.setMatchNo(0);
-        up_entry->upState.status = ex_queue::Q_NO_DATA;
-
-        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-        if (diagsArea == NULL)
-          diagsArea = ComDiagsArea::allocate(getMyHeap());
-        else
-          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-        diagsArea->setRowCount(rowsAffected_);
-
-        if (getDiagsArea())
-          diagsArea->mergeAfter(*getDiagsArea());
-
-        up_entry->setDiagsArea(diagsArea);
-
-        // insert into parent
-        qparent_.up->insert();
-        step_ = INITIAL_;
-        qparent_.down->removeHead();
-        return WORK_OK;
-      }
         break;
+      }
+      step_ = UNLOAD_END_;
 
-      case UNLOAD_ERROR_:
+      setEndStatusMsg(" MERGE FILES ", 0, TRUE);
+    }
+    break;
+
+    case UNLOAD_END_:
+    case UNLOAD_END_ERROR_:
+    {
+      if (step_ == UNLOAD_END_ &&
+          (hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_CREATE ||
+           hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_EXISTING))
       {
-        if (qparent_.up->isFull())
-          return WORK_OK;
-
-        // Return EOF.
-        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-
-        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-        up_entry->upState.setMatchNo(0);
-        up_entry->upState.status = ex_queue::Q_SQLERROR;
-
-        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-        if (diagsArea == NULL)
-          diagsArea = ComDiagsArea::allocate(getMyHeap());
-        else
-          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-        if (getDiagsArea())
-          diagsArea->mergeAfter(*getDiagsArea());
-
-        up_entry->setDiagsArea(diagsArea);
-
-        // insert into parent
-        qparent_.up->insert();
-
-        pstate.matches_ = 0;
-
-
-
+        if (snapshotsList_ != NULL)
+        {
+          for ( int i = 0 ; i < snapshotsList_->entries(); i++)
+          {
+            sfwRetCode = sequenceFileWriter_->setArchPermissions( *snapshotsList_->at(i)->fullTableName);
+            if (sfwRetCode != SFW_OK)
+            {
+              createHdfsFileError(sfwRetCode);
+              step_ = UNLOAD_END_ERROR_;
+              break;
+            }
+          }
+          if (step_ == UNLOAD_END_ERROR_)
+            break;
+        }
+        NAString tmpLoc( tmpLocation_);
+        sfwRetCode = sequenceFileWriter_->hdfsDeletePath( tmpLoc);
+        if (sfwRetCode != SFW_OK)
+        {
+          createHdfsFileError(sfwRetCode);
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+        sfwRetCode = sequenceFileWriter_->release( );
+        if (sfwRetCode != SFW_OK)
+        {
+          createHdfsFileError(sfwRetCode);
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+      }
+      if (restoreCQD("TRAF_TABLE_SNAPSHOT_SCAN") < 0)
+      {
+        step_ = UNLOAD_ERROR_;
+        break;
+      }
+      if (restoreCQD("TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION") < 0)
+      {
+        step_ = UNLOAD_ERROR_;
+        break;
+      }
+      if (hblTdb().getSnapshotSuffix() != NULL)
+      {
+        if (restoreCQD("TRAF_TABLE_SNAPSHOT_SCAN_SNAP_SUFFIX") < 0)
+        {
+          step_ = UNLOAD_ERROR_;
+          break;
+        }
+      }
+      if (restoreCQD("COMP_BOOL_226") < 0)
+      {
+        step_ = UNLOAD_ERROR_;
+        break;
+      }
+      if (restoreCQD("TRAF_UNLOAD_BYPASS_LIBHDFS") < 0)
+      {
+        step_ = UNLOAD_ERROR_;
+        break;
+      }
+      if ( restoreCQD("TRAF_UNLOAD_HDFS_COMPRESS") < 0)
+      {
+        step_ = UNLOAD_ERROR_;
+        break;
+      }
+      if (step_ == UNLOAD_END_)
         step_ = DONE_;
-      }
-        break;
+      else
+        step_ = UNLOAD_ERROR_;
+    }
+
+    break;
+    case RETURN_STATUS_MSG_:
+    {
+      if (moveRowToUpQueue(statusMsgBuf_,0,&rc))
+        return rc;
+
+      step_ = nextStep_;
+    }
+    break;
+
+    case DONE_:
+    {
+      if (qparent_.up->isFull())
+        return WORK_OK;
+
+      // Return EOF.
+      ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+      up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
+
+      up_entry->upState.setMatchNo(0);
+      up_entry->upState.status = ex_queue::Q_NO_DATA;
+
+      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+
+      if (diagsArea == NULL)
+        diagsArea = ComDiagsArea::allocate(getMyHeap());
+      else
+        diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+
+      diagsArea->setRowCount(rowsAffected_);
+
+      if (getDiagsArea())
+        diagsArea->mergeAfter(*getDiagsArea());
+
+      up_entry->setDiagsArea(diagsArea);
+
+      // insert into parent
+      qparent_.up->insert();
+      step_ = INITIAL_;
+      qparent_.down->removeHead();
+
+      freeResources();
+      return WORK_OK;
+    }
+    break;
+
+    case UNLOAD_ERROR_:
+    {
+      if (qparent_.up->isFull())
+        return WORK_OK;
+
+      // Return EOF.
+      ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+      up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
+
+      up_entry->upState.setMatchNo(0);
+      up_entry->upState.status = ex_queue::Q_SQLERROR;
+
+      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+
+      if (diagsArea == NULL)
+        diagsArea = ComDiagsArea::allocate(getMyHeap());
+      else
+        diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+
+      if (getDiagsArea())
+        diagsArea->mergeAfter(*getDiagsArea());
+
+      up_entry->setDiagsArea(diagsArea);
+
+      // insert into parent
+      qparent_.up->insert();
+
+      pstate.matches_ = 0;
+
+
+
+      step_ = DONE_;
+    }
+    break;
 
     } // switch
   } // while

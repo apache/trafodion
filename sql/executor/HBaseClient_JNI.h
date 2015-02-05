@@ -257,7 +257,12 @@ public:
 			const TextVec *inColNamesToFilter, 
 			const TextVec *inCompareOpList,
 			const TextVec *inColValuesToCompare,
-			Float32 samplePercent = -1.0f);
+			Float32 samplePercent = -1.0f,
+			NABoolean useSnapshotScan = FALSE,
+			Lng32 snapTimeout = 0,
+			char * snapName = NULL,
+			char * tmpLoc = NULL,
+			Lng32 espNum = 0);
   HTC_RetCode startGet(Int64 transID, const Text& rowID, const TextVec& cols, 
 		Int64 timestamp);
   HTC_RetCode startGets(Int64 transID, const TextVec& rowIDs, const TextVec& cols, 

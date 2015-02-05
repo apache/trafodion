@@ -271,6 +271,7 @@ enum OperatorTypeEnum {
                         REL_FAST_EXTRACT,
 
                         REL_HIVE_INSERT,
+                        REL_BULK_UNLOAD,
 
                         REL_LAST_REL_OP = 1999,
 

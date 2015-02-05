@@ -169,7 +169,10 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   zkPort_(zkPort),
   hbasePerfAttributes_(hbasePerfAttributes),
   LoadPrepLocation_ (NULL),
-  samplingRate_(samplingRate)
+  samplingRate_(samplingRate),
+  snapScanTmpLocation_(NULL),
+  snapName_(NULL),
+  snapshotScanTimeout_(0)
 {};
 
 ComTdbHbaseAccess::ComTdbHbaseAccess(
@@ -266,7 +269,10 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
 
   hbasePerfAttributes_(NULL),
   LoadPrepLocation_(NULL),
-  samplingRate_(-1)
+  samplingRate_(-1),
+  snapScanTmpLocation_(NULL),
+  snapName_(NULL),
+  snapshotScanTimeout_(0)
 {
 }
 
@@ -392,7 +398,8 @@ Long ComTdbHbaseAccess::pack(void * space)
   zkPort_.pack(space);
   hbasePerfAttributes_.pack(space);
   LoadPrepLocation_.pack(space);
-
+  snapScanTmpLocation_.pack(space);
+  snapName_.pack(space);
   // pack elements in listOfScanRows_
   if (listOfScanRows() && listOfScanRows()->numEntries() > 0)
     {
@@ -452,6 +459,8 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(zkPort_.unpack(base)) return -1;
   if(hbasePerfAttributes_.unpack(base, reallocator)) return -1;
   if(LoadPrepLocation_.unpack(base)) return -1;
+  if(snapScanTmpLocation_.unpack(base)) return -1;
+  if(snapName_.unpack(base)) return -1;
   // unpack elements in listOfScanRows_
   if(listOfScanRows_.unpack(base, reallocator)) return -1;
   if (listOfScanRows() && listOfScanRows()->numEntries() > 0)

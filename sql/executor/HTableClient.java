@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -76,6 +76,16 @@ import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.RandomRowFilter;
 
+import org.apache.hadoop.hbase.client.TableSnapshotScanner;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FileUtil;
+import java.util.UUID;
+import java.security.InvalidParameterException;
+
 public class HTableClient {
 	private boolean useTRex;
 	private boolean useTRexScanner;
@@ -102,8 +112,132 @@ public class HTableClient {
         ExecutorService executorService = null;
         Future future = null;
 	boolean preFetch = false;
-	long jniObject = 0;
 
+	long jniObject = 0;
+	SnapshotScanHelper snapHelper = null;
+
+	 class SnapshotScanHelper
+	 {
+	   Path snapRestorePath = null;
+	   HBaseAdmin admin  = null;
+	   Configuration conf = null;
+	   SnapshotDescription snpDesc = null;
+	   String tmpLocation = null;
+	   FileSystem fs  = null;
+
+	   SnapshotScanHelper( Configuration cnfg , String tmpLoc, String snapName) 
+	       throws IOException
+	   {
+	     conf = cnfg;
+	     admin = new HBaseAdmin(conf);
+	     tmpLocation = tmpLoc;
+	     setSnapshotDescription(snapName);
+	     Path rootDir = new Path(conf.get(HConstants.HBASE_DIR));
+	     fs = rootDir.getFileSystem(conf);
+	     setSnapRestorePath();
+	   }
+
+	   String getTmpLocation()
+	   {
+	     return tmpLocation;
+	   }
+	   String getSnapshotName()
+	   {
+	     if (snpDesc == null)
+	       return null;
+	     return snpDesc.getName();
+	   }
+	   void setSnapRestorePath() throws IOException
+	   {
+	     String restoreDirStr = tmpLocation + getSnapshotDescription().getName(); ;
+	     snapRestorePath = new Path(restoreDirStr);
+	     snapRestorePath = snapRestorePath.makeQualified(fs.getUri(), snapRestorePath);
+	   }
+	   Path getSnapRestorePath() throws IOException
+	   {
+	     return snapRestorePath;
+	   }
+	   boolean snapshotExists() throws IOException
+	   {
+	     return !admin.listSnapshots(snpDesc.getName()).isEmpty();
+	   }
+	   void deleteSnapshot() throws IOException
+	   {
+	     if (snapshotExists())
+	     {
+	       admin.deleteSnapshot(snpDesc.getName());
+	       if (logger.isTraceEnabled()) logger.trace("[Snapshot Scan] SnapshotScanHelper.deleteSnapshot(). snapshot: " + snpDesc.getName() + " deleted.");
+	     }
+	     else
+	     {
+	       if (logger.isTraceEnabled()) logger.trace("[Snapshot Scan] SnapshotScanHelper.deleteSnapshot(). snapshot: " + snpDesc.getName() + " does not exist.");
+	     }
+	   }
+	   void deleteRestorePath() throws IOException
+	   {
+	     if (fs.exists(snapRestorePath))
+	     {
+	       fs.delete(snapRestorePath, true);
+	       if (logger.isTraceEnabled()) logger.trace("[Snapshot Scan] SnapshotScanHelper.deleteRestorePath(). restorePath: " + snapRestorePath + " deleted.");
+	     }
+	     else
+	     {
+	       if (logger.isTraceEnabled()) logger.trace("[Snapshot Scan] SnapshotScanHelper.deleteRestorePath(). restorePath: " + snapRestorePath  + " does not exist.");
+	     }
+	   }
+	   
+	   void createTableSnapshotScanner(int timeout, int slp, long nbre, Scan scan) throws InterruptedException
+	   {
+	     int xx=0;
+	     while (xx < timeout)
+	     {
+         xx++;
+	       scanner = null;
+	       try
+	       {
+	         scanner = new TableSnapshotScanner(table.getConfiguration(), snapHelper.getSnapRestorePath(), snapHelper.getSnapshotName(), scan);
+	       }
+	       catch(IOException e )
+	       {
+	         if (logger.isTraceEnabled()) logger.trace("[Snapshot Scan] SnapshotScanHelper.createTableSnapshotScanner(). espNumber: " + nbre  + 
+	             " snapshot " + snpDesc.getName() + " TableSnapshotScanner Exception :" + e);
+	         Thread.sleep(slp);
+	         continue;
+	       }
+	       if (logger.isTraceEnabled()) logger.trace("[Snapshot Scan] SnapshotScanHelper.createTableSnapshotScanner(). espNumber: " + 
+	           nbre + " snapshot " + snpDesc.getName() +  " TableSnapshotScanner Done - Scanner:" + scanner );
+	       break;
+	     }
+	   }
+	   void setSnapshotDescription( String snapName)
+	   {
+       if (snapName == null )
+         throw new InvalidParameterException ("snapshotName is null.");
+       
+	     SnapshotDescription.Builder builder = SnapshotDescription.newBuilder();
+	     builder.setTable(Bytes.toString(table.getTableName()));
+	     builder.setName(snapName);
+	     builder.setType(SnapshotDescription.Type.FLUSH);
+	     snpDesc = builder.build();
+	   }
+	   SnapshotDescription getSnapshotDescription()
+	   {
+	     return snpDesc;
+	   }
+
+	   public void release() throws IOException
+	   {
+	     if (admin != null)
+	     {
+	       admin.close();
+	       admin = null;
+	     }
+	   }
+	 }
+
+	 
+	 
+	 
 	static Logger logger = Logger.getLogger(HTableClient.class.getName());;
 
 	public class QualifiedColumn {
@@ -212,99 +346,124 @@ public class HTableClient {
 	}
 
 	public boolean startScan(long transID, byte[] startRow, byte[] stopRow,
-				 Object[]  columns, long timestamp,
-				 boolean cacheBlocks, int numCacheRows,
-				 Object[] colNamesToFilter, 
-				 Object[] compareOpList, 
-				 Object[] colValuesToCompare,
-				 float samplePercent,
-				 boolean inPreFetch) 
-           throws IOException {
-	    if (logger.isTraceEnabled()) logger.trace("Enter startScan() " + tableName + " txid: " + transID);
+	    Object[]  columns, long timestamp,
+	    boolean cacheBlocks, int numCacheRows,
+	    Object[] colNamesToFilter, 
+	    Object[] compareOpList, 
+	    Object[] colValuesToCompare,
+	    float samplePercent,
+	    boolean inPreFetch,
+	    boolean useSnapshotScan,
+	    int snapTimeout,
+	    String snapName,
+	    String tmpLoc,
+	    int espNum) 
+	        throws IOException, Exception {
+	  if (logger.isTraceEnabled()) logger.trace("Enter startScan() " + tableName + " txid: " + transID+ " CacheBlocks: " + cacheBlocks + " numCacheRows: " + numCacheRows + " Bulkread: " + useSnapshotScan);
 
-		Scan scan;
+	  Scan scan;
 
-		if (startRow != null && startRow.toString() == "")
-			startRow = null;
-		if (stopRow != null && stopRow.toString() == "")
-			stopRow = null;
+	  if (startRow != null && startRow.toString() == "")
+	    startRow = null;
+	  if (stopRow != null && stopRow.toString() == "")
+	    stopRow = null;
 
-		if (startRow != null && stopRow != null)
-			scan = new Scan(startRow, stopRow);
-		else
-			scan = new Scan();
+	  if (startRow != null && stopRow != null)
+	    scan = new Scan(startRow, stopRow);
+	  else
+	    scan = new Scan();
 
 		if (cacheBlocks == true) {
-			scan.setCacheBlocks(true);
+	    scan.setCacheBlocks(true);
 			// Disable block cache for full table scan
 			if (startRow == null && stopRow == null)
 				scan.setCacheBlocks(false);
 		}
-		else
-			scan.setCacheBlocks(false);
+	  else
+	    scan.setCacheBlocks(false);
 		
-		scan.setCaching(numCacheRows);
-		numRowsCached = numCacheRows;
-		if (columns != null) {
-			numColsInScan = columns.length;
-			for (int i = 0; i < columns.length ; i++) {
-				byte[] col = (byte[])columns[i];
-				QualifiedColumn qc = new QualifiedColumn(col);
-				scan.addColumn(qc.getFamily(), qc.getName());
-			}
-		}
-		else
-			numColsInScan = 0;
-		if (colNamesToFilter != null) {
-			FilterList list = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+	  scan.setCaching(numCacheRows);
+	  numRowsCached = numCacheRows;
+	  if (columns != null) {
+	    numColsInScan = columns.length;
+	    for (int i = 0; i < columns.length ; i++) {
+	      byte[] col = (byte[])columns[i];
+	      QualifiedColumn qc = new QualifiedColumn(col);
+	      scan.addColumn(qc.getFamily(), qc.getName());
+	    }
+	  }
+	  else
+	    numColsInScan = 0;
+	  if (colNamesToFilter != null) {
+	    FilterList list = new FilterList(FilterList.Operator.MUST_PASS_ALL);
 
-			for (int i = 0; i < colNamesToFilter.length; i++) {
-				byte[] colName = (byte[])colNamesToFilter[i];
-				QualifiedColumn qc = new QualifiedColumn(colName);
-					
-				byte[] coByte = (byte[])compareOpList[i];
-				byte[] colVal = (byte[])colValuesToCompare[i];
+	    for (int i = 0; i < colNamesToFilter.length; i++) {
+	      byte[] colName = (byte[])colNamesToFilter[i];
+	      QualifiedColumn qc = new QualifiedColumn(colName);
 
-				if ((coByte == null) || (colVal == null)) {
-					return false;
-				}
+	      byte[] coByte = (byte[])compareOpList[i];
+	      byte[] colVal = (byte[])colValuesToCompare[i];
 
-				String coStr = new String(coByte);
-				CompareOp co = CompareOp.valueOf(coStr);
+	      if ((coByte == null) || (colVal == null)) {
+	        return false;
+	      }
 
-				SingleColumnValueFilter filter1 = 
-					new SingleColumnValueFilter(qc.getFamily(), qc.getName(), 
-							co, colVal);
-				list.addFilter(filter1);
-			}
+	      String coStr = new String(coByte);
+	      CompareOp co = CompareOp.valueOf(coStr);
 
-			if (samplePercent > 0.0f)
-			      list.addFilter(new RandomRowFilter(samplePercent));
-		    scan.setFilter(list);
-		} else if (samplePercent > 0.0f) {
-			scan.setFilter(new RandomRowFilter(samplePercent));
-		}
+	      SingleColumnValueFilter filter1 = 
+	          new SingleColumnValueFilter(qc.getFamily(), qc.getName(), 
+	              co, colVal);
+	      list.addFilter(filter1);
+	    }
 
-		if (useTRexScanner && (transID != 0)) {
-		    scanner = table.getScanner(transID, scan);
-		} else {
-		    scanner = table.getScanner(scan);
-		}
-		if (logger.isTraceEnabled()) logger.trace("startScan(). After getScanner. Scanner: " + scanner);
-		
-		preFetch = inPreFetch;
-		if (preFetch)
-		{
- 			executorService = Executors.newFixedThreadPool(1);
-			future = executorService.submit(new Callable<Result[]>() {
-				public Result[] call() throws Exception {
-					return scanner.next(numRowsCached);
-				}
-			});
-		}
+	    if (samplePercent > 0.0f)
+	      list.addFilter(new RandomRowFilter(samplePercent));
+	    scan.setFilter(list);
+	  } else if (samplePercent > 0.0f) {
+	    scan.setFilter(new RandomRowFilter(samplePercent));
+	  }
 
-		if (logger.isTraceEnabled()) logger.trace("Exit startScan().");
-		return true;
+	  if (!useSnapshotScan || transID != 0)
+	  {
+	    if (useTRexScanner && (transID != 0)) {
+	      scanner = table.getScanner(transID, scan);
+	    } else {
+	      scanner = table.getScanner(scan);
+	    }
+	    if (logger.isTraceEnabled()) logger.trace("startScan(). After getScanner. Scanner: " + scanner);
+	  }
+	  else
+	  {
+	    snapHelper = new SnapshotScanHelper(table.getConfiguration(), tmpLoc,snapName);
+
+	    if (logger.isTraceEnabled()) 
+	      logger.trace("[Snapshot Scan] HTableClient.startScan(). useSnapshotScan: " + useSnapshotScan + 
+	                   " espNumber: " + espNum + 
+	                   " tmpLoc: " + snapHelper.getTmpLocation() + 
+	                   " snapshot name: " + snapHelper.getSnapshotName());
+	    
+	    if (!snapHelper.snapshotExists())
+	      throw new Exception ("Snapshot " + snapHelper.getSnapshotName() + " does not exist.");
+
+	    snapHelper.createTableSnapshotScanner(snapTimeout, 5, espNum, scan);
+	    if (scanner==null)
+	      throw new Exception("Cannot create Table Snapshot Scanner");
+	  }
+    
+	  preFetch = inPreFetch;
+	  if (preFetch)
+	  {
+	    executorService = Executors.newFixedThreadPool(1);
+	    future = executorService.submit(new Callable<Result[]>() {
+	      public Result[] call() throws Exception {
+	        return scanner.next(numRowsCached);
+	      }
+	    });
+	  }
+
+	  if (logger.isTraceEnabled()) logger.trace("Exit startScan().");
+	  return true;
 	}
 
 	public boolean startGet(long transID, byte[] rowID, 
@@ -806,26 +965,31 @@ public class HTableClient {
 	}
 
 	public boolean release(boolean cleanJniObject) throws IOException {
-		if (table != null)
-			table.flushCommits();
-		if (scanner != null) {
-			scanner.close();
-			scanner = null;
-		}
-		cleanScan();		
-		future = null;
-		if (executorService != null) {
-			executorService.shutdown();
-			executorService = null;
-		}
-		getResultSet = null;
-		if (cleanJniObject) {
-			if (jniObject != 0)
-				cleanup(jniObject);
-			tableName = null;
-		}
-		jniObject = 0;
-		return true;
+	  if (table != null)
+	    table.flushCommits();
+	  if (scanner != null) {
+	    scanner.close();
+	    scanner = null;
+	  }
+	  if (snapHelper !=null)
+	  {
+	    snapHelper.release();
+	    snapHelper = null;
+	  }
+	  cleanScan();		
+	  future = null;
+	  if (executorService != null) {
+	    executorService.shutdown();
+	    executorService = null;
+	  }
+	  getResultSet = null;
+	  if (cleanJniObject) {
+	    if (jniObject != 0)
+	      cleanup(jniObject);
+	    tableName = null;
+	  }
+	  jniObject = 0;
+	  return true;
 	}
 
 	public boolean close(boolean clearRegionCache, boolean cleanJniObject) throws IOException {

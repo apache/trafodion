@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 
 	case SCAN_OPEN:
 	  {
+
 	    tcb_->table_.val = tcb_->hbaseAccessTdb().getTableName();
 	    tcb_->table_.len = strlen(tcb_->hbaseAccessTdb().getTableName());
 
@@ -72,7 +73,6 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-
 	    retcode = tcb_->ehi_->scanOpen(tcb_->table_, 
 					   tcb_->beginRowId_, tcb_->endRowId_,
 					   tcb_->columns_, -1,
@@ -454,6 +454,10 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 		step_ = HANDLE_ERROR;
 		break;
 	      }
+	    Lng32 snapTimeout = tcb_->hbaseAccessTdb().getSnapshotScanTimeout();
+            char * snapName = tcb_->hbaseAccessTdb().getSnapshotName();
+            char * tmpLoc = tcb_->hbaseAccessTdb().getSnapScanTmpLocation();
+            Lng32 espNum = tcb_->getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
 
 	    retcode = tcb_->ehi_->scanOpen(tcb_->table_, 
 					   tcb_->beginRowId_, tcb_->endRowId_,
@@ -468,7 +472,12 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.size() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
-					    tcb_->getSamplePercentage());
+					    tcb_->getSamplePercentage(),
+					    tcb_->hbaseAccessTdb().getUseSnapshotScan(),
+					    snapTimeout,
+					    snapName,
+					    tmpLoc,
+					    espNum);
 
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;

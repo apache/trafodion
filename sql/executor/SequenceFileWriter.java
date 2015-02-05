@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -27,10 +27,20 @@ import java.io.OutputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.MasterNotRunningException;
+import org.apache.hadoop.hbase.ZooKeeperConnectionException;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.TableSnapshotScanner;
+import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
+import org.apache.hadoop.hbase.snapshot.SnapshotCreationException;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.util.FSUtils;
+import org.apache.hadoop.hbase.util.HFileArchiveUtil;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
@@ -48,16 +58,24 @@ import org.apache.hadoop.io.compress.zlib.*;
 import org.apache.hadoop.fs.*;
 
 import java.io.*;
+import java.util.List;
 
 import org.apache.hadoop.util.*;
 import org.apache.hadoop.io.*;
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.Lists;
+import com.google.protobuf.ServiceException;
 
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.fs.permission.AclEntry;
+import org.apache.hadoop.fs.permission.FsPermission;
 public class SequenceFileWriter {
 
     static Logger logger = Logger.getLogger(SequenceFileWriter.class.getName());
     Configuration conf = null;           // File system configuration
+    HBaseAdmin admin = null;
+    
     SequenceFile.Writer writer = null;
 
     FSDataOutputStream fsOut = null;
@@ -67,8 +85,9 @@ public class SequenceFileWriter {
     /**
      * Class Constructor
      */
-    SequenceFileWriter() {
-      conf = new Configuration();
+    SequenceFileWriter() throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
+    {
+      init("", "");
       conf.set("fs.hdfs.impl","org.apache.hadoop.hdfs.DistributedFileSystem");
     }
     
@@ -333,4 +352,144 @@ public class SequenceFileWriter {
     return false;
   }
 
+  public boolean hdfsDeletePath(String pathStr) throws Exception
+  {
+    if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsDeletePath() - start - Path: " + pathStr);
+    try 
+    {
+      Path delPath = new Path(pathStr );
+      delPath = delPath.makeQualified(delPath.toUri(), null);
+      FileSystem fs = FileSystem.get(delPath.toUri(),conf);
+      fs.delete(delPath, true);
+    }
+    catch (IOException e)
+    {
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsDeletePath() --exception:" + e);
+      throw e;
+    }
+    
+    return true;
+  }
+
+  private boolean init(String zkServers, String zkPort) 
+      throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
+  {
+    logger.debug("SequenceFileWriter.init(" + zkServers + ", " + zkPort + ") called.");
+    if (conf != null)
+      return true;
+    
+    conf = HBaseConfiguration.create();
+    if (zkServers.length() > 0)
+      conf.set("hbase.zookeeper.quorum", zkServers);
+    if (zkPort.length() > 0)
+      conf.set("hbase.zookeeper.property.clientPort", zkPort);
+    HBaseAdmin.checkHBaseAvailable(conf);
+    return true;
+  }
+  
+  public boolean createSnapshot( String tableName, String snapshotName)
+      throws MasterNotRunningException, IOException, SnapshotCreationException, 
+      InterruptedException, ZooKeeperConnectionException, ServiceException
+  {
+    try 
+    {
+      if (admin == null)
+        admin = new HBaseAdmin(conf);
+      admin.snapshot(snapshotName, tableName);
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.createSnapshot() - Snapshot created: " + snapshotName);
+    }
+    catch (Exception e)
+    {
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.createSnapshot() - Exception: " + e);
+      throw e;
+    }
+    return true;
+  }
+  public boolean verifySnapshot( String tableName, String snapshotName)
+      throws MasterNotRunningException, IOException, SnapshotCreationException, 
+      InterruptedException, ZooKeeperConnectionException, ServiceException
+  {
+    try 
+    {
+      if (admin == null)
+        admin = new HBaseAdmin(conf);
+      List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
+
+      for (SnapshotDescription snpd : lstSnaps) 
+      {
+        if (snpd.getName().compareTo(snapshotName) == 0 && 
+            snpd.getTable().compareTo(tableName) == 0)
+        {
+          if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.verifySnapshot() - Snapshot verified: " + snapshotName);
+          return true;
+        }
+      }
+    }
+    catch (Exception e)
+    {
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.verifySnapshot() - Exception: " + e);
+      throw e;
+    }
+    return false;
+  }
+ 
+  public boolean deleteSnapshot( String snapshotName)
+      throws MasterNotRunningException, IOException, SnapshotCreationException, 
+      InterruptedException, ZooKeeperConnectionException, ServiceException
+  {
+    try 
+    {
+      if (admin == null)
+        admin = new HBaseAdmin(conf);
+      admin.deleteSnapshot(snapshotName);
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.deleteSnapshot() - Snapshot deleted: " + snapshotName);
+    }
+    catch (Exception e)
+    {
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.deleteSnapshot() - Exception: " + e);
+      throw e;
+    }
+
+    return true;
+  }
+  private boolean updatePermissionForEntries(FileStatus[] entries) throws IOException 
+  {
+    if (entries == null) {
+      return true;
+    }
+    for (FileStatus child : entries) {
+      Path path = child.getPath();
+      List<AclEntry> lacl = AclEntry.parseAclSpec("user::rwx,group::rwx,other::rwx", true) ;
+      fs.modifyAclEntries(path, lacl);
+      if (child.isDir()) 
+      {
+        FileStatus[] files = FSUtils.listStatus(fs,path);
+        updatePermissionForEntries(files);
+      } 
+    }
+    return true;
+  }
+  public boolean setArchPermissions( String tabName) throws IOException,ServiceException
+  {
+    Path rootDir = FSUtils.getRootDir(conf);
+    fs = FileSystem.get(rootDir.toUri(),conf);
+    Path tabArcPath = HFileArchiveUtil.getTableArchivePath(conf,  TableName.valueOf(tabName));
+    if (tabArcPath == null)
+      return true;
+    List<AclEntry> lacl = AclEntry.parseAclSpec("user::rwx,group::rwx,other::rwx", true) ;
+    fs.modifyAclEntries(tabArcPath, lacl);
+    FileStatus[] files = FSUtils.listStatus(fs,tabArcPath);
+    updatePermissionForEntries(files); 
+
+    return true;
+  }
+  public boolean release()  throws IOException
+  {
+    if (admin != null)
+    {
+      admin.close();
+      admin = null;
+    }
+    return true;
+  }
 }

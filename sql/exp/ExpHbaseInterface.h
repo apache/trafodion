@@ -139,7 +139,12 @@ class ExpHbaseInterface : public NABasicObject
 			 const TextVec *inColNamesToFilter, 
 			 const TextVec *inCompareOpList,
 			 const TextVec *inColValuesToCompare,
-			 Float32 samplePercent = -1.0f) = 0;
+			 Float32 samplePercent = -1.0f,
+			 NABoolean useSnapshotScan = FALSE,
+			 Lng32 snapTimeout = 0,
+			 char * snapName = NULL,
+			 char * tmpLoc = NULL,
+			 Lng32 espNum=0) = 0;
 
   virtual Lng32 scanClose() = 0;
 
@@ -397,8 +402,13 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 			 const TextVec *inColNamesToFilter, 
 			 const TextVec *inCompareOpList,
 			 const TextVec *inColValuesToCompare,
-                         Float32 samplePercent = -1.0f);
-  
+			 Float32 samplePercent = -1.0f,
+			 NABoolean useSnapshotScan = FALSE,
+			 Lng32 snapTimeout = 0,
+			 char * snapName = NULL,
+			 char * tmpLoc = NULL,
+			 Lng32 espNum = 0);
+
   virtual Lng32 scanClose();
 
   virtual Lng32 getRowOpen(

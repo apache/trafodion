@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -153,7 +153,17 @@ typedef enum {
  ,SFW_ERROR_HDFS_EXISTS_PARAM
  ,SFW_ERROR_HDFS_EXISTS_EXCEPTION
  ,SFW_ERROR_HDFS_EXISTS_FILE_EXISTS
-
+ ,SFW_ERROR_CREATE_SNAPSHOT_PARAM
+ ,SFW_ERROR_CREATE_SNAPSHOT_EXCEPTION
+ ,SFW_ERROR_DELETE_SNAPSHOT_PARAM
+ ,SFW_ERROR_DELETE_SNAPSHOT_EXCEPTION
+ ,SFW_ERROR_RELEASE_EXCEPTION
+ ,SFW_ERROR_VERIFY_SNAPSHOT_PARAM
+ ,SFW_ERROR_VERIFY_SNAPSHOT_EXCEPTION
+ ,SFW_ERROR_HDFS_DELETE_PATH_PARAM
+ ,SFW_ERROR_HDFS_DELETE_PATH_EXCEPTION
+ ,SFW_ERROR_SET_ARCH_PERMISSIONS_PARAM
+ ,SFW_ERROR_SET_ARCH_PERMISSIONS_EXCEPTION
  ,SFW_LAST
 } SFW_RetCode;
 
@@ -198,11 +208,17 @@ public:
 
   SFW_RetCode    hdfsCreate(const char* path, NABoolean compress);
   SFW_RetCode    hdfsWrite(const char* data, Int64 size);
-  SFW_RetCode    hdfsMergeFiles(const std::string& srcPath,
-                                 const std::string& dstPath);
-  SFW_RetCode    hdfsCleanUnloadPath(const std::string& uldPath );
-  SFW_RetCode    hdfsExists(const std::string& uldPath,  NABoolean & exists );
+  SFW_RetCode    hdfsMergeFiles(const NAString& srcPath,
+                                 const NAString& dstPath);
+  SFW_RetCode    hdfsDeletePath(const NAString& delPath);
+  SFW_RetCode    hdfsCleanUnloadPath(const NAString& uldPath );
+  SFW_RetCode    hdfsExists(const NAString& uldPath,  NABoolean & exists );
   SFW_RetCode    hdfsClose();
+  SFW_RetCode    createSnapshot( const NAString&  tableName, const NAString&  snapshotName);
+  SFW_RetCode    deleteSnapshot( const NAString&  snapshotName);
+  SFW_RetCode    verifySnapshot( const NAString&  tableName, const NAString&  snapshotName, NABoolean & exist);
+  SFW_RetCode    release();
+  SFW_RetCode    setArchPermissions( const NAString&  tabName);
 
   virtual char*  getErrorText(SFW_RetCode errEnum);
 
@@ -222,6 +238,12 @@ private:
     JM_HDFS_MERGE_FILES,
     JM_HDFS_CLEAN_UNLOAD_PATH,
     JM_HDFS_EXISTS,
+    JM_CREATE_SNAPSHOT,
+    JM_DELETE_SNAPSHOT,
+    JM_RELEASE,
+    JM_VERIFY_SNAPSHOT,
+    JM_HDFS_DELETE_PATH,
+    JM_SET_ARCH_PERMISSIONS,
     JM_LAST
   };
   

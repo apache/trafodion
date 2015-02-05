@@ -2335,6 +2335,13 @@ public:
     GZIP_ = 1
   };
 
+  enum ScanType
+  {
+    REGULAR_SCAN_ = 0,
+    SNAPSHOT_SCAN_CREATE_ = 1,
+    SNAPSHOT_SCAN_EXISTING_ = 2
+  };
+
     ExeUtilHBaseBulkUnLoad(const CorrName &hBaseTableName,
                      ExprNode * exprNode,
                      char * stmtText,
@@ -2348,7 +2355,10 @@ public:
       oneFile_(FALSE),
       compressType_(NONE_),
       extractLocation_( oHeap),
-      overwriteMergeFile_(FALSE)
+      overwriteMergeFile_(FALSE),
+      scanType_(REGULAR_SCAN_),
+      snapSuffix_(oHeap)
+
     {
     };
   ExeUtilHBaseBulkUnLoad(const CorrName &hBaseTableName,
@@ -2365,7 +2375,9 @@ public:
     oneFile_(FALSE),
     compressType_(NONE_),
     extractLocation_(*extractLocation, oHeap),
-    overwriteMergeFile_(FALSE)
+    overwriteMergeFile_(FALSE),
+    scanType_(REGULAR_SCAN_),
+    snapSuffix_(oHeap)
   {
   };
 
@@ -2440,6 +2452,8 @@ private:
   CompressionType compressType_;
   NAString extractLocation_;
   NABoolean overwriteMergeFile_;
+  NAString snapSuffix_;
+  ScanType scanType_;
 };
 
 

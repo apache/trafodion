@@ -1328,7 +1328,7 @@ $1~String1 --------------------------------
 4370 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Unused ----
 4371 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Unused ----
 4372 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Unused ----
-4373 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Unused ----
+4373 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The base temporary location for snapshot scan cannot be an empty string and needs to end with the character /.
 4374 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Invalid escape sequence specified as BULK UNLOAD field delimiter or record separator. Only the following escape sequences are allowed: \\a, \\b, \\f, \\n, \\r, \\t, or \\v.
 4375 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Window or Sequence function $0~String0 nested within an aggregate function in the same scope is not supported. 
 4376 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~String0 option was used more than once in an UNLOAD statement.
@@ -1473,6 +1473,7 @@ $1~String1 --------------------------------
 8109 ZZZZZ 99999 BEGINNER MINOR LOGONLY Default $0~String0 is not a valid default.
 8110 23000 99999 BEGINNER MAJOR DBADMIN Duplicate rows detected.
 8111 23000 99999 BEGINNER MAJOR DBADMIN Transactions are not allowd with Bulk load.
+8112 23000 99999 BEGINNER MAJOR DBADMIN Snapshot $0~String0 either does not exist or is associated with a table other than $1~String1.
 8140 ZZZZZ 99999 ADVANCED INFRM LOGONLY The statement was canceled, to test cancel processing.  File $0~string0 at line number $1~int0.
 8141 ZZZZZ 99999 ADVANCED INFRM LOGONLY An error was artificially injected, to test error handling.  File $0~string0 at line $1~int0.
 8142 ZZZZZ 99999 ADVANCED INFRM LOGONLY An error was artificially injected, to test error handling. Testpoint $0~string0, Value $1~string1.

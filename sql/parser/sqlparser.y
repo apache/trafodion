@@ -1126,6 +1126,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_UUID
 %token <tokval> TOK_UNKNOWN
 %token <tokval> TOK_UNLOAD
+%token <tokval> TOK_SCAN
+%token <tokval> TOK_SNAPSHOT
+%token <tokval> TOK_SUFFIX
 %token <tokval> TOK_UNLOCK              /* Tandem extension */
 %token <tokval> TOK_UNSIGNED            /* Tandem extension non-reserved word */
 %token <tokval> TOK_UPDATE		
@@ -2794,7 +2797,10 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hbbUnloadOption>      hbb_unload_null_string
 %type <hbbUnloadOption>      hbb_unload_header
 %type <hbbUnloadOption>      hbb_unload_append
+%type <hbbUnloadOption>      hbb_unload_snapshot
 %type <boolean>              hbb_unload_optional_overwrite
+%type <boolean>             hbb_unload_existing_snap
+
 %type <pSchemaName>             optional_from_schema
 %type <stringval>               get_statistics_optional_options
 
@@ -17362,7 +17368,7 @@ hbb_upsert_using_load : TOK_UPSERT TOK_USING TOK_LOAD
                 | TOK_UNLOAD TOK_EXTRACT optional_hbb_unload_options TOK_TO std_char_string_literal  query_expression 
                 {
                   if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
-                  YYERROR;
+                    YYERROR;
                   FastExtract* fastExt = 
                     new (PARSERHEAP()) FastExtract($6, $5, 
                                       FastExtract::FILE, 
@@ -17405,6 +17411,7 @@ hbb_unload_option:   hbb_unload_empty_target
                 | hbb_unload_null_string
                 | hbb_unload_header
                 | hbb_unload_append
+                | hbb_unload_snapshot
 
 
  hbb_unload_empty_target: TOK_PURGEDATA TOK_FROM TOK_TARGET
@@ -17500,6 +17507,26 @@ hbb_unload_append: TOK_APPEND
                                   new (PARSERHEAP ()) UnloadOption(UnloadOption::APPEND_,1,NULL);
                    $$ = op;
                 } 
+ hbb_unload_snapshot: hbb_unload_existing_snap TOK_SNAPSHOT  TOK_HAVING TOK_SUFFIX QUOTED_STRING 
+                {
+                   ExeUtilHBaseBulkUnLoad::ScanType scanType = ($1 == FALSE) ? ExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_CREATE_ : 
+                                                                                    ExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_EXISTING_;
+                   char * suffix = NULL;
+                   if ($5 != NULL) 
+                      suffix = (char *)$5->data();
+                   UnloadOption*op = 
+                                  new (PARSERHEAP ()) UnloadOption(UnloadOption::USE_SNAPSHOT_SCAN_,(int)scanType,suffix);
+                   $$ = op;                
+                }
+hbb_unload_existing_snap: TOK_NEW 
+                          { 
+                           $$ = FALSE;
+                          }
+                        | TOK_EXISTING
+                          {
+                            $$ = TRUE;
+                          }
+
 hbb_unload_optional_overwrite : TOK_OVERWRITE
          {
             $$ = TRUE;
@@ -32202,6 +32229,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_SAS_MODEL_INPUT_TABLE
                       | TOK_SCALAR
                       | TOK_SCALE
+                      | TOK_SCAN
                       | TOK_SCHEMAS
                       | TOK_SCHEMA_NAME
                       | TOK_SECONDS
@@ -32222,6 +32250,8 @@ nonreserved_word :      TOK_ABORT
                       | TOK_SLACK
                       | TOK_SOFTWARE
                       | TOK_SOURCE
+                      | TOK_SNAPSHOT
+                      | TOK_SUFFIX
                       | TOK_TARGET
                       | TOK_SOURCE_FILE
                       | TOK_SP_RESULT_SET

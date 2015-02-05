@@ -2,7 +2,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -922,6 +922,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SAVEPOINT",          IDENTIFIER,      POTANS_|RESWORD_),
   ParKeyWord("SCALAR",             TOK_SCALAR,      NONRESTOKEN_),
   ParKeyWord("SCALE",              TOK_SCALE,       NONRESTOKEN_),
+  ParKeyWord("SCAN",               TOK_SCAN,       NONRESTOKEN_),
   ParKeyWord("SCHEMA",             TOK_SCHEMA,      ANS_|RESWORD_),
   ParKeyWord("SCHEMAS",            TOK_SCHEMAS,     NONRESTOKEN_),
   ParKeyWord("SCHEMA_NAME",        TOK_SCHEMA_NAME, NONRESTOKEN_),
@@ -978,6 +979,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SKIP",               TOK_SKIP,        FIRST_|SECOND_|NONRESTOKEN_),
   ParKeyWord("SLACK",              TOK_SLACK,        NONRESTOKEN_),
   ParKeyWord("SMALLINT",           TOK_SMALLINT,    ANS_|RESWORD_|MPWORD_),
+  ParKeyWord("SNAPSHOT",           TOK_SNAPSHOT,    NONRESTOKEN_),
   ParKeyWord("SOFTWARE",           TOK_SOFTWARE,    NONRESTOKEN_),
   ParKeyWord("SOME",               TOK_SOME,        ANS_|RESWORD_|MPWORD_),
   ParKeyWord("SORT",               TOK_SORT,        NONRESTOKEN_),
@@ -1031,6 +1033,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SUBSTR",             TOK_SUBSTRING,   NONRESTOKEN_),
   ParKeyWord("SUBSTRING",          TOK_SUBSTRING,   ANS_|RESWORD_|NONRESTOKEN_),
   ParKeyWord("SUBSYSTEM_ID",       TOK_SUBSYSTEM_ID, NONRESTOKEN_),
+  ParKeyWord("SUFFIX",             TOK_SUFFIX,       NONRESTOKEN_),
   ParKeyWord("SUM",                TOK_SUM,         ANS_|RESWORD_|MPWORD_),
   ParKeyWord("SUMMARY",            TOK_SUMMARY,     NONRESTOKEN_),
   ParKeyWord("SUSPEND",            TOK_SUSPEND,     NONRESTOKEN_),

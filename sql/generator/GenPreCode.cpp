@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -11363,6 +11363,9 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
   // hbase preds. In this case, nuke existing exe preds.
   if (hbaseFilterColVIDlist_.entries() > 0)
     setExecutorPredicates(newExePreds);
+
+
+  useSnapshotScan_=(CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN) == DF_ON);
 
   markAsPreCodeGenned();
   

@@ -3279,9 +3279,13 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TRAF_NUM_OF_SALT_PARTNS,                     "-1"),
 
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
-
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),   
- 
+  DDkwd__(TRAF_TABLE_SNAPSHOT_SCAN,                    "OFF"),
+  DD_____(TRAF_TABLE_SNAPSHOT_SCAN_SNAP_SUFFIX,        "SNAP"),
+  DDint__(TRAF_TABLE_SNAPSHOT_SCAN_TIMEOUT,            "6000"),
+  DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_BASE_LOCATION,  "/bulkload/"),
+  DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION,       "sub/"),
+
   DDkwd__(TRAF_UNLOAD_BYPASS_LIBHDFS,                  "ON"),
   DD_____(TRAF_UNLOAD_DEF_DELIMITER,                   "|" ),
   DD_____(TRAF_UNLOAD_DEF_NULL_STRING,                 "" ),
