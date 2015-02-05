@@ -4951,6 +4951,7 @@ NATable::NATable(BindWA *bindWA,
     heapType_ = OTHER;
     mmPhase = "NATable Init (Other) - " + tblName;
   }
+  
 
   MonitorMemoryUsage_Enter((char*)mmPhase.data(), heap_, TRUE);
 
@@ -6950,24 +6951,6 @@ void NATable::resetAfterStatement() // ## to be implemented?
   setupForStatement_ = FALSE;
 
   sizeAfterLastStatement_ = heap_->getAllocSize();
-
-#ifndef NDEBUG
-  //memory leak, assert in debug
-  if ( ! isHiveTable() ) 
-    {
-     CMPASSERT(sizeAfterLastStatement_ <= initialSize_ );
-    }
-  else
-    {
-      Int32 hiveStatsSize = 0;
-      if (getClusteringIndex() && getClusteringIndex()->getHHDFSTableStats())
-        hiveStatsSize = getClusteringIndex()->getHHDFSTableStats()->getHiveStatsUsedHeap();
-
-      CMPASSERT(sizeAfterLastStatement_ <= (initialSize_ + hiveStatsSize) );
-    }
-
-#endif
-
   return;
 }
 
@@ -7456,7 +7439,7 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
     //if metadata caching is ON, then adjust cache size
     //since we are deleting a caching entry
     if(cacheMetaData_)
-      currentCacheSize_ -= cachedNATable->getSize();
+      currentCacheSize_ = heap_->getTotalSize();
 
     cachedNATable->removeTableToClusterMapInfo();
 
@@ -7932,14 +7915,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
     //are special tables
     if (((NOT table) && cacheMetaData_ && useCache_) &&
         corrName.isCacheable()){
-
-      //if caching NATable objects create them on a persistent heap
-      //create a new NATable heap for used by the NATable Object
-      size_t memLimit = (size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_NATABLECACHE_UPPER_KB);
-      const Lng32 initHeapSize = 16 * 1024;    // ## 16K
-      naTableHeap = new
-                    CTXTHEAP NAHeap("NATable Heap", (NAHeap *)CTXTHEAP, initHeapSize, memLimit);
-      naTableHeap->setJmpBuf(CmpInternalErrorJmpBufPtr);
+      naTableHeap = getHeap();
     }
 
     //if table is in cache tableInCache will be non-NULL
@@ -8171,7 +8147,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
          (useCache_) &&
          (corrName.isCacheable())) {
         table->removeTableToClusterMapInfo();
-        delete naTableHeap;
+        delete table;
       } else {
         delete table;
       }
@@ -8218,7 +8194,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         //if metadata caching is ON then adjust the size of the cache
         //since we are adding an entry to the cache
         if(cacheMetaData_)
-          currentCacheSize_ += table->getSize();
+          currentCacheSize_ = heap_->getTotalSize();
 
 	//update the high watermark for caching statistics
 	if (currentCacheSize_ > highWatermarkCache_)        
@@ -8304,7 +8280,7 @@ void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
               //if metadata caching is ON, then adjust cache size
               //since we are deleting a caching entry
               if(cacheMetaData_)
-                currentCacheSize_ -= cachedNATable->getSize();
+                currentCacheSize_ = heap_->getTotalSize();
 
               if (cachedNATable->heap_ &&
                   cachedNATable->heap_ != CmpCommon::statementHeap())
@@ -8417,15 +8393,14 @@ void NATableDB::resetAfterStatement(){
           //remove from the cache itself
           remove(statementCachedTableList_[i]->getKey());
           //keep track of change in cache size
-          currentCacheSize_-= statementCachedTableList_[i]->getSize();
+          currentCacheSize_ = heap_->getTotalSize();
           //delete the NATable by deleting the heap it is on
           //the heap has everything that belongs to the NATable
           //so this should hopefully avoid memory leaks
           statementCachedTableList_[i]->removeTableToClusterMapInfo();
 
           if ( statementCachedTableList_[i]->getHeapType() == NATable::OTHER ) {
-            tableHeap = statementCachedTableList_[i]->heap_;
-            delete tableHeap;
+            delete statementCachedTableList_[i];
           }
         }
         else{
@@ -8462,8 +8437,7 @@ void NATableDB::resetAfterStatement(){
   for(i=0; i < tablesToDeleteAfterStatement_.entries(); i++)
   {
     if ( tablesToDeleteAfterStatement_[i]->getHeapType() == NATable::OTHER ) {
-      tableHeap = tablesToDeleteAfterStatement_[i]->heap_;
-      delete tableHeap;
+      delete tablesToDeleteAfterStatement_[i];
     }
   }
 
@@ -8513,8 +8487,7 @@ void NATableDB::flushCache()
       if(cachedTableList_[i])
       {
         cachedTableList_[i]->removeTableToClusterMapInfo();
-        NAMemory * tableHeap = cachedTableList_[i]->heap_;
-        delete tableHeap;
+        delete cachedTableList_[i];
       }
     }
 
@@ -8640,12 +8613,8 @@ void NATableDB::flushCacheEntriesUsedInCurrentStatement(){
         //remove from the cache itself
         remove(statementCachedTableList_[i]->getKey());
         //keep track of change in cache size
-        currentCacheSize_-= statementCachedTableList_[i]->getSize();
-        //delete the NATable by deleting the heap it is on
-        //the heap has everything that belongs to the NATable
-        //so this should hopefully avoid memory leaks
-        NAMemory * tableHeap = statementCachedTableList_[i]->heap_;
-        delete tableHeap;
+        currentCacheSize_ = heap_->getTotalSize();
+        delete statementCachedTableList_[i];
       }
     }
 
@@ -8753,15 +8722,14 @@ NATableDB::RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx )
    NAMemory * tableHeap = NATablep->heap_;
    NABoolean InStatementHeap = (tableHeap == (NAMemory *)CmpCommon::statementHeap());
 
-   Lng32 removedSize = NATablep->getSize();
    if ( ! InStatementHeap )
-      currentCacheSize_-=removedSize;
+      currentCacheSize_ = heap_->getTotalSize();
    remove(NATablep->getKey());
    NATablep->removeTableToClusterMapInfo();
    cachedTableList_.removeAt( currIndx );
 
    if ( ! InStatementHeap )
-      delete tableHeap;
+      delete NATablep;
 }
 
 //
