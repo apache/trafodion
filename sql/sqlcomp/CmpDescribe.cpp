@@ -1,7 +1,7 @@
 //******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2763,28 +2763,6 @@ short CmpDescribeSeabaseTable (
             strcat(attrs, "ALIGNED FORMAT");
           
           outputShortLine(space, attrs);
-        }
-
-      // For create table like, add the BY clause so the new table will
-      // be owned by the effective user
-      if (type == 3)
-        {
-          // Get the owner of the table
-          char authName[MAX_DBUSERNAME_LEN + 1];
-          int32_t length;
-          
-          Int16 retCode = ComUser::getAuthNameFromAuthID(ComUser::getCurrentUser(),
-                                                         authName,
-                                                         sizeof(authName),
-                                                         length);
-          if (retCode != 0)
-            return -1;
-
-          if (attributesSet)
-            sprintf(buf,  ", BY \"%s\"", authName);
-          else
-            sprintf(buf,  " attributes BY \"%s\"", authName);
-          outputShortLine(space, buf);
         }
 
       if (!isView && (naTable->hbaseCreateOptions()) &&

@@ -48,6 +48,7 @@
 #include "StmtDDLAlterTableEnableIndex.h"
 #include "StmtDDLCreateComponentPrivilege.h"
 #include "StmtDDLDropComponentPrivilege.h"
+#include "StmtDDLGive.h"
 #include "StmtDDLGrantComponentPrivilege.h"
 #include "StmtDDLRevokeComponentPrivilege.h"
 #include "StmtDDLRegisterComponent.h"
@@ -2660,7 +2661,7 @@ Int64 CmpSeabaseDDL::getObjectTypeandOwner(
   ToQuotedString(quotedObjName, NAString(objName), FALSE);
 
   char buf[4000];
-  str_sprintf(buf, "select object_type, object_owner from %s.\"%s\".%s "
+  str_sprintf(buf, "select object_type, object_owner, object_UID from %s.\"%s\".%s "
                    "where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' ",
               getSystemCatalogStatic().data(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedObjName.data());
@@ -2693,10 +2694,13 @@ Int64 CmpSeabaseDDL::getObjectTypeandOwner(
   
   cliInterface->getPtrAndLen(2, ptr, len);
   objectOwner = *(Int32*)ptr;
+  
+  cliInterface->getPtrAndLen(3, ptr, len);
+  Int64 objUID = *(Int64*)ptr;
 
   cliInterface->fetchRowsEpilogue(NULL, TRUE);
 
-  return 0;
+  return objUID;
   
 }
 
@@ -3057,7 +3061,7 @@ short CmpSeabaseDDL::getUsingViews(ExeCliInterface *cliInterface,
 
   char buf[4000];
               
-  str_sprintf(buf, "select trim(catalog_name) || '.' || trim(schema_name) || '.' || trim(object_name) "
+  str_sprintf(buf, "select '\"' || trim(catalog_name) || '\"' || '.' || '\"' || trim(schema_name) || '\"' || '.' || '\"' || trim(object_name) || '\"' "
                    "from %s.\"%s\".%s T, %s.\"%s\".%s VU "
                    "where T.object_uid = VU.using_view_uid  and "
                    "T.valid_def = 'Y' and VU.used_object_uid = %Ld ",
@@ -6893,6 +6897,24 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
                               ? TRUE : FALSE),
                              currCatName, currSchName);
         }
+      else if (ddlNode->getOperatorType() == DDL_GIVE_ALL)
+        {
+         StmtDDLGiveAll *giveAllParseNode =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLGiveAll();   
+         giveSeabaseAll(giveAllParseNode);
+        }
+      else if (ddlNode->getOperatorType() == DDL_GIVE_OBJECT)
+        {
+         StmtDDLGiveObject *giveObjectParseNode =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLGiveObject();   
+         giveSeabaseObject(giveObjectParseNode);
+        }
+      else if (ddlNode->getOperatorType() == DDL_GIVE_SCHEMA)
+        {
+         StmtDDLGiveSchema *giveSchemaParseNode =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLGiveSchema();   
+         giveSeabaseSchema(giveSchemaParseNode,currCatName);
+        }
       else if (ddlNode->getOperatorType() == DDL_CREATE_SCHEMA)
         {
           StmtDDLCreateSchema * createSchemaParseNode =
@@ -7006,6 +7028,235 @@ void CmpSeabaseDDL::unregisterSeabaseUser(StmtDDLRegisterUser * authParseNode)
 
 // *****************************************************************************
 // *                                                                           *
+// * Function: CmpSeabaseDDL::giveSeabaseAll                                   *
+// *                                                                           *
+// *   This function transfers ownership of all SQL objects owned by one       *
+// * authID to another authID.                                                 *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <giveAllParseNode>           StmtDDLGiveAll *                   In       *
+// *    is a pointer to parse node containing the data for the GIVE ALL command*
+// *                                                                           *
+// *****************************************************************************
+void CmpSeabaseDDL::giveSeabaseAll(StmtDDLGiveAll * giveAllParseNode)
+
+{
+
+//
+// A user cannot give away all of their own objects unless they have the 
+// ALTER privilege.  
+//
+
+   if (!isDDLOperationAuthorized(SQLOperation::ALTER,NA_UserIdDefault,
+                                 NA_UserIdDefault))
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return;
+   }
+
+int32_t fromOwnerID = -1;
+
+   if (ComUser::getAuthIDFromAuthName(giveAllParseNode->getFromID().data(),
+                                      fromOwnerID) != 0)
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
+                          << DgString0(giveAllParseNode->getFromID().data());
+      return;
+   }
+
+int32_t toOwnerID = -1;
+
+   if (ComUser::getAuthIDFromAuthName(giveAllParseNode->getToID().data(),
+                                      toOwnerID) != 0)
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
+                          << DgString0(giveAllParseNode->getToID().data());
+      return;
+   }
+   
+// If the FROM and TO IDs are the same, just return.
+
+   if (fromOwnerID == toOwnerID)
+      return;
+   
+char buf[4000];
+ExeCliInterface cliInterface(STMTHEAP);
+Lng32 cliRC = 0;
+
+   str_sprintf(buf,"UPDATE %s.\"%s\".%s "
+                   "SET object_owner = %d "
+                   "WHERE object_owner = %d",
+               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
+               toOwnerID,fromOwnerID);
+   cliRC = cliInterface.executeImmediate(buf);
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+   }  
+              
+// Verify all objects in the database have been given to the new owner.   
+   str_sprintf(buf,"SELECT COUNT(*) "
+                   "FROM %s.\"%s\".%s "
+                   "WHERE object_owner = %d "
+                   "FOR READ COMMITTED ACCESS",
+               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
+               fromOwnerID);
+               
+int32_t length = 0;
+int32_t rowCount = 0;
+
+   cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,NULL);
+  
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+   }
+   
+   if (rowCount > 0)
+   {
+      SEABASEDDL_INTERNAL_ERROR("Not all objects were given");
+      return;
+   }
+
+}
+//******************** End of CmpSeabaseDDL::giveSeabaseAll ********************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: CmpSeabaseDDL::giveSeabaseObject                                *
+// *                                                                           *
+// *   This function transfers ownership of a SQL object to another authID.    *
+// * authID                                                                    *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <giveObjectParseNode>        StmtDDLGiveObject *                In       *
+// *    is a pointer to parse node containing the data for the GIVE command.   *
+// *                                                                           *
+// *****************************************************************************
+void CmpSeabaseDDL::giveSeabaseObject(StmtDDLGiveObject * giveObjectParseNode)
+{
+
+   *CmpCommon::diags() << DgSqlCode(-CAT_UNSUPPORTED_COMMAND_ERROR);
+
+}
+//****************** End of CmpSeabaseDDL::giveSeabaseObject *******************
+
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: CmpSeabaseDDL::dropOneTableorView                               *
+// *                                                                           *
+// *    Drops a table or view and all its dependent objects.                   *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <cliInterface>                  ExeCliInterface &               In       *
+// *    is a reference to an Executor CLI interface handle.                    *
+// *                                                                           *
+// *  <objectName>                    const char *                    In       *
+// *    is the fully quailified name of the object to drop.                    *
+// *                                                                           *
+// *  <objectType>                    ComObjectType                   In       *
+// *    is the type of object (Table or view) to drop.                         *
+// *                                                                           *
+// *  <isVolatile>                    bool                            In       *
+// *    is true if the object is volatile or part of a volatile schema.        *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// * true: Could not drop table/view or one of its dependent objects.          *
+// * false: Drop successful or could not set CQD for NATable cache reload.     *
+// *                                                                           *
+// *****************************************************************************
+bool CmpSeabaseDDL::dropOneTableorView(
+   ExeCliInterface & cliInterface,
+   const char * objectName,
+   ComObjectType objectType,
+   bool isVolatile)
+   
+{
+
+char buf [1000];
+
+Lng32 cliRC = cliInterface.holdAndSetCQD("TRAF_RELOAD_NATABLE_CACHE", "ON");
+
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      return false;
+   }
+
+bool someObjectsCouldNotBeDropped = false;
+
+char volatileString[20] = {0};
+char objectTypeString[20] = {0};
+
+   switch (objectType)
+   {
+      case COM_BASE_TABLE_OBJECT:
+         strcpy(objectTypeString,"TABLE");
+         break;
+      case COM_VIEW_OBJECT:
+         strcpy(objectTypeString,"VIEW");
+         break;
+      default:   
+         SEABASEDDL_INTERNAL_ERROR("Unsupported object type in CmpSeabaseDDL::dropOneTableorView");
+   }   
+
+   if (isVolatile)
+      strcpy(volatileString,"VOLATILE");
+
+   str_sprintf(buf,"DROP %s %s %s CASCADE",
+               volatileString,objectTypeString,objectName);
+               
+// Save the current parserflags setting
+ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+
+   try
+   {            
+      Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+               
+      cliRC = cliInterface.executeImmediate(buf);
+   }
+   catch (...)
+   {
+      // Restore parser flags settings to what they originally were
+      Assign_SqlParser_Flags(savedParserFlags);
+      
+      throw;
+   }
+   
+// Restore parser flags settings to what they originally were
+   Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+   
+   if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+      someObjectsCouldNotBeDropped = true;
+
+   cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
+
+   return someObjectsCouldNotBeDropped;
+   
+}
+//****************** End of CmpSeabaseDDL::dropOneTableorView ******************
+
+
+// *****************************************************************************
+// *                                                                           *
 // * Function: CmpSeabaseDDL::verifyDDLCreateOperationAuthorized               *
 // *                                                                           *
 // *   This member function determines if a user has the authority to perform  *
@@ -7107,7 +7358,7 @@ PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
 ComObjectType objectType;
 
    if (getObjectTypeandOwner(cliInterface,catalogName.data(),schemaName.data(),
-                             SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwner))
+                             SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwner) == -1)
    {
       objectOwner = schemaOwner = NA_UserIdDefault; 
       return CAT_SCHEMA_DOES_NOT_EXIST_ERROR;
@@ -7230,6 +7481,10 @@ bool CmpSeabaseDDL::isDDLOperationAuthorized(
 int32_t currentUser = ComUser::getCurrentUser(); 
 
    if (currentUser == ComUser::getRootUserID())
+      return true;
+      
+// If this is an internal operation, allow the operation.
+   if (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
       return true;
 
 // If authorization is not enabled, then authentication should not be enabled
@@ -7515,23 +7770,11 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
       grantorName = grantedByName.data();
    }  // grantedBy not null
    else
-      if (grantorID == ComUser::getRootUserID())
       {
-         grantorName = ComUser::getRootUserName();
-         grantorIsRoot = true;
+         grantorName = ComUser::getCurrentUsername();
+         if (grantorID == ComUser::getRootUserID())
+            grantorIsRoot = true;
       }
-      else
-      {
-         char GrantorNameString[MAX_DBUSERNAME_LEN + 1];
-         int32_t length;
-         
-         Int16 retCode = ComUser::getAuthNameFromAuthID(grantorID,GrantorNameString,
-                                               sizeof(GrantorNameString),length);
-         if (retCode != 0)
-            SEABASEDDL_INTERNAL_ERROR("Current user not registered");
-
-         grantorName = GrantorNameString;
-      }  
       
 // *****************************************************************************
 // *                                                                           *
@@ -7816,22 +8059,9 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
       
       //TODO: Cannot grant to _SYSTEM.  PUBLIC ok?
     
-   }  // grantedBy not null
-   else
-   {
-      char username[MAX_USERNAME_LEN + 1];
-      Int32 maxLen = sizeof(username);
-      Int32 actualLen;
-      
-      Int16 status = ComUser::getUserNameFromUserID(grantorID,username,
-                                                    maxLen,actualLen);
-      
-      if (status != FEOK)
-         *CmpCommon::diags() << DgSqlCode(-20235)
-                             << DgInt0(status)
-                             << DgInt1(grantorID);
-      grantorName = username;
-   }
+   }  
+   else	// Grantor is the current user.
+      grantorName = ComUser::getCurrentUsername();
 
 int32_t grantDepth = 0;
 

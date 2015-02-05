@@ -1,7 +1,7 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@
  *****************************************************************************
  */
 
-#define   SQLPARSERGLOBALS_FLAGS	// must precede all #include's
+#define   SQLPARSERGLOBALS_FLAGS        // must precede all #include's
 
 #include <stdlib.h>
 #ifndef NDEBUG
@@ -51,7 +51,7 @@
 #define   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
 #endif
 
-#include "SqlParserGlobals.h"	// must be last #include
+#include "SqlParserGlobals.h"   // must be last #include
 
 
 // -----------------------------------------------------------------------
@@ -173,6 +173,218 @@ const NAString
 StmtDDLGiveCatalog::getText() const
 {
   return "StmtDDLGiveCatalog";
+}
+
+
+
+// -----------------------------------------------------------------------
+// methods for class StmtDDLGiveAll
+// -----------------------------------------------------------------------
+
+//
+// constructor
+//
+StmtDDLGiveAll::StmtDDLGiveAll(
+   const NAString & fromAuthID,
+   const NAString & toAuthID)
+  : StmtDDLNode(DDL_GIVE_ALL),
+    fromAuthID_(fromAuthID, PARSERHEAP()),
+    toAuthID_(toAuthID, PARSERHEAP())
+{
+
+} // StmtDDLGiveAll::StmtDDLGiveAll()
+
+//
+// virtual destructor
+//
+StmtDDLGiveAll::~StmtDDLGiveAll()
+{
+}
+
+//
+// cast
+//
+StmtDDLGiveAll *
+StmtDDLGiveAll::castToStmtDDLGiveAll()
+{
+  return this;
+}
+
+
+//
+// methods for tracing
+//
+
+const NAString
+StmtDDLGiveAll::displayLabel1() const
+{
+  return NAString("From authID: ") + getFromID();
+}
+
+const NAString
+StmtDDLGiveAll::displayLabel2() const
+{
+  return NAString("To authID: ") + getToID();
+}
+
+
+const NAString
+StmtDDLGiveAll::getText() const
+{
+  return "StmtDDLGiveAll";
+}
+
+
+
+// -----------------------------------------------------------------------
+// methods for class StmtDDLGiveObject
+// -----------------------------------------------------------------------
+
+//
+// constructor
+//
+StmtDDLGiveObject::StmtDDLGiveObject(
+   ComObjectType objectType,
+   const QualifiedName & qualifiedName,
+   const NAString & aUserID)
+  : StmtDDLNode(DDL_GIVE_OBJECT),
+    objectType_(objectType),
+    objectName_(PARSERHEAP()),
+    objectQualName_(qualifiedName, PARSERHEAP()),
+    userID_(aUserID, PARSERHEAP())
+{
+
+  objectName_ = objectQualName_.getQualifiedNameAsAnsiString();
+
+} // StmtDDLGiveObject::StmtDDLGiveObject()
+
+//
+// virtual destructor
+//
+StmtDDLGiveObject::~StmtDDLGiveObject()
+{
+}
+
+//
+// cast
+//
+StmtDDLGiveObject *
+StmtDDLGiveObject::castToStmtDDLGiveObject()
+{
+  return this;
+}
+
+
+//
+// methods for tracing
+//
+
+const NAString
+StmtDDLGiveObject::displayLabel1() const
+{
+  return NAString("Object name: ") + getObjectName();
+}
+
+const NAString
+StmtDDLGiveObject::displayLabel2() const
+{
+  if (NOT getUserID().isNull())
+  {
+    return NAString("User ID: ") + getUserID();
+  }
+  else
+  {
+    return NAString("User ID not specified.");
+  }
+}
+
+
+const NAString
+StmtDDLGiveObject::getText() const
+{
+  return "StmtDDLGiveObject";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// -----------------------------------------------------------------------
+// methods for class StmtDDLGiveSchema
+// -----------------------------------------------------------------------
+
+//
+// constructor
+//
+StmtDDLGiveSchema::StmtDDLGiveSchema(
+   const SchemaName & schemaName,
+   const NAString & authID,
+   ComDropBehavior dropBehavior)
+  : StmtDDLNode(DDL_GIVE_SCHEMA),
+    authID_(authID, PARSERHEAP()),
+    dropBehavior_(dropBehavior) 
+{
+
+    catalogName_ = schemaName.getCatalogNameAsAnsiString();
+    schemaName_ = schemaName.getSchemaName();
+    
+} // StmtDDLGiveSchema::StmtDDLGiveSchema()
+
+//
+// virtual destructor
+//
+StmtDDLGiveSchema::~StmtDDLGiveSchema()
+{
+}
+
+//
+// cast
+//
+StmtDDLGiveSchema *
+StmtDDLGiveSchema::castToStmtDDLGiveSchema()
+{
+  return this;
+}
+
+
+//
+// methods for tracing
+//
+
+const NAString
+StmtDDLGiveSchema::displayLabel1() const
+{
+  return NAString("Schema name: ") + getCatalogName() + getSchemaName();
+}
+
+const NAString
+StmtDDLGiveSchema::displayLabel2() const
+{
+  if (NOT getAuthID().isNull())
+  {
+    return NAString("Auth ID: ") + getAuthID();
+  }
+  else
+  {
+    return NAString("Auth ID not specified.");
+  }
+}
+
+
+const NAString
+StmtDDLGiveSchema::getText() const
+{
+  return "StmtDDLGiveSchema";
 }
 
 

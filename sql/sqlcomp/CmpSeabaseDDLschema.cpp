@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@
 #include "CmpSeabaseDDLincludes.h"
 #include "StmtDDLCreateSchema.h"
 #include "StmtDDLDropSchema.h"
+#include "StmtDDLGive.h"
 #include "ElemDDLColDefault.h"
 #include "NumericType.h"
 #include "ComUser.h"
@@ -370,7 +371,7 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
-// *  <dropSchemaNode>                StmtDDLCreateSchema  *          In       *
+// *  <dropSchemaNode>                StmtDDLDropSchema *             In       *
 // *    is a pointer to a create schema parser node.                           *
 // *                                                                           *
 // *****************************************************************************
@@ -391,7 +392,7 @@ Int32 schemaOwnerID = 0;
 ComObjectType objectType;
 
    if (getObjectTypeandOwner(&cliInterface,catName.data(),schName.data(),
-                             SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwnerID))
+                             SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwnerID) == -1)
    {
       // A Trafodion schema does not exist if the schema object row is not
       // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
@@ -461,7 +462,7 @@ Queue * objectsQueue = NULL;
 
 bool someObjectsCouldNotBeDropped = false;
 
-// Drop libraries, sequence generators, procedures (SPJs), UDFs (functions) and views 
+// Drop libraries, procedures (SPJs), UDFs (functions), and views 
    objectsQueue->position();
    for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
    {
@@ -483,6 +484,7 @@ bool someObjectsCouldNotBeDropped = false;
          case COM_NOT_NULL_CONSTRAINT_OBJECT:
          case COM_PRIMARY_KEY_CONSTRAINT_OBJECT:
          case COM_REFERENTIAL_CONSTRAINT_OBJECT:
+         case COM_SEQUENCE_GENERATOR_OBJECT:
          case COM_UNIQUE_CONSTRAINT_OBJECT:
          {
             continue;
@@ -491,11 +493,6 @@ bool someObjectsCouldNotBeDropped = false;
          {
             objectTypeString = "LIBRARY";
             cascade = "CASCADE";
-            break;
-         }
-         case COM_SEQUENCE_GENERATOR_OBJECT:
-         {
-            objectTypeString = "SEQUENCE";
             break;
          }
          case COM_STORED_PROCEDURE_OBJECT:
@@ -607,6 +604,46 @@ bool histExists = false;
       }  
    }  
 
+// Drop any remaining sequences.
+
+   str_sprintf(query,"SELECT TRIM(object_name), TRIM(object_type) "
+                     "FROM %s.\"%s\".%s "
+                     "WHERE catalog_name = '%s' AND "
+                     "      schema_name = '%s' AND "
+                     "      object_type = '%s' "
+                     "FOR READ COMMITTED ACCESS ",
+               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
+               (char*)catName.data(),(char*)schName.data(), 
+               COM_SEQUENCE_GENERATOR_OBJECT_LIT);
+   
+   cliRC = cliInterface.fetchAllRows(objectsQueue,query,0,FALSE,FALSE,TRUE);
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+   }
+
+   objectsQueue->position();
+   for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
+   {
+      OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
+
+      char * objName = vi->get(0);
+      NAString objType = vi->get(1);
+    
+      if (objType == COM_SEQUENCE_GENERATOR_OBJECT_LIT)
+      {
+         char buf [1000];
+
+         str_sprintf(buf, "DROP SEQUENCE \"%s\".\"%s\".\"%s\" CASCADE",
+                     (char*)catName.data(), (char*)schName.data(), objName);
+         cliRC = cliInterface.executeImmediate(buf);
+
+         if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+            someObjectsCouldNotBeDropped = true;
+      }  
+   }  
+
 // For volatile schemas, sometimes only the objects get dropped.    
 // If the dropObjectsOnly flag is set, just exit now, we are done.
    if (dropSchemaNode->dropObjectsOnly())
@@ -633,7 +670,36 @@ bool histExists = false;
       return;
    }
    
-// If all objects in the schema have been dropped, drop the schema object itself.
+// Verify all objects in the schema have been dropped.   
+   str_sprintf(query,"SELECT COUNT(*) "
+                     "FROM %s.\"%s\".%s "
+                     "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
+                     "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"'" 
+                     "FOR READ COMMITTED ACCESS",
+               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
+               (char*)catName.data(),(char*)schName.data());
+               
+int32_t length = 0;
+int32_t rowCount = 0;
+
+   cliRC = cliInterface.executeImmediate(query,(char*)&rowCount,&length,NULL);
+  
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+   }
+   
+   if (rowCount > 0)
+   {
+      CmpCommon::diags()->clear();
+      
+      *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_SCHEMA)
+                          << DgSchemaName(catName + "." + schName);
+      return;
+   }
+   
+// After all objects in the schema have been dropped, drop the schema object itself.
     
 char buf [1000];
 
@@ -649,6 +715,186 @@ char buf [1000];
     
 }
 //****************** End of CmpSeabaseDDL::dropSeabaseSchema *******************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: CmpSeabaseDDL::giveSeabaseSchema                                *
+// *                                                                           *
+// *    Implements the GIVE SCHEMA command.                                    *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <giveSchemaNode>                StmtDDLGiveSchema *             In       *
+// *    is a pointer to a create schema parser node.                           *
+// *                                                                           *
+// *  <currentCatalogName>            NAString &                      In       *
+// *    is the name of the current catalog.                                    *
+// *                                                                           *
+// *****************************************************************************
+void CmpSeabaseDDL::giveSeabaseSchema(
+   StmtDDLGiveSchema * giveSchemaNode,
+   NAString          & currentCatalogName)
+   
+{
+
+ComDropBehavior dropBehavior = giveSchemaNode->getDropBehavior(); 
+NAString catalogName = giveSchemaNode->getCatalogName();
+NAString schemaName = giveSchemaNode->getSchemaName();
+
+   if (catalogName.isNull())
+      catalogName = currentCatalogName;  
+
+ExeCliInterface cliInterface(STMTHEAP);
+Int32 objectOwnerID = 0;
+Int32 schemaOwnerID = 0;
+ComObjectType objectType;
+
+Int64 schemaUID = getObjectTypeandOwner(&cliInterface,catalogName.data(),
+                                        schemaName.data(),SEABASE_SCHEMA_OBJECTNAME,
+                                        objectType,schemaOwnerID);
+                                       
+   if (schemaUID == -1)
+   {
+      // A Trafodion schema does not exist if the schema object row is not
+      // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
+      *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
+                          << DgSchemaName(schemaName.data());
+      return;
+   }
+   
+// *****************************************************************************
+// *                                                                           *
+// *    A schema owner can give their own schema to another authID, but they   *
+// * cannot give the objects in a shared schema to another authID.  Only       *
+// * DB__ROOT or a user with the ALTER_SCHEMA privilege can change the owners  *
+// * of objects in a shared schema.  So if the schema is private, or if only   *
+// * the schema is being given, we do standard authentication checking.  But   *
+// * if giving all the objects in a shared schema, we change the owner IDs to  *
+// * DB__ROOT to force the required check.                                     *
+// *                                                                           *
+// *****************************************************************************
+
+   if (objectType == COM_SHARED_SCHEMA_OBJECT && 
+       dropBehavior == COM_CASCADE_DROP_BEHAVIOR)
+      schemaOwnerID = ComUser::getRootUserID(); 
+
+   if (!isDDLOperationAuthorized(SQLOperation::ALTER_SCHEMA,
+                                 schemaOwnerID,schemaOwnerID))
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return;
+   }
+ 
+ComObjectName objName(catalogName,schemaName,NAString("dummy"),COM_TABLE_NAME,TRUE);
+
+   if (isSeabaseReservedSchema(objName) &&
+       !Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_USER_CANNOT_DROP_SMD_SCHEMA)
+                          << DgSchemaName(schemaName.data());
+      return;
+   }
+   
+bool isVolatile = (memcmp(schemaName.data(),"VOLATILE_SCHEMA",strlen("VOLATILE_SCHEMA")) == 0);
+
+// Can't give a schema whose name begins with VOLATILE_SCHEMA. 
+   if (isVolatile)
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_RESERVED_METADATA_SCHEMA_NAME)
+                          << DgTableName(schemaName);
+      return;
+   }
+   
+int32_t newOwnerID = -1;
+
+   if (ComUser::getAuthIDFromAuthName(giveSchemaNode->getAuthID().data(),
+                                      newOwnerID) != 0)
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
+                          << DgString0(giveSchemaNode->getAuthID().data());
+      return;
+   }
+
+// *****************************************************************************
+// *                                                                           *
+// *   Drop behavior is only relevant for shared schemas.  For shared schemas, *
+// * ownership of the schema OR the schema and all its objects may be given to *
+// * another authorization ID.  For private schemas, all objects are owned by  *
+// * the schema owner, so the drop behavior is always CASCADE.                 *
+// *                                                                           *
+// * NOTE: The syntax for drop behavior always defaults to RESTRICT; for       *
+// *       private schemas this is simply ignored, as opposed to requiring     *
+// *       users to always specify CASCASE.                                    *
+// *                                                                           *
+// *****************************************************************************
+
+Lng32 cliRC = 0;
+char buf[4000];
+   
+   if (objectType == COM_SHARED_SCHEMA_OBJECT && 
+       dropBehavior == COM_RESTRICT_DROP_BEHAVIOR)
+   {
+      str_sprintf(buf,"UPDATE %s.\"%s\".%s "
+                      "SET object_owner = %d "
+                      "WHERE object_UID = %Ld",
+                  getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
+                  newOwnerID,schemaUID);
+      cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0)
+         cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+                      
+      return;
+   }
+//
+// At this point, we are giving all objects in the schema (as well as the 
+// schema itself) to the new authorization ID.
+//
+
+      
+   str_sprintf(buf,"UPDATE %s.\"%s\".%s "
+                   "SET object_owner = %d "
+                   "WHERE catalog_name = '%s' AND schema_name = '%s'",
+               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
+               newOwnerID,catalogName.data(),schemaName.data());
+   cliRC = cliInterface.executeImmediate(buf);
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+   }             
+
+// Verify all objects in the schema have been given to the new owner.   
+   str_sprintf(buf,"SELECT COUNT(*) "
+                   "FROM %s.\"%s\".%s "
+                   "WHERE catalog_name = '%s' AND schema_name = '%s' AND "
+                   "object_name <> '"SEABASE_SCHEMA_OBJECTNAME"' AND "
+                   "object_owner <> %d " 
+                   "FOR READ COMMITTED ACCESS",
+               getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_OBJECTS,
+               catalogName.data(),schemaName.data(),newOwnerID);
+               
+int32_t length = 0;
+int32_t rowCount = 0;
+
+   cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,NULL);
+  
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+   }
+   
+   if (rowCount > 0)
+   {
+      SEABASEDDL_INTERNAL_ERROR("Not all objects in schema were given");
+      return;
+   }
+    
+}
+//****************** End of CmpSeabaseDDL::giveSeabaseSchema *******************
 
 
 
@@ -719,7 +965,25 @@ char volatileString[20] = {0};
 
    str_sprintf(buf,"DROP %s TABLE \"%s\".\"%s\".\"%s\" CASCADE",
                volatileString,catalogName,schemaName,objectName);
-   cliRC = cliInterface.executeImmediate(buf);
+ 
+ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+
+   try
+   {            
+      Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+               
+      cliRC = cliInterface.executeImmediate(buf);
+   }
+   catch (...)
+   {
+      // Restore parser flags settings to what they originally were
+      Assign_SqlParser_Flags(savedParserFlags);
+      
+      throw;
+   }
+   
+// Restore parser flags settings to what they originally were
+   Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
    
    if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
       someObjectsCouldNotBeDropped = true;

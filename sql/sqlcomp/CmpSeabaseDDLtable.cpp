@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2215,6 +2215,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
             << DgTableName(dropTableNode->getOrigTableNameAsQualifiedName().
                            getQualifiedNameAsAnsiString(TRUE));
 
+          deallocEHI(ehi); 
           processReturn();
 
           return;
@@ -2233,6 +2234,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
 
         if (retcode < 0)
           {
+            deallocEHI(ehi); 
             processReturn();
             
             return;
@@ -2275,6 +2277,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                    COM_BASE_TABLE_OBJECT);
   if (retcode < 0)
     {
+      deallocEHI(ehi); 
       processReturn();
 
       return;
@@ -2294,6 +2297,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                 << DgString0(extTableName);
         }
 
+      deallocEHI(ehi); 
       processReturn();
 
       return;
@@ -2342,6 +2346,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                 << DgString0(extTableName);
         }
       
+      deallocEHI(ehi); 
       processReturn();
 
       return;
@@ -2352,6 +2357,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
     {
       *CmpCommon::diags() << DgSqlCode(-1279);
 
+      deallocEHI(ehi); 
       processReturn();
 
       return;
@@ -2364,6 +2370,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
   if (objUID < 0)
     {
 
+      deallocEHI(ehi); 
       processReturn();
 
       return;
@@ -2376,6 +2383,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
 
+      deallocEHI(ehi); 
      processReturn ();
 
      return;
@@ -2388,6 +2396,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
       cliRC = getUsingObject(&cliInterface, objUID, usingObjName);
       if (cliRC < 0)
         {
+         deallocEHI(ehi); 
           processReturn();
           
           return;
@@ -2398,6 +2407,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
           *CmpCommon::diags() << DgSqlCode(-CAT_DEPENDENT_VIEW_EXISTS)
                               << DgTableName(usingObjName);
 
+          deallocEHI(ehi); 
           processReturn();
 
           return;
@@ -2408,6 +2418,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
       cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
       if (cliRC < 0)
         {
+          deallocEHI(ehi); 
           processReturn();
           
           return;
@@ -2438,6 +2449,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
               *CmpCommon::diags() << DgSqlCode(-1059)
                                   << DgConstraintName(constrName);
               
+              deallocEHI(ehi); 
               processReturn();
               
               return;
@@ -2457,9 +2469,10 @@ void CmpSeabaseDDL::dropSeabaseTable(
           
           char * viewName = vi->get(0);
           
-          if (dropSeabaseObject(ehi, viewName,
-                                currCatName, currSchName, COM_VIEW_OBJECT))
+          if (dropOneTableorView(cliInterface,viewName,COM_VIEW_OBJECT,false))
+          
             {
+              deallocEHI(ehi); 
               processReturn();
               
               return;
@@ -2486,6 +2499,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
             {
               cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
               
+              deallocEHI(ehi); 
               processReturn();
               
               return;
@@ -2512,6 +2526,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
 
                   cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
                   
+                  deallocEHI(ehi); 
                   processReturn();
                   
                   return;
@@ -2550,6 +2565,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                       COM_UNIQUE_CONSTRAINT_OBJECT_LIT));                
       if (constrUID < 0)
         {
+          deallocEHI(ehi); 
           processReturn();
           
           return;
@@ -2567,6 +2583,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                                    COM_PRIMARY_KEY_CONSTRAINT_OBJECT :
                                                    COM_UNIQUE_CONSTRAINT_OBJECT)))
         {
+          deallocEHI(ehi); 
           processReturn();
           
           return;
@@ -2599,6 +2616,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                      COM_REFERENTIAL_CONSTRAINT_OBJECT_LIT);             
       if (constrUID < 0)
         {
+          deallocEHI(ehi); 
           processReturn();
           
           return;
@@ -2639,6 +2657,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                         COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT );
           if (otherConstrUID < 0)
             {
+              deallocEHI(ehi); 
               processReturn();
               
               return;
@@ -2655,6 +2674,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                                   constrObjName,
                                                   COM_REFERENTIAL_CONSTRAINT_OBJECT))
         {
+          deallocEHI(ehi); 
           processReturn();
           
           return;
@@ -2684,6 +2704,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                          COM_CHECK_CONSTRAINT_OBJECT_LIT);
           if (constrUID < 0)
             {
+              deallocEHI(ehi); 
               processReturn();
               
               return;
@@ -2699,6 +2720,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                                                       constrObjName,
                                                       COM_CHECK_CONSTRAINT_OBJECT))
             {
+              deallocEHI(ehi); 
               processReturn();
               
               return;
@@ -2712,6 +2734,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
   Queue * indexInfoQueue = NULL;
   if (getAllIndexes(&cliInterface, objUID, TRUE, indexInfoQueue))
     {
+      deallocEHI(ehi); 
       processReturn();
       return;
     }
@@ -2745,6 +2768,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
         {
           NADELETEBASIC (qiKeys, STMTHEAP);
 
+          deallocEHI(ehi); 
           processReturn();
           
           return;
@@ -2787,7 +2811,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                   catalogNamePart.data(), schemaNamePart.data(), seqName.data());
       
       cliRC = cliInterface.executeImmediate(buf);
-      if (cliRC < 0)
+      if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
         {
           cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
           
@@ -2810,6 +2834,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
                          schemaNamePart.data(),
                          objUID))
     {
+      deallocEHI(ehi); 
       processReturn();
       return;
     }
@@ -2835,6 +2860,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
       if (dropSeabaseObject(ehi, ansiName,
                             idxCatName, idxSchName, COM_INDEX_OBJECT, FALSE, TRUE))
         {
+          deallocEHI(ehi); 
           processReturn();
           
           return;
@@ -2923,11 +2949,13 @@ void CmpSeabaseDDL::dropSeabaseTable(
   if (dropSeabaseObject(ehi, tabName,
                         currCatName, currSchName, COM_BASE_TABLE_OBJECT))
     {
+      deallocEHI(ehi); 
       processReturn();
       
       return;
     }
  
+  deallocEHI(ehi); 
   processReturn();
 
   CorrName cn2(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);

@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@
 #include "CmpCommon.h"
 #include "CmpDDLCatErrorCodes.h"
 #include "ComUser.h"
+#include "ComSecurityKey.h"
 
 static bool hasValue(
    std::vector<int32_t> container,
@@ -1639,6 +1640,10 @@ std::string setClause("SET GRANT_DEPTH = ");
       sprintf(grantDepthString,"%d",newGrantDepth);
       setClause += grantDepthString;
    }
+   
+int32_t numKeys = roleIDs.size() * granteeIDs.size();
+SQL_QIKEY siKeyList[numKeys];
+size_t siIndex = 0;
 
    for (size_t r2 = 0; r2 < roleIDs.size(); r2++)
    {
@@ -1672,8 +1677,21 @@ std::string setClause("SET GRANT_DEPTH = ");
                PRIVMGR_INTERNAL_ERROR("I/O error revoking role");
             return STATUS_ERROR;
          }
+         
+         ComSecurityKey secKey(granteeIDs[g2],roleIDs[r2], 
+                               ComSecurityKey::SUBJECT_IS_USER);
+                               
+         siKeyList[siIndex].revokeKey.subject = secKey.getSubjectHashValue();
+         siKeyList[siIndex].revokeKey.object = secKey.getObjectHashValue();
+         std::string actionString;
+         secKey.getSecurityKeyTypeAsLit(actionString);
+         strncpy(siKeyList[siIndex].operation, actionString.c_str(),2);
+         siIndex++;                          
       }
-   }   
+   }  
+    
+// Call the CLI to send details to RMS
+   SQL_EXEC_SetSecInvalidKeys(siIndex,siKeyList);
       
    return STATUS_GOOD;
    

@@ -639,29 +639,74 @@ void CmpSeabaseDDL::createSeabaseView(
     }
 
   char * query = NULL;
+  int64_t objectUID = -1;
+  std::vector<ObjectPrivsRow> viewPrivsRows;
+  bool replacingView = false;
+  
   if ((retcode == 1) && // exists
       ((createViewNode->isCreateOrReplaceViewCascade())|| 
        (createViewNode->isCreateOrReplaceView())))
     {
-      query = new(STMTHEAP) char[2000];
-
-      // TBD:  need to save privileges granted on the view
-      //       add grant them back later
       // Replace view. Drop this view and recreate it.
-      str_sprintf(query, "drop view \"%s\".\"%s\".\"%s\" cascade;",
-		  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
+      
+      Int32 objectOwnerID = 0;
+      Int32 schemaOwnerID = 0;
+      Int64 objUID = getObjectUIDandOwners(&cliInterface,
+    			                   catalogNamePart.data(), schemaNamePart.data(), 
+    			                   objectNamePart.data(),
+    			                   COM_VIEW_OBJECT,
+                                           objectOwnerID,schemaOwnerID);
 
-      cliRC = cliInterface.executeImmediate(query);
-      NADELETEBASIC(query, STMTHEAP);
-      if (cliRC < 0)
-	{
-	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-	  
-	  deallocEHI(ehi); 
-	  processReturn();
-	  
-	  return;
-	}
+      if (objUID < 0 || objectOwnerID == 0)
+        {
+          if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+            SEABASEDDL_INTERNAL_ERROR("getting object UID and owner for create or replace view");
+
+          deallocEHI(ehi); 
+
+          processReturn();
+
+          return;
+        }
+
+      if (isAuthorizationEnabled())
+      {
+         // Verify user can perform operation
+         if (!isDDLOperationAuthorized(SQLOperation::ALTER_VIEW,objectOwnerID,schemaOwnerID))
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+            deallocEHI(ehi);
+            processReturn ();
+            return;
+         }
+      
+         // Initiate the privilege manager interface class
+         NAString privMgrMDLoc;
+         CONCAT_CATSCH(privMgrMDLoc,getSystemCatalog(),SEABASE_PRIVMGR_SCHEMA);
+         PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), 
+                                       CmpCommon::diags());
+      
+         PrivStatus privStatus = privInterface.getPrivRowsForObject(objUID,viewPrivsRows);
+         if (privStatus != PrivStatus::STATUS_GOOD)
+         {
+            SEABASEDDL_INTERNAL_ERROR("Unable to retrieve privileges for replaced view");
+            deallocEHI(ehi); 
+            processReturn();
+            
+            return;
+         }
+         
+      }
+      
+      if (dropOneTableorView(cliInterface,extViewName.data(),COM_VIEW_OBJECT,false))
+      
+        {
+          deallocEHI(ehi); 
+          processReturn();
+          
+          return;
+        }
+      replacingView = true;
     }
 
   // Gather the object and grantable privileges that the view creator has.
@@ -783,7 +828,20 @@ void CmpSeabaseDDL::createSeabaseView(
           processReturn();
 
           return;
-        }   
+        }
+      if (replacingView)
+      {
+         PrivStatus privStatus = privInterface.insertPrivRowsForObject(objUID,viewPrivsRows);
+         
+         if (privStatus != PrivStatus::STATUS_GOOD)
+         {
+            SEABASEDDL_INTERNAL_ERROR("Unable to restore privileges for replaced view");
+            deallocEHI(ehi); 
+            processReturn();
+            
+            return;
+         }
+      }  
     }
 
 

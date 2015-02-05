@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -861,8 +861,7 @@ void EspNewIncomingConnectionStream::actOnReceive(IpcConnection *connection)
             Int32 secUserID = str_atoi(secInfo.getAuthID(), userIDLen);
 
             // Get the current user ID
-            ComUser userInfo;
-            Int32 curUserID = userInfo.getSessionUser(); 
+            Int32 curUserID = ComUser::getSessionUser(); 
 
             // Report an error if the user ID is not valid
             if (curUserID == NA_UserIdDefault || secUserID == NA_UserIdDefault)

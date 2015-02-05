@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -979,12 +979,7 @@ short ParserFlags::process(SqlciEnv * sqlci_env)
 {
   Int32 retCode;
 
-  
-  ComUser userInfo;
-  Int32 userId = userInfo.getSessionUser();
-  NABoolean operationOK = (userId == SUPER_USER) ? TRUE : FALSE;
-
-  if (!operationOK)
+  if (!ComUser::isRootUserID())
   {    
     // Return - "not authorized" error 
     ComDiagsArea diags;

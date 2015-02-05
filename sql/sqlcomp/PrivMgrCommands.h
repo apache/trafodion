@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-//// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+//// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 ////
 ////  Licensed under the Apache License, Version 2.0 (the "License");
 ////  you may not use this file except in compliance with the License.
@@ -175,6 +175,10 @@ public:
       PrivMgrUserPrivs &userPrivileges,
       std::vector <ComSecurityKey *>* secKeySet = NULL);
      
+   PrivStatus getPrivRowsForObject(
+      const int64_t objectUID,
+      std::vector<ObjectPrivsRow> & objectPrivsRows);
+      
    PrivStatus grantComponentPrivilege(
       const std::string & componentName,
       const std::vector<std::string> & operationNamesList,
@@ -220,7 +224,12 @@ public:
       const std::string &objectsLocation,
       const std::string &authsLocation);
 
+   PrivStatus insertPrivRowsForObject(
+      const int64_t objectUID,
+      const std::vector<ObjectPrivsRow> & objectPrivsRows);
+   
    bool isPrivMgrTable(const std::string &objectName);
+ 
    PrivStatus registerComponent(
       const std::string &componentName,
       const bool isSystem,

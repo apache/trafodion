@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1339,14 +1339,7 @@ void CmpSeabaseDDLrole::createRole(StmtDDLCreateRole * pNode)
          // get effective user from the Context
          Int32 userID = ComUser::getCurrentUser();
          setAuthCreator(userID);
-         char creatorName[MAX_DBUSERNAME_LEN + 1];
-         int32_t length;
-         if (ComUser::getAuthNameFromAuthID(userID,creatorName,sizeof(creatorName),length) != 0)
-         {
-            *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR);
-            return;
-         }
-         creatorUsername = creatorName;
+         creatorUsername = ComUser::getCurrentUsername();
       }
       else
       {

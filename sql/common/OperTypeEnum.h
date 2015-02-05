@@ -2,7 +2,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -888,7 +888,10 @@ enum OperatorTypeEnum {
                         DDL_DROP_TRIGGER,
                         DDL_DROP_VIEW,
                         DDL_DROP_EXCEPTION_TABLE,
+                        DDL_GIVE_ALL,
                         DDL_GIVE_CATALOG,
+                        DDL_GIVE_OBJECT,
+                        DDL_GIVE_SCHEMA,
                         DDL_GRANT,
                         DDL_GRANT_SCHEMA,
                         DDL_GRANT_ROLE,
