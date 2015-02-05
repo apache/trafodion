@@ -2,7 +2,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -220,7 +220,7 @@ testfiles="$prettyfiles"
 prettyfiles=
 
 # skip these tests on all platforms.
-skipTheseTests="TEST021 "
+skipTheseTests="TEST021 TEST024 "
 
 #skip these tests for Seabase
 if [ "$seabase" -ne 0 ]; then
