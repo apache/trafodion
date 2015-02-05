@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -126,6 +126,8 @@ extern bool bStatisticsEnabled;
 extern int myNid;
 extern int myPid;
 extern string myProcName;
+extern bool bPlanEnabled;
+
 
 extern long maxHeapPctExit;
 extern long initSessMemSize ;
@@ -287,7 +289,6 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle=NULL, char *stmtLabel=N
 bool loadPrivileges( char *component, bitmask_type mask);
 void setPrivMask( short priv, bitmask_type bitMask );
 
-
 // QSSYNC registered processes info
 REG_PROC_INFO regProcInfo[256];
 
@@ -359,10 +360,11 @@ static void* SessionWatchDog(void* arg)
 	pthread_mutex_lock(&Thread_mutex);
 	record_session_done = false;
 
+	SRVR_STMT_HDL *pSrvrStmt = NULL;
+	SQLCTX_HANDLE thread_context_handle = 0;
+
 	try
 	{
-		SQLCTX_HANDLE thread_context_handle = 0;
-
 		if (WSQL_EXEC_CreateContext(&thread_context_handle, NULL, 0) < 0)
 		{
 			SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
@@ -372,56 +374,78 @@ static void* SessionWatchDog(void* arg)
 			pthread_mutex_unlock(&Thread_mutex);
 			return 0;
 		}
-		SRVR_STMT_HDL *pSrvrStmt = NULL;
-		bool bSwitched = false;
+
+		SendEventMsg(MSG_SERVER_TRACE_INFO,
+						  EVENTLOG_INFORMATION_TYPE,
+						  srvrGlobal->nskASProcessInfo.processId,
+						  ODBCMX_SERVICE,
+						  srvrGlobal->srvrObjRef,
+						  3,
+						  srvrGlobal->sessionId,
+						  "Created new SQL context",
+						  "0");
+
 		stringstream errMsg;
 		ERROR_DESC_def *p_buffer = NULL;
 		int retcode;
+		bool okToGo = true;
+		stringstream ss;
 
-		while(!record_session_done)
+		retcode = WSQL_EXEC_SwitchContext(thread_context_handle, NULL);
+		if (retcode < 0)
+		{
+			SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+									0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+									1, "Failed to switch to new SQL context");
+			okToGo = false;
+		}
+		else
+		{
+			SQL_EXEC_SetParserFlagsForExSqlComp_Internal(0x20000);
+
+			pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", FALSE);
+			if (pSrvrStmt != NULL)
+			{
+				pSrvrStmt->cleanupAll();
+				pSrvrStmt->Close(SQL_DROP);
+				pSrvrStmt = NULL;
+			}
+			pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", TRUE);
+
+			retcode = pSrvrStmt->ExecDirect(NULL, "CONTROL QUERY DEFAULT traf_no_dtm_xn 'ON'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+			if (retcode < 0)
+			{
+				errMsg.str("");
+				if(pSrvrStmt->sqlError.errorList._length > 0)
+					p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+				else if(pSrvrStmt->sqlWarning._length > 0)
+					p_buffer = pSrvrStmt->sqlWarning._buffer;
+				if(p_buffer != NULL && p_buffer->errorText)
+					errMsg << "Failed to skip transaction - " << p_buffer->errorText;
+				else
+					errMsg << "Failed to skip transaction - " << " no additional information";
+
+				SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+										0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+										1, errMsg.str().c_str());
+				okToGo = false;
+			}
+		}
+
+		while(!record_session_done && okToGo)
 		{
 			REPOS_STATS repos_stats = repos_queue.get_task();
 
-			if (!bSwitched) {
-				retcode = WSQL_EXEC_SwitchContext(thread_context_handle, NULL);
-				if (retcode < 0)
-				{
-					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
-											0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-											1, "Failed to switch to new SQL context");
-					break;
-				}
-				SQL_EXEC_SetParserFlagsForExSqlComp_Internal(0x20000);
-
-				pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", FALSE);
-				if (pSrvrStmt != NULL)
-					pSrvrStmt->Close(SQL_DROP);
-				pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", TRUE);
-				retcode = pSrvrStmt->ExecDirect(NULL, "CONTROL QUERY DEFAULT traf_no_dtm_xn 'ON'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
-				if (retcode < 0)
-				{
-					errMsg.str("");
-					if(pSrvrStmt->sqlError.errorList._length > 0)
-						p_buffer = pSrvrStmt->sqlError.errorList._buffer;
-					else if(pSrvrStmt->sqlWarning._length > 0)
-						p_buffer = pSrvrStmt->sqlWarning._buffer;
-					if(p_buffer != NULL && p_buffer->errorText)
-						errMsg << "Failed to skip transaction - " << p_buffer->errorText;
-					else
-						errMsg << "Failed to skip transaction - " << " no additional information";
-
-					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
-											0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-											1, errMsg.str().c_str());
-					break;
-				}
-				bSwitched = true;
+			pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", FALSE);
+			if (pSrvrStmt != NULL)
+			{
+				pSrvrStmt->cleanupAll();
+				pSrvrStmt->Close(SQL_DROP);
+				pSrvrStmt = NULL;
 			}
 
-			if (pSrvrStmt == NULL)
 			pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", TRUE);
 
-			stringstream ss;
 			ss.str("");
 			ss.clear();
 
@@ -791,7 +815,6 @@ static void* SessionWatchDog(void* arg)
 			{
 				break;
 			}
-
 			retcode = pSrvrStmt->ExecDirect(NULL, ss.str().c_str(), INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
 			if (retcode < 0)
 			{
@@ -807,21 +830,34 @@ static void* SessionWatchDog(void* arg)
 				SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
 										0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
 										1, errMsg.str().c_str());
-				pSrvrStmt->cleanupAll();
 			}
 		}//End while
-		if (pSrvrStmt != NULL)
-		{
-			pSrvrStmt->cleanupAll();
-			pSrvrStmt->Close(SQL_DROP);
-		}//End while
 
-		WSQL_EXEC_DeleteContext(thread_context_handle);
 	}
 	catch(...)
 	{
 		//Write to Log4cpp the error message..
 	}
+
+	if (pSrvrStmt != NULL)
+	{
+		pSrvrStmt->cleanupAll();
+		pSrvrStmt->Close(SQL_DROP);
+		pSrvrStmt = NULL;
+	}
+
+	WSQL_EXEC_DeleteContext(thread_context_handle);
+
+	SendEventMsg(MSG_SERVER_TRACE_INFO,
+					  EVENTLOG_INFORMATION_TYPE,
+					  srvrGlobal->nskASProcessInfo.processId,
+					  ODBCMX_SERVICE,
+					  srvrGlobal->srvrObjRef,
+					  3,
+					  srvrGlobal->sessionId,
+					  "Deleted new SQL context",
+					  "0");
+
 	record_session_done = true;
 	pthread_mutex_unlock(&Thread_mutex);
 }
@@ -1220,7 +1256,8 @@ ImplInit (
 	srvrGlobal->m_bStatisticsEnabled = bStatisticsEnabled;
 	srvrGlobal->m_iAggrInterval = aggrInterval;
 	srvrGlobal->m_iQueryPubThreshold = queryPubThreshold;
-	srvrGlobal->sqlPlan = true;
+	srvrGlobal->sqlPlan = bPlanEnabled;
+
 	CEE_TIMER_CREATE2(DEFAULT_AS_POLLING,0,ASTimerExpired,(CEE_tag_def)NULL, &srvrGlobal->ASTimerHandle,srvrGlobal->receiveThrId);
 
 	resStatSession = NULL;
@@ -6410,7 +6447,6 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 					freeMem = false;
 					pSrvrStmt->exPlan = SRVR_STMT_HDL::COLLECTED;
 				}
-
 			}
 		}
 		if (QrySrvrStmt->sqlWarningOrErrorLength > 0)
