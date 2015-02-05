@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,7 +105,7 @@ public final class Constants {
   public static final String DCS_SERVER_USER_PROGRAM_COMMAND = "dcs.server.user.program.command";
 
   /** Default value for DCS server user program command */
-  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND = "cd ${dcs.user.program.home};. sqenv.sh;mxosrvr -ZKHOST -RZ -ZKPNODE -CNGTO -ZKSTO -EADSCO -TCPADD -MAXHEAPPCT -STATISTICSINTERVAL -STATISTICSLIMIT -STATISTICSTYPE -STATISTICSENABLE -PORTMAPTOSECS -PORTBINDTOSECS";
+  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_COMMAND = "cd ${dcs.user.program.home};. sqenv.sh;mxosrvr -ZKHOST -RZ -ZKPNODE -CNGTO -ZKSTO -EADSCO -TCPADD -MAXHEAPPCT -STATISTICSINTERVAL -STATISTICSLIMIT -STATISTICSTYPE -STATISTICSENABLE -SQLPLAN -PORTMAPTOSECS -PORTBINDTOSECS";
   
   /** Configuration key for DCS server user program connecting timeout */
   public static final String DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT = "dcs.server.user.program.connecting.timeout";
@@ -154,6 +154,12 @@ public final class Constants {
 
   /** Default value for DCS server user program statistics enable */
   public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "false";
+
+  /** Configuration key for DCS server user program to enable sqlplan for queries */
+  public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_SQLPLAN_ENABLE = "dcs.server.user.program.statistics.sqlplan.enabled";
+
+  /** Default value for DCS server user program to enable sql plans for queries*/
+  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_SQLPLAN_ENABLE = "false";
   
   /** Configuration key for DCS server user program port map timeout seconds */
   public static final String DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS = "dcs.server.user.program.port.map.timeout.seconds";

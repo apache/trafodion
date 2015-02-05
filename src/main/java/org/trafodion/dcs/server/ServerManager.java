@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,7 @@ public final class ServerManager implements Callable {
 	private static int statisticsLimitTime;
 	private static String statisticsType;
 	private static String statisticsEnable;
+	private static String sqlplanEnable;
 	private static int userProgPortMapToSecs;
 	private static int userProgPortBindToSecs;
 	
@@ -161,6 +162,7 @@ public final class ServerManager implements Callable {
 			.replace("-STATISTICSLIMIT","-STATISTICSLIMIT " + statisticsLimitTime + " ")
 			.replace("-STATISTICSTYPE","-STATISTICSTYPE " + statisticsType + " ")
 			.replace("-STATISTICSENABLE","-STATISTICSENABLE " + statisticsEnable + " ")
+                        .replace("-SQLPLAN","-SQLPLAN " + sqlplanEnable + " ")
 			.replace("-PORTMAPTOSECS","-PORTMAPTOSECS " + userProgPortMapToSecs + " ")
 			.replace("-PORTBINDTOSECS","-PORTBINDTOSECS " + userProgPortBindToSecs)
 			.replace("&lt;","<")
@@ -256,6 +258,7 @@ public final class ServerManager implements Callable {
 		this.statisticsLimitTime = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME);
 		this.statisticsType = this.conf.get(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE);
 		this.statisticsEnable = this.conf.get(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE);
+		this.sqlplanEnable = this.conf.get(Constants.DCS_SERVER_USER_PROGRAM_STATISTICS_SQLPLAN_ENABLE,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_SQLPLAN_ENABLE);
 		this.userProgPortMapToSecs = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS);	   	
 		this.userProgPortBindToSecs = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_PORT_BIND_TIMEOUT_SECONDS,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_BIND_TIMEOUT_SECONDS);	   	
 	}
