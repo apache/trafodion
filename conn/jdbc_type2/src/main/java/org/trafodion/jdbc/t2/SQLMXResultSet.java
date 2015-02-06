@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -5072,4 +5072,23 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
         public boolean isClosed() throws SQLException {
                return false;
         }
+    public SQLMXDesc[] getResultSetDesc(){
+        return outputDesc_;
+    }
+    public int getTotalRowsFetched(){
+        return totalRowsFetched_;
+    }
+    public int getCurrentRowNumber(){
+        return currentRow_;
+    }
+    public ArrayList<DataWrapper> getCachedRows(){
+        ArrayList<DataWrapper> lcachedRows_ = cachedRows_;
+        return lcachedRows_;
+    }
+    public byte[] getSQLBytes(int columnIndex)  throws SQLException {
+        DataWrapper row;
+        row = (DataWrapper)cachedRows_.get(currentRow_ - 1);
+        return row.getSQLBytes(columnIndex);
+    }
+//--------------------------
 }

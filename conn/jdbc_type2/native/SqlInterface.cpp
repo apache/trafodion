@@ -1,7 +1,7 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -510,6 +510,7 @@ SQLRETURN AllocAssignValueBuffer(SQLItemDescList_def *SQLDesc,  SQLValueList_def
 		maxRowCount,
 		VarBuffer));
 
+
 	SQLItemDesc_def *SQLItemDesc;
 	SQLValue_def *SQLValue;
 	long memOffset = 0;
@@ -901,7 +902,12 @@ static SQLRETURN ReadRow(SRVR_STMT_HDL *pSrvrStmt,
 					&allocLength,
 					NULL);
 				pBytes = (BYTE *)(pSrvrStmt->fetchQuadField[curColumnNo].var_ptr);
-				pBytes += row * allocLength;
+
+				if (charSet != SQLCHARSETCODE_ISO88591 && dataType == SQLTYPECODE_VARCHAR_WITH_LENGTH)
+					pBytes += row * (allocLength - 1);
+				else
+					pBytes += row * allocLength;
+
 				DEBUG_OUT(DEBUG_LEVEL_DATA,("RowSet Row %ld Column %ld pBytes=0x%08x item_count=%ld",
 					row,
 					curColumnNo,
@@ -987,6 +993,7 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 	SRVR_CONNECT_HDL *pConnect = NULL;
 	if(pSrvrStmt->dialogueId == 0) CLI_DEBUG_RETURN_SQL(SQL_ERROR);
 	pConnect = (SRVR_CONNECT_HDL*)pSrvrStmt->dialogueId;
+
 
 	BOOL isSPJRS = false;
 	long retcode = SQL_SUCCESS;

@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -159,6 +159,9 @@ public class T4Properties {
 
 	private static int DEFAULT_MAX_IDLE_TIMEOUT = 0; // Max idle timeout
 	// default = infinite
+    
+	//TCP Nagle's algorithm 
+	private boolean _tcpNoDelay = true;
 
 	// -----------------------------------------------------------
 	//
@@ -418,6 +421,7 @@ public class T4Properties {
 		setCertificateFile(getProperty("certificateFile"));
 		setKeepAlive(getProperty("keepAlive"));
 		setTokenAuth(getProperty("tokenAuth"));
+        setTcpNoDelay(getProperty("tcpNoDelay"));
 	}
 
 	T4Properties getT4Properties() {
@@ -509,7 +513,8 @@ public class T4Properties {
 			props.setProperty("certificateFile", _certificateFile);
 		props.setProperty("keepAlive", String.valueOf(_keepAlive));
 		props.setProperty("tokenAuth", String.valueOf(_tokenAuth));
-		
+        props.setProperty("tcpNoDelay", String.valueOf(_tcpNoDelay));
+        
 		return props;
 	}
 
@@ -2211,7 +2216,24 @@ public class T4Properties {
 	public boolean getKeepAlive() {
 		return _keepAlive;
 	}
-	
+
+    public void setTcpNoDelay(String val) {
+        if(val == null) {
+            _tcpNoDelay = true;
+        }
+        else {
+            _tcpNoDelay = Boolean.valueOf(val).booleanValue();
+        }
+    }
+
+    public void setTcp_NoDelay(boolean val) {
+        _tcpNoDelay = val;
+    }
+
+    public boolean getTcpNoDelay() {
+        return _tcpNoDelay;
+    }
+
 	public void setTokenAuth(String val) {
 		if(val == null) 
 		{

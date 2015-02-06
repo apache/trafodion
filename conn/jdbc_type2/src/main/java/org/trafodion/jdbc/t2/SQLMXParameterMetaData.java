@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2004-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2004-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -237,4 +237,258 @@ public class SQLMXParameterMetaData implements java.sql.ParameterMetaData
 		// TODO Auto-generated method stub
 		return false;
 	}
+    public int getSqlCharset(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].sqlCharset_;
+        }
+        finally
+        {
+        }
+    }
+    public int getOdbcCharset(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].odbcCharset_;
+        }
+        finally
+        {
+        }
+    }
+    public int getSqlDataType(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].sqlDataType_;
+        }
+        finally
+        {
+        }
+    }
+    public int getDataType(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].dataType_;
+        }
+        finally
+        {
+        }
+    }
+    public short getSqlPrecision(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].sqlPrecision_; 
+        }
+        finally
+        {
+        }
+    }
+    public int getOdbcPrecision(int param) throws SQLException{
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].odbcPrecision_;
+        }
+        finally
+        {
+        }
+    }
+    public short getSqlDatetimeCode(int param) throws SQLException{
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].sqlDatetimeCode_;
+        }
+        finally
+        {
+        }
+    }
+    public int getSqlOctetLength(int param) throws SQLException{
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].sqlOctetLength_;
+        }
+        finally
+        {
+        }
+    }
+    public int getMaxLen(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].maxLen_; 
+        }
+        finally
+        {
+        }
+    }
+    public boolean getIsCurrency(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].isCurrency_;
+        }
+        finally
+        {
+        }
+    }
+    public boolean getIsCaseSensitive(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].isCaseSensitive_;
+        }
+        finally
+        {
+        }
+    }
+    public int getFsDataType(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].fsDataType_;
+        }
+        finally
+        {
+        }
+    }
+    public int getIntLeadPrec(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].intLeadPrec_;
+        }
+        finally
+        {
+        }
+    }
+    public int getMode(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].paramMode_; 
+        }
+        finally
+        {
+        }
+    }
+    public int getIndex(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].paramIndex_;
+        }
+        finally
+        {
+        }
+    }
+    public int getPos(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].paramPos_;
+        }
+        finally
+        {
+        }
+    }
+    public int getDisplaySize(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].displaySize_; 
+        }
+        finally
+        {
+        }
+    }
+    public String getCatalogName(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].catalogName_;
+        }
+        finally
+        {
+        }
+    }
+    public String getSchemaName(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].schemaName_;
+        }
+        finally
+        {
+        }
+    }
+    public String getTableName(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].tableName_;
+        }
+        finally
+        {
+        }
+    }
+    public String getName(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].name_;
+        }
+        finally
+        {
+        }
+    }
+    public String getLabel(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].columnLabel_;
+        }
+        finally
+        {
+        }
+    }
+    public String getClassName(int param) throws SQLException {
+        try
+        {
+            if (param > inputDesc_.length)
+                throw Messages.createSQLException(connection_.locale_,"invalid_desc_index", null);
+            return inputDesc_[param - 1].columnClassName_;
+        }
+        finally
+        {
+        }
+    }
+//------------------------------------------------------
 }

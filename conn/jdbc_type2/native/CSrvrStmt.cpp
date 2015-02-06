@@ -1,7 +1,7 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -181,11 +181,10 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
 		inQueryTimeout));
 	DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  outValueList=0x%08x",
 		outValueList));
-
 	SQLRETURN rc;
 	char *saveptr=NULL;
 	SRVR_CONNECT_HDL *pConnect = NULL;
-	
+
 	if (dialogueId == 0) CLI_DEBUG_RETURN_SQL(SQL_ERROR);
 	pConnect = (SRVR_CONNECT_HDL *)dialogueId;
 				
@@ -389,10 +388,12 @@ SQLRETURN SRVR_STMT_HDL::ExecDirect(const char *inCursorName, const SQLValue_def
 	SQLValueList_def outValueList;
 
 	rc = Prepare(inSqlString, inStmtType, inHoldability, inQueryTimeout);
+
 	if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
 		CLI_DEBUG_RETURN_SQL(rc);
 	inValueList._buffer = NULL;
 	inValueList._length = 0;
+
 	rc = Execute(inCursorName, 1, inSqlStmtType, &inValueList, FALSE, inQueryTimeout, &outValueList);
 	if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
 		CLI_DEBUG_RETURN_SQL(rc);

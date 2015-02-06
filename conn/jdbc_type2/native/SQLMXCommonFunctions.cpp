@@ -1,7 +1,7 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ static Charset_def CHARSET_INFORMATION[] = {
 	{ SQLCHARSETCODE_KANJI,		"Shift_JIS",	NULL,	NULL},
 	{ SQLCHARSETCODE_KSC5601,	"EUC-KR",		NULL,	NULL},
 	{ SQLCHARSETCODE_SJIS,		"SJIS",			NULL,	NULL},
-	{ SQLCHARSETCODE_UCS2,		"UTF-16BE",		NULL,	NULL},
+//	{ SQLCHARSETCODE_UCS2,		"UTF-16BE",		NULL,	NULL},
+	{ SQLCHARSETCODE_UCS2,		"UTF-16LE",		NULL,	NULL},
 	{ 0,						NULL,			NULL,	NULL}};
 
 	static bool createWrapper(struct WrapperInfoStruct *wrapperInfo, JNIEnv *jenv, jsize totalColumns, bool allocateWrapper)
@@ -93,6 +94,8 @@ static Charset_def CHARSET_INFORMATION[] = {
 			JNI_SetFloatArrayRegion(wrapperInfo->jenv,wrapperInfo->floatValueObject,0,wrapperInfo->totalColumns,wrapperInfo->floatValue);
 		if (wrapperInfo->doubleValueObject)
 			JNI_SetDoubleArrayRegion(wrapperInfo->jenv,wrapperInfo->doubleValueObject,0,wrapperInfo->totalColumns,wrapperInfo->doubleValue);
+		if (wrapperInfo->SQLbytesArrayObject)
+            JNI_SetByteArrayRegion(wrapperInfo->jenv,wrapperInfo->SQLbytesArrayObject,0,wrapperInfo->totalColumns,wrapperInfo->SQLbytesArray);
 		FUNCTION_RETURN_VOID((NULL));
 	}
 
@@ -211,6 +214,40 @@ static Charset_def CHARSET_INFORMATION[] = {
 		FUNCTION_RETURN_VOID((NULL));
 	}
 
+    static void setupWrapperSQLBytes(struct WrapperInfoStruct *wrapperInfo)
+    {
+        // This method is implemented in DataWrapper.setupSQLBytes() also.  Any changes need to be made in both places
+        FUNCTION_ENTRY("setupWrapperSQLBytes",
+            ("wrapper=0x%08x",
+            wrapperInfo->wrapper));
+
+        DEBUG_ASSERT(wrapperInfo->SQLbytesArrayObject==NULL,("SQLBytes array object is not NULL"));
+        wrapperInfo->SQLbytesValueObject = JNI_NewObjectArray(wrapperInfo->jenv,wrapperInfo->totalColumns,gJNICache.SQLbyteArrayClass,NULL);
+        DEBUG_ASSERT(wrapperInfo->SQLbytesValueObject!=NULL,("NewObjectArray() failed"));
+        JNI_SetObjectField(wrapperInfo->jenv,wrapperInfo->wrapper,gJNICache.wrapperSQLBytesFieldId,wrapperInfo->SQLbytesValueObject);
+        FUNCTION_RETURN_VOID((NULL));
+    }
+
+    static void setWrapperSQLBytes(struct WrapperInfoStruct *wrapperInfo, jint paramNumber, jbyteArray value)
+    {
+        FUNCTION_ENTRY("setWrapperSQLBytes",
+            ("wrapper=0x%08x, paramNumber=%ld",
+            wrapperInfo->wrapper,
+            paramNumber));
+        if (wrapperInfo->SQLbytesValueObject==NULL)
+        {
+            wrapperInfo->SQLbytesValueObject = (jobjectArray) JNI_GetObjectField(wrapperInfo->jenv,wrapperInfo->wrapper,gJNICache.wrapperSQLBytesFieldId);
+            if (wrapperInfo->SQLbytesValueObject==NULL)
+            {
+                // Need to setup bytes array
+                setupWrapperSQLBytes(wrapperInfo);
+            }
+        }
+        JNI_SetObjectArrayElement(wrapperInfo->jenv,wrapperInfo->SQLbytesValueObject,paramNumber,value);
+        setWrapperDataType(wrapperInfo,paramNumber,org_trafodion_jdbc_t2_DataWrapper_BYTES);
+        FUNCTION_RETURN_VOID((NULL));
+    }
+//============================
 	// Big Num Changes
 	static jbyteArray convertBigDecimalToSQLBigNum(struct WrapperInfoStruct *wrapperInfo, jint paramNumber, jint scale, jint targetLength)
 	{
@@ -472,6 +509,20 @@ static Charset_def CHARSET_INFORMATION[] = {
 		FUNCTION_RETURN_VOID((NULL));
 	}
 
+    static void cleanupWrapperSQLBytesArray(struct WrapperInfoStruct *wrapperInfo)
+    {
+        FUNCTION_ENTRY("cleanupWrapperSQLBytesArray",
+            ("wrapper=0x%08x",
+            wrapperInfo->wrapper));
+        if (wrapperInfo->bytesArrayObject)
+        {
+            JNI_ReleaseByteArrayElements(wrapperInfo->jenv,wrapperInfo->SQLbytesArrayObject,wrapperInfo->SQLbytesArray,JNI_ABORT);
+            wrapperInfo->SQLbytesArrayObject = NULL;
+            wrapperInfo->SQLbytesArray = NULL;
+        }
+        FUNCTION_RETURN_VOID((NULL));
+    }
+//==============
 	static void cleanupWrapperInfo(struct WrapperInfoStruct *wrapperInfo)
 	{
 		FUNCTION_ENTRY("cleanupWrapperInfo",
@@ -539,6 +590,10 @@ static Charset_def CHARSET_INFORMATION[] = {
 		}
 		cleanupWrapperBytesArray(wrapperInfo);
 		wrapperInfo->bytesValueObject = NULL;
+
+        cleanupWrapperSQLBytesArray(wrapperInfo);
+        wrapperInfo->SQLbytesValueObject = NULL;
+
 		FUNCTION_RETURN_VOID((NULL));
 	}
 
@@ -596,6 +651,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 			DEBUG_OUT(DEBUG_LEVEL_ERROR,("sqlstate=%s, errorText=%s",
 				DebugString(error_desc_def->sqlstate),
 				DebugString(error_desc_def->errorText)));
+
 			sqlMessage = jenv->NewStringUTF(error_desc_def->errorText);
 			sqlState = jenv->NewStringUTF(error_desc_def->sqlstate);
 			sqlException = (jthrowable)jenv->NewObject(gJNICache.sqlExceptionClass,
@@ -1378,7 +1434,6 @@ static Charset_def CHARSET_INFORMATION[] = {
 		jint			paramOffset = pSrvrStmt->inputDescParamOffset;
 
 		SRVR_DESC_HDL *IPD = pSrvrStmt->IPD;
-
 		if (paramCount && paramOffset)
 		{
 			// First desc is rowset size
@@ -1556,6 +1611,8 @@ static Charset_def CHARSET_INFORMATION[] = {
 						}
 						cleanupWrapperBytesArray(&wrapperInfo);
 					}
+//---------------------------------------------------dataPtr--------
+
 				} else DEBUG_OUT(DEBUG_LEVEL_DATA,("  Parameter is NULL"));
 			}
 			cleanupWrapperInfo(&wrapperInfo);
@@ -1667,6 +1724,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 		case SQLTYPECODE_VARCHAR:
 		case SQLTYPECODE_VARCHAR_LONG:
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+
 			if ( useDefaultCharsetEncoding(wrapperInfo->jenv, jobj, charSet, iso88591Encoding) )
 			{
 				encoding = NULL;
@@ -1754,6 +1812,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 
 				DEBUG_OUT(DEBUG_LEVEL_UNICODE,("UCS2 byte array dataLen ='%ld'", dataLen));
 				MEMORY_DUMP(DEBUG_LEVEL_UNICODE,nParamValue,dataLen);
+
 				break;
 
 			case SQLCHARSETCODE_KSC5601:
@@ -3047,6 +3106,11 @@ func_exit:
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - byteArrayClass == NULL"));
 		gJNICache.byteArrayClass = (jclass)JNI_NewGlobalRef(jenv,byteArrayClass);
 
+        jclass SQLbyteArrayClass = JNI_FindClass(jenv,"[B");
+        if (SQLbyteArrayClass == NULL)
+            FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - SQLbyteArrayClass == NULL"));
+        gJNICache.SQLbyteArrayClass = (jclass)JNI_NewGlobalRef(jenv,SQLbyteArrayClass);
+//------------
 		// SPJRS
 		// Create reference to the ResultSetInfo class
 		jclass ResultSetInfoClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/ResultSetInfo");
@@ -3105,6 +3169,11 @@ func_exit:
 		if (gJNICache.wrapperBytesFieldId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.wrapperBytesFieldId == NULL"));
 
+        // ** SQLBytes - These are the JNI medthods used to fetch the sql byte array field
+        gJNICache.wrapperSQLBytesFieldId  = JNI_GetFieldID(jenv,wrapperClass, "SQLbytesValue", "[[B");
+        if (gJNICache.wrapperSQLBytesFieldId == NULL)
+            FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.wrapperSQLBytesFieldId == NULL"));
+//------------
 		// ** Byte - These are the JNI medthods used to fetch the byte field
 		gJNICache.wrapperByteFieldId  = JNI_GetFieldID(jenv,wrapperClass, "byteValue", "[B");
 		if (gJNICache.wrapperByteFieldId == NULL)
@@ -3206,6 +3275,23 @@ func_exit:
 		jint					sqlDatetimeCode;
 		jint					FSDataType;
 
+        char                    *strSQLDataPtr = (char*)SQLValue->dataValue._buffer;
+        long                    SQLDataLen = SQLValue->dataValue._length;
+
+        if (strSQLDataPtr){
+            jbyteArray stringSQLByteArray = JNI_NewByteArray(wrapperInfo->jenv,SQLDataLen);
+            if (stringSQLByteArray == NULL)
+            {
+                DEBUG_OUT(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE, ("stringSQLByteArray is NULL, returning NULL"));
+            }
+            else
+            {
+                JNI_SetByteArrayRegion(wrapperInfo->jenv,stringSQLByteArray,0, SQLDataLen, (jbyte *)strSQLDataPtr);
+                MEMORY_DUMP(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE,strSQLDataPtr,SQLDataLen);
+            }
+            setWrapperSQLBytes(wrapperInfo,columnIndex,stringSQLByteArray);
+        }
+//---------------------------------------
 		DEBUG_OUT(DEBUG_LEVEL_DATA,("SQLValue: dataType=%s dataValue._buffer=0x%08x, dataValue._length=%ld",
 			CliDebugSqlTypeCode(SQLValue->dataType),
 			SQLValue->dataValue._buffer,

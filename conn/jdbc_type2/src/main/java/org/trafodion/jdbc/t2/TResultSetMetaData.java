@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -282,4 +282,8 @@ public class TResultSetMetaData implements java.sql.ResultSetMetaData
 		// TODO Auto-generated method stub
 		return false;
 	}
+    public SQLMXResultSetMetaData getSqlResultSetMetaData(){
+        return (SQLMXResultSetMetaData)rsMD_;
+    }
+
 }

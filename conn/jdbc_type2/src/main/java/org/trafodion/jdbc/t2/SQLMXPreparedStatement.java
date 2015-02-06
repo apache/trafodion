@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -878,9 +878,10 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			debug[methodId_executeQuery].methodEntry();
 		try {
 			validateExecuteInvocation();
-			if (!isSelect_)
+			if (!isSelect_){
 				throw Messages.createSQLException(connection_.locale_,
 						"non_select_invalid", null);
+			}
 
 			// Allocate the result set incase any rows are returned by the
 			// execute
@@ -5654,5 +5655,15 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 		// TODO Auto-generated method stub
 		
 	}
+    public String getInputDescCatalogName(int parameterIndex){
+        return inputDesc_[parameterIndex].catalogName_;
+    }
 
+    public String getInputDescTableName(int parameterIndex){
+        return inputDesc_[parameterIndex].tableName_;
+    }
+    public String getInputDescName(int parameterIndex){
+        return inputDesc_[parameterIndex].name_;
+    }
+//------------------------------
 }
