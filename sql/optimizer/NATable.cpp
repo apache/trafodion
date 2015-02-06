@@ -5282,6 +5282,7 @@ NATable::NATable(BindWA *bindWA,
   mvAttributeBitmap_.initBitmap(table_desc->body.table_desc.mvAttributesBitmap);
 
   desc_struct *mvs_desc = table_desc->body.table_desc.using_mvs_desc;
+// Memory Leak
   while (mvs_desc)
   {
     using_mv_desc_struct *mv = &mvs_desc->body.using_mv_desc;
@@ -5526,6 +5527,7 @@ NATable::NATable(BindWA *bindWA,
 
   if (hasLobColumn())
     {
+//    Memory Leak
       // read lob related information from lob metadata
       short *lobNumList = new (heap_) short[getColumnCount()];
       short *lobTypList = new (heap_) short[getColumnCount()];
@@ -6803,6 +6805,8 @@ NATable::~NATable()
   // remove the map entries of associated table identifers in
   // NAClusterInfo::tableToClusterMap_.
   CMPASSERT(gpClusterInfo);
+  NAColumn *col;
+  NABoolean delHeading = ActiveSchemaDB()->getNATableDB()->cachingMetaData();
   const LIST(CollIndex) & tableIdList = getTableIdList();
   for(CollIndex i = 0; i < tableIdList.entries(); i++)
   {
@@ -6813,65 +6817,64 @@ NATable::~NATable()
     NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
     privInfo_ = NULL;
   }
-  // implicitly destructs all subcomponents allocated out of this' private heap
-  // hence no need to write a complicated destructor!
+  if (! isHive_) {
+     for (int i = 0 ; i < colcount_ ; i++) {
+         col = (NAColumn *)colArray_[i];
+         if (delHeading) {
+            if (col->getDefaultValue())
+                NADELETEBASIC(col->getDefaultValue(), heap_);
+            if (col->getHeading())
+                NADELETEBASIC(col->getHeading(), heap_);
+            if (col->getComputedColumnExprString())
+                NADELETEBASIC(col->getComputedColumnExprString(),heap_);
+         }
+         NADELETE(col, NAColumn, heap_);
+     }
+  }
+
+  if (clusteringIndex_ != NULL)
+  {
+     NADELETE(clusteringIndex_, NAFileSet, heap_);
+     clusteringIndex_ = NULL;
+  }
+ 
+  if (schemaLabelFileName_ != NULL)
+  {
+     NADELETEBASIC(schemaLabelFileName_, heap_);
+     schemaLabelFileName_ = NULL;
+  } 
+
+  if (parentTableName_ != NULL)
+  {
+     NADELETEBASIC(parentTableName_, heap_);
+     parentTableName_ = NULL;
+  } 
+  if (viewText_ != NULL)
+  {
+     NADELETEBASIC(viewText_, heap_);
+     viewText_ = NULL;
+  } 
+  if (viewCheck_ != NULL)
+  {
+     NADELETEBASIC(viewCheck_, heap_);
+     viewCheck_ = NULL;
+  } 
+  if (viewFileName_ != NULL)
+  {
+     NADELETEBASIC(viewFileName_, heap_);
+     viewFileName_ = NULL;
+  } 
+  if (prototype_ != NULL)
+  {
+     NADELETE(prototype_, HostVar, heap_);
+     prototype_ = NULL;
+  }
+  if (sgAttributes_ != NULL)
+  {
+     NADELETE(sgAttributes_, SequenceGeneratorAttributes, heap_);
+     sgAttributes_ = NULL;
+  }
 }
-
-//some stuff of historical importance
-
-// Currently we explicitly destruct NATables after compiling each stmt
-// (arkcmp calls SchemaDB::cleanupPerStatement -- cf. BindWA::getNATable).
-//
-// However, should we ever decide to save NATables across statement boundaries,
-// to cache and reuse them for performance, the following method will be needed
-// to reinit each NATable before it is reused (arkcmp would call this reset()
-// for each NATable in the SchemaDB).
-// (First we must determine if reuse is even possible by comparing redef
-// timestamp with current metadata via some call to Catman SOL -- if they don't
-// have some redef-event notification mechanism then they may have to
-// go to disk anyway, obviating any real performance boost to begin with.)
-//
-// There is another situation where reuse is possible:  compound statements.
-// The compiler must hold one same transaction open over the course of
-// sequentially compiling each of the stmts in the compound -- so no redef
-// could take place meanwhile.
-//
-//    void NATable::reset()	// ## to be implemented?
-//    {
-//      It is not clear to me whether virtual tables and resource forks
-//      (any "special" table type) can/should be reused.  Maybe certain
-//      types can; I just have no idea right now.  But as we're not reading
-//	metadata tables for them anyway, there seems little savings in
-//	caching them; perhaps we should just continue to build them on the fly.
-//
-//      All the real metadata in NATable members can stay as it is.
-//	But there are a few pieces of for-this-query-only data:
-//	  referenceCount_ = 0;
-//      And we now optimize/filter/reduce histogram statistics for each
-//      individual query, so stats and adminicular structures must be reset:
-//    	  statsFetched_ = FALSE;
-//    	  delete/clearAndDestroy colStats_
-//    	  for (i in colArray_) colArray_[i]->setReferenced(FALSE);
-//
-//	Actually, we'd probably want to call FetchHistograms in our ctor,
-//	passing a flag telling it to return the *full* set of stats
-//	(don't do all that nice filtering which is now saving us
-//	time/space from unnecessary new's and SQL fetches);
-//	our ctor would save these into a new fullColStats_ member here,
-//	which does *not* get reset.  The method getStatistics() above
-//	would traverse the fullColStats list and apply the same rules
-//	FH currently follows to decide which full stats elements to
-//	deep copy (no pointer sharing) into the per-query colStats_ list.
-//
-//	Actually, we'd want a fullStatsFetched_ flag -- i.e do not call FH
-//	in the ctor -- because if the inDDL flag is passed in TRUE, we don't
-//	want any stats at all.
-//
-//	We could do things such that for single-stmt compiles we continue
-//	to reap the performance benefit of doing the pruning within FH;
-//	but for a compound stmt we use the approach outlined just above.
-//	Obviously we'd need some sort of inCompoundCompile() flag.
-//    }
 
 void NATable::resetAfterStatement() // ## to be implemented?
 {
@@ -7439,7 +7442,7 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
     //if metadata caching is ON, then adjust cache size
     //since we are deleting a caching entry
     if(cacheMetaData_)
-      currentCacheSize_ = heap_->getTotalSize();
+      currentCacheSize_ = heap_->getAllocSize();
 
     cachedNATable->removeTableToClusterMapInfo();
 
@@ -8192,7 +8195,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         //if metadata caching is ON then adjust the size of the cache
         //since we are adding an entry to the cache
         if(cacheMetaData_)
-          currentCacheSize_ = heap_->getTotalSize();
+          currentCacheSize_ = heap_->getAllocSize();
 
 	//update the high watermark for caching statistics
 	if (currentCacheSize_ > highWatermarkCache_)        
@@ -8278,8 +8281,7 @@ void NATableDB::removeNATable(CorrName &corrName, QiScope qiScope,
               //if metadata caching is ON, then adjust cache size
               //since we are deleting a caching entry
               if(cacheMetaData_)
-                currentCacheSize_ = heap_->getTotalSize();
-
+                currentCacheSize_ = heap_->getAllocSize();
               if (cachedNATable->heap_ &&
                   cachedNATable->heap_ != CmpCommon::statementHeap())
                 tablesToDeleteAfterStatement_.insert(cachedNATable);
@@ -8390,15 +8392,11 @@ void NATableDB::resetAfterStatement(){
           cachedTableList_.remove(statementCachedTableList_[i]);
           //remove from the cache itself
           remove(statementCachedTableList_[i]->getKey());
-          //keep track of change in cache size
-          currentCacheSize_ = heap_->getTotalSize();
-          //delete the NATable by deleting the heap it is on
-          //the heap has everything that belongs to the NATable
-          //so this should hopefully avoid memory leaks
           statementCachedTableList_[i]->removeTableToClusterMapInfo();
 
           if ( statementCachedTableList_[i]->getHeapType() == NATable::OTHER ) {
             delete statementCachedTableList_[i];
+            currentCacheSize_ = heap_->getAllocSize();
           }
         }
         else{
@@ -8437,6 +8435,7 @@ void NATableDB::resetAfterStatement(){
     if ( tablesToDeleteAfterStatement_[i]->getHeapType() == NATable::OTHER ) {
       delete tablesToDeleteAfterStatement_[i];
     }
+    currentCacheSize_ = heap_->getAllocSize();
   }
 
   //clear the list of tables to delete after statement
@@ -8611,8 +8610,8 @@ void NATableDB::flushCacheEntriesUsedInCurrentStatement(){
         //remove from the cache itself
         remove(statementCachedTableList_[i]->getKey());
         //keep track of change in cache size
-        currentCacheSize_ = heap_->getTotalSize();
         delete statementCachedTableList_[i];
+        currentCacheSize_ = heap_->getAllocSize();
       }
     }
 
@@ -8720,14 +8719,13 @@ NATableDB::RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx )
    NAMemory * tableHeap = NATablep->heap_;
    NABoolean InStatementHeap = (tableHeap == (NAMemory *)CmpCommon::statementHeap());
 
-   if ( ! InStatementHeap )
-      currentCacheSize_ = heap_->getTotalSize();
    remove(NATablep->getKey());
    NATablep->removeTableToClusterMapInfo();
    cachedTableList_.removeAt( currIndx );
-
    if ( ! InStatementHeap )
       delete NATablep;
+   if ( ! InStatementHeap )
+      currentCacheSize_ = heap_->getAllocSize();
 }
 
 //
