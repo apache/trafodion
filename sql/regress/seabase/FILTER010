@@ -33,4 +33,5 @@ s/^\([ ]*HBASE_FILTER_PREDS[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*embedded_arkcmp[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*EST_TOTAL_COST[ ]*[\.]*\) .*/\1 removed/g
 s/^\([ ]*EST_OPER_COST[ ]*[\.]*\) .*/\1 removed/g
+s/VOLATILE_SCHEMA_MXID[0-9]*/VOLATILE_SCHEMA_00/
 " $fil

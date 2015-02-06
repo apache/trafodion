@@ -241,7 +241,9 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
               else
                 return FALSE; // error
             }
-
+          else
+            tableInfo = mddi.tableInfo;
+          
           return TRUE;
         }
       else  //if (mdti.oldName && (objName == mdti.oldName))

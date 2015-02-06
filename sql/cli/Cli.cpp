@@ -1,7 +1,7 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -11048,6 +11048,11 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
       cliInterface->retrieveSQLDiagnostics(myDiags);
       diags.mergeAfter(*myDiags);
 
+      if (diags.mainSQLCODE() == -EXE_NUMERIC_OVERFLOW)
+        {
+          cliRC = -EXE_SG_MAXVALUE_EXCEEDED;
+        }
+
       return cliRC;
     }
 
@@ -11208,8 +11213,11 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
        {
          if (startLocalXn)
             {
-              // error case. If xn was started here, abort it.
-              cqdCliInterface->rollbackWork();
+              if (cqdCliInterface->statusXn() == 0) // xn running
+                {
+                  // error case. If xn was started here, abort it.
+                  cqdCliInterface->rollbackWork();
+                }
             }
        }
 

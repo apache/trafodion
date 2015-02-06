@@ -10443,6 +10443,45 @@ FRAG_NUM    INST_NUM    SEQ_NUM     (EXPR)
 >>select * from logitem ;
 
 --- 0 row(s) selected.
+>>
+>>-- showddl output should not show 'ACTUAL PARTITIONS' 
+>>-- Created and actual partitions are the same.
+>>drop table if exists "delim_tab";
+
+--- SQL operation complete.
+>>create table "delim_tab" (a int not null primary key) salt using 4 partitions;
+
+--- SQL operation complete.
+>>showddl "delim_tab";
+
+CREATE TABLE TRAFODION.SCH."delim_tab"
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+  SALT USING 4 PARTITIONS
+;
+
+--- SQL operation complete.
+>>
+>>create volatile table vtab1 (a int);
+
+--- SQL operation complete.
+>>create volatile table vtab2 (a int);
+
+--- SQL operation complete.
+>>get all volatile schemas;
+
+Schema(Active  ): VOLATILE_SCHEMA_MXID110000062982122899236478654870000000002
+
+--- SQL operation complete.
+>>get all volatile tables;
+
+Schema(Active  ): VOLATILE_SCHEMA_MXID110000062982122899236478654870000000002
+  Table: VTAB1
+  Table: VTAB2
+
+--- SQL operation complete.
 >>drop schema minotaur cascade;
 
 --- SQL operation complete.

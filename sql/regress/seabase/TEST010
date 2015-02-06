@@ -453,3 +453,14 @@ CREATE TABLE LOGITEM
 cqd hbase_hash2_partitioning 'off' ;
 
 select * from logitem ;
+
+-- showddl output should not show 'ACTUAL PARTITIONS' 
+-- Created and actual partitions are the same.
+drop table if exists "delim_tab";
+create table "delim_tab" (a int not null primary key) salt using 4 partitions;
+showddl "delim_tab";
+
+create volatile table vtab1 (a int);
+create volatile table vtab2 (a int);
+get all volatile schemas;
+get all volatile tables;

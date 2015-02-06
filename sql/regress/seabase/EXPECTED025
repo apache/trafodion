@@ -1297,7 +1297,7 @@ A      B           C
 >>
 >>insert into T025T003 (b,c) values(1,1),(2,2);
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion.
+*** ERROR[8934] The MAXVALUE for the sequence generator has been exceeded.
 
 --- 0 row(s) inserted.
 >>
@@ -2327,7 +2327,9 @@ B           SURROGATE_KEY  C
 >>
 >>alter table T025T003 alter column surrogate_key set MAXVALUE 4294967296;
 
---- SQL operation complete.
+*** ERROR[1576] MAXVALUE value is greater than maximum allowed for this sequence.
+
+--- SQL operation failed with errors.
 >>
 >>-- repeat tests with column type of INT UNSIGNED
 >>
@@ -2461,7 +2463,9 @@ B           SURROGATE_KEY  C
 >>
 >>alter table T025T004 alter column surrogate_key set MAXVALUE 65536;
 
---- SQL operation complete.
+*** ERROR[1576] MAXVALUE value is greater than maximum allowed for this sequence.
+
+--- SQL operation failed with errors.
 >>
 >>-- Test largeint error handling
 >>

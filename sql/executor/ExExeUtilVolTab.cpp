@@ -269,100 +269,16 @@ ex_tcb * ExExeUtilCleanupVolatileTablesTdb::build(ex_globals * glob)
   return (exe_util_tcb);
 }
 
-static const QueryString getAllNodeNamesQuery[] =
-{
-  {" select RTRIM('NSK') from "},
-  {"   HP_SYSTEM_CATALOG.system_schema.catsys CS "},
-  {"   where cs.cat_name = replace(_ucs2'%s', _ucs2'''', _ucs2'''''') "},
-  {"        for read uncommitted access "},
-  {" ; "}
-};
-
 ////////////////////////////////////////////////////////////////
 // class ExExeUtilVolatileTablesTcb
 ///////////////////////////////////////////////////////////////
 ExExeUtilVolatileTablesTcb::ExExeUtilVolatileTablesTcb(
      const ComTdbExeUtil & exe_util_tdb,
      ex_globals * glob)
-     : ExExeUtilTcb( exe_util_tdb, NULL, glob),
-       nodeNamesList_(NULL)
+     : ExExeUtilTcb( exe_util_tdb, NULL, glob)
 {
   // Allocate the private state in each entry of the down queue
   qparent_.down->allocatePstate(this);
-}
-
-short ExExeUtilVolatileTablesTcb::getAllNodeNames(char * param1)
-{
-  Lng32 cliRC = 0;
-
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-  ExExeUtilPrivateState & pstate =
-    *((ExExeUtilPrivateState*) pentry_down->pstate);
-
-  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
-  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
-
-  short rc = 0;
-
-  rc = initializeInfoList(nodeNamesList_);
-  if (rc)
-    return -1;
-
-  if (param1)
-    {
-      const QueryString * qs;
-      Int32 sizeOfqs = 0;
-      
-      qs = getAllNodeNamesQuery;
-      sizeOfqs = sizeof(getAllNodeNamesQuery);
-      
-      Int32 qryArraySize = sizeOfqs / sizeof(QueryString);
-      char * gluedQuery;
-      Lng32 gluedQuerySize;
-      glueQueryFragments(qryArraySize,  qs,
-			 gluedQuery, gluedQuerySize);
-      
-      Lng32 extraSpace = 2 * 10 /*segment name*/+ ComMAX_1_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES/*cat name*/;
-      
-      char * nodeNamesQuery =
-	new(getHeap()) char[gluedQuerySize + extraSpace + 1];
-      
-      str_sprintf(nodeNamesQuery, gluedQuery, param1, NULL);
-      
-      if (fetchAllRows(nodeNamesList_, nodeNamesQuery, 1, FALSE, rc) < 0)
-	{
-	  // Delete new'd characters
-	  NADELETEBASIC(gluedQuery, getHeap());
-	  gluedQuery = NULL;
-	  
-	  NADELETEBASIC(nodeNamesQuery, getHeap());
-	  
-	  return -1;
-	}
-
-      // Delete new'd characters
-      NADELETEBASIC(gluedQuery, getHeap());
-      
-      NADELETEBASIC(nodeNamesQuery, getHeap());
-    }
-
-  // if no entries were found using the input param1(catalog name),
-  // then create an entry using the current myNodeName.
-  if (nodeNamesList_->numEntries() == 0)
-    {
-      OutputInfo * vi = new(getHeap()) OutputInfo(1);
-      
-      Lng32 len = strlen(masterGlob->getCliGlobals()->myNodeName());
-
-      char * r = new(getHeap()) char[1+len+1];
-      r[0] = '\\';
-      strcpy(&r[1], masterGlob->getCliGlobals()->myNodeName());
-      vi->insert(0, r);
-
-      nodeNamesList_->insert(vi);
-    }
-
-  return 0;
 }
 
 short ExExeUtilVolatileTablesTcb::isCreatorProcessObsolete
@@ -470,22 +386,24 @@ ExExeUtilCleanupVolatileTablesTcb::ExExeUtilCleanupVolatileTablesTcb(
      : ExExeUtilVolatileTablesTcb( exe_util_tdb, glob),
        step_(INITIAL_),
        schemaNamesList_(NULL),
-       schemaQuery_(NULL)
+       schemaQuery_(NULL),
+       someSchemasCouldNotBeDropped_(FALSE)
 {
 }
 
 //////////////////////////////////////////////////////
 // work() for ExExeUtilCleanupVolatileTablesTcb
 //////////////////////////////////////////////////////
-static const QueryString schemaCleanupQuery[] =
+static const QueryString getAllVolatileSchemasQuery[] =
 {
-  {" select translate(rtrim(C.cat_name) || _ucs2'.' || S.schema_name using ucs2toutf8) from "},
-  {" HP_SYSTEM_CATALOG.system_schema.schemata S, "},
-  {" HP_SYSTEM_CATALOG.system_schema.catsys C "},
-  {" where S.cat_uid = C.cat_uid "},
-  {"       and S.current_operation = 'VS'"},
-  {" for skip conflict access "}
+  {" select O.schema_name from "},
+  {" TRAFODION.\"_MD_\".OBJECTS O "},
+  {" where O.schema_name like 'VOLATILE_SCHEMA_%%' "},
+  {"           and O.object_type = 'SS' "},
+  {" order by 1 "},
+  {" for read uncommitted access "}
 };
+
 
 short ExExeUtilCleanupVolatileTablesTcb::work()
 {
@@ -522,10 +440,11 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	case FETCH_SCHEMA_NAMES_:
 	  {
 	    Int32 schema_qry_array_size = 
-	      sizeof(schemaCleanupQuery) 
+	      sizeof(getAllVolatileSchemasQuery) 
 	      / sizeof(QueryString);
 	    
-	    const QueryString * schemaCleanupQueryString = schemaCleanupQuery;
+	    const QueryString * schemaCleanupQueryString = 
+              getAllVolatileSchemasQuery;
 	    
 	    char * gluedQuery;
 	    Lng32 gluedQuerySize;
@@ -547,18 +466,6 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 
 	    if (fetchAllRows(schemaNamesList_, schemaQuery_, 1, FALSE, retcode) < 0)
 	      {
-		/*
-		ExHandleErrors(qparent_,
-			       pentry_down,
-			       0,
-			       getGlobals(),
-			       NULL,
-			       (ExeErrorCode)retcode,
-			       NULL,
-			       NULL
-			       );
-			       */
-
 		// Delete new'd characters
 		NADELETEBASIC(schemaQuery_, getHeap());
 		schemaQuery_ = NULL;
@@ -586,15 +493,9 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	      {
 		// cannot have a transaction running.
 		// Return error.
-		ExHandleErrors(qparent_,
-			       pentry_down,
-			       0,
-			       getGlobals(),
-			       NULL,
-			       (ExeErrorCode)-EXE_BEGIN_TRANSACTION_ERROR,
-			       NULL,
-			       NULL
-			       );
+                ComDiagsArea * diags = getDiagsArea();
+                *diags << DgSqlCode(-EXE_BEGIN_TRANSACTION_ERROR);
+
 		step_ = ERROR_;
 		break;
 	      }
@@ -614,23 +515,16 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	    OutputInfo * vi = (OutputInfo*)schemaNamesList_->getCurr();
 	    char * schemaName = vi->get(0);
 	    if ((cvtTdb().cleanupAllTables()) ||
-		(isCreatorProcessObsolete(schemaName, TRUE)))
+		(isCreatorProcessObsolete(schemaName, FALSE)))
 	      {
 		// schema is obsolete, drop it.
 		// Or we need to cleanup all schemas, active or obsolete.
-		step_ = BEGIN_WORK_;
+		step_ = DO_CLEANUP_;
 	      }
 	    else
 	      {
 		schemaNamesList_->advance();
 	      }
-	  }
-	break;
-
-	case BEGIN_WORK_:
-	  {
-	    cliInterface()->beginWork();
-	    step_ = DO_CLEANUP_;
 	  }
 	break;
 
@@ -653,60 +547,40 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	      }
 
 	    schemaNamesList_->advance();
-	    step_ = COMMIT_WORK_;
-	  }
-	break;
-
-	case COMMIT_WORK_:
-	  {
-	    cliInterface()->commitWork();
 	    step_ = CHECK_FOR_OBSOLETE_CREATOR_PROCESS_;
 	  }
 	break;
 
 	case END_CLEANUP_:
 	  {
-	    /*	    if (someSchemasCouldNotBeDropped_)
+            if (someSchemasCouldNotBeDropped_)
 	      {
 		// add a warning to indicate that some schemas were not
 		// dropped.
-		ExHandleErrors(qparent_,
-			       pentry_down,
-			       0,
-			       getGlobals(),
-			       NULL,
-			       (ExeErrorCode)1069,
-			       NULL,
-			       NULL
-			       );
+                ComDiagsArea * diags = getDiagsArea();
+                *diags << DgSqlCode(1069);
 	      }
-	      */
 	    step_ = DONE_;
 	  }
 	break;
 
 	case ERROR_:
 	  {
+            if (handleError())
+              return WORK_OK;
+
+	    getDiagsArea()->clear();
+
 	    step_ = DONE_;
 	  }
 	break;
 
 	case DONE_:
 	  {
-	    // Return EOF.
-	    ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	    
-	    up_entry->upState.parentIndex = 
-	      pentry_down->downState.parentIndex;
-	    
-	    up_entry->upState.setMatchNo(0);
-	    up_entry->upState.status = ex_queue::Q_NO_DATA;
-	    
-	    // insert into parent
-	    qparent_.up->insert();
+            if (handleDone())
+              return WORK_OK;
 	    
 	    step_ = INITIAL_;
-	    qparent_.down->removeHead();
 	    
 	    return WORK_OK;
 	  }
@@ -757,13 +631,7 @@ short ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
 
   NADELETEBASIC(dropSchema, heap);
 
-  if (cliRC < 0)
-    {
-      SQL_EXEC_ClearDiagnostics(NULL);
-      return (short)0; //cliRC;
-    }
-
-  return 0;
+  return cliRC;
 }
 
 short ExExeUtilCleanupVolatileTablesTcb::dropVolatileTables
@@ -801,13 +669,7 @@ short ExExeUtilCleanupVolatileTablesTcb::dropVolatileTables
   cliInterface.executeImmediate(sendCQD);
   NADELETEBASIC(sendCQD, heap);
 
-  if (cliRC < 0)
-    {
-      SQL_EXEC_ClearDiagnostics(NULL);
-      return (short)0; //cliRC;
-    }
-
-  return 0;
+  return cliRC;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -835,81 +697,30 @@ ExExeUtilGetVolatileInfoTcb::ExExeUtilGetVolatileInfoTcb(
        prevInfo_(NULL),
        infoQuery_(NULL)
 {
+  infoQuery_ = new(glob->getDefaultHeap()) char[10000];
 }
 
 //////////////////////////////////////////////////////
 // class ExExeUtilGetVolatileInfoTcb::work
 //////////////////////////////////////////////////////
 
-static const QueryString getAllSchemasQuery[] =
+static const QueryString getAllVolatileTablesQuery[] =
 {
-  {" select translate(rtrim(schema_name) using ucs2toutf8) from "},
-  {" HP_SYSTEM_CATALOG.system_schema.schemata S, "},
-  {" HP_SYSTEM_CATALOG.system_schema.catsys C "},
-  {" where S.cat_uid = C.cat_uid "},
-  {"       and S.current_operation = 'VS'"},
-  {" order by 1 "},
-  {" for skip conflict access "}
-};
-
-static const QueryString getAllTablesQuery[] =
-{
-  {" select translate(rtrim(S.schema_name) using ucs2toutf8), "}, 
-  {"        object_type, "},
-  {"        translate(O.object_name using ucs2toutf8) "},
-  {"  from  HP_SYSTEM_CATALOG.system_schema.schemata S,  "},
-  {"        HP_SYSTEM_CATALOG.system_schema.catsys C, "},
-  {"        %s.HP_DEFINITION_SCHEMA.objects O "},
-  {"  where S.cat_uid = C.cat_uid and "},
-  {"        O.schema_uid = S.schema_uid and "},
-  {"        S.current_operation = 'VS' and "},
-  {"        O.object_name_space in ('TA', 'IX') and "},
-  {"        O.object_security_class = 'UT' "},
-  {"        for skip conflict access "},
-};
-
-static const QueryString getAllTablesInASessionQuery[] =
-{
-  {" select translate(S.schema_name using ucs2toutf8), "}, 
-  {"        object_type, "},
-  {"        translate(O.object_name using ucs2toutf8) "},
-  {"  from  HP_SYSTEM_CATALOG.system_schema.schemata S,  "},
-  {"        HP_SYSTEM_CATALOG.system_schema.catsys C, "},
-  {"        %s.HP_DEFINITION_SCHEMA.objects O "},
-  {"  where S.cat_uid = C.cat_uid and "},
-  {"        O.schema_uid = S.schema_uid and "},
-  {"        S.current_operation = 'VS' and "},
-  {"        O.object_name_space in ('TA', 'IX') and "},
-  {"        O.object_security_class = 'UT' and "},
-  {"        S.schema_name like 'VOLATILE_SCHEMA_' || trim(substr('%s', 1, 42)) || '%%' "},
-  {"        for skip conflict access "},
-};
-
-static const QueryString getAllSeabaseSchemasQuery[] =
-{
-  {" select O.schema_name from "},
-  {" SEABASE.\"_MD_\".OBJECTS O "},
+  {" select O.schema_name, O.object_type, O.object_name from "},
+  {" TRAFODION.\"_MD_\".OBJECTS O "},
   {" where O.schema_name like 'VOLATILE_SCHEMA_%%' "},
   {"           and (O.object_type = 'BT' or O.object_type = 'IX') "},
-  {" order by 1 "},
+  {"          order by 1,2 "},
   {" for read uncommitted access "}
 };
 
-static const QueryString getAllSeabaseTablesQuery[] =
+static const QueryString getAllVolatileTablesInASessionQuery[] =
 {
   {" select O.schema_name, O.object_type, O.object_name from "},
-  {" SEABASE.\"_MD_\".OBJECTS O "},
-  {" where O.schema_name like 'VOLATILE_SCHEMA_%%' "},
+  {" TRAFODION.\"_MD_\".OBJECTS O "},
+  {" where O.schema_name like 'VOLATILE_SCHEMA_' || trim(substr('%s', 1, 42)) || '%%' "},
   {"           and (O.object_type = 'BT' or O.object_type = 'IX') "},
-  {" for read uncommitted access "}
-};
-
-static const QueryString getAllSeabaseTablesInASessionQuery[] =
-{
-  {" select O.schema_name, O.object_type, O.object_name from "},
-  {" SEABASE.\"_MD_\".OBJECTS O "},
-  {" where O.schema_name like 'VOLATILE_SCHEMA_%%' "},
-  {"           and (O.object_type = 'BT' or O.object_type = 'IX') "},
+  {"          order by 1,2 "},
   {" for read uncommitted access "}
 };
 
@@ -941,69 +752,12 @@ short ExExeUtilGetVolatileInfoTcb::work()
 	{
 	case INITIAL_:
 	  {
-	    step_ = GET_SCHEMA_VERSION_;
-	  }
-	break;
-
-	case GET_SCHEMA_VERSION_:
-	  {
-	    char * param1 = gviTdb().param1_;
-	    char * param1PlusNodeName = NULL;
-	    char * currNodeName = masterGlob->getCliGlobals()->myNodeName();
-	    if (param1 && gviTdb().vtCatSpecified())
-	      {
-		param1PlusNodeName = new(getHeap()) 
-		  char[strlen(param1) + 1 + strlen(currNodeName) + 1];
-		strcpy(param1PlusNodeName, param1);
-		strcat(param1PlusNodeName, "_");
-		strcat(param1PlusNodeName, currNodeName);
-	      }
-	    
-	    if (setSchemaVersion(
-		 (gviTdb().vtCatSpecified() ? param1PlusNodeName : param1)))
-	      {
-		if (param1PlusNodeName)
-		  NADELETEBASIC(param1PlusNodeName, getHeap());
-		
-		step_ = ERROR_;
-		break;
-	      }
-	    
-	    if (param1PlusNodeName)
-	      NADELETEBASIC(param1PlusNodeName, getHeap());
-	
-	    step_ = GET_ALL_NODE_NAMES_;
-	  }
-	break;
-
-	case GET_ALL_NODE_NAMES_:
-	  {
-	    // if only volatile schemas are to be retirved, then that is
-	    // available in the schemata table of the local segment. No
-	    // need to get all node names.
-	    // Also, if 'volatile_catalog' was not specified, then get
-	    // volatile tables of the local segment.
-	    if (getAllNodeNames(
-		 ((gviTdb().allSchemas() ||
-		   (NOT gviTdb().vtCatSpecified())) ? NULL : (char *)"NEO")))
-	      step_ = ERROR_;
-	    else
-	      {
-		nodeNamesList_->position();
-
-		if (nodeNamesList_->numEntries() == 0)
-		  step_ = ERROR_;
-		else
-		  step_ = APPEND_NEXT_QUERY_FRAGMENT_;
-	      }
+            step_ = APPEND_NEXT_QUERY_FRAGMENT_;
 	  }
 	break;
 
 	case APPEND_NEXT_QUERY_FRAGMENT_:
 	  {
-	    OutputInfo * vi = (OutputInfo*)nodeNamesList_->getCurr();
-	    char * currNodeName = &(vi->get(0))[1]; // skip leading backslash
-
 	    Int32 info_qry_array_size = -1;
 	    const QueryString * infoQueryString = NULL;
 
@@ -1013,35 +767,28 @@ short ExExeUtilGetVolatileInfoTcb::work()
 
 	    if (gviTdb().allSchemas())
 	      {
-		info_qry_array_size = sizeof(getAllSchemasQuery) 
+		info_qry_array_size = sizeof(getAllVolatileSchemasQuery) 
 		  / sizeof(QueryString);
 		
-		infoQueryString = getAllSchemasQuery;
-
-		extraSpace = 2 * 10; // segment name
+		infoQueryString = getAllVolatileSchemasQuery;
 	      }
 	    else if (gviTdb().allTables())
 	      {
-		info_qry_array_size = sizeof(getAllTablesQuery) 
+		info_qry_array_size = sizeof(getAllVolatileTablesQuery) 
 		  / sizeof(QueryString);
 		
-		infoQueryString = getAllTablesQuery;
-
-		extraSpace = 2 * 10 /*segment name*/+ ComMAX_1_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES/*cat name*/ 
-		  + 1/*separator*/ + 10/*segment name */
-		   + getSchemaVersionLen();
+		infoQueryString = getAllVolatileTablesQuery;
 	      }
 	    else if (gviTdb().allTablesInASession())
 	      {
-		info_qry_array_size = sizeof(getAllTablesInASessionQuery) 
+		info_qry_array_size = sizeof(getAllVolatileTablesInASessionQuery) 
 		  / sizeof(QueryString);
 		
-		infoQueryString = getAllTablesInASessionQuery;
-
-		extraSpace = 2 * 10 /*segment name*/+ ComMAX_1_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES/*cat name*/
-		  + 1/*separator*/ + 10/*segment name */
-		  + 128/*session id*/ + getSchemaVersionLen();
+		infoQueryString = getAllVolatileTablesInASessionQuery;
 	      }
+
+	    char * param1 = gviTdb().param1_;
+	    char * param2 = gviTdb().param2_;
 
 	    char * gluedQuery;
 	    Lng32 gluedQuerySize;
@@ -1049,95 +796,13 @@ short ExExeUtilGetVolatileInfoTcb::work()
 			       infoQueryString,
 			       gluedQuery, gluedQuerySize);
 	    
-	    char * iq =
-	      new(getHeap()) char[gluedQuerySize + extraSpace + 1];
-
-	    char * param1 = gviTdb().param1_;
-	    char * param2 = gviTdb().param2_;
-
-	    char * param1PlusNodeName = NULL;
-	    if (param1 && gviTdb().vtCatSpecified())
-	      {
-		param1PlusNodeName = new(getHeap()) 
-		  char[strlen(param1) + 1 + strlen(currNodeName) + 1];
-		strcpy(param1PlusNodeName, param1);
-		strcat(param1PlusNodeName, "_");
-		strcat(param1PlusNodeName, currNodeName);
-	      }
-
-	    str_sprintf(iq, gluedQuery, 
-			currNodeName, currNodeName,
-			(param1PlusNodeName ? param1PlusNodeName : param1), 
-			getSchemaVersion(), param2);
+	    str_sprintf(infoQuery_, gluedQuery, param1, param2);
 
 	    // Delete new'd characters
 	    NADELETEBASIC(gluedQuery, getHeap());
 	    gluedQuery = NULL;
 
-	    Lng32 newLen = 0;
-	    if (infoQuery_ == NULL)
-	      {
-		newLen = strlen(iq);
-	      }
-	    else
-	      {
-		newLen = strlen(infoQuery_) + strlen(iq);
-	      }
-
-	    nodeNamesList_->advance();
-	    if (NOT nodeNamesList_->atEnd())
-	      {
-		newLen += strlen(" union ");
-	      }
-	    else
-	      {
-		if ((gviTdb().allTables()) ||
-		    (gviTdb().allTablesInASession()))
-		  {
-		    newLen += strlen(" order by 1,2 desc ");
-		  }
-
-		newLen += 1; // for trailing semicolon
-	      }
-	    
-	    newLen++; // for null terminator
-
-	    char * newIq = new(getHeap()) char[newLen];
-	    
-	    if (infoQuery_ == NULL)
-	      {
-		strcpy(newIq, iq);
-		
-	      }
-	    else
-	      {
-		strcpy(newIq, infoQuery_);
-		strcat(newIq, iq);
-
-		NADELETEBASIC(infoQuery_, getHeap());
-	      }
-
-	    if (NOT nodeNamesList_->atEnd())
-	      {
-		strcat(newIq, " UNION ");
-	      }
-	    else
-	      {
-		if ((gviTdb().allTables()) ||
-		    (gviTdb().allTablesInASession()))
-		  {
-		    strcat(newIq, " order by 1,2 desc ");
-		  }
-
-		strcat(newIq, ";");
-	      }
-
-	    infoQuery_ = newIq;
-
-            NADELETEBASIC(iq, getHeap());
-
-	    if (nodeNamesList_->atEnd())
-	      step_ = FETCH_ALL_ROWS_;
+            step_ = FETCH_ALL_ROWS_;
 	  }
 	break;
 
