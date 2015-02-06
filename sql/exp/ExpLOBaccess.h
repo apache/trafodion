@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -553,6 +553,7 @@ class ExLobGlobals
     {
       return heap_;
     }
+    void traceMessage(const char *logMessage, int line);
   public :
     lobMap_t *lobMap_;
     hdfsFS fs_;
@@ -568,6 +569,7 @@ class ExLobGlobals
     ExLobLock postfetchBufListLock_;
     NABoolean isCliInitialized_;
     NABoolean isHive_;
+    FILE *threadTraceFile_;
     NAHeap *heap_;
 };
 

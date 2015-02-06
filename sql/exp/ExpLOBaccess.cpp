@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1019,6 +1019,7 @@ Ex_Lob_Error ExLob::readDataCursorSimple(char *file, char *tgt, Int64 tgtSize,
 
     while ((operLen < tgtSize) && !done && !cursor->eol_)
     {
+      lobGlobals->traceMessage("locking cursor",__LINE__);
       cursor->lock_.lock();
 
       // if no buffers to read and is eor or eod, we are done.
@@ -1028,8 +1029,10 @@ Ex_Lob_Error ExLob::readDataCursorSimple(char *file, char *tgt, Int64 tgtSize,
           done = true;
         } else {
           cursor->bufferMisses_++;
+	  lobGlobals->traceMessage("wait on condition cursor",__LINE__);
           cursor->lock_.wait();
         }
+	lobGlobals->traceMessage("unlocking cursor",__LINE__);
         cursor->lock_.unlock();
         continue;
       } 
@@ -1037,6 +1040,7 @@ Ex_Lob_Error ExLob::readDataCursorSimple(char *file, char *tgt, Int64 tgtSize,
       // a buffer is available
       c_it = cursor->prefetchBufList_.begin();
       buf = *c_it;
+      lobGlobals->traceMessage("unlocking cursor",__LINE__);
       cursor->lock_.unlock();
 
       bytesToCopy = min(buf->bytesRemaining_, tgtSize - operLen);
@@ -1048,9 +1052,12 @@ Ex_Lob_Error ExLob::readDataCursorSimple(char *file, char *tgt, Int64 tgtSize,
         lobGlobals->postfetchBufListLock_.lock();
         lobGlobals->postfetchBufList_.push_back(buf);
         lobGlobals->postfetchBufListLock_.unlock();
+	lobGlobals->traceMessage("locking cursor",__LINE__);
         cursor->lock_.lock();
         c_it = cursor->prefetchBufList_.erase(c_it);
+	lobGlobals->traceMessage("signal condition cursor",__LINE__);
         cursor->lock_.wakeOne(); // wake up prefetch thread if it was waiting for an empty buffer.
+	lobGlobals->traceMessage("unlocking cursor",__LINE__);
         cursor->lock_.unlock();
       } else {
         buf->bytesUsed_ += bytesToCopy;
@@ -1068,6 +1075,7 @@ Ex_Lob_Error ExLob::readDataCursorSimple(char *file, char *tgt, Int64 tgtSize,
     return LOB_OPER_OK;
 }
 
+// ***Note**** Multiple cursors not used/supported.
 Ex_Lob_Error ExLob::readDataCursorMultiple(Queue *finfoQ, char *tgt, Int64 tgtSize, 
 					   Int64 &index, Int64 &operLen)
 {
@@ -1129,6 +1137,9 @@ void ExLobCursor::emptyPrefetchList(ExLobGlobals *lobGlobals)
     }
 }
 
+// Seems like this is currently unused. 
+// closeDataCusrorSimple takes care of destroying the cursor.But addign code
+// similar to closeDataCursorSimple for correctness in case it is used in future
 Ex_Lob_Error ExLob::deleteCursor(char *cursorName, ExLobGlobals *lobGlobals)
 {
     cursor_t *cursor = NULL;
@@ -1139,7 +1150,11 @@ Ex_Lob_Error ExLob::deleteCursor(char *cursorName, ExLobGlobals *lobGlobals)
     if (it != lobCursors_.end())
     {
       cursor = &(it->second);
+      lobGlobals->traceMessage("locking cursor",__LINE__);
+      cursor->lock_.lock();
       cursor->emptyPrefetchList(lobGlobals);
+      lobGlobals->traceMessage("unlocking cursor",__LINE__);
+      cursor->lock_.unlock();
       lobCursors_.erase(it);
     }
 
@@ -1170,6 +1185,7 @@ Ex_Lob_Error ExLob::closeDataCursorSimple(char *fileName, ExLobGlobals *lobGloba
     if (it != lobCursors_.end())
     {
       cursor = &(it->second);
+      lobGlobals->traceMessage("locking cursor",__LINE__);
       cursor->lock_.lock();
 
       clock_gettime(CLOCK_MONOTONIC, &cursor->closeTime_);
@@ -1178,12 +1194,15 @@ Ex_Lob_Error ExLob::closeDataCursorSimple(char *fileName, ExLobGlobals *lobGloba
 
       if (cursor->eod_ || cursor->eor_) { // prefetch thread already done,
         cursor->emptyPrefetchList(lobGlobals);
+	lobGlobals->traceMessage("unlocking cursor",__LINE__);
 	cursor->lock_.unlock();
         lobCursors_.erase(it);            // so erase it here. 
         // no need to unlock as cursor object is gone.
       } else {
         cursor->eol_ = true;     // prefetch thread will do the eol rituals
+	lobGlobals->traceMessage("signal condition cursor",__LINE__);
         cursor->lock_.wakeOne(); // wakeup prefetch thread
+	lobGlobals->traceMessage("unlocking cursor",__LINE__);
         cursor->lock_.unlock();
       }
     }
@@ -1522,7 +1541,7 @@ Ex_Lob_Error ExLob::readCursorDataSimple(char *tgt, Int64 tgtSize, cursor_t &cur
 
    return LOB_OPER_OK;
 }
-
+// ***Note**** Multiple cursors not used/supported.
 Ex_Lob_Error ExLob::readCursorDataMultiple(Queue *finfoQ, char *tgt, Int64 tgtSize, 
 					   cursor_t &cursor, Int64 &index, Int64 &operLen)
 {
@@ -1796,7 +1815,11 @@ Ex_Lob_Error ExLob::initStats()
     stats_.init();
     return LOB_OPER_OK;
 }
-
+void ExLobGlobals::traceMessage(const char *logMessage, int line)
+{
+  if ( threadTraceFile_ && logMessage)
+    fprintf(threadTraceFile_, "Thread: %u Line:  %d %s\n" ,(int)pthread_self(), line, logMessage);
+}
 Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
 {
   Ex_Lob_Error err = LOB_OPER_OK;
@@ -1804,6 +1827,8 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
   ExLobCursorBuffer *buf;
   ExLobCursor *cursor;
   Int64 size;
+  NABoolean seenEOR = false;
+  NABoolean seenEOD = false;
   ExLobCursor::bufferList_t::iterator c_it;
   Int64 totalBufSize;
 
@@ -1812,6 +1837,7 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
     case Lob_Hdfs_Cursor_Prefetch :
       lobPtr = request->lobPtr_;
       cursor = request->cursor_;
+      traceMessage("locking cursor",__LINE__);
       cursor->lock_.lock();
       while (!cursor->eod_ && !cursor->eor_ && !cursor->eol_) 
       {
@@ -1821,6 +1847,7 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
           buf = *c_it;
           postfetchBufList_.erase(c_it);
           postfetchBufListLock_.unlock();
+	  traceMessage("unlocking cursor",__LINE__);
           cursor->lock_.unlock();
         } else { 
           postfetchBufListLock_.unlock();
@@ -1828,10 +1855,12 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
           // if prefetch list already has the max, wait for one to free up.
           totalBufSize =  cursor->prefetchBufList_.size() * cursor->bufMaxSize_;
           if (totalBufSize > LOB_CURSOR_PREFETCH_BYTES_MAX) {
+	    traceMessage("wait on condition cursor",__LINE__);
             cursor->lock_.wait();
             continue;
           }
           // create a new buffer
+	  traceMessage("unlocking cursor",__LINE__);
           cursor->lock_.unlock();
           buf = new (getHeap()) ExLobCursorBuffer();
           buf->data_ = (char *) (getHeap())->allocateMemory( cursor->bufMaxSize_);
@@ -1841,17 +1870,24 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
         if (buf->data_) {
           lobPtr->readCursorDataSimple(buf->data_, size, *cursor, buf->bytesRemaining_);
           buf->bytesUsed_ = 0;
+	  traceMessage("locking cursor",__LINE__);
           cursor->lock_.lock();
           if (size < (cursor->bufMaxSize_)) {
-            cursor->eor_ = true; 
+            cursor->eor_ = true;
+	    seenEOR = true;
           }
           if (buf->bytesRemaining_) {
             cursor->prefetchBufList_.push_back(buf);
+	    traceMessage("signal condition cursor",__LINE__);
             cursor->lock_.wakeOne();
+	    traceMessage("unlocking cursor",__LINE__);
             cursor->lock_.unlock();
           } else {
             cursor->eod_ = true;
+            seenEOD = true;
+	    traceMessage("signal condition cursor",__LINE__);
             cursor->lock_.wakeOne();
+	    traceMessage("unlocking cursor",__LINE__);
             cursor->lock_.unlock();
             postfetchBufListLock_.lock();
             postfetchBufList_.push_back(buf);
@@ -1860,12 +1896,24 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
         } else {
           assert("data_ is null"); 
         }
-	  cursor->lock_.lock();
-      }   
-      cursor->lock_.unlock();
-      if (cursor->eol_) { 
-        lobPtr->deleteCursor(cursor->name_, this);
-      }
+	// Important! Break and do not access cursor object if we have reaced
+	// end of data or range.
+	// The main thread could have destroyed the cursor 
+	// in ::closeDataCursorSimple
+	if (seenEOD || seenEOR)
+	  break;
+	traceMessage("locking cursor",__LINE__);
+	cursor->lock_.lock();
+      } // while
+
+      if (!seenEOD && !seenEOR)
+	{
+          traceMessage("locking cursor",__LINE__);
+	  cursor->lock_.unlock();
+	  if (cursor->eol_) { // never reaches here ??  
+	    lobPtr->deleteCursor(cursor->name_, this);
+	  }
+	}
       processPreOpens();
       break;
 
@@ -1892,8 +1940,16 @@ ExLobGlobals::ExLobGlobals() :
     fs_(NULL),
     isCliInitialized_(FALSE),
     isHive_(FALSE),
+    threadTraceFile_(NULL),
     heap_(NULL)
 {
+  //initialize the log file
+  if (getenv("TRACE_HDFS_THREAD_ACTIONS"))
+    {
+      char logFileName[50]= "";
+      sprintf(logFileName,"trace_threads.%d",getpid());
+      threadTraceFile_ = fopen(logFileName,"a");
+    }
 }
 
 ExLobGlobals::~ExLobGlobals()
@@ -1932,6 +1988,9 @@ ExLobGlobals::~ExLobGlobals()
     postfetchBufListLock_.unlock();
     
     //msg_mon_close_process(&serverPhandle);
+    if (threadTraceFile_)
+      fclose(threadTraceFile_);
+    threadTraceFile_ = NULL;
 }
 
 Ex_Lob_Error ExLobGlobals::setServerPhandle()
