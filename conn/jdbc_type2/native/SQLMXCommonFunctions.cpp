@@ -514,7 +514,7 @@ static Charset_def CHARSET_INFORMATION[] = {
         FUNCTION_ENTRY("cleanupWrapperSQLBytesArray",
             ("wrapper=0x%08x",
             wrapperInfo->wrapper));
-        if (wrapperInfo->bytesArrayObject)
+        if (wrapperInfo->SQLbytesArrayObject)
         {
             JNI_ReleaseByteArrayElements(wrapperInfo->jenv,wrapperInfo->SQLbytesArrayObject,wrapperInfo->SQLbytesArray,JNI_ABORT);
             wrapperInfo->SQLbytesArrayObject = NULL;
