@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -88,6 +88,7 @@ long maxHeapPctExit;
 long initSessMemSize;
 int portMapToSecs = -1;
 int portBindToSecs = -1;
+bool bPlanEnabled = false;
 
 void watcher(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx);
 bool verifyPortAvailable(const char * idForPort, int portNumber);
@@ -1403,6 +1404,33 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 			{
 				if( getNumberTemp( argv[count], number ) == TRUE )
 					portBindToSecs = number;
+				else
+				{
+					argWrong = TRUE;
+					break;
+				}
+			}
+			else
+			{
+				argEmpty = TRUE;
+				break;
+			}
+		}
+		else
+		if (strcmp(arg, "-SQLPLAN") == 0)
+		{
+			if (++count < argc && argv[count][0] != '-' )
+			{
+				char planEnable[20];
+				if (strlen(argv[count]) < sizeof(planEnable)-1)
+				{
+					memset(planEnable,0,sizeof(planEnable));
+					strcpy(planEnable, argv[count]);
+					if (stricmp(planEnable, "false") == 0)
+						bPlanEnabled = false;
+					else
+						bPlanEnabled = true;
+				}
 				else
 				{
 					argWrong = TRUE;
