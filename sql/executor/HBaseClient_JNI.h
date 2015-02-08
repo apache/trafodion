@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -450,6 +450,7 @@ typedef enum {
  ,HBC_ERROR_ROWCOUNT_EST_PARAM
  ,HBC_ERROR_ROWCOUNT_EST_EXCEPTION
  ,HBC_ERROR_REL_HBLC_EXCEPTION
+ ,HBC_ERROR_GET_CACHE_FRAC_EXCEPTION
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -492,6 +493,7 @@ public:
   HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes);
   HBC_RetCode estimateRowCount(const char* tblName, Int32 partialRowSize,
                                Int32 numCols, Int64& rowCount);
+  HBC_RetCode getBlockCacheFraction(float& frac);
 
   // req processing in worker threads
   HBC_RetCode enqueueRequest(HBaseClientRequest *request);
@@ -534,6 +536,7 @@ private:
    ,JM_GET_HBLC
    ,JM_EST_RC
    ,JM_REL_HBLC
+   ,JM_GET_CAC_FRC
    ,JM_LAST
   };
   static jclass          javaClass_; 

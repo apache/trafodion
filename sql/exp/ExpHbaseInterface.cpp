@@ -9,7 +9,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1316,3 +1316,13 @@ Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
   return retCode_;
 }
 
+
+
+Lng32 ExpHbaseInterface_JNI::getBlockCacheFraction(float& frac)
+{
+  if (client_ == NULL)
+    return -HBASE_ACCESS_ERROR ;
+
+  retCode_ = client_->getBlockCacheFraction(frac);
+  return retCode_;
+}

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1182,7 +1182,7 @@ short HbaseDelete::codeGen(Generator * generator)
 
   ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
-  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) == DF_ON)
+  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) != DF_OFF)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
   generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;
@@ -1993,7 +1993,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 
   ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
-  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) == DF_ON)
+  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) != DF_OFF)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
   generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -5139,8 +5139,11 @@ RelExpr * ExeUtilHbaseCoProcAggr::copyTopNode(RelExpr *derivedNode, CollHeap* ou
   ExeUtilHbaseCoProcAggr *result;
 
   if (derivedNode == NULL)
+  {
     result = new (outHeap) 
       ExeUtilHbaseCoProcAggr(getTableName(), aggregateExpr(), outHeap);
+    result->setEstRowsAccessed(getEstRowsAccessed());
+  }
   else
     result = (ExeUtilHbaseCoProcAggr *) derivedNode;
 
@@ -5172,6 +5175,9 @@ RelExpr * ExeUtilHbaseCoProcAggr::bindNode(BindWA *bindWA)
 
   // BindWA keeps list of coprocessors used, so privileges can be checked.
   bindWA->insertCoProcAggr(this);
+
+  CostScalar rowsAccessed(naTable->estimateHBaseRowCount());
+  setEstRowsAccessed(rowsAccessed);
 
   return boundExpr;
 }

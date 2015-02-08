@@ -660,6 +660,11 @@ public class HBaseClient {
     }
 
 
+    public float getBlockCacheFraction()
+    {
+        float defCacheFraction = 0.4f;
+        return config.getFloat("hfile.block.cache.size",defCacheFraction);
+    }
     // Estimates row count for tblName by iterating over the HFiles for
     // the table, extracting the KeyValue entry count from the file's
     // trailer block, summing the counts, and dividing by the number of

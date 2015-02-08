@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -281,6 +281,7 @@ static const char* const hbcErrorEnumStr[] =
  ,"Preparing parameters for estimateRowCount()."
  ,"Java exception in estimateRowCount()."
  ,"Java exception in releaseHBulkLoadClient()."
+ ,"Java exception in getBlockCacheFraction()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -423,6 +424,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_EST_RC     ].jm_signature = "(Ljava/lang/String;II[J)Z";
     JavaMethods_[JM_REL_HBLC   ].jm_name      = "releaseHBulkLoadClient";
     JavaMethods_[JM_REL_HBLC   ].jm_signature = "(Lorg/trafodion/sql/HBaseAccess/HBulkLoadClient;)V";
+    JavaMethods_[JM_GET_CAC_FRC].jm_name      = "getBlockCacheFraction";
+    JavaMethods_[JM_GET_CAC_FRC].jm_signature = "()F";
    
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
@@ -1316,10 +1319,33 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
     logError(CAT_SQL_HBASE, "HBaseClient_JNI::estimateRowCount()", getLastError());
     return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
   }
-
+  
   return HBC_OK;  // Table exists.
 }
 
+HBC_RetCode HBaseClient_JNI::getBlockCacheFraction(float& frac)
+{
+   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, 
+                 "HBaseClient_JNI::getBlockCacheFraction() called.");
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
+
+  jfloat jresult = jenv_->CallFloatMethod(javaObj_, 
+                                          JavaMethods_[JM_GET_CAC_FRC].methodID);
+  
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getBlockCacheFraction()", 
+             getLastError());
+    return HBC_ERROR_GET_CACHE_FRAC_EXCEPTION;
+  }
+  frac = jresult;
+
+  return HBC_OK;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //

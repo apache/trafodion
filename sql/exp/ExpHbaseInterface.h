@@ -9,7 +9,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -322,6 +322,8 @@ class ExpHbaseInterface : public NABasicObject
                                  Int32 numCols,
                                  Int64& estRC) = 0;
 
+  virtual Lng32 getBlockCacheFraction(float& frac) = 0;
+
 protected:
   enum 
     {
@@ -567,6 +569,8 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
                                  Int32 partialRowSize,
                                  Int32 numCols,
                                  Int64& estRC);
+
+  virtual Lng32 getBlockCacheFraction(float& frac) ;
 
 private:
   bool  useTRex_;

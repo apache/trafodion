@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2355,4 +2355,20 @@ void Generator::setHBaseNumCacheRows(double estRowsAccessed,
   else
       hbpa->setNumCacheRows(cacheMax);
     
+}
+
+void Generator::setHBaseCacheBlocks(Int32 hbaseRowSize, double estRowsAccessed,
+                                    ComTdbHbaseAccess::HbasePerfAttributes * hbpa)
+{
+  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) == DF_ON)
+    hbpa->setCacheBlocks(TRUE);
+  else if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) == DF_SYSTEM)
+  {
+    float frac = ActiveSchemaDB()->getHbaseBlockCacheFrac();
+    float regionServerCacheMemInMB = 
+      frac*getDefaultAsLong(HBASE_REGION_SERVER_MAX_HEAP_SIZE);
+    float memNeededForScanInMB = (hbaseRowSize*estRowsAccessed)/(1024*1024);
+    if (regionServerCacheMemInMB > memNeededForScanInMB)
+      hbpa->setCacheBlocks(TRUE);
+  }
 }

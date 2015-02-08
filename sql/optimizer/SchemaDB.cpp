@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -49,6 +49,8 @@
 #include <ComCextdecs.h>
 #include "SQLCLIdev.h"
 #include "ComUnits.h"
+#include "CmpSeabaseDDL.h"
+#include "ExpHbaseInterface.h"
 
 #include "SqlParserGlobals.h"			// must be last #include
 
@@ -92,7 +94,8 @@ SchemaDB::SchemaDB(ReadTableDef *rtd)
 	// created only on demand
     triggerDB_(NULL),
     nodeToCpuVolMapDB_(NULL),
-    currentDiskPool_(-1)
+    currentDiskPool_(-1),
+    hbaseBlockCacheFrac_(-1.0)
 {
   initPerStatement();
   routineDB_.setMetadata("NEO.UDF.ROUTINES");
@@ -217,6 +220,28 @@ void SchemaDB::createStmtTables()
 NABoolean SchemaDB::endTransaction()
 {
   return TRUE;
+}
+
+float SchemaDB::getHbaseBlockCacheFrac()
+{
+  if (hbaseBlockCacheFrac_ < 0) // access JNI layer first time to set value
+  {
+    CmpSeabaseDDL cmpSBD(STMTHEAP);
+    ExpHbaseInterface* ehi = cmpSBD.allocEHI();
+    if (!ehi)
+      hbaseBlockCacheFrac_ = 0.4 ; // hbase default default
+    else {
+    float frac;
+    Lng32 retcode;
+    retcode = ehi->getBlockCacheFraction(frac);
+    if (retcode < 0)
+      hbaseBlockCacheFrac_ = 0.4 ; // hbase default default
+    else
+      hbaseBlockCacheFrac_ = frac;
+    cmpSBD.deallocEHI(ehi);
+    }
+  }
+  return hbaseBlockCacheFrac_ ;
 }
 
 //****************************************************************************

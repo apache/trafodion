@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@
 #include "RelUpdate.h"
 #include "HDFSHook.h"
 #include "CmpSeabaseDDL.h"
+
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -2452,15 +2453,16 @@ short HbaseAccess::codeGen(Generator * generator)
 
   ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
-  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) == DF_ON)
-    hbpa->setCacheBlocks(TRUE);
   if (CmpCommon::getDefault(COMP_BOOL_184) == DF_ON)
     hbpa->setUseMinMdamProbeSize(TRUE);
-
-  generator->setHBaseNumCacheRows(MAXOF(getEstRowsAccessed().getValue(),getMaxCardEst().getValue()), 
+  generator->setHBaseNumCacheRows(MAXOF(getEstRowsAccessed().getValue(),
+                                        getMaxCardEst().getValue()), 
                                   hbpa) ;
+  generator->setHBaseCacheBlocks(getTableDesc()->getNATable()->
+                                 computeHBaseRowSizeFromMetaData(),
+                                 getEstRowsAccessed().getValue(),hbpa);
 
-  // create hdfsscan_tdb
+  // create hbasescan_tdb
   ComTdbHbaseAccess *hbasescan_tdb = new(space) 
     ComTdbHbaseAccess(
 		      ComTdbHbaseAccess::SELECT_,

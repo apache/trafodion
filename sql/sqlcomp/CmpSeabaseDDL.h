@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -314,6 +314,10 @@ class CmpSeabaseDDL
 
    short switchBackCompiler();
 
+  ExpHbaseInterface* allocEHI(NADefaults * defs = NULL);
+  
+  void deallocEHI(ExpHbaseInterface* &ehi);
+
  protected:
 
   enum { 
@@ -361,10 +365,6 @@ class CmpSeabaseDDL
   ExpHbaseInterface* allocEHI(const char * server, const char * port,
 			      const char * interface, const char * zkPort,
                               NABoolean raiseError);
-  
-  ExpHbaseInterface* allocEHI(NADefaults * defs = NULL);
-  
-  void deallocEHI(ExpHbaseInterface* &ehi);
   
   // if prevContext is defined, get the controlDB from the previous context so the
   // defaults are copied from the previous cmp context to the new cmp context. This is only
