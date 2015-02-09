@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -846,6 +846,12 @@ ex_expr::exp_return_type ex_comp_clause::pCodeGenerate(Space *space, UInt32 f) {
   case GE_ASCII_COMP:
     // ascii pcode comparison is not done on pre R2.1 nodes.
     if (ex_expr::downrevCompileR2FCS(f))
+      return ex_clause::pCodeGenerate(space, f);
+
+    // PCIT::getMemoryAddressingMode(), used below, cannot currently handle these.
+    if ((attrs[1]->getDatatype() == REC_BYTE_V_ASCII_LONG ) ||
+        (attrs[2]->getDatatype() == REC_BYTE_V_ASCII_LONG ))
+      return ex_clause::pCodeGenerate(space, f);
     break;
 
   case EQ_BIN16S_BIN16S: 
