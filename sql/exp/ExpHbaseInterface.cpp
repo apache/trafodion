@@ -9,7 +9,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ extern Int64 getTransactionIDFromContext();
 
 ExpHbaseInterface::ExpHbaseInterface(CollHeap * heap,
                                      const char * server,
-                                     const char * port,
                                      const char * zkPort,
                                      int debugPort,
                                      int debugTimeout)
@@ -55,12 +54,6 @@ ExpHbaseInterface::ExpHbaseInterface(CollHeap * heap,
   else
     server_[0] = 0;
 
-  if ((port) &&
-      (strlen(port) <= MAX_PORT_SIZE))
-    strcpy(port_, port);
-  else
-    port_[0] = 0;
-
   if ((zkPort) &&
       (strlen(zkPort) <= MAX_PORT_SIZE))
     strcpy(zkPort_, zkPort);
@@ -73,14 +66,12 @@ ExpHbaseInterface::ExpHbaseInterface(CollHeap * heap,
 
 ExpHbaseInterface* ExpHbaseInterface::newInstance(CollHeap* heap,
                                                   const char* server,
-                                                  const char* port,
-                                                  const char* interface,
                                                   const char *zkPort,
                                                   int debugPort,
                                                   int debugTimeout)
 {
-   return new (heap) ExpHbaseInterface_JNI(heap, server, port, TRUE,
-                                            zkPort, debugPort, debugTimeout); // This is the transactional interface
+  return new (heap) ExpHbaseInterface_JNI(heap, server, TRUE, zkPort,
+                                          debugPort, debugTimeout); // This is the transactional interface
 }
 
 Lng32 ExpHbaseInterface_JNI::deleteColumns(
@@ -338,9 +329,9 @@ char * getHbaseErrStr(Lng32 errEnum)
 // ===== Class ExpHbaseInterface_JNI
 // ===========================================================================
 
-ExpHbaseInterface_JNI::ExpHbaseInterface_JNI(CollHeap* heap, const char* server, const char* port, bool useTRex,
+ExpHbaseInterface_JNI::ExpHbaseInterface_JNI(CollHeap* heap, const char* server, bool useTRex,
                                              const char *zkPort, int debugPort, int debugTimeout)
-     : ExpHbaseInterface(heap, server, port, zkPort, debugPort, debugTimeout)
+     : ExpHbaseInterface(heap, server, zkPort, debugPort, debugTimeout)
    ,useTRex_(useTRex)
    ,client_(NULL)
    ,htc_(NULL)

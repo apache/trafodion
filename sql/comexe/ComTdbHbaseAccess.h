@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -352,8 +352,6 @@ public:
 		    Lng32 numBuffers,
 		    ULng32 bufferSize,
 		    char * server,
-		    char * port,
-		    char * interface,
 		    char * zkPort,
 		    HbasePerfAttributes * hbasePerfAttributes,
 		    Float32 samplingRate = -1
@@ -375,8 +373,6 @@ public:
 		    Lng32 numBuffers,
 		    ULng32 bufferSize,
 		    char * server,
-		    char * port,
-		    char * interface,
 		    char * zkPort
 		    );
 
@@ -512,8 +508,6 @@ public:
   char * keyColName() { return keyColName_; }
 
   const char * server() { return server_; }
-  const char * port() { return port_;}
-  const char * interface() { return interface_;}
   const char * zkPort() { return zkPort_;}
 
   HbasePerfAttributes * getHbasePerfAttributes() 
@@ -793,8 +787,6 @@ public:
   UInt32 wbSize_;
 
   NABasicPtr server_;
-  NABasicPtr port_;
-  NABasicPtr interface_;
   NABasicPtr zkPort_;
 
 
@@ -838,8 +830,6 @@ class ComTdbHbaseCoProcAccess : public ComTdbHbaseAccess
 			  Lng32 numBuffers,
 			  ULng32 bufferSize,
 			  char * server,
-			  char * port,
-			  char * interface,
 			  char * zkPort,
 			  HbasePerfAttributes * hbasePerfAttributes
 			  );
@@ -902,8 +892,6 @@ class ComTdbHbaseCoProcAggr : public ComTdbHbaseCoProcAccess
 			  Lng32 numBuffers,
 			  ULng32 bufferSize,
 			  char * server,
-			  char * port,
-			  char * interface,
 			  char * zkPort,
 			  HbasePerfAttributes * hbasePerfAttributes
 			  );

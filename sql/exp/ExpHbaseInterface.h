@@ -9,7 +9,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@
 
 #include "ExpHbaseDefs.h"
 
-#include "Hbase.h"
+//#include "Hbase.h"
 #include "HBaseClient_JNI.h"
 
 #define INLINE_COLNAME_LEN 256
@@ -83,8 +83,6 @@ class ExpHbaseInterface : public NABasicObject
 
   static ExpHbaseInterface* newInstance(CollHeap* heap, 
                                         const char* server = NULL, 
-                                        const char* port = NULL, 
-                                        const char* interface = NULL, 
                                         const char *zkPort = NULL, 
                                         int debugPort = 0, 
                                         int DebugTimeout = 0);
@@ -331,7 +329,6 @@ protected:
 
   ExpHbaseInterface(CollHeap * heap,
                     const char * server = NULL,
-                    const char * port = NULL,
                     const char * zkPort = NULL,
                     int debugPort = 0,
                     int debugTimeout = 0);
@@ -339,7 +336,6 @@ protected:
   CollHeap * heap_;
   ExHbaseAccessStats * hbs_;
   char server_[MAX_SERVER_SIZE+1];
-  char port_[MAX_PORT_SIZE+1];
   char zkPort_[MAX_PORT_SIZE+1];
   int  debugPort_;
   int  debugTimeout_;
@@ -353,7 +349,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
  public:
 
   ExpHbaseInterface_JNI(CollHeap* heap,
-                        const char* server, const char* port, bool useTRex,
+                        const char* server, bool useTRex,
                         const char *zkPort, int debugPort, int debugTimeout);
   
   virtual ~ExpHbaseInterface_JNI();

@@ -828,15 +828,13 @@ NABoolean CmpSeabaseDDL::isUserUpdatableSeabaseMD(const NAString &catName,
 }
 
 ExpHbaseInterface* CmpSeabaseDDL::allocEHI(const char * server, 
-                                           const char * port, 
-                                           const char * interface,
                                            const char * zkPort,
                                            NABoolean raiseError)
 {
   ExpHbaseInterface * ehi =  NULL;
 
   ehi = ExpHbaseInterface::newInstance
-    (heap_, server, port, interface, zkPort);
+    (heap_, server, zkPort);
     
   Lng32 retcode = ehi->init(NULL);
   if (retcode < 0)
@@ -866,11 +864,9 @@ ExpHbaseInterface* CmpSeabaseDDL::allocEHI(NADefaults * defs)
     defsL = &ActiveSchemaDB()->getDefaults();
   
   const char * server = defsL->getValue(HBASE_SERVER);
-  const char * port = defsL->getValue(HBASE_THRIFT_PORT);
-  const char* interface = defsL-> getValue(HBASE_INTERFACE);
   const char* zkPort = defsL->getValue(HBASE_ZOOKEEPER_PORT);
 
-  ehi = allocEHI(server, port, interface, zkPort, TRUE);
+  ehi = allocEHI(server, zkPort, TRUE);
     
   return ehi;
 }
@@ -914,8 +910,6 @@ short CmpSeabaseDDL::readAndInitDefaultsFromSeabaseDefaultsTable
     return 0;
 
   const char * server = defs->getValue(HBASE_SERVER);
-  const char * port = defs->getValue(HBASE_THRIFT_PORT);
-  const char * interface = defs->getValue(HBASE_INTERFACE);
   const char * zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
 
   HbaseStr hbaseDefaults;
@@ -940,7 +934,7 @@ short CmpSeabaseDDL::readAndInitDefaultsFromSeabaseDefaultsTable
   Text col2TextStr(col2NameStr);
   Text colUnused;
 
-  ExpHbaseInterface * ehi = allocEHI(server, port, interface, zkPort, FALSE);
+  ExpHbaseInterface * ehi = allocEHI(server, zkPort, FALSE);
   if (! ehi)
     {
       retcode = -1398;
@@ -1053,11 +1047,9 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
   if (! ehi)
     {
       const char * server = defs->getValue(HBASE_SERVER);
-      const char * port = defs->getValue(HBASE_THRIFT_PORT);
-      const char * interface = defs->getValue(HBASE_INTERFACE);
       const char * zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
       
-      ehi = allocEHI(server, port, interface, zkPort, TRUE);
+      ehi = allocEHI(server, zkPort, TRUE);
       if (! ehi)
         {
           // extract error info from diags area.
@@ -1423,11 +1415,9 @@ short CmpSeabaseDDL::isPrivMgrMetadataInitialized(NADefaults *defs)
   // A subsequent call to access a PrivMgr table returns an error if the 
   // Trafodion metadata is corrupted.
   const char * server = defs->getValue(HBASE_SERVER);
-  const char * port = defs->getValue(HBASE_THRIFT_PORT);
-  const char * interface = defs->getValue(HBASE_INTERFACE);
   const char * zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
 
-  ExpHbaseInterface * ehi = allocEHI(server, port, interface, zkPort, FALSE);
+  ExpHbaseInterface * ehi = allocEHI(server, zkPort, FALSE);
   if (! ehi)
     {
       // This code is not expected to be called, perhaps a core dump should be

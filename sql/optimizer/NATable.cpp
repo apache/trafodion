@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -7670,11 +7670,9 @@ Int64 NATable::estimateHBaseRowCount()
 
   NADefaults* defs = &ActiveSchemaDB()->getDefaults();
   const char* server = defs->getValue(HBASE_SERVER);
-  const char* port = defs->getValue(HBASE_THRIFT_PORT);
-  const char* interface = defs-> getValue(HBASE_INTERFACE);
   const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
   ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
-                           (STMTHEAP, server, port, interface, zkPort);
+                           (STMTHEAP, server, zkPort);
 
   Int64 estRowCount;
   Lng32 retcode = ehi->init(NULL);

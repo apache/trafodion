@@ -1,7 +1,7 @@
 //******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -3379,12 +3379,10 @@ enum DefaultConstants
   MODE_SEABASE,
   SEABASE_CATALOG,
   HBASE_CATALOG,
-  HBASE_INTERFACE,
   HBASE_SCHEMA,
   //  HBASE_DEFAULT_CHARSET,
 
   HBASE_SERVER,
-  HBASE_THRIFT_PORT,
 
   HBASE_MAX_COLUMN_NAME_LENGTH,
   HBASE_MAX_COLUMN_VAL_LENGTH,

@@ -1,7 +1,7 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1738,7 +1738,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  DDkwd__(HBASE_FILTER_PREDS,		             "OFF"),
  DDkwd__(HBASE_HASH2_PARTITIONING,                   "ON"),
- DDkwd__(HBASE_INTERFACE,                       "JNI_TRX"),
  DDui___(HBASE_MAX_COLUMN_INFO_LENGTH,                "10000"),
  DDui___(HBASE_MAX_COLUMN_NAME_LENGTH,               "100"),
  DDui___(HBASE_MAX_COLUMN_VAL_LENGTH,                  "1000"),
@@ -1762,7 +1761,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DD_____(HBASE_SERVER,                         ""), 
   DDkwd__(HBASE_SQL_IUD_SEMANTICS,		"ON"),
   DDkwd__(HBASE_STATS_PARTITIONING,           	"ON"),
-  DD_____(HBASE_THRIFT_PORT,                    "9090"),
   DDkwd__(HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT,		"OFF"),
   DDkwd__(HBASE_UPDEL_CURSOR_OPT,		"ON"),
   DDui___(HBASE_USE_FAKED_REGIONS,		"0"),
@@ -6757,11 +6755,6 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 
     case REUSE_OPENS:
       if (tok==DF_ON || tok == DF_OFF || tok == DF_OPENS_FOR_WRITE)
-        isValid = TRUE;
-      break;
-
-    case HBASE_INTERFACE:
-      if (tok==DF_THRIFT || tok==DF_JNI || tok==DF_JNI_TRX)
         isValid = TRUE;
       break;
 

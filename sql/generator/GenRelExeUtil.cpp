@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -4661,15 +4661,9 @@ short ExeUtilHbaseDDL::codeGen(Generator * generator)
   Int32 numBuffers = getDefault(GEN_DDL_NUM_BUFFERS);
 
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
-  NAString portNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_THRIFT_PORT);
-  NAString interfaceNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_INTERFACE);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
   char * server = space->allocateAlignedSpace(serverNAS.length() + 1);
   strcpy(server, serverNAS.data());
-  char * port = space->allocateAlignedSpace(portNAS.length() + 1);
-  strcpy(port, portNAS.data());
-  char * interface = space->allocateAlignedSpace(interfaceNAS.length() + 1);
-  strcpy(interface, interfaceNAS.data());
   char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
   strcpy(zkPort, zkPortNAS.data());
 
@@ -4692,8 +4686,6 @@ short ExeUtilHbaseDDL::codeGen(Generator * generator)
 		      numBuffers,
 		      buffersize,
 		      server,
-		      port,
-		      interface,
                       zkPort
 		      );
 
@@ -4821,15 +4813,9 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
 					   GenGetQualifiedName(getTableName()), 0);
   
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
-  NAString portNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_THRIFT_PORT);
-  NAString interfaceNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_INTERFACE);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
   char * server = space->allocateAlignedSpace(serverNAS.length() + 1);
   strcpy(server, serverNAS.data());
-  char * port = space->allocateAlignedSpace(portNAS.length() + 1);
-  strcpy(port, portNAS.data());
-  char * interface = space->allocateAlignedSpace(interfaceNAS.length() + 1);
-  strcpy(interface, interfaceNAS.data());
   char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
   strcpy(zkPort, zkPortNAS.data());
 
@@ -4862,8 +4848,6 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
 		      buffersize,
 
 		      server,
-		      port,
-		      interface,
                       zkPort,
 		      hbpa
 		      );
@@ -5197,16 +5181,10 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
   Int32 numBuffers = getDefault(GEN_DDL_NUM_BUFFERS);
 
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
-  NAString portNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_THRIFT_PORT);
-  NAString interfaceNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_INTERFACE);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
 
   char * server = space->allocateAlignedSpace(serverNAS.length() + 1);
   strcpy(server, serverNAS.data());
-  char * port = space->allocateAlignedSpace(portNAS.length() + 1);
-  strcpy(port, portNAS.data());
-  char * interface = space->allocateAlignedSpace(interfaceNAS.length() + 1);
-  strcpy(interface, interfaceNAS.data());
   char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
   strcpy(zkPort, zkPortNAS.data());
 
@@ -5225,8 +5203,6 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
                       numBuffers,
                       buffersize,
                       server,
-                      port,
-                      interface,
                       zkPort
                       );
 
