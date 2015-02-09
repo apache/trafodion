@@ -6912,6 +6912,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   ComObjectName coName(qCatName, qSchName, qObjName);
   NAString * extTableName =
     new(STMTHEAP) NAString(coName.getExternalName(TRUE));
+  const NAString extNameForHbase = catName + "." + schName + "." + objName;
 
   indexInfoQueue->position();
   for (int idx = 0; idx < indexInfoQueue->numEntries(); idx++)
@@ -7392,7 +7393,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
        // request the default
       ExpHbaseInterface* ehi =CmpSeabaseDDL::allocEHI();
-      ByteArrayList* bal = ehi->getRegionInfo(extTableName->data());
+      ByteArrayList* bal = ehi->getRegionInfo(extNameForHbase);
 
       // Set the header.nodetype to either HASH2 or RANGE based on whether
       // the table is salted or not.  
