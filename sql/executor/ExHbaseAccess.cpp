@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -328,8 +328,6 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
 					//					(char*)"localhost", 
 					(char*)hbaseAccessTdb.server_, 
-					(char*)hbaseAccessTdb.port_,
-					(char*)hbaseAccessTdb.interface_,
 					//                                        (char*)"2181", 
 					(char*)hbaseAccessTdb.zkPort_,
                                         jniDebugPort,

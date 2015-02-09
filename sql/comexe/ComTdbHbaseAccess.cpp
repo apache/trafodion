@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -91,8 +91,6 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
 				     Lng32 numBuffers,
 				     ULng32 bufferSize,
 				     char * server,
-				     char * port,
-				     char * interface,
                                      char * zkPort,
 				     HbasePerfAttributes * hbasePerfAttributes,
 				     Float32 samplingRate
@@ -168,8 +166,6 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   flags_(0),
   flags2_(0),
   server_(server),
-  port_(port),
-  interface_(interface),
   zkPort_(zkPort),
   hbasePerfAttributes_(hbasePerfAttributes),
   LoadPrepLocation_ (NULL),
@@ -192,8 +188,6 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
 				     Lng32 numBuffers,
 				     ULng32 bufferSize,
 				     char * server,
-				     char * port,
-				     char * interface,
                                      char * zkPort
 				     )
 : ComTdb( ComTdb::ex_HBASE_ACCESS,
@@ -268,8 +262,6 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   flags_(0),
   flags2_(0),
   server_(server),
-  port_(port),
-  interface_(interface),
   zkPort_(zkPort),
 
   hbasePerfAttributes_(NULL),
@@ -397,8 +389,6 @@ Long ComTdbHbaseAccess::pack(void * space)
   keyInfo_.pack(space);
   keyColName_.pack(space);
   server_.pack(space);
-  port_.pack(space);
-  interface_.pack(space);
   zkPort_.pack(space);
   hbasePerfAttributes_.pack(space);
   LoadPrepLocation_.pack(space);
@@ -459,8 +449,6 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(keyInfo_.unpack(base, reallocator)) return -1;
   if(keyColName_.unpack(base)) return -1;
   if(server_.unpack(base)) return -1;
-  if(port_.unpack(base)) return -1;
-  if(interface_.unpack(base)) return -1;
   if(zkPort_.unpack(base)) return -1;
   if(hbasePerfAttributes_.unpack(base, reallocator)) return -1;
   if(LoadPrepLocation_.unpack(base)) return -1;
@@ -900,7 +888,7 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
       str_sprintf(buf, "Flag = %b",flags_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      str_sprintf(buf, "server_ = %s, port_ = %s, interface_ = %s, zkPort_ = %s", server(), port(), interface(), zkPort());
+      str_sprintf(buf, "server_ = %s, zkPort_ = %s", server(), zkPort());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       if (listOfFetchedColNames())
@@ -1095,8 +1083,6 @@ ComTdbHbaseCoProcAccess::ComTdbHbaseCoProcAccess(
 						 Lng32 numBuffers,
 						 ULng32 bufferSize,
 						 char * server,
-						 char * port,
-						 char * interface,
 						 char * zkPort,
 						 HbasePerfAttributes * hbasePerfAttributes
 						 )
@@ -1116,7 +1102,7 @@ ComTdbHbaseCoProcAccess::ComTdbHbaseCoProcAccess(
 		      expectedRows,
 		      numBuffers,  
 		      bufferSize,
-		      server, port, interface, zkPort,
+		      server, zkPort,
 		      hbasePerfAttributes),
   coProcType_((UInt16)type)
 {
@@ -1152,8 +1138,6 @@ ComTdbHbaseCoProcAggr::ComTdbHbaseCoProcAggr(
 						 Lng32 numBuffers,
 						 ULng32 bufferSize,
 						 char * server,
-						 char * port,
-						 char * interface,
 						 char * zkPort,
 						 HbasePerfAttributes * hbasePerfAttributes
 						 )
@@ -1173,7 +1157,7 @@ ComTdbHbaseCoProcAggr::ComTdbHbaseCoProcAggr(
 			    expectedRows,
 			    numBuffers,  
 			    bufferSize,
-			    server, port, interface, zkPort,
+			    server, zkPort,
 			    hbasePerfAttributes),
     listOfAggrTypes_(listOfAggrTypes)
 {

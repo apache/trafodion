@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -358,8 +358,7 @@ class CmpSeabaseDDL
   short isMetadataInitialized(ExpHbaseInterface * ehi = NULL);
   short isOldMetadataInitialized(ExpHbaseInterface * ehi);
 
-  ExpHbaseInterface* allocEHI(const char * server, const char * port,
-			      const char * interface, const char * zkPort,
+  ExpHbaseInterface* allocEHI(const char * server, const char * zkPort,
                               NABoolean raiseError);
   
   ExpHbaseInterface* allocEHI(NADefaults * defs = NULL);

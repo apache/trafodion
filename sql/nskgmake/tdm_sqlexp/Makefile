@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ CPPSRC := BigNumHelper.cpp \
 	ExpAtp.cpp \
 	ExpBitMuxFunction.cpp \
 	ExpCriDesc.cpp \
-	ExpDemoClient.cpp \
 	ExpDll.cpp \
 	ExpError.cpp \
 	ExpHbaseInterface.cpp \
@@ -69,9 +68,7 @@ CPPSRC := BigNumHelper.cpp \
 	ExpSeqGen.cpp \
 	ExpSequenceFunction.cpp \
 	ExpSqlTupp.cpp \
-	Hbase_constants.cpp \
-	Hbase_types.cpp \
-	Hbase.cpp 
+	Hbase_types.cpp 
 
 ifeq ($(TARGTYPE),linux)
 

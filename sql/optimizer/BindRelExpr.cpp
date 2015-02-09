@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -4756,8 +4756,6 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 	  (child(0) && child(0)->getOperatorType() == REL_SCAN))
 	{
           Scan * scan = (Scan*)child(0)->castToRelExpr();
-	  NAString interfaceNAS = 
-	    ActiveSchemaDB()->getDefaults().getValue(HBASE_INTERFACE);
 
 	  if ((getCompExprTree()) &&
               (NOT hasOrderBy()) &&
@@ -4768,8 +4766,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 	       (scan->getTableName().getSpecialType() == ExtendedQualName::INDEX_TABLE)) &&
               !scan->getTableName().isPartitionNameSpecified() &&
               !scan->getTableName().isPartitionRangeSpecified() &&
-              (NOT bindWA->inViewDefinition()) &&
-	      (interfaceNAS != "THRIFT"))
+              (NOT bindWA->inViewDefinition()))
 	    {
               ItemExprList selList(bindWA->wHeap());
               selList.insertTree(getCompExprTree());
