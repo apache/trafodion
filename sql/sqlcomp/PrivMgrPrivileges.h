@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-//// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+//// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 ////
 ////  Licensed under the Apache License, Version 2.0 (the "License");
 ////  you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public:
    int64_t objectUID;
    PrivMgrBitmap privsBitmap;
 };
-      
+
 // *****************************************************************************
 // * Class:         PrivMgrPrivileges
 // * Description:  This class represents the access rights for objects
@@ -111,18 +111,28 @@ public:
       const PrivMgrCoreDesc &privs,
       std::vector <ComSecurityKey *> & secKeySet);
       
+   PrivStatus buildSecurityKeys(
+      const std::vector<int32_t> & roleIDs,
+      const int32_t userID, 
+      std::vector <ComSecurityKey *> & secKeySet);
+      
    PrivStatus getPrivBitmaps(
       const std::string & whereClause,
       const std::string & orderByClause,
       std::vector<PrivMgrBitmap> & privBitmaps);
       
+   PrivStatus getPrivRowsForObject(
+      const int64_t objectUID,
+      std::vector<ObjectPrivsRow> & objectPrivsRows);
+
    PrivStatus getPrivTextForObject(std::string &privilegeText);
 
    PrivStatus getPrivsOnObjectForUser(
       const int64_t objectUID,
       const int32_t userID,
       PrivMgrBitmap &userPrivs,
-      PrivMgrBitmap &grantablePrivs);
+      PrivMgrBitmap &grantablePrivs,
+      std::vector <ComSecurityKey *>* secKeySet);
 
    PrivStatus getUIDandPrivs(
       const int32_t granteeID,
@@ -158,7 +168,10 @@ public:
       const Int32 creatorID,
       const std::string & creatorName);
       
-      
+   PrivStatus insertPrivRowsForObject(
+      const int64_t objectUID,
+      const std::vector<ObjectPrivsRow> & objectPrivsRows);
+   
    PrivStatus populateObjectPriv(
       const std::string &objectsLocation,
       const std::string &authsLocation);
@@ -199,13 +212,15 @@ protected:
      const int64_t objectUID,
      const int32_t grantee,
      PrivMgrDesc &privs,
-     const bool withRoles = false
+     const bool withRoles = false,
+     std::vector <ComSecurityKey *>* secKeySet = NULL
      );
           
    PrivStatus getUserPrivs(
      const int32_t grantee,
      PrivMgrDesc &privs,
-     const bool withRoles = false
+     const bool withRoles = false,
+     std::vector <ComSecurityKey *>* secKeySet = NULL
      );
      
 private: 
@@ -265,7 +280,8 @@ private:
     const int64_t objectUID,
     const int32_t granteeID,
     const bool withroles,
-    std::vector<PrivMgrMDRow *> &rowList);
+    std::vector<PrivMgrMDRow *> &rowList,
+    std::vector <ComSecurityKey *>* secKeySet); 
 
   void scanObjectBranch( 
     const PrivType pType, // in

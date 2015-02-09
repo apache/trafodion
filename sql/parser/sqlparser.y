@@ -2,7 +2,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -135,6 +135,7 @@ using namespace std;
 #include "ComAnsiNamePart.h"
 #include "ComDiags.h"
 #include "ComMPLoc.h"
+#include "ComSmallDefs.h"
 #include "ComTransInfo.h"
 #include "ControlDB.h"
 #include "CmpStatement.h"
@@ -1570,6 +1571,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
   ComLevels                     levelEnum;
   ComOperation                  iudOp;
   ComObjectName                 *comObjectName;
+  ComObjectType                 objectTypeEnum;
   ComPartitioningScheme         partitionType;
   ComParamDirection             routineParamMode;
   ComRoutineExecutionMode       routineExecutionMode;
@@ -2206,6 +2208,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stringval> 		regular_identifier
 %type <stringval> 		regular_identifier_not_builtin
 %type <comObjectName>           user_defined_function_name
+%type <objectTypeEnum>          givable_object_type
 %type <tokval>                  nonreserved_word
 %type <tokval>                  nonreserved_func_word
 %type <tokval>                  MP_nonreserved_word
@@ -26745,14 +26748,64 @@ levels_clause : TOK_CASCADED
                                 }
 
 /* type pStmtDDL */
-give_statement : TOK_GIVE TOK_CATALOG catalog_name 
+give_statement : TOK_GIVE TOK_SCHEMA schema_name 
+                 TOK_TO authorization_identifier optional_drop_behavior
+                                {
+                  $$ = new (PARSERHEAP())
+                    StmtDDLGiveSchema(
+                                         *$3 /*schema_name*/,
+                                         *$5 /*authorization_identifier*/,
+                                          $6 /*drop behavior*/);
+                  delete $5;
+                  delete $3;
+                                }
+
+               |
+                 TOK_GIVE givable_object_type ddl_qualified_name 
                  TOK_TO authorization_identifier
                                 {
                   $$ = new (PARSERHEAP())
-                    StmtDDLGiveCatalog(
-                                         *$3 /*catalog_name*/,
+                    StmtDDLGiveObject(
+                                          $2, /*ComObjectType*/
+                                         *$3, /*qualified_name*/
                                          *$5 /*authorization_identifier*/);
+                  delete $3;
+                  delete $5;
                                 }
+                       
+               |
+                 TOK_GIVE TOK_ALL TOK_FROM authorization_identifier 
+                 TOK_TO authorization_identifier
+                                {
+                  $$ = new (PARSERHEAP())
+                    StmtDDLGiveAll(
+                                         *$4, /*from auth ID*/
+                                         *$6  /*to auth ID*/);
+                  delete $4;
+                  delete $6;
+                                }
+                       
+/* type pObjectTypeEnum */
+givable_object_type:       TOK_TABLE
+                           {
+                             $$ = COM_BASE_TABLE_OBJECT;
+                           }
+                           | TOK_VIEW
+                           {
+                             $$ = COM_VIEW_OBJECT;
+                           }
+                           | TOK_LIBRARY
+                           {
+                             $$ = COM_LIBRARY_OBJECT;
+                           }
+                           | TOK_PROCEDURE
+                           {
+                             $$ = COM_STORED_PROCEDURE_OBJECT;
+                           }
+                           | TOK_FUNCTION
+                           {
+                             $$ = COM_USER_DEFINED_ROUTINE_OBJECT;
+                           }
 
 /* type pStmtDDL */
 revoke_role_statement : TOK_REVOKE optional_with_admin_option

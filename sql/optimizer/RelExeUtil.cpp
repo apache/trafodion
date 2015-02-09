@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -3801,6 +3801,18 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       isPrivilegeMngt = TRUE; 
     }
     else if (getExprNode()->castToElemDDLNode()->castToStmtDDLRevokeComponentPrivilege())
+    {
+      isPrivilegeMngt = TRUE; 
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGiveAll())
+    {
+      isPrivilegeMngt = TRUE; 
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGiveObject())
+    {
+      isPrivilegeMngt = TRUE; 
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGiveSchema())
     {
       isPrivilegeMngt = TRUE; 
     }

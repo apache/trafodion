@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -364,7 +364,8 @@ PrivStatus PrivMgrCommands::getPrivileges(
     PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser(objectUID, 
                                                              userID, 
                                                              objPrivs, 
-                                                             grantablePrivs);
+                                                             grantablePrivs,
+                                                             secKeySet);
     if (retcode != STATUS_GOOD)
       return retcode;
   
@@ -395,6 +396,56 @@ PrivStatus PrivMgrCommands::getPrivileges(
   return STATUS_GOOD;
 }
 
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrCommands::getPrivRowsForObject                           *
+// *                                                                           *
+// *    Returns rows for privileges granted on an object.                      *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectUID>                    const int64_t                     In      *
+// *    is the unique ID of the object whose grants are being returned.        *
+// *                                                                           *
+// *  <objectPrivsRows>              std::vector<ObjectPrivsRow> &     In      *
+// *    passes back a vector of rows representing the grants for the object.   *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD    : Rows were returned                                       *
+// * STATUS_NOTFOUND: No rows were returned                                    *
+// *               *: Unable to read privileges, see diags.                    *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::getPrivRowsForObject(
+   const int64_t objectUID,
+   std::vector<ObjectPrivsRow> & objectPrivsRows)
+   
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrPrivileges objectPrivileges(getMetadataLocation(),pDiags_);
+      
+      privStatus = objectPrivileges.getPrivRowsForObject(objectUID,objectPrivsRows);
+   }
+
+   catch (...)
+   {
+      return STATUS_ERROR;
+   }
+   
+   return privStatus;
+
+}
+//*************** End of PrivMgrCommands::getPrivRowsForObject *****************
 
 
 // *****************************************************************************
@@ -660,6 +711,57 @@ PrivStatus PrivMgrCommands::initializeAuthorizationMetadata(
    PrivMgrMDAdmin metadata(getMetadataLocation(),getDiags());
    return metadata.initializeMetadata(objectsLocation, authsLocation);
 }
+   
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrCommands::insertPrivRowsForObject                        *
+// *                                                                           *
+// *    Writes rows for privileges granted on an object.                       *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectUID>                 const int64_t                        In      *
+// *    is the unique ID of the object whose grants are being written.         *
+// *                                                                           *
+// *  <objectPrivsRows>           const std::vector<ObjectPrivsRow> &  In      *
+// *    is a vector of rows representing the grants for the object.            *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD    : Rows were inserted                                       *
+// *               *: Unable to insert, see diags.                             *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::insertPrivRowsForObject(
+   const int64_t objectUID,
+   const std::vector<ObjectPrivsRow> & objectPrivsRows)
+   
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrPrivileges objectPrivileges(getMetadataLocation(),pDiags_);
+      
+      privStatus = objectPrivileges.insertPrivRowsForObject(objectUID,objectPrivsRows);
+   }
+
+   catch (...)
+   {
+      return STATUS_ERROR;
+   }
+   
+   return privStatus;
+
+}
+//************* End of PrivMgrCommands::insertPrivRowsForObject ****************
+
 
 
 // ----------------------------------------------------------------------------

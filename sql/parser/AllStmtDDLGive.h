@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -36,12 +36,7 @@
 
 
 #include "StmtDDLGiveCatalog.h"
-//#include "StmtDDLGiveMV.h"    
-//#include "StmtDDLGiveRoutine.h"
-//#include "StmtDDLGiveSchema.h"
-//#include "StmtDDLGiveTable.h"
-//#include "StmtDDLGiveTrigger.h"    
-//#include "StmtDDLGiveView.h"
+#include "StmtDDLGive.h"    
 
 //
 // End of File

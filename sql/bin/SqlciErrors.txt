@@ -1630,8 +1630,8 @@ $1~String1 --------------------------------
 8702 ZZZZZ 99999 ADVANCED MAJOR	DBADMIN An error occurred during a parallel extract operation. A parallel extract consumer could not establish its connection to producer ESP $0~string0, possibly because the ESP process identifier is invalid.
 8710 01000 99999 ADVANCED MAJOR DBADMIN Error $0~int0 returned by Measure when attempting to update SQL counters.
 8730 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU First CLI error.
-8731 ZZZZZ 99999 ADVANCED MAJOR DIALOUT User $0~String0 could not be verified as a valid database user. There was a problem reading user metadata. An internal query returned SQLCODE $1~Int1.
-8732 ZZZZZ 99999 ADVANCED MAJOR DBADMIN User $0~String0 is not a registered database user.
+8731 ZZZZZ 99999 ADVANCED MAJOR DIALOUT $0~String0 could not be verified as a valid database authorization ID. There was a problem reading metadata. An internal query returned SQLCODE $1~Int1.
+8732 ZZZZZ 99999 ADVANCED MAJOR DBADMIN $0~String0 is not a registered database user or role.
 8733 ZZZZZ 99999 ADVANCED MAJOR DBADMIN User $0~String0 is not a valid database user.
 8734 ZZZZZ 99999 ADVANCED INFRM LOGONLY Statement must be recompiled to allow privileges to be re-evaluated.
 8735 ZZZZZ 99999 ADVANCED MAJOR DBADMIN The value $0~int0 is not a valid tenant ID.

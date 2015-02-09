@@ -1,7 +1,7 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2280,6 +2280,21 @@ StmtDDLPublish::bindNode(BindWA * pBindWA)
 }
 
 // -----------------------------------------------------------------------
+// definition of method bindNode() for class StmtDDLGiveAll
+// -----------------------------------------------------------------------
+
+//
+// a virtual function for performing name
+// binding within the Give All tree
+//
+ExprNode *
+StmtDDLGiveAll::bindNode(BindWA * pBindWA)
+{
+  markAsBound();
+  return this;
+}
+
+// -----------------------------------------------------------------------
 // definition of method bindNode() for class StmtDDLGiveCatalog
 // -----------------------------------------------------------------------
 
@@ -2289,6 +2304,36 @@ StmtDDLPublish::bindNode(BindWA * pBindWA)
 //
 ExprNode *
 StmtDDLGiveCatalog::bindNode(BindWA * pBindWA)
+{
+  markAsBound();
+  return this;
+}
+
+// -----------------------------------------------------------------------
+// definition of method bindNode() for class StmtDDLGiveObject
+// -----------------------------------------------------------------------
+
+//
+// a virtual function for performing name
+// binding within the Give Object tree
+//
+ExprNode *
+StmtDDLGiveObject::bindNode(BindWA * pBindWA)
+{
+  markAsBound();
+  return this;
+}
+
+// -----------------------------------------------------------------------
+// definition of method bindNode() for class StmtDDLGiveSchema
+// -----------------------------------------------------------------------
+
+//
+// a virtual function for performing name
+// binding within the Give Schema tree
+//
+ExprNode *
+StmtDDLGiveSchema::bindNode(BindWA * pBindWA)
 {
   markAsBound();
   return this;

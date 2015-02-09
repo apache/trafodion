@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-//// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+//// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 ////
 ////  Licensed under the Apache License, Version 2.0 (the "License");
 ////  you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@
 #define PRIVMGR_DEFS_H
 
 #include <bitset>
-
+#include "NAUserId.h"
+#include "ComSmallDefs.h"
 // *****************************************************************************
 // *
 // * File:         PrivMgrDef.h
@@ -31,8 +32,21 @@
 // *
 // *****************************************************************************
 
-
-
+class ObjectPrivsRow
+{
+public:
+   char objectName[601];
+   ComObjectType objectType;
+   int32_t granteeID;
+   char granteeName[MAX_USERNAME_LEN * 2 + 1];
+   ComGranteeType granteeType;
+   int32_t grantorID;
+   char grantorName[MAX_USERNAME_LEN * 2 + 1];
+   ComGrantorType grantorType;
+   int64_t privilegesBitmap;
+   int64_t grantableBitmap;   
+};      
+      
 // Returns the result of the operation 
 enum PrivStatus { STATUS_UNKNOWN   = 20,
                   STATUS_GOOD      = 21,

@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -271,6 +271,7 @@ const char * PrivMgr::getSQLOperationName(SQLOperation operation)
       case SQLOperation::ALTER_LIBRARY: return "ALTER_LIBRARY";
       case SQLOperation::ALTER_ROUTINE: return "ALTER_ROUTINE";
       case SQLOperation::ALTER_ROUTINE_ACTION: return "ALTER_ROUTINE_ACTION";
+      case SQLOperation::ALTER_SCHEMA: return "ALTER_SCHEMA";
       case SQLOperation::ALTER_SEQUENCE: return "ALTER_SEQUENCE";
       case SQLOperation::ALTER_SYNONYM: return "ALTER_SYNONYM";
       case SQLOperation::ALTER_TABLE: return "ALTER_TABLE";
@@ -351,6 +352,7 @@ const char * PrivMgr::getSQLOperationCode(SQLOperation operation)
       case SQLOperation::ALTER_LIBRARY: return "AL";
       case SQLOperation::ALTER_ROUTINE: return "AR";
       case SQLOperation::ALTER_ROUTINE_ACTION: return "AA";
+      case SQLOperation::ALTER_SCHEMA: return "AH";
       case SQLOperation::ALTER_SEQUENCE: return "AQ";
       case SQLOperation::ALTER_SYNONYM: return "AY";
       case SQLOperation::ALTER_TABLE: return "AT";
@@ -434,6 +436,7 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
       case SQLOperation::ALTER_LIBRARY: return "Allow grantee to alter libraries";
       case SQLOperation::ALTER_ROUTINE: return "Allow grantee to alter routines";
       case SQLOperation::ALTER_ROUTINE_ACTION: return "Allow grantee to alter routine actions";
+      case SQLOperation::ALTER_SCHEMA: return "Allow grantee to alter schemas";
       case SQLOperation::ALTER_SEQUENCE: return "Allow grantee to alter sequence generators";
       case SQLOperation::ALTER_SYNONYM: return "Allow grantee to alter synonyms";
       case SQLOperation::ALTER_TABLE: return "Allow grantee to alter tables";
@@ -603,6 +606,7 @@ bool PrivMgr::isSQLAlterOperation(SQLOperation operation)
 
    if (operation == SQLOperation::ALTER_TABLE ||
        operation == SQLOperation::ALTER_VIEW ||
+       operation == SQLOperation::ALTER_SCHEMA ||
        operation == SQLOperation::ALTER_SEQUENCE ||
        operation == SQLOperation::ALTER_TRIGGER ||
        operation == SQLOperation::ALTER_ROUTINE ||
@@ -1190,16 +1194,16 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (const std::vector<std::string> &objects
 // ----------------------------------------------------------------------------
 // Method:  isAuthorized
 //
-// This method verifies that the current user is able to perform the requested
-// operation
+// This method verifies that the current user is able to initialize or
+// drop privilege manager metadata.  Currently this is restricted to the
+// root database user, but in the future am operator or service ID may have
+// the authority.
 //
 // Returns true if user is authorized
 // ----------------------------------------------------------------------------
 bool PrivMgrMDAdmin::isAuthorized (void)
 {
-  // get the current user
-  int32_t userName = ComUser::getCurrentUser();
-  return ComUser::isRootUserID(userName);
+  return ComUser::isRootUserID();
 }
 
 // ****************************************************************************

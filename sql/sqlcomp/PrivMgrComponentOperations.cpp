@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -400,23 +400,10 @@ PrivStatus privStatus = myTable.insert(row);
 // Grant authority to creator
 PrivMgrComponentPrivileges componentPrivilege(metadataLocation_,pDiags_);
 
-Int32 maxLen = MAX_USERNAME_LEN;
-char granteeName[maxLen+1];
-Int32 actualLen;
-      
-int32_t effectiveUser = ComUser::getCurrentUser();
-
-   Int16 status = ComUser::getUserNameFromUserID(effectiveUser,granteeName,maxLen,actualLen);
-   if (status != FEOK)
-     *CmpCommon::diags() << DgSqlCode(-20235)
-                         << DgInt0(status)
-                         << DgInt1(effectiveUser);
-
-
    return componentPrivilege.grantPrivilegeToCreator(componentUID,
                                                      operationCode,
-                                                     effectiveUser,
-                                                     granteeName);
+                                                     ComUser::getCurrentUser(),
+                                                     ComUser::getCurrentUsername());
 }  
 //************ End of PrivMgrComponentOperations::createOperation **************
   

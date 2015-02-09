@@ -1,7 +1,7 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@
 #include "sqlcli.h"
 #include "SQLCLIdev.h"
 #include "ExExeUtilCli.h"
+#include "Context.h"
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Class ComUser methods
@@ -75,6 +76,50 @@ Int32 ComUser::getCurrentUser(void)
 }
 
 // ----------------------------------------------------------------------------
+// method:  getCurrentUsername
+//
+// Returns size of username
+// ----------------------------------------------------------------------------
+bool ComUser::getCurrentUsername(
+   char * username,
+   Int32 maxUsernameLength)
+   
+{
+
+char dbUsername[MAX_USERNAME_LEN + 1];
+Int32 rc = 0;
+Int32 usernameLength;
+
+   SQL_EXEC_ClearDiagnostics(NULL);
+
+   rc = SQL_EXEC_GetSessionAttr(SESSION_DATABASE_USER_ID, NULL,
+                                dbUsername,sizeof(dbUsername),&usernameLength);
+
+   assert(rc >= 0);
+
+   if (usernameLength > maxUsernameLength)
+      return false;
+     
+   strcpy(username,dbUsername);
+   
+   return true;
+
+}
+
+// ----------------------------------------------------------------------------
+// method:  getCurrentUsername
+//
+// Returns a pointer to the current database username
+// ----------------------------------------------------------------------------
+const char * ComUser::getCurrentUsername()
+   
+{
+
+   return GetCliGlobals()->currContext()->getDatabaseUserName();
+   
+}
+
+// ----------------------------------------------------------------------------
 // method:  getSessionUser
 //
 // Returns sessionUser from the Cli context
@@ -94,82 +139,6 @@ Int32 ComUser::getSessionUser(void)
   assert(dbUserID >= SUPER_USER);
 
   return dbUserID;
-}
-
-// ----------------------------------------------------------------------------
-// method: getEffectiveUserID
-//
-// This method returns the effective user ID for the session.
-// In most cases the effective user ID is the same as the session user
-// If the user ID is the system owner ID or has system owner privileges,
-// and this is a create operation, then the effective user ID is the schema
-// owner ID.
-//
-// We may need to change this when definer and invoker rights are enabled
-//
-// input:  VerifyAction - describes what operation the user desires
-// ----------------------------------------------------------------------------
-Int32 ComUser::getEffectiveUserID(const VerifyAction act)
-{
-  return (getSessionUser() == SUPER_USER && belongsToCreateGroup(act))
-             ? getSchemaOwner() : getSessionUser();
-}
-
-// ----------------------------------------------------------------------------
-// method:getEffectiveUserName
-//
-// This mehtod returns the effective username form teh session.
-// In most cases the effective username is the same as the session user.
-// If the username is the system owner or has system owner privileges and
-// this is a create operations, then the effective username is the schema
-// owner name.
-//
-// This may need to change when definer and invoker rights are enabled.
-//
-// input:  VerifyAction - describes the operation, if not specified, then
-//                        ANY is the default
-//
-// returns the status:
-//    0 - userNameStr contains the effective username
-//    -1 - error occurred, see ComDiags area for problem
-// ----------------------------------------------------------------------------
-Int16 ComUser::getEffectiveUserName( NAString &userNameStr,
-                                     const VerifyAction act ) 
-{
-  Int32 effectiveUserID(getEffectiveUserID(act));
-  char userName[MAX_USERNAME_LEN+1];
-  Int32 actualLen;
-  Int16 retcode = getUserNameFromUserID(effectiveUserID,
-                                        (char *)&userName,
-                                        MAX_USERNAME_LEN,
-                                        actualLen);
-  if (retcode != FEOK)
-  {
-    if (retcode == FENOTFOUND)
-    {
-      // there was a code review comment that instead of returning a user not
-      // exists error, we should return an INTERNAL error.  If we have a user ID
-      // then there should always be a corresponding username. This is currently
-      // true but maybe not in the future.  So leaving it as a regular error.
-      std::string param ("ID ");
-      param += std::to_string((long long int)effectiveUserID);
-      *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
-                          << DgString0(param.c_str());
-    }
-    else if (retcode == FEBUFTOOSMALL)
-      *CmpCommon::diags() << DgSqlCode(-8941);
-    else
-    {
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-         *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                             << DgString0(__FILE__)
-                             << DgInt0(__LINE__)
-                             << DgString1("get effective username");
-    }
-    return -1;
-  }
-  userNameStr = userName;
-  return 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -378,202 +347,4 @@ Int16 ComUser::getAuthNameFromAuthID(Int32   authID,
     SQL_EXEC_ClearDiagnostics(NULL);
 
   return FEOK;
-}
-
-// ----------------------------------------------------------------------------
-// method: userHasPriv
-//
-// virtual method - always returns false
-// ----------------------------------------------------------------------------
-bool ComUser::userHasPriv(VerifyAction act)
-{
-  return false;
-}
-
-// ----------------------------------------------------------------------------
-// method: isAuthorized
-//
-// virtual method - always returns false
-// ----------------------------------------------------------------------------
-bool ComUser::isAuthorized(VerifyAction act,
-                           bool trustedCaller)
-{
-  return false;
-}
-
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Class ComUserVerifyObj methods
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-// ----------------------------------------------------------------------------
-// Constructors
-// ----------------------------------------------------------------------------
-ComUserVerifyObj::ComUserVerifyObj()
-: objType_(UNKNOWN_OBJ_TYPE)
-, ComUser()
-{}
-
-ComUserVerifyObj::ComUserVerifyObj(const ComObjectName &objName,
-                                   ComUserVerifyObj::ObjType objType)
-: objType_ (objType)
-, objName_ (objName)
-, ComUser()
-{}
-
-// ----------------------------------------------------------------------------
-// method:  isAuthorized
-//
-// This method returns true if the current session user can perform requested
-// operation, false otherwise
-//
-// input:  VerifyAction  - describes what operation the user desires
-//         trustedCaller - indicates that this call is made by the system,
-// ----------------------------------------------------------------------------
-bool ComUserVerifyObj::isAuthorized(ComUser::VerifyAction act,
-                                    bool trustedCaller)
-{
-  // If the request is for a metadata table and the call
-  // is from a trusted caller, return true
-  const NAString catName = getObjName().getCatalogNamePartAsAnsiString();
-  const NAString schName = getObjName().getSchemaNamePartAsAnsiString(true);
-  const NAString objName = getObjName().getObjectNamePartAsAnsiString(true);
-
-  // For now, just return true
-  return true;
-#if 0
-  if (CmpSeabaseDDL::isSeabaseMD(catName, schName, objName))
-    return trustedCaller ? true : false;
-
-  // Get the owner of the object
-  Int32 objOwnerID = getEffectiveUser(act);
-
-  // For create operations, the object does not exist so there is no owner
-  // otherwise, get the owner from the OBJECTS table
-  if (!belongsToCreateGroup(act))
-  {
-    // TBD: check to see if the object exists in the NATable structure, if so
-    // get the objectOwner from there instead of doing a separate I/O.
-    ExeCliInterface cliInterface(STMTHEAP);
-    CmpSeabaseDDL ddlClass(STMTHEAP);
-    Int32 retcode = ddlClass.getObjectOwner(&cliInterface,
-                                            catName.data(),
-                                            schName.data(),
-                                            objName.data(),
-                                            &objOwnerID);
-
-    // -1 is returned if object owner could not be extracted, 0 otherwise
-    if (retcode < 0)
-      return false;
-  }
-
-  // If user owns object via the object, schema, or other; return true
-  if (userOwnsObject(act, objOwnerID))
-    return true;
-
-  // If user has been granted the privilege, return true
-  return (userHasPriv(act));
-#endif
-}
-
-// ----------------------------------------------------------------------------
-// method: userOwnsObject
-//
-// returns true is the user is owner either because they own the object,
-// they own the schema, or they own the system (DB__ROOT).
-//
-// input:  VerifyAction  - describes what operation the user desires
-//         objOwnerID - specifies the object owner ID
-// ----------------------------------------------------------------------------
-bool ComUserVerifyObj::userOwnsObject(VerifyAction act,
-                                      Int32 objOwnerID)
-{
-  if (getSessionUser() == SUPER_USER )
-    return true;
-  if (getSessionUser() == getSchemaOwner())
-    return true;
-  if (objOwnerID == getSessionUser())
-      return true;
-  return false;
-}
-
-// ----------------------------------------------------------------------------
-// method: userHasPriv
-//
-// input:  VerifyAction - describes what operation the user desires
-//
-// Until privileges are added, just return false
-// ---------------------------------------------------------------------------
-bool ComUserVerifyObj::userHasPriv(VerifyAction act)
-{
-  return false;
-}
-
-// ----------------------------------------------------------------------------
-// method: belongsToCreateGroup
-//
-// This method returns true if the VerifyAction is CREATE, false otherwise
-//
-// input:  VerifyAction - describes what operation the user desires
-// ----------------------------------------------------------------------------
-bool ComUser::belongsToCreateGroup(ComUser::VerifyAction act)
-{
-  return (   (act == ComUser::CREATE)
-          || (act == ComUser::CREATE_TABLE)
-          || (act == ComUser::CREATE_VIEW)
-          || (act == ComUser::CREATE_LIBRARY)
-          || (act == ComUser::CREATE_TRIGGER)
-          || (act == ComUser::CREATE_PROCEDURE)
-          || (act == ComUser::CREATE_ROUTINE)
-          || (act == ComUser::CREATE_ROUTINE_ACTION)
-          || (act == ComUser::CREATE_SYNONYM)
-         );
-}
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Class ComUserVerifyAuth methods
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-// ----------------------------------------------------------------------------
-// Constructors
-// ----------------------------------------------------------------------------
-ComUserVerifyAuth::ComUserVerifyAuth()
-: authType_(UNKNOWN_AUTH_TYPE)
-, ComUser()
-{}
-
-ComUserVerifyAuth::ComUserVerifyAuth(const NAString &authName,
-                                     ComUserVerifyAuth::AuthType authType)
-: authType_ (authType)
-, authName_ (authName)
-, ComUser()
-{}
-
-// ----------------------------------------------------------------------------
-// method: isAuthorized
-//
-// This method returns true if the current session user can perform requested
-// operation, false otherwise
-//
-// input:  VerifyAction  - describes what operation the user desires
-//         trustedCaller - indicates that this call is made by the system,
-//                         it is similar to isCatman from SeaQuest
-// ---------------------------------------------------------------------------
-bool ComUserVerifyAuth::isAuthorized(ComUser::VerifyAction act,
-                                     bool trustedCaller)
-{
-  // just return true for now
-  return true;
-}
-
-// ----------------------------------------------------------------------------
-// method: userHasPriv
-//
-// input:  VerifyAction - describes what operation the user desires
-//
-// Until privileges are added, just return false
-// ---------------------------------------------------------------------------
-bool ComUserVerifyAuth::userHasPriv(VerifyAction act)
-{
-  return false;
 }

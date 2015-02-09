@@ -1,7 +1,7 @@
 
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -507,31 +507,29 @@ private:
       AUTH_QUERY_BY_NAME
     };
 
-  // Private method to perform single-row lookups into the USERS
+  // Private method to perform single-row lookups into the AUTHS
   // table. If a matching row is found, column values are returned in
   // the users_type structure. users_type is defined in
   // smdio/CmTableDefs.h.
   //
-  // For query type USERS_QUERY_BY_USER_ID, the userID argument must
+  // For query type USERS_QUERY_BY_USER_ID, the authID argument must
   // be provided.
   //
   // For query types USERS_QUERY_BY_USER_NAME and
-  // USERS_QUERY_BY_EXTERNAL_NAME, the userName argument must be
+  // USERS_QUERY_BY_EXTERNAL_NAME, the authName argument must be
   // provided.
-  RETCODE usersQuery(AuthQueryType queryType,       // IN
-                     const char *userName,           // IN optional
-                     Int32 userID,                   // IN optional 
-                     char * usersNameFromUsersTable, //OUT
-                     Int32 &userIDFromUsersTable);  // OUT
-    
-  // Private method to return the name of an authorization user given the 
-  // numeric authorization ID.  
   RETCODE authQuery(
      AuthQueryType queryType,         
      const char  * authName,          
      Int32         authID,            
-     char        * authNameFromTable, 
-     Int32       & authIDFromTable);   
+     char        * authNameFromTable,
+     Int32         authNameMaxLen, 
+     Int32       & authIDFromTable);  
+      
+  RETCODE storeName(
+     const char *src,
+     char       *dest,
+     int         maxLength);
 
   RETCODE storeName(
      const char *src,

@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@
 #include "ComSecurityKey.h"
 #include "NAUserId.h"
 #include "ComUser.h"
+#include "CmpSeabaseDDLutil.h"
 
 // ****************************************************************************
 // File: PrivMgrPrivileges.h
@@ -320,6 +321,126 @@ PrivStatus PrivMgrPrivileges::buildSecurityKeys(
 }
 
 // *****************************************************************************
+// * Method: buildSecurityKeys                                
+// *                                                       
+// *    Builds security keys for the current object and specified user.
+// *                                                       
+// *  Parameters:    
+// *                                                                       
+// *  <roleIDs> is a vector of role IDs of roles granted to the user
+// *  <userID> is ID of the user granted the role(s).
+// *  <secKeySet> is the set of security keys to be passed back.  Caller is 
+// *              responsible for freeing keys.
+// *                                                                  
+// * Returns: PrivStatus                                               
+// *                                                                  
+// * STATUS_GOOD: Security keys were built
+// *           *: Security keys were not built, see diags.     
+// *                                                               
+// *****************************************************************************
+PrivStatus PrivMgrPrivileges::buildSecurityKeys(
+   const std::vector<int32_t> & roleIDs,
+   const int32_t userID, 
+   std::vector <ComSecurityKey *> & secKeySet)
+  
+{
+
+   for ( size_t i = 0; i < roleIDs.size(); i++ )
+   {
+      ComSecurityKey *key = new ComSecurityKey(roleIDs[i],userID,
+                                               ComSecurityKey::SUBJECT_IS_USER);
+      if (key->isValid())
+         secKeySet.push_back(key);
+      else
+      {
+         // Probably should report a different error.  Is an error possible?
+         *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
+         return STATUS_ERROR;
+      }
+   }
+   
+   return STATUS_GOOD;
+
+}
+
+
+// *****************************************************************************
+// * Method: getPrivRowsForObject                                
+// *                                                       
+// *    returns rows describing all the privileges that have been
+// *    granted on the object
+// *                                                       
+// *  Parameters:    
+// *                                                                       
+// *  <objectUID> The unique ID of the object whose grants are being returned
+// *  <objectPrivsRows> Zero or more rows of grants for the object.
+// *                                                                     
+// * Returns: PrivStatus                                               
+// *                                                                  
+// * STATUS_GOOD    : Rows were returned
+// * STATUS_NOTFOUND: No rows were returned
+// *               *: Unable to read privileges, see diags.     
+// *                                                               
+// *****************************************************************************
+PrivStatus PrivMgrPrivileges::getPrivRowsForObject(
+   const int64_t objectUID,
+   std::vector<ObjectPrivsRow> & objectPrivsRows)
+   
+{
+  PrivStatus retcode = STATUS_GOOD;
+
+  if (objectUID_ == 0)
+  {
+    PRIVMGR_INTERNAL_ERROR("objectUID is 0 for getPrivRowsForObject()");
+    return STATUS_ERROR;
+  }
+
+
+  // extract the privilege rows for object from OBJECT_PRIVILEGES
+  char buf[100];
+  sprintf(buf, "WHERE object_uid = %ld AND grantor_ID <> %d", 
+          objectUID,SYSTEM_AUTH_ID);
+  std::string whereClause (buf);
+
+  // Should space be allocated and deleted from the heap for the rowList?
+  //   -- how many rows will be returned?
+  std::vector<PrivMgrMDRow *> rowList;
+
+  ObjectPrivsMDTable objectPrivsTable(fullTableName_,pDiags_);
+  retcode = objectPrivsTable.selectWhere(whereClause,rowList);
+  if (retcode != STATUS_GOOD)
+  {
+    deleteRowsForGrantee(rowList);
+    return retcode;
+  }
+  
+  for (int32_t i = 0; i < rowList.size();++i)
+  {
+    ObjectPrivsMDRow &row = static_cast<ObjectPrivsMDRow &> (*rowList[i]);
+    ObjectPrivsRow newRow;
+    
+    strcpy(newRow.objectName,row.objectName_.c_str());
+    newRow.objectType = row.objectType_;
+    newRow.granteeID = row.granteeID_;
+    strcpy(newRow.granteeName,row.granteeName_.c_str());
+    newRow.granteeType = CmGetComGranteeAsGranteeType(row.granteeType_.c_str());
+    newRow.grantorID = row.grantorID_;
+    strcpy(newRow.grantorName,row.grantorName_.c_str());
+    newRow.grantorType = CmGetComGrantorAsGrantorType(row.grantorType_.c_str());
+    newRow.privilegesBitmap = row.privsBitmap_.to_ulong();
+    newRow.grantableBitmap = row.grantableBitmap_.to_ulong();
+    
+    objectPrivsRows.push_back(newRow);
+  }
+
+  deleteRowsForGrantee(rowList);
+  return retcode;
+}
+
+
+
+
+// *****************************************************************************
 // * Method: grantObjectPriv                                
 // *                                                       
 // *    Adds or updates a row in the OBJECT_PRIVILEGES table.
@@ -397,7 +518,7 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
   // even if some requested privilege are not grantable.
   PrivMgrDesc privsOfTheGrantor(grantorID_);
   bool withRoles = true;
-  retcode = getUserPrivs( grantorID_, privsOfTheGrantor, withRoles ); 
+  retcode = getUserPrivs( grantorID_, privsOfTheGrantor, withRoles, NULL ); 
   if (retcode != STATUS_GOOD)
     return retcode;
   
@@ -721,6 +842,71 @@ PrivStatus privStatus = objectPrivsTable.insert(row);
    return objectPrivsTable.insert(row); 
   
 }
+
+// *****************************************************************************
+// * Method: insertPrivRowsForObject                                
+// *                                                       
+// *    writes rows that add grants of privileges for an object.
+// *                                                       
+// *  Parameters:    
+// *                                                                       
+// *  <objectUID> The unique ID of the object that grants are being inserted for
+// *  <objectPrivsRows> One or more rows of grants for the object.
+// *                                                                     
+// * Returns: PrivStatus                                               
+// *                                                                  
+// * STATUS_GOOD    : Rows were returned
+// * STATUS_NOTFOUND: No rows were returned
+// *               *: Unable to read privileges, see diags.     
+// *                                                               
+// *****************************************************************************
+PrivStatus PrivMgrPrivileges::insertPrivRowsForObject(
+   const int64_t objectUID,
+   const std::vector<ObjectPrivsRow> & objectPrivsRows)
+   
+{
+  PrivStatus retcode = STATUS_GOOD;
+
+  if (objectUID_ == 0)
+  {
+    PRIVMGR_INTERNAL_ERROR("objectUID is 0 for insertPrivRowsForObject()");
+    return STATUS_ERROR;
+  }
+
+  ObjectPrivsMDTable objectPrivsTable(fullTableName_,pDiags_);
+  
+  for (int32_t i = 0; i < objectPrivsRows.size();++i)
+  {
+    ObjectPrivsMDRow row;
+    const ObjectPrivsRow &rowIn = objectPrivsRows[i];
+    char granteeTypeString[3] = {0};
+    char grantorTypeString[3] = {0};
+    
+    row.objectUID_ = objectUID;
+    row.objectName_ = rowIn.objectName;
+    row.objectType_ = rowIn.objectType;
+    row.granteeID_ = rowIn.granteeID;
+    row.granteeName_ = rowIn.granteeName;
+    CmGetComGranteeAsLit(rowIn.granteeType,granteeTypeString);
+    row.granteeType_ = granteeTypeString;
+    
+    row.grantorID_ = rowIn.grantorID;
+    row.grantorName_ = rowIn.grantorName;
+    CmGetComGrantorAsLit(rowIn.grantorType,grantorTypeString);
+    row.grantorType_ = grantorTypeString;
+    
+    row.privsBitmap_ = rowIn.privilegesBitmap;
+    row.grantableBitmap_ = rowIn.grantableBitmap;
+    
+    retcode = objectPrivsTable.insert(row);
+    if (retcode != STATUS_GOOD)
+       return retcode;
+  }
+
+  return retcode;
+}
+
+
 
 // ****************************************************************************
 // method:  dealWithConstraints
@@ -1178,7 +1364,7 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const ComObjectType objectType,
   // even if some requested privilege are not revokable.
   PrivMgrDesc privsOfTheGrantor(grantorID_);
   bool withRoles = true;
-  retcode = getUserPrivs( grantorID_, privsOfTheGrantor, withRoles );
+  retcode = getUserPrivs( grantorID_, privsOfTheGrantor, withRoles, NULL );
   if (retcode != STATUS_GOOD)
     return retcode;
 
@@ -1929,7 +2115,8 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObjectForUser(
   const int64_t objectUID,
   const int32_t userID,
   std::bitset<NBR_OF_PRIVS> &userPrivs,
-  std::bitset<NBR_OF_PRIVS> &grantablePrivs)
+  std::bitset<NBR_OF_PRIVS> &grantablePrivs,
+  std::vector <ComSecurityKey *>* secKeySet)
 {
   PrivStatus retcode = STATUS_GOOD;
 
@@ -1942,7 +2129,7 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObjectForUser(
   objectUID_ = objectUID;
   PrivMgrDesc privsOfTheUser(userID);
   bool withRoles = true;
-  retcode = getUserPrivs( userID, privsOfTheUser, withRoles );
+  retcode = getUserPrivs( userID, privsOfTheUser, withRoles, secKeySet);
   if (retcode != STATUS_GOOD)
     return retcode;
 
@@ -2037,7 +2224,8 @@ PrivStatus privStatus = objectPrivsTable.selectWhere(whereClause,rowList);
 PrivStatus PrivMgrPrivileges::getUserPrivs(
   const int32_t granteeID,
   PrivMgrDesc &summarizedPrivs,
-  const bool withRoles
+  const bool withRoles,
+  std::vector <ComSecurityKey *>* secKeySet 
   )
 {
    PrivStatus retcode = STATUS_GOOD;
@@ -2048,7 +2236,8 @@ PrivStatus PrivMgrPrivileges::getUserPrivs(
    retcode = getPrivsFromAllGrantors( objectUID_,
                                       granteeID,
                                       temp,
-                                      withRoles
+                                      withRoles,
+                                      secKeySet
                                       );
    if (retcode != STATUS_GOOD)
     return retcode;
@@ -2082,7 +2271,8 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
    const int64_t objectUID,
    const int32_t granteeID,
    PrivMgrDesc &summarizedPrivs,
-   const bool withRoles
+   const bool withRoles,
+   std::vector <ComSecurityKey *>* secKeySet 
    )
 {
   PrivStatus retcode = STATUS_GOOD;
@@ -2099,7 +2289,7 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
   }
 
   std::vector<PrivMgrMDRow *> rowList;
-  retcode = getRowsForGrantee(objectUID, granteeID, withRoles, rowList);
+  retcode = getRowsForGrantee(objectUID, granteeID, withRoles, rowList, secKeySet);
   if (retcode == STATUS_ERROR)
     return retcode; 
 
@@ -2144,23 +2334,19 @@ PrivStatus PrivMgrPrivileges::getRowsForGrantee(
   const int64_t objectUID,
   const int32_t granteeID,
   const bool withRoles,
-  std::vector<PrivMgrMDRow *> &rowList)
+  std::vector<PrivMgrMDRow *> &rowList,
+  std::vector <ComSecurityKey *>* secKeySet) 
 {
   PrivStatus retcode = STATUS_GOOD;
+  std::vector<int32_t> roleIDs;
 
-  // set of list of IDs to access
-  // Include -1 public user in the list
-  std::vector<int32_t> listOfIDs;
-  listOfIDs.push_back(PUBLIC_AUTH_ID);
-  listOfIDs.push_back(granteeID);
-
-  // add list of roles that the user has been granted
+  // Get list of roles that the user has been granted
   if (withRoles)
   {
     PrivMgrRoles roles(" ",metadataLocation_, pDiags_);
     std::vector<std::string> roleNames;
     std::vector<int32_t> roleDepths;
-    retcode = roles.fetchRolesForUser(granteeID, roleNames, listOfIDs, roleDepths);
+    retcode = roles.fetchRolesForUser(granteeID, roleNames, roleIDs, roleDepths);
     if (retcode == STATUS_ERROR)
      return retcode;
   }
@@ -2169,12 +2355,14 @@ PrivStatus PrivMgrPrivileges::getRowsForGrantee(
   std::string whereClause ("where object_uid = ");
   whereClause += UIDToString(objectUID);
   whereClause += " and grantee_id in (";
-  for (size_t i = 0; i < listOfIDs.size(); i++)
+  for (size_t i = 0; i < roleIDs.size(); i++)
   {
-    whereClause += UIDToString(listOfIDs[i]);
-    if (i+1 != listOfIDs.size())
-      whereClause += ", ";
+    whereClause += UIDToString(roleIDs[i]);
+    whereClause += ", ";
   }
+  whereClause += UIDToString(PUBLIC_AUTH_ID);
+  whereClause += ", ";
+  whereClause += UIDToString(granteeID);
   whereClause += ")"; 
 
   ObjectPrivsMDTable objectPrivsTable(fullTableName_, pDiags_);
@@ -2184,6 +2372,10 @@ PrivStatus PrivMgrPrivileges::getRowsForGrantee(
     deleteRowsForGrantee(rowList);
     return retcode;
   }
+  
+  if (secKeySet != NULL)
+    return buildSecurityKeys(roleIDs,granteeID,*secKeySet);   
+
   return STATUS_GOOD;
 }
 
@@ -2218,7 +2410,7 @@ PrivStatus PrivMgrPrivileges::summarizeCurrentAndOriginalPrivs(
 
   // get OBJECT_PRIVILEGES rows where the grantee has received privileges
   std::vector<PrivMgrMDRow *> rowList;
-  retcode = getRowsForGrantee(objectUID, granteeID, withRoles, rowList);
+  retcode = getRowsForGrantee(objectUID, granteeID, withRoles, rowList, NULL);
 
   // rowList contains the original privileges, 
   // listOfChangedPrivs contains any updates to privileges

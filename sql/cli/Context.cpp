@@ -127,7 +127,7 @@ SQLSTMT_ID* getStatementId(plt_entry_struct * plte,
                            char * start_stmt_name,
                            SQLSTMT_ID * stmt_id,
                            NAHeap *heap);
-
+                           
 ContextCli::ContextCli(CliGlobals *cliGlobals)
   // the context heap's parent is the basic executor memory
   : cliGlobals_(cliGlobals),
@@ -4875,7 +4875,11 @@ void ContextCli::initializeUserInfoFromOS()
 // *  <authNameFromTable>             char *                          Out      *
 // *    passes back the name of the authorization entry.                       *
 // *                                                                           *
-// *  <authIDFromTable>             char *                            Out      *
+// *  <authNameMaxLen>                int                             In       *
+// *    is the maximum number of characters that can be written to             *
+// *  authNameFromTable.                                                       *
+// *                                                                           *
+// *  <authIDFromTable>              char *                           Out      *
 // *    passes back the numeric ID of the authorization entry.                 *
 // *                                                                           *
 // *****************************************************************************
@@ -4892,37 +4896,38 @@ RETCODE ContextCli::authQuery(
    const char  * authName,          
    Int32         authID,            
    char        * authNameFromTable, 
+   Int32         authNameMaxLen,
    Int32       & authIDFromTable)   
    
 {
 
-  // We may need to perform a transactional lookup into metadata.
-  // The following steps will be taken to manage the
-  // transaction. The same steps are used in the Statement class when
-  // we read the authorization information
-  //
-  //  1. Disable autocommit
-  //  2. Note whether a transaction is already in progress
-  //  3. Do the work
-  //  4. Commit the transaction if a new one was started
-  //  5. Enable autocommit if it was disabled
+// We may need to perform a transactional lookup into metadata.
+// The following steps will be taken to manage the
+// transaction. The same steps are used in the Statement class when
+// we read the authorization information
+//
+//  1. Disable autocommit
+//  2. Note whether a transaction is already in progress
+//  3. Do the work
+//  4. Commit the transaction if a new one was started
+//  5. Enable autocommit if it was disabled
 
-  // If we hit errors and need to inject the user name in error
-  // messages, but the caller passed in a user ID not a name, we will
-  // use the string form of the user ID.
+// If we hit errors and need to inject the user name in error
+// messages, but the caller passed in a user ID not a name, we will
+// use the string form of the user ID.
 
-  const char *nameForDiags = authName;
-  char localNameBuf[32];
-  char isValidFromUsersTable[3];
+const char *nameForDiags = authName;
+char localNameBuf[32];
+char isValidFromUsersTable[3];
 
-  if (queryType == USERS_QUERY_BY_USER_ID)
-  {
-    sprintf(localNameBuf, "%d", (int) authID);
-    nameForDiags = localNameBuf;
-  }
+   if (queryType == USERS_QUERY_BY_USER_ID)
+   {
+      sprintf(localNameBuf, "%d", (int) authID);
+      nameForDiags = localNameBuf;
+   }
 
-  //  1. Disable autocommit 
-  NABoolean autoCommitDisabled = FALSE;
+//  1. Disable autocommit 
+NABoolean autoCommitDisabled = FALSE;
 
    if (transaction_->autoCommit())
    {
@@ -4930,71 +4935,51 @@ RETCODE ContextCli::authQuery(
       transaction_->disableAutoCommit();
    }
 
-  //  2. Note whether a transaction is already in progress
-  NABoolean txWasInProgress = transaction_->xnInProgress();
+//  2. Note whether a transaction is already in progress
+NABoolean txWasInProgress = transaction_->xnInProgress();
 
-  //  3. Do the work
-  CmpSeabaseDDLauth::AuthStatus authStatus = CmpSeabaseDDLauth::STATUS_GOOD;
+//  3. Do the work
+CmpSeabaseDDLauth::AuthStatus authStatus = CmpSeabaseDDLauth::STATUS_GOOD;
+RETCODE result = SUCCESS;
+CmpSeabaseDDLuser userInfo;
+CmpSeabaseDDLauth authInfo;
+CmpSeabaseDDLrole roleInfo;
+CmpSeabaseDDLauth *authInfoPtr = NULL;
 
    switch (queryType)
    {
       case USERS_QUERY_BY_USER_NAME:
       {
-        CmpSeabaseDDLuser userInfo;
-        authStatus = userInfo.getUserDetails(authName, FALSE);
-        if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
-         {
-           authIDFromTable = userInfo.getAuthID();
-           strcpy (authNameFromTable, userInfo.getAuthDbName().data());    
-         }
+         authInfoPtr = &userInfo;
+         authStatus = userInfo.getUserDetails(authName, FALSE);
       }
       break;
 
       case USERS_QUERY_BY_EXTERNAL_NAME:
       {
-        CmpSeabaseDDLuser userInfo;
-        authStatus = userInfo.getUserDetails(authName, TRUE);
-        if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
-         {
-           authIDFromTable = userInfo.getAuthID();
-           strcpy (authNameFromTable, userInfo.getAuthExtName().data());    
-         }
+         authInfoPtr = &userInfo;
+         authStatus = userInfo.getUserDetails(authName, TRUE);
       }
       break;
 
       case USERS_QUERY_BY_USER_ID:
       {
-        CmpSeabaseDDLuser userInfo;
-        authStatus = userInfo.getUserDetails(authID);
-        if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
-        {
-          authIDFromTable = userInfo.getAuthID();
-          strcpy (authNameFromTable, userInfo.getAuthDbName().data());
-        }
+         authInfoPtr = &userInfo;
+         authStatus = userInfo.getUserDetails(authID);
       }
       break;
 
       case AUTH_QUERY_BY_NAME:
       {
-         CmpSeabaseDDLauth authInfo;
+         authInfoPtr = &authInfo;
          authStatus = authInfo.getAuthDetails(authName,false);
-         if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
-         {
-            authIDFromTable = authInfo.getAuthID();
-            strcpy(authNameFromTable,authInfo.getAuthDbName().data());    
-         }
       }
       break;
       
       case ROLE_QUERY_BY_ROLE_ID:
       {
-        CmpSeabaseDDLrole roleInfo;
-        authStatus = roleInfo.getAuthDetails(authID);
-        if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
-        {
-          authIDFromTable = roleInfo.getAuthID();
-          strcpy (authNameFromTable, roleInfo.getAuthDbName().data());
-        }
+         authInfoPtr = &roleInfo;
+         authStatus = roleInfo.getAuthDetails(authID);
       }
       break;
       default:
@@ -5003,45 +4988,57 @@ RETCODE ContextCli::authQuery(
       }
       break;
    }
+   
+   if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
+   {
+      //TODO: Check for valid auth 
+      authIDFromTable = authInfoPtr->getAuthID();
+      result = storeName(authInfoPtr->getAuthDbName().data(),authNameFromTable,
+      			 authNameMaxLen);
+                         
+      if (result == ERROR)
+         diagsArea_ << DgSqlCode(-CLI_USERNAME_BUFFER_TOO_SMALL);
+   }
   
-   //  4. Commit the transaction if a new one was started
+//  4. Commit the transaction if a new one was started
    if (!txWasInProgress && transaction_->xnInProgress())
       transaction_->commitTransaction();
   
-   //  5. Enable autocommit if it was disabled
+//  5. Enable autocommit if it was disabled
    if (autoCommitDisabled)
       transaction_->enableAutoCommit();
     
-  // Errors to consider:
-  // * an unexpected error (authStatus == CmpSeabaseDDLauth::STATUS_ERROR)
-  // * the row does not exist (authStatus == CmpSeabaseDDLauth::STATUS_NOTFOUND)
-  // * row exists but is marked invalid
-  RETCODE result = SUCCESS;
-  if (authStatus == CmpSeabaseDDLauth::STATUS_ERROR)
-  {
-    result = ERROR;
-    ex_assert (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0, "error getting user details");
-    Int32 primaryError = CmpCommon::diags()->getErrorEntry(1)->getSQLCODE();
-    // ACH: Make error specific to "user" or "role" depending on what we're trying to get
-    // ACH: But make sure ROLE stuff is Linux specific 
-    diagsArea_ << DgSqlCode(-CLI_PROBLEM_READING_USERS)
-               << DgString0(nameForDiags)
-               << DgInt1(primaryError);
-  }
-  else if (authStatus == CmpSeabaseDDLauth::STATUS_NOTFOUND)
-  {
-    result = ERROR;
-    // ACH: Make error specific to "user" or "role" depending on what we're trying to get
-    diagsArea_.clear();
-    diagsArea_ << DgSqlCode(-CLI_USER_NOT_REGISTERED)
-               << DgString0(nameForDiags);
-  }
-  else
-  {  
-   // If warnings were generated, do not propagate them to the caller
-   if (authStatus == CmpSeabaseDDLauth::STATUS_WARNING)
-      diagsArea_.clear();
-  }
+// Errors to consider:
+// * an unexpected error (authStatus == CmpSeabaseDDLauth::STATUS_ERROR)
+// * the row does not exist (authStatus == CmpSeabaseDDLauth::STATUS_NOTFOUND)
+// * row exists but is marked invalid
+
+   if (authStatus == CmpSeabaseDDLauth::STATUS_ERROR)
+   {
+      result = ERROR;
+      ex_assert (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0, "error getting user details");
+      Int32 primaryError = CmpCommon::diags()->getErrorEntry(1)->getSQLCODE();
+      // TODO: Make error specific to "user" or "role" depending on what we're trying to get
+      // TODO: But make sure ROLE stuff is Linux specific 
+      diagsArea_ << DgSqlCode(-CLI_PROBLEM_READING_USERS)
+                 << DgString0(nameForDiags)
+                 << DgInt1(primaryError);
+   }
+   else 
+      if (authStatus == CmpSeabaseDDLauth::STATUS_NOTFOUND)
+      {
+         result = ERROR;
+         // TODO: Make error specific to "user" or "role" depending on what we're trying to get
+         diagsArea_.clear();
+         diagsArea_ << DgSqlCode(-CLI_USER_NOT_REGISTERED)
+                    << DgString0(nameForDiags);
+      }
+      else
+      {  
+         // If warnings were generated, do not propagate them to the caller
+         if (authStatus == CmpSeabaseDDLauth::STATUS_WARNING)
+            diagsArea_.clear();
+      }
           
   return result;
 
@@ -5051,38 +5048,6 @@ RETCODE ContextCli::authQuery(
 
 
 
-
-// Query the USERS table and return information about the specified
-// user in users_row. If the user does not exist or is invalid, the
-// return value will be ERROR and ContextCli::diagsArea_ will be
-// populated.
-//
-// The users_type structure is defined in smdio/CmTableDefs.h.
-//
-// For query type USERS_QUERY_BY_USER_ID, the userID argument must
-// be provided.
-//
-// For query types USERS_QUERY_BY_USER_NAME and
-// USERS_QUERY_BY_EXTERNAL_NAME, the userName argument must be
-// provided.
-RETCODE ContextCli::usersQuery(AuthQueryType queryType,      // IN
-                               const char *userName,          // IN optional
-                               Int32 userID,                  // IN optional
-                               char * usersNameFromUsersTable, //OUT
-                               Int32 &userIDFromUsersTable)  // OUT
-{
-  // authQuery is a superset of usersQuery functionality
-  // so now usersQuery just calls authQuery and returns the result
-  //  We could remove usersQuery completely and have the callers of
-  // usersQuery just call authQuery directly.  Taking this 
-  // shortcut right now to avoid the dealing with the CLI-isms of
-  // calling a new function.
-  RETCODE result;
-  result = authQuery(queryType, userName, userID, 
-                     usersNameFromUsersTable, userIDFromUsersTable);
-  return result; 
-
-}
 
 // Public method to update the databaseUserID_ and databaseUserName_
 // members and at the same time. It also calls dropSession() to create a
@@ -5116,19 +5081,20 @@ void ContextCli::setDatabaseUser(const Int32 &uid, const char *uname)
 // not found an error code will be returned and diagsArea_ populated.
 RETCODE ContextCli::setDatabaseUserByID(Int32 userID)
 {
-  char usersNameFromUsersTable[MAX_USERNAME_LEN +1];
-  Int32 userIDFromUsersTable;
+  char username[MAX_USERNAME_LEN +1];
+  Int32 userIDFromMetadata;
 
   // See if the USERS row exists
-  RETCODE result = usersQuery(USERS_QUERY_BY_USER_ID,
-                              NULL,        // IN user name (ignored)
-                              userID,      // IN user ID
-                              usersNameFromUsersTable, //OUT
-                              userIDFromUsersTable);    //OUT
+  RETCODE result = authQuery(USERS_QUERY_BY_USER_ID,
+                             NULL,        // IN user name (ignored)
+                             userID,      // IN user ID
+                             username, //OUT
+                             sizeof(username),
+                             userIDFromMetadata);    //OUT
 
   // Update the instance if the USERS lookup was successful
   if (result != ERROR)
-    setDatabaseUser(userIDFromUsersTable, usersNameFromUsersTable);
+    setDatabaseUser(userIDFromMetadata, username);
 
   return result;
 
@@ -5141,14 +5107,15 @@ RETCODE ContextCli::setDatabaseUserByName(const char *userName)
 {
   char usersNameFromUsersTable[MAX_USERNAME_LEN +1];
   Int32 userIDFromUsersTable;
-  // See if the USERS row exists
-  RETCODE result = usersQuery(USERS_QUERY_BY_USER_NAME,
-                              userName,    // IN user name
-                              0,           // IN user ID (ignored)
-                              usersNameFromUsersTable, //OUT
-                              userIDFromUsersTable);  // OUT
 
-  // Update the instance if the USERS lookup was successful
+  RETCODE result = authQuery(USERS_QUERY_BY_USER_NAME,
+                             userName,    // IN user name
+                             0,           // IN user ID (ignored)
+                             usersNameFromUsersTable, //OUT
+                             sizeof(usersNameFromUsersTable),
+                             userIDFromUsersTable);  // OUT
+
+  // Update the instance if the lookup was successful
   if (result != ERROR)
      setDatabaseUser(userIDFromUsersTable, usersNameFromUsersTable);
 
@@ -5189,7 +5156,7 @@ RETCODE ContextCli::getAuthIDFromName(
 {
 
 RETCODE result = SUCCESS;
-char authNameFromTable[600];
+char authNameFromTable[MAX_USERNAME_LEN + 1];
 
    if (authName == NULL)
       return ERROR;
@@ -5220,7 +5187,8 @@ char authNameFromTable[600];
   
 //TODO: If list of roles granted to user is cached in context, search there first.
 
-   return authQuery(AUTH_QUERY_BY_NAME,authName,0,authNameFromTable,authID); 
+   return authQuery(AUTH_QUERY_BY_NAME,authName,0,authNameFromTable,
+                    sizeof(authNameFromTable),authID); 
                        
 }
 //******************* End of ContextCli::getAuthIDFromName *********************
@@ -5246,7 +5214,7 @@ char authNameFromTable[600];
 // *                                                                           *
 // *  <authName>                      char *                          Out      *
 // *    passes back the name that the numeric ID mapped to.  If the ID does    *
-// *  not map to a name, the ASCII equivalent of the ID is passed back.        *                                                                       *
+// *  not map to a name, the ASCII equivalent of the ID is passed back.        *                                                                       
 // *                                                                           *
 // *  <maxBufLen>                     Int32                           In       *
 // *    is the size of <authName>.                                             *
@@ -5273,7 +5241,7 @@ RETCODE ContextCli::getAuthNameFromID(
 {
 
 RETCODE result = SUCCESS;
-char authNameFromTable[600];
+char authNameFromTable[MAX_USERNAME_LEN + 1];
 Int32 authIDFromTable;
 
    requiredLen = 0;
@@ -5302,6 +5270,7 @@ Int32 authIDFromTable;
                             NULL,        // IN user name (ignored)
                             authID,      // IN user ID
                             authNameFromTable, //OUT
+                            sizeof(authNameFromTable),
                             authIDFromTable);  // OUT
          if (result == SUCCESS)
             return storeName(authNameFromTable,authName,maxBufLen,requiredLen);
@@ -5312,6 +5281,7 @@ Int32 authIDFromTable;
                             NULL,        // IN user name (ignored)
                             authID,      // IN user ID
                             authNameFromTable, //OUT
+                            sizeof(authNameFromTable),
                             authIDFromTable);  // OUT
          if (result == SUCCESS)
             return storeName(authNameFromTable,authName,maxBufLen,requiredLen);
@@ -5344,7 +5314,7 @@ RETCODE ContextCli::getDBUserNameFromID(Int32 userID,         // IN
                                         Int32 *requiredLen)   // OUT optional
 {
   RETCODE result = SUCCESS;
-  char usersNameFromUsersTable[600];
+  char usersNameFromUsersTable[MAX_USERNAME_LEN + 1];
   Int32 userIDFromUsersTable;
   if (requiredLen)
     *requiredLen = 0;
@@ -5366,11 +5336,12 @@ RETCODE ContextCli::getDBUserNameFromID(Int32 userID,         // IN
   else
   {
     // See if the USERS row exists
-    result = usersQuery(USERS_QUERY_BY_USER_ID,
-                        NULL,        // IN user name (ignored)
-                        userID,      // IN user ID
-                        usersNameFromUsersTable, //OUT
-                        userIDFromUsersTable);  // OUT
+    result = authQuery(USERS_QUERY_BY_USER_ID,
+                       NULL,        // IN user name (ignored)
+                       userID,      // IN user ID
+                       usersNameFromUsersTable, //OUT
+                       sizeof(usersNameFromUsersTable),
+                       userIDFromUsersTable);  // OUT
     if (result != ERROR)
       currentUserName = usersNameFromUsersTable;
   }
@@ -5433,14 +5404,15 @@ RETCODE ContextCli::getDBUserIDFromName(const char *userName, // IN
 // See if the AUTHS row exists
 
 RETCODE result = SUCCESS;
-char usersNameFromUsersTable[600];
+char usersNameFromUsersTable[MAX_USERNAME_LEN + 1];
 Int32 userIDFromUsersTable;
 
-   result = usersQuery(USERS_QUERY_BY_USER_NAME,
-                       userName,    // IN user name
-                       0,           // IN user ID (ignored)
-                       usersNameFromUsersTable, //OUT
-                       userIDFromUsersTable);  // OUT
+   result = authQuery(USERS_QUERY_BY_USER_NAME,
+                      userName,    // IN user name
+                      0,           // IN user ID (ignored)
+                      usersNameFromUsersTable, //OUT
+                      sizeof(usersNameFromUsersTable),
+                      userIDFromUsersTable);  // OUT
    if (result == SUCCESS && userID)
       *userID = userIDFromUsersTable;
 
@@ -5470,59 +5442,6 @@ void ContextCli::setDatabaseUserInESP(const Int32 &uid, const char *uname,
 }
 
 
-// *****************************************************************************
-// *                                                                           *
-// * Function: ContextCli::storeName                                           *
-// *                                                                           *
-// *    Stores a name in a buffer.  If the name is too large, an error is      *
-// * returned.                                                                 *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <src>                           const char *                    In       *
-// *    is the name to be stored.                                              *
-// *                                                                           *
-// *  <dest>                          char *                          Out      *
-// *    is the buffer to store the name into.                                  *
-// *                                                                           *
-// *  <maxLength>                     int                             In       *
-// *    is the maximum number of bytes that can be stored into <dest>.         *
-// *                                                                           *
-// *  <actualLength>                  int                             In       *
-// *    is the number of bytes in <src>, and <dest>, if the store operation    *
-// *  is successful.                                                           *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Returns: RETCODE                                                         *
-// *                                                                           *
-// *  SUCCESS: destination returned                                            *
-// *  ERROR: destination too small, see <actualLength>                         *
-// *                                                                           *
-// *****************************************************************************
-RETCODE ContextCli::storeName(
-   const char *src,
-   char       *dest,
-   int         maxLength,
-   int        &actualLength)
-
-{
-
-   actualLength = strlen(src);
-   if (actualLength >= maxLength)
-   {
-      diagsArea_ << DgSqlCode(-CLI_USERNAME_BUFFER_TOO_SMALL);
-      return ERROR;
-   }
-   
-   memcpy(dest,src,actualLength);
-   dest[actualLength] = 0;
-   return SUCCESS;
-
-}
-//*********************** End of ContextCli::storeName *************************
 
 void ContextCli::setUdrXactAborted(Int64 currTransId, NABoolean b)
 {
@@ -5679,3 +5598,95 @@ void ContextCli::flushHtableCache()
 }
 
 
+// *****************************************************************************
+// *                                                                           *
+// * Function: ContextCli::storeName                                           *
+// *                                                                           *
+// *    Stores a name in a buffer.  If the name is too large, an error is      *
+// * returned.                                                                 *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <src>                           const char *                    In       *
+// *    is the name to be stored.                                              *
+// *                                                                           *
+// *  <dest>                          char *                          Out      *
+// *    is the buffer to store the name into.                                  *
+// *                                                                           *
+// *  <maxLength>                     int                             In       *
+// *    is the maximum number of bytes that can be stored into <dest>.         *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Returns: RETCODE                                                         *
+// *                                                                           *
+// *  SUCCESS: destination returned                                            *
+// *  ERROR: destination too small                                             *
+// *                                                                           *
+// *****************************************************************************
+RETCODE ContextCli::storeName(
+   const char *src,
+   char       *dest,
+   int         maxLength)
+
+{
+
+int actualLength;
+
+   return storeName(src,dest,maxLength,actualLength);
+
+}
+//*********************** End of ContextCli::storeName *************************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: ContextCli::storeName                                           *
+// *                                                                           *
+// *    Stores a name in a buffer.  If the name is too large, an error is      *
+// * returned along with the size of the name.                                 *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <src>                           const char *                    In       *
+// *    is the name to be stored.                                              *
+// *                                                                           *
+// *  <dest>                          char *                          Out      *
+// *    is the buffer to store the name into.                                  *
+// *                                                                           *
+// *  <maxLength>                     int                             In       *
+// *    is the maximum number of bytes that can be stored into <dest>.         *
+// *                                                                           *
+// *  <actualLength>                  int &                           In       *
+// *    is the number of bytes in <src>, and <dest>, if the store operation    *
+// *  is successful.                                                           *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Returns: RETCODE                                                         *
+// *                                                                           *
+// *  SUCCESS: destination returned                                            *
+// *  ERROR: destination too small, see <actualLength>                         *
+// *                                                                           *
+// *****************************************************************************
+RETCODE ContextCli::storeName(
+   const char *src,
+   char       *dest,
+   int         maxLength,
+   int        &actualLength)
+
+{
+
+   actualLength = strlen(src);
+   if (actualLength >= maxLength)
+      return ERROR;
+   
+   memcpy(dest,src,actualLength);
+   dest[actualLength] = 0;
+   return SUCCESS;
+
+}
+//*********************** End of ContextCli::storeName *************************
