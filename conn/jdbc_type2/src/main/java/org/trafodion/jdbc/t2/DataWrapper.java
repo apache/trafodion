@@ -279,11 +279,15 @@ public class DataWrapper
                     if (source.SQLbytesValue==null)
                     {
                         if (SQLbytesValue!=null) SQLbytesValue[col_idx] = null;
+						if (JdbcDebugCfg.traceActive) debug[methodId_copyRows].methodParameters(
+								"source.SQLbytesValue is null");
                     }
                     else
                     {
                         if (SQLbytesValue==null) setupSQLBytes();
                         SQLbytesValue[col_idx] = source.SQLbytesValue[col_idx];
+						if (JdbcDebugCfg.traceActive) debug[methodId_copyRows].methodParameters(
+								"SQLbytesValue[" + col_idx + "] is : " + SQLbytesValue[col_idx]);
                     }
 //---------------------
 				}
