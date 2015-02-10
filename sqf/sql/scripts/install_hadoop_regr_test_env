@@ -1,0 +1,415 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+##############################################################################
+
+# This script installs a TPC-DS environment, to be used for Trafodion regression
+# tests.
+
+# invoke it with -h or --help to get help
+
+# Before calling this script, the following environment variables need to be set up,
+# or they need to be passed in through command line parameters:
+
+# MY_LOCAL_SW_DIST (optional): Location for tar/zip files for this install
+# MY_TPCDS_DATA_DIR          : Directory where to unpack the TPC-DS data generator
+# MY_LOG_FILE                : Log file for error/tracing information
+# MY_HDFS_CMD                : Command to be used for HDFS shell (e.g. "hdfs" or "swhdfs")
+# MY_HIVE_CMD                : Command to be used for Hive (e.g. "hive" or "swhive")
+
+TPCDS_MIRROR_URL=http://www.tpc.org/tpcds/dsgen/dsgen-download-files.asp?download_key=NaN
+TPCDS_ZIP=tpcds_kit.zip
+
+function usage {
+
+cat <<EOF
+
+Usage:
+
+$0 [ options... ]
+
+Options:
+
+   --unpackDir=<dir1>   Directory where to unpack the zip files
+   --dataDir=<dir2>     Directory where to store generated data files
+   --logFile=<file2>    Log file for diagnostic messages
+   --hdfsCmd=<cmd1>     HDFS command
+   --hiveCmd=<cmd2>     Hive command
+   -h | --help:         Display this help information
+
+Set environment variable MY_LOCAL_SW_DIST to the directory of a local
+copy of the TPC-DS zip file, if possible.
+
+EOF
+}
+
+while [ $# -gt 0 ];
+do
+  case "$1" in
+    --unpackDir=*)
+                     MY_TPCDS_UNPACK_DIR=${1#--unpackDir=}
+                     ;;
+
+    --dataDir=*)
+                     MY_TPCDS_DATA_DIR=${1#--dataDir=}
+                     ;;
+
+    --logFile=*)
+                     MY_LOG_FILE=${1#--logFile=}
+                     ;;
+
+    --hdfsCmd=*)
+                     MY_HDFS_CMD=${1#--hdfsCmd=}
+                     ;;
+
+    --hiveCmd=*)
+                     MY_HIVE_CMD=${1#--hiveCmd=}
+                     ;;
+
+    -h)
+                     usage
+                     exit 1
+                     ;;
+
+    --help)
+                     usage
+                     exit 1
+                     ;;
+
+    **)
+                     usage
+                     echo "Unexpected argument: $1"
+                     exit 100
+                     ;;
+  esac
+  shift
+done
+
+#####################################################
+echo "Downloading TPC-DS setup tools..."
+set -x
+
+if [ -z "$MY_TPCDS_UNPACK_DIR" ]; then
+  MY_TPCDS_UNPACK_DIR=.
+  cd -P .
+else
+  mkdir $MY_TPCDS_UNPACK_DIR
+  cd $MY_TPCDS_UNPACK_DIR
+fi
+
+if [ -f $MY_LOCAL_SW_DIST/${TPCDS_ZIP} ]; then
+  cp $MY_LOCAL_SW_DIST/${TPCDS_ZIP} .
+else
+  curl --output ${TPCDS_ZIP} ${TPCDS_MIRROR_URL}
+  fi
+
+  echo "Unzipping TPC-DS kit ${TPCDS_ZIP} into ${PWD} and making the tools..."
+  unzip ${TPCDS_ZIP} >/dev/null
+
+  cd tools
+  echo "Making objects for TPC-DS database generator..." | tee -a ${MY_LOG_FILE}
+  make clean >>${MY_LOG_FILE} 2>&1 
+  make >>${MY_LOG_FILE} 2>&1 
+
+  echo "Generating the data..." | tee -a ${MY_LOG_FILE}
+  mkdir $MY_TPCDS_DATA_DIR
+  SCALE=1
+  FORCE=Y
+
+  export PATH=.:$PATH
+
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table store_sales >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table date_dim    >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table time_dim    >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table item        >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table customer    >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table customer_demographics  >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table household_demographics >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table customer_address       >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table store       >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table promotion   >>${MY_LOG_FILE} 2>&1
+
+  echo "Copying generated data to HDFS..."
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds                        >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/date_dim               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/time_dim               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/item                   >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/customer               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/customer_demographics  >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/household_demographics >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/customer_address       >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/store                  >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/promotion              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir /hive/tpcds/store_sales            >>${MY_LOG_FILE} 2>&1
+
+  cd $MY_TPCDS_DATA_DIR
+
+  for t in date_dim time_dim item customer customer_demographics household_demographics customer_address store promotion store_sales
+    do
+      $MY_HDFS_CMD dfs -put ${t}.dat /hive/tpcds/${t}        >>${MY_LOG_FILE} 2>&1
+    done
+
+  $MY_HDFS_CMD dfs -ls -R /hive/tpcds/*/*.dat                >>${MY_LOG_FILE} 2>&1
+
+  echo "Creating tables in Hive..." | tee -a ${MY_LOG_FILE}
+  $MY_HIVE_CMD <<EOF >>${MY_LOG_FILE} 2>&1
+-- store_sales star only
+
+create external table store_sales
+(
+    ss_sold_date_sk           int,
+    ss_sold_time_sk           int,
+    ss_item_sk                int,
+    ss_customer_sk            int,
+    ss_cdemo_sk               int,
+    ss_hdemo_sk               int,
+    ss_addr_sk                int,
+    ss_store_sk               int,
+    ss_promo_sk               int,
+    ss_ticket_number          int,
+    ss_quantity               int,
+    ss_wholesale_cost         float,
+    ss_list_price             float,
+    ss_sales_price            float,
+    ss_ext_discount_amt       float,
+    ss_ext_sales_price        float,
+    ss_ext_wholesale_cost     float,
+    ss_ext_list_price         float,
+    ss_ext_tax                float,
+    ss_coupon_amt             float,
+    ss_net_paid               float,
+    ss_net_paid_inc_tax       float,
+    ss_net_profit             float                  
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/store_sales';
+
+create external table customer_demographics
+(
+    cd_demo_sk                int,
+    cd_gender                 string,
+    cd_marital_status         string,
+    cd_education_status       string,
+    cd_purchase_estimate      int,
+    cd_credit_rating          string,
+    cd_dep_count              int,
+    cd_dep_employed_count     int,
+    cd_dep_college_count      int 
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/customer_demographics';
+
+create external table date_dim
+(
+    d_date_sk                 int,
+    d_date_id                 string,
+    d_date                    timestamp,
+    d_month_seq               int,
+    d_week_seq                int,
+    d_quarter_seq             int,
+    d_year                    int,
+    d_dow                     int,
+    d_moy                     int,
+    d_dom                     int,
+    d_qoy                     int,
+    d_fy_year                 int,
+    d_fy_quarter_seq          int,
+    d_fy_week_seq             int,
+    d_day_name                string,
+    d_quarter_name            string,
+    d_holiday                 string,
+    d_weekend                 string,
+    d_following_holiday       string,
+    d_first_dom               int,
+    d_last_dom                int,
+    d_same_day_ly             int,
+    d_same_day_lq             int,
+    d_current_day             string,
+    d_current_week            string,
+    d_current_month           string,
+    d_current_quarter         string,
+    d_current_year            string 
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/date_dim';
+
+create external table time_dim
+(
+    t_time_sk                 int,
+    t_time_id                 string,
+    t_time                    int,
+    t_hour                    int,
+    t_minute                  int,
+    t_second                  int,
+    t_am_pm                   string,
+    t_shift                   string,
+    t_sub_shift               string,
+    t_meal_time               string
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/time_dim';
+
+create external table item
+(
+    i_item_sk                 int,
+    i_item_id                 string,
+    i_rec_start_date          timestamp,
+    i_rec_end_date            timestamp,
+    i_item_desc               string,
+    i_current_price           float,
+    i_wholesale_cost          float,
+    i_brand_id                int,
+    i_brand                   string,
+    i_class_id                int,
+    i_class                   string,
+    i_category_id             int,
+    i_category                string,
+    i_manufact_id             int,
+    i_manufact                string,
+    i_size                    string,
+    i_formulation             string,
+    i_color                   string,
+    i_units                   string,
+    i_container               string,
+    i_manager_id              int,
+    i_product_name            string
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/item';
+
+create external table store
+(
+    s_store_sk                int,
+    s_store_id                string,
+    s_rec_start_date          timestamp,
+    s_rec_end_date            timestamp,
+    s_closed_date_sk          int,
+    s_store_name              string,
+    s_number_employees        int,
+    s_floor_space             int,
+    s_hours                   string,
+    s_manager                 string,
+    s_market_id               int,
+    s_geography_class         string,
+    s_market_desc             string,
+    s_market_manager          string,
+    s_division_id             int,
+    s_division_name           string,
+    s_company_id              int,
+    s_company_name            string,
+    s_street_number           string,
+    s_street_name             string,
+    s_street_type             string,
+    s_suite_number            string,
+    s_city                    string,
+    s_county                  string,
+    s_state                   string,
+    s_zip                     string,
+    s_country                 string,
+    s_gmt_offset              float,
+    s_tax_precentage          float                  
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/store';
+
+create external table customer
+(
+    c_customer_sk             int,
+    c_customer_id             string,
+    c_current_cdemo_sk        int,
+    c_current_hdemo_sk        int,
+    c_current_addr_sk         int,
+    c_first_shipto_date_sk    int,
+    c_first_sales_date_sk     int,
+    c_salutation              string,
+    c_first_name              string,
+    c_last_name               string,
+    c_preferred_cust_flag     string,
+    c_birth_day               int,
+    c_birth_month             int,
+    c_birth_year              int,
+    c_birth_country           string,
+    c_login                   string,
+    c_email_address           string,
+    c_last_review_date        string
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/customer';
+
+create external table promotion
+(
+    p_promo_sk                int,
+    p_promo_id                string,
+    p_start_date_sk           int,
+    p_end_date_sk             int,
+    p_item_sk                 int,
+    p_cost                    float,
+    p_response_target         int,
+    p_promo_name              string,
+    p_channel_dmail           string,
+    p_channel_email           string,
+    p_channel_catalog         string,
+    p_channel_tv              string,
+    p_channel_radio           string,
+    p_channel_press           string,
+    p_channel_event           string,
+    p_channel_demo            string,
+    p_channel_details         string,
+    p_purpose                 string,
+    p_discount_active         string 
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/promotion';
+
+create external table household_demographics
+(
+    hd_demo_sk                int,
+    hd_income_band_sk         int,
+    hd_buy_potential          string,
+    hd_dep_count              int,
+    hd_vehicle_count          int
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/household_demographics';
+
+create external table customer_address
+(
+    ca_address_sk             int,
+    ca_address_id             string,
+    ca_street_number          string,
+    ca_street_name            string,
+    ca_street_type            string,
+    ca_suite_number           string,
+    ca_city                   string,
+    ca_county                 string,
+    ca_state                  string,
+    ca_zip                    string,
+    ca_country                string,
+    ca_gmt_offset             float,
+    ca_location_type          string
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/customer_address';
+
+create table store_orc stored as orc as select * from store;
+
+quit;
+
+EOF
+
