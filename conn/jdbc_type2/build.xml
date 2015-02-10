@@ -2,7 +2,7 @@
 
 <!-- @@@ START COPYRIGHT @@@                                                 -->
 <!--                                                                         -->
-<!-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.            -->
+<!-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.            -->
 <!--                                                                         -->
 <!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
 <!-- you may not use this file except in compliance with the License.        -->
@@ -59,7 +59,7 @@
     <target name="clean">
       <delete dir="${dest.classes}"/>
       <delete>
-        <fileset dir="${native.src}" includes="org_*.h,Vproc.h,Vproc.cpp"/>
+        <fileset dir="${native.src}" includes="org_*.h"/>
       </delete>
       <delete file="${package.src}/DriverInfo.java"/>
       <delete dir="dist"/>
@@ -75,9 +75,16 @@
     </target>
 
     <target name="compile" depends="init">
+<!--
       <copy file="${package.src}/DriverInfo.java-tmpl" tofile="${package.src}/DriverInfo.java" overwrite="yes"/>
+-->
       <copy todir="${dest.classes}" overwrite="yes" file="${dest.src}/SQLMXT2Messages_en.properties"/>
+<!--
       <replace file="${package.src}/DriverInfo.java" token="@@@" value="${vproc.str}" />
+-->
+      <exec executable="/bin/sh">
+         <arg line="../doDrvInfo ${package.src}/DriverInfo.java ${package.src}/DriverInfo.java-tmpl ${vproc.str}"/>
+      </exec>   
 
       <javac destdir="${dest.classes}" srcdir="${dest.src}" debug="on" includes="**/*.java" classpath="${java.home}/lib/tools.jar:${dest.classes}" includeAntRuntime="false"/>
     </target>
@@ -95,11 +102,13 @@
     </target>
 
     <target name="native" depends="jni" >
+<!--
          <copy file="${native.src}/Vproc.cpp-tmpl" tofile="${native.src}/Vproc.cpp" overwrite="yes"/>
          <copy file="${native.src}/Vproc.h-tmpl" tofile="${native.src}/Vproc.h" overwrite="yes"/>
 
          <replace file="${native.src}/Vproc.cpp" token="@@@" value="${vproc.str}" />
          <replace file="${native.src}/Vproc.h" token="@@@" value="${vproc.str}" />
+-->
 <!--
          <exec dir="." executable="/usr/bin/make">
             <arg line="clean"/>

@@ -2,7 +2,7 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ cleanall: cleanallndcs cleanlnx_drvr
 .PHONY: bldlnx_drvr
 include $(MY_SQROOT)/macros.gmk
 bldlnx_drvr:
-	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli;$(MAKE) -f makefile.lnx clean; $(MAKE) -f makefile.lnx linux64_$(SQ_BUILD_TYPE)
+	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli;$(MAKE) -f makefile.lnx linux64_$(SQ_BUILD_TYPE)
 	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli/package;rm -rf *.gz; ./mklnxpkg.sh -f; cp -p trafodbc_Linux64_pkg.tar.gz $(MY_SQROOT)/../conn/clients/TRAF_ODBC_Linux_Driver_64.tar.gz
 
 # Linux ODBC driver clean targets	
