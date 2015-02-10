@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1973,7 +1973,8 @@ class ExeUtilHbaseCoProcAggr : public ExeUtilExpr
 		 NULL, NULL, 
 		 NULL, CharInfo::UnknownCharSet, oHeap),
      aggregateExpr_(aggregateExpr),
-     corrName_(corrName)
+     corrName_(corrName),
+     estRowsAccessed_(-1.0)
   {
   };
 
@@ -1998,9 +1999,18 @@ class ExeUtilHbaseCoProcAggr : public ExeUtilExpr
 
   CorrName& getCorrName() { return corrName_; }
 
+  virtual ExplainTuple * addSpecificExplainInfo(
+       ExplainTupleMaster *explainTuple, ComTdb *tdb, 
+       Generator *generator);
+
+  inline const CostScalar getEstRowsAccessed() const 
+    { return estRowsAccessed_; }
+  inline void setEstRowsAccessed(CostScalar r)  { estRowsAccessed_ = r; }
+
  private:
   ValueIdSet aggregateExpr_;
   CorrName corrName_;
+  CostScalar estRowsAccessed_;
   
 };
 

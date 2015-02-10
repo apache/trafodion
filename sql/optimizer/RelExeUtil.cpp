@@ -5151,8 +5151,11 @@ RelExpr * ExeUtilHbaseCoProcAggr::copyTopNode(RelExpr *derivedNode, CollHeap* ou
   ExeUtilHbaseCoProcAggr *result;
 
   if (derivedNode == NULL)
+  {
     result = new (outHeap) 
       ExeUtilHbaseCoProcAggr(getTableName(), aggregateExpr(), outHeap);
+    result->setEstRowsAccessed(getEstRowsAccessed());
+  }
   else
     result = (ExeUtilHbaseCoProcAggr *) derivedNode;
 
@@ -5184,6 +5187,9 @@ RelExpr * ExeUtilHbaseCoProcAggr::bindNode(BindWA *bindWA)
 
   // BindWA keeps list of coprocessors used, so privileges can be checked.
   bindWA->insertCoProcAggr(this);
+
+  CostScalar rowsAccessed(naTable->estimateHBaseRowCount());
+  setEstRowsAccessed(rowsAccessed);
 
   return boundExpr;
 }

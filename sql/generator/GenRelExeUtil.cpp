@@ -4819,10 +4819,16 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
   char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
   strcpy(zkPort, zkPortNAS.data());
 
+  TableDesc *tableDesc = getUtilTableDesc();
   ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
-  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) == DF_ON)
-    hbpa->setCacheBlocks(TRUE);
+
+  generator->setHBaseCacheBlocks(tableDesc->getNATable()->
+                                 computeHBaseRowSizeFromMetaData(),
+                                 (Int64) getEstRowsAccessed().getValue(),
+                                 hbpa);
+
+  // cache setting not relevant since rows are not returned to HBase client
   hbpa->setNumCacheRows(CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MIN));
 
   // create hdfsscan_tdb
@@ -4854,7 +4860,6 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
 
   generator->initTdbFields(hbasescan_tdb);
 
-  TableDesc *tableDesc = getUtilTableDesc();
   if (tableDesc->getNATable()->isSeabaseTable())
   {
     if (tableDesc->getNATable()->isEnabledForDDLQI())

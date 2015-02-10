@@ -314,6 +314,10 @@ class CmpSeabaseDDL
 
    short switchBackCompiler();
 
+  ExpHbaseInterface* allocEHI(NADefaults * defs = NULL);
+  
+  void deallocEHI(ExpHbaseInterface* &ehi);
+
  protected:
 
   enum { 
@@ -360,10 +364,6 @@ class CmpSeabaseDDL
 
   ExpHbaseInterface* allocEHI(const char * server, const char * zkPort,
                               NABoolean raiseError);
-  
-  ExpHbaseInterface* allocEHI(NADefaults * defs = NULL);
-  
-  void deallocEHI(ExpHbaseInterface* &ehi);
   
   // if prevContext is defined, get the controlDB from the previous context so the
   // defaults are copied from the previous cmp context to the new cmp context. This is only

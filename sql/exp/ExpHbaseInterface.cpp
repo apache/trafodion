@@ -1307,3 +1307,13 @@ Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
   return retCode_;
 }
 
+
+
+Lng32 ExpHbaseInterface_JNI::getBlockCacheFraction(float& frac)
+{
+  if (client_ == NULL)
+    return -HBASE_ACCESS_ERROR ;
+
+  retCode_ = client_->getBlockCacheFraction(frac);
+  return retCode_;
+}

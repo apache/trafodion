@@ -7614,7 +7614,7 @@ NABoolean NATable::hasSaltedColumn()
 // The single column family used by Trafodion is also a known entity, but we
 // again do it in Java using the HBase client interface as insulation against
 // possible future changes.
-Int32 NATable::computeHBaseRowSizeFromMetaData()
+Int32 NATable::computeHBaseRowSizeFromMetaData() const
 {
   Int32 partialRowSize = 0;
   Int32 rowKeySize = 0;
@@ -7661,7 +7661,7 @@ Int32 NATable::computeHBaseRowSizeFromMetaData()
 // For an HBase table, we can estimate the number of rows by dividing the number
 // of KeyValues in all HFiles of the table by the number of columns (with a few
 // other considerations).
-Int64 NATable::estimateHBaseRowCount()
+Int64 NATable::estimateHBaseRowCount() const
 {
   if (!isHbaseTable() || isSeabaseMDTable() ||
       getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||

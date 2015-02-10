@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -689,6 +689,11 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   snprintf(cacheBuf, 12, "%u", ((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->numCacheRows());
   description += cacheBuf ;
   description += " " ;
+
+  if (!(((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->cacheBlocks())) {
+    description += "cache_blocks: " ;
+    description += "OFF " ;
+  }
 
   char buf[20];
   if ( getProbes().getValue() > 0.0 ) {
@@ -1971,3 +1976,24 @@ ExplainTuple *ExeUtilHBaseBulkUnLoad::addSpecificExplainInfo(ExplainTupleMaster 
 
   return explainTuple;
 }
+
+ExplainTuple *ExeUtilHbaseCoProcAggr::addSpecificExplainInfo(
+     ExplainTupleMaster *explainTuple, ComTdb *tdb, Generator *generator)
+{
+  NAString description;
+  char buf[64];
+  description += "rows_accessed: "; // #  rows accessed
+  sprintf(buf, "%g ", getEstRowsAccessed().getValue());
+  description += buf;
+  
+  if (!(((ComTdbHbaseCoProcAggr *)tdb)->
+        getHbasePerfAttributes()->cacheBlocks())) {
+    description += "cache_blocks: " ;
+    description += "OFF " ;
+  }
+
+  explainTuple->setDescription(description);
+
+  return explainTuple;
+}
+

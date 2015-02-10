@@ -320,6 +320,8 @@ class ExpHbaseInterface : public NABasicObject
                                  Int32 numCols,
                                  Int64& estRC) = 0;
 
+  virtual Lng32 getBlockCacheFraction(float& frac) = 0;
+
 protected:
   enum 
     {
@@ -563,6 +565,8 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
                                  Int32 partialRowSize,
                                  Int32 numCols,
                                  Int64& estRC);
+
+  virtual Lng32 getBlockCacheFraction(float& frac) ;
 
 private:
   bool  useTRex_;

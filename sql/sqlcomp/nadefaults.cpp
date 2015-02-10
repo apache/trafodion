@@ -1724,7 +1724,9 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // HBASE_SQL_IUD_SEMANTICS:      Off: Don't check for existing rows for insert/update
 
   DDkwd__(HBASE_ASYNC_DROP_TABLE,		"OFF"),
- DDkwd__(HBASE_CACHE_BLOCKS,		"ON"),
+ // HBASE_CACHE_BLOCKS, ON => cache every scan, OFF => cache no scan
+ // SYSTEM => cache scans which take less than 1 RS block cache mem.
+ DDkwd__(HBASE_CACHE_BLOCKS,		"SYSTEM"),
   DD_____(HBASE_CATALOG,                        "HBASE"),
   DDkwd__(HBASE_CHECK_AND_UPDEL_OPT,		"ON"),
 
@@ -1751,6 +1753,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(HBASE_RANGE_PARTITIONING,	        "ON"),
   DDkwd__(HBASE_RANGE_PARTITIONING_MC_SPLIT,	"ON"),
+ DDui___(HBASE_REGION_SERVER_MAX_HEAP_SIZE,     "1024"), // in units of MB
 
   DDkwd__(HBASE_ROWSET_VSBB_OPT,		"ON"),
   DDflt0_(HBASE_SALTED_TABLE_MAX_FILE_SIZE,	"0"),

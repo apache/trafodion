@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -819,8 +819,8 @@ public:
   // Get the part of the row size that is computable with info we have available
   // without accessing HBase. The result is passed to estimateHBaseRowCount(),
   // which completes the row size calculation with HBase info.
-  Int32 computeHBaseRowSizeFromMetaData();
-  Int64 estimateHBaseRowCount();
+  Int32 computeHBaseRowSizeFromMetaData() const ;
+  Int64 estimateHBaseRowCount() const;
 
 private:
   // copy ctor

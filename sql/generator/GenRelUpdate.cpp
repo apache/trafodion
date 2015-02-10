@@ -1176,7 +1176,7 @@ short HbaseDelete::codeGen(Generator * generator)
 
   ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
-  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) == DF_ON)
+  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) != DF_OFF)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
   generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;
@@ -1979,7 +1979,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 
   ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
-  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) == DF_ON)
+  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) != DF_OFF)
     hbpa->setCacheBlocks(TRUE);
   // estrowsaccessed is 0 for now, so cache size will be set to minimum
   generator->setHBaseNumCacheRows(getEstRowsAccessed().getValue(), hbpa) ;
