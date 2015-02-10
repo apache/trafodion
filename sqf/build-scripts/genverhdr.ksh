@@ -2,7 +2,7 @@
 ###############################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ static const char * SCMBuildStr = "";
 /* build version */
 #define VERS_BR        $branch
 #define VERS_BR2       $(echo $funbranch | sed -e "s:-:_dh_:g" -e "s:\.:_dt_:g" -e "s:\/:_sl_:g")
+#define VERS_BR3       $(echo $funbranch | sed -e "s:_dh_.*::")
 #define VERS_BV        $flavor
 #define VERS_SCMBV     $build
 #define VERS_SCMBV2    $(echo $build | sed -e "s:-:_dh_:g" -e "s:\.:_dt_:g" -e "s:\/:_sl_:g")
