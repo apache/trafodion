@@ -279,6 +279,13 @@ public class LmT2Driver implements java.sql.Driver
     {
       if (mapDefaultConnToType2_)
       {
+        String maxPoolSize = "0";
+        String minPoolSize = "1";
+        String initialPoolSize = "1";
+        props.setProperty("maxPoolSize", maxPoolSize);
+        props.setProperty("minPoolSize", minPoolSize);
+        props.setProperty("initialPoolSize", initialPoolSize);
+
         conn = jdbcMxDrvr_.connect(type2URL_, props);
       }
       else
