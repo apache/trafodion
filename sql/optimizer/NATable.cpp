@@ -6830,14 +6830,8 @@ NATable::~NATable()
          }
          NADELETE(col, NAColumn, heap_);
      }
+     colArray_.clear();
   }
-
-  if (clusteringIndex_ != NULL)
-  {
-     NADELETE(clusteringIndex_, NAFileSet, heap_);
-     clusteringIndex_ = NULL;
-  }
- 
   if (schemaLabelFileName_ != NULL)
   {
      NADELETEBASIC(schemaLabelFileName_, heap_);
@@ -6874,6 +6868,41 @@ NATable::~NATable()
      NADELETE(sgAttributes_, SequenceGeneratorAttributes, heap_);
      sgAttributes_ = NULL;
   }
+  // clusteringIndex_ is part of indexes - No need to delete clusteringIndex_
+  CollIndex entryCount = indexes_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+      NADELETE(indexes_[i], NAFileSet, heap_);
+  }
+  indexes_.clear();
+  entryCount  = vertParts_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+      NADELETE(vertParts_[i], NAFileSet, heap_);
+  }
+  vertParts_.clear();
+  entryCount  = checkConstraints_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+      NADELETE(checkConstraints_[i], CheckConstraint, heap_);
+  }
+  uniqueConstraints_.clear();
+  entryCount  = uniqueConstraints_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+      NADELETE(uniqueConstraints_[i], AbstractRIConstraint, heap_);
+  }
+  uniqueConstraints_.clear();
+  entryCount  = refConstraints_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+      NADELETE(refConstraints_[i], AbstractRIConstraint, heap_);
+  }
+  refConstraints_.clear();
+  entryCount  = mvsUsingMe_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+      NADELETE(mvsUsingMe_[i], UsingMvInfo, heap_);
+  }
+  mvsUsingMe_.clear();
+  // mvInfo_ is not used at all
+  // tableIDList_ is list of ints - No need to delete the entries
+  // colStats_ and colsWithMissingStats_ comes from STMTHEAP
+  // secKeySet_ is the set that holds ComSecurityKeySet object itself
 }
 
 void NATable::resetAfterStatement() // ## to be implemented?
@@ -8217,12 +8246,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         {
           //was not able to get cache size below
           //max allowed cache size
-
-          // Method RemoveFromNATableCache() should be revisited once NATables are allocated from a 
-          // single heap. Comment out CMPASSERT for the time being to allow 
-          // seabase/TEST020 to pass.
           #ifndef NDEBUG
-          // CMPASSERT(FALSE);
+          CMPASSERT(FALSE);
           #endif
         }
       }
@@ -8526,7 +8551,7 @@ void NATableDB::flushCache()
 NABoolean NATableDB::enforceMemorySpaceConstraints()
 {
   //check if cache size is within memory constraints
-  if (currentCacheSize_ <= maxCacheSize_)
+  if (maxCacheSize_ == 0 || heap_->getAllocSize()  <= maxCacheSize_)
     return TRUE;
 
   //need to get cache size under memory allowance
@@ -8552,7 +8577,7 @@ NABoolean NATableDB::enforceMemorySpaceConstraints()
   //in the current statement.
 
   //check if cache is now within memory constraints
-  while (currentCacheSize_ > maxCacheSize_){
+  while (heap_->getAllocSize()  > maxCacheSize_){
 
     //get reference to table
     NATable * table = cachedTableList_[replacementCursor_];

@@ -1253,9 +1253,9 @@ short ExeCliInterface::clearExecFetchClose(char * inputBuf,
 	    }
 	}
     }
-
-  close();
-
+  close(); 
+  if (retcode == 100)
+     fetchRowsEpilogue(NULL, TRUE); 
   return (short)retcode;
 }
 
