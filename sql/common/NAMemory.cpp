@@ -1,7 +1,7 @@
 // ***********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -111,6 +111,11 @@
 // memory overflow is found, use this tracing method to find where the
 // allocation was done and check if the allocation is adequate.
 //
+// Note that env MEMDEBUG should not be set to 2 when tracing the
+// allocation of specified size because the user specified size would
+// be different comparing to the allocated size due to extra bytes needed
+// for block overflow checking.
+//
 // As we may delete the entire heap without deallocating each individual
 // block we ever allocated for some heaps, the trace file may contains
 // blocks that are ok not to be explicitly deleted. One needs to separate
@@ -129,7 +134,7 @@
 //   2) Ensure existing memory debug methods specified by env MEMDEBUG
 //      still work in multi-threaded environment
 //-------------------------------------------------------------------------//
-// static THREAD_P UInt32 TraceAllocSize = 0;
+// static THREAD_P UInt32 TraceAllocSize = 0; ** defined in common/ComRtUtil.h
 #endif // _DEBUG
 
 const  UInt32 deallocTraceEntries = 4096;
