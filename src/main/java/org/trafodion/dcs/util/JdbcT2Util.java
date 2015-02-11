@@ -44,7 +44,7 @@ public final class JdbcT2Util
 	private static Log LOG = LogFactory.getLog(JdbcT2Util.class);
     private Configuration conf;
     private int mapInitialSize;
-	Map<String, ConnectionContext> m;
+    Map<String, ConnectionContext> m;
  
 	static
 	{
@@ -80,12 +80,12 @@ public final class JdbcT2Util
 		init(conf);
 	}
 
-	class ConnectionContext {
-		java.sql.Connection conn;
-		java.sql.Statement stmt;
-		java.sql.ResultSet rs; 
-		boolean open = false;
-		boolean error = false;
+    class ConnectionContext {
+        java.sql.Connection conn;
+        java.sql.Statement stmt;
+        java.sql.ResultSet rs; 
+        boolean open = false;
+        boolean error = false;
 
 		void open() {
 			if(LOG.isDebugEnabled())
@@ -161,23 +161,22 @@ public final class JdbcT2Util
 			if(LOG.isDebugEnabled())
 				LOG.debug("End ConnectionContext.execute()");
 		}
-
-		java.sql.ResultSet getResultSet(){
-			return rs;
-		}
-		
-		boolean isOpen(){
-			return open;
-		}
-		
-		boolean isError(){
-			return error;
-		}
-	}
-	
-	public synchronized JSONArray exec(String command){
-		if(LOG.isDebugEnabled())
-			LOG.debug("Begin exec()");
+        java.sql.ResultSet getResultSet(){
+            return rs;
+        }
+        
+        boolean isOpen(){
+            return open;
+        }
+        
+        boolean isError(){
+            return error;
+        }
+    }
+    
+    public synchronized JSONArray exec(String command){
+        if(LOG.isDebugEnabled())
+            LOG.debug("Begin exec()");
 
 		JSONArray js = null;
 		String threadId = Thread.currentThread().getName();
@@ -216,95 +215,95 @@ public final class JdbcT2Util
 		if(LOG.isDebugEnabled())
 			LOG.debug("End exec()");
 
-		return js;
-	}
-	
-	private synchronized JSONArray convertResultSetToJSON(java.sql.ResultSet rs) throws Exception {
-		if(LOG.isDebugEnabled())
-			LOG.debug("Begin convertResultSetToJSON");
-		
-		JSONArray json = new JSONArray();
+        return js;
+    }
+    
+    private synchronized JSONArray convertResultSetToJSON(java.sql.ResultSet rs) throws Exception {
+        if(LOG.isDebugEnabled())
+            LOG.debug("Begin convertResultSetToJSON");
+        
+        JSONArray json = new JSONArray();
 
-		try { 
+        try { 
 
-			java.sql.ResultSetMetaData rsmd = rs.getMetaData(); 
+            java.sql.ResultSetMetaData rsmd = rs.getMetaData(); 
 
-			while(rs.next()){ 
-				int numColumns = rsmd.getColumnCount(); 
-				JSONObject obj = new JSONObject(); 
+            while(rs.next()){ 
+                int numColumns = rsmd.getColumnCount(); 
+                JSONObject obj = new JSONObject(); 
 
-				for (int i=1; i<numColumns+1; i++) { 
+                for (int i=1; i<numColumns+1; i++) { 
 
-					String column_name = rsmd.getColumnName(i); 
+                    String column_name = rsmd.getColumnName(i); 
 
-					if(rsmd.getColumnType(i)==java.sql.Types.ARRAY){ 
-						obj.put(column_name, rs.getArray(column_name)); 
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.BIGINT){ 
-						obj.put(column_name, rs.getLong(column_name)); 
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.BOOLEAN){ 
-						obj.put(column_name, rs.getBoolean(column_name)); 
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.BLOB){ 
-						obj.put(column_name, rs.getBlob(column_name)); 
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.DOUBLE){ 
-						obj.put(column_name, rs.getDouble(column_name));  
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.FLOAT){ 
-						obj.put(column_name, rs.getFloat(column_name)); 
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.INTEGER){ 
-						obj.put(column_name, rs.getInt(column_name)); 
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.NVARCHAR){ 
-						obj.put(column_name, rs.getNString(column_name)); 
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.CHAR || 
-							rsmd.getColumnType(i)==java.sql.Types.VARCHAR){ 
-						//prevent obj.put from removing null key value from JSONObject
-						String s = rs.getString(column_name);
-						if(s == null)
-							obj.put(column_name, new String("")); 
-						else
-							obj.put(column_name, rs.getString(column_name)); 
-					} 					
-					else if(rsmd.getColumnType(i)==java.sql.Types.TINYINT){ 
-						obj.put(column_name, rs.getInt(column_name)); 
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.SMALLINT){ 
-						obj.put(column_name, rs.getInt(column_name)); 
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.DATE){ 
-						obj.put(column_name, rs.getDate(column_name)); 
-					} 
-					else if(rsmd.getColumnType(i)==java.sql.Types.TIMESTAMP){ 
-						obj.put(column_name, rs.getTimestamp(column_name));    
-					} 
-					else{ 
-						obj.put(column_name, rs.getObject(column_name)); 
-					}  
+                    if(rsmd.getColumnType(i)==java.sql.Types.ARRAY){ 
+                        obj.put(column_name, rs.getArray(column_name)); 
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.BIGINT){ 
+                        obj.put(column_name, rs.getLong(column_name)); 
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.BOOLEAN){ 
+                        obj.put(column_name, rs.getBoolean(column_name)); 
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.BLOB){ 
+                        obj.put(column_name, rs.getBlob(column_name)); 
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.DOUBLE){ 
+                        obj.put(column_name, rs.getDouble(column_name));  
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.FLOAT){ 
+                        obj.put(column_name, rs.getFloat(column_name)); 
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.INTEGER){ 
+                        obj.put(column_name, rs.getInt(column_name)); 
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.NVARCHAR){ 
+                        obj.put(column_name, rs.getNString(column_name)); 
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.CHAR || 
+                            rsmd.getColumnType(i)==java.sql.Types.VARCHAR){ 
+                        //prevent obj.put from removing null key value from JSONObject
+                        String s = rs.getString(column_name);
+                        if(s == null)
+                            obj.put(column_name, new String("")); 
+                        else
+                            obj.put(column_name, rs.getString(column_name)); 
+                    }                     
+                    else if(rsmd.getColumnType(i)==java.sql.Types.TINYINT){ 
+                        obj.put(column_name, rs.getInt(column_name)); 
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.SMALLINT){ 
+                        obj.put(column_name, rs.getInt(column_name)); 
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.DATE){ 
+                        obj.put(column_name, rs.getDate(column_name)); 
+                    } 
+                    else if(rsmd.getColumnType(i)==java.sql.Types.TIMESTAMP){ 
+                        obj.put(column_name, rs.getTimestamp(column_name));    
+                    } 
+                    else{ 
+                        obj.put(column_name, rs.getObject(column_name)); 
+                    }  
 
-				}//end foreach 
-				json.put(obj); 
+                }//end foreach 
+                json.put(obj); 
 
-			}//end while 
+            }//end while 
 
-		} catch (SQLException e) { 
-			e.printStackTrace(); 
-			if(LOG.isDebugEnabled())
-				LOG.error(e.getMessage());
-			throw e;
-		} catch (Exception e) { 
-			e.printStackTrace(); 
-			if(LOG.isDebugEnabled())
-				LOG.error(e.getMessage());
-			throw e;
-		}
-		
-		if(LOG.isDebugEnabled())
-			LOG.debug("End convertResultSetToJSON");
+        } catch (SQLException e) { 
+            e.printStackTrace(); 
+            if(LOG.isDebugEnabled())
+                LOG.error(e.getMessage());
+            throw e;
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+            if(LOG.isDebugEnabled())
+                LOG.error(e.getMessage());
+            throw e;
+        }
+        
+        if(LOG.isDebugEnabled())
+            LOG.debug("End convertResultSetToJSON");
 
 		return json; 
 	}
@@ -348,3 +347,4 @@ public final class JdbcT2Util
 	}
 	
 }
+

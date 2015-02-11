@@ -38,7 +38,7 @@ String format = "html";
 </%args>
 <%import>
 java.util.*;
-org.trafodion.dcs.serverna.DcsServer;
+org.trafodion.dcs.servermt.DcsServer;
 org.trafodion.dcs.util.DcsConfiguration;
 org.trafodion.dcs.Constants;
 org.trafodion.dcs.util.Bytes;

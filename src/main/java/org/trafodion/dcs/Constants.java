@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -274,6 +274,7 @@ public final class Constants {
   
   /** Configuration key for Listener request timeout */
   public static final String DCS_MASTER_LISTENER_REQUEST_TIMEOUT = "dcs.master.listener.request.timeout";
+
   /** Listener default request timeout */
   public static final int DEFAULT_LISTENER_REQUEST_TIMEOUT = 30 * 1000; // 30 seconds
   
@@ -286,7 +287,36 @@ public final class Constants {
   public static final String DCS_MASTER_INFO_PORT = "dcs.master.info.port";
   /** Default value for DCS master info port */
   public static final int DEFAULT_DCS_MASTER_INFO_PORT = 40010;
-  
+
+  /** Configuration key for server Listener selector timeout */
+  public static final String DCS_SERVER_LISTENER_SELECTOR_TIMEOUT = "dcs.server.listener.selector.timeout";
+  /** Listener default server selector timeout */
+  public static final int DEFAULT_SERVER_LISTENER_SELECTOR_TIMEOUT = 10 * 1000; // 10 seconds
+
+  /** Configuration key for server Listener request timeout */
+  public static final String DCS_SERVER_LISTENER_REQUEST_TIMEOUT = "dcs.server.listener.request.timeout";
+  /** Listener default server request timeout */
+  public static final int DEFAULT_SERVER_LISTENER_REQUEST_TIMEOUT = 30 * 1000; // 30 seconds
+
+  /** Configuration key for server Listener CONNECTING timeout */
+  public static final String DCS_SERVER_LISTENER_CONNECTING_TIMEOUT = "dcs.server.listener.request.timeout";
+  /** Listener default server CONNECTING timeout */
+  public static final int DEFAULT_SERVER_LISTENER_CONNECTING_TIMEOUT = 30 * 1000; // 30 seconds
+
+  /** Configuration key for server Listener number attempts BINDING assigned port */
+  public static final String DCS_SERVER_CHECK_TCPIPPORT_ATTEMPTS = "dcs.server.check.tcpipport.attempts";
+  /** server Listener default number attempts BINDING assigned port */
+  public static final int DEFAULT_DCS_SERVER_CHECK_TCPIPPORT_ATTEMPTS = 6;
+  /** Configuration key for server Listener interval between BINDING attempts */
+  public static final String DCS_SERVER_CHECK_TCPIPPORT_RETRY_INTERVAL_MILLIS = "dcs.server.check.tcpipport.retry.interval.millis";
+  /** server Listener default interval between BINDING attempts */
+  public static final int DEFAULT_DCS_SERVER_CHECK_TCPIPPORT_RETRY_INTERVAL_MILLIS = 1000;
+
+  /** Configuration key for maximum number of threads per DCS Server handler*/
+  public static final String DCS_SERVER_HANDLER_THREADS_MAX = "dcs.server.handler.threads.max";
+  /** Default maximum number of threads per DCS Server handler */
+  public static final int DEFAULT_DCS_SERVER_HANDLER_THREADS_MAX = 10;
+
   /** Configuration key for DCS server info port */
   public static final String DCS_SERVER_INFO_PORT = "dcs.server.info.port";
   /** Default value for DCS server info port */

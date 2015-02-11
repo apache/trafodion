@@ -192,6 +192,14 @@
     </description>
   </property>  
   <property>
+    <name>dcs.server.handler.threads.max</name>
+    <value>10</value>
+    <description>
+        For every DcsServer specified in the conf/servers file the maximum number of server handler threads that will be created. There can never be more than this value for any given DcsServer. The default
+        is 10.
+    </description>
+  </property>  
+  <property>
     <name>dcs.zookeeper.dns.interface</name>
     <value>default</value>
     <description>The name of the Network Interface from which a ZooKeeper server
@@ -411,7 +419,7 @@
     <name>dcs.server.class.name</name>
     <value>org.trafodion.dcs.server.DcsServer</value>
     <description>
-        The classname of the DcsServer to start. Used for development of new architecture
+        The classname of the DcsServer to start. Used for development of multithreaded server 
     </description>
   </property>
 </configuration>

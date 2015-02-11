@@ -55,115 +55,115 @@ import org.trafodion.dcs.server.ServerManager;
 
 public class DcsNetworkConfiguration {
 
-	private static final Log LOG = LogFactory.getLog(DcsNetworkConfiguration.class);
-	private static Configuration conf;
-	private InetAddress ia;
-	private String intHostAddress;
-	private String extHostAddress;
-	private String canonicalHostName;
-	private boolean matchedInterface = false;
+    private static final Log LOG = LogFactory.getLog(DcsNetworkConfiguration.class);
+    private static Configuration conf;
+    private InetAddress ia;
+    private String intHostAddress;
+    private String extHostAddress;
+    private String canonicalHostName;
+    private boolean matchedInterface = false;
 
-	public DcsNetworkConfiguration(Configuration conf) throws Exception {
+    public DcsNetworkConfiguration(Configuration conf) throws Exception {
 
-		this.conf = conf;
-		ia = InetAddress.getLocalHost();
+        this.conf = conf;
+        ia = InetAddress.getLocalHost();
 
-		String dcsDnsInterface = conf.get(Constants.DCS_DNS_INTERFACE, Constants.DEFAULT_DCS_DNS_INTERFACE);
-		if(dcsDnsInterface.equalsIgnoreCase("default")) {
-			intHostAddress = extHostAddress = ia.getHostAddress();
-			canonicalHostName = ia.getCanonicalHostName();
-			LOG.info("Using local host [" + canonicalHostName + "," + extHostAddress + "]");
-		} else {			
-			// For all nics get all hostnames and addresses	
-			// and try to match against dcs.dns.interface property 
-			Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
-			while(nics.hasMoreElements() && !matchedInterface) {
-				InetAddress inet = null;
-                		NetworkInterface ni = nics.nextElement();
-			        LOG.info("Found interface [" + ni.getDisplayName() + "]");
-				if (dcsDnsInterface.equalsIgnoreCase(ni.getDisplayName())) {
-                   			LOG.info("Matched specified interface ["+ ni.getName() + "]");
-					inet = getInetAddress(ni);
-					getCanonicalHostName(ni,inet);
-				} else {
-					Enumeration<NetworkInterface> subIfs = ni.getSubInterfaces();
-					for (NetworkInterface subIf : Collections.list(subIfs)) {
-						LOG.debug("Sub Interface Display name [" + subIf.getDisplayName() + "]");
-						if (dcsDnsInterface.equalsIgnoreCase(subIf.getDisplayName())) {
-							LOG.info("Matched subIf [" + subIf.getName() + "]");
-							inet = getInetAddress(subIf);
-							getCanonicalHostName(subIf,inet);
-							break;
-						}
-					}
-				}
-			}
-		}
+        String dcsDnsInterface = conf.get(Constants.DCS_DNS_INTERFACE, Constants.DEFAULT_DCS_DNS_INTERFACE);
+        if(dcsDnsInterface.equalsIgnoreCase("default")) {
+            intHostAddress = extHostAddress = ia.getHostAddress();
+            canonicalHostName = ia.getCanonicalHostName();
+            LOG.info("Using local host [" + canonicalHostName + "," + extHostAddress + "]");
+        } else {            
+            // For all nics get all hostnames and addresses    
+            // and try to match against dcs.dns.interface property 
+            Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
+            while(nics.hasMoreElements() && !matchedInterface) {
+                InetAddress inet = null;
+                        NetworkInterface ni = nics.nextElement();
+                    LOG.info("Found interface [" + ni.getDisplayName() + "]");
+                if (dcsDnsInterface.equalsIgnoreCase(ni.getDisplayName())) {
+                               LOG.info("Matched specified interface ["+ ni.getName() + "]");
+                    inet = getInetAddress(ni);
+                    getCanonicalHostName(ni,inet);
+                } else {
+                    Enumeration<NetworkInterface> subIfs = ni.getSubInterfaces();
+                    for (NetworkInterface subIf : Collections.list(subIfs)) {
+                        LOG.debug("Sub Interface Display name [" + subIf.getDisplayName() + "]");
+                        if (dcsDnsInterface.equalsIgnoreCase(subIf.getDisplayName())) {
+                            LOG.info("Matched subIf [" + subIf.getName() + "]");
+                            inet = getInetAddress(subIf);
+                            getCanonicalHostName(subIf,inet);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
-		if (!matchedInterface) 
-			checkCloud();
-	}
+        if (!matchedInterface) 
+            checkCloud();
+    }
 
-	public void getCanonicalHostName (NetworkInterface ni, InetAddress inet) throws Exception {
-		if(inet.getCanonicalHostName().contains(".") ) {
-			intHostAddress = extHostAddress = inet.getHostAddress();
-			canonicalHostName = inet.getCanonicalHostName();
-			LOG.info("Using interface [" + ni.getDisplayName() + "," + canonicalHostName + "," + extHostAddress + "]");
-			ia = inet;
-		}
+    public void getCanonicalHostName (NetworkInterface ni, InetAddress inet) throws Exception {
+        if(inet.getCanonicalHostName().contains(".") ) {
+            intHostAddress = extHostAddress = inet.getHostAddress();
+            canonicalHostName = inet.getCanonicalHostName();
+            LOG.info("Using interface [" + ni.getDisplayName() + "," + canonicalHostName + "," + extHostAddress + "]");
+            ia = inet;
+        }
 
-	}
+    }
 
-	public InetAddress getInetAddress (NetworkInterface ni) throws Exception {
-		InetAddress inet=null;
-		Enumeration<InetAddress> rawAdrs = ni.getInetAddresses();
-		while(rawAdrs.hasMoreElements()) {
-			inet = rawAdrs.nextElement();
-			LOG.info("Match Found interface [" + ni.toString() +"," + ni.getDisplayName() + "," + inet.getCanonicalHostName() + "," + inet.getHostAddress() + "]");
-		}
-		matchedInterface = true;
-		return inet;
-	}
+    public InetAddress getInetAddress (NetworkInterface ni) throws Exception {
+        InetAddress inet=null;
+        Enumeration<InetAddress> rawAdrs = ni.getInetAddresses();
+        while(rawAdrs.hasMoreElements()) {
+            inet = rawAdrs.nextElement();
+            LOG.info("Match Found interface [" + ni.toString() +"," + ni.getDisplayName() + "," + inet.getCanonicalHostName() + "," + inet.getHostAddress() + "]");
+        }
+        matchedInterface = true;
+        return inet;
+    }
 
-	public void checkCloud() {
-		//Ideally we want to use http://jclouds.apache.org/ so we can support all cloud providers.
-		//For now, use OpenStack Nova to retrieve int/ext network address map.
-		LOG.info("Checking Cloud environment");
-		String cloudCommand = conf.get(Constants.DCS_CLOUD_COMMAND, Constants.DEFAULT_DCS_CLOUD_COMMAND);
-		ScriptContext scriptContext = new ScriptContext();
-		scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
-		scriptContext.setCommand(cloudCommand);
-		LOG.info(scriptContext.getScriptName() + " exec [" + scriptContext.getCommand() + "]");
-		ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
+    public void checkCloud() {
+        //Ideally we want to use http://jclouds.apache.org/ so we can support all cloud providers.
+        //For now, use OpenStack Nova to retrieve int/ext network address map.
+        LOG.info("Checking Cloud environment");
+        String cloudCommand = conf.get(Constants.DCS_CLOUD_COMMAND, Constants.DEFAULT_DCS_CLOUD_COMMAND);
+        ScriptContext scriptContext = new ScriptContext();
+        scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+        scriptContext.setCommand(cloudCommand);
+        LOG.info(scriptContext.getScriptName() + " exec [" + scriptContext.getCommand() + "]");
+        ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
 
-		StringBuilder sb = new StringBuilder();
-		sb.append(scriptContext.getScriptName() + " exit code [" + scriptContext.getExitCode() + "]");
-		if(! scriptContext.getStdOut().toString().isEmpty()) 
-			sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
-		if(! scriptContext.getStdErr().toString().isEmpty())
-			sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
-		LOG.info(sb.toString());
+        StringBuilder sb = new StringBuilder();
+        sb.append(scriptContext.getScriptName() + " exit code [" + scriptContext.getExitCode() + "]");
+        if(! scriptContext.getStdOut().toString().isEmpty()) 
+            sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
+        if(! scriptContext.getStdErr().toString().isEmpty())
+            sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
+        LOG.info(sb.toString());
 
-		if(! scriptContext.getStdOut().toString().isEmpty()){
-			Scanner scn = new Scanner(scriptContext.getStdOut().toString());
-			scn.useDelimiter(",");
-			intHostAddress = scn.next();//internal ip
-			extHostAddress = scn.next();//external ip		
-			scn.close();
-			LOG.info("Cloud environment found");
-		} else
-			LOG.info("Cloud environment not found");
-	}
+        if(! scriptContext.getStdOut().toString().isEmpty()){
+            Scanner scn = new Scanner(scriptContext.getStdOut().toString());
+            scn.useDelimiter(",");
+            intHostAddress = scn.next();//internal ip
+            extHostAddress = scn.next();//external ip        
+            scn.close();
+            LOG.info("Cloud environment found");
+        } else
+            LOG.info("Cloud environment not found");
+    }
 
-	public String getHostName() {
-		return canonicalHostName;
-	}
+    public String getHostName() {
+        return canonicalHostName;
+    }
 
-	public String getIntHostAddress() {
-		return intHostAddress;
-	}
+    public String getIntHostAddress() {
+        return intHostAddress;
+    }
 
-	public String getExtHostAddress() {
-		return extHostAddress;
-	}
+    public String getExtHostAddress() {
+        return extHostAddress;
+    }
 }

@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.trafodion.dcs.serverna;
+package org.trafodion.dcs.servermt;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,28 +43,28 @@ import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.DcsConfiguration;
 
 public class Metrics  {
-	private static  final Log LOG = LogFactory.getLog(Metrics.class);
-	
-	public String getLoad(){               
-		int mb = 1024*1024;  
-		long total;
-		long free;
-		long max;
-		long used;
+    private static  final Log LOG = LogFactory.getLog(Metrics.class);
     
-		Runtime runtime = Runtime.getRuntime();                   
-		used = (runtime.totalMemory() - runtime.freeMemory()) / mb;           
-		free = runtime.freeMemory() / mb;                   
-		total = runtime.totalMemory() / mb;           
-		max = runtime.maxMemory() / mb;
-		String report = "totalHeap=" + total + ", usedHeap=" + used + ", freeHeap=" + free + ", maxHeap=" + max;
-		return report;
-	}
-	
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getLoad());
-		return sb.toString();
-	}
+    public String getLoad(){               
+        int mb = 1024*1024;  
+        long total;
+        long free;
+        long max;
+        long used;
+    
+        Runtime runtime = Runtime.getRuntime();                   
+        used = (runtime.totalMemory() - runtime.freeMemory()) / mb;           
+        free = runtime.freeMemory() / mb;                   
+        total = runtime.totalMemory() / mb;           
+        max = runtime.maxMemory() / mb;
+        String report = "totalHeap=" + total + ", usedHeap=" + used + ", freeHeap=" + free + ", maxHeap=" + max;
+        return report;
+    }
+    
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getLoad());
+        return sb.toString();
+    }
 }
 

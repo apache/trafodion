@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.trafodion.dcs.serverna;
+package org.trafodion.dcs.servermt;
 
 import java.io.IOException;
 
@@ -22,7 +22,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.trafodion.dcs.tmpl.serverna.ServerStatusTmpl;
+import org.trafodion.dcs.tmpl.servermt.ServerStatusTmpl;
 
 public class ServerStatusServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;

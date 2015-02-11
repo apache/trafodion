@@ -125,6 +125,9 @@ IFS=
 
 # CLASSPATH initially contains $DCS_CONF_DIR
 CLASSPATH="${DCS_CONF_DIR}"
+if [ "$MY_SQROOT" != "" ]; then
+    CLASSPATH=${CLASSPATH}:${MY_SQROOT}/export/lib/jdbcT2.jar
+fi
 CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
 
 add_maven_deps_to_classpath() {
