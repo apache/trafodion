@@ -50,7 +50,6 @@
 
 #include "ExpHbaseDefs.h"
 
-//#include "Hbase.h"
 #include "HBaseClient_JNI.h"
 
 #define INLINE_COLNAME_LEN 256

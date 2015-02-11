@@ -42,8 +42,8 @@
 #include "DomainDesc.h"
 #include "NADefaults.h"
 #include "NARoutineDB.h"
-#include "NARoutine.h"
 #include "NATable.h"
+#include "NARoutine.h"
 #include "TableDesc.h"
 #include "ValueDesc.h"
 

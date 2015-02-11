@@ -1,7 +1,7 @@
 -- Test: TEST005 (Core)
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -633,6 +633,10 @@ control query shape cut;
 ?section clnup
 control query shape cut;
 
+select num_lookups, num_cache_hits, num_entries, max_cache_size from table(natablecache('user','local')) ;
+
 obey TEST005(ddl);
+
+select num_lookups, num_cache_hits, num_entries, max_cache_size from table(natablecache('user','local')) ;
 
 log;

@@ -1488,6 +1488,15 @@ S   OPERATOR              LC  RC  TAB_NAME
 
 --- SQL operation complete.
 >>
+>>select num_lookups, num_cache_hits, num_entries, max_cache_size from table(natablecache('user','local')) ;
+
+NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
+-----------  --------------  -----------  --------------
+
+        165             135           16        20971520
+
+--- 1 row(s) selected.
+>>
 >>obey TEST005(ddl);
 >>
 >>drop index t005x1b;
@@ -1553,5 +1562,14 @@ S   OPERATOR              LC  RC  TAB_NAME
 --- SQL operation complete.
 >>#ifMX
 >>
+>>
+>>select num_lookups, num_cache_hits, num_entries, max_cache_size from table(natablecache('user','local')) ;
+
+NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
+-----------  --------------  -----------  --------------
+
+        170             136            0        20971520
+
+--- 1 row(s) selected.
 >>
 >>log;

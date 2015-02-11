@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@
 
 #include "CmpISPStd.h"
 #include "NABasicObject.h"
+#include "QCache.h"
 
 // ---------------------------------------------------------------------------------------------------------
 // QueryCacheStatStoredProcedure is a class that contains functions used by the
@@ -372,6 +373,91 @@ public:
 			      SP_PROCESS_HANDLE *spProcHandle,
 			      SP_HANDLE spObj,
 			      SP_ERROR_STRUCT *error);
+};
+
+
+class ISPIterator 
+{
+
+public:
+  ISPIterator(const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
+  : currCacheIndex_(-1)
+  , contextName_(h)
+  , ctxInfos_(ctxs)
+  , heap_(h) 
+  {}
+  
+  NABoolean initializeISPCaches(SP_ROW_DATA  inputData, 
+                                SP_EXTRACT_FUNCPTR  eFunc, 
+                                SP_ERROR_STRUCT* error, 
+                                const NAArray<CmpContextInfo*> & ctxs, //input 
+                                NAString & contextName,  // out
+                                Int32 & index           //out, set initial index in arrary of CmpContextInfos
+                                ) ;
+protected:
+  Int32 currCacheIndex_;
+  NAString contextName_;
+  const NAArray<CmpContextInfo*> & ctxInfos_;
+  CollHeap * heap_;
+  
+};
+
+class QueryCacheStatsISPIterator : public ISPIterator
+{
+public:
+  QueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                             SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
+  //if currCacheIndex_ is set 0, currQCache_ is not used and should always be NULL
+  NABoolean getNext(QueryCacheStats & stats);
+private:
+ QueryCache* currQCache_;
+};
+
+class QueryCacheEntriesISPIterator : public ISPIterator
+{
+public:
+  QueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                               SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
+  
+  NABoolean getNext(QueryCacheDetails & details);
+  Int32 & counter() { return counter_; }
+private:
+  Int32 counter_;
+  LRUList::iterator SQCIterator_;
+  QueryCache* currQCache_;
+};
+
+class HybridQueryCacheStatsISPIterator : public ISPIterator
+{
+public:
+    HybridQueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                     SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
+
+    NABoolean getNext(HybridQueryCacheStats & stats);
+private:
+ QueryCache* currQCache_;
+};
+
+class HybridQueryCacheEntriesISPIterator : public ISPIterator
+{
+public:
+    HybridQueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                       SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
+
+    ~HybridQueryCacheEntriesISPIterator()
+    {
+        if(HQCIterator_)
+            delete HQCIterator_;
+    }
+    NABoolean getNext(HybridQueryCacheDetails & details);
+private:
+    Int32 currEntryIndex_;
+    Int32 currEntriesPerKey_;
+    HQCCacheKey* currHKeyPtr_;
+    HQCCacheData* currValueList_;
+    HQCHashTblItor* HQCIterator_;
+    LRUList::iterator SQCIterator_;
+  QueryCache* currQCache_;
 };
 
 #endif

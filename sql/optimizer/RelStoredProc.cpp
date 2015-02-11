@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1997-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -164,6 +164,24 @@ NABoolean RelInternalSP::isHybridQueryCacheVirtualTable() const
       procName_.compareTo("HYBRIDQUERYCACHEENTRIES", NAString::ignoreCase)==0 ));
 }
 
+NABoolean RelInternalSP::isNATableCacheVirtualTable() const 
+{
+    //for query cache virtual table ISPs, 
+    //and they have 2 parameters and following ISP names.
+    return ( getProcAllParamsVids().entries() == 2 && 
+    ( procName_.compareTo("NATABLECACHE", NAString::ignoreCase)==0  || 
+      procName_.compareTo("NATABLECACHEENTRIES", NAString::ignoreCase)==0 ));
+}
+
+NABoolean RelInternalSP::isNARoutineCacheVirtualTable() const 
+{
+    //for query hybrid cache virtual table ISPs, 
+    //and they have 2 parameters and following ISP names.
+    return ( getProcAllParamsVids().entries() == 2 && 
+    ( procName_.compareTo("NAROUTINECACHE", NAString::ignoreCase)==0  || 
+      procName_.compareTo("NAROUTINECACHEENTRIES", NAString::ignoreCase)==0 ));
+}
+
 RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
 {
 
@@ -218,7 +236,8 @@ RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
        //local -- within local process
        //remote  -- if running in embedded compiler exec ISP locally,
        // if in remote compiler send to remote arkcmp
-      if( isQueryCacheVirtualTable() ||isHybridQueryCacheVirtualTable())
+      if( isQueryCacheVirtualTable() || isHybridQueryCacheVirtualTable() ||
+          isNATableCacheVirtualTable() || isNARoutineCacheVirtualTable() )
       {
           //extract the location parameter
           const NAString locationParam = getProcAllParamsVids()[1].getItemExpr()->getText();
