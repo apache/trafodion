@@ -11,7 +11,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ public:
 
   LmParameter *getLmParams() const { return lmParams_; }
 
-  ComUInt32 getInputRowLen() const { return inputRowLen_; }
+  ComUInt32 getInputParamRowLen() const { return inputParamRowLen_; }
   ComUInt32 getOutputRowLen() const { return outputRowLen_; }
 
   // Returns the routine name to use for error reporting.
@@ -146,7 +146,7 @@ protected:
             ComRoutineExternalSecurity externalSecurity,
             Int32 routineOwnerId,
             const char *parentQid,
-            ComUInt32 inputRowLen,
+            ComUInt32 inputParamRowLen,
             ComUInt32 outputRowLen,
             const char   *currentUserName,
             const char   *sessionUserName,
@@ -192,7 +192,7 @@ protected:
   ComRoutineExternalSecurity externalSecurity_;
   Int32 routineOwnerId_;
 
-  ComUInt32 inputRowLen_;
+  ComUInt32 inputParamRowLen_;
   ComUInt32 outputRowLen_;
 
   const char *udrCatalog_;	   // Default catalog value

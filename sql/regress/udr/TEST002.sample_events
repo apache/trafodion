@@ -1,0 +1,33 @@
+2015-02-03 00:08:03,480, INFO, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L,,, An executor process is launched.
+2015-02-03 00:08:08,402, INFO, SQL.COMP, Node Number: 0, CPU: 0, PIN: 25883, Process Name: $Z000L4I,,, A compiler process is launched.
+2015-02-03 00:08:11,037, INFO, SQL.COMP, Node Number: 0, CPU: 0, PIN: 25952, Process Name: $Z000L6H,,, A compiler process is launched.
+2015-02-03 00:08:22,679, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 1366, QID: MXID11000025816212289682083477587000000000206U3333300_684___SQLCI_DML_LAST__, *** ERROR[1366] Request failed.  One or more dependent procedures exist.
+2015-02-03 00:08:26,882, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 1390, QID: MXID11000025816212289682083477587000000000206U3333300_911___SQLCI_DML_LAST__, *** ERROR[1390] Object TRAFODION.SCH.TEST001 already exists in Trafodion.
+2015-02-03 00:08:31,536, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 2034, QID: MXID11000025816212289682083477587000000000206U3333300_1312___SQLCI_DML_LAST__, *** ERROR[2034] $Z000L2L: Operating system error 201 while communicating with server process $Z010LSM.
+2015-02-03 00:08:31,536, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 8904, QID: MXID11000025816212289682083477587000000000206U3333300_1312___SQLCI_DML_LAST__, *** ERROR[8904] SQL did not receive a reply from MXUDR, possibly caused by internal errors when executing user-defined routines.
+2015-02-03 00:08:31,884, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11252, QID: MXID11000025816212289682083477587000000000206U3333300_1438___SQLCI_DML_LAST__, *** ERROR[11252] Column  not found (SQLSTATE 38900)
+2015-02-03 00:08:32,225, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11252, QID: MXID11000025816212289682083477587000000000206U3333300_1476___SQLCI_DML_LAST__, *** ERROR[11252] Column  not found (SQLSTATE 38900)
+2015-02-03 00:08:32,696, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11246, QID: MXID11000025816212289682083477587000000000206U3333300_1515___SQLCI_DML_LAST__, *** ERROR[11246] An error occurred locating function 'fibonacci' in library '/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST001.dll'.
+2015-02-03 00:08:32,696, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11248, QID: MXID11000025816212289682083477587000000000206U3333300_1515___SQLCI_DML_LAST__, *** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
+/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST001.dll: undefined symbol: fibonacci.
+2015-02-03 00:08:33,060, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11246, QID: MXID11000025816212289682083477587000000000206U3333300_1554___SQLCI_DML_LAST__, *** ERROR[11246] An error occurred locating function 'fibonacci' in library '/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST001.dll'.
+2015-02-03 00:08:33,061, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11248, QID: MXID11000025816212289682083477587000000000206U3333300_1554___SQLCI_DML_LAST__, *** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
+/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST001.dll: undefined symbol: fibonacci.
+2015-02-03 00:08:33,418, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11246, QID: MXID11000025816212289682083477587000000000206U3333300_1593___SQLCI_DML_LAST__, *** ERROR[11246] An error occurred locating function 'SESSIONIZE_NON_EXISTENT' in library '/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST001.dll'.
+2015-02-03 00:this is a bad timestamp and should be appended to the previous message
+2015-02-03 00:08:33,419, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11248, QID: MXID11000025816212289682083477587000000000206U3333300_1593___SQLCI_DML_LAST__, *** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
+/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST001.dll: undefined symbol: SESSIONIZE_NON_EXISTENT.
+2015-02-03 00:08:33,500, ERROR, this should produce a parse error with this message
+2015-02-03 00:08:33,766, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11252, QID: MXID11000025816212289682083477587000000000206U3333300_1632___SQLCI_DML_LAST__, *** ERROR[11252] Expecting three input parameters, ts colname, user id colname, timeout (SQLSTATE 38080)
+2015-02-03 00:08:34,112, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11252, QID: MXID11000025816212289682083477587000000000206U3333300_1671___SQLCI_DML_LAST__, *** ERROR[11252] The first parameter of TMUDF TRAFODION.SCH.SESSIONIZE_DYNAMIC needs to be a compile time character constant (SQLSTATE 38082)
+2015-02-03 00:08:34,114, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 15001, QID: MXID11000025816212289682083477587000000000206U3333300_1710___SQLCI_DML_LAST__, *** ERROR[15001] A syntax error occurred at or before: 
+select * from udf(sessionize_dynamic(TABLE(SELECT userid, JULIANTIMESTAMP(ts) a
+s TS                           FROM clicks                           PARTITION 
+BY userid ORDER BY ts), TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS         
+                  FROM clicks                           PARTITION BY userid ORDER BY ts), cast('TS' as char(2)),                     'USERID',                
+     60000000)) XOX;
+             ^ (409 characters from start of SQL statement)
+2015-02-03 00:08:34,461, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11252, QID: MXID11000025816212289682083477587000000000206U3333300_1711___SQLCI_DML_LAST__, Some Chinese UTF8 characters: ÁÆö‰ªøÂ†ìÊì¨È≤°Á™¥Âª¥Êö¶ÊÆÄËû†„Åä and invalid UTF-8 characters: ÂˇˇÎ should see replacement characters to the left
+2015-02-03 00:08:34,461, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 11252, QID: MXID11000025816212289682083477587000000000206U3333300_1711___SQLCI_DML_LAST__, Parse error in continuation line:
+Invalid UTF-8 characters: ÂˇˇÎ should see replacement characters to the left
+2015-02-03 00:08:40,751, ERROR, SQL.EXE, Node Number: 0, CPU: 0, PIN: 25816, Process Name: $Z000L2L, SQLCODE: 1366, QID: MXID11000025816212289682083477587000000000206U3333300_2030___SQLCI_DML_LAST__, *** ERROR[1366] Request failed.  One or more dependent procedures exist.

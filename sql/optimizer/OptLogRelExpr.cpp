@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -609,6 +609,7 @@ RelExpr::synthLogProp(NormWA * normWAPtr)
 
   Int32 numChildren = getArity();
   Int32 numBaseTables = 0;   // add up all base tables from children
+  Int32 numTMUDFs = 0;       // ditto for TMUDFs
   // synthesize the log props for all children
   for (Lng32 i = 0; i < numChildren; i++)
   {
@@ -617,6 +618,7 @@ RelExpr::synthLogProp(NormWA * normWAPtr)
     {
       child(i)->synthLogProp(normWAPtr);
       numBaseTables += child(i).getGroupAttr()->getNumBaseTables();
+      numTMUDFs += child(i).getGroupAttr()->getNumTMUDFs();
 
       // QSTUFF
       // synthesize logical properties STREAM and DELETE from
@@ -642,8 +644,9 @@ RelExpr::synthLogProp(NormWA * normWAPtr)
 
   // remember the number of base tables
 
-  // remember the number of base tables
+  // remember the number of base tables and TMUDFs
   GA->setNumBaseTables(numBaseTables);
+  GA->setNumTMUDFs(numTMUDFs);
   // calculate the row size from the characteristic outputs
   GA->setRecordLength(GA->getCharacteristicOutputs().getRowLength());
   GA->setInputVarLength(GA->getCharacteristicInputs().getRowLength());

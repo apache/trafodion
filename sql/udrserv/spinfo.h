@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@
 #include "ComSmallDefs.h"
 #include "UdrExeIpc.h"
 #include "QueueIndex.h"
+#include "sqludr.h"
 
 #include "Platform.h"
 
@@ -107,7 +108,13 @@ public:
          ComUInt32 requestRowSize,
          ComUInt32 replyRowSize,
          ComDiagsArea &d,
-         char *parentQid);
+         char *parentQid,
+         ComUInt32 udrSerInvocationInfoLen,
+         const char *udrSerInvocationInfo,
+         ComUInt32 udrSerPlanInfoLen,
+         const char *udrSerPlanInfo,
+         ComUInt32 totalNumInstances,
+         ComUInt32 myInstanceNum);
 
   //
   // This constructor is used to create an uninitialized instance that
@@ -207,6 +214,10 @@ public:
 
   ComUInt32 getRequestRowSize() const { return requestRowSize_; }
   ComUInt32 getReplyRowSize() const { return replyRowSize_; }
+
+  inline tmudr::UDRInvocationInfo *getInvocationInfo()
+                                                   { return invocationInfo_; }
+  inline tmudr::UDRPlanInfo *getPlanInfo()               { return planInfo_; }
 
   // Access to result set object with RS handle
   UdrResultSet *getUdrResultSetByHandle(RSHandle handle);
@@ -398,6 +409,9 @@ private:
 
   char      *parentQid_; // Query Id of the CALL Statement
 
+  // C++ interface
+  tmudr::UDRInvocationInfo *invocationInfo_;
+  tmudr::UDRPlanInfo *planInfo_;
 
 }; // SPInfo
 

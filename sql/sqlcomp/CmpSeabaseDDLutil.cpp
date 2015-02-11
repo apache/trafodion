@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -496,137 +496,6 @@ const literalAndEnumStruct TableFeatureXlateArray [] =
 
 defXLateFuncs(CmGetTableFeature, CmGetTableFeatureAsLit, ComTableFeature, TableFeatureXlateArray);
 
-//----------------------------------------------------------------------------
-// ComRoutineLanguage translation
-//
-const literalAndEnumStruct RoutineLanguageXlateArray [] =
-{
-  {COM_LANGUAGE_JAVA, COM_LANGUAGE_JAVA_LIT},
-  {COM_LANGUAGE_C, COM_LANGUAGE_C_LIT},
-  {COM_LANGUAGE_SQL, COM_LANGUAGE_SQL_LIT},
-  {COM_UNKNOWN_ROUTINE_LANGUAGE, COM_UNKNOWN_ROUTINE_LANGUAGE_LIT}
-};
-
-defXLateFuncs(CmGetComRoutineLanguageAsRoutineLanguage, CmGetComRoutineLanguageAsLit, ComRoutineLanguage, RoutineLanguageXlateArray);
-
-//----------------------------------------------------------------------------
-// ComRoutineParamStyle translation
-//
-const literalAndEnumStruct RoutineParamStyleXlateArray [] =
-{
-  {COM_STYLE_GENERAL, COM_STYLE_GENERAL_LIT},
-  {COM_STYLE_JAVA, COM_STYLE_JAVA_LIT},
-  {COM_STYLE_SQL, COM_STYLE_SQL_LIT},
-  {COM_STYLE_SQLROW, COM_STYLE_SQLROW_LIT},
-  {COM_UNKNOWN_ROUTINE_PARAM_STYLE, COM_UNKNOWN_ROUTINE_PARAM_STYLE_LIT}
-};
-
-defXLateFuncs(CmGetComRoutineParamStyleAsRoutineParamStyle,
-              CmGetComRoutineParamStyleAsLit,
-              ComRoutineParamStyle,
-              RoutineParamStyleXlateArray);
-
-//----------------------------------------------------------------------------
-// ComRoutineParamType translation
-//
-const literalAndEnumStruct RoutineParamTypeXlateArray [] =
-{
-  {COM_NORMAL_PARAM_TYPE, COM_NORMAL_PARAM_TYPE_LIT},
-  {COM_SAS_PUT_FORMAT_NAME_PARAM_TYPE, COM_SAS_PUT_FORMAT_NAME_PARAM_TYPE_LIT},
-  {COM_SAS_PUT_LOCALE_ID_PARAM_TYPE, COM_SAS_PUT_LOCALE_ID_PARAM_TYPE_LIT},
-  {COM_SAS_SCORE_TABLE_NAME_PARAM_TYPE, COM_SAS_SCORE_TABLE_NAME_PARAM_TYPE_LIT}
-};
-
-defXLateFuncs(CmGetRoutineParamTypeAsComRoutineParamType,
-              CmGetComRoutineParamTypeAsLit,
-              ComRoutineParamType,
-              RoutineParamTypeXlateArray);
-
-//----------------------------------------------------------------------------
-// ComRoutineSQLAccess translation
-//
-const literalAndEnumStruct RoutineSQLAccessXlateArray [] =
-{
-  {COM_NO_SQL, COM_NO_SQL_LIT},
-  {COM_CONTAINS_SQL, COM_CONTAINS_SQL_LIT},
-  {COM_READS_SQL, COM_READS_SQL_LIT},
-  {COM_MODIFIES_SQL, COM_MODIFIES_SQL_LIT},
-  {COM_UNKNOWN_ROUTINE_SQL_ACCESS, COM_UNKNOWN_ROUTINE_SQL_ACCESS_LIT}
-};
-
-defXLateFuncs(CmGetComRoutineSQLAccessAsRoutineSQLAccess, CmGetComRoutineSQLAccessAsLit, ComRoutineSQLAccess, RoutineSQLAccessXlateArray);
-
-//----------------------------------------------------------------------------
-// ComRoutineTransactionAttributes translation
-//
-const literalAndEnumStruct RoutineTransactionAttributesXlateArray [] =
-{
-  {COM_NO_TRANSACTION_REQUIRED, COM_NO_TRANSACTION_REQUIRED_LIT},
-  {COM_TRANSACTION_REQUIRED, COM_TRANSACTION_REQUIRED_LIT},
-  {COM_UNKNOWN_ROUTINE_TRANSACTION_ATTRIBUTE, COM_UNKNOWN_ROUTINE_TRANSACTION_ATTRIBUTE_LIT}
-};
-
-defXLateFuncs( CmGetComRoutineTransactionAttributesAsRoutineTransactionAttributes, CmGetComRoutineTransactionAttributesAsLit
-             , ComRoutineTransactionAttributes, RoutineTransactionAttributesXlateArray);
-
-//----------------------------------------------------------------------------
-// ComRoutineType translation
-//
-const literalAndEnumStruct RoutineTypeXlateArray [] =
-{
-  {COM_PROCEDURE_TYPE, COM_PROCEDURE_TYPE_LIT},
-  {COM_SCALAR_UDF_TYPE, COM_SCALAR_UDF_TYPE_LIT},
-  {COM_AGGREGATE_UDF_TYPE, COM_AGGREGATE_UDF_TYPE_LIT},
-  {COM_TABLE_UDF_TYPE, COM_TABLE_UDF_TYPE_LIT},
-  {COM_UNIVERSAL_UDF_TYPE, COM_UNIVERSAL_UDF_TYPE_LIT},
-  {COM_ACTION_UDF_TYPE, COM_ACTION_UDF_TYPE_LIT},
-  {COM_UNKNOWN_ROUTINE_TYPE, COM_UNKNOWN_ROUTINE_TYPE_LIT}
-};
-
-defXLateFuncs( CmGetComRoutineTypeAsRoutineType, CmGetComRoutineTypeAsLit, ComRoutineType, RoutineTypeXlateArray);
-
-//----------------------------------------------------------------------------
-// ComRoutineParallelism translation
-//
-const literalAndEnumStruct ParallelismXlateArray [] =
-{
-  {COM_ROUTINE_NO_PARALLELISM, COM_ROUTINE_NO_PARALLELISM_LIT},
-  {COM_ROUTINE_ANY_PARALLELISM, COM_ROUTINE_ANY_PARALLELISM_LIT}
-};
-
-defXLateFuncs( CmGetRoutineParallelismAsComRoutineParallelism,
-               CmGetComRoutineParallelismAsLit,
-               ComRoutineParallelism,
-               ParallelismXlateArray);
-
-//----------------------------------------------------------------------------
-// ComRoutineExternalSecurity translation
-//
-const literalAndEnumStruct ExternalSecurityXlateArray [] =
-{
-  {COM_ROUTINE_EXTERNAL_SECURITY_INVOKER, COM_ROUTINE_EXTERNAL_SECURITY_INVOKER_LIT},
-  {COM_ROUTINE_EXTERNAL_SECURITY_DEFINER, COM_ROUTINE_EXTERNAL_SECURITY_DEFINER_LIT},
-  {COM_ROUTINE_EXTERNAL_SECURITY_IMPLEMENTATION_DEFINED, COM_ROUTINE_EXTERNAL_SECURITY_IMPLEMENTATION_DEFINED_LIT}
-};
-
-defXLateFuncs( CmGetRoutineExternalSecurityAsComRoutineExternalSecurity,
-               CmGetComRoutineExternalSecurityAsLit,
-               ComRoutineExternalSecurity,
-               ExternalSecurityXlateArray);
-
-//----------------------------------------------------------------------------
-// ComRoutineExecutionMode translation
-//
-const literalAndEnumStruct RoutineExecutionModeXlateArray [] =
-{
-  {COM_ROUTINE_FAST_EXECUTION, COM_ROUTINE_FAST_EXECUTION_LIT},
-  {COM_ROUTINE_SAFE_EXECUTION, COM_ROUTINE_SAFE_EXECUTION_LIT}
-};
-
-defXLateFuncs( CmGetRoutineExecutionModeAsComRoutineExecutionMode,
-               CmGetComRoutineExecutionModeAsLit,
-               ComRoutineExecutionMode,
-               RoutineExecutionModeXlateArray);
 
 //----------------------------------------------------------------------------
 // ComBoolean translation

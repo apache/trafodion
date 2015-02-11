@@ -1,6 +1,6 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2000-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -76,30 +76,34 @@ library TEST001;
 -- the dynamic version of sessionize uses a compiler interface to
 -- create result columns that match those of any input table given
 -- and it validates the column name for session id at compile time
-create table_mapping function sessionize_dynamic(colname char(10),
-                                                 user_colname char(10),
+create table_mapping function sessionize_dynamic(user_colname char(10),
+                                                 ts_colname char(10),
                                                  timeintval int)
 external name 'SESSIONIZE_DYNAMIC'
+language cpp
 library TEST001;
 
 -- This shows that we can share the same binaries for multiple
 -- TMUDFs, note that it uses the same external name SESSIONIZE_DYNAMIC
-create table_mapping function sessionize_dynamic_shared(colname char(10),
-                                                        user_colname char(10),
+create table_mapping function sessionize_dynamic_shared(user_colname char(10),
+                                                        ts_colname char(10),
                                                         timeintval int)
 external name 'SESSIONIZE_DYNAMIC'
+language cpp
 library TEST001;
 
 -- negative test case, the entry point SESSIONIZE_ERR does not exist
 create table_mapping function sessionize_err(dummy char(10))
 returns (session_id largeint)
 external name 'SESSIONIZE_NON_EXISTENT'
+language cpp
 library TEST001;
 
 -- Testing a TMUDF with no table-valued inputs
 create table_mapping function fibonacci(start_row int, num_rows int)
 returns (ordinal int, fibonacci_number largeint)
-external name 'fibonacci'
+external name 'Fibonacci'
+language cpp
 library TEST001;
 
 ?section tests
@@ -122,9 +126,9 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                                          ipAddr
                                   FROM clicks
                                   PARTITION BY userid ORDER BY ts),
-                            cast('TS' as char(2)),
                             'USERID',
-                            60000000)) XO;
+                            'TS',
+                            60000000));
 
 -- meant to call sessionize_dynamic_shared, but sharing DLLs
 -- is not yet working, getting an error so far
@@ -133,9 +137,9 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                                          JULIANTIMESTAMP(ts) as TS,
                                          ipAddr
                                   FROM clicks
-                                  PARTITION BY userid ORDER BY ts),
+                                  PARTITION BY ipaddr ORDER BY ts),
+                            'IPADDR',
                             cast('TS' as char(2)),
-                            'USERID',
                             60000000)) XO;
 
 cqd ATTEMPT_ESP_PARALLELISM 'off';
@@ -152,9 +156,9 @@ select * from udf(sessionize_err('abc')) XOX(a);
 -- expect errors 11246 and 11248
 
 -- these should be caught by the compiler interface
-select * from udf(sessionize_dynamic('TS')) XOX;
--- too few input parameters and not a string
-select * from udf(sessionize_dynamic(1,2,3)) XOX;
+select * from udf(sessionize_dynamic(table (select * from clicks), 'TS')) XOX;
+-- too few input parameters
+select * from udf(sessionize_dynamic(table (select * from clicks), 1,2,3)) XOX;
 -- not a string parameter
 select * from udf(sessionize_dynamic(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
                           FROM clicks

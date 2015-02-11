@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -73,20 +73,21 @@ class TMUDFDllInteraction : public NABasicObject
   NABoolean degreeOfParallelism(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws, int &dop);
   NABoolean generateInputPartitionAndOrder(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws);
   NABoolean describeOutputOrder(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws);
+  NABoolean finalizePlan(TableMappingUDF * tmudfNode, tmudr::UDRPlanInfo *planInfo);
 
   // helper methods for setup and return status
 
   void setDllPtr(LmHandle val) {dllPtr_ = val;}
   LmHandle getDllPtr() {return dllPtr_;}
   void setFunctionPtrs(const NAString& entryName);
-  void processReturnStatus(const tmudr::UDRException &e, 
-                           ComDiagsArea *diags,
-                           const char* routineName);
+  static void processReturnStatus(const tmudr::UDRException &e, 
+                                  ComDiagsArea *diags,
+                                  const char* routineName);
 
 private:
 
   LmHandle dllPtr_ ;
-  LmHandle createCompilerInterfaceObjectPtr_;
+  LmHandle createInterfaceObjectPtr_;
 
 };
 
@@ -108,16 +109,13 @@ public:
 
   // methods to convert Trafodion objects to tmudr objects
   // (allocated on system heap, if needed)
-  
+
   static tmudr::UDRInvocationInfo *createInvocationInfoFromRelExpr(
        TableMappingUDF * tmudfNode,
        ComDiagsArea *diags);
   static NABoolean setTypeInfoFromNAType(
        tmudr::TypeInfo &tgt,
        const NAType *src,
-       ComDiagsArea *diags);
-  static tmudr::ParameterInfo *createParameterInfoFromNAColumn(
-       NAColumn *src,
        ComDiagsArea *diags);
   static tmudr::ColumnInfo *createColumnInfoFromNAColumn(
        const NAColumn *src,
@@ -133,8 +131,8 @@ public:
        int colNumForDiags,
        NAHeap *heap,
        ComDiagsArea *diags);
-  static NAColumn *createNAColumnFromParameterInfo(
-       const tmudr::ParameterInfo &src,
+  static NAColumn *createNAColumnFromColumnInfo(
+       const tmudr::ColumnInfo &src,
        int position,
        NAHeap *heap,
        ComDiagsArea *diags);
@@ -145,7 +143,17 @@ public:
        ComDiagsArea *diags);
 
   // invoke private constructors/destructors of the interface structs
-  static tmudr::UDRPlanInfo *createUDRPlanInfo();
+  static tmudr::UDRPlanInfo *createUDRPlanInfo(
+       tmudr::UDRInvocationInfo *invocationInfo);
+  static void setCallPhase(
+       tmudr::UDRInvocationInfo *invocationInfo,
+       tmudr::CallPhase cp);
+  static void resetCallPhase(
+     tmudr::UDRInvocationInfo *invocationInfo);
+  static void setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
+                         ExpTupleDesc *inParamTupleDesc,
+                         ExpTupleDesc *outputTupleDesc,
+                         ExpTupleDesc **inputTupleDescs);
   static void deleteUDRInvocationInfo(tmudr::UDRInvocationInfo *toDelete);
   static void deleteUDRPlanInfo(tmudr::UDRPlanInfo *toDelete);
 };

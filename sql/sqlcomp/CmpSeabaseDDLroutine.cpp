@@ -139,6 +139,8 @@ static void getLanguageTypeLit(ComRoutineLanguage val, NAString& result)
       result = COM_LANGUAGE_JAVA_LIT;
     else if (val == COM_LANGUAGE_C)
       result = COM_LANGUAGE_C_LIT;
+    else if (val == COM_LANGUAGE_CPP)
+      result = COM_LANGUAGE_CPP_LIT;
     else if (val == COM_LANGUAGE_SQL)
       result = COM_LANGUAGE_SQL_LIT;
     else
@@ -163,14 +165,18 @@ static void getParamStyleLit(ComRoutineParamStyle val, NAString& result)
   {
     if (val == COM_STYLE_GENERAL)
       result = COM_STYLE_GENERAL_LIT;
-    else if (val == COM_STYLE_JAVA)
-      result = COM_STYLE_JAVA_LIT;
+    else if (val == COM_STYLE_JAVA_CALL)
+      result = COM_STYLE_JAVA_CALL_LIT;
+    else if (val == COM_STYLE_JAVA_OBJ)
+      result = COM_STYLE_JAVA_OBJ_LIT;
     else if (val == COM_STYLE_SQL)
       result = COM_STYLE_SQL_LIT;
     else if (val == COM_STYLE_SQLROW)
       result = COM_STYLE_SQLROW_LIT;
-     else if (val == COM_STYLE_TM)
-      result = COM_STYLE_SQLROW_TM;
+     else if (val == COM_STYLE_SQLROW_TM)
+      result = COM_STYLE_SQLROW_TM_LIT;
+     else if (val == COM_STYLE_CPP_OBJ)
+      result = COM_STYLE_CPP_OBJ_LIT;
     else 
       result = COM_UNKNOWN_ROUTINE_PARAM_STYLE_LIT;
   }

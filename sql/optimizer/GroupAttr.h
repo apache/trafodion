@@ -254,6 +254,8 @@ public:
   inline Int32 getNumBaseTables() const           { return numBaseTables_; }
   inline void setNumBaseTables(Int32 v)
                              { numBaseTables_ = MAXOF(numBaseTables_,v); }
+  inline Int32 getNumTMUDFs() const                 { return numTMUDFs_; }
+  inline void setNumTMUDFs(Int32 v)                    { numTMUDFs_ = v; }
 
   inline CostScalar getMinChildEstRowCount() const       { return minChildEstRowCount_; }
   void setMinChildEstRowCount(CostScalar v)
@@ -800,8 +802,9 @@ private:
   RowSize          inputVarLength_;    // estimated size of input parameters
 
   // values used to avoid bushy join trees
-  Int32          numBaseTables_;    // # of base tables involved in the query
+  Int32          numBaseTables_;    // # of base tables involved in this subtree
   Int32          numJoinedTables_;  // # of tables in join backbone
+  Int32          numTMUDFs_;        // # of table-mapping UDFs in this subtree
 
   // QSTUFF VV
   // --------------------------------------------------------------------

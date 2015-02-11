@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2000-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -762,6 +762,10 @@ public:
     ComUInt32 udrFlags,
     Int32 routineOwnerId,
     const char *parentQid,
+    ComUInt32 udrSerInvocationInfoLen, // objects for new C++ interface
+    const char *udrSerInvocationInfo,
+    ComUInt32 udrSerPlanInfoLen,
+    const char *udrSerPlanInfo,
     ComUInt32 instanceNum,
     ComUInt32 numInstances);
 
@@ -834,6 +838,14 @@ public:
   void setOptionalDataBuf(ComUInt32 i, const char *buf, ComUInt32 bufLen);
   char *getOptionalDataBuf(ComUInt32 i);
 
+  // methods for C++ interface data
+  inline ComUInt32 getUDRSerInvocationInfoLen()
+                                          { return udrSerInvocationInfoLen_; }
+  inline const char *getUDRSerInvocationInfo()
+                                             { return udrSerInvocationInfo_; }
+  inline ComUInt32 getUDRSerPlanInfoLen()       { return udrSerPlanInfoLen_; }
+  inline const char *getUDRSerPlanInfo()           { return udrSerPlanInfo_; }
+
   // Redefine pack/unpack methods from IpcMessageObj
   IpcMessageObjSize packedLength();
   IpcMessageObjSize packObjIntoMessage(IpcMessageBufferPtr buffer);
@@ -851,6 +863,9 @@ protected:
   void deallocateParamInfo();
  
   void deallocateOptionalDataBufs();
+
+  void allocateInvocationInfo();
+  void deallocateInvocationInfo();
   
 
   char *sqlName_;                    // Fully qualified SQL name
@@ -884,7 +899,11 @@ protected:
   NABoolean optionalDataIsShared_;   // Buffers owned by this instance?
   ComUInt32 numInstances_;           // num if instances of this udr tcb
   ComUInt32 instanceNum_;            // instance number of this udr tcb
-  
+  ComUInt32 udrSerInvocationInfoLen_; // serialized objects for new C++ interface
+  const char *udrSerInvocationInfo_;
+  ComUInt32 udrSerPlanInfoLen_;
+  const char *udrSerPlanInfo_;
+
 
 private:
 

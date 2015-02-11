@@ -1,6 +1,6 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2000-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -122,3 +122,55 @@ group by token
 order by 2,1;
 
 execute s1 ;
+
+-- some simple tests for the event_log_reader predefined TMUDF
+-- (result of the UDF is not deterministic)
+select [last 0] * from udf(event_log_reader());
+select [last 0] log_ts + interval '1' day,
+                severity || 'x',
+                substring(component from 1 for 2),
+                node_number + 1,
+                cpu + 2,
+                pin * 4,
+                process_name || query_id,
+                sql_code,
+                message,
+                log_file_node,
+                log_file_name,
+                log_file_line -1,
+                case when parse_status = ' ' then 'ok' else parse_status end
+from udf(event_log_reader('f'));
+select coalesce(min(log_file_node), 0) from udf(event_log_reader('f')) x
+where x.log_file_line <100;
+
+-- copy a file with known content to the log directory and see whether
+-- we get the correct results
+-- currently disabled, since Jenkins environment does not have $MY_SQROOT set
+--sh cp $$scriptsdir$$/udr/TEST002.sample_events $$MY_SQROOT$$/logs/master_exec_regr_999_99999.log;
+
+select count(*) as num_events,
+       max(log_file_line) as num_lines,
+       count(distinct query_id) num_query_ids,
+       sum(case when parse_status = ' ' then 0 else 1 end) num_parse_errors
+from udf(event_log_reader('f'))
+where log_file_name = 'master_exec_regr_999_99999.log';
+-- there are 22 events in 33 lines in this file, with 13 unique query ids and 3 parse errors
+
+select * from udf(event_log_reader('f'))
+where log_file_name = 'master_exec_regr_999_99999.log'
+  and (log_file_line in (1,3,8,16,23) or parse_status <> ' ')
+order by log_file_line;
+-- lines 20, 30 and 31 have parse errors and are also displayed
+
+--sh rm $$MY_SQROOT$$/logs/master_exec_regr_999_99999.log;
+
+-- some negative test cases
+prepare s from select * from udf(event_log_reader(10));
+-- parameter must be a string
+prepare s from select * from udf(event_log_reader(?));
+-- parameter must be available at compile time
+prepare s from select * from udf(event_log_reader(table(select * from (values (1)) as x)));
+-- table-valued input not allowed
+prepare s from select query_id, log_file_name, parse_status
+from udf(event_log_reader());
+-- log_file_name and parse_status columns not available without 'f' option

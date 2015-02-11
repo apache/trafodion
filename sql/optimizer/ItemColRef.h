@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -477,6 +477,11 @@ public:
   // same, but getting an approximate numeric value
   NABoolean canGetApproximateNumericValue() const;
   double getApproximateNumericValue() const;
+
+  // get offsets of the three fields stored in the data buffer
+  void getOffsetsInBuffer(int &nullIndOffset,
+                          int &vcLenOffset,
+                          int &dataOffset);
 
   // Are two ConstValues equal to each other???
   virtual NABoolean operator == (const ItemExpr& other) const;

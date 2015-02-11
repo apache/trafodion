@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -314,14 +314,23 @@ ExUdrTcb::ExUdrTcb(const ExUdrTdb &udrTdb,
     ComRoutineParamStyle paramStyle = udrTdb.getParamStyle();
     switch (paramStyle)
     {
-      case COM_STYLE_JAVA:
-        UdrDebug0("  Parameter style JAVA");
+      case COM_STYLE_JAVA_CALL:
+        UdrDebug0("  Parameter style JAVA (call)");
+        break;
+      case COM_STYLE_JAVA_OBJ:
+        UdrDebug0("  Parameter style JAVA (object)");
         break;
       case COM_STYLE_SQL:
         UdrDebug0("  Parameter style SQL");
         break;
       case COM_STYLE_SQLROW:
         UdrDebug0("  Parameter style SQLROW");
+        break;
+      case COM_STYLE_SQLROW_TM:
+        UdrDebug0("  Parameter style SQLROW_TM");
+        break;
+      case COM_STYLE_CPP_OBJ:
+        UdrDebug0("  Parameter style C++");
         break;
       default:
         ex_assert(0, "Invalid PARAMETER STYLE");
@@ -342,6 +351,9 @@ ExUdrTcb::ExUdrTcb(const ExUdrTdb &udrTdb,
         break;
       case COM_LANGUAGE_C:
         UdrDebug0("  Language C");
+        break;
+      case COM_LANGUAGE_CPP:
+        UdrDebug0("  Language C++");
         break;
       default:
         ex_assert(0, "Invalid LANGUAGE");
@@ -1036,8 +1048,15 @@ ExWorkProcRetcode ExUdrTcb::checkReceive()
           }
           else
           {
-            done = TRUE;
-	   
+            // check for errors from getReplyBuffer()
+            if (getStatementDiags() &&
+                getStatementDiags()->mainSQLCODE() < 0)
+              {
+                insertUpQueueEntry(ex_queue::Q_SQLERROR, getStatementDiags());
+                down_pstate.step_ = PRODUCE_EOD_AFTER_ERROR;
+              }
+            else
+              done = TRUE;
           }
         }
         break;
@@ -1113,6 +1132,8 @@ NABoolean ExUdrTcb::insertUpQueueEntry(ex_queue::up_status status,
     else
     {
       atpDiags->mergeAfter(*diags);
+      // errors have been reported, clear the passed-in diags
+      diags->clear();
     }
   }
 
@@ -1462,8 +1483,6 @@ void ExUdrTcb::reportLoadReply(NABoolean loadWasSuccessful)
     // (LME_JVM_INIT_ERROR in langman/LmError.h).
     ComDiagsArea *d = getStatementDiags();
 
-    insertUpQueueEntry(ex_queue::Q_SQLERROR, d);
-
     if (d && d->contains(-11202))
     {
       udrServer_->stop();
@@ -1473,6 +1492,8 @@ void ExUdrTcb::reportLoadReply(NABoolean loadWasSuccessful)
     {
       setUdrTcbState(LOAD_FAILED);
     }
+
+    insertUpQueueEntry(ex_queue::Q_SQLERROR, d);
   }
 
   tickleSchedulerWork();
@@ -1883,6 +1904,10 @@ NABoolean ExUdrTcb::sendControlMessage(UdrIpcObjectType t,
         udrTdb.getUdrFlags(),
         udrTdb.getRoutineOwnerId(),
         parentQid,
+        udrTdb.udrSerInvocationInfoLen_,
+        udrTdb.udrSerInvocationInfo_,
+        udrTdb.udrSerPlanInfoLen_,
+        udrTdb.udrSerPlanInfo_,
 	instanceNum,
 	numInstances
         );
@@ -1989,11 +2014,6 @@ NABoolean ExUdrTcb::sendControlMessage(UdrIpcObjectType t,
       if(udrTdb.isTmudf())
       {
 	setTmUdfInfo(loadMsg,udrTdb);
-
-        // This is a temporary setting of param style to COM_STYLE_TM.
-        // This value should get propagated from the binder once
-        // metadata changes are in place. //PV 
-        loadMsg->setParamStyle(COM_STYLE_TM); 
       }
 	
       msg = loadMsg;
@@ -2141,6 +2161,7 @@ NABoolean ExUdrTcb::sendControlMessage(UdrIpcObjectType t,
 #endif
     if(udrTdb.isTmudf())
     {
+      ex_assert(udrServer_->getUdrControlConnection(), "Invalid control connection (IPC error?)");
       s->addRecipient(udrServer_->getUdrControlConnection());
     }
     else
@@ -2433,6 +2454,13 @@ UdrDataBuffer *ExUdrTcb::getReplyBuffer()
   NABoolean doIntegrityChecks = TRUE;
   NABoolean integrityCheckResult = TRUE;
 
+#ifdef UDR_DEBUG
+  // Integrity checks can be disabled in the debug build by an
+  // environment setting. trustReplies_ stores the environment
+  // setting and is initialized by initializeDebugVariables().
+  doIntegrityChecks = !trustReplies_;
+#endif
+
   if (replyBuffer_ == NULL)
   {
     IpcMessageObjType msgType;
@@ -2444,12 +2472,6 @@ UdrDataBuffer *ExUdrTcb::getReplyBuffer()
       {
         case UDR_MSG_DATA_REPLY:
         {
-#ifdef UDR_DEBUG
-          // Integrity checks can be disabled in the debug build by an
-          // environment setting. trustReplies_ stores the environment
-          // setting and is initialized by initializeDebugVariables().
-          doIntegrityChecks = !trustReplies_;
-#endif
           if (doIntegrityChecks)
           {
             IpcMessageObjSize objSize = dataStream_->getNextObjSize();
@@ -2534,6 +2556,50 @@ UdrDataBuffer *ExUdrTcb::getReplyBuffer()
           }
         }
         break;
+
+      case UDR_MSG_ERROR_REPLY:
+        {
+          UdrDebug0("About to extract UdrErrorReply from stream");
+
+          UdrErrorReply *reply = new (getIpcHeap()) UdrErrorReply(getIpcHeap());
+
+          integrityCheckResult =
+            dataStream_->extractNextObj(*reply, doIntegrityChecks);
+          reply->decrRefCount();
+          reply = NULL;
+          if (!integrityCheckResult)
+            {
+              UdrDebug0("*** ERROR: extractNextObj() for diags returned FALSE");
+            }
+
+          IpcMessageObjType t;
+        
+          if (dataStream_->getNextObjType(t) && t == IPC_SQL_DIAG_AREA)
+            {
+              ComDiagsArea *returnedDiags = ComDiagsArea::allocate(getHeap());
+
+              integrityCheckResult =
+                dataStream_->extractNextObj(*returnedDiags, doIntegrityChecks);
+              if (integrityCheckResult)
+                {
+                  UdrDebug1("  [WORK]   Diags arrived with this row, count %d",
+                            (Lng32) returnedDiags->getNumber());
+                  getOrCreateStmtDiags()->mergeAfter(*returnedDiags);
+                }
+              else
+                {
+                  UdrDebug0("*** ERROR: extractNextObj() for diags returned FALSE");
+                }
+
+              returnedDiags->decrRefCount();
+              returnedDiags = NULL;
+            }
+          else
+            {
+              UdrDebug0("*** ERROR: Expected diags in the stream but found none");
+              integrityCheckResult = FALSE;
+            }
+        }
         
         default:
         {
@@ -3706,7 +3772,15 @@ ExWorkProcRetcode ExUdrTcb::tmudfCheckReceive()
 	      
 		else
 		  {
-		    done = TRUE;
+                    // check for errors from getReplyBuffer()
+                    if (getStatementDiags() &&
+                        getStatementDiags()->mainSQLCODE() < 0)
+                      {
+                        insertUpQueueEntry(ex_queue::Q_SQLERROR, getStatementDiags());
+                        down_pstate.step_ = PRODUCE_EOD_AFTER_ERROR;
+                      }
+                    else
+                      done = TRUE;
 		  }
 	      }
 	      break;

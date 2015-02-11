@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2565,10 +2565,10 @@ NABoolean JoinToTSJRule::topMatch (RelExpr * expr,
   // QSTUFF
 
   RelExpr * rightChild = joinExpr->child(1);
-  if (rightChild && rightChild->getOperatorType() == REL_TABLE_MAPPING_UDF)
+  if (rightChild && rightChild->getGroupAttr()->getNumTMUDFs() > 0)
     return FALSE;
 
-  // nested join execluded by heuristics
+  // nested join excluded by heuristics
   //if (NOT joinExpr->canTransformToTSJ()) return FALSE;
 
   // QSTUFF

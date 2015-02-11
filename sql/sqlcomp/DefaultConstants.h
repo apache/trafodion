@@ -3645,6 +3645,8 @@ enum DefaultConstants
   // and not from metadata. 
   TRAF_BOOTSTRAP_MD_MODE,
 
+  UDR_DEBUG_FLAGS,
+
   // The threshold on the number of rows scanned in an index join scan. 
   // If the estimated value is below the threshold, the index will be 
   // subjected to the elimination heuristics.

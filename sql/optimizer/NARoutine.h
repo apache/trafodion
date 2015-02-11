@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -177,6 +177,9 @@ public:
   inline void  setFile           (ComString file)     { externalFile_   = file; }  
   inline void  setExternalName   (ComString fname)    { externalName_   = fname; } 
   inline void  setLibrarySqlName (ComObjectName lib)  { librarySqlName_   = lib; }
+  inline void  setLanguage  (ComRoutineLanguage lang) { language_ = lang; }  
+  inline void  setRoutineType    (ComRoutineType typ) { UDRType_ = typ; }  
+  inline void  setParamStyle(ComRoutineParamStyle st) { paramStyle_ = st; }  
   inline void  setLastUsedTime   (Int64 time)         { lastUsedTime_   = time; } 
   inline void  setUecForParam(Int32 index, Int32 uec) { uecValues_[index] = uec; }
   inline ComRoutineExecutionMode      getExecutionMode()  const { return executionMode_; }

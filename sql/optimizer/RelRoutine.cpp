@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -362,6 +362,11 @@ RelExpr * TableMappingUDF::copyTopNode(RelExpr *derivedNode,
   return TableValuedFunction::copyTopNode(result, outHeap);
 }
 
+TableMappingUDF *TableMappingUDF::castToTableMappingUDF()
+{
+  return this;
+}
+
 //! TableMappingUDF::getText method
 const NAString TableMappingUDF::getText() const
 {
@@ -499,6 +504,8 @@ void TableMappingUDF::pushdownCoveredExpr(
 void TableMappingUDF::synthLogProp(NormWA * normWAPtr)
 {
   RelExpr::synthLogProp(normWAPtr);
+  // +1 on the TMUDFs
+  getGroupAttr()->setNumTMUDFs(getGroupAttr()->getNumTMUDFs()+1);
 };
 
 void TableMappingUDF::finishSynthEstLogProp()
@@ -942,6 +949,9 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
         result = new(bindWA->wHeap()) NARoutine(routineName,
                                                 bindWA->wHeap());
         result->setExternalName("TRAF_CPP_EVENT_LOG_READER");
+        result->setLanguage(COM_LANGUAGE_CPP);
+        result->setRoutineType(COM_TABLE_UDF_TYPE);
+        result->setParamStyle(COM_STYLE_CPP_OBJ);
       }
       break;
 
@@ -972,6 +982,21 @@ short PhysicalTableMappingUDF::generateShape(CollHeap * space, char * buf, NAStr
   CMPASSERT(0);
   return 0;
 };
+
+RelExpr * PhysicalTableMappingUDF::copyTopNode(RelExpr *derivedNode,
+                                               CollHeap* outHeap)
+{
+  PhysicalTableMappingUDF *result;
+
+  if (derivedNode == NULL)
+    result = new(outHeap) PhysicalTableMappingUDF(outHeap);
+  else
+    result = (PhysicalTableMappingUDF *) derivedNode;
+
+  result->planInfo_ = planInfo_;
+
+  return TableMappingUDF::copyTopNode(result, outHeap);
+}
 
 //! PhysicalTableMappingUDF::getText method
 const NAString PhysicalTableMappingUDF::getText() const

@@ -69,7 +69,8 @@ GroupAttributes::GroupAttributes() :
      numBaseTables_(0),  // only true base tables are counted here
      minChildEstRowCount_(csZero),
      numJoinedTables_(1), // count this node as one table
-	 logExprForSynthesis_(NULL),
+     numTMUDFs_(0),
+     logExprForSynthesis_(NULL),
      inputEstLogProp_(STMTHEAP),
      intermedOutputLogProp_(STMTHEAP),
      outputEstLogProp_(STMTHEAP),
@@ -106,6 +107,7 @@ GroupAttributes::GroupAttributes (const GroupAttributes & rhs) :
      numBaseTables_(rhs.numBaseTables_),
      minChildEstRowCount_(rhs.minChildEstRowCount_),
      numJoinedTables_(rhs.numJoinedTables_),
+     numTMUDFs_(rhs.numTMUDFs_),
      logExprForSynthesis_(rhs.logExprForSynthesis_),
      inputEstLogProp_(rhs.inputEstLogProp_, STMTHEAP),
      intermedOutputLogProp_(rhs.intermedOutputLogProp_, STMTHEAP),
@@ -621,6 +623,7 @@ void GroupAttributes::lomerge (GroupAttributes &other, NABoolean mergeCIO)
   minChildEstRowCount_ = MINOF(minChildEstRowCount_,other.minChildEstRowCount_);
 
   numJoinedTables_ = MAXOF(numJoinedTables_,other.numJoinedTables_);
+  numTMUDFs_ = MAXOF(numTMUDFs_, other.numTMUDFs_);
 
   // Look thru the sets of input/output est. logical properties for
   // the "other" set of group attributes.  For those not already in

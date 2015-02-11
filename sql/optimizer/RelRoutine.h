@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -67,7 +67,8 @@ class PhysicalTableMappingUDF;
 class TMUDFDllInteraction;
 namespace tmudr {
   class UDRInvocationInfo;
-  class TMUDRInterface;
+  class UDRPlanInfo;
+  class UDRInterface;
 }
 
 // -----------------------------------------------------------------------
@@ -734,6 +735,8 @@ public :
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
                                 CollHeap* outHeap = 0);
 
+  virtual TableMappingUDF *castToTableMappingUDF();
+
   //! getText method
   // a virtual function for displaying the name of the node
   virtual const NAString getText() const ;
@@ -883,7 +886,7 @@ public :
     return invocationInfo_;
   }
 
-  tmudr::TMUDRInterface * getUDRInterface()
+  tmudr::UDRInterface * getUDRInterface()
   {
     return udrInterface_;
   }
@@ -909,7 +912,7 @@ public :
   inline void setInvocationInfo(tmudr::UDRInvocationInfo *invocationInfo)
   { invocationInfo_ = invocationInfo; }
 
-  inline void setUDRInterface(tmudr::TMUDRInterface *udrInterface)
+  inline void setUDRInterface(tmudr::UDRInterface *udrInterface)
   { udrInterface_ = udrInterface; }
 
 protected:
@@ -923,7 +926,7 @@ protected:
   // the udrInterface should be in a cache, created when we invoke
   // a particular interface for the first time and deleted when
   // we unload the DLL
-  tmudr::TMUDRInterface *udrInterface_;
+  tmudr::UDRInterface *udrInterface_;
 
 private:
 
@@ -1005,18 +1008,21 @@ public:
 
   //! PhysicalTableMappingUDF Constructor
   PhysicalTableMappingUDF(CollHeap *oHeap = CmpCommon::statementHeap())
-    : TableMappingUDF(NULL, REL_TABLE_MAPPING_UDF, oHeap)
-  {};
+       : TableMappingUDF(NULL, REL_TABLE_MAPPING_UDF, oHeap),
+         planInfo_(NULL)
+  {}
 
   PhysicalTableMappingUDF(RelExpr* child0,
                           CollHeap *oHeap = CmpCommon::statementHeap())
-    : TableMappingUDF(child0, NULL, REL_TABLE_MAPPING_UDF, oHeap)
-  {};
+       : TableMappingUDF(child0, NULL, REL_TABLE_MAPPING_UDF, oHeap),
+         planInfo_(NULL)
+  {}
 
   //! PhysicalTableMappingUDF Copy Constructor
   PhysicalTableMappingUDF(const TableMappingUDF & other)
-    : TableMappingUDF(other)
-  {};
+       : TableMappingUDF(other),
+         planInfo_(NULL)
+  {}
 
   //! isLogical method
   //  indicate if the node is logical
@@ -1065,9 +1071,18 @@ public:
 					    ComTdb * tdb,
 					    Generator *generator);
 
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+                                CollHeap* outHeap = 0);
+
   //! getText method
   // a virtual function for displaying the name of the node
   virtual const NAString getText() const ;
+
+private:
+
+  // this only gets set during preCodeGen, in the optimizer this is
+  // stored in the TMUDFPlanWorkSpace
+  tmudr::UDRPlanInfo *planInfo_;
 
 }; // class PhysicalTableMappingUDF
 

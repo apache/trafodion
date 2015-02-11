@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -35,164 +35,173 @@ using namespace tmudr;
 // max. line length we can parse (give or take a few),
 // this should be the size of the "message" output column
 // plus enough room for the other fields
-const int maxLineLength = 5000;
+const int MaxLineLength = 5000;
+const int ParseStatusNumChars = 2;
 
 const char TruncationError     = 'T';
 const char FieldParserError    = 'E';
 const char CharConversionError = 'C';
 
-static void setParseError(char err,
-                          char *parseErrorField)
+static void setParseError(char err, std::string &parseErrorField)
 {
-  if (err != ' ' && parseErrorField)
-    {
-      // parse_error_output_field points to a 2 character field
-      // that is initialized with blanks. Add the code to the end
-      // if it is not yet recorded in the field
-      if (parseErrorField[0] == ' ')
-        parseErrorField[0] = err;
-      else if (parseErrorField[1] == ' ' &&
-               parseErrorField[0] != err)
-        parseErrorField[1] = err;
-    }
+  if (err != ' ' && parseErrorField.size() < ParseStatusNumChars)
+    if (parseErrorField.find_first_of(err) == std::string::npos)
+      parseErrorField.append(1, err);
 }
 
-static void setIntOutputColumn(char *outputRow,
-                               SQLUDR_PARAM *param,
+// the next two methods set output columns from string input
+// and instead of raising exceptions, they set the parse error field
+
+static void setIntOutputColumn(const UDRInvocationInfo &info,
+                               int paramNum,
                                const char *src,
-                               char *parseErrorField)
+                               std::string &parseErrorField)
 {
-  SQLUDR_INT32 *tgt = (SQLUDR_INT32 *) (outputRow + param->data_offset);
-  SQLUDR_INT16 *indPtr = (SQLUDR_INT16 *) (outputRow + param->ind_offset);
   char *endptr = NULL;
+  int result = 0;
 
   long num = strtol(src, &endptr, 10);
 
   if (num <= std::numeric_limits<int32_t>::max() &&
       num >= std::numeric_limits<int32_t>::min())
-    *tgt = (SQLUDR_INT32) strtol(src, &endptr, 10);
+    result = num;
   else
     {
       if (num < std::numeric_limits<int32_t>::min())
-        *tgt = std::numeric_limits<int32_t>::min();
+        result = std::numeric_limits<int32_t>::min();
       else
-        *tgt = std::numeric_limits<int32_t>::max();
+        result = std::numeric_limits<int32_t>::max();
       setParseError(TruncationError, parseErrorField);
     }
 
   if (endptr == NULL || *endptr != 0 || endptr == src)
     {
       // no valid number read, treat this as a NULL value
-      *tgt = 0;
-      *indPtr = -1;
+      info.out().setNull(paramNum);
       if (endptr && *endptr != 0)
         // strtol didn't consume all the characters, this is a
         // parse error
         setParseError(FieldParserError, parseErrorField);
     }
   else
-    *indPtr = 0;
+    info.out().setInt(paramNum, result);
 }
 
-static void setCharOutputColumn(char *outputRow,
-                                SQLUDR_PARAM *param,
+static void setCharOutputColumn(const UDRInvocationInfo &info,
+                                int paramNum,
                                 const char *src,
-                                char *parseErrorField)
+                                std::string &parseErrorField)
 {
-  char *tgt = outputRow + param->data_offset;
-  SQLUDR_INT16 *indPtr = (SQLUDR_INT16 *) (outputRow + param->ind_offset);
+  int srcLen = strlen(src);
+  const tmudr::TypeInfo &outType = info.out().getColumn(paramNum).getType();
+  int tgtLen = outType.getLength();
 
-  strncpy(tgt, src, param->data_len);
-  int len = strlen(src);
-  if (len <= param->data_len)
+  if (srcLen > tgtLen)
     {
-      if (len > 0)
+      // set an error indicator and truncate the string
+      setParseError(TruncationError, parseErrorField);
+      srcLen = tgtLen;
+
+      // remove any incomplete UTF-8 characters
+      if ((static_cast<unsigned char>(src[srcLen]) >> 6) == 2)
+        // the first character to be cut off is a continuation
+        // character (starting with bits '01'), continue to remove
+        // characters until the removed character is no longer a
+        // continuation character (i.e. it's the first character
+        // of the sequence).
+        do
+          {
+            srcLen--;
+          }
+        while ((static_cast<unsigned char>(src[srcLen]) >> 6) == 2);
+    }
+
+  if (srcLen > 0 || !outType.getIsNullable())
+    info.out().setString(paramNum, src, srcLen);
+  else
+    // treat a blank value as a NULL value
+    info.out().setNull(paramNum);
+}
+
+// validate UTF-8 characters in inputLine and copy
+// to inputLineValidated, replacing any invalid characters
+// with the "replacement character" U+FFFD
+bool validateCharsAndCopy(char *outBuf, int outBufLen,
+                          const char *inBuf, int inBufLen,
+                          int &resultLen)
+{
+  bool result = true;
+  int srcPos = 0;
+  int tgtPos = 0;
+  unsigned char c;
+  int byte = 1;
+  int tgtLimit = outBufLen - 4 - 1; // leave room for larger replacement
+
+  while (srcPos < inBufLen && tgtPos < tgtLimit)
+    {
+      c = inBuf[srcPos];
+
+      if (c < 0x80)
         {
-          // set the remainder of the field to blanks
-          memset(tgt+len, ' ', param->data_len - len); 
+          // ASCII character
+          outBuf[tgtPos++] = inBuf[srcPos++];
         }
       else
         {
-          // treat a blank value as a NULL value
-          *indPtr = -1;
-          memset(tgt, ' ', param->data_len);
+          // non-ASCII or invalid byte sequence
+          int numBytes;
+          int validUTF8Char = 1;
+
+          if (c >= 0xc0 && c < 0xe0) // start of 2-byte sequence
+            numBytes = 2;
+          else if (c >= 0xe0 && c < 0xf0) // start of 3-byte sequence
+            numBytes = 3;
+          else if (c >= 0xf0 && c < 0xfc) // start of 4-byte sequence
+            numBytes = 4;
+          else
+            {
+              // invalid sequence, remove those one by one
+              numBytes = 1;
+              validUTF8Char = 0;
+            }
+
+          if (numBytes > inBufLen - srcPos)
+            validUTF8Char = 0; // incomplete sequence
+
+          // make sure we have numBytes continuation bytes following
+          // in the range of 0x80 ... 0xbf
+          for (int p=1; p<numBytes; p++)
+            {
+              unsigned char s = inBuf[srcPos+p];
+
+              if (s < 0x80 || s >= 0xc0)
+                validUTF8Char = 0;
+            }
+
+          if (validUTF8Char)
+            {
+              for (int j=0; j<numBytes; j++)
+                outBuf[tgtPos++] = inBuf[srcPos++];
+            }
+          else
+            {
+              // U+FFFD in UTF-8
+              const unsigned char replacementChar[] =
+                { 0xef, 0xbf, 0xbd };
+
+              for (int k=0; k<sizeof(replacementChar); k++)
+                outBuf[tgtPos++] = (char) replacementChar[k];
+              srcPos += numBytes;
+              result = false;
+            }
         }
     }
-  else
-    setParseError(TruncationError, parseErrorField);
+
+  outBuf[tgtPos] = 0;
+  resultLen = tgtPos;
+
+  return result;
 }
-
-static void setVarCharOutputColumn(char *outputRow,
-                                   SQLUDR_PARAM *param,
-                                   const char *src,
-                                   char *parseErrorField)
-{
-  int len = strlen(src);
-  char *tgt = outputRow + param->data_offset;
-  SQLUDR_INT16 *indPtr = (SQLUDR_INT16 *) (outputRow + param->ind_offset);
-
-  strncpy(tgt, src, param->data_len);
-  *indPtr = 0;
-  if (len <= param->data_len)
-    {
-      // just to be clean, blank out remainder of the field
-      memset(tgt+len, ' ', param->data_len - len); 
-
-      if (len == 0)
-        // treat a blank value as a NULL value
-        *indPtr = -1;
-    }
-  else
-    {
-      len = param->data_len;
-      setParseError(TruncationError, parseErrorField);
-    }
-
-  if (param->vc_ind_len == sizeof(SQLUDR_UINT16))
-    *((SQLUDR_UINT16 *) (outputRow + param->vc_ind_offset)) = len;
-  else // if (param->vc_ind_len == sizeof(SQLUDR_INT32))
-    *((SQLUDR_UINT32 *) (outputRow + param->vc_ind_offset)) = len;
-}
-
-static void appendToVarCharOutputColumn(char *outputRow,
-                                        SQLUDR_PARAM *param,
-                                        const char *src,
-                                        int& appendPos,
-                                        char *parseErrorField)
-{
-  int len = strlen(src) + appendPos;
-  char *tgt = outputRow + param->data_offset + appendPos;
-  char *start = outputRow + param->data_offset;
-  SQLUDR_INT16 *indPtr = (SQLUDR_INT16 *) (outputRow + param->ind_offset);
-
-  if (appendPos < param->data_len)
-    strncpy(tgt, src, (param->data_len - appendPos));
-  *indPtr = 0;
-    
-  if (len <= param->data_len)
-    {
-      // just to be clean, blank out remainder of the field
-      memset(start+len, ' ', param->data_len - len); 
-
-      if (len == 0)
-        // treat a blank value as a NULL value
-        *indPtr = -1;
-    }
-  else
-    {
-      len = param->data_len;
-      setParseError(TruncationError, parseErrorField);
-    }
-
-  if (param->vc_ind_len == sizeof(SQLUDR_UINT16))
-    *((SQLUDR_UINT16 *) (outputRow + param->vc_ind_offset)) = len;
-  else // if (param->vc_ind_len == sizeof(SQLUDR_INT32))
-    *((SQLUDR_UINT32 *) (outputRow + param->vc_ind_offset)) = len;
-
-  appendPos = len;
-}
-
-
 
 // -----------------------------------------------------------------
 // Function to read event log files generated by Trafodion C++ code
@@ -205,8 +214,6 @@ static void appendToVarCharOutputColumn(char *outputRow,
 // following options are supported:
 //  f: add file name output columns (see below)
 //  t: turn on tracing
-//  d: loop in the runtime code, to be able to attach a debugger
-//     (debug build only)
 //  p: force parallel execution on workstation environment with
 //     virtual nodes (debug build only)
 //
@@ -240,28 +247,184 @@ static void appendToVarCharOutputColumn(char *outputRow,
 // 'C'  (as first or second character): character conversion error
 // -----------------------------------------------------------------
 
-extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
-     SQLUDR_CHAR *input_row,
-     SQLUDR_TMUDF_TRAIL_ARGS)
+// compiler interface class for TRAF_CPP_EVENT_LOG_READER
+
+class ReadCppEventsUDFInterface : public UDRInterface
 {
-  if (calltype == SQLUDR_CALLTYPE_FINAL)
-    return SQLUDR_SUCCESS;
+public:
 
-  SQLUDR_Q_STATE qstate;
+  enum ColNum {
+    LOG_TS_COLNUM = 0,
+    SEVERITY_COLNUM,
+    COMPONENT_COLNUM,
+    NODE_NUMBER_COLNUM,
+    CPU_COLNUM,
+    PIN_COLNUM,
+    PROCESS_NAME_COLNUM,
+    SQL_CODE_COLNUM,
+    QUERY_ID_COLNUM,
+    MESSAGE_COLNUM,
+    LOG_FILE_NODE_COLNUM, // optional columns
+    LOG_FILE_NAME_COLNUM,
+    LOG_FILE_LINE_COLNUM,
+    PARSE_STATUS_COLNUM
+  };
 
+  ReadCppEventsUDFInterface() : UDRInterface(), logDir_(NULL), infile_(NULL) {}
+
+  // override any methods where the UDF author would
+  // like to change the default behavior
+
+  virtual void describeParamsAndColumns(UDRInvocationInfo &info); // Binder
+  virtual void describeDesiredDegreeOfParallelism(UDRInvocationInfo &info,
+                                                  UDRPlanInfo &plan);// Optimizer
+  virtual void processData(UDRInvocationInfo &info,
+                           UDRPlanInfo &plan);
+  virtual ~ReadCppEventsUDFInterface();
+
+private:
+  bool useParallelExecForVirtualNodes_;
+  DIR *logDir_;
+  FILE *infile_;
+
+};
+
+extern "C" UDRInterface * TRAF_CPP_EVENT_LOG_READER(
+     const UDRInvocationInfo *info)
+{
+  return new ReadCppEventsUDFInterface();
+}
+
+void ReadCppEventsUDFInterface::describeParamsAndColumns(
+     UDRInvocationInfo &info)
+{
+  bool addFileColumns = false;
+
+  useParallelExecForVirtualNodes_ = false;
+
+  // This UDF is a table-valued function, no table-valued inputs
+  if (info.getNumTableInputs() != 0)
+    throw UDRException(38220,
+                       "There should be no table-valued parameters to the call to %s, got %d",
+                       info.getUDRName().data(),
+                       info.getNumTableInputs());
+
+  if (info.getNumActualParameters() > 1)
+    throw UDRException(38221,
+                       "There should be no more than one input parameters to the call to %s, got %d",
+                       info.getUDRName().data(),
+                       info.getNumActualParameters());
+  else if (info.getNumActualParameters() == 1)
+    {
+      if (!info.par().canGetString(0))
+        throw UDRException(38222,
+                           "Expecting a character constant as first parameter of the call to %s",
+                           info.getUDRName().data());
+
+      std::string options = info.par().getString(0);
+
+      // add an additional formal parameter for the options value
+      info.addFormalParameter(
+           ColumnInfo("OPTIONS",
+                      info.getActualParameterInfo(0).getType()));
+
+      // validate options
+      for (std::string::iterator it = options.begin();
+           it != options.end();
+           it++)
+        {
+          switch (*it)
+            {
+            case 'f':
+              addFileColumns = true;
+            break;
+
+            case 't':
+              // trace option, handled at runtime
+            break;
+
+            case ' ':
+              // tolerate blanks in the options
+              break;
+
+#ifndef NDEBUG
+            case 'p':
+              // debug option, use parallel execution even with virtual nodes
+              useParallelExecForVirtualNodes_ = true;
+              break;
+#endif
+
+            default:
+              {
+                throw UDRException(38223,
+                                   "Option %c not supported in first parameter of the call to %s",
+                                   *it,
+                                   info.getUDRName().data());
+              }
+            }
+        }
+    } // got 1 input parameter
+
+  // add the output columns
+  TableInfo &outTable = info.getOutputTableInfo();
+
+  outTable.addColumn(
+       ColumnInfo("LOG_TS",
+                  TypeInfo(TypeInfo::TIMESTAMP,
+                           0,
+                           true,
+                           6)));
+  outTable.addCharColumn   ("SEVERITY",    10, true);
+  outTable.addCharColumn   ("COMPONENT",   24, true);
+  outTable.addIntegerColumn("NODE_NUMBER",     true);
+  outTable.addIntegerColumn("CPU",             true);
+  outTable.addIntegerColumn("PIN",             true);
+  outTable.addCharColumn   ("PROCESS_NAME",12, true);
+  outTable.addIntegerColumn("SQL_CODE",        true);
+  outTable.addVarCharColumn("QUERY_ID",   200, true);
+  outTable.addVarCharColumn("MESSAGE",   4000, true);
+
+  if (addFileColumns)
+    {
+      outTable.addIntegerColumn("LOG_FILE_NODE");
+      outTable.addVarCharColumn("LOG_FILE_NAME",200);
+      outTable.addIntegerColumn("LOG_FILE_LINE");
+      outTable.addCharColumn   ("PARSE_STATUS",2);
+    }
+}
+
+void ReadCppEventsUDFInterface::describeDesiredDegreeOfParallelism(
+     UDRInvocationInfo &info,
+     UDRPlanInfo &plan)
+{
+  // check for configurations with virtual nodes. Run the UDF serially
+  // in those cases, since all the virtual nodes share the same node.
+  int usesNoVirtualNodes = system("grep '^[ \t]*_virtualnodes ' $MY_SQROOT/sql/scripts/sqconfig >/dev/null");
+
+  if (usesNoVirtualNodes != 0 || useParallelExecForVirtualNodes_)
+    // this TMUDF needs to run once on each node, since every
+    // parallel instance will be reading the local files on that node
+    plan.setDesiredDegreeOfParallelism(UDRPlanInfo::ONE_INSTANCE_PER_NODE);
+  else
+    plan.setDesiredDegreeOfParallelism(1);
+}
+
+void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
+                 UDRPlanInfo &plan)
+{
   // input parameters
-  int addFileColumns = 0;
-  int doTrace = 0;
-  int startWithALoop = 0;
+  bool addFileColumns = false;
+  bool doTrace = false;
   int pid = (int) getpid();
 
-  if (udrinfo->num_inputs >= 1)
+  if (info.par().getNumColumns() >= 1)
     {
-      char *options = input_row + udrinfo->inputs[0].data_offset;
-      int optionsLen = (int) udrinfo->inputs[0].data_len;
+      std::string inputPar = info.par().getString(0);
 
-      for (int i=0; i<optionsLen; i++)
-        switch (options[i])
+      for (std::string::iterator it = inputPar.begin();
+           it != inputPar.end();
+           it++)
+        switch (*it)
           {
           case ' ':
           case 'f': // handled below with addFileColumns
@@ -269,11 +432,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
             break;
 
           case 't':
-            doTrace = 1;
-          break;
-
-          case 'd':
-            startWithALoop = 1;
+            doTrace = true;
           break;
 
           default:
@@ -284,98 +443,37 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
 
   if (doTrace)
   {
-    printf("(%d) EVENT_LOG_READER calltype %d input %p\n", pid,
-           (int) calltype, input_row);
+    printf("(%d) EVENT_LOG_READER runtime call\n", pid);
     fflush(stdout);
   }
 
-  if (udrinfo->num_return_values != 10)
-    if (udrinfo->num_return_values == 14)
-      addFileColumns = 1;
+  if (info.out().getNumColumns() != 10)
+    if (info.out().getNumColumns() == 14)
+      addFileColumns = true;
     else
-        {
-          strcpy(sqlstate, "38000");
-          snprintf(msgtext,
-                   SQLUDR_MSGTEXT_SIZE,
-                   "Expecting 10 or 14 result columns, got %d",
-                   udrinfo->num_return_values);
-          return SQLUDR_ERROR;
-        }
-
-  // the output parameters
-  SQLUDR_PARAM *log_ts_param        = &(udrinfo->return_values[0]);
-  SQLUDR_PARAM *severity_param      = &(udrinfo->return_values[1]);
-  SQLUDR_PARAM *component_param     = &(udrinfo->return_values[2]);
-  SQLUDR_PARAM *node_number_param   = &(udrinfo->return_values[3]);
-  SQLUDR_PARAM *cpu_param           = &(udrinfo->return_values[4]);
-  SQLUDR_PARAM *pin_param           = &(udrinfo->return_values[5]);
-  SQLUDR_PARAM *process_name_param  = &(udrinfo->return_values[6]);
-  SQLUDR_PARAM *sql_code_param      = &(udrinfo->return_values[7]);
-  SQLUDR_PARAM *query_id_param      = &(udrinfo->return_values[8]);
-  SQLUDR_PARAM *message_param       = &(udrinfo->return_values[9]);
-  SQLUDR_PARAM *log_file_node_param = NULL;
-  SQLUDR_PARAM *log_file_name_param = NULL;
-  SQLUDR_PARAM *log_file_line_param = NULL;
-  SQLUDR_PARAM *parse_status_param  = NULL;
-  if (addFileColumns)
-    {
-      log_file_node_param = &(udrinfo->return_values[10]);
-      log_file_name_param = &(udrinfo->return_values[11]);
-      log_file_line_param = &(udrinfo->return_values[12]);
-      parse_status_param  = &(udrinfo->return_values[13]);
-    }
-
-  char *output_row = rowDataSpace2;
-
-  // pointers of the appropriate type for the output
-  char          *log_ts_param_ptr        = (char *) &(output_row[log_ts_param->data_offset]);
-  SQLUDR_INT32  *log_file_node_param_ptr = NULL;
-  SQLUDR_INT32  *log_file_line_param_ptr = NULL;
-  char          *parse_status_param_ptr  = NULL;
-  if (addFileColumns)
-    {
-      log_file_node_param_ptr = (SQLUDR_INT32 *) &(output_row[log_file_node_param->data_offset]);
-      log_file_line_param_ptr = (SQLUDR_INT32 *) &(output_row[log_file_line_param->data_offset]);
-      parse_status_param_ptr  = &(output_row[parse_status_param->data_offset]);
-    }
-
-  // null indicators
-  SQLUDR_INT16 *log_ts_param_ind        = (SQLUDR_INT16 *) &(output_row[udrinfo->return_values[0].ind_offset]);
+      throw UDRException(
+           38000,
+           "Expecting 10 or 14 result columns, got %d",
+           info.out().getNumColumns());
 
   char inString[1024] = "";
   int inLen = 0;
-  DIR *logDir = NULL;
-  FILE *infile = NULL;
   FILE *cFile = NULL;
   struct dirent *dirEntry = NULL;
   int lineNumber = 0;           // line number in current file
   int status = 0;
   int columnNum = 0;
   int columnSequenceError = 0;   // error that prevents us from parsing further
-  char inputLine[maxLineLength];          // space for all fields in character form
-  char inputLineValidated[maxLineLength]; // inputLine after validation
-  char cFileInputLine[maxLineLength];
+  char inputLine[MaxLineLength];          // space for all fields in character form
+  char inputLineValidated[MaxLineLength]; // inputLine after validation
+  char cFileInputLine[MaxLineLength];
   char *ok = NULL;                        // status of fgets
   int haveRowToEmit = 0;
   int appendPos = 0;
 
-#ifndef NDEBUG
-  if (startWithALoop)
-    {
-      int i=1;
-
-      while (i < 2)
-        i = 1-i;
-    }
-#endif
-
   char* sqroot = getenv("MY_SQROOT");
   if (strlen(sqroot) > 1000)
-  {
-    strcpy(sqlstate, "38001");
-    snprintf(msgtext, SQLUDR_MSGTEXT_SIZE, "SQROOT is longer than 1000 characters");
-    return SQLUDR_ERROR;
-  }
+    throw UDRException(38001, "SQROOT is longer than 1000 characters");
 
   std::string logDirName(sqroot);
   std::string confFileName(sqroot);
@@ -392,78 +490,75 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
     }
 
   errno = 0;
-  logDir = opendir(logDirName.data());
-  if (logDir == NULL)
+  if (logDir_ != NULL)
     {
-      status = errno;
-      strcpy(sqlstate, "38002");
-      snprintf(msgtext, SQLUDR_MSGTEXT_SIZE, "Error %d on opening directory %s",
-               status, logDirName.data());
-      return SQLUDR_ERROR;
+      // this may happen if we exited a previous call with an exception
+      closedir(logDir_);
+      logDir_ = NULL;
     }
 
-   cFile = fopen(confFileName.data(), "r");
-   if (cFile)
-     {
-       char * name ;
-       if (doTrace)
-         {
-           printf("(%d) EVENT_LOG_READER Conf file fopen\n", pid);
-           fflush(stdout);
-         }
-       while ((ok = fgets(cFileInputLine, sizeof(cFileInputLine), 
-                          cFile)) != NULL)
-          {
-            if (name = strstr(cFileInputLine, 
-                              "log4j.appender.mxoAppender.fileName="))
-              {
-                name = name + strlen("log4j.appender.mxoAppender.fileName=");
-                if (strstr(name, "${trafodion.log.dir}/"))
-                  {
-                    name = name + strlen("${trafodion.log.dir}/");
-                    name[strlen(name) - 1] = '_' ;
-                    eventLogFileName.assign(name);
-                  }
-                else
-                  {
+  logDir_ = opendir(logDirName.data());
+  if (logDir_ == NULL)
+    throw UDRException(
+         38002,
+         "Error %d on opening directory %s",
+         (int) errno, logDirName.data());
+
+  cFile = fopen(confFileName.data(), "r");
+  if (cFile)
+    {
+      char * name ;
+      if (doTrace)
+        {
+          printf("(%d) EVENT_LOG_READER Conf file fopen\n", pid);
+          fflush(stdout);
+        }
+      while ((ok = fgets(cFileInputLine, sizeof(cFileInputLine), 
+                         cFile)) != NULL)
+        {
+          if (name = strstr(cFileInputLine, 
+                            "log4j.appender.mxoAppender.fileName="))
+            {
+              name = name + strlen("log4j.appender.mxoAppender.fileName=");
+              if (strstr(name, "${trafodion.log.dir}/"))
+                {
+                  name = name + strlen("${trafodion.log.dir}/");
+                  name[strlen(name) - 1] = '_' ;
+                  eventLogFileName.assign(name);
+                }
+              else
+                {
                   // log file directory different from expected.
                   // currently not supported.
-                  }
-                
+                }
                 break ;
-              }
-            else
-              memset((char *)cFileInputLine, 0, sizeof(cFileInputLine));
-          }
-     }
-       
-
-  // initialize output row
-  memset(output_row, 0, udrinfo->out_row_length);
-
-  if (addFileColumns)
-    {
-      // log_file_node is the same for every row generated by this process
-      *log_file_node_param_ptr = udrinfo->instance_current;
+            }
+          else
+            memset((char *)cFileInputLine, 0, sizeof(cFileInputLine));
+        }
+      fclose(cFile);
+      cFile = NULL;
     }
 
-  qstate = SQLUDR_Q_MORE;
+  if (addFileColumns)
+    // log_file_node is the same for every row generated by this process
+    info.out().setInt(LOG_FILE_NODE_COLNUM, info.getMyInstanceNum());
 
+  // ---------------------------------------------------------------------------
+  // Loop over the files in the log directory
+  // ---------------------------------------------------------------------------
   while (1)
   {
     // read the next file in the log directory
 
     errno = 0;
-    struct dirent *dirEntry = readdir(logDir);
+    struct dirent *dirEntry = readdir(logDir_);
 
     if (errno != 0)
-    {
-      status = errno;
-      strcpy(sqlstate, "38003");
-      snprintf(msgtext, SQLUDR_MSGTEXT_SIZE, "Error %d on reading from directory %s",
-               status, logDirName.data());
-      return SQLUDR_ERROR;
-    }
+      throw UDRException(
+           38003,
+           "Error %d on reading from directory %s",
+           (int) errno, logDirName.data());
 
     // last file seen, we are done
     if (dirEntry == NULL)
@@ -484,9 +579,9 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
     if (nameLen > expectedSuffixLen)
       suffix = &fileName[nameLen-expectedSuffixLen];
 
-    // parse the file name to see whether this is a file we want to look at,
-    // allow some fixed string values as well as any name configured in
-    // the config file
+    // parse the file name to see whether this is a file we want to look at, 
+    // allow some fixed string values as well as any name configured in 
+    // the config file 
     if (suffix && strcmp(suffix, expectedSuffix) == 0 &&
         (strstr(fileName, "mxosrvr_")              == fileName ||
          strstr(fileName, "tmf")                   == fileName ||
@@ -494,19 +589,21 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
          strstr(fileName, eventLogFileName.data()) == fileName ||
          strstr(fileName, "tm.log")                == fileName))
       {
+        if (infile_ != NULL)
+          {
+            fclose(infile_);
+            infile_ = NULL;
+          }
 
         logFileName = logDirName + "/" + fileName;
 
-        /* Open the input file */
-        infile = fopen(logFileName.data(), "r");
-        if (infile == NULL)
-          {
-            status = errno;
-            strncpy(sqlstate, "38001", 6);
-            snprintf(msgtext, SQLUDR_MSGTEXT_SIZE, "Error %d returned when opening log file %s",
-                     status, fileName);
-            return SQLUDR_ERROR;
-          }
+        // Open the input file
+        infile_ = fopen(logFileName.data(), "r");
+        if (infile_ == NULL)
+          throw UDRException(
+               38001,
+               "Error %d returned when opening log file %s",
+               status, fileName);
 
         if (doTrace)
           {
@@ -515,35 +612,29 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
           }
 
         if (addFileColumns)
-          {
-            // set file name output column (same for all lines of this file)
-            setVarCharOutputColumn(output_row,
-                                   log_file_name_param,
-                                   fileName,
-                                   NULL); // no truncation warning for this metadata column
-          }
+          info.out().setString(LOG_FILE_NAME_COLNUM, fileName);
 
         lineNumber = 0;
+        std::string messageTextField;
+        std::string rowParseStatus;
 
+        // ---------------------------------------------------------------------
         // Loop over the lines of the file
-        while ((ok = fgets(inputLine, sizeof(inputLine), infile)) != NULL)
+        // ---------------------------------------------------------------------
+        while ((ok = fgets(inputLine, sizeof(inputLine), infile_)) != NULL)
           {
             int year, month, day, hour, minute, second, fraction;
             char fractionSeparator[2];
             char *currField = inputLineValidated;
             char *nextField = NULL;
-            char *messageTextField = NULL;
             int numChars = 0;
             int numItems = 0;
             int intFieldVal;
             int lineLength = strlen(inputLine);
             int lineLengthValidated = 0;
+            std::string lineParseError;
 
             lineNumber++;
-
-            if (parse_status_param_ptr)
-              // initialize parse status for this row
-              memset(parse_status_param_ptr, ' ', 2);
 
             // skip any empty lines, should not really happen
             if (lineLength < 2)
@@ -571,93 +662,30 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                 char *extraStatus;
                 do
                   {
-                    extraStatus = fgets(extraChars, sizeof(extraChars), infile);
+                    extraStatus = fgets(extraChars, sizeof(extraChars), infile_);
                   }
                 while (extraStatus != NULL && extraChars[strlen(extraChars)-1] != '\n');
 
-                setParseError(TruncationError, parse_status_param_ptr);
+                setParseError(TruncationError, lineParseError);
               }
 
-            // validate UTF-8 characters in inputLine and copy
-            // to inputLineValidated, replacing any invalid characters
-            // with the "replacement character" U+FFFD
-            int srcPos = 0;
-            int tgtPos = 0;
-            unsigned char c;
-            int byte = 1;
-            int tgtLimit = sizeof(inputLineValidated) - 4 - 1;
-
-            while (srcPos < lineLength && tgtPos < tgtLimit)
+            if (! validateCharsAndCopy(inputLineValidated,
+                                       sizeof(inputLineValidated),
+                                       inputLine,
+                                       lineLength,
+                                       lineLengthValidated))
               {
-                c = inputLine[srcPos];
-
-                if (c < 0x80)
+                if (doTrace)
                   {
-                    // ASCII character
-                    inputLineValidated[tgtPos++] = inputLine[srcPos++];
+                    printf("(%d) EVENT_LOG_READER invalid UTF8 char line %d\n",
+                           pid, lineNumber);
+                    fflush(stdout);
                   }
-                else
-                  {
-                    // non-ASCII or invalid byte sequence
-                    int numBytes;
-                    int validUTF8Char = 1;
-
-                    if (c >= 0xc0 && c < 0xe0) // start of 2-byte sequence
-                      numBytes = 2;
-                    else if (c >= 0xe0 && c < 0xf0) // start of 3-byte sequence
-                      numBytes = 3;
-                    else if (c >= 0xf0 && c < 0xfc) // start of 4-byte sequence
-                      numBytes = 4;
-                    else
-                      {
-                        // invalid sequence, remove those one by one
-                        numBytes = 1;
-                        validUTF8Char = 0;
-                      }
-
-                    if (numBytes > lineLength - srcPos)
-                      validUTF8Char = 0; // incomplete sequence
-
-                    // make sure we have numBytes continuation bytes following
-                    // in the range of 0x80 ... 0xbf
-                    for (int p=1; p<numBytes; p++)
-                      {
-                        unsigned char s = inputLine[srcPos+p];
-
-                        if (s < 0x80 || s >= 0xc0)
-                          validUTF8Char = 0;
-                      }
-
-                    if (validUTF8Char)
-                      {
-                        for (int j=0; j<numBytes; j++)
-                          inputLineValidated[tgtPos++] = inputLine[srcPos++];
-                      }
-                    else
-                      {
-                        // U+FFFD in UTF-8
-                        const unsigned char replacementChar[] =
-                          { 0xef, 0xbf, 0xbd };
-
-                        for (int k=0; k<sizeof(replacementChar); k++)
-                          inputLineValidated[tgtPos++] = (char) replacementChar[k];
-                        srcPos += numBytes;
-
-                        if (doTrace)
-                          {
-                            printf("(%d) EVENT_LOG_READER invalid %d byte UTF8 char %d in line %d\n",
-                                   pid, numBytes, (int) inputLine[srcPos-numBytes], lineNumber);
-                            fflush(stdout);
-                          }
-                        setParseError(CharConversionError, parse_status_param_ptr);
-                      }
-                  }
+                setParseError(CharConversionError, lineParseError);
               }
 
-            lineLengthValidated = tgtPos;
-            inputLineValidated[lineLengthValidated] = 0;
 
-            // read the timestamp at the beginning of the line. Example:
+            // try to read the timestamp at the beginning of the line. Example:
             // 2014-10-30 20:49:53,252
             numItems = sscanf(currField,
                               "%4d-%2d-%2d %2d:%2d:%2d %1[,.] %6d%n",
@@ -666,19 +694,35 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
 
             if (numItems == 8)
               {
+                // We were able to read a timestamp field
 
-                 /* Emit previous row, we have seen the start of next row  */
+                // Emit previous row, we have seen the start of next row
                 if (haveRowToEmit)
                   {
-                    emitRow(output_row, 0, &qstate);
+                    // set final two columns, message text and parse error
+                    setCharOutputColumn(info,
+                                        MESSAGE_COLNUM,
+                                        messageTextField.data(),
+                                        rowParseStatus);
+                    if (addFileColumns)
+                      setCharOutputColumn(info,
+                                          PARSE_STATUS_COLNUM,
+                                          rowParseStatus.c_str(),
+                                          rowParseStatus);
+                    emitRow(info);
                     if (doTrace)
                       {
                         printf("(%d) EVENT_LOG_READER emit\n", pid);
                         fflush(stdout);
                       }
-                    haveRowToEmit = 0;
-                    appendPos = 0;
                   }
+
+                // we read a line that will produce an output row, initialize
+                // some fields for this output row
+                haveRowToEmit = 0;
+                appendPos = 0;
+                messageTextField.erase();
+                rowParseStatus = lineParseError;
 
                 // When we see a comma between time and fraction, we interpret
                 // that as a fraction that is specified in milliseconds. Convert
@@ -686,15 +730,19 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                 // the fraction as microseconds (SQL syntax).
                 if (*fractionSeparator == ',')
                   fraction *= 1000;
-                  
-                sprintf(log_ts_param_ptr,
-                        "%04d-%02d-%02d %02d:%02d:%02d.%06d",
-                        year, month, day, hour, minute, second, fraction);
+
+                char buf[100];
+                snprintf(buf, sizeof(buf),
+                         "%04d-%02d-%02d %02d:%02d:%02d.%06d",
+                         year, month, day, hour, minute, second, fraction);
+                setCharOutputColumn(info, LOG_TS_COLNUM, buf, rowParseStatus);
               }
             else
               {
                 if (!haveRowToEmit)
                   {
+                    // no valid timestamp and We did not have a previous line
+                    // with a timestamp
                     if (numItems > 6)
                       numItems = 6;
                     
@@ -706,14 +754,23 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                       }
                     
                     // return a NULL value if we fail to parse the timestamp
-                    *log_ts_param_ind = -1;
-                    setParseError(FieldParserError, parse_status_param_ptr);
+                    info.out().setNull(LOG_TS_COLNUM);
+                    rowParseStatus = lineParseError;
+                    setParseError(FieldParserError, rowParseStatus);
                   }
                 else
                   {
                     // no valid timestamp and we have a row to emit
-                    // consdier this line as a continuation of previous row
-                    messageTextField = currField;
+                    // consider this line as a continuation of previous row
+                    // (add a blank instead of a line feed, though)
+                    messageTextField += " ";
+                    messageTextField += currField;
+
+                    // add any parse errors from this line
+                    for (std::string::iterator it = lineParseError.begin();
+                         it != lineParseError.end();
+                         it++)
+                      setParseError(*it, rowParseStatus);
                   }
               }
 
@@ -738,7 +795,7 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                     *currField = 0;
                     messageTextField =
                       (numChars < lineLengthValidated) ? currField+1 : currField;
-                    setParseError(FieldParserError, parse_status_param_ptr);
+                    setParseError(FieldParserError, rowParseStatus);
                   }
               }
 
@@ -801,13 +858,13 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                     startOfVal = currField;
                     nextField = currField;
                     // if there is any text left, point to it
-                    // (after currField, which points to a NULL byte)
+                    // (after currField, which points to a NUL byte)
                     // otherwise set the message text field to an empty string
-                    if (messageTextField == NULL)
+                    if (messageTextField.empty())
                       messageTextField =
                         (currField-inputLineValidated < lineLengthValidated) ?
                         currField+1 : currField;
-                    setParseError(FieldParserError, parse_status_param_ptr);
+                    setParseError(FieldParserError, rowParseStatus);
                   }
 
                 // now that we have the non-blank portion of the value,
@@ -815,62 +872,62 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                 switch (columnNum)
                   {
                   case 2:
-                    setCharOutputColumn(output_row,
-                                        severity_param,
+                    setCharOutputColumn(info,
+                                        SEVERITY_COLNUM,
                                         startOfVal,
-                                        parse_status_param_ptr);
+                                        rowParseStatus);
                     break;
 
                   case 3:
-                    setCharOutputColumn(output_row,
-                                        component_param,
+                    setCharOutputColumn(info,
+                                        COMPONENT_COLNUM,
                                         startOfVal,
-                                        parse_status_param_ptr);
+                                        rowParseStatus);
                     break;
 
                   case 4:
-                    setIntOutputColumn(output_row,
-                                       node_number_param,
+                    setIntOutputColumn(info,
+                                       NODE_NUMBER_COLNUM,
                                        startOfVal,
-                                       parse_status_param_ptr);
+                                       rowParseStatus);
                     break;
 
                   case 5:
-                    setIntOutputColumn(output_row,
-                                       cpu_param,
+                    setIntOutputColumn(info,
+                                       CPU_COLNUM,
                                        startOfVal,
-                                       parse_status_param_ptr);
+                                       rowParseStatus);
                     break;
 
                   case 6:
-                    setIntOutputColumn(output_row,
-                                       pin_param,
+                    setIntOutputColumn(info,
+                                       PIN_COLNUM,
                                        startOfVal,
-                                       parse_status_param_ptr);
+                                       rowParseStatus);
                     break;
 
                   case 7:
-                    setCharOutputColumn(output_row,
-                                        process_name_param,
+                    setCharOutputColumn(info,
+                                        PROCESS_NAME_COLNUM,
                                         startOfVal,
-                                        parse_status_param_ptr);
+                                        rowParseStatus);
                     break;
 
                   case 8:
-                    setIntOutputColumn(output_row,
-                                       sql_code_param,
+                    setIntOutputColumn(info,
+                                       SQL_CODE_COLNUM,
                                        startOfVal,
-                                       parse_status_param_ptr);
+                                       rowParseStatus);
                     break;
 
                   case 9:
-                    setVarCharOutputColumn(output_row,
-                                           query_id_param,
-                                           startOfVal,
-                                           parse_status_param_ptr);
+                    setCharOutputColumn(info,
+                                        QUERY_ID_COLNUM,
+                                        startOfVal,
+                                        rowParseStatus);
                     // we read all required fields,
                     // next field is the message text
-                    if (messageTextField == NULL)
+                    if (messageTextField.empty())
                       messageTextField = nextField;
                     break;
                   }
@@ -878,20 +935,16 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
                 currField = nextField;
               } // loop over column numbers 2-9
 
-            // now we reached the last field in the file, the message text itself
-            while (*messageTextField == ' ')
-              messageTextField++;
-
-            appendToVarCharOutputColumn(output_row,
-                                      message_param,
-                                      messageTextField,
-                                      appendPos,
-                                      parse_status_param_ptr);
-
-            if (addFileColumns)
+            // do some final adjustments
+            if (!haveRowToEmit)
               {
-                // line number column is computed, not from the log file
-                *log_file_line_param_ptr = lineNumber;
+                int numLeadingBlanks = messageTextField.find_first_not_of(' ');
+
+                if (numLeadingBlanks > 0 && numLeadingBlanks != std::string::npos)
+                  messageTextField.erase(0, numLeadingBlanks);
+
+                if (addFileColumns)
+                  info.out().setInt(LOG_FILE_LINE_COLNUM, lineNumber);
               }
 
             haveRowToEmit = 1;
@@ -899,8 +952,18 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
 
         if (haveRowToEmit) 
           {
-            /* Emit a row */
-            emitRow(output_row, 0, &qstate);
+            // set final two columns, message text and parse error
+            setCharOutputColumn(info,
+                                MESSAGE_COLNUM,
+                                messageTextField.data(),
+                                rowParseStatus);
+            if (addFileColumns)
+              setCharOutputColumn(info,
+                                  PARSE_STATUS_COLNUM,
+                                  rowParseStatus.c_str(),
+                                  rowParseStatus);
+            // Emit a row
+            emitRow(info);
             if (doTrace)
               {
                 printf("(%d) EVENT_LOG_READER emit\n", pid);
@@ -909,165 +972,29 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 TRAF_CPP_EVENT_LOG_READER(
             haveRowToEmit = 0;
             appendPos = 0;
           }
-        /* Close the input file */
-        if (infile)
-          fclose(infile);
+        // Close the input file
+        if (infile_)
+          {
+            fclose(infile_);
+            infile_ = NULL;
+          }
         if (doTrace)
           {
             printf("(%d) EVENT_LOG_READER fclose\n", pid);
             fflush(stdout);
           }
+
       } // file name matched our pattern
   } // while (1) - list files in the directory
 
-  /* Emit EOD */
-  qstate = SQLUDR_Q_EOD;
-  emitRow(output_row, 0, &qstate);
-  if (doTrace)
-  {
-    printf("(%d) EVENT_LOG_READER emit EOD\n", pid);
-    fflush(stdout);
-  }
-
-  return SQLUDR_SUCCESS;
+  closedir(logDir_);
+  logDir_ = NULL;
 }
 
-// compiler interface class for TRAF_CPP_EVENT_LOG_READER
-
-class ReadCppEventsUDFInterface : public TMUDRInterface
+ReadCppEventsUDFInterface::~ReadCppEventsUDFInterface()
 {
-  // override any methods where the UDF author would
-  // like to change the default behavior
-
-  virtual void describeParamsAndColumns(UDRInvocationInfo &info); // Binder
-  virtual void describeDesiredDegreeOfParallelism(UDRInvocationInfo &info,
-                                                  UDRPlanInfo &plan);// Optimizer
-
-private:
-  bool useParallelExecForVirtualNodes_;
-
-};
-
-extern "C" TMUDRInterface * TRAF_CPP_EVENT_LOG_READER_CreateCompilerInterfaceObject(
-     const UDRInvocationInfo *info)
-{
-  return new ReadCppEventsUDFInterface();
-}
-
-void ReadCppEventsUDFInterface::describeParamsAndColumns(
-     UDRInvocationInfo &info)
-{
-  bool addFileColumns = false;
-
-  useParallelExecForVirtualNodes_ = false;
-
-  // This UDF is a table-valued function, no table-valued inputs
-  if (info.getNumTableInputs() != 0)
-    throw UDRException(38220,
-                       "There should be no table-valued parameters to the call to %s, got %d",
-                       info.getUDRName().data(),
-                       info.getNumTableInputs());
-
-  if (info.getNumActualParameters() > 1)
-    throw UDRException(38221,
-                       "There should be no more than one input parameters to the call to %s, got %d",
-                       info.getUDRName().data(),
-                       info.getNumActualParameters());
-  else if (info.getNumActualParameters() == 1)
-    {
-      const tmudr::ParameterInfo &firstParam = info.getActualParameterInfo(0);
-
-      if (firstParam.isAvailable() != tmudr::ParameterInfo::STRING_VALUE)
-        throw UDRException(38222,
-                           "Expecting a character constant as first parameter of the call to %s",
-                           info.getUDRName().data());
-
-      const char *options = firstParam.getStringValue();
-
-      // add an additional formal parameter for the options value
-      info.addFormalParameter(ParameterInfo("OPTIONS",
-                                            firstParam.getType()));
-
-      // validate options
-      while (*options)
-        {
-          switch (*options)
-            {
-            case 'f':
-              addFileColumns = true;
-            break;
-
-            case 't':
-              // trace option, handled at runtime
-            break;
-
-            case ' ':
-              // tolerate blanks in the options
-              break;
-
-#ifndef NDEBUG
-            case 'd':
-              // debug option, makes UDF loop at runtime to attach
-              // debugger
-              break;
-            case 'p':
-              // debug option, use parallel execution even with virtual nodes
-              useParallelExecForVirtualNodes_ = true;
-              break;
-#endif
-
-            default:
-              {
-                throw UDRException(38223,
-                                   "Option %c not supported in first parameter of the call to %s",
-                                   *options,
-                                   info.getUDRName().data());
-              }
-            }
-          options++;
-        }
-    } // got 1 input parameter
-
-  // add the output columns
-  TableInfo &outTable = info.getOutputTableInfo();
-
-  outTable.addColumn(
-       ColumnInfo("LOG_TS",
-                  TypeInfo(TypeInfo::TIMESTAMP,
-                           0,
-                           true,
-                           6)));
-  outTable.addCharColumn   ("SEVERITY",    10, true);
-  outTable.addCharColumn   ("COMPONENT",   24, true);
-  outTable.addIntegerColumn("NODE_NUMBER",     true);
-  outTable.addIntegerColumn("CPU",             true);
-  outTable.addIntegerColumn("PIN",             true);
-  outTable.addCharColumn   ("PROCESS_NAME",12, true);
-  outTable.addIntegerColumn("SQL_CODE",        true);
-  outTable.addVarCharColumn("QUERY_ID",   200, true);
-  outTable.addVarCharColumn("MESSAGE",   4000, true);
-
-  if (addFileColumns)
-    {
-      outTable.addIntegerColumn("LOG_FILE_NODE");
-      outTable.addVarCharColumn("LOG_FILE_NAME",200);
-      outTable.addIntegerColumn("LOG_FILE_LINE");
-      outTable.addCharColumn   ("PARSE_STATUS",2);
-    }
-}
-
-void ReadCppEventsUDFInterface::describeDesiredDegreeOfParallelism(
-     UDRInvocationInfo &info,
-     UDRPlanInfo &plan)
-{
-  // check for configurations with virtual nodes. Run the UDF serially
-  // in those cases, since all the virtual nodes share the same node.
-  int usesNoVirtualNodes = system("grep '^[ \t]*_virtualnodes ' $MY_SQROOT/sql/scripts/sqconfig >/dev/null");
-
-  if (usesNoVirtualNodes != 0 || useParallelExecForVirtualNodes_)
-    // this TMUDF needs to run once on each node, since every
-    // parallel instance will be reading the local files on that node
-    plan.setDesiredDegreeOfParallelism(UDRPlanInfo::ONE_INSTANCE_PER_NODE);
-  else
-    plan.setDesiredDegreeOfParallelism(1);
+  if (logDir_ != NULL)
+    closedir(logDir_);
+  if (infile_ != NULL)
+    fclose(infile_);
 }

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -273,6 +273,7 @@ LmLanguageManager *UdrGlobals::getLM(ComRoutineLanguage language) const
       return getJavaLM();
 
     case COM_LANGUAGE_C:
+    case COM_LANGUAGE_CPP:
       return getCLM();
 
     default:
@@ -291,6 +292,7 @@ LmLanguageManager *UdrGlobals::getOrCreateLM(LmResult &result,
       return getOrCreateJavaLM(result, diags);
 
     case COM_LANGUAGE_C:
+    case COM_LANGUAGE_CPP:
       return getOrCreateCLM(result, diags);
 
     default:

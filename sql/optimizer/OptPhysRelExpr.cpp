@@ -17634,6 +17634,9 @@ PhysicalProperty* PhysicalTableMappingUDF::synthPhysicalProperty(
          EXECUTE_IN_MASTER_AND_ESP,
           SOURCE_VIRTUAL_TABLE);
 
+  sppForMe->setUDRPlanInfo(
+       static_cast<TMUDFPlanWorkSpace *>(pws)->getUDRPlanInfo());
+
   // remove anything that's not covered by the group attributes
   sppForMe->enforceCoverageByGroupAttributes (getGroupAttr());
 
