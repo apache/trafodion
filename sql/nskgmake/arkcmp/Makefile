@@ -81,15 +81,15 @@ DEP_LIBS := \
 DEP_LIBS += sqlcomp
 
 EXTERN_LIBS := \
-	$(STUBLIBROOT)/libtdm_measenty.so \
-	$(STUBLIBROOT)/libtdm_security.so \
-	$(STUBLIBROOT)/libtdm_tfds.so \
-	$(STUBLIBROOT)/libtdm_tmflib.so \
-	$(STUBLIBROOT)/libdummy.so \
+	$(LIBROOT)/libtdm_measenty.so \
+	$(LIBROOT)/libtdm_security.so \
+	$(LIBROOT)/libtdm_tfds.so \
+	$(LIBROOT)/libtdm_tmflib.so \
+	$(LIBROOT)/libdummy.so \
 	$(XMPIROOT)/libsbms.so \
 	$(XMPIROOT)/libsbfs.so \
 	$(XMPIROOT)/libstmlib.so \
-	$(STUBLIBROOT)/libtdm_tmfuser.so \
+	$(LIBROOT)/libtdm_tmfuser.so \
 	$(XMPIROOT)/libwin.so \
 	$(LIBROOT)/liblog4cpp.so
 

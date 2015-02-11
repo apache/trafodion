@@ -169,13 +169,6 @@ setupdir:
 	-@./makelink ../../sqid $(EXPORTBIN_DIR)
 	-@./makelink ../../sqinfo $(EXPORTBIN_DIR)
 	-@./makelink ../../sqvers $(EXPORTBIN_DIR)
-	@# SQL stub libraries
-	-@./makelink ../../sql/$(STUBLIBDIR)/libdummy.so $(EXPORTLIB_DIR)
-	-@./makelink ../../sql/$(STUBLIBDIR)/libtdm_measenty.so $(EXPORTLIB_DIR)
-	-@./makelink ../../sql/$(STUBLIBDIR)/libtdm_security.so $(EXPORTLIB_DIR)
-	-@./makelink ../../sql/$(STUBLIBDIR)/libtdm_tfds.so $(EXPORTLIB_DIR)
-	-@./makelink ../../sql/$(STUBLIBDIR)/libtdm_tmflib.so $(EXPORTLIB_DIR)
-	-@./makelink ../../sql/$(STUBLIBDIR)/libtdm_tmfuser.so $(EXPORTLIB_DIR)
 	@# SQL .mdf files
 	-mkdir -p $(EXPORTINCSQL_DIR)
 
