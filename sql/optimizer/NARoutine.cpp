@@ -1,7 +1,7 @@
 //**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -49,6 +49,10 @@
 #include "str.h"
 #include "LmJavaSignature.h"
 #include "CmUtil.h"
+#include "NATableSt.h"
+#include "CmpMain.h"
+#include "Globals.h"
+#include "Context.h"
 
 // -----------------------------------------------------------------------
 // Copy a string.  A null terminated buffer is returned.
@@ -927,12 +931,46 @@ Int64 NARoutineDB::getRedefTime(BindWA *bindWA, NARoutine &routine, Int32 &error
   return 0;
 }
 
+
+void NARoutineDB::getCacheStats(NARoutineCacheStats & stats)
+{
+  stats.numLookups = totalLookupsCount_;
+  stats.numCacheHits = totalCacheHits_;
+  stats.currentCacheSize = currentCacheSize_;
+  stats.highWaterMark = highWatermarkCache_;
+  stats.maxCacheSize = maxCacheSize_;
+  stats.numEntries =  entries_;    
+}
+
+
 //-----------------------------------------------------------------------
 // NARoutineCacheStoredProcedure is a class that contains functions used by
 // the NARoutineCache virtual table, whose purpose is to serve as an interface
 // to the SQL/MX NARoutine cache statistics. This table is implemented as
 // an internal stored procedure.
 //-----------------------------------------------------------------------
+
+SP_STATUS NARoutineCacheStatStoredProcedure::sp_InputFormat(SP_FIELDDESC_STRUCT *inputFieldFormat,
+                                                            Lng32 numFields,
+                                                            SP_COMPILE_HANDLE spCompileObj,
+                                                            SP_HANDLE spObj,
+                                                            SP_ERROR_STRUCT *error)
+{
+  if ( numFields != 2 )
+    {
+      //accepts 2 input columns
+      error->error = arkcmpErrorISPWrongInputNum;
+      strcpy(error->optionalString[0], "NARoutineCache");
+      error->optionalInteger[0] = 2;
+      return SP_FAIL;
+    }
+  
+  //column as input parameter for ISP, specifiy cache of metadata or user context
+  strcpy(&((inputFieldFormat++)->COLUMN_DEF[0]), "instance char(16)  not null");
+  strcpy(&((inputFieldFormat++)->COLUMN_DEF[0]), "location char(16)  not null"); 
+  return SP_SUCCESS;
+}
+
 SP_STATUS NARoutineCacheStatStoredProcedure::sp_NumOutputFields(
   Lng32 *numFields,
   SP_COMPILE_HANDLE spCompileObj,
@@ -975,48 +1013,38 @@ SP_STATUS NARoutineCacheStatStoredProcedure::sp_ProcessRoutine(
   SP_HANDLE spObj,
   SP_ERROR_STRUCT *error)
 {
-  struct InfoStruct
-  {
-    ULng32 counter;
-  };
-
-  SP_STATUS status = SP_SUCCESS;
-  InfoStruct *is = NULL;
-
-  NARoutineDB * tableDB = ActiveSchemaDB()->getNARoutineDB();
-
-  switch (action)
-  {
-  case SP_PROC_OPEN:
-    is = new InfoStruct;
-    is->counter = 0;
-    *spProcHandle = is;
-    break;
-
-  case SP_PROC_FETCH:
-    is = (InfoStruct*)(*spProcHandle);
-    if (is == NULL )
-    {
-      status = SP_FAIL;
-      break;
-    }
-
-    if (is->counter > 0) break;
-    is->counter++;
-    fFunc(0, outputData, sizeof(ULng32), &(tableDB->totalLookupsCount_), 0);
-    fFunc(1, outputData, sizeof(ULng32), &(tableDB->totalCacheHits_), 0);
-    fFunc(2, outputData, sizeof(ULng32), &(tableDB->entries_), 0);
-    fFunc(3, outputData, sizeof(ULng32), &(tableDB->currentCacheSize_), 0);
-    fFunc(4, outputData, sizeof(ULng32), &(tableDB->highWatermarkCache_), 0);
-    fFunc(5, outputData, sizeof(ULng32), &(tableDB->maxCacheSize_), 0);
-    status = SP_MOREDATA;
-    break;
-
-  case SP_PROC_CLOSE:
-    delete (InfoStruct*) (*spProcHandle);
-    break;
+  if (action == SP_PROC_OPEN) {
+    NARoutineCacheStatsISPIterator * it = new (GetCliGlobals()->exCollHeap()) 
+      NARoutineCacheStatsISPIterator(inputData, eFunc, error,
+                                     GetCliGlobals()->currContext()->getCmpContextInfo(), 
+                                     GetCliGlobals()->exCollHeap());
+    *spProcHandle = it;
+    return SP_SUCCESS;
   }
-  return status;
+
+  if (action == SP_PROC_FETCH) {
+    NARoutineCacheStatsISPIterator* it = (NARoutineCacheStatsISPIterator *)(*spProcHandle);
+    if (!it) {
+      return SP_FAIL;
+    }
+    NARoutineCacheStats stats;
+    if(!it->getNext(stats))
+       return SP_SUCCESS;
+    fFunc(0, outputData, sizeof(ULng32), &(stats.numLookups), 0);
+    fFunc(1, outputData, sizeof(ULng32), &(stats.numCacheHits), 0);
+    fFunc(2, outputData, sizeof(ULng32), &(stats.numEntries), 0);
+    fFunc(3, outputData, sizeof(ULng32), &(stats.currentCacheSize), 0);
+    fFunc(4, outputData, sizeof(ULng32), &(stats.highWaterMark), 0);
+    fFunc(5, outputData, sizeof(ULng32), &(stats.maxCacheSize), 0);
+    return SP_MOREDATA;
+  }
+  
+  if (action == SP_PROC_CLOSE) {
+    if (*spProcHandle)
+      NADELETEBASIC((NARoutineCacheStatsISPIterator *)(*spProcHandle), GetCliGlobals()->exCollHeap());
+    return SP_SUCCESS;
+  }
+  return SP_SUCCESS;
 }
 
 SP_STATUS NARoutineCacheStatStoredProcedure::sp_ProcessAction(
@@ -1178,4 +1206,44 @@ void NARoutineCacheDeleteStoredProcedure::Initialize(SP_REGISTER_FUNCPTR regFunc
           0,
 	  CMPISPVERSION);
 }
+
+NARoutineCacheStatsISPIterator::NARoutineCacheStatsISPIterator(
+     SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+     SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, 
+     CollHeap * h)
+: ISPIterator(ctxs, h)
+{
+  initializeISPCaches(inputData, eFunc, error, ctxs, 
+                      contextName_, currCacheIndex_);
+}
+
+
+NABoolean NARoutineCacheStatsISPIterator::getNext(NARoutineCacheStats & stats)
+{
+   //Only for remote tdm_arkcmp with 0 context
+   if(currCacheIndex_ == -1)
+   {
+     ActiveSchemaDB()->getNARoutineDB()->getCacheStats(stats);
+     currCacheIndex_ = -2;
+     return TRUE;
+   }
+   
+   //fetch QueryCaches of all CmpContexts with name equal to contextName_
+   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
+   {
+      if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
+       && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
+      {// go to next context in ctxInfos_
+          currCacheIndex_++;
+          return getNext(stats);
+      }
+      ctxInfos_[currCacheIndex_++]->getCmpContext()->getSchemaDB()->getNARoutineDB()->getCacheStats(stats);
+      return TRUE;
+   }
+   //all entries of all caches are fetched, we are done!
+   return FALSE;
+}
+
+
+
 

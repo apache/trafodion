@@ -5874,34 +5874,34 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
                                           , PARSERHEAP()
                                           , RelInternalSP::executeInSameArkcmp);
   }
-| TOK_TABLE '(' TOK_NATABLE_CACHE '(' ')' ')'
+| TOK_TABLE '(' TOK_NATABLE_CACHE '(' value_expression_list ')' ')'
   {
     $$ = new (PARSERHEAP()) RelInternalSP("NATABLECACHE"
-                                          , 0
+                                          , $5
                                           , REL_INTERNALSP
                                           , PARSERHEAP()
                                           , RelInternalSP::executeInSameArkcmp);
   }
-| TOK_TABLE '(' TOK_NATABLE_CACHE_ENTRIES '(' ')' ')'
+| TOK_TABLE '(' TOK_NATABLE_CACHE_ENTRIES '(' value_expression_list ')' ')'
   {
     $$ =  new (PARSERHEAP()) RelInternalSP( "NATABLECACHEENTRIES"
-                                          , 0
+                                          , $5
                                           , REL_INTERNALSP
                                           , PARSERHEAP()
                                           , RelInternalSP::executeInSameArkcmp);
   }
-| TOK_TABLE '(' TOK_NAROUTINE_CACHE '(' ')' ')'
+| TOK_TABLE '(' TOK_NAROUTINE_CACHE '(' value_expression_list ')' ')'
   {
     $$ = new (PARSERHEAP()) RelInternalSP("NAROUTINECACHE"
-                                          , 0
+                                          , $5
                                           , REL_INTERNALSP
                                           , PARSERHEAP()
                                           , RelInternalSP::executeInSameArkcmp);
   }
-| TOK_TABLE '(' TOK_NAROUTINE_ACTION_CACHE '(' ')' ')'
+| TOK_TABLE '(' TOK_NAROUTINE_ACTION_CACHE '(' value_expression_list ')' ')'
   {
     $$ = new (PARSERHEAP()) RelInternalSP("NAROUTINEACTIONCACHE"
-                                          , 0
+                                          , $5
                                           , REL_INTERNALSP
                                           , PARSERHEAP()
                                           , RelInternalSP::executeInSameArkcmp);

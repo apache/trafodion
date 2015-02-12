@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 
 class NARoutineDBKey;
 class NARoutine;
+class NARoutineCacheStats;
 
 //
 // External class definitions
@@ -63,6 +64,8 @@ public:
 
   inline void      resizeCache(Lng32 sizeInBytes)   { maxCacheSize_ = sizeInBytes;};
   inline void      refreshCacheInThisStatement()   { refreshCacheInThisStatement_=TRUE;}
+
+  void getCacheStats(NARoutineCacheStats & stats);
 
 private:
   // Remove everything from cache.

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -320,10 +320,7 @@ public:
                                   Lng32 numFields,
                                   SP_COMPILE_HANDLE spCompileObj,
                                   SP_HANDLE spObj,
-                                  SP_ERROR_STRUCT *error)
-  {
-    return SP_SUCCESS;  
-  }    
+                                  SP_ERROR_STRUCT *error);  
 
   // sp_NumOutputFields function is called at compile-time of the stored 
   // procedure to inquire about the number of output fields in a row.

@@ -4,7 +4,7 @@
 ----------------------------------------------------------------------
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -408,8 +408,7 @@ values(echoUDEC(123456.78));
 values(echoDEC0(123));
 values(echoDEC0(12345678));
 
-delete all from table(naroutinecache());
-select * from table(naroutinecache()) ;
+select num_lookups, num_cache_hits, num_entries, max_cache_size from table(naroutinecache('user','local')) ;
 
 -----------------------------------------------------------------------------
 -- COLLATION

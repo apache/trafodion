@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1909,77 +1909,5 @@ class QueryCache {
   NAString *parameterTypes_;
 };
 
-class ISPIterator 
-{
-
-public:
-  ISPIterator(const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
-  : currCacheIndex_(-1)
-  , currQCache_(NULL)
-  , contextName_(h)
-  , ctxInfos_(ctxs)
-  , heap_(h) 
-  {}
-  
-protected:
-  Int32 currCacheIndex_;
-  QueryCache* currQCache_;
-  NAString contextName_;
-  const NAArray<CmpContextInfo*> & ctxInfos_;
-  CollHeap * heap_;
-  
-};
-
-class QueryCacheStatsISPIterator : public ISPIterator
-{
-public:
-  QueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                                             SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
-  //if currCacheIndex_ is set 0, currQCache_ is not used and should always be NULL
-  NABoolean getNext(QueryCacheStats & stats);
-};
-
-class QueryCacheEntriesISPIterator : public ISPIterator
-{
-public:
-  QueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                                               SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
-  
-  NABoolean getNext(QueryCacheDetails & details);
-  Int32 & counter() { return counter_; }
-private:
-  Int32 counter_;
-  LRUList::iterator SQCIterator_;
-};
-
-class HybridQueryCacheStatsISPIterator : public ISPIterator
-{
-public:
-    HybridQueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                                                          SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
-
-    NABoolean getNext(HybridQueryCacheStats & stats);
-};
-
-class HybridQueryCacheEntriesISPIterator : public ISPIterator
-{
-public:
-    HybridQueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                                                            SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
-
-    ~HybridQueryCacheEntriesISPIterator()
-    {
-        if(HQCIterator_)
-            delete HQCIterator_;
-    }
-    NABoolean getNext(HybridQueryCacheDetails & details);
-private:
-    Int32 currEntryIndex_;
-    Int32 currEntriesPerKey_;
-    HQCCacheKey* currHKeyPtr_;
-    HQCCacheData* currValueList_;
-    HQCHashTblItor* HQCIterator_;
-    LRUList::iterator SQCIterator_;
-};
 
 #endif // QUERYCACHE__H

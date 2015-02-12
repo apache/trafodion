@@ -7723,14 +7723,13 @@ void NATableDB::getEntryDetails(
      Int32 ii,                      // (IN) : NATable cache iterator entry
      NATableEntryDetails &details)  // (OUT): cache entry's details
 {
-  NATableDB * Table = ActiveSchemaDB()->getNATableDB() ;
-  Int32      NumEnt = Table->cachedTableList_.entries();
+  Int32      NumEnt = cachedTableList_.entries();
   if  ( ( NumEnt == 0 ) || ( NumEnt <= ii ) )
   {
     memset(&details, 0, sizeof(details));
   }
   else {
-    NATable * object = Table->cachedTableList_[ii];
+    NATable * object = cachedTableList_[ii];
     QualifiedName QNO = object->qualifiedName_.getQualifiedNameObj();
 
     Int32 partLen = QNO.getCatalogName().length();
@@ -8646,10 +8645,10 @@ NATableDB::getStmtTableIdList(NAMemory *heap) const
   return *list;
 }
 
-// Static member function to return number of entries in cachedTableList_ LIST.
+// function to return number of entries in cachedTableList_ LIST.
 Int32 NATableDB::end()
 {
-   return ActiveSchemaDB()->getNATableDB()->cachedTableList_.entries() ;
+   return cachedTableList_.entries() ;
 }
 
 void
@@ -8782,176 +8781,13 @@ NATableDB::unmark_entries_marked_for_removal()
    }
 }
 
-//-----------------------------------------------------------------------
-// NATableCacheStoredProcedure is a class that contains functions used by
-// the NATableCache virtual table, whose purpose is to serve as an interface
-// to the SQL/MX NATable cache statistics. This table is implemented as
-// an internal stored procedure.
-//-----------------------------------------------------------------------
-const Lng32 NUM_OF_OUTPUT = 5;
-
-SP_STATUS NATableCacheStatStoredProcedure::sp_NumOutputFields(
-  Lng32 *numFields,
-  SP_COMPILE_HANDLE spCompileObj,
-  SP_HANDLE spObj,
-  SP_ERROR_STRUCT *error)
+void NATableDB::getCacheStats(NATableCacheStats & stats)
 {
-  *numFields = NUM_OF_OUTPUT;
-  return SP_SUCCESS;
+  stats.numLookups = totalLookupsCount_;
+  stats.numCacheHits = totalCacheHits_;
+  stats.currentCacheSize = currentCacheSize_;
+  stats.highWaterMark = highWatermarkCache_;
+  stats.maxCacheSize = maxCacheSize_;
+  stats.numEntries =  cachedTableList_.entries();    
 }
 
-SP_STATUS NATableCacheStatStoredProcedure::sp_OutputFormat(
-  SP_FIELDDESC_STRUCT *format,
-  SP_KEYDESC_STRUCT keyFields[],
-  Lng32 *numKeyFields,
-  SP_HANDLE spCompileObj,
-  SP_HANDLE spObj,
-  SP_ERROR_STRUCT *error)
-{
-  strcpy(&((format++)->COLUMN_DEF[0]), "Num_lookups      INT UNSIGNED");
-  strcpy(&((format++)->COLUMN_DEF[0]), "Num_cache_hits   INT UNSIGNED");
-  strcpy(&((format++)->COLUMN_DEF[0]), "Current_cache_size   INT UNSIGNED");
-  strcpy(&((format++)->COLUMN_DEF[0]), "High_watermark   INT UNSIGNED");
-  strcpy(&((format++)->COLUMN_DEF[0]), "Max_cache_size   INT UNSIGNED");
-
-  return SP_SUCCESS;
-}
-
-SP_STATUS NATableCacheStatStoredProcedure::sp_Process(
-  SP_PROCESS_ACTION action,
-  SP_ROW_DATA inputData,
-  SP_EXTRACT_FUNCPTR eFunc,
-  SP_ROW_DATA outputData,
-  SP_FORMAT_FUNCPTR fFunc,
-  SP_KEY_VALUE keys,
-  SP_KEYVALUE_FUNCPTR kFunc,
-  SP_PROCESS_HANDLE *spProcHandle,
-  SP_HANDLE spObj,
-  SP_ERROR_STRUCT *error)
-{
-  struct InfoStruct
-  {
-    ULng32 counter;
-  };
-
-  SP_STATUS status = SP_SUCCESS;
-  InfoStruct *is = NULL;
-
-  NATableDB * tableDB = ActiveSchemaDB()->getNATableDB();
-
-  switch (action)
-  {
-  case SP_PROC_OPEN:
-    is = new InfoStruct;
-    is->counter = 0;
-    *spProcHandle = is;
-    break;
-
-  case SP_PROC_FETCH:
-    is = (InfoStruct*)(*spProcHandle);
-    if (is == NULL )
-    {
-      status = SP_FAIL;
-      break;
-    }
-
-    if (is->counter > 0) break;
-    is->counter++;
-    fFunc(0, outputData, sizeof(ULng32), &(tableDB->totalLookupsCount_), 0);
-    fFunc(1, outputData, sizeof(ULng32), &(tableDB->totalCacheHits_), 0);
-    fFunc(2, outputData, sizeof(ULng32), &(tableDB->currentCacheSize_), 0);
-    fFunc(3, outputData, sizeof(ULng32), &(tableDB->highWatermarkCache_), 0);
-    fFunc(4, outputData, sizeof(ULng32), &(tableDB->maxCacheSize_), 0);
-    status = SP_MOREDATA;
-    break;
-
-  case SP_PROC_CLOSE:
-    delete (InfoStruct*) (*spProcHandle);
-    break;
-  }
-  return status;
-}
-
-void NATableCacheStatStoredProcedure::Initialize(SP_REGISTER_FUNCPTR regFunc)
-{
-  regFunc("NATABLECACHE",
-          sp_Compile,
-          sp_InputFormat,
-          0,
-          sp_NumOutputFields,
-          sp_OutputFormat,
-          sp_Process,
-          0,
-	  CMPISPVERSION);
-}
-
-//-----------------------------------------------------------------------
-// NATableCacheDeleteStoredProcedure is a class that contains functions used
-// to delete the contents of the  NATableCache virtual table. The delete 
-// function is implemented as an internal stored procedure.
-//-----------------------------------------------------------------------
-
-
-SP_STATUS NATableCacheDeleteStoredProcedure::sp_Process(
-  SP_PROCESS_ACTION action,
-  SP_ROW_DATA inputData,
-  SP_EXTRACT_FUNCPTR eFunc,
-  SP_ROW_DATA outputData,
-  SP_FORMAT_FUNCPTR fFunc,
-  SP_KEY_VALUE keys,
-  SP_KEYVALUE_FUNCPTR kFunc,
-  SP_PROCESS_HANDLE *spProcHandle,
-  SP_HANDLE spObj,
-  SP_ERROR_STRUCT *error)
-{
-  struct InfoStruct
-  {
-    ULng32 counter;
-  };
-
-  SP_STATUS status = SP_SUCCESS;
-  InfoStruct *is = NULL;
-  NATableDB * tableDB = NULL;
-
-  switch (action)
-  {
-  case SP_PROC_OPEN:
-    // No inputs to process
-    is = new InfoStruct;
-    is->counter = 0;
-    *spProcHandle = is;
-    break;
-
-  case SP_PROC_FETCH:
-    is = (InfoStruct*)(*spProcHandle);
-    tableDB = ActiveSchemaDB()->getNATableDB();
-    if (is == NULL )
-    {
-      status = SP_FAIL;
-      break;
-    }
-
-    //clear out NATableCache
-    tableDB->setCachingOFF();
-    tableDB->setCachingON();
-    break;
-
-  case SP_PROC_CLOSE:
-    delete (InfoStruct*) (*spProcHandle);
-    break;
-  }
-  return status;
-}
-
-void NATableCacheDeleteStoredProcedure::Initialize(SP_REGISTER_FUNCPTR regFunc)
-{
-  regFunc("NATABLECACHEDELETE",
-          sp_Compile,
-          sp_InputFormat,
-          0,
-          sp_NumOutputFields,
-          sp_OutputFormat,
-          sp_Process,
-          0,
-	  CMPISPVERSION);
-}
