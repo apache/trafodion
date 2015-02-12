@@ -153,7 +153,7 @@ public final class Constants {
   public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "dcs.server.user.program.statistics.enabled";
 
   /** Default value for DCS server user program statistics enable */
-  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "false";
+  public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "true";
 
   /** Configuration key for DCS server user program to enable sqlplan for queries */
   public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_SQLPLAN_ENABLE = "dcs.server.user.program.statistics.sqlplan.enabled";
