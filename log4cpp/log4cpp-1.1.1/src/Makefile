@@ -68,7 +68,6 @@ DEFINES += $(EXTRA_FLAGS)
 liblog4cpp.so: $(OBJS)
 	$(CXX) -shared $(GCCMODE) -o $@ $(DBG_FLGS) -L$(LIBEXPDIR) $(OBJS)
 	cp -up $@ $(LIBEXPDIR)
-	$(RM) liblog4cpp.so
 
 #$(OUTDIR)/libmxocore_version.o: $(MY_SQROOT)/export/include/SCMBuildStr.h
 
@@ -78,3 +77,6 @@ clean:
 
 cleanall: clean
 	$(RM) -rf $(BUILD_PLAT)
+
+-include $(CDEP_DIR)/*.dep
+_dummy := $(shell if [ ! -d $(CDEP_DIR) ]; then mkdir -p $(CDEP_DIR); fi)
