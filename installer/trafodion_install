@@ -180,20 +180,40 @@ $TRAF_PDSH sudo mkdir -p $LOCAL_WORKDIR
 #==============================================
 #Check that Hadoop nodes match Trafodion nodes
 
+curlRC=0
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
-   sudo curl -su $ADMIN:$PASSWORD http://$URL/api/v6/cm/deployment > tempFile
+   curl -su $ADMIN:$PASSWORD http://$URL/api/v6/cm/deployment > tempFile
+   curlRC=$?
    numberHadoopNodes=$(grep -r "hostname" tempFile | wc -l)
    grep -r "hostname" tempFile > tempFile2
 fi
 
 if [[ $HADOOP_TYPE == "hortonworks" ]]; then
-   sudo curl -u $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/hosts > tempFile
+   curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/hosts > tempFile
+   curlRC=$?
    numberHadoopNodes=$(grep -r "host_name" tempFile | wc -l)
    grep -r "host_name" tempFile > tempFile2
 fi
 
+if [ $curlRC != 0 ]; then 
+   echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE (RC=$curlRC)"
+   echo "***ERROR: curl command failed."
+   exit -1
+fi 
+
+# in most cases curl does not return an error
+# so curl's actual output needs to be checked, too
+curl_error=$(grep TITLE tempFile | grep Error | wc -l)
+
+if [ $curl_error -ne 0 ]; then
+   echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE"
+   cat tempFile
+   exit -1
+fi
+
 if [[ $numberHadoopNodes != $node_count ]]; then
-   echo "***ERROR: Number of Trafodion nodes must match number of $HADOOP_TYPE nodes"
+   echo "***ERROR: Number of Trafodion nodes ($node_count) must match number of $HADOOP_TYPE nodes ($numberHadoopNodes)"
+   cat tempFile
    echo "***ERROR: Exiting..."
    rm tempFile
    rm tempFile2
