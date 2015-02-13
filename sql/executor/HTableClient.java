@@ -965,6 +965,14 @@ public class HTableClient {
 	}
 
 	public boolean release(boolean cleanJniObject) throws IOException {
+          // Complete the pending IO
+          if (future != null)
+             future.cancel(true); // Interrupt the thread
+	  future = null;
+	  if (executorService != null) {
+	    executorService.shutdown();
+	    executorService = null;
+          }
 	  if (table != null)
 	    table.flushCommits();
 	  if (scanner != null) {
@@ -977,11 +985,6 @@ public class HTableClient {
 	    snapHelper = null;
 	  }
 	  cleanScan();		
-	  future = null;
-	  if (executorService != null) {
-	    executorService.shutdown();
-	    executorService = null;
-	  }
 	  getResultSet = null;
 	  if (cleanJniObject) {
 	    if (jniObject != 0)
