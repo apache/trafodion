@@ -36,6 +36,8 @@
 
 extern SRVR_GLOBAL_Def *srvrGlobal;
 
+extern void SyncPublicationThread();
+
 void CNSKListenerSrvr::closeTCPIPSession(int fnum)
 {
 	shutdown(fnum, SHUT_RDWR);
@@ -536,6 +538,10 @@ void CNSKListenerSrvr::terminateThreads(int status)
 //   m_bKeepRunning = false; // break out of $RECEIVE and listen loop
     char dummyWriteBuffer[100];
 
+   // Calling sync of repository thread here instead of exitServerProcess() since
+   // this also takes care of the case when the process is stopped via a system message.
+   SyncPublicationThread();
+
    if(syscall(__NR_gettid) == srvrGlobal->receiveThrId)
    {
       // we're in the $recv thread
@@ -566,7 +572,6 @@ void CNSKListenerSrvr::terminateThreads(int status)
       int cc = XCANCEL(m_ReceiveFnum);
       tcpip_listener_thr.exit(NULL);
    }
-
 }
 
 bool CNSKListenerSrvr::verifyPortAvailable(const char * idForPort, int port)

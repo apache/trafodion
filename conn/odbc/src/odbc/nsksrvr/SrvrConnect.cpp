@@ -4536,9 +4536,6 @@ void SRVR::exitServerProcess()
 				      "exitServerProcess()",
 				      "0");
 
-	SyncPublicationThread();
-		//mutex lock
-
 	terminateThreads(1);
 	exit(1);
 	SRVRTRACE_EXIT(FILE_AME+16);
