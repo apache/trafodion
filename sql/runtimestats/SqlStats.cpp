@@ -1,7 +1,7 @@
 /*********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1336,8 +1336,6 @@ StmtStats::~StmtStats()
 void StmtStats::deleteMe()
 {
    if (! checkIfRTSSemaphoreLocked())
-      abort();
-   if (! calledFromRemoveQuery())
       abort();
 // in case of Linux, create tempStats to do fixup
 // since vptr table will vary from one instance to another
