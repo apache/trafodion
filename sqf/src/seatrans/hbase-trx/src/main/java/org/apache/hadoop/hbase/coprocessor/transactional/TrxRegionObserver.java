@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.codec.binary.Hex;
@@ -58,6 +59,7 @@ import org.apache.zookeeper.KeeperException;
 
 public class TrxRegionObserver extends BaseRegionObserver {
 
+
 private static final Log LOG = LogFactory.getLog(TrxRegionObserver.class);
 public static final String trxkey = "TRAFODION";
 public static final String trxkeytransactionsById = "transactionsById";
@@ -65,6 +67,7 @@ public static final String trxkeycommitedTransactionsBySequenceNumber = "commite
 public static final String trxkeycommitPendingTransactions = "commitPendingTransactions";
 public static final String trxkeypendingTransactionsById = "pendingTransactionsById";
 public static final String trxkeyindoubtTransactionsCountByTmid = "indoubtTransactionsCountByTmid";
+public static final String trxkeyClosingVar = "checkClosingVariable";
 
 public static final int TS_ACTIVE = 0;
 public static final int TS_COMMIT_REQUEST = 1;
@@ -84,6 +87,7 @@ static ConcurrentHashMap<String, Object> transactionsRefMap = new ConcurrentHash
 
 private ConcurrentHashMap<String, TrxTransactionState> transactionsById = new ConcurrentHashMap<String, TrxTransactionState>();
 private Set<TrxTransactionState> commitPendingTransactions = Collections.synchronizedSet(new HashSet<TrxTransactionState>());
+private AtomicBoolean closing = new AtomicBoolean(false);
 
 HRegion my_Region;
 HRegionInfo regionInfo;
@@ -182,6 +186,15 @@ public void start(CoprocessorEnvironment e) throws IOException {
    else {
        transactionsRefMap.put(regionName+trxkeycommitPendingTransactions,
                               this.commitPendingTransactions);
+   }
+
+   AtomicBoolean closingCheck = (AtomicBoolean)transactionsRefMap
+                                               .get(regionName+trxkeyClosingVar);
+   if(closingCheck != null) {
+       this.closing = closingCheck;
+   }
+   else {
+       transactionsRefMap.put(regionName+trxkeyClosingVar, this.closing);
    }
 
     if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: trxRegionObserver load start complete");
@@ -516,9 +529,19 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
                        LOG.warn("Problem while calling sleep(), " + e);
                }
         }
+        if(LOG.isDebugEnabled()) LOG.debug("preSplit -- setting close var to true on: " + region.getRegionNameAsString());
+        closing.set(true);
         if(delayed) if(LOG.isWarnEnabled()) LOG.warn("Continuing with split operation, no transactions on: " + region.getRegionNameAsString());
 
         if(LOG.isTraceEnabled()) LOG.trace("preSplit -- EXIT region: " + region.getRegionNameAsString());
     }
 
+    @Override
+    public void    preClose(ObserverContext<RegionCoprocessorEnvironment> c, boolean abortRequested) {
+        if(LOG.isDebugEnabled()) {
+            HRegion region = c.getEnvironment().getRegion();
+            LOG.debug("preClose -- setting close var to true on: " + region.getRegionNameAsString());
+        }
+        closing.set(true);
+    }
 } // end of TrxRegionObserver Class
