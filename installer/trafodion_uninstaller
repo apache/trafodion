@@ -27,7 +27,7 @@ Options:
     --help                  Print this message and exit.
 
     --instance <dir-name>   Directory path of Trafodion instance to remove.
-                            This is ran from a Trafodion userid.
+                            This is run from a Trafodion userid.
 
     --all                   This will remove Trafodion completely, including the
                             the Trafodion userid and its $HOME directory.
