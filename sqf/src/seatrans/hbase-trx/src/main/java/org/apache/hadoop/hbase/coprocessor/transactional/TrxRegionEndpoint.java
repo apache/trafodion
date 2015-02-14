@@ -56,6 +56,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -285,7 +286,7 @@ CoprocessorService, Coprocessor {
   private FileSystem fs = null;
   private RegionCoprocessorHost rch = null;
   private HLog tHLog = null;
-  boolean closing = false;
+  private AtomicBoolean closing = new AtomicBoolean(false);
   private boolean fullEditInCommit = true;
   private boolean configuredEarlyLogging = false;
   private static Object zkRecoveryCheckLock = new Object();
@@ -2435,6 +2436,16 @@ CoprocessorService, Coprocessor {
                                   this.transactionsById);
     }
 
+    AtomicBoolean closingCheck = (AtomicBoolean)transactionsByIdTestz
+            .get(this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeyClosingVar);
+    if(closingCheck != null) {
+        this.closing = closingCheck;
+    }
+    else {
+        transactionsByIdTestz.put(this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeyClosingVar,
+                                  this.closing);
+    }
+
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: start");
   }
 
@@ -2452,9 +2463,9 @@ CoprocessorService, Coprocessor {
    * @throws IOException 
    */
   private void checkClosing(final long transactionId) throws IOException {
-    if (closing) {
-      LOG.error("TrxRegionEndpoint coprocessor: checkClosing - txId " + transactionId + ", Trafodion Recovery: Raising exception. no more new transactions allowed.");
-      throw new IOException("closing region, no more new transactions allowed");
+    if (closing.get()) {
+      if(LOG.isWarnEnabled()) LOG.warn("TrxRegionEndpoint coprocessor: checkClosing - txId " + transactionId + ", Trafodion Recovery: Raising exception. no more new transactions allowed.");
+      throw new IOException("closing region, no more new transactions allowed. Region: " + regionInfo.getRegionNameAsString());
     }
   }
 
