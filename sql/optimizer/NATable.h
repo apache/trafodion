@@ -1108,7 +1108,12 @@ private:
   
   // Object containing info on all privileges the current user has for this table.
   PrivMgrUserPrivs* privInfo_;
-
+  // While creating the index keys, the NAColumn from colArray_
+  // is not used in all cases. Sometimes, a new NAColumn is 
+  // constructured from the NAColumn. The variable below
+  // keeps track of these new columnsa allowing us to 
+  // destroy them when NATable is destroyed.
+  NAColumnArray newColumns_;
 }; // class NATable
 
 #pragma warn(1506)  // warning elimination 

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -101,6 +101,22 @@
 } // Constraint::makeColSignature
 // LCOV_EXCL_STOP
 
+AbstractRIConstraint::~AbstractRIConstraint()
+{
+  NAHeap *heap = (NAHeap *)collHeap();
+  CollIndex entryCount = keyColumns_.entries();
+  if (heap != NULL) {
+     for (CollIndex i = 0 ; i < entryCount; i++) {
+          NADELETE(keyColumns_[i], NAColumn, heap);
+     }
+  }
+  else {
+     for (CollIndex i = 0 ; i < entryCount; i++) 
+          delete keyColumns_[i];
+  }
+  keyColumns_.clear();
+}
+
 NABoolean AbstractRIConstraint::constraintOverlapsUpdateCols(
                                         BindWA *bindWA,
 					const ColSignature &updateCols) const
@@ -184,6 +200,22 @@ void AbstractRIConstraint::setKeyColumns(
   }
 
   CMPASSERT(desc->colcount == (signed)i);
+}
+
+UniqueConstraint::~UniqueConstraint()
+{
+  NAHeap *heap = (NAHeap *)collHeap();
+  CollIndex entryCount = refConstraintsReferencingMe_.entries();
+  if (heap != NULL) { 
+     for (CollIndex i = 0 ; i < entryCount; i++) {
+          NADELETE(refConstraintsReferencingMe_[i], ComplementaryRIConstraint, heap);
+     }
+  }
+  else {
+     for (CollIndex i = 0 ; i < entryCount; i++) 
+          delete refConstraintsReferencingMe_[i];
+  }
+  refConstraintsReferencingMe_.clear();
 }
 
 Int32 UniqueConstraint::getRefConstraints(BindWA *bindWA, 
@@ -280,6 +312,9 @@ void ComplementaryRIConstraint::resetAfterStatement()
   keyColumns_ = NULL;
 }
 
+RefConstraint::~RefConstraint()
+{
+}
 
 Int32 RefConstraint::getRefConstraints(BindWA *bindWA, 
 				     const ColSignature &updateCols,

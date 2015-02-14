@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public:
   NAColumn(const char* colName,
     Lng32 position,
     NAType *type,
-    CollHeap *h=0,
+    CollHeap *h,
     unsigned short SQLMPKeytag = 0,
     const NATable* table = NULL,
     ColumnClass columnClass = USER_COLUMN,
@@ -141,7 +141,7 @@ public:
     routineParamType_[2] = 0;
   }
 
-  NAColumn (const NAColumn & nac, NAMemory * h=0):
+  NAColumn (const NAColumn & nac, NAMemory * h):
   heap_(h),
     colName_(nac.colName_,h),
     position_(nac.position_),

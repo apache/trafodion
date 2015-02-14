@@ -2613,7 +2613,6 @@ static void createNodeMap (desc_struct* part_desc_list,
                            char * tableName,
                            Int32 tableIdent)
 {
-
   // ---------------------------------------------------------------------
   // Loop over all partitions creating a DP2 node map entry for each
   // partition.
@@ -3698,6 +3697,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 			   LIST(CollIndex) & tableIdList  /*OUT*/,
                            NAMemory* heap,
                            BindWA * bindWA,
+                           NAColumnArray &newColumns, /*OUT */
 			   Int32 *maxIndexLevelsPtr = NULL)
 {
   // ---------------------------------------------------------------------
@@ -3835,6 +3835,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 		       COM_USER_DEFINED_DEFAULT,
 		       (char*)keytagStr
 		       );
+             newColumns.insert(indexColumn);
 	  }
 	  else
           {
@@ -3849,7 +3850,9 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 		newIndexColumn->setHbaseColQual(keys_desc->body.keys_desc.hbaseColQual);
 
                 saveNAColumns.insert(indexColumn);
+                newColumns.insert(newIndexColumn);
 		indexColumn = newIndexColumn;
+                 
 	      }
 
             // Check if this is a SQLMP keytag column for index maintenance --
@@ -3962,6 +3965,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 	      newIndexColumn->setHbaseColQual(non_keys_desc->body.keys_desc.hbaseColQual);
 	      
 	      indexColumn = newIndexColumn;
+              newColumns.insert(newIndexColumn);
 	    }
 
 	  allColumns.insert(indexColumn);
@@ -4072,7 +4076,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       }
 
       // Create DP2 node map for partitioning function.
-      NodeMap* nodeMap = new (heap) NodeMap(heap);
+      NodeMap* nodeMap = NULL; 
 
       //increment for each table/index to create unique identifier
       cmpCurrentContext->incrementTableIdent();
@@ -4091,6 +4095,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 	     (NOT table->isHbaseTable()))
 	    OR files_desc->body.files_desc.partns_desc )
 	  {
+            nodeMap = new (heap) NodeMap(heap);
 	    createNodeMap(files_desc->body.files_desc.partns_desc,
 			  nodeMap,
 			  heap,
@@ -4933,7 +4938,8 @@ NATable::NATable(BindWA *bindWA,
     hiveTableId_(-1),
     tableDesc_(inTableDesc),
     privInfo_(NULL),
-    secKeySet_(heap)
+    secKeySet_(heap),
+    newColumns_(heap)
 {
   NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
   NAString mmPhase;
@@ -5221,6 +5227,7 @@ NATable::NATable(BindWA *bindWA,
 			   tableIdList_     /*OUT*/,
                            heap_,
                            bindWA,
+                           newColumns_,     /*OUT*/
 			   maxIndexLevelsPtr)) {
         return; // colcount_ == 0 indicates an error
       }
@@ -5691,7 +5698,8 @@ NATable::NATable(BindWA *bindWA,
     hiveTableId_(htbl->tblID_),
     tableDesc_(NULL),
     secKeySet_(heap),
-    privInfo_(NULL)
+    privInfo_(NULL),
+    newColumns_(heap)
 {
 
   NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
@@ -6828,6 +6836,7 @@ NATable::~NATable()
             if (col->getComputedColumnExprString())
                 NADELETEBASIC(col->getComputedColumnExprString(),heap_);
          }
+         NADELETE(col->getType(), NAType, heap_);
          NADELETE(col, NAColumn, heap_);
      }
      colArray_.clear();
@@ -6879,19 +6888,25 @@ NATable::~NATable()
       NADELETE(vertParts_[i], NAFileSet, heap_);
   }
   vertParts_.clear();
+  entryCount  = newColumns_.entries();
+  for (int i = 0 ; i < entryCount ; i++) {
+      col = (NAColumn *)newColumns_[i];
+      NADELETE(col, NAColumn, heap_);
+  }
+  newColumns_.clear();
   entryCount  = checkConstraints_.entries();
   for (CollIndex i = 0 ; i < entryCount; i++) {
       NADELETE(checkConstraints_[i], CheckConstraint, heap_);
   }
-  uniqueConstraints_.clear();
+  checkConstraints_.clear();
   entryCount  = uniqueConstraints_.entries();
   for (CollIndex i = 0 ; i < entryCount; i++) {
-      NADELETE(uniqueConstraints_[i], AbstractRIConstraint, heap_);
+      NADELETE((UniqueConstraint *)uniqueConstraints_[i], UniqueConstraint, heap_);
   }
   uniqueConstraints_.clear();
   entryCount  = refConstraints_.entries();
   for (CollIndex i = 0 ; i < entryCount; i++) {
-      NADELETE(refConstraints_[i], AbstractRIConstraint, heap_);
+      NADELETE((RefConstraint *)refConstraints_[i], RefConstraint, heap_);
   }
   refConstraints_.clear();
   entryCount  = mvsUsingMe_.entries();
@@ -7956,7 +7971,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	(!isSQUtiDisplayExplain(corrName)) &&
 	(!isSQInternalStoredProcedure(corrName))
 	) {
-      CmpSeabaseDDL cmpSBD((NAHeap *)heap_);
+      CmpSeabaseDDL cmpSBD((NAHeap *)CmpCommon::statementHeap());
+
 
       desc_struct *tableDesc = NULL;
 
