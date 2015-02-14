@@ -806,26 +806,29 @@ public class HTableClient {
 	}
 
 	public boolean release(boolean cleanJniObject) throws IOException {
-		if (table != null)
-			table.flushCommits();
-		if (scanner != null) {
-			scanner.close();
-			scanner = null;
-		}
-		cleanScan();		
-		future = null;
-		if (executorService != null) {
-			executorService.shutdown();
-			executorService = null;
-		}
-		getResultSet = null;
-		if (cleanJniObject) {
-			if (jniObject != 0)
-				cleanup(jniObject);
-			tableName = null;
-		}
-		jniObject = 0;
-		return true;
+          // Complete the pending IO
+          if (future != null)
+             future.cancel(true); // Interrupt the thread
+	  future = null;
+	  if (executorService != null) {
+	    executorService.shutdown();
+	    executorService = null;
+          }
+	  if (table != null)
+	    table.flushCommits();
+	  if (scanner != null) {
+	    scanner.close();
+	    scanner = null;
+	  }
+	  cleanScan();		
+	  getResultSet = null;
+	  if (cleanJniObject) {
+	    if (jniObject != 0)
+	      cleanup(jniObject);
+	    tableName = null;
+	  }
+	  jniObject = 0;
+	  return true;
 	}
 
 	public boolean close(boolean clearRegionCache, boolean cleanJniObject) throws IOException {
