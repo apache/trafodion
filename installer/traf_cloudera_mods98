@@ -76,7 +76,8 @@ else
     sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
 fi
 
-# create new directories for bulkload if not already there
+#=====================================
+# create new directories for bulkload and lobs if not already there
 rm $LOCAL_WORKDIR/traf_temp_output 2>/dev/null
 
 isClouderaRunning=$(sudo /etc/init.d/cloudera-scm-server status)
@@ -111,6 +112,19 @@ if [ $? != 0 ]; then
    fi
 fi
 sudo su $HDFS_USER --command "hadoop fs -chown -R $TRAF_USER:trafodion /bulkload"
+
+# Create lobs directory
+sudo su hdfs --command "hadoop fs -mkdir /lobs" 2> $LOCAL_WORKDIR/traf_temp_output
+if [ $? != 0 ]; then
+   # ok if directory already exists
+   dir_exists=$(grep "File exists" $LOCAL_WORKDIR/traf_temp_output | wc -l)
+   if [ $dir_exists -eq 0 ]; then
+      echo "***ERROR: 'hadoop fs -mkdir /lobs' command failed"
+      echo "***ERROR: $(cat $LOCAL_WORKDIR/traf_temp_output)"
+      exit -1
+   fi
+fi
+sudo su hdfs --command "hadoop fs -chown -R $TRAF_USER:trafodion /lobs"
 
 #=====================================
 # Modify hadoop settings as needed by Trafodion
