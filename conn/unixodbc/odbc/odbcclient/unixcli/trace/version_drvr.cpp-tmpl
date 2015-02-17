@@ -1,0 +1,3 @@
+extern char* versionString="TRAFODBC_DRVR (Build Id [@@@])";
+extern "C" void TRAFODBC_DRVR_Build_Id_@@@ ()
+{ }

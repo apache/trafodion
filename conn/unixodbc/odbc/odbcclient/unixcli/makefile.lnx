@@ -77,7 +77,8 @@ exp: $(EXPOBJS)
 clean:
 	rm -rf obj
 	rm -rf libtrafodbc_*
-#	rm -rf trace/version*
+	rm -rf trace/version.cpp trace/version_drvr.cpp
+
 .cpp.o:
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) $(INCLUDE) $(SSLINC) $(PLATFORMINCLUDE) -c $< -o $(addprefix $(OBJDIR), $@)
