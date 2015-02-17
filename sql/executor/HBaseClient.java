@@ -132,10 +132,18 @@ public class HBaseClient {
     }
 
     void setupLog4j() {
-        System.setProperty("trafodion.hdfs.log", System.getenv("MY_SQROOT") + "/logs/trafodion.hdfs.log");
-        String confFile = System.getenv("MY_SQROOT")
-            + "/conf/log4j.hdfs.config";
-        PropertyConfigurator.configure(confFile);
+    	//Some clients of this class e.g., DcsServer/JdbcT2 
+    	//want to use use their own log4j.properties file instead
+    	//of the /conf/lo4j.hdf.config so they can see their
+    	//log events in their own log files or console.
+    	//So, check for alternate log4j.properties otherwise
+    	//use the default HBaseClient config.
+    	String confFile = System.getProperty("hbaseclient.log4j.properties");
+    	if(confFile == null) {
+    		System.setProperty("trafodion.hdfs.log", System.getenv("MY_SQROOT") + "/logs/trafodion.hdfs.log");
+    		confFile = System.getenv("MY_SQROOT") + "/conf/log4j.hdfs.config";
+    	}
+    	PropertyConfigurator.configure(confFile);
     }
 
     public boolean init(String zkServers, String zkPort) 
