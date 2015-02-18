@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@ package org.trafodion.dcs.util;
 
 import java.sql.*;
 import java.math.BigDecimal;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.io.*;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
@@ -39,7 +41,7 @@ import org.trafodion.dcs.Constants;
 
 public final class JdbcT2Util
 {
-	private static final Log LOG = LogFactory.getLog(JdbcT2Util.class);
+	private static Log LOG = LogFactory.getLog(JdbcT2Util.class);
     private Configuration conf;
     private int mapInitialSize;
 	Map<String, ConnectionContext> m;
@@ -50,8 +52,7 @@ public final class JdbcT2Util
 			Class.forName(Constants.T2_DRIVER_CLASS_NAME);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
-			if(LOG.isErrorEnabled())
-				LOG.error(e.getMessage());
+			LOG.error(e.getMessage());
 		}
 	}
 	
@@ -59,6 +60,15 @@ public final class JdbcT2Util
 		this.conf = conf;
 		mapInitialSize = conf.getInt("dcs.info.threads.max", 100);
 		m = new HashMap<String, ConnectionContext>(mapInitialSize);
+		System.out.println("dcs.conf.dir=" + System.getProperty("dcs.conf.dir"));
+		System.out.println("dcs.root.logger=" + System.getProperty("dcs.root.logger"));
+		System.out.println("dcs.log.dir=" + System.getProperty("dcs.log.dir"));
+		System.out.println("dcs.log.file=" + System.getProperty("dcs.log.file"));
+		
+		System.setProperty("hbaseclient.log4j.properties",System.getProperty("dcs.conf.dir") + "/log4j.properties");
+		System.setProperty("dcs.root.logger",System.getProperty("dcs.root.logger"));
+		System.setProperty("dcs.log.dir",System.getProperty("dcs.log.dir"));
+		System.setProperty("dcs.log.file",System.getProperty("dcs.log.file"));
 	}
 	
 	public JdbcT2Util() {
@@ -102,15 +112,13 @@ public final class JdbcT2Util
 						sb.append("\nSQLState   " + nextException.getSQLState());
 						sb.append("\nError Code " + nextException.getErrorCode());
 					} while ((nextException = nextException.getNextException()) != null);
-					if(LOG.isErrorEnabled()) 
-						LOG.error("SQLException [" + sb.toString() + "]");
+					LOG.error("SQLException [" + sb.toString() + "]");
 					error = true;
 				} catch (Exception e) {
 					StringBuilder sb = new StringBuilder();
 					e.printStackTrace();
 					sb.append(e.getMessage());
-					if(LOG.isErrorEnabled()) 
-						LOG.error("Exception [" + sb.toString() + "]");
+					LOG.error("Exception [" + sb.toString() + "]");
 					error = true;
 				}
 			} else {
@@ -140,15 +148,13 @@ public final class JdbcT2Util
 					sb.append("\nSQLState   " + nextException.getSQLState());
 					sb.append("\nError Code " + nextException.getErrorCode());
 				} while ((nextException = nextException.getNextException()) != null);
-				if(LOG.isErrorEnabled()) 
-					LOG.error("SQLException [" + sb.toString() + "]");
+				LOG.error("SQLException [" + sb.toString() + "]");
 				error = true;
 			} catch (Exception e) {
 				StringBuilder sb = new StringBuilder();
 				e.printStackTrace();
 				sb.append(e.getMessage());
-				if(LOG.isErrorEnabled()) 
-					LOG.error("Exception [" + sb.toString() + "]");
+				LOG.error("Exception [" + sb.toString() + "]");
 				error = true;
 			}
 			
@@ -204,8 +210,7 @@ public final class JdbcT2Util
 			StringBuilder sb = new StringBuilder();
 			e.printStackTrace();
 			sb.append(e.getMessage());
-			if(LOG.isErrorEnabled()) 
-				LOG.error("Exception [" + sb.toString() + "]");
+			LOG.error("Exception [" + sb.toString() + "]");
 		}
 		
 		if(LOG.isDebugEnabled())
@@ -303,7 +308,6 @@ public final class JdbcT2Util
 
 		return json; 
 	}
-
 	
 	public static void main(String args[])
 	{
@@ -325,8 +329,13 @@ public final class JdbcT2Util
 		}
 
 		try	{
+			Log4jUtils log4jutils = new Log4jUtils();
 			JdbcT2Util jdbcT2Util = new JdbcT2Util();
+			if(LOG.isDebugEnabled())
+				log4jutils.dumpLog4j(JdbcT2Util.class.getName());
 			JSONArray js = jdbcT2Util.exec(command);
+			if(LOG.isDebugEnabled())
+				log4jutils.dumpLog4j(JdbcT2Util.class.getName());
 			if(LOG.isDebugEnabled())
 				LOG.debug("JSONArray [" + js.toString() + "]");
 		} catch (Exception e) {
