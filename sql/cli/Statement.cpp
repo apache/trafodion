@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -8098,17 +8098,15 @@ void Statement::setStmtStats(NABoolean autoRetry)
                   cliGlobals_->myPin(), savedPriority, savedStopMode,
                   FALSE /*shouldTimeout*/);
     ex_assert(error == 0, "getStatsSemaphore() returned an error");
-  // In case AQR, the stmtStats_ structure may not have been removed from shared segment
-  // Try again to remove, if not use the same structure
     if (autoRetry)
     {
       if (getUniqueStmtId() != NULL)
+      {
         stmtStats = statsGlobals->getMasterStmtStats(getUniqueStmtId(), getUniqueStmtIdLen(), 
               RtsQueryId::ANY_QUERY_);
-      else
-        stmtStats = NULL;
-      if (stmtStats != NULL)
-        stmtStatsRetained = statsGlobals->removeQuery(cliGlobals_->myPin(), stmtStats);
+        ex_assert(stmtStats, "AQR but missing stmtStats.");
+        stmtStatsRetained = TRUE;
+      }
     }
     else
     {

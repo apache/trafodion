@@ -673,12 +673,9 @@ short StatsGlobals::removeQuery(pid_t pid, StmtStats *stmtStats,
       (stmtStats->isStmtStatsUsed() || stmtStats->getMergedStats() != NULL
       || stmtStats->isWMSMonitoredCliQuery() || stmtStats->aqrInProgress()))
    {
-      if (! stmtStats->aqrInProgress())
-         stmtStats->setTobeGCed();
-      else if (calledFromRemoveProcess) // Even if AQR is in progress
-         stmtStats->setTobeGCed();
       if (calledFromRemoveProcess)
       {
+        stmtStats->setTobeGCed();
         if (masterStats != NULL)
         {
           masterStats->setStmtState(Statement::PROCESS_ENDED_);
@@ -693,6 +690,8 @@ short StatsGlobals::removeQuery(pid_t pid, StmtStats *stmtStats,
         stmtStats->setStmtStatsUsed(FALSE);
       
       }
+      else if (! stmtStats->aqrInProgress())
+          stmtStats->setTobeGCed();
    }
    else
    {
@@ -708,9 +707,9 @@ short StatsGlobals::removeQuery(pid_t pid, StmtStats *stmtStats,
              masterStats->getCollectStatsType() != (UInt16)ComTdb::NO_STATS &&
              masterStats->getCollectStatsType() != (UInt16)ComTdb::ALL_STATS))
      {
-       stmtStats->setTobeGCed();
        if (calledFromRemoveProcess)
        {
+         stmtStats->setTobeGCed();
          if (masterStats != NULL)
          {
            masterStats->setStmtState(Statement::PROCESS_ENDED_);
@@ -724,10 +723,13 @@ short StatsGlobals::removeQuery(pid_t pid, StmtStats *stmtStats,
          // because the StmtStats will not be GCed for the next 15 minutes 
          stmtStats->setStmtStatsUsed(FALSE);
        }
+       else if (!stmtStats->aqrInProgress())
+         stmtStats->setTobeGCed();
      }
      else
      {
-       if (!stmtStats->isDeleteError()) 
+       if (((!stmtStats->aqrInProgress()) || calledFromRemoveProcess) &&
+           (!stmtStats->isDeleteError()) )
        {
          stmtStats->setDeleteError(TRUE);
          stmtStats->setCalledFromRemoveQuery(TRUE);
@@ -737,6 +739,7 @@ short StatsGlobals::removeQuery(pid_t pid, StmtStats *stmtStats,
            stmtStatsList_->remove(stmtStats->getQueryId(), stmtStats->getQueryIdLen(),
                       stmtStats);
          stmtStats->deleteMe();
+         memset (stmtStats, 0, sizeof(StmtStats));
          heap->deallocateMemory(stmtStats);
          retcode = 0;
        }
