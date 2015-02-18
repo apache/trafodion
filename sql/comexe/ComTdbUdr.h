@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2000-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -109,7 +109,11 @@ public:
     ex_expr ** childInputExprs,
     ComTdb ** childTdbs,
     Queue *optionalData,
-    
+
+    Int32 udrSerInvocationInfoLen,
+    char *udrSerInvocationInfo,
+    Int32 udrSerPlanInfoLen,
+    char *udrSerPlanInfo,
 
     Space *space
 
@@ -303,10 +307,15 @@ protected:
   ComTdbPtrPtr childTdbs_;                                 // 200-207
 
   // Definer Rights related 
-  Int32 routineOwnerId_;                              // 208-211
+  Int32 routineOwnerId_;                                  // 208-211
+  // serialized UDRInvocationInfo and UDRPlanInfo
+  Int32 udrSerInvocationInfoLen_;                         // 212-215
+  NABasicPtr udrSerInvocationInfo_;                       // 216-223
+  Int32 udrSerPlanInfoLen_;                               // 224-227
+  NABasicPtr udrSerPlanInfo_;                             // 228-235
 
   // Make sure class size is a multiple of 8
-  char fillerComTdbUdr2_[60];                             // 212-271
+  char fillerComTdbUdr2_[36];                             // 236-271
 };
 
 

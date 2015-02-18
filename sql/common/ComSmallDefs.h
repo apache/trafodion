@@ -2,7 +2,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1268,30 +1268,36 @@ enum ComRCUpdateRule { COM_UNKNOWN_UPDATE_RULE
 enum ComRoutineLanguage { COM_UNKNOWN_ROUTINE_LANGUAGE
                         , COM_LANGUAGE_JAVA
                         , COM_LANGUAGE_C
+                        , COM_LANGUAGE_CPP
                         , COM_LANGUAGE_SQL
                         };
 
 #define COM_UNKNOWN_ROUTINE_LANGUAGE_LIT            "  "
 #define COM_LANGUAGE_JAVA_LIT                       "J "
 #define COM_LANGUAGE_C_LIT                          "C "
+#define COM_LANGUAGE_CPP_LIT                        "C+"
 #define COM_LANGUAGE_SQL_LIT                        "S "
 
 // Parameter passing styles for stored procedures and user-defined
 // functions.
 enum ComRoutineParamStyle { COM_UNKNOWN_ROUTINE_PARAM_STYLE
                           , COM_STYLE_GENERAL
-                          , COM_STYLE_JAVA
+                          , COM_STYLE_JAVA_CALL
+                          , COM_STYLE_JAVA_OBJ
                           , COM_STYLE_SQL
                           , COM_STYLE_SQLROW
-                          , COM_STYLE_TM
+                          , COM_STYLE_SQLROW_TM
+                          , COM_STYLE_CPP_OBJ
                           };
 
 #define COM_UNKNOWN_ROUTINE_PARAM_STYLE_LIT         "  "
 #define COM_STYLE_GENERAL_LIT                       "G "
-#define COM_STYLE_JAVA_LIT                          "J "
+#define COM_STYLE_JAVA_CALL_LIT                     "J "
+#define COM_STYLE_JAVA_OBJ_LIT                      "JO"
 #define COM_STYLE_SQL_LIT                           "S "
 #define COM_STYLE_SQLROW_LIT                        "SR"
-#define COM_STYLE_SQLROW_TM                  "TM"
+#define COM_STYLE_SQLROW_TM_LIT                     "TM"
+#define COM_STYLE_CPP_OBJ_LIT                       "C+"
 
 #define COM_UNKNOWN_ROUTINE_PARAM_STYLE_VERSION       0
 #define COM_ROUTINE_PARAM_STYLE_VERSION_1             1

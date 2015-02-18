@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -5027,6 +5027,7 @@ char * ExpGenerator::placeConstants(AListNode *list, Int32 length)
   // Loop over each constant in the list and construct it in the image area.
   // The data format for the constants area is assumed to be in
   // SQLARK_EXPLODED_FORMAT.
+  // See also method ConstValue::getOffsetsinBuffer()
   ConstValue * item;
   AListNode0 *current = list->getHead();
   while (current->getNext())

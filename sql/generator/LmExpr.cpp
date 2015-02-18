@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -210,6 +210,7 @@ static ItemExpr *CreateIntervalExpr(ItemExpr &source, const NAType &target,
 LmExprResult CreateLmInputExpr(const NAType &formalType,
                                ItemExpr &actualValue,
                                ComRoutineLanguage language,
+                               ComRoutineParamStyle style,
                                CmpContext *cmpContext,
                                ItemExpr *&newExpr)
 {
@@ -259,6 +260,7 @@ LmExprResult CreateLmInputExpr(const NAType &formalType,
 //---------------------------------------------------------------------------
 LmExprResult CreateLmOutputExpr(const NAType &formalType,
                                 ComRoutineLanguage language,
+                                ComRoutineParamStyle style,
                                 CmpContext *cmpContext,
                                 ItemExpr *&normalizedValue,
                                 ItemExpr *&outputValue,
@@ -291,12 +293,7 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
   
   if (replyType)
   {
-    if (isResultSet)
-    {
-      // Copy the nullability attribute from the formal type
-      replyType->setNullable(formalType);
-    }
-    else
+    if (style == COM_STYLE_JAVA_CALL)
     {
       // $$$$ TBD: let's assume all CALL statement parameters are
       // nullable for now, until we are sure UDR server's null
@@ -304,6 +301,9 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
       // types.
       replyType->setNullable(TRUE);
     }
+    else
+      // Copy the nullability attribute from the formal type
+      replyType->setNullable(formalType);
 
     normalizedValue = new (h) NATypeToItem(replyType->newCopy(h));
     if (normalizedValue)

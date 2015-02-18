@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@
 #include "sql_buffer.h"
 #include "ex_queue.h"
 #include "udrutil.h"
+#include "LmRoutineCppObj.h"
 
 extern UdrGlobals *UDR_GLOBALS;
 extern Int32 PerformWaitedReplyToClient(UdrGlobals *UdrGlob,
@@ -53,6 +54,9 @@ extern NABoolean allocateReplyRow(UdrGlobals *UdrGlob,
   ControlInfo *&newControlInfo, // [OUT] The allocated ControlInfo entry
   ex_queue::up_status upStatus  // [IN]  Q_OK_MMORE, Q_NO_DATA, Q_SQLERROR
   );
+extern NABoolean allocateEODRow(UdrGlobals *UdrGlob,
+                                SqlBuffer &replyBuffer,
+                                queue_index parentIndex);
 
 
 Int32 sendReqBufferWaitedReply(UdrGlobals *udrGlobals,
@@ -227,9 +231,11 @@ Int32 SpInfoGetNextRow(char            *rowData,
 }
 
 Int32 sendEmitWaitedReply(UdrGlobals *udrGlobals,
-                        SPInfo *sp,
-                        SqlBuffer *emitSqlBuffer)
+                          SPInfo *sp,
+                          SqlBuffer *emitSqlBuffer,
+                          NABoolean includesEOD)
 {
+  Int32 result = 0;
   const char *moduleName = "sendEmitWaitedReply";
 
   NABoolean traceInvokeDataAreas = false;
@@ -263,7 +269,11 @@ Int32 sendEmitWaitedReply(UdrGlobals *udrGlobals,
   // inside UdrDataBuffer. We could avoid this memcpy. Not sure how? PV
   memcpy(reply->getSqlBuffer(), emitSqlBuffer, sp->getReplyBufferSize()); 
 
-  // indicate to client to send a continue request.
+  if (includesEOD)
+    reply->setLastBuffer(TRUE);
+
+  // indicate to client to send a continue request, we don't seem to
+  // need more input data right now
   reply->setSendMoreData(FALSE);
 
   // set SPInfo state to INVOKED_EMITROWS for error checking purposes.
@@ -274,21 +284,37 @@ Int32 sendEmitWaitedReply(UdrGlobals *udrGlobals,
   }
   sp->setSPInfoState(SPInfo::INVOKED_EMITROWS);
 
-  //now wait for IO completion. Once IO completes
-  //necessary updates to spInfo are already performed.
-  Int32 result = PerformWaitedReplyToClient(udrGlobals, *dataStream);
+  if (includesEOD)
+    {
+      // return EOD to client and return without waiting
+      sendDataReply(udrGlobals, *dataStream, sp);
 
-  // reset SpInfo state back to INVOKED state.
-  if(sp->getSPInfoState() != SPInfo::INVOKED_EMITROWS)
-  {
-    return SQLUDR_ERROR;
-  }
-  sp->setSPInfoState(SPInfo::INVOKED);
+      sp->setSPInfoState(SPInfo::LOADED);
+    }
+  else
+    {
+      // Return data back to client and wait for a new message
+      // from the client. Restore context of this invocation
+      // once we have a new request.
+      result = PerformWaitedReplyToClient(udrGlobals, *dataStream);
+
+      // reset SpInfo state back to INVOKED state.
+      if(sp->getSPInfoState() != SPInfo::INVOKED_EMITROWS)
+        {
+          return SQLUDR_ERROR;
+        }
+      sp->setSPInfoState(SPInfo::INVOKED);
+    }
 
   return result;
 }
 
 
+// This method is used for the older TMUDF C interface. It does not
+// include an EOD entry in the SqlBuffer. We send a the buffer from
+// the UDF without an EOD and ask for a continue message. The caller
+// of the language manger "invokeRoutine()" method then sends the
+// EOD in a separate reply.
 Int32 SpInfoEmitRow  (char            *rowData,           
                      Int32             tableIndex,         
                      SQLUDR_Q_STATE  *queue_state        
@@ -330,7 +356,7 @@ Int32 SpInfoEmitRow  (char            *rowData,
   if((emitSqlBuffer != NULL ) && (*queue_state == SQLUDR_Q_EOD) &&
      (emitSqlBuffer->getTotalTuppDescs() > 0))
   {
-    Int32 status = sendEmitWaitedReply(udrGlobals, sp, emitSqlBuffer);
+    Int32 status = sendEmitWaitedReply(udrGlobals, sp, emitSqlBuffer, FALSE);
 
     if(status == SQLUDR_ERROR)
     {
@@ -365,6 +391,10 @@ Int32 SpInfoEmitRow  (char            *rowData,
     sp->setEmitSqlBuffer(emitSqlBuffer, tableIndex);
   }
 
+  if (sp->getInvocationInfo() &&
+      (sp->getInvocationInfo()->getDebugFlags() & tmudr::UDRInvocationInfo::VALIDATE_WALLS))
+    static_cast<LmRoutineCppObj *>(sp->getLMHandle())->validateWalls();
+
   //Allocate a row inside replyBuffer.
   char *replyData = NULL;
   ControlInfo *replyControlInfo = NULL;
@@ -381,7 +411,7 @@ Int32 SpInfoEmitRow  (char            *rowData,
   if (!replyRowAllocated)
   {
     // Since buffer is full send this buffer off to client and then continue.
-    Int32 status = sendEmitWaitedReply(udrGlobals, sp, emitSqlBuffer);
+    Int32 status = sendEmitWaitedReply(udrGlobals, sp, emitSqlBuffer, FALSE);
 
     if(status == SQLUDR_ERROR)
     {
@@ -430,3 +460,108 @@ Int32 SpInfoEmitRow  (char            *rowData,
 
 }
 
+// This method is used for the TMUDF C++ interface. It sends an EOD row
+// for regular results and for an EOD indicator. The latter is generated
+// right after we return from the user code.
+Int32 SpInfoEmitRowCpp(char            *rowData,           
+                       Int32             tableIndex,         
+                       SQLUDR_Q_STATE  *queue_state        
+                       )
+{
+  UdrGlobals *udrGlobals = UDR_GLOBALS;
+  
+  const char *moduleName = "SPInfo::SpInfoEmitRowCpp";
+
+  doMessageBox(udrGlobals,
+               TRACE_SHOW_DIALOGS,
+               udrGlobals->showInvoke_,
+               moduleName);
+
+  // Assumption here that there is always one SP when table mapping 
+  // UDR is used.
+  SPInfo *sp = udrGlobals->getCurrSP();
+  if(!sp)
+    throw tmudr::UDRException(38900, "Missing SPInfo for this UDF");
+
+  // Access emit SQL buffer that corresponds to table index 
+  SqlBuffer *emitSqlBuffer = sp->getEmitSqlBuffer(tableIndex);
+
+  //Allocate a row inside replyBuffer.
+  char *replyData = NULL;
+  ControlInfo *replyControlInfo = NULL;
+  NABoolean replyRowAllocated = FALSE;
+  int numRetries = 0;
+
+  while (!replyRowAllocated)
+    {
+      if(emitSqlBuffer == NULL)
+        {
+          //allocate one and set it back in SPInfo.
+          NAHeap *udrHeap = udrGlobals->getUdrHeap();
+          emitSqlBuffer = 
+            (SqlBuffer*)udrHeap->allocateMemory(sp->getReplyBufferSize());
+
+          if (emitSqlBuffer == NULL)
+            throw tmudr::UDRException(38900, "Unable to allocate an emitRow SqlBuffer");
+
+          emitSqlBuffer->driveInit(sp->getReplyBufferSize(), FALSE, SqlBuffer::NORMAL_);
+          emitSqlBuffer->bufferInUse();
+          sp->setEmitSqlBuffer(emitSqlBuffer, tableIndex);
+        }
+
+      if (*queue_state != SQLUDR_Q_EOD)
+        replyRowAllocated = allocateReplyRow(
+             udrGlobals,
+             *emitSqlBuffer,       // [IN]  A reply buffer
+             sp->getParentIndex(), // [IN]  Identifies the request queue entry
+             sp->getReplyRowSize(),// [IN]  Length of reply row
+             replyData,            // [OUT] The allocated reply row
+             replyControlInfo,     // [OUT] The allocated ControlInfo entry
+             ex_queue::Q_OK_MMORE);// [IN]  Q_OK_MMORE, Q_NO_DATA, Q_SQLERROR
+      else
+        replyRowAllocated = allocateEODRow(
+             udrGlobals,
+             *emitSqlBuffer,
+             sp->getParentIndex());
+
+      if (!replyRowAllocated)
+        if (numRetries++ < 1)
+          {
+            // Since buffer is full send this buffer off to client and then continue.
+            Int32 status = sendEmitWaitedReply(udrGlobals,
+                                               sp,
+                                               emitSqlBuffer,
+                                               FALSE);
+
+            if(status == SQLUDR_ERROR)
+              throw tmudr::UDRException(38900, "Error in sending result buffer from TMUDF");
+
+            // Now that we got continue message back from client, lets continue
+            // filling up emitSqlbuffer again.
+            emitSqlBuffer->driveInit(sp->getReplyBufferSize(), FALSE, SqlBuffer::NORMAL_);
+          }
+        else
+          throw tmudr::UDRException(
+               38900,
+               "Unable to allocate %d bytes in result SqlBuffer of size %d",
+               (int) sp->getReplyBufferSize(),
+               (int) sp->getReplyBufferSize());
+    }
+
+  if (sp->getInvocationInfo()->getDebugFlags() & tmudr::UDRInvocationInfo::VALIDATE_WALLS)
+    static_cast<LmRoutineCppObj *>(sp->getLMHandle())->validateWalls();
+
+  if (replyData)
+    memcpy(replyData, rowData, sp->getReplyRowSize());
+  else if (*queue_state == SQLUDR_Q_EOD)
+    {
+      // if the UDR signals EOD then send the partially filled buffer up
+      Int32 status = sendEmitWaitedReply(udrGlobals, sp, emitSqlBuffer, TRUE);
+
+      if(status == SQLUDR_ERROR)
+        throw tmudr::UDRException(38900, "Error in sending buffer with EOD from TMUDF");
+    }
+
+  return SQLUDR_SUCCESS;
+
+}

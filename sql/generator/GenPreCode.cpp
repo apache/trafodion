@@ -54,6 +54,7 @@
 #include "Cost.h"
 #include "CostMethod.h"
 #include "ItmFlowControlFunction.h"
+#include "UdfDllInteraction.h"
 
 
 #include "NATable.h"
@@ -10456,9 +10457,9 @@ RelExpr * IsolatedNonTableUDR::preCodeGen (Generator * generator,
   return this;
 }
 
-RelExpr * PhysicalTableMappingUDF::preCodeGen (Generator * generator,
-					     const ValueIdSet &externalInputs,
-					     ValueIdSet &pulledNewInputs)
+RelExpr * PhysicalTableMappingUDF::preCodeGen(Generator * generator,
+                                              const ValueIdSet &externalInputs,
+                                              ValueIdSet &pulledNewInputs)
 {
   if (nodeIsPreCodeGenned())
     return this;
@@ -10473,6 +10474,10 @@ RelExpr * PhysicalTableMappingUDF::preCodeGen (Generator * generator,
   {
     getChildInfo(i)->getOutputIds().replaceVEGExpressions(availableValues, externalInputs);
   }
+
+  planInfo_ = getPhysicalProperty()->getUDRPlanInfo();
+  if (!getDllInteraction()->finalizePlan(this, planInfo_))
+    return NULL;
   
   markAsPreCodeGenned();
   

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -225,6 +225,9 @@ ExplainTuple *IsolatedNonTableUDR::addSpecificExplainInfo(ExplainTupleMaster *ex
     case COM_LANGUAGE_C:
       description += "C";
       break;
+    case COM_LANGUAGE_CPP:
+      description += "C++";
+      break;
     case COM_LANGUAGE_SQL:
       description += "SQL";
       break;
@@ -241,14 +244,23 @@ ExplainTuple *IsolatedNonTableUDR::addSpecificExplainInfo(ExplainTupleMaster *ex
   description += " parameter_style: ";
   switch (getEffectiveNARoutine()->getParamStyle())
   {
-    case COM_STYLE_JAVA:
+    case COM_STYLE_JAVA_CALL:
       description += "JAVA";
+      break;
+    case COM_STYLE_JAVA_OBJ:
+      description += "JAVA_OBJ";
       break;
     case COM_STYLE_SQL:
       description += "SQL";
       break;
     case COM_STYLE_SQLROW:
       description += "SQLROW";
+      break;
+    case COM_STYLE_SQLROW_TM:
+      description += "SQLROW_TM";
+      break;
+    case COM_STYLE_CPP_OBJ:
+      description += "C++";
       break;
     case COM_UNKNOWN_ROUTINE_PARAM_STYLE:
     default:
@@ -411,7 +423,9 @@ static short udr_codegen(Generator *generator,
                              const char *runtimeOptsFromCaller,
                              const char *runtimeOptDelimsFromCaller,
                              ComTdb ** childTdbs,
-                             Queue *optionalData)
+                             Queue *optionalData,
+                             tmudr::UDRInvocationInfo *udrInvocationInfo,
+                             tmudr::UDRPlanInfo *udrPlanInfo)
 {
   CmpContext *cmpContext = generator->currentCmpContext();
   Space *space = generator->getSpace();
@@ -428,10 +442,10 @@ static short udr_codegen(Generator *generator,
   ULng32 replyRowLen = 0;
   ULng32 outputRowLen = 0;
   ULng32 childInputRowLen = 0;
-  ExpTupleDesc *requestTupleDesc = NULL;
-  ExpTupleDesc *replyTupleDesc = NULL;
-  ExpTupleDesc *outputTupleDesc = NULL;
-  ExpTupleDesc *childInputTupleDesc = NULL;
+  ExpTupleDesc *requestTupleDesc = NULL;     // input params in langman format
+  ExpTupleDesc *replyTupleDesc = NULL;       // output row/params in langman format
+  ExpTupleDesc *outputTupleDesc = NULL;      // output row/params in executor format
+  ExpTupleDesc *childInputTupleDesc = NULL;  // child table result in langman format
   newTdb = NULL;
   const NARoutine *metadata = NULL;
   const NARoutine *effectiveMetadata = NULL;
@@ -446,10 +460,10 @@ static short udr_codegen(Generator *generator,
                                (rdesc->getInParamColumnList().entries() +
                                 rdesc->getOutputColumnList().entries()) : 
                                (numInValues + numOutValues));
-  if (relExprType == REL_TABLE_MAPPING_UDF)
+  if (relExpr.castToTableMappingUDF())
     totalNumParams = (numInValues + numOutValues);
 
-  // If we hae a PhysicalSPProxyFunc, using the udr_codegen() method, the
+  // If we have a PhysicalSPProxyFunc, using the udr_codegen() method, the
   // rdesc will be NULL since it does not have any metadata to go with it.
 
   if (rdesc)
@@ -535,7 +549,7 @@ static short udr_codegen(Generator *generator,
   ULng32 numChildInputs = 0;
   ULng32 numChildInputCols = 0;
   TableMappingUDFChildInfo* childInfo = NULL;
-  if (relExprType == REL_TABLE_MAPPING_UDF)
+  if (relExpr.castToTableMappingUDF())
   {
     numChildInputs = relExpr.getArity();
     if (numChildInputs == 1)
@@ -605,6 +619,8 @@ static short udr_codegen(Generator *generator,
   //----------------------------------------------------------------------
   ComRoutineLanguage routineLanguage =
     (metadata ? metadata->getLanguage() : COM_UNKNOWN_ROUTINE_LANGUAGE);
+  ComRoutineParamStyle paramStyle =
+    (metadata ? metadata->getParamStyle() : COM_UNKNOWN_ROUTINE_PARAM_STYLE);
 
   if (numInValues > 0)
   {
@@ -623,6 +639,7 @@ static short udr_codegen(Generator *generator,
         formalType,         // [IN] UDR param type
         inputExpr,          // [IN] Actual input value
         routineLanguage,    // [IN] Routine language
+        paramStyle,         // [IN] Parameter style
         cmpContext,         // [IN] Compilation context
         lmExpr              // [OUT] Returned expression
         );
@@ -674,6 +691,7 @@ static short udr_codegen(Generator *generator,
         formalType,         // [IN] UDR param type
         inputExpr,          // [IN] Actual input value
         routineLanguage,    // [IN] Routine language
+        paramStyle,         // [IN] Parameter style
         cmpContext,         // [IN] Compilation context
         lmExpr              // [OUT] Returned expression
         );
@@ -746,6 +764,7 @@ static short udr_codegen(Generator *generator,
       LmExprResult lmResult = CreateLmOutputExpr(
         formalType,         // [IN] UDR param type
         routineLanguage,    // [IN] Routine language
+        paramStyle,         // [IN] Parameter style
         cmpContext,         // [IN] Compilation context
         replyValue,         // [OUT] Returned expression for reply value
         outputValue,        // [OUT] Returned expression for output value
@@ -865,7 +884,7 @@ static short udr_codegen(Generator *generator,
   
   if (relExprType == REL_SP_PROXY)
     udrFlags |= UDR_RESULT_SET;
-  else if (relExprType == REL_TABLE_MAPPING_UDF)
+  else if (relExpr.castToTableMappingUDF())
   {
     udrFlags |= UDR_TMUDF;
   }
@@ -983,8 +1002,59 @@ static short udr_codegen(Generator *generator,
     runtimeOptionDelimiters = AllocStringInSpace(*space,
                                                  runtimeOptDelimsFromCaller);
   }
+
+  Int32 udrSerInvocationInfoLen = 0;
+  char *udrSerInvocationInfo = NULL;
+  Int32 udrSerPlanInfoLen = 0;
+  char *udrSerPlanInfo = NULL;
+
+  try
+    {
+      int tempLen = 0;
+      char *tempBuffer = NULL;
+
+      if (udrInvocationInfo)
+        {
+          ExpTupleDesc *inputTupleDescs[2];
+
+          GenAssert(udrInvocationInfo->getNumTableInputs() <= 1,
+                    "this method is not yet ready for multiple input tables");
+          if (udrInvocationInfo->getNumTableInputs() == 1)
+            inputTupleDescs[0] = childInputTupleDesc;
+
+          // store the computed offsets and record lengths
+          // in the UDRInvocationInfo, to be used by the UDR
+          TMUDFInternalSetup::setOffsets(udrInvocationInfo,
+                                         requestTupleDesc,
+                                         replyTupleDesc,
+                                         inputTupleDescs);
+          
+          // Serialize the UDRInvocationInfo object, so that we
+          // can pass it to the UDR at runtime. This could be in
+          // another process (e.g. ESP, tdm_udrserv, or even to
+          // a Java program.
+          udrSerInvocationInfoLen = tempLen = udrInvocationInfo->serializedLength();
+          udrSerInvocationInfo = tempBuffer = space->allocateAlignedSpace(tempLen);
+          udrInvocationInfo->serialize(tempBuffer, tempLen);
+        } 
  
- 
+      if (udrPlanInfo)
+        {
+          // same for UDRPlanInfo
+          udrSerPlanInfoLen = tempLen = udrPlanInfo->serializedLength();
+          udrSerPlanInfo = tempBuffer = space->allocateAlignedSpace(tempLen);
+          udrPlanInfo->serialize(tempBuffer, tempLen);
+        } 
+    }
+  catch (tmudr::UDRException e)
+    {
+      TMUDFDllInteraction::processReturnStatus(
+           e,
+           CmpCommon::diags(),
+           (udrInvocationInfo ?
+            udrInvocationInfo->getUDRName().data() :
+            "unknown"));
+    }
  
   // Create a TDB
   ComTdbUdr *tdb = new (space) ComTdbUdr (
@@ -1040,6 +1110,12 @@ static short udr_codegen(Generator *generator,
     childTdbs,
 
     optionalData,
+
+    udrSerInvocationInfoLen,
+    udrSerInvocationInfo,
+    udrSerPlanInfoLen,
+    udrSerPlanInfo,
+
     space
     
     );
@@ -1492,7 +1568,9 @@ IsolatedScalarUDF::codeGen(Generator *generator)
                            NULL,               // const char *runtimeOpts
                            NULL,               // const char *runtimeOptDelims
                            NULL,               // TMUDF only
-                           optionalDataQ);
+                           optionalDataQ,
+                           NULL,               // TMUDF only
+                           NULL);              // TMUDF only
   
   return result;
 }
@@ -1584,7 +1662,9 @@ short CallSP::codeGen(Generator *generator)
                        opts.data(),
                        delims.data(),
                        NULL,                // TMUDF only
-                       optionalData);
+                       optionalData,
+                       NULL,                // TMUDF only
+                       NULL);               // TMUDF only
 
   return result;
 
@@ -1656,7 +1736,9 @@ short PhysicalSPProxyFunc::codeGen(Generator *generator)
                        NULL,               // const char *runtimeOpts
                        NULL,               // const char *runtimeOptDelims
                        NULL,               // TMUDF only
-                       optionalData);
+                       optionalData,
+                       NULL,               // TMUDF only
+                       NULL);              // TMUDF only
 
   return result;
 
@@ -1807,7 +1889,9 @@ PhysicalTableMappingUDF::codeGen(Generator *generator)
                            NULL,               // const char *runtimeOpts
                            NULL,               // const char *runtimeOptDelims
                            childTdbs,          // array of child TDBs (TMUDF only)
-                           optionalDataQ);
+                           optionalDataQ,
+                           getInvocationInfo(),
+                           planInfo_);
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(

@@ -497,6 +497,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_BY
 %token <tokval> TOK_BYTEINT             /* TD extension that HP wants to ignore */
 %token <tokval> TOK_C                   /* HP Neo extension non-reserved word */
+%token <tokval> TOK_CPP                 /* HP Neo extension non-reserved word */
 %token <tokval> TOK_CALL      /* Ansi potential-reserved, AND used by Lexer! */
 %token <tokval> TOK_CANCEL
 %token <tokval> TOK_CARDINALITY
@@ -23592,6 +23593,10 @@ udr_language_clause : TOK_LANGUAGE TOK_JAVA
                                 {
                                   $$ = new (PARSERHEAP()) ElemDDLUdrLanguage(COM_LANGUAGE_C);
                                 } 
+                    | TOK_LANGUAGE TOK_CPP
+                                {
+                                  $$ = new (PARSERHEAP()) ElemDDLUdrLanguage(COM_LANGUAGE_CPP);
+                                } 
                     | TOK_LANGUAGE TOK_SQL
                                 {
                                   yyerror("The LANGUAGE SQL clause is not supported within a routine definition. \n");
@@ -23622,7 +23627,7 @@ routine_parameter_style_sqlrow : TOK_PARAMETER TOK_STYLE TOK_SQLROW
 /* type pElemDDL */
 udr_param_style_clause : TOK_PARAMETER TOK_STYLE TOK_JAVA
                                 {
-                                  $$ = new (PARSERHEAP()) ElemDDLUdrParamStyle(COM_STYLE_JAVA);
+                                  $$ = new (PARSERHEAP()) ElemDDLUdrParamStyle(COM_STYLE_JAVA_CALL);
                                 } 
                        | routine_parameter_style_sql
                        | routine_parameter_style_sqlrow

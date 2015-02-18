@@ -8,7 +8,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ LmRoutineC::LmRoutineC(const char   *sqlName,
                        ComRoutineExternalSecurity externalSecurity,
                        Int32        routineOwnerId,
                        const char   *parentQid,
-                       ComUInt32    inputRowLen,
+                       ComUInt32    inputParamRowLen,
                        ComUInt32    outputRowLen,
                        const char   *currentUserName,
                        const char   *sessionUserName,
@@ -56,7 +56,7 @@ LmRoutineC::LmRoutineC(const char   *sqlName,
               COM_LANGUAGE_C, paramStyle, transactionAttrs, sqlAccessMode,
               externalSecurity, 
 	      routineOwnerId,
-              parentQid, inputRowLen, outputRowLen, 
+              parentQid, inputParamRowLen, outputRowLen, 
 	          currentUserName, sessionUserName, 
 	          parameters, lm),
     callType_(SQLUDR_CALLTYPE_INITIAL),
@@ -215,7 +215,7 @@ LmRoutineC::LmRoutineC(const char   *sqlName,
     
     // Set data offsets and lengths
     if((getParamStyle() == COM_STYLE_SQLROW) ||
-       (getParamStyle() == COM_STYLE_TM))
+       (getParamStyle() == COM_STYLE_SQLROW_TM))
     {
       switch (p.direction())
       {
@@ -248,7 +248,7 @@ LmRoutineC::LmRoutineC(const char   *sqlName,
   udrInfo_->inputs = (num_inputs > 0 ? &sqludr_params[0] : NULL);
   udrInfo_->return_values =
     (num_outputs > 0 ? &sqludr_params[num_inputs] : NULL);
-  udrInfo_->in_row_length = inputRowLen_;
+  udrInfo_->in_row_length = inputParamRowLen_;
   udrInfo_->out_row_length = outputRowLen_;
 
   switch (getParamStyle())
@@ -258,9 +258,12 @@ LmRoutineC::LmRoutineC(const char   *sqlName,
       udrInfo_->param_style_version = 1;
       break;
     case COM_STYLE_SQLROW:
-    case COM_STYLE_TM:
+    case COM_STYLE_SQLROW_TM:
       udrInfo_->param_style = SQLUDR_PARAMSTYLE_SQLROW;
       udrInfo_->param_style_version = 1;
+      break;
+    case COM_STYLE_CPP_OBJ:
+      // udrInfo_ is not used
       break;
     default:
       LM_ASSERT(0);

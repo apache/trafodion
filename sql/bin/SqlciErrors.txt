@@ -2054,6 +2054,8 @@ $3~String1.
 11251 ZZZZZ 99999 BEGINNER MAJOR DBADMIN User-defined function $0~String0 returned invalid data for output value $1~Int0. Details: $2~String1.
 11252 ZZZZZ 99999 ADVANCED MAJOR DBADMIN $0~String0 (SQLSTATE $1~String1)
 11253 ZZZZZ 99999 ADVANCED MAJOR DBADMIN $0~String0 (SQLSTATE $1~String1)
+11254 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UDR $0~String0 overwrote its $1~String1 buffer at the $2~String2.
+11255 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error in $0~String0 method in library $1~String1. Details: $2~String2.
 11299 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU -----Last Language Manager Error -----
 12000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ----------  First Materialized Views error  ------------
 12001 ZZZZZ 99999 BEGINNER MINOR DBADMIN Creation failed. The materialized view cannot be maintained incrementally.

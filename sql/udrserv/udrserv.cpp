@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1563,12 +1563,14 @@ static void doErrorDebugging(UdrGlobals *UdrGlob,
                              Lng32 errorNumber, Lng32 intErrorInfo,
                              const char *charErrorInfo)
 {
+  /*
   char errorText[MAXERRTEXT];
   sprintf(errorText, "(%.30s) UDR Error Reply: %d, %d",
           moduleName, errorNumber, intErrorInfo);
   ServerDebug("[UdrServ (%s)]  %s\n", moduleName, errorText);
   doMessageBox(UdrGlob, TRACE_SHOW_DIALOGS,
                UdrGlob->showMain_, errorText);
+  */
 
   if (UdrGlob->verbose_ &&
       UdrGlob->traceLevel_ >= TRACE_IPMS &&
@@ -2031,9 +2033,11 @@ static Int32 invokeUdrMethod(const char *method,
                                 0,   //numTableInfo
                                 NULL,//tableInfo
                                 NULL, // return value
-                                (isJava ? COM_STYLE_JAVA : COM_STYLE_SQL),
+                                (isJava ? COM_STYLE_JAVA_CALL : COM_STYLE_SQL),
                                 (txRequired ? COM_TRANSACTION_REQUIRED : COM_NO_TRANSACTION_REQUIRED),                                	
                                 COM_MODIFIES_SQL,
+                                NULL,
+                                NULL,
                                 "", // parentQid
                                 inputRowLen,
                                 outputRowLen,

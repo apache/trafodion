@@ -9,7 +9,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -33,8 +33,10 @@
 #include "LmRoutineCSql.h"
 #include "LmRoutineCSqlRow.h"
 #include "LmRoutineCSqlRowTM.h"
+#include "LmRoutineCppObj.h"
 #include "LmExtFunc.h"
 #include "LmDebug.h"
+#include "sqludr.h"
 
 LmLanguageManagerC::LmLanguageManagerC(
   LmResult &result,
@@ -82,6 +84,8 @@ LmResult LmLanguageManagerC::getRoutine(
   ComRoutineParamStyle paramStyle,
   ComRoutineTransactionAttributes transactionAttrs,
   ComRoutineSQLAccess sqlAccessMode,
+  tmudr::UDRInvocationInfo *invocationInfo,
+  tmudr::UDRPlanInfo       *planInfo,
   const char   *parentQid,
   ComUInt32    inputRowLen,
   ComUInt32    outputRowLen,
@@ -104,6 +108,7 @@ LmResult LmLanguageManagerC::getRoutine(
   *handle = NULL;
   LmContainer *container = NULL;
   LmResult result = LM_OK;
+  const char *operation = "dlsym";
 
   ComDiagsArea *da = (diagsArea != NULL) ? diagsArea : diagsArea_;
 
@@ -115,24 +120,27 @@ LmResult LmLanguageManagerC::getRoutine(
   
   // Get a handle to the requested routine
   LmHandle routinePtr = NULL;
-  routinePtr = getRoutinePtr(container->getHandle(), externalName);
 
-  const char *operation = "dlsym";
-  if (routinePtr == NULL)
-  {
-    char *libraryName = new (collHeap())
-      char[str_len(externalPath) + str_len(containerName) + 2];
-    sprintf(libraryName, "%s/%s", externalPath, containerName);
+  if (paramStyle != COM_STYLE_CPP_OBJ)
+    {
+      routinePtr = getRoutinePtr(container->getHandle(), externalName);
 
-    *da << DgSqlCode(-LME_DLL_METHOD_NOT_FOUND)
-        << DgString0(externalName)
-        << DgString1(libraryName);
+      if (routinePtr == NULL)
+        {
+          char *libraryName = new (collHeap())
+            char[str_len(externalPath) + str_len(containerName) + 2];
+          sprintf(libraryName, "%s/%s", externalPath, containerName);
 
-    addDllErrors(*da, operation, FALSE);
+          *da << DgSqlCode(-LME_DLL_METHOD_NOT_FOUND)
+              << DgString0(externalName)
+              << DgString1(libraryName);
 
-    NADELETEBASIC(libraryName, collHeap());
-    return LM_ERR;
-  }
+          addDllErrors(*da, operation, FALSE);
+
+          NADELETEBASIC(libraryName, collHeap());
+          return LM_ERR;
+        }
+    }
 
   // allocate an LM handle for the external method.
   LmRoutine *routineHandle = NULL;
@@ -184,7 +192,7 @@ LmResult LmLanguageManagerC::getRoutine(
                                         container,
                                         da);
   }
-  else if (paramStyle == COM_STYLE_TM)
+  else if (paramStyle == COM_STYLE_SQLROW_TM)
   {
     routineHandle =
       new (collHeap()) LmRoutineCSqlRowTM(sqlName,
@@ -211,6 +219,97 @@ LmResult LmLanguageManagerC::getRoutine(
                                         emitRowPtr,
                                         container,
                                         da);
+  }
+  else if (paramStyle == COM_STYLE_CPP_OBJ)
+  {
+    char factoryMethodName[500];
+    char libraryName[5000];
+
+    snprintf(factoryMethodName,
+             sizeof(factoryMethodName),
+             "%s",
+             externalName);
+    snprintf(libraryName, sizeof(libraryName), "%s/%s", externalPath, containerName);
+
+    // search the DLL for the method that creates the tmudr::UDRInterface object
+    LmHandle factoryMethodPtr = getRoutinePtr(container->getHandle(), factoryMethodName);
+    tmudr::UDRInterface *interfacePtr = NULL;
+
+    if (factoryMethodPtr == NULL)
+        {
+          *da << DgSqlCode(-LME_DLL_METHOD_NOT_FOUND)
+              << DgString0(factoryMethodName)
+              << DgString1(libraryName);
+
+          addDllErrors(*da, operation, FALSE);
+
+          return LM_ERR;
+        }
+
+    try
+      {
+        tmudr::CreateInterfaceObjectFunc fPtr =
+          reinterpret_cast<tmudr::CreateInterfaceObjectFunc>(factoryMethodPtr);
+
+        // call the factory method
+        interfacePtr = (*fPtr)(invocationInfo);
+      }
+    catch (tmudr::UDRException e)
+      {
+          *da << DgSqlCode(-LME_FACTORY_METHOD)
+              << DgString0(factoryMethodName)
+              << DgString1(libraryName)
+              << DgString2(e.getText().data());
+          return LM_ERR;
+      }
+    catch (...)
+      {
+          *da << DgSqlCode(-LME_FACTORY_METHOD)
+              << DgString0(factoryMethodName)
+              << DgString1(libraryName)
+              << DgString2("general exception");
+          return LM_ERR;
+      }
+
+    if (interfacePtr == NULL)
+      {
+        *da << DgSqlCode(-LME_FACTORY_METHOD)
+            << DgString0(factoryMethodName)
+            << DgString1(libraryName)
+            << DgString2("method returned NULL");
+        return LM_ERR;
+      }
+
+    // create the language manager routine, which will take
+    // ownership of the interface object
+    routineHandle =
+      new (collHeap()) LmRoutineCppObj(invocationInfo,
+                                       planInfo,
+                                       interfacePtr,
+                                       sqlName,
+                                       externalName,
+                                       librarySqlName,
+                                       numSqlParam,
+                                       numTableInfo,
+                                       tableInfo,
+                                       (char *)routineSig,
+                                       maxResultSets,
+                                       transactionAttrs,
+                                       sqlAccessMode,
+                                       externalSecurity,
+                                       routineOwnerId,
+                                       parentQid,
+                                       inputRowLen,
+                                       outputRowLen,
+                                       currentUserName,
+                                       sessionUserName,
+                                       parameters,
+                                       this,
+                                       routinePtr,
+                                       getNextRowPtr,
+                                       emitRowPtr,
+                                       container,
+                                       da);
   }
   else 
   {
@@ -276,8 +375,15 @@ LmResult LmLanguageManagerC::invokeRoutine(
 {
   LmRoutine *routine = (LmRoutine *) handle;
   LM_ASSERT(routine);
-  LmResult result = routine->invokeRoutine(inputRow, outputRow, diagsArea);
+  LmResult result = LM_OK;
 
+  if (routine->getParamStyle() == COM_STYLE_CPP_OBJ)
+    result = static_cast<LmRoutineCppObj *>(routine)->invokeRoutineMethod(
+         tmudr::RUNTIME_WORK_CALL,
+         inputRow,
+         diagsArea);
+  else
+    result = routine->invokeRoutine(inputRow, outputRow, diagsArea);
 
   return result;
 }

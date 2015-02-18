@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -245,8 +245,9 @@ void UdrClientControlStream::actOnReceive(IpcConnection *conn)
     }
     else if (stmtGlobalsExpectsReply())
     {
-      // Flag the UdrServer with error
-      stmtGlobals_->getUdrServer()->setState(ExUdrServer::EX_UDR_BROKEN);
+      if (stmtGlobals_->getUdrServer())
+        // Flag the UdrServer with error
+        stmtGlobals_->getUdrServer()->setState(ExUdrServer::EX_UDR_BROKEN);
 
       ComDiagsArea *d = stmtGlobals_->getDiagsArea();
       if (d && d->contains(-EXE_UDR_REPLY_ERROR))

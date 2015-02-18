@@ -8,7 +8,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ LmRoutine::LmRoutine(LmHandle container,
                      ComRoutineExternalSecurity externalSecurity,
                      Int32 routineOwnerId,
                      const char *parentQid,
-                     ComUInt32 inputRowLen,
+                     ComUInt32 inputParamRowLen,
                      ComUInt32 outputRowLen,
                      const char   *currentUserName,
                      const char   *sessionUserName,
@@ -67,7 +67,7 @@ LmRoutine::LmRoutine(LmHandle container,
     sqlAccessMode_(sqlAccessMode),
     externalSecurity_ (externalSecurity),
     routineOwnerId_ (routineOwnerId),
-    inputRowLen_(inputRowLen),
+    inputParamRowLen_(inputParamRowLen),
     outputRowLen_(outputRowLen),
     lmParams_(lmParams),
     udrCatalog_(NULL),

@@ -177,6 +177,9 @@ public:
   inline void  setFile           (ComString file)     { externalFile_   = file; }  
   inline void  setExternalName   (ComString fname)    { externalName_   = fname; } 
   inline void  setLibrarySqlName (ComObjectName lib)  { librarySqlName_   = lib; }
+  inline void  setLanguage  (ComRoutineLanguage lang) { language_ = lang; }  
+  inline void  setRoutineType    (ComRoutineType typ) { UDRType_ = typ; }  
+  inline void  setParamStyle(ComRoutineParamStyle st) { paramStyle_ = st; }  
   inline void  setLastUsedTime   (Int64 time)         { lastUsedTime_   = time; } 
   inline void  setUecForParam(Int32 index, Int32 uec) { uecValues_[index] = uec; }
   inline ComRoutineExecutionMode      getExecutionMode()  const { return executionMode_; }

@@ -3314,6 +3314,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
                                                             // Delimited names not allowed.
   DDkwd__(UDF_SUBQ_IN_AGGS_AND_GBYS,            "SYSTEM"),
 
+ XDDui___(UDR_DEBUG_FLAGS,                      "0"), // see sqludr/sqludr.h for values
  SDD_____(UDR_JAVA_OPTIONS,                     "OFF"),
   DD_____(UDR_JAVA_OPTION_DELIMITERS,           " "),
 

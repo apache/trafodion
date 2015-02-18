@@ -3498,7 +3498,7 @@ void NAHeap::deallocateHeapMemory(void* addr)
   }
 
 #ifdef _DEBUG
-  if (p->fragmentSize() == TraceAllocSize)
+  if (TraceAllocSize > 0 && p->fragmentSize() == TraceAllocSize)
     delTrafStack(getSAL(), p);
 #endif // _DEBUG
 

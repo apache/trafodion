@@ -616,7 +616,7 @@ void RelSample::transformNode(NormWA &normWARef,
     getGroupAttr()->getCharacteristicInputs())) 
   {
     // -----------------------------------------------------------------
-    // Transform my new child.
+    // Transform my new child
     // -----------------------------------------------------------------
     child(0)->transformNode(normWARef, child(0));
   }

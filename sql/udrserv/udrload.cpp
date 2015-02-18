@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2001-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2001-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -152,6 +152,12 @@ void processALoadMessage(UdrGlobals *UdrGlob,
         LmResult lmResult;
         LmLanguageManager *lm =
           UdrGlob->getOrCreateLM(lmResult, sp->getLanguage(), diags);
+        LmHandle emitRowFuncPtr;
+
+        if (sp->getParamStyle() == COM_STYLE_CPP_OBJ)
+          emitRowFuncPtr = (LmHandle)&SpInfoEmitRowCpp;
+        else
+          emitRowFuncPtr = (LmHandle)&SpInfoEmitRow;
         
         if (lm)
         {
@@ -163,6 +169,8 @@ void processALoadMessage(UdrGlobals *UdrGlob,
 				    sp->getParamStyle(),
 				    sp->getTransactionAttrs(),
                                     sp->getSQLAccessMode(),
+                                    sp->getInvocationInfo(),
+                                    sp->getPlanInfo(),
                                     sp->getParentQid(),
                                     sp->getRequestRowSize(),
                                     sp->getReplyRowSize(),
@@ -178,7 +186,7 @@ void processALoadMessage(UdrGlobals *UdrGlob,
 	                            sp->getRoutineOwnerId(),
                                     &lmRoutine,
                                     (LmHandle)&SpInfoGetNextRow,
-                                    (LmHandle)&SpInfoEmitRow,
+                                    emitRowFuncPtr,
                                     sp->getMaxNumResultSets(),
                                     diags);
         }
@@ -314,6 +322,7 @@ SPInfo *processLoadParameters(UdrGlobals *UdrGlob,
   // check for test mode processing...
   
   SPInfo *sp = NULL;
+  int numRetries = 0;
   
   // process message parameters...
   
@@ -328,7 +337,9 @@ SPInfo *processLoadParameters(UdrGlobals *UdrGlob,
   
   oldDiags = d.getNumber();
 
-  sp = new (UdrGlob->getUdrHeap()) SPInfo(UdrGlob, UdrGlob->getUdrHeap(),
+  while (sp == NULL && numRetries < 1)
+    {
+      sp = new (UdrGlob->getUdrHeap()) SPInfo(UdrGlob, UdrGlob->getUdrHeap(),
                                           request.getHandle(),
                                           (char *)request.getSqlName(),
                                           (char *)request.getRoutineName(),
@@ -355,44 +366,24 @@ SPInfo *processLoadParameters(UdrGlobals *UdrGlob,
                                           request.getInputRowSize(),
                                           request.getOutputRowSize(),
                                           /* ComDiagsArea */ d,
-                                          (char *)request.getParentQid());
+                                          (char *)request.getParentQid(),
+                                          request.getUDRSerInvocationInfoLen(),
+                                          request.getUDRSerInvocationInfo(),
+                                          request.getUDRSerPlanInfoLen(),
+                                          request.getUDRSerPlanInfo(),
+                                          request.getNumInstances(),
+                                          request.getInstanceNum());
+      if (sp == NULL)
+        {  // memory problem
+          UdrGlob->getSPList()->releaseOldestSPJ(/* ComDiagsArea */ d);
+          numRetries++;
+        }
+    }
+
   if (sp == NULL)
-  {  // memory problem
-    UdrGlob->getSPList()->releaseOldestSPJ(/* ComDiagsArea */ d);
-    sp = new (UdrGlob->getUdrHeap())
-      SPInfo(UdrGlob, UdrGlob->getUdrHeap(),
-             request.getHandle(),
-             (char *)request.getSqlName(),
-             (char *)request.getRoutineName(),
-             (char *)request.getSignature(),
-             (char *)request.getContainerName(),
-             (char *)request.getExternalPath(),
-             (char *)request.getLibrarySqlName(),
-             request.getNumParameters(),
-             request.getNumInValues(),
-             request.getNumOutValues(),
-             request.getMaxResultSets(),
-             request.getTransactionAttrs(),
-             request.getSqlAccessMode(),
-	     request.getLanguage(),
-	     request.getParamStyle(),
-             request.isIsolate(),
-             request.isCallOnNull(),
-             request.isExtraCall(),
-             request.isDeterministic(),
-             request.getExternalSecurity(),
-             request.getRoutineOwnerId(),
-             request.getInBufferSize(),
-             request.getOutBufferSize(),
-             request.getInputRowSize(),
-             request.getOutputRowSize(),
-             /* ComDiagsArea */ d,
-             (char *)request.getParentQid());
-    if (sp == NULL)
     {
       return NULL;
     }
-  }
   
   newDiags = d.getNumber();
   
@@ -431,7 +422,9 @@ SPInfo *processLoadParameters(UdrGlobals *UdrGlob,
   }
 
   // Process table input info if any
-  if(sp->getParamStyle() == COM_STYLE_TM)
+  if(sp->getParamStyle() == COM_STYLE_SQLROW_TM ||
+     sp->getParamStyle() == COM_STYLE_CPP_OBJ ||
+     sp->getParamStyle() == COM_STYLE_JAVA_OBJ)
   {
     sp->setNumTableInfo(request.getNumInputTables());
     sp->setTableInputInfo(request.getInputTables()); 
@@ -522,6 +515,10 @@ void displayLoadParameters(UdrLoadMsg &request)
 
     case COM_LANGUAGE_C:
       language = "C";
+      break;
+
+    case COM_LANGUAGE_CPP:
+      language = "C++";
       break;
 
     case COM_LANGUAGE_SQL:

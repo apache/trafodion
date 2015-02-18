@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2000-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -88,6 +88,11 @@ ComTdbUdr::ComTdbUdr(char *sqlName,
 
                      Queue *optionalData,
 
+                     Int32 udrSerInvocationInfoLen,
+                     char *udrSerInvocationInfo,
+                     Int32 udrSerPlanInfoLen,
+                     char *udrSerPlanInfo,
+
                      Space *space
                      )
 : ComTdb(ex_UDR, eye_UDR, estimatedRowCount, criDescParent,
@@ -131,6 +136,10 @@ ComTdbUdr::ComTdbUdr(char *sqlName,
   replyRowLen_(replyRowLen),
   outputRowLen_(outputRowLen),
   optionalData_(optionalData),
+  udrSerInvocationInfoLen_(udrSerInvocationInfoLen),
+  udrSerInvocationInfo_(udrSerInvocationInfo),
+  udrSerPlanInfoLen_(udrSerPlanInfoLen),
+  udrSerPlanInfo_(udrSerPlanInfo),
 
   numChildTableInputs_((Int16) numChildInputs),
   childInputExprs_(space,(void **)childInputExprs,numChildInputs),
@@ -187,6 +196,8 @@ Long ComTdbUdr::pack(void *space)
   paramInfo_.pack(space, (Lng32) numParams_);
 
   optionalData_.pack(space);
+  udrSerInvocationInfo_.pack(space);
+  udrSerPlanInfo_.pack(space);
   udrChildTableDescInfo_.pack(space,(Lng32)numChildTableInputs_);
   childInputExprs_.pack(space,(Lng32)numChildTableInputs_);
   childTdbs_.pack(space,(Lng32)numChildTableInputs_);
@@ -226,7 +237,11 @@ Lng32 ComTdbUdr::unpack(void *base, void *reallocator)
     return -1;
   if (childInputExprs_.unpack(base,(Lng32)numChildTableInputs_,reallocator))
     return -1;
-if (childTdbs_.unpack(base,(Lng32)numChildTableInputs_,reallocator))
+  if (childTdbs_.unpack(base,(Lng32)numChildTableInputs_,reallocator))
+    return -1;
+  if (udrSerInvocationInfo_.unpack(base))
+    return -1;
+  if (udrSerPlanInfo_.unpack(base))
     return -1;
 
   return ComTdb::unpack(base, reallocator);

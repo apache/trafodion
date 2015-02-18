@@ -11,7 +11,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -147,6 +147,8 @@ public:
     ComRoutineParamStyle paramStyle,
     ComRoutineTransactionAttributes transactionAttrs,
     ComRoutineSQLAccess sqlAccessMode,
+    tmudr::UDRInvocationInfo *invocationInfo,
+    tmudr::UDRPlanInfo       *planInfo,
     const char   *parentQid,
     ComUInt32    inputRowLen,
     ComUInt32    outputRowLen,

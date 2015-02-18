@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -10309,6 +10309,34 @@ double ConstValue::getApproximateNumericValue() const
         return tempResult * pow(10,-scale);
       }
     }
+}
+
+void ConstValue::getOffsetsInBuffer(int &nullIndOffset,
+                                    int &vcLenOffset,
+                                    int &dataOffset)
+{
+  int nextOffset = 0;
+
+  // This uses the alignment method of the ConstVal, which is slightly
+  // different from other formats, no alignment is used.
+  // See also method ExpGenerator::placeConstants()
+  if (type_->supportsSQLnull())
+    {
+      nullIndOffset = nextOffset;
+      nextOffset += type_->getSQLnullHdrSize();
+    }
+  else
+    nullIndOffset = -1;
+
+  if (type_->isVaryingLen())
+    {
+      vcLenOffset = nextOffset;
+      nextOffset += type_->getVarLenHdrSize();
+    }
+  else
+    vcLenOffset = -1;
+
+  dataOffset = nextOffset;
 }
 
 // The implementation checks for identity rather than equality,

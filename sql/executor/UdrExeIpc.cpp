@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -785,7 +785,13 @@ UdrLoadMsg::UdrLoadMsg(NAMemory *heap)
   inTables_(NULL),
   instanceNum_(0),
   numInstances_(0),
-  numOptionalDataBufs_(0), optionalData_(NULL), optionalDataIsShared_(TRUE)
+  numOptionalDataBufs_(0),
+  optionalData_(NULL),
+  optionalDataIsShared_(TRUE),
+  udrSerInvocationInfoLen_(0),
+  udrSerInvocationInfo_(NULL),
+  udrSerPlanInfoLen_(0),
+  udrSerPlanInfo_(NULL)
 {
 }
 
@@ -812,6 +818,10 @@ UdrLoadMsg::UdrLoadMsg(NAMemory *heap,
                        ComUInt32 udrFlags,
                        Int32 routineOwnerId,
                        const char *parentQid,
+                       ComUInt32 udrSerInvocationInfoLen,
+                       const char *udrSerInvocationInfo,
+                       ComUInt32 udrSerPlanInfoLen,
+                       const char *udrSerPlanInfo,
 		       ComUInt32 instanceNum,
 		       ComUInt32 numInstances
 		       )
@@ -830,9 +840,13 @@ UdrLoadMsg::UdrLoadMsg(NAMemory *heap,
   inTables_(NULL), 
   routineOwnerId_(routineOwnerId),
   parentQid_(NULL),
+  numOptionalDataBufs_(0), optionalData_(NULL), optionalDataIsShared_(TRUE),
+  udrSerInvocationInfoLen_(udrSerInvocationInfoLen),
+  udrSerInvocationInfo_(udrSerInvocationInfo),
+  udrSerPlanInfoLen_(udrSerPlanInfoLen),
+  udrSerPlanInfo_(udrSerPlanInfo),
   instanceNum_(instanceNum),
-  numInstances_(numInstances),
-  numOptionalDataBufs_(0), optionalData_(NULL), optionalDataIsShared_(TRUE)
+  numInstances_(numInstances)
 {
   sqlName_ = allocateString(sqlName);
   routineName_ = allocateString(routineName);
@@ -903,6 +917,26 @@ void UdrLoadMsg::deallocateTableInputInfo()
     
       inTables_ = NULL;
     }
+}
+
+void UdrLoadMsg::allocateInvocationInfo()
+{
+  if (udrSerInvocationInfoLen_)
+    udrSerInvocationInfo_ = allocateMemory(udrSerInvocationInfoLen_);
+  if (udrSerPlanInfoLen_)
+    udrSerPlanInfo_ = allocateMemory(udrSerPlanInfoLen_);
+}
+
+void UdrLoadMsg::deallocateInvocationInfo()
+{
+  if (udrSerInvocationInfoLen_)
+    deallocateMemory((char *) udrSerInvocationInfo_);
+  if (udrSerPlanInfoLen_)
+    deallocateMemory((char *) udrSerPlanInfo_);
+  udrSerInvocationInfoLen_ = 0;
+  udrSerInvocationInfo_ = NULL;
+  udrSerPlanInfoLen_ = 0;
+  udrSerPlanInfo_ = NULL;
 }
 
 UdrParameterInfo *UdrLoadMsg::setInParam(ComUInt32 i,
@@ -1054,7 +1088,7 @@ IpcMessageObjSize UdrLoadMsg::packedLength()
   result += packedStringLength(parentQid_);
   result += sizeof(numInputTables_);
   result += sizeof(numInstances_);
-  result +=sizeof(instanceNum_);
+  result += sizeof(instanceNum_);
 
   ComUInt32 i = 0;
   for (i = 0; i < numInValues_; i++)
@@ -1085,6 +1119,11 @@ IpcMessageObjSize UdrLoadMsg::packedLength()
     str_cpy_all((char *) &dataLen, buf, 4);
     result += (dataLen + 4);
   }
+
+  result += sizeof(udrSerInvocationInfoLen_);
+  result += sizeof(udrSerPlanInfoLen_);
+  result += udrSerInvocationInfoLen_;
+  result += udrSerPlanInfoLen_;
 
   return result;
 }
@@ -1144,6 +1183,17 @@ IpcMessageObjSize UdrLoadMsg::packObjIntoMessage(IpcMessageBufferPtr buffer)
     str_cpy_all((char *) &dataLen, buf, 4);
     result += packStrIntoBuffer(buffer, buf, (dataLen + 4));
   }
+
+  result += packIntoBuffer(buffer, udrSerInvocationInfoLen_);
+  result += packIntoBuffer(buffer, udrSerPlanInfoLen_);
+  if (udrSerInvocationInfoLen_)
+    result += packStrIntoBuffer(buffer,
+                                (char *) udrSerInvocationInfo_,
+                                udrSerInvocationInfoLen_); 
+  if (udrSerPlanInfoLen_)
+    result += packStrIntoBuffer(buffer,
+                                (char *) udrSerPlanInfo_,
+                                udrSerPlanInfoLen_); 
 
   return result;
 }
@@ -1210,6 +1260,19 @@ void UdrLoadMsg::unpackObj(IpcMessageObjType objType,
     setOptionalDataBuf(i, buffer, totalLen);
     buffer += totalLen;
   }
+
+  deallocateInvocationInfo();
+  unpackBuffer(buffer, udrSerInvocationInfoLen_);
+  unpackBuffer(buffer, udrSerPlanInfoLen_);
+  allocateInvocationInfo();
+  if (udrSerInvocationInfoLen_)
+    unpackStrFromBuffer(buffer,
+                        (char *) udrSerInvocationInfo_,
+                        udrSerInvocationInfoLen_);
+  if (udrSerPlanInfoLen_)
+    unpackStrFromBuffer(buffer,
+                        (char *) udrSerPlanInfo_,
+                        udrSerPlanInfoLen_);
 }
 
 //----------------------------------------------------------------------

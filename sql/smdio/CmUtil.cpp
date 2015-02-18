@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -504,8 +504,9 @@ defXLateFuncs(CmGetTableFeature, CmGetTableFeatureAsLit, ComTableFeature, TableF
 const literalAndEnumStruct RoutineLanguageXlateArray [] =
 {
   {COM_LANGUAGE_JAVA, COM_LANGUAGE_JAVA_LIT},
-  {COM_LANGUAGE_C, COM_LANGUAGE_C_LIT},
-  {COM_LANGUAGE_SQL, COM_LANGUAGE_SQL_LIT},
+  {COM_LANGUAGE_C,    COM_LANGUAGE_C_LIT},
+  {COM_LANGUAGE_CPP,  COM_LANGUAGE_CPP_LIT},
+  {COM_LANGUAGE_SQL,  COM_LANGUAGE_SQL_LIT},
   {COM_UNKNOWN_ROUTINE_LANGUAGE, COM_UNKNOWN_ROUTINE_LANGUAGE_LIT}
 };
 
@@ -517,9 +518,12 @@ defXLateFuncs(CmGetComRoutineLanguageAsRoutineLanguage, CmGetComRoutineLanguageA
 const literalAndEnumStruct RoutineParamStyleXlateArray [] =
 {
   {COM_STYLE_GENERAL, COM_STYLE_GENERAL_LIT},
-  {COM_STYLE_JAVA, COM_STYLE_JAVA_LIT},
+  {COM_STYLE_JAVA_CALL, COM_STYLE_JAVA_CALL_LIT},
+  {COM_STYLE_JAVA_OBJ, COM_STYLE_JAVA_OBJ_LIT},
   {COM_STYLE_SQL, COM_STYLE_SQL_LIT},
   {COM_STYLE_SQLROW, COM_STYLE_SQLROW_LIT},
+  {COM_STYLE_SQLROW_TM, COM_STYLE_SQLROW_TM_LIT},
+  {COM_STYLE_CPP_OBJ, COM_STYLE_CPP_OBJ_LIT},
   {COM_UNKNOWN_ROUTINE_PARAM_STYLE, COM_UNKNOWN_ROUTINE_PARAM_STYLE_LIT}
 };
 

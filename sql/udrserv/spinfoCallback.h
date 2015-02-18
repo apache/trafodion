@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -43,5 +43,10 @@ Int32 SpInfoEmitRow  (char            *rowData,           //IN
                      Int32             tableIndex,         //IN
                      SQLUDR_Q_STATE  *queue_state        //IN/OUT
                     );
+
+Int32 SpInfoEmitRowCpp(char            *rowData,           //IN
+                       Int32             tableIndex,       //IN
+                       SQLUDR_Q_STATE  *queue_state        //IN/OUT
+                       );
 
 

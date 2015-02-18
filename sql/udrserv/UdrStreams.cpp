@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -101,10 +101,18 @@ void UdrServerDataStream::actOnReceive(IpcConnection *conn)
           // Extract the object from the stream and call SPInfo's work()
           UdrContinueMsg *m = new (receiveMsgObj()) UdrContinueMsg(this);
           
-          if(spinfo_->getParamStyle() == COM_STYLE_TM)
-            spinfo_->workTM();
-          else
-            spinfo_->work();
+          switch (spinfo_->getParamStyle())
+            {
+            case COM_STYLE_SQLROW_TM:
+            case COM_STYLE_CPP_OBJ:
+            case COM_STYLE_JAVA_OBJ:
+              spinfo_->workTM();
+              break;
+
+            default:
+              spinfo_->work();
+              break;
+            }
           
         } // case UDR_MSG_CONTINUE_REQUEST
         break;

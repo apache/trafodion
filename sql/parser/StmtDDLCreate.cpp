@@ -2,7 +2,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2571,7 +2571,7 @@ StmtDDLCreateRoutine::StmtDDLCreateRoutine(const QualifiedName & aRoutineName,
     if (routineType_ EQU COM_UNIVERSAL_UDF_TYPE OR
         routineType_ EQU COM_ACTION_UDF_TYPE OR // actions
         routineType_ EQU COM_TABLE_UDF_TYPE) // table-mapping function
-      paramStyle_ = COM_STYLE_SQLROW;
+      paramStyle_ = COM_STYLE_SQLROW_TM;
     else
       paramStyle_ = COM_STYLE_SQL;
     paramStyleVersion_ = 1;
@@ -2838,7 +2838,7 @@ StmtDDLCreateRoutine::synthesize()
       return;
     }
 
-    if ((languageType_ != COM_LANGUAGE_JAVA) || (paramStyle_ != COM_STYLE_JAVA))
+    if ((languageType_ != COM_LANGUAGE_JAVA) || (paramStyle_ != COM_STYLE_JAVA_CALL))
     {
       *SqlParser_Diags << DgSqlCode(-15001);
       return;
@@ -2918,19 +2918,26 @@ StmtDDLCreateRoutine::synthesize()
       switch (getRoutineType())
       {
       case COM_PROCEDURE_TYPE:
-        paramStyle_ = COM_STYLE_JAVA; // unreachable (dead) code
+        paramStyle_ = COM_STYLE_JAVA_CALL; // unreachable (dead) code
         break;
       case COM_TABLE_UDF_TYPE:
       case COM_UNIVERSAL_UDF_TYPE:
       case COM_ACTION_UDF_TYPE:
-        paramStyle_ = COM_STYLE_SQLROW;
+        // UDFs written in C++ or Java use the object-oriented style
+        if (languageType_ == COM_LANGUAGE_CPP)
+          paramStyle_ = COM_STYLE_CPP_OBJ;
+        else if (languageType_ == COM_LANGUAGE_JAVA)
+          paramStyle_ = COM_STYLE_JAVA_OBJ;
+        else
+          paramStyle_ = COM_STYLE_SQLROW_TM;
         break;
-      case COM_UNKNOWN_ROUTINE_TYPE:  // either scalar or universal function
+      case COM_UNKNOWN_ROUTINE_TYPE:
         if (isStmtDDLAlterRoutineParseNode())
           paramStyle_ = COM_UNKNOWN_ROUTINE_PARAM_STYLE;
         else
           paramStyle_ = COM_STYLE_SQL;
         break;
+      case COM_SCALAR_UDF_TYPE:
       default:
         paramStyle_ = COM_STYLE_SQL;
         break;
@@ -3122,7 +3129,7 @@ StmtDDLCreateRoutine::synthesize()
       {
         switch (paramStyle_)
         {
-        case COM_STYLE_JAVA:
+        case COM_STYLE_JAVA_CALL:
           *SqlParser_Diags << DgSqlCode(-3270);
           isErrorFound = TRUE;
           break;

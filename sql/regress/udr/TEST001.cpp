@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2000-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #include <string.h>
 #include <wchar.h>
 #include <math.h>
-#include <limits.h>
+#include <limits>
 #include "sqludr.h"
 
 using namespace tmudr;
@@ -243,204 +243,169 @@ extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 SESSIONIZE_STATIC(
 
 }/* main */
 
-// This function does not have a compiler interface, all the
-// output columns to produce need to be provided in the DDL
+// C++ Sessionize TMUDF
+// Note: This code is the same as shown in the tutorial on the wiki
+// https://wiki.trafodion.org/wiki/index.php/Tutorial:_The_object-oriented_UDF_interface
 
-extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 SESSIONIZE_DYNAMIC(
-  SQLUDR_CHAR           *in_data,
-  SQLUDR_TMUDF_TRAIL_ARGS)
-{
-  return SESSIONIZE_STATIC(in_data,
-                           PASS_ON_SQLUDR_TMUDF_TRAIL_ARGS);
-}
-
-class SessionizeUDFInterface : public TMUDRInterface
+class Sessionize : public UDRInterface
 {
   // override any methods where the UDF author would
   // like to change the default behavior
 
   void describeParamsAndColumns(UDRInvocationInfo &info); // Binder
+  void processData(UDRInvocationInfo &info,
+                   UDRPlanInfo &plan);
 
 };
 
-extern "C" TMUDRInterface * SESSIONIZE_DYNAMIC_CreateCompilerInterfaceObject(
+extern "C" UDRInterface * SESSIONIZE_DYNAMIC(
      const UDRInvocationInfo *info)
 {
-  return new SessionizeUDFInterface();
+  return new Sessionize();
 }
 
-void SessionizeUDFInterface::describeParamsAndColumns(
-     UDRInvocationInfo &info)
+void Sessionize::describeParamsAndColumns(UDRInvocationInfo &info)
 {
-  // do this logic only if the UDF name matches
-  if (info.getUDRName().find(".SESSIONIZE_DYNAMIC"))
+  // First, do some validation of the parameters
+
+  // Make sure we have exactly one table-valued input, otherwise
+  // generate a compile error
+  if (info.getNumTableInputs() != 1)
+    throw UDRException(38000,
+                       "%s must be called with one table-valued input",
+                       info.getUDRName().data());
+
+  // check whether the first two arguments identify
+  // an arbitrary column and an exact numeric column
+  if (info.par().canGetString(0))
+    // This will raise an error if the column name
+    // specified in the first parameter doesn't exist
+    info.in().getColumn(info.par().getString(0));
+  else
+    throw UDRException(38001,"First scalar parameter must be a string constant");
+
+  // make sure the second parameter specifies the name of
+  // an existing input column of type exact numeric
+  if (info.par().canGetString(1))
     {
-      // validate the input parameters
-      if (info.getNumActualParameters() != 3)
-        throw UDRException(38080, 
-                           "Expecting three input parameters, ts colname, user id colname, timeout");
+      const TypeInfo &typ = info.in().getColumn(
+        info.par().getString(1)).getType();
 
-      for (int colNum=0; colNum<2; colNum++)
-        if (info.getActualParameterInfo(colNum).getType().getSQLTypeClass() == TypeInfo::CHARACTER_TYPE &&
-            info.getActualParameterInfo(colNum).isAvailable())
-          {
-            std::string colName =
-              info.getActualParameterInfo(colNum).getStringValue();
-            // test finding the timestamp column in the input table,
-            // an exception will be raised if it is not found
-            const ColumnInfo &colInfo =
-              info.getInputTableInfo(0).getColumn(colName);
-          }
-        else
-          {
-            throw UDRException(
-                 38082, 
-                 "The %s parameter of TMUDF %s needs to be a compile time character constant",
-                 (colNum == 0 ? "first" : "second"),
-                 info.getUDRName().data());
-          }
-
-      // sessionize is intended to work with a single input table
-      if (info.getNumTableInputs() != 1)
-        throw UDRException(38085,
-                           "Expecting one table-valued input, got %d",
-                           info.getNumTableInputs());
-
-      // remove any output columns declared in the DDL
-      while (info.getOutputTableInfo().getNumColumns() > 0)
-        info.getOutputTableInfo().deleteColumn(0);
-
-      // add the session id column, a single integer
-      info.getOutputTableInfo().addColumn(
-           ColumnInfo("SESSION_ID",
-                      TypeInfo(TypeInfo::INT64)));
-
-      // add all input table columns as output columns
-      for (int t=0; t<info.getNumTableInputs(); t++)
-        info.addPassThruColumns(t);
+      if (typ.getSQLTypeSubClass() != TypeInfo::EXACT_NUMERIC_TYPE)
+        throw UDRException(38002, "Second scalar parameter must be the name of an exact numeric column");
     }
   else
-    {
-      throw UDRException(
-           38086, 
-           "Called compiler interface for TMUDF SESSIONIZE_DYNAMIC for TMUDF %s",
-           info.getUDRName().data());
-    }
+    throw UDRException(38003,"Second scalar parameter must be a string constant");
+ 
+  // Second, define the output parameters
+
+  // add the column for the session id
+  info.getOutputTableInfo().addLongColumn("SESSION_ID");
+ 
+  // Make all the input table columns also output columns,
+  // those are called "pass-through" columns. The default
+  // parameters of this method add all the columns of the
+  // first input table.
+  info.addPassThruColumns();
 }
 
-extern "C" SQLUDR_LIBFUNC SQLUDR_INT32 fibonacci(
-  SQLUDR_CHAR           *in_data,
-  SQLUDR_TMUDF_TRAIL_ARGS)
+void Sessionize::processData(UDRInvocationInfo &info,
+                             UDRPlanInfo &plan)
 {
-  char            *inData = NULL;
-  SQLUDR_PARAM    *inParam = NULL;
-  int             inDataLen = 0;
+  // read the three parameters and convert the first two into column numbers
+  int userIdColNum    = info.in(0).getColNum(info.par().getString(0));
+  int timeStampColNum = info.in(0).getColNum(info.par().getString(1));
+  long timeout        = info.par().getLong(2);
 
-  char            *outData = NULL;
-  SQLUDR_PARAM    *outParam = NULL;
-  int             outDataLen = 0;
+  // variables needed for computing the session id
+  long lastTimeStamp = 0;
+  std::string lastUserId;
+  long currSessionId = 0;
 
-  SQLUDR_Q_STATE  qstate = SQLUDR_Q_MORE;
-  int             start = 0;
-  int             num_result_rows = 0;
-  int             *ordinal = NULL;
-  long            *fibonacci_number = NULL;
-  long            previous_result = 0;
-  long            temp;
-  SQLUDR_INT32    retcode = SQLUDR_SUCCESS;
-
-  if (calltype == SQLUDR_CALLTYPE_FINAL)
-    return SQLUDR_SUCCESS;
-
-  int dd=1;
-
-  // enable this for debugging
-  // while (dd < 2)
-  //   dd=1-dd;
-
-
-  /* extract the scalar input parameters */
-  for(int i= 0; i < udrinfo->num_inputs; i++)
+  // loop over input rows
+  while (getNextRow(info))
   {
-    inParam = &(udrinfo->inputs[i]);
-    inData = in_data + inParam->data_offset;
-    inDataLen = (int) inParam->data_len;
+    long timeStamp = info.in(0).getLong(timeStampColNum);
+    std::string userId = info.in(0).getString(userIdColNum);
 
-    /* expect scalar values to be input in desired order. */
-    switch(i)
-    {
-      case 0: /* scalar argument 1, ordinal of first row */
-        if (inDataLen != sizeof(start))
-          return SQLUDR_ERROR;
-        memcpy(&start, inData, sizeof(start));
-        break;
+    if (lastUserId != userId)
+      {
+        // reset timestamp check and start over with session id 0
+        lastTimeStamp = 0;
+        currSessionId = 1;
+        lastUserId = userId;
+      }
 
-      case 1: /* scalar argument 2, number of result rows */
-        if (inDataLen != sizeof(num_result_rows))
-          return SQLUDR_ERROR;
-        memcpy(&num_result_rows, inData, sizeof(num_result_rows));
-        break;
+    long tsDiff = timeStamp - lastTimeStamp;
 
-      default:
-        return SQLUDR_ERROR;
-    }
+    if (tsDiff > timeout && lastTimeStamp > 0)
+      currSessionId++;
+    else if (tsDiff < 0)
+      throw UDRException(
+           38001,
+           "Got negative or descending timestamps %ld, %ld",
+           lastTimeStamp, timeStamp);
+
+    lastTimeStamp = timeStamp;
+
+    // produce session id output column
+    info.out().setLong(0, currSessionId);
+
+    // produce the remaining columns and emit the row
+    info.copyPassThruData();
+    emitRow(info);
   }
+}
 
-  // one-time check for output parameters
-  if (udrinfo->num_return_values != 2)
-    return SQLUDR_ERROR;
+class FibonacciUDF : public UDRInterface
+{
+  // override any methods where the UDF author would
+  // like to change the default behavior
 
-  // set result row pointers only once
-  // ---------------------------------
+  void processData(UDRInvocationInfo &info,
+                   UDRPlanInfo &plan);
 
-  // first output is ordinal
-  outParam = &udrinfo->return_values[0];
-  outData = rowDataSpace2 + outParam->data_offset;
-  outDataLen = (int) outParam->data_len;
+};
 
-  if (outDataLen != sizeof(int))
-    return SQLUDR_ERROR;
-  else
-    ordinal = (int *) (outData);
+extern "C" UDRInterface * Fibonacci(
+     const UDRInvocationInfo *info)
+{
+  return new FibonacciUDF();
+}
 
-  // second output is the Fibonacci number
-  outParam = &udrinfo->return_values[1];
-  outData = rowDataSpace2 + outParam->data_offset;
-  outDataLen = (int) outParam->data_len;
-
-  if (outDataLen != sizeof(long))
-    return SQLUDR_ERROR;
-  else
-    fibonacci_number = (long *) (outData);
-
-  // prepare the output row
-  memset(rowDataSpace2, '\0', udrinfo->out_row_length);
-  if (start < 0)
-    start = 0;
-  *fibonacci_number = 0;
-  previous_result = 1;
+void FibonacciUDF::processData(UDRInvocationInfo &info,
+                               UDRPlanInfo &plan)
+{
+  // input parameters: (int startRow, int numResultRows)
+  int startRow = info.par().getInt(0);
+  int numResultRows = info.par().getInt(1);
+  long fibonacciNumber = 0;
+  long previousResult = 1;
+  long temp = 0;
+  int ordinal=0;
 
   // produce fibonacci numbers and emit rows
   // ---------------------------------------
-  for (*ordinal=0;
-       *ordinal<start+num_result_rows && qstate == SQLUDR_Q_MORE;
-       (*ordinal)++)
+  while (1)
     {
-      if (*ordinal >= start)
-        emitRow(rowDataSpace2, 0, &qstate);
+      if (ordinal >= startRow)
+        {
+          // set result parameters (int ordinal, long fibonacci_number)
+          info.out().setInt(0, ordinal);
+          info.out().setLong(1, fibonacciNumber);
+          emitRow(info);
+        }
 
-      if (*fibonacci_number > LONG_MAX/2)
+      // did we produce numResultRows already?
+      if (++ordinal >= startRow+numResultRows)
         break;
 
+      if (fibonacciNumber > std::numeric_limits<long>::max()/2)
+        throw UDRException(38001, "Upper limit exceeded");
+
       // pre-compute the next row
-      temp = *fibonacci_number;
-      *fibonacci_number += previous_result;
-      previous_result = temp;
+      temp = fibonacciNumber;
+      fibonacciNumber += previousResult;
+      previousResult = temp;
     }
-
-  qstate = SQLUDR_Q_EOD;
-  emitRow(rowDataSpace2,0,&qstate);
-
-  return retcode;
-
-}/* main */
+}

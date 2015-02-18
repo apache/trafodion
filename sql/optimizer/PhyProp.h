@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -59,6 +59,9 @@ class CorrName;
 class DP2CostDataThatDependsOnSPP;
 class PushDownProperty;
 class PushDownRequirement;
+namespace tmudr {
+  class UDRPlanInfo;
+}
 
 // -----------------------------------------------------------------------
 // global defines
@@ -99,6 +102,7 @@ public:
       partSearchKey_(NULL),
       currentCountOfCPUs_(1),
       dp2CostInfo_(NULL),
+      udrPlanInfo_(NULL),
       pushDownProperty_(NULL),
       memoryNeedsinCurrentFragment_(NULL),
       explodedOcbJoin_(FALSE),
@@ -127,6 +131,7 @@ public:
       partSearchKey_(partSearchKey),
       currentCountOfCPUs_(1),
       dp2CostInfo_(NULL),
+      udrPlanInfo_(NULL),
       pushDownProperty_(pdp),
       memoryNeedsinCurrentFragment_(NULL),
       explodedOcbJoin_(explOcbJoin),
@@ -147,6 +152,7 @@ public:
       partSearchKey_(NULL),
       currentCountOfCPUs_(1),
       dp2CostInfo_(NULL),
+      udrPlanInfo_(NULL),
       pushDownProperty_(NULL),
       memoryNeedsinCurrentFragment_(NULL),
       explodedOcbJoin_(FALSE),
@@ -165,6 +171,7 @@ public:
       partSearchKey_(other.partSearchKey_),
       currentCountOfCPUs_(other.currentCountOfCPUs_),
       dp2CostInfo_(other.dp2CostInfo_),
+      udrPlanInfo_(other.udrPlanInfo_),
       pushDownProperty_(other.pushDownProperty_),
       memoryNeedsinCurrentFragment_(other.memoryNeedsinCurrentFragment_),
       explodedOcbJoin_(other.explodedOcbJoin_),
@@ -187,6 +194,7 @@ public:
       partSearchKey_(other.partSearchKey_),
       currentCountOfCPUs_(other.currentCountOfCPUs_),
       dp2CostInfo_(other.dp2CostInfo_),
+      udrPlanInfo_(other.udrPlanInfo_),
       pushDownProperty_(other.pushDownProperty_),
       memoryNeedsinCurrentFragment_(other.memoryNeedsinCurrentFragment_),
       explodedOcbJoin_(other.explodedOcbJoin_),
@@ -210,6 +218,7 @@ public:
       partSearchKey_(other.partSearchKey_),
       currentCountOfCPUs_(other.currentCountOfCPUs_),
       dp2CostInfo_(other.dp2CostInfo_),
+      udrPlanInfo_(other.udrPlanInfo_),
       pushDownProperty_(other.pushDownProperty_),
       memoryNeedsinCurrentFragment_(other.memoryNeedsinCurrentFragment_),
       explodedOcbJoin_(other.explodedOcbJoin_),
@@ -233,6 +242,7 @@ public:
       partSearchKey_(other.partSearchKey_),
       currentCountOfCPUs_(other.currentCountOfCPUs_),
       dp2CostInfo_(other.dp2CostInfo_),
+      udrPlanInfo_(other.udrPlanInfo_),
       pushDownProperty_(other.pushDownProperty_),
       memoryNeedsinCurrentFragment_(other.memoryNeedsinCurrentFragment_),
       explodedOcbJoin_(other.explodedOcbJoin_),
@@ -357,6 +367,10 @@ public:
   
   void setDP2CostThatDependsOnSPP(DP2CostDataThatDependsOnSPP * dp2Cost)
   { dp2CostInfo_ = dp2Cost; }
+
+  // for UDRs (only to transfer this info to the code generator)
+  tmudr::UDRPlanInfo *getUDRPlanInfo() const      { return udrPlanInfo_; }
+  void setUDRPlanInfo(tmudr::UDRPlanInfo *pi)       { udrPlanInfo_ = pi; }
   
   // -----------------------------------------------------------------------
   // Make sure that all members are covered by the group attributes!
@@ -472,6 +486,7 @@ private:
   // -----------------------------------------------------------------------
 
   DP2CostDataThatDependsOnSPP * dp2CostInfo_;
+  tmudr::UDRPlanInfo *udrPlanInfo_;
 
   const PushDownProperty* pushDownProperty_;
 

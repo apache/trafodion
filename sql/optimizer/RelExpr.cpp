@@ -363,6 +363,11 @@ void RelExpr::deleteInstance()
   delete this;
 } // RelExpr::deleteInstance()
 
+TableMappingUDF *RelExpr::castToTableMappingUDF()
+{
+  return NULL;
+}
+
 ExprNode * RelExpr::getChild(Lng32 index)
 {
   return child(index);

@@ -16001,8 +16001,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
   name.applyDefaults(defaultSchema);
   setRoutineName(name);
 
-    // in open source, only the SEABASE catalog is allowed.
-    // Return an error if some other catalog is being used.
+  // Return an error if an unsupported catalog is being used.
   if ((NOT name.isSeabase()) && (NOT name.isHive()))
       {
 	*CmpCommon::diags()
@@ -16039,29 +16038,23 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
   setRETDesc(rDesc);
 
   ComUInt32 size = 0;
-  LmHandle dllPtr;
+  LmHandle dllPtr = NULL;
   Lng32 diagsMark = CmpCommon::diags()->mark();
 
-  dllPtr = loadDll(tmudfRoutine->getFile().data(),
-                   tmudfRoutine->getExternalPath().data(),
-                   NULL,
-                   &size,
-                   CmpCommon::diags(),
-                   bindWA->wHeap());
-  if (dllPtr == NULL)
-  {
-    NABoolean tolerateMissingDll = FALSE;
-    
-    if (tolerateMissingDll)
+  if (tmudfRoutine->getLanguage() == COM_LANGUAGE_CPP)
     {
-      CmpCommon::diags()->rewind(diagsMark);
+      dllPtr = loadDll(tmudfRoutine->getFile().data(),
+                       tmudfRoutine->getExternalPath().data(),
+                       NULL,
+                       &size,
+                       CmpCommon::diags(),
+                       bindWA->wHeap());
+      if (dllPtr == NULL)
+        {
+          bindWA->setErrStatus();
+          return this;
+        }
     }
-    else
-    {
-      bindWA->setErrStatus();
-      return this;
-    }
-  }
 
   dllInteraction_ = new (bindWA->wHeap()) TMUDFDllInteraction();
   dllInteraction_->setDllPtr(dllPtr);

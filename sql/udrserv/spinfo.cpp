@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -46,9 +46,10 @@
 #include "UdrResultSet.h"
 #include "ex_queue.h"
 #include "ComRtUtils.h"
+#include "UdfDllInteraction.h"
 
 #include "sqlcli.h"
-
+#include "sqludr.h"
 #include "udrdecs.h"
 
 
@@ -109,7 +110,13 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
                ComUInt32 requestRowSize,
                ComUInt32 replyRowSize,
                ComDiagsArea &d,
-               char *parentQid)
+               char *parentQid,
+               ComUInt32 udrSerInvocationInfoLen,
+               const char *udrSerInvocationInfo,
+               ComUInt32 udrSerPlanInfoLen,
+               const char *udrSerPlanInfo,
+               ComUInt32 totalNumInstances,
+               ComUInt32 myInstanceNum)
       : udrGlobals_(udrGlobals),
         udrHandle_(udrHandle),
         lmHandle_(FALSE),
@@ -242,6 +249,47 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
     lmParameters_ = (LmParameter *) udrHeapPtr_->allocateMemory(lmParamBytes);
     memset(lmParameters_, 0, lmParamBytes);
   }
+
+  try
+    {
+      if (udrSerInvocationInfoLen > 0)
+        {
+          char *buffer = const_cast<char *>(udrSerInvocationInfo);
+          int bufferLen = udrSerInvocationInfoLen;
+          
+          invocationInfo_ = new tmudr::UDRInvocationInfo();
+          invocationInfo_->deserialize(buffer, bufferLen);
+          invocationInfo_->totalNumInstances_ = totalNumInstances;
+          invocationInfo_->myInstanceNum_ = myInstanceNum;
+#ifndef NDEBUG
+          if (invocationInfo_->getDebugFlags() &
+              tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME)
+            invocationInfo_->print();
+#endif
+        }
+      else
+        invocationInfo_ = NULL;
+
+      if (udrSerPlanInfoLen > 0)
+        {
+          char *buffer = const_cast<char *>(udrSerPlanInfo);
+          int bufferLen = udrSerPlanInfoLen;
+
+          planInfo_ = new tmudr::UDRPlanInfo(invocationInfo_);
+          planInfo_->deserialize(buffer, bufferLen);
+#ifndef NDEBUG
+          if (invocationInfo_ && invocationInfo_->getDebugFlags() &
+              tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME)
+            planInfo_->print();
+#endif
+        }
+      else
+        planInfo_ = NULL;
+    }
+  catch (tmudr::UDRException e)
+    {
+      TMUDFDllInteraction::processReturnStatus(e, &d, pSqlName);
+    }
 
   // Now we create the data stream that will be used by this SPInfo
   // instance. All we need to do is call a constructor, but first there
@@ -437,6 +485,12 @@ SPInfo::~SPInfo()
       udrHeapPtr_->deallocateMemory(tableInfo_);
     }
   }
+
+  if (invocationInfo_)
+    delete invocationInfo_;
+
+  if (planInfo_)
+    delete planInfo_;
 
   if (rowDiags_)
     rowDiags_->decrRefCount();
@@ -657,6 +711,9 @@ void SPInfo::displaySPInfo(Lng32 indent)
     case COM_LANGUAGE_C:
 	  lang = "C"; break;
 
+    case COM_LANGUAGE_CPP:
+	  lang = "C++"; break;
+
     case COM_LANGUAGE_SQL:
 	  lang = "SQL"; break;
 
@@ -674,14 +731,23 @@ void SPInfo::displaySPInfo(Lng32 indent)
     case COM_STYLE_GENERAL:
 	  paramStyle = "GENERAL"; break;
 
-    case COM_STYLE_JAVA:
+    case COM_STYLE_JAVA_CALL:
 	  paramStyle = "JAVA"; break;
+
+    case COM_STYLE_JAVA_OBJ:
+	  paramStyle = "JAVA_OBJ"; break;
 
     case COM_STYLE_SQL:
 	  paramStyle = "SQL"; break;
 
     case COM_STYLE_SQLROW:
           paramStyle = "SQLROW"; break;
+
+    case COM_STYLE_SQLROW_TM:
+          paramStyle = "SQLROW_TM"; break;
+
+    case COM_STYLE_CPP_OBJ:
+          paramStyle = "C++"; break;
 
     default:
 	  break;
@@ -1252,7 +1318,7 @@ void SPInfo::quiesceExecutor()
   // With SPJs, we don't do any SQL in UDR Server process on NEO since
   // we use Type 4 JDBC. But SQL execution is possible in UDR Server on
   // Windows platform.
-  if (getParamStyle() == COM_STYLE_JAVA)
+  if (getParamStyle() == COM_STYLE_JAVA_CALL)
   {
     Int64 tx_id = 0;
     short tmfCode = GETTRANSID((short*) &tx_id);
@@ -1611,7 +1677,7 @@ SPInfo::processOneRequestRow(SqlBuffer *reqSqlBuf,
     {
       // $$$$ It would be better to check the routine type or the
       // number of result sets here rather than the parameter style
-      if (getParamStyle() == COM_STYLE_JAVA)
+      if (getParamStyle() == COM_STYLE_JAVA_CALL)
         setupUdrResultSets(*rowDiags_);
     }
 
@@ -1942,34 +2008,40 @@ void SPInfo::workTM()
     return;
   }
 
-  //allocate reply buffer
-  UdrDataBuffer *reply = new (*dataStream_, getReplyBufferSize())
-    UdrDataBuffer(getReplyBufferSize(), UdrDataBuffer::UDR_DATA_OUT, NULL);
+  if (paramStyle_ != COM_STYLE_CPP_OBJ)
+    {
+      // should happen in the C interface only, C++ interface
+      // sends this inside LmRoutine::invoke()
+
+      //allocate reply buffer
+      UdrDataBuffer *reply = new (*dataStream_, getReplyBufferSize())
+        UdrDataBuffer(getReplyBufferSize(), UdrDataBuffer::UDR_DATA_OUT, NULL);
   
-  if (reply == NULL || reply->getSqlBuffer() == NULL)
-  {
-    dataErrorReply(udrGlobals_, *dataStream_, UDR_ERR_MESSAGE_PROCESSING,
-                   INVOKE_ERR_NO_REPLY_DATA_BUFFER, NULL);
+      if (reply == NULL || reply->getSqlBuffer() == NULL)
+        {
+          dataErrorReply(udrGlobals_, *dataStream_, UDR_ERR_MESSAGE_PROCESSING,
+                         INVOKE_ERR_NO_REPLY_DATA_BUFFER, NULL);
 
-    if (traceInvokeIPMS)
-      ServerDebug("[UdrServ (%s)] Send Invoke Error Reply", moduleName);
+          if (traceInvokeIPMS)
+            ServerDebug("[UdrServ (%s)] Send Invoke Error Reply", moduleName);
 
-    sendDataReply(udrGlobals_, *dataStream_, NULL);
-    currentRequest_ = NULL;
-    return;
-  }
+          sendDataReply(udrGlobals_, *dataStream_, NULL);
+          currentRequest_ = NULL;
+          return;
+        }
 
-  // Allocate a reply row with EOD reply
-  SqlBuffer *replyBuffer = reply->getSqlBuffer();
-  allocateEODRow(udrGlobals_, *replyBuffer, requestQueueIndex); 
+      // Allocate a reply row with EOD reply
+      SqlBuffer *replyBuffer = reply->getSqlBuffer();
+      allocateEODRow(udrGlobals_, *replyBuffer, requestQueueIndex); 
 
-  // Indicate this is the last buffer reply from server
-  reply->setLastBuffer(TRUE);
+      // Indicate this is the last buffer reply from server
+      reply->setLastBuffer(TRUE);
 
-  // Also reset any flag that indicates send more data, just incase.
-  reply->setSendMoreData(FALSE);
+      // Also reset any flag that indicates send more data, just incase.
+      reply->setSendMoreData(FALSE);
 
-  sendDataReply(udrGlobals_, *dataStream_, this);
+      sendDataReply(udrGlobals_, *dataStream_, this);
+    }
 
   // Free up any receive buffers no longer in use
   dataStream_->cleanupBuffers();
