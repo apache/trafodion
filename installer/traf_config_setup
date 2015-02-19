@@ -291,17 +291,6 @@ fi
 echo "export HOME_DIR=\"$HOME_DIR\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
-#Check if on the Cloud
-
-echo -n "Is system being installed on HP Cloud, default is No: "
-read answer
-if [ -z $answer ]; then
-   echo "export OPENSTACK_VM=\"0\"" >> $LOCAL_TRAF_CONFIG
-else
-   echo "export OPENSTACK_VM=\"1\"" >> $LOCAL_TRAF_CONFIG
-fi
-
-#==============================================
 #Check location given for EPEL RPM
 
 echo -n "Specify location of EPEL RPM (if any), default is None: "
@@ -335,16 +324,16 @@ JAVA65="65"
 for node in $NODE_LIST
 do
    THIS_JVM_VER="$(ssh -n $node $JAVA_HOME/bin/java -version 2>&1 > /dev/null)"
-   temp_JAVA=`echo "${THIS_JVM_VER:20:2}" | sed 's/.*\.//'`
-
+   temp_JAVA=`echo "${THIS_JVM_VER:15:2}" | sed 's/.*\.//'`
+   
    #Check if using something less than Java 7
    if [[ "$temp_JAVA" -lt "$JAVA7" ]]; then
       error="true"
    fi
-
+   
    #Checking if using 1.7.0_n
-   if [[ "${THIS_JVM_VER:10:1}" -eq "0" ]] && [[ "$temp_JAVA" -eq "$JAVA7" ]]; then
-      if [[ "${THIS_JVM_VER:12:1}" -eq "0" ]] || [[ "${THIS_JVM_VER:12:3}" -lt $JAVA65 ]]; then      
+   if [[ "${THIS_JVM_VER:18:1}" -eq "0" ]] && [[ "$temp_JAVA" -eq "$JAVA7" ]]; then
+      if [[ "${THIS_JVM_VER:20:1}" -eq "0" ]] || [[ "${THIS_JVM_VER:20:2}" -lt $JAVA65 ]]; then      
          error="true"
       fi
    fi

@@ -30,7 +30,7 @@ Options:
                             This is run from a Trafodion userid.
 
     --all                   This will remove Trafodion completely, including the
-                            the Trafodion userid and its $HOME directory.
+                            the Trafodion userid and its $HOME_DIR/trafodion directory.
                             This must be run from a userid with sudo access.
 
 EOF
@@ -79,7 +79,7 @@ done
 
 if [ -z "$UNINSTALL_DIR" ]; then
     if [ "$UNINSTALL_ALL" != "Y" ]; then
-        echo "***ERROR: no directory to uninstall was specified or '--all' otpion was not used"
+        echo "***ERROR: no directory to uninstall was specified or '--all' option was not used"
         print_usage
         exit -1
     fi

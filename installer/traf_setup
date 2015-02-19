@@ -68,47 +68,6 @@ if [ "$USER" == "$TRAF_USER" ]; then
 fi
 
 #================================
-if [[ $node_count -gt 1 ]]; then 
-   #Check for private key errors if on HP cloud VM
-   if [ $OPENSTACK_VM -ne 0 ]; then
-      echo "***INFO: Checking for private key errors"
-
-      #If file has not been copied over, then script will exit
-
-      if ! [[ -f /root/.ssh/id_rsa ]]; then
-         echo
-         echo "***ERROR[1]: Private Key file not found"
-         echo "Script exiting..."
-         echo
-         exit -1
-      fi
-
-      #There should be as many begin statements as end statements. If there is not an
-      #equal matching it may be the result of a copy error.
-
-      begin=$(grep "\-\-\-\-\-BEGIN RSA PRIVATE KEY\-\-\-\-\-" /root/.ssh/id_rsa | wc -l)
-      end=$(grep "\-\-\-\-\-END RSA PRIVATE KEY\-\-\-\-\-" /root/.ssh/id_rsa | wc -l)
-
-      if [[ $begin -ne $end ]]; then
-         echo
-         echo "***ERROR[2]: Private Key file copy error"
-         echo "Script exiting..."
-         echo
-         exit -1
-      fi
-
-      ##If there are no begin or end statements then there is a copy error.
-
-      if [[ $begin -eq 0 ]]; then
-         echo
-         echo "***ERROR[3]: Private Key file copy error"
-         echo "Script exiting..."
-         echo
-         exit -1
-      fi
-  fi
-fi
-#================================
 # validate specified nodes and that we can get to them with passwordless ssh
 echo "***INFO: Checking all nodes in specified node list"
 bad_nodes=""
@@ -296,51 +255,6 @@ if [[ $internetAccess ]]; then
 else
   echo "***ERROR: No internet access"
   echo "***ERROR: Please install 'Desktop Fonts' 'Desktop Platform' and 'X Windows System'"
-fi
-
-#=======================================
-# Install additional packages if we are on an OpenStack VM
-if [ $OPENSTACK_VM -ne 0 ]; then
-    
-    echo "***INFO: OpenStack VM detected"
-    echo "***INFO: Installing additional packages for OpenStack VMs"
-    package_list="python-pip git"
-    if [[ $internetAccess == "true" ]]; then
-       for package in $package_list
-       do
-          echo "***INFO: ... $package"
-          for node in $NODE_LIST
-          do
-             installed=$(ssh $node sudo rpm -qa | grep $package | wc -l )
-             if [[ $installed -eq "0" ]]; then
-                "***INFO: Uninstalling $package on all nodes"
-                $TRAF_PDSH sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
-                if [ $? != 0 ]; then
-                   echo "***WARNING: Can't install VM-only package $package"
-                fi
-                break
-             fi
-          done
-       done
-    else
-      for node in $NODE_LIST
-      do
-         echo "***ERROR: No internet access on $node"
-         echo "***ERROR: Missing packages will need to be installed."
-         echo "***ERROR: Missing packages: "
-         for package in $package_list
-         do
-            installed=$(sudo rpm -qa | grep $package | wc -l)
-            if [[ $installed -eq "0" ]]; then
-               echo "$package"
-               stopInstall=true
-            fi
-        done
-      done
-      if [[ $stopInstall == "true" ]]; then
-         exit -1
-      fi
-    fi
 fi
 
 #=======================================

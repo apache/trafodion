@@ -81,9 +81,6 @@ export MY_NODES=""
 # i.e. /opt/home, not /opt/home/trafodion
 export HOME_DIR="/home"
 
-# set to 1 if installing on an openstack VM
-export OPENSTACK_VM="0"
-
 # If your machine doesn't have external internet access then you must
 # specify the location of the EPEL rpm, otherwise leave blank and it
 # will be installed from the internet
