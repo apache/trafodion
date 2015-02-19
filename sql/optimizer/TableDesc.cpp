@@ -212,7 +212,7 @@ void TableDesc::setPrimaryKeyColumns()
 	primaryColumns.insert(valId) ;
         // mark column as referenced for histogram, as we may need its histogram
         // during plan generation
-        if ((column->isUserColumn() ) &&
+        if ((column->isUserColumn() || column->isSaltColumn() ) &&
             (column->getNATable()->getSpecialType() == ExtendedQualName::NORMAL_TABLE) )
               column->setReferencedForMultiIntHist();
       }

@@ -11433,10 +11433,12 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
     NAColumn *column = baseCol->getTableDesc()->getNATable()->
                                 getNAColumnArray()[colNumber];
 
-    // don't give a warniong if it is not marked for histogram
-    // or it is not a user column
-    if ( (!column->isReferencedForHistogram()) ||
-         (!column->isUserColumn()))
+    // Don't give a warning if it is not marked for histogram
+    // or it is not a user column. Exception is salt column, for
+    // which we suppress warning, but create empty histogram if
+    // automation is enabled.
+    if ( !column->isReferencedForHistogram() ||
+         (!column->isUserColumn() && !column->isSaltColumn()))
       return;
     setOfColsWithMissingStats.insert(colNumber );
   }
@@ -11560,6 +11562,22 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
        CostPrimitives::getBasicCostFactor(HIST_ROWCOUNT_REQUIRING_STATS)))
     return;
 
+  // Do not display warning for salt column, although an empty histogram may
+  // have been added to histograms table above. Use new ValueIdSet nonSaltPredCols
+  // for remainder of function, which is predCols with any salt column removed.
+  ValueIdSet nonSaltPredCols(predCols);
+  ValueIdSet saltCols;
+  for (col = predCols.init();
+             predCols.next(col);
+             predCols.advance(col))
+  {
+    if (col.isSaltColumn())
+      saltCols.addElement(col.toUInt32());
+  }
+  nonSaltPredCols.remove(saltCols);
+  if (nonSaltPredCols.isEmpty())
+    return;
+
   // Now see, if we should issue a missing single column or a missing multi-col
   // stats warning. This would depend on the number of columns on which the
   // statistics is missing.
@@ -11573,12 +11591,12 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
 
   // If warning level is one, display only single column stats warning.
   if ((CURRSTMT_OPTDEFAULTS->histMissingStatsWarningLevel() == 1) &&
-      (predCols.entries() > 1) )
+      (nonSaltPredCols.entries() > 1) )
     return;
 
   // If this is a multi-column (MC) stat, check to see if it should be displayed as
   // a warning based on the operation and the warning level.
-  if ((predCols.entries() > 1) &&
+  if ((nonSaltPredCols.entries() > 1) &&
       ((CURRSTMT_OPTDEFAULTS->histMissingStatsWarningLevel() < 2 && op == REL_SCAN)    ||
        (CURRSTMT_OPTDEFAULTS->histMissingStatsWarningLevel() < 3 && op == REL_JOIN)    ||
        (CURRSTMT_OPTDEFAULTS->histMissingStatsWarningLevel() < 4 && op == REL_GROUPBY)) )
@@ -11620,9 +11638,9 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
     break;
   }
 
-  for (col = predCols.init();
-	     predCols.next(col);
-	     predCols.advance(col))
+  for (col = nonSaltPredCols.init();
+       nonSaltPredCols.next(col);
+       nonSaltPredCols.advance(col))
   {
       if (first)
 	first = FALSE;
@@ -11679,7 +11697,7 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
     << DgString1( tableName )
     << DgString2(opName);
 
-  if (LM->LogNeeded() && predCols.entries() > 1)
+  if (LM->LogNeeded() && nonSaltPredCols.entries() > 1)
   {
     LM->Log("MC Warning for table, col set, operator, selectivity: ");
     sprintf(LM->msg, "%s, %s, %s, %e", tableName.data(), tableCols.data(), opName.data(), redFromSC.getValue());
