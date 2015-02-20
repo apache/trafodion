@@ -173,6 +173,18 @@ public final class Constants {
   /** Default value for DCS server tcp bind max retries */
   public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_PORT_BIND_TIMEOUT_SECONDS = -1; 
   
+  /** Configuration key for user program restart handler attempts */
+  public static final String DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS = "dcs.server.user.program.restart.handler.attempts";
+
+  /** Default value for user program restart handler attempts */
+  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS = 6;
+  
+  /** Configuration key for user program restart handler retry interval millis */
+  public static final String DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS = "dcs.server.user.program.restart.handler.retry.interval.millis";
+  
+  /** Default value for user program restart handler retry interval millis */
+  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS = 5000;
+  
   /** Name of ZooKeeper quorum configuration parameter. */
   public static final String ZOOKEEPER_QUORUM = "dcs.zookeeper.quorum";
 
