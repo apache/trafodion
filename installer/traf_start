@@ -42,7 +42,7 @@ source $TRAF_CONFIG
 
 echo "***INFO: Log file location $INSTALL_LOG"
 
-echo "***INFO: ***Log File: traf_installer script***" >> $INSTALL_LOG
+echo "***INFO: ***Log File: traf_start script***" >> $INSTALL_LOG
 echo >> $INSTALL_LOG
 echo "***INFO: Working directory: $TRAF_WORKDIR" >> $INSTALL_LOG
 echo "***INFO: Build: $BUILD_FILE" >> $INSTALL_LOG

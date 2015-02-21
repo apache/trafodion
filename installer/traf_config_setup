@@ -324,6 +324,12 @@ JAVA65="65"
 for node in $NODE_LIST
 do
    THIS_JVM_VER="$(ssh -n $node $JAVA_HOME/bin/java -version 2>&1 > /dev/null)"
+   if [[ "$THIS_JVM_VER" == *"No such file"* ]]; then
+      echo "***ERROR: Unable to find Java version"
+      echo "***ERROR: Must enter a specific Java version (example: /usr/java/jdk1.7.0_67)"
+      echo "***ERROR: Please check for typos and that directory exists"
+      exit -1
+   fi
    temp_JAVA=`echo "${THIS_JVM_VER:15:2}" | sed 's/.*\.//'`
    
    #Check if using something less than Java 7
@@ -655,7 +661,7 @@ fi
 userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
 
 if [[ "$userForTrafodion" != "0" ]]; then
-   isTrafUp=$(sudo su trafodion --login --command "sqcheck")
+   isTrafUp=$(sudo su trafodion --login --command "sqcheck" 2>/dev/null)
 
    trafodionRunning=$(echo $isTrafUp | grep "The SQ environment is up" | wc -l)
 

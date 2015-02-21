@@ -581,10 +581,10 @@ echo "******************************"
 echo
 sudo mkdir -p $SQ_ROOT
 sudo chown trafodion.trafodion $SQ_ROOT
-sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_installer"
+sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_start"
 
 if [ ${PIPESTATUS[0]} != "0" ]; then
-   echo "***ERROR: Error while running traf_installer." | tee -a $INSTALL_LOG
+   echo "***ERROR: Error while running traf_start." | tee -a $INSTALL_LOG
    echo "***ERROR: Setup not complete, review logs." | tee -a $INSTALL_LOG
    echo "***ERROR: Exiting...." | tee -a $INSTALL_LOG
    exit -1

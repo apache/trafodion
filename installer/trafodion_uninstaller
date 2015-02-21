@@ -27,7 +27,8 @@ Options:
     --help                  Print this message and exit.
 
     --instance <dir-name>   Directory path of Trafodion instance to remove.
-                            This is run from a Trafodion userid.
+                            This can be run from a Trafodion userid or userid with
+                            sudo access.
 
     --all                   This will remove Trafodion completely, including the
                             the Trafodion userid and its $HOME_DIR/trafodion directory.
@@ -105,8 +106,13 @@ if [ "$UNINSTALL_ALL" != "Y" ]; then
     # TODO: maybe check that we are running from the Trafodion userid?
 
     echo "***INFO: stopping Trafodion instance"
-    sqstop
-    ckillall
+    if [[ "$(whoami)" == "trafodion" ]]; then
+       sqstop
+       ckillall
+    else
+       sudo su $TRAF_USER --login --command "sqstop"
+       sudo su $TRAF_USER --login --command "ckillall"
+    fi    
 
     # remove directory on all nodes
     echo "***INFO: removing Trafodion build files"
