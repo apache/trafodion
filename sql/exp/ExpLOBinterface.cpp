@@ -784,7 +784,8 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
                                   Int64 srcOffset, Int64 inLen, 
 			          Int64 &outLen, char * lobData,
 				  
-				  Lng32 oper // 1: open. 2: fetch. 3: close
+				  Lng32 oper, // 1: open. 2: fetch. 3: close
+                                  Lng32 openType // 0: not applicable. 1: preOpen. 2: mustOpen.
 				  )
 {
   Ex_Lob_Error err;
@@ -841,101 +842,9 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
                    waitedOp,
 		   lobGlob,
 		   0,
-		   NULL, 0
+		   NULL, 0,0,0,0,
+                   openType
 		   );
-
-  if (err != LOB_OPER_OK)
-    {
-      return -(short)err;
-    }
-  
-  return LOB_ACCESS_SUCCESS;
-}
-
-Lng32 ExpLOBInterfaceSelectCursorMulti(
-				       void * lobGlob, 
-				       Queue * hdfsFileInfoList,
-				       Lng32 beginRangeNum, // 0 based
-				       Lng32 numRanges, 
-				       Lng32 &currEntry,
-				       Lng32 lobType,
-				       char * lobHdfsServer,
-				       Lng32 lobHdfsPort,
-				       
-				       Int64 &requestTag,
-				       Lng32 checkStatus,
-				       Lng32 waitedOp,
-				       
-				       Int64 inLen, 
-				       Int64 &outLen, char * lobData,
-				       
-				       Lng32 oper // 0: init. 1: open. 2: fetch. 3: close
-				       )
-{
-  Ex_Lob_Error err;
-  
-  Int64 dummyParam = 0;
-  Ex_Lob_Error status;
-  Int64 cliError;
-  
-  LobsOper lo;
-
-  if (oper == 0)
-    lo = Lob_InitDataCursorMulti;
-  else if (oper == 1)
-    lo = Lob_OpenDataCursorMulti;
-  else if (oper == 2)
-    lo = Lob_ReadDataCursorMulti;
-  else if (oper == 3)
-    lo = Lob_CloseDataCursorMulti;
-  else
-    return -1;
-
-  if (checkStatus)
-    lo = Lob_Check_Status;
-  else
-    requestTag = -1;
-
-  LobsStorage ls = (LobsStorage)lobType;
-
-  union ranges_t {
-    Int64 range64;
-    struct {
-      Lng32 beginRange;
-      Lng32 numRanges;
-    }r;
-  } rangeVal;
-
-  HdfsFileInfo * f = (HdfsFileInfo*)hdfsFileInfoList->get(beginRangeNum);
-  for (Lng32 i = 1; i < numRanges; i++)
-    {
-      hdfsFileInfoList->advance();
-      f = (HdfsFileInfo*)hdfsFileInfoList->getCurr();
-    }
-
-  rangeVal.r.beginRange = beginRangeNum;
-  rangeVal.r.numRanges = numRanges;
-
-  Int64 currDataEntry = 0;
-  err = ExLobsOper((char*)hdfsFileInfoList,
-		   NULL, 0,
-		   lobHdfsServer, lobHdfsPort,
-                   NULL, dummyParam, 
-		   rangeVal.range64, currDataEntry,
-		   outLen,
-                   requestTag, requestTag,
-		   status, cliError, 
-		   NULL, ls, //Lob_HDFS_File,
-		   lobData, inLen, 
-		   0,NULL,
-		   lo,
-		   Lob_Memory,
-                   waitedOp,
-		   lobGlob,
-		   0,
-		   NULL, 0
-		   );
-  currEntry = (Lng32)currDataEntry;
 
   if (err != LOB_OPER_OK)
     {
@@ -951,8 +860,7 @@ Lng32 ExpLOBinterfaceStats(
 			    char * lobName, char * lobLoc,
 			    Lng32 lobType,
 			    char * lobHdfsServer,
-			    Lng32 lobHdfsPort,
-			    NABoolean lobMulti)
+			    Lng32 lobHdfsPort)
 {
   Ex_Lob_Error err;
 
@@ -968,7 +876,7 @@ Lng32 ExpLOBinterfaceStats(
 		   lobLoc, (LobsStorage)lobType, 
 		   (char*)lobStats, 0,
 		   0,NULL,
-		   lobMulti ? Lob_StatsMulti : Lob_Stats,
+		   Lob_Stats,
 		   Lob_None,
                    1, // waited op
 		   lobGlob,

@@ -899,19 +899,11 @@ Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type, Int64 range,
     cursor.bufferMisses_ = 0;
     strcpy(cursor.name_, file);
 
-    if (type == Lob_Cursor_Multiple) 
-    { 
-      ranges.range64 = range; 
-      cursor.currentRange_ = ranges.r.beginRange;
-      cursor.endRange_ = cursor.currentRange_ + ranges.r.numRanges - 1;
-      cursor.currentStartOffset_ = -1; // will be updated by entry in hdfsFileInfo
-    } else { 
-      cursor.currentRange_ = -1;
-      cursor.endRange_ = -1;
-      cursor.currentStartOffset_ = -1;
-      cursor.descOffset_ = range;
-    }
-
+    cursor.currentRange_ = -1;
+    cursor.endRange_ = -1;
+    cursor.currentStartOffset_ = -1;
+    cursor.descOffset_ = range;
+    
     cursor.currentFd_ = NULL;
     cursor.currentBytesToRead_ = -1;
     cursor.currentBytesRead_ = 0;
@@ -1066,52 +1058,6 @@ Ex_Lob_Error ExLob::readDataCursorSimple(char *file, char *tgt, Int64 tgtSize,
       stats_.bytesPrefetched += bytesToCopy;
       operLen += bytesToCopy;
     } 
-
-    // update stats
-    stats_.bytesRead += operLen;
-    stats_.bytesToRead += tgtSize;
-    stats_.numReadReqs++;
-
-    return LOB_OPER_OK;
-}
-
-// ***Note**** Multiple cursors not used/supported.
-Ex_Lob_Error ExLob::readDataCursorMultiple(Queue *finfoQ, char *tgt, Int64 tgtSize, 
-					   Int64 &index, Int64 &operLen)
-{
-    int dataOffset;
-    Ex_Lob_Error result;
-    cursor_t *cursor;
-    Int64 len;
-
-    operLen = 0;
-
-    lobCursors_it it = lobCursors_.find(string(lobDataFile_, strlen(lobDataFile_)));
-
-    if (it == lobCursors_.end())
-    {
-       return LOB_CURSOR_NOT_OPEN;
-    }
-    else
-    {
-       cursor = &(it->second); 
-    } 
-
-    cursor->lock_.lock();
-
-    if (operLen < tgtSize) 
-    {
-      if (!cursor->eod_) {
-        result = readCursorDataMultiple(finfoQ, tgt, tgtSize - operLen, *cursor, index, len); // increments cursor
-        if (result != LOB_OPER_OK) {
-          cursor->lock_.unlock();
-          return result;
-        }
-        operLen += len;
-      }
-    }
-
-    cursor->lock_.unlock();
 
     // update stats
     stats_.bytesRead += operLen;
@@ -1541,95 +1487,6 @@ Ex_Lob_Error ExLob::readCursorDataSimple(char *tgt, Int64 tgtSize, cursor_t &cur
 
    return LOB_OPER_OK;
 }
-// ***Note**** Multiple cursors not used/supported.
-Ex_Lob_Error ExLob::readCursorDataMultiple(Queue *finfoQ, char *tgt, Int64 tgtSize, 
-					   cursor_t &cursor, Int64 &index, Int64 &operLen)
-{
-   ExLobDesc desc;
-   Ex_Lob_Error err;
-   Int64 bytesAvailable = 0;
-   Int64 bytesToCopy = 0;
-   Int64 bytesRead = 0;
-   operLen = 0;
-   tOffset offset; 
-   struct timespec startTime; 
-   struct timespec endTime;
-  
-   while ( (operLen < tgtSize) && !cursor.eod_)
-   {
-      if (cursor.bytesRead_ == -1) {  // starting
-        cursor.bytesRead_ = 0;
-      }
-
-      // if the file is not open for read, open it.
-      if (!cursor.currentFd_) 
-      {
-         HdfsFileInfo *finfo = (HdfsFileInfo *)finfoQ->get(cursor.currentRange_);
-         char *fileName = finfo->fileName();
-         cursor.currentFd_ = hdfsOpenFile(fs_, fileName, O_RDONLY, 0, 0, 0);
-         if (!cursor.currentFd_) {
-    	   operLen = 0;
-           index = -1;
-           return LOB_DATA_FILE_OPEN_ERROR;
-         }
-         cursor.currentStartOffset_ = finfo->getStartOffset();
-         cursor.currentBytesToRead_ = finfo->getBytesToRead();
-         cursor.currentBytesRead_ = 0;
-         cursor.currentEod_ = false;
-      }
-
-      //Int64 currentBytesRemaining = cursor.currentBytesToRead_
-      //				    - cursor.currentBytesRead_;
-
-      offset = cursor.currentStartOffset_ + cursor.currentBytesRead_;
-      bytesToCopy = tgtSize - operLen;
-
-      //bytesToCopy = min(tgtSize - operLen, currentBytesRemaining);
-
-      clock_gettime(CLOCK_MONOTONIC, &startTime);
-
-      bytesRead = hdfsPread(fs_, cursor.currentFd_, offset, tgt, bytesToCopy);
-
-      clock_gettime(CLOCK_MONOTONIC, &endTime);
-
-      Int64 secs = endTime.tv_sec - startTime.tv_sec;
-      Int64 nsecs = endTime.tv_nsec - startTime.tv_nsec;
-      if (nsecs < 0) {
-        secs--;
-        nsecs += NUM_NSECS_IN_SEC;
-      }
-      Int64 totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
-      stats_.CumulativeReadTime += totalnsecs;
-
-      stats_.numHdfsReqs++;
-
-      if (bytesRead == -1) {
-         index = cursor.currentRange_;
-         return LOB_DATA_READ_ERROR;
-      } else if (bytesRead == 0) {
-         index = cursor.currentRange_;
-         cursor.eod_ = true;
-         continue;
-      	 /*hdfsCloseFile(fs_, cursor.currentFd_);
-      	 cursor.currentFd_ = NULL;
-      	 index = cursor.currentRange_;
-      	 if (cursor.currentRange_ == cursor.endRange_) { 
-      	   cursor.eod_ = true; // all done
-      	 } else {
-      	   cursor.currentRange_++;
-      	 }
-         return LOB_OPER_OK; */
-      }
-
-      cursor.currentBytesRead_ += bytesRead;
-      cursor.bytesRead_ += bytesRead;
-      operLen += bytesRead;
-      tgt += bytesRead;
-   }
-
-   return LOB_OPER_OK;
-}
-
 
 Ex_Lob_Error ExLob::readDataToMem(char *memAddr, Int64 &descNum,
                                   Int64 offset, Int64 size, Int64 &operLen)
@@ -2468,7 +2325,8 @@ Ex_Lob_Error ExLobsOper (
     Int64       blackBoxLen,       // length of black box
     int         bufferSize ,
     short       replication ,
-    int         blockSize)
+    int         blockSize,
+    Lng32       openType)
 { 
     Ex_Lob_Error err = LOB_OPER_OK;
     ExLob *lobPtr = NULL;
@@ -2479,8 +2337,6 @@ Ex_Lob_Error ExLobsOper (
     ExLobPreOpen *preOpenObj;
     ExLobGlobals *lobGlobals = NULL;
 
-    bool preOpen = retOperLen;
-
     retOperLen = 0;
     ExLobDesc desc;
     
@@ -2490,16 +2346,6 @@ Ex_Lob_Error ExLobsOper (
     clock_gettime(CLOCK_MONOTONIC, &startTime);
 
     char *fileName = lobName;
-
-    // for multi operations, the lobname is an address of the array of hdfsInfo objects. 
-    // change the lobname to "Multi<hdfsInfoAddr>"
-    if (operation == Lob_InitDataCursorMulti || operation == Lob_OpenDataCursorMulti ||
-        operation == Lob_ReadDataCursorMulti || operation == Lob_CloseDataCursorMulti ||
-        operation == Lob_StatsMulti) 
-    {
-        sprintf(fn,"Multi%Lx",(long long unsigned int)lobName);
-        fileName = fn; 
-    } 
 
     if (globPtr == NULL)
     {
@@ -2613,22 +2459,17 @@ Ex_Lob_Error ExLobsOper (
         break;
 
       case Lob_OpenDataCursorSimple:  
-        if (preOpen) { // preopen
-          sprintf(fn,"%s:%Lx:%s",lobPtr->getDataFileName(), (long long unsigned int)lobName, handleIn);
-          preOpenObj = new (lobGlobals->getHeap()) ExLobPreOpen(lobPtr, fn, descNumIn, sourceLen, handleInLen, waited);
+        if (openType == 1) { // preopen
+          sprintf(fn,"%s:%Lx:%s",lobPtr->getDataFileName(), (long long unsigned int)lobName, cursorId);
+          preOpenObj = new (lobGlobals->getHeap()) ExLobPreOpen(lobPtr, fn, descNumIn, sourceLen, cursorBytes, waited);
           lobGlobals->addToPreOpenList(preOpenObj);
-        } else {
+        } else if (openType == 2) { // must open
           sprintf(fn,"%s:%Lx:%s",lobPtr->getDataFileName(), (long long unsigned int)lobName, cursorId);
           fileName = fn;
           err = lobPtr->openDataCursor(fileName, Lob_Cursor_Simple, descNumIn, sourceLen, cursorBytes, waited, lobGlobals);
-        }
+        } else
+          err = LOB_SUBOPER_ERROR;
         break;
-
-      case Lob_OpenDataCursorMulti:
-	sprintf(fn,"%s:%Lx","Multi", (long long unsigned int)lobName);
-        fileName = fn;
-        err = lobPtr->openDataCursor(fileName, Lob_Cursor_Multiple, descNumIn, sourceLen, handleInLen, waited, lobGlobals);
-		break;
 
       case Lob_ReadCursor:
         if (subOperation == Lob_Memory)
@@ -2643,11 +2484,6 @@ Ex_Lob_Error ExLobsOper (
 	 sprintf(fn,"%s:%Lx:%s",lobPtr->getDataFileName(), (long long unsigned int)lobName, cursorId);
         fileName = fn;       
         err = lobPtr->readDataCursorSimple(fileName, source, sourceLen, retOperLen, lobGlobals);
-        break;
-
-      case Lob_ReadDataCursorMulti:
-        err = lobPtr->readDataCursorMultiple((Queue *)lobName, source, sourceLen, 
-					      descNumOut, retOperLen);
         break;
 
       case Lob_CloseFile:
@@ -2666,12 +2502,6 @@ Ex_Lob_Error ExLobsOper (
 
       case Lob_CloseDataCursorSimple:
 	sprintf(fn,"%s:%Lx:%s",lobPtr->getDataFileName(), (long long unsigned int)lobName, cursorId);
-        fileName = fn;
-        err = lobPtr->closeDataCursorSimple(fileName, lobGlobals);
-        break;
-
-      case Lob_CloseDataCursorMulti:
-	sprintf(fn,"%s:%Lx",lobPtr->getDataFileName(), (long long unsigned int)lobName);
         fileName = fn;
         err = lobPtr->closeDataCursorSimple(fileName, lobGlobals);
         break;
@@ -2716,7 +2546,6 @@ Ex_Lob_Error ExLobsOper (
         err = lobPtr->print();
         break;
 
-      case Lob_StatsMulti:
       case Lob_Stats:
       err = lobPtr->readStats(source);
       lobPtr->initStats(); // because file may remain open across cursors

@@ -207,18 +207,12 @@ typedef enum {
    Lob_ReadDataCursorSimple,
    Lob_CloseDataCursorSimple,
 
-   Lob_InitDataCursorMulti,
-   Lob_OpenDataCursorMulti,
-   Lob_ReadDataCursorMulti,
-   Lob_CloseDataCursorMulti,
-
    Lob_CloseFile,
 
    Lob_Drop,
    Lob_Check_Status,
 
    Lob_Stats,
-   Lob_StatsMulti,
 
    Lob_Print, // debugging purposes
 
@@ -258,8 +252,7 @@ typedef enum {
 } LobsHdfsRequestType;
 
 typedef enum {
-   Lob_Cursor_Simple,
-   Lob_Cursor_Multiple
+   Lob_Cursor_Simple
 } LobsCursorType;
 
 #endif
