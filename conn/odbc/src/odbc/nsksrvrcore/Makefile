@@ -54,7 +54,7 @@ CODEGEN = -fPIC
 
 # Produce libmxocore.so
 libmxocore.so: $(OBJS)
-	$(CXX) -shared $(GCCMODE) -o $@ $(DBG_FLGS) -L$(LIBEXPDIR) -levlsq -lqpidclient  -lsqauth -lsqcert $(OBJS)
+	$(CXX) -shared $(GCCMODE) -o $@ $(DBG_FLGS) -L$(LIBEXPDIR) -levlsq -lsqauth -lsqcert $(OBJS)
 	cp -up $@ $(LIBEXPDIR)
 
 $(OUTDIR)/libmxocore_version.o: $(MY_SQROOT)/export/include/SCMBuildStr.h
