@@ -63,7 +63,7 @@ CTmTxBase::CTmTxBase(int32 pv_nid, int64 pv_flags, int32 pv_trace_level,
    iv_tag = 0;
    iv_tx_state = TM_TX_STATE_NOTX;
    iv_ender_pid = 0;
-   atomic_set(&iv_num_active_partic, 0);
+   iv_num_active_partic.set_val(0);
    iv_prepared_rms = 0;
    iv_cleanup_sem = 0;
    iv_rm_wait_time = 0;
@@ -214,7 +214,7 @@ void CTmTxBase::initialize(int32 pv_nid, int64 pv_flags, int32 pv_trace_level,
    iv_trace_level = pv_trace_level;
    iv_tx_state = TM_TX_STATE_NOTX;
    iv_tag = pv_seq;
-   atomic_set(&iv_num_active_partic, 1);
+   iv_num_active_partic.set_val(1);
    iv_ender_nid = pv_creator_nid;
    iv_ender_pid = pv_creator_pid;
    ip_currRequest = NULL;

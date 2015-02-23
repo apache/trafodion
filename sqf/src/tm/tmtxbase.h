@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <alsa/iatomic.h>
+#include "../seabed/src/utilatomic.h"
 
 #include "dtm/tmtransid.h"
 #include "tmaudit.h"
@@ -120,7 +120,7 @@ class CTmTxBase :public virtual CTmPoolElement
        TM_TX_STATE      iv_tx_state;
        int32            iv_ender_pid;
        int32            iv_ender_nid;
-       atomic_t         iv_num_active_partic;
+       SB_Atomic_Int    iv_num_active_partic;
        int32            iv_prepared_rms;
        int32            iv_cleanup_sem; // cleanup semaphore
        int32            iv_rm_wait_time;
@@ -314,16 +314,16 @@ class CTmTxBase :public virtual CTmPoolElement
        int64 timestamp() {return iv_transid.iv_timestamp;}
        int32 num_active_partic()
        {
-          int32 lv_rtn = atomic_read(&iv_num_active_partic);
+          int32 lv_rtn = iv_num_active_partic.read_val();
           return lv_rtn;
        }
        void inc_active_partic() 
        {
-          atomic_inc(&iv_num_active_partic);
+          iv_num_active_partic.add_val(1);
        }
        void dec_active_partic()
        {
-          atomic_dec(&iv_num_active_partic);
+          iv_num_active_partic.sub_val(1);
        }
        int32 prepared_rms() {return iv_prepared_rms;}
        void inc_prepared_rms() 
