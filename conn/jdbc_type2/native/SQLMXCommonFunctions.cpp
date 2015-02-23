@@ -3226,7 +3226,8 @@ func_exit:
 				FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - Encoding NewGlobalRef() == NULL"));
 			gJNICache.charsetInfo[idx].useDefaultEncoding = FALSE;
 		}
-
+                if (setenv("MASTER_FAST_COMPLETION","0",1) != 0)
+		   abort();
 		gJEnv = jenv;
 		FUNCTION_RETURN_NUMERIC(TRUE,(NULL));
 	}
