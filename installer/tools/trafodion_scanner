@@ -85,10 +85,21 @@ def exec_command_remote(cmd_string, node_name):
   return (cmd_output, exit_code)    
   
 def read_config(filename):
-  with open(filename) as config:
-    lines=[ line.split(':::') for line in config if not re.search('^#', line) and not re.search('^\s*$', line) ]
+  with open(filename, 'r') as config:
     logger = logging.getLogger("trafodion_scanner_logger")
     logger.info("Reading configuration file %s", filename)
+    lines = []
+    for line in config:
+      if re.search('^#', line) or re.search('^\s*$', line): # skip comments and blank lines
+        continue
+      elif re.search(':::', line): # configuration line
+        lines.append(line.split(':::'))
+      elif len(lines) > 0: # multi-line command, append to the command in the last configuration line
+        lines[-1][-1] += line
+      else: # unexpected line, raise an error and exit
+        err_str = 'Fatal error: encountered unexpected line in configuration file: %s' % (line)
+        logger.error(err_str); print(err_str)
+        sys.exit(EXIT_GENERAL_ERROR)
     return lines
 
 def replace_placeholders_in_command_string(cmd_string, placeholder_map):
@@ -238,7 +249,13 @@ def main(argv):
       sys.exit(EXIT_GENERAL_ERROR)
     list_of_node_names = sorted(options.nodes.split())
     for node_name in list_of_node_names:  
-      if (re.search('^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$', node_name)):
+      if (re.search('[^a-zA-Z0-9\.\-]', node_name)):
+        print '\n***ERROR: Special characters cannot be specified for the --nodes (-n) option! '\
+              'The only allowed characters are: lowercase letters (a-z), '\
+              'uppercase letters (A-Z), digits (0-9), ".", and "-".\n'
+        parser.print_help()
+        sys.exit(EXIT_GENERAL_ERROR)
+      elif (re.search('^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$', node_name)):
         print '\n***ERROR: IP addresses cannot be specified for the --nodes (-n) option!\n'
         parser.print_help()
         sys.exit(EXIT_GENERAL_ERROR)
