@@ -146,7 +146,11 @@ curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
                 "name" : "secondary_namenode_java_heapsize",
         "value" : "1073741824"
                 } ]
-     } ]
+     } ],
+    "items": [ {
+             "name":"dfs_namenode_acls_enabled",
+             "value":"true"
+             } ]
 }' \
 http://$URL/api/v1/clusters/$CLUSTER_NAME/services/hdfs/config > $LOCAL_WORKDIR/traf_hdfs_config_temp
 
@@ -171,18 +175,24 @@ fi
 rm $LOCAL_WORKDIR/traf_hdfs_config_temp 2> /dev/null
 
 # change the hbase configuration using Cloudera Manager's REST api
+# NOTE: hbase.regionserver.lease.period is used as it is equivalent to
+#       hbase.client.scanner.timeout.period and Cloudera only allows
+#       hbase.regionserver.lease.period to be set through the REST API.
 curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
 '{ "roleTypeConfigs" :	[ {
 	"roleType" : "MASTER",
 	"items" : [ { 
 		"name" : "hbase_master_config_safety_valve", 
-        "value" : "<property>\r\n   <name>hbase.master.distributed.log.splitting</name>\r\n   <value>false</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.ma    ster.timeoutMillis</name>\r\n   <value>600000</value>\r\n</property>\r\n"
+        "value" : "<property>\r\n   <name>hbase.master.distributed.log.splitting</name>\r\n   <value>false</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.master.timeoutMillis</name>\r\n   <value>600000</value>\r\n</property>\r\n"
 		} ]
     }, {
 	"roleType" : "REGIONSERVER", 
 	"items" : [ { 
 		"name" : "hbase_coprocessor_region_classes", 
                 "value" : "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"
+		}, {
+		"name" : "hbase_regionserver_lease_period", 
+		"value" : "600000"
 		}, {
 		"name" : "hbase_regionserver_config_safety_valve", 
 		"value" : "<property>\r\n   <name>hbase.hregion.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.split.policy</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy</value>\r\n</property>\r\n  <property>\r\n   <name>hbase.snapshot.enabled</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.bulkload.staging.dir</name>\r\n   <value>/hbase-staging</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.transactional.tlog</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.region.timeout</name>\r\n   <value>600000</value>\r\n</property>\r\n "
@@ -203,14 +213,14 @@ curl_error=$(grep TITLE $LOCAL_WORKDIR/traf_hbase_config_temp | grep Error | wc 
 if [ $curl_error -ne 0 ]; then
     echo "***ERROR: Unable to modify HBase configuration through Cloudera's REST API."
     echo "***ERROR: Check that HBase is running without error."
-    cat traf_hbase_config_temp
+    cat $LOCAL_WORKDIR/traf_hbase_config_temp
     exit -1
 fi
 curl_error=$(grep message $LOCAL_WORKDIR/traf_hbase_config_temp | wc -l)
 if [ $curl_error -ne 0 ]; then
     echo "***ERROR: Unable to modify HBase configuration through Cloudera's REST API."
     echo "***ERROR: Check that HBase is running without error."
-    cat traf_hbase_config_temp
+    cat $LOCAL_WORKDIR/traf_hbase_config_temp
     exit -1
 fi
 rm $LOCAL_WORKDIR/traf_hbase_config_temp 2> /dev/null
@@ -247,4 +257,27 @@ if [ $failures -ne 0 ]; then
 fi
 
 echo "***INFO: HBase restart completed successfully"
+
+#====================================================
+# NOTE: These command must be done AFTER acls are 
+#       enabled and HDFS has been restarted
+echo "***INFO: Setting HDFS ACLs for snapshot scan support"
+sudo su hdfs --command "hdfs dfs -mkdir -p /hbase/archive"
+sudo su hdfs --command "hdfs dfs chown hbase:hbase /hbase/archive"
+sudo su hdfs --command "hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive"
+if [ $? != 0 ]; then
+   echo "***ERROR: (hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive) command failed"
+   exit -1
+fi
+sudo su hdfs --command "hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive"
+if [ $? != 0 ]; then
+   echo "***ERROR: (hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /hbase/archive) command failed"
+   exit -1
+fi
+sudo su hdfs --command "hdfs dfs -setfacl -R -m mask::rwx /hbase/archive"
+if [ $? != 0 ]; then
+   echo "***ERROR: (hdfs dfs -setfacl -R -m mask::rwx /hbase/archive) command failed"
+   exit -1
+fi
+
 

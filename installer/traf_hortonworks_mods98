@@ -183,6 +183,18 @@ if [ $? != 0 ]; then
     exit -1
 fi
 sleep 2
+$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hdfs-site dfs.namenode.acls.enabled true
+if [ $? != 0 ]; then
+    echo "***ERROR: unable to modify dfs.namenode.acls.enabled through Ambari's configs.sh script."
+    exit -1
+fi
+sleep 2
+$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.client.scanner.timeout.period 600000
+if [ $? != 0 ]; then
+    echo "***ERROR: unable to modify hbase.client.scanner.timeout.period through Ambari's configs.sh script."
+    exit -1
+fi
+sleep 2
 echo
 
 #=====================================
@@ -250,7 +262,7 @@ echo "***INFO: ...polling every $poll_time seconds until start is completed."
 command_id=$(cat $TRAF_WORKDIR/traf_hbase_restart_temp | grep id | awk '{print $3}' | sed -e 's@,@@' )
 echo "***DEBUG: Ambari command_id=$command_id"
 
-# poll until stop is completed as a stop can take a while
+# poll until start is completed as a start can take a while
 completed=0
 while [ $completed -eq 0 ]; do
     sleep $poll_time
@@ -262,6 +274,106 @@ while [ $completed -eq 0 ]; do
     # if start command is completed then completed will not equal 0
     completed=$(cat $LOCAL_WORKDIR/hbase_restart_status_temp | grep '"request_status" : "COMPLETED"' | wc -l)
 done
+
+#=====================================
+# restart HDFS to pick up all the changes just made
+
+echo "***INFO: Restarting HDFS to pick up config changes for Trafodion"
+echo "***INFO: Stopping HDFS..."
+curl --user $ADMIN:$PASSWORD \
+    -H "X-Requested-By: Trafodion" \
+    -X PUT -d '{"ServiceInfo": { "state" : "INSTALLED" }}' \
+    http://$URL/api/v1/clusters/$CLUSTER_NAME/services/HDFS > $TRAF_WORKDIR/traf_hdfs_restart_temp
+
+if [ $? != 0 ]; then 
+   echo "***ERROR: Unable to restart HDFS"
+   echo "***ERROR: Please manually restart HDFS through the Ambari web GUI"
+fi 
+
+# in most cases curl does not return an error
+# so curl's actual output needs to be checked, too
+curl_error=$(grep TITLE $TRAF_WORKDIR/traf_hdfs_restart_temp | grep Error | wc -l)
+
+if [ $curl_error -ne 0 ]; then
+    echo "***ERROR: Unable to restart HDFS"
+    echo "***ERROR: Please manually restart HDFS through the Ambari web GUI"
+fi
+
+echo "***INFO: ...polling every $poll_time seconds until restart is completed."
+command_id=$(cat $TRAF_WORKDIR/traf_hdfs_restart_temp | grep id | awk '{print $3}' | sed -e 's@,@@' )
+echo "***DEBUG: Ambari command_id=$command_id"
+
+# poll until stop is completed as a stop can take a while
+completed=0
+while [ $completed -eq 0 ]; do
+    sleep $poll_time
+    curl --user $ADMIN:$PASSWORD \
+        http://$URL/api/v1/clusters/$CLUSTER_NAME/requests/$command_id \
+        > $LOCAL_WORKDIR/traf_hdfs_restart_temp
+    cat $LOCAL_WORKDIR/traf_hdfs_restart_temp
+    echo "***INFO: ...polling every $poll_time seconds until stop is completed."
+    # if stop command is completed then completed will not equal 0
+    completed=$(cat $LOCAL_WORKDIR/traf_hdfs_restart_temp | grep '"request_status" : "COMPLETED"' | wc -l)
+done
+
+echo "***INFO: Starting HDFS..."
+curl --user $ADMIN:$PASSWORD \
+    -H "X-Requested-By: Trafodion" \
+    -X PUT -d '{"ServiceInfo": { "state" : "STARTED" }}' \
+    http://$URL/api/v1/clusters/$CLUSTER_NAME/services/HDFS > $TRAF_WORKDIR/traf_hdfs_restart_temp
+
+if [ $? != 0 ]; then
+   echo "***ERROR: Unable to restart HDFS"
+   echo "***ERROR: Please manually restart HDFS through the Ambari web GUI"
+fi
+
+# in most cases curl does not return an error
+# so curl's actual output needs to be checked, too
+curl_error=$(grep TITLE $TRAF_WORKDIR/traf_hdfs_restart_temp | grep Error | wc -l)
+if [ $curl_error -ne 0 ]; then
+    echo "***ERROR: Unable to restart HDFS"
+    echo "***ERROR: Please manually restart HDFS through the Ambari web GUI"
+fi
+
+echo "***INFO: ...polling every $poll_time seconds until start is completed."
+command_id=$(cat $TRAF_WORKDIR/traf_hdfs_restart_temp | grep id | awk '{print $3}' | sed -e 's@,@@' )
+echo "***DEBUG: Ambari command_id=$command_id"
+
+# poll until start is completed as a start can take a while
+completed=0
+while [ $completed -eq 0 ]; do
+    sleep $poll_time
+    curl --user $ADMIN:$PASSWORD \
+        http://$URL/api/v1/clusters/$CLUSTER_NAME/requests/$command_id \
+        > $LOCAL_WORKDIR/traf_hdfs_restart_temp
+    cat $LOCAL_WORKDIR/traf_hdfs_restart_temp
+    echo "***INFO: ...polling every $poll_time seconds until stop is completed."
+    # if start command is completed then completed will not equal 0
+    completed=$(cat $LOCAL_WORKDIR/traf_hdfs_restart_temp | grep '"request_status" : "COMPLETED"' | wc -l)
+done
+
+#=====================================
+# NOTE: These command must be done AFTER acls are 
+#       enabled and HDFS has been restarted
+echo "***INFO: Setting HDFS ACLs for snapshot scan support"
+sudo su hdfs --command "hdfs dfs -mkdir -p /apps/hbase/data/archive"
+sudo su hdfs --command "hdfs dfs chown hbase:hdfs apps/hbase/data/archive"
+sudo su hdfs --command "hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /apps/hbase/data/archive"
+if [ $? != 0 ]; then
+   echo "***ERROR: (hdfs dfs -setfacl -R -m mask::rwx /apps/hbase/data/archive) command failed"
+   exit -1
+fi
+sudo su hdfs --command "hdfs dfs -setfacl -R -m default:user:$TRAF_USER:rwx /apps/hbase/data/archive"
+if [ $? != 0 ]; then
+   echo "***ERROR: (hdfs dfs -setfacl -R -m mask::rwx /apps/hbase/data/archive) command failed"
+   exit -1
+fi
+sudo su hdfs --command "hdfs dfs -setfacl -R -m mask::rwx /apps/hbase/data/archive"
+if [ $? != 0 ]; then
+   echo "***ERROR: (hdfs dfs -setfacl -R -m mask::rwx /apps/hbase/data/archive) command failed"
+   exit -1
+fi
+
 
 # clean up files generated by Ambari's config.sh script
 rm $LOCAL_WORKDIR/doSet_version*
