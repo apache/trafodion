@@ -178,11 +178,13 @@ class PrivMgr
     PrivMgr();
     PrivMgr( 
        const std::string &metadataLocation,
-       ComDiagsArea * pDiags = NULL);
+       ComDiagsArea * pDiags = NULL,
+       PrivMDStatus authorizationEnabled = PRIV_INITIALIZE_UNKNOWN);
     PrivMgr( 
        const std::string &trafMetadataLocation,
        const std::string &metadataLocation,
-       ComDiagsArea * pDiags = NULL);
+       ComDiagsArea * pDiags = NULL,
+       PrivMDStatus authorizationEnabled = PRIV_INITIALIZE_UNKNOWN);
     PrivMgr(const PrivMgrMDAdmin &rhs);
     virtual ~PrivMgr(void);
     
@@ -195,6 +197,7 @@ class PrivMgr
     inline std::string getTrafMetadataLocation (void) {return trafMetadataLocation_;}
     inline const std::string & getTrafMetadataLocation (void) const {return trafMetadataLocation_;}
     bool isAuthorizationEnabled(void); 
+    void setAuthorizationEnabled(PrivMDStatus authStatus) {authorizationEnabled_ = authStatus;}
     bool isAuthIDGrantedPrivs(
        int32_t authID,
        std::vector<PrivClass> privClasses);
@@ -211,6 +214,7 @@ class PrivMgr
     std::string  metadataLocation_;
     ComDiagsArea * pDiags_;
     unsigned int parserFlags_;
+    PrivMDStatus authorizationEnabled_;
     
 }; // class PrivMgr      
   

@@ -92,6 +92,7 @@ enum class PrivAuthClass {
 };                
 
 const static int32_t FIRST_DML_PRIV = SELECT_PRIV;
+const static int32_t LAST_PRIMARY_DML_PRIV = UPDATE_PRIV;
 const static int32_t LAST_DML_PRIV = EXECUTE_PRIV;
 const static int32_t FIRST_DDL_PRIV = CREATE_PRIV;
 const static int32_t LAST_DDL_PRIV = DROP_PRIV;

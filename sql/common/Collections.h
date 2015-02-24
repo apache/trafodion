@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2931,8 +2931,6 @@ public:
   // 'Const' is used on method signatures where it makes sense
   //(thus allowing the methods to be called more easily, and safely).
   // Constness is cast away within some of the methods because
-  // RogueWave's interface stupidly doesn't use 'const' as much as
-  // it could and should.
   // --------------------------------------------------------------------
   void clearAndDestroy()
   {

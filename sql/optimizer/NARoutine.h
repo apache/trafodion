@@ -38,12 +38,10 @@
 #include "BindWA.h"
 #include "Stats.h"
 #include "CostVector.h"
+#include "PrivMgrCommands.h"
 
 class NARoutine;
 class NARoutineDB;
-class CatRORoutine;
-class CatRORoutineAction;
-class CatROUDFRoutine;
 
 // forward reference
 class SimpleCostVector;
@@ -141,11 +139,8 @@ public:
   inline const ComString        &getSignature()            const { return signature_; }
   inline const ComObjectName    &getLibrarySqlName()       const { return librarySqlName_; }
   inline const QualifiedName    &getSqlName()              const { return name_; }  
-  inline const ComString        &getSurrogateFileName()    const { return surrogateFileName_; }
-  inline const ComString        &getSchemaLabelFileName()  const { return schemaLabelFileName_; }
   inline       ComSecurityKeySet getSecKeySet()                  { return routineSecKeySet_ ; }
-  inline const Int64             getSchemaRedefTime()      const { return schemaRedefTime_; }  
-  inline const Int64             getRoutineID()            const { return routineID_; }
+  inline const Int64             getRoutineID()            const { return objectUID_; }
   inline const Int32              getStateAreaSize()        const { return stateAreaSize_; }
   inline const NAString         &getDllName()              const { return dllName_; }
   inline const NAString         &getDllEntryPoint()        const { return dllEntryPoint_; }
@@ -171,6 +166,10 @@ public:
   inline ComRoutineParamStyle            getParamStyle()  const { return paramStyle_; }  
   inline ComRoutineExternalSecurity getExternalSecurity() const { return externalSecurity_; }
   inline Int32                        getActionPosition() const { return actionPosition_; }
+
+  inline PrivMgrUserPrivs *              getPrivInfo()    const { return privInfo_; }
+  inline Int32                           getObjectOwner() const { return objectOwner_; }
+  inline Int32                           getSchemaOwner() const { return schemaOwner_; }
 
   inline void  setudfFanOut      (Int32 fanOut)       { udfFanOut_ = fanOut; }
   inline void  setExternalPath   (ComString path)     { externalPath_   = path; }
@@ -201,10 +200,7 @@ public:
   inline NABoolean hasResultSets()        const { return (maxResults_ > 0); }
 
 
-  inline Int32 getObjectOwner() const
-  {
-    return objectOwner_;
-  }
+  void setupPrivInfo();
 
   // -------------------------------------------------------------------
   // Standard operators
@@ -256,13 +252,10 @@ private:
   ComRoutineExternalSecurity externalSecurity_;
   NABoolean            isExtraCall_;
   NABoolean            hasOutParams_;
-  ComString            surrogateFileName_;
-  ComString            schemaLabelFileName_;
-  ComTimestamp         schemaRedefTime_;
 
   ComSecurityKeySet    routineSecKeySet_ ;
 
-  Int64                routineID_;
+  Int64                objectUID_;
   NABoolean            isUniversal_;
   Int32                actionPosition_;
   ComRoutineExecutionMode executionMode_;
@@ -284,6 +277,9 @@ private:
 
   COM_VERSION          schemaVersionOfRoutine_;
   Int32                objectOwner_;
+  Int32                schemaOwner_;
+  PrivMgrUserPrivs    *privInfo_;
+
 };
 #pragma warn(1506)  // warning elimination 
 

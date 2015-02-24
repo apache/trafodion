@@ -89,7 +89,8 @@ static const literalAndEnumStruct objectTypeConversionTable [] =
 PrivMgr::PrivMgr() 
 : trafMetadataLocation_ ("TRAFODION.\"_MD_\""),
   metadataLocation_ ("TRAFODION.PRIVMGR_MD"),
-  pDiags_(CmpCommon::diags())
+  pDiags_(CmpCommon::diags()),
+  authorizationEnabled_(PRIV_INITIALIZE_UNKNOWN)
 {}
 
 // -----------------------------------------------------------------------
@@ -99,9 +100,11 @@ PrivMgr::PrivMgr()
 
 PrivMgr::PrivMgr( 
    const std::string & metadataLocation,
-   ComDiagsArea * pDiags)
+   ComDiagsArea * pDiags,
+   PrivMDStatus authorizationEnabled)
 : metadataLocation_ (metadataLocation),
-  pDiags_(pDiags)
+  pDiags_(pDiags),
+  authorizationEnabled_(authorizationEnabled)
   
 {
 
@@ -114,10 +117,12 @@ PrivMgr::PrivMgr(
 PrivMgr::PrivMgr( 
    const std::string & trafMetadataLocation,
    const std::string & metadataLocation,
-   ComDiagsArea * pDiags)
+   ComDiagsArea * pDiags,
+   PrivMDStatus authorizationEnabled)
 : trafMetadataLocation_ (trafMetadataLocation),
   metadataLocation_ (metadataLocation),
-  pDiags_(pDiags)
+  pDiags_(pDiags),
+  authorizationEnabled_(authorizationEnabled)
   
 {
 
@@ -785,8 +790,12 @@ ComObjectType PrivMgr::ObjectLitToEnum(const char *objectLiteral)
 // ----------------------------------------------------------------------------
 bool PrivMgr::isAuthorizationEnabled()
 {
-  PrivMDStatus retcode = authorizationEnabled();
-  return (retcode != PRIV_UNINITIALIZED);
+  // If authorizationEnabled_ not setup in class, go determine status
+  if (authorizationEnabled_ == PRIV_INITIALIZE_UNKNOWN)
+    authorizationEnabled_ = authorizationEnabled();
+
+  // return true if PRIV_INITIALIZED
+  return (authorizationEnabled_ == PRIV_INITIALIZED);
 }
 
 // ----------------------------------------------------------------------------

@@ -38,21 +38,19 @@
 #include "ComSmallDefs.h"
 #include "CmpCommon.h"
 #include "UdrErrors.h"
-#include "hs_util.h"       // For getModifyTime and getRedefTime
-#include "hs_cli.h"        // For getModifyTime and getRedefTime
-#include "hs_la.h"         // For getModifyTime and getRedefTime
-#include "CmpContext.h"    // For getModifyTime and getRedefTime
-#include "NAExecTrans.h"   // For getModifyTime and getRedefTime
 #include "NARoutineDB.h"
 #include "NARoutine.h"
 #include "SchemaDB.h"
 #include "str.h"
+#include "hs_util.h"
 #include "LmJavaSignature.h"
 #include "CmUtil.h"
 #include "NATableSt.h"
 #include "CmpMain.h"
 #include "Globals.h"
 #include "Context.h"
+#include "ComUser.h"
+#include "CmpSeabaseDDL.h"
 
 // -----------------------------------------------------------------------
 // Copy a string.  A null terminated buffer is returned.
@@ -95,11 +93,8 @@ NARoutine::NARoutine (CollHeap *heap)
     , externalSecurity_       (COM_ROUTINE_EXTERNAL_SECURITY_INVOKER)
     , isExtraCall_            (FALSE)
     , hasOutParams_           (FALSE)
-    , surrogateFileName_      ("", heap)
     , redefTime_              (0)
     , lastUsedTime_           (0)
-    , schemaLabelFileName_    ("", heap)
-    , schemaRedefTime_        (0)
     , routineSecKeySet_       (heap)
     , passThruDataNumEntries_ (0)
     , passThruData_           (NULL)
@@ -109,7 +104,7 @@ NARoutine::NARoutine (CollHeap *heap)
     , isUniversal_            (FALSE)
     , actionPosition_         (-1)
     , executionMode_          (COM_ROUTINE_SAFE_EXECUTION)
-    , routineID_              (0)
+    , objectUID_              (0)
     , dllName_                ("", heap)
     , dllEntryPoint_          ("", heap)
     , comRoutineParallelism_  ("NO", heap)
@@ -118,6 +113,9 @@ NARoutine::NARoutine (CollHeap *heap)
     , dataSource_             ("", heap)
     , fileSuffix_             ("", heap)
     , schemaVersionOfRoutine_ (COM_VERS_UNKNOWN)
+    , objectOwner_            (0)
+    , schemaOwner_            (0)
+    , privInfo_               (NULL)
     , heap_                   (heap)
 {
 }
@@ -153,11 +151,9 @@ NARoutine::NARoutine (  const QualifiedName &name
     , externalSecurity_       (COM_ROUTINE_EXTERNAL_SECURITY_INVOKER)
     , isExtraCall_            (1)
     , hasOutParams_           (FALSE)
-    , surrogateFileName_      ("", heap)
     , redefTime_              (0)
     , lastUsedTime_           (0)
-    , schemaLabelFileName_    ("", heap)
-    , schemaRedefTime_        (0)
+    , routineSecKeySet_       (heap)
     , passThruDataNumEntries_ (0)
     , passThruData_           (NULL)
     , passThruDataSize_       (NULL)
@@ -166,7 +162,7 @@ NARoutine::NARoutine (  const QualifiedName &name
     , isUniversal_            (0)
     , actionPosition_         (-1)
     , executionMode_          (COM_ROUTINE_SAFE_EXECUTION)
-    , routineID_              (0)
+    , objectUID_              (0)
     , dllName_                ("", heap)
     , dllEntryPoint_          ("", heap)
     , comRoutineParallelism_  ("", heap)
@@ -175,6 +171,9 @@ NARoutine::NARoutine (  const QualifiedName &name
     , dataSource_             ("", heap)
     , fileSuffix_             ("", heap)
     , schemaVersionOfRoutine_ (COM_VERS_2500)
+    , objectOwner_            (0)
+    , schemaOwner_            (0)
+    , privInfo_               (NULL)
     , heap_(heap)
 {
   CollIndex colCount = 0;
@@ -284,14 +283,12 @@ NARoutine::NARoutine (const NARoutine &old, CollHeap *h)
     , externalSecurity_       (old.externalSecurity_)
     , isExtraCall_            (old.isExtraCall_)
     , hasOutParams_           (old.hasOutParams_)
-    , surrogateFileName_      (old.surrogateFileName_, h)
     , redefTime_              (old.redefTime_)
     , lastUsedTime_           (old.lastUsedTime_)
-    , schemaLabelFileName_    (old.schemaLabelFileName_, h)
-    , schemaRedefTime_        (old.schemaRedefTime_)
+    , routineSecKeySet_       (h)
     , isUniversal_            (old.isUniversal_)
     , executionMode_          (old.getExecutionMode())
-    , routineID_              (old.routineID_)
+    , objectUID_              (old.objectUID_)
     , stateAreaSize_          (old.stateAreaSize_)
     , dllName_                (old.dllName_, h)
     , dllEntryPoint_          (old.dllEntryPoint_, h)
@@ -303,11 +300,13 @@ NARoutine::NARoutine (const NARoutine &old, CollHeap *h)
     , initialRowCost_	      (old.initialRowCost_)
     , normalRowCost_	      (old.normalRowCost_)
     , udfFanOut_              (old.udfFanOut_)
-    , routineSecKeySet_       (h)
     , passThruDataNumEntries_ (old.passThruDataNumEntries_)
     , uecValues_              (old.uecValues_, h)
     , actionPosition_         (old.actionPosition_)
     , schemaVersionOfRoutine_ (old.schemaVersionOfRoutine_)
+    , objectOwner_            (0)
+    , schemaOwner_            (0) 
+    , privInfo_               (NULL)
     , heap_                   (h)
 {
   extRoutineName_ = new (h) ExtendedQualName(*old.extRoutineName_, h);
@@ -367,11 +366,9 @@ NARoutine::NARoutine(const QualifiedName   &name,
     , externalSecurity_       (routine_desc->body.routine_desc.externalSecurity)
     , isExtraCall_            (FALSE) //TODO
     , hasOutParams_           (FALSE)
-    , surrogateFileName_      ("", heap) //TODO
     , redefTime_              (0)  //TODO
     , lastUsedTime_           (0)
-    , schemaLabelFileName_    ("", heap) //TODO
-    , schemaRedefTime_        (0) //TODO
+    , routineSecKeySet_       (heap)
     , passThruDataNumEntries_ (0)
     , passThruData_           (NULL)
     , passThruDataSize_       (0)
@@ -380,7 +377,7 @@ NARoutine::NARoutine(const QualifiedName   &name,
     , isUniversal_            (0) // TODO
     , actionPosition_         (0) // TODO
     , executionMode_          (COM_ROUTINE_SAFE_EXECUTION)
-    , routineID_              (0)
+    , objectUID_              (routine_desc->body.routine_desc.objectUID)
     , dllName_                (routine_desc->body.routine_desc.libraryFileName, heap)
     , dllEntryPoint_          (routine_desc->body.routine_desc.externalName, heap)
     , sasFormatWidth_         ("", heap) //TODO
@@ -388,7 +385,9 @@ NARoutine::NARoutine(const QualifiedName   &name,
     , dataSource_             ("", heap) // TODO
     , fileSuffix_             ("", heap) // TODO
     , schemaVersionOfRoutine_ ((COM_VERSION)0) // TODO
-    , objectOwner_            (0) // TODO
+    , objectOwner_            (routine_desc->body.routine_desc.owner)
+    , schemaOwner_            (routine_desc->body.routine_desc.schemaOwner)
+    , privInfo_               (NULL)
     , heap_(heap)
 {
   char parallelism[5];
@@ -603,6 +602,7 @@ NARoutine::NARoutine(const QualifiedName   &name,
     }
     
      
+  setupPrivInfo();
 
   heapSize_ = (heap ? heap->getTotalSize() : 0);
 }
@@ -629,11 +629,69 @@ NARoutine::~NARoutine()
   }
   if (passThruDataSize_ NEQ NULL) // Use NADELETEARRAY for any 'new(heap)<class>[<size>]'
     NADELETEARRAY(passThruDataSize_, (UInt32)passThruDataNumEntries_, Int64, heap_);
+
+  if (privInfo_)
+   NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
 }
 
 void NARoutine::setSasFormatWidth(NAString &width)
 {
   sasFormatWidth_ = width;
+}
+
+// ----------------------------------------------------------------------------
+// method: setupPrivInfo
+//
+// If authorization is enabled, go retrieve privilege information
+// and set up query invalidation (security) keys for the table.
+// ----------------------------------------------------------------------------
+void NARoutine::setupPrivInfo(void)
+{
+  privInfo_ = new(heap_) PrivMgrUserPrivs;
+  if ( !CmpCommon::context()->isAuthorizationEnabled() || ComUser::isRootUserID())
+  {
+    privInfo_->setOwnerDefaultPrivs();
+    return;
+  }
+
+  NAString privMDLoc;
+  CONCAT_CATSCH(privMDLoc,CmpSeabaseDDL::getSystemCatalogStatic(),SEABASE_PRIVMGR_SCHEMA);
+  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(), PRIV_INITIALIZED);
+
+
+  // use embedded compiler.
+  CmpSeabaseDDL cmpSBD(STMTHEAP);
+  if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+  {
+    abort();
+    return;
+  }
+
+  // gather privileges
+  std::vector <ComSecurityKey *> secKeyVec;
+  if (STATUS_GOOD != privInterface.getPrivileges(objectUID_, ComUser::getCurrentUser(),
+                                    *privInfo_, &secKeyVec))
+  {
+    NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
+    privInfo_ = NULL;
+  }
+
+  cmpSBD.switchBackCompiler();
+
+  // generate list of query invalidation (security) keys for the
+  // routine and current user
+  // getPrivileges allocates space, this routine should delete it
+  //   (should a heap pointer to set up for this?)
+  for (std::vector<ComSecurityKey*>::iterator iter = secKeyVec.begin();
+       iter != secKeyVec.end();
+       iter++)
+  {
+    // Insertion of the dereferenced pointer results in NASet making
+    // a copy of the object, and then we delete the original.
+    routineSecKeySet_.insert(**iter);
+    delete *iter;
+  }
+
 }
 
 ULng32 NARoutineDBKey::hash() const
@@ -678,6 +736,42 @@ NABoolean NARoutineDB::cachingMetaData()
   return cacheMetaData_ && maxCacheSize_; 
 }
 
+// ----------------------------------------------------------------------------
+// method: moveRoutineToDeleteList
+//
+// This method removes the routine from the primary cache and adds it to the
+// list of routines to delete after statement execution completes.
+//
+// cachedNARoutine is a pointer to an NARoutine entry
+// key is a pointer to the routine key
+// ----------------------------------------------------------------------------
+void NARoutineDB::moveRoutineToDeleteList(NARoutine *cachedNARoutine, const NARoutineDBKey *key)
+{  
+  // routine is not cached, just return
+  if (cachedNARoutine == NULL || !cachingMetaData())
+    return;
+
+  // Add pointer to the routine to the list that will  be deleted after the 
+  // statement completes (to avoid affecting compile time)
+  routinesToDeleteAfterStatement_.insert(cachedNARoutine);
+
+  // The NARoutine in cache is dirty and needs to be removed.
+  // Remove entry that the key is pointing to
+  remove(key);
+
+  // Adjust cache size
+  if ((ULng32)cachedNARoutine->getSize() <= currentCacheSize_)
+  {
+    currentCacheSize_ -= cachedNARoutine->getSize();
+    if (entries_>0) entries_--;
+  }
+  else
+  {
+    currentCacheSize_ = 0;
+    entries_ = 0;
+  }
+}
+
 // Cleanup NARoutine cache after the statement completes.  Remove entries 
 // using LRU policy, if the cache has grown too large.  The approach here is 
 // somewhat different from NATableDB caching, which deletes entries from the 
@@ -718,6 +812,97 @@ void NARoutineDB::resetAfterStatement()
   }
 }
 
+// ----------------------------------------------------------------------------
+// method: free_entries_with_QI_key
+//
+// This method is sent a list of query invalidation keys.
+// It looks through the list of routines to see if any of them need to be
+// removed from cache because their definitions are no longer valid.
+//
+// numKeys - number of existing invalidation keys
+// qiKeyArray - actual keys
+// ----------------------------------------------------------------------------
+void NARoutineDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
+{
+  NAHashDictionaryIterator<NARoutineDBKey,NARoutine> iter (*this);
+  NARoutineDBKey *key;
+  NARoutine *routine;
+  iter.getNext(key,routine);
+  while(key && routine)
+  {
+    // See if item should be removed
+    if (qiCheckForInvalidObject(numKeys, qiKeyArray,
+                                routine->getRoutineID(),
+                                routine->getSecKeySet()))
+      moveRoutineToDeleteList(routine, key);
+    iter.getNext(key,routine);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// method: removeNARoutine
+//
+// The method is called when DDL is performed against a routine making its 
+// definition incorrect.
+// It has a side affect of generating query invalidation keys that are 
+// propagate to all the other processes that could have the routine stored 
+// in cache.
+// ----------------------------------------------------------------------------
+void NARoutineDB::removeNARoutine(QualifiedName &routineName, 
+                                  QiScope qiScope, 
+                                  Int64 objUID)
+{
+
+  NAHashDictionaryIterator<NARoutineDBKey,NARoutine> iter (*this); 
+  NARoutineDBKey *key = NULL;
+  NARoutine *cachedNARoutine = NULL;
+
+  NASet<Int64> objectUIDs(CmpCommon::statementHeap(), 1);
+
+  // If there are no items in cache, skip
+  if (entries() > 0)
+  {
+    NASet<Int64> objectUIDs(CmpCommon::statementHeap(), 1);
+
+    // iterate over all entries and remove the ones that match the name
+    iter.reset();
+    iter.getNext(key,cachedNARoutine);
+
+    while(key && cachedNARoutine)
+    {
+      if (cachedNARoutine->getSqlName() == routineName)
+      {
+        objectUIDs.insert(cachedNARoutine->getRoutineID());
+        moveRoutineToDeleteList(cachedNARoutine,key);
+      }
+      iter.getNext(key,cachedNARoutine);
+    }
+  }
+
+  // clear out the other users' caches too.
+  if (qiScope == REMOVE_FROM_ALL_USERS) 
+  {
+    // There are some scenarios where the affected object does not have an 
+    // NARoutine cache entry.  However, other processes may have this routine
+    // in their caches.  Go ahead and create an invalidation key 
+    if (0 == objectUIDs.entries())
+        objectUIDs.insert(objUID);
+
+    if (objectUIDs.entries() > 0)
+    {
+      Int32 numKeys = objectUIDs.entries();
+      SQL_QIKEY qiKeys[numKeys];
+      for (CollIndex i = 0; i < numKeys; i++)
+      {
+        qiKeys[i].ddlObjectUID = objectUIDs[i];
+        qiKeys[i].operation[0] = 'O';
+        qiKeys[i].operation[1] = 'R';
+      }
+      long retcode = SQL_EXEC_SetSecInvalidKeys(numKeys, qiKeys);
+    }
+  }
+}
+
 // Find the NARoutine entry in the cache for 'key' or create it if not found.
 // 1. Check for entry in cache.  
 // 2. If it doesn't exist, return.
@@ -742,53 +927,7 @@ NARoutine *NARoutineDB::get(BindWA *bindWA, const NARoutineDBKey *key)
   // Record time that this NARoutine was obtained from cache for LRU.
   cachedNARoutine->setLastUsedTime(hs_getEpochTime());
 
-  // If this is the first time this cache entry has been accessed
-  // during the current statement, check to see if it is dirty.         /* 3 */
-  
-  if(!cachedNARoutine->getAccessedInCurStmt() &&
-     CmpCommon::getDefault(COMP_BOOL_191) == DF_OFF) // Don't do if using
-                                                     // old UDF metadatra.
-  {
-
-    // Read time from ROUTINES label and compare to what is in cache.
-    // If label time is newer than cache, read REDEF_TIME from ROUTINES
-    // table and compare to redefinition time for cached NARoutine.
-    Int32 error = 0;
-    if ((                                                               /* 4 */
-         getModifyTime(*cachedNARoutine, error) > 
-           cachedNARoutine->getRedefTime() &&
-         getRedefTime(bindWA, *cachedNARoutine, error) > 
-           cachedNARoutine->getRedefTime()) ||
-         error)
-    {
-      // The NARoutine in cache is dirty and needs to be removed.       /* 5 */
-      // Remove pointer to NAroutine from cache
-      remove(key);
-
-      // Adjust cache size
-      if ((ULng32)cachedNARoutine->getSize() <= currentCacheSize_)
-      {
-        currentCacheSize_ -= cachedNARoutine->getSize();
-        if (entries_>0) entries_--;
-      }
-      else
-      {
-        currentCacheSize_ = 0;
-        entries_ = 0;
-      }
- 
-      // Add to list to be deleted after the statement completes 
-      // (to avoid affecting compile time)
-      routinesToDeleteAfterStatement_.insert(cachedNARoutine);
-
-      return NULL;
-    }
-    else 
-      // Set this flag so we do not check to see if the NARoutine is 
-      // dirty again during this statement.  This flag will be reset
-      // at end of statement.
-      cachedNARoutine->getAccessedInCurStmt() = TRUE; 
-  }
+  cachedNARoutine->getAccessedInCurStmt() = TRUE; 
 
   return cachedNARoutine;
 }
@@ -915,23 +1054,6 @@ void NARoutineDB::flushCache()
 
 }
 
-//Int64 NARoutineDB::getModifyTime(Int32 &error)
-
-// Get modification time of table.  NOTE: This does not work on NT.
-Int64 NARoutineDB::getModifyTime(NARoutine &routine, Int32 &error)
-{
-  return 0;
-}
-
-// Obtain the value of the REDEF_TIME column for the function or action from
-// metadata.  Note that the use of readRoutineDef() should mean that almost all
-// of the time this will be read from Catman cache.
-Int64 NARoutineDB::getRedefTime(BindWA *bindWA, NARoutine &routine, Int32 &error)
-{
-  return 0;
-}
-
-
 void NARoutineDB::getCacheStats(NARoutineCacheStats & stats)
 {
   stats.numLookups = totalLookupsCount_;
@@ -941,7 +1063,6 @@ void NARoutineDB::getCacheStats(NARoutineCacheStats & stats)
   stats.maxCacheSize = maxCacheSize_;
   stats.numEntries =  entries_;    
 }
-
 
 //-----------------------------------------------------------------------
 // NARoutineCacheStoredProcedure is a class that contains functions used by

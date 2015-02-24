@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@
 #include "NABoolean.h"
 #include "ComPackDefs.h"
 #include "NAVersionedObject.h"
+#include "PrivMgrDefs.h"
 
 // #include "BaseTypes.h"
 // --------------------------------------------------------------------------
@@ -249,6 +250,20 @@ public:
   UInt32 getInsertAccess() const      { return accessFlags_.insert_; }
   UInt32 getUpdateAccess() const      { return accessFlags_.update_; }
   UInt32 getDeleteAccess() const      { return accessFlags_.delete_; }
+  UInt32 getPrivAccess(PrivType which)
+  {
+    if (which == SELECT_PRIV)
+      return getSelectAccess();
+    else if (which == INSERT_PRIV)
+      return getInsertAccess();
+    else if (which == UPDATE_PRIV)
+      return getUpdateAccess();
+    else if (which == DELETE_PRIV)
+      return getDeleteAccess();
+    else
+      return -1;
+  }
+
   AccessFlags  getAccessFlags()  const      { return accessFlags_; }
 
   void setSelectAccess(UInt32 flag = 1)

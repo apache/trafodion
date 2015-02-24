@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -93,14 +93,6 @@ void GenericUpdate::generateCacheKey(CacheWA& cwa) const
     convertInt64ToAscii(tbl->getRedefTime(), redefTime);
     cwa += " redef:";
     cwa += redefTime;
-    if ((tbl->getSchemaLabelFileName()) &&
-        (str_len(tbl->getSchemaLabelFileName()) > 0)) 
-    {
-      char schRedefTime[40];
-      convertInt64ToAscii(tbl->getSchemaRedefTime(), schRedefTime);
-      cwa += " schredef:";
-      cwa += schRedefTime;
-    }
   }
   ItemExpr *newExpr = newRecExprTree_ ? newRecExprTree_ :
     newRecExpr_.rebuildExprTree(ITM_ITEM_LIST);
@@ -366,14 +358,6 @@ void IsolatedScalarUDF::generateCacheKey(CacheWA &cwa) const
     convertInt64ToAscii(routine->getRedefTime(), redefTime);
     cwa += " redef:";
     cwa += redefTime;
-    if ((routine->getSchemaLabelFileName()) &&
-        (str_len(routine->getSchemaLabelFileName()) > 0)) 
-    {
-      char schRedefTime[40];
-      convertInt64ToAscii(routine->getSchemaRedefTime(), schRedefTime);
-      cwa += " schredef:";
-      cwa += schRedefTime;
-    }
   }
 
   if (getRoutineDesc() != NULL && getRoutineDesc()->isUUDFRoutine())
@@ -1165,14 +1149,6 @@ void Scan::generateCacheKey(CacheWA &cwa) const
       Int64 numberOfFiles = tbl->getClusteringIndex()->getHHDFSTableStats()->getNumFiles();
       sprintf(numFiles, " %ld", numberOfFiles); 
       cwa += numFiles ;
-    }
-    if ((tbl->getSchemaLabelFileName()) &&
-        (str_len(tbl->getSchemaLabelFileName()) > 0)) 
-    {
-      char schRedefTime[40];
-      convertInt64ToAscii(tbl->getSchemaRedefTime(), schRedefTime);
-      cwa += " schredef:";
-      cwa += schRedefTime;
     }
     // save pointer to this table. later, QueryCache::addEntry will use
     // this pointer to get to this table's histograms's timestamp

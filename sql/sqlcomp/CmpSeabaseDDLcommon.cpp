@@ -2590,18 +2590,32 @@ short CmpSeabaseDDL::existsInSeabaseMDTable(
     strcpy(cfvd, " and valid_def = 'Y' ");
 
   // Name must be a valid hbase name
-  if ((checkForValidHbaseName) &&
-      ((! isValidHbaseName(catName)) ||
-       (! isValidHbaseName(schName)) ||
-       (! isValidHbaseName(objName))))
+  if (checkForValidHbaseName)
     {
-      *CmpCommon::diags() << DgSqlCode(-1422);
+      if ((! isValidHbaseName(catName)) ||
+          (! isValidHbaseName(schName)) ||
+          (! isValidHbaseName(objName)))
+        {
+          *CmpCommon::diags() << DgSqlCode(-1422);
 
-      return -1;
+          return -1;
+        }
+
+      // HBase name must not be too long (see jira HDFS-6055)
+      // Generated HBase name = catName.schName.objName
+      Int32 nameLen = (strlen(catName) + 1 +
+                       strlen(schName) + 1 +
+                       strlen(objName));
+      if (nameLen > MAX_HBASE_NAME_LEN)
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_HBASE_NAME_TOO_LONG)
+                              << DgInt0(nameLen)
+                              << DgInt1(MAX_HBASE_NAME_LEN);
+
+          return -1;
+        }
     }
-
-
-
+ 
   NAString quotedSchName;
   ToQuotedString(quotedSchName, NAString(schName), FALSE);
   NAString quotedObjName;

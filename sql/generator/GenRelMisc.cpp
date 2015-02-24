@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1659,34 +1659,6 @@ short RelRoot::codeGen(Generator * generator)
 			 new (space)  char[strlen(genUdrStoi->ansiName()) + 1]
 				      );
       strcpy(udrStoiList[udrIdx]->nonConstAnsiName(), genUdrStoi->ansiName());
-
-      // checkSecurity() is FALSE and validateTimestamp() is FALSE mean the
-      // SPJ is internal stored procedures. If checkSecurity() is FALSE and
-      // validateTimestamp() is TRUE, it means schema level security check 
-      // PASS. If checkSecurity() is TRUE, it means the SPJ is a user created
-      // SPJ.
-      
-      if (genUdrStoi->checkSecurity() || genUdrStoi->validateTimestamp())
-      {
-        udrStoiList[udrIdx]->setFileName(
-			     new (space) char[strlen(genUdrStoi->fileName()) + 1]
-		          );
-        strcpy(udrStoiList[udrIdx]->fileName(), genUdrStoi->fileName());
-
-        udrStoiList[udrIdx]->setRedefTime(genUdrStoi->getRedefTime ());
-
-        udrStoiList[udrIdx]->setIsSQLMPTable(genUdrStoi->isSQLMPTable() );
-        udrStoiList[udrIdx]->setValidateTimestamp(genUdrStoi->validateTimestamp());
-        udrStoiList[udrIdx]->setAccessMode(genUdrStoi->accessMode() );
-        udrStoiList[udrIdx]->setIsUDRSurrogate(genUdrStoi->isUDRSurrogate() );
-        udrStoiList[udrIdx]->setSpecialTable( genUdrStoi->specialTable() );
-      }
-      else
-      {
-        udrStoiList[udrIdx]->setValidateTimestamp(genUdrStoi->validateTimestamp());
-        udrStoiList[udrIdx]->setCheckSecurity(genUdrStoi->checkSecurity());
-
-      }
     }
   }
 

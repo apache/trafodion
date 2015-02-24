@@ -27430,10 +27430,10 @@ ddl_object_name : ddl_qualified_name {
                                   $2->setObjectNameSpace(COM_TABLE_NAME);
 				  $$ = $2; }
                       | TOK_TABLE_MAPPING ddl_qualified_name {
-                                  $2->setObjectNameSpace(COM_TABLE_NAME);
+                                  $2->setObjectNameSpace(COM_UDF_NAME);
                                   $$ = $2; }
                       | TOK_PROCEDURE ddl_qualified_name {
-                                  $2->setObjectNameSpace(COM_TABLE_NAME);
+                                  $2->setObjectNameSpace(COM_UDF_NAME);
 				  $$ = $2; }
                       | TOK_FUNCTION ddl_qualified_name {
                                   $2->setObjectNameSpace(COM_UDF_NAME);
