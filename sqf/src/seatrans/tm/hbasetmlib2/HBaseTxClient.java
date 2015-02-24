@@ -37,7 +37,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.transactional.TransactionManager;
 import org.apache.hadoop.hbase.client.transactional.TransactionState;
@@ -58,6 +57,7 @@ import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.trafodion.dtm.HBaseTmZK;
 import org.trafodion.dtm.TmAuditTlog;
+import org.trafodion.dtm.TmDDL;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -70,6 +70,7 @@ public class HBaseTxClient {
    private static TmAuditTlog tLog;
    private static HBaseTmZK tmZK;
    private static RecoveryThread recovThread;
+   private static TmDDL tmDDL;
    private short dtmID;
    private int stallWhere;
 
@@ -77,6 +78,7 @@ public class HBaseTxClient {
    boolean useForgotten;
    boolean forceForgotten;
    boolean useRecovThread;
+   boolean useDDLTrans;
 
    private static Configuration config;
    TransactionManager trxManager;
@@ -216,6 +218,28 @@ public class HBaseTxClient {
       this.dtmID = dtmid;
       this.useRecovThread = false;
       this.stallWhere = 0;
+      this.useDDLTrans = false;
+ 
+      try {
+         String useDDLTransactions = System.getenv("TM_ENABLE_DDL_TRANS");
+         if (useDDLTransactions != null) {
+             useDDLTrans = (Integer.parseInt(useDDLTransactions) != 0);
+         }
+      }
+      catch (Exception e) {
+         if (LOG.isDebugEnabled()) LOG.debug("TM_ENABLE_DDL_TRANS is not in ms.env");
+      }
+
+      if(useDDLTrans){
+         try {
+            tmDDL = new TmDDL(config);
+         }
+         catch (Exception e) {
+            LOG.error("Unable to create TmDDL, throwing exception " + e);
+            e.printStackTrace();
+            throw new RuntimeException(e);
+         }
+      }
 
       useForgotten = true;
       try {

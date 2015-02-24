@@ -1,7 +1,7 @@
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ echo "TM_TLOG_AUTO_FLUSH=0"
 echo "TM_TLOG_DISABLE_BLOCK_CACHE=0"
 echo "#TM_TLOG_MAX_VERSIONS less than 3 will be ignored"
 echo "TM_TLOG_MAX_VERSIONS=5"
+echo "TM_ENABLE_DDL_TRANS=0"
 
 echo "TSE_CONVERT_NOUNDO_TRANS=1"
 

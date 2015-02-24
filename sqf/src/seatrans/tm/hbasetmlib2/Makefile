@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSTMOBJS)
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBTMB) -shared -o $@ $(LIBSTMOBJS)
 
 $(TMCLASS_FULL)/HBaseTxClient.class: HBaseTxClient.java
-	$(JAVAC) -Xlint -Xlint:-path -Werror HBaseTxClient.java TmAuditTlog.java HBaseAuditControlPoint.java HBaseTmZK.java HashMapArray.java -d $(TMCLASS_DIR)
+	$(JAVAC) -Xlint -Xlint:-path -Werror HBaseTxClient.java TmAuditTlog.java HBaseAuditControlPoint.java HBaseTmZK.java TmDDL.java HashMapArray.java -d $(TMCLASS_DIR)
 
 $(TMCLASS_FULL)/HBaseAuditControlPoint.class: HBaseAuditControlPoint.java
 	$(JAVAC) -Xlint -Xlint:-path -Werror HBaseAuditControlPoint.java TmAuditTlog.java -d $(TMCLASS_DIR)
@@ -76,6 +76,9 @@ $(TMCLASS_FULL)/TmAuditTlog.class: TmAuditTlog.java
 
 $(TMCLASS_FULL)/HBaseTmZK.class: HBaseTmZK.java
 	$(JAVAC) -Xlint -Xlint:-path -Werror HBaseTmZK.java -d $(TMCLASS_DIR)
+
+$(TMCLASS_FULL)/TmDDL.class: TmDDL.java
+	$(JAVAC) -Xlint -Xlint:-path -Werror TmDDL.java -d $(TMCLASS_DIR)
 
 $(TMCLASS_FULL)/TrafInfo.class: TrafInfo.java
 	$(JAVAC) -Xlint -Xlint:-path -Werror TrafInfo.java -d $(TMCLASS_DIR)
