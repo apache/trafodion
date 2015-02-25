@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <alsa/iatomic.h>
+#include "../seabed/src/utilatomic.h"
 
 #include "dtm/tmtransid.h"
 #include "xa.h"

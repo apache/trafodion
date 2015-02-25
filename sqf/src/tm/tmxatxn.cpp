@@ -65,7 +65,7 @@ CTmXaTxn::CTmXaTxn(int32 pv_nid, int64 pv_flags, int32 pv_trace_level,
    iv_tag = 0;
    iv_tx_state = TM_TX_STATE_NOTX;
    iv_ender_pid = 0;
-   atomic_set(&iv_num_active_partic, 0);
+   iv_num_active_partic.set_val(0);
    iv_prepared_rms = 0;
    iv_cleanup_sem = 0;
    iv_rm_wait_time = 0;
