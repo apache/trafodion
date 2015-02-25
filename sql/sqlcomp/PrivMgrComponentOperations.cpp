@@ -20,7 +20,6 @@
   
 #include "PrivMgrComponentOperations.h"
 #include "PrivMgrMD.h"
-#include "PrivMgrMDDefs.h"
 #include "PrivMgrMDTable.h"
 #include "PrivMgrComponents.h"
 #include "PrivMgrComponentPrivileges.h"

@@ -238,6 +238,11 @@ class CmpSeabaseDDL
 				     NAList<HbaseCreateOption*>* &hbaseCreateOptions,
 				     NAMemory * heap);
 
+  desc_struct * getSeabaseLibraryDesc(
+     const NAString &catName, 
+     const NAString &schName, 
+     const NAString &libraryName);
+     
   desc_struct *getSeabaseRoutineDesc(const NAString &catName,
                                      const NAString &schName,
                                      const NAString &objName);

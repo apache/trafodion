@@ -168,7 +168,7 @@ PrivMgr::~PrivMgr()
 //
 // A cli error is put into the diags area if there is an error
 // ----------------------------------------------------------------------------
-PrivMDStatus PrivMgr::authorizationEnabled()
+PrivMgr::PrivMDStatus PrivMgr::authorizationEnabled()
 {
 // Will require QI to reset on INITIALIZE AUTHORIZATION [,DROP]
   // get the list of tables from the schema
@@ -314,6 +314,9 @@ const char * PrivMgr::getSQLOperationName(SQLOperation operation)
       case SQLOperation::MANAGE_ROLES: return "MANAGE_ROLES";
       case SQLOperation::MANAGE_STATISTICS: return "MANAGE_STATISTICS";
       case SQLOperation::MANAGE_USERS: return "MANAGE_USERS";
+      case SQLOperation::QUERY_ACTIVATE: return "QUERY_ACTIVATE";
+      case SQLOperation::QUERY_CANCEL: return "QUERY_CANCEL";
+      case SQLOperation::QUERY_SUSPEND: return "QUERY_SUSPEND";
       case SQLOperation::REMAP_USER: return "REMAP_USER";
       case SQLOperation::SHOW: return "SHOW";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "USE_ALTERNATE_SCHEMA";
@@ -395,6 +398,9 @@ const char * PrivMgr::getSQLOperationCode(SQLOperation operation)
       case SQLOperation::MANAGE_ROLES: return "MR";
       case SQLOperation::MANAGE_STATISTICS: return "MS";
       case SQLOperation::MANAGE_USERS: return "MU";
+      case SQLOperation::QUERY_ACTIVATE: return "QA";
+      case SQLOperation::QUERY_CANCEL: return "QC";
+      case SQLOperation::QUERY_SUSPEND: return "QS";
       case SQLOperation::REMAP_USER: return "RU";
       case SQLOperation::SHOW: return "SW";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "UA";
@@ -475,10 +481,13 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
       case SQLOperation::DROP_VIEW: return "Allow grantee to drop views";
       case SQLOperation::MANAGE_COMPONENTS: return "Allow grantee to manage components";
       case SQLOperation::MANAGE_LIBRARY: return "Allow grantee to manage libraries";
-      case SQLOperation::MANAGE_LOAD: return "ALLOW grantee to perform LOAD and UNLOAD commands";
+      case SQLOperation::MANAGE_LOAD: return "Allow grantee to perform LOAD and UNLOAD commands";
       case SQLOperation::MANAGE_ROLES: return "Allow grantee to manage roles";
       case SQLOperation::MANAGE_STATISTICS: return "Allow grantee to show and update statistics";
       case SQLOperation::MANAGE_USERS: return "Allow grantee to manage users";
+      case SQLOperation::QUERY_ACTIVATE: return "Allow grantee to activate queries";
+      case SQLOperation::QUERY_CANCEL: return "Allow grantee to cancel queries";
+      case SQLOperation::QUERY_SUSPEND: return "Allow grantee to suspend queries";
       case SQLOperation::REMAP_USER: return "Allow grantee to remap DB__ users to a different external username";
       case SQLOperation::SHOW: return "Allow grantee to view metadata information about objects";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "Allow grantee to use non-default schemas";
@@ -1205,7 +1214,7 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (const std::vector<std::string> &objects
 //
 // This method verifies that the current user is able to initialize or
 // drop privilege manager metadata.  Currently this is restricted to the
-// root database user, but in the future am operator or service ID may have
+// root database user, but in the future an operator or service ID may have
 // the authority.
 //
 // Returns true if user is authorized

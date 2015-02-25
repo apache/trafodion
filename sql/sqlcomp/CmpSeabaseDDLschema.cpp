@@ -49,6 +49,7 @@
 #include "CmpMain.h"
 #include "Context.h"
 #include "PrivMgrCommands.h"
+#include "PrivMgrObjects.h"
 #include <vector>
 
 static bool dropOneTable(
@@ -57,6 +58,13 @@ static bool dropOneTable(
    const char * schemaName, 
    const char * objectName,
    bool isVolatile);
+   
+static bool transferObjectPrivs(
+   const char * systemCatalogName, 
+   const char * catalogName,
+   const char * schemaName,
+   const int32_t newOwnerID,
+   const char * newOwnerName);   
 
 // *****************************************************************************
 // *                                                                           *
@@ -772,17 +780,18 @@ Int64 schemaUID = getObjectTypeandOwner(&cliInterface,catalogName.data(),
 // * DB__ROOT or a user with the ALTER_SCHEMA privilege can change the owners  *
 // * of objects in a shared schema.  So if the schema is private, or if only   *
 // * the schema is being given, we do standard authentication checking.  But   *
-// * if giving all the objects in a shared schema, we change the owner IDs to  *
-// * DB__ROOT to force the required check.                                     *
+// * if giving all the objects in a shared schema, we change the check ID to   *
+// * the default user to force the ALTER_SCHEMA privilege check.               *
 // *                                                                           *
 // *****************************************************************************
 
+int32_t checkID = schemaOwnerID;
+
    if (objectType == COM_SHARED_SCHEMA_OBJECT && 
        dropBehavior == COM_CASCADE_DROP_BEHAVIOR)
-      schemaOwnerID = ComUser::getRootUserID(); 
+      checkID = NA_UserIdDefault; 
 
-   if (!isDDLOperationAuthorized(SQLOperation::ALTER_SCHEMA,
-                                 schemaOwnerID,schemaOwnerID))
+   if (!isDDLOperationAuthorized(SQLOperation::ALTER_SCHEMA,checkID,checkID))
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
       return;
@@ -850,9 +859,26 @@ char buf[4000];
    }
 //
 // At this point, we are giving all objects in the schema (as well as the 
-// schema itself) to the new authorization ID.
+// schema itself) to the new authorization ID.  If authentication is enabled,
+// update the privileges first.
 //
-
+   if (isAuthorizationEnabled())
+   {
+      int32_t rc = transferObjectPrivs(getSystemCatalog(),catalogName.data(),
+                                       schemaName.data(),newOwnerID,
+                                       giveSchemaNode->getAuthID().data());
+      if (rc != 0)
+      {
+         if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+         {
+          //TODO: add error
+         
+         }
+         return;
+      }
+   }
+   
+// Now update the object owner for all objects in the schema.
       
    str_sprintf(buf,"UPDATE %s.\"%s\".%s "
                    "SET object_owner = %d "
@@ -1000,3 +1026,102 @@ ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
 }
 //**************************** End of dropOneTable *****************************
 
+// *****************************************************************************
+// *                                                                           *
+// * Function: transferObjectPrivs                                             *
+// *                                                                           *
+// *    Transfers object privs from current owner to new owner.                *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <systemCatalogName>             const char *                    In       *
+// *    is the location of the system catalog.                                 *
+// *                                                                           *
+// *  <catalogName>                   const char *                    In       *
+// *    is the catalog of the schema whose objects are getting a new owner.    *
+// *                                                                           *
+// *  <schemaName>                    const char *                    In       *
+// *    is the schema whose objects are getting a new owner.                   *
+// *                                                                           *
+// *  <newOwnerID>                    const int32_t                   In       *
+// *    is the ID of the new owner for the objects.                            *
+// *                                                                           *
+// *  <newOwnerName                   const char *                    In       *
+// *    is the database username or role name of the new owner for the objects.*
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// * true: Privileges for object(s) transferred to new owner.                  *
+// * false: Privileges for object(s) NOT transferred to new owner.             *
+// *                                                                           *
+// *****************************************************************************
+static bool transferObjectPrivs(
+   const char * systemCatalogName, 
+   const char * catalogName,
+   const char * schemaName,
+   const int32_t newOwnerID,
+   const char * newOwnerName)
+   
+   
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+      
+// Initiate the privilege manager interface class
+NAString privMgrMDLoc;
+
+   CONCAT_CATSCH(privMgrMDLoc,systemCatalogName,SEABASE_PRIVMGR_SCHEMA);
+   
+PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()),CmpCommon::diags());
+   
+std::vector<UIDAndOwner> objectRows;
+std::string whereClause(" WHERE catalogName = ");
+   
+   whereClause += catalogName;
+   whereClause += " AND schema_name = ";
+   whereClause += schemaName;
+   
+std::string orderByClause(" ORDER BY OBJECT_OWNER");
+std::string metadataLocation(systemCatalogName);  
+      
+   metadataLocation += ".";
+   metadataLocation += SEABASE_MD_SCHEMA;
+      
+PrivMgrObjects objects(metadataLocation,CmpCommon::diags());
+   
+   privStatus = objects.fetchUIDandOwner(whereClause,orderByClause,objectRows); 
+
+   if (privStatus != STATUS_GOOD || objectRows.size() == 0)
+      return false;
+   
+int32_t lastOwner = objectRows[0].ownerID;
+std::vector<int64_t> objectUIDs;
+
+   for (size_t i = 0; i < objectRows.size(); i++)
+   {
+      if (objectRows[i].ownerID != lastOwner)
+      {
+         privStatus = privInterface.givePrivForObjects(lastOwner,
+                                                       newOwnerID,
+                                                       newOwnerName,
+                                                       objectUIDs);
+                                                       
+         objectUIDs.clear();
+      }
+      objectUIDs.push_back(objectRows[i].UID);
+      lastOwner = objectRows[i].ownerID;
+   }
+   
+   privStatus = privInterface.givePrivForObjects(lastOwner,
+                                                 newOwnerID,
+                                                 newOwnerName,
+                                                 objectUIDs);
+                                                 
+   return true;                                             
+
+}
+//************************ End of transferObjectPrivs **************************

@@ -656,7 +656,7 @@ void NARoutine::setupPrivInfo(void)
 
   NAString privMDLoc;
   CONCAT_CATSCH(privMDLoc,CmpSeabaseDDL::getSystemCatalogStatic(),SEABASE_PRIVMGR_SCHEMA);
-  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(), PRIV_INITIALIZED);
+  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(),PrivMgr::PRIV_INITIALIZED);
 
 
   // use embedded compiler.

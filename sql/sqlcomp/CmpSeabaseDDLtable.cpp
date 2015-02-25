@@ -6652,6 +6652,85 @@ ComTdbVirtTableSequenceInfo * CmpSeabaseDDL::getSeabaseSequenceInfo(
   return seqInfo;
 }
 
+desc_struct * CmpSeabaseDDL::getSeabaseLibraryDesc(
+   const NAString &catName, 
+   const NAString &schName, 
+   const NAString &libraryName)
+   
+{
+
+  desc_struct * tableDesc = NULL;
+
+  NAString extLibName;
+  Int32 objectOwner = 0;
+  Int32 schemaOwner = 0;
+  
+  
+  
+  char query[4000];
+  char buf[4000];
+
+  ExeCliInterface cliInterface(STMTHEAP);
+
+  Int64 libUID = getObjectUID(&cliInterface, 
+                                 catName.data(), schName.data(),
+                                 libraryName.data(),
+                                 (char *)COM_LIBRARY_OBJECT_LIT);
+  if (libUID == -1)
+     return NULL;
+     
+  str_sprintf(buf, "SELECT library_filename, version "
+                   "FROM %s.\"%s\".%s "
+                   "WHERE library_uid = %Ld "
+                   "FOR READ COMMITTED ACCESS",
+             getSystemCatalog(),SEABASE_MD_SCHEMA,SEABASE_LIBRARIES,libUID);
+
+  Int32 cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
+  if (cliRC < 0)
+  {
+     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+     return NULL;
+  }
+
+  cliRC = cliInterface.clearExecFetchClose(NULL, 0);
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+     return NULL;
+  }
+  if (cliRC == 100) // did not find the row
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+                         << DgString0(libraryName);
+     return NULL;
+  }
+
+  char * ptr = NULL;
+  Lng32 len = 0;
+
+  ComTdbVirtTableLibraryInfo *libraryInfo = new (STMTHEAP) ComTdbVirtTableLibraryInfo();
+  
+  if (libraryInfo == NULL)
+     return NULL;
+
+  libraryInfo->library_name = libraryName.data();
+  cliInterface.getPtrAndLen(1, ptr, len);
+  libraryInfo->library_filename = new (STMTHEAP) char[len + 1];    
+  str_cpy_and_null((char *)libraryInfo->library_filename, ptr, len, '\0', ' ', TRUE);
+  cliInterface.getPtrAndLen(2, ptr, len);
+  libraryInfo->library_version = *(Int32 *)ptr;
+  
+  desc_struct *library_desc = Generator::createVirtualLibraryDesc(
+            libraryName.data(),
+            libraryInfo);
+
+  processReturn();
+  return library_desc;
+  
+}
+
+
+
 desc_struct * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName, 
                                                     const NAString &schName, 
                                                     const NAString &seqName)
@@ -7513,13 +7592,18 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
         {
           if (switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
             return NULL;
-
-          if (objType == COM_SEQUENCE_GENERATOR_OBJECT)
-            tDesc = getSeabaseSequenceDesc(catName, schName, objName);
-          else
-            tDesc = getSeabaseUserTableDesc(catName, schName, objName, 
-                                            objType, includeInvalidDefs);
-
+	  switch (objType)
+          {
+            case COM_SEQUENCE_GENERATOR_OBJECT:
+              tDesc = getSeabaseSequenceDesc(catName, schName, objName);
+              break;
+            case COM_LIBRARY_OBJECT:
+              tDesc = getSeabaseLibraryDesc(catName, schName, objName);
+              break;
+            default:
+              tDesc = getSeabaseUserTableDesc(catName, schName, objName, 
+                                              objType, includeInvalidDefs);
+	  }
           switchBackCompiler();
         }
     }

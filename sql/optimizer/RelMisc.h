@@ -2513,6 +2513,7 @@ public:
   virtual ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *, 
                                                ComTdb *, Generator *);
 
+  bool isUserAuthorized(BindWA *bindWA);
   void setComment(NAString &comment);
 
 private:

@@ -31,11 +31,12 @@
 // *               privilege manager component
 // *
 // *****************************************************************************
+#define MAX_PRIV_OBJECT_NAME_LEN 600
 
 class ObjectPrivsRow
 {
 public:
-   char objectName[601];
+   char objectName[MAX_PRIV_OBJECT_NAME_LEN + 1];
    ComObjectType objectType;
    int32_t granteeID;
    char granteeName[MAX_USERNAME_LEN * 2 + 1];
@@ -104,5 +105,32 @@ const static int32_t NBR_OF_PRIVS = NBR_DML_PRIVS+NBR_DDL_PRIVS;
 // Defines the privileges and grantable bitmaps as PrivMgrBitmap
 //using PrivMgrBitmap = std::bitset<NBR_OF_PRIVS>;
 #define PrivMgrBitmap std::bitset<NBR_OF_PRIVS>
+
+// object types for grantable objects
+#define BASE_TABLE_OBJECT_LIT               "BT"
+#define LIBRARY_OBJECT_LIT                  "LB"
+#define VIEW_OBJECT_LIT                     "VI"
+#define USER_DEFINED_ROUTINE_OBJECT_LIT     "UR"
+#define SEQUENCE_GENERATOR_OBJECT_LIT       "SG"
+
+#define UNKNOWN_GRANTOR_TYPE_LIT               "  "
+#define SYSTEM_GRANTOR_LIT                     "S "
+#define USER_GRANTOR_LIT                       "U "
+
+#define UNKNOWN_GRANTEE_TYPE_LIT               "  "
+#define PUBLIC_GRANTEE_LIT                     "P "
+#define USER_GRANTEE_LIT                       "U "
+
+#define SYSTEM_AUTH_ID          -2
+#define PUBLIC_AUTH_ID          -1
+
+#define PUBLIC_AUTH_NAME "PUBLIC"
+#define SYSTEM_AUTH_NAME "_SYSTEM"
+
+#define DB_ROOTROLE_NAME "DB__ROOTROLE"
+#define DB_ROOTROLE_ID 1000000
+
+#define MAX_SQL_IDENTIFIER_NAME_LEN 256
+
 
 #endif

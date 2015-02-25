@@ -250,6 +250,12 @@ public:
       const int64_t objectUID,
       std::vector<ObjectPrivsRow> & objectPrivsRows);
       
+   PrivStatus givePrivForObjects(
+         const int32_t currentOwnerID,
+         const int32_t newOwnerID,
+         const std::string &newOwnerName,
+         const std::vector<int64_t> &objectUIDs);
+         
    PrivStatus grantComponentPrivilege(
       const std::string & componentName,
       const std::vector<std::string> & operationNamesList,

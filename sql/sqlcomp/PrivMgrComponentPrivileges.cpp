@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1086,6 +1086,8 @@ bool PrivMgrComponentPrivileges::hasSQLPriv(
    
 {
 
+  if (authID == ComUser::getRootUserID())
+     return true;
 
 const std::string & operationCode = PrivMgr::getSQLOperationCode(operation);
 

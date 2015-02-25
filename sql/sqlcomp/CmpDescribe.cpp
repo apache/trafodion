@@ -149,6 +149,12 @@ static size_t indexLastNewline(const NAString & text,
                                size_t maxLen);
 
 
+static bool CmpDescribeLibrary(
+   const CorrName   & corrName,
+   char           * & outbuf,
+   ULng32           & outbuflen,
+   CollHeap         * heap);
+
 static short CmpDescribePlan(
    const char   *query,
    ULng32 flags,
@@ -192,7 +198,10 @@ short CmpDescribeSequence (
                              CollHeap *heap,
                              Space *inSpace);
 
-NABoolean CmpDescribeIsAuthorized( PrivMgrUserPrivs *privs );
+bool CmpDescribeIsAuthorized( 
+   SQLOperation operation = SQLOperation::UNKNOWN,
+   PrivMgrUserPrivs *privs = NULL,
+   ComObjectType objectType = COM_UNKNOWN_OBJECT);
 
 // The real Ark catalog manager returns all object names as three-part
 // identifiers, properly delimited where necessary.
@@ -581,6 +590,8 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
 
   if (d->getIsSchema())
     {
+      if (!CmpDescribeIsAuthorized())
+        return -1;
       NAString schemaText;
       QualifiedName objQualName(d->getDescribedTableName().getQualifiedNameObj(),
                                 STMTHEAP);
@@ -600,6 +611,8 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   // If SHOWDDL USER, go get description and return
   if (d->getIsUser())
     {
+      if (!CmpDescribeIsAuthorized(SQLOperation::MANAGE_USERS))
+        return -1;
       NAString userText;
       CmpSeabaseDDLuser userInfo;
       if (!userInfo.describe(d->getAuthIDName(), userText))
@@ -616,6 +629,8 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   // If SHOWDDL ROLE, go get description and return
   if (d->getIsRole())
   {
+      if (!CmpDescribeIsAuthorized(SQLOperation::MANAGE_ROLES))
+        return -1;
       NAString roleText;
       CmpSeabaseDDLrole roleInfo(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
       if (!roleInfo.describe(d->getAuthIDName(),roleText))
@@ -632,6 +647,8 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   // If SHOWDDL COMPONENT, go get description and return
   if (d->getIsComponent())
     {
+      if (!CmpDescribeIsAuthorized(SQLOperation::MANAGE_COMPONENTS))
+        return -1;
        std::vector<std::string> outlines;
        std::string privMDLoc = ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG);
        privMDLoc += ".\"";
@@ -655,14 +672,13 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
        return 0;
     }
 
-  if (d->getDescribedTableName().getQualifiedNameObj().getObjectNameSpace() 
-           == COM_LIBRARY_NAME)
+  if (d->getDescribedTableName().getQualifiedNameObj().getObjectNameSpace() == COM_LIBRARY_NAME)
     {
-      *CmpCommon::diags() << DgSqlCode(-4222)
-                          << DgString0("DESCRIBE LIBRARY");
-      return -1;
+      if (!CmpDescribeLibrary(d->getDescribedTableName(),outbuf,outbuflen,heap))
+         return -1;
+         
+      return 0;
     }
-
 
   ExtendedQualName::SpecialTableType tType =
     d->getDescribedTableName().getSpecialType();
@@ -2429,6 +2445,7 @@ static short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
   return 0;
 }
 
+
 // type:  1, invoke. 2, showddl. 3, create_like
 short CmpDescribeSeabaseTable ( 
                                const CorrName  &dtName,
@@ -2485,11 +2502,10 @@ short CmpDescribeSeabaseTable (
   // since the create code performs authorization checks
   if (type != 3)
     {
-      if (!CmpDescribeIsAuthorized(naTable->getPrivInfo()))
-      {
-        *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+      if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
+                                   naTable->getPrivInfo(),
+                                   COM_BASE_TABLE_OBJECT))
         return -1;
-      }
     }
 
   if ((type == 2) && (isView))
@@ -3104,6 +3120,12 @@ short CmpDescribeSequence(
   if (naTable == NULL || bindWA.errStatus())
     return -1;
 
+   // Verify user can perform commands
+  if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
+                               naTable->getPrivInfo(),
+                               COM_SEQUENCE_GENERATOR_OBJECT))
+    return -1;
+
   const SequenceGeneratorAttributes* sga = naTable->getSGAttributes();
 
   const NAString& seqName =
@@ -3137,13 +3159,6 @@ short CmpDescribeSequence(
   sga->display(space, NULL, FALSE);
 
   outputShortLine(*space, ";");
-
-   // Verify user can perform commands
-  if (!CmpDescribeIsAuthorized(naTable->getPrivInfo()))
-  {
-    *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
-    return -1;
-   }
 
   // If authorization enabled, display grant statements
   if (CmpCommon::context()->isAuthorizationEnabled())
@@ -3183,21 +3198,49 @@ short CmpDescribeSequence(
 // Determines if current user is authorized to perform operations
 //
 // parameters:  PrivMgrUserPrivs *privs - pointer to granted privileges
+//              operation - SQLOperation to check in addition to SHOW 
 //
 // returns:  TRUE if authorized, FALSE otherwise
 // ----------------------------------------------------------------------------
-NABoolean CmpDescribeIsAuthorized (PrivMgrUserPrivs *privs)
+bool CmpDescribeIsAuthorized( 
+   SQLOperation operation,
+   PrivMgrUserPrivs *privs,
+   ComObjectType objectType)
+   
 {
+
   if (!CmpCommon::context()->isAuthorizationEnabled())
-    return TRUE;
+    return true;
 
   if (ComUser::isRootUserID())
-    return TRUE;
+    return true;
 
   // check to see if user has select privilege
-  if (privs && privs->hasSelectPriv())
-    return TRUE;
-
+  if (privs)
+  {
+     switch (objectType)
+     {
+        case COM_LIBRARY_OBJECT:
+        case COM_SEQUENCE_GENERATOR_OBJECT:
+           if (privs->hasUsagePriv())
+              return true;
+           break;
+        case COM_STORED_PROCEDURE_OBJECT:
+        case COM_USER_DEFINED_ROUTINE_OBJECT:
+           if (privs->hasExecutePriv())
+              return true;
+           break;
+        case COM_PRIVATE_SCHEMA_OBJECT:
+        case COM_SHARED_SCHEMA_OBJECT:
+           break;
+        case COM_VIEW_OBJECT:
+        case COM_BASE_TABLE_OBJECT:
+        default:
+           if (privs->hasSelectPriv())
+              return true;
+     }
+  }
+  
   // check to see if user has SHOW component privilege
   std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
   privMDLoc += std::string(".\"") +
@@ -3206,8 +3249,187 @@ NABoolean CmpDescribeIsAuthorized (PrivMgrUserPrivs *privs)
 
   PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
   if (componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),SQLOperation::SHOW,true))
-    return TRUE;
+    return true;
 
-  return FALSE;
-}
+  if (operation != SQLOperation::UNKNOWN && 
+      componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),operation,true))
+    return true;
+    
+  *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
   
+  return false;
+  
+}
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: CmpDescribeLibrary                                              *
+// *                                                                           *
+// *    Describes the DDL for a library object with normalized syntax.         *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <corrName>                      const CorrName  &               In       *
+// *    is a reference to correlation name for the library object.             *
+// *                                                                           *
+// *  <outbuf>                        char * &                        Out      *
+// *    is a reference to a pointed to a character array.  The desribe output  *
+// *    is stored here.                                                        *
+// *                                                                           *
+// *  <outbuflen>                     ULng32 &                        Out      *
+// *    is the number of characters stored in outbuf.  Note, ULng32 is an      *
+// *    unsigned 32-bit integer, aka uint32_t or unsigned int.  Not a long.    *
+// *                                                                           *
+// *  <heap>                          CollHeap *                      In       *
+// *    is the heap to use for any dynamic allocations.                        *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Describe text added to outbuf.                                     *
+// * false: Desribe text not added. A CLI error is put into the diags area.    *
+// *                                                                           *
+// *****************************************************************************
+bool CmpDescribeLibrary(
+   const CorrName   & corrName,
+   char           * & outbuf,
+   ULng32           & outbuflen,
+   CollHeap         * heap)
+   
+{
+
+CmpSeabaseDDL cmpSBD((NAHeap *)heap);
+CorrName cn(corrName, heap);
+
+   cn.setSpecialType(ExtendedQualName::LIBRARY_TABLE);
+
+const NAString& libraryName = cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
+
+
+ComObjectName libName(libraryName);
+NAString libCatNamePart = libName.getCatalogNamePartAsAnsiString();
+NAString libSchNamePart = libName.getSchemaNamePartAsAnsiString(TRUE);
+NAString libObjNamePart = libName.getObjectNamePartAsAnsiString(TRUE);
+const NAString extLibraryName = libName.getExternalName(TRUE);
+
+ExeCliInterface cliInterface(heap);
+        
+Int64 libraryUID = -1;
+
+   libraryUID = cmpSBD.getObjectUID(&cliInterface, 
+                                    libCatNamePart, 
+                                    libSchNamePart, 
+                                    libObjNamePart,
+                                    COM_LIBRARY_OBJECT_LIT);
+
+   if (libraryUID <= 0) // does not exist
+   {
+      *CmpCommon::diags() << DgSqlCode(-CAT_LIBRARY_DOES_NOT_EXIST) 
+                          << DgTableName(extLibraryName.data());
+      return false;
+   }
+
+// For libraries, we need to check if the user has the USAGE privilege;
+// if so, they can perform SHOWDDL on this library.
+   
+NAString privMgrMDLoc;
+
+   CONCAT_CATSCH(privMgrMDLoc,CmpSeabaseDDL::getSystemCatalogStatic(),SEABASE_PRIVMGR_SCHEMA);
+
+PrivMgrCommands privInterface(privMgrMDLoc.data(),CmpCommon::diags());
+
+   if (CmpCommon::context()->isAuthorizationEnabled())
+   {
+      PrivMgrUserPrivs privs;
+      PrivStatus retcode = privInterface.getPrivileges(libraryUID, 
+                                                       ComUser::getCurrentUser(), 
+                                                       privs);
+
+      // Verify user can perform the SHOWDDL LIBRARY command on the specified library.
+      if (!CmpDescribeIsAuthorized(SQLOperation::MANAGE_LIBRARY,&privs,
+                                   COM_LIBRARY_OBJECT))
+         return false;
+   }
+   
+Space localSpace;
+Space * space = &localSpace;
+
+char query[1000];
+char libraryFilename[1025];
+  
+  sprintf(query,"SELECT library_filename from %s.\"%s\".%s WHERE library_uid = %ld",
+                ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG),
+                SEABASE_MD_SCHEMA,SEABASE_LIBRARIES,libraryUID);
+
+Int32 cliRC = cliInterface.fetchRowsPrologue(query,TRUE/*no exec*/); 
+
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return false;
+   }
+
+   cliRC = cliInterface.clearExecFetchClose(NULL,0);
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return false;
+   }
+
+   if (cliRC == 100) // did not find the row
+      return false;
+
+char * ptr = NULL;
+Lng32 len = 0;
+
+   cliInterface.getPtrAndLen(1,ptr,len);
+   if (len >= sizeof(libraryFilename))
+      return false;
+       
+   str_cpy_and_null(libraryFilename,ptr,len,'\0',' ',TRUE);
+
+   outputShortLine(*space," ");
+
+char buf[1000];
+
+   sprintf(buf,"CREATE LIBRARY \"%s\" FILE '%s'",
+           libraryName.data(),libraryFilename);
+           
+   outputShortLine(*space,buf);
+   outputShortLine(*space,";");
+
+// If authorization is enabled, display grant statements for library
+   if (CmpCommon::context()->isAuthorizationEnabled())
+   {
+      // now get the grant stmts
+      NAString trafMDLoc;
+      
+      CONCAT_CATSCH(trafMDLoc,CmpSeabaseDDL::getSystemCatalogStatic(),SEABASE_MD_SCHEMA);
+
+      PrivMgrCommands privInterface(std::string(trafMDLoc.data()), 
+                                    std::string(privMgrMDLoc.data()),
+                                    CmpCommon::diags());
+
+      std::string objectName(libraryName);
+      std::string privilegeText;
+      if (privInterface.describePrivileges(libraryUID,objectName,privilegeText))
+      {
+         outputShortLine(*space," ");
+         outputLine(*space,privilegeText.c_str(),0);
+      }
+   }
+
+   outbuflen = space->getAllocatedSpaceSize();
+   outbuf = new (heap) char[outbuflen];
+   space->makeContiguous(outbuf, outbuflen);
+
+   return true;
+
+}
+//************************ End of CmpDescribeLibrary ***************************
+
+

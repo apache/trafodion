@@ -23,7 +23,6 @@
 
 #include <string>
 #include <vector>
-#include "PrivMgrMDDefs.h"
 #include "PrivMgrDefs.h"
 #include "PrivMgrDesc.h"
 #include "ComSmallDefs.h"
@@ -129,12 +128,16 @@ enum class SQLOperation {
    MANAGE_ROLES,
    MANAGE_STATISTICS,
    MANAGE_USERS,
+   QUERY_ACTIVATE,
+   QUERY_CANCEL,
+   QUERY_SUSPEND,
    REMAP_USER,
    SHOW,
    USE_ALTERNATE_SCHEMA,
    FIRST_OPERATION = ALTER,
    LAST_OPERATION = USE_ALTERNATE_SCHEMA,
-   NUMBER_OF_OPERATIONS = LAST_OPERATION - FIRST_OPERATION + 1
+   NUMBER_OF_OPERATIONS = LAST_OPERATION - FIRST_OPERATION + 1,
+   UNKNOWN
 };
 
 enum {SQL_OPERATIONS_COMPONENT_UID = 1};
@@ -153,7 +156,11 @@ enum {SQL_OPERATIONS_COMPONENT_UID = 1};
 class PrivMgr
 {
   public:
-  
+    enum PrivMDStatus { PRIV_INITIALIZED           = 30,
+                        PRIV_UNINITIALIZED         = 31,
+                        PRIV_PARTIALLY_INITIALIZED = 32,
+                        PRIV_INITIALIZE_UNKNOWN    = 33
+                      }; 
     // -------------------------------------------------------------------
     // Static functions:
     // -------------------------------------------------------------------
@@ -205,6 +212,8 @@ class PrivMgr
     void setFlags();
 
   protected:
+  // Returns status of privilege manager metadata
+
     PrivMDStatus authorizationEnabled();
     
     // -------------------------------------------------------------------
