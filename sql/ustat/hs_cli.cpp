@@ -322,7 +322,6 @@ Lng32 HSFuncExecDDL( const char *dml
                   )
 {
   Lng32 retcode = 0;
-  HSLogMan *LM = HSLogMan::Instance();
   HSGlobalsClass *hs_globals = GetHSContext();
   if (!tabDef && hs_globals) tabDef = hs_globals->objDef;
   if (!tabDef) return -1;

@@ -109,7 +109,7 @@ typedef NABoolean               ComBoolean;
 
 #define HIVE_SYSTEM_CATALOG          "HIVE"
 #define HIVE_SYSTEM_SCHEMA           "HIVE"
-#define HIVE_STATS_CATALOG           "HIVESTATS"
+#define HIVE_STATS_CATALOG           "TRAFODION"
 #define HIVE_STATS_SCHEMA            "HIVESTATS"
 
 #define HBASE_SYSTEM_CATALOG          "HBASE"

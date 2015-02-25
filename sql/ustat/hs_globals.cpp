@@ -2868,11 +2868,8 @@ Lng32 HSGlobalsClass::Initialize()
     if (isHiveCat(objDef->getCatName()))
       {
         HSTranMan *TM = HSTranMan::Instance(); // Must have transaction around this.
-        TM->Begin("Create catalog and schema for hive stats.");
-        NAString ddl = "CREATE CATALOG ";
-        ddl.append(HIVE_STATS_CATALOG);
-        retcode = HSFuncExecQuery(ddl, HS_WARNING); // On failure we assume it already exists.
-        ddl = "CREATE SCHEMA ";
+        TM->Begin("Create schema for hive stats.");
+        NAString ddl = "CREATE SCHEMA ";
         ddl.append(HIVE_STATS_CATALOG).append('.').append(HIVE_STATS_SCHEMA);
         retcode = HSFuncExecQuery(ddl, HS_WARNING); // On failure we assume it already exists.
         TM->Commit(); // Must commit this transaction (even if schema didn't get created).

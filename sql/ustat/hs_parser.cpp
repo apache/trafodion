@@ -428,18 +428,19 @@ Lng32 AddTableName( const hs_table_type type
         const char* period = strchr(hs_globals->catSch->data(), '.');
         NAString catName(hs_globals->catSch->data(),
                          period - hs_globals->catSch->data());
-        NABoolean isHbase = HSGlobalsClass::isHbaseCat(catName);
+        NABoolean isHbaseOrHive = HSGlobalsClass::isHbaseCat(catName) ||
+                                  HSGlobalsClass::isHiveCat(catName);
 
         *hs_globals->hstogram_table = 
             getHistogramsTableLocation(hs_globals->catSch->data(), FALSE);
-        if (isHbase)
+        if (isHbaseOrHive)
           hs_globals->hstogram_table->append(".").append(HBASE_HIST_NAME);
         else
           hs_globals->hstogram_table->append(".HISTOGRAMS");
-        
+
         *hs_globals->hsintval_table = 
             getHistogramsTableLocation(hs_globals->catSch->data(), FALSE);
-        if (isHbase)
+        if (isHbaseOrHive)
           hs_globals->hsintval_table->append(".").append(HBASE_HISTINT_NAME);
         else
           hs_globals->hsintval_table->append(".HISTOGRAM_INTERVALS");
