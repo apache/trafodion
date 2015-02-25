@@ -106,7 +106,7 @@ if [ "$UNINSTALL_ALL" != "Y" ]; then
     # TODO: maybe check that we are running from the Trafodion userid?
 
     echo "***INFO: stopping Trafodion instance"
-    if [[ "$(whoami)" == "trafodion" ]]; then
+    if [[ "$(whoami)" == "$TRAF_USER" ]]; then
        sqstop
        ckillall
     else

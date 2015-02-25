@@ -485,7 +485,7 @@ if [[ "$UPGRADE_TRAF" == "true" ]]; then
    echo "***INFO: $TRAF_USER username has already been installed." | tee -a $INSTALL_LOG
    echo "***INFO: Skipping Trafodion setup..." | tee -a $INSTALL_LOG
 
-   trafodionRunning=$(sudo su trafodion --login --command "cstat --no-header | wc -l")
+   trafodionRunning=$(sudo su $TRAF_USER --login --command "cstat --no-header | wc -l")
 
    if [[ "$trafodionRunning" -ne "0" ]]; then
       echo "***ERROR: Trafodion is still running."
@@ -494,7 +494,7 @@ if [[ "$UPGRADE_TRAF" == "true" ]]; then
 
       if [ -z $answer ]; then
          echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
-         echo "***ERROR: Change to trafodion userid then do a 'sqstop'"
+         echo "***ERROR: Change to $TRAF_USER userid then do a 'sqstop'"
          exit -1
       else
          if [[ ${answer^} == "Y" ]]; then
@@ -503,7 +503,7 @@ if [[ "$UPGRADE_TRAF" == "true" ]]; then
             sudo su $TRAF_USER --login --command "ckillall"
          else
             echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
-            echo "***ERROR: Change to trafodion user id then do a 'sqstop'"
+            echo "***ERROR: Change to $TRAF_USER user id then do a 'sqstop'"
             exit -1
          fi
       fi
@@ -523,8 +523,6 @@ else
 fi
 
 #Create sqconfig file if it does not exist
-
-#sqconfigExist=$(sudo ls $HOME_DIR/$TRAF_USER/sqconfig | wc -l)
 
 if [[ ! -f $HOME_DIR/$TRAF_USER/sqconfig ]]; then
    $TRAF_WORKDIR/installer/traf_sqconfig
@@ -576,11 +574,11 @@ echo "***INFO: Trafodion Mods ran successfully."
 #Install Trafodion
 echo
 echo "******************************"
-echo " TRAFODION INSTALLER"
+echo " TRAFODION START"
 echo "******************************"
 echo
 sudo mkdir -p $SQ_ROOT
-sudo chown trafodion.trafodion $SQ_ROOT
+sudo chown $TRAF_USER.trafodion $SQ_ROOT
 sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_start"
 
 if [ ${PIPESTATUS[0]} != "0" ]; then

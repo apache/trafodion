@@ -61,7 +61,7 @@ echo >> $INSTALL_LOG
 
 userId=$(whoami)
 
-if [[ "$userId" != "trafodion" ]]; then
+if [[ "$userId" != "$TRAF_USER" ]]; then
    echo "***ERROR: Logged in as user '$userId'" | tee -a $INSTALL_LOG
    echo "***ERROR: Must be logged in as user 'trafodion'" | tee -a $INSTALL_LOG
    echo "***ERROR: Exiting..." | tee -a $INSTALL_LOG
