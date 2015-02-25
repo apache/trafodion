@@ -292,7 +292,7 @@ void setPrivMask( short priv, bitmask_type bitMask );
 // QSSYNC registered processes info
 REG_PROC_INFO regProcInfo[256];
 
-pthread_mutex_t Thread_mutex;
+pthread_mutex_t Thread_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 template<class T>
 class Repos_Queue
@@ -357,7 +357,9 @@ static bool record_session_done = true;
 
 static void* SessionWatchDog(void* arg)
 {
-	pthread_mutex_lock(&Thread_mutex);
+	int rc = pthread_mutex_lock(&Thread_mutex);
+	if (rc != 0) abort;
+
 	record_session_done = false;
 
 	SRVR_STMT_HDL *pSrvrStmt = NULL;
@@ -386,10 +388,12 @@ static void* SessionWatchDog(void* arg)
 						  "0");
 
 		stringstream errMsg;
+		string errStr;
 		ERROR_DESC_def *p_buffer = NULL;
 		int retcode;
 		bool okToGo = true;
 		stringstream ss;
+		string execStr;
 
 		retcode = WSQL_EXEC_SwitchContext(thread_context_handle, NULL);
 		if (retcode < 0)
@@ -399,7 +403,7 @@ static void* SessionWatchDog(void* arg)
 									1, "Failed to switch to new SQL context");
 			okToGo = false;
 		}
-		else
+		if (okToGo)
 		{
 			SQL_EXEC_SetParserFlagsForExSqlComp_Internal(0x20000);
 
@@ -410,8 +414,22 @@ static void* SessionWatchDog(void* arg)
 				pSrvrStmt->Close(SQL_DROP);
 				pSrvrStmt = NULL;
 			}
-			pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", TRUE);
+			if ((pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", TRUE)) == NULL)
+			{
 
+				SendEventMsg(MSG_ODBC_NSK_ERROR,
+				             EVENTLOG_ERROR_TYPE,
+				             0,
+				             ODBCMX_SERVER,
+				             srvrGlobal->srvrObjRef,
+				             1,
+				             "Failed to allocate statement for repository publications"
+				             );
+				okToGo = false;
+			}
+		}
+		if (okToGo)
+		{
 			retcode = pSrvrStmt->ExecDirect(NULL, "CONTROL QUERY DEFAULT traf_no_dtm_xn 'ON'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
 			if (retcode < 0)
 			{
@@ -425,26 +443,49 @@ static void* SessionWatchDog(void* arg)
 				else
 					errMsg << "Failed to skip transaction - " << " no additional information";
 
+				errStr = errMsg.str();
 				SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
 										0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-										1, errMsg.str().c_str());
+										1, errStr.c_str());
+				okToGo = false;
+			}
+		}
+
+		if (okToGo)
+		{
+			pSrvrStmt->cleanupAll();
+			retcode = pSrvrStmt->ExecDirect(NULL, "CONTROL QUERY DEFAULT attempt_esp_parallelism 'OFF'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+			if (retcode < 0)
+			{
+				errMsg.str("");
+				if(pSrvrStmt->sqlError.errorList._length > 0)
+					p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+				else if(pSrvrStmt->sqlWarning._length > 0)
+					p_buffer = pSrvrStmt->sqlWarning._buffer;
+				if(p_buffer != NULL && p_buffer->errorText)
+					errMsg << "Failed to disable ESP startup - " << p_buffer->errorText;
+				else
+					errMsg << "Failed to disable ESP startup - " << " no additional information";
+
+				errStr = errMsg.str();
+				SendEventMsg(MSG_ODBC_NSK_ERROR,
+				            EVENTLOG_ERROR_TYPE,
+				            0,
+				            ODBCMX_SERVER,
+				            srvrGlobal->srvrObjRef,
+				            1,
+				            errStr.c_str()
+				            );
+
 				okToGo = false;
 			}
 		}
 
 		while(!record_session_done && okToGo)
 		{
+			pSrvrStmt->cleanupAll();
+
 			REPOS_STATS repos_stats = repos_queue.get_task();
-
-			pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", FALSE);
-			if (pSrvrStmt != NULL)
-			{
-				pSrvrStmt->cleanupAll();
-				pSrvrStmt->Close(SQL_DROP);
-				pSrvrStmt = NULL;
-			}
-
-			pSrvrStmt = getSrvrStmt("STMT_PUBLICATION", TRUE);
 
 			ss.str("");
 			ss.clear();
@@ -808,14 +849,16 @@ static void* SessionWatchDog(void* arg)
 				ss << "DELTA_TOTAL_INSERTS = " << pAggrStat->m_delta_total_inserts << ",";
 				ss << "DELTA_TOTAL_UPDATES = " << pAggrStat->m_delta_total_updates << ",";
 				ss << "DELTA_TOTAL_DELETES = " << pAggrStat->m_delta_total_deletes;
-				ss << " where SESSION_ID = '" << pAggrStat->m_sessionId.c_str() << "'";
+				ss << " where AGGREGATION_START_UTC_TS = CONVERTTIMESTAMP(" << pAggrStat->m_aggregation_start_utc_ts << ")";
+				ss << " and SESSION_ID = '" << pAggrStat->m_sessionId.c_str() << "'";
 
 			}
 			else
 			{
 				break;
 			}
-			retcode = pSrvrStmt->ExecDirect(NULL, ss.str().c_str(), INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+			execStr = ss.str();
+			retcode = pSrvrStmt->ExecDirect(NULL, execStr.c_str(), INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
 			if (retcode < 0)
 			{
 				errMsg.str("");
@@ -824,13 +867,15 @@ static void* SessionWatchDog(void* arg)
 				else if(pSrvrStmt->sqlWarning._length > 0)
 					p_buffer = pSrvrStmt->sqlWarning._buffer;
 				if(p_buffer != NULL && p_buffer->errorText)
-					errMsg << "Failed to write statistics: " << ss.str().c_str() << "----Error detail - " << p_buffer->errorText;
+					errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << p_buffer->errorText;
 				else
-					errMsg << "Failed to write statistics: " << ss.str().c_str() << "----Error detail - " << " no additional information";
+					errMsg << "Failed to write statistics: " << execStr.c_str() << "----Error detail - " << " no additional information";
+				errStr = errMsg.str();
 				SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
 										0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-										1, errMsg.str().c_str());
+										1, errStr.c_str());
 			}
+
 		}//End while
 
 	}
@@ -840,11 +885,10 @@ static void* SessionWatchDog(void* arg)
 	}
 
 	if (pSrvrStmt != NULL)
-	{
 		pSrvrStmt->cleanupAll();
-		pSrvrStmt->Close(SQL_DROP);
-		pSrvrStmt = NULL;
-	}
+
+	// Statements allocated earlier will get cleaned up 
+	// during stop processing
 
 	WSQL_EXEC_DeleteContext(thread_context_handle);
 
@@ -1395,16 +1439,19 @@ void __cdecl SRVR::ASTimerExpired(CEE_tag_def timer_tag)
 		children.count = 0;
 		children.data = NULL;
 		stringstream ss;
+		string pathStr;
 
 		ss.str("");
 		ss << zkRootNode << "/dcs/master";
-		rc = zoo_get_children(zh, ss.str().c_str(), 0, &children);
+		pathStr = ss.str();
+		rc = zoo_get_children(zh, pathStr.c_str(), 0, &children);
 		if( rc != ZOK || !(children.count > 0) )
 		{
 			free_String_vector(&children);
 			ss.str("");
 			ss << zkRootNode << "/dcs/servers/running";
-			rc = zoo_get_children(zh, ss.str().c_str(), 0, &children);
+			pathStr = ss.str();
+			rc = zoo_get_children(zh, pathStr.c_str(), 0, &children);
 			if( rc != ZOK || !(children.count > 0) )
 				shutdownThisThing = 1;
 		}
