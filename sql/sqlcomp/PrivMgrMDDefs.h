@@ -116,38 +116,6 @@ static const PrivMgrTableStruct privMgrTables[] =
     { "ROLE_USAGE", roleUsageDDL, false }
   };
 
-// Returns status of privilege metadata
-enum PrivMDStatus { PRIV_INITIALIZED           = 30,
-                    PRIV_UNINITIALIZED         = 31,
-                    PRIV_PARTIALLY_INITIALIZED = 32,
-                    PRIV_INITIALIZE_UNKNOWN    = 33
-                  };
-
-// object types for grantable objects
-#define BASE_TABLE_OBJECT_LIT               "BT"
-#define LIBRARY_OBJECT_LIT                  "LB"
-#define VIEW_OBJECT_LIT                     "VI"
-#define USER_DEFINED_ROUTINE_OBJECT_LIT     "UR"
-#define SEQUENCE_GENERATOR_OBJECT_LIT       "SG"
-
-#define UNKNOWN_GRANTOR_TYPE_LIT               "  "
-#define SYSTEM_GRANTOR_LIT                     "S "
-#define USER_GRANTOR_LIT                       "U "
-
-#define UNKNOWN_GRANTEE_TYPE_LIT               "  "
-#define PUBLIC_GRANTEE_LIT                     "P "
-#define USER_GRANTEE_LIT                       "U "
-
-#define SYSTEM_AUTH_ID          -2
-#define PUBLIC_AUTH_ID          -1
-
-#define PUBLIC_AUTH_NAME "PUBLIC"
-#define SYSTEM_AUTH_NAME "_SYSTEM"
-
-#define DB_ROOTROLE_NAME "DB__ROOTROLE"
-#define DB_ROOTROLE_ID 1000000
-
-#define MAX_SQL_IDENTIFIER_NAME_LEN 256
 
 #endif // PRIVMGR_MD_DEFS_H
 

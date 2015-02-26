@@ -458,6 +458,70 @@ PrivStatus privStatus = STATUS_GOOD;
 
 // *****************************************************************************
 // *                                                                           *
+// * Function: PrivMgrCommands::givePrivForObjects                             *
+// *                                                                           *
+// *    Gives privileges (grants) associated with one or more objects to       *
+// *  a new owner.                                                             *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <currentOwnerID>                const int32_t                    In      *
+// *    is the authID of the current owner of the object(s).                   *
+// *                                                                           *
+// *  <newOwnerID>                    const int32_t                    In      *
+// *    is the the authID of the new owner of the object(s).                   *
+// *                                                                           *
+// *  <newOwnerName>                  const std::string &              In      *
+// *    is the name of the new owner of the object(s).                         *
+// *                                                                           *
+// *  <objectUIDs>                    const std::vector<int64_t> &     In      *
+// *    is a list of objects whose privileges are to be given to a new owner.  *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Component privilege(s) were granted                          *
+// *           *: One or more component privileges were not granted.           *
+// *              A CLI error is put into the diags area.                      *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::givePrivForObjects(
+   const int32_t currentOwnerID,
+   const int32_t newOwnerID,
+   const std::string &newOwnerName,
+   const std::vector<int64_t> &objectUIDs)
+   
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrPrivileges objectPrivileges(getMetadataLocation(),pDiags_);
+      
+      privStatus = objectPrivileges.givePrivForObjects(currentOwnerID,
+                                                       newOwnerID,
+                                                       newOwnerName,
+                                                       objectUIDs);
+   }
+
+   catch (...)
+   {
+      return STATUS_ERROR;
+   }
+   
+   return privStatus;
+
+
+
+}         
+//**************** End of PrivMgrCommands::givePrivForObjects ******************
+
+// *****************************************************************************
+// *                                                                           *
 // * Function: PrivMgrCommands::grantComponentPrivilege                        *
 // *                                                                           *
 // *    Grants the authority to perform one or more operations on a            *

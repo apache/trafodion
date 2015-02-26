@@ -4951,14 +4951,14 @@ CmpSeabaseDDLauth *authInfoPtr = NULL;
       case USERS_QUERY_BY_USER_NAME:
       {
          authInfoPtr = &userInfo;
-         authStatus = userInfo.getUserDetails(authName, FALSE);
+         authStatus = userInfo.getUserDetails(authName,false);
       }
       break;
 
       case USERS_QUERY_BY_EXTERNAL_NAME:
       {
          authInfoPtr = &userInfo;
-         authStatus = userInfo.getUserDetails(authName, TRUE);
+         authStatus = userInfo.getUserDetails(authName,true);
       }
       break;
 
@@ -5012,35 +5012,44 @@ CmpSeabaseDDLauth *authInfoPtr = NULL;
 // * an unexpected error (authStatus == CmpSeabaseDDLauth::STATUS_ERROR)
 // * the row does not exist (authStatus == CmpSeabaseDDLauth::STATUS_NOTFOUND)
 // * row exists but is marked invalid
-
-   if (authStatus == CmpSeabaseDDLauth::STATUS_ERROR)
+   switch (authStatus)
    {
-      result = ERROR;
-      ex_assert (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0, "error getting user details");
-      Int32 primaryError = CmpCommon::diags()->getErrorEntry(1)->getSQLCODE();
-      // TODO: Make error specific to "user" or "role" depending on what we're trying to get
-      // TODO: But make sure ROLE stuff is Linux specific 
-      diagsArea_ << DgSqlCode(-CLI_PROBLEM_READING_USERS)
-                 << DgString0(nameForDiags)
-                 << DgInt1(primaryError);
-   }
-   else 
-      if (authStatus == CmpSeabaseDDLauth::STATUS_NOTFOUND)
+      case CmpSeabaseDDLauth::STATUS_ERROR:
       {
          result = ERROR;
-         // TODO: Make error specific to "user" or "role" depending on what we're trying to get
+         ex_assert (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0, "error getting user details");
+         Int32 primaryError = CmpCommon::diags()->getErrorEntry(1)->getSQLCODE();
+         diagsArea_ << DgSqlCode(-CLI_PROBLEM_READING_USERS)
+                    << DgString0(nameForDiags)
+                    << DgInt1(primaryError);
+         break;
+      }
+      case CmpSeabaseDDLauth::STATUS_NOTFOUND:
+      {
+         result = ERROR;
          diagsArea_.clear();
          diagsArea_ << DgSqlCode(-CLI_USER_NOT_REGISTERED)
                     << DgString0(nameForDiags);
+         break;
       }
-      else
+      case CmpSeabaseDDLauth::STATUS_WARNING:
       {  
          // If warnings were generated, do not propagate them to the caller
-         if (authStatus == CmpSeabaseDDLauth::STATUS_WARNING)
-            diagsArea_.clear();
+         diagsArea_.clear();
+         break;
       }
+      case CmpSeabaseDDLauth::STATUS_GOOD:
+      //TODO: Check for invalid user?
+         break;
+      case CmpSeabaseDDLauth::STATUS_UNKNOWN:
+      default:
+      {  
+         *CmpCommon::diags() << DgSqlCode(-CLI_INTERNAL_ERROR) 	   
+                             << DgString0("Unknown auth status in ContextCLI::authQuery"); 			   	  
+      }
+   }
           
-  return result;
+   return result;
 
 }
 //*********************** End of ContextCli::authQuery *************************
@@ -5616,7 +5625,8 @@ void ContextCli::flushHtableCache()
 // *    is the buffer to store the name into.                                  *
 // *                                                                           *
 // *  <maxLength>                     int                             In       *
-// *    is the maximum number of bytes that can be stored into <dest>.         *
+// *    is the maximum number of bytes (including trailing null) that can      *
+// *    be stored into <dest>.                                                 *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -5658,11 +5668,12 @@ int actualLength;
 // *    is the buffer to store the name into.                                  *
 // *                                                                           *
 // *  <maxLength>                     int                             In       *
-// *    is the maximum number of bytes that can be stored into <dest>.         *
+// *    is the maximum number of bytes (including trailing null) that can      *
+// *    be stored into <dest>.                                                 *
 // *                                                                           *
 // *  <actualLength>                  int &                           In       *
-// *    is the number of bytes in <src>, and <dest>, if the store operation    *
-// *  is successful.                                                           *
+// *    is the number of bytes (not including the trailing null) in <src>,     *
+// *    and <also dest>, if the store operation is successful.                 *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *

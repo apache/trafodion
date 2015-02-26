@@ -1420,6 +1420,9 @@ public:
                                   ComTdbVirtTableRoutineInfo *routineInfo,
                                   Int32 numParams,
                                   ComTdbVirtTableColumnInfo *paramsArray);
+  static desc_struct *createVirtualLibraryDesc(
+                                  const char *libraryName,
+                                  ComTdbVirtTableLibraryInfo *libraryInfo);
   static short genAndEvalExpr(
 			      CmpContext * cmpContext,
 			      char * exprStr, Lng32 numChildren, 

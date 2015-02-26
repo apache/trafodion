@@ -30,7 +30,7 @@
  *****************************************************************************
  */
 
-#define   SQLPARSERGLOBALS_FLAGS	// must precede all #include's
+#define   SQLPARSERGLOBALS_FLAGS        // must precede all #include's
 #define   SQLPARSERGLOBALS_NADEFAULTS
 
 #include "ComUser.h"
@@ -86,22 +86,18 @@ bool ComUser::getCurrentUsername(
    
 {
 
-char dbUsername[MAX_USERNAME_LEN + 1];
-Int32 rc = 0;
-Int32 usernameLength;
-
    SQL_EXEC_ClearDiagnostics(NULL);
 
-   rc = SQL_EXEC_GetSessionAttr(SESSION_DATABASE_USER_ID, NULL,
-                                dbUsername,sizeof(dbUsername),&usernameLength);
+Int32 usernameLength = 0;
+
+Int32 rc = SQL_EXEC_GetSessionAttr(SESSION_DATABASE_USER_ID,NULL,
+                                   username,maxUsernameLength,&usernameLength);
 
    assert(rc >= 0);
 
    if (usernameLength > maxUsernameLength)
       return false;
      
-   strcpy(username,dbUsername);
-   
    return true;
 
 }

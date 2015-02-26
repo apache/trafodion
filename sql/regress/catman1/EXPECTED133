@@ -305,7 +305,7 @@ ROLE_USAGE
 (EXPR)              
 --------------------
 
-                  45
+                  48
 
 --- 1 row(s) selected.
 >>select count (*) from component_privileges;
@@ -313,7 +313,7 @@ ROLE_USAGE
 (EXPR)              
 --------------------
 
-                  92
+                  98
 
 --- 1 row(s) selected.
 >>execute get_owner_privs;

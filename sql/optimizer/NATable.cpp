@@ -6688,7 +6688,7 @@ void NATable::setupPrivInfo()
   privMDLoc += SEABASE_PRIVMGR_SCHEMA;
   privMDLoc += "\"";
 
-  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(),PRIV_INITIALIZED);
+  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(),PrivMgr::PRIV_INITIALIZED);
 
   if (privInterface.isPrivMgrTable(
     qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString().data()))
@@ -8031,39 +8031,43 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	  isSeabase = TRUE;
 	  isSeabaseMD = TRUE;
 	}
-      else if (corrName.isSpecialTable() && corrName.getSpecialType() == ExtendedQualName::INDEX_TABLE)
-	{
-	  tableDesc = 
-	    cmpSBD.getSeabaseTableDesc(
-				       corrName.getQualifiedNameObj().getCatalogName(),
-				       corrName.getQualifiedNameObj().getSchemaName(),
-				       corrName.getQualifiedNameObj().getObjectName(),
-				       COM_INDEX_OBJECT);
-	  isSeabase = TRUE;
-	}
-      else if (corrName.isSpecialTable() && corrName.getSpecialType() == ExtendedQualName::SG_TABLE)
-	{
-	  tableDesc = 
-	    cmpSBD.getSeabaseTableDesc(
-				       corrName.getQualifiedNameObj().getCatalogName(),
-				       corrName.getQualifiedNameObj().getSchemaName(),
-				       corrName.getQualifiedNameObj().getObjectName(),
-				       COM_SEQUENCE_GENERATOR_OBJECT);
-	}
       else 
-	{
-	  tableDesc = 
-	    cmpSBD.getSeabaseTableDesc(
-				       corrName.getQualifiedNameObj().getCatalogName(),
-				       corrName.getQualifiedNameObj().getSchemaName(),
-				       corrName.getQualifiedNameObj().getObjectName(),
-				       COM_BASE_TABLE_OBJECT);
-	  isSeabase = TRUE;
-	}
-
-      if (inTableDescStruct)
-	tableDesc = inTableDescStruct;
-
+        {
+          ComObjectType objectType = COM_BASE_TABLE_OBJECT;
+          isSeabase = TRUE;
+          if (corrName.isSpecialTable())
+          {
+            switch (corrName.getSpecialType())
+            {
+              case ExtendedQualName::INDEX_TABLE:
+              {
+                objectType = COM_INDEX_OBJECT;
+                break;
+              }
+              case ExtendedQualName::SG_TABLE:
+              {
+                objectType = COM_SEQUENCE_GENERATOR_OBJECT;
+                isSeabase = FALSE;
+                break;
+              }
+              case ExtendedQualName::LIBRARY_TABLE:
+              {
+                objectType = COM_LIBRARY_OBJECT;
+                isSeabase = FALSE;
+                break;
+              }
+              default: //TODO: No SpecialTableType for UDFs/Routines/COM_USER_DEFINED_ROUTINE_OBJECT
+              {
+                objectType = COM_BASE_TABLE_OBJECT;
+              }
+            }
+          }
+          tableDesc = cmpSBD.getSeabaseTableDesc(
+                                corrName.getQualifiedNameObj().getCatalogName(),
+                                corrName.getQualifiedNameObj().getSchemaName(),
+                                corrName.getQualifiedNameObj().getObjectName(),
+                                objectType);
+        }
       if (inTableDescStruct)
          tableDesc = inTableDescStruct;
 

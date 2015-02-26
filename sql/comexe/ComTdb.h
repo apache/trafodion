@@ -1147,6 +1147,23 @@ class ComTdbVirtTableSequenceInfo : public ComTdbVirtTableBase
   Int64                  redefTime;
 };
 
+class ComTdbVirtTableLibraryInfo : public ComTdbVirtTableBase
+{
+ public:
+  ComTdbVirtTableLibraryInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtTableLibraryInfo);}
+
+  const char *library_name;
+  Int64       library_UID;
+  Int32       library_version;
+  const char *library_filename;
+};
+
 #endif /* COMTDB_H */
 
 

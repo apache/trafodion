@@ -24,7 +24,6 @@
 #include "PrivMgrMDTable.h"
 #include "PrivMgrDesc.h"
 #include "PrivMgrDefs.h"
-#include "PrivMgrMDDefs.h"
 #include "PrivMgrRoles.h"
 
 #include <string>
@@ -191,7 +190,9 @@ public:
    PrivStatus selectWhere(
       const std::string & whereClause,
       std::vector<PrivMgrMDRow *> &rowList);
+   PrivStatus deleteRow(const ObjectPrivsMDRow & row);
    virtual PrivStatus deleteWhere(const std::string & whereClause);
+   PrivStatus updateRow(const ObjectPrivsMDRow & row);
    PrivStatus updateWhere(
       const std::string & setClause,
       const std::string & whereClause);
@@ -432,7 +433,264 @@ PrivStatus PrivMgrPrivileges::getPrivRowsForObject(
   return retcode;
 }
 
+// *****************************************************************************
+// * Method: givePrivForObjects                                
+// *                                                       
+// *    Updates one or more rows in the OBJECT_PRIVILEGES table to reflect 
+// *    a new owner of one or more objects.
+// *                                                       
+// *  Parameters:    
+// *                                                                       
+// *  <currentOwnerID> is the unique identifier for the current owner
+// *  <newOwnerID> is the unique identifier for the new owner
+// *  <newOwnerName> is the name of the new owner (upper cased)
+// *  <objectUIDs> is the list of objects with a new owner
+// *                                                                     
+// * Returns: PrivStatus                                               
+// *                                                                  
+// * STATUS_GOOD: Privileges were updated to reflect new owner
+// *           *: Unable to update privileges, see diags.     
+// *                                                               
+// *****************************************************************************
+PrivStatus PrivMgrPrivileges::givePrivForObjects(
+      const int32_t currentOwnerID,
+      const int32_t newOwnerID,
+      const std::string &newOwnerName,
+      const std::vector<int64_t> &objectUIDs)
+      
+{
 
+PrivStatus privStatus = STATUS_GOOD;
+  
+  for (size_t i = 0; i < objectUIDs.size(); i++)
+  {
+     privStatus = givePriv(currentOwnerID,newOwnerID,newOwnerName,objectUIDs[i]);
+     if (privStatus != STATUS_GOOD)
+        return privStatus;
+  }
+      
+  return STATUS_GOOD;
+  
+}
+  
+
+// *****************************************************************************
+// * Method: givePriv                                
+// *                                                       
+// *    Updates rows in the OBJECT_PRIVILEGES table to reflect a new owner of
+// *    an objects.
+// *                                                       
+// *  Parameters:    
+// *                                                                       
+// *  <granteeID> is the unique identifier for the new owner
+// *  <granteeName> is the name of the new owner (upper cased)
+// *  <objectUIDs> is the list of objects with a new owner
+// *                                                                     
+// * Returns: PrivStatus                                               
+// *                                                                  
+// * STATUS_GOOD: Privileges were updated to reflect new owner
+// *           *: Unable to update privileges, see diags.     
+// *                                                               
+// *****************************************************************************
+PrivStatus PrivMgrPrivileges::givePriv(
+   const int32_t currentOwnerID,
+   const int32_t newOwnerID,
+   const std::string &newOwnerName,
+   const int64_t objectUID)
+      
+{
+
+// *****************************************************************************
+// *                                                                           *
+// *    The set of grants for a given object can be thought of as a tree with  *
+// * many branches and one root.  At the root, is the grant from the system    *
+// * (grantor is _SYSTEM) to the owner of the object.  The grant from the      *
+// * system is for all privileges, with grant option.                          *
+// *                                                                           *
+// *    The owner then grants privileges to one or more authIDs.  Each of      *
+// * these grants can be viewed as a branch off the system grant root.  With   *
+// * WITH GRANT OPTION, each of these branches can have its own set of         *
+// * branches, potentially resulting in a dense tree.  See the rough           *
+// * drawing:                                                                  *
+// *                                                                           *
+// *         USERG  USERC   USERD  USERC  USERB                                *
+// *             \    |     /   \    |     /                                   *
+// *              \   |    /     \   |    /                                    *
+// *               \  |  /        \  |  /                                      *
+// *                USERE  USERD   USERF  USERB  USERG                         *
+// *                    \    |     /   \    |     /                            *
+// *                     \   |    /     \   |    /                             *
+// *                      \  |  /        \  |  /                               *
+// *                       USERB  USERC  USERD                                 *
+// *                           \    |     /                                    *
+// *                            \   |    /                                     *
+// *                             \  |  /                                       *
+// *                              USERA                                        *
+// *                                 |                                         *
+// *                             _SYSTEM                                       *
+// *                                                                           *
+// *                                                                           *
+// *    Some of the rules are:                                                 *
+// *  1) No grants to the owner (USERA)                                        *
+// *  2) A user can appear an unlimited number of times in the tree, but       *
+// *     all grants from the user (for a given privilege) are from the same    *
+// *     node.  For example, USERB is granted 3 times, but all grants from     *
+// *     USERB emanate from the same node.  This is because when USERB grants  *
+// *     a privilege, we start from the root and find the first node where     *
+// *     USERB has WITH GRANT OPTION.                                          *
+// *                                                                           *
+// *    When an object is given to another user, the current owner loses       *
+// * their grant from the system; instead, the new owner is granted from the   *
+// * system.  All existing grants from the current owner are now from the new  *
+// * owner.  Based on rule #1 above, the new owner can no longer appear in     *
+// * other nodes in the tree except the root node.  So, in the case where the  *
+// * object is given to USERB, the new grant tree should be:                   *
+// *                                                                           *
+// *                        USERD  USERC                                       *
+// *                         |  \    |                                         *
+// *                         |   \   |                                         *
+// *                 USERC   |    \  |                                         *
+// *                    \    |    USERF           USERG                        *
+// *                     \   |      |  \           /                           *
+// *                      \  |      |   \         /                            *
+// *                       \ |      |    \      /                              *
+// *        USERG ---------USERE    |    USERD                                 *
+// *                           \    |     /                                    *
+// *                            \   |    /                                     *
+// *                             \  |  /                                       *
+// *                              USERB ---- USERC                             *
+// *                                 |                                         *
+// *                             _SYSTEM                                       *
+// *                                                                           *
+// *                                                                           *
+// *   Note, previously USERA had three grants, and USERB had three grants,    *
+// * and now USERB has four grants--not six.  First, the grant from USERA to   *
+// * USERB is removed.  USERB is the grantee on only one node, from the system *
+// * Second, USERA and USERB both had a grant to USERD; these grants need to   *
+// * be combined.                                                              *
+// *                                                                           *
+// *   Essentially, the subtree (or branch) of USERB has been grafted into     *
+// * the root, and all USERB leaf nodes have been removed.  Any duplicate      *
+// * nodes, where USERA and USERB were grantors to the same grantee, have      *
+// * been merged.                                                              *
+// *                                                                           *
+// *    The algorithm is therefore three steps:                                *
+// *                                                                           *
+// * 1) Delete any leaf nodes where the new owner is the grantee.              *
+// * 2) Get the list of nodes where the original or the new owner is the       *
+// *    grantor.  Merge any duplicates (update bitmaps), and update to new     *
+// *    owner for old nodes.                                                   *
+// * 3) Update grantee on system grant to new owner.                           *
+// *                                                                           *
+// *****************************************************************************
+
+// 
+// Delete the leaf nodes:
+// 
+// DELETE FROM OBJECT_PRIVIELGES 
+//        WHERE OBJECT_UID = objectUID and GRANTEE_ID = granteeID
+// 
+
+PrivStatus privStatus = STATUS_GOOD;
+ObjectPrivsMDTable objectPrivsTable(fullTableName_,pDiags_);
+std::vector<PrivMgrMDRow *> rowList;
+char buf[1000];
+
+   sprintf(buf,"WHERE object_uid = %ld AND grantee_ID = %d",
+           objectUID,newOwnerID);
+          
+   privStatus = objectPrivsTable.deleteWhere(buf); 
+   
+   if (privStatus != STATUS_GOOD)
+      return privStatus;
+   
+   sprintf(buf, "WHERE object_uid = %ld AND (grantor_ID = %d OR grantor_ID = %d) ORDER BY grantee", 
+           objectUID,newOwnerID,currentOwnerID);
+
+   privStatus = objectPrivsTable.selectWhere(buf,rowList);
+   if (privStatus != STATUS_GOOD)
+   {
+      deleteRowsForGrantee(rowList);
+      return privStatus;
+   }
+         
+   for (size_t i = rowList.size(); i > 0; i--)
+   {
+      ObjectPrivsMDRow &currentRow = static_cast<ObjectPrivsMDRow &>(*rowList[i - 1]);
+      if (i == 1 && currentRow.grantorID_ == currentOwnerID)
+      {
+         currentRow.grantorID_ = newOwnerID;
+         currentRow.grantorName_ = newOwnerName;
+         privStatus = objectPrivsTable.updateRow(currentRow);
+         if (privStatus != STATUS_GOOD)
+         {
+            deleteRowsForGrantee(rowList);
+            return privStatus;
+         }
+         continue;
+      }   
+         
+      ObjectPrivsMDRow &previousRow = static_cast<ObjectPrivsMDRow &>(*rowList[i - 1]);
+      
+      // If both granted to the same ID, merge the rows, delete one,
+      // and update the other.
+      if (currentRow.granteeID_ == previousRow.granteeID_)
+      {
+         previousRow.privsBitmap_ |= currentRow.privsBitmap_;
+         previousRow.grantableBitmap_ |= currentRow.grantableBitmap_;
+         previousRow.grantorID_ = newOwnerID;
+         previousRow.grantorName_ = newOwnerName;
+         privStatus = objectPrivsTable.deleteRow(currentRow);
+         if (privStatus != STATUS_GOOD)
+         {
+            deleteRowsForGrantee(rowList);
+            return privStatus;
+         }
+         privStatus = objectPrivsTable.updateRow(previousRow);
+         if (privStatus != STATUS_GOOD)
+         {
+            deleteRowsForGrantee(rowList);
+            return privStatus;
+         }
+         i--;
+         continue;
+      }   
+
+      // If this is a grant from the old owner, update to the new owner.
+      if (currentRow.grantorID_ == currentOwnerID)
+      {
+         currentRow.grantorID_ = newOwnerID;
+         currentRow.grantorName_ = newOwnerName;
+         privStatus = objectPrivsTable.updateRow(currentRow);
+         if (privStatus != STATUS_GOOD)
+         {
+            deleteRowsForGrantee(rowList);
+            return privStatus;
+         }
+         continue;
+      }   
+      
+      // Grant from the new owner.  Will automatically be grafted into the
+      // tree in the next step.
+   }
+   
+   deleteRowsForGrantee(rowList);
+   
+// Update the root node.
+char setClause[1000];
+char whereClause[1000];
+
+   sprintf(setClause," SET GRANTEE_ID = %d, GRANTEE_NAME = '%s' ",
+           newOwnerID,newOwnerName.c_str());
+   sprintf(whereClause," WHERE GRANTOR_ID = %d ",SYSTEM_AUTH_ID);
+   
+   privStatus = objectPrivsTable.updateWhere(setClause,whereClause);
+   if (privStatus != STATUS_GOOD)
+      return privStatus;
+   
+   return STATUS_GOOD;
+
+}
 
 
 // *****************************************************************************
@@ -2931,7 +3189,36 @@ PrivStatus ObjectPrivsMDTable::insert(const PrivMgrMDRow &rowIn)
 }
 
 // *****************************************************************************
-// * method: ObjectPrivsMDTable::delete
+// * method: ObjectPrivsMDTable::deleteRow
+// *                                  
+// *    Deletes a row from the OBJECT_PRIVILEGES table based on the primary key
+// *    contents of the row.
+// *                                               
+// *  Parameters:                                 
+// *                                             
+// *  <row> defines what row should be deleted
+// *                                                                    
+// * Returns: PrivStatus
+// *                   
+// * STATUS_GOOD: Row deleted. 
+// *           *: Insert failed. A CLI error is put into the diags area. 
+// *****************************************************************************
+PrivStatus ObjectPrivsMDTable::deleteRow(const ObjectPrivsMDRow & row)
+
+{
+
+char whereClause[1000];
+
+   sprintf(whereClause," WHERE object_uid = %ld AND grantor_id = %d AND grantee_id = %d ",
+           row.objectUID_,row.grantorID_,row.granteeID_);
+           
+   return deleteWhere(whereClause);
+
+}
+
+
+// *****************************************************************************
+// * method: ObjectPrivsMDTable::deleteWhere
 // *                                  
 // *    Deletes a row from the OBJECT_PRIVILEGES table based on the where clause
 // *                                               
@@ -2975,6 +3262,44 @@ PrivStatus ObjectPrivsMDTable::deleteWhere(const std::string & whereClause)
 
   return STATUS_GOOD;
 }
+
+// *****************************************************************************
+// * method: ObjectPrivsMDTable::updateRow
+// *                                  
+// *    Updates grantor and bitmaps for a row in the OBJECT_PRIVILEGES table 
+// *    based on the contents of the row.
+// *                                               
+// *  Parameters:                                 
+// *                                             
+// *  <row> defines what row should be updated
+// *                                                                    
+// * Returns: PrivStatus
+// *                   
+// * STATUS_GOOD: Row(s) deleted. 
+// *           *: Insert failed. A CLI error is put into the diags area. 
+// *****************************************************************************
+PrivStatus ObjectPrivsMDTable::updateRow(const ObjectPrivsMDRow & row)
+
+{
+
+char setClause[1000];
+int64_t privilegesBitmapLong = row.getPrivilegesBitmap().to_ulong();
+int64_t grantableBitmapLong = row.getGrantableBitmap().to_ulong();
+
+   sprintf(setClause," SET grantor_id = %d, grantor_name = '%s', "
+                     "     privileges_bitmap = %ld, grantable_bitmap = %ld  ",
+           row.grantorID_,row.grantorName_.c_str(),privilegesBitmapLong,grantableBitmapLong);
+           
+char whereClause[1000];
+
+   sprintf(whereClause," WHERE object_uid = %ld AND grantor_id = %d AND grantee_id = %d ",
+           row.objectUID_,row.grantorID_,row.granteeID_);
+           
+   return updateWhere(setClause,whereClause);
+
+}
+
+
 
 // ----------------------------------------------------------------------------
 // method: updateWhere

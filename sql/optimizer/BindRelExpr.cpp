@@ -94,8 +94,11 @@
 #include "HDFSHook.h"
 #include "CmpSeabaseDDL.h"
 #include "ComUser.h"
+#include "ComSqlId.h"
 #include "PrivMgrCommands.h"
+#include "PrivMgrComponentPrivileges.h"
 #include "PrivMgrDefs.h"
+#include "PrivMgrMD.h"
 
   #define SLASH_C '/'
 
@@ -6267,7 +6270,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   // Set up a PrivMgrCommands class in case we need to get privilege information
   NAString privMDLoc;
   CONCAT_CATSCH(privMDLoc,CmpSeabaseDDL::getSystemCatalogStatic(),SEABASE_PRIVMGR_SCHEMA);
-  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(), PRIV_INITIALIZED);
+  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(), PrivMgr::PRIV_INITIALIZED);
   PrivStatus retcode = STATUS_GOOD;
 
   // ==> Check privileges for tables used in the query.
@@ -16233,8 +16236,11 @@ RelExpr * ControlRunningQuery::bindNode(BindWA *bindWA)
     bindWA->getCurrentScope()->setRETDesc(getRETDesc());
     return this;
   }
-
-  // Currently we do not check security, anyone can cancel any query
+  //
+  // Check to see if user is authorized to control this query.
+  //
+  if (!isUserAuthorized(bindWA))
+     return NULL;
 
   //
   // Bind the child nodes.
@@ -16262,3 +16268,103 @@ RelExpr * ControlRunningQuery::bindNode(BindWA *bindWA)
 
   return boundExpr;
 } // ControlRunningQuery::bindNode()
+
+
+bool ControlRunningQuery::isUserAuthorized(BindWA *bindWA)
+{
+// For now allow all query control operations.
+  return true;
+
+  bool userHasPriv = false;
+  Int32 sessionID = ComUser::getSessionUser();
+
+  // Check to see if the current user owns the query id.
+  // This only has to be done for the Cancel query request.
+  // This option to check privilege is not available unless
+  // the query Id was supplied.
+  if ((action_ == Cancel) &&
+      (qs_ == ControlQid))
+  {
+    // The user ID associated with the query is stored in the QID. 
+    // To be safe, copy the QID to a character string.
+    Int32 qidLen = queryId_.length();
+    char *pQid = new (bindWA->wHeap()) char[qidLen+1];
+    str_cpy_all(pQid, queryId_.data(), qidLen);
+    pQid[qidLen] = '\0';
+
+    // Set up the returned parameters
+    // Max username can be (128 * 2) + 2 (delimiters) + 1 (null indicator)
+    char username[2 * MAX_USERNAME_LEN + 2 + 1];
+    Int64 usernameLen = strlen(username) - 1;
+ 
+    // Call function to extract the username from the QID
+    Int32 retcode = ComSqlId::getSqlQueryIdAttr(ComSqlId::SQLQUERYID_USERNAME,
+                                                pQid,
+                                                qidLen,
+                                                usernameLen,
+                                                &username[0]);
+    if (retcode == 0)
+    {
+      // The username stored in the QID is actually the userID preceeded with
+      // a "U".  Check for a U and convert the succeeding characters 
+      // to integer.  This integer value is compared against the current userID.
+      username[usernameLen] = '\0';  
+      if (username[0] == 'U')
+      {
+        Int64 userID = str_atoi(&username[1],usernameLen - 1);  
+        if (sessionID == userID || sessionID == ComUser::getRootUserID())
+          userHasPriv = true;
+      }
+      // If userName does not begin with a 'U', ignore and continue
+    }
+    // If retcode != 0, continue, an invalid QID could be specified which
+    // is checked later in the code
+  }
+  
+  // The current user does not own the query, see if the current user has 
+  // the correct QUERY privilege.  Code above only supports cancel, but other 
+  // checks could be added.  Component checks for all query operations.
+  if (!userHasPriv)
+  {
+    SQLOperation operation;
+    switch (ControlRunningQuery::action_)
+    {
+      case ControlRunningQuery::Suspend:
+        operation = SQLOperation::QUERY_SUSPEND;
+        break;
+      case ControlRunningQuery::Activate:
+        operation = SQLOperation::QUERY_ACTIVATE;
+        break;
+      case ControlRunningQuery::Cancel:
+        operation = SQLOperation::QUERY_CANCEL;
+        break;
+      default:
+        operation = SQLOperation::UNKNOWN;
+    
+      NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
+      privMDLoc += ".\"";
+      privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+      privMDLoc += "\"";
+
+      PrivMgrComponentPrivileges componentPriv(privMDLoc.data(),CmpCommon::diags());
+
+      userHasPriv = componentPriv.hasSQLPriv(sessionID,operation,true);
+    }
+    
+    if (!userHasPriv)
+    {
+      // ANSI requests a special SqlState for cancel requests
+      if (ControlRunningQuery::action_ == ControlRunningQuery::Cancel)
+        *CmpCommon::diags() << DgSqlCode(-8029);
+      else
+        *CmpCommon::diags() << DgSqlCode(-1017);
+      bindWA->setErrStatus();
+    }
+    
+    if (bindWA->errStatus())
+      return false;
+  }
+  return true;
+  
+}// ControlRunningQuery::isUserAuthorized()
+

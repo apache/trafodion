@@ -60,7 +60,8 @@ enum desc_nodetype {
   DESC_SEQUENCE_GENERATOR_TYPE,
   DESC_HBASE_HASH2_REGION_TYPE,
   DESC_HBASE_RANGE_REGION_TYPE,
-  DESC_ROUTINE_TYPE
+  DESC_ROUTINE_TYPE,
+  DESC_LIBRARY_TYPE
 };
 
 typedef ComDiskFileFormat UnderlyingFileType;
@@ -429,6 +430,16 @@ struct routine_desc_struct {
 
 };
 
+struct library_desc_struct {
+  char *libraryName;
+  char *libraryFilename;
+  Int32 libraryVersion;
+  ComSInt64 libraryUID;
+#ifdef NA_LITTLE_ENDIAN
+  void encode() {}
+#endif
+};
+
 union body_struct {
   check_constrnts_desc_struct check_constrnts_desc;
   columns_desc_struct columns_desc;
@@ -447,6 +458,7 @@ union body_struct {
   sequence_generator_desc_struct  sequence_generator_desc;  
   hbase_region_desc_struct hbase_region_desc;
   routine_desc_struct routine_desc;
+  library_desc_struct library_desc;
 };
 
 struct desc_struct {

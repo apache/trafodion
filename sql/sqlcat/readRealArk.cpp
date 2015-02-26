@@ -1,7 +1,7 @@
 /* -*-C++-*-
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -110,6 +110,9 @@ desc_struct *readtabledef_allocate_desc(desc_nodetype nodetype)
       break;
    case DESC_ROUTINE_TYPE:
       size = sizeof(routine_desc_struct);
+      break;
+   case DESC_LIBRARY_TYPE:
+      size = sizeof(library_desc_struct);
       break;
     default:
       assert(FALSE);

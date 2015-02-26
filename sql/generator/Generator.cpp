@@ -1401,6 +1401,26 @@ desc_struct * Generator::createVirtualTableDesc(
   return table_desc;
 }
 
+
+desc_struct *Generator::createVirtualLibraryDesc(
+   const char *libraryName,
+   ComTdbVirtTableLibraryInfo *libraryInfo)
+   
+{
+
+   desc_struct *library_desc = readtabledef_allocate_desc(DESC_LIBRARY_TYPE);
+   library_desc->body.library_desc.libraryName = new HEAP char[strlen(libraryName) + 1];
+   strcpy(library_desc->body.library_desc.libraryName, libraryName);
+   library_desc->body.library_desc.libraryFilename = new HEAP char[strlen(libraryInfo->library_filename) + 1];
+   strcpy(library_desc->body.library_desc.libraryFilename, libraryInfo->library_filename);
+   library_desc->body.library_desc.libraryVersion = libraryInfo->library_version;
+   library_desc->body.library_desc.libraryUID = libraryInfo->library_UID;
+   
+   return library_desc;
+   
+}
+
+
 desc_struct *Generator::createVirtualRoutineDesc(
                                   const char *routineName,
                                   ComTdbVirtTableRoutineInfo *routineInfo,

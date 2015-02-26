@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-//// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+//// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 ////
 ////  Licensed under the Apache License, Version 2.0 (the "License");
 ////  you may not use this file except in compliance with the License.
@@ -37,6 +37,12 @@ class PrivMgrMDTable;
 // * Language:     C++
 // *
 // *****************************************************************************
+
+typedef struct 
+{
+   int64_t UID;
+   int32_t ownerID;
+} UIDAndOwner;
 
 typedef struct 
 {
@@ -94,6 +100,11 @@ public:
    PrivStatus fetchUIDs(
       const std::string whereClause,
       vector<int64_t> &UIDs);
+        
+   PrivStatus fetchUIDandOwner(
+      const std::string whereClause,
+      const std::string orderByClause,
+      vector<UIDAndOwner> & objectRows); 
         
    PrivStatus fetchUIDandTypes(
       const std::string whereClause,

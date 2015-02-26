@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -450,6 +450,67 @@ PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
 }
 //****************** End of PrivMgrObjects::fetchQualifiedName *****************
 
+
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrObjects::fetchUIDandOwner                                *
+// *                                                                           *
+// *    Returns a vector of object UIDs and their object owner for all rows    *
+// * in the OBJECTS table specified by a WHERE clause.                         *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <whereClause>                   const std::string &             In       *
+// *    is the WHERE clause specifying the rows to fetch.                      *
+// *                                                                           *
+// *  <orderByClause>                 const std::string &             In       *
+// *    is the ORDER BY clause specifying the order to return the rows.        *
+// *                                                                           *
+// *  <objectRows>                   vector<UIDAndOwner> &            Out      *
+// *    passes back a vector of object UIDs and their object.                  *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// *  STATUS_GOOD: A vector of object UIDs and object owners was returned.     *
+// * STATUS_ERROR: Error reading OBJECTS table or no matches found.  A CLI     *
+// *               error is put into the diags area.                           *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrObjects::fetchUIDandOwner(
+   const std::string whereClause,
+   const std::string orderByClause,
+   vector<UIDAndOwner> & objectRows) 
+        
+{
+
+std::vector<MyRow> rows;
+MyTable &myTable = static_cast<MyTable &>(myTable_);
+
+PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
+
+   if (privStatus != STATUS_GOOD)
+      return STATUS_ERROR;
+   
+   for (size_t r = 0; r < rows.size(); r++)
+   {
+      UIDAndOwner element;
+      
+      element.UID = rows[r].objectUID_;
+      element.ownerID = rows[r].objectOwner_;
+      
+      objectRows.push_back(element);
+   }
+
+   return STATUS_GOOD;
+    
+}
+//******************* End of PrivMgrObjects::fetchUIDandOwner ******************
 
 
 
