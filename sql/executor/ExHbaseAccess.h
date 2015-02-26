@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -304,7 +304,8 @@ protected:
     (NABoolean fetchRangeHadRows = FALSE);
   Lng32 setupSubsetKeysAndCols();
 
-  Lng32 setupListOfColNames(Queue * listOfColNames, TextVec &columns);
+  Lng32 setupListOfColNames(Queue * listOfColNames, LIST(HbaseStr) &columns);
+  Lng32 setupListOfColNames(Queue * listOfColNames, LIST(NAString) &columns);
 
   short setupHbaseFilterPreds();
   void setRowID(char *rowId, Lng32 rowIdLen);
@@ -353,12 +354,12 @@ protected:
   Text beginRowId_;
   Text endRowId_;
 
-  TextVec rowIds_;
-  TextVec columns_;
-  TextVec deletedColumns_;
-  TextVec hbaseFilterColumns_;
-  TextVec hbaseFilterOps_;
-  TextVec hbaseFilterValues_;
+  LIST(HbaseStr) rowIds_;
+  LIST(HbaseStr) columns_;
+  LIST(HbaseStr) deletedColumns_;
+  LIST(NAString) hbaseFilterColumns_;
+  LIST(NAString) hbaseFilterOps_;
+  LIST(NAString) hbaseFilterValues_;
 
   char * asciiRow_;
   char * convertRow_;

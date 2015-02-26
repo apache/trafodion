@@ -80,11 +80,11 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
 					   FALSE, 
-					   (tcb_->hbaseFilterColumns_.size() > 0 ?
+					   (tcb_->hbaseFilterColumns_.entries() > 0 ?
 					    &tcb_->hbaseFilterColumns_ : NULL),
-					   (tcb_->hbaseFilterOps_.size() > 0 ?
+					   (tcb_->hbaseFilterOps_.entries() > 0 ?
 					    &tcb_->hbaseFilterOps_ : NULL),
-					   (tcb_->hbaseFilterValues_.size() > 0 ?
+					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
 					   tcb_->getSamplePercentage());
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
@@ -260,11 +260,11 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
 					   FALSE, 
-					   (tcb_->hbaseFilterColumns_.size() > 0 ?
+					   (tcb_->hbaseFilterColumns_.entries() > 0 ?
 					    &tcb_->hbaseFilterColumns_ : NULL),
-					   (tcb_->hbaseFilterOps_.size() > 0 ?
+					   (tcb_->hbaseFilterOps_.entries() > 0 ?
 					    &tcb_->hbaseFilterOps_ : NULL),
-					   (tcb_->hbaseFilterValues_.size() > 0 ?
+					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
 					   tcb_->getSamplePercentage());
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
@@ -466,11 +466,11 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
                                            TRUE,
-					   (tcb_->hbaseFilterColumns_.size() > 0 ?
+					   (tcb_->hbaseFilterColumns_.entries() > 0 ?
 					    &tcb_->hbaseFilterColumns_ : NULL),
-					   (tcb_->hbaseFilterOps_.size() > 0 ?
+					   (tcb_->hbaseFilterOps_.entries() > 0 ?
 					    &tcb_->hbaseFilterOps_ : NULL),
-					   (tcb_->hbaseFilterValues_.size() > 0 ?
+					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
 					    tcb_->getSamplePercentage(),
 					    tcb_->hbaseAccessTdb().getUseSnapshotScan(),
@@ -704,7 +704,7 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 		break;
 	      }
 
-	    if (tcb_->rowIds_.size() == 1)
+	    if (tcb_->rowIds_.entries() == 1)
 	      {
 		retcode = tcb_->ehi_->getRowOpen(tcb_->table_, tcb_->rowIds_[0],
 					     tcb_->columns_, -1);
@@ -888,7 +888,7 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 		break;
 	      }
 
-	    if (tcb_->rowIds_.size() == 1)
+	    if (tcb_->rowIds_.entries() == 1)
 	      {
 		retcode = tcb_->ehi_->getRowOpen(tcb_->table_, tcb_->rowIds_[0],
 					     tcb_->columns_, -1);
@@ -1064,7 +1064,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	    tcb_->table_.val = tcb_->hbaseAccessTdb().getTableName();
 	    tcb_->table_.len = strlen(tcb_->hbaseAccessTdb().getTableName());
 
-	    if (tcb_->rowIds_.size() == 1)
+	    if (tcb_->rowIds_.entries() == 1)
 	      {
 		retcode = tcb_->ehi_->getRowOpen(tcb_->table_, tcb_->rowIds_[0],
 					     tcb_->columns_, -1);
@@ -1099,7 +1099,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
             // for multi get, only EOR indicates DONE
 	    if ( (retcode == HBASE_ACCESS_EOR) ||
                  ( (retcode == HBASE_ACCESS_EOD) &&
-                   (tcb_->rowIds_.size() == 1) ) )
+                   (tcb_->rowIds_.entries() == 1) ) )
 	      {
 		step_ = GET_CLOSE;
 		break;
@@ -1107,7 +1107,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
             
             // for multi get, do FETCH if retcode is EOD
             if ( (retcode == HBASE_ACCESS_EOD) && 
-                 (tcb_->rowIds_.size() > 1) )
+                 (tcb_->rowIds_.entries() > 1) )
             {
                 step_ = NEXT_ROW;
                 break;

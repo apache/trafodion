@@ -1932,11 +1932,11 @@ NAString HTableClient_JNI::getLastJavaError()
 // 
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID, 
-   const Text& stopRowID, const TextVec& cols, Int64 timestamp, 
+   const Text& stopRowID, const LIST(HbaseStr) & cols, Int64 timestamp, 
    bool cacheBlocks, Lng32 numCacheRows, NABoolean preFetch,
-					const TextVec *inColNamesToFilter, 
-					const TextVec *inCompareOpList,
-					const TextVec *inColValuesToCompare,
+					const LIST(NAString) *inColNamesToFilter, 
+					const LIST(NAString) *inCompareOpList,
+					const LIST(NAString) *inColValuesToCompare,
 					Float32 samplePercent,
 					NABoolean useSnapshotScan,
 					Lng32 snapTimeout,
@@ -1965,7 +1965,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
   jenv_->SetByteArrayRegion(jba_stopRowID, 0, len, (const jbyte*)stopRowID.data());
 
   jobjectArray j_cols = NULL;
-  if (!cols.empty())
+  if (!cols.isEmpty())
   {
     j_cols = convertToByteArrayObjectArray(cols);
     if (j_cols == NULL)
@@ -1977,7 +1977,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
        jenv_->DeleteLocalRef(jba_stopRowID);
        return HTC_ERROR_SCANOPEN_PARAM;
     }
-    numColsInScan_ = cols.size();
+    numColsInScan_ = cols.entries();
   }
   else
      numColsInScan_ = 0;
@@ -1994,7 +1994,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 
 
   jobjectArray j_colnamestofilter = NULL;
-  if ((inColNamesToFilter) && (!inColNamesToFilter->empty()))
+  if ((inColNamesToFilter) && (!inColNamesToFilter->isEmpty()))
   {
     j_colnamestofilter = convertToByteArrayObjectArray(*inColNamesToFilter);
     if (j_colnamestofilter == NULL)
@@ -2011,7 +2011,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
   }
 
   jobjectArray j_compareoplist = NULL;
-  if ((inCompareOpList) && (! inCompareOpList->empty()))
+  if ((inCompareOpList) && (! inCompareOpList->isEmpty()))
   {
      j_compareoplist = convertToByteArrayObjectArray(*inCompareOpList);
      if (j_compareoplist == NULL)
@@ -2031,7 +2031,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
   }
 
   jobjectArray j_colvaluestocompare = NULL;
-  if ((inColValuesToCompare) && (!inColValuesToCompare->empty()))
+  if ((inColValuesToCompare) && (!inColValuesToCompare->isEmpty()))
   {
      j_colvaluestocompare = convertToByteArrayObjectArray(*inColValuesToCompare);
      if (j_colvaluestocompare == NULL)
@@ -2120,20 +2120,20 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const Text& rowID, 
-      const TextVec& cols, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const HbaseStr& rowID, 
+      const LIST(HbaseStr) & cols, Int64 timestamp)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::startGet(%s) called.", rowID.data());
-  int len = rowID.size();
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::startGet(%s) called.", rowID.val);
+  int len = rowID.len;
   jbyteArray jba_rowID = jenv_->NewByteArray(len);
   if (jba_rowID == NULL) 
   {
      GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_GETROWOPEN_PARAM));
      return HTC_ERROR_GETROWOPEN_PARAM;
   }
-  jenv_->SetByteArrayRegion(jba_rowID, 0, len, (const jbyte*)rowID.data());
+  jenv_->SetByteArrayRegion(jba_rowID, 0, len, (const jbyte*)rowID.val);
   jobjectArray j_cols = NULL;
-  if (!cols.empty())
+  if (!cols.isEmpty())
   {
      j_cols = convertToByteArrayObjectArray(cols);
      if (j_cols == NULL)
@@ -2144,7 +2144,7 @@ HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const Text& rowID,
         jenv_->DeleteLocalRef(jba_rowID);
         return HTC_ERROR_GETROWOPEN_PARAM;
      }  
-     numColsInScan_ = cols.size();
+     numColsInScan_ = cols.entries();
   }
   else
      numColsInScan_ = 0;
@@ -2186,12 +2186,12 @@ HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const Text& rowID,
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs, 
-	const TextVec& cols, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const LIST(HbaseStr)& rowIDs, 
+	const LIST(HbaseStr) & cols, Int64 timestamp)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::startGet(multi-row) called.");
   jobjectArray j_cols = NULL;
-  if (!cols.empty())
+  if (!cols.isEmpty())
   {
      j_cols = convertToByteArrayObjectArray(cols);
      if (j_cols == NULL)
@@ -2201,7 +2201,7 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs,
         logError(CAT_SQL_HBASE, "HTableClient_JNI::startGets()", getLastError());
         return HTC_ERROR_GETROWSOPEN_PARAM;
      }
-     numColsInScan_ = cols.size();
+     numColsInScan_ = cols.entries();
   }  
   else
      numColsInScan_ = 0;
@@ -2215,7 +2215,7 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs,
         jenv_->DeleteLocalRef(j_cols);
     return HTC_ERROR_GETROWSOPEN_PARAM;
   }  
-  numReqRows_ = rowIDs.size();
+  numReqRows_ = rowIDs.entries();
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
   
@@ -2254,7 +2254,7 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs,
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& cols, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr)& cols, Int64 timestamp)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRow(%ld, %s) called.", transID, rowID.val);
   jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
@@ -2265,7 +2265,7 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const Te
   }
   jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
   jobjectArray j_cols = NULL;
-  if (!cols.empty())
+  if (!cols.isEmpty())
   {
      j_cols = convertToByteArrayObjectArray(cols);
      if (j_cols == NULL)
@@ -3944,22 +3944,54 @@ HTC_RetCode HTableClient_JNI::nextCell(
    return HTC_OK;
 }
 
-jobjectArray convertToByteArrayObjectArray(const TextVec &vec)
+jobjectArray convertToByteArrayObjectArray(const LIST(NAString) &vec)
 {
-   int vecLen = vec.size();
+   int vecLen = vec.entries();
    int i = 0;
    jobjectArray j_objArray = NULL;
-   for (std::vector<Text>::const_iterator it = vec.begin(); 
-           it != vec.end(); ++it, i++)
+   for ( ; i < vec.entries(); i++)
    {
-       jbyteArray j_obj = jenv_->NewByteArray((*it).size());
+       const NAString *naStr = &vec.at(i);
+       jbyteArray j_obj = jenv_->NewByteArray(naStr->length());
        if (jenv_->ExceptionCheck())
        {
           if (j_objArray != NULL)
              jenv_->DeleteLocalRef(j_objArray);
           return NULL; 
        }
-       jenv_->SetByteArrayRegion(j_obj, 0, (*it).size(), (const jbyte *)(*it).data());
+       jenv_->SetByteArrayRegion(j_obj, 0, naStr->length(), (const jbyte *)naStr->data());
+       if (j_objArray == NULL)
+       {
+          j_objArray = jenv_->NewObjectArray(vecLen,
+                 jenv_->GetObjectClass(j_obj), NULL);
+          if (jenv_->ExceptionCheck())
+          {
+             jenv_->DeleteLocalRef(j_obj);
+             return NULL;
+          }
+       }
+       jenv_->SetObjectArrayElement(j_objArray, i, (jobject)j_obj);
+       jenv_->DeleteLocalRef(j_obj);
+   }
+   return j_objArray;
+}
+
+jobjectArray convertToByteArrayObjectArray(const LIST(HbaseStr) &vec)
+{
+   int vecLen = vec.entries();
+   int i = 0;
+   jobjectArray j_objArray = NULL;
+   for ( ; i < vec.entries(); i++)
+   {
+       const HbaseStr *hbStr = &vec.at(i);
+       jbyteArray j_obj = jenv_->NewByteArray(hbStr->len);
+       if (jenv_->ExceptionCheck())
+       {
+          if (j_objArray != NULL)
+             jenv_->DeleteLocalRef(j_objArray);
+          return NULL; 
+       }
+       jenv_->SetByteArrayRegion(j_obj, 0, hbStr->len, (const jbyte *)hbStr->val);
        if (j_objArray == NULL)
        {
           j_objArray = jenv_->NewObjectArray(vecLen,

@@ -922,18 +922,20 @@ short CmpSeabaseDDL::readAndInitDefaultsFromSeabaseDefaultsTable
   hbaseDefaults.val = (char*)hbaseDefaultsStr.data();
   hbaseDefaults.len = hbaseDefaultsStr.length();
 
-  NAString col1NameStr;
-  NAString col2NameStr;
+  NAString col1NameStr(heap_);
+  NAString col2NameStr(heap_);
 
   getColName(SEABASE_DEFAULT_COL_FAMILY, "1", col1NameStr);
   getColName(SEABASE_DEFAULT_COL_FAMILY, "2", col2NameStr);
 
-  NAList<Text> col1ValueList;
-  NAList<Text> col2ValueList;
-  NAList<Text> listUnused;
-  Text col1TextStr(col1NameStr);
-  Text col2TextStr(col2NameStr);
-  Text colUnused;
+  LIST(NAString) col1ValueList(heap_);
+  LIST(NAString) col2ValueList(heap_);
+  LIST(NAString) listUnused(heap_);
+  HbaseStr col1TextStr;
+  HbaseStr col2TextStr;
+  HbaseStr colUnused;
+  char *col1 = NULL;
+  char *col2 = NULL;
 
   ExpHbaseInterface * ehi = allocEHI(server, zkPort, FALSE);
   if (! ehi)
@@ -948,6 +950,27 @@ short CmpSeabaseDDL::readAndInitDefaultsFromSeabaseDefaultsTable
       retcode = -1394;
       goto label_return;
     }
+
+  col1 = (char *) heap_->allocateMemory(col1NameStr.length() + 1, FALSE);
+  col2 = (char *) heap_->allocateMemory(col2NameStr.length() + 1, FALSE);
+  if (col1 == NULL || col2 == NULL)
+    {
+      retcode = -EXE_NO_MEM_TO_EXEC;  // error -8571
+      goto label_return;
+    }
+
+  memcpy(col1, col1NameStr.data(), col1NameStr.length());
+  col1[col1NameStr.length()] = 0;
+  col1TextStr.val = col1;
+  col1TextStr.len = col1NameStr.length();
+
+  memcpy(col2, col2NameStr.data(), col2NameStr.length());
+  col2[col2NameStr.length()] = 0;
+  col2TextStr.val = col2;
+  col2TextStr.len = col2NameStr.length();
+
+  colUnused.val = NULL;
+  colUnused.len = 0;
 
   retcode = ehi->fetchAllRows(hbaseDefaults, 
                               2, // numCols
@@ -973,6 +996,11 @@ short CmpSeabaseDDL::readAndInitDefaultsFromSeabaseDefaultsTable
     }
  label_return:
   deallocEHI(ehi);
+
+  if (col1)
+    heap_->deallocateMemory(col1);
+  if (col2)
+    heap_->deallocateMemory(col2);
 
   return retcode;
 }   
@@ -1018,21 +1046,24 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
 
   HbaseStr hbaseVersions;
 
-  NAString col1NameStr;
-  NAString col2NameStr;
-  NAString col3NameStr;
+  NAString col1NameStr(heap_);
+  NAString col2NameStr(heap_);
+  NAString col3NameStr(heap_);
 
-  NAList<Text> col1ValueList;
-  NAList<Text> col2ValueList;
-  NAList<Text> col3ValueList;
+  LIST(NAString) col1ValueList(heap_);
+  LIST(NAString) col2ValueList(heap_);
+  LIST(NAString) col3ValueList(heap_);
 
   getColName(SEABASE_DEFAULT_COL_FAMILY, "1", col1NameStr);
   getColName(SEABASE_DEFAULT_COL_FAMILY, "2", col2NameStr);
   getColName(SEABASE_DEFAULT_COL_FAMILY, "3", col3NameStr);
 
-  Text col1TextStr(col1NameStr);
-  Text col2TextStr(col2NameStr);
-  Text col3TextStr(col3NameStr);
+  char * col1 = NULL;
+  char * col2 = NULL;
+  char * col3 = NULL;
+  HbaseStr col1TextStr;
+  HbaseStr col2TextStr;
+  HbaseStr col3TextStr;
 
   NAString hbaseVersionsStr(getSystemCatalog());
   hbaseVersionsStr += ".";
@@ -1102,6 +1133,30 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
       retcode = -1394;
       goto label_return;
     }
+
+  col1 = (char *) heap_->allocateMemory(col1NameStr.length() + 1, FALSE);
+  col2 = (char *) heap_->allocateMemory(col2NameStr.length() + 1, FALSE);
+  col3 = (char *) heap_->allocateMemory(col3NameStr.length() + 1, FALSE);
+  if (col1 == NULL || col2 == NULL || col3 == NULL)
+    {
+      retcode = -EXE_NO_MEM_TO_EXEC;  // error -8571
+      goto label_return;
+    }
+
+  memcpy(col1, col1NameStr.data(), col1NameStr.length());
+  col1[col1NameStr.length()] = 0;
+  col1TextStr.val = col1;
+  col1TextStr.len = col1NameStr.length();
+
+  memcpy(col2, col2NameStr.data(), col2NameStr.length());
+  col2[col2NameStr.length()] = 0;
+  col2TextStr.val = col2;
+  col2TextStr.len = col2NameStr.length();
+
+  memcpy(col3, col3NameStr.data(), col3NameStr.length());
+  col3[col3NameStr.length()] = 0;
+  col3TextStr.val = col3;
+  col3TextStr.len = col3NameStr.length();
 
   retcode = ehi->fetchAllRows(hbaseVersions, 
                               3, // numCols
@@ -1206,6 +1261,12 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
  label_return:
   if (! inEHI)
     deallocEHI(ehi);
+  if (col1)
+    heap_->deallocateMemory(col1);
+  if (col2)
+    heap_->deallocateMemory(col2);
+  if (col3)
+    heap_->deallocateMemory(col3);
   return retcode;
 }   
 

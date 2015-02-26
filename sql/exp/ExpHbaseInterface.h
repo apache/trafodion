@@ -129,15 +129,15 @@ class ExpHbaseInterface : public NABasicObject
 			 HbaseStr &tblName,
 			 const Text& startRow, 
 			 const Text& stopRow, 
-			 const std::vector<Text> & columns,
+			 const LIST(HbaseStr) & columns,
 			 const int64_t timestamp,
 			 const NABoolean readUncommitted,
 			 const NABoolean cacheBlocks,
 			 const Lng32 numCacheRows,
                          const NABoolean preFetch,
-			 const TextVec *inColNamesToFilter, 
-			 const TextVec *inCompareOpList,
-			 const TextVec *inColValuesToCompare,
+			 const LIST(NAString) *inColNamesToFilter, 
+			 const LIST(NAString) *inCompareOpList,
+			 const LIST(NAString) *inColValuesToCompare,
 			 Float32 samplePercent = -1.0f,
 			 NABoolean useSnapshotScan = FALSE,
 			 Lng32 snapTimeout = 0,
@@ -150,17 +150,17 @@ class ExpHbaseInterface : public NABasicObject
   Lng32 fetchAllRows(
 		     HbaseStr &tblName,
 		     Lng32 numCols,
-		     Text &col1NameStr,
-		     Text &col2NameStr,
-		     Text &col3NameStr,
-		     NAList<Text> &col1ValueList, // output
-		     NAList<Text> &col2ValueList, // output
-		     NAList<Text> &col3ValueList); // output
+		     HbaseStr &col1NameStr,
+		     HbaseStr &col2NameStr,
+		     HbaseStr &col3NameStr,
+		     LIST(NAString) &col1ValueList, // output
+		     LIST(NAString) &col2ValueList, // output
+		     LIST(NAString) &col3ValueList); // output
 		     
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
-		const Text &row, 
-		const std::vector<Text> & columns,
+		const HbaseStr &row, 
+		const LIST(HbaseStr) & columns,
 		const int64_t timestamp) = 0;
 
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
@@ -170,8 +170,8 @@ class ExpHbaseInterface : public NABasicObject
 
  virtual Lng32 getRowsOpen(
 		HbaseStr &tblName,
-		const std::vector<Text> & rows, 
-		const std::vector<Text> & columns,
+		const LIST(HbaseStr) & rows, 
+		const LIST(HbaseStr) & columns,
 		const int64_t timestamp) = 0;
 
   virtual Lng32 nextRow() = 0;
@@ -200,7 +200,7 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 deleteRow(
 		  HbaseStr &tblName,
 		  HbaseStr& row, 
-		  const std::vector<Text> & columns,
+		  const LIST(HbaseStr) & columns,
 		  NABoolean noXn,
 		  const int64_t timestamp) = 0;
 
@@ -226,7 +226,7 @@ class ExpHbaseInterface : public NABasicObject
 
   virtual Lng32 deleteColumns(
 		  HbaseStr &tblName,
-		  const Text & column) = 0;
+		  HbaseStr & column) = 0;
 
   virtual Lng32 insertRow(
 		  HbaseStr &tblName,
@@ -392,15 +392,15 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 			 HbaseStr &tblName,
 			 const Text& startRow, 
 			 const Text& stopRow, 
-			 const std::vector<Text> & columns,
+			 const LIST(HbaseStr) & columns,
 			 const int64_t timestamp,
 			 const NABoolean readUncommitted,
 			 const NABoolean cacheBlocks,
 			 const Lng32 numCacheRows,
                          const NABoolean preFetch,
-			 const TextVec *inColNamesToFilter, 
-			 const TextVec *inCompareOpList,
-			 const TextVec *inColValuesToCompare,
+			 const LIST(NAString) *inColNamesToFilter, 
+			 const LIST(NAString) *inCompareOpList,
+			 const LIST(NAString) *inColValuesToCompare,
 			 Float32 samplePercent = -1.0f,
 			 NABoolean useSnapshotScan = FALSE,
 			 Lng32 snapTimeout = 0,
@@ -412,8 +412,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
-		const Text &row, 
-		const std::vector<Text> & columns,
+		const HbaseStr &row, 
+		const LIST(HbaseStr) & columns,
 		const int64_t timestamp);
  
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
@@ -423,8 +423,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
  virtual Lng32 getRowsOpen(
 		HbaseStr &tblName,
-		const std::vector<Text> & rows, 
-		const std::vector<Text> & columns,
+		const LIST(HbaseStr) & rows, 
+		const LIST(HbaseStr) & columns,
 		const int64_t timestamp);
 
   virtual Lng32 nextRow();
@@ -453,7 +453,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 deleteRow(
 		  HbaseStr &tblName,
 		  HbaseStr &row, 
-		  const std::vector<Text> & columns,
+		  const LIST(HbaseStr) & columns,
 		  NABoolean noXn,
 		  const int64_t timestamp);
 
@@ -477,7 +477,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 deleteColumns(
 		  HbaseStr &tblName,
-		  const Text & column);
+		  HbaseStr & column);
 
   virtual Lng32 insertRow(
 		  HbaseStr &tblName,

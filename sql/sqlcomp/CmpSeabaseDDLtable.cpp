@@ -3699,7 +3699,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
   //  column.append(":");
   //  column.append(colName);
 
-  Text column(nacol->getHbaseColFam());
+  NAString column(nacol->getHbaseColFam(), heap_);
   column.append(":");
   //  column.append(nacol->getHbaseColQual());
 
@@ -3724,7 +3724,27 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
   else
     column.append((char*)&colQval, 8);
   
-  retcode = ehi->deleteColumns(hbaseTable, column);
+  HbaseStr colNameStr;
+  char *col = NULL;
+  col = (char *) heap_->allocateMemory(column.length() + 1, FALSE);
+  if (col)
+    {
+      memcpy(col, column.data(), column.length());
+      col[column.length()] = 0;
+      colNameStr.val = col;
+      colNameStr.len = column.length();
+    }
+  else
+    {
+      deallocEHI(ehi);
+
+      *CmpCommon::diags() << DgSqlCode(-EXE_NO_MEM_TO_EXEC);  // error -8571
+
+      processReturn();
+
+      return;
+    }
+  retcode = ehi->deleteColumns(hbaseTable, colNameStr);
   if (retcode < 0)
     {
       *CmpCommon::diags() << DgSqlCode(-8448)
@@ -3734,6 +3754,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
                           << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
       
       deallocEHI(ehi); 
+      heap_->deallocateMemory(col);
 
       processReturn();
 
@@ -3745,6 +3766,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
                             COM_BASE_TABLE_OBJECT_LIT))
     {
       processReturn();
+      heap_->deallocateMemory(col);
 
       deallocEHI(ehi);
 
@@ -3752,6 +3774,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
     }
 
   deallocEHI(ehi); 
+  heap_->deallocateMemory(col);
 
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
     NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);

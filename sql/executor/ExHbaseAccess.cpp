@@ -225,9 +225,15 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   , workAtp_(NULL)
   , pool_(NULL)
   , matches_(0)
+  , rowIds_(glob ? glob->getDefaultHeap() : NULL)
+  , columns_(glob ? glob->getDefaultHeap() : NULL)
+  , deletedColumns_(glob ? glob->getDefaultHeap() : NULL)
+  , hbaseFilterColumns_(glob ? glob->getDefaultHeap() : NULL)
+  , hbaseFilterOps_(glob ? glob->getDefaultHeap() : NULL)
+  , hbaseFilterValues_(glob ? glob->getDefaultHeap() : NULL)
 {
-  Space * space = (glob ? glob->getSpace() : 0);
-  CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
+  Space * space = (glob ? glob->getSpace() : NULL);
+  CollHeap * heap = (glob ? glob->getDefaultHeap() : NULL);
 
   pool_ = new(space) 
         sql_buffer_pool(hbaseAccessTdb.numBuffers_,
@@ -413,8 +419,6 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   directBufferRowNum_ = 0;
   directRowIDBuffer_ = NULL;
   directRowIDBufferLen_ = 0;
-  rowIDs_.val = NULL;
-  rowIDs_.len = 0;
   dbRowID_.val = NULL;
   dbRowID_.len = 0;
   directRowBuffer_ = NULL;
@@ -1554,12 +1558,34 @@ void ExHbaseAccessTcb::setupPrevRowId()
 }  
 
 Lng32 ExHbaseAccessTcb::setupListOfColNames(Queue * listOfColNames,
-						   TextVec &columns)
+					    LIST(HbaseStr) &columns)
 {
-  if (listOfColNames)
+  if (columns.isEmpty() && listOfColNames)
     {
       listOfColNames->position();
-      columns.clear();
+      HbaseStr colNameText;
+      for (Lng32 i = 0; i < listOfColNames->numEntries(); i++)
+	{
+	  short colNameLen = *(short*)listOfColNames->getCurr();
+	  char * colName = &((char*)listOfColNames->getCurr())[sizeof(short)];
+	  
+	  listOfColNames->advance();
+	  
+	  colNameText.val = colName;
+          colNameText.len = colNameLen;
+	  columns.insert(colNameText);
+	}
+    }
+  
+  return 0;
+}
+
+Lng32 ExHbaseAccessTcb::setupListOfColNames(Queue * listOfColNames,
+					    LIST(NAString) &columns)
+{
+  if (columns.isEmpty() && listOfColNames)
+    {
+      listOfColNames->position();
       for (Lng32 i = 0; i < listOfColNames->numEntries(); i++)
 	{
 	  short colNameLen = *(short*)listOfColNames->getCurr();
@@ -1567,8 +1593,8 @@ Lng32 ExHbaseAccessTcb::setupListOfColNames(Queue * listOfColNames,
 	  
 	  listOfColNames->advance();
 	  
-	  Text colNameText(colName, colNameLen);
-	  columns.push_back(colNameText);
+          NAString colNameText(colName, colNameLen, getHeap());
+	  columns.insert(colNameText);
 	}
     }
   
@@ -1585,6 +1611,7 @@ Lng32 ExHbaseAccessTcb::setupUniqueRowIdsAndCols
       return -1;
     }
   
+  HbaseStr rowIdRowText;
   hgr->rowIds()->position();
   rowIds_.clear();
   for (Lng32 i = 0; i < hgr->rowIds()->numEntries(); i++)
@@ -1618,9 +1645,9 @@ Lng32 ExHbaseAccessTcb::setupUniqueRowIdsAndCols
 	  return -1;
 	}
       
-      Text rowIdRowText;
-      rowIdRowText.assign(rowIdPtr, rowIdLen);
-      rowIds_.push_back(rowIdRowText);
+      rowIdRowText.val = rowIdPtr;
+      rowIdRowText.len = rowIdLen;
+      rowIds_.insert(rowIdRowText);
     }
 
   setupListOfColNames(hbaseAccessTdb().listOfFetchedColNames(), columns_);
@@ -1714,20 +1741,30 @@ Lng32 ExHbaseAccessTcb::setupUniqueKeyAndCols(NABoolean doInit)
   tupp &keyData = keySubsetExeExpr_->getBkData();
   char * beginKeyRow = keyData.getDataPointer();
 
-  Text rowIdRowText;
+  HbaseStr rowIdRowText;
   if (hbaseAccessTdb().sqHbaseTable())
-    rowIdRowText.assign(beginKeyRow, hbaseAccessTdb().keyLen_);
+    {
+      rowIdRowText.val = beginKeyRow;
+      rowIdRowText.len = hbaseAccessTdb().keyLen_;
+    }
   else
     {
       // hbase table. Key is in varchar format.
       short keyLen = *(short*)beginKeyRow;
-      rowIdRowText.assign(beginKeyRow + sizeof(short), keyLen);
+      rowIdRowText.val = beginKeyRow + sizeof(short);
+      rowIdRowText.len = keyLen;
     }
 
   if (keyRangeStatus == keyRangeEx::NO_MORE_RANGES)
-    rowIdRowText.append(1, '\0');
+    {
+      // At the end of range, added an extra byte with "0" value to
+      // make the key exclusive which is required by hbase scan.
+      // Note that the key buffer should have 2 extra bytes allocated
+      rowIdRowText.val[rowIdRowText.len] = '\0';
+      rowIdRowText.len += 1;
+    }
 
-  rowIds_.push_back(rowIdRowText);
+  rowIds_.insert(rowIdRowText);
 
   if (doInit)
     setupListOfColNames(hbaseAccessTdb().listOfFetchedColNames(), columns_);
@@ -2275,7 +2312,7 @@ short ExHbaseAccessTcb::setupHbaseFilterPreds()
   
       if (attr)
 	{
-	  Text value;
+	  NAString value(getHeap());
 	  if (attr->getNullFlag())
 	    {
 	      char nullValChar = 0;
@@ -2284,7 +2321,7 @@ short ExHbaseAccessTcb::setupHbaseFilterPreds()
 
 	      if (nullVal)
 		nullValChar = -1;
-	      value.assign((char*)&nullValChar, sizeof(char));
+	      value.append((char*)&nullValChar, sizeof(char));
 	    }	  
 
 	  char * colVal = &hbaseFilterValRow_[attr->getOffset()];
@@ -2292,7 +2329,7 @@ short ExHbaseAccessTcb::setupHbaseFilterPreds()
 	  value.append(colVal,
 		       attr->getLength(&hbaseFilterValRow_[attr->getVCLenIndOffset()]));
 
-	  hbaseFilterValues_.push_back(value);
+	  hbaseFilterValues_.insert(value);
 	}
     }
 
@@ -2305,7 +2342,7 @@ short ExHbaseAccessTcb::setupHbaseFilterPreds()
     {
       char * op = (char*)hbaseAccessTdb().listOfHbaseCompareOps()->getCurr();
 
-      hbaseFilterOps_.push_back(op);
+      hbaseFilterOps_.insert(op);
       hbaseAccessTdb().listOfHbaseCompareOps()->advance();
     }
 

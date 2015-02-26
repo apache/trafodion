@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,405 +26,6 @@
 #include "ExHbaseAccess.h"
 #include "ex_exe_stmt_globals.h"
 #include "ExpHbaseInterface.h"
-
-ExHbaseAccessDeleteTcb::ExHbaseAccessDeleteTcb(
-          const ExHbaseAccessTdb &hbaseAccessTdb, 
-          ex_globals * glob ) :
-  ExHbaseAccessTcb( hbaseAccessTdb, glob),
-  step_(NOT_STARTED)
-{
-  hgr_ = NULL;
-  currColName_ = NULL;
-}
-
-ExWorkProcRetcode ExHbaseAccessDeleteTcb::work()
-{
-  Lng32 retcode = 0;
-  short rc = 0;
-
-  while (!qparent_.down->isEmpty())
-    {
-      ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-      if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE;
-
-      switch (step_)
-	{
-	case NOT_STARTED:
-	  {
-	    matches_ = 0;
-
-	    step_ = DELETE_INIT;
-	  }
-	  break;
-
-	case DELETE_INIT:
-	  {
-	    retcode = ehi_->init(getHbaseAccessStats());
-	    if (setupError(retcode, "ExpHbaseInterface::init"))
-	      {
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	    if (hbaseAccessTdb().listOfGetRows())
-	      hbaseAccessTdb().listOfGetRows()->position();
-	    else
-	      {
-		setupError(-HBASE_OPEN_ERROR, "", "RowId list is empty");
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	    table_.val = hbaseAccessTdb().getTableName();
-	    table_.len = strlen(hbaseAccessTdb().getTableName());
-
-	    step_ = SETUP_DELETE;
-	  }
-	  break;
-
-	case SETUP_DELETE:
-	  {
-	    hgr_ = 
-	      (ComTdbHbaseAccess::HbaseGetRows*)hbaseAccessTdb().listOfGetRows()
-	      ->getCurr();
-
-	    if ((! hgr_->rowIds()) ||
-		(hgr_->rowIds()->numEntries() == 0))
-	      {
-		setupError(-HBASE_OPEN_ERROR, "", "RowId list is empty");
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	    hgr_->rowIds()->position();
-
-	    step_ = GET_NEXT_ROWID;
-	  }
-	  break;
-
-	case GET_NEXT_ROWID:
-	  {
-	    if (hgr_->rowIds()->atEnd())
-	      {
-		step_ = GET_NEXT_ROW;
-		break;
-	      }
-
-	    rowId_.val = (char*)hgr_->rowIds()->getCurr();
-	    rowId_.len = strlen((char*)hgr_->rowIds()->getCurr());
-
-	    currColName_ = NULL;
-	    if (hgr_->colNames())
-	      hgr_->colNames()->position();
-
-	    if (hgr_->colNames()->numEntries() > 0)
-	      {
-		step_ = GET_NEXT_COL;
-	      }    
-	    else
-	      step_ = PROCESS_DELETE;
-	  }
-	  break;
-
-	case GET_NEXT_COL:
-	  {
-	    if (hgr_->colNames()->atEnd())
-	      {
-		step_ = ADVANCE_NEXT_ROWID;
-		break;
-	      }
-
-	    currColName_ = (char*)hgr_->colNames()->getNext();
-	    
-	    step_ = PROCESS_DELETE;
-	  }
-	  break;
-
-	case PROCESS_DELETE:
-	  {
-	    TextVec columns;
-	    if (currColName_)
-	      {
-		Text colName(currColName_);
-		columns.push_back(colName);
-	      }
-	    retcode = ehi_->deleteRow(table_,
-				      rowId_, 
-				      columns,
-                                      hbaseAccessTdb().useHbaseXn(),
-				      hgr_->colTS_);
-
-	    if (setupError(retcode, "ExpHbaseInterface::deleteRow"))
-	      {
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	    if (getHbaseAccessStats())
-	      getHbaseAccessStats()->incUsedRows();
-
-	    matches_++;
-
-	    if (hgr_->colNames())
-	      step_ = GET_NEXT_COL;
-	    else
-	      step_ = ADVANCE_NEXT_ROWID;
-	  }
-	  break;
-
-	case ADVANCE_NEXT_ROWID:
-	  {
-	    hgr_->rowIds()->advance();
-
-	    if (! hgr_->rowIds()->atEnd())
-	      {
-		step_ = GET_NEXT_ROWID;
-		break;
-	      }
-
-	    step_ = GET_NEXT_ROW;
-	  }
-	  break;
-
-	case GET_NEXT_ROW:
-	  {
-	    hbaseAccessTdb().listOfGetRows()->advance();
-
-	    if (! hbaseAccessTdb().listOfGetRows()->atEnd())
-	      {
-		step_ = SETUP_DELETE;
-		break;
-	      }
-
-	    step_ = DELETE_CLOSE;
-	  }
-	  break;
-
-	case DELETE_CLOSE:
-	  {
-	    retcode = ehi_->close();
-	    if (setupError(retcode, "ExpHbaseInterface::close"))
-	      {
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	    step_ = DONE;
-	  }
-	  break;
-
-	case HANDLE_ERROR:
-	  {
-	    if (handleError(rc))
-	      return rc;
-
-	    step_ = DONE;
-	  }
-	  break;
-
-	case DONE:
-	  {
-	    if (NOT hbaseAccessTdb().computeRowsAffected())
-	      matches_ = 0;
-
-	    if (handleDone(rc, matches_))
-	      return rc;
-
-	    step_ = NOT_STARTED;
-	  }
-	  break;
-
-	} // switch
-    } // while
-
-  return WORK_OK;
-}
-
-ExHbaseAccessDeleteSubsetTcb::ExHbaseAccessDeleteSubsetTcb(
-          const ExHbaseAccessTdb &hbaseAccessTdb, 
-          ex_globals * glob ) :
-  ExHbaseAccessDeleteTcb( hbaseAccessTdb, glob)
-{
-  step_ = NOT_STARTED;
-}
-
-ExWorkProcRetcode ExHbaseAccessDeleteSubsetTcb::work()
-{
-  Lng32 retcode = 0;
-  short rc = 0;
-
-  while (!qparent_.down->isEmpty())
-    {
-      ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-      if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE;
-
-      switch (step_)
-	{
-	case NOT_STARTED:
-	  {
-	    matches_ = 0;
-
-	    step_ = SCAN_INIT;
-	  }
-	  break;
-
-	case SCAN_INIT:
-	  {
-	    retcode = ehi_->init(getHbaseAccessStats());
-	    if (setupError(retcode, "ExpHbaseInterface::init"))
-	      {
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	    step_ = SCAN_OPEN;
-	  }
-	  break;
-
-	case SCAN_OPEN:
-	  {
-	    table_.val = hbaseAccessTdb().getTableName();
-	    table_.len = strlen(hbaseAccessTdb().getTableName());
-
-	    retcode = ehi_->scanOpen(table_, "", "", columns_, -1,
-				     hbaseAccessTdb().readUncommittedScan(),
-				     hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
-				     hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-				     FALSE, NULL, NULL, NULL);
-	    if (setupError(retcode, "ExpHbaseInterface::scanOpen"))
-	      step_ = HANDLE_ERROR;
-	    else
-	      step_ = NEXT_ROW;
-	  }
-	  break;
-
-	case NEXT_ROW:
-	  {
-	    retcode = ehi_->nextRow();
-	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
-	    {
-	       step_ = SCAN_CLOSE;
-	       break;
-	    }
-	    if (setupError(retcode, "ExpHbaseInterface::nextRow"))
-	       step_ = HANDLE_ERROR;
-	    else
-	       step_ = NEXT_CELL;
-	  }
-	  break;
-
-	case NEXT_CELL:
-	  {
-            if (colVal_.val == NULL)
-                colVal_.val = new (getHeap())
-                     char[hbaseAccessTdb().convertRowLen()];
-	    colVal_.len = hbaseAccessTdb().convertRowLen();
-	    retcode = ehi_->nextCell(rowId_, colFamName_, 
-				      colName_, colVal_, colTS_);
-	    if (retcode == HBASE_ACCESS_EOD)
-	       step_ = NEXT_ROW;
-	    else
-	    if (setupError(retcode, "ExpHbaseInterface::nextCell"))
-	       step_ = HANDLE_ERROR;
-	    else
-	       step_ = CREATE_ROW;
-	  }
-	  break;
-
-	case CREATE_ROW:
-	  {
-	    rc = createColumnwiseRow();
-	    if (rc == -1)
-	      {
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	    if (setupError(retcode, "createColumnwiseRow"))
-	      step_ = HANDLE_ERROR;
-	    else
-	      step_ = APPLY_PRED;
-	  }
-	  break;
-
-	case APPLY_PRED:
-	  {
-	    rc = applyPred(scanExpr());
-	    if (rc == 1)
-	      step_ = DELETE_ROW;
-	    else if (rc == -1)
-	      step_ = HANDLE_ERROR;
-	    else
-	      step_ = NEXT_CELL;
-	  }
-	  break;
-
-	case DELETE_ROW:
-	  {
-	    TextVec columns;
-	    if (colName_.val)
-	      {
-		Text colName(colName_.val);
-		columns.push_back(colName);
-	      }
-
-	    retcode = ehi_->deleteRow(table_,
-				      rowId_, 
-				      columns,
-                                      hbaseAccessTdb().useHbaseXn(),
-				      colTS_);
-
-	    if (setupError(retcode, "ExpHbaseInterface::deleteRow"))
-	      {
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	    if (getHbaseAccessStats())
-	      getHbaseAccessStats()->incUsedRows();
-
-	    matches_++;
-
-	    step_ = NEXT_CELL;
-	  }
-	  break;
-
-	case SCAN_CLOSE:
-	  {
-	    retcode = ehi_->scanClose();
-	    if (setupError(retcode, "ExpHbaseInterface::scanClose"))
-	      step_ = HANDLE_ERROR;
-	    else
-	      step_ = DONE;
-	  }
-	  break;
-
-	case HANDLE_ERROR:
-	  {
-	    if (handleError(rc))
-	      return rc;
-
-	    step_ = DONE;
-	  }
-	  break;
-
-	case DONE:
-	  {
-	    if (handleDone(rc, matches_))
-	      return rc;
-
-	    step_ = NOT_STARTED;
-	  }
-	  break;
-
-	}// switch
-
-    } // while
-
-  return WORK_OK;
-}
 
 ExHbaseAccessInsertTcb::ExHbaseAccessInsertTcb(
           const ExHbaseAccessTdb &hbaseAccessTdb, 
@@ -1709,7 +1310,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case GET_NEXT_ROWID:
 	  {
-	    if (tcb_->currRowidIdx_ ==  tcb_->rowIds_.size())
+	    if (tcb_->currRowidIdx_ ==  tcb_->rowIds_.entries())
 	      {
 		step_ = GET_CLOSE;
 		break;
@@ -1975,11 +1576,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case UPDATE_ROW:
 	  {
-            HbaseStr rowID;
-            rowID.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
-            rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
             retcode =  tcb_->ehi_->insertRow(tcb_->table_,
-                                             rowID,
+                                             tcb_->rowIds_[tcb_->currRowidIdx_],
 	                                     tcb_->row_,
 					     (tcb_->hbaseAccessTdb().useHbaseXn() ? TRUE : FALSE),
 					     -1); //colTS_
@@ -2011,11 +1609,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		break;
 	      }
 
-            HbaseStr rowID;
-            rowID.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
-            rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
 	    retcode =  tcb_->ehi_->checkAndUpdateRow(tcb_->table_,
-                                                     rowID,
+                                                     tcb_->rowIds_[tcb_->currRowidIdx_],
 						     tcb_->row_,
 						     columnToCheck,
 						     colValToCheck,
@@ -2074,8 +1669,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
             }
             else
             {
-               rowID.val = (char *)tcb_->rowIds_[tcb_->currRowidIdx_].data();
-               rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
+               rowID.val = (char *)tcb_->rowIds_[tcb_->currRowidIdx_].val;
+               rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].len;
             }
 	    retcode =  tcb_->ehi_->checkAndInsertRow(tcb_->table_,
                                                      rowID,
@@ -2126,12 +1721,9 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case DELETE_ROW:
 	  {
-	    TextVec columns;
-            HbaseStr rowID;
-            rowID.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
-            rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
+	    LIST(HbaseStr) columns(tcb_->getHeap());
             retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
-                                             rowID,
+                                             tcb_->rowIds_[tcb_->currRowidIdx_],
 	                                     columns,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
  
@@ -2174,11 +1766,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		break;
 	      }
 
-            HbaseStr rowID;
-            rowID.val = (char *)(tcb_->rowIds_[tcb_->currRowidIdx_].data());
-            rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
 	    retcode =  tcb_->ehi_->checkAndDeleteRow(tcb_->table_,
-                                                     rowID,
+                                                     tcb_->rowIds_[tcb_->currRowidIdx_],
 						     columnToCheck, 
 						     colValToCheck,
                                                      tcb_->hbaseAccessTdb().useHbaseXn(),
@@ -2408,7 +1997,7 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 
 	case GET_NEXT_ROWID:
 	  {
-	    if (tcb_->currRowidIdx_ ==  tcb_->rowIds_.size())
+	    if (tcb_->currRowidIdx_ ==  tcb_->rowIds_.entries())
 	      {
 		step_ = GET_CLOSE;
 		break;
@@ -2418,18 +2007,18 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 	    // this row cannot be deleted.
 	    // But if there is a scan expr, then we need to also retrieve the columns used
 	    // in the pred. Add those.
-	    StrVec columns;
+	    LIST(HbaseStr) columns(tcb_->getHeap());
 	    if (tcb_->hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_)
 	      {
 		columns = tcb_->deletedColumns_;
 		if (tcb_->scanExpr())
 		  {
 		    // retrieve all columns if none is specified.
-		    if (tcb_->columns_.size() == 0)
+		    if (tcb_->columns_.entries() == 0)
 		      columns.clear();
 		    else
 		      // append retrieved columns to deleted columns.
-		      columns.insert(columns.end(), tcb_->columns_.begin(), tcb_->columns_.end());
+		      columns.insert(tcb_->columns_);
 		  }
 	      }
 
@@ -2570,11 +2159,8 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 
 	case DELETE_ROW:
 	  {
-            HbaseStr rowID;
-            rowID.val = (char *)(tcb_->rowIds_[tcb_->currRowidIdx_].data());
-            rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
             retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
-                                             rowID,
+                                             tcb_->rowIds_[tcb_->currRowidIdx_],
                                              tcb_->deletedColumns_,
                                              tcb_->hbaseAccessTdb().useHbaseXn(),
  
@@ -2604,11 +2190,8 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 	  {
 	    if (tcb_->numColsInDirectBuffer() > 0)
 	      {
-                HbaseStr rowID;
-                rowID.val = (char *)tcb_->rowIds_[tcb_->currRowidIdx_].data();
-                rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
                 retcode =  tcb_->ehi_->insertRow(tcb_->table_,
-                                                 rowID,
+                                                 tcb_->rowIds_[tcb_->currRowidIdx_],
                                                  tcb_->row_,
 
                                                  tcb_->hbaseAccessTdb().useHbaseXn(),
@@ -2899,7 +2482,7 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 
 	case DELETE_ROW:
 	  {
-	    TextVec columns;
+	    LIST(HbaseStr) columns(tcb_->getHeap());
             retcode = tcb_->ehi_->getRowID(rowID);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 	    {
@@ -3102,18 +2685,18 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 	    // this row cannot be deleted.
 	    // But if there is a scan expr, then we need to also retrieve the columns used
 	    // in the pred. Add those.
-	    StrVec columns;
+	    LIST(HbaseStr) columns(tcb_->getHeap());
 	    if (tcb_->hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_)
 	      {
 		columns = tcb_->deletedColumns_;
 		if (tcb_->scanExpr())
 		  {
 		    // retrieve all columns if none is specified.
-		    if (tcb_->columns_.size() == 0)
+		    if (tcb_->columns_.entries() == 0)
 		      columns.clear();
 		    else
 		      // append retrieved columns to deleted columns.
-		      columns.insert(columns.end(), tcb_->columns_.begin(), tcb_->columns_.end());
+		      columns.insert(tcb_->columns_);
 		  }
 	      }
 
@@ -3809,10 +3392,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 		break;
 	      }
 
-	    HbaseStr rowId;
-            rowId.val = (char *)rowIds_[0].data();
-            rowId.len = rowIds_[0].length();
-	    copyRowIDToDirectBuffer(rowId);
+	    copyRowIDToDirectBuffer(rowIds_[0]);
 
 	    if ((hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_) ||
 		(hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_))
