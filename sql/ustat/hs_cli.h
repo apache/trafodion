@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ Lng32 HSFuncExecQuery( const char *dml
                     , Int64 *srcTabRowCount = NULL
                     , const HSTableDef *tabDef = NULL
                     , NABoolean doRetry = FALSE
+                    , short errorToIgnore = 0
                     );
 
 Lng32 HSFuncExecDDL( const char *dml

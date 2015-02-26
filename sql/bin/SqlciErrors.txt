@@ -1836,6 +1836,7 @@ drop the default context
 9239 ZZZZZ 99999 BEGINNER MINOR DBADMIN VIEWONLY option is not valid for Update Statistics on $0~string0 tables.
 9240 ZZZZZ 99999 BEGINNER MINOR DBADMIN ON EVERY KEY option is not yet implemented for Update Statistics on $0~string0 tables.
 9241 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Insufficient privileges to perform the statistics request for table $0~String0.
+9242 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to create schema for Hive statistics.
 9250 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Last UPDATE STATISTICS error.
 10000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Sort Error: First Sort error
 10001 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Sort Error : No error text defined. Unexpected error. $0~String0

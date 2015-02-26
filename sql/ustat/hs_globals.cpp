@@ -67,6 +67,7 @@
 #include "PrivMgrDefs.h"
 #include "PrivMgrComponentPrivileges.h"
 #include "PrivMgrCommands.h"
+#include "CmpDDLCatErrorCodes.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -2871,7 +2872,10 @@ Lng32 HSGlobalsClass::Initialize()
         TM->Begin("Create schema for hive stats.");
         NAString ddl = "CREATE SCHEMA ";
         ddl.append(HIVE_STATS_CATALOG).append('.').append(HIVE_STATS_SCHEMA);
-        retcode = HSFuncExecQuery(ddl, HS_WARNING); // On failure we assume it already exists.
+        retcode = HSFuncExecQuery(ddl, -UERR_CANT_CREATE_HIVE_STATS_SCHEMA, NULL,
+                                  "Creating schema for Hive statistics", NULL,
+                                  NULL, FALSE, -CAT_SCHEMA_ALREADY_EXISTS);
+        HSHandleError(retcode);
         TM->Commit(); // Must commit this transaction (even if schema didn't get created).
       }
                                               /*==============================*/
