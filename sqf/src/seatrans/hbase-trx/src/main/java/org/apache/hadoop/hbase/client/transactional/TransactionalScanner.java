@@ -1,3 +1,21 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
 package org.apache.hadoop.hbase.client.transactional;
 
 import java.io.IOException;
@@ -25,11 +43,12 @@ import org.apache.hadoop.hbase.ipc.ServerRpcController;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import com.google.protobuf.ServiceException;
 import com.google.protobuf.ByteString;
 
 
 /*
- *   Simple Transaction Scanner
+ *   Transaction Scanner
  */
 public class TransactionalScanner extends AbstractClientScanner {
     private final Log LOG = LogFactory.getLog(this.getClass());
@@ -44,6 +63,7 @@ public class TransactionalScanner extends AbstractClientScanner {
     protected long nextCallSeq = 0;
     private boolean hasMore = true;
     private boolean moreScanners = true;
+    private boolean interrupted = false;
     public HRegionInfo currentRegion;
     public byte[] currentBeginKey;
     public byte[] currentEndKey;
@@ -84,6 +104,17 @@ public class TransactionalScanner extends AbstractClientScanner {
             if(LOG.isTraceEnabled()) LOG.trace("close()  already closed -- EXIT txID: " + ts.getTransactionId());
             return;
         }
+        this.closed = true;
+        if(this.interrupted) {
+            if(LOG.isDebugEnabled()) LOG.debug("close() resetting connection, txID: " + ts.getTransactionId());
+            try {
+               ttable.resetConnection();
+            } catch(IOException e) {
+               if(LOG.isErrorEnabled()) LOG.error("close() unable to reset connection, txID: " + ts.getTransactionId());
+               return;
+            }
+            this.interrupted = false;
+        }
         TrxRegionProtos.CloseScannerRequest.Builder requestBuilder = CloseScannerRequest.newBuilder();
         requestBuilder.setTransactionId(ts.getTransactionId());
         requestBuilder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
@@ -100,17 +131,26 @@ public class TransactionalScanner extends AbstractClientScanner {
                     LOG.error(errMsg);
             }
         }
+        catch(ServiceException se) {
+            this.interrupted = true;
+            this.closed = false;
+        }
+
         catch (Throwable e) {
             String errMsg = "CloseScanner error on coprocessor call, scannerID: " + this.scannerID + " " + e;
             LOG.error(errMsg);
         }
 
-        this.closed = true;
         if(LOG.isTraceEnabled()) LOG.trace("close() -- EXIT txID: " + ts.getTransactionId());
     }
 
     protected boolean nextScanner(final boolean done) throws IOException{
         if(LOG.isTraceEnabled()) LOG.trace("nextScanner() -- ENTRY txID: " + ts.getTransactionId());
+        if(this.interrupted) {
+            if(LOG.isDebugEnabled()) LOG.debug("nextScanner() resetting connection, txID: " + ts.getTransactionId());
+            ttable.resetConnection();
+            this.interrupted = false;
+        }
         if(this.currentBeginKey != null) {
             if(LOG.isTraceEnabled()) LOG.trace("nextScanner() currentBeginKey != null txID: " + ts.getTransactionId());
             if (doNotCloseOnLast)
@@ -159,8 +199,14 @@ public class TransactionalScanner extends AbstractClientScanner {
           }
           this.scannerID = response.getScannerId();
       }
+      catch(ServiceException se) {
+          this.interrupted = true;
+          String errMsg = "OpenScanner error encountered Service Exception, scannerID: " + this.scannerID + " " + se;
+          LOG.error(errMsg);
+          throw new IOException(errMsg);
+      }
       catch (Throwable e) {
-          String errMsg = "OpenScanner error on coprocessor call, scannerID: " + this.scannerID;
+          String errMsg = "OpenScanner error on coprocessor call, scannerID: " + this.scannerID + " " + e;
           LOG.error(errMsg);
           throw new IOException(errMsg);
       }
@@ -202,9 +248,14 @@ public class TransactionalScanner extends AbstractClientScanner {
                             throw new IOException(errMsg);
                     }
                 }
+                catch (ServiceException se) {
+                    this.interrupted = true;
+                    if(LOG.isDebugEnabled()) LOG.debug("PerformScan encountered Service Exception, scannerID: " + this.scannerID + " " + se);
+                    return null;
+                }
                 catch (Throwable e) {
-                    String errMsg = "PerformScan error on coprocessor call, scannerID: " + this.scannerID;
-                    LOG.error(errMsg);
+                    String errMsg = "PerformScan error on coprocessor call, scannerID: " + this.scannerID + " " + e;
+                    if(LOG.isErrorEnabled()) LOG.error(errMsg);
                     throw new IOException(errMsg);
                 }
                 int count;
