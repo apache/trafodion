@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -115,10 +115,16 @@ private:
 //                errors should be suppressed.
 //          rowsAffected, srcTabRowCount  = pointers (NULL by default) to
 //                variables that rowcount info for query will be stored in.
-//          tabDef = pointer to HSTableDef of table affected (only used
-//                when rowsAffected, srcTabRowCount are non NULL.
 //          errorToken = text string indicating major operation being
 //                executed (within ustats, ...).  Used for err processing.
+//          tabDef = pointer to HSTableDef of table affected (only used
+//                when rowsAffected, srcTabRowCount are non NULL.
+//          doRetry = if TRUE, retry the statement the configured (via CQD)
+//                number of times if it fails.
+//          errorToIgnore = sqlcode of an inconsequential expected error
+//                that should not disrupt execution, such as "schema already
+//                exists" when executing a Create Schema statement. 0 indicates
+//                there is no such expected error.
 // -----------------------------------------------------------------------
 Lng32 HSFuncExecQuery( const char *dml
                     , short sqlcode
@@ -127,6 +133,7 @@ Lng32 HSFuncExecQuery( const char *dml
                     , Int64 *srcTabRowCount
                     , const HSTableDef *tabDef
                     , NABoolean doRetry
+                    , short errorToIgnore
                     )
 {
   HSLogMan *LM = HSLogMan::Instance();
@@ -221,9 +228,12 @@ Lng32 HSFuncExecQuery( const char *dml
     // If retcode is > 0 or sqlcode is HS_WARNING, then set to 0 (no error/ignore).
     if (retcode >= 0) retcode = 0;
     // If sqlcode is HS_WARNING, then this means failures should be returned as
-    // warnings.  So, don't call HSHandleError, but rather return 0.
-    if (sqlcode == HS_WARNING && retcode < 0) retcode = 0;
-    else HSHandleError(retcode);
+    // warnings.  So, don't call HSHandleError, but rather return 0. Also return
+    // 0 if we get an expected and inconsequential error.
+    if ((sqlcode == HS_WARNING && retcode < 0) || retcode == errorToIgnore)
+      retcode = 0;
+    else
+      HSHandleError(retcode);
   }
   else // doRetry
   {
@@ -252,9 +262,10 @@ Lng32 HSFuncExecQuery( const char *dml
       // If retcode is > 0 or sqlcode is HS_WARNING,
       // then set to 0 (no error/ignore).
       if (retcode >= 0) retcode = 0;
-      // If sqlcode is HS_WARNING, then
-      // this means failures should be returned as warnings.
-      if (sqlcode == HS_WARNING && retcode < 0) retcode = 0;
+      // If sqlcode is HS_WARNING, then failures should be ignored. Also check
+      // for specific error code to be ignored.
+      if ((sqlcode == HS_WARNING && retcode < 0) || retcode == errorToIgnore)
+        retcode = 0;
 
       if (!retcode)
         break; // passed ExecDirect

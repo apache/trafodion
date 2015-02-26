@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -160,6 +160,7 @@ enum USTAT_ERROR_CODES {UERR_SYNTAX_ERROR                    = 15001,
                         UERR_NO_VIEWONLY                     = 9239,
                         UERR_NO_ONEVERYKEY                   = 9240,
                         UERR_NO_PRIVILEGE                    = 9241,
+                        UERR_CANT_CREATE_HIVE_STATS_SCHEMA   = 9242,
                         UERR_NO_ERROR                        = 9250,
                         UERR_LAST_ERROR                      = 9250
                        };
