@@ -29,7 +29,7 @@
 1027 ZZZZZ 99999 BEGINNER MINOR DBADMIN The definition schema $0~SchemaName is dropped when its catalog is dropped.
 1028 ZZZZZ 99999 BEGINNER MINOR DBADMIN The schema must be empty.  It contains at least one object $0~TableName.
 1029 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be created.
-1030 ZZZZZ 99999 BEGINNER MINOR DBADMIN File label $0~String0 could not be accessed. File system error: $1~NSKCode.
+1030 ZZZZZ 99999 BEGINNER MINOR DBADMIN The HBase name has a length of $0~Int0 which is too long. Maximum length supported is $1~Int1.  
 1031 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be dropped.
 1032 ZZZZZ 99999 BEGINNER MINOR DBADMIN The DISPLAY command completes and the query is not executed.
 1033 ZZZZZ 99999 BEGINNER MINOR DBADMIN The table name is not specified.

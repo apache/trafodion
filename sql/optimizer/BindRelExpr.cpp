@@ -6204,24 +6204,41 @@ NABoolean RelRoot::checkFirstNRowsNotAllowed(BindWA *bindWA)
    return FALSE;
 }
 
+// ----------------------------------------------------------------------------
+// Method:  checkPrivileges
+//
+// This method:
+//   - Verifies that the user executing the query has the necessary privileges
+//   - Adds security keys to RelRoot class  that need to be checked when priv
+//     changes (revokes) are performed.  Security keys are part of the Query 
+//     Invalidation feature.
+//   - Also, removes any previously cached entries if the user has no priv
+//
+// Input: pointer to the binder work area
+// Output:  result of the check
+//   TRUE  - user has priv
+//   FALSE - user does not have priv or unexpected error occurred
+//
+// The ComDiags area is populated with error details
+// The BindWA flag setFailedForPrivileges is set to TRUE if priv check fails 
+// ----------------------------------------------------------------------------
 NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 {
-  // If internal callers, allow operation - is this needed?
-  if (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
-    {
-      return TRUE;
-    }
+  // If internal caller and not part of explain, then return 
+  if (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) 
+    return TRUE;
 
-  // return if root user
+  // If qiPath (used for testing) is not 0, skip root user check
   NAString qiPath = "";
   CmpCommon::getDefault(QI_PATH, qiPath, FALSE);
-  if ( qiPath.length() == 0 ) // If debugging or regression testing Query Invalidation, skip root check
-  {
-    if (ComUser::isRootUserID())
-      return TRUE;
-  }
+  if (qiPath.length() == 0 && ComUser::isRootUserID())
+    return TRUE;
 
   // See if there is anything to check
+  //  StoiList contains any tables used in the query
+  //  UdrStoiList contains any routines used in the query
+  //  CoProcAggrList contains any queries using the aggregate co-processor
+  //  SeqValList contains any sequences
   if (bindWA->getStoiList().entries() == 0 &&
       bindWA->getUdrStoiList().entries() == 0 &&
       bindWA->getCoProcAggrList().entries() == 0 &&
@@ -6233,10 +6250,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     return TRUE;
 
   ComBoolean QI_enabled = (CmpCommon::getDefault(CAT_ENABLE_QUERY_INVALIDATION) == DF_ON);
-
-  SqlTableOpenInfo * stoi = NULL ;
-  OptSqlTableOpenInfo * optStoi = NULL;
-  NABoolean privCheckSuccess = TRUE;
+  NABoolean RemoveNATableEntryFromCache = FALSE ;
 
   // Have the ComSecurityKey constructor compute the hash value for the the User's ID.
   // Note: The following code doesn't care about the object's hash value or the resulting 
@@ -6249,340 +6263,254 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
                         );
   uint32_t userHashValue = userKey.getSubjectHashValue();
 
-  NABoolean RemoveNATableEntryFromCache = FALSE ;
-  NABoolean thisPrivCheckSuccess = TRUE;
 
-  // Check privileges for tables used in the query.
+  // Set up a PrivMgrCommands class in case we need to get privilege information
+  NAString privMDLoc;
+  CONCAT_CATSCH(privMDLoc,CmpSeabaseDDL::getSystemCatalogStatic(),SEABASE_PRIVMGR_SCHEMA);
+  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(), PRIV_INITIALIZED);
+  PrivStatus retcode = STATUS_GOOD;
+
+  // ==> Check privileges for tables used in the query.
+  SqlTableOpenInfo * stoi = NULL ;
+  OptSqlTableOpenInfo * optStoi = NULL;
   for(Int32 i=0; i<(Int32)bindWA->getStoiList().entries(); i++)
   {
     RemoveNATableEntryFromCache = FALSE ;  // Initialize each time through loop
-    thisPrivCheckSuccess = TRUE;           // Initialize each time through loop
     optStoi = (bindWA->getStoiList())[i];
     stoi = optStoi->getStoi();
     NATable* tab = optStoi->getTable();
-    if (tab->isSeabaseMDTable() )
-      continue;
 
-    // Privilege info for the user/table combination is stored in the NATable
-    // object.
-    PrivStatus retcode = STATUS_GOOD;
-    PrivMgrUserPrivs* privInfo = tab->getPrivInfo();
-    if (!privInfo)
+    // System metadata tables do not, by default, have privileges stored in the
+    // NATable structure.  Go ahead and retrieve them now. 
+    PrivMgrUserPrivs *pPrivInfo = tab->getPrivInfo();
+    PrivMgrUserPrivs privInfo;
+    if (!pPrivInfo)
     {
-       tab->setRemoveFromCacheBNC(TRUE);
-       bindWA->setFailedForPrivileges(TRUE);
-       return FALSE;
+      CmpSeabaseDDL cmpSBD(STMTHEAP);
+      if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+      {
+        abort();
+        return FALSE;
+      }
+      retcode = privInterface.getPrivileges( tab->objectUid().get_value(), thisUserID, privInfo);
+      cmpSBD.switchBackCompiler();
+
+      if (retcode != STATUS_GOOD)
+      {
+        tab->setRemoveFromCacheBNC(TRUE);
+        bindWA->setFailedForPrivileges(TRUE);
+        *CmpCommon::diags() << DgSqlCode( -1034 );
+        return FALSE;
+      }
+      pPrivInfo = &privInfo;
     }
 
-   // if this is an explain query, validate that user has SELECT priv.
-   // If they do, access is allowed.
-   const NAString * val =
-     ActiveControlDB()->getControlSessionValue("EXPLAIN");
-   if ((Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
-       ((val) && (*val == "ON")) &&
-       (privInfo->hasSelectPriv()))
-     continue;
-
-   NABoolean ErrorPutInDiags = FALSE ;
-
-    Int32 numSecKeys = tab->getSecKeySet().entries();
-
-    if (stoi->getInsertAccess())
+    // Check each primary DML privilege to see if the query requires it. If 
+    // so, verify that the user has the privilege
+    NABoolean insertQIKeys = FALSE;
+    if (QI_enabled && (tab->getSecKeySet().entries()) > 0)
+      insertQIKeys = TRUE;
+    for (int_32 i = FIRST_DML_PRIV; i <= LAST_PRIMARY_DML_PRIV; i++)
     {
-      // See if we have the priv
-      if ( privInfo->hasInsertPriv() )
+      if (stoi->getPrivAccess((PrivType)i))
       {
-        if ( QI_enabled && numSecKeys > 0 &&
-             ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
-                                 userHashValue, INSERT_PRIV ) )
+        if (pPrivInfo->hasPriv((PrivType)i))
         {
-           thisPrivCheckSuccess = FALSE;
-           RemoveNATableEntryFromCache = TRUE;
+          // do this only if QI is enabled and object has security keys defined
+          if ( insertQIKeys )
+            findKeyAndInsertInOutputList(tab->getSecKeySet(), userHashValue, (PrivType)(i));
+        }
+
+        // plan requires privilege but user has none, report an error
+        else
+        {
+          RemoveNATableEntryFromCache = TRUE;
+          *CmpCommon::diags() 
+            << DgSqlCode( -4481 )
+            << DgString0( PrivMgrUserPrivs::convertPrivTypeToLiteral((PrivType)i).c_str() )
+            << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
         }
       }
-      else
-      {
-         thisPrivCheckSuccess        = FALSE;
-         RemoveNATableEntryFromCache = TRUE;
-         ErrorPutInDiags             = FALSE;
-      }
-      if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
-      {
-         *CmpCommon::diags() << DgSqlCode( -4481 )
-                             << DgString0( "INSERT" )
-                             << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
-      }
     }
 
-    thisPrivCheckSuccess = TRUE; // Ensure previous priv check doesn't affect next check
-    if (stoi->getUpdateAccess())
-    {
-      if ( privInfo->hasUpdatePriv() )
-      {
-        if ( QI_enabled && numSecKeys > 0 &&
-             ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
-                                 userHashValue, UPDATE_PRIV ) )
-        {
-           thisPrivCheckSuccess = FALSE;
-           RemoveNATableEntryFromCache = TRUE;
-        }
-      }
-      else
-      {
-         thisPrivCheckSuccess        = FALSE;
-         RemoveNATableEntryFromCache = TRUE;
-         ErrorPutInDiags             = FALSE;
-      }
-      if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
-      {
-         *CmpCommon::diags() << DgSqlCode( -4481 )
-                             << DgString0( "UPDATE" )
-                             << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
-      }
-    }
-
-    thisPrivCheckSuccess = TRUE; // Ensure previous priv check doesn't affect next check
-    if (stoi->getDeleteAccess())
-    {
-      if ( privInfo->hasDeletePriv() )
-      {
-        if ( QI_enabled && numSecKeys > 0 &&
-             ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
-                                 userHashValue, DELETE_PRIV ) )
-        {
-           thisPrivCheckSuccess = FALSE;
-           RemoveNATableEntryFromCache = TRUE;
-        }
-      }
-      else
-      {
-        thisPrivCheckSuccess = FALSE;
-        RemoveNATableEntryFromCache = TRUE;
-        NATable* table = optStoi->getTable();
-        *CmpCommon::diags() << DgSqlCode(-4481)
-                            << DgString0("DELETE")
-                            << DgString1(table->getTableName().getQualifiedNameAsAnsiString());
-
-      }
-    }
-
-    thisPrivCheckSuccess = TRUE; // Ensure previous priv check doesn't affect next check
-    if (stoi->getSelectAccess())
-    {
-      if ( privInfo->hasSelectPriv() )
-      {
-        if ( QI_enabled && numSecKeys > 0 &&
-             ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
-                                 userHashValue, SELECT_PRIV ) )
-        {
-           thisPrivCheckSuccess = FALSE;
-           RemoveNATableEntryFromCache = TRUE;
-        }
-      }
-      else
-      {
-         thisPrivCheckSuccess        = FALSE;
-         RemoveNATableEntryFromCache = TRUE;
-         ErrorPutInDiags             = FALSE;
-      }
-      if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
-      {
-         *CmpCommon::diags() << DgSqlCode( -4481 )
-                             << DgString0( "SELECT" )
-                             << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
-      }
-    }
-
+    // wait until all the primary DML privileges have been checked before
+    // setting failure information
     if ( RemoveNATableEntryFromCache )
     {
+       bindWA->setFailedForPrivileges( TRUE );
        tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
-       privCheckSuccess = FALSE ; // Accumulate overall failure (if any)
     }
   }  // for loop over tables in stoi list
 
-  // We currently do NOT cache the NARoutine objects for SPJs.
-  // We currently do NOT support UDFs which are the other users of NARoutine objects.
-  // Until one of these statements changes, we do NOT need to remove
-  // NARoutine objects from cache.  Hence the following line and all lines
-  // dealing with RemoveNARoutineEntryFromCache are commented out!
-
-  // NABoolean RemoveNARoutineEntryFromCache = FALSE ;
-  NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
-  privMDLoc += ".\"";
-  privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-  privMDLoc += "\"";
-
-  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags());
-
-  OptUdrOpenInfo * udrStoi = NULL;
+  // ==> Check privileges for functions and procedures used in the query.
+  NABoolean RemoveNARoutineEntryFromCache = FALSE ;
   if (bindWA->getUdrStoiList().entries())
   {
     for(Int32 i=0; i<(Int32)bindWA->getUdrStoiList().entries(); i++)
     {
-      thisPrivCheckSuccess = TRUE ;  // Initialize each time through loop
-     // RemoveNARoutineEntryFromCache = FALSE ; // Initialize each time through loop
+      // Privilege info for the user/routine combination is stored in the 
+      // NARoutine object.
+      OptUdrOpenInfo *udrStoi = (bindWA->getUdrStoiList())[i];
+      NARoutine* rtn = udrStoi->getNARoutine();
+      PrivMgrUserPrivs *pPrivInfo = rtn->getPrivInfo();
 
-      udrStoi = (bindWA->getUdrStoiList())[i];
-      if (udrStoi->getUdrStoi()->checkSecurity() == FALSE)
-        continue;
+      NABoolean insertQIKeys = FALSE;
+      if (QI_enabled && (rtn->getSecKeySet().entries() > 0))
+       insertQIKeys = TRUE;
 
-     NARoutine* rtn = udrStoi->getNARoutine();
-     PrivMgrUserPrivs privInfo;
-     PrivStatus retcode = privInterface.getPrivileges(
-       rtn->getRoutineID(), thisUserID, privInfo);
-
-      // If we have object EXECUTE priv
-      if ( privInfo.hasExecutePriv() )
+      if (pPrivInfo == NULL) 
       {
-        if ( QI_enabled && ! findKeyAndInsertInOutputList(
-                               udrStoi->getNARoutine()->getSecKeySet(),
-                               userHashValue,
-                               EXECUTE_PRIV ) )
-        {
-          thisPrivCheckSuccess = FALSE;
-          // RemoveNARoutineEntryFromCache = TRUE;
-        }
+        RemoveNARoutineEntryFromCache = TRUE ; 
+        *CmpCommon::diags() << DgSqlCode( -1034 );
       }
+
+      // Verify that the user has execute priv
       else
       {
-        thisPrivCheckSuccess = FALSE;
-        // RemoveNARoutineEntryFromCache = TRUE;
+        if (pPrivInfo->hasPriv(EXECUTE_PRIV))
+        {
+          // do this only if QI is enabled and object has security keys defined
+          if ( insertQIKeys )
+            findKeyAndInsertInOutputList(rtn->getSecKeySet(), userHashValue, EXECUTE_PRIV);
+        }
+
+        // plan requires privilege but user has none, report an error
+        else
+        {
+          RemoveNARoutineEntryFromCache = TRUE ; 
+          *CmpCommon::diags() 
+            << DgSqlCode( -4482 )
+            << DgString0( "EXECUTE" )
+            << DgString1( udrStoi->getUdrName() );
+        }
       }
 
-      if ( thisPrivCheckSuccess == FALSE )
+      if ( RemoveNARoutineEntryFromCache )
       {
-        *CmpCommon::diags() << DgSqlCode(-4482)
-                            << DgString0("EXECUTE")
-                            << DgString1(udrStoi->getUdrName());
-      }
+        bindWA->setFailedForPrivileges(TRUE);
 
-     // if ( RemoveNARoutineEntryFromCache )
-     // {
-          // Mark as to be removed by CmpMain before Compilation retry
-          // udrStoi->getNARoutine()->setRemoveFromCacheBNC(TRUE);
-     // }
-  
-      if ( ! thisPrivCheckSuccess )  // Accumulate overall failure (if any)
-        privCheckSuccess = FALSE ;
+        // If routine exists in cache, add it to the list to remove
+        NARoutineDB *pRoutineDBCache  = bindWA->getSchemaDB()->getNARoutineDB();
+        NARoutineDBKey key(rtn->getSqlName(), bindWA->wHeap());
+        NARoutine *cachedNARoutine = pRoutineDBCache->get(bindWA, &key);
+        if (cachedNARoutine != NULL)
+          pRoutineDBCache->moveRoutineToDeleteList(cachedNARoutine, &key);
+      }
     }  // for loop over UDRs
   }  // end if any UDRs.
 
-  // Check privs on any CoprocAggrs used in the query.
-  ExeUtilHbaseCoProcAggr* coProcAggr = NULL;
+  // ==> Check privs on any CoprocAggrs used in the query.
   for (Int32 i=0; i<(Int32)bindWA->getCoProcAggrList().entries(); i++)
   {
     RemoveNATableEntryFromCache = FALSE ;  // Initialize each time through loop
-    thisPrivCheckSuccess = TRUE ;          // Initialize each time through loop
-    coProcAggr = (bindWA->getCoProcAggrList())[i];
+    ExeUtilHbaseCoProcAggr *coProcAggr = (bindWA->getCoProcAggrList())[i];
     NATable* tab = bindWA->getSchemaDB()->getNATableDB()->
                                    get(coProcAggr->getCorrName(), bindWA, NULL);
-    if (tab->isSeabaseMDTable())
-      continue;
 
-    PrivMgrUserPrivs* privInfo = tab->getPrivInfo();
-    PrivStatus retcode = STATUS_GOOD;
-
-    const NAString * val = 
-      ActiveControlDB()->getControlSessionValue("EXPLAIN");
-    if ((Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
-        ((val) && (*val == "ON")) &&
-        (privInfo->hasSelectPriv()))
-      continue;
-
-    NABoolean ErrorPutInDiags = FALSE ;
     Int32 numSecKeys = 0;
 
-    if (!privInfo)
+    // Privilege info for the user/table combination is stored in the NATable
+    // object.
+    PrivMgrUserPrivs* pPrivInfo = tab->getPrivInfo();
+    PrivMgrUserPrivs privInfo;
+
+    // System metadata tables do not, by default, have privileges stored in the
+    // NATable structure.  Go ahead and retrieve them now. 
+    if (!pPrivInfo)
     {
-      thisPrivCheckSuccess = FALSE;
-      RemoveNATableEntryFromCache = TRUE;
-    }
-    else if ( privInfo->hasSelectPriv() )
-    {
-      if ( QI_enabled && numSecKeys > 0 &&
-           ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
-                              userHashValue, SELECT_PRIV ) )
+      CmpSeabaseDDL cmpSBD(STMTHEAP);
+      if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
       {
-        thisPrivCheckSuccess = FALSE;
-        RemoveNATableEntryFromCache = TRUE;
+        abort();
+        return FALSE;
       }
-    }
-    else
-    {
-      thisPrivCheckSuccess        = FALSE;
-      RemoveNATableEntryFromCache = TRUE;
-      ErrorPutInDiags             = FALSE;
-    }
-    if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
-    {
-      *CmpCommon::diags() << DgSqlCode( -4481 )
-        << DgString0( "SELECT" )
-        << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
+      retcode = privInterface.getPrivileges( tab->objectUid().get_value(), thisUserID, privInfo);
+      cmpSBD.switchBackCompiler();
+
+      if (retcode != STATUS_GOOD)
+      {
+        bindWA->setFailedForPrivileges( TRUE );
+        RemoveNATableEntryFromCache = TRUE;
+        *CmpCommon::diags() << DgSqlCode( -1034 );
+        return FALSE;
+      }
+      pPrivInfo = &privInfo;
     }
 
-    if ( RemoveNATableEntryFromCache )
+    // Verify that the user has select priv
+    // Select priv is needed for EXPLAIN requests, so no special check is done
+    NABoolean insertQIKeys = FALSE; 
+    if (QI_enabled && (tab->getSecKeySet().entries()) > 0)
+      insertQIKeys = TRUE;
+    if (pPrivInfo->hasPriv(SELECT_PRIV))
     {
-      tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
-      privCheckSuccess = FALSE ; // Accumulate overall failure (if any)
+      // do this only if QI is enabled and object has security keys defined
+      if ( insertQIKeys )
+        findKeyAndInsertInOutputList(tab->getSecKeySet(), userHashValue, SELECT_PRIV );
+    }
+
+    // plan requires privilege but user has none, report an error
+    else
+    {
+       bindWA->setFailedForPrivileges( TRUE );
+       tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
+       *CmpCommon::diags()
+         << DgSqlCode( -4481 )
+         << DgString0( "SELECT" )
+         << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
     }
   }  // for loop over coprocs
 
-  // Check privs on any sequence generators used in the query.
-  SequenceValue* seqVal = NULL;
+  // ==> Check privs on any sequence generators used in the query.
   for (Int32 i=0; i<(Int32)bindWA->getSeqValList().entries(); i++)
   {
-    thisPrivCheckSuccess = TRUE ;  // Initialize each time through loop
-    seqVal = (bindWA->getSeqValList())[i];
+    SequenceValue *seqVal = (bindWA->getSeqValList())[i];
     NATable* tab = const_cast<NATable*>(seqVal->getNATable());
-    PrivStatus retcode = STATUS_GOOD;
+
     // No need to save priv info in NATable object representing a sequence;
     // these NATables are not cached.
     PrivMgrUserPrivs privInfo;
-    Int64 tabUid = tab->objectUid().get_value();
-    CMPASSERT(tabUid > 0);
-    //    if (tabUid <= 0)
-    //      tabUid = tab->lookupObjectUid();
-    retcode = privInterface.getPrivileges(tabUid, thisUserID, privInfo);
-    if (retcode != STATUS_GOOD)
-     return false;
-
-    NABoolean ErrorPutInDiags = FALSE ;
-    Int32 numSecKeys = 0;
-
-    if ( privInfo.hasUsagePriv() )
+    CmpSeabaseDDL cmpSBD(STMTHEAP);
+    if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
     {
-      if ( QI_enabled && numSecKeys > 0 &&
-           ! findKeyAndInsertInOutputList(tab->getSecKeySet(),
-                               userHashValue, USAGE_PRIV ) )
-      {
-         thisPrivCheckSuccess = FALSE;
-      }
+      abort();
+      return FALSE;
     }
+    retcode = privInterface.getPrivileges(tab->objectUid().get_value(), thisUserID, privInfo);
+    cmpSBD.switchBackCompiler();
+    if (retcode != STATUS_GOOD)
+    {
+      bindWA->setFailedForPrivileges(TRUE);
+      RemoveNATableEntryFromCache = TRUE;
+      *CmpCommon::diags() << DgSqlCode( -1034 );
+      return FALSE;
+    }
+
+    // Verify that the user has usage priv
+    if (privInfo.hasPriv(USAGE_PRIV))
+    {
+      // Do we need to add any QI keys to the plan?
+    }
+
+    // plan requires privilege but user has none, report an error
     else
     {
-      thisPrivCheckSuccess        = FALSE;
-      ErrorPutInDiags             = FALSE;
+      bindWA->setFailedForPrivileges( TRUE );
+      RemoveNATableEntryFromCache = TRUE;
+      *CmpCommon::diags()
+        << DgSqlCode( -4491 )
+        << DgString0( "USAGE" )
+        << DgString1( tab->getTableName().getQualifiedNameAsAnsiString());
     }
-    if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
-    {
-      *CmpCommon::diags() << DgSqlCode( -4491 )
-       << DgString0( "USAGE" )
-       << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
-    }
-
-    if ( !thisPrivCheckSuccess )
-      privCheckSuccess = FALSE ; // Accumulate overall failure (if any)
   }  // for loop over sequences
 
-  bindWA->setFailedForPrivileges( ! privCheckSuccess );
-
-  return privCheckSuccess ;
+  return !bindWA->failedForPrivileges() ;
 }
 
-NABoolean RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
-                                               , const uint32_t userHashValue
-                                               , const PrivType which
-                                               )
+void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
+                                          , const uint32_t userHashValue
+                                          , const PrivType which
+                                          )
 {
    ComSecurityKey  dummyKey;
 
@@ -6622,17 +6550,15 @@ NABoolean RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
    if ( UserObjectKey ) BestKey = UserObjectKey ;
    else if ( RoleObjectKey ) BestKey = RoleObjectKey ;
    if ( BestKey == NULL)
-   {
-        //return FALSE;  // We didn't find any ComSecurityKey that granted the privilege
-        return TRUE;  // Sometimes there aren't any security keys...  GMS???
-   }
+     return;  // Sometimes there aren't any security keys
    securityKeySet_.insert(*BestKey);
 
    uint32_t SubjHashValue = BestKey->getSubjectHashValue();
    hashValueOfPublic = BestKey->generateHash(PUBLIC_USER);
+
    // Check whether this privilege was granted to PUBLIC.  If so, nothing more to check.
    if ( SubjHashValue == hashValueOfPublic )
-      return TRUE;
+      return;
    while ( SubjHashValue != userHashValue ) //While we see a ComSecurityKey for a Role
    {
       NABoolean found = FALSE;
@@ -6650,13 +6576,9 @@ NABoolean RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
             break; // We found the user or Role which granted the user the privilege
          }
       }
-      if (found == FALSE)
-         // This should never happen.
-         return FALSE; // ... but we want to prevent infinite loops.
-
-      // else continue; We will continue until we find the Role to which the User belongs
+      // found should never be FALSE
+      CMPASSERT(found)
    }
-   return TRUE;
 }
 
 
@@ -15437,6 +15359,44 @@ RelExpr *CallSP::bindNode(BindWA *bindWA)
   //
   //bindWA->getCurrentScope()->setRETDesc(getRETDesc());
 
+  // add the routine to the UdrStoiList.  The UdrStoi list is used
+  // to check valid privileges
+  LIST(OptUdrOpenInfo *) udrList = bindWA->getUdrStoiList ();
+  ULng32 numUdrs = udrList.entries();
+  NABoolean udrReferenced = FALSE;
+
+  // See if UDR already exists
+  for (ULng32 stoiIndex = 0; stoiIndex < numUdrs; stoiIndex++)
+  {
+    if ( 0 ==
+         udrList[stoiIndex]->getUdrName().compareTo(
+                           getRoutineName().getQualifiedNameAsAnsiString()
+                                                  )
+       )
+    {
+      udrReferenced = TRUE;
+      break;
+    }
+  }
+
+  // UDR has not been defined, go ahead an add one
+  if ( FALSE == udrReferenced )
+  {
+    SqlTableOpenInfo *udrStoi = new (bindWA->wHeap ())SqlTableOpenInfo ();
+    udrStoi->setAnsiName ( convertNAString(
+                           getRoutineName().getQualifiedNameAsAnsiString(),
+                           bindWA->wHeap ())
+                         );
+
+    OptUdrOpenInfo *udrOpenInfo = new (bindWA->wHeap ())
+      OptUdrOpenInfo( udrStoi
+                    , getRoutineName().getQualifiedNameAsAnsiString()
+                    , (NARoutine *)getNARoutine()
+                    );
+    bindWA->getUdrStoiList().insert(udrOpenInfo);
+  }
+
+
   //
   // Bind the base class
   //
@@ -16112,6 +16072,43 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
   // root node
   if (getOperatorType() == REL_TABLE_MAPPING_BUILTIN_LOG_READER)
     bindWA->getTopRoot()->setMustUseESPs(TRUE);
+
+  // add the routine to the UdrStoiList.  The UdrStoi list is used
+  // to check valid privileges
+  LIST(OptUdrOpenInfo *) udrList = bindWA->getUdrStoiList ();
+  ULng32 numUdrs = udrList.entries();
+  NABoolean udrReferenced = FALSE;
+
+  // See if UDR already exists
+  for (ULng32 stoiIndex = 0; stoiIndex < numUdrs; stoiIndex++)
+  {
+    if ( 0 ==
+         udrList[stoiIndex]->getUdrName().compareTo(
+                           getRoutineName().getQualifiedNameAsAnsiString()
+                                                  )
+       )
+    {
+      udrReferenced = TRUE;
+      break;
+    }
+  }
+
+  // UDR has not been defined, go ahead an add one
+  if ( FALSE == udrReferenced )
+  {
+    SqlTableOpenInfo *udrStoi = new (bindWA->wHeap ())SqlTableOpenInfo ();
+    udrStoi->setAnsiName ( convertNAString(
+                           getRoutineName().getQualifiedNameAsAnsiString(),
+                           bindWA->wHeap ())
+                         );
+
+    OptUdrOpenInfo *udrOpenInfo = new (bindWA->wHeap ())
+      OptUdrOpenInfo( udrStoi
+                    , getRoutineName().getQualifiedNameAsAnsiString()
+                    , (NARoutine *)getNARoutine()
+                    );
+    bindWA->getUdrStoiList().insert(udrOpenInfo);
+  }
 
   RelExpr *boundExpr = bindSelf(bindWA);
   if (bindWA->errStatus())

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -301,10 +301,14 @@ const literalAndEnumStruct qiTypeConversionTable [] =
   {COM_QI_OBJECT_INSERT, COM_QI_OBJECT_INSERT_LIT},
   {COM_QI_OBJECT_DELETE, COM_QI_OBJECT_DELETE_LIT},
   {COM_QI_OBJECT_UPDATE, COM_QI_OBJECT_UPDATE_LIT},
+  {COM_QI_OBJECT_USAGE, COM_QI_OBJECT_USAGE_LIT},
+  {COM_QI_OBJECT_REFERENCES, COM_QI_OBJECT_REFERENCES_LIT},
   {COM_QI_SCHEMA_SELECT, COM_QI_SCHEMA_SELECT_LIT},
   {COM_QI_SCHEMA_INSERT, COM_QI_SCHEMA_INSERT_LIT},
   {COM_QI_SCHEMA_DELETE, COM_QI_SCHEMA_DELETE_LIT},
   {COM_QI_SCHEMA_UPDATE, COM_QI_SCHEMA_UPDATE_LIT},
+  {COM_QI_SCHEMA_USAGE, COM_QI_SCHEMA_USAGE_LIT},
+  {COM_QI_SCHEMA_REFERENCES, COM_QI_SCHEMA_REFERENCES_LIT},
   {COM_QI_OBJECT_EXECUTE, COM_QI_OBJECT_EXECUTE_LIT},
   {COM_QI_SCHEMA_EXECUTE, COM_QI_SCHEMA_EXECUTE_LIT},
   {COM_QI_OBJECT_REDEF, COM_QI_OBJECT_REDEF_LIT}

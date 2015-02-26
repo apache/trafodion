@@ -57,6 +57,41 @@ class PrivMgrUserPrivs
 
   PrivMgrUserPrivs(const int32_t nbrCols = 0){};
 
+  static std::string convertPrivTypeToLiteral(PrivType which)
+  {
+    std::string privilege;
+    switch (which)
+    {
+      case SELECT_PRIV:
+        privilege = "SELECT";
+        break;
+      case INSERT_PRIV:
+        privilege = "INSERT";
+        break;
+      case DELETE_PRIV:
+        privilege = "DELETE";
+        break;
+      case UPDATE_PRIV:
+        privilege = "UPDATE";
+        break;
+      case USAGE_PRIV:
+        privilege = "USAGE";
+        break;
+      case REFERENCES_PRIV:
+        privilege = "REFERENCES";
+        break;
+      case EXECUTE_PRIV:
+        privilege = "EXECUTE";
+        break;
+
+      // other privileges defined in PrivMgrDefs.h are not yet supported
+      default:
+        privilege = "UNKNOWN";
+    }
+  return privilege;
+}
+
+ 
   // Object level
   bool hasSelectPriv() const    {return objectBitmap_.test(SELECT_PRIV);}
   bool hasInsertPriv() const    {return objectBitmap_.test(INSERT_PRIV);}
@@ -70,6 +105,40 @@ class PrivMgrUserPrivs
   bool hasDropPriv() const      {return objectBitmap_.test(DROP_PRIV);}
   bool hasAllPriv() const       {return objectBitmap_.all();}
   bool hasAnyPriv() const       {return objectBitmap_.any();}
+  bool hasPriv(PrivType which) const
+  {
+    bool hasPriv = false;
+    switch (which)
+    {
+      case SELECT_PRIV:
+        hasPriv = hasSelectPriv();
+        break;
+      case INSERT_PRIV:
+        hasPriv = hasInsertPriv();
+        break;
+      case DELETE_PRIV:
+        hasPriv = hasDeletePriv();
+        break;
+      case UPDATE_PRIV:
+        hasPriv = hasUpdatePriv();
+        break;
+      case USAGE_PRIV:
+        hasPriv = hasUsagePriv();
+        break;
+      case REFERENCES_PRIV:
+        hasPriv = hasReferencePriv();
+        break;
+      case EXECUTE_PRIV:
+        hasPriv = hasExecutePriv();
+        break;
+
+      // other privileges defined in the PrivType enum are not yet supported
+      default:
+        hasPriv = false;
+    }
+    return hasPriv;
+  }
+
 
   bool hasAllDMLPriv() const
   {
@@ -136,9 +205,11 @@ public:
    PrivMgrCommands ( 
       const std::string trafMetadataLocation,
       const std::string &metadataLocation,
-      ComDiagsArea *pDiags );
+      ComDiagsArea *pDiags,
+      PrivMDStatus authorizationEnabled = PRIV_INITIALIZE_UNKNOWN );
    PrivMgrCommands ( const std::string &metadataLocation 
-                   , ComDiagsArea *pDiags );
+                   , ComDiagsArea *pDiags
+                   , PrivMDStatus authorizationEnabled = PRIV_INITIALIZE_UNKNOWN );
    PrivMgrCommands ( const PrivMgrCommands &rhs ); 
    virtual ~PrivMgrCommands ( void );
 

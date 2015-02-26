@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2001-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2001-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1423,14 +1423,6 @@ void UDFunction::generateCacheKey(CacheWA& cwa) const
     convertInt64ToAscii(routine->getRedefTime(), redefTime);
     cwa += " redef:";
     cwa += redefTime;
-    if ((routine->getSchemaLabelFileName()) &&
-        (str_len(routine->getSchemaLabelFileName()) > 0)) 
-    {
-      char schRedefTime[40];
-      convertInt64ToAscii(routine->getSchemaRedefTime(), schRedefTime);
-      cwa += " schredef:";
-      cwa += schRedefTime;
-    }
   }
 
   if (getRoutineDesc() && 

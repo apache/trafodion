@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1118,6 +1118,9 @@ class ComTdbVirtTableRoutineInfo : public ComTdbVirtTableBase
   const char *library_filename;
   Int32 library_version;
   const char * signature;
+  Int64 object_uid;
+  Int32 object_owner_id;
+  Int32 schema_owner_id;
 };
 
 class ComTdbVirtTableSequenceInfo : public ComTdbVirtTableBase

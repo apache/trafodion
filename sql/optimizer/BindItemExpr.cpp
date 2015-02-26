@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -9690,6 +9690,42 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
     
   curContext->inUDFunction() = FALSE;
  
+  // add the routine to the UdrStoiList.  The UdrStoi list is used
+  // to check valid privileges
+  LIST(OptUdrOpenInfo *) udrList = bindWA->getUdrStoiList ();
+
+  // See if UDF already exists
+  NABoolean udrReferenced = FALSE;
+  for (ULng32 stoiIndex = 0; stoiIndex < udrList.entries(); stoiIndex++)
+  {
+    if ( 0 ==
+         udrList[stoiIndex]->getUdrName().compareTo(
+                           udf->getSqlName().getQualifiedNameAsAnsiString()
+                                                  )
+       )
+    {
+      udrReferenced = TRUE;
+      break;
+    }
+  }
+
+  // UDF has not been defined, go ahead an add one
+  if ( FALSE == udrReferenced )
+  {
+    SqlTableOpenInfo *udrStoi = new (bindWA->wHeap ())SqlTableOpenInfo ();
+    udrStoi->setAnsiName ( convertNAString(
+                           udf->getSqlName().getQualifiedNameAsAnsiString(),
+                           bindWA->wHeap ())
+                         );
+
+    OptUdrOpenInfo *udrOpenInfo = new (bindWA->wHeap ())
+      OptUdrOpenInfo( udrStoi
+                    , udf->getSqlName().getQualifiedNameAsAnsiString()
+                    , udf
+                    );
+    bindWA->getUdrStoiList().insert(udrOpenInfo);
+  }
+
   delete inParams; // clean up the memory used 
 
   return retExpr;

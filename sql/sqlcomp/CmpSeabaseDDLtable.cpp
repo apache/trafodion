@@ -7618,12 +7618,23 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
 
   ExeCliInterface cliInterface(STMTHEAP);
 
-  Int64 objectUid = getObjectUID(&cliInterface, 
-                                 catName.data(), schName.data(),
-                                 objName.data(),
-                                 (char *)COM_UDR_NAME_LIT);
-  if (objectUid == -1)
-     return NULL;
+  Int64 objectUID = 0;
+  Int32 objectOwnerID = 0;
+  Int32 schemaOwnerID = 0;
+  ComObjectType objectType = COM_USER_DEFINED_ROUTINE_OBJECT;
+
+  objectUID = getObjectUIDandOwners(&cliInterface,
+                                    catName.data(), schName.data(),
+                                    objName.data(), objectType,
+                                    objectOwnerID,schemaOwnerID);
+
+  if (objectUID == -1 || objectOwnerID == 0)
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        SEABASEDDL_INTERNAL_ERROR("getting object UID and owners for routine desc request");
+      processReturn();
+      return NULL;
+    }
 
   str_sprintf(buf, "select udr_type, language_type, deterministic_bool,"
   " sql_access, call_on_null, isolate_bool, param_style,"
@@ -7633,7 +7644,7 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   " where a.udr_uid = %Ld and a.library_uid = b.library_uid "
   " for read committed access",
        getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
-       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, objectUid);
+       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, objectUID);
 
 
   cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
@@ -7660,6 +7671,10 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   Lng32 len = 0;
 
   ComTdbVirtTableRoutineInfo *routineInfo = new (STMTHEAP) ComTdbVirtTableRoutineInfo();
+
+  routineInfo->object_uid = objectUID;
+  routineInfo->object_owner_id = objectOwnerID;
+  routineInfo->schema_owner_id = schemaOwnerID;
 
   routineInfo->routine_name = objName.data();
   cliInterface.getPtrAndLen(1, ptr, len);
@@ -7727,7 +7742,7 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
                       COM_INOUT_PARAM_LIT);
   // Params
   if (getSeabaseColumnInfo(&cliInterface,
-                           objectUid,
+                           objectUID,
                            catName, schName, objName,
                            (char *)direction,
                            NULL,

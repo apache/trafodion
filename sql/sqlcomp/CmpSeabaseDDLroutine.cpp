@@ -983,17 +983,35 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
     }
   
   // get objectOwner
+  Int64 objUID = 0;
   Int32 objectOwnerID = 0;
   Int32 schemaOwnerID = 0;
-  Int64 objUID = getObjectUIDandOwners(&cliInterface,
+
+  // see if routine is cached
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  NARoutineDB *pRoutineDBCache  = ActiveSchemaDB()->getNARoutineDB();
+  QualifiedName qualRoutineName(routineName, STMTHEAP);
+  NARoutineDBKey key(qualRoutineName, STMTHEAP);
+
+  NARoutine *cachedNARoutine = pRoutineDBCache->get(&bindWA, &key);
+  if (cachedNARoutine)
+    {
+      objUID = cachedNARoutine->getRoutineID();
+      objectOwnerID = cachedNARoutine->getObjectOwner();
+      schemaOwnerID = cachedNARoutine->getSchemaOwner();
+    }
+  else
+    {
+      objUID = getObjectUIDandOwners(&cliInterface,
 			      catalogNamePart.data(), schemaNamePart.data(), 
 			      objectNamePart.data(), COM_USER_DEFINED_ROUTINE_OBJECT,
                               objectOwnerID,schemaOwnerID);
-  if (objUID < 0 || objectOwnerID == 0 || schemaOwnerID == 0)
-    {
-      deallocEHI(ehi); 
-      processReturn();
-      return;
+    if (objUID < 0 || objectOwnerID == 0 || schemaOwnerID == 0)
+      {
+        deallocEHI(ehi); 
+        processReturn();
+        return;
+      }
     }
 
   // Verify user has privilege to drop routine
@@ -1005,6 +1023,7 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
      return;
   }
 
+  // Removed routine from metadata and HBase
   if (dropSeabaseObject(ehi, dropRoutineNode->getRoutineName(),
                         currCatName, currSchName, COM_USER_DEFINED_ROUTINE_OBJECT,
                         TRUE, FALSE))
@@ -1013,6 +1032,11 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
       processReturn();
       return;
     }
+
+  // Remove cached entries in other processes
+  pRoutineDBCache->removeNARoutine(qualRoutineName, 
+                                   NARoutineDB::REMOVE_FROM_ALL_USERS,
+                                   objUID);
 
   deallocEHI(ehi);      
   processReturn();

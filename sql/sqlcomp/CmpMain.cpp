@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1156,6 +1156,7 @@ void CmpMain:: getAndProcessAnySiKeys(TimeVal begTime)
        CURRENTQCACHE->free_entries_with_QI_keys(returnedNumSiKeys, 
          sikKeyArray);
        InvalidateNATableCacheEntries(returnedNumSiKeys, sikKeyArray);
+       InvalidateNARoutineCacheEntries(returnedNumSiKeys, sikKeyArray);
      }
    }
   // Always update previous QI time 
@@ -1264,7 +1265,7 @@ Int32 CmpMain::getAnySiKeys(TimeVal      begTime,
 
            Int32 SiKeyDebugEntries = 1;
            if ( new_QI_Priv_Value == 255 )
-              SiKeyDebugEntries = 7;
+              SiKeyDebugEntries = NBR_DML_PRIVS;
            SQL_QIKEY debugQiKeys[SiKeyDebugEntries];
 
            if ( SiKeyDebugEntries == 1 )
@@ -1288,90 +1289,20 @@ Int32 CmpMain::getAnySiKeys(TimeVal      begTime,
            }
            else
            {
-              ComSecurityKey  secKey0(thisUserID, objectUID,
-                           SELECT_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
-              debugQiKeys[0].revokeKey.subject = (Int32) secKey0.getSubjectHashValue();
-              debugQiKeys[0].revokeKey.object = (Int32) secKey0.getObjectHashValue();
+             for (int_32 i = FIRST_DML_PRIV; i <= LAST_DML_PRIV; i++)
+             {
+               ComSecurityKey  secKey0(thisUserID, objectUID, (PrivType)i,
+                                       ComSecurityKey::OBJECT_IS_OBJECT);
+               debugQiKeys[i].revokeKey.subject = (Int32) secKey0.getSubjectHashValue();
+               debugQiKeys[i].revokeKey.object = (Int32) secKey0.getObjectHashValue();
 
-              ComQIActionTypeEnumToLiteral(
+               ComQIActionTypeEnumToLiteral(
                              secKey0.getSecurityKeyType(), sikOpLit  );
-              debugQiKeys[0].operation[0] = sikOpLit[0];
-              debugQiKeys[0].operation[1] = sikOpLit[1];
-
-              if ( objectUID == 0 )
-                debugQiKeys[0].revokeKey.object = realObjHashVal;
-              ComSecurityKey  secKey1(thisUserID, objectUID,
-                           INSERT_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
-              debugQiKeys[1].revokeKey.subject = (Int32) secKey1.getSubjectHashValue();
-              debugQiKeys[1].revokeKey.object = (Int32) secKey1.getObjectHashValue();
-
-              ComQIActionTypeEnumToLiteral(
-                             secKey1.getSecurityKeyType(), sikOpLit  );
-              debugQiKeys[1].operation[0] = sikOpLit[0];
-              debugQiKeys[1].operation[1] = sikOpLit[1];
-
-              if ( objectUID == 0 )
-                debugQiKeys[1].revokeKey.object = realObjHashVal;
-              ComSecurityKey  secKey2(thisUserID, objectUID,
-                  DELETE_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
-              debugQiKeys[2].revokeKey.subject = (Int32) secKey2.getSubjectHashValue();
-              debugQiKeys[2].revokeKey.object = (Int32) secKey2.getObjectHashValue();
-
-              ComQIActionTypeEnumToLiteral(
-                             secKey2.getSecurityKeyType(), sikOpLit  );
-              debugQiKeys[2].operation[0] = sikOpLit[0];
-              debugQiKeys[2].operation[1] = sikOpLit[1];
-
-              if ( objectUID == 0 )
-                debugQiKeys[2].revokeKey.object = realObjHashVal;
-              ComSecurityKey  secKey3(thisUserID, objectUID,
-                           UPDATE_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
-              debugQiKeys[3].revokeKey.subject = (Int32) secKey3.getSubjectHashValue();
-              debugQiKeys[3].revokeKey.object = (Int32) secKey3.getObjectHashValue();
-
-              ComQIActionTypeEnumToLiteral(
-                             secKey3.getSecurityKeyType(), sikOpLit  );
-              debugQiKeys[3].operation[0] = sikOpLit[0];
-              debugQiKeys[3].operation[1] = sikOpLit[1];
-
-              if ( objectUID == 0 )
-                debugQiKeys[3].revokeKey.object = realObjHashVal;
-              ComSecurityKey  secKey4(thisUserID, objectUID,
-                           USAGE_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
-              debugQiKeys[4].revokeKey.subject = (Int32) secKey4.getSubjectHashValue();
-              debugQiKeys[4].revokeKey.object = (Int32) secKey4.getObjectHashValue();
-
-              ComQIActionTypeEnumToLiteral(
-                             secKey4.getSecurityKeyType(), sikOpLit  );
-              debugQiKeys[4].operation[0] = sikOpLit[0];
-              debugQiKeys[4].operation[1] = sikOpLit[1];
-
-              if ( objectUID == 0 )
-                debugQiKeys[4].revokeKey.object = realObjHashVal;
-              ComSecurityKey  secKey5(thisUserID, objectUID,
-                           REFERENCES_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
-              debugQiKeys[5].revokeKey.subject = (Int32) secKey5.getSubjectHashValue();
-              debugQiKeys[5].revokeKey.object = (Int32) secKey5.getObjectHashValue();
-
-              ComQIActionTypeEnumToLiteral(
-                             secKey5.getSecurityKeyType(), sikOpLit  );
-              debugQiKeys[5].operation[0] = sikOpLit[0];
-              debugQiKeys[5].operation[1] = sikOpLit[1];
-
-              if ( objectUID == 0 )
-                debugQiKeys[5].revokeKey.object = realObjHashVal;
-              ComSecurityKey  secKey6(thisUserID, objectUID,
-                           EXECUTE_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
-              debugQiKeys[6].revokeKey.subject = (Int32) secKey6.getSubjectHashValue();
-              debugQiKeys[6].revokeKey.object = (Int32) secKey6.getObjectHashValue();
-
-              ComQIActionTypeEnumToLiteral(
-                             secKey6.getSecurityKeyType(), sikOpLit  );
-              debugQiKeys[6].operation[0] = sikOpLit[0];
-              debugQiKeys[6].operation[1] = sikOpLit[1];
-
-              if ( objectUID == 0 )
-                debugQiKeys[6].revokeKey.object = realObjHashVal;
+               debugQiKeys[i].operation[0] = sikOpLit[0];
+               debugQiKeys[i].operation[1] = sikOpLit[1];
+               if ( objectUID == 0 )
+                 debugQiKeys[i].revokeKey.object = realObjHashVal;
+             }
            }
            *retNumSiKeys = SiKeyDebugEntries;
            *pMaxTimestamp = begTime;
@@ -1399,6 +1330,14 @@ void CmpMain::InvalidateNATableCacheEntries(Int32 returnedNumQiKeys,
                                             SQL_QIKEY * qiKeyArray)
 {
    ActiveSchemaDB()->getNATableDB()->free_entries_with_QI_key(
+     returnedNumQiKeys, qiKeyArray);
+   return ;
+}
+
+void CmpMain::InvalidateNARoutineCacheEntries(Int32 returnedNumQiKeys,
+                                              SQL_QIKEY * qiKeyArray)
+{
+   ActiveSchemaDB()->getNARoutineDB()->free_entries_with_QI_key(
      returnedNumQiKeys, qiKeyArray);
    return ;
 }

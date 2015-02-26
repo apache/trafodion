@@ -2914,147 +2914,6 @@ RETCODE Statement::doQuerySimilarityCheck(QuerySimilarityInfo * qsi,
   
   return SUCCESS;
 }
-RETCODE Statement::checkSecurity(Queue * stoiList, ComDiagsArea &diagsArea)
-{
-  RETCODE retcode = SUCCESS;
-  return retcode;
-}
-
-RETCODE
-Statement::checkExecutePermission(char* labelName,
-                                  // VO: Added ANSI name for error reporting purposes
-                                  const char * ansiName,      
-                                  Int64 compileTS,
-                                  UdrSecurityInfo* secureInfo,
-                                  ComDiagsArea &diagsArea,
-                                  NABoolean checkSecurity)
-{
-  RETCODE retcode;
-  return SUCCESS;
-
-}
-
-//
-// Checks for EXECUTE permission for the user
-// on the UDRs used in this statement, after first checking 
-// that the UDR's catalog is visible.
-//
-RETCODE Statement::checkUdrSecurity(SqlTableOpenInfoPtrPtr udrStoiList,
-                                    ComDiagsArea &diagsArea)
-{
-  RETCODE retcode = SUCCESS;
-  SqlTableOpenInfo * stoi = NULL;
-  UdrSecurityInfo *secureInfo = NULL;
-  NAHeap *ctxHeap = getContext()->exHeap();
-  AnsiOrNskName *ansiNameStruct;
-  NABoolean udrSecurityDebug = FALSE;
-
-
-  if (udrSecurity_ == NULL)
-  {
-    // Create a new LIST of UdrSecurityInfo
-    udrSecurity_ = new (ctxHeap) LIST (UdrSecurityInfo *) (ctxHeap);
-
-#ifdef NA_DEBUG_C_RUNTIME
-    if (udrSecurityDebug)
-      cout << "[UDR] Initialized LIST of UdrSecruityInfo structure." << endl;
-#endif
-  }
-
-  UInt32 udrindex = 0;         // index into udrSecurity_ LIST.
-  for (Int32 i = 0; i < root_tdb->getUdrCount(); i++)
-  {
-    stoi = udrStoiList[i];
-    const char *ansiName = stoi->ansiName();
-    Lng32 ansiNameLen = str_len(ansiName);
-
-//  checkSecurity() is FALSE and validateTimestamp() is FALSE mean the SPJ is
-//  internal stored procedures. If checkSecurity() is FALSE and
-//  validateTimestamp() is TRUE, it means schema level security check PASS. If
-//  checkSecurity() is TRUE, it means the SPJ is a user created SPJ.
-
-    if ( stoi->checkSecurity() == FALSE
-         && stoi->validateTimestamp() == FALSE)
-    {
-#ifdef NA_DEBUG_C_RUNTIME
-      if (udrSecurityDebug)
-        cout << "[UDR] Security Check for "<< ansiName 
-             << " will be skipped." << endl << endl;
-#endif
-      continue;
-    }
-    else
-    {
-#ifdef NA_DEBUG_C_RUNTIME
-      if (udrSecurityDebug)
-        cout << "[UDR] Security Check for "<< ansiName
-             << " will be performed." << endl;
-#endif
-    }
-
-    if (! stoi->isUDRSurrogate())
-    {
-      diagsArea << DgSqlCode(-EXE_INTERNAL_ERROR);
-      return ERROR;
-    }
-
-    //
-    // We need to allocate UdrSecurityInfo structures for the first
-    // time execution. Successive executions can reuse them. So check
-    // if we have already allocated udrSecurityInfo for this
-    // UDR instance. If entries in udrSecurity_ are more than
-    // udrindex then there is already an allocated udrSecurityInfo
-    // structure for the current udr.
-    //
-    if (udrSecurity_->entries() > udrindex)
-    {
-      secureInfo = (*udrSecurity_)[udrindex];
-      assert(! str_cmp(secureInfo->getUdrName(), ansiName, ansiNameLen));
-
-#ifdef NA_DEBUG_C_RUNTIME
-      if (udrSecurityDebug)
-        cout << "[UDR] Using existing UdrSecruityInfo structure." << endl;
-#endif
-    }
-    else
-    {
-      secureInfo = new (ctxHeap) UdrSecurityInfo();
-
-      char *udrName = new (ctxHeap) char[ansiNameLen + 1];
-      str_cpy_all(udrName, ansiName, ansiNameLen);
-      udrName[ansiNameLen] = '\0';
-      secureInfo->setUdrName(udrName);
-
-      udrSecurity_->insert(secureInfo);
-
-#ifdef NA_DEBUG_C_RUNTIME
-      if (udrSecurityDebug)
-        cout << "[UDR] Created new UdrSecurityInfo structure." << endl;
-#endif
-    }
-
-
-    retcode = checkExecutePermission(stoi->fileName(),
-                                     stoi->ansiName(),
-                                     stoi->getRedefTime(),
-                                     secureInfo,
-                                     diagsArea,
-                                     stoi->checkSecurity());
-
-    if (retcode == ERROR)
-    {
-      diagsArea << DgSqlCode(-EXE_UDR_ACCESS_VIOLATION)
-                << DgString0("EXECUTE")
-                << DgString1(stoi->ansiName());
-      return ERROR;
-    }
-
-    // Advance udrindex
-    udrindex++;
-  }
-
-  return SUCCESS;
-}
 
 RETCODE Statement::fixup(CliGlobals * cliGlobals, Descriptor * input_desc,
 			 ComDiagsArea &diagsArea, NABoolean &doSimCheck,
@@ -3388,7 +3247,6 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	    case CHECK_DYNAMIC_SETTINGS_:
               strcpy(buf, "CHECK_DYNAMIC_SETTINGS_");
               break;
-	    case VALIDATE_SECURITY_: strcpy(buf, "VALIDATE_SECURITY_"); break;
 	    case FIXUP_: strcpy(buf, "FIXUP_"); break;
 	    case FIXUP_DONE_: strcpy(buf, "FIXUP_DONE_"); break;
 	    case EXECUTE_: strcpy(buf, "EXECUTE_"); break;
@@ -4035,113 +3893,13 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
             }
           }
 
-          state_ = VALIDATE_SECURITY_;
+          if (!fixupState())
+            state_ = FIXUP_;
+          else
+            state_ = EXECUTE_;
+
         }
         break;
-	
-	case VALIDATE_SECURITY_:
-	  {
-	    
-	    // Validate security for any views accessed in the statement.
-	    // Security on tables is validated at table open time.
-	    if (root_tdb->getViewStoiList())
-	      {
-		retcode = 
-		  checkSecurity(root_tdb->getViewStoiList(), diagsArea);
-		if (retcode == ERROR)
-		  {
-		    if (diagsArea.contains(-EXE_VIEW_NOT_FOUND))
-		      {
-			if ((fixupOnly) ||
-			    (root_tdb->aqrEnabled()))
-			  {
-			    // view not found or was dropped/recreated.
-			    state_ = ERROR_;
-			  }
-			else
-			  {
-			    diagsArea.clear();
-			    
-			    state_ = RECOMPILE_;
-			  }
-		      }
-		    else
-		      state_ = ERROR_;
-		    break;
-		  }
-                if (retcode == WARNING)
-                {
-                  // Visibility check requested recompile
-                  if (root_tdb->querySimilarityInfo()->getSimilarityCheckOption() == QuerySimilarityInfo::INTERNAL_SIM_CHECK)
-                    // This is an internal query, force a similarity check
-                    state_ = DO_SIM_CHECK_;
-                  else
-                    // This is a user query, recompile
-                    state_ = RECOMPILE_;
-                  break;
-                }
-
-	      } // view Stoi
-
-            // Validate security for User Defined Routines
-            // A surrogate table "stands in" for the UDR 
-	    if (root_tdb->getUdrStoiList())
-            {
-              // UDRs compiled prior to R2 must be recompiled in order
-              // for UDR security checks to work correctly.
-              if (root_tdb->getUdrCount() > 0 &&
-                  root_tdb->getPlanVersion() < COM_VERS_R2_FCS)
-              {
-                diagsArea.clear();
-                state_ = RECOMPILE_;
-                break;
-              }
-
-              // Clear our local list of last known surrogate
-              // file timestamps
-              if (!fixupState())
-              {
-                if (udrSecurity_ && udrSecurity_->entries())
-                {
-                  for (UInt32 i = 0; i < udrSecurity_->entries (); i++)
-                  {
-                    delete (*udrSecurity_)[i];
-                  }
-                  udrSecurity_->clear();
-                }
-              }
-
-              retcode = checkUdrSecurity(root_tdb->getUdrStoiList(), diagsArea); 
-              if (retcode == ERROR)
-              {
-                if (diagsArea.contains(-EXE_TIMESTAMP_MISMATCH))
-                {
-                  diagsArea.clear(); 
-                  state_ = RECOMPILE_;
-                }
-                else
-                  state_ = ERROR_;
-                break;
-              }  
-              if (retcode == WARNING)
-              {
-                // Visibility check requested recompile
-                if (root_tdb->querySimilarityInfo()->getSimilarityCheckOption() == QuerySimilarityInfo::INTERNAL_SIM_CHECK)
-                  // This is an internal query, force a similarity check
-                  state_ = DO_SIM_CHECK_;
-                else
-                  // This is a user query, recompile
-                  state_ = RECOMPILE_;
-                break;
-              }  
-            }
-            
-            if (!fixupState())
-              state_ = FIXUP_;
-            else
-              state_ = EXECUTE_;
-	  }
-	break;
 	
 	case FIXUP_:
 	  {

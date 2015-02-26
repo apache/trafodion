@@ -67,7 +67,8 @@ public:
              objectType == COM_LIBRARY_OBJECT ||
              objectType == COM_USER_DEFINED_ROUTINE_OBJECT ||
              objectType == COM_VIEW_OBJECT ||
-             objectType == COM_SEQUENCE_GENERATOR_OBJECT);
+             objectType == COM_SEQUENCE_GENERATOR_OBJECT ||
+             objectType == COM_STORED_PROCEDURE_OBJECT);
    }
 
    // Set default privileges for a bitmap based on a table or view

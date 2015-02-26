@@ -2,7 +2,7 @@
 
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_DEFINITION_SCHEMA_CAN_NOT_BE_DROPPED_BY_USER
                   , CAT_SCHEMA_IS_NOT_EMPTY                       = 1028
                   , CAT_UNABLE_TO_CREATE_OBJECT                   = 1029
-                  , CAT_ACCESS_LABEL_ERROR                        = 1030
+                  , CAT_HBASE_NAME_TOO_LONG                       = 1030
                   , CAT_UNABLE_TO_DROP_OBJECT                     = 1031
                   , CAT_ANSINAME_IS_NOT_SPECIFIED                 = 1033
                   , CAT_UNABLE_TO_RETRIEVE_PRIVS                  = 1034

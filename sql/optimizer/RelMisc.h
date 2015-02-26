@@ -1,7 +1,7 @@
 /***********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -342,16 +342,13 @@ public:
 
   NABoolean &needFirstSortedRows() 		{ return needFirstSortedRows_; }
 
+  //++ Privs
   NABoolean checkPrivileges(BindWA* bindWA);
-  NABoolean findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
-                                        , const uint32_t userHashValue
-                                        , const PrivType which
-                                        );
+  void findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
+                                   , const uint32_t userHashValue
+                                   , const PrivType which );
 
-
-
-
-  //++ MV OZ
+  //++ MVs
   NABoolean hasMvBindContext() const;
   MvBindContext * getMvBindContext() const;
   void setMvBindContext(MvBindContext * pMvBindContext);

@@ -1572,6 +1572,9 @@ IsolatedScalarUDF::codeGen(Generator *generator)
                            NULL,               // TMUDF only
                            NULL);              // TMUDF only
   
+  if (effectiveMetadata.getRoutineID() > 0)
+    generator->objectUids().insert(effectiveMetadata.getRoutineID());
+
   return result;
 }
 
@@ -1665,6 +1668,9 @@ short CallSP::codeGen(Generator *generator)
                        optionalData,
                        NULL,                // TMUDF only
                        NULL);               // TMUDF only
+
+  if (metadata.getRoutineID() > 0)
+    generator->objectUids().insert(metadata.getRoutineID());
 
   return result;
 
@@ -1908,6 +1914,9 @@ PhysicalTableMappingUDF::codeGen(Generator *generator)
   udrInterface_ = NULL;
   unloadDll(getDllInteraction()->getDllPtr(), CmpCommon::diags());
   
+  if (metadata.getRoutineID() > 0)
+    generator->objectUids().insert(metadata.getRoutineID());
+
   return result;
 }
 

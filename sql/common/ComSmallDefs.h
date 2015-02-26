@@ -1195,10 +1195,14 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
                      , COM_QI_OBJECT_INSERT
                      , COM_QI_OBJECT_DELETE
                      , COM_QI_OBJECT_UPDATE
+                     , COM_QI_OBJECT_USAGE
+                     , COM_QI_OBJECT_REFERENCES
                      , COM_QI_SCHEMA_SELECT
                      , COM_QI_SCHEMA_INSERT
                      , COM_QI_SCHEMA_DELETE
                      , COM_QI_SCHEMA_UPDATE
+                     , COM_QI_SCHEMA_USAGE
+                     , COM_QI_SCHEMA_REFERENCES
                      , COM_QI_OBJECT_EXECUTE
                      , COM_QI_SCHEMA_EXECUTE
                      , COM_QI_USER_GRANT_SPECIAL_ROLE
@@ -1212,10 +1216,14 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
 #define COM_QI_OBJECT_INSERT_LIT       "OI"
 #define COM_QI_OBJECT_DELETE_LIT       "OD"
 #define COM_QI_OBJECT_UPDATE_LIT       "OU"
+#define COM_QI_OBJECT_USAGE_LIT        "OG"
+#define COM_QI_OBJECT_REFERENCES_LIT   "OF"
 #define COM_QI_SCHEMA_SELECT_LIT       "SS"
 #define COM_QI_SCHEMA_INSERT_LIT       "SI"
 #define COM_QI_SCHEMA_DELETE_LIT       "SD"
 #define COM_QI_SCHEMA_UPDATE_LIT       "SU"
+#define COM_QI_SCHEMA_USAGE_LIT        "SG"
+#define COM_QI_SCHEMA_REFERENCES_LIT   "SF"
 #define COM_QI_OBJECT_EXECUTE_LIT      "OE"
 #define COM_QI_SCHEMA_EXECUTE_LIT      "SE"
 #define COM_QI_USER_GRANT_SPECIAL_ROLE_LIT     "UZ"

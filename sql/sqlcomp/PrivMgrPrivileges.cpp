@@ -293,31 +293,26 @@ PrivStatus PrivMgrPrivileges::buildSecurityKeys(
    std::vector <ComSecurityKey *> & secKeySet)
   
 {
-
-// Only need to generate keys for SELECT, INSERT, UPDATE, and DELETE
-   for ( size_t i = 0; i < NBR_OF_PRIVS; i++ )
-   {
-      PrivType pType = PrivType(i);
-      if ((pType == SELECT_PRIV || pType == INSERT_PRIV || 
-           pType == UPDATE_PRIV || pType == DELETE_PRIV) && privs.getPriv(pType))
+  // Only need to generate keys for DML privileges
+  for ( size_t i = FIRST_DML_PRIV; i <= LAST_DML_PRIV; i++ )
+  {
+    if ( privs.getPriv(PrivType(i)))
+    {
+      ComSecurityKey *key = new ComSecurityKey(granteeID, 
+                                               objectUID_,
+                                               PrivType(i),
+                                               ComSecurityKey::OBJECT_IS_OBJECT);
+      if (key->isValid())
+         secKeySet.push_back(key);
+      else
       {
-         ComSecurityKey *key = new ComSecurityKey(granteeID, 
-                                                  objectUID_,
-                                                  pType, 
-                                                  ComSecurityKey::OBJECT_IS_OBJECT);
-         if (key->isValid())
-            secKeySet.push_back(key);
-         else
-         {
-            // Probably should report a different error.  Is an error possible?
-            *pDiags_ << DgSqlCode (-CAT_NOT_AUTHORIZED);
-            return STATUS_ERROR;
-         }
+        PRIVMGR_INTERNAL_ERROR("ComSecurityKey is null");
+        return STATUS_ERROR;
       }
-   }
+    }
+  }
    
-   return STATUS_GOOD;
-
+  return STATUS_GOOD;
 }
 
 // *****************************************************************************

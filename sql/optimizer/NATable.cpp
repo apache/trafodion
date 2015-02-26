@@ -6675,20 +6675,20 @@ void NATable::setupPrivInfo()
   privInfo_ = new(heap_) PrivMgrUserPrivs;
   if (!isSeabaseTable() || 
       !CmpCommon::context()->isAuthorizationEnabled() ||
-      isVolatileTable())
+      isVolatileTable() ||
+      ComUser::isRootUserID())
     {
       privInfo_->setOwnerDefaultPrivs();
       return;
     }
 
   Int32 thisUserID = ComUser::getCurrentUser();
-
   NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
   privMDLoc += ".\"";
   privMDLoc += SEABASE_PRIVMGR_SCHEMA;
   privMDLoc += "\"";
 
-  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags());
+  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(),PRIV_INITIALIZED);
 
   if (privInterface.isPrivMgrTable(
     qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString().data()))
@@ -8697,63 +8697,33 @@ NATableDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
 {
   UInt32 currIndx = 0;
 
+  // For each table in cache, see if it should be removed
   while ( currIndx < cachedTableList_.entries() )
   {
-     NABoolean found = FALSE;
-     NATable * currTable = cachedTableList_[currIndx];
+    NATable * currTable = cachedTableList_[currIndx];
 
-     char SiKeyOpVal[4] ;
-     SiKeyOpVal[2] = '\0'; //Put null terminator after first 2 chars
+    // Only need to remove seabase tables
+    if (!currTable->isSeabaseTable())
+    {
+      currIndx++;
+      continue;
+    }
 
-     for ( Int32 jj = 0; jj < numKeys && !found; jj++ )
-     {
-        SiKeyOpVal[0] = qiKeyArray[jj].operation[0];
-        SiKeyOpVal[1] = qiKeyArray[jj].operation[1];
+    if (qiCheckForInvalidObject(numKeys, qiKeyArray,
+                                currTable->objectUid().get_value(),
+                                currTable->getSecKeySet()))
+    {
+      if ( currTable->accessedInCurrentStatement_ )
+        statementCachedTableList_.remove( currTable );
+      while ( statementTableList_.remove( currTable ) ) // Remove as many times as on list!
+      { ; }
 
-        ComQIActionType siKeyType =
-          ComQIActionTypeLiteralToEnum( SiKeyOpVal );
-        if (siKeyType == COM_QI_OBJECT_REDEF) 
-        {
-          if ((currTable->isSeabaseTable())      &&
-              (!currTable->isSeabaseMDTable()))
-          {
-            SQL_QIKEY qp = qiKeyArray[jj];
-            Int64 ouid = qp.ddlObjectUID;
-            Int64 tOuid =  currTable->objectUid().get_value();
-            if (ouid == tOuid)
-              found = TRUE;
-          }
-        }
-        else
-        {
-          // We now scan the NATable's Security Invalidation Key SET
-          // to find any that match the passed-in SQL_QIKEY, 
-          //
-          Int32 numSikEntries = currTable->secKeySet_.entries();
-          for (Int32 ii = 0; ii < numSikEntries && !found; ii++ )
-          {
-            if ( ( qiKeyArray[jj].revokeKey.subject ==
-                     currTable->secKeySet_[ii].getSubjectHashValue() ) &&
-               ( qiKeyArray[jj].revokeKey.object ==
-                     currTable->secKeySet_[ii].getObjectHashValue() )  &&
-               ( siKeyType ==
-                     currTable->secKeySet_[ii].getSecurityKeyType() ) )
-              found = TRUE;
-          }
-        }
-     }
-     if ( found )
-     {
-        if ( currTable->accessedInCurrentStatement_ )
-           statementCachedTableList_.remove( currTable );
-        while ( statementTableList_.remove( currTable ) ) // Remove as many times as on list!
-        { ; }
-
-        RemoveFromNATableCache( currTable , currIndx );
-     }
-     else currIndx++; //Increment if NOT found ... else currIndx already pointing at next entry!
+      RemoveFromNATableCache( currTable , currIndx );
+    }
+    else currIndx++; //Increment if NOT found ... else currIndx already pointing at next entry!
   }
 }
+
 //
 // Remove a specifed NATable entry from the NATable Cache
 //

@@ -1408,6 +1408,7 @@ desc_struct *Generator::createVirtualRoutineDesc(
                                   ComTdbVirtTableColumnInfo *paramsArray)
 {
    desc_struct *routine_desc = readtabledef_allocate_desc(DESC_ROUTINE_TYPE);
+   routine_desc->body.routine_desc.objectUID = routineInfo->object_uid;
    routine_desc->body.routine_desc.routineName = new HEAP char[strlen(routineName)+1];
    strcpy(routine_desc->body.routine_desc.routineName, routineName);
    routine_desc->body.routine_desc.externalName = new HEAP char[strlen(routineInfo->external_name)+1];
@@ -1446,6 +1447,8 @@ desc_struct *Generator::createVirtualRoutineDesc(
    routine_desc->body.routine_desc.params = 
              Generator::createColDescs(routineName, 
               paramsArray, (Int16) numParams, reclen);
+   routine_desc->body.routine_desc.owner = routineInfo->object_owner_id;
+   routine_desc->body.routine_desc.schemaOwner = routineInfo->schema_owner_id; 
    return routine_desc;
 }
 

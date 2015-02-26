@@ -49,14 +49,16 @@ PrivMgrCommands::PrivMgrCommands ()
 // -----------------------------------------------------------------------
 PrivMgrCommands::PrivMgrCommands ( const std::string trafMetadataLocation
                                  , const std::string &metadataLocation
-                                 , ComDiagsArea *pDiags )
-: PrivMgr(trafMetadataLocation,metadataLocation,pDiags)
+                                 , ComDiagsArea *pDiags
+                                 , PrivMDStatus authorizationEnabled )
+: PrivMgr(trafMetadataLocation,metadataLocation,pDiags,authorizationEnabled)
 {
 };
 
 PrivMgrCommands::PrivMgrCommands ( const std::string &metadataLocation
-                                 , ComDiagsArea *pDiags )
-: PrivMgr(metadataLocation,pDiags)
+                                 , ComDiagsArea *pDiags
+                                 , PrivMDStatus authorizationEnabled )
+: PrivMgr(metadataLocation,pDiags,authorizationEnabled)
 {
 };
 
@@ -85,6 +87,10 @@ PrivMgrCommands& PrivMgrCommands::operator=(const PrivMgrCommands& other)
     return *this;
 
   metadataLocation_ = other.metadataLocation_;
+  trafMetadataLocation_ = other.trafMetadataLocation_;
+  pDiags_ = other.pDiags_;
+  parserFlags_ = other.parserFlags_;
+  authorizationEnabled_ = other.authorizationEnabled_;
   return *this;
 }
 
@@ -96,6 +102,8 @@ PrivMgrCommands& PrivMgrCommands::operator=(const PrivMgrCommands& other)
 // ----------------------------------------------------------------------------
 bool PrivMgrCommands::authorizationEnabled()
 {
+  if (authorizationEnabled_ == PRIV_INITIALIZED)
+    return true;
   PrivMgrMDAdmin admin(getMetadataLocation(), getDiags());
   return admin.isAuthorizationEnabled();
 }

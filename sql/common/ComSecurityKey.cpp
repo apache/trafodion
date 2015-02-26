@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 // ==========================================================================
 // Contains non inline methods in the following classes
 //   ComSecurityKey
+// Contains helper function: qiKeysMakeObjectInvalid
 // ==========================================================================
 
 #include "ComSecurityKey.h"
@@ -28,6 +29,45 @@
 #include <string>
 #include <vector>
 #include "exp_function.h"
+#include "ComDistribution.h"
+
+NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
+                                   const SQL_QIKEY* invalidationKeys,
+                                   const Int64 objectUID,
+                                   const ComSecurityKeySet objectKeys)
+{
+  NABoolean found = FALSE;
+  ComQIActionType invalidationKeyType = COM_QI_INVALID_ACTIONTYPE;
+
+  // check each invalidation key against objects in NATableDB cache
+  for ( Int32 i = 0; i < numInvalidationKeys && !found; i++ )
+  {
+    invalidationKeyType = ComQIActionTypeLiteralToEnum( invalidationKeys[i].operation );
+
+    // if the object redef time changed and this is the object, remove entry
+    if (invalidationKeyType == COM_QI_OBJECT_REDEF &&
+        invalidationKeys[i].ddlObjectUID == objectUID)
+      found = TRUE;
+    else
+    {
+      // Scan the passed-in object keys to find any that match the 
+      // invalidation key 
+      Int32 numObjectKeys = objectKeys.entries();
+      for (Int32 j = 0; j < numObjectKeys && !found; j++ )
+      {
+        ComSecurityKey keyValue = objectKeys[j];
+        if ( ( invalidationKeys[i].revokeKey.subject ==
+                 keyValue.getSubjectHashValue() ) &&
+           ( invalidationKeys[i].revokeKey.object ==
+                 keyValue.getObjectHashValue() )  &&
+           ( invalidationKeyType ==
+                 keyValue.getSecurityKeyType() ) ) 
+          found = TRUE;
+      }
+    }
+  }
+  return found;
+}
 
 // *****************************************************************************
 //    ComSecurityKey methods
@@ -140,7 +180,7 @@ ComQIActionType ComSecurityKey::convertBitmapToQIActionType (
       break;
     case INSERT_PRIV:
       if (inputType == OBJECT_IS_OBJECT)
-        result = COM_QI_SCHEMA_INSERT;
+        result = COM_QI_OBJECT_INSERT;
       //else 
       //  result = COM_QI_COLUMN_INSERT;
       break;
@@ -153,6 +193,14 @@ ComQIActionType ComSecurityKey::convertBitmapToQIActionType (
         result = COM_QI_OBJECT_UPDATE;
       //else 
       //  result = COM_QI_COLUMN_UPDATE;
+      break;
+    case USAGE_PRIV:
+      if (inputType == OBJECT_IS_OBJECT)
+        result = COM_QI_OBJECT_USAGE;
+      break;
+    case REFERENCES_PRIV:
+      if (inputType == OBJECT_IS_OBJECT)
+        result = COM_QI_OBJECT_REFERENCES;
       break;
     case EXECUTE_PRIV:  
       if (inputType == OBJECT_IS_OBJECT)
@@ -204,6 +252,12 @@ void ComSecurityKey::getSecurityKeyTypeAsLit (std::string &actionString) const
       break;
     case COM_QI_OBJECT_UPDATE:
       actionString = COM_QI_OBJECT_UPDATE_LIT;
+      break;
+    case COM_QI_OBJECT_USAGE:
+      actionString = COM_QI_OBJECT_USAGE_LIT;
+      break;
+    case COM_QI_OBJECT_REFERENCES:
+      actionString = COM_QI_OBJECT_REFERENCES_LIT;
       break;
     case COM_QI_SCHEMA_SELECT:
       actionString = COM_QI_SCHEMA_SELECT_LIT;
@@ -265,6 +319,12 @@ void ComSecurityKey::print() const
       break;
     case COM_QI_OBJECT_UPDATE:
       typeString = "OBJECT_UPDATE";
+      break;
+    case COM_QI_OBJECT_USAGE:
+      typeString = "OBJECT_USAGE";
+      break;
+    case COM_QI_OBJECT_REFERENCES:
+      typeString = "OBJECT_REFERENCES";
       break;
     default:
       typeString = "INVALID_ACTIONTYPE";

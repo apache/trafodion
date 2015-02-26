@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -400,6 +400,7 @@ struct sequence_generator_desc_struct {
 };
 
 struct routine_desc_struct {
+  Int64 objectUID;
   char *routineName;
   char *externalName;
   char *librarySqlName;
@@ -423,6 +424,9 @@ struct routine_desc_struct {
 #ifdef NA_LITTLE_ENDIAN
   void encode() {}
 #endif
+  Int32 owner;
+  Int32 schemaOwner;
+
 };
 
 union body_struct {
