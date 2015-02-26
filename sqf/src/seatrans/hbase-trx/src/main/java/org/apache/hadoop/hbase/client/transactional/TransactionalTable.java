@@ -26,6 +26,8 @@ import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HConnectionManager;
+import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
@@ -89,6 +91,12 @@ public class TransactionalTable extends HTable {
      */
     public TransactionalTable(final Configuration conf, final byte[] tableName) throws IOException {
         super(conf, tableName);       
+    }
+
+    public void resetConnection() throws IOException {
+        if (LOG.isDebugEnabled()) LOG.debug("Resetting connection for " + this.getTableDescriptor().getTableName());
+        HConnection conn = this.getConnection();
+        conn = HConnectionManager.createConnection(this.getConfiguration());
     }
     
     private void addLocation(final TransactionState transactionState, HRegionLocation location) {
