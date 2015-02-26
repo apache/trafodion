@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ extern CReqQueue ReqQueue;
 extern char MyPath[MAX_PROCESS_PATH];
 extern int MyPNID;
 extern bool IsRealCluster;
+extern bool SpareNodeColdStandby;
 
 extern CConfigContainer *Config;
 extern CMonitor *Monitor;
@@ -1036,9 +1037,12 @@ void CNode::MoveLNodes( CNode *spareNode )
     spareNode->SetFirstProcess( GetFirstProcess() );
     spareNode->SetLastProcess( GetLastProcess() );
     spareNode->SetNumProcs( GetNumProcs() );
+    spareNode->ResetSpareNode();
+    // Reset the state of the down node, it is now a spare node
     SetFirstProcess( NULL );
     SetLastProcess( NULL );
     SetNumProcs( 0 );
+    SetSpareNode();
 
     // Move zone identifier
     spareNode->SetZone( GetZone() );
@@ -1677,9 +1681,16 @@ void CNodeContainer::AddToSpareNodesList( int pnid )
     if (trace_settings & TRACE_INIT)
         trace_printf("%s@%d - adding pnid=%d to spare node list\n", method_name, __LINE__, pnid);
 
-    if ( Node[pnid]->GetState() == State_Up && Node[pnid]->IsSpareNode() )
+    if ( SpareNodeColdStandby )
     {
         spareNodesList_.push_back( Node[pnid] );
+    }
+    else
+    {
+        if ( Node[pnid]->GetState() == State_Up && Node[pnid]->IsSpareNode() )
+        {
+            spareNodesList_.push_back( Node[pnid] );
+        }
     }
 
     if (trace_settings & TRACE_INIT)
@@ -1694,6 +1705,153 @@ void CNodeContainer::AddToSpareNodesList( int pnid )
     }
 
     TRACE_EXIT;
+}
+
+int CNodeContainer::PackSpareNodesList( intBuffPtr_t &buffer )
+{
+    const char method_name[] = "CNodeContainer::PackSpareNodesList";
+    TRACE_ENTRY;
+
+    NodesList::iterator itSn;
+    for ( itSn = spareNodesList_.begin(); itSn != spareNodesList_.end() ; itSn++ )
+    {
+        *buffer = (*itSn)->GetPNid();
+
+        if (trace_settings & TRACE_INIT)
+            trace_printf("%s@%d - packing spare node pnid=%d \n", method_name, __LINE__, *buffer);
+
+        ++buffer;
+    }
+
+    TRACE_EXIT;
+    return spareNodesList_.size();
+}
+
+void CNodeContainer::UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesCount )
+{
+    const char method_name[] = "CNodeContainer::UnpackSpareNodesList";
+    TRACE_ENTRY;
+
+    // make sure the list is empty.
+    assert(spareNodesList_.size() == 0);
+
+    // reset spareNode_ flag in all nodes.
+    for ( int pnid = 0; pnid < NumberPNodes; pnid++ )
+    {
+        Node[pnid]->ResetSpareNode();
+    }
+
+    for ( int i=0; i < spareNodesCount; i++ )
+    {
+        if (trace_settings & TRACE_INIT)
+            trace_printf("%s@%d - unpacking spare node pnid=%d \n", method_name, __LINE__, *buffer);
+
+        spareNodesList_.push_back( Node[*buffer] );
+        Node[*buffer]->SetSpareNode();
+        ++buffer;
+    }
+
+    TRACE_EXIT;
+    return;
+}
+
+int CNodeContainer::PackNodeMappings( intBuffPtr_t &buffer )
+{
+    const char method_name[] = "CNodeContainer::PackNodeMappings";
+    TRACE_ENTRY;
+
+    int pnid, pnidConfig;
+    CLNode *lnode = NULL;
+    CLNodeConfig *lnodeConfig = NULL;
+    int count = 0;
+
+    // go thru all configured physical nodes; and for their logical nodes,
+    // find the physical nodes on which they are running.
+    CPNodeConfig *pnodeConfig = clusterConfig_->GetFirstPNodeConfig();
+    for ( ; pnodeConfig; pnodeConfig = pnodeConfig->GetNext() )
+    {
+        pnidConfig = pnodeConfig->GetPNid();
+        lnodeConfig = pnodeConfig->GetFirstLNodeConfig();
+        if ( lnodeConfig )
+        {
+            lnode = Nodes->GetLNode( lnodeConfig->GetNid() );
+            pnid =  lnode->GetNode()->GetPNid();
+
+            *buffer++ = pnidConfig;
+            *buffer++ = pnid;
+
+            ++count;
+
+            if (trace_settings & ( TRACE_INIT || TRACE_RECOVERY || TRACE_REQUEST_DETAIL) )
+                trace_printf("%s@%d - Packing node mapping, pnidConfig=%d, pnid=%d \n",
+                            method_name, __LINE__, pnidConfig, pnid);
+        }
+    }
+
+    TRACE_EXIT;
+
+    return count;
+}
+
+void CNodeContainer::UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount )
+{
+    const char method_name[] = "CNodeContainer::UnpackNodeMappings";
+    TRACE_ENTRY;
+
+    int pnid, pnidConfig;
+
+    for (int count = 0; count < nodeMapCount; count++)
+    {
+        pnidConfig = *buffer++;
+        pnid = *buffer++;
+
+        Nodes->AddLNodes( Nodes->GetNode(pnid), Nodes->GetNode(pnidConfig) );
+
+        if (trace_settings & ( TRACE_INIT || TRACE_RECOVERY || TRACE_REQUEST_DETAIL) )
+            trace_printf("%s@%d - Unpacking node mapping, pnidConfig=%d, pnid=%d \n",
+                        method_name, __LINE__, pnidConfig, pnid);
+    }
+
+    TRACE_EXIT;
+    return;
+}
+
+void CNodeContainer::PackZids( intBuffPtr_t &buffer )
+{
+    const char method_name[] = "CNodeContainer::PackZids";
+    TRACE_ENTRY;
+
+    for ( int pnid = 0; pnid < NumberPNodes; pnid++ )
+    {
+        *buffer = Node[pnid]->GetZone();
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            trace_printf( "%s@%d - Packing zid=%d for pnid=%d\n"
+                         , method_name, __LINE__
+                         , Node[pnid]->GetZone(), pnid);
+        ++buffer;
+    }
+
+    TRACE_EXIT;
+    return;
+}
+
+void CNodeContainer::UnpackZids( intBuffPtr_t &buffer )
+{
+    const char method_name[] = "CNodeContainer::UnpackZids";
+    TRACE_ENTRY;
+
+    for ( int pnid = 0; pnid < NumberPNodes; pnid++ )
+    {
+        Node[pnid]->SetZone(*buffer);
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            trace_printf( "%s@%d - Unpacking zid=%d for pnid=%d\n"
+                         , method_name, __LINE__
+                         , Node[pnid]->GetZone(), pnid);
+        ++buffer;
+    }
+
+    TRACE_EXIT;
+    return;
 }
 
 CLNode *CNodeContainer::AssignLNode( CProcess *requester, PROCESSTYPE type, int nid, int not_nid)
@@ -2619,10 +2777,11 @@ void CNodeContainer::SetupCluster( CNode ***pnode_list, CLNode ***lnode_list )
     for ( int i = 0; i < GetNodesCount(); i++ )
     {
         if (trace_settings & TRACE_INIT)
-            trace_printf( "%s@%d - Node %s (pnid=%d, state=%s) is Spare=%d\n"
+            trace_printf( "%s@%d - Node %s (pnid=%d, zid=%d, state=%s) is Spare=%d\n"
                         , method_name, __LINE__
                         , Node[i]->GetName()
                         , Node[i]->GetPNid()
+                        , Node[i]->GetZone()
                         , StateString(Node[i]->GetState())
                         , Node[i]->IsSpareNode());
         if ( Node[i]->GetState() == State_Up && Node[i]->IsSpareNode() )
@@ -2850,143 +3009,3 @@ CLNode *CNodeContainer::NextPossibleLNode( CProcess *requester, ZoneType type, i
     TRACE_EXIT;
     return lnode;
 }
-
-int CNodeContainer::PackSpareNodesList( intBuffPtr_t &buffer )
-{ 
-    const char method_name[] = "CNodeContainer::PackSpareNodesList";
-    TRACE_ENTRY;
-
-    NodesList::iterator itSn;
-    for ( itSn = spareNodesList_.begin(); itSn != spareNodesList_.end() ; itSn++ ) 
-    {
-        *buffer = (*itSn)->GetPNid();
-
-        if (trace_settings & TRACE_INIT)
-            trace_printf("%s@%d - packing spare node pnid=%d \n", method_name, __LINE__, *buffer);
-
-        ++buffer; 
-    }
-
-    TRACE_EXIT;
-    return spareNodesList_.size();
-}
-
-void CNodeContainer::UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesCount )
-{
-    const char method_name[] = "CNodeContainer::UnpackSpareNodesList";
-    TRACE_ENTRY;
-
-    // make sure the list is empty. 
-    assert(spareNodesList_.size() == 0);
-
-    // reset spareNode_ flag in all nodes.
-    for ( int pnid = 0; pnid < NumberPNodes; pnid++ )
-    {
-        Node[pnid]->ResetSpareNode();
-    }
-
-    for ( int i=0; i < spareNodesCount; i++ ) 
-    {
-        if (trace_settings & TRACE_INIT)
-            trace_printf("%s@%d - unpacking spare node pnid=%d \n", method_name, __LINE__, *buffer);
-
-        spareNodesList_.push_back( Node[*buffer] ); 
-        Node[*buffer]->SetSpareNode();
-        ++buffer;
-    }
-
-    TRACE_EXIT;
-    return;
-}
-
-int CNodeContainer::PackNodeMappings( intBuffPtr_t &buffer )
-{
-    const char method_name[] = "CNodeContainer::PackNodeMappings";
-    TRACE_ENTRY;
-  
-    int pnid, pnidConfig;
-    CLNode *lnode = NULL;
-    CLNodeConfig *lnodeConfig = NULL;
-    int count = 0;
-    
-    // go thru all configured physical nodes; and for their logical nodes,
-    // find the physical nodes on which they are running.
-    CPNodeConfig *pnodeConfig = clusterConfig_->GetFirstPNodeConfig();
-    for ( ; pnodeConfig; pnodeConfig = pnodeConfig->GetNext() )
-    {
-        pnidConfig = pnodeConfig->GetPNid();
-        lnodeConfig = pnodeConfig->GetFirstLNodeConfig();
-        if ( lnodeConfig ) 
-        {
-            lnode = Nodes->GetLNode( lnodeConfig->GetNid() );
-            pnid =  lnode->GetNode()->GetPNid();
-
-            *buffer++ = pnidConfig;
-            *buffer++ = pnid;
-
-            ++count;
-
-            if (trace_settings & ( TRACE_INIT || TRACE_RECOVERY || TRACE_REQUEST_DETAIL) )
-                trace_printf("%s@%d - Packing node mapping, pnidConfig=%d, pnid=%d \n", 
-                            method_name, __LINE__, pnidConfig, pnid);
-        }
-    }
-
-    TRACE_EXIT;
-
-    return count;
-}
-
-void CNodeContainer::UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount )
-{
-    const char method_name[] = "CNodeContainer::UnpackNodeMappings";
-    TRACE_ENTRY;
-  
-    int pnid, pnidConfig;
-
-    for (int count = 0; count < nodeMapCount; count++)
-    {
-        pnidConfig = *buffer++;
-        pnid = *buffer++;
-
-        Nodes->AddLNodes( Nodes->GetNode(pnid), Nodes->GetNode(pnidConfig) );
-
-        if (trace_settings & ( TRACE_INIT || TRACE_RECOVERY || TRACE_REQUEST_DETAIL) )
-            trace_printf("%s@%d - Unpacking node mapping, pnidConfig=%d, pnid=%d \n", 
-                        method_name, __LINE__, pnidConfig, pnid);
-    }
-
-    TRACE_EXIT;
-    return;
-}
-
-void CNodeContainer::PackZids( intBuffPtr_t &buffer )
-{ 
-    const char method_name[] = "CNodeContainer::PackZids";
-    TRACE_ENTRY;
-
-    for ( int pnid = 0; pnid < NumberPNodes; pnid++ )
-    {
-        *buffer = Node[pnid]->GetZone();
-        ++buffer;
-    }
-
-    TRACE_EXIT;
-    return;
-}
-
-void CNodeContainer::UnpackZids( intBuffPtr_t &buffer )
-{ 
-    const char method_name[] = "CNodeContainer::UnpackZids";
-    TRACE_ENTRY;
-
-    for ( int pnid = 0; pnid < NumberPNodes; pnid++ )
-    {
-        Node[pnid]->SetZone(*buffer);
-        ++buffer;
-    }
-
-    TRACE_EXIT;
-    return;
-}
-

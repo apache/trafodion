@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -134,6 +134,8 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
     
             spareNode->SetPhase( Phase_Activating );
 
+            Nodes->AddToSpareNodesList( downNode->GetPNid() );
+
             if ( !IsIntegrating() )
             {
                 downNode->SetState( State_Down ); 
@@ -163,8 +165,6 @@ void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealt
             }
         }
         
-        spareNode->ResetSpareNode();
-    
         // Create Watchdog and PSD processes if this node is the activating spare
         if ( spareNode->GetPNid() == MyPNID )
         {
@@ -967,7 +967,7 @@ bool CCluster::CheckSpareSet( int pnid )
                 lnode = node->GetFirstLNode();
                 if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
                     trace_printf( "%s@%d - node nid=%d, pnid=%d(%s), state=%s\n"
-                                , method_name, __LINE__, lnode->GetNid()
+                                , method_name, __LINE__, lnode?lnode->GetNid():-1
                                 , node->GetPNid(), node->GetName()
                                 , StateString( node->GetState() ) );
                 if ( lnode && lnode->GetState() == State_Down )
@@ -2473,7 +2473,7 @@ void CCluster::InitializeConfigCluster( void )
             rankToPnid[i] = i;
 
             // Set bit indicating node is up
-            upNodes_.upNodes[i/64] |= (1ull << i);
+            upNodes_.upNodes[i/MAX_NODE_BITMASK] |= (1ull << (i%MAX_NODE_BITMASK));
         }
     }
     NumNodes = cfgPNodes_;
@@ -2633,7 +2633,7 @@ void CCluster::InitializeConfigCluster( void )
                 }
                 else
                 {   // Set bit indicating node is up
-                    upNodes_.upNodes[i/64] |= (1ull << i);
+                    upNodes_.upNodes[i/MAX_NODE_BITMASK] |= (1ull << (i%MAX_NODE_BITMASK));
                 }
             }
         }
@@ -2996,7 +2996,7 @@ void CCluster::ReIntegrateMPI( int initProblem )
     strcpy(myNodeInfo.nodeName, MyNode->GetName());
     strcpy(myNodeInfo.commPort, MyNode->GetCommPort());
     // Set bit indicating my node is up
-    upNodes_.upNodes[MyPNID/64] |= (1ull << MyPNID);
+    upNodes_.upNodes[MyPNID/MAX_NODE_BITMASK] |= (1ull << (MyPNID%MAX_NODE_BITMASK));
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
        trace_printf("%s@%d - Connect to creator monitor (port %s)\n",
@@ -3088,7 +3088,7 @@ void CCluster::ReIntegrateMPI( int initProblem )
             ++CurNodes;
 
             // Set bit indicating node is up
-            upNodes_.upNodes[i/64] |= (1ull << i);
+            upNodes_.upNodes[i/MAX_NODE_BITMASK] |= (1ull << (i%MAX_NODE_BITMASK));
 
             Node[i]->SetCommPort( IntegratingMonitorPort );
             Node[i]->SetState( State_Up );
@@ -3184,7 +3184,7 @@ void CCluster::ReIntegrateMPI( int initProblem )
             Node[i]->SetState( State_Up );
 
             // Set bit indicating node is up
-            upNodes_.upNodes[i/64] |= (1ull << i);
+            upNodes_.upNodes[i/MAX_NODE_BITMASK] |= (1ull << (i%MAX_NODE_BITMASK));
 
             mem_log_write(CMonLog::MON_REINTEGRATE_6, MyPNID, i);
         }
@@ -3242,7 +3242,7 @@ void CCluster::ReIntegrateSock( int initProblem )
     int existingSyncFd;
 
     // Set bit indicating my node is up
-    upNodes_.upNodes[MyPNID/64] |= (1ull << MyPNID);
+    upNodes_.upNodes[MyPNID/MAX_NODE_BITMASK] |= (1ull << (MyPNID%MAX_NODE_BITMASK));
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
        trace_printf("%s@%d - Connect to creator monitor (port %s)\n",
@@ -3407,7 +3407,7 @@ void CCluster::ReIntegrateSock( int initProblem )
             }
             socks_[i] = existingSyncFd;
             // Set bit indicating node is up
-            upNodes_.upNodes[i/64] |= (1ull << i);
+            upNodes_.upNodes[i/MAX_NODE_BITMASK] |= (1ull << (i%MAX_NODE_BITMASK));
 
             if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
             {
@@ -3518,7 +3518,7 @@ void CCluster::ReIntegrateSock( int initProblem )
             socks_[i] = existingSyncFd;
 
             // Set bit indicating node is up
-            upNodes_.upNodes[i/64] |= (1ull << i);
+            upNodes_.upNodes[i/MAX_NODE_BITMASK] |= (1ull << (i%MAX_NODE_BITMASK));
 
             if (trace_settings & (TRACE_RECOVERY | TRACE_INIT))
             {
@@ -3690,7 +3690,7 @@ void CCluster::setNewComm( int pnid )
             otherMonRank_[it->pnid] = it->otherRank;
             ++CurNodes;
             // Set bit indicating node is up
-            upNodes_.upNodes[it->pnid/64] |= (1ull << it->pnid);
+            upNodes_.upNodes[it->pnid/MAX_NODE_BITMASK] |= (1ull << (it->pnid%MAX_NODE_BITMASK));
 
             // Delete current list element and advance to next one
             it = newComms_.erase ( it );
@@ -3793,7 +3793,7 @@ void CCluster::setNewSock( int pnid )
             otherMonRank_[it->pnid] = it->otherRank;
             ++CurNodes;
             // Set bit indicating node is up
-            upNodes_.upNodes[it->pnid/64] |= (1ull << it->pnid);
+            upNodes_.upNodes[it->pnid/MAX_NODE_BITMASK] |= (1ull << (it->pnid%MAX_NODE_BITMASK));
 
             // Delete current list element and advance to next one
             it = newComms_.erase ( it );
@@ -4282,6 +4282,11 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
     exitedMons_t::iterator it;
     upNodes_t nodeMask;
 
+    for ( int i =0; i < MAX_NODE_MASKS ; i++ )
+    {
+        nodeMask.upNodes[i] = 0;
+    }
+
     for ( it = exitedMons_.begin(); it != exitedMons_.end(); )
     {
         if (trace_settings & (TRACE_SYNC | TRACE_RECOVERY | TRACE_INIT))
@@ -4304,17 +4309,30 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
             int concurringNodes = 0;
 
             // Check if all active nodes see the node as down.
-            nodeMask.upNodes[it->exitedPnid/64] = 1ull << it->exitedPnid;
+            nodeMask.upNodes[it->exitedPnid/MAX_NODE_BITMASK] = 1ull << (it->exitedPnid%MAX_NODE_BITMASK);
             string setSeesUp;
             string setSeesDown;
             char nodeX[10];
 
+            // Evaluate each active (up) node in the cluster
             for (int pnid = 0; pnid < cfgPNodes_; ++pnid)
             {
                 if ( nodestate[pnid].seq_num != 0 )
                 {  // There is valid nodestate info from node "pnid"
-                    if ((nodestate[pnid].nodeMask.upNodes[pnid/64] & 
-                         nodeMask.upNodes[pnid/64]) == 0)
+
+                    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                    {
+                        trace_printf( "%s@%d down pnid= %d: nodestate[%d].nodeMask.upNodes[%d]=%llx, downNodeMask.upNodes[%d]=%llx\n"
+                                    , method_name, __LINE__
+                                    , it->exitedPnid
+                                    , pnid, (it->exitedPnid/MAX_NODE_BITMASK)
+                                    , nodestate[pnid].nodeMask.upNodes[it->exitedPnid/MAX_NODE_BITMASK]
+                                    , (pnid/MAX_NODE_BITMASK)
+                                    , nodeMask.upNodes[it->exitedPnid/MAX_NODE_BITMASK] );
+                    }
+
+                    if ((nodestate[pnid].nodeMask.upNodes[it->exitedPnid/MAX_NODE_BITMASK] &
+                         nodeMask.upNodes[it->exitedPnid/MAX_NODE_BITMASK]) == 0)
                     {  // Node "pnid" sees the node as down
 
                         // temp trace
@@ -4472,16 +4490,16 @@ void CCluster::ValidateClusterState( cluster_state_def_t nodestate[],
             }
 
             // Check if all active nodes see the node as up.
-            nodeMask.upNodes[remotePNid/64] = 1ull << remotePNid;
+            nodeMask.upNodes[remotePNid/MAX_NODE_BITMASK] = 1ull << (remotePNid%MAX_NODE_BITMASK);
 
-            if ( upNodes_.upNodes[remotePNid/64] & nodeMask.upNodes[remotePNid/64] )
+            if ( upNodes_.upNodes[remotePNid/MAX_NODE_BITMASK] & nodeMask.upNodes[remotePNid/MAX_NODE_BITMASK] )
             {  // This remote node sees node pnid as up
                 for (int exitedPNid = 0; exitedPNid < cfgPNodes_; ++exitedPNid)
                 {
                     if ( (remotePNid != exitedPNid) &&
                          (nodestate[remotePNid].seq_num != 0) &&
-                         (nodestate[exitedPNid].nodeMask.upNodes[remotePNid/64] & 
-                          nodeMask.upNodes[remotePNid/64]) == 0 )
+                         (nodestate[exitedPNid].nodeMask.upNodes[remotePNid/MAX_NODE_BITMASK] &
+                          nodeMask.upNodes[remotePNid/MAX_NODE_BITMASK]) == 0 )
                     {  // Node remotePNid sees exitedPNid as down
 
                         if (trace_settings & (TRACE_SYNC | TRACE_RECOVERY | TRACE_INIT))
@@ -4860,7 +4878,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
             Node[pnid]->SetState( State_Down );
             --CurNodes;
             // Clear bit in set of "up nodes"
-            upNodes_.upNodes[pnid/64] &= ~(1ull << pnid);
+            upNodes_.upNodes[pnid/MAX_NODE_BITMASK] &= ~(1ull << (pnid%MAX_NODE_BITMASK));
         }
     }
 
@@ -4932,7 +4950,7 @@ void CCluster::UpdateClusterState( bool &doShutdown,
                 --CurNodes;
 
                 // Clear bit in set of "up nodes"
-                upNodes_.upNodes[pnid/64] &= ~(1ull << pnid);
+                upNodes_.upNodes[pnid/MAX_NODE_BITMASK] &= ~(1ull << (pnid%MAX_NODE_BITMASK));
 
                 // Pretend node is still up until down node processing
                 // completes.

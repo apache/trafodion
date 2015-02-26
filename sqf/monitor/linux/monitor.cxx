@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -102,6 +102,7 @@ CommType_t CommType = CommType_Undefined;
 bool SMSIntegrating = false;
 int  CreatorShellPid = -1;
 Verifier_t CreatorShellVerifier = -1;
+bool SpareNodeColdStandby = true;
 
 // Lock to manage memory modifications during fork/exec
 CLock MemModLock;
@@ -902,6 +903,16 @@ int main (int argc, char *argv[])
     {
         initSleepTime = atoi(env);
     }
+
+    env = getenv("SQ_COLD_STANDBY_SPARE");
+    if ( env && isdigit(*env) )
+    {
+        if ( strcmp(env,"0")==0 )
+        {
+            SpareNodeColdStandby = false;
+        }
+    }
+
     // We need to delay some to make sure all monitor processes have initialized before
     // any monitor tries to perform an Allgather operation.
     sleep( initSleepTime );

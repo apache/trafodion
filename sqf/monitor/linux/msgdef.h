@@ -63,8 +63,11 @@
                                // a large number may degrade performance
 #define MAX_NODES        256   // This can be higher when needed and will
                                // have performance implications
+                               // Increment by 64 to match node state bitmask
 #define MAX_LNODES       (MAX_NODES*4)  // The 4 is a per physical node limit
-#define MAX_NODE_MASKS   (MAX_NODES/64) // The 64 is a bit mask word boundary
+#define MAX_NODE_BITMASK  64   // A 64 bit mask, each bit represent pnid state
+                               // 0 = down, 1 = up
+#define MAX_NODE_MASKS   (MAX_NODES/MAX_NODE_BITMASK) // Node bit mask array size
 
 #define MAX_FAULT_ZONES  16 
 #define MAX_KEY_NAME     32
