@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../seabed/src/utilatomic.h"
+#include "seabed/atomic.h"
 
 #include "dtm/tmtransid.h"
 #include "xa.h"

@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -25,8 +25,9 @@
 #ifndef __SB_MSICCTR_H_
 #define __SB_MSICCTR_H_
 
+#include "seabed/atomic.h"
+
 #include "recvq.h"
-#include "utilatomic.h"
 
 extern SB_Recv_Queue gv_ms_lim_q;
 extern SB_Recv_Queue gv_ms_recv_q;

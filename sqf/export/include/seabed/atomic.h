@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@
 //
 // @@@ END COPYRIGHT @@@
 
-#ifndef __SB_UTILATOMIC_H_
-#define __SB_UTILATOMIC_H_
+#ifndef __SB_ATOMIC_H_
+#define __SB_ATOMIC_H_
 
 //
 // Atomic int
@@ -101,4 +101,4 @@ private:
     long long iv_val;
 };
 
-#endif // !__SB_UTILATOMIC_H_
+#endif // !__SB_ATOMIC_H_
