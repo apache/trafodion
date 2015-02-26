@@ -122,6 +122,11 @@ ExeCliInterface::ExeCliInterface(CollHeap * heap, Int32 isoMapping,
 {
 }
 
+ExeCliInterface::~ExeCliInterface()
+{
+   dealloc();
+}
+
 Lng32 ExeCliInterface::deallocStuff(SQLMODULE_ID * &module,
 				SQLSTMT_ID * &stmt,
 				SQLDESC_ID * &sql_src,

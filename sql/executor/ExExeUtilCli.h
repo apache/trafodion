@@ -51,6 +51,8 @@ private:
                   ContextCli * currContext = NULL,
                   char *parentQid = NULL);
 
+  virtual ~ExeCliInterface();
+
   Lng32 allocStuff(SQLMODULE_ID * &module,
                   SQLSTMT_ID * &stmt,
                   SQLDESC_ID * &sql_src,
