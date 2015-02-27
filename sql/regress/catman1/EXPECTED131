@@ -288,7 +288,145 @@ End of MXCI Session
 >>grant all on t131a to SQL_USER7;
 
 --- SQL operation complete.
->>log;
+>>
+>>sh sqlci -i"TEST131(priv_cancel)" -u"SQL_User7"  ;
+>>
+>>-- expect error 8029
+>>control query cancel qid
++>MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+*** ERROR[8029] Server declined cancel request. The user is not authorized to make this request.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>sh sqlci -i"TEST131(grant_cancel)";
+>>
+>>grant component privilege QUERY_CANCEL on sql_operations to SQL_USER7;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>
+>>-- expect error 8026 and no AQR warning
+>>control query cancel qid
++>MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+*** ERROR[8026] Server declined cancel request. The query ID  of the targeted query was not found.
+
+--- SQL operation failed with errors.
+>>
+>>prepare s1 from
++>control query cancel qid
++>MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+--- SQL command prepared.
+>>
+>>-- expect error 8026 and no AQR warning
+>>execute s1;
+
+*** ERROR[8026] Server declined cancel request. The query ID  of the targeted query was not found.
+
+--- SQL operation failed with errors.
+>>
+>>sh sleep 2;
+>>-- expect error 8026 and AQR warning
+>>execute s1;
+
+*** ERROR[8026] Server declined cancel request. The query ID  of the targeted query was not found.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
+--- SQL operation failed with errors.
+>>
+>>sh sqlci -i"TEST131(revoke_cancel)";
+>>
+>>revoke component privilege QUERY_CANCEL on sql_operations from SQL_USER7;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- expect error 8029
+>>control query cancel qid
++>MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+*** ERROR[8029] Server declined cancel request. The user is not authorized to make this request.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>sh sqlci -i"TEST131(grant_cancel_role)";
+>>create role role131;
+
+--- SQL operation complete.
+>>grant component privilege QUERY_CANCEL on SQL_OPERATIONS to role131;
+
+--- SQL operation complete.
+>>grant role role131 to sql_user7;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- expect error 8026
+>>control query cancel qid
++>MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+*** ERROR[8026] Server declined cancel request. The query ID  of the targeted query was not found.
+
+--- SQL operation failed with errors.
+>>
+>>sh sqlci -i"TEST131(revoke_cancel_role)";
+>>revoke role role131  from sql_user7;
+
+--- SQL operation complete.
+>>revoke component privilege QUERY_CANCEL on SQL_OPERATIONS from role131;
+
+--- SQL operation complete.
+>>drop role role131;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- expect error 8029
+>>control query cancel qid
++>MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+*** ERROR[8029] Server declined cancel request. The user is not authorized to make this request.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>exit;
+
+End of MXCI Session
+
 >>
 >>obey TEST131(clnup);
 >>
@@ -301,6 +439,27 @@ End of MXCI Session
 >>drop table T131a;
 
 --- SQL operation complete.
+>>revoke component privilege QUERY_CANCEL on sql_operations from SQL_USER7;
+
+*** ERROR[1018] Grant of role or privilege QUERY_CANCEL on component SQL_OPERATIONS from DB__ROOT to SQL_USER7 not found, revoke request ignored.
+
+--- SQL operation failed with errors.
+>>revoke role role131  from sql_user7;
+
+*** ERROR[1338] Role ROLE131 is not defined in the database.
+
+--- SQL operation failed with errors.
+>>revoke component privilege QUERY_CANCEL on SQL_OPERATIONS from role131;
+
+*** ERROR[1008] Authorization identifier ROLE131 does not exist.
+
+--- SQL operation failed with errors.
+>>drop role role131;
+
+*** ERROR[1338] Role ROLE131 is not defined in the database.
+
+--- SQL operation failed with errors.
+>>
 >>initialize authorization, drop;
 
 --- SQL operation complete.

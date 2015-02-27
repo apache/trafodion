@@ -59,13 +59,19 @@ sh sqlci -i"TEST131(update_where_current_of)" -u"SQL_User7"  ;
 
 log LOG131;
 grant all on t131a to SQL_USER7;
-log;
+
+sh sqlci -i"TEST131(priv_cancel)" -u"SQL_User7"  ;
 
 ?section clnup
 
 drop table T131c;
 drop table T131b;
 drop table T131a;
+revoke component privilege QUERY_CANCEL on sql_operations from SQL_USER7;
+revoke role role131  from sql_user7;
+revoke component privilege QUERY_CANCEL on SQL_OPERATIONS from role131;
+drop role role131;
+
 initialize authorization, drop;
 
 ?section setup
@@ -198,6 +204,51 @@ execute s4;
 commit;
 select * from t131a;
 
+?section priv_cancel
+log LOG131;
+
+-- expect error 8029
+control query cancel qid
+MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+sh sqlci -i"TEST131(grant_cancel)";
+
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+-- expect error 8026 and no AQR warning
+control query cancel qid
+MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+prepare s1 from
+control query cancel qid
+MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+-- expect error 8026 and no AQR warning
+execute s1;
+
+sh sleep 2;
+-- expect error 8026 and AQR warning
+execute s1;
+
+sh sqlci -i"TEST131(revoke_cancel)";
+
+-- expect error 8029
+control query cancel qid
+MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+sh sqlci -i"TEST131(grant_cancel_role)";
+
+-- expect error 8026
+control query cancel qid
+MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+sh sqlci -i"TEST131(revoke_cancel_role)";
+
+-- expect error 8029
+control query cancel qid
+MXID11000023943212197828612249700000000000206U6553500_20_S1;
+
+
 ?section revoke1
 
 log LOG131;
@@ -265,6 +316,31 @@ grant SELECT on t131a to SQL_USER7;
 log LOG131;
 
 revoke SELECT on t131a from SQL_USER7;
+
+?section grant_cancel
+
+log LOG131;
+
+grant component privilege QUERY_CANCEL on sql_operations to SQL_USER7;
+
+?section revoke_cancel
+
+log LOG131;
+
+revoke component privilege QUERY_CANCEL on sql_operations from SQL_USER7;
+
+?section grant_cancel_role
+
+log LOG131;
+create role role131;
+grant component privilege QUERY_CANCEL on SQL_OPERATIONS to role131;
+grant role role131 to sql_user7;
+
+?section revoke_cancel_role
+log LOG131;
+revoke role role131  from sql_user7;
+revoke component privilege QUERY_CANCEL on SQL_OPERATIONS from role131;
+drop role role131;
 
 ?section end_of_test
 -- end of test.

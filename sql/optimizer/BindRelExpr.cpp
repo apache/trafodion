@@ -16272,9 +16272,6 @@ RelExpr * ControlRunningQuery::bindNode(BindWA *bindWA)
 
 bool ControlRunningQuery::isUserAuthorized(BindWA *bindWA)
 {
-// For now allow all query control operations.
-  return true;
-
   bool userHasPriv = false;
   Int32 sessionID = ComUser::getSessionUser();
 
@@ -16340,16 +16337,17 @@ bool ControlRunningQuery::isUserAuthorized(BindWA *bindWA)
         break;
       default:
         operation = SQLOperation::UNKNOWN;
-    
-      NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
-      privMDLoc += ".\"";
-      privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-      privMDLoc += "\"";
-
-      PrivMgrComponentPrivileges componentPriv(privMDLoc.data(),CmpCommon::diags());
-
-      userHasPriv = componentPriv.hasSQLPriv(sessionID,operation,true);
     }
+    
+    NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
+    privMDLoc += ".\"";
+    privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+    privMDLoc += "\"";
+
+    PrivMgrComponentPrivileges componentPriv(
+      privMDLoc.data(),CmpCommon::diags());
+
+    userHasPriv = componentPriv.hasSQLPriv(sessionID,operation,true);
     
     if (!userHasPriv)
     {

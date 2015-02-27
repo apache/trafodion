@@ -56,13 +56,6 @@ select * from T106_interleaved_log
   order by ts;
 drop table T106_interleaved_log;
 
--- These should already be removed but just in case
-revoke role DB__USERADMIN from sql_user5;
-revoke component privilege QUERY_ACTIVATE on SQL_OPERATIONS from sql_user7;
-revoke role exetest106 from sql_user7;
-revoke component privilege QUERY_ACTIVATE on SQL_OPERATIONS from exetest106;
-drop role exetest106;
-
 ?section setup
 
 obey TEST106(clnup);
@@ -212,15 +205,19 @@ obey TEST106(qc1351);
 set envvar sqlci_cursor '1';
 
 declare c1 cursor for select * from t106a A, t106a B;
+values('FUNKY_OPT_UNIQUE', current_timestamp);
 
 open c1;
 close c1;
+values('FUNKY_OPT_UNIQUE', current_timestamp);
 
 open c1;
 close c1;
+values('FUNKY_OPT_UNIQUE', current_timestamp);
 
 open c1;
 close c1;
+values('FUNKY_OPT_UNIQUE', current_timestamp);
 
 ?section uniq_query_test
 -- By default, cannot cancel unique queries. And since we 
@@ -1183,26 +1180,32 @@ for read uncommitted access;
 control query shape cut;
 
 control query default COMP_INT_39 'reset';
+values('FUNKY_OPT_UNIQUE', current_timestamp);
 
 open c1;
 
 close c1;
+values('FUNKY_OPT_UNIQUE', current_timestamp);
 
 open c1;
 
 close c1;
+values('FUNKY_OPT_UNIQUE', current_timestamp);
 
 open c1;
 
 close c1;
+values('FUNKY_OPT_UNIQUE', current_timestamp);
 
 open c1;
 
 close c1;
+values('FUNKY_OPT_UNIQUE', current_timestamp);
 
 open c1;
 
 close c1;
+values('FUNKY_OPT_UNIQUE', current_timestamp);
 
 ?section qc1351
 log LOG106;
@@ -1442,76 +1445,3 @@ log;
 sh sleep 2;
 sh cat LOCK_LOG106 >> LOG106;
 log LOG106;
-
-?section privs
--- This section makes sure that the current user has privileges required
--- to perform the request. By default, a user belonging to roles DB__ADMIN
--- and DB__USERADMIN, and users DB__ROOT and DB__USERADMINUSER have privileges.
---
--- If the user does not have the privilege then error 1017 is returned.
--- If the user has the privilege then error 8026 is returned.
--- up until now, all the tests have been run by DB__ROOT.
-
--- Have DB__USERADMINUSER try to cancel a query (expect error 8026)
-sh `which sqlci` -i "TEST106(privs_cancel_rqst)" -u DB__USERADMINUSER;
-
--- Test that sql_user5 who does not have the privilege fails, expect error 1017
-sh `which sqlci` -i "TEST106(privs_suspend_rqst)" -u SQL_USER5;
-
--- grant the role DB__USERADMIN to sql_user5 and retry, 
--- this time error 8923 is returned
-grant role DB__USERADMIN to sql_user5;
-sh `which sqlci` -i "TEST106(privs_suspend_rqst)" -u SQL_USER5;
-revoke role DB__USERADMIN from sql_user5;
-
--- this time sql_user7 does not have the privilege, expect error 1017
-sh `which sqlci` -i "TEST106(privs_activate_rqst)" -u sql_user7;
-
--- Now grant the privilege to sql_user7, expect error 8923
-grant component privilege QUERY_ACTIVATE on SQL_OPERATIONS to sql_user7;
-sh `which sqlci` -i "TEST106(privs_activate_rqst)" -u sql_user7;
-revoke component privilege QUERY_ACTIVATE on SQL_OPERATIONS from sql_user7;
-
--- Privilege has been revoked to sql_user7 no long has privilege, error 1017
-sh `which sqlci` -i "TEST106(privs_activate_rqst)" -u sql_user7;
-
--- Grant a role the activate privilege, sql_user7 still fails, error 1017
-create role exetest106;
-grant component privilege QUERY_ACTIVATE on SQL_OPERATIONS to exetest106;
-sh `which sqlci` -i "TEST106(privs_activate_rqst)" -u sql_user7;
-
--- Now grant the role to sql_user7, should work (error 8923)
-grant role exetest106 to sql_user7;
-sh `which sqlci` -i "TEST106(privs_activate_rqst)" -u sql_user7;
-revoke role exetest106 from sql_user7;
-revoke component privilege QUERY_ACTIVATE on SQL_OPERATIONS from exetest106;
-drop role exetest106;
-
--- Test logic that re-compiles a stale cancel/suspend/activate.
-cqd auto_query_retry_warnings 'on';
-prepare s2 from control query suspend qid
-MXID11000023943212197828612249700000000000206U6553500_20_S1;
-sh sleep 2;
-execute s2;
-prepare s3 from control query suspend qid
-MXID11000023943212197828612249700000000000206U6553500_20_S1;
-execute s3;
-cqd auto_query_retry_warnings 'reset';
-
-?section privs_cancel_rqst
-log LOG106;
-control query cancel qid
-MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
-log;
-
-?section privs_suspend_rqst
-log LOG106;
-control query suspend qid
-MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
-log;
-
-?section privs_activate_rqst
-log LOG106;
-control query activate qid
-MXID11000026954212168745269419968000000000217DEFAULT_MXCI_USER00_22_S1;
-log;
