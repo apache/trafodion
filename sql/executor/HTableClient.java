@@ -32,6 +32,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.nio.ByteOrder;
@@ -965,10 +967,21 @@ public class HTableClient {
 	}
 
 	public boolean release(boolean cleanJniObject) throws IOException {
+
+           boolean retcode = false;
           // Complete the pending IO
-          if (future != null)
-             future.cancel(true); // Interrupt the thread
-	  future = null;
+           if (future != null) {
+              try {
+                 future.get(30, TimeUnit.SECONDS);
+              } catch(TimeoutException | InterruptedException e) {
+		  logger.error("Pre-fetch Thread is Cancelled, " + e);
+                  retcode = true;
+                  future.cancel(true); // Interrupt the thread
+              } catch (ExecutionException ee)
+              {
+              }
+              future = null;
+          }
 	  if (executorService != null) {
 	    executorService.shutdown();
 	    executorService = null;
@@ -989,10 +1002,10 @@ public class HTableClient {
 	  if (cleanJniObject) {
 	    if (jniObject != 0)
 	      cleanup(jniObject);
-	    tableName = null;
+            tableName = null;
 	  }
 	  jniObject = 0;
-	  return true;
+	  return retcode;
 	}
 
 	public boolean close(boolean clearRegionCache, boolean cleanJniObject) throws IOException {

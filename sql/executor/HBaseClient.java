@@ -524,11 +524,19 @@ public class HBaseClient {
 	                
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.releaseHTableClient(" + htable.getTableName() + ").");
         boolean cleanJniObject = false;
-        htable.release(cleanJniObject);
-        if (hTableClientsInUse.remove(htable.getTableName(), htable))
-            hTableClientsFree.put(htable.getTableName(), htable);
+        if (htable.release(cleanJniObject))
+        // If the thread is interrupted, then remove the table from cache
+        // because the table connection is retried when the table is used
+        // next time
+
+           cleanupCache(htable.getTableName());
         else
-            if (logger.isDebugEnabled()) logger.debug("Table not found in inUse Pool");
+        {
+           if (hTableClientsInUse.remove(htable.getTableName(), htable))
+              hTableClientsFree.put(htable.getTableName(), htable);
+           else
+              if (logger.isDebugEnabled()) logger.debug("Table not found in inUse Pool");
+        }
     }
 
     public boolean flushAllTables() throws IOException {
