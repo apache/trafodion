@@ -94,6 +94,7 @@ public class HTableClient {
 	private String tableName;
 
 	private ResultScanner scanner = null;
+        private ScanHelper scanHelper = null;
 	Result[] getResultSet = null;
 	String lastError;
         RMInterface table = null;
@@ -111,7 +112,7 @@ public class HTableClient {
 	byte[][] kvBuffer = null;
 	byte[][] rowIDs = null;
 	int[] kvsPerRow = null;
-        ExecutorService executorService = null;
+        static ExecutorService executorService = null;
         Future future = null;
 	boolean preFetch = false;
 
@@ -237,35 +238,38 @@ public class HTableClient {
 	   }
 	 }
 
-	 
-	 
+	class ScanHelper implements Callable {
+            public Result[] call() throws Exception {
+                return scanner.next(numRowsCached);
+            }
+        }
 	 
 	static Logger logger = Logger.getLogger(HTableClient.class.getName());;
 
-	public class QualifiedColumn {
-		byte[] family = null;
-		byte[] name = null;
+        static public  byte[] getFamily(byte[] qc) {
+	   byte[] family = null;
 
-		public QualifiedColumn(byte[] qc) {
-			if (qc != null && qc.length > 0) {
-				int pos = Bytes.indexOf(qc, (byte) ':');
-				if (pos == -1) {
-					family = Bytes.toBytes("cf1");
-					name = qc;
-				} else {
-					family = Arrays.copyOfRange(qc, 0, pos);
-					name = Arrays.copyOfRange(qc, pos + 1, qc.length);
-				}
-			}
-		}
+	   if (qc != null && qc.length > 0) {
+	       int pos = Bytes.indexOf(qc, (byte) ':');
+	       if (pos == -1) 
+	          family = Bytes.toBytes("cf1");
+	       else
+	          family = Arrays.copyOfRange(qc, 0, pos);
+           }	
+	   return family;
+	}
 
-		byte[] getFamily() {
-			return family;
-		}
+        static public byte[] getName(byte[] qc) {
+	   byte[] name = null;
 
-		byte[] getName() {
-			return name;
-		}
+	   if (qc != null && qc.length > 0) {
+	      int pos = Bytes.indexOf(qc, (byte) ':');
+	      if (pos == -1) 
+	         name = qc;
+	      else
+	         name = Arrays.copyOfRange(qc, pos + 1, qc.length);
+	   }	
+	   return name;
 	}
 
 	public boolean setWriteBufferSize(long writeBufferSize) throws IOException {
@@ -390,8 +394,7 @@ public class HTableClient {
 	    numColsInScan = columns.length;
 	    for (int i = 0; i < columns.length ; i++) {
 	      byte[] col = (byte[])columns[i];
-	      QualifiedColumn qc = new QualifiedColumn(col);
-	      scan.addColumn(qc.getFamily(), qc.getName());
+	      scan.addColumn(getFamily(col), getName(col));
 	    }
 	  }
 	  else
@@ -401,8 +404,6 @@ public class HTableClient {
 
 	    for (int i = 0; i < colNamesToFilter.length; i++) {
 	      byte[] colName = (byte[])colNamesToFilter[i];
-	      QualifiedColumn qc = new QualifiedColumn(colName);
-
 	      byte[] coByte = (byte[])compareOpList[i];
 	      byte[] colVal = (byte[])colValuesToCompare[i];
 
@@ -414,7 +415,7 @@ public class HTableClient {
 	      CompareOp co = CompareOp.valueOf(coStr);
 
 	      SingleColumnValueFilter filter1 = 
-	          new SingleColumnValueFilter(qc.getFamily(), qc.getName(), 
+	          new SingleColumnValueFilter(getFamily(colName), getName(colName), 
 	              co, colVal);
 	      list.addFilter(filter1);
 	    }
@@ -456,12 +457,8 @@ public class HTableClient {
 	  preFetch = inPreFetch;
 	  if (preFetch)
 	  {
-	    executorService = Executors.newFixedThreadPool(1);
-	    future = executorService.submit(new Callable<Result[]>() {
-	      public Result[] call() throws Exception {
-	        return scanner.next(numRowsCached);
-	      }
-	    });
+	    scanHelper = new ScanHelper(); 
+            future = executorService.submit(scanHelper);
 	  }
 
 	  if (logger.isTraceEnabled()) logger.trace("Exit startScan().");
@@ -481,8 +478,7 @@ public class HTableClient {
 		{
 			for (int i = 0; i < columns.length; i++) {
 				byte[] col = (byte[]) columns[i];
-				QualifiedColumn qc = new QualifiedColumn(col);
-				get.addColumn(qc.getFamily(), qc.getName());
+				get.addColumn(getFamily(col), getName(col));
 			}
 			numColsInScan = columns.length;
 		}
@@ -539,9 +535,8 @@ public class HTableClient {
 		{
 			for (int j = 0; j < columns.length; j++ ) {
 				byte[] col = (byte[])columns[j];
-				QualifiedColumn qc = new QualifiedColumn(col);
 				for (Get get : listOfGets)
-					get.addColumn(qc.getFamily(), qc.getName());
+					get.addColumn(getFamily(col), getName(col));
 			}
 			numColsInScan = columns.length;
 		}
@@ -582,11 +577,7 @@ public class HTableClient {
 				future = null;
 				if ((rowsReturned <= 0 || rowsReturned < numRowsCached))
 					return rowsReturned;
-				future = executorService.submit(new Callable<Result[]>() {
-					public Result[] call() throws Exception {					
-						return scanner.next(numRowsCached);
-					}
-				});
+                                future = executorService.submit(scanHelper);
 			}
 			else
 			{
@@ -692,8 +683,7 @@ public class HTableClient {
 			if (columns != null) {
 				for (int i = 0; i < columns.length ; i++) {
 					byte[] col = (byte[]) columns[i];
-					QualifiedColumn qc = new QualifiedColumn(col);
-					del.deleteColumns(qc.getFamily(), qc.getName());
+					del.deleteColumns(getFamily(col), getName(col));
 				}
 			}
 
@@ -763,11 +753,8 @@ public class HTableClient {
 			byte[] qualifier = null;
 
 			if (columnToCheck.length > 0) {
-				QualifiedColumn qc = new QualifiedColumn(columnToCheck);
-				//del.deleteColumns(qc.getFamily(), qc.getName());
-
-				family = qc.getFamily();
-				qualifier = qc.getName();
+				family = getFamily(columnToCheck);
+				qualifier = getName(columnToCheck);
 			}
 			
 			boolean res;
@@ -793,7 +780,6 @@ public class HTableClient {
 		short numCols;
 		short colNameLen;
                 int colValueLen;
-		QualifiedColumn qc = null;
 		byte[] family = null;
 		byte[] qualifier = null;
 		byte[] colName, colValue;
@@ -809,17 +795,15 @@ public class HTableClient {
 			colValueLen = bb.getInt();	
 			colValue = new byte[colValueLen];
 			bb.get(colValue, 0, colValueLen);
-			qc = new QualifiedColumn(colName);
-			put.add(qc.getFamily(), qc.getName(), colValue); 
+			put.add(getFamily(colName), getName(colName), colValue); 
 			if (checkAndPut && colIndex == 0) {
-				family = qc.getFamily();
-				qualifier = qc.getName();
+				family = getFamily(colName);
+				qualifier = getName(colName);
 			} 
 		}
 		if (columnToCheck != null && columnToCheck.length > 0) {
-			qc = new QualifiedColumn(columnToCheck);
-			family = qc.getFamily();
-			qualifier = qc.getName();
+			family = getFamily(columnToCheck);
+			qualifier = getName(columnToCheck);
 		}
 		boolean res = true;
 		if (checkAndPut)
@@ -860,7 +844,6 @@ public class HTableClient {
 		short numCols, numRows;
 		short colNameLen;
                 int colValueLen;
-		QualifiedColumn qc = null;
 		byte[] colName, colValue, rowID;
 
 		bbRowIDs = (ByteBuffer)rowIDs;
@@ -882,8 +865,7 @@ public class HTableClient {
 				colValueLen = bbRows.getInt();	
 				colValue = new byte[colValueLen];
 				bbRows.get(colValue, 0, colValueLen);
-				qc = new QualifiedColumn(colName);
-				put.add(qc.getFamily(), qc.getName(), colValue); 
+				put.add(getFamily(colName), getName(colName), colValue); 
 			}
 			if (writeToWAL)  
 				put.setWriteToWAL(writeToWAL);
@@ -982,10 +964,6 @@ public class HTableClient {
               }
               future = null;
           }
-	  if (executorService != null) {
-	    executorService.shutdown();
-	    executorService = null;
-          }
 	  if (table != null)
 	    table.flushCommits();
 	  if (scanner != null) {
@@ -1004,6 +982,7 @@ public class HTableClient {
 	      cleanup(jniObject);
             tableName = null;
 	  }
+          scanHelper = null;
 	  jniObject = 0;
 	  return retcode;
 	}
@@ -1096,6 +1075,7 @@ public class HTableClient {
    private native void cleanup(long jniObject);
  
    static {
+     executorService = Executors.newCachedThreadPool();
      System.loadLibrary("executor");
    }
 }
