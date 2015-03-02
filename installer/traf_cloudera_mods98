@@ -228,7 +228,7 @@ rm $LOCAL_WORKDIR/traf_hbase_config_temp 2> /dev/null
 #=====================================
 # restart Cloudera to pick up all the changes just made
 poll_time=30
-echo "***INFO: restarting hbase to pickup Trafodion transaction jar"
+echo "***INFO: restarting Hadoop to pickup Trafodion transaction jar"
 echo "***INFO: ...polling every $poll_time seconds until restart is completed."
 restart_info=$(curl -X POST -u $ADMIN:$PASSWORD \
     http://$URL/api/v1/clusters/$CLUSTER_NAME/commands/restart)
@@ -252,18 +252,30 @@ done
 # make sure restart completed successfully
 failures=$(cat $LOCAL_WORKDIR/hbase_restart_status_temp | grep '"success" : false' | wc -l)
 if [ $failures -ne 0 ]; then
-    echo "***ERROR: Unable to restart HBase."
+    echo "***ERROR: Unable to restart Hadoop."
     exit -1
 fi
 
-echo "***INFO: HBase restart completed successfully"
+echo "***INFO: Hadoop restart completed successfully"
+
+# wait to make sure HDFS is fully restarted and out of safemode
+echo "***INFO: waiting for HDFS to exit safemode"
+sudo su hdfs --command "hdfs dfsadmin -safemode wait"
 
 #====================================================
 # NOTE: These command must be done AFTER acls are 
 #       enabled and HDFS has been restarted
 echo "***INFO: Setting HDFS ACLs for snapshot scan support"
 sudo su hdfs --command "hdfs dfs -mkdir -p /hbase/archive"
+if [ $? != 0 ]; then
+   echo "***ERROR: (hdfs dfs -mkdir -p /hbase/archive) command failed"
+   exit -1
+fi
 sudo su hdfs --command "hdfs dfs -chown hbase:hbase /hbase/archive"
+if [ $? != 0 ]; then
+   echo "***ERROR: (hdfs dfs -chown hbase:hbase /hbase/archive) command failed"
+   exit -1
+fi
 sudo su hdfs --command "hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive"
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /hbase/archive) command failed"
