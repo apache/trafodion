@@ -260,9 +260,21 @@ void SRVR::addSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
 	SRVRTRACE_ENTER(FILE_COMMON+4);
 
 	SRVR_STMT_HDL_LIST *pSrvrStmtList;
+	char tmpString[128];
 
 	int rc = pthread_mutex_lock(&pSrvrSession_mutex);
-	if (rc != 0) abort;
+	if (rc != 0)
+	{
+		sprintf(tmpString, "Failed to acquire mutex lock in addSrvrStmt: error code %d", rc);
+		SendEventMsg(MSG_ODBC_NSK_ERROR,
+		             EVENTLOG_ERROR_TYPE,
+		             0,
+		             ODBCMX_SERVER,
+		             srvrGlobal->srvrObjRef,
+		             1,
+		             tmpString);
+		abort();
+	}
 
 	pSrvrStmtList = allocSrvrStmtHdlList();
 	pSrvrStmtList->pSrvrStmt = pSrvrStmt;
@@ -292,9 +304,21 @@ void SRVR::removeSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
 
 	SRVR_STMT_HDL_LIST *pSrvrStmtList;
 	SRVR_STMT_HDL *lpSrvrStmt;
+	char tmpString[128];
 
 	int rc = pthread_mutex_lock(&pSrvrSession_mutex);
-	if (rc != 0) abort;
+	if (rc != 0)
+	{
+		sprintf(tmpString, "Failed to acquire mutex lock in removeSrvrStmt: error code %d", rc);
+		SendEventMsg(MSG_ODBC_NSK_ERROR,
+		             EVENTLOG_ERROR_TYPE,
+		             0,
+		             ODBCMX_SERVER,
+		             srvrGlobal->srvrObjRef,
+		             1,
+		             tmpString);
+		abort();
+	}
 
 	if (pSrvrSession->pSrvrStmtListHead != NULL)
 	{
@@ -425,9 +449,21 @@ SRVR_STMT_HDL *SRVR::getSrvrStmt( const IDL_char *stmtLabel
 
 	SRVR_STMT_HDL *pSrvrStmt;
 	SRVR_STMT_HDL_LIST *pSrvrStmtList;
+	char tmpString[128];
 
 	int rc = pthread_mutex_lock(&pSrvrSession_mutex);
-	if (rc != 0) abort;
+	if (rc != 0)
+	{
+		sprintf(tmpString, "Failed to acquire mutex lock in getSrvrStmt: error code %d", rc);
+		SendEventMsg(MSG_ODBC_NSK_ERROR,
+		             EVENTLOG_ERROR_TYPE,
+		             0,
+		             ODBCMX_SERVER,
+		             srvrGlobal->srvrObjRef,
+		             1,
+		             tmpString);
+		return NULL;
+	}
 
 	// Check in the currentSrvrStmt
 	if (pSrvrSession->pSrvrStmtListHead != NULL)
@@ -528,9 +564,21 @@ SRVR_STMT_HDL *SRVR::getSrvrStmtByCursorName(const IDL_char	*stmtLabel,
 
 	SRVR_STMT_HDL *pSrvrStmt;
 	SRVR_STMT_HDL_LIST *pSrvrStmtList;
+	char tmpString[128];
 
 	int rc = pthread_mutex_lock(&pSrvrSession_mutex);
-	if (rc != 0) abort;
+	if (rc != 0)
+	{
+		sprintf(tmpString, "Failed to acquire mutex lock in getSrvrStmtByCursorName: error code %d", rc);
+		SendEventMsg(MSG_ODBC_NSK_ERROR,
+		             EVENTLOG_ERROR_TYPE,
+		             0,
+		             ODBCMX_SERVER,
+		             srvrGlobal->srvrObjRef,
+		             1,
+		             tmpString);
+		return NULL;
+	}
 
 	// Check in the currentSrvrStmt
 	if (pSrvrSession->pSrvrStmtListHead != NULL)

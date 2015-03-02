@@ -357,13 +357,27 @@ static bool record_session_done = true;
 
 static void* SessionWatchDog(void* arg)
 {
-	int rc = pthread_mutex_lock(&Thread_mutex);
-	if (rc != 0) abort;
-
 	record_session_done = false;
 
 	SRVR_STMT_HDL *pSrvrStmt = NULL;
 	SQLCTX_HANDLE thread_context_handle = 0;
+	char tmpString[128];
+
+	int rc = pthread_mutex_lock(&Thread_mutex);
+	if (rc != 0)
+	{
+		sprintf(tmpString, "Failed to acquire mutex lock for repository session: error code %d", rc);
+		SendEventMsg(MSG_ODBC_NSK_ERROR,
+		             EVENTLOG_ERROR_TYPE,
+		             0,
+		             ODBCMX_SERVER,
+		             srvrGlobal->srvrObjRef,
+		             1,
+		             tmpString);
+		record_session_done = true;
+		return 0;
+	}
+
 
 	try
 	{
@@ -453,7 +467,6 @@ static void* SessionWatchDog(void* arg)
 
 		if (okToGo)
 		{
-			pSrvrStmt->cleanupAll();
 			retcode = pSrvrStmt->ExecDirect(NULL, "CONTROL QUERY DEFAULT attempt_esp_parallelism 'OFF'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
 			if (retcode < 0)
 			{
@@ -483,8 +496,6 @@ static void* SessionWatchDog(void* arg)
 
 		while(!record_session_done && okToGo)
 		{
-			pSrvrStmt->cleanupAll();
-
 			REPOS_STATS repos_stats = repos_queue.get_task();
 
 			ss.str("");
@@ -903,7 +914,18 @@ static void* SessionWatchDog(void* arg)
 					  "0");
 
 	record_session_done = true;
-	pthread_mutex_unlock(&Thread_mutex);
+	rc = pthread_mutex_unlock(&Thread_mutex);
+	if (rc != 0)
+	{
+		sprintf(tmpString, "Failed to release mutex lock for repository session: error code %d", rc);
+		SendEventMsg(MSG_ODBC_NSK_ERROR,
+		             EVENTLOG_ERROR_TYPE,
+		             0,
+		             ODBCMX_SERVER,
+		             srvrGlobal->srvrObjRef,
+		             1,
+		             tmpString);
+	}
 }
 
 
