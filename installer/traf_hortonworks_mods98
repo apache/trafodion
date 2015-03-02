@@ -357,7 +357,7 @@ done
 #       enabled and HDFS has been restarted
 echo "***INFO: Setting HDFS ACLs for snapshot scan support"
 sudo su hdfs --command "hdfs dfs -mkdir -p /apps/hbase/data/archive"
-sudo su hdfs --command "hdfs dfs chown hbase:hdfs apps/hbase/data/archive"
+sudo su hdfs --command "hdfs dfs -chown hbase:hdfs apps/hbase/data/archive"
 sudo su hdfs --command "hdfs dfs -setfacl -R -m user:$TRAF_USER:rwx /apps/hbase/data/archive"
 if [ $? != 0 ]; then
    echo "***ERROR: (hdfs dfs -setfacl -R -m mask::rwx /apps/hbase/data/archive) command failed"
