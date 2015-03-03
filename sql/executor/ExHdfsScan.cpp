@@ -339,7 +339,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
   char *errorDesc = NULL;
   char cursorId[8];
   HdfsFileInfo *hdfo = NULL;
-  Int64 preOpen = 0;
+  Lng32 openType = 0;
   
   while (!qparent_.down->isEmpty())
     {
@@ -393,42 +393,26 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	case INIT_HDFS_CURSOR:
 	  {
-	    if (NOT hdfsScanTdb().useCursorMulti())
-	      {
-		 hdfo_ = (HdfsFileInfo*)
-		  hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_);
 
-		hdfsOffset_ = hdfo_->getStartOffset();
-		bytesLeft_ = hdfo_->getBytesToRead();
-
-		hdfsFileName_ = hdfo_->fileName();
-                sprintf(cursorId_, "%d", currRangeNum_);
-	      }
-	    else
-	      {
-                // tbd - Ask Viral about cursorMulti status. I cannot see
-                // how it can be correct for cursorMulti to cycle back
-                // to INIT_HDFS_CURSOR, since that results in resetting
-                // bytesLeft_ to the original value. If this problem gets
-                // fixed, make sure we still refresh hdfo_ for new range.
-		hdfo_ = (HdfsFileInfo*)
-		  hdfsScanTdb().getHdfsFileInfoList()->get(beginRangeNum_);
-		bytesLeft_ = 0;
-		for (Lng32 i = beginRangeNum_; i < (beginRangeNum_ + numRanges_); i++)
-		  {
-		    bytesLeft_ += hdfo_->getBytesToRead();
-		    hdfsScanTdb().getHdfsFileInfoList()->advance();
-		    hdfo_ = (HdfsFileInfo*)
-		      hdfsScanTdb().getHdfsFileInfoList()->getCurr();
-		  }
-                // tbd - does CursorMulti update currRangeNum_ 
-                // correctly for this usage? (Note that it is true that
-                // ExpLOBInterfaceSelectCursorMulti does side-effect
-                // currRangeNum_.
-                hdfo_ = (HdfsFileInfo*) 
+            hdfo_ = (HdfsFileInfo*)
+              hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_);
+            if ((hdfo_->getBytesToRead() == 0) && 
+                (beginRangeNum_ == currRangeNum_) && (numRanges_ > 1))
+              {
+                // skip the first range if it has 0 bytes to read
+                // doing this for subsequent ranges is more complex
+                // since the file may neeed to be closed. The first 
+                // range being 0 is common with sqoop generated files
+                currRangeNum_++;
+                hdfo_ = (HdfsFileInfo*)
                   hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_);
-                hdfsOffset_ = hdfo_->getStartOffset();
-	      }
+              }
+               
+            hdfsOffset_ = hdfo_->getStartOffset();
+            bytesLeft_ = hdfo_->getBytesToRead();
+
+            hdfsFileName_ = hdfo_->fileName();
+            sprintf(cursorId_, "%d", currRangeNum_);
             stopOffset_ = hdfsOffset_ + hdfo_->getBytesToRead();
 
 	    step_ = OPEN_HDFS_CURSOR;
@@ -477,114 +461,91 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      }
 	    else
 	      {
-	        if (NOT hdfsScanTdb().useCursorMulti())
-	          {
-                    preOpen = 0;
-		    retcode = ExpLOBInterfaceSelectCursor
-		      (lobGlob_,
-		       hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
-		       NULL, //(char*)"",
-		       (Lng32)Lob_External_HDFS_File,
-		       hdfsScanTdb().hostName_,
-		       hdfsScanTdb().port_,
-		       0, NULL, // handle not valid for non lob access
-		       bytesLeft_, // max bytes
-		       cursorId_, 
+                openType = 2; // must open
+                retcode = ExpLOBInterfaceSelectCursor
+                  (lobGlob_,
+                   hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
+                   NULL, //(char*)"",
+                   (Lng32)Lob_External_HDFS_File,
+                   hdfsScanTdb().hostName_,
+                   hdfsScanTdb().port_,
+                   0, NULL, // handle not valid for non lob access
+                   bytesLeft_, // max bytes
+                   cursorId_, 
 		       
-		       requestTag_, 
-		       0, // not check status
-		       (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
+                   requestTag_, 
+                   0, // not check status
+                   (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
 		       
-		       hdfsOffset_, 
-		       hdfsScanBufMaxSize_,
-		       preOpen,
-		       NULL,
-		       1 // open
-		       );
+                   hdfsOffset_, 
+                   hdfsScanBufMaxSize_,
+                   bytesRead_,
+                   NULL,
+                   1, // open
+                   openType //
+                   );
                 
-                    // preopen next range. 
-                    if ( (currRangeNum_ + 1) < (beginRangeNum_ + numRanges_) ) 
-                    {
-                        hdfo = (HdfsFileInfo*)
-		                hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_ + 1);
+                // preopen next range. 
+                if ( (currRangeNum_ + 1) < (beginRangeNum_ + numRanges_) ) 
+                  {
+                    hdfo = (HdfsFileInfo*)
+                      hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_ + 1);
                 
-		        hdfsFileName_ = hdfo->fileName();
-                        sprintf(cursorId, "%d", currRangeNum_ + 1);
-                        preOpen = 1;
+                    hdfsFileName_ = hdfo->fileName();
+                    sprintf(cursorId, "%d", currRangeNum_ + 1);
+                    openType = 1; // preOpen
                 
-                        retcode = ExpLOBInterfaceSelectCursor
-                          (lobGlob_,
-                           hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
-                           NULL, //(char*)"",
-                           (Lng32)Lob_External_HDFS_File,
-                           hdfsScanTdb().hostName_,
-                           hdfsScanTdb().port_,
-                           0, NULL,//handle not relevant for non lob access
-                           hdfo->getBytesToRead(), // max bytes
-                           cursorId, 
+                    retcode = ExpLOBInterfaceSelectCursor
+                      (lobGlob_,
+                       hdfsFileName_, //hdfsScanTdb().hdfsFileName_,
+                       NULL, //(char*)"",
+                       (Lng32)Lob_External_HDFS_File,
+                       hdfsScanTdb().hostName_,
+                       hdfsScanTdb().port_,
+                       0, NULL,//handle not relevant for non lob access
+                       hdfo->getBytesToRead(), // max bytes
+                       cursorId, 
                            
-                           requestTag_, 
-                           0, // not check status
-                           (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
+                       requestTag_, 
+                       0, // not check status
+                       (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
                            
-                           hdfo->getStartOffset(), 
-                           hdfsScanBufMaxSize_,
-                           preOpen,
-                           NULL,
-                           1 // open
-                           );
+                       hdfo->getStartOffset(), 
+                       hdfsScanBufMaxSize_,
+                       bytesRead_,
+                       NULL,
+                       1,// open
+                       openType
+                       );
                 
-                        hdfsFileName_ = hdfo_->fileName();
-                    } 
-	          }
-	        else
-	          {
-		    retcode = ExpLOBInterfaceSelectCursorMulti
-		      (lobGlob_,
-		       hdfsScanTdb().getHdfsFileInfoList(),
-		       beginRangeNum_, numRanges_,
-		       currRangeNum_,
-		       (Lng32)Lob_External_HDFS_File,
-		       hdfsScanTdb().hostName_,
-		       hdfsScanTdb().port_,
-		       
-		       requestTag_, 
-		       0, // not check status
-		       (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
-		       
-		       hdfsScanBufMaxSize_,
-		       bytesRead_,
-		       hdfsScanBuffer_,
-		       1 // open
-		       );
+                    hdfsFileName_ = hdfo_->fileName();
+                  } 
+              }
                 
-	          }
-                
-	        if (retcode < 0)
-	          {
-		    Lng32 cliError = 0;
+            if (retcode < 0)
+              {
+                Lng32 cliError = 0;
 		    
-		    Lng32 intParam1 = -retcode;
-		    ComDiagsArea * diagsArea = NULL;
-		    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
-                                    &intParam1, 
-                                    &cliError, 
-                                    NULL, 
-                                    "HDFS",
-                                    (char*)"ExpLOBInterfaceSelectCursor/open",
-                                    getLobErrStr(intParam1));
-		    pentry_down->setDiagsArea(diagsArea);
-		    step_ = HANDLE_ERROR;
-		    break;
-	          }
+                Lng32 intParam1 = -retcode;
+                ComDiagsArea * diagsArea = NULL;
+                ExRaiseSqlError(getHeap(), &diagsArea, 
+                                (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
+                                &intParam1, 
+                                &cliError, 
+                                NULL, 
+                                "HDFS",
+                                (char*)"ExpLOBInterfaceSelectCursor/open",
+                                getLobErrStr(intParam1));
+                pentry_down->setDiagsArea(diagsArea);
+                step_ = HANDLE_ERROR;
+                break;
               }  
-	    trailingPrevRead_ = 0; 
+            trailingPrevRead_ = 0; 
             firstBufOfFile_ = true;
             numBytesProcessedInRange_ = 0;
-	    step_ = GET_HDFS_DATA;
-	  }
-	  break;
+            step_ = GET_HDFS_DATA;
+          }
+          break;
 	  
 	case GET_HDFS_DATA:
 	  {
@@ -640,50 +601,28 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      }
 	    else
 	      {
-	        if (NOT hdfsScanTdb().useCursorMulti())
-	          {
-		    retcode = ExpLOBInterfaceSelectCursor
-		      (lobGlob_,
-		       hdfsFileName_,
-		       NULL, 
-		       (Lng32)Lob_External_HDFS_File,
-		       hdfsScanTdb().hostName_,
-		       hdfsScanTdb().port_,
-                       0, NULL,		       
-		       0, cursorId_,
+
+                retcode = ExpLOBInterfaceSelectCursor
+                  (lobGlob_,
+                   hdfsFileName_,
+                   NULL, 
+                   (Lng32)Lob_External_HDFS_File,
+                   hdfsScanTdb().hostName_,
+                   hdfsScanTdb().port_,
+                   0, NULL,		       
+                   0, cursorId_,
 		       
-		       requestTag_, 
-		       0, // not check status
-		       (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
+                   requestTag_, 
+                   0, // not check status
+                   (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
 		       
-		       hdfsOffset_,
-		       bytesToRead,
-		       bytesRead_,
-		       hdfsScanBuffer_  + trailingPrevRead_,
-		       2 // read
-		       );
-	          }
-	        else
-	          {
-		    retcode = ExpLOBInterfaceSelectCursorMulti
-		      (lobGlob_,
-		       hdfsScanTdb().getHdfsFileInfoList(),
-		       beginRangeNum_, numRanges_,
-		       currRangeNum_,
-		       (Lng32)Lob_External_HDFS_File,
-		       hdfsScanTdb().hostName_,
-		       hdfsScanTdb().port_,
-		       
-		       requestTag_, 
-		       0, // not check status
-		       (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
-		       
-		       bytesToRead,
-		       bytesRead_,
-		       hdfsScanBuffer_  + trailingPrevRead_,
-		       2 // read
-		       );
-	          }
+                   hdfsOffset_,
+                   bytesToRead,
+                   bytesRead_,
+                   hdfsScanBuffer_  + trailingPrevRead_,
+                   2, // read
+                   0 // openType, not applicable for read
+                   );
                   
                 if (hdfsStats_)
                   hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getTimer().stop());
@@ -1067,49 +1006,26 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      }
 	    else
 	      {
-	        if (NOT hdfsScanTdb().useCursorMulti())
-	          {
-		    retcode = ExpLOBInterfaceSelectCursor
-		      (lobGlob_,
-		       hdfsFileName_, 
-		       NULL,
-		       (Lng32)Lob_External_HDFS_File,
-		       hdfsScanTdb().hostName_,
-		       hdfsScanTdb().port_,
-		       0,NULL, //handle not relevant for non lob access
-		       0, cursorId_,
+                retcode = ExpLOBInterfaceSelectCursor
+                  (lobGlob_,
+                   hdfsFileName_, 
+                   NULL,
+                   (Lng32)Lob_External_HDFS_File,
+                   hdfsScanTdb().hostName_,
+                   hdfsScanTdb().port_,
+                   0,NULL, //handle not relevant for non lob access
+                   0, cursorId_,
 		       
-		       requestTag_, 
-		       0, // not check status
-		       (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
+                   requestTag_, 
+                   0, // not check status
+                   (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
 		       
-		       0, 
-		       hdfsScanBufMaxSize_,
-		       bytesRead_,
-		       hdfsScanBuffer_,
-		       3); // close
-	          }
-	        else
-	          {
-		    retcode = ExpLOBInterfaceSelectCursorMulti
-		      (lobGlob_,
-		       hdfsScanTdb().getHdfsFileInfoList(),
-		       beginRangeNum_, numRanges_,
-		       currRangeNum_,
-		       (Lng32)Lob_External_HDFS_File,
-		       hdfsScanTdb().hostName_,
-		       hdfsScanTdb().port_,
-		       
-		       requestTag_, 
-		       0, // not check status
-		       (NOT hdfsScanTdb().hdfsPrefetch()),  //1, // waited op
-		       
-		       hdfsScanBufMaxSize_,
-		       bytesRead_,
-		       hdfsScanBuffer_,
-		       3 // close
-		       );
-	          }
+                   0, 
+                   hdfsScanBufMaxSize_,
+                   bytesRead_,
+                   hdfsScanBuffer_,
+                   3, // close
+                   0); // openType, not applicable for close
                 
 	        if (retcode < 0)
 	          {
@@ -1186,8 +1102,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		       NULL, //(char*)"",
 		       (Lng32)Lob_External_HDFS_File,
 		       hdfsScanTdb().hostName_,
-		       hdfsScanTdb().port_,
-		       hdfsScanTdb().useCursorMulti());
+		       hdfsScanTdb().port_);
 
 		    *stats->lobStats() = *stats->lobStats() + s;
 		  }
@@ -1213,8 +1128,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
             {
                 retcode = ExpLOBinterfaceCloseFile
                   (lobGlob_,
-                   (hdfsScanTdb().useCursorMulti() ?
-                    (char*)hdfsScanTdb().getHdfsFileInfoList() : hdfsFileName_),
+                   hdfsFileName_,
                    NULL, 
                    (Lng32)Lob_External_HDFS_File,
                    hdfsScanTdb().hostName_,
@@ -1240,18 +1154,14 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
             } 
 	    if (step_ == CLOSE_FILE)
 	      {
-		if (NOT hdfsScanTdb().useCursorMulti())
-		  {
-		    currRangeNum_++;
-		    
-		    if ((!satisfiedGetN) && 
-                        (currRangeNum_ < (beginRangeNum_ + numRanges_)))
-		      {
-			// move to the next file.
-			step_ = INIT_HDFS_CURSOR;
-			break;
-		      }
-		  }
+                currRangeNum_++;
+                if ((!satisfiedGetN) && 
+                    (currRangeNum_ < (beginRangeNum_ + numRanges_)))
+                  {
+                    // move to the next file.
+                    step_ = INIT_HDFS_CURSOR;
+                    break;
+                  }
 	      }
 
 	    step_ = DONE;

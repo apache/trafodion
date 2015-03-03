@@ -252,28 +252,9 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
                                   Int64 offset, Int64 inLen, 
 			          Int64 &outLen, char * lobData,
 				  
-				  Lng32 oper // 1: open. 2: fetch. 3: close
+				  Lng32 oper, // 1: open. 2: fetch. 3: close
+                                  Lng32 openType // 0: not applicable. 1: preOpen. 2: mustOpen. 
 				  );
-
-Lng32 ExpLOBInterfaceSelectCursorMulti(
-				       void * lobGlob, 
-				       Queue * hdfsFileInfoList,
-				       Lng32 beginRangeNum, // 0 based
-				       Lng32 numRanges, 
-				       Lng32 &currEntry,
-				       Lng32 lobType,
-				       char * lobHdfsServer,
-				       Lng32 lobHdfsPort,
-				       
-				       Int64 &requestTag,
-				       Lng32 checkStatus,
-				       Lng32 waitedOp,
-				       
-				       Int64 inLen, 
-				       Int64 &outLen, char * lobData,
-				       
-				       Lng32 oper // 0: init. 1: open. 2: fetch. 3: close
-				       );
 
 Lng32 ExpLOBinterfaceStats(void * lobGlob, 
 			   ExLobStats * lobStats,
@@ -281,8 +262,7 @@ Lng32 ExpLOBinterfaceStats(void * lobGlob,
 			   char * lobLoc,
 			   Lng32 lobType = (Lng32)Lob_HDFS_File,
 			   char * lobHdfsServer = (char *)"default",
-			   Lng32 lobHdfsPort = 0,
-			   NABoolean lobMulti = FALSE);
+			   Lng32 lobHdfsPort = 0);
 
 char * getLobErrStr(Lng32 errEnum);
 

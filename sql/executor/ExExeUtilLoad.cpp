@@ -2816,8 +2816,8 @@ short ExExeUtilLobExtractTcb::work()
 
 	       0, lobDataMaxLen_, 
 	       lobDataLen_, lobData_, 
-	       1 // open
-	       );
+	       1, // open
+	       2); // must open
 
 	    if (retcode < 0)
 	      {
@@ -2856,8 +2856,8 @@ short ExExeUtilLobExtractTcb::work()
 
 	       0, lobDataMaxLen_, 
 	       lobDataLen_, lobData_, 
-	       2 // read
-	       );
+	       2, // read
+	       0); // open type not applicable
 
 	    if (retcode < 0)
 	      {
@@ -2908,7 +2908,8 @@ short ExExeUtilLobExtractTcb::work()
 
 	       0, lobDataMaxLen_, 
 	       lobDataLen_, lobData_, 
-	       3); // close
+	       3, // close
+               0); // open type not applicable
 
 	    if (retcode < 0)
 	      {
@@ -3092,8 +3093,8 @@ short ExExeUtilFileExtractTcb::work()
 
 	       0, lobDataMaxLen_, 
 	       lobDataLen_, lobData_, 
-	       1 // open
-	       );
+	       1, // open
+	       2); // must open
 
 	    if (retcode < 0)
 	      {
@@ -3138,8 +3139,8 @@ short ExExeUtilFileExtractTcb::work()
 
 	       0, lobDataMaxLen_, 
 	       lobDataLen_, lobData_, 
-	       2 // read
-	       );
+	       2, // read
+	       0); // open type not applicable
 
 	    if (retcode < 0)
 	      {
@@ -3195,8 +3196,8 @@ short ExExeUtilFileExtractTcb::work()
 
 	       0, lobDataMaxLen_, 
 	       lobDataLen_, lobData_, 
-	       3); // close
-
+	       3, // close
+               0); // open type not applicable
 	    if (retcode < 0)
 	      {
 		Lng32 cliError = 0;

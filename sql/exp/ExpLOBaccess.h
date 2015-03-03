@@ -72,7 +72,8 @@ using namespace std;
 #define MAX_HANDLE_OUT_LEN 1024
 #define MAX_BLACK_BOX_LEN 2048
 #define LOB_DESC_HEADER_KEY 1
-#define NUM_WORKER_THREADS 4
+#define NUM_WORKER_THREADS 2 
+// 2 threads at most, one to read and the other to pick up next read from preOpen
 
 #define LOB_CURSOR_PREFETCH_BYTES_MAX (1 << 27) // 128MB
 
@@ -110,9 +111,10 @@ Ex_Lob_Error ExLobsOper (
     Int64       transId,
     void        *blackBox,         // black box to be sent to cli
     Int64       blackBoxLen,        // length of black box
-    int         bufferSize = 0,
+    int         bufferSize =0,
     short       replication =0,
-    int         blocksize=0
+    int         blocksize=0,
+    Lng32       openType=0
 
 );
 
@@ -365,10 +367,7 @@ class ExLob
     Ex_Lob_Error readCursor(char *tgt, Int64 tgtSize, char *handleIn, Int64 handleInLen, Int64 &operLen);
     Ex_Lob_Error readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &operLen);
     Ex_Lob_Error readCursorDataSimple(char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &operLen);
-    Ex_Lob_Error readCursorDataMultiple(Queue *finfoQ, char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &index, Int64 &operLen);
     Ex_Lob_Error readDataCursorSimple(char *fileName, char *tgt, Int64 tgtSize, Int64 &operLen, ExLobGlobals *lobGlobals);
-    Ex_Lob_Error readDataCursorMultiple(Queue *finfoQ, char *tgt, Int64 tgtSize, 
-					Int64 &index, Int64 &operLen);
     bool hasNoOpenCursors() { return lobCursors_.empty(); }
     Ex_Lob_Error openCursor(char *handleIn, Int64 handleInLen);
     Ex_Lob_Error openDataCursor(char *fileName, LobsCursorType type, Int64 range, 
@@ -503,6 +502,9 @@ class ExLobPreOpen
     Int64 waited_;
 };
 
+typedef list<ExLobPreOpen *> preOpenList_t;
+typedef list<ExLobPreOpen *>::iterator preOpenList_it;
+
 class ExLobGlobals
 {
   public :
@@ -561,7 +563,6 @@ class ExLobGlobals
     typedef list<ExLobHdfsRequest *> reqList_t;
     reqList_t reqQueue_;
     ExLobLock reqQueueLock_;
-    typedef list<ExLobPreOpen *> preOpenList_t;
     preOpenList_t preOpenList_;
     ExLobLock preOpenListLock_;
     typedef list<ExLobCursorBuffer *> bufferList_t;
