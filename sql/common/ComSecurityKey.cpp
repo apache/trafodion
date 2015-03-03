@@ -21,7 +21,7 @@
 // ==========================================================================
 // Contains non inline methods in the following classes
 //   ComSecurityKey
-// Contains helper function: qiKeysMakeObjectInvalid
+// Contains helper function: qiCheckForInvalidKeys
 // ==========================================================================
 
 #include "ComSecurityKey.h"
@@ -39,7 +39,8 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
   NABoolean found = FALSE;
   ComQIActionType invalidationKeyType = COM_QI_INVALID_ACTIONTYPE;
 
-  // check each invalidation key against objects in NATableDB cache
+  // check each invalidation key against objects in NATableDB or NARoutineDB 
+  // cache
   for ( Int32 i = 0; i < numInvalidationKeys && !found; i++ )
   {
     invalidationKeyType = ComQIActionTypeLiteralToEnum( invalidationKeys[i].operation );

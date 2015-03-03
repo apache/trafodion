@@ -2930,7 +2930,6 @@ public:
   // Methods for a NAKeyLookup.
   // 'Const' is used on method signatures where it makes sense
   //(thus allowing the methods to be called more easily, and safely).
-  // Constness is cast away within some of the methods because
   // --------------------------------------------------------------------
   void clearAndDestroy()
   {

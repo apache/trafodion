@@ -29,7 +29,7 @@
 +>     trafodion.privmgr_md.components c 
 +>where (component_name like 'LIBRARY%' and 
 +>       c.component_uid = o.component_uid)
-+>order by 1
++>order by 1,2, 3
 +>for read uncommitted access;
 
 --- SQL command prepared.
@@ -638,10 +638,10 @@ LIBRARY_USERS         LIB_VIEW_USERS        VU
 COMPONENT             OPERATION_NAME        OPERATION_CODE
 --------------------  --------------------  --------------
 
-LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    VC            
 LIBRARY_ACCOUNTS      LIB_MANAGE_OVERDUE    MO            
-LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    VC            
+LIBRARY_ACCOUNTS      LIB_VIEW_CHECKOUTS    VC            
 LIBRARY_BOOKS         LIB_MANAGE_CHECKOUTS  MC            
+LIBRARY_BOOKS         LIB_VIEW_CHECKOUTS    VC            
 
 --- 4 row(s) selected.
 >>-- returns 2 rows

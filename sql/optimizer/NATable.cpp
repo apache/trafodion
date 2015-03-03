@@ -6710,8 +6710,9 @@ void NATable::setupPrivInfo()
   CmpSeabaseDDL cmpSBD(STMTHEAP);
   if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
     {
-      abort();
-      
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        *CmpCommon::diags() << DgSqlCode( -4400 );
+
       return;
     }
 
