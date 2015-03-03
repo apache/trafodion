@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ unsigned long ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 							SQLSMALLINT	srcScale,
 							SQLSMALLINT srcUnsigned,
 							SQLINTEGER	srcCharSet,
+							SQLINTEGER	srcMaxLength,
 							SQLSMALLINT	CDataType,
 							SQLPOINTER	targetDataPtr,
 							SQLINTEGER	targetLength,

@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -131,6 +131,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 							SQLSMALLINT	srcScale,
 							SQLSMALLINT srcUnsigned,
 							SQLINTEGER	srcCharSet,
+							SQLINTEGER	srcMaxLength,
 							SQLSMALLINT	CDataType,
 							SQLPOINTER	targetDataPtr,
 							SQLINTEGER	targetLength,
@@ -207,7 +208,10 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 	int rc;
 	bool DefaultCharRequired;
 	LPBOOL PtrDefaultCharRequired = (LPBOOL)&DefaultCharRequired;
-
+	bool isshort;
+	int short_len;
+	int int_len;
+	int charlength=0;
 
 	if(pdwGlobalTraceVariable && *pdwGlobalTraceVariable){
 		TraceOut(TR_ODBC_API,"ConvertSQLToC(%d, %d, %d, %d, %#x, %d, %d, %d, %d, %d, %#x, %d, %#x, %d, %#x, %#x, %#x, %d, %d)",
@@ -265,6 +269,8 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				ODBCDataType = SQL_INTEGER;
 				SignType = FALSE;
 */
+	isshort=srcMaxLength<=32767;
+
 	tODBCDataType = ODBCDataType;
 	if (ODBCDataType == SQL_NUMERIC && SQLDataType == SQLTYPECODE_LARGEINT &&
 					srcPrecision == 19 && srcScale==0)
@@ -350,7 +356,8 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		{
 		case SQL_CHAR:
 		case SQL_WCHAR:
-			if (srcLength-1 == 0)
+			charlength = srcLength-1;
+			if (charlength == 0)
 			{
 				if (targetStrLenPtr != NULL)
 					*targetStrLenPtr = 0;
@@ -360,7 +367,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			}
 			if (translatedDataPtr == NULL)
 			{
-				DataLen = srcLength -1 - Offset;		
+				DataLen = charlength - Offset;		
 				if (DataLen == 0)
 					return SQL_NO_DATA;
 				DataPtr = (char *)srcDataPtr + Offset;
@@ -383,19 +390,40 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
 		case SQL_WVARCHAR:
-		case SQL_WLONGVARCHAR:
-			if (*(USHORT *)srcDataPtr == 0)
-			{	
-				if (targetStrLenPtr != NULL)
-					*targetStrLenPtr = 0;
-				if (targetLength > 0)
-					((char*)targetDataPtr)[0] = '\0';
-				return retCode;
+			if(isshort){
+				short_len=*(USHORT *)srcDataPtr;
+				charlength=short_len;
+				if (short_len == 0)
+				{	
+					if (targetStrLenPtr != NULL)
+						*targetStrLenPtr = 0;
+					if (targetLength > 0)
+						((char*)targetDataPtr)[0] = '\0';
+					return retCode;
+				}
+			}
+			else{
+				int_len=*(int *)srcDataPtr;
+				charlength=int_len;
+				if (int_len == 0)
+				{	
+					if (targetStrLenPtr != NULL)
+						*targetStrLenPtr = 0;
+					if (targetLength > 0)
+						((char*)targetDataPtr)[0] = '\0';
+					return retCode;
+				}
 			}
 			if (translatedDataPtr == NULL)
 			{
-				DataLen = *(USHORT *)srcDataPtr - Offset;
-				DataPtr = (char *)srcDataPtr + sizeof(USHORT) + Offset;
+				if(isshort){
+					DataLen = short_len - Offset;
+					DataPtr = (char *)srcDataPtr + 2 + Offset;
+				}
+				else{
+					DataLen = int_len - Offset;
+					DataPtr = (char *)srcDataPtr + 4 + Offset;
+				}
 				if (DataLen == 0)
 					return SQL_NO_DATA;	
 				if ((translateOption == 0) && DataLen >= targetLength && srcCharSet != SQLCHARSETCODE_UCS2)
@@ -650,7 +678,8 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		{
 		 case SQL_CHAR:
 		 case SQL_WCHAR:
-			if (srcLength-1 == 0)
+			charlength = srcLength-1;
+			if (charlength == 0)
 			{
 				if (targetStrLenPtr != NULL)
 					*targetStrLenPtr = 0;
@@ -660,7 +689,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			}
 			if (translatedDataPtr == NULL)
 			{
-				DataLen = srcLength -1 - Offset;		
+				DataLen = charlength - Offset;		
 				if (DataLen == 0)
 					return SQL_NO_DATA;
 				if (srcCharSet == SQLCHARSETCODE_UCS2)
@@ -684,18 +713,37 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
 		case SQL_WVARCHAR:
-		case SQL_WLONGVARCHAR:
-			if (*(USHORT *)srcDataPtr == 0)
-			{	
-				if (targetStrLenPtr != NULL)
-					*targetStrLenPtr = 0;
-				if (targetLength > 0)
-					((char*)targetDataPtr)[0] = '\0';
-				return retCode;
+			if(isshort){
+				short_len=*(USHORT *)srcDataPtr;
+				charlength=short_len;
+				if (short_len == 0)
+				{	
+					if (targetStrLenPtr != NULL)
+						*targetStrLenPtr = 0;
+					if (targetLength > 0)
+						((char*)targetDataPtr)[0] = '\0';
+					return retCode;
+				}
 			}
+			else{
+				int_len=*(int *)srcDataPtr;
+				charlength=int_len;
+				if (int_len == 0)
+				{
+					if (targetStrLenPtr != NULL)
+						*targetStrLenPtr = 0;
+					if (targetLength > 0)
+						((char*)targetDataPtr)[0] = '\0';
+					return retCode;
+				}
+			}
+
 			if (translatedDataPtr == NULL)
 			{
-				DataLen = *(USHORT *)srcDataPtr - Offset;			
+				if(isshort)
+					DataLen = short_len - Offset;			
+				else
+					DataLen = int_len - Offset;			
 				if (DataLen == 0)
 					return SQL_NO_DATA;
 				if (srcCharSet == SQLCHARSETCODE_UCS2)
@@ -711,7 +759,10 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 					}
 					WCharData = true; // No translation needed
 				}
-				DataPtr = (char *)srcDataPtr + sizeof(USHORT) + Offset;
+				if(isshort)
+					DataPtr = (char *)srcDataPtr + 2 + Offset;
+				else
+					DataPtr = (char *)srcDataPtr + 4 + Offset;
 			}
 //			if (totalReturnedLength != NULL )
 //				*totalReturnedLength = DataLen + Offset;
@@ -2041,23 +2092,44 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
 		case SQL_WVARCHAR:
-			if (*(USHORT *)srcDataPtr == 0)
-			{
-				if (targetStrLenPtr != NULL)
-					*targetStrLenPtr = 0;
-				((char*)targetDataPtr)[0] = '\0';
-				return retCode;
+			if(isshort){
+				short_len=*(USHORT *)srcDataPtr;
+				charlength=short_len;
+				if (short_len == 0){	
+					if (targetStrLenPtr != NULL)
+						*targetStrLenPtr = 0;
+					((char*)targetDataPtr)[0] = '\0';
+					return retCode;
+				}
+				DataLen = short_len - Offset;
 			}
-			DataLen = *(USHORT *)srcDataPtr - Offset;
+			else{
+				int_len=*(int *)srcDataPtr;
+				charlength=int_len;
+				if(int_len == 0){
+					if (targetStrLenPtr != NULL)
+						*targetStrLenPtr = 0;
+					((char*)targetDataPtr)[0] = '\0';
+					return retCode;
+				}
+				DataLen = int_len - Offset;
+			}
+
 			if (DataLen == 0)
 				return SQL_NO_DATA;
 			if (DataLen > targetLength)
 			{
 				retCode = IDS_01_004;
-				DataLenTruncated = *(USHORT *)srcDataPtr - Offset;
+				if(isshort)
+					DataLenTruncated = short_len - Offset;
+				else
+					DataLenTruncated = int_len - Offset;
 				DataLen = targetLength-1;
 			}
-			DataPtr = (char *)srcDataPtr + sizeof(USHORT) + Offset;
+			if(isshort)
+				DataPtr = (char *)srcDataPtr + 2 + Offset;
+			else
+				DataPtr = (char *)srcDataPtr + 4 + Offset;
 //			if (totalReturnedLength != NULL)
 //				*totalReturnedLength = DataLen + Offset;
 			break;
@@ -2116,20 +2188,21 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		{
 		case SQL_CHAR:
 		case SQL_WCHAR:
-			if (srcLength-1 == 0)
+			charlength = srcLength-1;
+			if (charlength == 0)
 			{
 				if (targetStrLenPtr != NULL)
 					*targetStrLenPtr = 0;
 				((char*)targetDataPtr)[0] = '\0';
 				return retCode;
 			}
-			DataLen = srcLength -1 - Offset;
+			DataLen = charlength - Offset;
 			if (DataLen == 0)
 				return SQL_NO_DATA;
 			if (DataLen >= targetLength)
 			{
 				retCode = IDS_01_004;
-				DataLenTruncated = srcLength - Offset-1;
+				DataLenTruncated = charlength - Offset;
 				DataLen = targetLength-1;
 			}
 			DataPtr = (char *)srcDataPtr + Offset;
@@ -2140,23 +2213,45 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
 		case SQL_WVARCHAR:
-			if (*(USHORT *)srcDataPtr == 0)
-			{
-				if (targetStrLenPtr != NULL)
-					*targetStrLenPtr = 0;
-				((char*)targetDataPtr)[0] = '\0';
-				return retCode;
+			if(isshort){
+				short_len=*(USHORT *)srcDataPtr;
+				charlength=short_len;
+				if (short_len == 0)
+				{	
+					if (targetStrLenPtr != NULL)
+						*targetStrLenPtr = 0;
+					((char*)targetDataPtr)[0] = '\0';
+					return retCode;
+				}
+				DataLen = short_len - Offset;
 			}
-			DataLen = *(USHORT *)srcDataPtr - Offset;
+			else{
+				int_len=*(int *)srcDataPtr;
+				charlength=int_len;
+				if (int_len == 0)
+				{
+					if (targetStrLenPtr != NULL)
+						*targetStrLenPtr = 0;
+					((char*)targetDataPtr)[0] = '\0';
+					return retCode;
+				}
+				DataLen = int_len - Offset;
+			}
 			if (DataLen == 0)
 				return SQL_NO_DATA;
 			if (DataLen >= targetLength)
 			{
 				retCode = IDS_01_004;
-				DataLenTruncated = *(USHORT *)srcDataPtr - Offset;
+				if(isshort)
+					DataLenTruncated = short_len - Offset;
+				else
+					DataLenTruncated = int_len - Offset;
 				DataLen = targetLength-1;
 			}
-			DataPtr = (char *)srcDataPtr + sizeof(USHORT) + Offset;
+			if(isshort)
+				DataPtr = (char *)srcDataPtr + 2 + Offset;
+			else
+				DataPtr = (char *)srcDataPtr + 4 + Offset;
 //			if (totalReturnedLength != NULL)
 //				*totalReturnedLength = DataLen + Offset;
 			NullTerminate = TRUE;
@@ -2986,7 +3081,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			// data has already translated
 			if (CDataType == SQL_C_WCHAR)
 			{
-				DataLen = wcslen((wchar_t *)translatedDataPtr)*2-Offset;
+				DataLen = charlength*2-Offset;
 				if (DataLen > targetLength-2)
 				{
 					DataLenTruncated = DataLen;
@@ -3004,7 +3099,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			}
 			else
 			{
-				DataLen = strlen(translatedDataPtr)-Offset;
+				DataLen = charlength-Offset;
 				if (DataLen >= targetLength)
 				{
 					DataLenTruncated = DataLen;
