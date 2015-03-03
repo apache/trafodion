@@ -198,7 +198,7 @@ sleep 2
 echo
 
 #=====================================
-# restart HBase to pick up all the changes just made
+# stop HBase to restart HDFS and pick up all the changes just made
 
 poll_time=30
 echo "***INFO: Restarting HBase to pick up config changes for Trafodion"
@@ -209,7 +209,7 @@ curl -u $ADMIN:$PASSWORD \
     http://$URL/api/v1/clusters/$CLUSTER_NAME/services/HBASE > $TRAF_WORKDIR/traf_hbase_restart_temp
 
 if [ $? != 0 ]; then 
-   echo "***ERROR: Unable to restart HBase"
+   echo "***ERROR: Unable to stop HBase"
    echo "***ERROR: Please manually restart HBase through the Ambari web GUI"
 fi 
 
@@ -218,11 +218,11 @@ fi
 curl_error=$(grep TITLE $TRAF_WORKDIR/traf_hbase_restart_temp | grep Error | wc -l)
 
 if [ $curl_error -ne 0 ]; then
-    echo "***ERROR: Unable to restart HBase"
+    echo "***ERROR: Unable to stop HBase"
     echo "***ERROR: Please manually restart HBase through the Ambari web GUI"
 fi
 
-echo "***INFO: ...polling every $poll_time seconds until restart is completed."
+echo "***INFO: ...polling every $poll_time seconds until HBase stop is completed."
 command_id=$(cat $TRAF_WORKDIR/traf_hbase_restart_temp | grep id | awk '{print $3}' | sed -e 's@,@@' )
 echo "***DEBUG: Ambari command_id=$command_id"
 
@@ -234,46 +234,12 @@ while [ $completed -eq 0 ]; do
         http://$URL/api/v1/clusters/$CLUSTER_NAME/requests/$command_id \
         > $LOCAL_WORKDIR/hbase_restart_status_temp
     cat $LOCAL_WORKDIR/hbase_restart_status_temp
-    echo "***INFO: ...polling every $poll_time seconds until stop is completed."
+    echo "***INFO: ...polling every $poll_time seconds until HBase stop is completed."
     # if stop command is completed then completed will not equal 0
     completed=$(cat $LOCAL_WORKDIR/hbase_restart_status_temp | grep '"request_status" : "COMPLETED"' | wc -l)
 done
 
-echo "***INFO: Starting HBase..."
-curl -u $ADMIN:$PASSWORD \
-    -H "X-Requested-By: Trafodion" \
-    -X PUT -d '{"ServiceInfo": { "state" : "STARTED" }}' \
-    http://$URL/api/v1/clusters/$CLUSTER_NAME/services/HBASE > $TRAF_WORKDIR/traf_hbase_restart_temp
-
-if [ $? != 0 ]; then
-   echo "***ERROR: Unable to restart HBase"
-   echo "***ERROR: Please manually restart HBase through the Ambari web GUI"
-fi
-
-# in most cases curl does not return an error
-# so curl's actual output needs to be checked, too
-curl_error=$(grep TITLE $TRAF_WORKDIR/traf_hbase_restart_temp | grep Error | wc -l)
-if [ $curl_error -ne 0 ]; then
-    echo "***ERROR: Unable to restart HBase"
-    echo "***ERROR: Please manually restart HBase through the Ambari web GUI"
-fi
-
-echo "***INFO: ...polling every $poll_time seconds until start is completed."
-command_id=$(cat $TRAF_WORKDIR/traf_hbase_restart_temp | grep id | awk '{print $3}' | sed -e 's@,@@' )
-echo "***DEBUG: Ambari command_id=$command_id"
-
-# poll until start is completed as a start can take a while
-completed=0
-while [ $completed -eq 0 ]; do
-    sleep $poll_time
-    curl -u $ADMIN:$PASSWORD \
-        http://$URL/api/v1/clusters/$CLUSTER_NAME/requests/$command_id \
-        > $LOCAL_WORKDIR/hbase_restart_status_temp
-    cat $LOCAL_WORKDIR/hbase_restart_status_temp
-    echo "***INFO: ...polling every $poll_time seconds until stop is completed."
-    # if start command is completed then completed will not equal 0
-    completed=$(cat $LOCAL_WORKDIR/hbase_restart_status_temp | grep '"request_status" : "COMPLETED"' | wc -l)
-done
+echo "***INFO: HBase stop completed"
 
 #=====================================
 # restart HDFS to pick up all the changes just made
@@ -299,7 +265,7 @@ if [ $curl_error -ne 0 ]; then
     echo "***ERROR: Please manually restart HDFS through the Ambari web GUI"
 fi
 
-echo "***INFO: ...polling every $poll_time seconds until restart is completed."
+echo "***INFO: ...polling every $poll_time seconds until HDFS stop is completed."
 command_id=$(cat $TRAF_WORKDIR/traf_hdfs_restart_temp | grep id | awk '{print $3}' | sed -e 's@,@@' )
 echo "***DEBUG: Ambari command_id=$command_id"
 
@@ -311,7 +277,7 @@ while [ $completed -eq 0 ]; do
         http://$URL/api/v1/clusters/$CLUSTER_NAME/requests/$command_id \
         > $LOCAL_WORKDIR/traf_hdfs_restart_temp
     cat $LOCAL_WORKDIR/traf_hdfs_restart_temp
-    echo "***INFO: ...polling every $poll_time seconds until stop is completed."
+    echo "***INFO: ...polling every $poll_time seconds until HDFS stop is completed."
     # if stop command is completed then completed will not equal 0
     completed=$(cat $LOCAL_WORKDIR/traf_hdfs_restart_temp | grep '"request_status" : "COMPLETED"' | wc -l)
 done
@@ -335,7 +301,7 @@ if [ $curl_error -ne 0 ]; then
     echo "***ERROR: Please manually restart HDFS through the Ambari web GUI"
 fi
 
-echo "***INFO: ...polling every $poll_time seconds until start is completed."
+echo "***INFO: ...polling every $poll_time seconds until HDFS start is completed."
 command_id=$(cat $TRAF_WORKDIR/traf_hdfs_restart_temp | grep id | awk '{print $3}' | sed -e 's@,@@' )
 echo "***DEBUG: Ambari command_id=$command_id"
 
@@ -347,14 +313,58 @@ while [ $completed -eq 0 ]; do
         http://$URL/api/v1/clusters/$CLUSTER_NAME/requests/$command_id \
         > $LOCAL_WORKDIR/traf_hdfs_restart_temp
     cat $LOCAL_WORKDIR/traf_hdfs_restart_temp
-    echo "***INFO: ...polling every $poll_time seconds until stop is completed."
+    echo "***INFO: ...polling every $poll_time seconds until HDFS start is completed."
     # if start command is completed then completed will not equal 0
     completed=$(cat $LOCAL_WORKDIR/traf_hdfs_restart_temp | grep '"request_status" : "COMPLETED"' | wc -l)
 done
 
+echo "***INFO: HDFS restart completed"
+
 # wait to make sure HDFS is fully restarted and out of safemode
 echo "***INFO: waiting for HDFS to exit safemode"
 sudo su hdfs --command "hdfs dfsadmin -safemode wait"
+
+#=====================================
+# restart HBase to pick up all the changes just made
+
+echo "***INFO: Restarting HBase to pick up config changes for Trafodion"
+echo "***INFO: Starting HBase..."
+curl -u $ADMIN:$PASSWORD \
+    -H "X-Requested-By: Trafodion" \
+    -X PUT -d '{"ServiceInfo": { "state" : "STARTED" }}' \
+    http://$URL/api/v1/clusters/$CLUSTER_NAME/services/HBASE > $TRAF_WORKDIR/traf_hbase_restart_temp
+
+if [ $? != 0 ]; then
+   echo "***ERROR: Unable to restart HBase"
+   echo "***ERROR: Please manually restart HBase through the Ambari web GUI"
+fi
+
+# in most cases curl does not return an error
+# so curl's actual output needs to be checked, too
+curl_error=$(grep TITLE $TRAF_WORKDIR/traf_hbase_restart_temp | grep Error | wc -l)
+if [ $curl_error -ne 0 ]; then
+    echo "***ERROR: Unable to restart HBase"
+    echo "***ERROR: Please manually restart HBase through the Ambari web GUI"
+fi
+
+echo "***INFO: ...polling every $poll_time seconds until HBase start is completed."
+command_id=$(cat $TRAF_WORKDIR/traf_hbase_restart_temp | grep id | awk '{print $3}' | sed -e 's@,@@' )
+echo "***DEBUG: Ambari command_id=$command_id"
+
+# poll until start is completed as a start can take a while
+completed=0
+while [ $completed -eq 0 ]; do
+    sleep $poll_time
+    curl -u $ADMIN:$PASSWORD \
+        http://$URL/api/v1/clusters/$CLUSTER_NAME/requests/$command_id \
+        > $LOCAL_WORKDIR/hbase_restart_status_temp
+    cat $LOCAL_WORKDIR/hbase_restart_status_temp
+    echo "***INFO: ...polling every $poll_time seconds until HBase start is completed."
+    # if start command is completed then completed will not equal 0
+    completed=$(cat $LOCAL_WORKDIR/hbase_restart_status_temp | grep '"request_status" : "COMPLETED"' | wc -l)
+done
+
+echo "***INFO: HBase restart completed"
 
 #=====================================
 # NOTE: These command must be done AFTER acls are 
@@ -389,7 +399,5 @@ fi
 
 # clean up files generated by Ambari's config.sh script
 rm $LOCAL_WORKDIR/doSet_version*
-
-echo "***INFO: HDFS and HBase restart completed successfully"
 
 exit
