@@ -109,7 +109,7 @@ from trafodion.privmgr_md.component_operations o,
      trafodion.privmgr_md.components c 
 where (component_name like 'LIBRARY%' and 
        c.component_uid = o.component_uid)
-order by 1
+order by 1,2, 3
 for read uncommitted access;
 
 prepare get_priv_desc from

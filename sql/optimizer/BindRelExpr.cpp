@@ -6292,7 +6292,8 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
       CmpSeabaseDDL cmpSBD(STMTHEAP);
       if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
       {
-        abort();
+        if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+          *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
       retcode = privInterface.getPrivileges( tab->objectUid().get_value(), thisUserID, privInfo);
@@ -6424,7 +6425,8 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
       CmpSeabaseDDL cmpSBD(STMTHEAP);
       if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
       {
-        abort();
+        if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+          *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
       retcode = privInterface.getPrivileges( tab->objectUid().get_value(), thisUserID, privInfo);
@@ -6476,7 +6478,8 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     CmpSeabaseDDL cmpSBD(STMTHEAP);
     if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
     {
-      abort();
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        *CmpCommon::diags() << DgSqlCode( -4400 );
       return FALSE;
     }
     retcode = privInterface.getPrivileges(tab->objectUid().get_value(), thisUserID, privInfo);

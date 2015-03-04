@@ -663,7 +663,9 @@ void NARoutine::setupPrivInfo(void)
   CmpSeabaseDDL cmpSBD(STMTHEAP);
   if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
   {
-    abort();
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      *CmpCommon::diags() << DgSqlCode( -4400 );
+
     return;
   }
 
@@ -888,18 +890,15 @@ void NARoutineDB::removeNARoutine(QualifiedName &routineName,
     if (0 == objectUIDs.entries())
         objectUIDs.insert(objUID);
 
-    if (objectUIDs.entries() > 0)
+    Int32 numKeys = objectUIDs.entries();
+    SQL_QIKEY qiKeys[numKeys];
+    for (CollIndex i = 0; i < numKeys; i++)
     {
-      Int32 numKeys = objectUIDs.entries();
-      SQL_QIKEY qiKeys[numKeys];
-      for (CollIndex i = 0; i < numKeys; i++)
-      {
-        qiKeys[i].ddlObjectUID = objectUIDs[i];
-        qiKeys[i].operation[0] = 'O';
-        qiKeys[i].operation[1] = 'R';
-      }
-      long retcode = SQL_EXEC_SetSecInvalidKeys(numKeys, qiKeys);
+      qiKeys[i].ddlObjectUID = objectUIDs[i];
+      qiKeys[i].operation[0] = 'O';
+      qiKeys[i].operation[1] = 'R';
     }
+    long retcode = SQL_EXEC_SetSecInvalidKeys(numKeys, qiKeys);
   }
 }
 
