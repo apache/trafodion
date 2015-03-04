@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -73,7 +73,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.trafodion.sql.HBaseAccess.HTableClient;
 //import org.trafodion.sql.HBaseAccess.HBaseClient;
-import org.trafodion.sql.HBaseAccess.HTableClient.QualifiedColumn;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 
@@ -232,7 +231,6 @@ public class HBulkLoadClient
      short numCols, numRows;
      short colNameLen;
      int colValueLen;
-     HTableClient.QualifiedColumn qc = null;
      byte[] colName, colValue, rowID;
 
      bbRowIDs = (ByteBuffer)rowIDs;
@@ -253,10 +251,9 @@ public class HBulkLoadClient
             colValueLen = bbRows.getInt();
             colValue = new byte[colValueLen];
             bbRows.get(colValue, 0, colValueLen);
-            qc = htc.new QualifiedColumn(colName);
             KeyValue kv = new KeyValue(rowID,
-                                qc.getFamily(), 
-                                qc.getName(), 
+                                htc.getFamily(colName), 
+                                htc.getName(colName), 
                                 now,
                                 colValue);
             writer.append(kv);
