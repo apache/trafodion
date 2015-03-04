@@ -12348,14 +12348,11 @@ Context* RelRoot::createContextForAChild(Context* myContext,
         !isFastLoadIntoTrafodion &&
         !mustUseESPs())
     {
-      if(!OSIM_isNSKbehavior())
-      {
         countOfCPUs = 
             CURRSTMT_OPTDEFAULTS->getMaximumDegreeOfParallelism();
 
         // Adaptive segmentation is ON
         isASON = TRUE;
-      }
     }
 
     // Get the value as a token code, no errmsg if not a keyword.
@@ -13047,7 +13044,7 @@ computeDP2CostDataThatDependsOnSPP(
 
   NABoolean fakeEnv = FALSE; // do not care
   CostScalar totalCPUsExecutingDP2s = defs.getTotalNumOfESPsInCluster(fakeEnv);
-  if(!isHbaseTable && !OSIM_isNSKbehavior())
+  if(!isHbaseTable)
   {
      // seabed api doesn't return audit count
      totalCPUsExecutingDP2s--; // do not count the system volume

@@ -2763,56 +2763,7 @@ static NABoolean checkRemote(desc_struct* part_desc_list,
 {
   if (!OSIM_isNSKbehavior())
     return TRUE;
-  desc_struct* partns_desc = part_desc_list;
-  char mySystem[9];
-  char *currPart;
-  short lengthCurrPart = 0;
-  mySystem[8] = '\0';
 
-  OSIM_GETSYSTEMNAME(OSIM_MYSYSTEMNUMBER(), (short *)mySystem);
-
-  short lengthMySys = 0;
-  while (lengthMySys < 8)
-  {
-    if (mySystem[lengthMySys] == ' ')
-       break;
-    lengthMySys++;
-  }
-
-  if(NOT partns_desc)
-  {
-    currPart = tableName;
-    while (lengthCurrPart < 8)
-    {
-       if (currPart[lengthCurrPart] == '.')
-          break;
-       lengthCurrPart++;
-    }
-    if ((lengthCurrPart != lengthMySys) ||
-        (str_cmp(currPart, mySystem, lengthMySys) != 0))
-       return TRUE;
-  }
-  else
-  {
-    while (partns_desc)
-    {
-      // ------------------------------------------------------------------
-      // Loop over all partitions
-      // ------------------------------------------------------------------
-      currPart = partns_desc->body.partns_desc.partitionname;
-      lengthCurrPart = 0;
-      while (lengthCurrPart < 8)
-      {
-         if (currPart[lengthCurrPart] == '.')
-            break;
-         lengthCurrPart++;
-      }
-      if ((lengthCurrPart != lengthMySys) ||
-          (str_cmp(currPart, mySystem, lengthMySys) != 0))
-         return TRUE;
-      partns_desc = partns_desc->header.next;
-    }
-  }
   return FALSE;
 }
 #pragma warn(262)  // warning elimination
@@ -3597,68 +3548,6 @@ void processDuplicateNames(NAHashDictionaryIterator<NAString, Int32> &Iter,
 {
   if (!OSIM_isNSKbehavior())
     return;
-  // get index name
-  NAString *str=NULL;
-  Int32 *index=NULL;
-  NAFileSet *nfs=NULL;
-  NAFileSet *nfsRemote= NULL;
-  NAFileSet *nfsLocal=NULL;
-
-  NAFileSetList localIndexes(CmpCommon::statementHeap()),
-                remoteIndexes(CmpCommon::statementHeap());
-
-  // gather remote and local indexes
-  UInt32 i,j;
-  for (i=0; i<Iter.entries();i++)
-    {
-    Iter.getNext(str,index);
-    nfs=(NAFileSet *)index;
-
-    NAString  extFileName(nfs->getExtFileSetName().data(),
-                          CmpCommon::statementHeap());
-    char *str=(char *)extFileName.data();
-    char *pos=strchr(str, '.');
-    *pos='\0';
-
-    if (strcmp(str, localNodeName) == 0)
-      {
-       // all local indexes go into the indexes list to be considered
-       // by the optimizer
-       indexes.insert(nfs);
-
-       localIndexes.insert(nfs);
-      }
-    else
-       remoteIndexes.insert(nfs);
-    }
-
-  for (i=0; i<remoteIndexes.entries();i++)
-    {
-    nfsRemote=remoteIndexes[i];
-
-    for (j=0; j<localIndexes.entries();j++)
-      {
-      nfsLocal=localIndexes[j];
-      NABoolean partitionedSameWay = TRUE;
-
-      // check if both are partitioned....
-      if (nfsLocal->isPartitioned() != nfsRemote->isPartitioned() ||
-          (! (nfsLocal->getPartitioningKeyColumns() ==
-             nfsRemote->getPartitioningKeyColumns())))
-         partitionedSameWay=FALSE;
-
-      if (nfsLocal->getAllColumns() == nfsRemote->getAllColumns()&&
-          partitionedSameWay)
-        {
-
-        // nfsRemote goes away?
-        nfsRemote->setRemoteIndexGone();
-        break;
-        }
-      }
-      indexes.insert(nfsRemote);
-    }
-
 } // processDuplicateNames()
 // LCOV_EXCL_STOP
 
@@ -5322,7 +5211,7 @@ NATable::NATable(BindWA *bindWA,
       primaryNodeNum=0;
 
       if(!OSIM_runningSimulation())
-        error = OSIM_NODENAME_TO_NODENUMBER_ (nodeName, nodeNameLen, &primaryNodeNum);
+        error = OSIM_NODENAME_TO_NODENUMBER (nodeName, nodeNameLen, &primaryNodeNum);
     }
     else{
       //get qualified name of the clustering index which should
@@ -5374,7 +5263,7 @@ NATable::NATable(BindWA *bindWA,
       //which has the primary partition.
       primaryNodeNum=0;
 
-      error = OSIM_NODENAME_TO_NODENUMBER_ (nodeName, nodeNameLen, &primaryNodeNum);
+      error = OSIM_NODENAME_TO_NODENUMBER (nodeName, nodeNameLen, &primaryNodeNum);
     }
   }
 

@@ -135,7 +135,8 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   qcache_(NULL),                              // just to be safe ...
   optPCodeCache_(NULL),                       // just to be safe ...
   CDBList_(NULL),
-  allControlCount_(0)
+  allControlCount_(0),
+  optSimulator_(NULL)
 {
   SetMode(isDynamicSQL() ? STMT_DYNAMIC : STMT_STATIC);
 
@@ -179,8 +180,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   cmpMemMonitor_ = new(CmpCommon::contextHeap()) CmpMemoryMonitor(CmpCommon::contextHeap());
   
   cmpMemMonitor = cmpMemMonitor_;
-  // Set up the OSIM environment
-  optSimulator_ = new(CmpCommon::contextHeap()) OptimizerSimulator(CmpCommon::contextHeap());
+  
   //## Commenting this out for now.  Eventually all ISP-arkcmp's we start up
   //## will need to have the *originating* arkcmp's context passed in,
   //## else the two arkcmp's *could* be inconsistent.
@@ -347,6 +347,10 @@ CmpContext::~CmpContext()
   // trafMDDescsInfo_ is of type MDDescsInfo but it is created as an array of char
   // look at the creation of trafMDDescsInfo_ in method CmpSeabaseDDL::createMDdescs
   NADELETEBASIC((char *)trafMDDescsInfo_, heap_);
+  
+  if(optSimulator_)
+      delete  optSimulator_;
+   optSimulator_ = NULL;
   
   readTableDef_ = 0;
   schemaDB_ = 0;

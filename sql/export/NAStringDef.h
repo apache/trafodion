@@ -499,7 +499,12 @@ NAString operator+(const NAString& s,  const char* cs);
 
 friend
 SQLEXPORT_LIB_FUNC
+NAString operator+(const NAString& s,  const char c);
+
+friend
+SQLEXPORT_LIB_FUNC
 NAString operator+(const char* cs, const NAString& s);
+
 
 
 friend

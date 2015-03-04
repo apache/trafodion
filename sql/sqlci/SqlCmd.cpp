@@ -2333,6 +2333,7 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
     break;
 
     case DML_CONTROL_TYPE:
+    case DML_OSIM_TYPE:
     case DML_DISPLAY_NO_HEADING_TYPE:
     case DML_DESCRIBE_TYPE:
     case DML_DDL_TYPE:

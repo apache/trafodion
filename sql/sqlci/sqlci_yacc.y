@@ -83,6 +83,7 @@ static char *get_stats_str;
 
 //extern "C" { void yyerror(const char *sb); };
 
+
 static void sqlcierror(const char *)		// (const char *errtext)
 {
   // Re-initialize the following variables which are used in sqlci_lex.l
@@ -385,6 +386,7 @@ static char * FCString (const char *idString, int isFC)
 %token COMMA
 %token COMMANDStoken
 %token CONTROL
+%token OSIM
 %token COPY
 %token CPU_VALUE
 %token ERRORtoken 
@@ -2171,6 +2173,7 @@ cursor_info : dml_simple_table_type
 dml_type :
 	 	dml_simple_table_type	{}
 	|	CONTROL 		{$$ = DML_CONTROL_TYPE;}
+	|    OSIM               {$$ = DML_OSIM_TYPE;}
 	|	SETtoken CATALOG	{$$ = DML_CONTROL_TYPE;}
 	|	SETtoken SCHEMA		{$$ = DML_CONTROL_TYPE;}
 	|	SETtoken HIVEtoken		{$$ = DML_CONTROL_TYPE;}

@@ -43,8 +43,6 @@ NABoolean IsStaticCompiler();
 class NodeMapEntry;
 class NodeMap;
 class NAClusterInfo;
-class NAClusterInfoNT;
-class NAClusterInfoNSK;
 
 //----------------------
 // Known processor types
@@ -185,7 +183,7 @@ public:
   // This is called by captureNAClusterInfo() to capture the OSIM
   // information that is specific to the operating system. Each new
   // platform must define this.
-  virtual void captureOSInfo() const = 0;
+  virtual void captureOSInfo(ofstream & f) const = 0;
 
   //For a fully qualified dp2 it returns the cluster and Cpu information.
   //Also caches the information in the appropriate structure if it is for
@@ -224,7 +222,7 @@ public:
   // The OSIM uses these following methods to capture and simulate
   // cluster information respectively.
   void initializeForOSIMCapture();
-  void captureNAClusterInfo();
+  void captureNAClusterInfo(ofstream & naclfile);
   void simulateNAClusterInfo();
 
   // three methods to enter, leave and test the test mode. The test 
@@ -329,68 +327,6 @@ private:
   QualifiedName maxOSVName_;
 };
 
-//<pb>
-
-//<pb>
-
-class NAClusterInfoNSK : public NAClusterInfo
-{
-public:
-  // The OSIM uses the following method to simulate NSK cluster information.
-  void simulateNAClusterInfoNSK();
-
-   NAClusterInfoNSK(CollHeap * heap);
-   ~NAClusterInfoNSK();
-
-   Int32      processorFrequency() const;
-   float    ioTransferRate() const;
-   float    seekTime() const;
-   Int32      cpuArchitecture() const;
-
-   size_t   numberOfCpusPerSMP() const;
-
-   size_t   pageSize() const;
-   size_t   physicalMemoryAvailable() const;
-   size_t   totalMemoryAvailable() const;
-   size_t   virtualMemoryAvailable();
-
-   void captureOSInfo() const;
-
-private:
-   Int32      findFrequency(void);
-   float    findIORate(void);
-   size_t   findPageSize();
-   size_t   findTotalMemoryAvailable();
-
-private:
-
-  //-------------------------------------------------------------------------
-  // Stores the frequency of the SMP, in Megahertz
-  //-------------------------------------------------------------------------
-  Int32           frequency_;
-
-  //-------------------------------------------------------------------------
-  // Stores the IO transfer rate of the disk, in MB/sec
-  //-------------------------------------------------------------------------
-  float         iorate_;
-
-  //-------------------------------------------------------------------------
-  // Stores the average seek time of the disk, in ms
-  //-------------------------------------------------------------------------
-  float         seekTime_;
-
-  //-------------------------------------------------------------------------
-  // Stores the memory page size, in kilobytes.
-  //-------------------------------------------------------------------------
-  size_t        pageSize_;
-
-  //-------------------------------------------------------------------------
-  // Stores the total memory available, in bytes.
-  //-------------------------------------------------------------------------
-  size_t totalMemoryAvailable_;
-
-};
-
 #define MAX_NUM_TSES 1024
 
 class NAClusterInfoLinux : public NAClusterInfo
@@ -398,7 +334,6 @@ class NAClusterInfoLinux : public NAClusterInfo
 public:
    NAClusterInfoLinux(CollHeap * heap);
    ~NAClusterInfoLinux();
-
    Int32      processorFrequency() const;
    float    ioTransferRate() const;
    float    seekTime() const;
@@ -417,7 +352,7 @@ public:
    size_t   totalMemoryAvailable() const;
    size_t   virtualMemoryAvailable();
 
-   void captureOSInfo() const;
+   void captureOSInfo(ofstream &) const;
 
    // get the kth TSE entry from a list of sorted TSE elements
    MS_Mon_Process_Info_Type* getTSEInfoForPOS(Int32 k);

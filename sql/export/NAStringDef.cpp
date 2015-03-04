@@ -528,6 +528,15 @@ operator+(const NAString& s, const char* cs)
 
 SQLEXPORT_LIB_FUNC
 NAString 
+operator+(const NAString& s, const char c)
+{
+  // Use the special concatenation constructor:
+  NAString temp(c);
+  return NAString(s.data(), s.length(), temp.data(), temp.length(), s.heap());
+}            
+
+SQLEXPORT_LIB_FUNC
+NAString 
 operator+(const char* cs, const NAString& s)
 {
   // Use the special concatenation constructor:
