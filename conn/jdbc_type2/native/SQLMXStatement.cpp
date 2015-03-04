@@ -1,7 +1,7 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -120,6 +120,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_executeDirect
 		FUNCTION_RETURN_VOID(("beginTxnControl() failed"));
 	}
 
+	exception_.u.SQLError.errorList._buffer = NULL;
 	odbc_SQLSvc_ExecDirect_sme_(NULL, NULL, 
 			&exception_,
 			dialogueId,
@@ -170,6 +171,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_executeDirect
 		jenv->CallVoidMethod(jobj, gJNICache.setCurrentStmtIdMethodId, stmtId);
 		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
 		throwSQLException(jenv, &exception_.u.SQLError);
+		exception_.u.SQLError.errorList._buffer = NULL;
 		break;
 	case odbc_SQLSvc_ExecDirect_SQLQueryCancelled_exn_:
 		jenv->CallVoidMethod(jobj, gJNICache.setCurrentStmtIdMethodId, stmtId);
