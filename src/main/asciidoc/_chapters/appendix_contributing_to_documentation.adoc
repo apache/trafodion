@@ -1,0 +1,284 @@
+////
+/**
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+////
+
+[appendix]
+[[appendix-contributing-to-documentation]]
+== Contributing to Documentation
+:doctype: book
+:numbered:
+:toc: left
+:icons: font
+:experimental:
+:source-language: java
+
+The DCS project welcomes contributions to the reference guide.
+
+=== DCS Reference Guide Style Guide and Cheat Sheet
+
+The DCS Reference Guide is written in Asciidoc and built using link:http://asciidoctor.org[AsciiDoctor]. The following cheat sheet is included for your reference. 
+More comprehensive documentation is available in the link:http://asciidoctor.org/docs/user-manual[AsciiDoctor user manual]. 
+
+.AsciiDoc Cheat Sheet
+[cols="1,1,a",options="header"]
+|===
+| Element Type | Desired Rendering | How to do it
+| A paragraph | a paragraph | Just type some text with a blank line at the top and bottom.
+| Add line breaks within a paragraph without adding blank lines | Manual line breaks | This will break + at the plus sign. Or prefix the whole paragraph with a line containing `[%hardbreaks]`
+| Give a title to anything | Colored italic bold differently-sized text | `.MyTitle` (no space between the period and the words) on the line before the thing to be titled
+| In-Line Code or commands | monospace | \`text`  
+| In-line literal content (things to be typed exactly as shown) | bold mono | \*\`typethis`*
+| In-line replaceable content (things to substitute with your own values) | bold italic mono | \*\_typesomething_*
+| Code blocks with highlighting | monospace, highlighted, preserve space | 
+........
+[source,java]
+---- 
+  myAwesomeCode() { 
+} 
+----
+........
+| Code block included from a separate file | included just as though it were part of the main file |
+................
+[source,ruby]
+----
+include\::path/to/app.rb[]
+----
+................
+| Include only part of a separate file | Similar to Javadoc | See http://www.asciidoctor.org/docs/user-manual/#by-tagged-regions
+| Filenames, directory names, new terms | italic | \_dcs-default.xml_
+| External naked URLs | A link with the URL as link text | 
+----
+link:http://www.google.com
+----
+
+| External URLs with text | A link with arbitrary link text | 
+----
+link:http://www.google.com[Google]
+----
+
+| Create an internal anchor to cross-reference | not rendered | 
+----
+[[anchor_name]]
+----
+| Cross-reference an existing anchor using its default title| an internal hyperlink using the element title if available, otherwise using the anchor name | 
+----
+<<anchor_name>>
+----
+| Cross-reference an existing anchor using custom text | an internal hyperlink using arbitrary text | 
+----
+<<anchor_name,Anchor Text>>
+----
+| A block image | The image with alt text | 
+----
+image::sunset.jpg[Alt Text] 
+----
+(put the image in the src/main/site/resources/images directory)
+| An inline image | The image with alt text, as part of the text flow | 
+----
+image:sunset.jpg [Alt Text]
+----
+(only one colon)
+| Link to a remote image | show an image hosted elsewhere | 
+----
+image::http://inkscape.org/doc/examples/tux.svg[Tux,250,350] 
+----
+(or `image:`)
+| Add dimensions or a URL to the image | depends | inside the brackets after the alt text, specify width, height and/or link="http://my_link.com"
+| A footnote | subscript link which takes you to the footnote | 
+----
+Some text.footnote:[The footnote text.]
+----
+| A note or warning with no title | The admonition image followed by the admonition | 
+----
+NOTE:My note here
+----
+
+----
+WARNING:My warning here
+----
+| A complex note | The note has a title and/or multiple paragraphs and/or code blocks or lists, etc | 
+........
+.The Title
+[NOTE]
+====
+Here is the note text. Everything until the second set of four equals signs is part of the note.
+----
+some source code
+----
+====
+........
+| Bullet lists | bullet lists | 
+----
+* list item 1
+----
+(See http://asciidoctor.org/docs/user-manual/#unordered-lists)
+| Numbered lists | numbered list | 
+----
+. list item 2 
+----
+(See http://asciidoctor.org/docs/user-manual/#ordered-lists)
+| Checklists | Checked or unchecked boxes | 
+Checked:
+----
+- [*] 
+----
+Unchecked:
+----
+- [ ]
+----
+| Multiple levels of lists | bulleted or numbered or combo | 
+----
+. Numbered (1), at top level
+* Bullet (2), nested under 1
+* Bullet (3), nested under 1
+. Numbered (4), at top level
+* Bullet (5), nested under 4
+** Bullet (6), nested under 5
+- [x] Checked (7), at top level
+----
+| Labelled lists / variablelists | a list item title or summary followed by content | 
+----
+Title:: content 
+
+Title::
+  content
+----
+| Sidebars, quotes, or other blocks of text | a block of text, formatted differently from the default | Delimited using different delimiters, see http://asciidoctor.org/docs/user-manual/#built-in-blocks-summary. Some of the examples above use delimiters like \...., ----,====.
+........
+[example]
+====
+This is an example block.
+====
+
+[source]
+----
+This is a source block.
+----
+
+[note]
+====
+This is a note block.
+====
+
+[quote]
+____
+This is a quote block.
+____
+........
+
+If you want to insert literal Asciidoc content that keeps being interpreted, when in doubt, use eight dots as the delimiter at the top and bottom.
+| Nested Sections | chapter, section, sub-section, etc | 
+----
+= Book (or chapter if the chapter can be built alone, see the leveloffset info below)
+
+== Chapter (or section if the chapter is standalone)
+
+=== Section (or subsection, etc)
+
+==== Subsection 
+----
+
+and so on up to 6 levels (think carefully about going deeper than 4 levels, maybe you can just titled paragraphs or lists instead). Note that you can include a book inside another book by adding the `:leveloffset:+1` macro directive directly before your include, and resetting it to 0 directly after. See the _index.adoc_ source for examples, as this is how this guide handles chapters. *Don't do it for prefaces, glossaries, appendixes, or other special types of chapters.*
+
+| Include one file from another | Content is included as though it were inline |
+
+----
+include::[/path/to/file.adoc]
+----
+
+For plenty of examples. see _book.adoc_.
+| A table | a table | See http://asciidoctor.org/docs/user-manual/#tables. Generally rows are separated by newlines and columns by pipes
+| Comment out a single line | A  line is skipped during rendering | 
+`+//+ This line won't show up`
+| Comment out a block | A section of the file is skipped during rendering |
+----
+////
+Nothing between the slashes will show up.
+////
+----
+| Highlight text for review | text shows up with yellow background | 
+----
+Test between #hash marks# is highlighted yellow.
+----
+|===
+
+
+=== Auto-Generated Content
+
+Some parts of the DCS Reference Guide, most notably <<dcs_default_configurations,DCS default configuration>>, are generated automatically, so that this area of the documentation stays in sync with the code.
+This is done by means of an XSLT transform, which you can examine in the source at _src/main/xslt/configuration_to_asciidoc_chapter.xsl_.
+This transforms the _dcs-common/src/main/resources/dcs-default.xml_            file into an Asciidoc output which can be included in the Reference Guide.
+Sometimes, it is necessary to add configuration parameters or modify their descriptions.
+Make the modifications to the source file, and they will be included in the Reference Guide when it is rebuilt.
+
+It is possible that other types of content can and will be automatically generated from DCS source files in the future.
+
+
+=== Images in the DCS Reference Guide
+
+You can include images in the DCS Reference Guide. It is important to include an image title if possible, and alternate text always. 
+This allows screen readers to navigate to the image and also provides alternative text for the image.
+The following is an example of an image with a title and alternate text. Notice the double colon.
+
+[source,asciidoc]
+----
+.My Image Title
+image::sunset.jpg[Alt Text]
+----
+
+Here is an example of an inline image with alternate text. Notice the single colon. Inline images cannot have titles. They are generally small images like GUI buttons.
+
+[source,asciidoc]
+----
+image:sunset.jpg[Alt Text]
+----
+
+
+When doing a local build, save the image to the _src/main/site/resources/images/_ directory.
+When you link to the image, do not include the directory portion of the path.
+The image will be copied to the appropriate target location during the build of the output.
+
+=== Adding a New Chapter to the DCS Reference Guide
+
+If you want to add a new chapter to the DCS Reference Guide, the easiest way is to copy an existing chapter file, rename it, and change the ID (in double brackets) and title. Chapters are located in the _src/main/asciidoc/_chapters/_ directory.
+
+Delete the existing content and create the new content.
+Then open the _src/main/asciidoc/book.adoc_ file, which is the main file for the DCS Reference Guide, and copy an existing `include` element to include your new chapter in the appropriate location.
+Be sure to add your new file to your Git repository before creating your patch.
+
+When in doubt, check to see how other files have been included.
+
+=== Common Documentation Issues
+
+The following documentation issues come up often.
+Some of these are preferences, but others can create mysterious build errors or other problems.
+
+Syntax Highlighting::
+  The DCS Reference Guide uses `coderay` for syntax highlighting. To enable syntax highlighting for a given code listing, use the following type of syntax:
++
+........
+[source,xml]
+----
+<name>My Name</name>
+----
+........
++
+Several syntax types are supported. The most interesting ones for the DCS Reference Guide are `java`, `xml`, `sql`, and `bash`.
+

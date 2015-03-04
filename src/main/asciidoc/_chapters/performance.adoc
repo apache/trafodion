@@ -1,9 +1,6 @@
-<?xml version="1.0"?>
-<xsl:stylesheet
-  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-  version="1.0">
-<!--
+////
 /**
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,15 +17,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+////
 
-This stylesheet is used making an html version of hbase-default.xml.
--->
-  <xsl:import href="urn:docbkx:stylesheet"/>
+[[performance]]
+= Performance Tuning
+:doctype: book
+:numbered:
+:toc: left
+:icons: font
+:experimental:
 
-  <xsl:template name="user.header.content">
-  </xsl:template>
-
-  <xsl:template name="user.footer.content">
-  </xsl:template>
-
-</xsl:stylesheet>
+[[perf-os]]
+== Operating System 
+[[perf-os-ram]]
+=== Memory 
+RAM, RAM, RAM.  Don't starve Dcs. 
+[[perf-os-64]]
+=== 64-bit
+Use a 64-bit platform (and 64-bit JVM). 
+[[perf-os-swap]]
+=== Swapping 
+Watch out for swapping. Set swappiness to 0. 
+[[perf-network]]
+== Network 
+[[perf-zookeeper]]
+== ZooKeeper
+See <<zookeeper,Zookeeper>> for information on configuring ZooKeeper, and see the part about having a dedicated disk.

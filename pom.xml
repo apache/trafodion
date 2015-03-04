@@ -3,7 +3,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 <!-- 
 /**
-  *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+  *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -90,6 +90,28 @@
       <id>trafodion repository</id>
       <url>http://mvnrepo.trafodion.org/</url>
     </repository>
+     <repository>
+      <id>java.net</id>
+      <name>Java.Net</name>
+      <url>http://download.java.net/maven/2/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+    </repository>
+    <repository>
+      <id>codehaus</id>
+      <name>Codehaus Public</name>
+      <url>http://repository.codehaus.org/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+    </repository>
   </repositories>
    
   <build>
@@ -119,7 +141,7 @@
   <plugins>
     <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.6</version>
+        <version>${maven.antrun.plugin.version}</version>
         <executions>
            <execution>
             <id>generate</id>
@@ -207,7 +229,7 @@
     <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.5</version>
+        <version>${build.helper.maven.plugin.version}</version>
         <executions>
           <execution>
             <id>packageInfo-source</id>
@@ -227,7 +249,7 @@
     <plugin>
         <groupId>org.jamon</groupId>
         <artifactId>jamon-maven-plugin</artifactId>
-        <version>2.3.4</version>
+        <version>${jamon.maven.plugin.version}</version>
         <executions>
           <execution>
             <phase>generate-sources</phase>
@@ -263,7 +285,8 @@
     <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>xml-maven-plugin</artifactId>
-        <version>1.0-beta-3</version>
+        <version>${xml.maven.plugin.version}</version>
+        <inherited>false</inherited>
         <executions>
           <execution>
             <goals>
@@ -279,67 +302,17 @@
               <includes>
                 <include>dcs-default.xml</include>
               </includes>
-              <stylesheet>${basedir}/src/main/xslt/configuration_to_docbook_section.xsl</stylesheet>
-              <outputDir>${basedir}/target/site/</outputDir>
+              <stylesheet>${basedir}/src/main/xslt/configuration_to_asciidoc_chapter.xsl</stylesheet>
+              <fileMappers>
+                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.RegExpFileMapper">
+                  <pattern>^(.*)\.xml$</pattern>
+                  <replacement>$1.adoc</replacement>
+                </fileMapper>
+              </fileMappers>
+              <outputDir>${basedir}/target/asciidoc</outputDir>
             </transformationSet>
           </transformationSets>
         </configuration>
-    </plugin>
-    <plugin>
-        <groupId>com.agilejava.docbkx</groupId>
-        <artifactId>docbkx-maven-plugin</artifactId>
-        <version>2.0.13</version>
-        <executions>
-          <execution>
-              <id>multipage</id>
-              <phase>pre-site</phase>
-        <configuration>
-          <xincludeSupported>true</xincludeSupported>
-          <navigShowtitles>true</navigShowtitles>
-          <chunkedOutput>true</chunkedOutput>
-          <useIdAsFilename>true</useIdAsFilename>
-          <sectionAutolabelMaxDepth>100</sectionAutolabelMaxDepth>
-          <sectionAutolabel>true</sectionAutolabel>
-          <sectionLabelIncludesComponentLabel>true</sectionLabelIncludesComponentLabel>
-          <targetDirectory>${basedir}/target/site/</targetDirectory>
-          <htmlStylesheet>../css/freebsd_docbook.css</htmlStylesheet>
-          <htmlCustomization>src/docbkx/customization.xsl</htmlCustomization>
-          <imgSrcPath>../images/</imgSrcPath>
-          <tocMaxDepth>2</tocMaxDepth>
-          <insertXrefPageNumber>yes</insertXrefPageNumber>
-        </configuration>
-            <goals>
-              <goal>generate-html</goal>
-            </goals>
-          </execution>
-          <execution>
-              <id>onepage</id>
-            <phase>pre-site</phase>
-        <configuration>
-          <xincludeSupported>true</xincludeSupported>
-          <useIdAsFilename>true</useIdAsFilename>
-          <sectionAutolabelMaxDepth>100</sectionAutolabelMaxDepth>
-          <sectionAutolabel>true</sectionAutolabel>
-          <sectionLabelIncludesComponentLabel>true</sectionLabelIncludesComponentLabel>
-          <targetDirectory>${basedir}/target/site/</targetDirectory>
-          <htmlStylesheet>css/freebsd_docbook.css</htmlStylesheet>
-          <imgSrcPath>images/</imgSrcPath>
-          <tocMaxDepth>2</tocMaxDepth>
-          <insertXrefPageNumber>yes</insertXrefPageNumber>
-        </configuration>
-            <goals>
-              <goal>generate-html</goal>
-            </goals>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>org.docbook</groupId>
-            <artifactId>docbook-xml</artifactId>
-            <version>4.4</version>
-            <scope>runtime</scope>
-          </dependency>
-        </dependencies>
     </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -401,7 +374,77 @@
                 </configuration>
             </execution>
         </executions>
+      </plugin>  
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${maven.resources.plugin.version}</version>
+        <!--$NO-MVN-MAN-VER$ -->
+        <inherited>false</inherited>
+        <executions>
+          <execution>
+            <id>copy-javadocs</id>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <phase>site</phase>
+            <configuration>
+              <outputDirectory>target/site/apidocs</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/target/apidocs</directory>
+                  <includes>
+                    <include>**/**</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+        <configuration>
+          <escapeString>\</escapeString>
+        </configuration>
+      </plugin> 
+       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>${maven.site.plugin.version}</version>
+        <inherited>false</inherited>
+        <dependencies>
+        </dependencies>
+        <configuration>
+          <siteDirectory>${basedir}/src/main/site</siteDirectory>
+          <inputEncoding>UTF-8</inputEncoding>
+          <outputEncoding>UTF-8</outputEncoding>
+        </configuration>
       </plugin>     
+      <!-- For AsciiDoc docs building -->
+      <plugin>
+        <groupId>org.asciidoctor</groupId>
+        <artifactId>asciidoctor-maven-plugin</artifactId>
+        <version>${asciidoctor.maven.plugin.version}</version> 
+        <executions>
+          <execution>
+            <id>output-html</id> 
+            <goals>
+              <goal>process-asciidoc</goal> 
+            </goals>
+            <phase>site</phase>
+            <configuration>
+              <imagesDir>./images</imagesDir>
+              <doctype>book</doctype>
+              <attributes>
+                <stylesheet>dcs.css</stylesheet>
+                <projectVersion>${project.version}</projectVersion>
+                <buildDate>${maven.build.timestamp}</buildDate>
+              </attributes>
+              <backend>html5</backend>
+              <sourceHighlighter>coderay</sourceHighlighter>
+              <outputDirectory>target/site</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>        
   </plugins>
   </build>
   
@@ -424,6 +467,7 @@
   	<guava.version>11.0.2</guava.version>
   	<jackson.version>1.8.8</jackson.version>
   	<jasper.version>5.5.23</jasper.version>
+  	<jamon.runtime.version>2.4.0</jamon.runtime.version>
   	<jaxb-api.version>2.1</jaxb-api.version>
   	<jetty.version>6.1.26</jetty.version>
   	<jetty.jspapi.version>6.1.14</jetty.jspapi.version>
@@ -437,9 +481,22 @@
   	<displaytag.version>1.1.1</displaytag.version>
   	<jdbct4.version>0.9.0</jdbct4.version>
     <jdbct2.version>20150210_0830</jdbct2.version>
+    
+    <!-- Plugin Dependencies -->
+    <maven.antrun.plugin.version>1.6</maven.antrun.plugin.version>
+    <maven.site.plugin.version>3.3</maven.site.plugin.version>
+    <maven.javadoc.plugin.version>2.9.1</maven.javadoc.plugin.version>
+    <maven.resources.plugin.version>2.6</maven.resources.plugin.version>
+    <maven.jxr.plugin.version>2.3</maven.jxr.plugin.version>
+    <jamon.maven.plugin.version>2.3.4</jamon.maven.plugin.version>
+    <xml.maven.plugin.version>1.0</xml.maven.plugin.version>
+    <maven.surefire.report.plugin.version>2.7.2</maven.surefire.report.plugin.version>
+    <asciidoctor.maven.plugin.version>1.5.2</asciidoctor.maven.plugin.version>
+    <maven.project.info.reports.plugin.version>2.1.2</maven.project.info.reports.plugin.version>
+    <build.helper.maven.plugin.version>1.5</build.helper.maven.plugin.version>
 
-        <!-- also must update this when we bump version -->
-        <package.version>1.1.0</package.version>
+    <!-- also must update this when we bump version -->
+    <package.version>1.1.0</package.version>
   	<final.name>${project.artifactId}-${project.version}</final.name>
   	
   	<!-- Test inclusion patterns used by failsafe configuration -->
@@ -521,36 +578,6 @@
       <artifactId>hadoop-common</artifactId>
       <version>${hadoop.version}</version>
     </dependency>
- <!--   
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-core</artifactId>
-      <version>${hadoop.version}</version>
-      <optional>true</optional>
-      <exclusions>
-        <exclusion>
-          <groupId>hsqldb</groupId>
-          <artifactId>hsqldb</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>net.sf.kosmosfs</groupId>
-          <artifactId>kfs</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.eclipse.jdt</groupId>
-          <artifactId>core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>net.java.dev.jets3t</groupId>
-          <artifactId>jets3t</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>oro</groupId>
-          <artifactId>oro</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
- --> 
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
@@ -674,11 +701,10 @@
         </exclusion>
       </exclusions>
     </dependency>
-
     <dependency>
       <groupId>org.jamon</groupId>
       <artifactId>jamon-runtime</artifactId>
-      <version>2.4.0</version>
+      <version>${jamon.runtime.version}</version>
     </dependency>
 
     <!-- REST dependencies -->
@@ -735,7 +761,6 @@
       <artifactId>t2driver</artifactId>
       <version>${jdbct2.version}</version>
     </dependency>
- 
   </dependencies>
   
   <profiles>
@@ -794,37 +819,17 @@
     <plugins>
       <plugin>
         <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>2.1.2</version>
+        <version>${maven.project.info.reports.plugin.version}</version>
         <reportSets>
           <reportSet>
             <reports>
-              <report>project-team</report>
-              <report>mailing-list</report>
-<!--   
-              <report>cim</report>
-              <report>issue-tracking</report>
-              <report>license</report>
-              <report>scm</report>
-              <report>index</report>
--->
             </reports>
           </reportSet>
         </reportSets>
       </plugin>
-<!-- 
-      <plugin>
-        <artifactId>maven-site-plugin</artifactId>
-        <version>3.2</version>
-        <configuration>
-          <inputEncoding>UTF-8</inputEncoding>
-          <outputEncoding>UTF-8</outputEncoding>
-          <templateFile>src/site/site.vm</templateFile>
-        </configuration>
-      </plugin>
- -->      
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.6.1</version>
+        <version>${maven.javadoc.plugin.version}</version>
         <configuration>
           <docfilessubdirs>true</docfilessubdirs>
         </configuration>
@@ -840,17 +845,12 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
-        <version>2.1</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>0.8</version>
+        <version>${maven.jxr.plugin.version}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-report-plugin</artifactId>
-        <version>2.7.2</version>
+        <version>${maven.surefire.report.plugin.version}</version>
         <reportSets>
           <reportSet>
             <id>integration-tests</id>
