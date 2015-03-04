@@ -126,6 +126,11 @@ if [ -f $LOCAL_TRAF_CONFIG ]; then
 	source $LOCAL_TRAF_CONFIG
 fi
 
+if [[ "$(whoami)" == "$TRAF_USER" ]]; then
+   echo "***ERROR: The Trafodion username cannot be the same as the install username"
+   exit -1 
+fi
+
 echo "#!/bin/bash" > $LOCAL_TRAF_CONFIG
 echo "export TRAF_USER=\"$TRAF_USER\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_WORKDIR=\"$TRAF_WORKDIR\"" >> $LOCAL_TRAF_CONFIG
