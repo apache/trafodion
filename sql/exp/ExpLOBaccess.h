@@ -555,7 +555,7 @@ class ExLobGlobals
     {
       return heap_;
     }
-    void traceMessage(const char *logMessage, int line);
+    void traceMessage(const char *logMessage, ExLobCursor *c, int line);
   public :
     lobMap_t *lobMap_;
     hdfsFS fs_;

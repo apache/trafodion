@@ -114,6 +114,10 @@ prepare s from insert into ins_store_sales select * from store_sales;
 execute s;
 select count(*) from hive.store_sales;
 select count(*) from hive.ins_store_sales;
+prepare s1 from select [first 1] 'the first row' from ins_store_sales;
+execute s1;
+prepare s1 from values('lp 1425661 - Hang with hive scan and [FIRST N]');
+execute s1;
 
 prepare s from insert into ins_customer_demographics select * from customer_demographics;
 execute s;
