@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -61,6 +61,9 @@ short qrysrvcExecuteFinished(
 
 
 // Global Variables
+
+// mutex for maintaining SRVR_SESSION_HDL list
+static pthread_mutex_t 	pSrvrSession_mutex =  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 SRVR_SESSION_HDL	*pSrvrSession = NULL;  
 SRVR_GLOBAL_Def		*srvrGlobal = NULL;	
@@ -258,6 +261,9 @@ void SRVR::addSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
 
 	SRVR_STMT_HDL_LIST *pSrvrStmtList;
 
+	int rc = pthread_mutex_lock(&pSrvrSession_mutex);
+	if (rc != 0) abort;
+
 	pSrvrStmtList = allocSrvrStmtHdlList();
 	pSrvrStmtList->pSrvrStmt = pSrvrStmt;
 	
@@ -274,6 +280,8 @@ void SRVR::addSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
 	pSrvrSession->pCurrentSrvrStmt = pSrvrStmt;
 	pSrvrSession->count++;
 
+	pthread_mutex_unlock(&pSrvrSession_mutex);
+
 	SRVRTRACE_EXIT(FILE_COMMON+4);
 	return;
 }
@@ -284,6 +292,9 @@ void SRVR::removeSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
 
 	SRVR_STMT_HDL_LIST *pSrvrStmtList;
 	SRVR_STMT_HDL *lpSrvrStmt;
+
+	int rc = pthread_mutex_lock(&pSrvrSession_mutex);
+	if (rc != 0) abort;
 
 	if (pSrvrSession->pSrvrStmtListHead != NULL)
 	{
@@ -311,11 +322,14 @@ void SRVR::removeSrvrStmt(SRVR_STMT_HDL *pSrvrStmt)
 				delete pSrvrStmtList;
 				if( trace_memory ) LogDelete("delete pSrvrStmtList;",(void**)&pSrvrStmtList,pSrvrStmtList);
 				pSrvrSession->count--;
+				pthread_mutex_unlock(&pSrvrSession_mutex);
 				return;
 			}
 			pSrvrStmtList = pSrvrStmtList->next;
 		}
 	}
+
+	pthread_mutex_unlock(&pSrvrSession_mutex);
 
 	SRVRTRACE_EXIT(FILE_COMMON+5);
 	return;
@@ -412,6 +426,9 @@ SRVR_STMT_HDL *SRVR::getSrvrStmt( const IDL_char *stmtLabel
 	SRVR_STMT_HDL *pSrvrStmt;
 	SRVR_STMT_HDL_LIST *pSrvrStmtList;
 
+	int rc = pthread_mutex_lock(&pSrvrSession_mutex);
+	if (rc != 0) abort;
+
 	// Check in the currentSrvrStmt
 	if (pSrvrSession->pSrvrStmtListHead != NULL)
 	{
@@ -429,6 +446,7 @@ SRVR_STMT_HDL *SRVR::getSrvrStmt( const IDL_char *stmtLabel
 			{
 				if (stmtLabelCmp == 0)
 				{
+					pthread_mutex_unlock(&pSrvrSession_mutex);
 					SRVRTRACE_EXIT(FILE_COMMON+7);
 					return pSrvrSession->pCurrentSrvrStmt;
 				}
@@ -438,6 +456,7 @@ SRVR_STMT_HDL *SRVR::getSrvrStmt( const IDL_char *stmtLabel
 				if (stmtLabelCmp == 0
 					&& (strcmp(pSrvrSession->pCurrentSrvrStmt->moduleName, moduleName) == 0))
 				{
+					pthread_mutex_unlock(&pSrvrSession_mutex);
 					SRVRTRACE_EXIT(FILE_COMMON+7);
 					return pSrvrSession->pCurrentSrvrStmt;
 				}
@@ -457,6 +476,7 @@ SRVR_STMT_HDL *SRVR::getSrvrStmt( const IDL_char *stmtLabel
 					if (stmtLabelCmp == 0)
 					{
 						pSrvrSession->pCurrentSrvrStmt = pSrvrStmt;
+						pthread_mutex_unlock(&pSrvrSession_mutex);
 						SRVRTRACE_EXIT(FILE_COMMON+7);
 						return pSrvrStmt;
 					}
@@ -468,6 +488,7 @@ SRVR_STMT_HDL *SRVR::getSrvrStmt( const IDL_char *stmtLabel
 						&& strcmp(pSrvrStmt->moduleName, moduleName) == 0)
 					{
 						pSrvrSession->pCurrentSrvrStmt = pSrvrStmt;
+						pthread_mutex_unlock(&pSrvrSession_mutex);
 						SRVRTRACE_EXIT(FILE_COMMON+7);
 						return pSrvrStmt;
 					}
@@ -493,6 +514,8 @@ SRVR_STMT_HDL *SRVR::getSrvrStmt( const IDL_char *stmtLabel
 	else
 		pSrvrStmt = NULL;
 
+	pthread_mutex_unlock(&pSrvrSession_mutex);
+
 	SRVRTRACE_EXIT(FILE_COMMON+7);
 
 	return pSrvrStmt;
@@ -505,6 +528,9 @@ SRVR_STMT_HDL *SRVR::getSrvrStmtByCursorName(const IDL_char	*stmtLabel,
 
 	SRVR_STMT_HDL *pSrvrStmt;
 	SRVR_STMT_HDL_LIST *pSrvrStmtList;
+
+	int rc = pthread_mutex_lock(&pSrvrSession_mutex);
+	if (rc != 0) abort;
 
 	// Check in the currentSrvrStmt
 	if (pSrvrSession->pSrvrStmtListHead != NULL)
@@ -520,6 +546,7 @@ SRVR_STMT_HDL *SRVR::getSrvrStmtByCursorName(const IDL_char	*stmtLabel,
 			stmtLabelCmp = memcmp(pSrvrSession->pCurrentSrvrStmt->stmtName, stmtLabel, stmtLabelLen);
 			if (stmtLabelCmp == 0)
 			{
+				pthread_mutex_unlock(&pSrvrSession_mutex);
 				SRVRTRACE_EXIT(FILE_COMMON+7);
 				return pSrvrSession->pCurrentSrvrStmt;
 			}
@@ -531,6 +558,7 @@ SRVR_STMT_HDL *SRVR::getSrvrStmtByCursorName(const IDL_char	*stmtLabel,
 			stmtLabelCmp = memcmp(pSrvrSession->pCurrentSrvrStmt->cursorName, stmtLabel, stmtLabelLen);
 			if (stmtLabelCmp == 0)
 			{
+				pthread_mutex_unlock(&pSrvrSession_mutex);
 				SRVRTRACE_EXIT(FILE_COMMON+7);
 				return pSrvrSession->pCurrentSrvrStmt;
 			}
@@ -547,6 +575,7 @@ SRVR_STMT_HDL *SRVR::getSrvrStmtByCursorName(const IDL_char	*stmtLabel,
 				if (stmtLabelCmp == 0)
 				{
 					pSrvrSession->pCurrentSrvrStmt = pSrvrStmt;
+					pthread_mutex_unlock(&pSrvrSession_mutex);
 					SRVRTRACE_EXIT(FILE_COMMON+7);
 					return pSrvrStmt;
 				}
@@ -559,6 +588,7 @@ SRVR_STMT_HDL *SRVR::getSrvrStmtByCursorName(const IDL_char	*stmtLabel,
 				if (stmtLabelCmp == 0)
 				{
 					pSrvrSession->pCurrentSrvrStmt = pSrvrStmt;
+					pthread_mutex_unlock(&pSrvrSession_mutex);
 					SRVRTRACE_EXIT(FILE_COMMON+7);
 					return pSrvrStmt;
 				}
@@ -570,6 +600,7 @@ SRVR_STMT_HDL *SRVR::getSrvrStmtByCursorName(const IDL_char	*stmtLabel,
 
 	// Not Found, return NULL
 	pSrvrStmt = NULL;
+	pthread_mutex_unlock(&pSrvrSession_mutex);
 	SRVRTRACE_EXIT(FILE_COMMON+7);
 	return pSrvrStmt;
 }
@@ -593,6 +624,10 @@ void SRVR::releaseCachedObject(BOOL internalStmt, NDCS_SUBSTATE mxsrvr_substate)
 	char				*inSqlError = NULL;
 	Int32				inSqlErrorLength = 0;
 	
+
+//	SQL_DROP is a process hop, hence we should not take a mutex on 
+//	pSrvrSession_mutex. Also releaseCachedObject() should not be called
+//	by two different threads.
 
 	for (pSrvrStmtList = pSrvrSession->pSrvrStmtListHead ; pSrvrStmtList != NULL ;)
 	{

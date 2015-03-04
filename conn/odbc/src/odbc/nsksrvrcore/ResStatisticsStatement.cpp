@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1311,11 +1311,8 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 	short reqStrLen = 0;
 	char *reqStrCurrent = "CURRENT";
 
-	// Check the undocumented flag if the stats needs to collected.
-	if (srvrGlobal->m_rule_endstats_off)	// perf
+	if (!srvrGlobal->m_bStatisticsEnabled)
 		return;
-
-	// perf
 
 	if (pSrvrStmt != NULL)
 		pSrvrStmt->m_mxsrvr_substate = NDCS_INIT;
