@@ -1675,11 +1675,14 @@ Ex_Lob_Error ExLob::initStats()
 void ExLobGlobals::traceMessage(const char *logMessage, ExLobCursor *cursor,
                                 int line)
 {
+  if ( threadTraceFile_ && logMessage)
+  {
     fprintf(threadTraceFile_, 
     "Thread: 0x%lx Line:  %d %s 0x%lx\n" ,
        (unsigned long)pthread_self(), line, logMessage, 
        (unsigned long) cursor);
     fflush(threadTraceFile_);
+  }
 }
 Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
 {
