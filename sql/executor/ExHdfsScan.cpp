@@ -344,9 +344,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
   while (!qparent_.down->isEmpty())
     {
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-      if (pentry_down->downState.request == ex_queue::GET_NOMORE)
-	step_ = DONE;
-      
       switch (step_)
 	{
 	case NOT_STARTED:
@@ -841,6 +838,14 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
+
+            if (((pentry_down->downState.request == ex_queue::GET_N) &&
+                 (pentry_down->downState.requestValue == matches_)) ||
+                 (pentry_down->downState.request == ex_queue::GET_NOMORE))
+            {
+              step_ = CLOSE_HDFS_CURSOR;
+              break;
+            }
 	    
 	    ex_queue_entry *up_entry = qparent_.up->getTailEntry();
 	    up_entry->copyAtp(pentry_down);
@@ -932,11 +937,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    
 	    workAtp_->setDiagsArea(NULL);    // get rid of warnings.
 	    
-	    if ((pentry_down->downState.request == ex_queue::GET_N) &&
-		(pentry_down->downState.requestValue == matches_))
-	      step_ = CLOSE_FILE;
-	    else
-	      step_ = PROCESS_HDFS_ROW;
+	    step_ = PROCESS_HDFS_ROW;
 	    break;
 	  }
 	case REPOS_HDFS_DATA:
@@ -1108,16 +1109,12 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		  }
 	      }
 
-            bool satisfiedGetN = 
-              ((pentry_down->downState.request == ex_queue::GET_N) &&
-               (pentry_down->downState.requestValue == matches_));
-
             // if next file is not same as current file, then close the current file. 
             bool closeFile = true;
 
             if ( (step_ == CLOSE_FILE) && 
-                 ((currRangeNum_ + 1) < (beginRangeNum_ + numRanges_))  &&
-                 !satisfiedGetN)
+                 ((currRangeNum_ + 1) < (beginRangeNum_ + numRanges_))) 
+                 
             {   
                 hdfo = (HdfsFileInfo*) hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_ + 1);
                 if (strcmp(hdfsFileName_, hdfo->fileName()) == 0) 
@@ -1155,8 +1152,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    if (step_ == CLOSE_FILE)
 	      {
                 currRangeNum_++;
-                if ((!satisfiedGetN) && 
-                    (currRangeNum_ < (beginRangeNum_ + numRanges_)))
+                if (currRangeNum_ < (beginRangeNum_ + numRanges_))
                   {
                     // move to the next file.
                     step_ = INIT_HDFS_CURSOR;

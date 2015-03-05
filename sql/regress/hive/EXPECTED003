@@ -239,6 +239,28 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
              2880404
 
 --- 1 row(s) selected.
+>>prepare s1 from select [first 1] 'the first row' from ins_store_sales;
+
+--- SQL command prepared.
+>>execute s1;
+
+(EXPR)       
+-------------
+
+the first row
+
+--- 1 row(s) selected.
+>>prepare s1 from values('lp 1425661 - Hang with hive scan and [FIRST N]');
+
+--- SQL command prepared.
+>>execute s1;
+
+(EXPR)                                        
+----------------------------------------------
+
+lp 1425661 - Hang with hive scan and [FIRST N]
+
+--- 1 row(s) selected.
 >>
 >>prepare s from insert into ins_customer_demographics select * from customer_demographics;
 
