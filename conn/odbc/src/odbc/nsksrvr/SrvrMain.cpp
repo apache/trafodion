@@ -773,26 +773,26 @@ catch(SB_Fatal_Excep sbfe)
 		}
 	}
 
-	// If a address is passed in with TCPADD param then use that.
-	if( strlen(trafIPAddr) > 0 )
-	{
-		strcpy( srvrGlobal->IpAddress, trafIPAddr );
-        sprintf( errStrBuf1, "Server: IPaddr = %s, hostname = %s",
-                 srvrGlobal->IpAddress, "");
-	}
-	else
 	if (host_addr_get( initParam.TcpProcessName, srvrGlobal->IpAddress, srvrGlobal->HostName ) != CEE_SUCCESS)
 	{
 //LCOV_EXCL_START
         SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
                                       srvrGlobal->nskProcessInfo.processId,
                                       ODBCMX_SERVICE, srvrGlobal->srvrObjRef,
-                                      1, errStrBuf1);
+                                      1, "host_addr_get failed");
 		exit(0);
 //LCOV_EXCL_STOP
 	}
     else
-    {   // Log an informational event giving our ip address and host name
+    {  		
+	    // If a address is passed in with TCPADD param then use that.
+	    // Set the host name as unresolved if the TCPADD is different with the ip returned from host_addr_get
+	    if(( strlen(trafIPAddr) > 0 )&&(strcmp(srvrGlobal->IpAddress,trafIPAddr)))
+	    {
+	           strcpy(srvrGlobal->IpAddress,trafIPAddr);
+			    strcpy(srvrGlobal->HostName,"UNRESOLVED");
+	    }
+	    // Log an informational event giving our ip address and host name
         sprintf( errStrBuf1, "Server: IPaddr = %s, hostname = %s",
                  srvrGlobal->IpAddress, srvrGlobal->HostName);
 	}
@@ -801,7 +801,6 @@ catch(SB_Fatal_Excep sbfe)
 								  srvrGlobal->nskProcessInfo.processId,
 								  ODBCMX_SERVICE, srvrGlobal->srvrObjRef,
 								  1, errStrBuf1);
-
 	if( stopOnDisconnect )
 		srvrGlobal->stopTypeFlag = STOP_WHEN_DISCONNECTED;
 	found = false;
