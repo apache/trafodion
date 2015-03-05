@@ -53,7 +53,7 @@
 #define SQL_API_SQLTABLES_JDBC			SQL_API_SQLTABLES + SQL_API_JDBC
 // Global Variables
 
-__thread SRVR_GLOBAL_Def		*srvrGlobal = NULL;
+SRVR_GLOBAL_Def		*srvrGlobal = NULL;
 //ODBCMXEventMsg		*srvrEventLogger = NULL;
 long				*TestPointArray = NULL;
 __thread SQLDESC_ITEM		gDescItems[NO_OF_DESC_ITEMS];

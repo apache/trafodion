@@ -224,6 +224,8 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 	// Fields
 	private static T2Driver singleton_;
 
+    private static Locale locale_;
+	
 	static int stmtatomicityval_;
 
 	// dateFormat object used to format the timestamps printed in jdbcTrace
@@ -262,6 +264,18 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 	// Constructors
 	public T2Driver() {
 		super();
+		String lang = this.getLanguage();
+		if (lang == null)
+			locale_ = Locale.getDefault();
+		else {
+			if (lang.equalsIgnoreCase("ja"))
+				locale_ = new Locale("ja", "", "");
+			else if (lang.equalsIgnoreCase("en"))
+				locale_ = new Locale("en", "", "");
+			else
+				locale_ = Locale.getDefault();
+		}
+		
 		if (JdbcDebugCfg.entryActive) {
 			debug[methodId_T2Driver].methodEntry();
 			debug[methodId_T2Driver].methodExit();
@@ -350,6 +364,9 @@ public class T2Driver extends T2Properties implements java.sql.Driver {
 
 		// Verify that the JDBC Java libaray is compatible with the JNI library
 		checkLibraryVersion(DriverInfo.driverVproc);
+		
+		// Initialize Java objects, methods references into gJNICache
+		SQLMXInitialize(locale_.getLanguage(), 1, "OFF", null);
 		
     	// Get the major and minor database version numbers that
 		// were setup in SQLMXInitialize()

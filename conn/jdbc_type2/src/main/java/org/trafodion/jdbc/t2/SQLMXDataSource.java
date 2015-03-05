@@ -86,9 +86,6 @@ public class SQLMXDataSource extends T2Properties implements
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_getConnection_V]
 					.methodEntry(JdbcDebug.debugLevelPooling);
-//		T2Driver.SQLMXInitialize(locale_.getLanguage(), nowaitOn_,enableMFC_, compiledModuleLocation_);
-
-		T2Driver.SQLMXInitialize(locale_.getLanguage(), this.getSqlmx_nowait(),this.getEnableMFC(), this.getCompiledModuleLocation());
 
 		try {
 			Connection connect;
@@ -246,7 +243,6 @@ public class SQLMXDataSource extends T2Properties implements
 			throws SQLException {
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_getConnection_LL].methodEntry();
-		T2Driver.SQLMXInitialize(locale_.getLanguage(), this.getSqlmx_nowait(),this.getEnableMFC(), this.getCompiledModuleLocation());
 		try {
 			return getConnection();
 		} finally {

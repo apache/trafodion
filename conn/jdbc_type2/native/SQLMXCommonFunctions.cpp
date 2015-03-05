@@ -2926,30 +2926,6 @@ func_exit:
 			"([II[Lorg/trafodion/jdbc/t2/DataWrapper;II)V");
 		if (gJNICache.executeOutputsMethodId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.executeOutputsMethodId == NULL"));
-		gJNICache.getSQLDataTypeMethodId = JNI_GetMethodID(jenv,SQLMXPreparedStatementClass, "getSQLDataType", "(I)I");
-		if (gJNICache.getSQLDataTypeMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.getSQLDataTypeMethodId == NULL"));
-		gJNICache.getSQLOctetLengthMethodId = JNI_GetMethodID(jenv,SQLMXPreparedStatementClass, "getSQLOctetLength", "(I)I");
-		if (gJNICache.getSQLOctetLengthMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.getSQLOctetLengthMethodId == NULL"));
-		gJNICache.getPrecisionMethodId = JNI_GetMethodID(jenv,SQLMXPreparedStatementClass, "getPrecision", "(I)I");
-		if (gJNICache.getPrecisionMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.getPrecisionMethodId == NULL"));
-		gJNICache.getScaleMethodId = JNI_GetMethodID(jenv,SQLMXPreparedStatementClass, "getScale", "(I)I");
-		if (gJNICache.getScaleMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.getScaleMethodId == NULL"));
-		gJNICache.getSqlDatetimeCodeMethodId = JNI_GetMethodID(jenv,SQLMXPreparedStatementClass, "getSqlDatetimeCode", "(I)I");
-		if (gJNICache.getSqlDatetimeCodeMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.getSqlDatetimeCodeMethodId == NULL"));
-		gJNICache.getOutFSDataTypeMethodId = JNI_GetMethodID(jenv,SQLMXPreparedStatementClass, "getOutFSDataType", "(I)I");
-		if (gJNICache.getOutFSDataTypeMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.getOutFSDataTypeMethodId == NULL"));
-		gJNICache.getOutScaleMethodId = JNI_GetMethodID(jenv,SQLMXPreparedStatementClass, "getOutScale", "(I)I");
-		if (gJNICache.getOutScaleMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.getOutScaleMethodId == NULL"));
-		gJNICache.getFSDataTypeMethodId = JNI_GetMethodID(jenv,SQLMXPreparedStatementClass, "getFSDataType", "(I)I");
-		if (gJNICache.getFSDataTypeMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.getFSDataTypeMethodId == NULL"));
 
 		// SQLMXStatement
 		jclass  SQLMXStatementClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/SQLMXStatement");
@@ -2991,34 +2967,10 @@ func_exit:
 			"(Lorg/trafodion/jdbc/t2/SQLMXDatabaseMetaData;[Lorg/trafodion/jdbc/t2/SQLMXDesc;IJ)V");
 		if (gJNICache.SQLMXResultSetConstructorId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.SQLMXResultSetConstructorId == NULL"));
-		gJNICache.wasNullFieldId = JNI_GetFieldID(jenv,SQLMXResultSetClass, "wasNull_", "Z");
-		if (gJNICache.wasNullFieldId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.wasNullFieldId == NULL"));
-		gJNICache.setDataTrunctionMethodId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "setDataTruncation", "(IZZII)V");
-		if (gJNICache.setDataTrunctionMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.setDataTrunctionMethodId == NULL"));
 		gJNICache.setCurrentTxidRSMethodId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "setCurrentTxid",
 			"(I)V");
 		if (gJNICache.setCurrentTxidRSMethodId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.setCurrentTxidRSMethodId == NULL"));
-		gJNICache.RSgetPrecisionMethodId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "getPrecision", "(I)I");
-		if (gJNICache.RSgetPrecisionMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.RSgetPrecisionMethodId == NULL"));
-		gJNICache.RSgetScaleMethodId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "getScale", "(I)I");
-		if (gJNICache.RSgetScaleMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.RSgetScaleMethodId == NULL"));
-		gJNICache.RSgetSQLDataTypeMethodId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "getSQLDataType", "(I)I");
-		if (gJNICache.RSgetSQLDataTypeMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.RSgetSQLDataTypeMethodId == NULL"));
-		gJNICache.RSgetSignedMethodId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "getSigned", "(I)Z");
-		if (gJNICache.RSgetSignedMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.RSgetSignedMethodId == NULL"));
-		gJNICache.RSgetSqlDatetimeCodeMethodId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "getSqlDatetimeCode", "(I)I");
-		if (gJNICache.RSgetSqlDatetimeCodeMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.RSgetSqlDatetimeCodeMethodId == NULL"));
-		gJNICache.RSgetFSDataTypeMethodId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "getFSDataType", "(I)I");
-		if (gJNICache.RSgetFSDataTypeMethodId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.RSgetFSDataTypeMethodId == NULL"));
 
 		//SQLMXDatabaseMetaData
 		jclass  SQLMXDatabaseMetaDataClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/SQLMXDatabaseMetaData");
@@ -3050,26 +3002,6 @@ func_exit:
 		{
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.getSqlStmtTypeMethodId == NULL"));
 		}
-
-
-		/* 
-		* Description: Type 2 driver now supports atomicity at statement level
-		*/
-		//T2Driver
-		jclass T2DriverClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/T2Driver");
-		if (T2DriverClass == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - T2DriverClass == NULL"));
-		jfieldID driverStmtatomicityFieldId = jenv->GetStaticFieldID(T2DriverClass,"stmtatomicityval_","I");
-		if(driverStmtatomicityFieldId == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - driverStmtatomicityFieldId == NULL"));
-		jint driverStmtatomicityField = jenv->GetStaticIntField(T2DriverClass,driverStmtatomicityFieldId);
-
-
-		//Object
-		jclass objectClass = JNI_FindClass(jenv,"java/lang/Object");
-		if (objectClass == NULL)
-			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - objectClass == NULL"));
-		gJNICache.objectClass = (jclass)JNI_NewGlobalRef(jenv,objectClass);
 
 		//String
 		jclass stringClass = JNI_FindClass(jenv,"java/lang/String");
@@ -3222,9 +3154,12 @@ func_exit:
 			if (encoding==NULL)
 				FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - Encoding NewStringUTF() == NULL"));
 			gJNICache.charsetInfo[idx].encodingNameJava = (jstring) JNI_NewGlobalRef(jenv,encoding);
-			if (gJNICache.charsetInfo[idx].encodingNameJava==NULL)
+			if (gJNICache.charsetInfo[idx].encodingNameJava==NULL) {
+				jenv->DeleteLocalRef(encoding);
 				FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - Encoding NewGlobalRef() == NULL"));
+			}
 			gJNICache.charsetInfo[idx].useDefaultEncoding = FALSE;
+			jenv->DeleteLocalRef(encoding);
 		}
                 if (setenv("MASTER_FAST_COMPLETION","0",1) != 0)
 		   abort();

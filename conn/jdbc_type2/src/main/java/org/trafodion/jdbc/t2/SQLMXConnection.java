@@ -2576,8 +2576,6 @@ public class SQLMXConnection extends PreparedStatementManager implements
 //
 //			connectionTimeout_ = 60;
 
-
-			T2Driver.SQLMXInitialize(locale_.getLanguage(), t2props.getSqlmx_nowait(),t2props.getEnableMFC(), t2props.getCompiledModuleLocation());
 			setDialogueId_(connect(server_, uid_, pwd_));
 			if (getDialogueId_() == 0)
 				return;
@@ -2625,10 +2623,6 @@ public class SQLMXConnection extends PreparedStatementManager implements
 //			getProperties(properties);
 
 			initConnectionProps(t2props);
-
-
-
-			T2Driver.SQLMXInitialize(locale_.getLanguage(), t2props.getSqlmx_nowait(),t2props.getEnableMFC(), t2props.getCompiledModuleLocation());
 
 			setDialogueId_(connect(server_, uid_, pwd_));
 			if (getDialogueId_() == 0)
@@ -2679,7 +2673,6 @@ public class SQLMXConnection extends PreparedStatementManager implements
 
 			initConnectionProps(t2props);
 
-			T2Driver.SQLMXInitialize(locale_.getLanguage(), t2props.getSqlmx_nowait(),t2props.getEnableMFC(), t2props.getCompiledModuleLocation());
 			setDialogueId_(connect(server_, uid_, pwd_));
 			if (getDialogueId_() == 0)
 				return;
