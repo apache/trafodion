@@ -1,0 +1,240 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--  
+/**
+ *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+ -->
+
+<configuration>
+  <property>
+    <name>rest.tmp.dir</name>
+    <value>${java.io.tmpdir}/rest-${user.name}</value>
+    <description>Temporary directory on the local filesystem.
+    Change this setting to point to a location more permanent
+    than '/tmp' (The '/tmp' directory is often cleared on
+    machine restart).
+    </description>
+  </property>  
+  <property>
+    <name>rest.local.dir</name>
+    <value>${rest.tmp.dir}/local/</value>
+    <description>Directory on the local filesystem to be used 
+    as a local storage.
+    </description>
+  </property>
+  <property>
+    <name>rest.server.info.bindAddress</name>
+    <value>0.0.0.0</value>
+    <description>The address for the Rest server web UI
+    </description>
+  </property> 
+  <property>
+    <name>rest.dns.interface</name>
+    <value>default</value>
+    <description>Rest uses the local host name for reporting its IP address. If your machine
+        has multiple interfaces REST will use the interface that the primary
+        host name resolves to. If this is insufficient, you can set this property
+        to indicate the primary interface e.g., "eth1". This only works if your cluster 
+        configuration is consistent and every host has the same network interface
+        configuration.        
+    </description>
+  </property>
+  <property>
+    <name>rest.zookeeper.dns.interface</name>
+    <value>default</value>
+    <description>The name of the Network Interface from which a ZooKeeper server
+      should report its IP address.
+    </description>
+  </property>
+  <property>
+    <name>rest.zookeeper.dns.nameserver</name>
+    <value>default</value>
+    <description>The host name or IP address of the name server (DNS)
+      which a ZooKeeper server should use to determine the host name used by the
+      master for communication and display purposes.
+    </description>
+  </property>
+  <property>
+    <name>rest.server.versionfile.writeattempts</name>
+    <value>3</value>
+    <description>
+    How many time to retry attempting to write a version file
+    before just aborting. Each attempt is seperated by the
+    rest.server.thread.wakefrequency milliseconds.
+    </description>
+  </property>
+  <property>
+    <name>zookeeper.session.timeout</name>
+    <value>180000</value>
+    <description>ZooKeeper session timeout.
+      rest passes this to the zk quorum as suggested maximum time for a
+      session (This setting becomes zookeeper's 'maxSessionTimeout').  See
+      http://hadoop.apache.org/zookeeper/docs/current/zookeeperProgrammers.html#ch_zkSessions
+      "The client sends a requested timeout, the server responds with the
+      timeout that it can give the client. " In milliseconds.
+    </description>
+  </property>
+  <property>
+    <name>zookeeper.znode.parent</name>
+    <value>/${user.name}</value>
+    <description>Root Znode for rest in ZooKeeper. All of rest's ZooKeeper
+      znodes that are configured with a relative path will go under this node.
+      By default, all of rest's ZooKeeper file path are configured with a
+      relative path, so they will all go under this directory unless changed.
+    </description>
+  </property>
+  
+  <!--
+  The following three properties are used together to create the list of
+  host:peer_port:leader_port quorum servers for ZooKeeper.
+  -->
+  <property>
+    <name>rest.zookeeper.quorum</name>
+    <value>localhost</value>
+    <description>Comma separated list of servers in the ZooKeeper Quorum.
+    For example, "host1.mydomain.com,host2.mydomain.com,host3.mydomain.com".
+    By default this is set to localhost. For a fully-distributed setup, 
+    this should be set to a full list of ZooKeeper quorum servers. 
+    If REST_MANAGES_ZK is set in rest-env.sh this is the list of servers which
+    we will start/stop ZooKeeper on.
+    </description>
+  </property>
+  <property>
+    <name>rest.zookeeper.peerport</name>
+    <value>2888</value>
+    <description>Port used by ZooKeeper peers to talk to each other.
+    See http://hadoop.apache.org/zookeeper/docs/r3.1.1/zookeeperStarted.html#sc_RunningReplicatedZooKeeper
+    for more information.
+    </description>
+  </property>
+  <property>
+    <name>rest.zookeeper.leaderport</name>
+    <value>3888</value>
+    <description>Port used by ZooKeeper for leader election.
+    See http://hadoop.apache.org/zookeeper/docs/r3.1.1/zookeeperStarted.html#sc_RunningReplicatedZooKeeper
+    for more information.
+    </description>
+  </property>
+  <property>
+    <name>rest.zookeeper.useMulti</name>
+    <value>false</value>
+    <description>Instructs rest server to make use of ZooKeeper's multi-update functionality.
+    This allows certain ZooKeeper operations to complete more quickly and prevents some issues
+    with rare ZooKeeper failure scenarios (see the release note of HBASE-6710 for an example).
+    IMPORTANT: only set this to true if all ZooKeeper servers in the cluster are on version 3.4+
+    and will not be downgraded.  ZooKeeper versions before 3.4 do not support multi-update and will
+    not fail gracefully if multi-update is invoked (see ZOOKEEPER-1495).
+    </description>
+  </property>
+  <!-- End of properties used to generate ZooKeeper host:port quorum list. -->
+
+  <!--
+  Beginning of properties that are directly mapped from ZooKeeper's zoo.cfg.
+  All properties with an "rest.zookeeper.property." prefix are converted for
+  ZooKeeper's configuration. Hence, if you want to add an option from zoo.cfg,
+  e.g.  "initLimit=10" you would append the following to your configuration:
+    <property>
+      <name>rest.zookeeper.property.initLimit</name>
+      <value>10</value>
+    </property>
+  -->
+  <property>
+    <name>rest.zookeeper.property.initLimit</name>
+    <value>10</value>
+    <description>Property from ZooKeeper's config zoo.cfg.
+    The number of ticks that the initial synchronization phase can take.
+    </description>
+  </property>
+  <property>
+    <name>rest.zookeeper.property.syncLimit</name>
+    <value>5</value>
+    <description>Property from ZooKeeper's config zoo.cfg.
+    The number of ticks that can pass between sending a request and getting an
+    acknowledgment.
+    </description>
+  </property>
+  <property>
+    <name>rest.zookeeper.property.dataDir</name>
+    <value>${rest.tmp.dir}/zookeeper</value>
+    <description>Property from ZooKeeper's config zoo.cfg.
+    The directory where the snapshot is stored.
+    </description>
+  </property>
+  <property>
+    <name>rest.zookeeper.property.clientPort</name>
+    <value>2181</value>
+    <description>Property from ZooKeeper's config zoo.cfg.
+    The port at which the clients will connect.
+    </description>
+  </property>
+  <property>
+    <name>rest.zookeeper.property.maxClientCnxns</name>
+    <value>300</value>
+    <description>Property from ZooKeeper's config zoo.cfg.
+    Limit on number of concurrent connections (at the socket level) that a
+    single client, identified by IP address, may make to a single member of
+    the ZooKeeper ensemble. Set high to avoid zk connection issues running
+    standalone and pseudo-distributed.
+    </description>
+  </property>
+  <!-- End of properties that are directly mapped from ZooKeeper's zoo.cfg -->
+  
+  <property>
+    <name>trafodion.rest.port</name>
+    <value>4200</value>
+    <description>The port for the REST server.</description>
+  </property>
+  <property>
+    <name>trafodion.rest.readonly</name>
+    <value>false</value>
+    <description>
+    Defines the mode the REST server will be started in. Possible values are:
+    false: All HTTP methods are permitted - GET/PUT/POST/DELETE.
+    true: Only the GET method is permitted.
+    </description>
+  </property>
+  <property>
+    <name>rest.threads.max</name>
+    <value>100</value>
+    <description>
+        The maximum number of threads of the REST server thread pool.
+        Threads in the pool are reused to process REST requests. This
+        controls the maximum number of requests processed concurrently.
+        It may help to control the memory used by the REST server to
+        avoid out of memory issues. If the thread pool is full, incoming requests
+        will be queued up and wait for some free threads. The default
+        is 100.
+    </description>
+  </property>
+  <property>
+    <name>rest.threads.min</name>
+    <value>2</value>
+    <description>
+        The minimum number of threads of the REST server thread pool.
+        The thread pool always has at least these number of threads so
+        the REST server is ready to serve incoming requests. The default
+        is 2.
+    </description>
+  </property>
+  <property>
+    <name>rest.refresh.seconds</name>
+    <value>5</value>
+    <description>
+        Time in seconds between refresh of the REST server page. Set to 0
+        to disable automatic refresh. The default is 5.
+    </description>
+  </property>
+ </configuration>

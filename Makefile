@@ -2,7 +2,7 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 include macros.gmk
 
 # Make Targets
-.PHONY: all log4cpp dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr
+.PHONY: all log4cpp dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr rest
 .PHONY: package package-all pkg-product pkg-sql-regress
 
 ################
@@ -32,7 +32,7 @@ include macros.gmk
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar
+all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest
 
 package: pkg-product pkg-client
 
@@ -81,7 +81,10 @@ trafci: jdbc_jar
 jdbc_type2_jar: ndcs
 	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
-
+	
+rest: verhdr 
+	cd rest && $(MAKE) 2>&1 | sed -e "s/$$/  ##(REST)/" ; exit $${PIPESTATUS[0]}
+    
 clean: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd $(SEAMONSTER_TARGET)/src &&	$(MAKE) clean
@@ -93,6 +96,7 @@ clean: sqroot
 	cd conn/jdbc_type4    &&	$(ANT) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
+	cd rest &&			$(MAKE) clean
 
 cleanall: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
@@ -104,6 +108,7 @@ cleanall: sqroot
 	cd conn/jdbc_type4    &&	$(ANT) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
+	cd rest &&			$(MAKE) clean
 
 package-all: package pkg-sql-regress
 
