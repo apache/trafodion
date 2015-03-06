@@ -427,7 +427,7 @@ const
   if (!result) return FALSE;
 
   // both must have the same TransMode for preparser cache entries
-  if (phase == CmpMain::PREPARSE) {
+  if (phase == CmpMain::PREPARSE||phase == CmpMain::PARSE) {
     if (tmode_ && other.tmode_) {
       if (!(*tmode_ == *other.tmode_)) {
         return FALSE; // env mismatch
@@ -1882,8 +1882,8 @@ void QCache::clearStats()
 }
 
 // constructor for query cache
-QCache::QCache(ULng32 maxSize, ULng32 maxVictims, ULng32 avgPlanSz)
-  : maxSiz_(maxSize), limit_(maxVictims)
+QCache::QCache(QueryCache & qc, ULng32 maxSize, ULng32 maxVictims, ULng32 avgPlanSz)
+  : querycache_(qc), maxSiz_(maxSize), limit_(maxVictims)
   , heap_(new CTXTHEAP NABoundedHeap
           ("mxcmp cache heap", (NAHeap *)CTXTHEAP, 0, 0))
   , clruQ_(heap_)
@@ -1968,7 +1968,7 @@ void QCache::makeEmpty()
   cache_->clear(); // removes entries from template hash table
   tlruQ_.clear();  // removes and destroys entries from text list
   clruQ_.clear();  // removes and destroys entries from template list
-  CURRENTQCACHE->getHQC()->clear();   //empty HQC as well
+  querycache_.getHQC()->clear();   //empty HQC as well
 }
 
 // return bytes that can be freed by evicting this postparser cache entry
@@ -2375,7 +2375,7 @@ void QCache::deCachePostParserEntry(CacheEntry *entry)
   ULng32 x = heap_->getAllocSize();
 #endif
 
-  CURRENTQCACHE->getHQC()->delEntryWithCacheKey((CacheKey*)(entry->data_.first_));
+  querycache_.getHQC()->delEntryWithCacheKey((CacheKey*)(entry->data_.first_));
 
   cache_->remove((CacheKey*)(entry->data_.first_));
 
@@ -3157,7 +3157,7 @@ void QueryCache::resizeCache(ULng32 maxSize, ULng32 maxVictims, ULng32 avgPlanSz
     cache_ = cache_->resizeCache(maxSize, maxVictims);
   }
   else {
-    cache_ = new CTXTHEAP QCache(maxSize, maxVictims, avgPlanSz);
+    cache_ = new CTXTHEAP QCache(*this, maxSize, maxVictims, avgPlanSz);
   }
 
   //do the same for Hybrid Query Cache
@@ -3168,7 +3168,7 @@ void QueryCache::resizeCache(ULng32 maxSize, ULng32 maxVictims, ULng32 avgPlanSz
       hqc_ = hqc_->resizeCache(numBuckets);
   }
   else {
-      hqc_ = new (CTXTHEAP) HybridQCache(numBuckets);
+      hqc_ = new (CTXTHEAP) HybridQCache(*this, numBuckets);
   }
 }
 
@@ -3367,6 +3367,34 @@ void HQCParseKey::bindConstant2SQC(BaseColumn* base, ConstantParameter* cParamet
     }//for
 }
 
+void HQCParseKey::FixupForUnaryNegate(BiArith* itm)
+{
+  if(!this->isCacheable()
+    ||getParams().getNPLiterals().entries() <= 0 
+    ||getParams().getTmpList()->entries() <=0
+    ||!itm->isUnaryNegate())
+    return;
+
+  ConstValue* zero = (ConstValue*)itm->getChild(0);
+  if(zero->getText().compareTo("0")!=0)
+    return;
+  ConstValue* unarycv = (ConstValue*)itm->getChild(1);
+  CollIndex lastNPIndex = getParams().getNPLiterals().entries() - 1;
+  //insert 0 to NPLiterals at penultimate position
+  getParams().getNPLiterals().insertAt(lastNPIndex, NAString("0"));
+  //create hqcConstant for 0
+  hqcConstant * hqcConst = 
+   new (heap_) hqcConstant( (ConstValue*)zero, 
+                               lastNPIndex,
+                               heap_ );
+  //insert hqcConstant of 0 to tmpList at penultimate position
+  CollIndex lastTmpIndex = getParams().getTmpList()->entries() - 1;                             
+  getParams().getTmpList()->insertAt(lastTmpIndex, hqcConst);
+  //update index info
+  hqcConstant* unaryhqc = (*getParams().getTmpList())[lastTmpIndex+1];
+  unaryhqc->getIndex() = lastNPIndex + 1;
+}
+
 void HQCParseKey::collectItem4HQC(ItemExpr* itm)
 {
   CMPASSERT(itm);
@@ -3524,8 +3552,8 @@ void hqcConstant::addRange(const EncodedValue & hiBound, const EncodedValue & lo
 }
  
 
-HybridQCache::HybridQCache(ULng32 nOfBuckets) 
- : heap_(new CTXTHEAP NABoundedHeap("hybrid query cache heap", (NAHeap *)CTXTHEAP, 0, 0))
+HybridQCache::HybridQCache(QueryCache & qc, ULng32 nOfBuckets) 
+ : querycache_(qc), heap_(new CTXTHEAP NABoundedHeap("hybrid query cache heap", (NAHeap *)CTXTHEAP, 0, 0))
  , hashTbl_(new (heap_) HQCHashTbl(hashHQCKeyFunc, nOfBuckets, TRUE, heap_))// enforce uniqueness of keys
  , maxValuesPerKey_(CmpCommon::getDefaultLong(HQC_MAX_VALUES_PER_KEY))
  , currentKey_(NULL)
@@ -3699,7 +3727,7 @@ HybridQCache* HybridQCache::resizeCache(ULng32 numBuckets)
             itor.getNext(keyPtr, valueList);
         }
         //delete old one, and swith to new one
-        NADELETE(hashTbl_, HQCHashTbl, heap_);
+        delete hashTbl_;
         hashTbl_ =newHashTable;
         
      }
@@ -3724,8 +3752,11 @@ void HybridQCache::clear()
   hashTbl_->clear();
 }
 
+//Set HQCParseKey::isCacheable=FALSE if non-cacheable case is detected.
 void HQCParseKey::verifyCacheability(CacheKey* ckey)
 {
+   if(!this->isCacheable())
+     return;
    NAList <hqcConstant*> & paramConstList = getParams().getConstantList();
    for(Int32 i = 0; i < paramConstList.entries(); i++)
    {
@@ -3815,6 +3846,14 @@ HQCCacheKey::HQCCacheKey(CompilerEnv* e, NAHeap* h)
     reqdShape_ = NAString(reqdShape, h);
 }
 
+HQCCacheKey::HQCCacheKey(const HQCParseKey& hkey, NAHeap* h)
+          : Key(hkey, h)
+          , keyText_(hkey.keyText_.data(), h)
+          , reqdShape_(hkey.getReqdShape(), h)
+          , numConsts_(hkey.getParams().getConstantList().entries())
+          , numDynParams_(hkey.getParams().getDynParamList().entries())
+{}
+
 HQCParseKey::HQCParseKey(CompilerEnv* e, NAHeap* h)
                 : HQCCacheKey(e, h)
                 , params_(h)
@@ -3827,7 +3866,7 @@ HQCParseKey::HQCParseKey(CompilerEnv* e, NAHeap* h)
 HQCCacheEntry::~HQCCacheEntry()
 {
     if (params_)
-       NADELETE(params_, HQCParams, heap_);
+       delete params_;
 
     sqcCacheKey_ = NULL;
 }
@@ -3837,14 +3876,6 @@ HQCCacheEntry::HQCCacheEntry(NAHeap* h)
                 , sqcCacheKey_ (NULL)
                 , numHits_(0)
                 , heap_(h)
-{}
-
-HQCCacheKey::HQCCacheKey(const HQCParseKey& hkey, NAHeap* h)
-          : Key(hkey, h)
-          , keyText_(hkey.keyText_.data(), h)
-          , reqdShape_(hkey.getReqdShape(), h)
-          , numConsts_(hkey.getParams().getConstantList().entries())
-          , numDynParams_(hkey.getParams().getDynParamList().entries())
 {}
 
 HQCCacheEntry::HQCCacheEntry(const HQCParams& params, CacheKey* sqcCacheKey, NAHeap* h)
@@ -3888,10 +3919,10 @@ HQCParams::HQCParams (const HQCParams & other, NAHeap* h)
 HQCParams::~HQCParams()
 {
    for(Int32 i = 0; i < ConstantList_.entries(); i++)
-      NADELETE(ConstantList_[i], hqcConstant, heap_);
+      delete ConstantList_[i];
       
    for(Int32 i = 0; i < DynParamList_.entries(); i++)
-      NADELETE(DynParamList_[i], hqcDynParam, heap_);
+      delete DynParamList_[i];
 }
 
 NABoolean HQCParams::isApproximatelyEqualTo (HQCParams& otherParam) 
@@ -3922,7 +3953,13 @@ NABoolean HQCParams::isApproximatelyEqualTo (HQCParams& otherParam)
              CMPASSERT(otherTmpL[h]->getIndex() == i);
 
              hqcConstant* parameterizedLiteral = otherTmpL[h];
-             
+
+             CMPASSERT(parameterizedLiteral);
+             //ConstValue empty string(like '') is non-parameterized literal.
+             //Launchpad bug 1409863
+             if(parameterizedLiteral->getConstValue()->isEmptyString())
+                 return FALSE;       
+      
              //add it to otherParam.getConstantList(), if all items are match, we will use it for backpatch, 
              //otherwise, empty otherParam.getConstantList() after comparing all literals.
              otherParam.getConstantList().insert(parameterizedLiteral);
@@ -4031,4 +4068,279 @@ NABoolean HQCCacheData::removeEntry (CacheKey* sqcCacheKey)
   return entryRemoved;
 }
 
+QueryCacheStatsISPIterator::QueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                           SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
+: ISPIterator(ctxs, h), currQCache_(NULL)
+{
+    initializeISPCaches(inputData, eFunc, error, ctxs, contextName_, currCacheIndex_);
+    //initialize currQCache_ here
+    //set currQCache_ to CURRENTQCACHE, and set to NULL after fetch one row.
+    if(currCacheIndex_ == -1);
+      currQCache_ = CURRENTQCACHE;
+}
 
+QueryCacheEntriesISPIterator::QueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                             SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
+: ISPIterator(ctxs, h), counter_(0), currQCache_(NULL)
+{
+     initializeISPCaches( inputData, eFunc, error, ctxs, contextName_, currCacheIndex_);
+     //initialize currQCache_ here
+     if(currCacheIndex_ == -1);
+         currQCache_ = CURRENTQCACHE;
+     //iterator start with preparser cache entries of first query cache, if any
+     if(currCacheIndex_ == -1 && currQCache_)
+         SQCIterator_ = currQCache_->beginPre();
+     else if(currCacheIndex_ == 0)
+         SQCIterator_ = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->beginPre();
+}
+
+HybridQueryCacheStatsISPIterator::HybridQueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                                      SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
+ : ISPIterator(ctxs, h), currQCache_(NULL)
+{
+    initializeISPCaches( inputData, eFunc, error, ctxs, contextName_, currCacheIndex_);
+    //initialize currQCache_ here
+    //set currQCache_ to CURRENTQCACHE, and set to NULL after fetch one row.
+    if(currCacheIndex_ == -1);
+       currQCache_ = CURRENTQCACHE;
+}
+
+HybridQueryCacheEntriesISPIterator::HybridQueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                                        SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
+: ISPIterator(ctxs, h)
+, currEntryIndex_(-1)
+, currEntriesPerKey_(-1)
+, currHKeyPtr_(NULL)
+, currValueList_(NULL)
+, HQCIterator_(NULL)
+, currQCache_(NULL)
+{
+    initializeISPCaches( inputData, eFunc, error, ctxs, contextName_, currCacheIndex_);
+    //initialize currQCache_ here
+    if(currCacheIndex_ == -1);
+       currQCache_ = CURRENTQCACHE;
+    if(currCacheIndex_ == -1 && currQCache_)
+       HQCIterator_ = new (heap_) HQCHashTblItor (currQCache_->getHQC()->begin());
+    else if(currCacheIndex_ == 0)
+       HQCIterator_ = new (heap_) HQCHashTblItor (ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->getHQC()->begin());
+}
+
+HybridQueryCacheEntriesISPIterator::~HybridQueryCacheEntriesISPIterator()
+{
+    if(HQCIterator_)
+        delete HQCIterator_;
+}
+
+//if currCacheIndex_ is set 0, currQCache_ is not used and should always be NULL
+NABoolean QueryCacheStatsISPIterator::getNext(QueryCacheStats & stats)
+{
+   //Only for remote tdm_arkcmp with 0 context
+   if(currCacheIndex_ == -1 && currQCache_)
+   {
+      currQCache_->getCacheStats(stats);
+      currQCache_ = NULL;
+      return TRUE;
+   }
+   
+   //fetch QueryCaches of all CmpContexts with name equal to contextName_
+   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
+   {
+      if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
+       && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
+      {// go to next context in ctxInfos_
+          currCacheIndex_++;
+          return getNext(stats);
+      }
+      ctxInfos_[currCacheIndex_++]->getCmpContext()->getQueryCache()->getCacheStats(stats);
+      return TRUE;
+   }
+   //all entries of all caches are fetched, we are done!
+   return FALSE;
+}
+
+NABoolean QueryCacheEntriesISPIterator::getNext(QueryCacheDetails & details)
+{
+   //Only for remote tdm_arkcmp with 0 context
+   if( currCacheIndex_ == -1 && currQCache_ )
+   {
+       if (SQCIterator_ == currQCache_->endPre()) {
+           // end of preparser cache, continue with postparser entries
+           SQCIterator_ = currQCache_->begin();
+       }
+       if (SQCIterator_ != currQCache_->end())
+           currQCache_->getEntryDetails(SQCIterator_++, details);
+       else
+           return FALSE; //all entries are fetched, we are done!
+             
+       return TRUE;
+   }
+
+   //fetch QueryCaches of all CmpContexts with name equal to contextName_
+   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
+   {
+        if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
+         && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
+        {// go to next context in ctxInfos_
+          currCacheIndex_++;
+          if(currCacheIndex_ < ctxInfos_.entries()){
+              //initialize iterator to first cache entry of next query cache, if any
+              SQCIterator_ = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->beginPre();
+          }
+          return getNext(details);
+        }
+        
+        QueryCache * qcache = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache();
+        if(SQCIterator_ == qcache->endPre()) {
+              // end of preparser cache, continue with postparser entries
+             SQCIterator_ = qcache->begin();
+        }
+        
+        if(SQCIterator_ != qcache->end()){
+             qcache->getEntryDetails( SQCIterator_++, details);
+             return TRUE;
+        }
+        else
+        {
+            //end of this query cache, try to get from next in ctxInfos_
+            currCacheIndex_++;
+            if(currCacheIndex_ < ctxInfos_.entries()){
+                //initialize iterator to first cache entry of next query cache, if any
+                SQCIterator_ = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->beginPre();
+            }
+            //let deeper getNext() decide.
+            return getNext(details);
+        }
+   }
+   //no more query caches, we are done.
+   return FALSE;
+}
+
+NABoolean HybridQueryCacheStatsISPIterator::getNext(HybridQueryCacheStats & stats)
+{
+   //Only for remote tdm_arkcmp with 0 context
+   if(currCacheIndex_ == -1 && currQCache_)
+   {
+      currQCache_->getHQCStats(stats);
+      currQCache_ = NULL;
+      return TRUE;
+   }
+   //fetch QueryCaches of all CmpContexts with name equal to contextName_
+   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
+   {
+      if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
+       && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
+      {// go to next context in ctxInfos_
+          currCacheIndex_++;
+          return getNext(stats);
+      }
+      ctxInfos_[currCacheIndex_++]->getCmpContext()->getQueryCache()->getHQCStats(stats);
+      return TRUE;
+   }
+   //all entries of all caches are fetched, we are done!
+   return FALSE;
+}
+
+NABoolean HybridQueryCacheEntriesISPIterator::getNext(HybridQueryCacheDetails & details)
+{
+   //Only for remote tdm_arkcmp with 0 context
+   if( currCacheIndex_ == -1 && currQCache_ )
+   {
+      if( currEntryIndex_ >= currEntriesPerKey_ )
+      {
+          //get next key-value pair
+          HQCIterator_->getNext(currHKeyPtr_, currValueList_);
+          if(currHKeyPtr_ && currValueList_ && currQCache_->isCachingOn())
+          {
+             currEntryIndex_ = 0;
+             currEntriesPerKey_ = currValueList_->entries();
+          }
+          else//interator == end, all entries fetched, we are done!
+              return FALSE;
+      }
+      //just get next entry in previous valueList
+      currQCache_->getHQCEntryDetails(currHKeyPtr_, (*currValueList_)[currEntryIndex_++], details);
+      return TRUE;
+   }
+ 
+   //fetch QueryCaches of all CmpContexts with name equal to contextName_
+   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
+   {
+      if( !ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()) //current context name is not equal to contextName_
+       && contextName_.compareTo("ALL", NAString::exact)!=0) //and contextName_ is not "ALL"
+      {// go to next context in ctxInfos_
+          currCacheIndex_++;
+          if(currCacheIndex_ < ctxInfos_.entries())
+          {  //initialize HQCIterator to begin of next query cache, if any
+             if(HQCIterator_)
+               delete HQCIterator_;
+             HQCIterator_ = NULL;
+             HQCIterator_ = new (heap_) HQCHashTblItor (ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->getHQC()->begin());
+          }
+          return getNext(details);
+      }
+      
+      if( currEntryIndex_ >= currEntriesPerKey_ )
+      {
+         //get next key-value pair
+         HQCIterator_->getNext(currHKeyPtr_, currValueList_);
+         QueryCache * tmpCache = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache();
+         if(currHKeyPtr_ && currValueList_ && tmpCache->isCachingOn())
+         {
+            currEntryIndex_ = 0;
+            currEntriesPerKey_ = currValueList_->entries();
+         }
+         else//interator == end
+         {  
+            currCacheIndex_++;
+            if(currCacheIndex_ < ctxInfos_.entries())
+            {  //initialize HQCIterator to begin of next query cache, if any
+               if(HQCIterator_)
+                 delete HQCIterator_;
+               HQCIterator_ = NULL;
+               HQCIterator_ = new (heap_) HQCHashTblItor (ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->getHQC()->begin());
+            }
+            //let deeper getNext() decide.
+            return getNext(details);
+         }
+      }
+      //just get next entry in previous valueList
+      QueryCache * qcache = ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache();
+      qcache->getHQCEntryDetails(currHKeyPtr_, (*currValueList_)[currEntryIndex_++], details);
+      return TRUE;
+   }
+   //no more query caches, we are done.
+   return FALSE;
+}
+
+QueryCacheDeleter::QueryCacheDeleter(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                             SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h)
+:ISPIterator(ctxs, h), currQCache_(NULL)
+{
+  initializeISPCaches( inputData, eFunc, error, ctxs, contextName_, currCacheIndex_);
+  //initialize currQCache_ here
+  if(currCacheIndex_ == -1);
+     currQCache_ = CURRENTQCACHE;
+}
+
+void QueryCacheDeleter::doDelete()
+{
+   //if currCacheIndex_ is set 0, currQCache_ is not used and should always be NULL
+   
+   //Only for remote tdm_arkcmp with 0 context
+   if(currCacheIndex_ == -1 && currQCache_)
+   {
+      currQCache_->makeEmpty();
+   }
+   
+   //clear QueryCaches of all CmpContexts with name equal to contextName_
+   if(currCacheIndex_ > -1 && currCacheIndex_ < ctxInfos_.entries())
+   {
+      for(;currCacheIndex_ < ctxInfos_.entries(); currCacheIndex_++)
+      {
+          if(contextName_.compareTo("ALL", NAString::exact)==0)
+              ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->makeEmpty();
+          else if(ctxInfos_[currCacheIndex_]->isSameClass(contextName_.data()))
+              ctxInfos_[currCacheIndex_]->getCmpContext()->getQueryCache()->makeEmpty();
+      }
+   }
+}

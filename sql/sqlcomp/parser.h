@@ -246,6 +246,9 @@ ItemExpr *get_w_ItemExprTree(const NAWchar * str,
   void addTokenToNormalizedString(Int32 & tokCod) 
     { if(HQCKey_)HQCKey_->addTokenToNormalizedString(tokCod); }
 
+  void FixupForUnaryNegate(BiArith* itm)
+    { if(HQCKey_)HQCKey_->FixupForUnaryNegate(itm); }
+
   void collectItem4HQC(ItemExpr* itm)
     { if(HQCKey_)HQCKey_->collectItem4HQC(itm); }
   

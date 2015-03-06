@@ -45,6 +45,7 @@
 #include "ComSysUtils.h"
 #include "Generator.h"
 #include "CmpMain.h"
+#include "QueryCacheSt.h"
 
 class Key;
 class CacheKey;
@@ -64,6 +65,7 @@ class HQCParseKey;
 class HQCCacheKey;
 class HQCCacheEntry;
 class HQCCacheData;
+
 #define QCache CmpQCache
 typedef NAArray<CacheEntry*> TextPtrArray;
 typedef NAHashDictionary<CacheKey,CacheEntry> CacheHashTbl;
@@ -402,7 +404,7 @@ struct HQCDParamPair
   NAString normalized_;
 };
 
-class hqcTerm {
+class hqcTerm : public NABasicObject {
 public:
   virtual NABoolean isLookupHistRequired() const  = 0;
 };
@@ -534,7 +536,7 @@ protected:
   Int32 index_;
 };
 
-class HQCParams
+class HQCParams : public NABasicObject
 {
  public:
    HQCParams (NAHeap* h);
@@ -610,7 +612,8 @@ class HQCCacheKey : public Key
        
  protected:
        NAString  keyText_;
-       NAString  reqdShape_;    // control query shape or empty string
+       NAString  reqdShape_;    // control query shape or empty string 
+
        // number of constants,
        // its value valid only in a compile cycle,
        //not valid in static senario, i.e. one HQCCacheKey maps to multiple HQCCacheEntry in hashtable
@@ -672,8 +675,9 @@ class HQCParseKey : public HQCCacheKey
        void collectBinderRetConstVal4HQC(ConstValue* origin, ConstValue* after);
 
        void bindConstant2SQC(BaseColumn* base, ConstantParameter* cParameter, LIST(Int32)& hqcConstPos);
+       
+       void FixupForUnaryNegate(BiArith* itm);
 
-       void replaceConstValue(ItemExpr * oldCV, ItemExpr* newCV);
        
   private:
        HQCParams params_;
@@ -761,7 +765,7 @@ class HQCCacheData : public LIST (HQCCacheEntry*)
 class HybridQCache : public NABasicObject
 {
 public:
-  HybridQCache(ULng32 nOfBuckets);
+  HybridQCache(QueryCache & qc, ULng32 nOfBuckets);
 
   ~HybridQCache();
   
@@ -805,7 +809,7 @@ public:
     { if ( currentKey_ ) currentKey_->collectBinderRetConstVal4HQC(origin, after); }
   
 private:
-
+  QueryCache & querycache_; 
   NAHeap* heap_;
   HQCHashTbl* hashTbl_;
   ULng32  maxValuesPerKey_;
@@ -823,7 +827,7 @@ private:
   void deCache(HQCCacheKey * hkey)
   {  //hkey must point to internal HQCParseKey
       hashTbl_->remove(hkey);
-      delete hkey;
+      NADELETE(hkey, HQCCacheKey, heap_);
   }
   
 };
@@ -1384,7 +1388,8 @@ class QCache : public NABasicObject {
  public:
   // Constructor
   QCache
-    (ULng32 maxSize,       // (IN) : maximum heap size in bytes
+    (QueryCache & qc,      // (IN) : reference to its wrapper
+     ULng32 maxSize,       // (IN) : maximum heap size in bytes
      ULng32 maxVictims=40, // (IN) : max # of victims replaceable by new entry
      ULng32 avgPlanSz=93070);// (IN) : average plan size in bytes
 
@@ -1602,7 +1607,7 @@ class QCache : public NABasicObject {
   // requires: entries is an array of preparser entries
   // modifies: cache
   // effects : decache entries
-
+  QueryCache & querycache_; //reference to wapper object
   ULng32 limit_; // maximum number of victims replaceable
   NABoundedHeap* heap_;  // heap for cache entries
   ULng32 maxSiz_;// maximum byte size of query cache
@@ -1613,8 +1618,6 @@ class QCache : public NABasicObject {
   TextHashTbl*  tHash_; // TextKey  hash table of cache entries
   LRUList       clruQ_; // queue of LRU postparser entries
   LRUList       tlruQ_; // queue of LRU preparser entries
-
-  HQCHashTbl* hqcTbl_; // Hash table for Hybrid Query Cache
 
   ULng32 nOfCompiles_; // cummulative number of compilation requests (include queries, cqd, invalid queries, ...)
   ULng32 nOfLookups_; // cummulative number of query cache loopups = cache hits (text and template) + cache misses (template cache insert attempts)
@@ -1909,5 +1912,71 @@ class QueryCache {
   NAString *parameterTypes_;
 };
 
+//Classes below, when xxx::getNext() is called time after time by xxx::sp_Process(), 
+//should be able to iterator all querycache instances of different CmpContexts, in embedded compiler.
+class QueryCacheStatsISPIterator : public ISPIterator
+{
+public:
+  QueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                             SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
+  //if currCacheIndex_ is set 0, currQCache_ is not used and should always be NULL
+  NABoolean getNext(QueryCacheStats & stats);
+protected:
+  QueryCache* currQCache_;
+};
+
+class QueryCacheEntriesISPIterator : public ISPIterator
+{
+public:
+  QueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                               SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
+  
+  NABoolean getNext(QueryCacheDetails & details);
+  Int32 & counter() { return counter_; }
+protected:
+  Int32 counter_;
+  QueryCache* currQCache_;
+  LRUList::iterator SQCIterator_;
+};
+
+class HybridQueryCacheStatsISPIterator : public ISPIterator
+{
+public:
+    HybridQueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                                          SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
+
+    NABoolean getNext(HybridQueryCacheStats & stats);
+protected:
+  QueryCache* currQCache_;
+};
+
+class HybridQueryCacheEntriesISPIterator : public ISPIterator
+{
+public:
+    HybridQueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                                            SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
+
+    ~HybridQueryCacheEntriesISPIterator();
+
+    NABoolean getNext(HybridQueryCacheDetails & details);
+protected:
+    Int32 currEntryIndex_;
+    Int32 currEntriesPerKey_;
+    HQCCacheKey* currHKeyPtr_;
+    HQCCacheData* currValueList_;
+    HQCHashTblItor* HQCIterator_;
+    LRUList::iterator SQCIterator_;
+    QueryCache* currQCache_;
+};
+
+class QueryCacheDeleter : public ISPIterator
+{
+public:
+  QueryCacheDeleter(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
+                                             SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
+  void doDelete();
+protected:
+  QueryCache* currQCache_;
+};
 
 #endif // QUERYCACHE__H

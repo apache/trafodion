@@ -38,7 +38,9 @@
 
 #include "CmpISPStd.h"
 #include "NABasicObject.h"
-#include "QCache.h"
+#include "Collections.h"
+#include "NAStringDef.h"
+class CmpContextInfo;
 
 // ---------------------------------------------------------------------------------------------------------
 // QueryCacheStatStoredProcedure is a class that contains functions used by the
@@ -210,10 +212,7 @@ public:
                                   Lng32 numFields,
                                   SP_COMPILE_HANDLE spCompileObj,
                                   SP_HANDLE spObj,
-                                  SP_ERROR_STRUCT *error)
-  {
-    return SP_SUCCESS;  
-  }    
+                                  SP_ERROR_STRUCT *error);
 
   // sp_NumOutputFields function is called at compile-time of the stored 
   // procedure to inquire about the number of output fields in a row.
@@ -375,7 +374,6 @@ public:
 			      SP_ERROR_STRUCT *error);
 };
 
-
 class ISPIterator 
 {
 
@@ -388,76 +386,18 @@ public:
   {}
   
   NABoolean initializeISPCaches(SP_ROW_DATA  inputData, 
-                                SP_EXTRACT_FUNCPTR  eFunc, 
-                                SP_ERROR_STRUCT* error, 
-                                const NAArray<CmpContextInfo*> & ctxs, //input 
-                                NAString & contextName,  // out
-                                Int32 & index           //out, set initial index in arrary of CmpContextInfos
-                                ) ;
+                                  SP_EXTRACT_FUNCPTR  eFunc, 
+                                  SP_ERROR_STRUCT* error, 
+                                  const NAArray<CmpContextInfo*> & ctxs, //input 
+                                  NAString & contextName, 
+                                  Int32 & index           //out, set initial index in arrary of CmpContextInfos
+                                  ) ;
 protected:
   Int32 currCacheIndex_;
   NAString contextName_;
   const NAArray<CmpContextInfo*> & ctxInfos_;
   CollHeap * heap_;
   
-};
-
-class QueryCacheStatsISPIterator : public ISPIterator
-{
-public:
-  QueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                             SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
-  //if currCacheIndex_ is set 0, currQCache_ is not used and should always be NULL
-  NABoolean getNext(QueryCacheStats & stats);
-private:
- QueryCache* currQCache_;
-};
-
-class QueryCacheEntriesISPIterator : public ISPIterator
-{
-public:
-  QueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                               SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
-  
-  NABoolean getNext(QueryCacheDetails & details);
-  Int32 & counter() { return counter_; }
-private:
-  Int32 counter_;
-  LRUList::iterator SQCIterator_;
-  QueryCache* currQCache_;
-};
-
-class HybridQueryCacheStatsISPIterator : public ISPIterator
-{
-public:
-    HybridQueryCacheStatsISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                                     SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
-
-    NABoolean getNext(HybridQueryCacheStats & stats);
-private:
- QueryCache* currQCache_;
-};
-
-class HybridQueryCacheEntriesISPIterator : public ISPIterator
-{
-public:
-    HybridQueryCacheEntriesISPIterator(SP_ROW_DATA  inputData, SP_EXTRACT_FUNCPTR  eFunc, 
-                                       SP_ERROR_STRUCT* error, const NAArray<CmpContextInfo*> & ctxs, CollHeap * h);
-
-    ~HybridQueryCacheEntriesISPIterator()
-    {
-        if(HQCIterator_)
-            delete HQCIterator_;
-    }
-    NABoolean getNext(HybridQueryCacheDetails & details);
-private:
-    Int32 currEntryIndex_;
-    Int32 currEntriesPerKey_;
-    HQCCacheKey* currHKeyPtr_;
-    HQCCacheData* currValueList_;
-    HQCHashTblItor* HQCIterator_;
-    LRUList::iterator SQCIterator_;
-  QueryCache* currQCache_;
 };
 
 #endif

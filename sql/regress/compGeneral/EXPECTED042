@@ -1,18 +1,20 @@
 >>showstats for table t042_orderline on ol_o_id detail;
 
 Detailed Histogram data for Table TRAFODION.ORDERENTRY.T042_ORDERLINE
+Table ID: 111524151150068848
 
-Column(s): OL_O_ID
+Hist ID:    1719719887
+Column(s):  OL_O_ID
 Total Rows: 10
-Total UEC: 4
-Low Value: (1)
+Total UEC:  4
+Low Value:  (1)
 High Value: (9)
-Intervals: 1
+Intervals:  1
 
-Number Rowcount UEC Boundary
+Number    Rowcount         UEC Boundary
 ====== =========== =========== ======================================
- 0 0 0 (1)
- 1 10 4 (9)
+     0           0           0 (1)
+     1          10           4 (9)
 
 
 --- SQL operation complete.
@@ -31,6 +33,7 @@ Number Rowcount UEC Boundary
 
 --- SQL command prepared.
 >>
+>>sh rm hqc.log;
 >>cqd HQC_LOG 'on';
 
 --- SQL operation complete.
@@ -49,22 +52,22 @@ Number Rowcount UEC Boundary
 --- SQL command prepared.
 >>explain options 'f' xx;
 
-LC RC OP OPERATOR OPT DESCRIPTION CARD
----- ---- ---- -------------------- -------- -------------------- ---------
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
 
-1 . 2 root 4.00E+000
-. . 1 TRAFODION_SCAN T042_ORDERLINE 4.00E+000
+1    .    2    root                                                  4.00E+000
+.    .    1    trafodion_scan                  T042_ORDERLINE        4.00E+000
 
 --- SQL operation complete.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 1 10 3 1 38994 3 2027-11-26 18:11:34.000000 5 .00 chuwgjxIpnypxU[YfcxPhUBF
- 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
- 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
- 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
+          1           10            3            1        38994               3  2027-11-26 18:11:34.000000            5           .00  chuwgjxIpnypxU[YfcxPhUBF
+          1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+          1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+          1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
 
 --- 4 row(s) selected.
 >>
@@ -73,21 +76,21 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 --- SQL command prepared.
 >>explain options 'f' xx;
 
-LC RC OP OPERATOR OPT DESCRIPTION CARD
----- ---- ---- -------------------- -------- -------------------- ---------
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
 
-1 . 2 root 4.00E+000
-. . 1 TRAFODION_SCAN T042_ORDERLINE 4.00E+000
+1    .    2    root                                                  4.00E+000
+.    .    1    trafodion_scan                  T042_ORDERLINE        4.00E+000
 
 --- SQL operation complete.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 2 10 3 1 57108 3 2002-06-25 12:06:46.000000 5 .00 MnEboHclGwXFSXp{pqeDLtbo
- 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
- 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
+          2           10            3            1        57108               3  2002-06-25 12:06:46.000000            5           .00  MnEboHclGwXFSXp{pqeDLtbo
+          2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+          2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
 
 --- 3 row(s) selected.
 >>
@@ -96,20 +99,20 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 --- SQL command prepared.
 >>explain options 'f' xx;
 
-LC RC OP OPERATOR OPT DESCRIPTION CARD
----- ---- ---- -------------------- -------- -------------------- ---------
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
 
-1 . 2 root 4.00E+000
-. . 1 TRAFODION_SCAN T042_ORDERLINE 4.00E+000
+1    .    2    root                                                  4.00E+000
+.    .    1    trafodion_scan                  T042_ORDERLINE        4.00E+000
 
 --- SQL operation complete.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
- 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
+          3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+          3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
 
 --- 2 row(s) selected.
 >>
@@ -118,11 +121,11 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 --- SQL command prepared.
 >>explain options 'f' xx;
 
-LC RC OP OPERATOR OPT DESCRIPTION CARD
----- ---- ---- -------------------- -------- -------------------- ---------
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
 
-1 . 2 root 4.00E+000
-. . 1 TRAFODION_SCAN T042_ORDERLINE 4.00E+000
+1    .    2    root                                                  4.00E+000
+.    .    1    trafodion_scan                  T042_ORDERLINE        4.00E+000
 
 --- SQL operation complete.
 >>execute xx;
@@ -133,31 +136,31 @@ LC RC OP OPERATOR OPT DESCRIPTION CARD
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_orderline where ol_o_id = 1 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 
 Found in HQC:
 SQL query=select * from t042_orderline where ol_o_id = 2 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 
 HQC backpatch OK:
 SQL query=select * from t042_orderline where ol_o_id = 2 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 
 Found in HQC:
 SQL query=select * from t042_orderline where ol_o_id = 3 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 
 HQC backpatch OK:
 SQL query=select * from t042_orderline where ol_o_id = 3 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 
 Found in HQC:
 SQL query=select * from t042_orderline where ol_o_id = 162 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 
 HQC backpatch OK:
 SQL query=select * from t042_orderline where ol_o_id = 162 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 >>sh rm hqc.log;
 >>
 >>---===== TEST BUILT-IN FUNCTION HQC Cacheability =====-------
@@ -191,23 +194,23 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP (2);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP ( #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP ( #NP# ) ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP (3);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP ( #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP ( #NP# ) ; 
 
 HQC::AddEntry(): passed
 SQL query=select CURRENT_TIMESTAMP (2) from t042_ORDERLINE where OL_D_ID = 3;
-HQC key=SELECT CURRENT_TIMESTAMP ( #NP# ) FROM T042_ORDERLINE WHERE OL_D_ID = #NP# ;
+HQC key=SELECT CURRENT_TIMESTAMP ( #NP# ) FROM T042_ORDERLINE WHERE OL_D_ID = #NP# ; 
 
 Found in HQC:
 SQL query=select CURRENT_TIMESTAMP (2) from t042_ORDERLINE where OL_D_ID = 4;
-HQC key=SELECT CURRENT_TIMESTAMP ( #NP# ) FROM T042_ORDERLINE WHERE OL_D_ID = #NP# ;
+HQC key=SELECT CURRENT_TIMESTAMP ( #NP# ) FROM T042_ORDERLINE WHERE OL_D_ID = #NP# ; 
 
 HQC backpatch OK:
 SQL query=select CURRENT_TIMESTAMP (2) from t042_ORDERLINE where OL_D_ID = 4;
-HQC key=SELECT CURRENT_TIMESTAMP ( #NP# ) FROM T042_ORDERLINE WHERE OL_D_ID = #NP# ;
+HQC key=SELECT CURRENT_TIMESTAMP ( #NP# ) FROM T042_ORDERLINE WHERE OL_D_ID = #NP# ; 
 >>sh rm hqc.log;
 >>
 >>-- CURRENT_TIMESTAMP_RUNNING - HQC cacheable - no params
@@ -228,15 +231,15 @@ HQC key=SELECT CURRENT_TIMESTAMP ( #NP# ) FROM T042_ORDERLINE WHERE OL_D_ID = #N
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING and OL_D_ID = 3;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING AND OL_D_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING AND OL_D_ID = #NP# ; 
 
 Found in HQC:
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING and OL_D_ID = 5;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING AND OL_D_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING AND OL_D_ID = #NP# ; 
 
 HQC backpatch OK:
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING and OL_D_ID = 5;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING AND OL_D_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING AND OL_D_ID = #NP# ; 
 >>sh rm hqc.log;
 >>
 >>-- dayofweek - HQC cacheable and parameterized
@@ -246,18 +249,18 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUN
 >>execute xx;
 
 (EXPR)
-----------
+------
 
- 2
- 2
- 2
- 2
- 2
- 2
- 2
- 2
- 2
- 2
+     2
+     2
+     2
+     2
+     2
+     2
+     2
+     2
+     2
+     2
 
 --- 10 row(s) selected.
 >>prepare xx from select dayofweek(timestamp '1975-12-24 12:12:02.00') from t042_ORDERLINE;
@@ -266,18 +269,18 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUN
 >>execute xx;
 
 (EXPR)
-----------
+------
 
- 4
- 4
- 4
- 4
- 4
- 4
- 4
- 4
- 4
- 4
+     4
+     4
+     4
+     4
+     4
+     4
+     4
+     4
+     4
+     4
 
 --- 10 row(s) selected.
 >>
@@ -285,15 +288,15 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUN
 
 HQC::AddEntry(): passed
 SQL query=select dayofweek(timestamp '1973-12-24 12:12:02.00') from t042_ORDERLINE;
-HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select dayofweek(timestamp '1975-12-24 12:12:02.00') from t042_ORDERLINE;
-HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select dayofweek(timestamp '1975-12-24 12:12:02.00') from t042_ORDERLINE;
-HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- EXTRACT - HQC cacheable and parameterized
@@ -303,18 +306,18 @@ HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ;
 >>execute xx;
 
 (EXPR)
-----------
+------
 
- 2017
- 2017
- 2017
- 2017
- 2017
- 2017
- 2017
- 2017
- 2017
- 2017
+  2017
+  2017
+  2017
+  2017
+  2017
+  2017
+  2017
+  2017
+  2017
+  2017
 
 --- 10 row(s) selected.
 >>prepare xx from select EXTRACT (YEAR FROM DATE '1980-09-28') from t042_ORDERLINE;
@@ -323,18 +326,18 @@ HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ;
 >>execute xx;
 
 (EXPR)
-----------
+------
 
- 1980
- 1980
- 1980
- 1980
- 1980
- 1980
- 1980
- 1980
- 1980
- 1980
+  1980
+  1980
+  1980
+  1980
+  1980
+  1980
+  1980
+  1980
+  1980
+  1980
 
 --- 10 row(s) selected.
 >>
@@ -342,15 +345,15 @@ HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ;
 
 HQC::AddEntry(): passed
 SQL query=select EXTRACT (YEAR FROM DATE '2017-09-28') from t042_ORDERLINE;
-HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select EXTRACT (YEAR FROM DATE '1980-09-28') from t042_ORDERLINE;
-HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select EXTRACT (YEAR FROM DATE '1980-09-28') from t042_ORDERLINE;
-HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- JULIANTIMESTAMP HQC cacheable and parameterized
@@ -359,19 +362,19 @@ HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)              
+--------------------
 
- 212373316800000000
- 212373316800000000
- 212373316800000000
- 212373316800000000
- 212373316800000000
- 212373316800000000
- 212373316800000000
- 212373316800000000
- 212373316800000000
- 212373316800000000
+  212373316800000000
+  212373316800000000
+  212373316800000000
+  212373316800000000
+  212373316800000000
+  212373316800000000
+  212373316800000000
+  212373316800000000
+  212373316800000000
+  212373316800000000
 
 --- 10 row(s) selected.
 >>prepare xx from select JULIANTIMESTAMP(DATE'1990-09-28') from t042_ORDERLINE;
@@ -379,19 +382,19 @@ HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)              
+--------------------
 
- 211521240000000000
- 211521240000000000
- 211521240000000000
- 211521240000000000
- 211521240000000000
- 211521240000000000
- 211521240000000000
- 211521240000000000
- 211521240000000000
- 211521240000000000
+  211521240000000000
+  211521240000000000
+  211521240000000000
+  211521240000000000
+  211521240000000000
+  211521240000000000
+  211521240000000000
+  211521240000000000
+  211521240000000000
+  211521240000000000
 
 --- 10 row(s) selected.
 >>
@@ -399,15 +402,15 @@ HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ;
 
 HQC::AddEntry(): passed
 SQL query=select JULIANTIMESTAMP(DATE'2017-09-28') from t042_ORDERLINE;
-HQC key=SELECT JULIANTIMESTAMP ( DATE #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT JULIANTIMESTAMP ( DATE #NP# ) FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select JULIANTIMESTAMP(DATE'1990-09-28') from t042_ORDERLINE;
-HQC key=SELECT JULIANTIMESTAMP ( DATE #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT JULIANTIMESTAMP ( DATE #NP# ) FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select JULIANTIMESTAMP(DATE'1990-09-28') from t042_ORDERLINE;
-HQC key=SELECT JULIANTIMESTAMP ( DATE #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT JULIANTIMESTAMP ( DATE #NP# ) FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- LOWER - HQC cacheable and NOT parameterized
@@ -417,18 +420,18 @@ HQC key=SELECT JULIANTIMESTAMP ( DATE #NP# ) FROM T042_ORDERLINE ;
 >>execute xx;
 
 (EXPR)
-----------
+------
 
-texta
-texta
-texta
-texta
-texta
-texta
-texta
-texta
-texta
-texta
+texta 
+texta 
+texta 
+texta 
+texta 
+texta 
+texta 
+texta 
+texta 
+texta 
 
 --- 10 row(s) selected.
 >>prepare xx from select LOWER('TEXTB') from t042_ORDERLINE;
@@ -437,18 +440,18 @@ texta
 >>execute xx;
 
 (EXPR)
-----------
+------
 
-textb
-textb
-textb
-textb
-textb
-textb
-textb
-textb
-textb
-textb
+textb 
+textb 
+textb 
+textb 
+textb 
+textb 
+textb 
+textb 
+textb 
+textb 
 
 --- 10 row(s) selected.
 >>
@@ -456,11 +459,11 @@ textb
 
 HQC::AddEntry(): passed
 SQL query=select LOWER('TEXTA') from t042_ORDERLINE;
-HQC key=SELECT LOWER ( #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT LOWER ( #NP# ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select LOWER('TEXTB') from t042_ORDERLINE;
-HQC key=SELECT LOWER ( #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT LOWER ( #NP# ) FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- UPPER - HQC cacheable and NOT parameterized
@@ -469,8 +472,8 @@ HQC key=SELECT LOWER ( #NP# ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)   
+---------
 
 OL_O_ID_1
 OL_O_ID_1
@@ -489,8 +492,8 @@ OL_O_ID_1
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)   
+---------
 
 OL_O_ID_2
 OL_O_ID_2
@@ -509,11 +512,11 @@ OL_O_ID_2
 
 HQC::AddEntry(): passed
 SQL query=select UPPER('ol_o_id_1') from t042_ORDERLINE;
-HQC key=SELECT UPPER ( #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT UPPER ( #NP# ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select UPPER('ol_o_id_2') from t042_ORDERLINE;
-HQC key=SELECT UPPER ( #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT UPPER ( #NP# ) FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- TRIM - HQC cacheable and NOT parameterized
@@ -522,19 +525,19 @@ HQC key=SELECT UPPER ( #NP# ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)   
+---------
 
-O TE XTA
-O TE XTA
-O TE XTA
-O TE XTA
-O TE XTA
-O TE XTA
-O TE XTA
-O TE XTA
-O TE XTA
-O TE XTA
+O TE XTA 
+O TE XTA 
+O TE XTA 
+O TE XTA 
+O TE XTA 
+O TE XTA 
+O TE XTA 
+O TE XTA 
+O TE XTA 
+O TE XTA 
 
 --- 10 row(s) selected.
 >>prepare xx from select TRIM('A' FROM 'LO TE XTA') from t042_ORDERLINE;
@@ -542,59 +545,59 @@ O TE XTA
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)   
+---------
 
-LO TE XT
-LO TE XT
-LO TE XT
-LO TE XT
-LO TE XT
-LO TE XT
-LO TE XT
-LO TE XT
-LO TE XT
-LO TE XT
+LO TE XT 
+LO TE XT 
+LO TE XT 
+LO TE XT 
+LO TE XT 
+LO TE XT 
+LO TE XT 
+LO TE XT 
+LO TE XT 
+LO TE XT 
 
 --- 10 row(s) selected.
->>prepare xx from select TRIM(' Robert1 ') from t042_ORDERLINE;
+>>prepare xx from select TRIM('  Robert1  ') from t042_ORDERLINE;
 
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)     
+-----------
 
-Robert1
-Robert1
-Robert1
-Robert1
-Robert1
-Robert1
-Robert1
-Robert1
-Robert1
-Robert1
+Robert1    
+Robert1    
+Robert1    
+Robert1    
+Robert1    
+Robert1    
+Robert1    
+Robert1    
+Robert1    
+Robert1    
 
 --- 10 row(s) selected.
->>prepare xx from select TRIM(' Robert2 ') from t042_ORDERLINE;
+>>prepare xx from select TRIM('  Robert2  ') from t042_ORDERLINE;
 
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)     
+-----------
 
-Robert2
-Robert2
-Robert2
-Robert2
-Robert2
-Robert2
-Robert2
-Robert2
-Robert2
-Robert2
+Robert2    
+Robert2    
+Robert2    
+Robert2    
+Robert2    
+Robert2    
+Robert2    
+Robert2    
+Robert2    
+Robert2    
 
 --- 10 row(s) selected.
 >>
@@ -602,19 +605,19 @@ Robert2
 
 HQC::AddEntry(): passed
 SQL query=select TRIM('L' FROM 'LO TE XTA') from t042_ORDERLINE;
-HQC key=SELECT TRIM ( #NP# FROM #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT TRIM ( #NP# FROM #NP# ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select TRIM('A' FROM 'LO TE XTA') from t042_ORDERLINE;
-HQC key=SELECT TRIM ( #NP# FROM #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT TRIM ( #NP# FROM #NP# ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
-SQL query=select TRIM(' Robert1 ') from t042_ORDERLINE;
-HQC key=SELECT TRIM ( #NP# ) FROM T042_ORDERLINE ;
+SQL query=select TRIM('  Robert1  ') from t042_ORDERLINE;
+HQC key=SELECT TRIM ( #NP# ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
-SQL query=select TRIM(' Robert2 ') from t042_ORDERLINE;
-HQC key=SELECT TRIM ( #NP# ) FROM T042_ORDERLINE ;
+SQL query=select TRIM('  Robert2  ') from t042_ORDERLINE;
+HQC key=SELECT TRIM ( #NP# ) FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- TRANSLATE - HQC cacheable and NOT parameterized
@@ -624,18 +627,18 @@ HQC key=SELECT TRIM ( #NP# ) FROM T042_ORDERLINE ;
 >>execute xx;
 
 (EXPR)
-----------
+------
 
-abc
-abc
-abc
-abc
-abc
-abc
-abc
-abc
-abc
-abc
+abc   
+abc   
+abc   
+abc   
+abc   
+abc   
+abc   
+abc   
+abc   
+abc   
 
 --- 10 row(s) selected.
 >>Prepare xx from select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from t042_ORDERLINE;
@@ -644,18 +647,18 @@ abc
 >>execute xx;
 
 (EXPR)
-----------
+------
 
-abc
-abc
-abc
-abc
-abc
-abc
-abc
-abc
-abc
-abc
+abc   
+abc   
+abc   
+abc   
+abc   
+abc   
+abc   
+abc   
+abc   
+abc   
 
 --- 10 row(s) selected.
 >>
@@ -663,15 +666,15 @@ abc
 
 HQC::AddEntry(): passed
 SQL query=select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from t042_ORDERLINE;
-HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ;
+HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from t042_ORDERLINE;
-HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ;
+HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from t042_ORDERLINE;
-HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ;
+HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- CODE_VALUE - HQC cacheable and parameterized
@@ -680,19 +683,19 @@ HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR) OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+(EXPR)      OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+----------  -----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 97 1 10 3 1 38994 3 2027-11-26 18:11:34.000000 5 .00 chuwgjxIpnypxU[YfcxPhUBF
- 97 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
- 97 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
- 97 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
- 97 2 10 3 1 57108 3 2002-06-25 12:06:46.000000 5 .00 MnEboHclGwXFSXp{pqeDLtbo
- 97 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
- 97 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
- 97 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
- 97 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
- 97 9 10 3 4 44466 3 1979-10-17 07:10:53.000000 5 .00 LsDxFlXHBuSBTzPkLZTMjRVD
+        97            1           10            3            1        38994               3  2027-11-26 18:11:34.000000            5           .00  chuwgjxIpnypxU[YfcxPhUBF
+        97            1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+        97            1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+        97            1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
+        97            2           10            3            1        57108               3  2002-06-25 12:06:46.000000            5           .00  MnEboHclGwXFSXp{pqeDLtbo
+        97            2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+        97            2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
+        97            3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+        97            3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
+        97            9           10            3            4        44466               3  1979-10-17 07:10:53.000000            5           .00  LsDxFlXHBuSBTzPkLZTMjRVD
 
 --- 10 row(s) selected.
 >>prepare xx from select code_value ('bb'), * from t042_ORDERLINE;
@@ -700,19 +703,19 @@ HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR) OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+(EXPR)      OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+----------  -----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 98 1 10 3 1 38994 3 2027-11-26 18:11:34.000000 5 .00 chuwgjxIpnypxU[YfcxPhUBF
- 98 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
- 98 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
- 98 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
- 98 2 10 3 1 57108 3 2002-06-25 12:06:46.000000 5 .00 MnEboHclGwXFSXp{pqeDLtbo
- 98 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
- 98 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
- 98 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
- 98 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
- 98 9 10 3 4 44466 3 1979-10-17 07:10:53.000000 5 .00 LsDxFlXHBuSBTzPkLZTMjRVD
+        98            1           10            3            1        38994               3  2027-11-26 18:11:34.000000            5           .00  chuwgjxIpnypxU[YfcxPhUBF
+        98            1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+        98            1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+        98            1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
+        98            2           10            3            1        57108               3  2002-06-25 12:06:46.000000            5           .00  MnEboHclGwXFSXp{pqeDLtbo
+        98            2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+        98            2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
+        98            3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+        98            3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
+        98            9           10            3            4        44466               3  1979-10-17 07:10:53.000000            5           .00  LsDxFlXHBuSBTzPkLZTMjRVD
 
 --- 10 row(s) selected.
 >>
@@ -720,15 +723,15 @@ HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ;
 
 HQC::AddEntry(): passed
 SQL query=select code_value ('aa'), * from t042_ORDERLINE;
-HQC key=SELECT CODE_VALUE ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT CODE_VALUE ( #NP# ) , * FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select code_value ('bb'), * from t042_ORDERLINE;
-HQC key=SELECT CODE_VALUE ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT CODE_VALUE ( #NP# ) , * FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select code_value ('bb'), * from t042_ORDERLINE;
-HQC key=SELECT CODE_VALUE ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT CODE_VALUE ( #NP# ) , * FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- BETWEEN - HQC cacheable but NOT parameterized
@@ -737,17 +740,17 @@ HQC key=SELECT CODE_VALUE ( #NP# ) , * FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
- 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
- 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
- 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
- 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
- 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
- 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
- 9 10 3 4 44466 3 1979-10-17 07:10:53.000000 5 .00 LsDxFlXHBuSBTzPkLZTMjRVD
+          1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+          1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+          1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
+          2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+          2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
+          3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+          3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
+          9           10            3            4        44466               3  1979-10-17 07:10:53.000000            5           .00  LsDxFlXHBuSBTzPkLZTMjRVD
 
 --- 8 row(s) selected.
 >>prepare xx from select * from t042_ORDERLINE where OL_NUMBER between 3 and 5;
@@ -755,14 +758,14 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 --- SQL command prepared.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
- 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
- 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
- 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
- 9 10 3 4 44466 3 1979-10-17 07:10:53.000000 5 .00 LsDxFlXHBuSBTzPkLZTMjRVD
+          1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+          1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
+          2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+          3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
+          9           10            3            4        44466               3  1979-10-17 07:10:53.000000            5           .00  LsDxFlXHBuSBTzPkLZTMjRVD
 
 --- 5 row(s) selected.
 >>
@@ -770,56 +773,56 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_NUMBER between 2 and 6;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_NUMBER BETWEEN #NP# AND #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_NUMBER BETWEEN #NP# AND #NP# ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_NUMBER between 3 and 5;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_NUMBER BETWEEN #NP# AND #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_NUMBER BETWEEN #NP# AND #NP# ; 
 >>sh rm hqc.log;
 >>
 >>-- LIKE - HQC cacheable and only parameterize first arg
->>prepare xx from select * from t042_ORDERLINE where OL_DIST_INFO like 'DoIQoq%';
+>>prepare xx from select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQoq%';
 
 --- SQL command prepared.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
+          2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
 
 --- 1 row(s) selected.
->>prepare xx from select * from t042_ORDERLINE where OL_DIST_INFO like 'DoIQ%';
+>>prepare xx from select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQ%';
 
 --- SQL command prepared.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
+          2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
 
 --- 1 row(s) selected.
 >>
 >>sh cat hqc.log >> LOG042;
 
 HQC::AddEntry(): passed
-SQL query=select * from t042_ORDERLINE where OL_DIST_INFO like 'DoIQoq%';
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DIST_INFO LIKE #NP# ;
+SQL query=select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQoq%';
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DIST_INFO LIKE #NP# ; 
 
 HQC::AddEntry(): passed
-SQL query=select * from t042_ORDERLINE where OL_DIST_INFO like 'DoIQ%';
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DIST_INFO LIKE #NP# ;
+SQL query=select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQ%';
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DIST_INFO LIKE #NP# ; 
 >>sh rm hqc.log;
 >>
 >>-- IN - HQC cacheable and NOT parameterized
->>prepare xx from select * from t042_ORDERLINE where OL_I_ID in (18000, 19000, 20000);
+>>prepare xx from select * from t042_ORDERLINE  where OL_I_ID in (18000, 19000, 20000);
 
 --- SQL command prepared.
 >>execute xx;
 
 --- 0 row(s) selected.
->>prepare xx from select * from t042_ORDERLINE where OL_I_ID in (19500, 21000);
+>>prepare xx from select * from t042_ORDERLINE  where OL_I_ID in (19500, 21000);
 
 --- SQL command prepared.
 >>execute xx;
@@ -829,12 +832,12 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DIST_INFO LIKE #NP# ;
 >>sh cat hqc.log >> LOG042;
 
 HQC::AddEntry(): passed
-SQL query=select * from t042_ORDERLINE where OL_I_ID in (18000, 19000, 20000);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_I_ID IN ( #NP# , #NP# , #NP# ) ;
+SQL query=select * from t042_ORDERLINE  where OL_I_ID in (18000, 19000, 20000);
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_I_ID IN ( #NP# , #NP# , #NP# ) ; 
 
 HQC::AddEntry(): passed
-SQL query=select * from t042_ORDERLINE where OL_I_ID in (19500, 21000);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_I_ID IN ( #NP# , #NP# ) ;
+SQL query=select * from t042_ORDERLINE  where OL_I_ID in (19500, 21000);
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_I_ID IN ( #NP# , #NP# ) ; 
 >>sh rm hqc.log;
 >>
 >>-- CONCAT - HQC cacheable and NOT parameterized
@@ -856,18 +859,18 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_I_ID IN ( #NP# , #NP# ) ;
 >>execute xx;
 
 (EXPR)
-----------
+------
 
-ab
-ab
-ab
-ab
-ab
-ab
-ab
-ab
-ab
-ab
+ab    
+ab    
+ab    
+ab    
+ab    
+ab    
+ab    
+ab    
+ab    
+ab    
 
 --- 10 row(s) selected.
 >>prepare xx from select concat('c', 'd') from t042_ORDERLINE;
@@ -876,18 +879,18 @@ ab
 >>execute xx;
 
 (EXPR)
-----------
+------
 
-cd
-cd
-cd
-cd
-cd
-cd
-cd
-cd
-cd
-cd
+cd    
+cd    
+cd    
+cd    
+cd    
+cd    
+cd    
+cd    
+cd    
+cd    
 
 --- 10 row(s) selected.
 >>
@@ -895,19 +898,19 @@ cd
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where 'DoIQoq' = concat(OL_DIST_INFO, 'abc');
-HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = CONCAT ( OL_DIST_INFO , #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = CONCAT ( OL_DIST_INFO , #NP# ) ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where 'xyzq' = concat(OL_DIST_INFO, 'bc');
-HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = CONCAT ( OL_DIST_INFO , #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = CONCAT ( OL_DIST_INFO , #NP# ) ; 
 
 HQC::AddEntry(): passed
 SQL query=select concat('a', 'b') from t042_ORDERLINE;
-HQC key=SELECT CONCAT ( #NP# , #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT CONCAT ( #NP# , #NP# ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select concat('c', 'd') from t042_ORDERLINE;
-HQC key=SELECT CONCAT ( #NP# , #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT CONCAT ( #NP# , #NP# ) FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- CONVERTTOHEX - HQC cacheable and NOT parameterized
@@ -916,19 +919,19 @@ HQC key=SELECT CONCAT ( #NP# , #NP# ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR) OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+(EXPR)  OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+------  -----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
-61 1 10 3 1 38994 3 2027-11-26 18:11:34.000000 5 .00 chuwgjxIpnypxU[YfcxPhUBF
-61 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
-61 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
-61 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
-61 2 10 3 1 57108 3 2002-06-25 12:06:46.000000 5 .00 MnEboHclGwXFSXp{pqeDLtbo
-61 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
-61 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
-61 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
-61 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
-61 9 10 3 4 44466 3 1979-10-17 07:10:53.000000 5 .00 LsDxFlXHBuSBTzPkLZTMjRVD
+61                1           10            3            1        38994               3  2027-11-26 18:11:34.000000            5           .00  chuwgjxIpnypxU[YfcxPhUBF
+61                1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+61                1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+61                1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
+61                2           10            3            1        57108               3  2002-06-25 12:06:46.000000            5           .00  MnEboHclGwXFSXp{pqeDLtbo
+61                2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+61                2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
+61                3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+61                3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
+61                9           10            3            4        44466               3  1979-10-17 07:10:53.000000            5           .00  LsDxFlXHBuSBTzPkLZTMjRVD
 
 --- 10 row(s) selected.
 >>prepare xx from select converttohex ('b'), * from t042_ORDERLINE;
@@ -936,19 +939,19 @@ HQC key=SELECT CONCAT ( #NP# , #NP# ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR) OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+(EXPR)  OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+------  -----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
-62 1 10 3 1 38994 3 2027-11-26 18:11:34.000000 5 .00 chuwgjxIpnypxU[YfcxPhUBF
-62 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
-62 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
-62 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
-62 2 10 3 1 57108 3 2002-06-25 12:06:46.000000 5 .00 MnEboHclGwXFSXp{pqeDLtbo
-62 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
-62 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
-62 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
-62 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
-62 9 10 3 4 44466 3 1979-10-17 07:10:53.000000 5 .00 LsDxFlXHBuSBTzPkLZTMjRVD
+62                1           10            3            1        38994               3  2027-11-26 18:11:34.000000            5           .00  chuwgjxIpnypxU[YfcxPhUBF
+62                1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+62                1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+62                1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
+62                2           10            3            1        57108               3  2002-06-25 12:06:46.000000            5           .00  MnEboHclGwXFSXp{pqeDLtbo
+62                2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+62                2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
+62                3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+62                3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
+62                9           10            3            4        44466               3  1979-10-17 07:10:53.000000            5           .00  LsDxFlXHBuSBTzPkLZTMjRVD
 
 --- 10 row(s) selected.
 >>
@@ -957,11 +960,11 @@ HQC key=SELECT CONCAT ( #NP# , #NP# ) FROM T042_ORDERLINE ;
 
 HQC::AddEntry(): passed
 SQL query=select converttohex ('a'), * from t042_ORDERLINE;
-HQC key=SELECT CONVERTTOHEX ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT CONVERTTOHEX ( #NP# ) , * FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select converttohex ('b'), * from t042_ORDERLINE;
-HQC key=SELECT CONVERTTOHEX ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT CONVERTTOHEX ( #NP# ) , * FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- CHAR_LENGTH - HQC cacheable and parameterized
@@ -970,19 +973,19 @@ HQC key=SELECT CONVERTTOHEX ( #NP# ) , * FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR) OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+(EXPR)      OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+----------  -----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 1 1 10 3 1 38994 3 2027-11-26 18:11:34.000000 5 .00 chuwgjxIpnypxU[YfcxPhUBF
- 1 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
- 1 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
- 1 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
- 1 2 10 3 1 57108 3 2002-06-25 12:06:46.000000 5 .00 MnEboHclGwXFSXp{pqeDLtbo
- 1 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
- 1 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
- 1 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
- 1 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
- 1 9 10 3 4 44466 3 1979-10-17 07:10:53.000000 5 .00 LsDxFlXHBuSBTzPkLZTMjRVD
+         1            1           10            3            1        38994               3  2027-11-26 18:11:34.000000            5           .00  chuwgjxIpnypxU[YfcxPhUBF
+         1            1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+         1            1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+         1            1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
+         1            2           10            3            1        57108               3  2002-06-25 12:06:46.000000            5           .00  MnEboHclGwXFSXp{pqeDLtbo
+         1            2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+         1            2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
+         1            3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+         1            3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
+         1            9           10            3            4        44466               3  1979-10-17 07:10:53.000000            5           .00  LsDxFlXHBuSBTzPkLZTMjRVD
 
 --- 10 row(s) selected.
 >>prepare xx from select char_length ('b'), * from t042_ORDERLINE;
@@ -990,19 +993,19 @@ HQC key=SELECT CONVERTTOHEX ( #NP# ) , * FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR) OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+(EXPR)      OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+----------  -----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 1 1 10 3 1 38994 3 2027-11-26 18:11:34.000000 5 .00 chuwgjxIpnypxU[YfcxPhUBF
- 1 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
- 1 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
- 1 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
- 1 2 10 3 1 57108 3 2002-06-25 12:06:46.000000 5 .00 MnEboHclGwXFSXp{pqeDLtbo
- 1 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
- 1 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
- 1 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
- 1 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
- 1 9 10 3 4 44466 3 1979-10-17 07:10:53.000000 5 .00 LsDxFlXHBuSBTzPkLZTMjRVD
+         1            1           10            3            1        38994               3  2027-11-26 18:11:34.000000            5           .00  chuwgjxIpnypxU[YfcxPhUBF
+         1            1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+         1            1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+         1            1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
+         1            2           10            3            1        57108               3  2002-06-25 12:06:46.000000            5           .00  MnEboHclGwXFSXp{pqeDLtbo
+         1            2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+         1            2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
+         1            3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+         1            3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
+         1            9           10            3            4        44466               3  1979-10-17 07:10:53.000000            5           .00  LsDxFlXHBuSBTzPkLZTMjRVD
 
 --- 10 row(s) selected.
 >>
@@ -1010,15 +1013,15 @@ HQC key=SELECT CONVERTTOHEX ( #NP# ) , * FROM T042_ORDERLINE ;
 
 HQC::AddEntry(): passed
 SQL query=select char_length ('a'), * from t042_ORDERLINE;
-HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select char_length ('b'), * from t042_ORDERLINE;
-HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select char_length ('b'), * from t042_ORDERLINE;
-HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- OCTET_LENGTH - HQC cacheable and parameterized
@@ -1027,19 +1030,19 @@ HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR) OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+(EXPR)      OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+----------  -----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 1 1 10 3 1 38994 3 2027-11-26 18:11:34.000000 5 .00 chuwgjxIpnypxU[YfcxPhUBF
- 1 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
- 1 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
- 1 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
- 1 2 10 3 1 57108 3 2002-06-25 12:06:46.000000 5 .00 MnEboHclGwXFSXp{pqeDLtbo
- 1 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
- 1 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
- 1 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
- 1 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
- 1 9 10 3 4 44466 3 1979-10-17 07:10:53.000000 5 .00 LsDxFlXHBuSBTzPkLZTMjRVD
+         1            1           10            3            1        38994               3  2027-11-26 18:11:34.000000            5           .00  chuwgjxIpnypxU[YfcxPhUBF
+         1            1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+         1            1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+         1            1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
+         1            2           10            3            1        57108               3  2002-06-25 12:06:46.000000            5           .00  MnEboHclGwXFSXp{pqeDLtbo
+         1            2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+         1            2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
+         1            3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+         1            3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
+         1            9           10            3            4        44466               3  1979-10-17 07:10:53.000000            5           .00  LsDxFlXHBuSBTzPkLZTMjRVD
 
 --- 10 row(s) selected.
 >>prepare xx from select octet_length ('b'), * from t042_ORDERLINE;
@@ -1047,19 +1050,19 @@ HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR) OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+(EXPR)      OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+----------  -----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 1 1 10 3 1 38994 3 2027-11-26 18:11:34.000000 5 .00 chuwgjxIpnypxU[YfcxPhUBF
- 1 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
- 1 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
- 1 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
- 1 2 10 3 1 57108 3 2002-06-25 12:06:46.000000 5 .00 MnEboHclGwXFSXp{pqeDLtbo
- 1 2 10 3 5 93745 3 2009-02-03 15:02:17.000000 5 .00 JqdrpThOBHRwqbMEJIVXGmKu
- 1 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
- 1 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
- 1 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
- 1 9 10 3 4 44466 3 1979-10-17 07:10:53.000000 5 .00 LsDxFlXHBuSBTzPkLZTMjRVD
+         1            1           10            3            1        38994               3  2027-11-26 18:11:34.000000            5           .00  chuwgjxIpnypxU[YfcxPhUBF
+         1            1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+         1            1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+         1            1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
+         1            2           10            3            1        57108               3  2002-06-25 12:06:46.000000            5           .00  MnEboHclGwXFSXp{pqeDLtbo
+         1            2           10            3            5        93745               3  2009-02-03 15:02:17.000000            5           .00  JqdrpThOBHRwqbMEJIVXGmKu
+         1            2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
+         1            3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+         1            3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
+         1            9           10            3            4        44466               3  1979-10-17 07:10:53.000000            5           .00  LsDxFlXHBuSBTzPkLZTMjRVD
 
 --- 10 row(s) selected.
 >>
@@ -1067,15 +1070,15 @@ HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
 
 HQC::AddEntry(): passed
 SQL query=select octet_length ('a'), * from t042_ORDERLINE;
-HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select octet_length ('b'), * from t042_ORDERLINE;
-HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select octet_length ('b'), * from t042_ORDERLINE;
-HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
+HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- POSITION - HQC cacheable and parameterized
@@ -1084,19 +1087,19 @@ HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
+(EXPR)    
 ----------
 
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 2
+         0
+         0
+         0
+         0
+         0
+         0
+         2
+         0
+         0
+         0
 
 --- 10 row(s) selected.
 >>prepare xx from select position('xyzoIQo' in OL_DIST_INFO ) from t042_ORDERLINE;
@@ -1104,19 +1107,19 @@ HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
+(EXPR)    
 ----------
 
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
 
 --- 10 row(s) selected.
 >>prepare xx from select * from t042_ORDERLINE where 2 = position('oIQo' in OL_DIST_INFO );
@@ -1124,10 +1127,10 @@ HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
+          2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
 
 --- 1 row(s) selected.
 >>prepare xx from select * from t042_ORDERLINE where 9 = position('xyzoIQo' in OL_DIST_INFO );
@@ -1141,19 +1144,19 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 
 HQC::AddEntry(): passed
 SQL query=select position('oIQo' in OL_DIST_INFO ) from t042_ORDERLINE;
-HQC key=SELECT POSITION ( #NP# IN OL_DIST_INFO ) FROM T042_ORDERLINE ;
+HQC key=SELECT POSITION ( #NP# IN OL_DIST_INFO ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select position('xyzoIQo' in OL_DIST_INFO ) from t042_ORDERLINE;
-HQC key=SELECT POSITION ( #NP# IN OL_DIST_INFO ) FROM T042_ORDERLINE ;
+HQC key=SELECT POSITION ( #NP# IN OL_DIST_INFO ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where 2 = position('oIQo' in OL_DIST_INFO );
-HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = POSITION ( #NP# IN OL_DIST_INFO ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = POSITION ( #NP# IN OL_DIST_INFO ) ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where 9 = position('xyzoIQo' in OL_DIST_INFO );
-HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = POSITION ( #NP# IN OL_DIST_INFO ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = POSITION ( #NP# IN OL_DIST_INFO ) ; 
 >>sh rm hqc.log;
 >>
 >>-- SUBSTRING - HQC cacheable ONLY first arg is parameterized
@@ -1163,18 +1166,18 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = POSITION ( #NP# IN OL_DIST_INF
 >>execute xx;
 
 (EXPR)
-----------
+------
 
-aa
-aa
-aa
-aa
-aa
-aa
-aa
-aa
-aa
-aa
+aa    
+aa    
+aa    
+aa    
+aa    
+aa    
+aa    
+aa    
+aa    
+aa    
 
 --- 10 row(s) selected.
 >>prepare xx from select substring('abba'from 1 for 2) from t042_ORDERLINE;
@@ -1183,18 +1186,18 @@ aa
 >>execute xx;
 
 (EXPR)
-----------
+------
 
-ab
-ab
-ab
-ab
-ab
-ab
-ab
-ab
-ab
-ab
+ab    
+ab    
+ab    
+ab    
+ab    
+ab    
+ab    
+ab    
+ab    
+ab    
 
 --- 10 row(s) selected.
 >>prepare xx from select * from t042_ORDERLINE where 'DoIQoq' = substring(OL_DIST_INFO from 1 for 6);
@@ -1202,10 +1205,10 @@ ab
 --- SQL command prepared.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 2 10 3 6 68201 3 1973-12-24 12:12:02.000000 5 .00 DoIQoqGSfRX{UDPwXhLRwkSw
+          2           10            3            6        68201               3  1973-12-24 12:12:02.000000            5           .00  DoIQoqGSfRX{UDPwXhLRwkSw
 
 --- 1 row(s) selected.
 >>prepare xx from select * from t042_ORDERLINE where 'DoIQoq' = substring(OL_DIST_INFO from 1 for 5);
@@ -1225,27 +1228,27 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 
 HQC::AddEntry(): passed
 SQL query=select substring('aaaa'from 1 for 2) from t042_ORDERLINE;
-HQC key=SELECT SUBSTRING ( #NP# FROM #NP# FOR #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT SUBSTRING ( #NP# FROM #NP# FOR #NP# ) FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select substring('abba'from 1 for 2) from t042_ORDERLINE;
-HQC key=SELECT SUBSTRING ( #NP# FROM #NP# FOR #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT SUBSTRING ( #NP# FROM #NP# FOR #NP# ) FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select substring('abba'from 1 for 2) from t042_ORDERLINE;
-HQC key=SELECT SUBSTRING ( #NP# FROM #NP# FOR #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT SUBSTRING ( #NP# FROM #NP# FOR #NP# ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where 'DoIQoq' = substring(OL_DIST_INFO from 1 for 6);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( OL_DIST_INFO FROM #NP# FOR #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( OL_DIST_INFO FROM #NP# FOR #NP# ) ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where 'DoIQoq' = substring(OL_DIST_INFO from 1 for 5);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( OL_DIST_INFO FROM #NP# FOR #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( OL_DIST_INFO FROM #NP# FOR #NP# ) ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where 'DoIQoq' = substring('DoIQoqabc' from 1 for 5);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( #NP# FROM #NP# FOR #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( #NP# FROM #NP# FOR #NP# ) ; 
 >>sh rm hqc.log;
 >>
 >>-- CASE/IfThenElse - HQC cacheable and parameterized
@@ -1255,18 +1258,18 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( #NP# FROM #NP# FOR
 >>execute xx;
 
 (EXPR)
-----------
+------
 
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
+     1
+     1
+     1
+     1
+     1
+     1
+     1
+     1
+     1
+     1
 
 --- 10 row(s) selected.
 >>prepare xx from select case when OL_O_ID <> 6 THEN 2 else 1 end from t042_ORDERLINE;
@@ -1275,18 +1278,18 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( #NP# FROM #NP# FOR
 >>execute xx;
 
 (EXPR)
-----------
+------
 
- 2
- 2
- 2
- 2
- 2
- 2
- 2
- 2
- 2
- 2
+     2
+     2
+     2
+     2
+     2
+     2
+     2
+     2
+     2
+     2
 
 --- 10 row(s) selected.
 >>
@@ -1294,11 +1297,11 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( #NP# FROM #NP# FOR
 
 HQC::AddEntry(): passed
 SQL query=select case when OL_O_ID <> 5 THEN 1 else 0 end from t042_ORDERLINE;
-HQC key=SELECT CASE WHEN OL_O_ID <> #NP# THEN #NP# ELSE #NP# END FROM T042_ORDERLINE ;
+HQC key=SELECT CASE WHEN OL_O_ID <> #NP# THEN #NP# ELSE #NP# END FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select case when OL_O_ID <> 6 THEN 2 else 1 end from t042_ORDERLINE;
-HQC key=SELECT CASE WHEN OL_O_ID <> #NP# THEN #NP# ELSE #NP# END FROM T042_ORDERLINE ;
+HQC key=SELECT CASE WHEN OL_O_ID <> #NP# THEN #NP# ELSE #NP# END FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- CAST - HQC cacheable and parameterize
@@ -1307,19 +1310,19 @@ HQC key=SELECT CASE WHEN OL_O_ID <> #NP# THEN #NP# ELSE #NP# END FROM T042_ORDER
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)              
+--------------------
 
-aaa
-aaa
-aaa
-aaa
-aaa
-aaa
-aaa
-aaa
-aaa
-aaa
+aaa                 
+aaa                 
+aaa                 
+aaa                 
+aaa                 
+aaa                 
+aaa                 
+aaa                 
+aaa                 
+aaa                 
 
 --- 10 row(s) selected.
 >>prepare xx from select cast('bbb' as char(30)) from t042_ORDERLINE;
@@ -1327,19 +1330,19 @@ aaa
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)                        
+------------------------------
 
-bbb
-bbb
-bbb
-bbb
-bbb
-bbb
-bbb
-bbb
-bbb
-bbb
+bbb                           
+bbb                           
+bbb                           
+bbb                           
+bbb                           
+bbb                           
+bbb                           
+bbb                           
+bbb                           
+bbb                           
 
 --- 10 row(s) selected.
 >>
@@ -1347,11 +1350,11 @@ bbb
 
 HQC::AddEntry(): passed
 SQL query=select cast('aaa' as char(20)) from t042_ORDERLINE;
-HQC key=SELECT CAST ( #NP# AS CHAR ( #NP# ) ) FROM T042_ORDERLINE ;
+HQC key=SELECT CAST ( #NP# AS CHAR ( #NP# ) ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select cast('bbb' as char(30)) from t042_ORDERLINE;
-HQC key=SELECT CAST ( #NP# AS CHAR ( #NP# ) ) FROM T042_ORDERLINE ;
+HQC key=SELECT CAST ( #NP# AS CHAR ( #NP# ) ) FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- bitOperator HQC cacheable and parameterized
@@ -1360,19 +1363,19 @@ HQC key=SELECT CAST ( #NP# AS CHAR ( #NP# ) ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)     
+-----------
 
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
+          1
+          1
+          1
+          1
+          1
+          1
+          1
+          1
+          1
+          1
 
 --- 10 row(s) selected.
 >>prepare xx from select (2 | 1 )& (3 ^ 1) from t042_ORDERLINE;
@@ -1380,19 +1383,19 @@ HQC key=SELECT CAST ( #NP# AS CHAR ( #NP# ) ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)     
+-----------
 
- 2
- 2
- 2
- 2
- 2
- 2
- 2
- 2
- 2
- 2
+          2
+          2
+          2
+          2
+          2
+          2
+          2
+          2
+          2
+          2
 
 --- 10 row(s) selected.
 >>
@@ -1400,15 +1403,15 @@ HQC key=SELECT CAST ( #NP# AS CHAR ( #NP# ) ) FROM T042_ORDERLINE ;
 
 HQC::AddEntry(): passed
 SQL query=select (1 | 0 )& (1 ^ 0) from t042_ORDERLINE;
-HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select (2 | 1 )& (3 ^ 1) from t042_ORDERLINE;
-HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select (2 | 1 )& (3 ^ 1) from t042_ORDERLINE;
-HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ; 
 >>sh rm hqc.log;
 >>
 >>-- MOD - HQC cacheable and parameterized
@@ -1418,18 +1421,18 @@ HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ;
 >>execute xx;
 
 (EXPR)
-----------
+------
 
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
+     1
+     1
+     1
+     1
+     1
+     1
+     1
+     1
+     1
+     1
 
 --- 10 row(s) selected.
 >>prepare xx from select mod(8,5) from t042_ORDERLINE;
@@ -1438,18 +1441,18 @@ HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ;
 >>execute xx;
 
 (EXPR)
-----------
+------
 
- 3
- 3
- 3
- 3
- 3
- 3
- 3
- 3
- 3
- 3
+     3
+     3
+     3
+     3
+     3
+     3
+     3
+     3
+     3
+     3
 
 --- 10 row(s) selected.
 >>prepare xx from select * from t042_ORDERLINE where OL_O_ID = mod(4,3);
@@ -1457,13 +1460,13 @@ HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ;
 --- SQL command prepared.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 1 10 3 1 38994 3 2027-11-26 18:11:34.000000 5 .00 chuwgjxIpnypxU[YfcxPhUBF
- 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
- 1 10 3 3 75288 3 2001-06-20 01:06:58.000000 5 .00 ejOFCzrytcrSqNOrOjZ{{yLH
- 1 10 3 4 17362 3 2026-05-25 20:05:09.000000 5 .00 Yr[mwMsXouLnDgQH{MIXdsyO
+          1           10            3            1        38994               3  2027-11-26 18:11:34.000000            5           .00  chuwgjxIpnypxU[YfcxPhUBF
+          1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
+          1           10            3            3        75288               3  2001-06-20 01:06:58.000000            5           .00  ejOFCzrytcrSqNOrOjZ{{yLH
+          1           10            3            4        17362               3  2026-05-25 20:05:09.000000            5           .00  Yr[mwMsXouLnDgQH{MIXdsyO
 
 --- 4 row(s) selected.
 >>prepare xx from select * from t042_ORDERLINE where OL_O_ID = mod(8,5);
@@ -1471,11 +1474,11 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 --- SQL command prepared.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
- 3 10 3 3 44744 3 2027-10-15 09:10:27.000000 5 .00 {{rts[zOMuPPrWNmIQdy[eBh
+          3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
+          3           10            3            3        44744               3  2027-10-15 09:10:27.000000            5           .00  {{rts[zOMuPPrWNmIQdy[eBh
 
 --- 2 row(s) selected.
 >>
@@ -1483,23 +1486,23 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 
 HQC::AddEntry(): passed
 SQL query=select mod(4,3) from t042_ORDERLINE;
-HQC key=SELECT MOD ( #NP# , #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT MOD ( #NP# , #NP# ) FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select mod(8,5) from t042_ORDERLINE;
-HQC key=SELECT MOD ( #NP# , #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT MOD ( #NP# , #NP# ) FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select mod(8,5) from t042_ORDERLINE;
-HQC key=SELECT MOD ( #NP# , #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT MOD ( #NP# , #NP# ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_O_ID = mod(4,3);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = MOD ( #NP# , #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = MOD ( #NP# , #NP# ) ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_O_ID = mod(8,5);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = MOD ( #NP# , #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = MOD ( #NP# , #NP# ) ; 
 >>sh rm hqc.log;
 >>
 >>-- MATH FUNC - HQC cacheable and parameterized
@@ -1508,19 +1511,19 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = MOD ( #NP# , #NP# ) ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR) (EXPR) (EXPR) (EXPR) (EXPR)
-----------
+(EXPR)       (EXPR)       (EXPR)       (EXPR)  (EXPR)
+-----------  -----------  -----------  ------  ------
 
- 0 1 0 -1 1
- 0 1 0 -1 1
- 0 1 0 -1 1
- 0 1 0 -1 1
- 0 1 0 -1 1
- 0 1 0 -1 1
- 0 1 0 -1 1
- 0 1 0 -1 1
- 0 1 0 -1 1
- 0 1 0 -1 1
+          0            1            0      -1       1
+          0            1            0      -1       1
+          0            1            0      -1       1
+          0            1            0      -1       1
+          0            1            0      -1       1
+          0            1            0      -1       1
+          0            1            0      -1       1
+          0            1            0      -1       1
+          0            1            0      -1       1
+          0            1            0      -1       1
 
 --- 10 row(s) selected.
 >>prepare xx from select bitand(4,1), bitor(1,0), bitxor(1,1),bitnot(1), abs(-2) from t042_ORDERLINE;
@@ -1528,19 +1531,19 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = MOD ( #NP# , #NP# ) ;
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR) (EXPR) (EXPR) (EXPR) (EXPR)
-----------
+(EXPR)       (EXPR)       (EXPR)       (EXPR)  (EXPR)
+-----------  -----------  -----------  ------  ------
 
- 0 1 0 -2 2
- 0 1 0 -2 2
- 0 1 0 -2 2
- 0 1 0 -2 2
- 0 1 0 -2 2
- 0 1 0 -2 2
- 0 1 0 -2 2
- 0 1 0 -2 2
- 0 1 0 -2 2
- 0 1 0 -2 2
+          0            1            0      -2       2
+          0            1            0      -2       2
+          0            1            0      -2       2
+          0            1            0      -2       2
+          0            1            0      -2       2
+          0            1            0      -2       2
+          0            1            0      -2       2
+          0            1            0      -2       2
+          0            1            0      -2       2
+          0            1            0      -2       2
 
 --- 10 row(s) selected.
 >>
@@ -1548,7 +1551,7 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = MOD ( #NP# , #NP# ) ;
 
 Not HQC Cacheable but added to SQC:
 SQL query=select bitand(1,2), bitor(0,1), bitxor(0,0),bitnot(0), abs(-1) from t042_ORDERLINE;
-HQC key=SELECT BITAND ( #NP# , #NP# ) , BITOR ( #NP# , #NP# ) , BITXOR ( #NP# , #NP# ) , BITNOT ( #NP# ) , ABS ( - #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT BITAND ( #NP# , #NP# ) , BITOR ( #NP# , #NP# ) , BITXOR ( #NP# , #NP# ) , BITNOT ( #NP# ) , ABS ( - #NP# ) FROM T042_ORDERLINE ; 
 
 Not in HQC but in SQC:
 SQL query=select bitand(4,1), bitor(1,0), bitxor(1,1),bitnot(1), abs(-2) from t042_ORDERLINE;
@@ -1560,8 +1563,8 @@ SQL query=select bitand(4,1), bitor(1,0), bitxor(1,1),bitnot(1), abs(-2) from t0
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 2026-12-18 01:12:15.000000
 2026-12-18 01:12:15.000000
@@ -1580,8 +1583,8 @@ SQL query=select bitand(4,1), bitor(1,0), bitxor(1,1),bitnot(1), abs(-2) from t0
 --- SQL command prepared.
 >>execute xx;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 2032-08-09 05:08:58.000000
 2032-08-09 05:08:58.000000
@@ -1600,10 +1603,10 @@ SQL query=select bitand(4,1), bitor(1,0), bitxor(1,1),bitnot(1), abs(-2) from t0
 --- SQL command prepared.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 1 10 3 2 16909 3 2026-12-18 01:12:15.000000 5 .00 nkuftmCZosGnTOEDeeHniXPl
+          1           10            3            2        16909               3  2026-12-18 01:12:15.000000            5           .00  nkuftmCZosGnTOEDeeHniXPl
 
 --- 1 row(s) selected.
 >>prepare xx from select * from t042_ORDERLINE where OL_DELIVERY_D = CONVERTTIMESTAMP(212842400938000000);
@@ -1611,10 +1614,10 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 --- SQL command prepared.
 >>execute xx;
 
-OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTITY OL_AMOUNT OL_DIST_INFO
-----------
+OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID  OL_DELIVERY_D               OL_QUANTITY  OL_AMOUNT     OL_DIST_INFO
+-----------  -----------  -----------  -----------  -----------  --------------  --------------------------  -----------  ------------  ------------------------
 
- 3 10 3 2 92861 3 2032-08-09 05:08:58.000000 5 .00 MC{juFoKVMnIYqecIEiMl[HH
+          3           10            3            2        92861               3  2032-08-09 05:08:58.000000            5           .00  MC{juFoKVMnIYqecIEiMl[HH
 
 --- 1 row(s) selected.
 >>
@@ -1622,29 +1625,29 @@ OL_O_ID OL_D_ID OL_W_ID OL_NUMBER OL_I_ID OL_SUPPLY_W_ID OL_DELIVERY_D OL_QUANTI
 
 HQC::AddEntry(): passed
 SQL query=select CONVERTTIMESTAMP(212664316335000000) from t042_ORDERLINE;
-HQC key=SELECT CONVERTTIMESTAMP ( #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT CONVERTTIMESTAMP ( #NP# ) FROM T042_ORDERLINE ; 
 
 Found in HQC:
 SQL query=select CONVERTTIMESTAMP(212842400938000000) from t042_ORDERLINE;
-HQC key=SELECT CONVERTTIMESTAMP ( #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT CONVERTTIMESTAMP ( #NP# ) FROM T042_ORDERLINE ; 
 
 HQC backpatch OK:
 SQL query=select CONVERTTIMESTAMP(212842400938000000) from t042_ORDERLINE;
-HQC key=SELECT CONVERTTIMESTAMP ( #NP# ) FROM T042_ORDERLINE ;
+HQC key=SELECT CONVERTTIMESTAMP ( #NP# ) FROM T042_ORDERLINE ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CONVERTTIMESTAMP(212664316335000000);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CONVERTTIMESTAMP ( #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CONVERTTIMESTAMP ( #NP# ) ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CONVERTTIMESTAMP(212842400938000000);
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CONVERTTIMESTAMP ( #NP# ) ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CONVERTTIMESTAMP ( #NP# ) ; 
 >>sh rm hqc.log;
 >>
 >>-- LaunchPad bug: 1408148
 >>select '0123456789' from t042_t1;
 
-(EXPR)
+(EXPR)    
 ----------
 
 0123456789
@@ -1654,67 +1657,69 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CONVERTTIMESTAMP ( #N
 >>select '' from t042_t1;
 
 (EXPR)
-----------
+------
 
+      
+      
 
 --- 2 row(s) selected.
 >>-- Non-parameterized literals should be compared case sensitively.
 >>-- query 1: should return row1
 >>select b from t042_t1 where a like 'BOO_%';
 
-B
+B         
 ----------
 
-row1
+row1      
 
 --- 1 row(s) selected.
 >>-- query 2: should return row2
 >>select b from t042_t1 where a like 'boo_%';
 
-B
+B         
 ----------
 
-row2
+row2      
 
 --- 1 row(s) selected.
 >>-- query 3: should return row1
 >>select b from t042_t1 where a like 'BOO%';
 
-B
+B         
 ----------
 
-row1
+row1      
 
 --- 1 row(s) selected.
 >>-- query 4: should return row2
 >>select b from t042_t1 where a like 'boo%';
 
-B
+B         
 ----------
 
-row2
+row2      
 
 --- 1 row(s) selected.
 >>-- query 5: should return row2
 >>select * from t042_t1 where a = 'book' or b = 'ROW1';
 
-A B
-----------
+A           B         
+----------  ----------
 
-book row2
+book        row2      
 
 --- 1 row(s) selected.
->>-- query 6: should return zero
+>>-- query 6: should return zero 
 >>select * from t042_t1 where a = 'Book' or b = 'ROW2';
 
 --- 0 row(s) selected.
 >>-- query 7: should return row1
 >>select * from t042_t1 where a = 'BOOK' or b = 'ROW2';
 
-A B
-----------
+A           B         
+----------  ----------
 
-BOOK row1
+BOOK        row1      
 
 --- 1 row(s) selected.
 >>
@@ -1730,11 +1735,11 @@ BOOK row1
 +>order by 1, 2
 +>;
 
-T_VARCHAR0_UNIQ T_CHAR2_2 T_CHAR3_4 U_VARCHAR0_UNIQ U_CHAR2_2
-----------
+T_VARCHAR0_UNIQ  T_CHAR2_2  T_CHAR3_4  U_VARCHAR0_UNIQ  U_CHAR2_2
+---------------  ---------  ---------  ---------------  ---------
 
-AEAAJAAB AA AAAAAAAA CJAAAAAC AA
-CCAAFAAC AA AAAAAAAA CJAAAAAC AA
+AEAAJAAB         AA         AAAAAAAA   CJAAAAAC         AA       
+CCAAFAAC         AA         AAAAAAAA   CJAAAAAC         AA       
 
 --- 2 row(s) selected.
 >>
@@ -1742,47 +1747,43 @@ CCAAFAAC AA AAAAAAAA CJAAAAAC AA
 
 HQC::AddEntry(): passed
 SQL query=select '0123456789' from t042_t1;
-HQC key=SELECT #NP# FROM T042_T1 ;
+HQC key=SELECT #NP# FROM T042_T1 ; 
 
-Found in HQC:
+HQC::AddEntry(): passed
 SQL query=select '' from t042_t1;
-HQC key=SELECT #NP# FROM T042_T1 ;
-
-HQC backpatch OK:
-SQL query=select '' from t042_t1;
-HQC key=SELECT #NP# FROM T042_T1 ;
+HQC key=SELECT #NP# FROM T042_T1 ; 
 
 HQC::AddEntry(): passed
 SQL query=select b from t042_t1 where a like 'BOO_%';
-HQC key=SELECT B FROM T042_T1 WHERE A LIKE #NP# ;
+HQC key=SELECT B FROM T042_T1 WHERE A LIKE #NP# ; 
 
 HQC::AddEntry(): passed
 SQL query=select b from t042_t1 where a like 'boo_%';
-HQC key=SELECT B FROM T042_T1 WHERE A LIKE #NP# ;
+HQC key=SELECT B FROM T042_T1 WHERE A LIKE #NP# ; 
 
 HQC::AddEntry(): passed
 SQL query=select b from t042_t1 where a like 'BOO%';
-HQC key=SELECT B FROM T042_T1 WHERE A LIKE #NP# ;
+HQC key=SELECT B FROM T042_T1 WHERE A LIKE #NP# ; 
 
 HQC::AddEntry(): passed
 SQL query=select b from t042_t1 where a like 'boo%';
-HQC key=SELECT B FROM T042_T1 WHERE A LIKE #NP# ;
+HQC key=SELECT B FROM T042_T1 WHERE A LIKE #NP# ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_t1 where a = 'book' or b = 'ROW1';
-HQC key=SELECT * FROM T042_T1 WHERE A = #NP# OR B = #NP# ;
+HQC key=SELECT * FROM T042_T1 WHERE A = #NP# OR B = #NP# ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_t1 where a = 'Book' or b = 'ROW2';
-HQC key=SELECT * FROM T042_T1 WHERE A = #NP# OR B = #NP# ;
+HQC key=SELECT * FROM T042_T1 WHERE A = #NP# OR B = #NP# ; 
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_t1 where a = 'BOOK' or b = 'ROW2';
-HQC key=SELECT * FROM T042_T1 WHERE A = #NP# OR B = #NP# ;
+HQC key=SELECT * FROM T042_T1 WHERE A = #NP# OR B = #NP# ; 
 
 Not HQC Cacheable but added to SQC:
 SQL query=select t.varchar0_uniq as t_varchar0_uniq , t.char2_2 as t_char2_2 , t.char3_4 as t_char3_4 , u.varchar0_uniq as u_varchar0_uniq , u.char2_2 as u_char2_2 from t042_BTA1P006 t, t042_BTA1P006 u where (t.char2_2, 'AA', t.char3_4 ,'CJAAAAAC') =('AA' ,u.char2_2 , 'AAAAAAAA' , u.varchar0_uniq) order by 1, 2 ;
-HQC key=SELECT T . VARCHAR0_UNIQ AS T_VARCHAR0_UNIQ , T . CHAR2_2 AS T_CHAR2_2 , T . CHAR3_4 AS T_CHAR3_4 , U . VARCHAR0_UNIQ AS U_VARCHAR0_UNIQ , U . CHAR2_2 AS U_CHAR2_2 FROM T042_BTA1P006 T , T042_BTA1P006 U WHERE ( T . CHAR2_2 , #NP# , T . CHAR3_4 , #NP# ) = ( #NP# , U . CHAR2_2 , #NP# , U . VARCHAR0_UNIQ ) ORDER BY #NP# , #NP# ;
+HQC key=SELECT T . VARCHAR0_UNIQ AS T_VARCHAR0_UNIQ , T . CHAR2_2 AS T_CHAR2_2 , T . CHAR3_4 AS T_CHAR3_4 , U . VARCHAR0_UNIQ AS U_VARCHAR0_UNIQ , U . CHAR2_2 AS U_CHAR2_2 FROM T042_BTA1P006 T , T042_BTA1P006 U WHERE ( T . CHAR2_2 , #NP# , T . CHAR3_4 , #NP# ) = ( #NP# , U . CHAR2_2 , #NP# , U . VARCHAR0_UNIQ ) ORDER BY #NP# , #NP# ; 
 >>sh rm hqc.log;
 >>
 >>-- test compile time
@@ -1792,28 +1793,32 @@ HQC key=SELECT T . VARCHAR0_UNIQ AS T_VARCHAR0_UNIQ , T . CHAR2_2 AS T_CHAR2_2 ,
 
 --- SQL command prepared.
 
-SUCCESS (less than 1ms)
+Start Time             2015/03/04 01:34:25.511275
+End Time               2015/03/04 01:34:25.511978
+Elapsed Time                      00:00:00.000703
+Compile Time                      00:00:00.000703
+Execution Time                    00:00:00.000000
 
 
 --- SQL operation complete.
 >>explain options 'f' xx;
 
-LC RC OP OPERATOR OPT DESCRIPTION CARD
----- ---- ---- -------------------- -------- -------------------- ---------
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
 
-1 . 2 root 4.00E+000
-. . 1 TRAFODION_SCAN T042_ORDERLINE 4.00E+000
+1    .    2    root                                                  4.00E+000
+.    .    1    trafodion_scan                  T042_ORDERLINE        4.00E+000
 
 --- SQL operation complete.
 >>sh cat hqc.log >> LOG042;
 
 Found in HQC:
 SQL query=select * from t042_orderline where ol_o_id = 1 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 
 HQC backpatch OK:
 SQL query=select * from t042_orderline where ol_o_id = 1 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 >>sh rm hqc.log;
 >>
 >>
@@ -1822,28 +1827,32 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 
 --- SQL command prepared.
 
-SUCCESS (less than 1ms)
+Start Time             2015/03/04 01:34:25.553918
+End Time               2015/03/04 01:34:25.554642
+Elapsed Time                      00:00:00.000724
+Compile Time                      00:00:00.000724
+Execution Time                    00:00:00.000000
 
 
 --- SQL operation complete.
 >>explain options 'f' xx;
 
-LC RC OP OPERATOR OPT DESCRIPTION CARD
----- ---- ---- -------------------- -------- -------------------- ---------
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
 
-1 . 2 root 4.00E+000
-. . 1 TRAFODION_SCAN T042_ORDERLINE 4.00E+000
+1    .    2    root                                                  4.00E+000
+.    .    1    trafodion_scan                  T042_ORDERLINE        4.00E+000
 
 --- SQL operation complete.
 >>sh cat hqc.log >> LOG042;
 
 Found in HQC:
 SQL query=select * from t042_orderline where ol_o_id = 2 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 
 HQC backpatch OK:
 SQL query=select * from t042_orderline where ol_o_id = 2 ;
-HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
+HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
 >>sh rm hqc.log;
 >>
 >>set statistics off;
@@ -1851,19 +1860,19 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 >>--Stats in Query Cache
 >>select num_entries, text_entries, num_plans from table(querycache('user', 'local'));
 
-NUM_ENTRIES TEXT_ENTRIES NUM_PLANS
-----------
+NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS 
+-----------  ------------  ----------
 
- 64 10 64
+         65            10          65
 
 --- 1 row(s) selected.
 >>select num_entries, text_entries, num_plans from table(querycache('meta', 'local'));
 
-NUM_ENTRIES TEXT_ENTRIES NUM_PLANS
-----------
+NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS 
+-----------  ------------  ----------
 
- 2 0 2
- 22 0 22
+         22             0          22
+          4             0           4
 
 --- 2 row(s) selected.
 >>select num_entries, text_entries, num_plans from table(querycache('ustats', 'local'));
@@ -1871,253 +1880,259 @@ NUM_ENTRIES TEXT_ENTRIES NUM_PLANS
 --- 0 row(s) selected.
 >>select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
 
-NUM_ENTRIES TEXT_ENTRIES NUM_PLANS
-----------
+NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS 
+-----------  ------------  ----------
 
- 2 0 2
- 22 0 22
- 64 10 64
+         65            10          65
+         22             0          22
+          4             0           4
 
 --- 3 row(s) selected.
 >>
->>select plan_length, num_hits, num_params from table(querycacheentries('user', 'local')) order by 1;
+>>select num_hits, num_params from table(querycacheentries('user', 'local')) order by 1;
 
-PLAN_LENGTH NUM_HITS NUM_PARAMS
-----------
+NUM_HITS    NUM_PARAMS
+----------  ----------
 
- 14296 0 0
- 14296 1 1
- 14296 0 0
- 15584 0 0
- 16200 0 0
- 16200 0 0
- 16200 0 0
- 16200 0 0
- 16200 0 0
- 16200 0 0
- 17048 0 0
- 17048 1 1
- 17048 0 0
- 17056 0 0
- 17056 0 0
- 17064 0 0
- 17064 0 0
- 17072 0 0
- 17072 0 0
- 17088 0 1
- 17088 0 1
- 17152 1 1
- 17224 1 4
- 17248 0 0
- 17248 0 0
- 17248 0 0
- 17248 0 0
- 17440 1 1
- 17472 1 1
- 17480 0 1
- 17480 1 1
- 17488 0 1
- 17536 1 0
- 17632 1 2
- 17696 0 0
- 17696 0 0
- 17728 0 0
- 17728 0 0
- 17728 0 0
- 17728 0 0
- 17832 0 0
- 17832 0 0
- 17936 1 1
- 19352 1 9
- 22488 5 1
- 22872 1 1
- 23160 0 0
- 23488 0 0
- 23576 0 0
- 23584 0 0
- 23584 1 1
- 23600 0 0
- 23600 0 0
- 23600 0 0
- 23608 0 0
- 23632 0 0
- 23632 0 0
- 23672 0 0
- 23672 0 0
- 23784 0 0
- 23784 0 0
- 23792 0 0
- 23792 0 0
- 23976 0 0
- 23976 0 0
- 24032 1 1
- 24032 1 1
- 24408 0 0
- 24416 0 0
- 25160 0 0
- 25160 0 0
- 42448 0 3
- 42448 0 0
- 55536 0 0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           1
+         0           0
+         0           1
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           1
+         0           3
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           1
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           1
+         0           0
+         0           0
+         1           1
+         1           1
+         1           1
+         1           4
+         1           1
+         1           1
+         1           2
+         1           9
+         1           0
+         1           1
+         1           1
+         1           1
+         1           1
+         1           1
+         5           1
 
---- 74 row(s) selected.
->>select plan_length, num_hits, num_params from table(querycacheentries('meta', 'local')) order by 1;
+--- 75 row(s) selected.
+>>select num_hits, num_params from table(querycacheentries('meta', 'local')) order by 1;
 
-PLAN_LENGTH NUM_HITS NUM_PARAMS
-----------
+NUM_HITS    NUM_PARAMS
+----------  ----------
 
- 8048 1 1
- 8048 0 1
- 8048 1 1
- 8048 0 1
- 8248 1 3
- 8248 1 3
- 9768 0 2
- 9768 0 2
- 10552 1 4
- 10552 0 4
- 10552 1 4
- 10552 8 4
- 10576 1 3
- 10576 0 3
- 14064 2 1
- 20152 1 3
- 20152 0 3
- 23032 2 1
- 26960 1 2
- 26960 0 2
- 29960 0 2
- 29960 1 2
- 33816 0 1
- 33816 0 1
+         0           1
+         0           3
+         0           2
+         0           1
+         0           2
+         0           4
+         0           3
+         0           2
+         0           1
+         0           2
+         0           1
+         0           4
+         1           3
+         1           4
+         1           3
+         1           1
+         1           1
+         1           3
+         1           3
+         1           2
+         1           4
+         1           2
+         2           4
+         2           1
+         2           1
+         4           4
 
---- 24 row(s) selected.
->>select plan_length, num_hits, num_params from table(querycacheentries('ustats', 'local')) order by 1;
+--- 26 row(s) selected.
+>>select num_hits, num_params from table(querycacheentries('ustats', 'local')) order by 1;
 
 --- 0 row(s) selected.
->>select plan_length, num_hits, num_params from table(querycacheentries('all', 'local')) order by 1;
+>>select num_hits, num_params from table(querycacheentries('all', 'local')) order by 1;
 
-PLAN_LENGTH NUM_HITS NUM_PARAMS
-----------
+NUM_HITS    NUM_PARAMS
+----------  ----------
 
- 8048 1 1
- 8048 0 1
- 8048 1 1
- 8048 0 1
- 8248 1 3
- 8248 1 3
- 9768 0 2
- 9768 0 2
- 10552 1 4
- 10552 1 4
- 10552 0 4
- 10552 8 4
- 10576 0 3
- 10576 1 3
- 14064 2 1
- 14296 0 0
- 14296 1 1
- 14296 0 0
- 15584 0 0
- 16200 0 0
- 16200 0 0
- 16200 0 0
- 16200 0 0
- 16200 0 0
- 16200 0 0
- 17048 0 0
- 17048 0 0
- 17048 1 1
- 17056 0 0
- 17056 0 0
- 17064 0 0
- 17064 0 0
- 17072 0 0
- 17072 0 0
- 17088 0 1
- 17088 0 1
- 17152 1 1
- 17224 1 4
- 17248 0 0
- 17248 0 0
- 17248 0 0
- 17248 0 0
- 17440 1 1
- 17472 1 1
- 17480 1 1
- 17480 0 1
- 17488 0 1
- 17536 1 0
- 17632 1 2
- 17696 0 0
- 17696 0 0
- 17728 0 0
- 17728 0 0
- 17728 0 0
- 17728 0 0
- 17832 0 0
- 17832 0 0
- 17936 1 1
- 19352 1 9
- 20152 1 3
- 20152 0 3
- 22488 5 1
- 22872 1 1
- 23032 2 1
- 23160 0 0
- 23488 0 0
- 23576 0 0
- 23584 1 1
- 23584 0 0
- 23600 0 0
- 23600 0 0
- 23600 0 0
- 23608 0 0
- 23632 0 0
- 23632 0 0
- 23672 0 0
- 23672 0 0
- 23784 0 0
- 23784 0 0
- 23792 0 0
- 23792 0 0
- 23976 0 0
- 23976 0 0
- 24032 1 1
- 24032 1 1
- 24408 0 0
- 24416 0 0
- 25160 0 0
- 25160 0 0
- 26960 1 2
- 26960 0 2
- 29960 1 2
- 29960 0 2
- 33816 0 1
- 33816 0 1
- 42448 0 0
- 42448 0 3
- 55536 0 0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           4
+         0           0
+         0           0
+         0           0
+         0           0
+         0           1
+         0           0
+         0           0
+         0           3
+         0           2
+         0           2
+         0           3
+         0           1
+         0           4
+         0           2
+         0           0
+         0           1
+         0           2
+         0           0
+         0           0
+         0           1
+         0           0
+         0           0
+         0           1
+         0           0
+         0           1
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           3
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           1
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           1
+         0           1
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         1           1
+         1           3
+         1           2
+         1           4
+         1           4
+         1           1
+         1           1
+         1           3
+         1           1
+         1           3
+         1           3
+         1           1
+         1           1
+         1           1
+         1           1
+         1           9
+         1           0
+         1           2
+         1           1
+         1           1
+         1           1
+         1           4
+         1           2
+         1           1
+         2           1
+         2           1
+         2           4
+         4           4
+         5           1
 
---- 98 row(s) selected.
+--- 101 row(s) selected.
 >>
 >>
 >>--Stats in Hybrid Query Cache
 >>select * from table(hybridquerycache('user', 'local'));
 
-NUM_HKEYS NUM_SKEYS NUM_MAX_VALUES_PER_KEY NUM_HASH_TABLE_BUCKETS
-----------
+NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
+----------  ----------  ----------------------  ----------------------
 
- 37 59 5 211
+        37          60                       5                     211
 
 --- 1 row(s) selected.
 >>select * from table(hybridquerycache('meta', 'local'));
 
-NUM_HKEYS NUM_SKEYS NUM_MAX_VALUES_PER_KEY NUM_HASH_TABLE_BUCKETS
-----------
+NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
+----------  ----------  ----------------------  ----------------------
 
- 1 1 5 211
- 10 10 5 211
+        10          10                       5                     211
+         3           3                       5                     211
 
 --- 2 row(s) selected.
 >>select * from table(hybridquerycache('ustats', 'local'));
@@ -2125,184 +2140,337 @@ NUM_HKEYS NUM_SKEYS NUM_MAX_VALUES_PER_KEY NUM_HASH_TABLE_BUCKETS
 --- 0 row(s) selected.
 >>select * from table(hybridquerycache('all', 'local'));
 
-NUM_HKEYS NUM_SKEYS NUM_MAX_VALUES_PER_KEY NUM_HASH_TABLE_BUCKETS
-----------
+NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
+----------  ----------  ----------------------  ----------------------
 
- 1 1 5 211
- 10 10 5 211
- 37 59 5 211
+        37          60                       5                     211
+        10          10                       5                     211
+         3           3                       5                     211
 
 --- 3 row(s) selected.
 >>
->>select char_length(hkey), num_hits, num_PLiterals, num_NPLiterals from table(hybridquerycacheentries('user', 'local')) order by 1;
+>>select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('user', 'local')) order by 1;
 
-(EXPR) NUM_HITS NUM_PLITERALS NUM_NPLITERALS
-----------
+(EXPR)      NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
+----------  ----------  -------------  --------------
 
- 27 1 1 0
- 42 0 0 1
- 42 0 0 1
- 42 0 0 1
- 42 0 0 1
- 43 0 0 1
- 43 0 0 1
- 44 0 0 1
- 44 0 0 1
- 44 0 0 1
- 44 0 0 1
- 49 1 2 0
- 51 0 0 2
- 51 0 0 2
- 51 0 0 2
- 52 0 0 2
- 52 0 0 2
- 52 5 1 0
- 53 1 1 0
- 53 0 0 2
- 53 0 0 2
- 54 1 1 0
- 55 1 1 0
- 55 0 0 1
- 55 0 0 1
- 55 1 1 0
- 58 1 1 0
- 59 1 1 0
- 60 0 0 1
- 60 0 0 1
- 60 0 1 1
- 60 0 1 1
- 61 1 1 0
- 63 0 1 0
- 63 1 4 0
- 63 0 1 0
- 64 0 0 2
- 67 0 0 2
- 67 0 0 2
- 67 1 1 2
- 69 1 0 1
- 69 0 0 2
- 69 0 0 2
- 71 0 0 3
- 75 0 0 2
- 75 0 0 2
- 77 1 1 1
- 78 0 0 2
- 78 0 0 2
- 79 0 0 3
- 79 0 0 3
- 79 0 0 1
- 79 0 0 1
- 80 0 0 1
- 80 0 0 1
- 82 0 0 4
- 90 0 0 3
- 90 0 0 3
- 98 1 1 0
+        27           0              1               0
+        27           0              0               1
+        42           0              0               1
+        42           0              0               1
+        42           0              0               1
+        42           0              0               1
+        43           0              0               1
+        43           0              0               1
+        44           0              0               1
+        44           0              0               1
+        44           0              0               1
+        44           0              0               1
+        49           1              2               0
+        51           0              0               2
+        51           0              0               2
+        51           0              0               2
+        52           0              0               2
+        52           5              1               0
+        52           0              0               2
+        53           1              1               0
+        53           0              0               2
+        53           0              0               2
+        54           1              1               0
+        55           0              0               1
+        55           1              1               0
+        55           1              1               0
+        55           0              0               1
+        58           1              1               0
+        59           1              1               0
+        60           0              1               1
+        60           0              0               1
+        60           0              0               1
+        60           0              1               1
+        61           1              1               0
+        63           0              1               0
+        63           0              1               0
+        63           1              4               0
+        64           0              0               2
+        67           0              0               2
+        67           0              0               2
+        67           1              1               2
+        69           0              0               2
+        69           0              0               2
+        69           1              0               1
+        71           0              0               3
+        75           0              0               2
+        75           0              0               2
+        77           1              1               1
+        78           0              0               2
+        78           0              0               2
+        79           0              0               1
+        79           0              0               3
+        79           0              0               1
+        79           0              0               3
+        80           0              0               1
+        80           0              0               1
+        82           0              0               4
+        90           0              0               3
+        90           0              0               3
+        98           1              1               0
 
---- 59 row(s) selected.
->>select char_length(hkey), num_hits, num_PLiterals, num_NPLiterals from table(hybridquerycacheentries('meta', 'local')) order by 1;
+--- 60 row(s) selected.
+>>select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('meta', 'local')) order by 1;
 
-(EXPR) NUM_HITS NUM_PLITERALS NUM_NPLITERALS
-----------
+(EXPR)      NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
+----------  ----------  -------------  --------------
 
- 134 0 1 0
- 134 0 1 0
- 150 1 3 0
- 179 0 4 0
- 179 0 4 0
- 201 0 2 1
- 222 0 3 1
- 314 0 3 1
- 454 0 2 3
- 492 0 2 1
- 619 0 1 14
+       134           0              1               0
+       134           0              1               0
+       150           1              3               0
+       179           0              4               0
+       179           0              4               0
+       179           0              4               0
+       179           0              4               0
+       201           0              2               1
+       222           0              3               1
+       314           0              3               1
+       454           0              2               3
+       492           0              2               1
+       619           0              1              14
 
---- 11 row(s) selected.
->>select char_length(hkey), num_hits, num_PLiterals, num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1;
+--- 13 row(s) selected.
+>>select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1;
 
 --- 0 row(s) selected.
->>select char_length(hkey), num_hits, num_PLiterals, num_NPLiterals from table(hybridquerycacheentries('all', 'local')) order by 1;
+>>select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('all', 'local')) order by 1;
 
-(EXPR) NUM_HITS NUM_PLITERALS NUM_NPLITERALS
-----------
+(EXPR)      NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
+----------  ----------  -------------  --------------
 
- 27 1 1 0
- 42 0 0 1
- 42 0 0 1
- 42 0 0 1
- 42 0 0 1
- 43 0 0 1
- 43 0 0 1
- 44 0 0 1
- 44 0 0 1
- 44 0 0 1
- 44 0 0 1
- 49 1 2 0
- 51 0 0 2
- 51 0 0 2
- 51 0 0 2
- 52 0 0 2
- 52 5 1 0
- 52 0 0 2
- 53 1 1 0
- 53 0 0 2
- 53 0 0 2
- 54 1 1 0
- 55 1 1 0
- 55 0 0 1
- 55 1 1 0
- 55 0 0 1
- 58 1 1 0
- 59 1 1 0
- 60 0 0 1
- 60 0 1 1
- 60 0 1 1
- 60 0 0 1
- 61 1 1 0
- 63 0 1 0
- 63 0 1 0
- 63 1 4 0
- 64 0 0 2
- 67 0 0 2
- 67 1 1 2
- 67 0 0 2
- 69 0 0 2
- 69 1 0 1
- 69 0 0 2
- 71 0 0 3
- 75 0 0 2
- 75 0 0 2
- 77 1 1 1
- 78 0 0 2
- 78 0 0 2
- 79 0 0 3
- 79 0 0 1
- 79 0 0 1
- 79 0 0 3
- 80 0 0 1
- 80 0 0 1
- 82 0 0 4
- 90 0 0 3
- 90 0 0 3
- 98 1 1 0
- 134 0 1 0
- 134 0 1 0
- 150 1 3 0
- 179 0 4 0
- 179 0 4 0
- 201 0 2 1
- 222 0 3 1
- 314 0 3 1
- 454 0 2 3
- 492 0 2 1
- 619 0 1 14
+        27           0              0               1
+        27           0              1               0
+        42           0              0               1
+        42           0              0               1
+        42           0              0               1
+        42           0              0               1
+        43           0              0               1
+        43           0              0               1
+        44           0              0               1
+        44           0              0               1
+        44           0              0               1
+        44           0              0               1
+        49           1              2               0
+        51           0              0               2
+        51           0              0               2
+        51           0              0               2
+        52           0              0               2
+        52           5              1               0
+        52           0              0               2
+        53           1              1               0
+        53           0              0               2
+        53           0              0               2
+        54           1              1               0
+        55           1              1               0
+        55           0              0               1
+        55           1              1               0
+        55           0              0               1
+        58           1              1               0
+        59           1              1               0
+        60           0              0               1
+        60           0              1               1
+        60           0              1               1
+        60           0              0               1
+        61           1              1               0
+        63           0              1               0
+        63           0              1               0
+        63           1              4               0
+        64           0              0               2
+        67           0              0               2
+        67           1              1               2
+        67           0              0               2
+        69           0              0               2
+        69           1              0               1
+        69           0              0               2
+        71           0              0               3
+        75           0              0               2
+        75           0              0               2
+        77           1              1               1
+        78           0              0               2
+        78           0              0               2
+        79           0              0               3
+        79           0              0               1
+        79           0              0               1
+        79           0              0               3
+        80           0              0               1
+        80           0              0               1
+        82           0              0               4
+        90           0              0               3
+        90           0              0               3
+        98           1              1               0
+       134           0              1               0
+       134           0              1               0
+       150           1              3               0
+       179           0              4               0
+       179           0              4               0
+       179           0              4               0
+       179           0              4               0
+       201           0              2               1
+       222           0              3               1
+       314           0              3               1
+       454           0              2               3
+       492           0              2               1
+       619           0              1              14
 
---- 70 row(s) selected.
+--- 73 row(s) selected.
 >>
 >>
 >>-- virtual table ISP queries are not cacheable.
 >>-- hqc.log should be empty.
 >>sh cat hqc.log >> LOG042;
+>>cqd HQC_LOG 'off';
+
+--- SQL operation complete.
 >>sh rm hqc.log;
+>>
+>>-- clear all (hybrid)query cache entries
+>>delete all from table(querycache('all', 'local'));
+
+--- 0 row(s) deleted.
+>>select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
+
+NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS 
+-----------  ------------  ----------
+
+          0             0           0
+          0             0           0
+          0             0           0
+
+--- 3 row(s) selected.
+>>select * from table(hybridquerycache('all', 'local'));
+
+NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
+----------  ----------  ----------------------  ----------------------
+
+         0           0                       5                     211
+         0           0                       5                     211
+         0           0                       5                     211
+
+--- 3 row(s) selected.
+>>
+>>-- LP 1409830
+>>insert into t042_t1 values ('trans1', 'xxx');
+
+--- 1 row(s) inserted.
+>>SET TRANSACTION READ ONLY;
+
+--- SQL operation complete.
+>>insert into t values ('trans2', 'xxx');
+
+*** ERROR[3141] The transaction access mode cannot be READ ONLY for an INSERT, UPDATE, DELETE, or DDL statement.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t042_t1;
+
+A           B         
+----------  ----------
+
+trans1      xxx       
+BOOK        row1      
+book        row2      
+
+--- 3 row(s) selected.
+>>
+>>-- LP 1409863 
+>>SELECT POSITION('April spring time' IN 'April rain') from t042_t1;
+
+(EXPR)    
+----------
+
+         0
+         0
+         0
+
+--- 3 row(s) selected.
+>>SELECT POSITION('' IN 'April rain') from t042_t1;
+
+(EXPR)    
+----------
+
+         1
+         1
+         1
+
+--- 3 row(s) selected.
+>>
+>>
+>>select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
+
+NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS 
+-----------  ------------  ----------
+
+          4             4           4
+          0             0           0
+          0             0           0
+
+--- 3 row(s) selected.
+>>select * from table(hybridquerycache('all', 'local'));
+
+NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
+----------  ----------  ----------------------  ----------------------
+
+         2           3                       5                     211
+         0           0                       5                     211
+         0           0                       5                     211
+
+--- 3 row(s) selected.
+>>
+>>-- clear all (hybrid)query cache entries
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
+
+NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS 
+-----------  ------------  ----------
+
+          0             0           0
+          0             0           0
+          0             0           0
+
+--- 3 row(s) selected.
+>>select * from table(hybridquerycache('all', 'local'));
+
+NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
+----------  ----------  ----------------------  ----------------------
+
+         0           0                       5                     211
+         0           0                       5                     211
+         0           0                       5                     211
+
+--- 3 row(s) selected.
+>>
+>>--LP 1421374
+>>select * from p9tab order by 1;
+
+C1                         C2                         C3                         C4               C5
+-------------------------  -------------------------  -------------------------  ---------------  -------------------------
+
+ 2.00000000000000000E+000   3.33333000000000000E+002   4.00000000000000000E+004   4.0000000E-001   1.00000000000000000E+002
+ 1.00000000000000000E+001   1.00000000000000000E+002   1.00000000000000000E+003   1.0000000E+004   1.00000000000000000E+005
+ 2.10000000000000000E+001   2.10000000000000000E+002   2.10000000000000000E+003   2.1000000E+004   2.10000000000000000E+005
+ 5.50000000000000000E+001   5.50000000000000000E+002   5.50000000000000000E+003   5.5000000E+004   5.50000000000000064E+005
+ 6.10000000000000000E+001   5.20000000000000000E+001   4.30000000000000000E+001   4.1234569E+000   5.12345678900999936E+000
+ 8.00000000000000000E+001   8.00000000000000000E+002   8.00000000000000000E+003   8.0000000E+004   8.00000000000000000E+005
+ 1.01000000000000000E+002   1.02000000000000000E+002   1.03000000000000000E+002   1.4000000E+001   1.50000000000000000E+001
+ 6.00000000000000000E+002   5.20000000000000000E+001   4.30000000000000000E+001   4.1234564E+000   6.09320000000000000E+000
+                        ?                          ?                          ?                ?   0.00000000000000000E+000
+
+--- 9 row(s) selected.
+>>select c4 from p9tab where c1 = 61E0;
+
+C4             
+---------------
+
+ 4.1234569E+000
+
+--- 1 row(s) selected.
 >>
 >>log off;

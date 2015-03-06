@@ -189,6 +189,43 @@ NULL , -1594, 'AA', -15935, -812, 'AAAAAAA' -- (15)
 )
 ;
 
+--DDL for LP bug 1421374
+drop table p9tab;
+create table p9tab (
+c1  float
+, c2  float(22)
+, c3  float(23)
+, c4  real
+, c5  double precision not null
+, primary key (c5)
+) no partition;
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (1.0e1,1.0e2,1.0e3,1.0e4,1.0e5);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (2.1e1,2.1e2,2.1e3,2.1e4,2.1e5);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (5.5e1,5.5e2,5.5e3,5.5e4,5.5e5);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (8.0e1,8.0e2,8.0e3,8.0e4,8.0e5);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (2,333.333,0.4E5,400E-3,100);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (101.0,1.02E2,103,1.4E1,1.5E1);
+
+insert into p9tab (c1,c2,c3,c4,c5)
+values (61,52,43,4.1234567,5.12345678901);
+--
+insert into p9tab (c1,c2,c3,c4,c5)
+values (600,52,43,4.12345678,6.0932);
+--
+insert into p9tab (c5) values (0E0);
+
 
 ?section test_dml
 set schema TRAFODION.ORDERENTRY;
@@ -201,6 +238,7 @@ prepare xx from select * from t042_t1;
 prepare xx from select * from t042_BTA1P006;
 prepare xx from select * from t042_orderline;
 
+sh rm hqc.log;
 cqd HQC_LOG 'on';
 cqd HQC_LOG_FILE 'hqc.log';
 cqd HYBRID_QUERY_CACHE 'on';
@@ -539,10 +577,10 @@ select num_entries, text_entries, num_plans from table(querycache('meta', 'local
 select num_entries, text_entries, num_plans from table(querycache('ustats', 'local'));
 select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
 
-select  plan_length, num_hits, num_params from table(querycacheentries('user', 'local')) order by 1;
-select  plan_length, num_hits, num_params from table(querycacheentries('meta', 'local')) order by 1;
-select  plan_length, num_hits, num_params from table(querycacheentries('ustats', 'local')) order by 1;
-select  plan_length, num_hits, num_params from table(querycacheentries('all', 'local')) order by 1;
+select num_hits, num_params from table(querycacheentries('user', 'local')) order by 1;
+select num_hits, num_params from table(querycacheentries('meta', 'local')) order by 1;
+select num_hits, num_params from table(querycacheentries('ustats', 'local')) order by 1;
+select num_hits, num_params from table(querycacheentries('all', 'local')) order by 1;
 
 
 --Stats in Hybrid Query Cache
@@ -552,15 +590,44 @@ select * from table(hybridquerycache('ustats', 'local'));
 select * from table(hybridquerycache('all', 'local'));
 
 select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('user', 'local')) order by 1;
-select char_length(hkey), num_hits,  num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('meta', 'local')) order by 1;
-select char_length(hkey), num_hits,  num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1;
+select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('meta', 'local')) order by 1;
+select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1;
 select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('all', 'local')) order by 1;
 
 
 -- virtual table ISP queries are not cacheable.
 -- hqc.log should be empty.
 sh cat hqc.log >> LOG042;
+cqd HQC_LOG 'off';
 sh rm hqc.log;
+
+-- clear all (hybrid)query cache entries
+delete all from table(querycache('all', 'local'));
+select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
+select * from table(hybridquerycache('all', 'local'));
+
+-- LP 1409830
+insert into t042_t1 values ('trans1', 'xxx');
+SET TRANSACTION READ ONLY;
+insert into t values ('trans2', 'xxx');
+select * from t042_t1;
+
+-- LP 1409863 
+SELECT POSITION('April spring time' IN 'April rain') from t042_t1;
+SELECT POSITION('' IN 'April rain') from t042_t1;
+
+
+select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
+select * from table(hybridquerycache('all', 'local'));
+
+-- clear all (hybrid)query cache entries
+cqd query_cache '0';
+select num_entries, text_entries, num_plans from table(querycache('all', 'local'));
+select * from table(hybridquerycache('all', 'local'));
+
+--LP 1421374
+select * from p9tab order by 1;
+select c4 from p9tab where c1 = 61E0;
 
 log off;
 

@@ -2430,14 +2430,13 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
                 }
 
 
-                if ( hkey->isCacheable() )
+                if ( hkey->isCacheable() && ckeyInQCache->useView() == FALSE)
                 {
                    NAString hqcAddResult = "failed";
                    if (CURRENTQCACHE->HQCAddEntry(hkey, ckeyInQCache))
                       hqcAddResult = "passed";
                    
                    ostream* hqc_ostream=CURRENTQCACHE->getHQCLogFile();
-
                    if ( hqc_ostream ) 
                    {
                       *hqc_ostream << "\nHQC::AddEntry(): " << hqcAddResult << endl
