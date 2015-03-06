@@ -3106,6 +3106,7 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
  SDDkwd__(SHOWCONTROL_SHOW_ALL,         	"OFF"),
  SDDkwd__(SHOWCONTROL_SHOW_SUPPORT,		"OFF"),
   DDkwd__(SHOWDDL_DISPLAY_FORMAT, 		"EXTERNAL"),
+  DDkwd__(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS,     "SYSTEM"),
  DDint__(SHOWDDL_FOR_REPLICATE, 		"0"),
   DDkwd__(SHOWLABEL_LOCKMODE,                   "OFF"),
   DDkwd__(SHOWWARN_OPT,		"ON"),
@@ -6688,6 +6689,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 
     case SHOWDDL_DISPLAY_FORMAT:
       if (tok == DF_INTERNAL || tok == DF_EXTERNAL || tok == DF_LOG)
+	isValid = TRUE;
+      break;
+
+    case SHOWDDL_DISPLAY_PRIVILEGE_GRANTS:
+      if (tok == DF_SYSTEM || tok == DF_ON || tok == DF_OFF)
 	isValid = TRUE;
       break;
 

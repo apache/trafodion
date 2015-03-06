@@ -6,14 +6,9 @@
  * File:         StmtDDLDropSchema.h
  * Description:  class for parse node representing Drop Schema statements
  *
- *
- * Created:      11/15/95
- * Language:     C++
- *
- *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -76,7 +71,10 @@ public:
   inline const NAString & getSchemaName() const;
   inline const SchemaName & getSchemaNameAsQualifiedName() const;
   inline       SchemaName & getSchemaNameAsQualifiedName();
+
+  const NABoolean dropIfExists() const { return dropIfExists_; }
   
+  void setDropIfExists(NABoolean v) { dropIfExists_ = v; }
   ComBoolean dropObjectsOnly() { return dropObjectsOnly_; }
 
   // for binding
@@ -94,6 +92,7 @@ private:
   SchemaName schemaQualName_;
   ComDropBehavior dropBehavior_;
   ComBoolean cleanupMode_;
+  NABoolean dropIfExists_;
 
   // if TRUE, then only drop objects in the schema. Do not drop the schema.
   ComBoolean dropObjectsOnly_;

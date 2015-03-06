@@ -775,7 +775,8 @@ class CmpSeabaseDDL
      ExeCliInterface & cliInterface,
      const ComSchemaName & schemaName,
      ComSchemaClass schemaClass,
-     Int32 ownerID);
+     Int32 ownerID,
+     NABoolean ignoreIfExists);
      
   short createSchemaObjects(ExeCliInterface * cliInterface);
   

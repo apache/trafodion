@@ -89,6 +89,8 @@ static bool transferObjectPrivs(
 // *  <ownerID>                       Int32                           In       *
 // *    is the authorization ID that will own the schema.                      *
 // *                                                                           *
+// *  <ignoreIfExists>                NABoolean                       In       *
+// *    do not return an error is schema already exists                        *
 // *****************************************************************************
 // *                                                                           *
 // * Returns: PrivStatus                                                       *
@@ -101,7 +103,8 @@ int CmpSeabaseDDL::addSchemaObject(
    ExeCliInterface & cliInterface,
    const ComSchemaName & schemaName,
    ComSchemaClass schemaClass,
-   Int32 ownerID)
+   Int32 ownerID,
+   NABoolean ignoreIfExists)
    
 {
 
@@ -127,10 +130,13 @@ Lng32 retcode = existsInSeabaseMDTable(&cliInterface,catalogName,schemaNamePart,
    if (retcode < 0)
       return -1;
   
-   if (retcode == 1) // already exists
+   if (retcode == 1 ) // already exists
    {
-      *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_ALREADY_EXISTS)
-                          << DgSchemaName(schemaName.getExternalName().data());
+      if (ignoreIfExists)
+        return 0;
+      else
+        *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_ALREADY_EXISTS)
+                            << DgSchemaName(schemaName.getExternalName().data());
       return -1;
    }
 
@@ -268,7 +274,8 @@ Int32 schemaOwnerID = NA_UserIdDefault;
    addSchemaObject(cliInterface,
                    schemaName,
                    createSchemaNode->getSchemaClass(),
-                   schemaOwnerID);
+                   schemaOwnerID,
+                   createSchemaNode->createIfNotExists());
 
 }
 //***************** End of CmpSeabaseDDL::createSeabaseSchema ******************
@@ -399,9 +406,20 @@ Int32 objectOwnerID = 0;
 Int32 schemaOwnerID = 0;
 ComObjectType objectType;
 
-   if (getObjectTypeandOwner(&cliInterface,catName.data(),schName.data(),
-                             SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwnerID) == -1)
+   Int64 schemaUID = getObjectTypeandOwner(&cliInterface,catName.data(),schName.data(),
+                             SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwnerID);
+   
+   // if schemaUID == -1, then either the schema does not exist or an unexpected error occurred
+   if (schemaUID == -1)
    {
+      // If an error occurred, return
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+        return;
+ 
+      // schema does not exist and IF EXISTS specified, then ignore and continue
+      if (dropSchemaNode->dropIfExists())
+        return;
+
       // A Trafodion schema does not exist if the schema object row is not
       // present: CATALOG-NAME.SCHEMA-NAME.__SCHEMA__.
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)

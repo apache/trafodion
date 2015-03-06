@@ -5423,7 +5423,7 @@ short CmpSeabaseDDL::createSchemaObjects(ExeCliInterface *cliInterface)
       ComSchemaName schemaName(quotedCatalogName,quotedSchemaName);
       
       if (addSchemaObject(*cliInterface,schemaName,
-                          COM_SCHEMA_CLASS_SHARED,SUPER_USER)) 
+                          COM_SCHEMA_CLASS_SHARED,SUPER_USER, FALSE)) 
         {
           // Restore parser flags settings to what they originally were
           Assign_SqlParser_Flags(savedParserFlags);

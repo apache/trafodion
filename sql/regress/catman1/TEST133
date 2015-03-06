@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -32,8 +32,7 @@
 --   authorized - runs authorization tests
 -- ============================================================================
 
-cqd metadata_cache_size '0';
-cqd QUERY_CACHE '0';
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 obey TEST133(clean_up);
 register user sql_user4;
 log LOG133 clear;

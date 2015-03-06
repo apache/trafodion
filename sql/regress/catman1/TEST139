@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ register user sql_user7;
 register user sql_user8;
 register user sql_user9;
 register user sql_user10;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG139 clear;
 obey TEST139(set_up);
 obey TEST139(create_db);
@@ -279,6 +280,7 @@ showddl teams;
 
 ?section user1_dml
 set schema t139sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG139;
 select count(*) from games;
 update games set game_location = 'Ohio' where game_location = 'New York';
@@ -291,6 +293,7 @@ exit;
 
 ?section user2_dml
 set schema t139sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG139;
 select count(*) from teams;
 update teams set team_contact = 'Ophelia', team_contact_number = '2344652934'
@@ -306,6 +309,7 @@ showddl teams;
 
 ?section user3_dml
 set schema t139sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG139;
 select count(*) from teams;
 update teams set team_contact = 'Ophelia', team_contact_number = '2344652934'
@@ -320,6 +324,7 @@ grant update on teams to sql_user4;
 
 ?section user4_dml
 set schema t139sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG139;
 select count(*) from teams;
 update teams set team_contact = 'Ophelia', team_contact_number = '2344652934'

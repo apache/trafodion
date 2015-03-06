@@ -22772,28 +22772,53 @@ extended_label_name : label_name
 /* type pStmtDDL */
 
 schema_definition : TOK_CREATE schema_class TOK_SCHEMA schema_name_clause char_set collation_option
-				{
-				  NAString extSchName($4->getSchemaName().getSchemaNameAsAnsiString());
-				  if (! validateVolatileSchemaName(extSchName))
-				    {
-				      YYERROR;
-				    }
+                    {
+                      NAString extSchName($4->getSchemaName().getSchemaNameAsAnsiString());
+                      if (! validateVolatileSchemaName(extSchName))
+                      {
+                        YYERROR;
+                      }
 
-          // allocate the CharType object and pass it to StmDDLCreateSchema. 
-          // StmtDDLCreateSchema will free the memory there.
-          CharType *charType = new CharType(CharType::LiteralSchema, 
-                                            0, 0, FALSE, FALSE, FALSE, FALSE, FALSE,
-                                            $5, $6.collation_, $6.coercibility_ );
+                    // allocate the CharType object and pass it to StmDDLCreateSchema. 
+                    // StmtDDLCreateSchema will free the memory there.
+                    CharType *charType = new CharType(CharType::LiteralSchema, 
+                                                      0, 0, FALSE, FALSE, FALSE, FALSE, FALSE,
+                                                      $5, $6.collation_, $6.coercibility_ );
                                                          
-          StmtDDLCreateSchema *pNode = new (PARSERHEAP())
-				                          StmtDDLCreateSchema(
-                                      *$4 /*schema_name_clause*/,
-                                      $2, /* schema class */
-                                      charType);
-                                  pNode->synthesize();
-                                  $$ = pNode;
-				  delete $4 /*schema_name_clause*/;
-				}
+                    StmtDDLCreateSchema *pNode = new (PARSERHEAP())
+                      StmtDDLCreateSchema( *$4 /*schema_name_clause*/,
+                                            $2, /* schema class */
+                                            charType );
+                     pNode->synthesize();
+                     $$ = pNode;
+                     delete $4 /*schema_name_clause*/;
+                   }
+
+schema_definition : TOK_CREATE schema_class TOK_SCHEMA TOK_IF TOK_NOT TOK_EXISTS 
+                    schema_name_clause char_set collation_option
+                    {
+                      NAString extSchName($7->getSchemaName().getSchemaNameAsAnsiString());
+                      if (! validateVolatileSchemaName(extSchName))
+                      {
+                        YYERROR;
+                      }
+
+                      // allocate the CharType object and pass it to StmDDLCreateSchema. 
+                      // StmtDDLCreateSchema will free the memory there.
+                      CharType *charType = new CharType(CharType::LiteralSchema,
+                                                        0, 0, FALSE, FALSE, FALSE, FALSE, FALSE,
+                                                        $8, $9.collation_, $9.coercibility_ );
+
+                      StmtDDLCreateSchema *pNode = new (PARSERHEAP())
+                        StmtDDLCreateSchema( *$7 /*schema_name_clause*/,
+                                             $2, /* schema class */
+                                             charType);
+                      pNode->setCreateIfNotExists(TRUE);
+                      pNode->synthesize();
+                      delete $7 /*schema_name_clause*/;
+                      $$ = pNode;
+                    }
+
 
 schema_definition : TOK_CREATE TOK_VOLATILE TOK_SCHEMA 
 				{
@@ -29108,6 +29133,27 @@ drop_schema_statement : TOK_DROP TOK_SCHEMA schema_name_clause optional_cleanup
                                          $4 /*optional_cleanup*/,
 					FALSE);
                                   delete $3 /*schema_name*/;
+                                }
+
+drop_schema_statement : TOK_DROP TOK_SCHEMA TOK_IF TOK_EXISTS schema_name_clause optional_cleanup
+                        optional_drop_behavior
+                                {
+                                  NAString extSchName($5->getSchemaName().getSchemaNameAsAnsiString());
+                                  if (! validateVolatileSchemaName(extSchName))
+                                    {
+                                      YYERROR;
+                                    }
+
+                                    StmtDDLDropSchema *pNode =
+                                      new (PARSERHEAP())
+                                      StmtDDLDropSchema(
+                                        *$5 /*schema_name_clause*/,
+                                         $7 /*optional_drop_behavior*/,
+                                         $6 /*optional_cleanup*/,
+                                        FALSE);
+                                  pNode->setDropIfExists(TRUE); 
+                                  delete $5 /*schema_name*/;
+                                  $$ = pNode;
                                 }
 
 drop_schema_statement : TOK_DROP TOK_VOLATILE TOK_SCHEMA schema_name optional_cleanup optional_drop_behavior

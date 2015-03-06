@@ -3671,7 +3671,8 @@ StmtDDLCreateSchema::StmtDDLCreateSchema(
   schemaQualName_(aSchemaNameParseNode.getSchemaName(), heap),
   authorizationID_(aSchemaNameParseNode.getAuthorizationID(), heap),
   schemaClass_(schemaClass),
-  pCharType_(pCharType)
+  pCharType_(pCharType),
+  createIfNotExists_(FALSE)
 {
 }
 

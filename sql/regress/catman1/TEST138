@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@
 
 obey TEST138(clean_up);
 obey TEST138(set_up);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
 log LOG138 clear;
 obey TEST138(test_create);
 obey TEST138(test_alter);
@@ -242,6 +243,7 @@ select count (*) from TRAFODION."_MD_".OBJECTS WHERE schema_name = 'SCH138C';
 
 ?section create_tbl
 set schema t138sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
 log LOG138;
 get tables;
 create table user1_t1 (c1 int not null primary key, c2 int);
@@ -258,6 +260,7 @@ showddl user1_t2;
 
 ?section alter_tbl
 set schema t138sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
 log LOG138;
 get tables;
 
@@ -295,6 +298,7 @@ alter table user1_t4 rename to user1_t1;
 
 ?section drop_tbl
 set schema t138sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
 log LOG138;
 get tables;
 drop table user1_t1 cascade;
@@ -303,6 +307,7 @@ get tables;
 
 ?section create_view
 set schema t138sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
 log LOG138;
 get views;
 create view user1_v1 as select * from user1_t1;
@@ -312,6 +317,7 @@ get views;
 
 ?section drop_view
 set schema t138sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
 log LOG138;
 get views;
 drop view user1_v1;
@@ -320,6 +326,7 @@ get views;
 
 ?section create_sequence
 set schema t138sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
 log LOG138;
 get sequences in schema t138sch;
 create sequence user1_seq1;
@@ -328,6 +335,7 @@ get sequences in schema t138sch;
 
 ?section drop_sequence
 set schema t138sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
 log LOG138;
 get sequences in schema t138sch;
 drop sequence user1_seq1;

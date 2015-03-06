@@ -2,7 +2,7 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@
 # It is off by default when the software is installed
 #
 # To turn on authentication, specify:
-#    --on (REQUIRED)
+#    --setup or --on
 #    --file <name> (OPTIONAL) 
 #        ==> specifies the name of the ldap configuration file that
 #            will be used to contact the identity store
 #            defaults to:  $MY_SQROOT/sql/script/.traf_authentication_config 
 #
-#   When specifying --on, the script:
+#   When specifying --setup or --on, the script:
 #      ==> verifies that the configuration file exists
 #      ==> calls ldapconfigcheck to verify the contents of the config file
 #      ==> calls ldapcheck to test a connection to LDAP
@@ -42,6 +42,9 @@
 #         ==> copies $MY_SQROOT/sqenvcom.sh to all nodes in cluster
 #         ==> propagates $MY_SQROOT/sql/script/.traf_authentication_config to
 #             all nodes in the cluster
+#
+#   When specifying --on 
+#     ==> brings up sqlci and performs "initialize authorization"
 #
 # To turn off authentication specify:
 #    --off
@@ -61,16 +64,16 @@
 function print_usage {
 cat << EOF
 
-This script turns on or turns off authentication for Trafodion
+This script enables or disables security features for Trafodion
 
 Usage: $(basename $0) [options]
 
 Options:
-    --file <loc>  Optionally specify location of the Trafodion authentication
-                  configuration file.
-    --help        Print this message and exit.
-    --off         Turns off authentication                               
-    --on          Turns on authentication                               
+    --file <loc>  Optional location of OpenLDAP configuration file
+    --help        Prints this message
+    --off         Disables authentication and authorization                               
+    --on          Enables authentication and authorization                               
+    --setup       Enables authentication
     --status      Returns status of authentication enablement
 
 EOF
@@ -197,7 +200,7 @@ function enable_authorization
 eof
   errorRows=`/bin/cat $logLoc/authEnable.log | /bin/grep "\*\*\* ERROR" | wc -l`
   if [ $errorRows -ne 0 ]; then
-    echo "ERROR: Authorization has not been enabled, see $logLoc/authEnable.log"
+    echo "ERROR: Authorization setting have not changed, see $logLoc/authEnable.log"
   else
     echo "INFO: Authorization (grant/revoke support) has been enabled"
   fi
@@ -222,11 +225,41 @@ function disable_authorization
 eof
   errorRows=`/bin/cat $logLoc/authDisable.log | /bin/grep "\*\*\* ERROR" | wc -l`
   if [ $errorRows -ne 0 ]; then
-    echo "ERROR: Authorization has not been disabled, see $logLoc/authDisable.log"
+    echo "ERROR: Authorization settings have not changed, see $logLoc/authDisable.log"
   else
     echo "INFO: Authorization (grant/revoke support) has been disabled"
   fi
 }
+
+
+# =============================================================================
+# function status_authorization
+#
+# this functions calls sqlci to see if the schema containing authorization
+# data exists (PRIVMGR_MD)
+# =============================================================================
+function status_authorization
+{
+  logLoc=$MY_SQROOT/logs
+  rm $logLoc/authStatus.log > /dev/null 2>&1
+  sqlci >> "$logLoc/authStatus.log" 2>&1 <<eof
+   values (current_timestamp);
+   get schemas, no header;
+   exit;
+eof
+  errorRows=`/bin/cat $logLoc/authStatus.log | /bin/grep "\*\*\* ERROR" | wc -l`
+  if [ $errorRows -ne 0 ]; then
+    echo "   Unable to determine authorization status, see $logLoc/authStatus.log"
+  else
+    privMgrSchema=`/bin/cat $logLoc/authStatus.log | /bin/grep "PRIVMGR_MD" | wc -l`
+    if [ $privMgrSchema -eq 0 ]; then
+      echo "   Authorization (grant/revoke) is NOT ENABLED"
+    else
+      echo "   Authorization (grant/revoke) is ENABLED"
+    fi
+  fi
+}
+
 
 # =============================================================================
 # main
@@ -238,6 +271,7 @@ configFileDir=$defaultConfigFileDir
 configFile=$defaultConfigFileDir$defaultConfigFile
 authOn=0
 authOnSpecified=0
+enableAuthorization=0
 authOff=0
 authOffSpecified=0
 fileSpecified=0
@@ -296,8 +330,19 @@ while [[ $# -gt 0 ]]; do
             fi
             authOn=1
             authOnSpecified=1
+            enableAuthorization=1
             ;;
-        -s | --status)
+        --setup)
+            if [ $authOnSpecified -eq 1 ]; then
+              echo
+              echo "***ERROR: Option $1 specified more than once."
+              print_usage
+              exit 1
+            fi
+            authOn=1
+            authOnSpecified=1
+            ;;
+        --status)
             if [ $statusSpecified -eq 1 ]; then
               echo
               echo "***ERROR: Option $1 specified more than once."
@@ -317,7 +362,7 @@ done
 if [ $doStatus -eq 0 ]; then
   if [ $authOn -eq 0 -a $authOff -eq 0 ]; then
     echo
-    echo "***ERROR: Please turn authentication on (--on) or off (--off)."
+    echo "***ERROR: Please turn authentication on (--on/--setup) or off (--off)."
     print_usage 
     exit 1
   fi
@@ -345,6 +390,10 @@ errorRows=0
 if [ $authOn -eq 1 ]; then
   setup_config
   copy_config
+fi
+
+# if requested, enable authorization
+if [ $enableAuthorization -eq 1 ]; then
   enable_authorization
 fi
 
@@ -369,14 +418,14 @@ else
   # report the status of authentication enablement
   if [ $doStatus -eq 1 ]; then
     echo
-    echo "INFO:  *** Authentication Status *** "
-    echo "   OpenLDAP authentication has been configured"
+    echo "INFO:  *** Trafodion security (authentication and authorization) status *** "
     authEnabled=`echo $TRAFODION_ENABLE_AUTHENTICATION | grep "YES" | wc -l`
     if [ $authEnabled -eq 0 ]; then
       echo "   Authentication is NOT ENABLED"
     else
       echo "   Authentication is ENABLED"
     fi
+    status_authorization
     echo
   fi
 fi

@@ -1540,6 +1540,12 @@ bool CmpSeabaseDDLrole::describe(
       if (privStatus == PrivStatus::STATUS_ERROR)                                   
          SEABASEDDL_INTERNAL_ERROR("Could not fetch users granted role.");
          
+      // If CQD to display privilege grants is off, return now
+      if ((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF) || 
+          ((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM) 
+              && getenv("SQLMX_REGRESS")))
+        return true;
+
       // Report on each grantee.
       for (size_t r = 0; r < granteeNames.size(); r++)
       {

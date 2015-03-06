@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ register user sql_user9;
 register user sql_user10;
 initialize authorization;
 set parserflags 64;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG136 clear;
 obey TEST136(create_db);
 obey TEST136(register_tests);

@@ -3074,6 +3074,9 @@ enum DefaultConstants
   // enable special features to be used for compatability with certain vendors.
   MODE_SPECIAL_4,
 
+  // toggle display system grants for SHOWDDL
+  SHOWDDL_DISPLAY_PRIVILEGE_GRANTS,
+
   // ***** END REGULAR DEFAULTS *********************************
   
   // Add regular default values (CQDs) before this line.

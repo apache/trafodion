@@ -2870,11 +2870,11 @@ Lng32 HSGlobalsClass::Initialize()
       {
         HSTranMan *TM = HSTranMan::Instance(); // Must have transaction around this.
         TM->Begin("Create schema for hive stats.");
-        NAString ddl = "CREATE SCHEMA ";
+        NAString ddl = "CREATE SCHEMA IF NOT EXISTS ";
         ddl.append(HIVE_STATS_CATALOG).append('.').append(HIVE_STATS_SCHEMA);
-        retcode = HSFuncExecQuery(ddl, -UERR_CANT_CREATE_HIVE_STATS_SCHEMA, NULL,
+        retcode = HSFuncExecQuery(ddl, -UERR_INTERNAL_ERROR, NULL,
                                   "Creating schema for Hive statistics", NULL,
-                                  NULL, FALSE, -CAT_SCHEMA_ALREADY_EXISTS);
+                                  NULL);
         HSHandleError(retcode);
         TM->Commit(); // Must commit this transaction (even if schema didn't get created).
       }

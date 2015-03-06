@@ -7,6 +7,24 @@
 --   GRANT COMPONENT PRIVILEGE
 --   REVOKE COMPONENT PRIVILEGE
 --
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
 -- This test in valid only for Linux
 -- This test cannot run in parallel with other tests, it turns off the
 -- public privilege for create catalog and create schema.  This would cause
@@ -22,6 +40,7 @@
 control query default SKIP_METADATA_VIEWS 'ON';
 
 obey TEST137(clean_up);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137 clear;
 obey TEST137(set_up);
 obey TEST137(create_db);
@@ -402,6 +421,7 @@ showddl component sql_operations;
 
 ?section user1_tests
 obey TEST137 (set_up);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 -- These tests should succeed
 -- returns 2 rows
@@ -424,6 +444,7 @@ log;
 
 ?section user4_tests
 obey TEST137 (set_up);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 -- these tests should succeed
 grant component privilege lib_view_checkouts on library_books to sql_user6;
@@ -436,6 +457,7 @@ log;
 
 ?section user5_tests
 obey TEST137 (set_up);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 -- these tests should fail
 grant component privilege lib_view_repository on library_books to sql_user7;
@@ -444,6 +466,7 @@ log;
 -- below is the setup and testing for various scenarios for revoke component privileges
 ?section revoke_comp_privs_setup
 initialize authorization;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 create role library_admin;
 grant role library_admin to sql_user1, sql_user2;
@@ -483,12 +506,14 @@ grant component privilege lib_view_repository
 log;
 
 ?section revoke_comp_privs_setup_user1
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 grant component privilege lib_view_repository
 on library_books to sql_user2 with grant option;
 log;
 
 ?section revoke_comp_privs_setup_user2
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 grant component privilege lib_view_repository
 on library_books to sql_user3 with grant option;
@@ -501,6 +526,7 @@ on library_books to sql_user5;
 log;
 
 ?section revoke_comp_privs_setup_user3
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 grant component privilege lib_view_repository
 on library_books to DB__ROOT with grant option;
@@ -513,18 +539,21 @@ on library_books to sql_user4 with grant option;
 log;
 
 ?section revoke_comp_privs_setup_user4
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 grant component privilege lib_view_repository
 on library_books to sql_user5;
 log;
 
 ?section revoke_comp_privs_test_user2
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 revoke component privilege lib_view_repository
 on library_books from sql_user3;
 log;
 
 ?section revoke_comp_privs_cleanup
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137 ;
 unregister component Library_books cascade;
 revoke role library_admin from sql_user1, sql_user2;
@@ -534,6 +563,7 @@ drop role library_ckout_clerks;
 log;
 
 ?section user2_cc
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 -- user2 requests
 --create catalog t137cat1;
@@ -545,6 +575,7 @@ log LOG137;
 log;
 
 ?section user3_cc
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 -- user3 requests
 --create catalog t137cat1;
@@ -552,6 +583,7 @@ log LOG137;
 log;
 
 ?section user6_cc
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 -- user6 requests
 --create schema t137sch;
@@ -559,6 +591,7 @@ log LOG137;
 log;
 
 ?section user7_cc
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 -- user7 requests
 --create catalog t137cat1;
@@ -568,6 +601,7 @@ log LOG137;
 log;
 
 ?section user8_cc
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG137;
 -- user8 requests
 --create catalog t137cat1;

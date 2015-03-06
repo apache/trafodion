@@ -2038,6 +2038,9 @@ drop component privilege lib_view_benefactors cascade;
 >>initialize authorization;
 
 --- SQL operation complete.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
 >>log LOG137;
 >>create role library_admin;
 

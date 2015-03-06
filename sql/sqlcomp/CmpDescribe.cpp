@@ -2489,6 +2489,11 @@ short CmpDescribeSeabaseTable (
 
   char * sqlmxRegr = getenv("SQLMX_REGRESS");
 
+  NABoolean displayPrivilegeGrants = TRUE;
+  if (((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM) && sqlmxRegr) ||
+       (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF))
+    displayPrivilegeGrants = FALSE;
+ 
   // display syscols for invoke if not running regrs
   NABoolean displaySystemCols = ((!sqlmxRegr) && (type == 1));
 
@@ -2518,7 +2523,7 @@ short CmpDescribeSeabaseTable (
       outputLongLine(space, viewtext, 0);
 
       // Display grant statements
-      if (CmpCommon::context()->isAuthorizationEnabled())
+      if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
       {
         std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
         privMDLoc += std::string(".\"") +    
@@ -3065,7 +3070,7 @@ short CmpDescribeSeabaseTable (
   // If SHOWDDL and authorization is enabled, display GRANTS
   if (type == 2)
   {
-    if (CmpCommon::context()->isAuthorizationEnabled())
+    if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
     {
       // now get the grant stmts
       int64_t objectUID = (int64_t)naTable->objectUid().get_value();
@@ -3160,8 +3165,14 @@ short CmpDescribeSequence(
 
   outputShortLine(*space, ";");
 
+  char * sqlmxRegr = getenv("SQLMX_REGRESS");
+  NABoolean displayPrivilegeGrants = TRUE;
+  if (((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM) && sqlmxRegr) ||
+       (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF))
+    displayPrivilegeGrants = FALSE;
+
   // If authorization enabled, display grant statements
-  if (CmpCommon::context()->isAuthorizationEnabled())
+  if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
   {
     // now get the grant stmts
     int64_t objectUID = (int64_t)naTable->objectUid().get_value();
@@ -3402,8 +3413,14 @@ char buf[1000];
    outputShortLine(*space,buf);
    outputShortLine(*space,";");
 
+   // Determine if privilege grants should be displayed
+   NABoolean displayPrivilegeGrants = 
+    ((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF) ||
+       ((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM)
+           && getenv("SQLMX_REGRESS"))) ? FALSE : TRUE;
+
 // If authorization is enabled, display grant statements for library
-   if (CmpCommon::context()->isAuthorizationEnabled())
+   if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
    {
       // now get the grant stmts
       NAString trafMDLoc;

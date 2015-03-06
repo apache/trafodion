@@ -3487,7 +3487,8 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
 
   // Make sure rows were inserted correctly.
   // Get the expected number of rows
- sprintf(buf, "select count(*) from %s o where o.object_type in ('VI','BT','LB','UR', 'SG')",
+ sprintf(buf, "select count(*) from %s o where o.object_type in ('VI','BT','LB','UR', 'SG')"
+              " and object_owner > 0",
               objectsLocation.c_str());
   Lng32 len = 0;
   cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &len, NULL);
