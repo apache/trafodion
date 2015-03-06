@@ -22,6 +22,7 @@ import java.nio.*;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
+import java.math.*;
 
 import org.trafodion.jdbc.t2.*;
 
@@ -213,13 +214,13 @@ public class ServerApiSqlPrepare {
             
             switch (sqlStmtType){
                 case ServerConstants.TYPE_SELECT:
+                case ServerConstants.TYPE_EXPLAIN:
                     isResultSet = true;
                     break;
                 case ServerConstants.TYPE_UPDATE:
                 case ServerConstants.TYPE_DELETE:
                 case ServerConstants.TYPE_INSERT:
                 case ServerConstants.TYPE_INSERT_PARAM:
-                case ServerConstants.TYPE_EXPLAIN:
                 case ServerConstants.TYPE_CREATE:
                 case ServerConstants.TYPE_GRANT:
                 case ServerConstants.TYPE_DROP:
@@ -233,22 +234,25 @@ public class ServerApiSqlPrepare {
                 trafConn = clientData.getTrafConnection();
                 trafStmt = trafConn.prepareTrafStatement(stmtLabel, sqlString, isResultSet);
                 pstmt = (PreparedStatement)trafStmt.getStatement();
-                pstmt.setFetchSize(125);                //????????????????????????????????
-//-------------------------------------------------------------
-                if(isResultSet == true){
-                    rsmd = pstmt.getMetaData();
-                    outNumberParams = rsmd.getColumnCount();
-                }
-//-------------------------------------------------------------                
+                
+                rsmd = pstmt.getMetaData();
                 pmd = pstmt.getParameterMetaData();
+                
+//-------------------------------------------------------------
+                if(isResultSet)
+                    outNumberParams = rsmd.getColumnCount();
+                LOG.debug(serverWorkerName + ". outNumberParams :" + outNumberParams);
+//-------------------------------------------------------------                
                 if(pmd != null)
                     inpNumberParams = pmd.getParameterCount();
+                LOG.debug(serverWorkerName + ". inpNumberParams :" + inpNumberParams);
                 
                 if(LOG.isDebugEnabled()){
                     LOG.debug(serverWorkerName + ".outNumberParams :" + outNumberParams);
                     LOG.debug(serverWorkerName + ".inpNumberParams :" + inpNumberParams);
                 }
                 if (outNumberParams > 0){
+//                  strsmd = ((TResultSetMetaData)rsmd).getSqlResultSetMetaData();
                     strsmd = (SQLMXResultSetMetaData)rsmd;
                     outDescList = new Descriptor2List(outNumberParams);
                     
@@ -292,35 +296,37 @@ public class ServerApiSqlPrepare {
                     if(LOG.isDebugEnabled()){
                         for (int column = 1; column <= outNumberParams; column++){
                             Descriptor2 dsc = outDescList.getDescriptors2()[column-1];
-                            LOG.debug(serverWorkerName + ".Column :" + column);
-                            LOG.debug(serverWorkerName + ".out_noNullValue" + column + " :" + dsc.getNoNullValue());
-                            LOG.debug(serverWorkerName + ".out_nullValue" + column + " :" + dsc.getNullValue());
-                            LOG.debug(serverWorkerName + ".out_version" + column + " :" + dsc.getVersion());
-                            LOG.debug(serverWorkerName + ".out_dataType " + column + " :" + SqlUtils.getDataType(dsc.getDataType()));
-                            LOG.debug(serverWorkerName + ".out_datetimeCode " + column + " :" + dsc.getDatetimeCode());
-                            LOG.debug(serverWorkerName + ".out_maxLen " + column + " :" + dsc.getMaxLen());
-                            LOG.debug(serverWorkerName + ".out_precision " + column + " :" + dsc.getPrecision());
-                            LOG.debug(serverWorkerName + ".out_scale " + column + " :" + dsc.getScale());
-                            LOG.debug(serverWorkerName + ".out_nullInfo " + column + " :" + dsc.getNullInfo());
-                            LOG.debug(serverWorkerName + ".out_signed " + column + " :" + dsc.getSigned());
-                            LOG.debug(serverWorkerName + ".out_odbcDataType " + column + " :" + dsc.getOdbcDataType());
-                            LOG.debug(serverWorkerName + ".out_odbcPrecision " + column + " :" + dsc.getOdbcPrecision());
-                            LOG.debug(serverWorkerName + ".out_sqlCharset " + column + " :" + SqlUtils.getCharsetName(dsc.getSqlCharset()) + "[" + dsc.getSqlCharset() + "]");
-                            LOG.debug(serverWorkerName + ".out_odbcCharset " + column + " :" + SqlUtils.getCharsetName(dsc.getOdbcCharset()) + "[" + dsc.getOdbcCharset() + "]");
-                            LOG.debug(serverWorkerName + ".out_colHeadingNm " + column + " :" + dsc.getColHeadingNm());
-                            LOG.debug(serverWorkerName + ".out_tableName " + column + " :" + dsc.getTableName());
-                            LOG.debug(serverWorkerName + ".out_schemaName " + column + " :" + dsc.getSchemaName());
-                            LOG.debug(serverWorkerName + ".out_headingName " + column + " :" + dsc.getHeadingName());
-                            LOG.debug(serverWorkerName + ".out_intLeadPrec " + column + " :" + dsc.getParamMode());
-                            LOG.debug(serverWorkerName + ".out_paramMode " + column + " :" + dsc.getColHeadingNm());
-                            LOG.debug(serverWorkerName + ".out_memAlignOffset " + column + " :" + dsc.getMemAlignOffset());
-                            LOG.debug(serverWorkerName + ".out_allocSize " + column + " :" + dsc.getAllocSize());
-                            LOG.debug(serverWorkerName + ".out_varLayout " + column + " :" + dsc.getVarLayout());
+                            LOG.debug(serverWorkerName + ". [" + column + "] Output descriptor -------------" );
+                            LOG.debug(serverWorkerName + ". noNullValue" + column + " :" + dsc.getNoNullValue());
+                            LOG.debug(serverWorkerName + ". nullValue" + column + " :" + dsc.getNullValue());
+                            LOG.debug(serverWorkerName + ". version" + column + " :" + dsc.getVersion());
+                            LOG.debug(serverWorkerName + ". dataType " + column + " :" + SqlUtils.getDataType(dsc.getDataType()));
+                            LOG.debug(serverWorkerName + ". datetimeCode " + column + " :" + dsc.getDatetimeCode());
+                            LOG.debug(serverWorkerName + ". maxLen " + column + " :" + dsc.getMaxLen());
+                            LOG.debug(serverWorkerName + ". precision " + column + " :" + dsc.getPrecision());
+                            LOG.debug(serverWorkerName + ". scale " + column + " :" + dsc.getScale());
+                            LOG.debug(serverWorkerName + ". nullInfo " + column + " :" + dsc.getNullInfo());
+                            LOG.debug(serverWorkerName + ". signed " + column + " :" + dsc.getSigned());
+                            LOG.debug(serverWorkerName + ". odbcDataType " + column + " :" + dsc.getOdbcDataType());
+                            LOG.debug(serverWorkerName + ". odbcPrecision " + column + " :" + dsc.getOdbcPrecision());
+                            LOG.debug(serverWorkerName + ". sqlCharset " + column + " :" + SqlUtils.getCharsetName(dsc.getSqlCharset()) + "[" + dsc.getSqlCharset() + "]");
+                            LOG.debug(serverWorkerName + ". odbcCharset " + column + " :" + SqlUtils.getCharsetName(dsc.getOdbcCharset()) + "[" + dsc.getOdbcCharset() + "]");
+                            LOG.debug(serverWorkerName + ". colHeadingNm " + column + " :" + dsc.getColHeadingNm());
+                            LOG.debug(serverWorkerName + ". tableName " + column + " :" + dsc.getTableName());
+                            LOG.debug(serverWorkerName + ". schemaName " + column + " :" + dsc.getSchemaName());
+                            LOG.debug(serverWorkerName + ". headingName " + column + " :" + dsc.getHeadingName());
+                            LOG.debug(serverWorkerName + ". intLeadPrec " + column + " :" + dsc.getParamMode());
+                            LOG.debug(serverWorkerName + ". paramMode " + column + " :" + dsc.getColHeadingNm());
+                            LOG.debug(serverWorkerName + ". memAlignOffset " + column + " :" + dsc.getMemAlignOffset());
+                            LOG.debug(serverWorkerName + ". allocSize " + column + " :" + dsc.getAllocSize());
+                            LOG.debug(serverWorkerName + ". varLayout " + column + " :" + dsc.getVarLayout());
+                            LOG.debug(serverWorkerName + ".Output descriptor End-------------");
                         }
-                       }
+                    }
                 }
                 if (inpNumberParams > 0){
-                    SQLMXParameterMetaData spmtd = (SQLMXParameterMetaData)pmd;
+//                    spmtd = ((TParameterMetaData)pmd).getSqlParameterMetaData();
+                    spmtd = (SQLMXParameterMetaData)pmd;
                     inpDescList = new Descriptor2List(inpNumberParams);
                     
                     for(int param = 1; param <= inpNumberParams; param++){
@@ -361,32 +367,33 @@ public class ServerApiSqlPrepare {
                     if(LOG.isDebugEnabled()){
                         for (int param = 1; param <= inpNumberParams; param++){
                             Descriptor2 dsc = inpDescList.getDescriptors2()[param-1];
-                            LOG.debug(serverWorkerName + ".Param :" + param);
-                            LOG.debug(serverWorkerName + ".inp_noNullValue" + param + " :" + dsc.getNoNullValue());
-                            LOG.debug(serverWorkerName + ".inp_nullValue" + param + " :" + dsc.getNullValue());
-                            LOG.debug(serverWorkerName + ".inp_version" + param + " :" + dsc.getVersion());
-                            LOG.debug(serverWorkerName + ".inp_dataType " + param + " :" + SqlUtils.getDataType(dsc.getDataType()));
-                            LOG.debug(serverWorkerName + ".inp_datetimeCode " + param + " :" + dsc.getDatetimeCode());
-                            LOG.debug(serverWorkerName + ".inp_maxLen " + param + " :" + dsc.getMaxLen());
-                            LOG.debug(serverWorkerName + ".inp_precision " + param + " :" + dsc.getPrecision());
-                            LOG.debug(serverWorkerName + ".inp_scale " + param + " :" + dsc.getScale());
-                            LOG.debug(serverWorkerName + ".inp_nullInfo " + param + " :" + dsc.getNullInfo());
-                            LOG.debug(serverWorkerName + ".inp_signed " + param + " :" + dsc.getSigned());
-                            LOG.debug(serverWorkerName + ".inp_odbcDataType " + param + " :" + dsc.getOdbcDataType());
-                            LOG.debug(serverWorkerName + ".inp_odbcPrecision " + param + " :" + dsc.getOdbcPrecision());
-                            LOG.debug(serverWorkerName + ".inp_sqlCharset " + param + " :" + SqlUtils.getCharsetName(dsc.getSqlCharset()) + "[" + dsc.getSqlCharset() + "]");
-                            LOG.debug(serverWorkerName + ".inp_odbcCharset " + param + " :" + SqlUtils.getCharsetName(dsc.getOdbcCharset()) + "[" + dsc.getOdbcCharset() + "]");
-                            LOG.debug(serverWorkerName + ".inp_colHeadingNm " + param + " :" + dsc.getColHeadingNm());
-                            LOG.debug(serverWorkerName + ".inp_tableName " + param + " :" + dsc.getTableName());
-                            LOG.debug(serverWorkerName + ".inp_schemaName " + param + " :" + dsc.getSchemaName());
-                            LOG.debug(serverWorkerName + ".inp_headingName " + param + " :" + dsc.getHeadingName());
-                            LOG.debug(serverWorkerName + ".inp_intLeadPrec " + param + " :" + dsc.getParamMode());
-                            LOG.debug(serverWorkerName + ".inp_paramMode " + param + " :" + dsc.getColHeadingNm());
-                            LOG.debug(serverWorkerName + ".inp_memAlignOffset " + param + " :" + dsc.getMemAlignOffset());
-                            LOG.debug(serverWorkerName + ".inp_allocSize " + param + " :" + dsc.getAllocSize());
-                            LOG.debug(serverWorkerName + ".inp_varLayout " + param + " :" + dsc.getVarLayout());
+                            LOG.debug(serverWorkerName + ". [" + param + "] Input descriptor -------------" );
+                            LOG.debug(serverWorkerName + ". noNullValue" + param + " :" + dsc.getNoNullValue());
+                            LOG.debug(serverWorkerName + ". nullValue" + param + " :" + dsc.getNullValue());
+                            LOG.debug(serverWorkerName + ". version" + param + " :" + dsc.getVersion());
+                            LOG.debug(serverWorkerName + ". dataType " + param + " :" + SqlUtils.getDataType(dsc.getDataType()));
+                            LOG.debug(serverWorkerName + ". datetimeCode " + param + " :" + dsc.getDatetimeCode());
+                            LOG.debug(serverWorkerName + ". maxLen " + param + " :" + dsc.getMaxLen());
+                            LOG.debug(serverWorkerName + ". precision " + param + " :" + dsc.getPrecision());
+                            LOG.debug(serverWorkerName + ". scale " + param + " :" + dsc.getScale());
+                            LOG.debug(serverWorkerName + ". nullInfo " + param + " :" + dsc.getNullInfo());
+                            LOG.debug(serverWorkerName + ". signed " + param + " :" + dsc.getSigned());
+                            LOG.debug(serverWorkerName + ". odbcDataType " + param + " :" + dsc.getOdbcDataType());
+                            LOG.debug(serverWorkerName + ". odbcPrecision " + param + " :" + dsc.getOdbcPrecision());
+                            LOG.debug(serverWorkerName + ". sqlCharset " + param + " :" + SqlUtils.getCharsetName(dsc.getSqlCharset()) + "[" + dsc.getSqlCharset() + "]");
+                            LOG.debug(serverWorkerName + ". odbcCharset " + param + " :" + SqlUtils.getCharsetName(dsc.getOdbcCharset()) + "[" + dsc.getOdbcCharset() + "]");
+                            LOG.debug(serverWorkerName + ". colHeadingNm " + param + " :" + dsc.getColHeadingNm());
+                            LOG.debug(serverWorkerName + ". tableName " + param + " :" + dsc.getTableName());
+                            LOG.debug(serverWorkerName + ". schemaName " + param + " :" + dsc.getSchemaName());
+                            LOG.debug(serverWorkerName + ". headingName " + param + " :" + dsc.getHeadingName());
+                            LOG.debug(serverWorkerName + ". intLeadPrec " + param + " :" + dsc.getParamMode());
+                            LOG.debug(serverWorkerName + ". paramMode " + param + " :" + dsc.getColHeadingNm());
+                            LOG.debug(serverWorkerName + ". memAlignOffset " + param + " :" + dsc.getMemAlignOffset());
+                            LOG.debug(serverWorkerName + ". allocSize " + param + " :" + dsc.getAllocSize());
+                            LOG.debug(serverWorkerName + ". varLayout " + param + " :" + dsc.getVarLayout());
+                            LOG.debug(serverWorkerName + ". Input descriptor End -------------" );
                         }
-                       }
+                    }
                 }
             } catch (SQLException ex){
                 LOG.error(serverWorkerName + ". Prepare.SQLException " + ex);

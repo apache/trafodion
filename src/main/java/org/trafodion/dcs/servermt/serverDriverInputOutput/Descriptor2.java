@@ -127,6 +127,7 @@ public class Descriptor2 {
         this.label_ = label_;
 //====================================================================
         if(LOG.isDebugEnabled()){
+            LOG.debug("T2 descriptor ----------");
             LOG.debug("sqlCharset_      :" + sqlCharset_);
             LOG.debug("odbcCharset_     :" + odbcCharset_);
             LOG.debug("sqlDataType_     :" + sqlDataType_ + " :" + SqlUtils.getSqlDataType(sqlDataType_));
@@ -153,7 +154,7 @@ public class Descriptor2 {
             LOG.debug("maxLen_          :" + maxLen_);
             LOG.debug("displaySize_     :" + displaySize_);
             LOG.debug("label_           :" + label_);
-            LOG.debug("------------end descriptor --------------");
+            LOG.debug("T2 descriptor End ----------");
         }
 //=====================================================
         noNullValue = -1;
@@ -207,9 +208,11 @@ public class Descriptor2 {
                 break;
             case Types.TIME:
                 odbcDataType = 10;
+                precision = odbcPrecision;
                 break;
             case Types.TIMESTAMP:
                 odbcDataType = 11;
+                precision = odbcPrecision;
                 break;
         }
 //================================================================        
@@ -478,6 +481,7 @@ public class Descriptor2 {
 //-----------------------------
     public void debugDescriptor(){
         if(LOG.isDebugEnabled()){
+            LOG.debug("T4 descriptor -----------");
             LOG.debug("noNullValue :" + noNullValue);
             LOG.debug("nullValue :" + nullValue);
             LOG.debug("version :" + version);
@@ -502,6 +506,7 @@ public class Descriptor2 {
             LOG.debug("memAlignOffset :" + memAlignOffset);
             LOG.debug("allocSize :" + allocSize);
             LOG.debug("varLayout :" + varLayout);
+            LOG.debug("T4 descriptor End -----------");
         }
     }
 }

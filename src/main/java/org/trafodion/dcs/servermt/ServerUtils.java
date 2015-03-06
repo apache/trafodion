@@ -94,6 +94,7 @@ public final class ServerUtils  {
         switch(serverState){
         case ServerConstants.SERVER_STATE_INIT:stServerState = "[INIT]";break;
         case ServerConstants.SERVER_STATE_AVAILABLE:stServerState = "[AVAILABLE]";break;
+        case ServerConstants.SERVER_STATE_CONNECTING:stServerState = "[CONNECTING]";break;
         case ServerConstants.SERVER_STATE_CONNECTED:stServerState = "[CONNECTED]";break;
         case ServerConstants.SERVER_STATE_CONNECT_FAILED:stServerState = "[CONNECT_FAILED]";break;
         case ServerConstants.SERVER_STATE_CONNECT_REJECTED:stServerState = "[CONNECT_REJECTED]";break;
@@ -233,7 +234,8 @@ public final class ServerUtils  {
 //================= STARTING =======================================================
     public void updateStateToStarting() throws KeeperException, InterruptedException {
         
-        LOG.info(server.serverName + ". Update State to [STARTING] from " + convertStateToString(serverState));
+        if(LOG.isDebugEnabled())
+            LOG.debug(server.serverName + ". Update State to [STARTING] from " + convertStateToString(serverState));
 
         stat = zkc.exists(registeredPath, false);
         if(stat != null) {
@@ -256,7 +258,8 @@ public final class ServerUtils  {
 
         if(serverState != ServerConstants.SERVER_STATE_INIT) return;
        
-        LOG.info(server.serverName + ". Update State to [AVAILABLE] from " + convertStateToString(serverState));
+        if(LOG.isDebugEnabled())
+            LOG.debug(server.serverName + ". Update State to [AVAILABLE] from " + convertStateToString(serverState));
         
         threadRegisteredData = Bytes.toBytes(String.format("AVAILABLE:%s::%d:%s:%s:%s:%d:::::",
                 julianTimestamp(),
@@ -280,9 +283,9 @@ public final class ServerUtils  {
         threadRegisteredData = zkc.getData(threadRegisteredPath, false, stat);
         String s = new String(threadRegisteredData);
         if (true == s.startsWith("CONNECTING:")){
-            LOG.info(server.serverName + ". Update State to [CONNECTED] from " + convertStateToString(serverState));
+            if(LOG.isDebugEnabled())
+                LOG.debug(server.serverName + ". Update State to [CONNECTED] from " + convertStateToString(serverState));
             s=s.replace("CONNECTING:", "CONNECTED:");
-            LOG.info(server.serverName + ". Updated state: [" + s + "]");
             zkc.setData(threadRegisteredPath, s.getBytes(), -1);
             serverState=ServerConstants.SERVER_STATE_CONNECTED;
         }
@@ -290,7 +293,8 @@ public final class ServerUtils  {
 //================== CONNECT_FAILED =======================================================
     public void updateStateConnectFailed() throws KeeperException, InterruptedException {
         
-        LOG.info(server.serverName + ". Update State to [CONNECT_FAILED] from " + convertStateToString(serverState));
+        if(LOG.isDebugEnabled())
+            LOG.debug(server.serverName + ". Update State to [CONNECT_FAILED] from " + convertStateToString(serverState));
 
         threadRegisteredData = Bytes.toBytes(String.format("CONNECT_FAILED:%s::%d:%s:%s:%s:%d:::::",
                 julianTimestamp(),
@@ -302,14 +306,15 @@ public final class ServerUtils  {
         
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
         try {
-            Thread.sleep(30000);
+            Thread.sleep(ServerConstants.SERVER_STATUS_DELAY);
         } catch (InterruptedException e) {  }
     }
 
 //================== CONNECT_REJECTED =======================================================
     public void updateStateConnectRejected() throws KeeperException, InterruptedException {
         
-        LOG.info(server.serverName + ". Update State to [CONNECT_REJECTED] from " + convertStateToString(serverState));
+        if(LOG.isDebugEnabled())
+            LOG.debug(server.serverName + ". Update State to [CONNECT_REJECTED] from " + convertStateToString(serverState));
 
         threadRegisteredData = Bytes.toBytes(String.format("CONNECT_REJECTED:%s::%d:%s:%s:%s:%d:::::",
                 julianTimestamp(),
@@ -321,14 +326,15 @@ public final class ServerUtils  {
         
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
         try {
-            Thread.sleep(30000);
+            Thread.sleep(ServerConstants.SERVER_STATUS_DELAY);
         } catch (InterruptedException e) {  }
     }
 
 //================== READ_TIMEOUTED =======================================================
     public void updateStateReadTimeouted() throws KeeperException, InterruptedException {
         
-        LOG.info(server.serverName + ". Update State to [READ_TIMEOUTED] from " + convertStateToString(serverState));
+        if(LOG.isDebugEnabled())
+            LOG.debug(server.serverName + ". Update State to [READ_TIMEOUTED] from " + convertStateToString(serverState));
         
         threadRegisteredData = Bytes.toBytes(String.format("READ_TIMEOUTED:%s::%d:%s:%s:%s:%d:::::",
                 julianTimestamp(),
@@ -340,14 +346,15 @@ public final class ServerUtils  {
         
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
         try {
-            Thread.sleep(30000);
+            Thread.sleep(ServerConstants.SERVER_STATUS_DELAY);
         } catch (InterruptedException e) {  }
     }
 
 //================== WRITE_TIMEOUTED =======================================================
     public void updateStateWriteTimeouted() throws KeeperException, InterruptedException {
         
-        LOG.info(server.serverName + ". Update State to [WRITE_TIMEOUTED] from " + ServerUtils.convertStateToString(serverState));
+        if(LOG.isDebugEnabled())
+            LOG.debug(server.serverName + ". Update State to [WRITE_TIMEOUTED] from " + ServerUtils.convertStateToString(serverState));
         
         threadRegisteredData = Bytes.toBytes(String.format("WRITE_TIMEOUTED:%s::%d:%s:%s:%s:%d:::::",
                 julianTimestamp(),
@@ -360,14 +367,15 @@ public final class ServerUtils  {
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
         
         try {
-            Thread.sleep(30000);
+            Thread.sleep(ServerConstants.SERVER_STATUS_DELAY);
         } catch (InterruptedException e) {  }
     }
     
 //================== CLIENT_TIMEOUTED =======================================================
     public void updateStateClientTimeouted() throws KeeperException, InterruptedException {
         
-        LOG.info(server.serverName + ". Update State to [CLIENT_TIMEOUTED] from " + ServerUtils.convertStateToString(serverState));
+        if(LOG.isDebugEnabled())
+            LOG.debug(server.serverName + ". Update State to [CLIENT_TIMEOUTED] from " + ServerUtils.convertStateToString(serverState));
 
         threadRegisteredData = Bytes.toBytes(String.format("CLIENT_TIMEOUTED:%s::%d:%s:%s:%s:%d:::::",
                 julianTimestamp(),
@@ -380,13 +388,14 @@ public final class ServerUtils  {
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
         
         try {
-            Thread.sleep(30000);
+            Thread.sleep(ServerConstants.SERVER_STATUS_DELAY);
         } catch (InterruptedException e) {  }
     }
 //================== PORT_IN_USE =======================================================
     public void updateStatePortInUse() throws KeeperException, InterruptedException   {
         
-        LOG.info(server.serverName + ". Update State to [PORT_IN_USE] from "+ ServerUtils.convertStateToString(serverState));
+        if(LOG.isDebugEnabled())
+            LOG.debug(server.serverName + ". Update State to [PORT_IN_USE] from "+ ServerUtils.convertStateToString(serverState));
     
         threadRegisteredData = Bytes.toBytes(String.format("PORT_IN_USE:%s::%d:%s:%s:%s:%d:::::",
                 julianTimestamp(),
@@ -401,7 +410,8 @@ public final class ServerUtils  {
 //================== CONNECTING_TIMEOUTED =======================================================
     public void updateStateConnectingTimeouted() throws KeeperException, InterruptedException   {
         
-        LOG.info(server.serverName + ". Update State to [CONNECTING_TIMEOUTED] from " + ServerUtils.convertStateToString(serverState));
+        if(LOG.isDebugEnabled())
+            LOG.debug(server.serverName + ". Update State to [CONNECTING_TIMEOUTED] from " + ServerUtils.convertStateToString(serverState));
     
         threadRegisteredData = Bytes.toBytes(String.format("CONNECTING_TIMEOUTED:%s::%d:%s:%s:%s:%d:::::",
                 julianTimestamp(),
@@ -414,13 +424,14 @@ public final class ServerUtils  {
         zkc.setData(threadRegisteredPath, threadRegisteredData, -1);
         
         try {
-            Thread.sleep(30000);
+            Thread.sleep(ServerConstants.SERVER_STATUS_DELAY);
         } catch (InterruptedException e) {  }
     }
 //================== DISCONNECTED =======================================================
     public void updateStateDisconnected() throws KeeperException, InterruptedException {
         
-        LOG.info(server.serverName + ". Update State to [DISCONNECTED] from " + convertStateToString(serverState));
+        if(LOG.isDebugEnabled())
+            LOG.debug(server.serverName + ". Update State to [DISCONNECTED] from " + convertStateToString(serverState));
 
         threadRegisteredData = zkc.getData(threadRegisteredPath, false, stat);
         String s = new String(threadRegisteredData);
@@ -429,26 +440,31 @@ public final class ServerUtils  {
         serverState=ServerConstants.SERVER_STATE_CONNECTED;
         
         try {
-            Thread.sleep(30000);
+            Thread.sleep(ServerConstants.SERVER_STATUS_DELAY);
         } catch (InterruptedException e) {  }
     }
 //=================== Watcher ================================================================   
    class RunningWatcher implements Watcher {
        public void process(WatchedEvent event) {
            if(event.getType() == Event.EventType.NodeDataChanged) {
-               LOG.debug(server.serverName + ": Watcher: AVAILABLE znode changed [" + event.toString() + "]");
+               if(LOG.isDebugEnabled()){
+                   LOG.debug(server.serverName + ": " + event.toString());
+               }
                try {
                    threadRegisteredData = zkc.getData(event.getPath(), false, stat);
                    String s = new String(threadRegisteredData);
-                   LOG.debug(server.serverName + ": Watcher: " + s);
                    if (true == s.startsWith("CONNECTING:")){
-//                    timeouts.put(serverkey, System.currentTimeMillis());
-                        server.setConnectingTimeout();
+                       if(LOG.isDebugEnabled())
+                           LOG.debug(server.serverName + ". Update State to [CONNECTING] from " + convertStateToString(serverState) + " timeout set to :" + server.getConnectingTimeout());
+                       serverState=ServerConstants.SERVER_STATE_CONNECTING;
+                       server.setConnectingTimeout();
                    }
                } catch(KeeperException ke){
-                   LOG.debug(server.serverName + ": Watcher KeeperException: " + ke);
+                   if(LOG.isDebugEnabled())
+                       LOG.debug(server.serverName + ": Watcher KeeperException: " + ke);
                } catch(InterruptedException ie){
-                   LOG.debug(server.serverName + ": Watcher InterruptedException: " + ie);
+                   if(LOG.isDebugEnabled())
+                       LOG.debug(server.serverName + ": Watcher InterruptedException: " + ie);
                }
            }
        }

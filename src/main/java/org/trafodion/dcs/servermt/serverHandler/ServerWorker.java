@@ -56,6 +56,7 @@ public class ServerWorker extends Thread {
     private ServerApiSqlFetch serverApiSqlFetch;
     private ServerApiSqlDisconnect serverApiSqlDisconnect;
     private ServerApiSqlClose serverApiSqlClose;
+    private ServerApiSqlEndTransact serverApiSqlEndTransact;
 
     ServerWorker(ZkClient zkc, int instance, int serverThread, String serverName, byte[] cert){    
         this.zkc=zkc;
@@ -73,6 +74,7 @@ public class ServerWorker extends Thread {
         serverApiSqlFetch = new ServerApiSqlFetch(instance, serverThread);
         serverApiSqlDisconnect = new ServerApiSqlDisconnect(instance, serverThread);
         serverApiSqlClose = new ServerApiSqlClose(instance, serverThread);
+        serverApiSqlEndTransact = new ServerApiSqlEndTransact(instance, serverThread);
     }
     public void closeTrafConnection(SelectionKey key) {
         synchronized(queue) {
@@ -128,7 +130,7 @@ public class ServerWorker extends Thread {
             clientData.setRequest(ServerConstants.REQUST_CLOSE);
 
             if(LOG.isDebugEnabled())
-                LOG.debug(serverWorkerName + ". OperationId: " + ServerUtils.convertOpIdToString(clientData.hdr.getOperationId()) + " :" + clientData.hdr.getOperationId());
+                LOG.debug(serverWorkerName + ". Api Entry: " + ServerUtils.convertOpIdToString(clientData.hdr.getOperationId()) + " :" + clientData.hdr.getOperationId() + "---------------------------");
             switch (clientData.hdr.getOperationId()){
             case ServerConstants.SRVR_API_INIT:
                 break;
@@ -142,6 +144,7 @@ public class ServerWorker extends Thread {
                 clientData = serverApiSqlSetConnectAttr.processApi(clientData );
                 break;
             case ServerConstants.SRVR_API_SQLENDTRAN:
+                clientData = serverApiSqlEndTransact.processApi(clientData ); 
                 break;
             case ServerConstants.SRVR_API_SQLPREPARE:
                 clientData = serverApiSqlPrepare.processApi(clientData );
@@ -186,6 +189,8 @@ public class ServerWorker extends Thread {
             if(LOG.isDebugEnabled())
                 LOG.debug(serverWorkerName + ". request :" + ServerUtils.convertRequestToString(clientData.getRequest()));
             server.send(new PendingRequest(key));
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". Api Exit : " + ServerUtils.convertOpIdToString(clientData.hdr.getOperationId()) + " :" + clientData.hdr.getOperationId() + " ---------- ");
         }
     }
 }

@@ -32,14 +32,14 @@ import org.trafodion.dcs.servermt.serverSql.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class ServerApiEndTransaction {
+public class ServerApiSqlEndTransact {
     private static final int odbc_SQLSvc_EndTransaction_ParamError_exn_ = 1;
     private static final int odbc_SQLSvc_EndTransaction_InvalidConnection_exn_ = 2;
     private static final int odbc_SQLSvc_EndTransaction_SQLError_exn_ = 3;
     private static final int odbc_SQLSvc_EndTransaction_SQLInvalidHandle_exn_ = 4;
     private static final int odbc_SQLSvc_EndTransaction_TransactionError_exn_ = 5;
 
-    private static  final Log LOG = LogFactory.getLog(ServerApiEndTransaction.class);
+    private static  final Log LOG = LogFactory.getLog(ServerApiSqlEndTransact.class);
     private int instance;
     private int serverThread;
     private String serverWorkerName;
@@ -50,7 +50,7 @@ public class ServerApiEndTransaction {
 
     private ServerException serverException;
 
-    ServerApiEndTransaction(int instance, int serverThread) {  
+    ServerApiSqlEndTransact(int instance, int serverThread) {  
         this.instance = instance;
         this.serverThread = serverThread;
         serverWorkerName = ServerConstants.SERVER_WORKER_NAME + "_" + instance + "_" + serverThread;
@@ -58,14 +58,14 @@ public class ServerApiEndTransaction {
     void init(){
         dialogueId = 0;
         transactionOpt = 0;
-        serverException = new ServerException();
+        serverException = null;
     }
     void reset(){
         dialogueId = 0;
         transactionOpt = 0;
         serverException = null;
     }
-    ClientData ProcessApi(ClientData clientData) {  
+    ClientData processApi(ClientData clientData) {  
         this.clientData = clientData;
         init();
 //        
@@ -96,11 +96,16 @@ public class ServerApiEndTransaction {
             }
 //=====================Process ServerApiEndTransaction==============
 //
-/*          try {
+            serverException = new ServerException();
+            try {
+              if (transactionOpt == 1)
+                  clientData.getTrafConnection().rollback();
+              else
+                  clientData.getTrafConnection().commit();
             } catch (SQLException ex){
-                serverException.setServerException (odbc_SQLSvc_EndTransaction_SQLError_exn_, 0, ex);                
+                LOG.error(serverWorkerName + ". SQLException :" + ex);
+                serverException.setServerException (odbc_SQLSvc_EndTransaction_TransactionError_exn_, 0, ex);
             }
-*/
 //            
 //===================calculate length of output ByteBuffer========================
 //
@@ -109,8 +114,11 @@ public class ServerApiEndTransaction {
 //
 // check if ByteBuffer is big enough for output
 //      
-            int dataLength = serverException.lengthOfData();
-            int availableBuffer = bbBody.capacity() - bbBody.position();
+            int dataLength = 0;
+            int availableBuffer = 0;
+            
+            dataLength = serverException.lengthOfData();
+            availableBuffer = bbBody.capacity() - bbBody.position();
             
             if(LOG.isDebugEnabled())
                 LOG.debug(serverWorkerName + ". dataLength :" + dataLength + " availableBuffer :" + availableBuffer);

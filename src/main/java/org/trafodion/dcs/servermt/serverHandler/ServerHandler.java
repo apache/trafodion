@@ -142,8 +142,11 @@ public final class ServerHandler implements Callable {
         this.selector.wakeup();
     }
     public void setConnectingTimeout(){
-        timeouts.put(serverkey, System.currentTimeMillis());
+        timeouts.put(serverkey, System.currentTimeMillis() + connectingTimeout * 1000);
         this.selector.wakeup();
+    }
+    public int getConnectingTimeout(){
+        return connectingTimeout;
     }
     private int setSelectorTimeout(){
         if (false == timeouts.isEmpty()){
@@ -405,10 +408,11 @@ public final class ServerHandler implements Callable {
             }
             clientData.setThreadRegisteredPath();
             clientData.setThreadRegisteredData();
-            
             utils.updateServerState(ServerConstants.SERVER_STATE_CONNECTED);
+
             key.attach(clientData);
             this.worker.processData(this, key);
+            
             if(LOG.isDebugEnabled())
                 LOG.debug(serverName + ". Read processed");
             return;

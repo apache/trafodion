@@ -36,7 +36,11 @@ import org.apache.commons.logging.LogFactory;
 
 public class TrafStatement {
     private static  final Log LOG = LogFactory.getLog(TrafStatement.class);
-    private Statement stmt = null;
+    private String serverWorkerName = "";
+    private String stmtLabel = "";
+    private Object stmt = null;
+//    private Statement stmt = null;
+//    private PreparedStatement pstmt = null;
     private int outNumberParams = 0;
     private long outParamLength = 0;
     private Descriptor2List outDescList = null;
@@ -44,8 +48,13 @@ public class TrafStatement {
     private int inpNumberParams = 0;
     private long inpParamLength = 0;
     private boolean isResultSet = false;
+    private ResultSet rs = null;
 
-    public TrafStatement(Connection conn, String sqlString) throws SQLException {
+    public TrafStatement(String serverWorkerName, String stmtLabel, Connection conn, String sqlString) throws SQLException {
+        if(LOG.isDebugEnabled())
+            LOG.debug(serverWorkerName + ". constructor TrafStatement[" + stmtLabel + "]");
+        this.serverWorkerName = serverWorkerName;
+        this.stmtLabel = stmtLabel;
         setStatement(conn, sqlString);
     }
     void init(){
@@ -60,14 +69,39 @@ public class TrafStatement {
         inpNumberParams = 0;
         inpParamLength = 0;
         isResultSet = false;
+        rs = null;
     }
     public void closeTStatement(){
         try {
-            if (stmt.isClosed() == false){
-                stmt.close();
+            if (stmt != null){
+                if (stmt instanceof Statement){
+                    Statement st = (Statement)stmt;
+                    if (st.isClosed() == false){
+                        st.close();
+                        if(LOG.isDebugEnabled())
+                            LOG.debug(serverWorkerName + ". T2 st.close(" + stmtLabel + ")");
+                    }
+                }
+                else if (stmt instanceof PreparedStatement){
+                    PreparedStatement pst = (PreparedStatement)stmt;
+                    if (pst.isClosed() == false){
+                        pst.close();
+                        if(LOG.isDebugEnabled())
+                            LOG.debug(serverWorkerName + ". T2 pst.close(" + stmtLabel + ")");
+                    }
+                }
             }
         } catch (SQLException sql){}
         reset();
+    }
+    public void closeTResultSet(){
+        try {
+            if (rs != null && rs.isClosed() == false)
+                rs.close();
+        } catch (SQLException e){}
+        rs = null;
+        if(LOG.isDebugEnabled())
+            LOG.debug(serverWorkerName + ". T2 rs.close(" + stmtLabel + ")");
     }
     public void setOutNumberParams(int outNumberParams){
         this.outNumberParams = outNumberParams;
@@ -90,20 +124,26 @@ public class TrafStatement {
     public void setIsResultSet(boolean isResultSet){
         this.isResultSet = isResultSet;
     }
+    public void setResultSet(ResultSet rs){
+        this.rs = rs;
+    }
     public void setStatement(Connection conn, String sqlString) throws SQLException{
-        if (this.stmt != null){
-            if (this.stmt.isClosed() == false){
-                this.stmt.close();
-            }
-            reset();
+        if(LOG.isDebugEnabled())
+            LOG.debug(serverWorkerName + ". TrafStatement.setStatement [" + stmtLabel + "]");
+        closeTStatement();
+        if (sqlString != null){
+            stmt = conn.prepareStatement(sqlString);
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". T2 conn.prepareStatement [" + stmtLabel + "] sqlString :" + sqlString);
         }
-        if (sqlString != null)
-            this.stmt = conn.prepareStatement(sqlString);
-        else
+        else {
             this.stmt = conn.createStatement();
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". T2 conn.createStatement [" + stmtLabel + "]");
+        }
     }
 //================================================
-    public Statement getStatement(){
+    public Object getStatement(){
         return stmt;
     }
     public Descriptor2List getOutDescList(){
@@ -126,5 +166,8 @@ public class TrafStatement {
     }
     public boolean getIsResultSet(){
         return isResultSet;
+    }
+    public ResultSet getResultSet(){
+        return rs;
     }
 }

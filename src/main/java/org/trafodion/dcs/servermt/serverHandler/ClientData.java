@@ -63,13 +63,12 @@ public class ClientData {
     private String threadRegisteredData = null;
     
 //=========== SQL =====================================
-       TrafConnection trafConnection = null;
+   TrafConnection trafConnection = null;
 //=====================================================    
     ClientData(SocketAddress clientSocketAddress, ServerUtils utils){
 
     bbHeader = ByteBufferUtils.allocate(ServerConstants.HEADER_SIZE,true);
-//  bbBody = ByteBufferUtils.allocate(ServerConstants.BODY_SIZE,true);
-    bbBody = ByteBufferUtils.allocate(1,true);
+    bbBody = ByteBufferUtils.allocate(ServerConstants.BODY_SIZE,true);
     bbBuf = new ByteBuffer[]{bbHeader,bbBody};
     bbHeader.order(ByteOrder.LITTLE_ENDIAN);
     bbBody.order(ByteOrder.LITTLE_ENDIAN);
@@ -140,6 +139,7 @@ public class ClientData {
     TrafConnection getTrafConnection(){
         return trafConnection;
     }
+
 //=====================================================
     
     void setByteBufferHeader(ByteBuffer bbHeader){

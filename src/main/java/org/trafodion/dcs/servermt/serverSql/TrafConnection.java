@@ -28,12 +28,14 @@ import java.sql.*;
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.*;
 import org.trafodion.dcs.servermt.serverDriverInputOutput.*;
+import org.trafodion.dcs.servermt.serverHandler.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class TrafConnection {
     private static  final Log LOG = LogFactory.getLog(TrafConnection.class);
+    private String serverWorkerName = "";
     private Properties prop = null;
     private Connection conn = null;
     private boolean isClosed = true;
@@ -91,8 +93,9 @@ public class TrafConnection {
     public TrafConnection(){
         init();
     }
-    public TrafConnection(ConnectionContext cc) throws SQLException, ClassNotFoundException {
+    public TrafConnection(String serverWorkerName, ClientData clientData, ConnectionContext cc) throws SQLException, ClassNotFoundException {
         init();
+        this.serverWorkerName = serverWorkerName;
         datasource = cc.getDatasource();
         catalog = cc.getCatalog();
         schema = cc.getSchema();
@@ -154,26 +157,35 @@ T2 Driver properties
     idMapFile
 */
         prop = new Properties(); 
-        prop.put("catalog", catalog);
-        prop.put("schema", schema);
-//      prop.put("traceFlag", "3");
-//      prop.put("traceFile", "/opt/home/zomanski/mt/T2trace");
-//        prop.put("batchBinding", batchBinding);
+        prop.setProperty("catalog", catalog);
+        prop.setProperty("schema", schema);
+//      prop.setProperty("traceFlag", "3");
+//      prop.setProperty("traceFile", "/opt/home/zomanski/mt/T2traceMt");
+//      prop.put("batchBinding", batchBinding);
         if(LOG.isDebugEnabled()){
-            LOG.debug(" catalog :" + catalog + " schema :" + schema);
+            LOG.debug(serverWorkerName + ". catalog :" + catalog + " schema :" + schema);
             String[] envs = {"LD_LIBRARY_PATH", "LD_PRELOAD"};
             for (String env: envs) {
                  String value = System.getenv(env);
                  if (value != null) {
-                     LOG.debug( env + " = " + value);
+                     LOG.debug(serverWorkerName + ". " + env + " = " + value);
                  } else {
-                     LOG.debug( env + " is not assigned.");
+                     LOG.debug(serverWorkerName + ". " + env + " is not assigned.");
                  }
              }
         }
         Class.forName(Constants.T2_DRIVER_CLASS_NAME);
         conn = DriverManager.getConnection(Constants.T2_DRIVER_URL, prop);
-        isClosed = false;
+        if (conn.isClosed() == false){
+            isClosed = false;
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". T2 connection is open.");
+        }
+        else {
+            isClosed = true;
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". T2 connection is close.");
+        }
 
 // isoMapping, termCharset and enforceISO must be set by properties?
         if (isoMapping == SqlUtils.getCharsetValue("ISO8859_1")) {
@@ -223,9 +235,9 @@ T2 Driver properties
     }
     public void closeTConnection() {
         TrafStatement tstmt;
-        
         Iterator<String> keySetIterator = statements.keySet().iterator();
-
+        if(LOG.isDebugEnabled())
+            LOG.debug(serverWorkerName + ". closeTConnection");
         while(keySetIterator.hasNext()){
           String key = keySetIterator.next();
           tstmt = statements.get(key);
@@ -240,41 +252,62 @@ T2 Driver properties
         } catch (SQLException sql){}
         reset();
     }
-    public TrafStatement createTrafStatement(String cursorName, boolean isResultSet) throws SQLException {
+    public TrafStatement createTrafStatement(String stmtLabel, boolean isResultSet) throws SQLException {
         TrafStatement trafStatement = null;
         
-        if (statements.containsKey(cursorName) == false){
-            trafStatement = new TrafStatement(conn, null);
+        if (statements.containsKey(stmtLabel) == false){
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". createTrafStatement.containsKey [" + stmtLabel + "] is false ");
+            trafStatement = new TrafStatement(serverWorkerName, stmtLabel, conn, null);
             trafStatement.setIsResultSet(isResultSet);
-            statements.put(cursorName, trafStatement);
+            statements.put(stmtLabel, trafStatement);
         }
         else{
-            trafStatement = getTrafStatement(cursorName);
+            LOG.debug(serverWorkerName + ". createTrafStatement.containsKey [" + stmtLabel + "] is found ");
+            trafStatement = getTrafStatement(stmtLabel);
             trafStatement.setStatement(conn, null);
             trafStatement.setIsResultSet(isResultSet);
         }
         return trafStatement;
     }
-    public TrafStatement prepareTrafStatement(String cursorName, String sqlString, boolean isResultSet) throws SQLException {
+    public TrafStatement prepareTrafStatement(String stmtLabel, String sqlString, boolean isResultSet) throws SQLException {
         TrafStatement trafStatement = null;
         
-        if (statements.containsKey(cursorName) == false){
-            trafStatement = new TrafStatement(conn,sqlString);
+        if (statements.containsKey(stmtLabel) == false){
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". prepareTrafStatement.containsKey [" + stmtLabel + "] is false ");
+            trafStatement = new TrafStatement(serverWorkerName, stmtLabel, conn,sqlString);
             trafStatement.setIsResultSet(isResultSet);
-            statements.put(cursorName, trafStatement);
+            statements.put(stmtLabel, trafStatement);
         }
         else{
-            trafStatement = getTrafStatement(cursorName);
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". prepareTrafStatement.containsKey [" + stmtLabel + "] is found ");
+            trafStatement = getTrafStatement(stmtLabel);
             trafStatement.setStatement(conn, sqlString);
             trafStatement.setIsResultSet(isResultSet);
         }
         return trafStatement;
     }
-
-    public TrafStatement getTrafStatement(String cursorName) throws SQLException {
+    public TrafStatement closeTrafStatement(String stmtLabel) throws SQLException {
         TrafStatement trafStatement = null;
-        trafStatement = statements.get(cursorName);
-        if (trafStatement == null) throw new SQLException("getTrafStatement for cursor :" +  cursorName + " returns null");
+        
+        if (statements.containsKey(stmtLabel) == false){
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". closeTrafStatement.containsKey [" + stmtLabel + "] is false ");
+        }
+        else{
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". createTrafStatement.containsKey [" + stmtLabel + "] is found ");
+            trafStatement = getTrafStatement(stmtLabel);
+            trafStatement.closeTStatement();
+        }
+        return trafStatement;
+    }
+    public TrafStatement getTrafStatement(String stmtLabel) throws SQLException {
+        TrafStatement trafStatement = null;
+        trafStatement = statements.get(stmtLabel);
+        if (trafStatement == null) throw new SQLException("getTrafStatement [" +  stmtLabel + "] returns null");
         return trafStatement;
     }
     public void setDatasource(String datasource) {
@@ -476,5 +509,33 @@ T2 Driver properties
     }
     public boolean setEnforceISO(){
         return enforceISO;
+    }
+    public void commit() throws SQLException{
+        if (conn != null && conn.isClosed() == false){
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". commit.");
+            conn.commit();
+        }
+    }
+    public void rollback() throws SQLException{
+        if (conn != null && conn.isClosed() == false){
+            if(LOG.isDebugEnabled())
+                LOG.debug(serverWorkerName + ". rollback.");
+            conn.rollback();
+        }
+    }
+    public void setAutoCommit(int option) throws SQLException{
+        boolean autoCommit = true;
+        if (conn != null && conn.isClosed() == false){
+            if (option == 0)
+                autoCommit = false;
+            if(LOG.isDebugEnabled()){
+                if (autoCommit == false)
+                    LOG.debug(serverWorkerName + ". setAutoCommit off.");
+                else
+                    LOG.debug(serverWorkerName + ". setAutoCommit on.");
+            }
+            conn.setAutoCommit(autoCommit);
+        }
     }
 }

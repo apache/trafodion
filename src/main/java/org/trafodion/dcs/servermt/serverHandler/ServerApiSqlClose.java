@@ -33,6 +33,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class ServerApiSqlClose {
+    
     private static final int odbc_SQLSvc_Close_ParamError_exn_ = 1;
     private static final int odbc_SQLSvc_Close_InvalidConnection_exn_ = 2;
     private static final int odbc_SQLSvc_Close_SQLError_exn_ = 3;
@@ -43,6 +44,7 @@ public class ServerApiSqlClose {
     private int serverThread;
     private String serverWorkerName;
     private ClientData clientData;
+    private TrafConnection trafConn;
 
     private int dialogueId;
     private String stmtLabel;
@@ -52,6 +54,8 @@ public class ServerApiSqlClose {
     private int rowsAffected;
     private SQLWarningOrErrorList errorList;
     
+    private ServerException serverException;
+    
     ServerApiSqlClose(int instance, int serverThread) {  
         this.instance = instance;
         this.serverThread = serverThread;
@@ -59,6 +63,7 @@ public class ServerApiSqlClose {
      }
     void init(){
         reset();
+        serverException = new ServerException();
     }
     void reset(){
         dialogueId = 0;
@@ -68,6 +73,9 @@ public class ServerApiSqlClose {
         returnCode = ServerConstants.SQL_SUCCESS;
         rowsAffected = 0;
         errorList = null;
+        
+        trafConn = null;
+        serverException = null;
     }
     ClientData processApi(ClientData clientData) {  
         this.clientData = clientData;
@@ -103,11 +111,24 @@ public class ServerApiSqlClose {
             }
 //=====================Process ServerApiSqlClose===========================
 //
-/*          try {
-            } catch (SQLException ex){
-                serverException.setServerException (odbc_SQLSvc_Close_SQLError_exn_, 0, ex);                
+          try {
+              trafConn = clientData.getTrafConnection();
+              if (trafConn != null){
+                  switch(freeResourceOpt){
+                      case ServerConstants.SQL_DROP:
+                          trafConn.closeTrafStatement(stmtLabel);
+                          break;
+                      default:
+                          if(LOG.isDebugEnabled())
+                              LOG.debug(serverWorkerName + ". Unknown freeResourceOpt :[" + freeResourceOpt + "]");
+                          break;
+                  }
+              }
+           } catch (SQLException ex){
+               if(LOG.isDebugEnabled())
+                   LOG.debug(serverWorkerName + ". SQLException :" + ex);
+               serverException.setServerException (odbc_SQLSvc_Close_SQLError_exn_, 0, ex);                
             }
-*/
 //            
 //===================calculate length of output ByteBuffer========================
 //

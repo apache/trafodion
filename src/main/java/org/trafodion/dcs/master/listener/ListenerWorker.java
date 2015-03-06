@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,129 +29,90 @@ import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooKeeper;
 import org.trafodion.dcs.zookeeper.ZkClient;
+import org.trafodion.dcs.Constants;
 
 public class ListenerWorker extends Thread {
-	private static  final Log LOG = LogFactory.getLog(ListenerWorker.class);
-	private List<DataEvent> queue = new LinkedList<DataEvent>();
-	private ZkClient zkc=null;
-	ConnectReply connectReplay = null;
-	private String parentZnode;
+    private static  final Log LOG = LogFactory.getLog(ListenerWorker.class);
+    private List<DataEvent> queue = new LinkedList<DataEvent>();
+    private ZkClient zkc=null;
+    ConnectReply connectReplay = null;
+    private String parentZnode;
+    
+    private RequestGetObjectRef requestGetObjectRef = null;
+    private RequestCancelQuery requestCancelQuery = null;
+    private RequestUnknown requestUnknown = null;
+    
+    static
+    {
+        try {
+            Class.forName(Constants.T2_DRIVER_CLASS_NAME);
+        } catch (Exception e) {
+            e.printStackTrace();
+            if(LOG.isDebugEnabled())
+                LOG.error("T2 Driver Class not found in CLASSPATH :" + e.getMessage());
+            System.exit(-1);
+        }
+    }
+    ListenerWorker(ZkClient zkc,String parentZnode){	
+        this.zkc=zkc;
+        this.parentZnode=parentZnode;
+        connectReplay = new ConnectReply(zkc,parentZnode);
+        
+        requestGetObjectRef = new RequestGetObjectRef(zkc,parentZnode);
+        requestCancelQuery = new RequestCancelQuery(zkc,parentZnode);
+        requestUnknown = new RequestUnknown(zkc,parentZnode);
+        
+        System.setProperty("hbaseclient.log4j.properties",System.getProperty("dcs.conf.dir") + "/log4j.properties");
+        System.setProperty("dcs.root.logger",System.getProperty("dcs.root.logger"));
+        System.setProperty("dcs.log.dir",System.getProperty("dcs.log.dir"));
+        System.setProperty("dcs.log.file",System.getProperty("dcs.log.file"));
+    }
+    
+    public void processData(ListenerService server, SelectionKey key) {
+        synchronized(queue) {
+            queue.add(new DataEvent(server, key));
+            queue.notify();
+        }
+    }
 
-	ListenerWorker(ZkClient zkc,String parentZnode){	
-		this.zkc=zkc;
-		this.parentZnode=parentZnode;
-		connectReplay = new ConnectReply(zkc,parentZnode);
-	}
-
-	public void processData(ListenerService server, SelectionKey key) {
-		synchronized(queue) {
-			queue.add(new DataEvent(server, key));
-			queue.notify();
-		}
-	}
-
-	public void run() {
-		DataEvent dataEvent;
-
-		while(true) {
-			// Wait for data to become available
-			synchronized(queue) {
-				while(queue.isEmpty()) {
-					try {
-						queue.wait();
-					} catch (InterruptedException e) {
-					}
-				}
-				dataEvent = queue.remove(0);
-			}
-			boolean cancelConnection = false;
-			SelectionKey key = dataEvent.key;
-			SocketChannel client = (SocketChannel) key.channel();
-			Socket s = client.socket();
-			ClientData clientData = (ClientData) key.attachment();
-			ListenerService server = dataEvent.server;
-			dataEvent.key = null;
-			dataEvent.server = null;
-
-			try {
-				boolean replyException = buildConnectReply(clientData);
-				key.attach(clientData);
-				// Return to sender for writing
-				if (replyException == false)
-					server.send(new PendingRequest(key, ListenerConstants.REQUST_WRITE));
-				else
-					server.send(new PendingRequest(key, ListenerConstants.REQUST_WRITE_EXCEPTION));
-			} catch (UnsupportedEncodingException ue){
-				LOG.error("Exception in buildConnectReply: " + s.getRemoteSocketAddress() + ": " + ue.getMessage() );
-				cancelConnection = true;
-			} catch (IOException io){
-				LOG.error("Exception in buildConnectReply: " + s.getRemoteSocketAddress() + ": " + io.getMessage());
-				cancelConnection = true;
-			}
-			if (cancelConnection == true){
-				// Return to sender for closing
-				server.send(new PendingRequest(key, ListenerConstants.REQUST_CLOSE));
-			}
-		}
-	}
-	boolean buildConnectReply(ClientData clientData) throws UnsupportedEncodingException, IOException {
-
-		boolean replyException = false;
-
-		ByteBuffer header = clientData.header;
-		ByteBuffer body = clientData.body;
-		Header hdr = clientData.hdr;
-		ConnectionContext conectContex = clientData.conectContex;
-		SocketAddress clientSocketAddress = null;
-		clientSocketAddress = clientData.clientSocketAddress;
-
-		header.flip();
-		hdr.extractFromByteArray(header);
-		body.flip();
-		conectContex.extractFromByteBuffer(body);
-
-		replyException = connectReplay.buildConnectReply(hdr, conectContex, clientSocketAddress);
-
-		header.clear();
-		body.clear();
-
-		switch(hdr.getVersion()){
-
-			case ListenerConstants.CLIENT_HEADER_VERSION_BE: //from jdbc
-				hdr.setSwap(ListenerConstants.YES);
-				header.order(ByteOrder.BIG_ENDIAN);
-				body.order(ByteOrder.LITTLE_ENDIAN);
-				hdr.setVersion(ListenerConstants.SERVER_HEADER_VERSION_LE);
-				break;
-			case ListenerConstants.CLIENT_HEADER_VERSION_LE: //from odbc
-				hdr.setSwap(ListenerConstants.NO);
-				header.order(ByteOrder.LITTLE_ENDIAN);
-				body.order(ByteOrder.LITTLE_ENDIAN);
-				hdr.setVersion(ListenerConstants.SERVER_HEADER_VERSION_LE);
-				break;
-			default:
-				throw new IOException(clientSocketAddress + ": " + "Wrong Header Version");
-		}
-
-		connectReplay.insertIntoByteBuffer(body);
-		body.flip();
-
-		hdr.setTotalLength(body.limit());
-		hdr.insertIntoByteBuffer(header);
-		header.flip();
-
-		clientData.header = header;
-		clientData.body = body;
-		clientData.hdr = hdr;
-		clientData.conectContex = conectContex;
-
-		header = null;
-		body = null;
-		hdr = null;
-		conectContex = null;
-		clientSocketAddress = null;
-
-		return replyException;
-	}
+    public void run() {
+        DataEvent dataEvent;
+    
+        while(true) {
+            // Wait for data to become available
+            synchronized(queue) {
+                while(queue.isEmpty()) {
+                    try {
+                        queue.wait();
+                    } catch (InterruptedException e) {
+                    }
+                }
+                dataEvent = queue.remove(0);
+            }
+            SelectionKey key = dataEvent.key;
+            SocketChannel client = (SocketChannel) key.channel();
+            Socket s = client.socket();
+            ClientData clientData = (ClientData) key.attachment();
+            ListenerService server = dataEvent.server;
+            dataEvent.key = null;
+            dataEvent.server = null;
+            
+            switch (clientData.hdr.getOperationId()){
+                case ListenerConstants.DCS_MASTER_GETSRVRAVAILABLE:
+                    clientData = requestGetObjectRef.processRequest(clientData, s);
+                    break;
+                case ListenerConstants.DCS_MASTER_CANCELQUERY:
+                    clientData = requestCancelQuery.processRequest(clientData, s);
+                    break;
+                default:
+                    clientData = requestUnknown.processRequest(clientData, s);
+                    break;
+            }
+            // Return to sender
+            int requestReply = clientData.requestReply;
+            key.attach(clientData);
+            server.send(new PendingRequest(key, requestReply));
+        }
+    }
 }
 

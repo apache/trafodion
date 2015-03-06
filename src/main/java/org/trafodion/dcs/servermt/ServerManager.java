@@ -82,6 +82,8 @@ public final class ServerManager implements Callable {
     private int retryIntervalMillis;
     private RetryCounterFactory retryCounterFactory;
     
+    private String CLUSTERNAME;
+    private String HOME;
     private String MY_SQROOT;
     private byte[] cert;
     private String key;
@@ -113,6 +115,10 @@ public final class ServerManager implements Callable {
         this.connectingTimeout = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT);           
         this.zkSessionTimeout = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT);           
         this.userProgExitAfterDisconnect = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT);
+        System.setProperty("hbaseclient.log4j.properties",System.getProperty("dcs.conf.dir") + "/log4j.properties");
+        System.setProperty("dcs.root.logger",System.getProperty("dcs.root.logger"));
+        System.setProperty("dcs.log.dir",System.getProperty("dcs.log.dir"));
+        System.setProperty("dcs.log.file",System.getProperty("dcs.log.file"));
     }
 
     @Override
@@ -217,7 +223,19 @@ public final class ServerManager implements Callable {
     }
     
     private void getCertificate() throws IOException {
-        String path = MY_SQROOT + "/sqcert/server.crt";
+        String path;
+        CLUSTERNAME = System.getenv("CLUSTERNAME");
+        if(CLUSTERNAME == null || CLUSTERNAME.length() == 0 ) {
+            path = MY_SQROOT + "/sqcert/server.crt";
+        }
+        else {
+            HOME = System.getenv("HOME");
+            if(HOME == null || HOME.length() == 0 ) {
+                LOG.error("Environment variable $HOME is not set.");
+                throw new IOException("Environment variable $HOME is not set.");
+           }
+           path = HOME + "/sqcert/server.crt";
+        }
         int readLength;
         int outLength;
         

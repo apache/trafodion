@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,44 +26,56 @@ import org.apache.commons.logging.LogFactory;
 import org.trafodion.dcs.zookeeper.ZkClient;
 
 public class ClientData {
-	private static  final Log LOG = LogFactory.getLog(ClientData.class);
+    private static  final Log LOG = LogFactory.getLog(ClientData.class);
 
-	ByteBuffer header = null;
-	ByteBuffer body = null;
-	ByteBuffer[] buf = null;
-	int total_read;
-	int total_write;
-	int buffer_state = ListenerConstants.BUFFER_INIT;
-
-	Header hdr = null;
-	ConnectionContext conectContex = null;
-
-	SocketAddress clientSocketAddress = null;
-
-	ClientData(SocketAddress clientSocketAddress){
-
-		header = ByteBuffer.allocate(ListenerConstants.HEADER_SIZE);
-		body = ByteBuffer.allocate(ListenerConstants.BODY_SIZE);
-		buf = new ByteBuffer[]{header,body};
-
-		total_read = 0;
-		total_write = 0;
-
-		hdr = new Header();
-		conectContex = new ConnectionContext();
-
-		this.clientSocketAddress = clientSocketAddress;
-	}
-
-	ByteBuffer[] getByteBufferArray(){
-		return buf;
-	}
-
-	void setByteBufferHeader(ByteBuffer header){
-		this.header = header;
-	}
-
-	void setByteBufferBody(ByteBuffer body){
-		this.body = body;
-	}
+    ByteBuffer header = null;
+    ByteBuffer body = null;
+    ByteBuffer[] buf = null;
+    int total_read;
+    int total_write;
+    int buffer_state = ListenerConstants.BUFFER_INIT;
+    
+    Header hdr = null;
+    ConnectionContext conectContex = null;
+    
+    SocketAddress clientSocketAddress = null;
+    
+    int requestReply = 0;
+    
+    ClientData(SocketAddress clientSocketAddress){
+    
+        header = ByteBuffer.allocate(ListenerConstants.HEADER_SIZE);
+        body = ByteBuffer.allocate(ListenerConstants.BODY_SIZE);
+        buf = new ByteBuffer[]{header,body};
+    
+        total_read = 0;
+        total_write = 0;
+    
+        hdr = new Header();
+        conectContex = new ConnectionContext();
+    
+        this.clientSocketAddress = clientSocketAddress;
+    }
+    
+    ByteBuffer[] getByteBufferArray(){
+        return buf;
+    }
+    
+    void setByteBufferHeader(ByteBuffer header){
+        this.header = header;
+    }
+    
+    void setByteBufferBody(ByteBuffer body){
+        this.body = body;
+    }
+    void switchEndian(){
+        ByteOrder buffOrder = header.order();
+        if (buffOrder == ByteOrder.BIG_ENDIAN)
+            buffOrder = ByteOrder.LITTLE_ENDIAN;
+        else if (buffOrder == ByteOrder.LITTLE_ENDIAN)
+            buffOrder = ByteOrder.BIG_ENDIAN;
+        header.order(buffOrder);
+        body.order(buffOrder);
+        header.position(0);
+    }
 }

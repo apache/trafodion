@@ -47,6 +47,11 @@ public class ServerApiSqlSetConnectAttr {
     private SetConnectionOption setConnectionOption;
     private ServerException serverException;
     private ErrorDescList errorDescList;
+    private int exception = 0;
+    private int exception_detail = 0;
+    private TrafConnection trafConnection;
+    private int attr;
+    private int option;
     
     ServerApiSqlSetConnectAttr(int instance, int serverThread) {  
         this.instance = instance;
@@ -89,30 +94,51 @@ public class ServerApiSqlSetConnectAttr {
 //
 //=====================Process SqlSetConnectAttr===========================
 //
-            switch(setConnectionOption.getConnectionOption()){
+            exception = 0;
+            exception_detail = 0;
+            trafConnection = clientData.getTrafConnection();
+            attr = setConnectionOption.getConnectionOption();
+            option = setConnectionOption.getOptionValueNum();
+            
+            switch(attr){
             case ServerConstants.SQL_ATTR_ROWSET_RECOVERY:
-                LOG.info(serverWorkerName + ". Connection Attr: SQL_ATTR_ROWSET_RECOVERY [" + setConnectionOption.getOptionValueNum() + "]" );
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". Connection Attr: SQL_ATTR_ROWSET_RECOVERY [" + option + "]" );
+                break;
+            case ServerConstants.SQL_ATTR_ACCESS_MODE:
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". Connection Attr: SQL_ATTR_ACCESS_MODE [" + option + "]" );
+               break;
+            case ServerConstants.SQL_ATTR_AUTOCOMMIT:
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". Connection Attr: SQL_ATTR_AUTOCOMMIT [" + option + "]" );
+                trafConnection.setAutoCommit(option);
+                break;
+            case ServerConstants.SQL_TXN_ISOLATION:
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". Connection Attr: SQL_TXN_ISOLATION [" + option + "]" );
                 break;
             default:
-                LOG.info(serverWorkerName + ". Unknown Connection Attr: [" + setConnectionOption.getConnectionOption() + "/" + setConnectionOption.getOptionValueNum() + "]" );
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". Unknown Connection Attr: [" + attr + "/" + option + "]" );
             }
             errorDescList = new ErrorDescList(1);
-            errorDescList.getBuffer()[0].setRowId(0);
-            errorDescList.getBuffer()[0].setErrorDiagnosticId(0);
-            errorDescList.getBuffer()[0].setSqlcode(0);
-            errorDescList.getBuffer()[0].setSqlstate("");
-            errorDescList.getBuffer()[0].setErrorText("");
-            errorDescList.getBuffer()[0].setOperationAbortId(0);
-            errorDescList.getBuffer()[0].setErrorCodeType(0);
-            errorDescList.getBuffer()[0].setParam1("");
-            errorDescList.getBuffer()[0].setParam2("");
-            errorDescList.getBuffer()[0].setParam3("");
-            errorDescList.getBuffer()[0].setParam4("");
-            errorDescList.getBuffer()[0].setParam5("");
-            errorDescList.getBuffer()[0].setParam6("");
-            errorDescList.getBuffer()[0].setParam7("");
+            errorDescList.getBuffer()[0].setRowId(1);
+            errorDescList.getBuffer()[0].setErrorDiagnosticId(2);
+            errorDescList.getBuffer()[0].setSqlcode(3);
+            errorDescList.getBuffer()[0].setSqlstate("state");
+            errorDescList.getBuffer()[0].setErrorText("Text");
+            errorDescList.getBuffer()[0].setOperationAbortId(4);
+            errorDescList.getBuffer()[0].setErrorCodeType(5);
+            errorDescList.getBuffer()[0].setParam1("A");
+            errorDescList.getBuffer()[0].setParam2("B");
+            errorDescList.getBuffer()[0].setParam3("C");
+            errorDescList.getBuffer()[0].setParam4("D");
+            errorDescList.getBuffer()[0].setParam5("E");
+            errorDescList.getBuffer()[0].setParam6("F");
+            errorDescList.getBuffer()[0].setParam7("G");
             
-            serverException.setServerException (0, 0, errorDescList);
+            serverException.setServerException (exception, exception_detail, errorDescList);
 //
 //===================calculate length of output ByteBuffer========================
 //

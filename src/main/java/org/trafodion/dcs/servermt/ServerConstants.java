@@ -73,15 +73,16 @@ public final class ServerConstants {
     
     public static final int SERVER_STATE_INIT               =0;
     public static final int SERVER_STATE_AVAILABLE          =2;
-    public static final int SERVER_STATE_CONNECTED          =3;
-    public static final int SERVER_STATE_CONNECT_FAILED     =4;
-    public static final int SERVER_STATE_CONNECT_REJECTED   =5;
-    public static final int SERVER_STATE_READ_TIMEOUTED     =6;
-    public static final int SERVER_STATE_WRITE_TIMEOUTED    =7;
-    public static final int SERVER_STATE_CLIENT_TIMEOUTED   =8;
-    public static final int SERVER_STATE_CONNECTING_TIMEOUTED=9;
-    public static final int SERVER_STATE_DISCONNECTED       =10;
-    public static final int SERVER_STATE_PORTINUSE          =11;
+    public static final int SERVER_STATE_CONNECTING         =3;
+    public static final int SERVER_STATE_CONNECTED          =4;
+    public static final int SERVER_STATE_CONNECT_FAILED     =5;
+    public static final int SERVER_STATE_CONNECT_REJECTED   =6;
+    public static final int SERVER_STATE_READ_TIMEOUTED     =7;
+    public static final int SERVER_STATE_WRITE_TIMEOUTED    =8;
+    public static final int SERVER_STATE_CLIENT_TIMEOUTED   =9;
+    public static final int SERVER_STATE_CONNECTING_TIMEOUTED=10;
+    public static final int SERVER_STATE_DISCONNECTED       =11;
+    public static final int SERVER_STATE_PORTINUSE          =12;
 
 // All server APIs. Some of them are from AS
     
@@ -155,7 +156,10 @@ public final class ServerConstants {
 // SetAttributes
 //
     public static final int SQL_ATTR_ROWSET_RECOVERY        = 2000;
-    
+    public static final short SQL_ATTR_ACCESS_MODE          = 101;
+    public static final short SQL_ATTR_AUTOCOMMIT           = 102;
+    public static final short SQL_TXN_ISOLATION             = 108;
+
 // The enum SQLTYPE_CODE from sqlcli.h. HP extenstion are negative values.
 
     public static final int SQLTYPECODE_CHAR                   = 1;
@@ -346,4 +350,7 @@ public final class ServerConstants {
     public static final int BOOLEAN_FIELD_SIZE                  = 1;
     public static final int DOUBLE_FIELD_SIZE                   = 8;
     public static final int FLOAT_FIELD_SIZE                    = 4;
+    
+    public static final int SERVER_STATUS_DELAY                 = 30000;
+
 }

@@ -215,13 +215,13 @@ public class ServerApiSqlExecDirect {
             
             switch (sqlStmtType){
                 case ServerConstants.TYPE_SELECT:
+                case ServerConstants.TYPE_EXPLAIN:
                     isResultSet = true;
                     break;
                 case ServerConstants.TYPE_UPDATE:
                 case ServerConstants.TYPE_DELETE:
                 case ServerConstants.TYPE_INSERT:
                 case ServerConstants.TYPE_INSERT_PARAM:
-                case ServerConstants.TYPE_EXPLAIN:
                 case ServerConstants.TYPE_CREATE:
                 case ServerConstants.TYPE_GRANT:
                 case ServerConstants.TYPE_DROP:
@@ -232,21 +232,25 @@ public class ServerApiSqlExecDirect {
             try {
                 trafConn = clientData.getTrafConnection();
                 trafStmt = trafConn.createTrafStatement(stmtLabel, isResultSet);
-                stmt = trafStmt.getStatement();
+                trafStmt.setResultSet(null);
+                stmt = (Statement)trafStmt.getStatement();
 //            
 //=====================Process ServerApiSqlExecute===========================
 //
                 boolean status = stmt.execute(sqlString);
+                if(LOG.isDebugEnabled())
+                     LOG.debug(serverWorkerName + ". T2 Execute.execute(sqlString) status: " + status);
                 if(status){
-                    if(LOG.isDebugEnabled())
-                        LOG.debug(serverWorkerName + ". executeQuery ");
                     rs = stmt.getResultSet();
                     rsmd = rs.getMetaData();
+                    trafStmt.setResultSet(rs);
+                    if(LOG.isDebugEnabled())
+                        LOG.debug(serverWorkerName + ". T2 Execute.getResultSet()");
                     resultSetColumns = rsmd.getColumnCount();
                 } else {
                     rowsAffected = stmt.getUpdateCount();
                     if(LOG.isDebugEnabled())
-                        LOG.debug(serverWorkerName + ". executeUpdate rowsAffected :" + rowsAffected);
+                        LOG.debug(serverWorkerName + ". T2 Execute.getUpdateCount() rowsAffected :" + rowsAffected);
                 }
             } catch (SQLException se){
                 LOG.error(serverWorkerName + ". ExecDirect.SQLException " + se);

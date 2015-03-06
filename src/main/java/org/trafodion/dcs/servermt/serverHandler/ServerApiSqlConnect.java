@@ -99,40 +99,47 @@ public class ServerApiSqlConnect {
             if(LOG.isDebugEnabled())
                 LOG.debug(serverWorkerName + ". threadRegisteredData :" + clientData.getThreadRegisteredData());
             
+            boolean isConnectingTimeout = true;
             String[] st = clientData.getThreadRegisteredData().split(":");
-            clientData.setDialogueId(Integer.parseInt(st[2]));
-            clientData.setNodeNumber(Integer.parseInt(st[3]));
-            clientData.setProcessId(Integer.parseInt(st[4]));
-            clientData.setProcessName(st[5]);
-            clientData.setHostName(st[6]);
-            clientData.setPortNumber(Integer.parseInt(st[7]));
-            clientData.setClientHostName(st[8]);
-            clientData.setClientIpAddress(st[9]);
-            clientData.setClientPortNumber(Integer.parseInt(st[10]));
-            clientData.setClientApplication(st[11]);
-            
-            if(LOG.isDebugEnabled()){
-                LOG.debug(serverWorkerName + ". dialogueId :" + clientData.getDialogueId());
-                LOG.debug(serverWorkerName + ". nodeNumber :" + clientData.getNodeNumber());
-                LOG.debug(serverWorkerName + ". processId :" + clientData.getProcessId());
-                LOG.debug(serverWorkerName + ". processName :" + clientData.getProcessName());
-                LOG.debug(serverWorkerName + ". hostName :" + clientData.getHostName());
-                LOG.debug(serverWorkerName + ". portNumber :" + clientData.getPortNumber());
-                LOG.debug(serverWorkerName + ". clientHostName :" + clientData.getClientHostName());
-                LOG.debug(serverWorkerName + ". clientIpAddress :" + clientData.getClientIpAddress());
-                LOG.debug(serverWorkerName + ". clientPortNumber :" + clientData.getClientPortNumber());
-                LOG.debug(serverWorkerName + ". clientApplication :" + clientData.getClientApplication());
-            }
-            if (connectionContext.getDialogueId() < 1 ) {
-                throw new SQLException(serverWorkerName + ". Wrong dialogueId :" + connectionContext.getDialogueId());
-            }
-            if (connectionContext.getDialogueId() != clientData.getDialogueId() ) {
-                throw new SQLException(serverWorkerName + ". Wrong dialogueId sent by the Client [sent/expected] : [" + connectionContext.getDialogueId() + "/" + clientData.getDialogueId() + "]");
+            if (st[0].equals("CONNECTING")){
+                isConnectingTimeout = false;
+                clientData.setDialogueId(Integer.parseInt(st[2]));
+                clientData.setNodeNumber(Integer.parseInt(st[3]));
+                clientData.setProcessId(Integer.parseInt(st[4]));
+                clientData.setProcessName(st[5]);
+                clientData.setHostName(st[6]);
+                clientData.setPortNumber(Integer.parseInt(st[7]));
+                clientData.setClientHostName(st[8]);
+                clientData.setClientIpAddress(st[9]);
+                clientData.setClientPortNumber(Integer.parseInt(st[10]));
+                clientData.setClientApplication(st[11]);
+             
+                if(LOG.isDebugEnabled()){
+                    LOG.debug(serverWorkerName + ". dialogueId :" + clientData.getDialogueId());
+                    LOG.debug(serverWorkerName + ". nodeNumber :" + clientData.getNodeNumber());
+                    LOG.debug(serverWorkerName + ". processId :" + clientData.getProcessId());
+                    LOG.debug(serverWorkerName + ". processName :" + clientData.getProcessName());
+                    LOG.debug(serverWorkerName + ". hostName :" + clientData.getHostName());
+                    LOG.debug(serverWorkerName + ". portNumber :" + clientData.getPortNumber());
+                    LOG.debug(serverWorkerName + ". clientHostName :" + clientData.getClientHostName());
+                    LOG.debug(serverWorkerName + ". clientIpAddress :" + clientData.getClientIpAddress());
+                    LOG.debug(serverWorkerName + ". clientPortNumber :" + clientData.getClientPortNumber());
+                    LOG.debug(serverWorkerName + ". clientApplication :" + clientData.getClientApplication());
+                }
+                if (connectionContext.getDialogueId() < 1 ) {
+                    throw new SQLException(serverWorkerName + ". Wrong dialogueId :" + connectionContext.getDialogueId());
+                }
+                if (connectionContext.getDialogueId() != clientData.getDialogueId() ) {
+                    throw new SQLException(serverWorkerName + ". Wrong dialogueId sent by the Client [sent/expected] : [" + connectionContext.getDialogueId() + "/" + clientData.getDialogueId() + "]");
+                }
             }
 //=====================Process SqlConnect===========================
             
             try {
-                trafConnection = new TrafConnection(connectionContext);
+                if (isConnectingTimeout == true)
+                    throw new SQLException("Connecting timeout occured.");
+                
+                trafConnection = new TrafConnection(serverWorkerName, clientData, connectionContext);
  
                 outConnectionContext.getVersionList().getList()[0].setComponentId((short)4);       //ODBC_SRVR_COMPONENT
                 outConnectionContext.getVersionList().getList()[0].setMajorVersion((short)3);
