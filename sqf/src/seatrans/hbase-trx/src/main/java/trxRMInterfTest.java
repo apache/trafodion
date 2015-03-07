@@ -36,7 +36,7 @@ public class trxRMInterfTest {
       HTableDescriptor desc = new HTableDescriptor(tablename);
       desc.addFamily(new HColumnDescriptor("cf1"));
       hbadmin.createTable(desc);
-      rm1 = new RMInterface(conf,TABLE1);
+      rm1 = new RMInterface(TABLE1);
       System.out.println("Enter an int:"); 
       int retInt = reader.nextInt();
       ts = new TransactionState(retInt);

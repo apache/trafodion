@@ -104,8 +104,7 @@ public class TransactionalAggregationClient {
       throws Throwable {
     TransactionalTable table = null;
     try {
-      table = new TransactionalTable(conf,
-                         tableName.getName());
+      table = new TransactionalTable(tableName.getName());
       return max(transactionId, table, ci, scan);
     } finally {
       if (table != null) {
@@ -204,7 +203,7 @@ public class TransactionalAggregationClient {
       throws Throwable {
     TransactionalTable table = null;
     try {
-      table = new TransactionalTable(conf, tableName.getName());
+      table = new TransactionalTable(tableName.getName());
       return min(transactionId, table, ci, scan);
     } finally {
       if (table != null) {
@@ -291,7 +290,7 @@ public class TransactionalAggregationClient {
       throws Throwable {
     TransactionalTable table = null;
     try {
-      table = new TransactionalTable(conf, tableName.getName());
+      table = new TransactionalTable(tableName.getName());
       return rowCount(transactionId, table, ci, scan);
     } finally {
       if (table != null) {
@@ -369,7 +368,7 @@ public class TransactionalAggregationClient {
       throws Throwable {
     TransactionalTable table = null;
     try {
-      table = new TransactionalTable(conf, tableName.getName());
+      table = new TransactionalTable(tableName.getName());
       return sum(transactionId, table, ci, scan);
     } finally {
       if (table != null) {
@@ -446,7 +445,7 @@ public class TransactionalAggregationClient {
       throws Throwable {
     TransactionalTable table = null;
     try {
-      table = new TransactionalTable(conf, tableName.getName());
+      table = new TransactionalTable(tableName.getName());
       return getAvgArgs(transactionId, table, ci, scan);
     } finally {
       if (table != null) {
@@ -645,7 +644,7 @@ public class TransactionalAggregationClient {
       Scan scan) throws Throwable {
     TransactionalTable table = null;
     try {
-      table = new TransactionalTable(conf, tableName.getName());
+      table = new TransactionalTable(tableName.getName());
       return std(transactionId, table, ci, scan);
     } finally {
       if (table != null) {
@@ -762,7 +761,7 @@ public class TransactionalAggregationClient {
       Scan scan) throws Throwable {
     TransactionalTable table = null;
     try {
-      table = new TransactionalTable(conf, tableName.getName());
+      table = new TransactionalTable(tableName.getName());
       return median(transactionId, table, ci, scan);
     } finally {
       if (table != null) {

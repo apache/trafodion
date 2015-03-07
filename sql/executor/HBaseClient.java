@@ -82,7 +82,7 @@ import org.apache.hadoop.hbase.HConstants;
 public class HBaseClient {
 
     static Logger logger = Logger.getLogger(HBaseClient.class.getName());
-    Configuration config;
+    public static Configuration config = HBaseConfiguration.create();
     String lastError;
     private PoolMap<String, HTableClient> hTableClientsFree;
     private PoolMap<String, HTableClient> hTableClientsInUse;
@@ -113,8 +113,6 @@ public class HBaseClient {
     public static final int HBASE_SPLIT_POLICY = 22;
 
     
-    
-    
     public HBaseClient() {
       if (hTableClientsFree == null)
          hTableClientsFree = new PoolMap<String, HTableClient>
@@ -131,7 +129,7 @@ public class HBaseClient {
         lastError = err;
     }
 
-    void setupLog4j() {
+    static {
     	//Some clients of this class e.g., DcsServer/JdbcT2 
     	//want to use use their own log4j.properties file instead
     	//of the /conf/lo4j.hdf.config so they can see their
@@ -149,14 +147,8 @@ public class HBaseClient {
     public boolean init(String zkServers, String zkPort) 
 	throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
     {
-         setupLog4j();
          if (logger.isDebugEnabled()) logger.debug("HBaseClient.init(" + zkServers + ", " + zkPort
                          + ") called.");
-         config = HBaseConfiguration.create();
-	 if (zkServers.length() > 0)
-            config.set("hbase.zookeeper.quorum", zkServers);
-	 if (zkPort.length() > 0)
-            config.set("hbase.zookeeper.property.clientPort", zkPort);
          HBaseAdmin.checkHBaseAvailable(config);
          return true;
     }
@@ -501,7 +493,7 @@ public class HBaseClient {
        HTableClient htable = hTableClientsFree.get(tblName);
        if (htable == null) {
           htable = new HTableClient();
-          if (htable.init(tblName, config, useTRex) == false) {
+          if (htable.init(tblName, useTRex) == false) {
              if (logger.isDebugEnabled()) logger.debug("  ==> Error in init(), returning empty.");
              return null;
           }

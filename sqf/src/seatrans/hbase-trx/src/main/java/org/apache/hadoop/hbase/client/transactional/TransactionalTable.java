@@ -18,10 +18,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Delete;
@@ -69,28 +73,35 @@ import com.google.protobuf.ServiceException;
  */
 public class TransactionalTable extends HTable {
     static final Log LOG = LogFactory.getLog(RMInterface.class);
-    
-    /*   // Not necessary for 0.98
-    private RpcRetryingCallerFactory rpcCallerFactory;    
-    private RpcControllerFactory rpcControllerFactory;
-    */
+    static private HConnection connection = null;
+    static Configuration       config = HBaseConfiguration.create();
+    static ExecutorService     threadPool;
+
+    static {
+	config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
+	try {
+	    connection = HConnectionManager.createConnection(config);        
+	}
+	catch (IOException ioe) {
+	    LOG.error("Exception on TransactionTable anonymous static method. IOException while creating HConnection");
+	}
+ 	threadPool = Executors.newCachedThreadPool();
+   }
     
     /**
-     * @param conf
      * @param tableName
      * @throws IOException
      */
-    public TransactionalTable(final Configuration conf, final String tableName) throws IOException {
-        this(conf, Bytes.toBytes(tableName));        
+    public TransactionalTable(final String tableName) throws IOException {
+        this(Bytes.toBytes(tableName));        
     }
 
     /**
-     * @param conf
      * @param tableName
      * @throws IOException
      */
-    public TransactionalTable(final Configuration conf, final byte[] tableName) throws IOException {
-        super(conf, tableName);       
+    public TransactionalTable(final byte[] tableName) throws IOException {
+       super(tableName, connection, threadPool);      
     }
 
     public void resetConnection() throws IOException {

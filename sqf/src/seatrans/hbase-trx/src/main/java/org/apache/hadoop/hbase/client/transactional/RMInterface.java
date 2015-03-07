@@ -51,8 +51,8 @@ public class RMInterface extends TransactionalTable{
       System.out.println("MAIN ENTRY");      
     }
     
-    public RMInterface(final Configuration conf, final String tableName) throws IOException {
-        super(conf, Bytes.toBytes(tableName));
+    public RMInterface(final String tableName) throws IOException {
+        super(Bytes.toBytes(tableName));
         mapTransactionStates = new ConcurrentHashMap<Long, TransactionState>();
     }
 
