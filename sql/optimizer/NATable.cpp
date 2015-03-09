@@ -4939,7 +4939,8 @@ NATable::NATable(BindWA *bindWA,
     tableDesc_(inTableDesc),
     privInfo_(NULL),
     secKeySet_(heap),
-    newColumns_(heap)
+    newColumns_(heap),
+    snapshotName_(NULL)
 {
   NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
   NAString mmPhase;
@@ -5145,6 +5146,13 @@ NATable::NATable(BindWA *bindWA,
       parentTableName_ =
 	new(heap_) char[strlen(table_desc->body.table_desc.parentTableName) + 1];
       strcpy(parentTableName_, table_desc->body.table_desc.parentTableName);
+    }
+
+  if (table_desc->body.table_desc.snapshotName)
+    {
+    snapshotName_ =
+        new(heap_) char[strlen(table_desc->body.table_desc.snapshotName) + 1];
+      strcpy(snapshotName_, table_desc->body.table_desc.snapshotName);
     }
 
   desc_struct * files_desc = table_desc->body.table_desc.files_desc;
@@ -5699,7 +5707,8 @@ NATable::NATable(BindWA *bindWA,
     tableDesc_(NULL),
     secKeySet_(heap),
     privInfo_(NULL),
-    newColumns_(heap)
+    newColumns_(heap),
+    snapshotName_(NULL)
 {
 
   NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
@@ -6853,6 +6862,11 @@ NATable::~NATable()
      NADELETEBASIC(parentTableName_, heap_);
      parentTableName_ = NULL;
   } 
+  if (snapshotName_ != NULL)
+  {
+     NADELETEBASIC(snapshotName_, heap_);
+     snapshotName_ = NULL;
+  }
   if (viewText_ != NULL)
   {
      NADELETEBASIC(viewText_, heap_);

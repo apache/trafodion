@@ -162,8 +162,6 @@ typedef enum {
  ,SFW_ERROR_VERIFY_SNAPSHOT_EXCEPTION
  ,SFW_ERROR_HDFS_DELETE_PATH_PARAM
  ,SFW_ERROR_HDFS_DELETE_PATH_EXCEPTION
- ,SFW_ERROR_SET_ARCH_PERMISSIONS_PARAM
- ,SFW_ERROR_SET_ARCH_PERMISSIONS_EXCEPTION
  ,SFW_LAST
 } SFW_RetCode;
 
@@ -218,7 +216,6 @@ public:
   SFW_RetCode    deleteSnapshot( const NAString&  snapshotName);
   SFW_RetCode    verifySnapshot( const NAString&  tableName, const NAString&  snapshotName, NABoolean & exist);
   SFW_RetCode    release();
-  SFW_RetCode    setArchPermissions( const NAString&  tabName);
 
   virtual char*  getErrorText(SFW_RetCode errEnum);
 
@@ -243,7 +240,6 @@ private:
     JM_RELEASE,
     JM_VERIFY_SNAPSHOT,
     JM_HDFS_DELETE_PATH,
-    JM_SET_ARCH_PERMISSIONS,
     JM_LAST
   };
   

@@ -133,7 +133,7 @@
 
 --- 6 row(s) inserted.
 >>--load1
->>load with no populate indexes into customer_address 
+>>load with no populate indexes no recovery into customer_address 
 +>select * from hive.hive.customer_address;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
@@ -164,27 +164,27 @@ Task:  COMPLETION      Status: Ended      ET: 00:00:01.375
 --- 1 row(s) selected.
 >>
 >>--load2
->>load  with no populate indexes into customer_demographics 
-+>select * from hive.hive.customer_demographics  where cd_demo_sk <= 200000;
+>>load  with no populate indexes no recovery  into customer_demographics 
++>select * from hive.hive.customer_demographics  where cd_demo_sk <= 20000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-       Rows Processed: 200000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:05.954
+       Rows Processed: 20000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:07.229
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  COMPLETION      Status: Ended      ET: 00:00:01.310
 
---- 200000 row(s) loaded.
+--- 20000 row(s) loaded.
 >>--
->>select count(*) from hive.hive.customer_demographics   where cd_demo_sk <= 200000;
+>>select count(*) from hive.hive.customer_demographics   where cd_demo_sk <= 20000;
 
 *** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
 (EXPR)              
 --------------------
 
-              200000
+               20000
 
 --- 1 row(s) selected.
 >>select count(*) from customer_demographics;
@@ -192,33 +192,33 @@ Task:  COMPLETION      Status: Ended      ET: 00:00:01.310
 (EXPR)              
 --------------------
 
-              200000
+               20000
 
 --- 1 row(s) selected.
 >>--load3
->>load  with no populate indexes  into customer_demographics_salt 
-+>select * from hive.hive.customer_demographics  where cd_demo_sk <= 200000;
+>>load  with no populate indexes   no recovery into customer_demographics_salt 
++>select * from hive.hive.customer_demographics  where cd_demo_sk <= 20000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-       Rows Processed: 200000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:07.386
+       Rows Processed: 20000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:06.141
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  COMPLETION      Status: Ended      ET: 00:00:01.287
 
---- 200000 row(s) loaded.
+--- 20000 row(s) loaded.
 >>--                                                                              
 >>select count(*) from customer_demographics_salt;
 
 (EXPR)              
 --------------------
 
-              200000
+               20000
 
 --- 1 row(s) selected.
 >>--load4
->>load  with no populate indexes into customer_salt 
+>>load  with no populate indexes no recovery  into customer_salt 
 +>select * from hive.hive.customer;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_SALT
 Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_SALT
@@ -249,7 +249,7 @@ Task:  COMPLETION      Status: Ended      ET: 00:00:01.364
 --- 1 row(s) selected.
 >>
 >>--load5
->>load  with no populate indexes into store_sales_salt 
+>>load  with no populate indexes  no recovery into store_sales_salt 
 +>select * from hive.hive.store_sales where ss_item_sk <= 1000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.STORE_SALES_SALT
 Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.STORE_SALES_SALT
@@ -396,17 +396,17 @@ Task: UNLOAD           Status: Started
 Task:  EMPTY TARGET    Status: Started
 Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.014
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:04.743
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.888
 Task:  MERGE FILES     Status: Started
 Task:  MERGE FILES     Status: Ended      ET: 00:00:00.063
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>log;
 regrhadoop.ksh fs -copyToLocal  /bulkload/customer_demographics/merged_customer_demogs.gz /tmp 
 gunzip -f /tmp/merged_customer_demogs.gz
 cat /tmp/merged_customer_demogs | wc -l
-200000
+20000
 >>-----------
 >>--unload 3
 >>UNLOAD  
@@ -420,15 +420,15 @@ Task: UNLOAD           Status: Started
 Task:  EMPTY TARGET    Status: Started
 Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.014
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:03.120
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.660
 Task:  MERGE FILES     Status: Started
 Task:  MERGE FILES     Status: Ended      ET: 00:00:00.071
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>log;
 regrhadoop.ksh fs -cat  /bulkload/customer_demographics/merged_customer_demogs_2 | wc -l 
-200000
+20000
 >>----------------------------------
 >>--exp 3
 >>explain options 'f' 
@@ -457,16 +457,16 @@ Task: UNLOAD           Status: Started
 Task:  EMPTY TARGET    Status: Started
 Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.012
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:01.154
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.651
 Task:  MERGE FILES     Status: Started
 Task:  MERGE FILES     Status: Ended      ET: 00:00:00.093
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>
 >>log;
 regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_demogs_3
-8002685  /bulkload/customer_demographics_salt/merged_customer_demogs_3
+778224  /bulkload/customer_demographics_salt/merged_customer_demogs_3
 >>-------------------
 >>--unload 5
 >>UNLOAD  
@@ -480,16 +480,16 @@ Task: UNLOAD           Status: Started
 Task:  EMPTY TARGET    Status: Started
 Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.012
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:00.955
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.433
 Task:  MERGE FILES     Status: Started
 Task:  MERGE FILES     Status: Ended      ET: 00:00:00.072
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>
 >>log;
 regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_demogs_4.gz
-769162  /bulkload/customer_demographics_salt/merged_customer_demogs_4.gz
+78431  /bulkload/customer_demographics_salt/merged_customer_demogs_4.gz
 >>
 >>--exp4
 >>explain options 'f' 
@@ -518,14 +518,14 @@ Task: UNLOAD           Status: Started
 Task:  EMPTY TARGET    Status: Started
 Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.012
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:01.156
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.801
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>
 >>log;
 regrhadoop.ksh fs -cat /bulkload/customer_demographics_salt/file* | wc -l
-200000
+20000
 regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/file* |  grep file | wc -l
 4
 >>
@@ -541,12 +541,12 @@ Task: UNLOAD           Status: Started
 Task:  EMPTY TARGET    Status: Started
 Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.027
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:00.919
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.599
 Task:  MERGE FILES     Status: Started
 Task:  MERGE FILES     Status: Ended      ET: 00:00:00.288
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>
 >>sh regrhadoop.ksh fs -copyToLocal  /bulkload/customer_demographics_salt/merged_customer_demogs_2.gz /tmp ;
 >>sh gunzip -f /tmp/merged_customer_demogs_2.gz  ;
@@ -558,8 +558,6 @@ Task:  MERGE FILES     Status: Ended      ET: 00:00:00.288
 
 --- SQL operation complete.
 >>select [first 100] * from hive.hive.unload_customer_demographics where cd_demo_sk <200 order by cd_demo_sk;
-
-*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.UNLOAD_CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
 CD_DEMO_SK   CD_GENDER                                                                                             CD_MARITAL_STATUS                                                                                     CD_EDUCATION_STATUS                                                                                   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING                                                                                      CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
 -----------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------  ----------------------------------------------------------------------------------------------------  ------------  ---------------------  --------------------
@@ -681,12 +679,12 @@ Task: UNLOAD           Status: Started
 Task:  EMPTY TARGET    Status: Started
 Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.010
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:01.163
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.790
 Task:  MERGE FILES     Status: Started
 Task:  MERGE FILES     Status: Ended      ET: 00:00:00.071
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>log;
 regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/merged* | grep merge | wc -l
 1
@@ -721,24 +719,22 @@ Task: UNLOAD           Status: Started
 Task:  EMPTY TARGET    Status: Started
 Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.009
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:01.271
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.411
 Task:  MERGE FILES     Status: Started
 Task:  MERGE FILES     Status: Ended      ET: 00:00:00.094
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>
 >>select count(*) from hive.hive.unload_customer_demographics;
 
 (EXPR)              
 --------------------
 
-              200000
+               20000
 
 --- 1 row(s) selected.
 >>select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk < 100 order by cd_demo_sk;
-
-*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.UNLOAD_CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
 CD_DEMO_SK   CD_GENDER                                                                                             CD_MARITAL_STATUS                                                                                     CD_EDUCATION_STATUS                                                                                   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING                                                                                      CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
 -----------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------  ----------------------------------------------------------------------------------------------------  ------------  ---------------------  --------------------
@@ -778,22 +774,20 @@ Task: UNLOAD           Status: Started
 Task:  EMPTY TARGET    Status: Started
 Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.012
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:00.889
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.409
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>
 >>select count(*) from hive.hive.unload_customer_demographics;
 
 (EXPR)              
 --------------------
 
-              200000
+               20000
 
 --- 1 row(s) selected.
 >>select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk <100  order by cd_demo_sk;
-
-*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.UNLOAD_CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
 CD_DEMO_SK   CD_GENDER                                                                                             CD_MARITAL_STATUS                                                                                     CD_EDUCATION_STATUS                                                                                   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING                                                                                      CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
 -----------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------  ----------------------------------------------------------------------------------------------------  ------------  ---------------------  --------------------
@@ -998,22 +992,20 @@ Task: UNLOAD           Status: Started
 Task:  EMPTY TARGET    Status: Started
 Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.026
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:04.431
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:01.337
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>
 >>select count(*) from hive.hive.unload_customer_demographics;
 
 (EXPR)              
 --------------------
 
-              200000
+               20000
 
 --- 1 row(s) selected.
 >>select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk < 100 order by cd_demo_sk;
-
-*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.UNLOAD_CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
 CD_DEMO_SK   CD_GENDER                                                                                             CD_MARITAL_STATUS                                                                                     CD_EDUCATION_STATUS                                                                                   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING                                                                                      CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
 -----------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------  ----------------------------------------------------------------------------------------------------  ------------  ---------------------  --------------------
@@ -1334,6 +1326,297 @@ CA_ADDRESS_SK  CA_ADDRESS_ID                                                    
         40980  AAAAAAAAEBAKAAAA                                                                                      676                                                                                                   Center                                                                                                Lane                                                                                                  Suite 360                                                                                             Bear Creek                                                                                            Johnson County                                                                                        MO                                                                                                    63075                                                                                                 United States                                                                                         -6.0000000E+000  apartment                                                                                           
 
 --- 20 row(s) selected.
+>>--*****************************************************
+>>--tests for snapshot scan without unload
+>>--can be moved in the future to their own test 
+>>--*****************************************************
+>>--select 0
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD '0';
+
+--- SQL operation complete.
+>>
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+
+--- SQL operation complete.
+>>prepare ss from select  * from HBASE.CUSTOMER_DEMOGRAPHICS order by cd_demo_sk;
+
+*** WARNING[4372] Snapshot scan cannot be used with table TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS because there are no snapshots associated with it.
+
+--- SQL command prepared.
+>>
+>>--select 1
+>>cqd parallel_num_esps '2';
+
+--- SQL operation complete.
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+
+--- SQL operation complete.
+>>prepare snp from select  * from HBASE.CUSTOMER_DEMOGRAPHICS_SALT <<+ cardinality 10e10 >> order by cd_demo_sk;
+
+--- SQL command prepared.
+>>
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN 'NONE';
+
+--- SQL operation complete.
+>>prepare reg from select  * from HBASE.CUSTOMER_DEMOGRAPHICS_SALT <<+ cardinality 10e10 >> order by cd_demo_sk;
+
+--- SQL command prepared.
+>>log;
+grep -i -e 'explain snp' -e snapshot -e full_table_name -e esp_exchange LOG018_SNAPSHOT_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id 
+>>--snapshot
+>>explain snp;
+  TRAF_TABLE_SNAPSHOT_SCA  0
+  TRAF_TABLE_SNAPSHOT_SCA  LATEST
+ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
+  use_snapshot_scan ...... TRUE
+  full_table_name ........ TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+  snapshot_name .......... TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT_SNAP111
+  snapshot_temp_location   /bulkload/
+grep -i -e 'explain reg' -e snapshot -e full_table_name  -e esp_exchange  LOG018_REGULAR_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id
+>>--no snapshot
+>>explain reg;
+  TRAF_TABLE_SNAPSHOT_SCA  0
+  TRAF_TABLE_SNAPSHOT_SCA  NONE
+ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
+>>--no snapshot
+>>execute reg ;
+
+CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING  CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
+-----------  ---------  -----------------  --------------------  --------------------  ----------------  ------------  ---------------------  --------------------
+
+          1  M          M                  Primary                                500  Good                         0                      0                     0
+          2  F          M                  Primary                                500  Good                         0                      0                     0
+          3  M          S                  Primary                                500  Good                         0                      0                     0
+          4  F          S                  Primary                                500  Good                         0                      0                     0
+          5  M          D                  Primary                                500  Good                         0                      0                     0
+          6  F          D                  Primary                                500  Good                         0                      0                     0
+          7  M          W                  Primary                                500  Good                         0                      0                     0
+          8  F          W                  Primary                                500  Good                         0                      0                     0
+          9  M          U                  Primary                                500  Good                         0                      0                     0
+         10  F          U                  Primary                                500  Good                         0                      0                     0
+         11  M          M                  Secondary                              500  Good                         0                      0                     0
+         12  F          M                  Secondary                              500  Good                         0                      0                     0
+         13  M          S                  Secondary                              500  Good                         0                      0                     0
+         14  F          S                  Secondary                              500  Good                         0                      0                     0
+>>--snapshot
+>>execute snp;
+
+CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING  CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
+-----------  ---------  -----------------  --------------------  --------------------  ----------------  ------------  ---------------------  --------------------
+
+          1  M          M                  Primary                                500  Good                         0                      0                     0
+          2  F          M                  Primary                                500  Good                         0                      0                     0
+          3  M          S                  Primary                                500  Good                         0                      0                     0
+          4  F          S                  Primary                                500  Good                         0                      0                     0
+          5  M          D                  Primary                                500  Good                         0                      0                     0
+          6  F          D                  Primary                                500  Good                         0                      0                     0
+          7  M          W                  Primary                                500  Good                         0                      0                     0
+          8  F          W                  Primary                                500  Good                         0                      0                     0
+          9  M          U                  Primary                                500  Good                         0                      0                     0
+         10  F          U                  Primary                                500  Good                         0                      0                     0
+         11  M          M                  Secondary                              500  Good                         0                      0                     0
+         12  F          M                  Secondary                              500  Good                         0                      0                     0
+         13  M          S                  Secondary                              500  Good                         0                      0                     0
+         14  F          S                  Secondary                              500  Good                         0                      0                     0
+1,2c1,2
+< >>--no snapshot
+< >>execute reg ;
+---
+> >>--snapshot
+> >>execute snp;
+>>
+>>--select 2
+>>cqd parallel_num_esps reset;
+
+--- SQL operation complete.
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+
+--- SQL operation complete.
+>>prepare snp from select  * from HBASE.CUSTOMER_ADDRESS <<+ cardinality 10e10 >> order by ca_address_sk;
+
+--- SQL command prepared.
+>>
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN 'NONE';
+
+--- SQL operation complete.
+>>prepare reg from select  * from HBASE.CUSTOMER_ADDRESS <<+ cardinality 10e10 >> order by ca_address_sk;
+
+--- SQL command prepared.
+>>log;
+grep -i -e 'explain snp' -e snapshot -e full_table_name -e esp_exchange LOG018_SNAPSHOT_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id 
+>>--snapshot
+>>explain snp;
+  TRAF_TABLE_SNAPSHOT_SCA  0
+  TRAF_TABLE_SNAPSHOT_SCA  LATEST
+  use_snapshot_scan ...... TRUE
+  full_table_name ........ TRAFODION.HBASE.CUSTOMER_ADDRESS
+  snapshot_name .......... TRAFODION.HBASE.CUSTOMER_ADDRESS_SNAP111
+  snapshot_temp_location   /bulkload/20150307141643/
+grep -i -e 'explain reg' -e snapshot -e full_table_name  -e esp_exchange  LOG018_REGULAR_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id
+>>--no snapshot
+>>explain reg;
+  TRAF_TABLE_SNAPSHOT_SCA  0
+  TRAF_TABLE_SNAPSHOT_SCA  NONE
+>>--no snapshot
+>>execute reg ;
+
+CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME                                                CA_STREET_TYPE   CA_SUITE_NUMBER  CA_CITY                                                       CA_COUNTY                       CA_STATE  CA_ZIP      CA_COUNTRY                      CA_GMT_OFFSET  CA_LOCATION_TYPE
+-------------  ----------------  ----------------  ------------------------------------------------------------  ---------------  ---------------  ------------------------------------------------------------  ------------------------------  --------  ----------  ------------------------------  -------------  --------------------
+
+            1  AAAAAAAABAAAAAAA  18                Jackson                                                       Parkway          Suite 280        Fairfield                                                     Maricopa County                 AZ        86192       United States                           -7.00  condo               
+            2  AAAAAAAACAAAAAAA  362               Washington 6th                                                RD               Suite 80         Fairview                                                      Taos County                     NM        85709       United States                           -7.00  condo               
+            3  AAAAAAAADAAAAAAA  585               Dogwood Washington                                            Circle           Suite Q          Pleasant Valley                                               York County                     PA        12477       United States                           -5.00  single family       
+            4  AAAAAAAAEAAAAAAA  111               Smith                                                         Wy               Suite A          Oak Ridge                                                     Kit Carson County               CO        88371       United States                           -7.00  condo               
+            5  AAAAAAAAFAAAAAAA  31                College                                                       Blvd             Suite 180        Glendale                                                      Barry County                    MO        63951       United States                           -6.00  single family       
+            6  AAAAAAAAGAAAAAAA  59                Williams Sixth                                                Parkway          Suite 100        Lakeview                                                      Chelan County                   WA        98579       United States                           -8.00  single family       
+            7  AAAAAAAAHAAAAAAA  ?                 Hill 7th                                                      Road             Suite U          Farmington                                                    ?                               ?         39145       United States                               ?  ?                   
+            8  AAAAAAAAIAAAAAAA  875               Lincoln                                                       Ct.              Suite Y          Union                                                         Bledsoe County                  TN        38721       United States                           -5.00  apartment           
+            9  AAAAAAAAJAAAAAAA  819               1st Laurel                                                    Ave              Suite 70         New Hope                                                      Perry County                    AL        39431       United States                           -6.00  condo               
+           10  AAAAAAAAKAAAAAAA  851               Woodland Poplar                                               ST               Suite Y          Martinsville                                                  Haines Borough                  AK        90419       United States                           -9.00  condo               
+           11  AAAAAAAALAAAAAAA  189               13th 2nd                                                      Street           Suite 470        Maple Grove                                                   Madison County                  MT        68252       United States                           -7.00  single family       
+           12  AAAAAAAAMAAAAAAA  76                Ash 8th                                                       Ct.              Suite O          Edgewood                                                      Mifflin County                  PA        10069       United States                           -5.00  apartment           
+           13  AAAAAAAANAAAAAAA  424               Main Second                                                   Ln               Suite 130        Greenville                                                    Noxubee County                  MS        51387       United States                           -6.00  single family       
+           14  AAAAAAAAOAAAAAAA  923               Pine Oak                                                      Dr.              Suite 100        ?                                                             Lipscomb County                 TX        77752       ?                                       -6.00  ?                   
+>>--snapshot
+>>execute snp;
+
+CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME                                                CA_STREET_TYPE   CA_SUITE_NUMBER  CA_CITY                                                       CA_COUNTY                       CA_STATE  CA_ZIP      CA_COUNTRY                      CA_GMT_OFFSET  CA_LOCATION_TYPE
+-------------  ----------------  ----------------  ------------------------------------------------------------  ---------------  ---------------  ------------------------------------------------------------  ------------------------------  --------  ----------  ------------------------------  -------------  --------------------
+
+            1  AAAAAAAABAAAAAAA  18                Jackson                                                       Parkway          Suite 280        Fairfield                                                     Maricopa County                 AZ        86192       United States                           -7.00  condo               
+            2  AAAAAAAACAAAAAAA  362               Washington 6th                                                RD               Suite 80         Fairview                                                      Taos County                     NM        85709       United States                           -7.00  condo               
+            3  AAAAAAAADAAAAAAA  585               Dogwood Washington                                            Circle           Suite Q          Pleasant Valley                                               York County                     PA        12477       United States                           -5.00  single family       
+            4  AAAAAAAAEAAAAAAA  111               Smith                                                         Wy               Suite A          Oak Ridge                                                     Kit Carson County               CO        88371       United States                           -7.00  condo               
+            5  AAAAAAAAFAAAAAAA  31                College                                                       Blvd             Suite 180        Glendale                                                      Barry County                    MO        63951       United States                           -6.00  single family       
+            6  AAAAAAAAGAAAAAAA  59                Williams Sixth                                                Parkway          Suite 100        Lakeview                                                      Chelan County                   WA        98579       United States                           -8.00  single family       
+            7  AAAAAAAAHAAAAAAA  ?                 Hill 7th                                                      Road             Suite U          Farmington                                                    ?                               ?         39145       United States                               ?  ?                   
+            8  AAAAAAAAIAAAAAAA  875               Lincoln                                                       Ct.              Suite Y          Union                                                         Bledsoe County                  TN        38721       United States                           -5.00  apartment           
+            9  AAAAAAAAJAAAAAAA  819               1st Laurel                                                    Ave              Suite 70         New Hope                                                      Perry County                    AL        39431       United States                           -6.00  condo               
+           10  AAAAAAAAKAAAAAAA  851               Woodland Poplar                                               ST               Suite Y          Martinsville                                                  Haines Borough                  AK        90419       United States                           -9.00  condo               
+           11  AAAAAAAALAAAAAAA  189               13th 2nd                                                      Street           Suite 470        Maple Grove                                                   Madison County                  MT        68252       United States                           -7.00  single family       
+           12  AAAAAAAAMAAAAAAA  76                Ash 8th                                                       Ct.              Suite O          Edgewood                                                      Mifflin County                  PA        10069       United States                           -5.00  apartment           
+           13  AAAAAAAANAAAAAAA  424               Main Second                                                   Ln               Suite 130        Greenville                                                    Noxubee County                  MS        51387       United States                           -6.00  single family       
+           14  AAAAAAAAOAAAAAAA  923               Pine Oak                                                      Dr.              Suite 100        ?                                                             Lipscomb County                 TX        77752       ?                                       -6.00  ?                   
+1,2c1,2
+< >>--no snapshot
+< >>execute reg ;
+---
+> >>--snapshot
+> >>execute snp;
+>>--select 2
+>>cqd parallel_num_esps reset;
+
+--- SQL operation complete.
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+
+--- SQL operation complete.
+>>prepare snp from select * from trafodion.hbase.customer_salt c 
++>join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk
++>order by c.c_customer_sk, ca.ca_address_sk ;
+
+--- SQL command prepared.
+>>
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN 'NONE';
+
+--- SQL operation complete.
+>>prepare reg from select * from trafodion.hbase.customer_salt c 
++>join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk
++>order by c.c_customer_sk, ca.ca_address_sk ;
+
+--- SQL command prepared.
+>>log;
+grep -i -e 'explain snp' -e snapshot -e full_table_name -e esp_exchange LOG018_SNAPSHOT_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id 
+>>--snapshot
+>>explain snp;
+  TRAF_TABLE_SNAPSHOT_SCA  0
+  TRAF_TABLE_SNAPSHOT_SCA  LATEST
+  use_snapshot_scan ...... TRUE
+  full_table_name ........ TRAFODION.HBASE.CUSTOMER_SALT
+  snapshot_name .......... TRAFODION.HBASE.CUSTOMER_SALT_SNAP111
+  snapshot_temp_location   /bulkload/20150307141657/
+  use_snapshot_scan ...... TRUE
+  full_table_name ........ TRAFODION.HBASE.CUSTOMER_ADDRESS
+  snapshot_name .......... TRAFODION.HBASE.CUSTOMER_ADDRESS_SNAP111
+  snapshot_temp_location   /bulkload/20150307141657/
+grep -i -e 'explain reg' -e snapshot -e full_table_name  -e esp_exchange  LOG018_REGULAR_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id
+>>--no snapshot
+>>explain reg;
+  TRAF_TABLE_SNAPSHOT_SCA  0
+  TRAF_TABLE_SNAPSHOT_SCA  NONE
+>>--no snapshot
+>>execute reg ;
+
+C_CUSTOMER_SK  C_CUSTOMER_ID     C_CURRENT_CDEMO_SK  C_CURRENT_HDEMO_SK  C_CURRENT_ADDR_SK  C_FIRST_SHIPTO_DATE_SK  C_FIRST_SALES_DATE_SK  C_SALUTATION                              C_FIRST_NAME                                                                      C_LAST_NAME                                                                                                               C_PREFERRED_CUST_FLAG  C_BIRTH_DAY  C_BIRTH_MONTH  C_BIRTH_YEAR  C_BIRTH_COUNTRY                                                                   C_LOGIN                                               C_EMAIL_ADDRESS                                                                                                                                                                                           C_LAST_REVIEW_DATE                                  CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME                                                CA_STREET_TYPE   CA_SUITE_NUMBER  CA_CITY                                                       CA_COUNTY                       CA_STATE  CA_ZIP      CA_COUNTRY                      CA_GMT_OFFSET  CA_LOCATION_TYPE
+-------------  ----------------  ------------------  ------------------  -----------------  ----------------------  ---------------------  ----------------------------------------  --------------------------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------  ---------------------  -----------  -------------  ------------  --------------------------------------------------------------------------------  ----------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------  -------------  ----------------  ----------------  ------------------------------------------------------------  ---------------  ---------------  ------------------------------------------------------------  ------------------------------  --------  ----------  ------------------------------  -------------  --------------------
+
+            1  AAAAAAAABAAAAAAA              980124                7135              32946                 2452238                2452208  Mr.                                       Javier                                                                            Lewis                                                                                                                     Y                                9             12          1936  CHILE                                                                             ?                                                     Javier.Lewis@VFAxlnZEvOx.org                                                                                                                                                                              2452508                                                     32946  AAAAAAAACLAIAAAA  325               Chestnut Main                                                 Ln               Suite I          Spring Hill                                                   Leflore County                  MS        56787       United States                           -6.00  apartment           
+            2  AAAAAAAACAAAAAAA              819667                1461              31655                 2452318                2452288  Dr.                                       Amy                                                                               Moses                                                                                                                     Y                                9              4          1966  TOGO                                                                              ?                                                     Amy.Moses@Ovk9KjHH.com                                                                                                                                                                                    2452318                                                     31655  AAAAAAAAHKLHAAAA  614               8th Oak                                                       Boulevard        Suite 150        Antioch                                                       Gogebic County                  MI        48605       United States                           -5.00  condo               
+            3  AAAAAAAADAAAAAAA             1473522                6247              48572                 2449130                2449100  Miss                                      Latisha                                                                           Hamilton                                                                                                                  N                               18              9          1979  NIUE                                                                              ?                                                     Latisha.Hamilton@V.com                                                                                                                                                                                    2452313                                                     48572  AAAAAAAAMLNLAAAA  649               Park Jefferson                                                Ave              Suite 300        Cedar Grove                                                   Cass County                     MO        60411       United States                           -6.00  single family       
+            4  AAAAAAAAEAAAAAAA             1703214                3986              39558                 2450030                2450000  Dr.                                       Michael                                                                           White                                                                                                                     N                                7              6          1983  MEXICO                                                                            ?                                                     Michael.White@i.org                                                                                                                                                                                       2452361                                                     39558  AAAAAAAAGIKJAAAA  977               Cedar Sycamore                                                Road             Suite 230        Lakewood                                                      Renville County                 MN        58877       United States                           -6.00  single family       
+            5  AAAAAAAAFAAAAAAA              953372                4470              36368                 2449438                2449408  Sir                                       Robert                                                                            Moran                                                                                                                     N                                8              5          1956  FIJI                                                                              ?                                                     Robert.Moran@Hh.edu                                                                                                                                                                                       2452469                                                     36368  AAAAAAAAABOIAAAA  604               Miller Main                                                   Blvd             Suite P          Waterloo                                                      Big Horn County                 WY        81675       United States                           -7.00  apartment           
+            6  AAAAAAAAGAAAAAAA              213219                6374              27082                 2451883                2451853  Ms.                                       Brunilda                                                                          Sharp                                                                                                                     N                                4             12          1925  SURINAME                                                                          ?                                                     Brunilda.Sharp@T3pylZEUQjm.org                                                                                                                                                                            2452430                                                     27082  AAAAAAAAKMJGAAAA  248               Jackson                                                       Cir.             Suite X          Shiloh                                                        Reno County                     KS        69275       United States                           -6.00  condo               
+            7  AAAAAAAAHAAAAAAA               68377                3219              44814                 2451438                2451408  Ms.                                       Fonda                                                                             Wiles                                                                                                                     Y                               24              4          1985  GAMBIA                                                                            ?                                                     Fonda.Wiles@S9KnyEtz9hv.org                                                                                                                                                                               2452360                                                     44814  AAAAAAAAOAPKAAAA  704               Cedar Hickory                                                 Road             Suite V          Bethel                                                        Reynolds County                 MO        65281       United States                           -6.00  apartment           
+            8  AAAAAAAAIAAAAAAA             1215897                2471              16598                 2449406                2449376  Sir                                       Ollie                                                                             Shipman                                                                                                                   N                               26             12          1938  KOREA, REPUBLIC OF                                                                ?                                                     Ollie.Shipman@be.org                                                                                                                                                                                      2452334                                                     16598  AAAAAAAAGNAEAAAA  463               10th                                                          Cir.             Suite 180        Plainview                                                     Grenada County                  MS        53683       United States                           -6.00  condo               
+            9  AAAAAAAAJAAAAAAA             1168667                1404              49388                 2452275                2452245  Sir                                       Karl                                                                              Gilbert                                                                                                                   N                               26             10          1966  MONTSERRAT                                                                        ?                                                     Karl.Gilbert@Crg5KyP2IxX9C4d6.edu                                                                                                                                                                         2452454                                                     49388  AAAAAAAAMOAMAAAA  416               First Tenth                                                   Pkwy             Suite K          Fairview                                                      Clinton County                  IA        55709       United States                           -6.00  apartment           
+           10  AAAAAAAAKAAAAAAA             1207553                5143              19580                 2451353                2451323  Ms.                                       Albert                                                                            Brunson                                                                                                                   N                               15             10          1973  JORDAN                                                                            ?                                                     Albert.Brunson@62.com                                                                                                                                                                                     2452641                                                     19580  AAAAAAAAMHMEAAAA  870               Laurel Laurel                                                 Road             Suite Y          Centerville                                                   Hot Spring County               AR        70059       United States                           -6.00  condo               
+           11  AAAAAAAALAAAAAAA             1114415                6807              47999                 2452288                2452258  Ms.                                       Betty                                                                             Williams                                                                                                                  N                               18             12          1963  BURKINA FASO                                                                      ?                                                     Betty.Williams@xRtDqM1eLBVQNoYAJ.com                                                                                                                                                                      2452398                                                     47999  AAAAAAAAPHLLAAAA  267               13th                                                          Ave              ?                ?                                                             ?                               ?         54098       ?                                           ?  apartment           
+           12  AAAAAAAAMAAAAAAA              502141                6577              47366                 2451039                2451009  Ms.                                       Margaret                                                                          Farias                                                                                                                    N                                2              6          1956  TURKMENISTAN                                                                      ?                                                     Margaret.Farias@cb.edu                                                                                                                                                                                    2452634                                                     47366  AAAAAAAAGAJLAAAA  943               Adams                                                         Lane             Suite 170        Hartland                                                      Scott County                    IA        56594       United States                           -6.00  single family       
+           13  AAAAAAAANAAAAAAA             1128748                2777              14006                 2449658                2449628  Mrs.                                      Rosalinda                                                                         Grimes                                                                                                                    N                                1              3          1970  UKRAINE                                                                           ?                                                     Rosalinda.Grimes@tC8pcU7Lt.edu                                                                                                                                                                            2452616                                                     14006  AAAAAAAAGLGDAAAA  450               Dogwood 9th                                                   Ln               Suite 380        Glenwood                                                      Poinsett County                 AR        73511       United States                           -6.00  single family       
+           14  AAAAAAAAOAAAAAAA              929344                 892               6440                 2450318                2450288  Mr.                                       Jack                                                                              Wilcox                                                                                                                    N                               30              3          1937  SLOVENIA                                                                          ?                                                     Jack.Wilcox@Y3Etqyv3.org                                                                                                                                                                                  2452641                                                      6440  AAAAAAAAICJBAAAA  ?                 Valley                                                        ?                ?                Mountain View                                                 Gilchrist County                FL        ?           ?                                           ?  condo               
+>>--snapshot
+>>execute snp;
+
+C_CUSTOMER_SK  C_CUSTOMER_ID     C_CURRENT_CDEMO_SK  C_CURRENT_HDEMO_SK  C_CURRENT_ADDR_SK  C_FIRST_SHIPTO_DATE_SK  C_FIRST_SALES_DATE_SK  C_SALUTATION                              C_FIRST_NAME                                                                      C_LAST_NAME                                                                                                               C_PREFERRED_CUST_FLAG  C_BIRTH_DAY  C_BIRTH_MONTH  C_BIRTH_YEAR  C_BIRTH_COUNTRY                                                                   C_LOGIN                                               C_EMAIL_ADDRESS                                                                                                                                                                                           C_LAST_REVIEW_DATE                                  CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME                                                CA_STREET_TYPE   CA_SUITE_NUMBER  CA_CITY                                                       CA_COUNTY                       CA_STATE  CA_ZIP      CA_COUNTRY                      CA_GMT_OFFSET  CA_LOCATION_TYPE
+-------------  ----------------  ------------------  ------------------  -----------------  ----------------------  ---------------------  ----------------------------------------  --------------------------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------  ---------------------  -----------  -------------  ------------  --------------------------------------------------------------------------------  ----------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------  -------------  ----------------  ----------------  ------------------------------------------------------------  ---------------  ---------------  ------------------------------------------------------------  ------------------------------  --------  ----------  ------------------------------  -------------  --------------------
+
+            1  AAAAAAAABAAAAAAA              980124                7135              32946                 2452238                2452208  Mr.                                       Javier                                                                            Lewis                                                                                                                     Y                                9             12          1936  CHILE                                                                             ?                                                     Javier.Lewis@VFAxlnZEvOx.org                                                                                                                                                                              2452508                                                     32946  AAAAAAAACLAIAAAA  325               Chestnut Main                                                 Ln               Suite I          Spring Hill                                                   Leflore County                  MS        56787       United States                           -6.00  apartment           
+            2  AAAAAAAACAAAAAAA              819667                1461              31655                 2452318                2452288  Dr.                                       Amy                                                                               Moses                                                                                                                     Y                                9              4          1966  TOGO                                                                              ?                                                     Amy.Moses@Ovk9KjHH.com                                                                                                                                                                                    2452318                                                     31655  AAAAAAAAHKLHAAAA  614               8th Oak                                                       Boulevard        Suite 150        Antioch                                                       Gogebic County                  MI        48605       United States                           -5.00  condo               
+            3  AAAAAAAADAAAAAAA             1473522                6247              48572                 2449130                2449100  Miss                                      Latisha                                                                           Hamilton                                                                                                                  N                               18              9          1979  NIUE                                                                              ?                                                     Latisha.Hamilton@V.com                                                                                                                                                                                    2452313                                                     48572  AAAAAAAAMLNLAAAA  649               Park Jefferson                                                Ave              Suite 300        Cedar Grove                                                   Cass County                     MO        60411       United States                           -6.00  single family       
+            4  AAAAAAAAEAAAAAAA             1703214                3986              39558                 2450030                2450000  Dr.                                       Michael                                                                           White                                                                                                                     N                                7              6          1983  MEXICO                                                                            ?                                                     Michael.White@i.org                                                                                                                                                                                       2452361                                                     39558  AAAAAAAAGIKJAAAA  977               Cedar Sycamore                                                Road             Suite 230        Lakewood                                                      Renville County                 MN        58877       United States                           -6.00  single family       
+            5  AAAAAAAAFAAAAAAA              953372                4470              36368                 2449438                2449408  Sir                                       Robert                                                                            Moran                                                                                                                     N                                8              5          1956  FIJI                                                                              ?                                                     Robert.Moran@Hh.edu                                                                                                                                                                                       2452469                                                     36368  AAAAAAAAABOIAAAA  604               Miller Main                                                   Blvd             Suite P          Waterloo                                                      Big Horn County                 WY        81675       United States                           -7.00  apartment           
+            6  AAAAAAAAGAAAAAAA              213219                6374              27082                 2451883                2451853  Ms.                                       Brunilda                                                                          Sharp                                                                                                                     N                                4             12          1925  SURINAME                                                                          ?                                                     Brunilda.Sharp@T3pylZEUQjm.org                                                                                                                                                                            2452430                                                     27082  AAAAAAAAKMJGAAAA  248               Jackson                                                       Cir.             Suite X          Shiloh                                                        Reno County                     KS        69275       United States                           -6.00  condo               
+            7  AAAAAAAAHAAAAAAA               68377                3219              44814                 2451438                2451408  Ms.                                       Fonda                                                                             Wiles                                                                                                                     Y                               24              4          1985  GAMBIA                                                                            ?                                                     Fonda.Wiles@S9KnyEtz9hv.org                                                                                                                                                                               2452360                                                     44814  AAAAAAAAOAPKAAAA  704               Cedar Hickory                                                 Road             Suite V          Bethel                                                        Reynolds County                 MO        65281       United States                           -6.00  apartment           
+            8  AAAAAAAAIAAAAAAA             1215897                2471              16598                 2449406                2449376  Sir                                       Ollie                                                                             Shipman                                                                                                                   N                               26             12          1938  KOREA, REPUBLIC OF                                                                ?                                                     Ollie.Shipman@be.org                                                                                                                                                                                      2452334                                                     16598  AAAAAAAAGNAEAAAA  463               10th                                                          Cir.             Suite 180        Plainview                                                     Grenada County                  MS        53683       United States                           -6.00  condo               
+            9  AAAAAAAAJAAAAAAA             1168667                1404              49388                 2452275                2452245  Sir                                       Karl                                                                              Gilbert                                                                                                                   N                               26             10          1966  MONTSERRAT                                                                        ?                                                     Karl.Gilbert@Crg5KyP2IxX9C4d6.edu                                                                                                                                                                         2452454                                                     49388  AAAAAAAAMOAMAAAA  416               First Tenth                                                   Pkwy             Suite K          Fairview                                                      Clinton County                  IA        55709       United States                           -6.00  apartment           
+           10  AAAAAAAAKAAAAAAA             1207553                5143              19580                 2451353                2451323  Ms.                                       Albert                                                                            Brunson                                                                                                                   N                               15             10          1973  JORDAN                                                                            ?                                                     Albert.Brunson@62.com                                                                                                                                                                                     2452641                                                     19580  AAAAAAAAMHMEAAAA  870               Laurel Laurel                                                 Road             Suite Y          Centerville                                                   Hot Spring County               AR        70059       United States                           -6.00  condo               
+           11  AAAAAAAALAAAAAAA             1114415                6807              47999                 2452288                2452258  Ms.                                       Betty                                                                             Williams                                                                                                                  N                               18             12          1963  BURKINA FASO                                                                      ?                                                     Betty.Williams@xRtDqM1eLBVQNoYAJ.com                                                                                                                                                                      2452398                                                     47999  AAAAAAAAPHLLAAAA  267               13th                                                          Ave              ?                ?                                                             ?                               ?         54098       ?                                           ?  apartment           
+           12  AAAAAAAAMAAAAAAA              502141                6577              47366                 2451039                2451009  Ms.                                       Margaret                                                                          Farias                                                                                                                    N                                2              6          1956  TURKMENISTAN                                                                      ?                                                     Margaret.Farias@cb.edu                                                                                                                                                                                    2452634                                                     47366  AAAAAAAAGAJLAAAA  943               Adams                                                         Lane             Suite 170        Hartland                                                      Scott County                    IA        56594       United States                           -6.00  single family       
+           13  AAAAAAAANAAAAAAA             1128748                2777              14006                 2449658                2449628  Mrs.                                      Rosalinda                                                                         Grimes                                                                                                                    N                                1              3          1970  UKRAINE                                                                           ?                                                     Rosalinda.Grimes@tC8pcU7Lt.edu                                                                                                                                                                            2452616                                                     14006  AAAAAAAAGLGDAAAA  450               Dogwood 9th                                                   Ln               Suite 380        Glenwood                                                      Poinsett County                 AR        73511       United States                           -6.00  single family       
+           14  AAAAAAAAOAAAAAAA              929344                 892               6440                 2450318                2450288  Mr.                                       Jack                                                                              Wilcox                                                                                                                    N                               30              3          1937  SLOVENIA                                                                          ?                                                     Jack.Wilcox@Y3Etqyv3.org                                                                                                                                                                                  2452641                                                      6440  AAAAAAAAICJBAAAA  ?                 Valley                                                        ?                ?                Mountain View                                                 Gilchrist County                FL        ?           ?                                           ?  condo               
+1,2c1,2
+< >>--no snapshot
+< >>execute reg ;
+---
+> >>--snapshot
+> >>execute snp;
+>>
+>>--select 3
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+
+--- SQL operation complete.
+>>
+>>prepare ss from select  c_first_name, c_last_name from HBASE.customer_salt order by c_first_name, c_last_name;
+
+*** WARNING[4372] Snapshot scan cannot be used with table TRAFODION.HBASE.CUSTOMER_IDX1 because snapshot scan is not supported with index tables yet.
+
+--- SQL command prepared.
+>>
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD '1000';
+
+--- SQL operation complete.
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+
+--- SQL operation complete.
+>>prepare ss from select  * from trafodion.hbase.customer_address;
+
+*** WARNING[4372] Snapshot scan cannot be used with table TRAFODION.HBASE.CUSTOMER_ADDRESS because its estimated size is less than the threshold of 1000 MBs.
+
+--- SQL command prepared.
+>>cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD '0';
+
+--- SQL operation complete.
+>>
+>>
 >>
 >>--******************************************************************************
 >>--*********************BULK UNLOAD with SNAPSHOT SCAN
@@ -1436,22 +1719,20 @@ Task:  VERIFY SNAPSHO  Status: Started
        Snapshots verified: 1 
 Task:  VERIFY SNAPSHO  Status: Ended      ET: 00:00:00.262
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:01.955
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:01.569
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>
 >>select count(*) from hive.hive.unload_customer_demographics;
 
 (EXPR)              
 --------------------
 
-              200000
+               20000
 
 --- 1 row(s) selected.
 >>select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk < 100 order by cd_demo_sk;
-
-*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.UNLOAD_CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
 CD_DEMO_SK   CD_GENDER                                                                                             CD_MARITAL_STATUS                                                                                     CD_EDUCATION_STATUS                                                                                   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING                                                                                      CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
 -----------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------  ----------------------------------------------------------------------------------------------------  ------------  ---------------------  --------------------
@@ -1492,25 +1773,23 @@ Task:  CREATE SNAPSHO  Status: Started
        Snapshots created: 1 
 Task:  CREATE SNAPSHO  Status: Ended      ET: 00:00:00.886
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:01.528
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:01.068
 Task:  DELETE SNAPSHO  Status: Started
        Snapshots deleted: 1 
 Task:  DELETE SNAPSHO  Status: Ended      ET: 00:00:00.009
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>
 >>select count(*) from hive.hive.unload_customer_demographics;
 
 (EXPR)              
 --------------------
 
-              200000
+               20000
 
 --- 1 row(s) selected.
 >>select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk < 100 order by cd_demo_sk;
-
-*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.UNLOAD_CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
 CD_DEMO_SK   CD_GENDER                                                                                             CD_MARITAL_STATUS                                                                                     CD_EDUCATION_STATUS                                                                                   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING                                                                                      CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
 -----------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------  ----------------------------------------------------------------------------------------------------  ------------  ---------------------  --------------------
@@ -1551,25 +1830,23 @@ Task:  CREATE SNAPSHO  Status: Started
        Snapshots created: 1 
 Task:  CREATE SNAPSHO  Status: Ended      ET: 00:00:00.573
 Task:  EXTRACT         Status: Started
-       Rows Processed: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:01.376
+       Rows Processed: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.991
 Task:  DELETE SNAPSHO  Status: Started
        Snapshots deleted: 1 
 Task:  DELETE SNAPSHO  Status: Ended      ET: 00:00:00.009
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>
 >>select count(*) from hive.hive.unload_customer_demographics;
 
 (EXPR)              
 --------------------
 
-              200000
+               20000
 
 --- 1 row(s) selected.
 >>select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk < 100 order by cd_demo_sk;
-
-*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.UNLOAD_CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
 CD_DEMO_SK   CD_GENDER                                                                                             CD_MARITAL_STATUS                                                                                     CD_EDUCATION_STATUS                                                                                   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING                                                                                      CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
 -----------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------  ----------------------------------------------------------------------------------------------------  ------------  ---------------------  --------------------
@@ -1906,10 +2183,10 @@ regrhadoop.ksh fs -rm /user/hive/exttables/unload_customer_demographics/*
 +>(select * from trafodion.hbase.customer_demographics_salt) ;
 Task: UNLOAD           Status: Started
 Task:  EXTRACT         Status: Started
-       Rows Processed but NOT Written to Disk: 200000 
-Task:  EXTRACT         Status: Ended      ET: 00:00:03.339
+       Rows Processed but NOT Written to Disk: 20000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.444
 
---- 200000 row(s) unloaded.
+--- 20000 row(s) unloaded.
 >>select count(*) from hive.hive.unload_customer_demographics;
 
 (EXPR)              

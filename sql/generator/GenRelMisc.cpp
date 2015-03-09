@@ -2213,6 +2213,27 @@ short RelRoot::codeGen(Generator * generator)
         objectUIDsPtr[i] = generator->objectUids()[i];
     }
   
+  Queue * listOfSnapshotscanTables =  NULL;
+  NAString tmpLocNAS;
+  char * tmpLoc = NULL;
+  Int64 numObjectNames = generator->objectNames().entries();
+  if (numObjectNames >0)
+  {
+    listOfSnapshotscanTables = new(space) Queue(space);
+    for (Lng32 i=0 ; i <generator->objectNames().entries(); i++)
+    {
+     char * nm = space->allocateAlignedSpace(generator->objectNames()[i].length() + 1);
+     strcpy(nm, generator->objectNames()[i].data());
+     listOfSnapshotscanTables->insert(nm);
+    }
+
+    tmpLocNAS = generator->getSnapshotScanTmpLocation();
+    CMPASSERT(tmpLocNAS[tmpLocNAS.length()-1] =='/');
+    tmpLoc = space->allocateAlignedSpace(tmpLocNAS.length() + 1);
+    strcpy(tmpLoc, tmpLocNAS.data());
+  }
+
+
   // for describe type commands(showshape, showplan, explain) we don't
   // need to pass in the actual param values even if the query contains
   // params. Reset input_expr. This is done to avoid returning
@@ -2308,7 +2329,9 @@ short RelRoot::codeGen(Generator * generator)
 		 rwrsInfoBuf,
                  numObjectUIDs ,
                  objectUIDsPtr,
-                 compilationStatsData);
+                 compilationStatsData,
+                 tmpLoc,
+                 listOfSnapshotscanTables);
 #pragma warning (default : 4244)  //warning elimination
 
   root_tdb->setTdbId(generator->getAndIncTdbId());

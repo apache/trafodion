@@ -1974,14 +1974,23 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       }
 
       if (hblTdb().getScanType()== ComTdbExeUtilHBaseBulkUnLoad::REGULAR_SCAN)
-        cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN", "OFF");
+        cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN", "NONE");
       else
-        cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN", "ON");
+      {
+        cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN", "SUFFIX");
+        if (cliRC < 0)
+        {
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+      }
+      cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD", "0");
       if (cliRC < 0)
       {
         step_ = UNLOAD_END_ERROR_;
         break;
       }
+
       if (hblTdb().getSnapshotSuffix() != NULL)
       {
         cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN_SNAP_SUFFIX", hblTdb().getSnapshotSuffix());
@@ -1990,20 +1999,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
           step_ = UNLOAD_END_ERROR_;
           break;
         }
-      }
-      if (hblTdb().getScanType() ==ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_CREATE ||
-          hblTdb().getScanType() ==ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_EXISTING)
-      {
-        memset (tmpLocation_, '\0', sizeof(tmpLocation_));
-        char str2[60];
-        setSnapshotScanId(str2);
-        snprintf(tmpLocation_,sizeof(tmpLocation_) - 1,  "%s%s/",hblTdb().getTempBaseLocation(), str2 );
-        cliRC = holdAndSetCQD("TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION", tmpLocation_);  
-         if (cliRC < 0)
-         {
-           step_ = UNLOAD_END_ERROR_;
-           break;
-         }
       }
 
       step_ = UNLOAD_;
@@ -2182,29 +2177,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
           (hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_CREATE ||
            hblTdb().getScanType() == ComTdbExeUtilHBaseBulkUnLoad::SNAPSHOT_SCAN_EXISTING))
       {
-        if (snapshotsList_ != NULL)
-        {
-          for ( int i = 0 ; i < snapshotsList_->entries(); i++)
-          {
-            sfwRetCode = sequenceFileWriter_->setArchPermissions( *snapshotsList_->at(i)->fullTableName);
-            if (sfwRetCode != SFW_OK)
-            {
-              createHdfsFileError(sfwRetCode);
-              step_ = UNLOAD_END_ERROR_;
-              break;
-            }
-          }
-          if (step_ == UNLOAD_END_ERROR_)
-            break;
-        }
-        NAString tmpLoc( tmpLocation_);
-        sfwRetCode = sequenceFileWriter_->hdfsDeletePath( tmpLoc);
-        if (sfwRetCode != SFW_OK)
-        {
-          createHdfsFileError(sfwRetCode);
-          step_ = UNLOAD_END_ERROR_;
-          break;
-        }
         sfwRetCode = sequenceFileWriter_->release( );
         if (sfwRetCode != SFW_OK)
         {
@@ -2218,7 +2190,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
         step_ = UNLOAD_ERROR_;
         break;
       }
-      if (restoreCQD("TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION") < 0)
+      if (restoreCQD("TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD") < 0)
       {
         step_ = UNLOAD_ERROR_;
         break;

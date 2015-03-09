@@ -2612,8 +2612,7 @@ ComTdbExeUtilHBaseBulkUnLoad::ComTdbExeUtilHBaseBulkUnLoad(char * tableName,
       compressType_(0),
       extractLocation_(extractLocation),
       scanType_(0),
-      snapshotSuffix_(NULL),
-      tempBaseLocation_(NULL)
+      snapshotSuffix_(NULL)
     {
     setNodeType(ComTdb::ex_HBASE_UNLOAD);
     }
@@ -2629,9 +2628,6 @@ Long ComTdbExeUtilHBaseBulkUnLoad::pack(void * space)
     extractLocation_.pack(space);
   if (snapshotSuffix_)
     snapshotSuffix_.pack(space);
-  if (tempBaseLocation_)
-    tempBaseLocation_.pack(space);
-
 
   return ComTdbExeUtil::pack(space);
 }
@@ -2646,8 +2642,7 @@ Lng32 ComTdbExeUtilHBaseBulkUnLoad::unpack(void * base, void * reallocator)
       return -1;
   if(snapshotSuffix_.unpack(base))
       return -1;
-  if(tempBaseLocation_.unpack(base))
-       return -1;
+
   return ComTdbExeUtil::unpack(base, reallocator);
 }
 void ComTdbExeUtilHBaseBulkUnLoad::displayContents(Space * space,ULng32 flag)

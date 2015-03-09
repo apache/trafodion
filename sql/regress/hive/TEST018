@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 create schema trafodion.hbase;
 set schema trafodion.hbase;
 cqd comp_bool_226 'on';
-
+cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD  '0';
 cqd hive_max_string_length '60';
 cqd query_cache '0';
 
@@ -40,6 +40,35 @@ obey TEST018(test_bulk_unload_simple);
 log;
 obey TEST018(clean_up);
 exit;
+
+?section log_results
+
+log LOG018_SNAPSHOT_SCAN_PLAN.TXT clear;
+--snapshot
+explain snp;
+log;
+sh echo "grep -i -e 'explain snp' -e snapshot -e full_table_name -e esp_exchange LOG018_SNAPSHOT_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id " >> LOG018 ;
+sh grep -i -e 'explain snp' -e snapshot -e full_table_name -e esp_exchange LOG018_SNAPSHOT_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id 2>&1 >> LOG018 ;
+log LOG018_REGULAR_SCAN_PLAN.TXT clear;
+--no snapshot
+explain reg;
+log;
+sh echo "grep -i -e 'explain reg' -e snapshot -e full_table_name  -e esp_exchange  LOG018_REGULAR_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id" >> LOG018 ;
+sh grep -i -e 'explain reg' -e snapshot -e full_table_name  -e esp_exchange  LOG018_REGULAR_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id 2>&1 >> LOG018 ;
+
+log LOG018_REGULAR_SCAN.DAT clear;
+--no snapshot
+execute reg ;
+log;
+log LOG018_SNAPSHOT_SCAN.DAT clear;
+--snapshot
+execute snp;
+log;
+
+sh head -n 20 LOG018_REGULAR_SCAN.DAT  2>&1 >> LOG018;
+sh head -n 20 LOG018_SNAPSHOT_SCAN.DAT  2>&1 >> LOG018;
+
+sh diff  LOG018_REGULAR_SCAN.DAT LOG018_SNAPSHOT_SCAN.DAT 2>&1 >> LOG018;
 
 ?section clean_up
 drop index customer_idx1;
@@ -174,32 +203,32 @@ insert into nulls values ('aaa1','bbbbb1'),(null,'bbbbb2'),
                          ('aaa3',null),(null,null),
                           ('aaa5',null),(null,'bbbbb6');
 --load1
-load with no populate indexes into customer_address 
+load with no populate indexes no recovery into customer_address 
 select * from hive.hive.customer_address;    
 --
 select count(*) from hive.hive.customer_address;                                                                                          
 select count(*) from customer_address;
 
 --load2
-load  with no populate indexes into customer_demographics 
-select * from hive.hive.customer_demographics  where cd_demo_sk <= 200000;
+load  with no populate indexes no recovery  into customer_demographics 
+select * from hive.hive.customer_demographics  where cd_demo_sk <= 20000;
 --
-select count(*) from hive.hive.customer_demographics   where cd_demo_sk <= 200000;
+select count(*) from hive.hive.customer_demographics   where cd_demo_sk <= 20000;
 select count(*) from customer_demographics;
 --load3
-load  with no populate indexes  into customer_demographics_salt 
-select * from hive.hive.customer_demographics  where cd_demo_sk <= 200000;      
+load  with no populate indexes   no recovery into customer_demographics_salt 
+select * from hive.hive.customer_demographics  where cd_demo_sk <= 20000;      
 --                                                                              
 select count(*) from customer_demographics_salt;
 --load4
-load  with no populate indexes into customer_salt 
+load  with no populate indexes no recovery  into customer_salt 
 select * from hive.hive.customer;
 --
 select count(*) from hive.hive.customer;
 select count(*) from customer_salt;
 
 --load5
-load  with no populate indexes into store_sales_salt 
+load  with no populate indexes  no recovery into store_sales_salt 
 select * from hive.hive.store_sales where ss_item_sk <= 1000;
 --
 select count(*) from hive.hive.store_sales;
@@ -502,6 +531,63 @@ select * from customer_address where ca_address_sk < 1000 union select * from cu
 select count(*) from hive.hive.unload_customer_address;
 select [first 20] * from hive.hive.unload_customer_address order by ca_address_sk;
 select [first 20] * from hive.hive.unload_customer_address order by ca_address_sk desc;
+--*****************************************************
+--tests for snapshot scan without unload
+--can be moved in the future to their own test 
+--*****************************************************
+--select 0
+cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD '0';
+
+cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+prepare ss from select  * from HBASE.CUSTOMER_DEMOGRAPHICS order by cd_demo_sk;
+
+--select 1
+cqd parallel_num_esps '2';
+cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+prepare snp from select  * from HBASE.CUSTOMER_DEMOGRAPHICS_SALT <<+ cardinality 10e10 >> order by cd_demo_sk;
+
+cqd TRAF_TABLE_SNAPSHOT_SCAN 'NONE';
+prepare reg from select  * from HBASE.CUSTOMER_DEMOGRAPHICS_SALT <<+ cardinality 10e10 >> order by cd_demo_sk;
+log;
+obey TEST018(log_results);
+log LOG018;
+
+--select 2
+cqd parallel_num_esps reset;
+cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+prepare snp from select  * from HBASE.CUSTOMER_ADDRESS <<+ cardinality 10e10 >> order by ca_address_sk;
+
+cqd TRAF_TABLE_SNAPSHOT_SCAN 'NONE';
+prepare reg from select  * from HBASE.CUSTOMER_ADDRESS <<+ cardinality 10e10 >> order by ca_address_sk;
+log;
+obey TEST018(log_results);
+log LOG018;
+--select 2
+cqd parallel_num_esps reset;
+cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+prepare snp from select * from trafodion.hbase.customer_salt c 
+join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk
+order by c.c_customer_sk, ca.ca_address_sk ;
+
+cqd TRAF_TABLE_SNAPSHOT_SCAN 'NONE';
+prepare reg from select * from trafodion.hbase.customer_salt c 
+join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk
+order by c.c_customer_sk, ca.ca_address_sk ;
+log;
+obey TEST018(log_results);
+log LOG018;
+
+--select 3
+cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+
+prepare ss from select  c_first_name, c_last_name from HBASE.customer_salt order by c_first_name, c_last_name;
+
+cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD '1000';
+cqd TRAF_TABLE_SNAPSHOT_SCAN 'LATEST';
+prepare ss from select  * from trafodion.hbase.customer_address;
+cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD '0';
+
+
 
 --******************************************************************************
 --*********************BULK UNLOAD with SNAPSHOT SCAN

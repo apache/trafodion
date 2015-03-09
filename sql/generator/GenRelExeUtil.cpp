@@ -5488,23 +5488,6 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
   exe_util_tdb->setScanType(scanType_);
   exe_util_tdb->setSnapshotSuffix(snapSuffixStr);
 
-  NAString tlpTmpLocationNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_TABLE_SNAPSHOT_SCAN_TMP_BASE_LOCATION);
-  char * tlpTmpLocation = NULL;
-  //if the temp base location is empty or does not end with '/' then produce error
-  if (tlpTmpLocationNAS.length() == 0 ||
-      (tlpTmpLocationNAS.length() != 0 &&
-      tlpTmpLocationNAS[tlpTmpLocationNAS.length()-1] != '/'))
-  {
-    *CmpCommon::diags() << DgSqlCode( -4373 );
-  }
-
-  tlpTmpLocation = space->allocateAlignedSpace(tlpTmpLocationNAS.length() + 1);
-  strcpy(tlpTmpLocation, tlpTmpLocationNAS.data());
-  exe_util_tdb->setTempBaseLocation(tlpTmpLocation);
-
-
-
-
   generator->initTdbFields(exe_util_tdb);
 
   if (!generator->explainDisabled())

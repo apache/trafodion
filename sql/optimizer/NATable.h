@@ -705,6 +705,8 @@ public:
 
   inline CostScalar getOriginalRowCount() const { return originalCardinality_ ; }
   void setOriginalRowCount(CostScalar rowcount) {originalCardinality_ = rowcount; }
+
+  const char * getSnapshotName() const { return snapshotName_; }
   // ---------------------------------------------------------------------
   // Standard operators
   // ---------------------------------------------------------------------
@@ -1071,6 +1073,8 @@ private:
   Int64 schemaRedefTime_;
 
   char * parentTableName_;
+
+  char *snapshotName_;
 
   ComSecurityKeySet secKeySet_ ;
 

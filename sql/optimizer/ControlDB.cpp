@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -351,6 +351,19 @@ void ControlDB::setControlDefault(ControlQueryDefault *def)
      // Turning it back on, so that the successive queries'
      // NaTables are cached.
      ActiveSchemaDB()->getNATableDB()->setCachingON();
+    break;
+  case TRAF_TABLE_SNAPSHOT_SCAN:
+    if (CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN) == DF_LATEST)
+    {
+       //when the user sets TRAF_TABLE_SNAPSHOT_SCAN to LATEST
+       //we flush the metadata and then we set the caching back to on so that metadata
+       //get cached again. If newer snapshots are created after setting the cqd they
+       //won't be seen if they are already cached unless the user issue a command/cqd
+       //to invalidate or flush the cache. One way for doing that can be to issue
+       //"cqd TRAF_TABLE_SNAPSHOT_SCAN 'latest';" again
+       ActiveSchemaDB()->getNATableDB()->setCachingOFF();
+       ActiveSchemaDB()->getNATableDB()->setCachingON();
+    }
     break;
    //need to flush histogram cache, if we change HIST_MC_STATS_NEEDED
    case HIST_MC_STATS_NEEDED:

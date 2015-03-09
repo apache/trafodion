@@ -282,6 +282,12 @@ static const char* const hbcErrorEnumStr[] =
  ,"Java exception in estimateRowCount()."
  ,"Java exception in releaseHBulkLoadClient()."
  ,"Java exception in getBlockCacheFraction()."
+ ,"Preparing parameters for getLatestSnapshot()."
+ ,"Java exception in getLatestSnapshot()."
+ ,"Preparing parameters for cleanSnpTmpLocation()."
+ ,"Java exception in cleanSnpTmpLocation()."
+ ,"Preparing parameters for setArcPerms()."
+ ,"Java exception in setArcPerms()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -426,7 +432,12 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_REL_HBLC   ].jm_signature = "(Lorg/trafodion/sql/HBaseAccess/HBulkLoadClient;)V";
     JavaMethods_[JM_GET_CAC_FRC].jm_name      = "getBlockCacheFraction";
     JavaMethods_[JM_GET_CAC_FRC].jm_signature = "()F";
-   
+    JavaMethods_[JM_GET_LATEST_SNP].jm_name      = "getLatestSnapshot";
+    JavaMethods_[JM_GET_LATEST_SNP].jm_signature = "(Ljava/lang/String;)Ljava/lang/String;";
+    JavaMethods_[JM_CLEAN_SNP_TMP_LOC].jm_name      = "cleanSnpScanTmpLocation";
+    JavaMethods_[JM_CLEAN_SNP_TMP_LOC].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_SET_ARC_PERMS].jm_name      = "setArchivePermissions";
+    JavaMethods_[JM_SET_ARC_PERMS].jm_signature = "(Ljava/lang/String;)Z";
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
@@ -1323,6 +1334,101 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
   return HBC_OK;  // Table exists.
 }
 
+HBC_RetCode HBaseClient_JNI::getLatestSnapshot(const char * tblName, char *& snapshotName, NAHeap * heap)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getLatestSnapshot(%s) called.", tblName);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
+  jstring js_tblName = jenv_->NewStringUTF(tblName);
+  if (js_tblName == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_LATEST_SNP_PARAM));
+    return HBC_ERROR_GET_LATEST_SNP_PARAM;
+  }
+  jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_LATEST_SNP].methodID,js_tblName);
+  if (js_tblName != NULL)
+    jenv_->DeleteLocalRef(js_tblName);
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getLatestSnapshot()", 
+             getLastError());
+    return HBC_ERROR_GET_LATEST_SNP_EXCEPTION;
+  }
+
+  if (jresult == NULL)
+    snapshotName = NULL;
+  else
+  {
+    char * tmp = (char*)jenv_->GetStringUTFChars(jresult, NULL);
+    snapshotName = new (heap) char[strlen(tmp)+1];
+    strcpy(snapshotName, tmp);
+    jenv_->ReleaseStringUTFChars(jresult, tmp);
+    jenv_->DeleteLocalRef(jresult);
+  }
+
+  return HBC_OK;  
+}
+HBC_RetCode HBaseClient_JNI::cleanSnpTmpLocation(const char * path)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::cleanSnpTmpLocation(%s) called.", path);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
+  jstring js_path = jenv_->NewStringUTF(path);
+  if (js_path == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_CLEAN_SNP_TMP_LOC_PARAM));
+    return HBC_ERROR_CLEAN_SNP_TMP_LOC_PARAM;
+  }
+
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CLEAN_SNP_TMP_LOC].methodID,js_path);
+
+  if (js_path != NULL)
+    jenv_->DeleteLocalRef(js_path);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::cleanSnpTmpLocation()", getLastError());
+    return HBC_ERROR_CLEAN_SNP_TMP_LOC_EXCEPTION;
+  }
+
+  return HBC_OK;
+}
+
+HBC_RetCode HBaseClient_JNI::setArchivePermissions(const char * tbl)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::setArchivePermissions(%s) called.", tbl);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
+  jstring js_tbl = jenv_->NewStringUTF(tbl);
+  if (js_tbl == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_SET_ARC_PERMS_PARAM));
+    return HBC_ERROR_SET_ARC_PERMS_PARAM;
+  }
+
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_SET_ARC_PERMS].methodID,js_tbl);
+
+  if (js_tbl != NULL)
+    jenv_->DeleteLocalRef(js_tbl);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::setArchivePermissions()",
+             getLastError());
+    return HBC_ERROR_SET_ARC_PERMS_EXCEPTION;
+  }
+
+  return HBC_OK;
+}
 HBC_RetCode HBaseClient_JNI::getBlockCacheFraction(float& frac)
 {
    QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, 

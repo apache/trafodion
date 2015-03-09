@@ -11369,8 +11369,14 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
   if (hbaseFilterColVIDlist_.entries() > 0)
     setExecutorPredicates(newExePreds);
 
-
-  useSnapshotScan_=(CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN) == DF_ON);
+  snpType_ = SNP_NONE;
+  DefaultToken  tok = CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN);
+  if (tok == DF_LATEST)
+    //latest snapshot -- new way used with scan independent from bulk unload
+    snpType_= SNP_LATEST;
+  else if (tok == DF_SUFFIX)
+    //the exsiting where snapshot scan is used with bulk unload
+    snpType_ = SNP_SUFFIX;
 
   markAsPreCodeGenned();
   

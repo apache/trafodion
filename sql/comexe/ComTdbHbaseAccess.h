@@ -279,6 +279,63 @@ public:
   // ---------------------------------------------------------------------
   typedef NAVersionedObjectPtrTempl<HbasePerfAttributes> HbasePerfAttributesPtr;
   
+
+  class HbaseSnapshotScanAttributes  : public NAVersionedObject
+  {
+  public:
+    HbaseSnapshotScanAttributes()
+    :  NAVersionedObject(-1),
+      flags_(0),
+      snapScanTmpLocation_(NULL),
+      snapshotScanTimeout_(0),
+      snapshotName_(NULL)
+        {}
+
+    virtual unsigned char getClassVersionID()
+    {
+      return 1;
+    }
+
+    virtual void populateImageVersionIDArray()
+    {
+      setImageVersionID(0,getClassVersionID());
+    }
+
+    virtual short getClassSize() { return (short)sizeof(HbaseSnapshotScanAttributes); }
+
+    virtual Long pack(void * space);
+
+    virtual Lng32 unpack(void * base, void * reallocator);
+
+    void setUseSnapshotScan(NABoolean v)
+      {(v ? flags_ |= TRAF_USE_SNAPSHOT_SCAN_ATTR : flags_ &= ~TRAF_USE_SNAPSHOT_SCAN_ATTR); };
+    NABoolean getUseSnapshotScan() { return (flags_ & TRAF_USE_SNAPSHOT_SCAN_ATTR) != 0; };
+
+    char * getSnapScanTmpLocation() const { return snapScanTmpLocation_; }
+    void   setSnapScanTmpLocation(char *  v) { snapScanTmpLocation_= v; }
+
+    // The number of times we try to get the scanner before giving up
+    UInt32 getSnapshotScanTimeout() const { return snapshotScanTimeout_; }
+    void setSnapshotScanTimeout(UInt32 v) { snapshotScanTimeout_ = v;}
+
+    char * getSnapshotName() const { return snapshotName_; }
+    void   setSnapshotName(char *  v) { snapshotName_= v; }
+
+  private:
+    enum
+    {
+      TRAF_USE_SNAPSHOT_SCAN_ATTR               = 0x0001
+    };
+
+
+    NABasicPtr snapScanTmpLocation_;
+    NABasicPtr snapshotName_;
+    UInt32     snapshotScanTimeout_;
+    UInt32     flags_;
+  };
+  typedef NAVersionedObjectPtrTempl<HbaseSnapshotScanAttributes> HbaseSnapshotScanAttributesPtr;
+	
+	
   // Constructors
 
   // Default constructor (used in ComTdb::fixupVTblPtr() to extract
@@ -354,7 +411,9 @@ public:
 		    char * server,
 		    char * zkPort,
 		    HbasePerfAttributes * hbasePerfAttributes,
-		    Float32 samplingRate = -1
+		    Float32 samplingRate = -1,
+		    HbaseSnapshotScanAttributes * hbaseSnapshotScanAttributes = NULL
+
 	       );
   
   ComTdbHbaseAccess(
@@ -678,19 +737,9 @@ public:
      maxHFileSize_ = maxHFileSize;
    }
 
-   void setUseSnapshotScan(NABoolean v)
-     {(v ? flags2_ |= TRAF_USE_SNAPSHOT_SCAN : flags2_ &= ~TRAF_USE_SNAPSHOT_SCAN); };
-   NABoolean getUseSnapshotScan() { return (flags2_ & TRAF_USE_SNAPSHOT_SCAN) != 0; };
-
-   char * getSnapScanTmpLocation() const { return snapScanTmpLocation_; }
-   void   setSnapScanTmpLocation(char *  v) { snapScanTmpLocation_= v; }
-
-   // The number of times we try to get the scanner before giving up
-   UInt32 getSnapshotScanTimeout() const { return snapshotScanTimeout_; }
-   void setSnapshotScanTimeout(UInt32 v) { snapshotScanTimeout_ = v;}
-
-   char * getSnapshotName() const { return snapName_; }
-   void   setSnapshotName(char *  v) { snapName_= v; }
+   HbaseSnapshotScanAttributes * getHbaseSnapshotScanAttributes()
+   { return (HbaseSnapshotScanAttributes*)hbaseSnapshotScanAttributes_.getPointer();}
+   HbaseSnapshotScanAttributesPtr getHbaseSnapshotScanAttributesPtr() { return hbaseSnapshotScanAttributes_; }
 
 
  protected:
@@ -813,13 +862,9 @@ public:
   NABasicPtr LoadPrepLocation_;
   UInt32 flags2_;
   UInt32 maxHFileSize_;
+  HbaseSnapshotScanAttributesPtr hbaseSnapshotScanAttributes_;
 
-  NABasicPtr snapScanTmpLocation_;
-
-  NABasicPtr snapName_;
-  UInt32     snapshotScanTimeout_;
-
-  char fillers[12];
+  char fillers[16];
 
 };
 

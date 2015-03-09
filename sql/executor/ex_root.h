@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -180,6 +180,8 @@ public:
  
   Int32 requestCancel();
 
+  Int32 snapshotScanCleanup( ComDiagsArea* & diagsArea);
+  void setupWarning(Lng32 retcode, const char * str, const char * str2, ComDiagsArea* & diagsArea);
   // Called by the main thread for internal cancel.
   Int32 cancel(ExExeStmtGlobals * glob, ComDiagsArea* &diagsArea, 
              NABoolean getQueueDiags = FALSE);

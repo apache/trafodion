@@ -7511,9 +7511,28 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
        if ( CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) == DF_ON ) 
          ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
             assembleRegionDescs(bal, DESC_HBASE_RANGE_REGION_TYPE);
-
-
       delete bal;
+      DefaultToken  tok = CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN);
+      if (tok == DF_LATEST)
+      {
+        char * snapName = NULL;
+        Lng32 retcode = ehi->getLatestSnapshot(extNameForHbase.data(), snapName, STMTHEAP);
+        if (retcode < 0)
+        {
+          *CmpCommon::diags()
+                    << DgSqlCode(-8448)
+                    << DgString0((char*)"ExpHbaseInterface::getLatestSnapshot()")
+                    << DgString1(getHbaseErrStr(-retcode))
+                    << DgInt0(-retcode)
+                    << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+          delete ehi;
+        }
+        if (snapName != NULL)
+        {
+          tableDesc->body.table_desc.snapshotName=snapName;
+        }
+      }
+      //test return code
       CmpSeabaseDDL::deallocEHI(ehi);
   }
 

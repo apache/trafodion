@@ -26,4 +26,5 @@ fi
 
 sed "
 s/ET:.*/ET:xxxxxxxxxx/g
+s/snapshot_temp_location.*/snapshot_temp_location location/g
 " $fil

@@ -456,6 +456,12 @@ typedef enum {
  ,HBC_ERROR_ROWCOUNT_EST_EXCEPTION
  ,HBC_ERROR_REL_HBLC_EXCEPTION
  ,HBC_ERROR_GET_CACHE_FRAC_EXCEPTION
+ ,HBC_ERROR_GET_LATEST_SNP_PARAM
+ ,HBC_ERROR_GET_LATEST_SNP_EXCEPTION
+ ,HBC_ERROR_CLEAN_SNP_TMP_LOC_PARAM
+ ,HBC_ERROR_CLEAN_SNP_TMP_LOC_EXCEPTION
+ ,HBC_ERROR_SET_ARC_PERMS_PARAM
+ ,HBC_ERROR_SET_ARC_PERMS_EXCEPTION
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -498,6 +504,9 @@ public:
   HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes);
   HBC_RetCode estimateRowCount(const char* tblName, Int32 partialRowSize,
                                Int32 numCols, Int64& rowCount);
+  HBC_RetCode getLatestSnapshot(const char * tabname, char *& snapshotName, NAHeap * heap);
+  HBC_RetCode cleanSnpTmpLocation(const char * path);
+  HBC_RetCode setArchivePermissions(const char * path);
   HBC_RetCode getBlockCacheFraction(float& frac);
 
   // req processing in worker threads
@@ -542,6 +551,9 @@ private:
    ,JM_EST_RC
    ,JM_REL_HBLC
    ,JM_GET_CAC_FRC
+   ,JM_GET_LATEST_SNP
+   ,JM_CLEAN_SNP_TMP_LOC
+   ,JM_SET_ARC_PERMS
    ,JM_LAST
   };
   static jclass          javaClass_; 

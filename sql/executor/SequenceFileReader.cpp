@@ -454,8 +454,6 @@ static const char* const sfwErrorEnumStr[] =
  ,"Java exception in verifySnapshot()."
  ,"JNI NewStringUTF() in hdfsDeletePath()."
  ,"Java exception in hdfsDeletePath()."
- ,"JNI NewStringUTF() in setArchPermissions()."
- ,"Java exception in setArchPermissions()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -528,8 +526,7 @@ SFW_RetCode SequenceFileWriter::init()
     JavaMethods_[JM_VERIFY_SNAPSHOT].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_HDFS_DELETE_PATH].jm_name      = "hdfsDeletePath";
     JavaMethods_[JM_HDFS_DELETE_PATH].jm_signature = "(Ljava/lang/String;)Z";
-    JavaMethods_[JM_SET_ARCH_PERMISSIONS].jm_name      = "setArchPermissions";
-    JavaMethods_[JM_SET_ARCH_PERMISSIONS].jm_signature = "(Ljava/lang/String;)Z";
+
 
     setHBaseCompatibilityMode(FALSE);
     rc = (SFW_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
@@ -1044,47 +1041,7 @@ SFW_RetCode SequenceFileWriter::hdfsDeletePath( const NAString& delPath)
 
   return SFW_OK;
 }
-SFW_RetCode SequenceFileWriter::setArchPermissions( const NAString& tabName)
-{
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::setArchPermissions(%s called.",
-      tabName.data());
 
-  jstring js_tabName = jenv_->NewStringUTF(tabName.data());
-   if (js_tabName == NULL)
-   {
-     return SFW_ERROR_SET_ARCH_PERMISSIONS_PARAM;
-   }
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::setArchPermissions(..) => before calling Java.", getLastError());
-    jenv_->DeleteLocalRef(js_tabName);
-    return SFW_ERROR_SET_ARCH_PERMISSIONS_EXCEPTION;
-  }
-
-
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_SET_ARCH_PERMISSIONS].methodID, js_tabName);
-
-  jenv_->DeleteLocalRef(js_tabName);
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::setArchPermissions()", getLastError());
-    return SFW_ERROR_SET_ARCH_PERMISSIONS_EXCEPTION;
-  }
-
-  if (jresult == false)
-  {
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::setArchPermissions()", getLastError());
-    return SFW_ERROR_SET_ARCH_PERMISSIONS_EXCEPTION;
-  }
-
-  return SFW_OK;
-}
 
 SFW_RetCode SequenceFileWriter::hdfsExists( const NAString& uldPath, NABoolean & exist)
 {

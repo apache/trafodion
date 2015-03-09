@@ -3334,12 +3334,7 @@ public:
   char * getSnapshotSuffix() const {
      return snapshotSuffix_;
   }
-  void setTempBaseLocation(char * v){
-    tempBaseLocation_ = v;
-  }
-  char * getTempBaseLocation() const {
-     return tempBaseLocation_;
-  }
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
@@ -3364,8 +3359,7 @@ private:
   UInt8        compressType_;                           // 28 - 28
   UInt8        scanType_;                               // 29 - 29
   NABasicPtr   snapshotSuffix_;                         // 30 - 37
-  NABasicPtr   tempBaseLocation_;                       // 38 - 45
-  char         fillersExeUtilHbaseUnLoad_[8];           // 46 - 53
+  char         fillersExeUtilHbaseUnLoad_[16];          // 38 - 53
 };
 #endif
 

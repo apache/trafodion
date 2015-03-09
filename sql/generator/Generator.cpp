@@ -85,6 +85,8 @@
 Generator::Generator(CmpContext* currentCmpContext) :
     currentCmpContext_(currentCmpContext)
  ,  objectUids_(wHeap(), 1)
+ ,  objectNames_(wHeap(),0)
+ ,  snapshotScanTmpLocation_(NULL)
 {
   // nothing generated yet.
   genObj = 0;
