@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -68,6 +68,7 @@
 #include "sqludr.h"
 #include "hs_globals.h"
 
+#include "PCodeExprCache.h"
 #ifdef NA_CMPDLL
 #include "CompException.h"
 #include "CostMethod.h"
@@ -130,6 +131,8 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
              TransMode::READ_WRITE_,
              TransMode::OFF_),
   ciClass_(CmpContextInfo::CMPCONTEXT_TYPE_NONE),
+  qcache_(NULL),                              // just to be safe ...
+  optPCodeCache_(NULL),                       // just to be safe ...
   CDBList_(NULL)
 {
   SetMode(isDynamicSQL() ? STMT_DYNAMIC : STMT_STATIC);
@@ -261,7 +264,11 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   qcache_->setHeapUpperLimit((size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_QCACHE_UPPER_KB));
 
   tableIdent_ = 0;
-
+  
+  //
+  // Initialize context-local optimized PCode Expression cache
+  //
+  optPCodeCache_ = new (heap_) OptPCodeCache();
 
   // Allocate (static) host_data_ if it's not already allocated.
   // This will never be deleted and stays until the process dies.
@@ -353,6 +360,12 @@ CmpContext::~CmpContext()
 
   if ( isRuntimeCompile_) // Seems like QueryCache is not initialized for static compiler  
     qcache_->finalize((char *)"Drop Session");
+
+  if ( CTXTHEAP ) // Defensive coding - if NULL, the Context Heap is gone. 
+    delete optPCodeCache_ ;
+
+  optPCodeCache_ = NULL ;
+
   resetContext();
   // reset thread global variables
   HSGlobalsClass::resetJitLogThresholdHash();

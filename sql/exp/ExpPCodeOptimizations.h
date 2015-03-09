@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -73,6 +73,8 @@
 #include "exp_clause_derived.h"
 #include "NABitVector.h"
 #include <stdio.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #define NA_LINUX_LLVMJIT
 #undef  NA_LINUX_LIBJIT
@@ -1663,6 +1665,8 @@ public:
     SHORT_CIRCUIT              = 0x200,
     AGGRESSIVE                 = 0x400,
     BULK_HASH                  = 0x800,
+    OPT_PCODE_CACHE_DISABLED   = 0x1000,   // If ON, PCode Expr Cache is disabled.
+    EXPR_CACHE_CMP_ONLY        = 0x2000,   // Compare-Only mode [for testing purposes only]
     LAST_OPT_FLAG              = 0x1FFFFFF
   };
 
@@ -1780,7 +1784,9 @@ public:
   void clearVisitedFlags();
 
   // Setup Routines
-  NABoolean canPCodeBeOptimized( PCodeBinary * pCode );
+  NABoolean canPCodeBeOptimized( PCodeBinary * pCode
+                               , NABoolean   & pExprCacheable /* OUT */
+                               , UInt32      & totalPCodeLen  /* OUT */ );
   void createCfg();
   NABoolean createInsts (PCodeBinary* pcode);
   NABoolean addOverlappingOperands(NABoolean detectOnly);

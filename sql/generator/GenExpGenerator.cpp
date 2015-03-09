@@ -117,6 +117,7 @@ ExpGenerator::ExpGenerator(Generator * generator_)
   // $$$ is this the correct heap???
   cache_ = new(generator->wHeap()) ExpGeneratorCache(generator_);
 
+  temps_length = 0;  // Initialize various member variables
   mapTable_ = 0;
   clause_list = 0;
   constant_list = 0;
@@ -4537,6 +4538,19 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
   // Get default low-level opt flags and prevent predicate reordering from
   // happening if this expression represents a case statement.
   optFlags = (UInt32)CmpCommon::getDefaultLong(PCODE_OPT_FLAGS);
+
+  UInt32 Enbld = (UInt32)CmpCommon::getDefaultLong(PCODE_NE_ENABLED);
+  if ( Enbld == 0 )
+     optFlags &= ~( PCodeCfg::NATIVE_EXPR ); // Disable Native Exprs in optFlags
+
+  Enbld = (UInt32)CmpCommon::getDefaultLong(PCODE_EXPR_CACHE_ENABLED);
+  if ( Enbld == 0 )
+     optFlags |= PCodeCfg::OPT_PCODE_CACHE_DISABLED ; // Disable feature in optFlags
+
+  Enbld = (UInt32)CmpCommon::getDefaultLong(PCODE_EXPR_CACHE_CMP_ONLY);
+  if ( Enbld == 1 )
+     optFlags |= ( PCodeCfg::EXPR_CACHE_CMP_ONLY ); // Enable Compare-Only mode -- FOR TESTING!
+
   if (caseStmtGenerated()) {
     optFlags &= ~(PCodeCfg::REORDER_PREDICATES);
     setCaseStmtGenerated(FALSE);

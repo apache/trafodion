@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -348,6 +348,12 @@ class Validate_1_200000   : public ValidateNumericRange
 {public:
   Validate_1_200000()
     : ValidateNumericRange(VALID_UINT, 1, (float)200000) {}
+};
+
+class Validate_0_10485760   : public ValidateNumericRange
+{public:
+  Validate_0_10485760()
+    : ValidateNumericRange(VALID_UINT, 0, (float)10485760) {}
 };
 
 class Validate_30_32000 : public ValidateNumericRange

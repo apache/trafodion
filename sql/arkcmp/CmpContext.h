@@ -77,6 +77,7 @@ class OptDebug;
 class CmpMemoryMonitor;
 class OptimizerSimulator;
 class QueryCache;
+class OptPCodeCache ;
 class HistogramCache;
 class CompilerTrackingInfo;
 class OptDefaults;
@@ -385,6 +386,7 @@ public :
   CmpQCache *getQCache() { return qCache_; }
 */
   QueryCache* getQueryCache() { return qcache_; }
+  OptPCodeCache* getOptPCodeCache() { return optPCodeCache_; }
 
   SchemaDB* getSchemaDB() {return schemaDB_;}
 
@@ -539,6 +541,7 @@ private:
   HistogramCache *histogramCache_;
 
   QueryCache* qcache_;
+  OptPCodeCache* optPCodeCache_ ; //Ptr to PCode Expr Cache for this CmpContext
 
   // table identifier representing each table, easier to hash on.
   CollIndex tableIdent_;

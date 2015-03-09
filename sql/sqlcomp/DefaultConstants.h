@@ -3675,6 +3675,14 @@ enum DefaultConstants
   HBASE_REGION_SERVER_MAX_HEAP_SIZE,
 
   TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD,
+
+  PCODE_DEBUG_LOGDIR,
+  PCODE_EXPR_CACHE_CMP_ONLY,
+  PCODE_EXPR_CACHE_DEBUG,
+  PCODE_EXPR_CACHE_ENABLED,
+  PCODE_NE_ENABLED,
+  PCODE_EXPR_CACHE_SIZE,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
