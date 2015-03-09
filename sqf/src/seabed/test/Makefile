@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ PROGS		= t2 t3 t4 t5 t6 t9 t14 t15 t16 t17 t18 t19 \
 		  t250           t253                               \
 		       t261 t262 t263           t266           \
 		                                     t277      t279 \
-		  t280 t281\
+		  t280 t281 t282 \
 		  tcheck tsock ttee
 PROGSI		= t2fs t3ms t4ms \
 		  t5ms t6ms t9thread t14ms \
@@ -97,7 +97,7 @@ PROGSI		= t2fs t3ms t4ms \
 		  t261ms t262ms t263ms \
 		  t266ms \
 	          t277fs t279ms \
-	          t280fs t281ms
+	          t280fs t281ms t282ms
 
 ###########################################################################
 
@@ -953,6 +953,10 @@ t280fs: $(OUTDIR)/t280fs.o $(TFS)
 
 t281: $(CHK) t281ms
 t281ms: $(OUTDIR)/t281ms.o $(TMS)
+	$(LINKITCXX) -o $@ $< $(RMS)
+
+t282: $(CHK) t282ms
+t282ms: $(OUTDIR)/t282ms.o $(TMS)
 	$(LINKITCXX) -o $@ $< $(RMS)
 
 

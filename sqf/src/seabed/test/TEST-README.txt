@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -191,3 +191,4 @@ t277	- FS	- simple FS app		- thread-specific FS
 t279	- MS	- simple MS app		- verifier
 t280	- FS	- simple FS app		- verifier
 t281	- MS	- simple MS app		- stream-count-problem
+t282	- MS	- simple MS app		- client-death stress
