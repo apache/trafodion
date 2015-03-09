@@ -52,6 +52,7 @@ INIT_TRAFODION="N"
 START="N"
 SQCONFIG=""
 DCS_SERVERS_PARM="2"
+RUN_SCANNER="N"
 
 #==============================================
 
@@ -137,6 +138,39 @@ echo "export TRAF_WORKDIR=\"$TRAF_WORKDIR\"" >> $LOCAL_TRAF_CONFIG
 echo "export LOCAL_WORKDIR=\"$LOCAL_WORKDIR\"" >> $LOCAL_TRAF_CONFIG
 echo "export SQCONFIG=\"$SQCONFIG\"" >> $LOCAL_TRAF_CONFIG
 
+#=============================================
+#Check if Trafodion is up
+
+userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
+
+if [[ "$userForTrafodion" != "0" ]]; then
+   isTrafUp=$(sudo su $TRAF_USER --login --command "sqcheck" 2>/dev/null)
+
+   trafodionRunning=$(echo $isTrafUp | grep "The SQ environment is up" | wc -l)
+
+   if [[ "$trafodionRunning" -eq "1" ]]; then
+      echo "***ERROR: Trafodion is still running."
+      echo -n "Stop Trafodion (Y/N), default is N: "
+      read answer
+
+      if [ -z $answer ]; then
+         echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
+         echo "***ERROR: Change to trafodion userid then do a 'sqstop'"
+         exit -1
+      else
+         if [[ ${answer^} == "Y" ]]; then
+            echo "***INFO: Stopping Trafodion instance."
+            sudo su $TRAF_USER --login --command "sqstop"
+            sudo su $TRAF_USER --login --command "ckillall"
+         else
+            echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
+            echo "***ERROR: Change to trafodion user id then do a 'sqstop'"
+            exit -1
+         fi
+      fi
+   fi
+fi
+
 #==============================================
 # Password
 
@@ -172,89 +206,26 @@ if [[ -z "$answer" ]]; then
 else
    NODES="$answer"
 
-   #Check nodes for any error
-
-   nodeName=$(echo $NODES | sed 's/[^a-zA-Z0-9\ \.\-]//g')
-
-   if [[ "$nodeName" != "$NODES" ]]; then
-      echo "***ERROR: Nodes are not named properly."
-      echo "***ERROR: Nodes can have no special characters other than '-' and '.'"
-      exit -1
-   fi
-
    for node in $NODES
    do
-      if [[ "$node" =~ ^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$ ]]; then
+      newNode=$(ssh -n $node hostname)
+
+      nodeName=$(echo $newNode | sed 's/[^a-zA-Z0-9\ \.\-]//g')
+
+      if [[ "$nodeName" != "$newNode" ]]; then
+         echo "***ERROR: Nodes are not named properly."
+         echo "***ERROR: Nodes can have no special characters other than '-' and '.'"
+         exit -1
+      fi
+
+      if [[ "$newNode" =~ ^([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})[.]([0-9]{1,3})$ ]]; then
          echo "***ERROR: Nodes are not named properly."
          echo "***ERROR: IP addresses are not supported. Please use node names."
          exit -1
       fi
+      
+      NODE_LIST="$newNode $NODE_LIST"  
    done
-fi
-#==============================================
-#Check hostname config
-
-#Check that hostname -f and hostname -s are not returning the same value.
-#If they are then /etc/hosts may need the FQDNs added to it.
-if [[ $(hostname -f) == $(hostname -s) ]]; then
-   echo "***ERROR: Hostname configuration error."
-   echo "***ERROR: 'hostname -f' and 'hostname -s' are returning the same result."
-   echo "***ERROR: 'hostname -f' must return FQDN and 'hostname -s' must return short name."
-   exit -1
-fi
-
-#Check to make sure hostname -f does return a FQDN. This check is probably
-#not needed due to the check above but this prevents odd configurations.
-fullName=$(echo $(hostname -f) | grep -r "\." | wc -l)
-
-if [[ "$fullName" -ne "1" ]]; then
-   echo "***ERROR: Hostname configuration error."
-   echo "***ERROR: 'hostname -f' must return FQDN."
-   exit -1
-fi
-
-if [[ ! -z $NODES ]]; then
-   FQDN=$(echo $(hostname) | grep -r "\." | wc -l)
-   nodeListFQDN=$(echo $NODES | grep -r "\." | wc -l)
-   #hostname short and node names long
-   if [[ "$FQDN" -eq "0" ]] && [[ "$nodeListFQDN" -ge "1" ]] ; then
-      echo "***ERROR: Node names must be in the same format as 'hostname'"
-      echo "***ERROR: Please rerun trafodion_installer and enter short names for nodes"
-      echo "***ERROR: Example: "$(hostname)""
-      exit -1
-   fi
-   #hostname long and node names short
-   if [[ "$FQDN" -ge "1" ]] && [[ "$nodeListFQDN" -eq "0" ]]; then
-      for node in $NODES
-      do
-          nodeAndDomain=$node.$(hostname -d)
-          NODE_LIST="$nodeAndDomain $NODE_LIST"
-      done
-      echo "***INFO: Added domain to all nodes"
-      echo "***INFO: $NODE_LIST"
-      echo
-   #hostname long and (some or all) node names long
-   elif [[ "$FQDN" -ge "1" ]] && [[ "$nodeListFQDN" -gt "0" ]]; then
-        for node in $NODES
-        do
-           dots=`echo $node | grep -o "\." | wc -l`
-           if [[ $dots -gt "0" ]] && [[ $dots -lt "3" ]]; then
-              echo "***ERROR: Node names are not named properly"
-              echo "***ERROR: Node name can not include a '.' that is not the domain"
-              exit -1
-           elif [[ $dots -eq "0" ]]; then
-              nodeAndDomain=$node.$(hostname -d)
-              NODE_LIST="$nodeAndDomain $NODE_LIST"
-              echo "***INFO: Added domain to $node"
-              echo "***INFO: $nodeAndDomain"
-           else
-              NODE_LIST="$node $NODE_LIST"
-           fi
-        done
-   #Hostname short nad nodes names short
-   else
-      NODE_LIST="$NODES"
-   fi
 fi
 
 node_count=$(echo $NODE_LIST | wc -w)
@@ -673,36 +644,6 @@ else
    fi
 fi
 
-userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
-
-if [[ "$userForTrafodion" != "0" ]]; then
-   isTrafUp=$(sudo su $TRAF_USER --login --command "sqcheck" 2>/dev/null)
-
-   trafodionRunning=$(echo $isTrafUp | grep "The SQ environment is up" | wc -l)
-
-   if [[ "$trafodionRunning" -eq "1" ]]; then
-      echo "***ERROR: Trafodion is still running." 
-      echo -n "Stop Trafodion (Y/N), default is N: "
-      read answer
-  
-      if [ -z $answer ]; then 
-         echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
-         echo "***ERROR: Change to trafodion userid then do a 'sqstop'"
-         exit -1
-      else
-         if [[ ${answer^} == "Y" ]]; then
-            echo "***INFO: Stopping Trafodion instance."
-            sudo su $TRAF_USER --login --command "sqstop"
-            sudo su $TRAF_USER --login --command "ckillall"
-         else 
-            echo "***ERROR: Please stop Trafodion then rerun trafodion_install"
-            echo "***ERROR: Change to trafodion user id then do a 'sqstop'"
-            exit -1
-         fi 
-      fi
-   fi
-fi
-
 #==============================================
 #DCS Servers
 
@@ -716,66 +657,28 @@ fi
 echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
+#Run the scanner
+echo -n "Run the Trafodion Scanner to check system configuration (Y/N), default N: "
+read answer
+
+if [ ! -z $answer ]; then
+   RUN_SCANNER="${answer^}"
+fi
+
+echo "export RUN_SCANNER=\"$RUN_SCANNER\"" >> $LOCAL_TRAF_CONFIG
+
+#==============================================
 #All items added to config file
 #Will add setup complete flag
 
 echo "export CONFIG_COMPLETE=\"true\"" >> $LOCAL_TRAF_CONFIG
 #=============================================
-
-#Need to add test for internet access
-internetAccess=true
-
-YUM_LOG=/var/log/trafodion/trafodion_yum_$timestamp.log
-
-# first install pdsh on each node so we can use it to install
-# everything else.  don't need pdsh if only a single node
-if [ $node_count -ne 1 ]; then
-    for node in $NODE_LIST
-    do
-        echo "***INFO: ... pdsh on node $node"
-
-        # if not already installed on this node, then install it
-        ssh $node rpm -qa | grep pdsh &> /dev/null
-        if [ $? -ne 0 ]; then
-            ssh $node sudo mkdir -p $TRAF_WORKDIR
-            ssh $node sudo mkdir -p /var/log/trafodion
-            if [[ $internetAccess == "true" ]]; then
-               ssh $node sudo yum --assumeyes install pdsh &>> $YUM_LOG
-               if [ $? != 0 ]; then
-                  echo "***ERROR: Can't install pdsh on node $node"
-                  exit -1
-               fi
-            else
-               echo "***ERROR: Can't install pdsh on node $node"
-               echo "***ERROR: Must have pdsh installed on each node."
-               echo "***ERROR: No internet access to do automatic install."
-               exit -1
-            fi
-        fi
-    done
-    # create working directory on all nodes
-    $TRAF_PDSH mkdir -p $TRAF_WORKDIR &> /dev/null
-    $TRAF_PDSH mkdir -p /var/log/trafodion &> /dev/null
-
-fi
-
-#=============================================
 #Create directories and cp files
 
-$TRAF_PDSH sudo mkdir -p $TRAF_CONFIG_DIR
-$TRAF_PDSH sudo chmod 777 $TRAF_CONFIG_DIR
+sudo mkdir -p $TRAF_CONFIG_DIR
+sudo chmod 777 $TRAF_CONFIG_DIR
 sudo cp $LOCAL_TRAF_CONFIG $TRAF_CONFIG
+sudo chmod 777 $TRAF_CONFIG_DIR
 echo "***INFO: Configuration file: $TRAF_CONFIG"
-
-# copy trafodion config to all nodes
-if [ $node_count -ne 1 ]; then
-   $TRAF_PDSH sudo mkdir -p $(dirname $LOCAL_TRAF_CONFIG)
-   $TRAF_PDSH sudo chmod 777 $(dirname $LOCAL_TRAF_CONFIG)
-   pdcp $MY_NODES $LOCAL_TRAF_CONFIG $(dirname $LOCAL_TRAF_CONFIG)
-   $TRAF_PDSH sudo cp -f $LOCAL_TRAF_CONFIG $TRAF_CONFIG_DIR
-fi
-$TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
-
-#sudo rm $LOCAL_TRAF_CONFIG
 
 echo "***INFO: Trafodion configuation setup complete"

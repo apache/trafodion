@@ -161,6 +161,23 @@ if [ $? -ne 0 ]; then
    echo "***ERROR: unable to source $TRAF_CONFIG"
    exit -1
 fi
+#==============================================
+#Run Trafodion scanner
+
+if [[ "$RUN_SCANNER" == "Y" ]]; then
+
+   $LOCAL_WORKDIR/tools/trafodion_scanner -l $timestamp.log -n "$NODE_LIST" \
+   -c $LOCAL_WORKDIR/tools/trafodion_scanner.cfg | tee -a $INSTALL_LOG
+
+   if [[ ${PIPESTATUS[0]} -eq "2" ]] || [[ ${PIPESTATUS[0]} -eq "1" ]]; then
+      echo "***ERROR: Error while running trafodion_scanner." 
+      echo "***ERROR: Please review logs and fix listed issue(s)."
+      exit -1
+   fi
+   echo "***INFO: Trafodion scanner ran without error. Install will continue..."
+fi
+
+#=============================================
 
 if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""
@@ -339,17 +356,12 @@ if [[ $CONFIG_COMPLETE ]]; then
    sed -i '/UPGRADE_TRAF\=/d' $TRAF_CONFIG
    echo "export UPGRADE_TRAF=\"$UPGRADE_TRAF\"" >> $TRAF_CONFIG
    sudo chmod 777 $TRAF_CONFIG
-   if [ "$node_count" -ne 1 ]; then
-      pdcp $MY_NODES $TRAF_CONFIG $TRAF_CONFIG_DIR
-   fi
    source $TRAF_CONFIG
 fi
 
 #==============================================
-#Check to make sure HBase Version matches trafodion build
-
-#>>>NOTE: might have a problem with developer UTT build tar filenames
-#>>>      becasue they might not have a date within the filename
+#Check to make sure HBase Version is the correct version and the same
+#on all nodes
 
 for node in $NODE_LIST;
 do
@@ -362,14 +374,15 @@ do
    fi
  
    version=$(ssh -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
-   if [[ $hadoop_type == "hortonworks" ]]; then
+
+   if [[ $HADOOP_TYPE == "hortonworks" ]]; then
       supportedHBase=$(echo $version | grep "0.98.0.2" | wc -l)
       if [[ $supportedHBase -eq "0" ]]; then
          echo "***ERROR: HBase installed must be 0.98.0.2 on node $node"
          exit -1
       fi
    fi
-   if [[ $hadoop_type == "cloudera" ]]; then
+   if [[ $HADOOP_TYPE == "cloudera" ]]; then
       supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
       if [[ $supportedHBase -eq "0" ]]; then
          echo "***ERROR: HBase installed must be 0.98.1 on node $node"
@@ -382,7 +395,6 @@ do
       exit -1 
    fi
 done
-
 hbaseVersion=$(grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
 HBASE=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hbase | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
 
@@ -393,10 +405,6 @@ echo "export hbaseVersion=\"$hbaseVersion\"" >> $TRAF_CONFIG
 sed -i '/HBASE\=/d' $TRAF_CONFIG
 echo "export HBASE=\"$HBASE\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
-if [ $node_count -ne 1 ]; then
-   pdcp $MY_NODES $TRAF_CONFIG $TRAF_CONFIG_DIR
-fi
-
 sudo rm -rf hbaseVersion.txt
 
 trafodionFullName=$(basename $TRAF_BUILD)
@@ -408,7 +416,7 @@ echo "***INFO: Trafodion version = $trafodionVersion"
 
 #==============================================
 # Determine Trafodion version by parsing it
-# from the hbase-trx jar filename.
+# from the trafodion_server tar file.
 # Determine Java version
 
 cd $UNTAR_DIR
@@ -423,10 +431,11 @@ if [ ${PIPESTATUS[0]} != 0 ]; then
     exit -1
 fi
 
-# parse the version string from the hbase-trx-n.n.n.jar filename
-TRAF_VERSION=$(sudo ls $UNTAR_DIR/export/lib | \
-               grep --max-count=1 hbase-trx | \
-               sed -e 's@hbase-trx-\([0-9].*\).jar@\1@')
+# parse the version string from the trafodion_server-n.n.n.jar filename
+traf_version=$(sudo ls $UNTAR_DIR | \
+               grep --max-count=1 trafodion_server | \
+               sed -e 's@trafodion_server-\([0-9*].*\).tgz@\1@')
+TRAF_VERSION=$(echo $traf_version | sed -e 's@\([0-9*].*\)-debug@\1@')
 
 # Detect java version
 java_exec=$(ps -C java --noheader -o pid,user,cmd \
@@ -469,9 +478,6 @@ echo "export TRAF_VERSION=\"$TRAF_VERSION\"" >> $TRAF_CONFIG
 sed -i '/JAVA_VERSION\=/d' $TRAF_CONFIG
 echo "export JAVA_VERSION=\"$JAVA_VERSION\"" >> $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG
-if [ $node_count -ne 1 ]; then
-   pdcp $MY_NODES $TRAF_CONFIG $TRAF_CONFIG_DIR
-fi
 
 #==============================================
 # Run trafodion_setup
