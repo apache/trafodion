@@ -366,15 +366,23 @@ echo "export JAVA_HOME=\"$JAVA_HOME\"" >> $LOCAL_TRAF_CONFIG
 # TRAF_BUILD = the trafodion core tar file extracted from the trafodion package
 # DCS_BUILD = the dcs tar file extracted from the trafodion package
 
-echo -n "Enter location of trafodion tar file ($TRAF_PACKAGE): "
+if [ -z "$TRAF_PACKAGE" ]; then
+   TRAF_DEFAULT="$TRAF_BUILD"
+else
+   TRAF_DEFAULT="$TRAF_PACKAGE"
+fi
+
+echo -n "Enter location of trafodion tar file ($TRAF_DEFAULT): "
 read answer
-if [ -z $answer ] && [ -z $TRAF_PACKAGE ]; then
+if [ -z $answer ] && [ -z $TRAF_DEFAULT ]; then
    echo "***ERROR: Must specify Trafodion tar file location."
    exit -1
 fi
 
 if [ ! -z "$answer" ]; then
    TRAF_PACKAGE="$answer"
+else
+   TRAF_PACKAGE="$TRAF_DEFAULT"
 fi
 
 # make sure file exists
@@ -404,12 +412,14 @@ if [ $package -eq 0 ]; then
    # since its not a package tar file, we'll need to prompt for the dcs build file
    echo -n "Enter location of DCS tar file ($DCS_BUILD): "
    read answer
-   if [ -z $answer ] && [ -z $DCS_BUILD ]; then
-      echo "***ERROR: Must specify DCS tar file location."
-      exit -1
+   if [ -z $answer ]; then
+      if [ -z $DCS_BUILD ]; then
+         echo "***ERROR: Must specify DCS tar file location."
+         exit -1
+      fi
+   else
+      DCS_BUILD=$answer
    fi
-
-   DCS_BUILD=$answer
    
    # make sure file exists
    if [ ! -f $DCS_BUILD ]; then
