@@ -53,7 +53,7 @@ public:
        void *outputRow,
        ComDiagsArea *da);
   virtual LmResult invokeRoutineMethod(
-       tmudr::CallPhase phase,
+       tmudr::UDRInvocationInfo::CallPhase phase,
        void *parameterRow,
        ComDiagsArea *da);
   LmResult validateWall(char *userBuf,
@@ -66,7 +66,7 @@ protected:
   LmRoutineCppObj(
     tmudr::UDRInvocationInfo *invocationInfo,
     tmudr::UDRPlanInfo       *planInfo,
-    tmudr::UDRInterface      *interfaceObj,
+    tmudr::UDR               *interfaceObj,
     const char   *sqlName,
     const char   *externalName,
     const char   *librarySqlName,
@@ -99,8 +99,8 @@ protected:
   void setUpWall(char *userBuf, int userBufLen);
 
   tmudr::UDRInvocationInfo *invocationInfo_;
-  tmudr::UDRPlanInfo *planInfo_;
-  tmudr::UDRInterface *interfaceObj_;
+  tmudr::UDRPlanInfo       *planInfo_;
+  tmudr::UDR               *interfaceObj_;
 
   // number, lengths and pointers to row buffers
   int paramRowLen_;

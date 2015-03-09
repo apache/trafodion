@@ -34,11 +34,14 @@
 #include "NumericType.h"
 #include "CharType.h"
 #include "DatetimeType.h"
+#include "ItemLog.h"
 #include "ItemOther.h"
 #include "NARoutine.h"
 #include "SchemaDB.h"
+#include "GroupAttr.h"
 #include "exp_attrs.h"
 #include "LmError.h"
+#include "ComUser.h"
 
 
 // -----------------------------------------------------------------------
@@ -70,62 +73,72 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
   // get the interface class that has the code for the compiler interaction,
   // this could be a C++ class provided by the UDF writer or the base class
   // with the default implementation. Note: This could already be cached.
-  tmudr::UDRInterface *udrInterface = tmudfNode->getUDRInterface();
+  tmudr::UDR *udrInterface = tmudfNode->getUDRInterface();
 
 #ifndef NDEBUG
   if (invocationInfo->getDebugFlags() & tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_INITIAL)
     invocationInfo->print();
 #endif
 
-  if (!udrInterface)
-    {
-      // try to allocate a user-provided class for compiler interaction
-      if (createInterfaceObjectPtr_)
-        {
-          tmudr::CreateInterfaceObjectFunc factoryFunc =
-            (tmudr::CreateInterfaceObjectFunc)
-            createInterfaceObjectPtr_;
-
-          udrInterface = (*factoryFunc)(invocationInfo);
-        }
-      else
-        // just use the default implementation
-        udrInterface = new tmudr::UDRInterface();
-
-      tmudfNode->setUDRInterface(udrInterface);
-    }
-
   try
     {
+      if (!udrInterface)
+        {
+          // try to allocate a user-provided class for compiler interaction
+          if (createInterfaceObjectPtr_)
+            {
+              tmudr::CreateInterfaceObjectFunc factoryFunc =
+                reinterpret_cast<tmudr::CreateInterfaceObjectFunc>(
+                     createInterfaceObjectPtr_);
+
+              // call the factory method to create an object that is
+              // derived from UDR
+              udrInterface = (*factoryFunc)();
+            }
+          else
+            // just use the default implementation in the base class
+            udrInterface = new tmudr::UDR();
+
+          tmudfNode->setUDRInterface(udrInterface);
+        }
+
 #ifndef NDEBUG
-      if (invocationInfo->getDebugFlags() & tmudr::UDRInvocationInfo::DEBUG_INITIAL_COMPILE_TIME_LOOP)
+      if (invocationInfo->getDebugFlags() &
+          tmudr::UDRInvocationInfo::DEBUG_INITIAL_COMPILE_TIME_LOOP)
         udrInterface->debugLoop();
 #endif
 
       TMUDFInternalSetup::setCallPhase(
            invocationInfo,
-           tmudr::COMPILER_INITIAL_CALL);
+           tmudr::UDRInvocationInfo::COMPILER_INITIAL_CALL);
       udrInterface->describeParamsAndColumns(*invocationInfo);
       TMUDFInternalSetup::resetCallPhase(invocationInfo);
     }
   catch (tmudr::UDRException e)
     {
-      processReturnStatus(e,
-                          CmpCommon::diags(), 
-                          tmudfNode->getUserTableName().getExposedNameAsAnsiString().data());
+      processReturnStatus(e, tmudfNode);
       bindWA->setErrStatus();
       return FALSE;
     }
+  catch (...)
+    {
+      processReturnStatus(
+           tmudr::UDRException(
+                38900, "Unknown exception during describeParamsAndColumns()"),
+           tmudfNode);
+      return FALSE;
+    }
 
+  // copy the formal parameter list back into the RelExpr
   NAHeap *outHeap = CmpCommon::statementHeap();
   NAColumnArray * modifiedParameterArray =
     new(outHeap) NAColumnArray(outHeap);
 
-  for (int p=0; p<invocationInfo->getNumFormalParameters(); p++)
+  for (int p=0; p<invocationInfo->getFormalParameters().getNumColumns(); p++)
     {
       NAColumn *newParam = 
         TMUDFInternalSetup::createNAColumnFromColumnInfo(
-             invocationInfo->getFormalParameterInfo(p),
+             invocationInfo->getFormalParameters().getColumn(p),
              p,
              outHeap,
              CmpCommon::diags());
@@ -139,9 +152,10 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
 
   tmudfNode->setScalarInputParams(modifiedParameterArray);
 
+  // copy the output columns back into the RelExpr
   NAColumnArray * outColArray =
     TMUDFInternalSetup::createColumnArrayFromTableInfo(
-         invocationInfo->getOutputTableInfo(),
+         invocationInfo->out(),
          tmudfNode,
          outHeap,
          CmpCommon::diags());
@@ -153,6 +167,96 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
 
   tmudfNode->setOutputParams(outColArray);
 
+  // copy the query partition by and order by back into childInfo
+  for (int c=0; c<tmudfNode->getArity(); c++)
+    {
+      TableMappingUDFChildInfo *childInfo = tmudfNode->getChildInfo(c);
+      const ValueIdList &childCols = childInfo->getOutputs();
+      const tmudr::PartitionInfo &childPartInfo = invocationInfo->in(c).getQueryPartitioning();
+      const tmudr::OrderInfo &childOrderInfo = invocationInfo->in(c).getQueryOrdering();
+      TMUDFInputPartReq childPartType;
+      ValueIdSet childPartKey;
+      ValueIdList childOrderBy;
+
+      switch (childPartInfo.getType())
+        {
+        case tmudr::PartitionInfo::ANY:
+          childPartType = ANY_PARTITIONING;
+          break;
+
+        case tmudr::PartitionInfo::SERIAL:
+          childPartType = NO_PARTITIONING;
+          break;
+
+        case tmudr::PartitionInfo::PARTITION:
+          {
+            childPartType = SPECIFIED_PARTITIONING;
+            // convert column numbers back to ValueIds
+            for (int p=0; p<childPartInfo.size(); p++)
+              {
+                int colNum = childPartInfo[p];
+
+                if (colNum < childCols.entries() && colNum >= 0)
+                  {
+                    childPartKey += childCols[colNum];
+                  }
+                else
+                  processReturnStatus(
+                       tmudr::UDRException(
+                            38900,
+                            "Invalid child column number %d used in partition by key of child table %d with %d columns",
+                            colNum, c, childCols.entries()),
+                       tmudfNode);
+                            
+                            
+              }
+          }
+          break;
+
+        case tmudr::PartitionInfo::REPLICATE:
+          childPartType = REPLICATE_PARTITIONING;
+          break;
+
+        default:
+          processReturnStatus(
+               tmudr::UDRException(
+                    38900,
+                    "Invalid partitioning type %d used in partition by key of child table %d",
+                    static_cast<int>(childPartInfo.getType()), c),
+               tmudfNode);
+          break;
+        }
+
+      for (int oc=0; oc<childOrderInfo.getNumEntries(); oc++)
+        {
+          int colNum = childOrderInfo.getColumnNum(oc);
+
+          if (colNum < childCols.entries() && colNum >= 0)
+            {
+              if (childOrderInfo.getOrderType(oc) == tmudr::OrderInfo::DESCENDING)
+                {
+                  ItemExpr *inv = new(CmpCommon::statementHeap())
+                    InverseOrder(childCols[colNum].getItemExpr());
+                  inv->synthTypeAndValueId();
+                  childOrderBy.insert(inv->getValueId());
+                }
+              childOrderBy.insert(childCols[colNum]);
+            }
+          else
+            processReturnStatus(
+                 tmudr::UDRException(
+                      38900,
+                      "Invalid child column number %d used in order by key of child table %d with %d columns",
+                      colNum, c, childCols.entries()),
+                 tmudfNode);
+        }
+
+      // now transfer all this info into childInfo
+      childInfo->setPartitionType(childPartType);
+      childInfo->setPartitionBy(childPartKey);
+      childInfo->setOrderBy(childOrderBy);
+    }
+
   return TRUE;
 }
 
@@ -161,7 +265,7 @@ NABoolean TMUDFDllInteraction::createOutputInputColumnMap(
      ValueIdMap &result)
 {
   tmudr::UDRInvocationInfo * invocationInfo = tmudfNode->getInvocationInfo();
-  tmudr::TableInfo & outputTableInfo = invocationInfo->getOutputTableInfo();
+  tmudr::TableInfo & outputTableInfo = invocationInfo->out();
   int numOutputColumns = outputTableInfo.getNumColumns();
 
   for (int oc=0; oc<numOutputColumns; oc++)
@@ -174,44 +278,287 @@ NABoolean TMUDFDllInteraction::createOutputInputColumnMap(
           result.addMapEntry(
                tmudfNode->getProcOutputParamsVids()[oc],
                tmudfNode->getChildInfo(p.getInputTableNum())->
-                             getOutputIds()[p.getInputColumnNum()]);
+                             getOutputs()[p.getInputColumnNum()]);
         }
     }
 
   return TRUE;
 }
 
-NABoolean TMUDFDllInteraction::describeInputsAndOutputs(
-     TableMappingUDF * tmudfNode)
-{ return FALSE; }
+NABoolean TMUDFDllInteraction::describeDataflow(
+     TableMappingUDF * tmudfNode,        // in
+     ValueIdSet &valuesRequiredByParent, // out: values the parent needs to
+                                         //      require from its children
+     ValueIdSet &selectionPreds,         // in:  predicates that could
+                                         //      potentially be pushed down
+                                         // out: predicates that need to be
+                                         //      evaluated on the UDF result
+     ValueIdSet &predsEvaluatedByUDF,    // out: predicates evaluated by the
+                                         //      UDF (in user-written code)
+     ValueIdSet &predsToPushDown)        // out: predicates to be pushed down
+                                         //      to the children (expressed
+                                         //      in terms of child value ids)
+{
+  tmudr::UDRInvocationInfo * invocationInfo = tmudfNode->getInvocationInfo();
+  tmudr::TableInfo & outputTableInfo = invocationInfo->out();
+  int numOutputColumns = outputTableInfo.getNumColumns();
+  ValueIdList &udfOutputCols = tmudfNode->getProcOutputParamsVids();
+  ValueIdSet udfOutputColSet(udfOutputCols);
+  const ValueIdSet &udfCharOutputs =
+    tmudfNode->getGroupAttr()->getCharacteristicOutputs();
+  ValueIdSet usedOutputColumns(udfCharOutputs);
+  ValueIdSet exprsOnOutputColumns(udfCharOutputs);
+  ValueIdList predsOfferedToUDF;
+  NABitVector usedColPositions;
 
-NABoolean TMUDFDllInteraction::describeInputPartitionAndOrder(
-     TableMappingUDF * tmudfNode)
-{ return FALSE; }
+  // don't clear valuesRequiredByParent, we just add to this set
+  // clear remaining output parameters
+  predsEvaluatedByUDF.clear();
+  predsToPushDown.clear();
 
-NABoolean TMUDFDllInteraction::predicatePushDown(
-     TableMappingUDF * tmudfNode)
-{ return FALSE; }
+  // start with those characteristic outputs that are output columns
+  // of the UDF
+  usedOutputColumns.intersectSet(udfOutputColSet);
 
-NABoolean TMUDFDllInteraction::cardinality(
-     TableMappingUDF * tmudfNode)
-{ return FALSE; }
+  // next, look into more complex expressions that reference output columns
+  exprsOnOutputColumns -= udfOutputColSet;
 
-NABoolean TMUDFDllInteraction::constraints(
-     TableMappingUDF * tmudfNode)
-{ return FALSE; }
+  // find out which of the UDF outputs are referenced by these
+  // more complex expressions
+  ValueIdSet temp(udfOutputColSet);
+  exprsOnOutputColumns.weedOutUnreferenced(temp);
+  usedOutputColumns += temp;
 
-NABoolean TMUDFDllInteraction::cost(
-     TableMappingUDF * tmudfNode,
-     TMUDFPlanWorkSpace * pws)
-{ return FALSE; }
+  // loop over the characteristic outputs and translate them into ordinals
+  for (ValueId udfOutputCol=usedOutputColumns.init(); 
+       usedOutputColumns.next(udfOutputCol);
+       usedOutputColumns.advance(udfOutputCol))
+    {
+      CollIndex ordinal =
+        tmudfNode->getProcOutputParamsVids().index(udfOutputCol);
+
+      CMPASSERT(ordinal != NULL_COLL_INDEX)
+      usedColPositions += ordinal;
+    }
+
+  // set up predicate information from the selection predicates
+  if (!TMUDFInternalSetup::setPredicateInfoFromValueIdSet(
+           invocationInfo,
+           udfOutputCols,
+           tmudfNode->selectionPred(),
+           predsOfferedToUDF,
+           usedColPositions))
+    return FALSE;
+
+  // initialize usage info for all columns
+  for (int c=0; c<numOutputColumns; c++)
+    outputTableInfo.getColumn(c).setUsage(
+         (usedColPositions.contains(c) ?
+          tmudr::ColumnInfo::USED :
+          tmudr::ColumnInfo::NOT_USED));
+
+  try
+    {
+      TMUDFInternalSetup::setCallPhase(
+           invocationInfo,
+           tmudr::UDRInvocationInfo::COMPILER_DATAFLOW_CALL);
+      tmudfNode->getUDRInterface()->describeDataflowAndPredicates(
+           *invocationInfo);
+      TMUDFInternalSetup::resetCallPhase(invocationInfo);
+    }
+  catch (tmudr::UDRException e)
+    {
+      processReturnStatus(e, tmudfNode);
+      return FALSE;
+    }
+  catch (...)
+    {
+      processReturnStatus(
+           tmudr::UDRException(
+                38900, "Unknown exception during describeDataflowAndPredicates()"),
+           tmudfNode);
+      return FALSE;
+    }
+
+  // Remove any unused output columns. Also, just as a sanity check,
+  // make sure the UDF didn't change any of the output columns' usage
+  for (int x=udfOutputCols.entries()-1; x>=0; x--)
+    {
+      tmudr::ColumnInfo::ColumnUseCode usage =
+        invocationInfo->out().getColumn(x).getUsage();
+
+      if (usedColPositions.contains(x))
+        {
+          if (usage != tmudr::ColumnInfo::USED)
+            {
+              processReturnStatus(
+                   tmudr::UDRException(
+                        38900,
+                        "UDF output column %d changed from used to not used.",
+                        x),
+                   tmudfNode);
+              return FALSE;
+            }
+        }
+      else
+        {
+          if (usage == tmudr::ColumnInfo::USED)
+            {
+              processReturnStatus(
+                   tmudr::UDRException(
+                        38900,
+                        "UDF output column %d changed from not used to used",
+                        x),
+                   tmudfNode);
+            }
+          else if (usage == tmudr::ColumnInfo::NOT_PRODUCED)
+            // remove this column from the list
+            // of output columns, the UDF allowed it by
+            // setting the usage code to NOT_PRODUCED
+            tmudfNode->removeOutputParam(x);
+        }
+    }
+
+  // For each child column marked as "used" by the UDF, treat it as an
+  // expression required by the parent.
+  // For each predicate marked as pushable to a child, rewrite it in terms of
+  // child value ids and use it as a selection predicate for
+  // pushdownCoveredExprs. For every predicate marked as evaluated by the
+  // UDF, remove it from the selection predicates.
+
+  for (int i=0; i<tmudfNode->getArity(); i++)
+    {
+      const tmudr::TableInfo &ti = invocationInfo->in(i);
+      const tmudr::PartitionInfo &pi = ti.getQueryPartitioning();
+      const tmudr::OrderInfo &oi = ti.getQueryOrdering();
+      ValueIdList &childOutputs = tmudfNode->getChildInfo(i)->getOutputIds();
+      int numInputCols = ti.getNumColumns();
+
+      // mark all columns used by PARTITION BY or ORDER BY as used,
+      // in case the UDF didn't
+      for (std::vector<int>::const_iterator it = pi.begin();
+           it != pi.end();
+           it++)
+        invocationInfo->setChildColumnUsage(i,*it,tmudr::ColumnInfo::USED);
+      for (int oc=0; oc<oi.getNumEntries(); oc++)
+        invocationInfo->setChildColumnUsage(i,
+                                            oi.getColumnNum(oc),
+                                            tmudr::ColumnInfo::USED);
+
+      // go backwards, so we can remove by position from
+      // a ValueIdList below
+      for (int c=numInputCols-1; c>=0; c--)
+        switch (ti.getColumn(c).getUsage())
+          {
+          case tmudr::ColumnInfo::UNKNOWN:
+            // the UDF didn't set any usage info, assume USED
+            invocationInfo->setChildColumnUsage(
+                 i, c, tmudr::ColumnInfo::USED);
+            // fall through to next case
+          case tmudr::ColumnInfo::USED:
+            // This column is needed, treat it as an expression needed by
+            // the parent.
+            valuesRequiredByParent += childOutputs[c];
+            break;
+
+          case tmudr::ColumnInfo::NOT_PRODUCED:
+          case tmudr::ColumnInfo::NOT_USED:
+            // Remove the column from the NAColumnArray and ValueIdList
+            // describing the child table. We don't distinguish NOT_USED
+            // and NOT_PRODUCED on children, since both are set by the UDF.
+            tmudfNode->getChildInfo(i)->removeColumn(c);
+            break;
+
+          default:
+            processReturnStatus(
+                 tmudr::UDRException(
+                      38900,
+                      "Invalid usage code %d for column %d of child %d",
+                      ti.getColumn(c).getUsage(), c, i),
+                 tmudfNode);
+            return FALSE;
+          }
+    }
+
+  // walk through predicates and handle the evaluation codes assigned to them
+  for (int p=0; p<predsOfferedToUDF.entries(); p++)
+    {
+      int evalCode = static_cast<int>(
+           invocationInfo->getPredicate(p).getEvaluationCode());
+
+      // evaluate the predicate on the UDF result if the evaluation
+      // code was not set at all or if the EVALUATE_ON_RESULT flag
+      // is set
+      if (!(evalCode == tmudr::PredicateInfo::UNKNOWN_EVAL ||
+            evalCode & tmudr::PredicateInfo::EVALUATE_ON_RESULT))
+        selectionPreds -= predsOfferedToUDF[p];
+
+      if (evalCode & tmudr::PredicateInfo::EVALUATE_IN_UDF)
+        predsEvaluatedByUDF += predsOfferedToUDF[p];
+
+      if (evalCode & tmudr::PredicateInfo::EVALUATE_IN_CHILD)
+        predsToPushDown += predsOfferedToUDF[p];
+    }
+
+  // We have removed unused columns from our ValueIdLists.
+  // Remove columns that are not used or not produced in
+  // the UDRInvocationInfo as well and
+  // trim down the predicate list in the UDRInvocationInfo
+  // to contain just those predicates that are evaluated in
+  // the UDF itself.
+  return TMUDFInternalSetup::removeUnusedColumnsAndPredicates(
+       invocationInfo);
+}
+
+NABoolean TMUDFDllInteraction::describeConstraints(
+     TableMappingUDF * tmudfNode)
+{
+  tmudr::UDR *udrInterface = tmudfNode->getUDRInterface();
+  tmudr::UDRInvocationInfo *invocationInfo = tmudfNode->getInvocationInfo();
+
+  // set up constraint info for child tables
+  if (!TMUDFInternalSetup::createConstraintInfoFromRelExpr(tmudfNode))
+    return FALSE;
+
+  try
+    {
+      TMUDFInternalSetup::setCallPhase(
+           invocationInfo,
+           tmudr::UDRInvocationInfo::COMPILER_CONSTRAINTS_CALL);
+      udrInterface->describeConstraints(*invocationInfo);
+      TMUDFInternalSetup::resetCallPhase(invocationInfo);
+    }
+  catch (tmudr::UDRException e)
+    {
+      processReturnStatus(e, tmudfNode);
+      return FALSE;
+    }
+  catch (...)
+    {
+      processReturnStatus(
+           tmudr::UDRException(
+                38900, "Unknown exception during describeConstraints()"),
+           tmudfNode);
+      return FALSE;
+    }
+
+  // translate resulting constraints on result table back into
+  // ItemExprs
+  if (!TMUDFInternalSetup::createConstraintsFromConstraintInfo(
+           invocationInfo->out(),
+           tmudfNode,
+           CmpCommon::statementHeap()))
+    return FALSE;
+
+  return TRUE;
+}
 
 NABoolean TMUDFDllInteraction::degreeOfParallelism(
      TableMappingUDF * tmudfNode,
      TMUDFPlanWorkSpace * pws,
      int &dop)
 { 
-  tmudr::UDRInterface *udrInterface = tmudfNode->getUDRInterface();
+  tmudr::UDR *udrInterface = tmudfNode->getUDRInterface();
   tmudr::UDRInvocationInfo *invocationInfo = tmudfNode->getInvocationInfo();
   tmudr::UDRPlanInfo *udrPlanInfo = pws->getUDRPlanInfo();
 
@@ -227,16 +574,22 @@ NABoolean TMUDFDllInteraction::degreeOfParallelism(
     {
       TMUDFInternalSetup::setCallPhase(
            invocationInfo,
-           tmudr::COMPILER_DOP_CALL);
+           tmudr::UDRInvocationInfo::COMPILER_DOP_CALL);
       udrInterface->describeDesiredDegreeOfParallelism(*invocationInfo,
                                                        *udrPlanInfo);
       TMUDFInternalSetup::resetCallPhase(invocationInfo);
     }
   catch (tmudr::UDRException e)
     {
-      processReturnStatus(e,
-                          CmpCommon::diags(), 
-                          tmudfNode->getUserTableName().getExposedNameAsAnsiString().data());
+      processReturnStatus(e, tmudfNode);
+      return FALSE;
+    }
+  catch (...)
+    {
+      processReturnStatus(
+           tmudr::UDRException(
+                38900, "Unknown exception during describeDesiredDegreeOfParallelismdescribeParamsAndColumns()"),
+           tmudfNode);
       return FALSE;
     }
 
@@ -245,37 +598,32 @@ NABoolean TMUDFDllInteraction::degreeOfParallelism(
   return TRUE;
 }
 
-NABoolean TMUDFDllInteraction::generateInputPartitionAndOrder(
-     TableMappingUDF * tmudfNode,
-     TMUDFPlanWorkSpace * pws)
-{ return FALSE; }
-
-NABoolean TMUDFDllInteraction::describeOutputOrder(
-     TableMappingUDF * tmudfNode,
-     TMUDFPlanWorkSpace * pws)
-{ return FALSE; }
-
-
 NABoolean TMUDFDllInteraction::finalizePlan(
      TableMappingUDF * tmudfNode,
      tmudr::UDRPlanInfo *planInfo)
 { 
-  tmudr::UDRInterface *udrInterface = tmudfNode->getUDRInterface();
+  tmudr::UDR *udrInterface = tmudfNode->getUDRInterface();
   tmudr::UDRInvocationInfo *invocationInfo = tmudfNode->getInvocationInfo();
 
   try
     {
       TMUDFInternalSetup::setCallPhase(
            invocationInfo,
-           tmudr::COMPILER_COMPLETION_CALL);
+           tmudr::UDRInvocationInfo::COMPILER_COMPLETION_CALL);
       udrInterface->completeDescription(*invocationInfo, *planInfo);
       TMUDFInternalSetup::resetCallPhase(invocationInfo);
     }
   catch (tmudr::UDRException e)
     {
-      processReturnStatus(e,
-                          CmpCommon::diags(), 
-                          tmudfNode->getUserTableName().getExposedNameAsAnsiString().data());
+      processReturnStatus(e, tmudfNode);
+      return FALSE;
+    }
+  catch (...)
+    {
+      processReturnStatus(
+           tmudr::UDRException(
+                38900, "Unknown exception during completeDescription()"),
+           tmudfNode);
       return FALSE;
     }
 
@@ -300,16 +648,42 @@ void TMUDFDllInteraction::setFunctionPtrs(
 }
 
 void TMUDFDllInteraction::processReturnStatus(const tmudr::UDRException &e, 
-                                              ComDiagsArea *diags,
-                                              const char* routineName)
+                                              TableMappingUDF *tmudfNode)
 {
-  int iSQLState = e.getSQLState();
-  char sqlState[6];
+  // this method is just a shortcut to the more verbose form
+  processReturnStatus(
+       e,
+       tmudfNode->getUserTableName().getExposedNameAsAnsiString().data());
+}
 
-  snprintf(sqlState,6,"%5d", iSQLState);
+void TMUDFDllInteraction::processReturnStatus(const tmudr::UDRException &e, 
+                                              const char * routineName,
+                                              ComDiagsArea *diags)
+{
+  const char *sqlState = e.getSQLState();
+  NABoolean validSQLState = (strncmp(sqlState, "38", 2) == 0);
 
-  if (iSQLState > 38000 && iSQLState < 39000)
+  if (diags == NULL)
+    diags = CmpCommon::diags();
+
+  if (validSQLState)
+    for (int pos=2; pos<5; pos++)
+      {
+        char ch = sqlState[pos];
+
+        // See ISO/ANSI SQL, subclause 23.1 SQLSTATE
+        // - Class 38: External routine exception (see above)
+        // - Only digits and simple Latin upper case letters
+        //   are allowed in SQLSTATE.
+        if (!(ch >= '0' && ch <= '9' ||
+              ch >= 'A' && ch <= 'Z'))
+          validSQLState = FALSE;
+      }
+                          
+  if (validSQLState)
     {
+      // valid SQLSTATE for UDRs, class 38 as defined
+      // in the ANSI SQL standard
       *diags << DgSqlCode(-LME_CUSTOM_ERROR)
              << DgString0(e.getText().data())
              << DgString1(sqlState);
@@ -337,7 +711,27 @@ tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
   result->debugFlags_ = static_cast<int>(ActiveSchemaDB()->getDefaults().getAsLong(UDR_DEBUG_FLAGS));
   // initialize the function type with the most general
   // type there is, SETFUNC
-  result->funcType_ = tmudr::UDRInvocationInfo::SETFUNC;
+  result->funcType_ = tmudr::UDRInvocationInfo::GENERIC;
+
+  // set user ids
+  result->currentUser_ = ComUser::getCurrentUsername();
+
+  if (ComUser::getSessionUser() ==
+      ComUser::getCurrentUser())
+    result->sessionUser_ = result->currentUser_;
+  else
+    {
+      // session user is different, look it up
+      char sessionUsername[MAX_USERNAME_LEN + 1];
+      Int32 sessionUserLen;
+
+      if (ComUser::getUserNameFromUserID(
+               ComUser::getSessionUser(),
+               sessionUsername,
+               sizeof(sessionUsername),
+               sessionUserLen) == FEOK)
+        result->sessionUser_ = sessionUsername;
+    }
 
   // set info for the formal scalar input parameters
   const NAColumnArray &formalParams = tmudfNode->getNARoutine()->getInParams();
@@ -392,8 +786,8 @@ tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
       std::string paramName;
       char paramNum[10];
 
-      if (i < result->getNumFormalParameters())
-        paramName = result->getFormalParameterInfo(i).getColName();
+      if (i < result->getFormalParameters().getNumColumns())
+        paramName = result->getFormalParameters().getColumn(i).getColName();
 
       tmudr::TypeInfo ti;
       success = TMUDFInternalSetup::setTypeInfoFromNAType(
@@ -440,6 +834,7 @@ tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
     {
       TableMappingUDFChildInfo *childInfo = tmudfNode->getChildInfo(c);
       const NAColumnArray &childColArray = childInfo->getInputTabCols();
+      const ValueIdList &childOrderBy = childInfo-> getOrderBy();
 
       success = TMUDFInternalSetup::setTableInfoFromNAColumnArray(
            result->inputTableInfo_[c],
@@ -448,8 +843,77 @@ tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
       if (!success)
         return NULL;
 
-      // Todo: Set query partitioning and ordering for this child table
-      // (numRows and constraints will be set later)
+      // add child PARTITION BY syntax
+      tmudr::PartitionInfo pi;
+
+      switch (childInfo->getPartitionType())
+        {
+        case ANY_PARTITIONING:
+          pi.setType(tmudr::PartitionInfo::ANY);
+          break;
+
+        case SPECIFIED_PARTITIONING:
+          {
+            const ValueIdSet &childPartBy = childInfo->getPartitionBy();
+            const ValueIdList &childCols  = childInfo->getOutputs();
+
+            pi.setType(tmudr::PartitionInfo::PARTITION);
+
+            // translate the value ids into ordinal column numbers
+            for (ValueId p=childPartBy.init();
+                 childPartBy.next(p);
+                 childPartBy.advance(p))
+              {
+                CollIndex ordinal = childCols.index(p);
+
+                CMPASSERT(ordinal != NULL_COLL_INDEX);
+                pi.push_back(ordinal);
+              }
+          }
+          break;
+
+        case REPLICATE_PARTITIONING:
+          pi.setType(tmudr::PartitionInfo::REPLICATE);
+          break;
+
+        case NO_PARTITIONING:
+          pi.setType(tmudr::PartitionInfo::SERIAL);
+          break;
+
+        default:
+          // leave pi uninitialized
+          break;
+        }
+
+      result->setChildPartitioning(c, pi);
+
+      if (childOrderBy.entries() > 0)
+        {
+          // add child ORDER BY syntax
+          const ValueIdList &childCols  = childInfo->getOutputs();
+          tmudr::OrderInfo orderInfo;
+
+          for (int obc=0; obc<childOrderBy.entries(); obc++)
+            {
+              // translate the value id into an ordinal column number
+              CollIndex ordinal = NULL_COLL_INDEX;
+              tmudr::OrderInfo::OrderTypeCode orderCode = tmudr::OrderInfo::ASCENDING;
+
+              if (childOrderBy[obc].getItemExpr()->getOperatorType() == ITM_INVERSE)
+                {
+                  orderCode = tmudr::OrderInfo::DESCENDING;
+                  ordinal = childCols.index(
+                       childOrderBy[obc].getItemExpr()->child(0).getValueId());
+                }
+              else
+                ordinal = childCols.index(childOrderBy[obc]);
+
+              CMPASSERT(ordinal != NULL_COLL_INDEX);
+              orderInfo.addEntry(ordinal, orderCode);
+            }
+
+          result->setChildOrdering(c, orderInfo);
+        }
     }
 
   // initialize output columns with the columns declared in the metadata
@@ -518,7 +982,6 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
               tgt.d_.sqlType_ = tmudr::TypeInfo::DECIMAL_UNSIGNED;
             else
               tgt.d_.sqlType_ = tmudr::TypeInfo::DECIMAL_LSE;
-            tgt.d_.cType_ = tmudr::TypeInfo::STRING;
           }
         else if (isExact)
           switch (tgt.d_.length_)
@@ -529,13 +992,11 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
                 {
                   if (!isDecimalPrecision)
                     tgt.d_.sqlType_ = tmudr::TypeInfo::SMALLINT_UNSIGNED;
-                  tgt.d_.cType_   = tmudr::TypeInfo::UINT16;
                 }
               else
                 {
                   if (!isDecimalPrecision)
                     tgt.d_.sqlType_ = tmudr::TypeInfo::SMALLINT;
-                  tgt.d_.cType_   = tmudr::TypeInfo::INT16;
                 }
               break;
               
@@ -544,13 +1005,11 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
                 {
                   if (!isDecimalPrecision)
                     tgt.d_.sqlType_ = tmudr::TypeInfo::INT_UNSIGNED;
-                  tgt.d_.cType_   = tmudr::TypeInfo::UINT32;
                 }
               else
                 {
                   if (!isDecimalPrecision)
                     tgt.d_.sqlType_ = tmudr::TypeInfo::INT;
-                  tgt.d_.cType_   = tmudr::TypeInfo::INT32;
                 }
               break;
 
@@ -558,7 +1017,6 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
               CMPASSERT(!isUnsigned);
               if (!isDecimalPrecision)
                 tgt.d_.sqlType_ = tmudr::TypeInfo::LARGEINT;
-              tgt.d_.cType_   = tmudr::TypeInfo::INT64;
               break;
 
             default:
@@ -572,7 +1030,6 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
           if (tgt.d_.length_ == 4)
             {
               tgt.d_.sqlType_ = tmudr::TypeInfo::REAL;
-              tgt.d_.cType_   = tmudr::TypeInfo::FLOAT;
             }
           else
             {
@@ -580,7 +1037,6 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
               // gets mapped to REAL or DOUBLE PRECISION
               CMPASSERT(tgt.d_.length_ == 8);
               tgt.d_.sqlType_ = tmudr::TypeInfo::DOUBLE_PRECISION;
-              tgt.d_.cType_   = tmudr::TypeInfo::DOUBLE;
             }
       }
       break;
@@ -603,17 +1059,14 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
           {
           case CharInfo::ISO88591:
             tgt.d_.charset_ = tmudr::TypeInfo::CHARSET_ISO88591;
-            tgt.d_.cType_   = tmudr::TypeInfo::STRING;
             break;
 
           case CharInfo::UTF8:
             tgt.d_.charset_ = tmudr::TypeInfo::CHARSET_UTF8;
-            tgt.d_.cType_   = tmudr::TypeInfo::STRING;
             break;
 
           case CharInfo::UCS2:
             tgt.d_.charset_ = tmudr::TypeInfo::CHARSET_UCS2;
-            tgt.d_.cType_ = tmudr::TypeInfo::U16STRING;
             break;
 
           default:
@@ -656,7 +1109,6 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
           }
 
         // Todo, translate to time_t C type or to string??
-        tgt.d_.cType_ = tmudr::TypeInfo::STRING;
       }
       break;
 
@@ -716,10 +1168,6 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
                    << DgString2("unsupported interval subtype");
             result = FALSE;
           }
-
-        // Todo, convert to special data structure or just an integer?
-        tgt.d_.cType_ = tmudr::TypeInfo::INT64;
-
       }
       break;
 
@@ -772,6 +1220,299 @@ NABoolean TMUDFInternalSetup::setTableInfoFromNAColumnArray(
   return TRUE;
 }
 
+NABoolean TMUDFInternalSetup::setPredicateInfoFromValueIdSet(
+     tmudr::UDRInvocationInfo *tgt,
+     const ValueIdList &udfOutputColumns,
+     const ValueIdSet &predicates,
+     ValueIdList &convertedPredicates,
+     NABitVector &usedColPositions)
+{
+  tmudr::TableInfo & outputTableInfo = tgt->out();
+  int numOutputColumns = outputTableInfo.getNumColumns();
+  tmudr::ComparisonPredicateInfo *pi;
+
+  // loop over predicates
+  for (ValueId pred=predicates.init(); 
+       predicates.next(pred);
+       predicates.advance(pred))
+    {
+      pi = NULL;
+
+      // logic specific to the item expression
+      switch (pred.getItemExpr()->getOperatorType())
+        {
+        case ITM_EQUAL:
+        case ITM_LESS:
+        case ITM_LESS_EQ:
+        case ITM_GREATER:
+        case ITM_GREATER_EQ:
+          {
+            // TBD: Do we need to check for "const op col" as well or
+            // has this already been normalized?
+            BiRelat *comp = static_cast<BiRelat *>(pred.getItemExpr());
+            int columnNum = udfOutputColumns.index(comp->child(0).getValueId());
+            NABoolean dummy;
+            ConstValue *val = comp->child(1)->castToConstValue(dummy);
+
+            if (val != NULL && columnNum != NULL_COLL_INDEX)
+              {
+                tmudr::PredicateInfo::PredOperator predOp;
+
+                pi = new tmudr::ComparisonPredicateInfo;
+
+                switch (pred.getItemExpr()->getOperatorType())
+                  {
+                  case ITM_EQUAL:
+                    predOp = tmudr::PredicateInfo::EQUAL;
+                    break;
+                  case ITM_LESS:
+                    predOp = tmudr::PredicateInfo::LESS;
+                    break;
+                  case ITM_LESS_EQ:
+                    predOp = tmudr::PredicateInfo::LESS_EQUAL;
+                    break;
+                  case ITM_GREATER:
+                    predOp = tmudr::PredicateInfo::GREATER;
+                    break;
+                  case ITM_GREATER_EQ:
+                    predOp = tmudr::PredicateInfo::GREATER_EQUAL;
+                    break;
+                  }
+                pi->setOperator(predOp);
+                pi->setColumnNumber(columnNum);
+                pi->setValue(val->getConstStr().data());
+                // mark column used in predicate as used
+                usedColPositions += columnNum;
+              }
+          }
+          break;
+
+        case ITM_VEG_PREDICATE:
+          {
+            VEGPredicate *vegPred = static_cast<VEGPredicate *>(pred.getItemExpr());
+            VEG *veg = vegPred->getVEG();
+            ValueId constValId = veg->getAConstant();
+            ValueIdSet udfOutputColsInVEG(udfOutputColumns);
+            ValueId colReferencedInVEG;
+
+            udfOutputColsInVEG.intersectSet(veg->getAllValues());
+            udfOutputColsInVEG.getFirst(colReferencedInVEG);
+
+            if (constValId != NULL_VALUE_ID &&
+                colReferencedInVEG != NULL_VALUE_ID)
+              {
+                int colNum = udfOutputColumns.index(colReferencedInVEG);
+
+                // we found a VEG that has a constant member and also
+                // one of the TMUDF output columns as a member, add
+                // an equals predicate between the two
+                CMPASSERT(colNum != NULL_COLL_INDEX);
+                pi = new tmudr::ComparisonPredicateInfo;
+                pi->setOperator(tmudr::PredicateInfo::EQUAL);
+                pi->setColumnNumber(colNum);
+                pi->setValue(
+                     static_cast<ConstValue *>(constValId.getItemExpr())->
+                     getConstStr().data());
+                // mark column used in predicate as used
+                usedColPositions += colNum;
+              }
+          }
+          break;
+
+        default:
+          break;
+
+        } // switch
+
+      if (pi)
+        {
+          // add this predicate to the invocation info
+          tgt->predicates_.push_back(pi);
+          // also remember its number, so we can later
+          // translate it back
+          convertedPredicates.insert(pred);
+        }
+    } // loop over predicates
+
+  return TRUE;
+}
+
+NABoolean TMUDFInternalSetup::removeUnusedColumnsAndPredicates(
+     tmudr::UDRInvocationInfo *tgt)
+{
+  // remove unused output columns
+
+  tmudr::TableInfo &outInfo = tgt->out();
+  std::vector<int> outputColMap;
+  int numDeletedOutCols = 0;
+
+  // Make a map of current output column numbers to the new state
+  // with output columns that are NOT_PRODUCED removed. Note that we
+  // keep the columns marked as NOT_USED by the normalizer, since
+  // the UDF did not indicate that it is ok to drop such columns.
+  for (int c=0; c<outInfo.getNumColumns(); c++)
+    if (outInfo.getColumn(c).getUsage() == tmudr::ColumnInfo::NOT_PRODUCED)
+      {
+        outputColMap.push_back(-1);
+        numDeletedOutCols++;
+      }
+    else
+      outputColMap.push_back(c-numDeletedOutCols);
+
+  // remove unused predicates and adjust column numbers of remaining ones
+  // to reflect deleted output columns
+  std::vector<tmudr::PredicateInfo *>::iterator it = tgt->predicates_.begin();
+
+  while (it != tgt->predicates_.end())
+    if ((*it)->getEvaluationCode() == tmudr::PredicateInfo::EVALUATE_IN_UDF)
+      {
+        // keep this predicate, adjust its column numbers and 
+        // move on to the next
+        (*it)->mapColumnNumbers(outputColMap);
+        it++;
+      }
+    else
+      {
+        // delete this predicate, set the iterator to the element following it
+        tmudr::PredicateInfo *pi = *it;
+
+        it = tgt->predicates_.erase(it);
+        delete pi;
+      }
+
+  // remove unused output columns (go backwards)
+  for (int oc=outInfo.getNumColumns()-1; oc>=0; oc--)
+    if (outInfo.getColumn(oc).getUsage() == tmudr::ColumnInfo::NOT_PRODUCED)
+      outInfo.deleteColumn(oc);
+
+  // remove unused columns from the table-valued inputs
+  for (int i=0; i<tgt->getNumTableInputs(); i++)
+    {
+      tmudr::TableInfo &inInfo = tgt->inputTableInfo_[i];
+      std::vector<int> childOutputColMap;
+      int numDeletedCols = 0;
+
+      // first, make a map of current column numbers of this
+      // table-valued input to the new state with unused columns
+      // removed
+      for (int cc=0; cc<inInfo.getNumColumns(); cc++)
+        if (inInfo.getColumn(cc).getUsage() == tmudr::ColumnInfo::USED)
+          childOutputColMap.push_back(cc-numDeletedCols);
+        else
+          {
+            childOutputColMap.push_back(-1);
+            numDeletedCols++;
+          }
+
+      if (numDeletedCols > 0)
+        {
+          tmudr::PartitionInfo newPartInfo;
+          tmudr::OrderInfo newOrderInfo;
+
+          // loop in reverse order and remove unused columns
+          for (int ic=inInfo.getNumColumns()-1; ic>=0; ic--)
+            if (inInfo.getColumn(ic).getUsage() != tmudr::ColumnInfo::USED)
+              inInfo.deleteColumn(ic);
+
+          // adjust column numbers in ORDER BY and PARTITION BY lists,
+          // if necessary
+          inInfo.getQueryPartitioning().mapColumnNumbers(childOutputColMap);
+          inInfo.getQueryOrdering().mapColumnNumbers(childOutputColMap);
+
+          // adjust the column numbers in the provenance info of the outputs
+          // for removal of unused columns in the table-valued inputs
+          for (int oc=0; oc<outInfo.getNumColumns(); oc++)
+            {
+              tmudr::ColumnInfo &colInfo = outInfo.getColumn(oc);
+              const tmudr::ProvenanceInfo &prov = colInfo.getProvenance();
+
+              if (prov.isFromInputTable(i))
+                {
+                  int oldColNum = prov.getInputColumnNum();
+
+                  if (childOutputColMap[oldColNum] != oldColNum)
+                    // column number is going to change, update provenance
+                    colInfo.setProvenance(
+                         tmudr::ProvenanceInfo(i, childOutputColMap[oldColNum]));
+                }            
+            }
+        } // numDeletedCols > 0
+    } // loop over table-valued inputs
+
+  return TRUE;
+}
+
+NABoolean TMUDFInternalSetup::createConstraintInfoFromRelExpr(
+     TableMappingUDF * tmudfNode)
+{
+  tmudr::UDRInvocationInfo *tgt = tmudfNode->getInvocationInfo();
+
+  for (int i=0; i<tmudfNode->getArity(); i++)
+    {
+      const ValueIdSet &childConstraints =
+        tmudfNode->child(i)->getGroupAttr()->getConstraints();
+
+      for (ValueId v=childConstraints.init();
+           childConstraints.next(v);
+           childConstraints.advance(v))
+        {
+          switch (v.getItemExpr()->getOperatorType())
+            {
+            case ITM_CARD_CONSTRAINT:
+              {
+                long minRows, maxRows;
+                CardConstraint *cc =
+                  static_cast<CardConstraint *>(v.getItemExpr());
+
+                minRows = cc->getLowerBound();
+                maxRows = cc->getUpperBound();
+                tgt->inputTableInfo_[i].addCardinalityConstraint(
+                     tmudr::CardinalityConstraintInfo(minRows, maxRows));
+              }
+              break;
+
+            case ITM_UNIQUE_OPT_CONSTRAINT:
+              {
+                // set of unique columns
+                const ValueIdSet &uniqueCols =
+                  static_cast<UniqueOptConstraint *>(
+                       v.getItemExpr())->uniqueCols();
+                // outputs produced by child i
+                const ValueIdList &childColList =
+                  tmudfNode->getChildInfo(i)->getOutputs();
+                ValueIdSet childOutputSet = childColList;
+
+                // cross-check the two
+                childOutputSet.intersectSet(uniqueCols);
+
+                if (uniqueCols == childOutputSet)
+                  {
+                    // we found all the unique columns in the child
+                    // outputs (should be the common case), continue
+
+                    tmudr::UniqueConstraintInfo ucInfo;
+
+                    // translate ValueIdSet into a set of ordinal numbers
+                    for (ValueId u=uniqueCols.init();
+                         uniqueCols.next(u);
+                         uniqueCols.advance(u))
+                      ucInfo.addColumn(childColList.index(u));
+
+                    tgt->inputTableInfo_[i].addUniquenessConstraint(ucInfo);
+                  }
+              }
+              break;
+
+            default:
+              // skip this constraint, it's not handled yet
+              break;
+            }
+        }
+    }
+
+  return TRUE;
+}
+
 NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
      const tmudr::TypeInfo &src,
      int colNumForDiags,
@@ -779,7 +1520,7 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
      ComDiagsArea *diags)
 {
   NAType *result = NULL;
-  tmudr::TypeInfo::SQLTYPE_CODE typeCode = src.getSQLType();
+  tmudr::TypeInfo::SQLTypeCode typeCode = src.getSQLType();
 
   switch (typeCode)
     {
@@ -1123,6 +1864,67 @@ NAColumnArray * TMUDFInternalSetup::createColumnArrayFromTableInfo(
   return result;
 }
 
+NABoolean TMUDFInternalSetup::createConstraintsFromConstraintInfo(
+     const tmudr::TableInfo &tableInfo,
+     TableMappingUDF * tmudfNode,
+     NAHeap *heap)
+{
+  int numConstraints = tableInfo.getNumConstraints();
+
+  for (int c=0; c<tableInfo.getNumConstraints(); c++)
+    switch(tableInfo.getConstraint(c).getType())
+      {
+      case tmudr::ConstraintInfo::CARDINALITY:
+        {
+          const tmudr::CardinalityConstraintInfo &cc =
+            static_cast<const tmudr::CardinalityConstraintInfo &>(
+                 tableInfo.getConstraint(c));
+          CardConstraint *ccItem = new(heap)
+            CardConstraint(cc.getMinNumRows(),
+                           cc.getMaxNumRows());
+
+          // attach it to the group attributes
+          tmudfNode->getGroupAttr()->addConstraint(ccItem);
+        }
+        break;
+
+      case tmudr::ConstraintInfo::UNIQUE:
+        {
+          const tmudr::UniqueConstraintInfo &uc =
+            static_cast<const tmudr::UniqueConstraintInfo &>(
+                 tableInfo.getConstraint(c));
+          const ValueIdList &udfOutputCols =
+            tmudfNode->getProcOutputParamsVids();
+          ValueIdSet uniqueValSet;
+          int numUniqueCols = uc.getNumUniqueColumns();
+
+          // translate the ordinals of the unique cols into ValueIds
+          for (int c=0; c<numUniqueCols; c++)
+            uniqueValSet += udfOutputCols[uc.getUniqueColumn(c)];
+
+          // make a new ItemExpr constraint expression from the ValueIdSet
+          UniqueOptConstraint *ucItem = new(heap)
+            UniqueOptConstraint(uniqueValSet);
+
+
+          // attach it to the group attributes
+          tmudfNode->getGroupAttr()->addConstraint(ucItem);
+        }
+        break;
+
+      default:
+        TMUDFDllInteraction::processReturnStatus(
+             tmudr::UDRException(
+                  38900,
+                  "Encountered invalid constraint type after describeConstraints(): %d",
+                  static_cast<int>(tableInfo.getConstraint(c).getType())),
+             tmudfNode);
+        return FALSE;
+      }
+
+  return TRUE;
+}
+
 tmudr::UDRPlanInfo *TMUDFInternalSetup::createUDRPlanInfo(
      tmudr::UDRInvocationInfo *invocationInfo)
 {
@@ -1131,7 +1933,7 @@ tmudr::UDRPlanInfo *TMUDFInternalSetup::createUDRPlanInfo(
 
 void TMUDFInternalSetup::setCallPhase(
      tmudr::UDRInvocationInfo *invocationInfo,
-     tmudr::CallPhase cp)
+     tmudr::UDRInvocationInfo::CallPhase cp)
 {
   invocationInfo->callPhase_ = cp;
 }
@@ -1140,7 +1942,7 @@ void TMUDFInternalSetup::resetCallPhase(
      tmudr::UDRInvocationInfo *invocationInfo)
 {
   invocationInfo->callPhase_ = 
-    tmudr::UNKNOWN_CALL_PHASE;
+    tmudr::UDRInvocationInfo::UNKNOWN_CALL_PHASE;
 }
 
 void TMUDFInternalSetup::setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
@@ -1150,11 +1952,11 @@ void TMUDFInternalSetup::setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
 {
   if (paramTupleDesc)
     {
-      CMPASSERT(invocationInfo->getNumFormalParameters() ==
+      CMPASSERT(invocationInfo->getFormalParameters().getNumColumns() ==
                 paramTupleDesc->numAttrs());
       invocationInfo->nonConstFormalParameters().setRecordLength(
            paramTupleDesc->tupleDataLength());
-      for (int p=0; p<invocationInfo->getNumFormalParameters(); p++)
+      for (int p=0; p<invocationInfo->getFormalParameters().getNumColumns(); p++)
         {
           Attributes *attr = paramTupleDesc->getAttr(p);
 
@@ -1166,7 +1968,7 @@ void TMUDFInternalSetup::setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
     }
   else
     {
-      CMPASSERT(invocationInfo->getNumFormalParameters() == 0);
+      CMPASSERT(invocationInfo->getFormalParameters().getNumColumns() == 0);
       invocationInfo->nonConstFormalParameters().setRecordLength(0);
     }
 
@@ -1178,17 +1980,17 @@ void TMUDFInternalSetup::setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
   // Also erase the compile time constant parameters.
   invocationInfo->nonConstActualParameters().setConstBuffer(0, NULL);
 
-  while (invocationInfo->getNumActualParameters() > 0)
+  while (invocationInfo->par().getNumColumns() > 0)
     invocationInfo->nonConstActualParameters().deleteColumn(0);
 
-  while (invocationInfo->getNumFormalParameters() > 0)
+  while (invocationInfo->getFormalParameters().getNumColumns() > 0)
     {
       invocationInfo->nonConstActualParameters().addColumn(
            invocationInfo->nonConstFormalParameters().getColumn(0));
       invocationInfo->nonConstFormalParameters().deleteColumn(0);
     }
 
-  tmudr::TableInfo &ot = invocationInfo->getOutputTableInfo();
+  tmudr::TableInfo &ot = invocationInfo->out();
 
   if (outputTupleDesc)
     {
@@ -1198,11 +2000,12 @@ void TMUDFInternalSetup::setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
       ot.setRecordLength(outputTupleDesc->tupleDataLength());
       for (int oc=0; oc<ot.getNumColumns(); oc++)
         {
+          tmudr::ColumnInfo &colInfo = ot.getColumn(oc);
           Attributes *attr = outputTupleDesc->getAttr(oc);
 
-          ot.getColumn(oc).getType().setOffsets(attr->getNullIndOffset(),
-                                                attr->getVCLenIndOffset(),
-                                                attr->getOffset());
+          colInfo.getType().setOffsets(attr->getNullIndOffset(),
+                                       attr->getVCLenIndOffset(),
+                                       attr->getOffset());
         }
     }
   else
@@ -1222,11 +2025,12 @@ void TMUDFInternalSetup::setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
           it.setRecordLength(inputTupleDesc->tupleDataLength());
           for (int ic=0; ic<it.getNumColumns(); ic++)
             {
+              tmudr::ColumnInfo &colInfo = it.getColumn(ic);
               Attributes *attr = inputTupleDesc->getAttr(ic);
-              
-              it.getColumn(ic).getType().setOffsets(attr->getNullIndOffset(),
-                                                    attr->getVCLenIndOffset(),
-                                                    attr->getOffset());
+
+              colInfo.getType().setOffsets(attr->getNullIndOffset(),
+                                           attr->getVCLenIndOffset(),
+                                           attr->getOffset());
             }
         }
       else

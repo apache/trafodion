@@ -249,7 +249,7 @@ bool validateCharsAndCopy(char *outBuf, int outBufLen,
 
 // compiler interface class for TRAF_CPP_EVENT_LOG_READER
 
-class ReadCppEventsUDFInterface : public UDRInterface
+class ReadCppEventsUDFInterface : public UDR
 {
 public:
 
@@ -270,7 +270,7 @@ public:
     PARSE_STATUS_COLNUM
   };
 
-  ReadCppEventsUDFInterface() : UDRInterface(), logDir_(NULL), infile_(NULL) {}
+  ReadCppEventsUDFInterface() : UDR(), logDir_(NULL), infile_(NULL) {}
 
   // override any methods where the UDF author would
   // like to change the default behavior
@@ -289,7 +289,7 @@ private:
 
 };
 
-extern "C" UDRInterface * TRAF_CPP_EVENT_LOG_READER(
+extern "C" UDR * TRAF_CPP_EVENT_LOG_READER(
      const UDRInvocationInfo *info)
 {
   return new ReadCppEventsUDFInterface();
@@ -309,14 +309,15 @@ void ReadCppEventsUDFInterface::describeParamsAndColumns(
                        info.getUDRName().data(),
                        info.getNumTableInputs());
 
-  if (info.getNumActualParameters() > 1)
+  if (info.par().getNumColumns() > 1)
     throw UDRException(38221,
                        "There should be no more than one input parameters to the call to %s, got %d",
                        info.getUDRName().data(),
-                       info.getNumActualParameters());
-  else if (info.getNumActualParameters() == 1)
+                       info.par().getNumColumns());
+  else if (info.par().getNumColumns() == 1)
     {
-      if (!info.par().canGetString(0))
+      if (!info.par().isAvailable(0) ||
+          !info.par().getSQLTypeClass(0) == TypeInfo::CHARACTER_TYPE)
         throw UDRException(38222,
                            "Expecting a character constant as first parameter of the call to %s",
                            info.getUDRName().data());
@@ -326,7 +327,7 @@ void ReadCppEventsUDFInterface::describeParamsAndColumns(
       // add an additional formal parameter for the options value
       info.addFormalParameter(
            ColumnInfo("OPTIONS",
-                      info.getActualParameterInfo(0).getType()));
+                      info.par().getColumn(0).getType()));
 
       // validate options
       for (std::string::iterator it = options.begin();
@@ -366,7 +367,7 @@ void ReadCppEventsUDFInterface::describeParamsAndColumns(
     } // got 1 input parameter
 
   // add the output columns
-  TableInfo &outTable = info.getOutputTableInfo();
+  TableInfo &outTable = info.out();
 
   outTable.addColumn(
        ColumnInfo("LOG_TS",
@@ -376,19 +377,19 @@ void ReadCppEventsUDFInterface::describeParamsAndColumns(
                            6)));
   outTable.addCharColumn   ("SEVERITY",    10, true);
   outTable.addCharColumn   ("COMPONENT",   24, true);
-  outTable.addIntegerColumn("NODE_NUMBER",     true);
-  outTable.addIntegerColumn("CPU",             true);
-  outTable.addIntegerColumn("PIN",             true);
+  outTable.addIntColumn    ("NODE_NUMBER",     true);
+  outTable.addIntColumn    ("CPU",             true);
+  outTable.addIntColumn    ("PIN",             true);
   outTable.addCharColumn   ("PROCESS_NAME",12, true);
-  outTable.addIntegerColumn("SQL_CODE",        true);
+  outTable.addIntColumn    ("SQL_CODE",        true);
   outTable.addVarCharColumn("QUERY_ID",   200, true);
   outTable.addVarCharColumn("MESSAGE",   4000, true);
 
   if (addFileColumns)
     {
-      outTable.addIntegerColumn("LOG_FILE_NODE");
+      outTable.addIntColumn    ("LOG_FILE_NODE");
       outTable.addVarCharColumn("LOG_FILE_NAME",200);
-      outTable.addIntegerColumn("LOG_FILE_LINE");
+      outTable.addIntColumn    ("LOG_FILE_LINE");
       outTable.addCharColumn   ("PARSE_STATUS",2);
     }
 }

@@ -1,3 +1,5 @@
+#ifndef SQLUDR_H
+#define SQLUDR_H
 /**********************************************************************
  *
  * File:         sqludr.h
@@ -23,8 +25,6 @@
 // @@@ END COPYRIGHT @@@
  *
  *********************************************************************/
-#ifndef SQLUDR_H
-#define SQLUDR_H
 
 /* Export declaration for DLL functions */
 #define SQLUDR_LIBFUNC
@@ -438,7 +438,7 @@ typedef void (*SQLUDR_EmitRow)  (char            *rowData,        /*IN*/
 
 /************************************************/
 /*                                              */
-/*           C++ interface for TMUDFs           */
+/*           C++ interface for UDRs             */
 /*                                              */
 /************************************************/
 
@@ -446,16 +446,23 @@ typedef void (*SQLUDR_EmitRow)  (char            *rowData,        /*IN*/
 // defined above. We plan to provide a Java interface similar
 // to this C++ version.
 
-// Summary of the interface below:
-
-// Classes UDRInvocationInfo and UDRPlanInfo describe
-// a specific invocation of a UDR, e.g. number, types and
-// values of parameters, UDR name, etc.
-
-// Class UDRInterface contains the code written by
-// the UDF writer as methods. It also contains default
-// implementations for methods the UDF writer chooses
-// not to provide.
+/**
+ *  @mainpage C++ Interface for Trafodion UDRs
+ *
+ *  Class tmudr::UDR contains the code written by
+ *  the UDR writer as methods. It also contains default
+ *  implementations for methods the UDR writer chooses
+ *  not to provide. Start with this class if you want to
+ *  explore the interface.
+ *
+ *  Classes tmudr::UDRInvocationInfo and tmudr::UDRPlanInfo describe
+ *  a specific invocation of a UDR, e.g. number, types and
+ *  values of parameters, UDR name, etc.
+ *
+ *  For an introduction, see
+ *  https://wiki.trafodion.org/wiki/index.php/Tutorial:_The_object-oriented_UDF_interface
+ *  
+ */
 
 // There are no inline functions in this file, except
 // for those that return versions, since we want to be
@@ -469,82 +476,45 @@ typedef void (*SQLUDR_EmitRow)  (char            *rowData,        /*IN*/
 
 // these are classes used internally by Trafodion to set up
 // the environment for UDFs, they should not be used
-// by UDF writers and are therefore not declared here
+// by UDR writers and are therefore not declared here
 class TMUDFInternalSetup;
 class SPInfo;
 class LmRoutineCppObj;
 
 namespace tmudr
 {
+  // forward declaration
+  class TableInfo;
 
   // type for a buffer of binary data (e.g. serialized objects)
   typedef char * Bytes;
 
 
-  // -------------------------------------------------------------------
-  // UDRException
-  //
-  // Exception that can be thrown by code provided by the UDF writer
-  // -------------------------------------------------------------------
+  /**
+   *  @brief This is the exception to throw when an error occurs in
+   *         a UDR. 
+   *
+   *  The SQLState value must be a value between 38000 and 38999,
+   *  since the SQL standard reserves SQLState class 38 for user-written
+   *  code. SQLState values 38950 to 38999 are reserved for use by
+   *  Trafodion code. Trafodion will produce SQL error code -11252 when
+   *  this exception is thrown.
+   */
 
   class UDRException
   {
   public:
 
-    // The SQLState value must be a value between 38000 and 38999,
-    // since the SQL standard reserves SQLState class 38 for user-written
-    // code. SQLState values 38950 to 38999 are reserved for use by
-    // Trafodion code. Trafodion will produce SQL error code -11252 when
-    // this exception is thrown.
     UDRException(int sqlState, const char *printf_format, ...);
-    int getSQLState() const;
+    UDRException(const char * sqlState, const char *printf_format, ...);
+    const char *getSQLState() const;
     const std::string &getText() const;
 
   private:
 
-    int sqlState_;
+    char sqlState_[6];
     std::string  text_;
   };
-
-  enum Endianness
-    {
-      UNKNOWN_ENDIANNESS = 0,
-      IS_LITTLE_ENDIAN = 1,
-      IS_BIG_ENDIAN = 2
-    };
-
-  enum TMUDRObjectType
-    {
-      UNKNOWN_OBJECT_TYPE = 0,
-      TYPE_INFO_OBJ = 100,
-      PARAMETER_INFO_OBJ = 200,
-      COLUMN_INFO_OBJ = 400,
-      CONSTRAINT_INFO_OBJ = 500,
-      UNIQUE_CONSTRAINT_INFO_OBJ = 600,
-      PREDICATE_INFO_OBJ = 700,
-      PARTITION_INFO_OBJ = 800,
-      ORDER_INFO_OBJ = 900,
-      TUPLE_INFO_OBJ = 1000,
-      TABLE_INFO_OBJ = 1100,
-      PARAMETER_LIST_INFO_OBJ = 1200,
-      UDR_INVOCATION_INFO_OBJ = 1300,
-      UDR_PLAN_INFO_OBJ = 1400
-    };
-
-  enum CallPhase
-    {
-      UNKNOWN_CALL_PHASE          = 0,
-      COMPILER_INITIAL_CALL       = 10,
-      COMPILER_DATAFLOW_CALL      = 20,
-      COMPILER_CONSTRAINTS_CALL   = 30,
-      COMPILER_STATISTICS_CALL    = 40,
-      COMPILER_DOP_CALL           = 50,
-      COMPILER_PLAN_CALL          = 60,
-      COMPILER_COMPLETION_CALL    = 70,
-      RUNTIME_INITIAL_CALL        = 100,
-      RUNTIME_WORK_CALL           = 110,
-      RUNTIME_FINAL_CALL          = 120
-    };
 
   // Class to help with serialization, note that it is not required
   // to inherit from this class in order to participate in serialization.
@@ -553,12 +523,37 @@ namespace tmudr
   {
   public:
 
+    enum Endianness
+      {
+        UNKNOWN_ENDIANNESS = 0,
+        IS_LITTLE_ENDIAN = 1,
+        IS_BIG_ENDIAN = 2
+      };
+
+    enum TMUDRObjectType
+      {
+        UNKNOWN_OBJECT_TYPE = 0,
+        TYPE_INFO_OBJ = 100,
+        PARAMETER_INFO_OBJ = 200,
+        COLUMN_INFO_OBJ = 400,
+        CARDINALITY_CONSTRAINT_INFO_OBJ = 510,
+        UNIQUE_CONSTRAINT_INFO_OBJ = 520,
+        COMP_PREDICATE_INFO_OBJ = 710,
+        PARTITION_INFO_OBJ = 800,
+        ORDER_INFO_OBJ = 900,
+        TUPLE_INFO_OBJ = 1000,
+        TABLE_INFO_OBJ = 1100,
+        PARAMETER_LIST_INFO_OBJ = 1200,
+        UDR_INVOCATION_INFO_OBJ = 1300,
+        UDR_PLAN_INFO_OBJ = 1400
+      };
+
     TMUDRSerializableObject(
-         int objectType,
+         TMUDRObjectType objectType,
          unsigned short version = 1,
          unsigned short endianness = IS_LITTLE_ENDIAN);
 
-    int getObjectType() const;
+    TMUDRObjectType getObjectType() const;
     unsigned short getVersion() const;
     Endianness getEndianness() const;
     virtual int serializedLength();
@@ -567,7 +562,7 @@ namespace tmudr
     virtual int deserialize(Bytes &inputBuffer,
                             int &inputBufferLength);
 
-    void validateObjectType(int o);
+    void validateObjectType(TMUDRObjectType o);
     void validateSerializedLength(int l);
     void validateDeserializedLength(int l);
 
@@ -620,10 +615,12 @@ namespace tmudr
                           bool makeACopy,
                           Bytes &inputBuffer,
                           int &inputBufferLength);
+    TMUDRObjectType getNextObjectType(Bytes inputBuffer,
+                                      int inputBufferLength);
 
   private:
 
-    struct {
+    struct headerFields {
       int            objectType_;
       int            totalLength_;
       unsigned short version_;
@@ -633,176 +630,153 @@ namespace tmudr
     } v_;
   };
 
-  // -------------------------------------------------------------------
-  // TypeInfo
-  //
-  // Describes an SQL data type and the corresponding C/C++ type,
-  // used for scalar parameters, columns of input rows and
-  // columns of result rows.
-  // -------------------------------------------------------------------
+  /**
+   *  @brief Data types in the UDR interface
+   *
+   *  Describes an SQL data type and the corresponding C/C++ type,
+   *  used for scalar parameters, columns of input rows and
+   *  columns of result rows.
+  */
 
   class TypeInfo : public TMUDRSerializableObject
   {
   public:
 
-    enum CTYPE_CODE // Maps a column to its C++ type.
-      {
-        UNDEFINED_C_TYPE,
-        INT16,           // int16_t
-        INT32,           // int32_t
-        INT64,           // int64_t
-        UINT16,          // uint16_t
-        UINT32,          // uint32_t
-        UINT64,          // uint64_t
-        FLOAT, 
-        DOUBLE,
-        CHAR_ARRAY,      // char *
-        CHAR16_ARRAY,    // uint16_t *
-        VARCHAR_ARRAY,   // char * with length stored in first 2 bytes
-        VARCHAR16_ARRAY, // uint16_t * with length stored in first 2 bytes
-        STRING,          // C++ STL string type.
-        U16STRING,       // C++ STL u16string of 2 byte characters
-        //BYTES,         // class UDRBytes for binary data
-        //TIME           // class UDRTime for date, time, interval … values.
-      };
-  
-    enum SQLTYPE_CODE // Maps a column to its SQL type.
+    /** SQL data types */
+    enum SQLTypeCode
       {
         UNDEFINED_SQL_TYPE,
-        SMALLINT,             // 16 bit integer
-        INT,                  // 32 bit integer
-        LARGEINT,             // 64 bit integer
-        NUMERIC,              // Numeric with decimal precision
-        DECIMAL_LSE,          // Decimal, leading sign embedded
-        SMALLINT_UNSIGNED,    // unsigned 16 bit integer
-        INT_UNSIGNED,         // unsigned 32 bit integer
-        NUMERIC_UNSIGNED,     // unsigned numeric
-        DECIMAL_UNSIGNED,     // unsigned decimal
-        REAL,                 // 4 byte floating point number
-        DOUBLE_PRECISION,     // 8 byte floating point number
-        CHAR,                 // fixed length character types.
-        VARCHAR,              // varying length character types.
-        DATE,
-        TIME,
-        TIMESTAMP,
-        INTERVAL
+        SMALLINT,             ///< 16 bit integer
+        INT,                  ///< 32 bit integer
+        LARGEINT,             ///< 64 bit integer
+        NUMERIC,              ///< Numeric with decimal precision
+        DECIMAL_LSE,          ///< Decimal, leading sign embedded
+        SMALLINT_UNSIGNED,    ///< unsigned 16 bit integer
+        INT_UNSIGNED,         ///< unsigned 32 bit integer
+        NUMERIC_UNSIGNED,     ///< unsigned numeric
+        DECIMAL_UNSIGNED,     ///< unsigned decimal
+        REAL,                 ///< 4 byte floating point number
+        DOUBLE_PRECISION,     ///< 8 byte floating point number
+        CHAR,                 ///< fixed length character types.
+        VARCHAR,              ///< varying length character types.
+        DATE,                 ///< date
+        TIME,                 ///< time
+        TIMESTAMP,            ///< timestamp
+        INTERVAL              ///< interval
       };
   
-    enum SQLTYPE_CLASS_CODE // Classes of types defined in the SQL standard
+    /** Classes of types defined in the SQL standard */
+    enum SQLTypeClassCode
       {
-        CHARACTER_TYPE,       // char and varchar types
-        NUMERIC_TYPE,         // exact and approximate numerics
-        DATETIME_TYPE,        // date/time/timestamp
-        INTERVAL_TYPE,        // day/month or hour/second intervals
-        UNDEFINED_TYPE_CLASS
+        CHARACTER_TYPE,       ///< char and varchar types
+        NUMERIC_TYPE,         ///< exact and approximate numerics
+        DATETIME_TYPE,        ///< date/time/timestamp
+        INTERVAL_TYPE,        ///< day/month or hour/second intervals
+        UNDEFINED_TYPE_CLASS  ///< undefined value
       };
   
-    enum SQLTYPE_SUB_CLASS_CODE // More detailed type information
+    /** More detailed type information, but not as detailed as the actual type */
+    enum SQLTypeSubClassCode
       {
-        FIXED_CHAR_TYPE,
-        VAR_CHAR_TYPE,
-        EXACT_NUMERIC_TYPE,
-        APPROXIMATE_NUMERIC_TYPE,
-        DATE_TYPE,
-        TIME_TYPE,
-        TIMESTAMP_TYPE,
-        YEAR_MONTH_INTERVAL_TYPE,
-        DAY_SECOND_INTERVAL_TYPE,
-        UNDEFINED_TYPE_SUB_CLASS
+        FIXED_CHAR_TYPE,           ///< CHAR types
+        VAR_CHAR_TYPE,             ///< VARCHAR type
+        EXACT_NUMERIC_TYPE,        ///< Exact numeric
+        APPROXIMATE_NUMERIC_TYPE,  ///< Approximate numeric (floating point)
+        DATE_TYPE,                 ///< Date
+        TIME_TYPE,                 ///< Time
+        TIMESTAMP_TYPE,            ///< Timestamp (date + time
+                                   ///< + optional fractional seconds)
+        YEAR_MONTH_INTERVAL_TYPE,  ///< Intervals involving year and month
+        DAY_SECOND_INTERVAL_TYPE,  ///< Intervals involving
+                                   ///< days/hours/minutes/seconds
+        UNDEFINED_TYPE_SUB_CLASS   ///< undefined value
       };
   
-    // character sets
-    enum SQLCHARSET_CODE {
-      UNDEFINED_CHARSET,
-      CHARSET_ISO88591, // ISO 8859-1, single byte western European characters
-      CHARSET_UTF8,     // UTF-8, 1-4 byte Unicode encoding, length is in bytes
-      CHARSET_UCS2      // UCS-2, 16 bit Unicode encoding, tolerates UTF-16
-    };
+    /** Character sets */
+    enum SQLCharsetCode
+      {
+        UNDEFINED_CHARSET,
+        CHARSET_ISO88591, ///< ISO 8859-1, single byte western European characters
+        CHARSET_UTF8,     ///< UTF-8, 1-4 byte Unicode encoding, length is in bytes
+        CHARSET_UCS2      ///< UCS-2, 16 bit Unicode encoding, tolerates UTF-16
+      };
 
-    // collations
-    enum SQLCOLLATION_CODE {
-      UNDEFINED_COLLATION,
-      SYSTEM_COLLATION
-    };
+    /** Collations */
+    enum SQLCollationCode
+      {
+        UNDEFINED_COLLATION,      ///< undefined value
+        SYSTEM_COLLATION          ///< System collation, which is a binary
+                                  ///< collation, except that it ignores
+                                  ///< trailing blanks
+      };
 
-    // same values as SQLINTERVAL_CODE in file sql/cli/sqlcli.h
-    enum SQLINTERVAL_CODE {
-      UNDEFINED_INTERVAL_CODE =  0,
-      INTERVAL_YEAR           =  1,
-      INTERVAL_MONTH          =  2,
-      INTERVAL_DAY            =  3,
-      INTERVAL_HOUR           =  4,
-      INTERVAL_MINUTE         =  5,
-      INTERVAL_SECOND         =  6,
-      INTERVAL_YEAR_MONTH     =  7,
-      INTERVAL_DAY_HOUR       =  8,
-      INTERVAL_DAY_MINUTE     =  9,
-      INTERVAL_DAY_SECOND     = 10,
-      INTERVAL_HOUR_MINUTE    = 11,
-      INTERVAL_HOUR_SECOND    = 12,
-      INTERVAL_MINUTE_SECOND  = 13
-    };
+    /** Start and end fields of interval columns */
+    // Note: same values as SQLINTERVAL_CODE in file sql/cli/sqlcli.h
+    enum SQLIntervalCode
+      {
+        UNDEFINED_INTERVAL_CODE =  0,
+        INTERVAL_YEAR           =  1,
+        INTERVAL_MONTH          =  2,
+        INTERVAL_DAY            =  3,
+        INTERVAL_HOUR           =  4,
+        INTERVAL_MINUTE         =  5,
+        INTERVAL_SECOND         =  6,
+        INTERVAL_YEAR_MONTH     =  7,
+        INTERVAL_DAY_HOUR       =  8,
+        INTERVAL_DAY_MINUTE     =  9,
+        INTERVAL_DAY_SECOND     = 10,
+        INTERVAL_HOUR_MINUTE    = 11,
+        INTERVAL_HOUR_SECOND    = 12,
+        INTERVAL_MINUTE_SECOND  = 13
+      };
 
     TypeInfo(const TypeInfo &type);
-    // for use in UDRs, to make a TypeInfo from a C type
-    TypeInfo(CTYPE_CODE ctype = UNDEFINED_C_TYPE,
-             int length = 0,
-             bool nullable = false);
-    // for use in UDRs, to make a TypeInfo from an SQL type
-    TypeInfo(SQLTYPE_CODE sqltype,
+    TypeInfo(SQLTypeCode sqltype = UNDEFINED_SQL_TYPE,
              int length = 0,
              bool nullable = false,
              int scale = 0,
-             SQLCHARSET_CODE charset = CHARSET_UTF8,
-             SQLINTERVAL_CODE intervalCode = UNDEFINED_INTERVAL_CODE,
+             SQLCharsetCode charset = CHARSET_UTF8,
+             SQLIntervalCode intervalCode = UNDEFINED_INTERVAL_CODE,
              int precision = 0,
-             SQLCOLLATION_CODE collation = SYSTEM_COLLATION);
-    TypeInfo(CTYPE_CODE ctype,
-             SQLTYPE_CODE sqltype,
+             SQLCollationCode collation = SYSTEM_COLLATION);
+    // this constructor should not be used by UDR writers
+    TypeInfo(SQLTypeCode sqltype,
              bool nullable,
              int scale,
-             SQLCHARSET_CODE charset,
-             SQLINTERVAL_CODE intervalCode,
+             SQLCharsetCode charset,
+             SQLIntervalCode intervalCode,
              int precision,
-             SQLCOLLATION_CODE collation,
+             SQLCollationCode collation,
              int length);
 
-    CTYPE_CODE getCType() const;
-    SQLTYPE_CODE getSQLType() const;
-    SQLTYPE_CLASS_CODE getSQLTypeClass() const;
-    SQLTYPE_SUB_CLASS_CODE getSQLTypeSubClass() const;
+    SQLTypeCode getSQLType() const;
+    SQLTypeClassCode getSQLTypeClass() const;
+    SQLTypeSubClassCode getSQLTypeSubClass() const;
     bool getIsNullable() const;
     int getScale() const;
-    SQLCHARSET_CODE getCharset() const;
-    SQLINTERVAL_CODE getIntervalCode() const;
+    SQLCharsetCode getCharset() const;
+    SQLIntervalCode getIntervalCode() const;
     int getPrecision() const;
-    SQLCOLLATION_CODE getCollation() const;
+    SQLCollationCode getCollation() const;
     int getLength() const;
 
-    // get values at runtime and also values of available
-    // constant input parameters at compile time
-    bool canGetInt() const;
+    // UDR writers can ignore these methods
+
     int getInt(const char *row, bool &wasNull) const;
-    bool canGetLong() const;
     long getLong(const char *row, bool &wasNull) const;
-    bool canGetDouble() const;
     double getDouble(const char *row, bool &wasNull) const;
-    bool canGetString() const;
     const char * getRaw(const char *row,
                         bool &wasNull,
                         int &byteLen) const;
+    bool isAvailable() const;
 
-    // set data, used during runtime only
     void setInt(int val, char *row) const;
     void setLong(long val, char *row) const;
     void setDouble(double val, char *row) const;
     void setString(const char *val, int stringLen, char *row) const;
     void setNull(char *row) const;
 
-    // Functions for debugging
     void toString(std::string &s, bool longForm) const;
-
-    // UDF writers can ignore these methods
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
@@ -819,16 +793,15 @@ namespace tmudr
     };
 
     struct {
-      int /*CTYPE_CODE       */ cType_;
-      int /*SQLTYPE_CODE     */ sqlType_;
+      int /*SQLTypeCode      */ sqlType_;
       int /*bool             */ nullable_;
       int                       scale_;         // scale for exact numeric,
                                                 // fraction precision for datetime/interval
-      int /*SQLCHARSET_CODE  */ charset_;       // for character types
-      int /*SQLINTERVAL_CODE */ intervalCode_;  // for interval types
+      int /*SQLCharsetCode   */ charset_;       // for character types
+      int /*SQLIntervalCode  */ intervalCode_;  // for interval types
       int                       precision_;     // decimal precision for exact numerics,
                                                 // leading interval precision for intervals
-      int /*SQLCOLLATION_CODE*/ collation_;     // for character types
+      int /*SQLCollationCode */ collation_;     // for character types
       int                       length_;        // for numeric (decimal precision) and character types
       int                       dataOffset_;    // offset in record for data portion
       int                       nullIndOffset_; // offset in record for 2 or 4 byte varchar length
@@ -841,24 +814,18 @@ namespace tmudr
     friend class ::TMUDFInternalSetup;
   };
 
-  enum ORDER_TYPE // For outputs, the ordering of values from the first row
-                  // out to the last. Note that this ordering applies within
-                  // a parallel instance of the UDF at runtime, but it does
-                  // not guarantee a total order. For example, two parallel
-                  // instances may get these ordered values:
-                  // instance 0 gets 1,3,5,7
-                  // instance 1 gets 2,4,6,8
-    {
-      NO_ORDER,
-      ASCENDING,
-      DESCENDING
-    };
-
-  // -------------------------------------------------------------------
-  // ProvenanceInfo
-  //
-  // Describes where an output column is coming from.
-  // -------------------------------------------------------------------
+  /**
+   *  @brief Describes where an output column is coming from.
+   *
+   *  Points to input table and input column number that is the
+   *  source of a column. This must only be used if the result column
+   *  always has the exact same value as the current value of the
+   *  corresponding input column.
+   *
+   *  @see ColumnInfo::getProvenance()
+   *  @see ColumnInfo::setProvenance()
+   *  @see UDRInvocationInfo::addPassThruColumns()
+  */
 
   class ProvenanceInfo
   {
@@ -866,47 +833,50 @@ namespace tmudr
 
     ProvenanceInfo();
     ProvenanceInfo(int inputTableNum,
-                   int inputColumnNum);
+                   int inputColNum);
     int getInputTableNum() const;
     int getInputColumnNum() const;
-    bool isFromInputTable() const;
+    bool isFromInputTable(int inputTableNum = -1) const;
 
   private:
     int inputTableNum_;
-    int inputColumnNum_;
+    int inputColNum_;
   };
 
-  // -------------------------------------------------------------------
-  // ColumnInfo
-  //
-  // Describes a column in a table-valued input or in the output table
-  // -------------------------------------------------------------------
+  /**
+   *  @brief Describes a column in an input or output table or a parameter
+   *
+   *  This describes a column or parameter value that is passed through
+   *  the UDR interface, either as a value read from an input table, a
+   *  value produced in an output table or a parameter.
+  */
 
   class ColumnInfo : public TMUDRSerializableObject
   {
   public:
 
-    enum COLUMN_USE // Whether the column is used.
+    /** @brief Info on whether a table-valued input or output column is used */
+    enum ColumnUseCode
       {
-        USED,        // For an input, it’s needed by the UDF, for an output
-                     // it’s needed by the SQL Engine
-        NOT_USED,    // For an input, it’s not needed by the UDF,
-                     // For an output it’s not needed by the SQL Engine but
-                     // it is produced by the UDF.
-        NOT_PRODUCED // For outputs only, a column that is not needed by the
-                     // SQL Engine and will not be produced by the UDF.
+        UNKNOWN,     ///< Column usage is not yet determined
+        USED,        ///< For an input, it’s needed by the UDF, for an output
+                     ///< it’s needed by the SQL Engine
+        NOT_USED,    ///< Input or output is not needed. Input will be
+                     ///< removed after the describeDataflowAndPredicates()
+                     ///< call. Output will be retained to avoid errors at
+                     ///< runtime when the UDF tries to set this column value.
+        NOT_PRODUCED ///< Output is not needed and will be removed after the
+                     ///< describeDataflowAndPredicates() call.
       };
 
     ColumnInfo();
     ColumnInfo(const char *name,
-               const TypeInfo &type,
-               COLUMN_USE usage = USED,
-               long uniqueEntries = -1);
+               const TypeInfo &type);
 
     const std::string &getColName() const;
     const TypeInfo &getType() const;
     long getUniqueEntries() const;
-    COLUMN_USE getUsage() const;
+    ColumnUseCode getUsage() const;
     const ProvenanceInfo &getProvenance() const;
 
     // for use during compilation
@@ -914,13 +884,13 @@ namespace tmudr
     void setColName(const char *name);
     void setType(TypeInfo &type);
     void setUniqueEntries(long uniqueEntries);
-    void setUsage(COLUMN_USE usage);
+    void setUsage(ColumnUseCode usage);
     void setProvenance(const ProvenanceInfo &provenance);
 
     // Functions for debugging
     void toString(std::string &s, bool longForm = false) const;
 
-    // UDF writers can ignore these methods
+    // UDR writers can ignore these methods
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
@@ -932,37 +902,71 @@ namespace tmudr
 
     std::string name_;
     TypeInfo type_;
-    COLUMN_USE usage_;
+    ColumnUseCode usage_;
     long uniqueEntries_;
     ProvenanceInfo provenance_;
-    int dataOffset_;
-    int nullIndOffset_;
-    int vcLenIndOffset_;
 
     friend class ::TMUDFInternalSetup;
   };
 
-  // -------------------------------------------------------------------
-  // ConstraintInfo
-  //
-  // Describes an SQL constraint on an input or output table
-  // -------------------------------------------------------------------
+  /**
+   *  @brief A constraint on a table-valued input or output table
+   *
+   *  This could be a uniqueness constraint, a cardinality constraint
+   *  or some other constraint
+  */
 
   class ConstraintInfo : public TMUDRSerializableObject
   {
   public:
 
-    enum CONSTRAINT_TYPE // the type of a constraint
+    /** Type of a constraint */
+    enum ConstraintTypeCode
       {
-        UNIQUE         // A uniqueness constraint
+        CARDINALITY,   ///< Cardinality constraint
+        UNIQUE         ///< Uniqueness constraint
       };
 
-    ConstraintInfo(CONSTRAINT_TYPE constraintType);
 
-    CONSTRAINT_TYPE getType() const;    
-    void setType(CONSTRAINT_TYPE type);
+    ConstraintTypeCode getType() const;    
 
-    // UDF writers can ignore these methods
+    // UDR writers can ignore these methods
+    virtual void toString(const TableInfo &ti, std::string &s) = 0;
+    inline static unsigned short getCurrentVersion() { return 1; }
+    virtual int serializedLength();
+    virtual int serialize(Bytes &outputBuffer,
+                          int &outputBufferLength);
+    virtual int deserialize(Bytes &inputBuffer,
+                            int &inputBufferLength);
+
+  protected:
+    ConstraintInfo(ConstraintTypeCode constraintType,
+                   unsigned short version);
+
+  private:
+    ConstraintTypeCode constraintType_;
+  };
+
+  /**
+   *  @brief A cardinality constraint
+   *
+   *  Upper and/or lower bounds for the cardinality of
+   *  a table. Note that unlike cardinality estimates, this
+   *  is a hard constraint that must be followed by the table,
+   *  otherwise incorrect results and errors may occur.
+  */
+
+  class CardinalityConstraintInfo : public ConstraintInfo
+  {
+  public: 
+    CardinalityConstraintInfo(long minNumRows = 0,
+                              long maxNumRows = -1);
+
+    long getMinNumRows() const;
+    long getMaxNumRows() const;
+
+    // UDR writers can ignore these methods
+    virtual void toString(const TableInfo &ti, std::string &s);
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
@@ -971,29 +975,27 @@ namespace tmudr
                             int &inputBufferLength);
 
   private:
-    CONSTRAINT_TYPE constraintType_;
+
+    long minNumRows_;
+    long maxNumRows_;
   };
 
-  // -------------------------------------------------------------------
-  // UniqueConstraintInfo
-  // -------------------------------------------------------------------
+  /**
+   *  @brief A uniqueness constraint
+   *
+   *  A list of columns that, together, form a unique key
+  */
 
   class UniqueConstraintInfo : public ConstraintInfo
   {
-  public: 
-    // todo: std::vector<ColumnInfo> &getColumns() const;    
-    // todo: void setColumns(std::vector<ColumnInfo> &cols);
-  };
+  public:
+    UniqueConstraintInfo();
+    int getNumUniqueColumns() const;
+    int getUniqueColumn(int i) const;
+    void addColumn(int c);
 
-  // -------------------------------------------------------------------
-  // PredicateInfo
-  //
-  // Describes a predicate to be evaluated on a table
-  // -------------------------------------------------------------------
-
-  class PredicateInfo : public TMUDRSerializableObject
-  {
-    // UDF writers can ignore these methods
+    // UDR writers can ignore these methods
+    virtual void toString(const TableInfo &ti, std::string &s);
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
@@ -1001,118 +1003,253 @@ namespace tmudr
     virtual int deserialize(Bytes &inputBuffer,
                             int &inputBufferLength);
 
-  public:
+  private:
 
-    enum PRED_OPERATOR // The relation of the predicate.
-      { 
-        EQUAL, 
-        NOT_EQUAL,
-        LESS, 
-        LESS_EQUAL, 
-        GREATER, 
-        GREATER_EQUAL, 
-        IN, 
-        NOT_IN
-      };
-
-    // todo: PRED_OPERATOR getOperator() const;
-    // todo: const ColumnInfo &getLeftColumn() const;
-    // todo: bool isRightColumn() const;
-    // todo: const ColumnInfo &getRightColumn() const;  
-    // todo: const ParameterInfo &getRightValues() const;
-    // todo: void absorbed(bool absorb);
+    std::vector<int> uniqueColumns_;
   };
 
-  // -------------------------------------------------------------------
-  // PartitionInfo
-  // -------------------------------------------------------------------
+  /**
+   *  @brief A predicate to be evaluated on a table
+   *
+   *  These could be different kinds of predicates, like an equals
+   *  predicate, a non-equals predicate or more complex cases.
+  */
+
+  class PredicateInfo : public TMUDRSerializableObject
+  {
+  public:
+
+    /**
+     *  @brief Info on whether a table-valued input or output column is used
+     *
+     *  Note that these are not necessarily exclusive, a predicate might
+     *  be evaluated in multiple places, although that should not be
+     *  common and is not yet allowed.
+     */
+    enum EvaluationCode
+      {
+        UNKNOWN_EVAL        = 0,     ///< Not yet determined where predicate
+                                     ///< is evaluated.
+        EVALUATE_ON_RESULT  = 0x1,   ///< Predicate is evaluated on the
+                                     ///< UDF result, in Trafodion code.
+                                     ///< This is the default.
+        EVALUATE_IN_UDF     = 0x2,   ///< Predicate is evaluated inside the
+                                     ///< code provided by the UDR writer.
+        EVALUATE_IN_CHILD   = 0x4    ///< Predicate should be evaluated
+                                     ///< in a table-valued input before
+                                     ///< the data reaches the UDF.
+      };
+
+    /** Operator of a relational (comparison) predicate */
+    enum PredOperator
+      {
+        UNKNOWN_OP,     ///< Operator not yet determined
+        EQUAL,          ///< Equals predicate (col = val)
+        NOT_EQUAL,      ///< Not equals predicate (col <> val)
+        LESS,           ///< Less than predicate (col <)
+        LESS_EQUAL,     ///< Less or equals predicate (col <=)
+        GREATER,        ///< Greater predicate (col >)
+        GREATER_EQUAL,  ///< Greater or equals predicate (col >=)
+        IN,             ///< IN predicate (col IN)
+        NOT_IN          ///< NOT IN predicate (col NOT IN)
+      };
+
+
+    EvaluationCode getEvaluationCode() const;
+    PredOperator getOperator() const;
+    bool isAComparisonPredicate() const;
+
+    // UDR writers can ignore these methods
+    PredicateInfo(TMUDRSerializableObject::TMUDRObjectType t);
+    void setOperator(PredOperator op);
+    void setEvaluationCode(EvaluationCode c);
+    virtual void mapColumnNumbers(const std::vector<int> &map) = 0;
+    virtual void toString(std::string &s,
+                          const TableInfo &ti) const = 0;
+
+    inline static unsigned short getCurrentVersion() { return 1; }
+    virtual int serializedLength();
+    virtual int serialize(Bytes &outputBuffer,
+                          int &outputBufferLength);
+    virtual int deserialize(Bytes &inputBuffer,
+                            int &inputBufferLength);
+
+  private:
+
+    int evalCode_;
+    PredOperator operator_;
+
+  };
+
+  /**
+   *  @brief A comparison predicate to be evaluated on a table
+   *
+   *  A predicate that compares a column value to a constant or
+   *  another value that evaluates to a constant at runtime,
+   *  like an SQL query parameter.
+  */
+
+  class ComparisonPredicateInfo : public PredicateInfo
+  {
+  public:
+
+    int getColumnNumber() const;
+    bool hasAConstantValue() const;
+    std::string getConstValue() const;
+
+    // UDR writers can ignore these methods
+    ComparisonPredicateInfo();
+    void setColumnNumber(int columnNumber);
+    void setValue(const char *value);
+    virtual void mapColumnNumbers(const std::vector<int> &map);
+    virtual void toString(std::string &s,
+                          const TableInfo &ti) const;
+
+    inline static unsigned short getCurrentVersion() { return 1; }
+    virtual int serializedLength();
+    virtual int serialize(Bytes &outputBuffer,
+                          int &outputBufferLength);
+    virtual int deserialize(Bytes &inputBuffer,
+                            int &inputBufferLength);
+
+  private:
+
+    int columnNumber_;
+    bool hasValue_;
+    std::string value_;
+
+  };
+
+
+  /**
+   *  @brief Partitioning key of an input table or result table
+   *
+   *  Describes the partitioning key of a table-valued input or
+   *  result.  When executing a UDR in parallel, if a table is
+   *  partitioned on some columns, e.g. (a,b), this means that a rows
+   *  with particular values for (a,b), e.g. (10, 20) will all go to
+   *  the same parallel instance and will be seen as a contiguous
+   *  group. This is similar to the key of a reducer in MapReduce,
+   *  except that in this case we process a group of rows with the
+   *  same key, not a single key and a list of values.
+  */
 
   class PartitionInfo : public std::vector<int>
   {
   public:
 
-    enum PARTITION_TYPE // The type of partitioning
+    /** Type of partitioning */
+    enum PartitionTypeCode
       {
-        UNKNOWN,   // partitioning type not yet determined
-        SERIAL,    // no partitioning is allowed, execute serially
-        PARTITION, // partitioning is required
-        REPLICATE  // replicate the data to each parallel instance
+        UNKNOWN,   ///< Partitioning type not yet determined.
+        ANY,       ///< No limitations on parallel execution, typical for
+                   ///< mappers, any row can be evaluated by any parallel
+                   ///< instance of the UDF.
+        SERIAL,    ///< No partitioning is allowed, execute serially in a
+                   ///< single instance.
+        PARTITION, ///< Allow parallelism with partitioning key, if specified,
+                   ///< serial execution otherwise.
+        REPLICATE  ///< Replicate the data to each parallel instance.
       };
 
     PartitionInfo();
-    PARTITION_TYPE getType() const;
+    PartitionTypeCode getType() const;
     
-    void setType(PARTITION_TYPE type);
+    void setType(PartitionTypeCode type);
+
+    // UDR writers can ignore these methods
+    void mapColumnNumbers(const std::vector<int> &map);
 
   private:
 
-    PARTITION_TYPE type_;
+    PartitionTypeCode type_;
   };
 
-  // -------------------------------------------------------------------
-  // OrderInfo
-  // -------------------------------------------------------------------
+  /**
+   *  @brief Ordering of a table by some ascending or descending columns
+   *
+   *  A list of columns, represented by column numbers, with an
+   *  ascending/descending indicator for each column.
+  */
 
   class OrderInfo
   {
   public:
 
-    // const Functions for use by UDF writer, both at compile and at run time
+    /**
+     *  @brief Ascending/descending order of columns
+     *
+     *  For outputs, the ordering of values from the first row out to the
+     *  last. Note that this ordering applies within a parallel instance
+     *  of the UDF at runtime, but it does not guarantee a total
+     *  order. For example, two parallel instances may get these ordered
+     *  values: instance 0 gets 1,3,5,7 instance 1 gets 2,4,6,8
+     */
+    enum OrderTypeCode
+      {
+        NO_ORDER,  ///< Unspecified order
+        ASCENDING, ///< Ascending order
+        DESCENDING ///< Descending order
+      };
+
+    // const Functions for use by UDR writer, both at compile and at run time
     int getNumEntries() const;
     int getColumnNum(int i) const;
-    ORDER_TYPE getOrderType(int i) const;
+    OrderTypeCode getOrderType(int i) const;
 
     // Functions available at compile time only
-    void addEntry(int colNum, ORDER_TYPE orderType = ASCENDING);
+    void addEntry(int colNum, OrderTypeCode orderType = ASCENDING);
     void addEntryAt(int pos,
                     int colNum,
-                    ORDER_TYPE orderType = ASCENDING);
+                    OrderTypeCode orderType = ASCENDING);
+
+    // UDR writers can ignore these methods
+    void mapColumnNumbers(const std::vector<int> &map);
 
   private:
     std::vector<int> columnNumbers_;
-    std::vector<ORDER_TYPE> orderTypes_;
+    std::vector<OrderTypeCode> orderTypes_;
   };
 
-  // -------------------------------------------------------------------
-  // TupleInfo
-  //
-  // Describes a list of scalars, which could be columns of a table
-  // or a parameter list
-  // -------------------------------------------------------------------
+
+  /**
+   *  @brief Common base class for parameter lists and row layouts
+   *
+   *  Describes a list of scalars, which could be columns of a table
+   *  or a parameter list
+  */
 
   class TupleInfo : public TMUDRSerializableObject
   {
   public: 
 
-    TupleInfo(TMUDRObjectType objType, int version);
-    ~TupleInfo();
-
-    // Functions for use by UDF writer, both at compile and at run time
+    // Functions for use by UDR writer, both at compile and at run time
     int getNumColumns() const;
     int getColNum(const char *colName) const;
     int getColNum(const std::string &colName) const;
     const ColumnInfo &getColumn(int colNum) const;
     const ColumnInfo &getColumn(const std::string &colName) const;
+    const TypeInfo &getType(int colNum) const;
+    TypeInfo::SQLTypeClassCode getSQLTypeClass(int colNum) const;
 
     // get values at runtime and also values of available
     // constant input parameters at compile time
-    bool canGetInt(int colNum) const;
     int getInt(int colNum) const;
     int getInt(const std::string &colName) const;
-    bool canGetLong(int colNum) const;
     long getLong(int colNum) const;
     long getLong(const std::string &colName) const;
-    bool canGetDouble(int colNum) const;
     double getDouble(int colNum) const;
     double getDouble(const std::string &colName) const;
-    bool canGetString(int colNum) const;
     std::string getString(int colNum) const;
     std::string getString(const std::string &colName) const;
     const char * getRaw(int colNum, int &byteLen) const;
+    bool isAvailable(int colNum) const;
     void getDelimitedRow(std::string &row,
                          char delim='|',
                          bool quote = false,
-                         char quoteSymbol = '"') const;
+                         char quoteSymbol = '"',
+                         int firstColumn = 0,
+                         int lastColumn = -1) const;
     bool wasNull() const; // did getXXX() method return a NULL?
 
     // non-const methods, used during runtime only
@@ -1125,29 +1262,32 @@ namespace tmudr
     const char * setFromDelimitedRow(const char *row,
                                      char delim='|',
                                      bool quote = false,
-                                     char quoteSymbol = '"') const;
+                                     char quoteSymbol = '"',
+                                     int firstColumnToSet = 0,
+                                     int lastColumnToSet = -1,
+                                     int numDelimColsToSkip = 0) const;
     void setNull(int colNum) const;
 
     // non-const methods, used during compile time only
-    ColumnInfo &getColumn(int i);
-    ColumnInfo &getColumn(const std::string &name);
+    ColumnInfo &getColumn(int colNum);
+    ColumnInfo &getColumn(const std::string &colName);
     void addColumn(const ColumnInfo &column);
 
     // for convenient adding of columns of a common type
-    void addIntegerColumn(const char *colName, bool isNullable = false);
+    void addIntColumn(const char *colName, bool isNullable = false);
     void addLongColumn(const char *colName, bool isNullable = false);
     void addCharColumn(
          const char *colName,
          int length,
          bool isNullable = false,
-         TypeInfo::SQLCHARSET_CODE charset = TypeInfo::CHARSET_UTF8,
-         TypeInfo::SQLCOLLATION_CODE collation = TypeInfo::SYSTEM_COLLATION);
+         TypeInfo::SQLCharsetCode charset = TypeInfo::CHARSET_UTF8,
+         TypeInfo::SQLCollationCode collation = TypeInfo::SYSTEM_COLLATION);
     void addVarCharColumn(
          const char *colName,
          int length,
          bool isNullable = false,
-         TypeInfo::SQLCHARSET_CODE charset = TypeInfo::CHARSET_UTF8,
-         TypeInfo::SQLCOLLATION_CODE collation = TypeInfo::SYSTEM_COLLATION);
+         TypeInfo::SQLCharsetCode charset = TypeInfo::CHARSET_UTF8,
+         TypeInfo::SQLCollationCode collation = TypeInfo::SYSTEM_COLLATION);
 
     void addColumns(const std::vector<ColumnInfo *> &columns);
     void addColumnAt(const ColumnInfo &column, int position);
@@ -1157,7 +1297,9 @@ namespace tmudr
     // Functions for debugging
     void print();
 
-    // UDF writers can ignore these methods
+    // UDR writers can ignore these methods
+    TupleInfo(TMUDRObjectType objType, int version);
+    ~TupleInfo();
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
@@ -1186,20 +1328,15 @@ namespace tmudr
     friend class ::LmRoutineCppObj;
   };
 
-  // -------------------------------------------------------------------
-  // TableInfo
-  //
-  // A TupleInfo used for an input or output table
-  // -------------------------------------------------------------------
+  /**
+   *  @brief Describes a table-valued input or a table-valued output
+  */
 
   class TableInfo : public TupleInfo
   {
   public: 
 
-    TableInfo();
-    ~TableInfo();
-
-    // Functions for use by UDF writer, both at compile and at run time
+    // Functions for use by UDR writer, both at compile and at run time
     long getNumRows() const;
     const PartitionInfo &getQueryPartitioning() const;
     const OrderInfo &getQueryOrdering() const;
@@ -1208,17 +1345,22 @@ namespace tmudr
     const ConstraintInfo &getConstraint(int i) const;
 
     // non-const methods, used during compile time only
-    ConstraintInfo &getConstraint(int i);
-
     void setNumRows(long rows);
-    void addConstraint(ConstraintInfo &constraint);
+    void addCardinalityConstraint(const CardinalityConstraintInfo &constraint);
+    void addUniquenessConstraint(const UniqueConstraintInfo &constraint);
     void setIsStream(bool stream);
 
     // Functions for debugging
     void print();
 
-    // UDF writers can ignore these methods
+    // UDR writers can ignore these methods
+    TableInfo();
+    ~TableInfo();
     inline static unsigned short getCurrentVersion() { return 1; }
+    PartitionInfo &getQueryPartitioning();
+    OrderInfo &getQueryOrdering();
+    void setQueryPartitioning(const PartitionInfo &partInfo);
+    void setQueryOrdering(const OrderInfo &orderInfo);
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
@@ -1239,11 +1381,14 @@ namespace tmudr
     friend class ::TMUDFInternalSetup;
   };
 
-  // -------------------------------------------------------------------
-  // ParameterListInfo
-  //
-  // A TupleInfo used for a parameter list
-  // -------------------------------------------------------------------
+  /**
+   *  @brief Describes the parameters of a UDR.
+   *
+   *  This method currently has no methods relevant to the UDR
+   *  writer, but the base class, TupleInfo, has a variety of methods.
+   *
+   *  @see TupleInfo
+  */
 
   class ParameterListInfo : public TupleInfo
   {
@@ -1252,7 +1397,7 @@ namespace tmudr
     ParameterListInfo();
     virtual ~ParameterListInfo();
 
-   // UDF writers can ignore these methods
+    // UDR writers can ignore these methods
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
@@ -1270,35 +1415,16 @@ namespace tmudr
     friend class ::TMUDFInternalSetup;
   };
 
-  // -------------------------------------------------------------------
-  // UDRWriterCompileTimeData
-  //
-  // These are optional classes a UDF writer can use to store
-  // information that should persist between method calls of the
-  // UDRInterface object with the same UDRInvocationInfo/UDRPlanInfo
-  // objects.
-  //
-  // UDRWriterCompileTimeData:
-  //  - When attached to a UDRInvocationInfo object, keeps context
-  //    between compiler interface calls for this object. The
-  //    info is NOT passed to the run time methods, use
-  //    UDRWriterPlanData object for that.
-  //
-  // UDRWriterPlanData:
-  //  - This is not an object, it's a serialized byte array
-  //    that gets added to the UDRPlanInfo during the
-  //    completeDescription() call and that is passed to all
-  //    runtime instances that execute the UDR.
-  //
-  // UDRWriterRunTimeData:
-  //  - This object can be created in the parallel instances at
-  //    runtime and attached to the UDRPlanInfo object. It will be local
-  //    to the parallel instance in which it is created and not be shared.
-  //
-  // For both of these objects, they can allocate memory and other resources,
-  // but all of these resources must be freed up by the destructor.
-  // -------------------------------------------------------------------
-
+  /**
+   *  @brief Compile time data owned by the UDR writer
+   *
+   *  When attached to a UDRInvocationInfo object, keeps context
+   *  between compiler interface calls for this object. This class
+   *  can also be attached to a UDRPlanInfo object, to keep state
+   *  between plan alternatives for a UDR invocation. The
+   *  info is NOT passed to the run time methods, use
+   *  UDRPlanInfo::addPlanData() for that.
+  */
   class UDRWriterCompileTimeData
   {
   public:
@@ -1311,99 +1437,131 @@ namespace tmudr
 
   };
 
-  class UDRWriterRunTimeData
-  {
-  public:
-
-    UDRWriterRunTimeData();
-    virtual ~UDRWriterRunTimeData();
-
-    // Functions for debugging
-    virtual void print();
-
-  };
-
-  // -------------------------------------------------------------------
-  // UDRInvocationInfo
-  // -------------------------------------------------------------------
+  /**
+   *  @brief Describes an invocation of a UDR
+   *
+   *  This combines the description of the UDR, its names and
+   *  properties with the parameters, input and output table layouts
+   *  and other information. An object of this class is passed to
+   *  most methods defined by the UDR writer. It can be used to
+   *  get input and parameter data and to set values of table-valued
+   *  output columns.
+  */
 
   class UDRInvocationInfo : public TMUDRSerializableObject
   {
   public:
 
+    /**
+     *  @brief Type of a TMUDF: Generic, mapper or reducer.
+     */
     enum FuncType  // The type of this UDF.
       {
-        ROWFUNC,              // A function that takes a single row of input
-                              // per invocation and produces 0 or more rows
-                              // of outputs.  
-        ROWFUNC_EQUALIZER,    // A function that takes a single row of input per invocation and 
-                              // produces exactly one row of output.                                  
-        ROWFUNC_FILTER,       // A function that takes a single row of input per invocation and 
-                              // produces 0 or 1 rows of output. 
-        SETFUNC,              // A function that takes 0 or more rows of input per invocation and 
-                              // produces 0 or more rows of output. 
-        SETFUNC_EQUALIZER,    // A function that takes 0 or more rows of input per invocation and 
-                              // produces 1 row of output per row of input.
-        SETFUNC_UNIFIER,      // A function that takes 0 or more rows of input per invocation and 
-                              // produces 1 row of output.
-        VECTORFUNC,           // A function that takes 0 or more ordered rows of input per invocation
-                              // and produces 0 or more rows of output. 
-        VECTORFUNC_EQUALIZER, // A function that takes 0 or more ordered rows of input per invocation 
-                              // and produces 1 row of output per row of input.
-        VECTORFUNC_UNIFIER    // A function that takes 0 or more ordered rows of input per invocation
-                              // and produces 1 row of output. 
-    };
+        GENERIC, ///< The Trafodion compiler will make only the
+                 ///< most conservative assumptions about this type of UDF.
+        MAPPER,  ///< A UDF that behaves like a mapper. A mapper does not
+                 ///< carry any state between rows it reads from its
+                 ///< table-valued inputs. It produces zero or more output
+                 ///< rows per input row. Because no state is kept between
+                 ///< rows, the Trafodion compiler can automatically push
+                 ///< predicates down to the table-valued inputs.
+        REDUCER  ///< A reducer requires the data to be partitioned on
+                 ///< a set of columns. The UDF does not carry any state
+                 ///< between groups of rows with the same partition column
+                 ///< values, but it may carry state within such groups.
+                 ///< This allows the compiler to push predicates on the
+                 ///< partitioning column(s) down to table-valued inputs.
+      };
 
-    // use cqd UDR_DEBUG_FLAGS 'num' in SQL to set these, add up
-    // the flags (in decimal) that you want to set
+    /**
+     *  @brief call phase for the UDR interface
+     *
+     *  This is of limited interest for UDR writers and mostly
+     *  used internally to ensure method calls are not done at
+     *  the wrong time.
+     */
+    enum CallPhase
+      {
+        UNKNOWN_CALL_PHASE          = 0,
+        COMPILER_INITIAL_CALL       = 10,
+        COMPILER_DATAFLOW_CALL      = 20,
+        COMPILER_CONSTRAINTS_CALL   = 30,
+        COMPILER_STATISTICS_CALL    = 40,
+        COMPILER_DOP_CALL           = 50,
+        COMPILER_PLAN_CALL          = 60,
+        COMPILER_COMPLETION_CALL    = 70,
+        RUNTIME_WORK_CALL           = 110
+      };
+
+    /**
+     *  @brief values used for the UDR_DEBUG_FLAGS CQD
+     *
+     *  use cqd UDR_DEBUG_FLAGS 'num' in SQL to set these, add up
+     *  the flags (in decimal) that you want to set. See
+     *  https://wiki.trafodion.org/wiki/index.php/Tutorial:_The_object-oriented_UDF_interface#Debugging_UDF_code
+     *  for details.
+     */
     enum DebugFlags
       {
-        DEBUG_INITIAL_RUN_TIME_LOOP_ONE   = 0x00000001, // 1
-        DEBUG_INITIAL_RUN_TIME_LOOP_ALL   = 0x00000002, // 2
-        DEBUG_INITIAL_COMPILE_TIME_LOOP   = 0x00000004, // 4
-        DEBUG_LOAD_MSG_LOOP               = 0x00000008, // 8
-        TRACE_ROWS                        = 0x00000010, // 16
-        PRINT_INVOCATION_INFO_INITIAL     = 0x00000020, // 32
-        PRINT_INVOCATION_INFO_END_COMPILE = 0x00000040, // 64
-        PRINT_INVOCATION_INFO_AT_RUN_TIME = 0x00000080, // 128
-        VALIDATE_WALLS                    = 0x00000100  // 256
+        DEBUG_INITIAL_RUN_TIME_LOOP_ONE   = 0x00000001, ///< 1
+        DEBUG_INITIAL_RUN_TIME_LOOP_ALL   = 0x00000002, ///< 2
+        DEBUG_INITIAL_COMPILE_TIME_LOOP   = 0x00000004, ///< 4
+        DEBUG_LOAD_MSG_LOOP               = 0x00000008, ///< 8
+        TRACE_ROWS                        = 0x00000010, ///< 16
+        PRINT_INVOCATION_INFO_INITIAL     = 0x00000020, ///< 32
+        PRINT_INVOCATION_INFO_END_COMPILE = 0x00000040, ///< 64
+        PRINT_INVOCATION_INFO_AT_RUN_TIME = 0x00000080, ///< 128
+        VALIDATE_WALLS                    = 0x00000100  ///< 256
       };
 
     // there are no public constructors for this class
 
-    // const Functions for use by UDF writer, both at compile and at run time
+    // const Functions for use by UDR writer, both at compile and at run time
     const std::string &getUDRName() const;
     int getNumTableInputs() const;
     const TableInfo &in(int childNum = 0) const;
     const TableInfo &out() const;
     CallPhase getCallPhase() const;
+    const std::string &getCurrentUser() const;
+    const std::string &getSessionUser() const;
+    const std::string &getCurrentRole() const;
     bool isCompileTime() const;
     bool isRunTime() const;
     int getDebugFlags() const;
     FuncType getFuncType() const;
     const ParameterListInfo &getFormalParameters() const;
     const ParameterListInfo &par() const; // actual parameters
-    int getNumFormalParameters() const;
-    const ColumnInfo &getFormalParameterInfo(int position) const;
-    const ColumnInfo &getFormalParameterInfo(const std::string &name) const;
-    int getNumActualParameters() const;
-    const ColumnInfo &getActualParameterInfo(int position) const;
-    const ColumnInfo &getActualParameterInfo(const std::string &name) const;
     int getNumPredicates() const;
     const PredicateInfo &getPredicate(int i) const;
+    bool isAComparisonPredicate(int i) const;
+    const ComparisonPredicateInfo &getComparisonPredicate(int i) const;
 
     // Functions available at compile time only
 
-    // use the next four only from describeParamsAndColumns()
-    TableInfo &getOutputTableInfo();
+    // use the next six only from describeParamsAndColumns()
+    TableInfo &out();
     void addFormalParameter(const ColumnInfo &param);
     void setFuncType(FuncType type);
     void addPassThruColumns(int inputTableNum = 0,
-                            int startInputColumnNum = 0,
-                            int endInputColumnNum = -1);
+                            int startInputColNum = 0,
+                            int endInputColNum = -1);
+    void setChildPartitioning(int inputTableNum,
+                              const PartitionInfo &partInfo);
+    void setChildOrdering(int inputTableNum,
+                          const OrderInfo &orderInfo);
 
-    // use only from describeDataflow()
-    void addPredicate(const PredicateInfo &pred);
+    // use only from describeDataflowAndPredicates()
+    void setChildColumnUsage(int inputTableNum,
+                             int inputColumnNum,
+                             ColumnInfo::ColumnUseCode usage);
+    void setUnusedPassthruColumns();
+    void setPredicateEvaluationCode(int predicateNum,
+                                    PredicateInfo::EvaluationCode c);
+    void pushPredicatesOnPassthruColumns(int startPredNum = 0,
+                                         int lastPredNum = -1);
+
+    // use only from describeConstraints()
+    void propagateConstraintsFor1To1UDFs(bool exactlyOneRowPerInput);
 
     // use anytime during compilation
     UDRWriterCompileTimeData *getUDRWriterCompileTimeData();
@@ -1411,17 +1569,16 @@ namespace tmudr
 
     // Functions available at run-time only
     void copyPassThruData(int inputTableNum = 0,
-                          int startInputColumnNum = 0,
-                          int endInputColumnNum = -1);
+                          int startInputColNum = 0,
+                          int endInputColNum = -1);
+    const std::string &getQueryId() const;
     int getNumParallelInstances() const;
     int getMyInstanceNum() const;  // 0 ... getNumInstances()-1
-    UDRWriterRunTimeData *getUDRWriterRunTimeData();
-    void setUDRWriterRunTimeData(UDRWriterRunTimeData *runTimeData);
 
     // Functions for debugging
     void print();
 
-    // UDF writers can ignore these methods
+    // UDR writers can ignore these methods
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
@@ -1445,6 +1602,10 @@ namespace tmudr
     std::string name_;
     int numTableInputs_;
     CallPhase callPhase_;
+    std::string currentUser_;
+    std::string sessionUser_;
+    std::string currentRole_;
+    std::string queryId_;
     TableInfo inputTableInfo_[MAX_INPUT_TABLES];
     TableInfo outputTableInfo_;
     int debugFlags_;
@@ -1453,7 +1614,6 @@ namespace tmudr
     ParameterListInfo actualParameterInfo_;
     std::vector<PredicateInfo *> predicates_;
     UDRWriterCompileTimeData *udrWriterCompileTimeData_;
-    UDRWriterRunTimeData *udrWriterRunTimeData_;
     int totalNumInstances_;
     int myInstanceNum_;
 
@@ -1464,14 +1624,38 @@ namespace tmudr
     friend class ::LmRoutineCppObj;
   };
 
-  // -------------------------------------------------------------------
-  // UDRPlanInfo
-  // -------------------------------------------------------------------
+  /**
+   *  @brief Describes the query plan used for a UDR invocation
+   *
+   *  Objects of this type are used together with UDRInvocationInfo
+   *  objects and they contain additional info on plan-related
+   *  such as the chosen partitioning and ordering.
+  */
 
   class UDRPlanInfo : public TMUDRSerializableObject
   {
   public:
-    // Functions for use by UDF writer, both at compile and at run time
+    /** @brief Special degrees of parallelism.
+     *
+     *  Values that can be used in the setDesiredDegreeOfParallelism()
+     *  method, in addition to positive numbers for the degree of
+     *  parallelism (DoP).
+     */
+    enum SpecialDegreeOfParallelism
+      {
+        ANY_DEGREE_OF_PARALLELISM     =  0, ///< Optimizer decides DoP
+        DEFAULT_DEGREE_OF_PARALLELISM = -1, ///< Optimizer decides DoP based
+                                            ///< on dataflow heuristics.
+        MAX_DEGREE_OF_PARALLELISM     = -2, ///< Execute the UDF with the
+                                            ///< largest degree of parallelism
+                                            ///< allowed.
+        ONE_INSTANCE_PER_NODE         = -3  ///< Execute one instance of the
+                                            ///< on every Trafodion node.
+                                            ///< Used internally for
+                                            ///< maintenance UDFs.
+      };
+
+    // Functions for use by UDR writer, both at compile and at run time
     long getCostPerRow() const;
     int getDesiredDegreeOfParallelism() const;
 
@@ -1479,13 +1663,6 @@ namespace tmudr
     // call this from describePlanProperties() or earlier
     void setCostPerRow(long microseconds);
 
-    // values that can be used in the setDesiredDegreeOfParallelism()
-    // method below, in addition to positive numbers for the degree of
-    // parallelism
-    static const int ANY_DEGREE_OF_PARALLELISM     =  0;
-    static const int DEFAULT_DEGREE_OF_PARALLELISM = -1;
-    static const int MAX_DEGREE_OF_PARALLELISM     = -2;
-    static const int ONE_INSTANCE_PER_NODE         = -3;
     // call this from describeDesiredDegreeOfParallelism() or earlier
     void setDesiredDegreeOfParallelism(int dop);
 
@@ -1500,7 +1677,7 @@ namespace tmudr
     // Functions for debugging
     void print();
 
-    // UDF writers can ignore these methods
+    // UDR writers can ignore these methods
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
@@ -1525,56 +1702,87 @@ namespace tmudr
     friend class ::SPInfo;
   };
 
-  // ----------------------------------------------------------------------
-  // class UDRInterface
-  //
-  // This class represents the default behavior of a UDR. UDR
-  // writers can create a derived class and implement these methods
-  // for their specific UDR.
-  //
-  // To use this interface, the UDF writer must provide a function
-  // of type CreateInterfaceObjectFunc with a name that's the UDR
-  // name plus the string "_CreateInterfaceObject", and it must
-  // have "C" linkage. See below for an example.
-  //
-  // Using the compiler interface for TMUDFs is completely optional!!
-  // ================================================================
-  //
-  // - If the describeParamsAndColumns() interface is not used, all
-  //   parameters and result table columns must be declared in the
-  //   CREATE TABLE MAPPING FUNCTION DDL.
-  // - When using the describeParamsAndColumns() interface, additional
-  //   parameters and all output columns can be defined at compile time.
-  // - A TMUDF writer can decide to override none, some or all of
-  //   the virtual methods in the compiler interface.
-  // - See file sqludr.cpp for the default implementation of these
-  //   methods.
-  // - When overriding methods, the TMUDF writer has the option to
-  //   call the default method to do part of the work, and then to
-  //   implement additional logic.
-  // - Multiple TMUDFs could share the same subclass of UDRInterface.
-  //   The UDR name is passed in UDRInvocationInfo, so the logic can
-  //   depend on the name.
-  // - A single query may invoke the same TMUDF more than once. A
-  //   different UDRInvocationInfo object will be passed for each
-  //   such invocation.
-  // - The optimizer may try different execution plans for a TMUDF
-  //   invocation, e.g. with different partitioning and ordering
-  //   of input and/or output data. These alternative plans share
-  //   the same UDRInvocationInfo object but they will use different
-  //   UDRPlanInfo objects.
-  // ----------------------------------------------------------------------
+  /**
+   *  @brief This class represents the code associated with a UDR.
+   *
+   *  UDR writers can create a derived class and implement these methods
+   *  for their specific UDR. The base class also has default methods
+   *  for all but the runtime call. See
+   *  https://wiki.trafodion.org/wiki/index.php/Tutorial:_The_object-oriented_UDF_interface
+   *  for examples.
+   *
+   *  To use this interface, the UDR writer must provide a function
+   *  of type CreateInterfaceObjectFunc with a name that's the UDR
+   *  external name, and it must have "C" linkage. Example, assuming
+   *  the external name of the UDF is MYUDF:
+   *
+   *  @code
+   *  // define a class that is derived from UDR
+   *  class MyUDFInterface : public UDR
+   *  {
+   *    // Override any virtual methods where the UDF author would
+   *    // like to change the default behavior. It is fine to add
+   *    // other methods and data members, just make sure to free
+   *    // up all resources in the destructor.
+   *    ...
+   *  };
+   *  // define a "factory" function to return an object of this class
+   *  extern "C"
+   *  SQLUDR_LIBFUNC UDR * MYUDF()
+   *  {
+   *    return new MyUDFInterface;
+   *  }
+   *  @endcode
+   *
+   *  @arg If the describeParamsAndColumns() interface is not used, all
+   *       parameters and result table columns must be declared in the
+   *       CREATE TABLE MAPPING FUNCTION DDL.
+   *  @arg When using the describeParamsAndColumns() interface, additional
+   *       parameters and all output columns can be defined at compile time.
+   *  @arg A UDR writer can decide to override none, some or all of
+   *       the virtual methods in the compiler interface. The run-time
+   *       interface, processData(), must always be provided.
+   *  @arg See file sqludr.cpp for the default implementation of these
+   *       methods.
+   *  @arg When overriding methods, the UDR writer has the option to
+   *       call the default method to do part of the work, and then to
+   *       implement additional logic.
+   *  @arg Multiple UDRs could share the same subclass of UDR.
+   *       The UDR name is passed in UDRInvocationInfo, so the logic can
+   *       depend on the name.
+   *  @arg A single query may invoke the same UDR more than once. A
+   *       different UDRInvocationInfo object will be passed for each
+   *       such invocation.
+   *  @arg The UDR object or the object of its derived class
+   *       may be reused for multiple queries, so its life time can
+   *       exceed that of a UDRInvocationInfo object.
+   *  @arg Different instances of UDR (or derived class)
+   *       objects will be created in the processes that compile and
+   *       execute a query.
+   *  @arg Based on the previous three bullets, UDR writers should not
+   *       store state that relates to a UDR invocation in a UDR
+   *       (or derived) object. There are special classes to do that.
+   *       It is ok to use the UDR derived class to store
+   *       resources that are shared between UDR invocations, such as
+   *       connections to server processes etc. These need to be cleaned
+   *       up by overloading the destructor.
+   *  @arg The optimizer may try different execution plans for a UDR
+   *       invocation, e.g. with different partitioning and ordering
+   *       of input and/or output data. These alternative plans share
+   *       the same UDRInvocationInfo object but they will use different
+   *       UDRPlanInfo objects.
+   */
 
-  class UDRInterface
+  class UDR
   {
   public:
 
-    UDRInterface();
-    virtual ~UDRInterface();
+    UDR();
+    virtual ~UDR();
 
-    // compile time interface for TMUDFs
+    // compile time interface for UDRs
     virtual void describeParamsAndColumns(UDRInvocationInfo &info);
-    virtual void describeDataflow(UDRInvocationInfo &info);
+    virtual void describeDataflowAndPredicates(UDRInvocationInfo &info);
     virtual void describeConstraints(UDRInvocationInfo &info);
     virtual void describeStatistics(UDRInvocationInfo &info);
     virtual void describeDesiredDegreeOfParallelism(UDRInvocationInfo &info,
@@ -1588,7 +1796,7 @@ namespace tmudr
     virtual void processData(UDRInvocationInfo &info,
                              UDRPlanInfo &plan);
 
-    // methods to be called from the run time interface for TMUDFs:
+    // methods to be called from the run time interface for UDRs:
 
     // read a row from an input table
     bool getNextRow(UDRInvocationInfo &info, int tableIndex = 0);
@@ -1611,39 +1819,14 @@ namespace tmudr
 
   };
 
-  // ----------------------------------------------------------------------
-  // typedef CreateInterfaceObjectFunc
-  //
-  // Function pointer type for the factory method provided by the UDF writer
-  // Example, assuming the UDF is called "MYUDF"
-  /*
-      // define a class that is derived from UDRInterface
-      class MyUDFInterface : public UDRInterface
-      {
-        // Override any virtual methods where the UDF author would
-        // like to change the default behavior. It is fine to add
-        // other methods and data members, just make sure to free
-        // up all resources in the destructor.
-        ...
-      };
-
-      // define a "factory" function to return an object of this class
-      extern "C"
-      SQLUDR_LIBFUNC UDRInterface * MYUDF_CreateInterfaceObject(
-           const UDRInvocationInfo *info)
-      {
-        return new MyUDFInterface;
-      }
+  /**
+   *  @brief Function pointer type for the factory method
   */
-  //
-  // ----------------------------------------------------------------------
-
-  typedef UDRInterface * (*CreateInterfaceObjectFunc) (
-       const UDRInvocationInfo *info);
+  typedef UDR * (*CreateInterfaceObjectFunc) ();
 
 } // end of namespace tmudr
 
-// end of C++ compiler interaction interface for TMUDFs
+// end of C++ interface for UDRs
 #endif
 
 // SQLUDR_H

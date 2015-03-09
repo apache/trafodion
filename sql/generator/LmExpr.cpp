@@ -217,7 +217,7 @@ LmExprResult CreateLmInputExpr(const NAType &formalType,
   LmExprResult result = LmExprOK;
   NABoolean isResultSet = FALSE;
 
-  if (LmTypeIsString(formalType, language, isResultSet))
+  if (LmTypeIsString(formalType, language, style, isResultSet))
   {
     if (formalType.getTypeQualifier() == NA_CHARACTER_TYPE)
     {
@@ -272,7 +272,7 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
   NAMemory *h = cmpContext->statementHeap();
   NAType *replyType = NULL;
 
-  if (LmTypeIsString(formalType, language, isResultSet) &&
+  if (LmTypeIsString(formalType, language, style, isResultSet) &&
       (formalType.getTypeQualifier() != NA_CHARACTER_TYPE))
   {
     if (isResultSet || language != COM_LANGUAGE_JAVA)
@@ -368,8 +368,11 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
 //  REAL -> float
 //  DOUBLE PREC -> double
 //
+// Note: When changing this, a change in file ../sqludr/sqludr.cpp
+//       may be required as well (and other places, of course)
 NABoolean LmTypeIsString(const NAType &t,
                          ComRoutineLanguage language,
+                         ComRoutineParamStyle style,
                          NABoolean isResultSet)
 {
   NABoolean result = TRUE;
@@ -399,12 +402,14 @@ NABoolean LmTypeIsString(const NAType &t,
         // NUMERIC
         // Cases to consider
         // * SPJ result sets: LM format is internal format
-        // * Java routines: LM format is a string
-        // * C routines, not a BigNum: LM format is internal format
-        // * C routines, BigNum: LM format is a string
+        // * Java call style: LM format is a string
+        // * Bignum: LM format is a string
+        // * C/C++ routines or Java object style: LM format is internal format
         if (isResultSet)
           result = FALSE;
-        else if (language != COM_LANGUAGE_C)
+        else if (language != COM_LANGUAGE_C &&
+                 language != COM_LANGUAGE_CPP &&
+                 style != COM_STYLE_JAVA_OBJ)
           result = TRUE;
         else if (nt.isBigNum())
           result = TRUE;

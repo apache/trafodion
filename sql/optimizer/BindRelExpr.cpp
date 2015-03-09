@@ -15944,13 +15944,96 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
     // can also get from child Root compExpr
     ValueIdList vidList;
     childRetDesc->getValueIdList(vidList, USER_COLUMN);
+    ValueIdSet childPartition(myChild->partitionArrangement());
+    ValueIdList childOrder(myChild->reqdOrder());
+
+    // replace 1-based ordinals in the child's partition by / order by with
+    // actual columns
+    for (ValueId cp=childPartition.init();
+         childPartition.next(cp);
+         childPartition.advance(cp))
+      {
+        NABoolean negate;
+        ConstValue *cv = cp.getItemExpr()->castToConstValue(negate);
+
+        if (cv &&
+            cv->canGetExactNumericValue())
+        {
+          Lng32 scale = 0;
+          Int64 ordinal = cv->getExactNumericValue(scale);
+
+          if (!negate && scale == 0 && ordinal >= 1 && ordinal <= vidList.entries())
+            {
+              // remove this ValueId from the set and add the corresponding
+              // column value. Note that this won't cause problems with the
+              // iterator through the set, since we don't need to apply
+              // this conversion on the new element we are inserting
+              childPartition -= cp;
+              childPartition += vidList[ordinal-1];
+            }
+          else
+            {
+              *CmpCommon::diags()
+                << DgSqlCode(-11154)
+                << DgInt0(ordinal)
+                << DgString0("PARTITION BY")
+                << DgInt1(vidList.entries());
+              bindWA->setErrStatus();
+              return NULL;
+            }
+        }
+      }
+
+    for (CollIndex co=0; co<childOrder.entries(); co++)
+      {
+        NABoolean negate;
+        ItemExpr *ie = childOrder[co].getItemExpr();
+        ConstValue *cv = NULL;
+
+        if (ie->getOperatorType() == ITM_INVERSE)
+          ie = ie->child(0);
+        cv = ie->castToConstValue(negate);
+
+        if (cv &&
+            cv->canGetExactNumericValue())
+        {
+          Lng32 scale = 0;
+          Int64 ordinal = cv->getExactNumericValue(scale);
+
+          // replace the const value with the actual column
+          if (!negate && scale == 0 && ordinal >= 1 && ordinal <= vidList.entries())
+            if (ie == childOrder[co].getItemExpr())
+              {
+                // ascending order
+                childOrder[co] = vidList[ordinal-1];
+              }
+            else
+              {
+                // desc order, need to add an InverseOrder on top
+                ItemExpr *inv = new(bindWA->wHeap()) InverseOrder(
+                     vidList[ordinal-1].getItemExpr());
+                inv->synthTypeAndValueId();
+                childOrder[co] = inv->getValueId();
+              }
+          else
+            {
+              *CmpCommon::diags()
+                << DgSqlCode(-11154)
+                << DgInt0(ordinal)
+                << DgString0("ORDER BY")
+                << DgInt1(vidList.entries());
+              bindWA->setErrStatus();
+              return NULL;
+            }
+        }
+      }
 
     TableMappingUDFChildInfo * cInfo = new (heap) TableMappingUDFChildInfo(
       childName, 
       childColumns,
       myChild->getPartReqType(), 
-      myChild->partitionArrangement(),
-      myChild->reqdOrder(),
+      childPartition,
+      childOrder,
       vidList);
     childInfo_.insert(cInfo);
   }

@@ -164,13 +164,6 @@ ExplainTuple *IsolatedNonTableUDR::addSpecificExplainInfo(ExplainTupleMaster *ex
     } // for each SQL parameter
   } // if numParams > 0
 
-#if 0
-  // On Neo, NSK specific information is not exposed so this code is
-  // commented out.
-  description += " routine_label: ";
-  description += getNARoutine()->getSurrogateFileName();
-#endif
-
   description += " sql_access_mode: ";
   switch (getEffectiveNARoutine()->getSqlAccess())
   {
@@ -198,13 +191,6 @@ ExplainTuple *IsolatedNonTableUDR::addSpecificExplainInfo(ExplainTupleMaster *ex
 
   description += " external_name: ";
   description += getEffectiveNARoutine()->getExternalName();
-
-#if 0
-  // On Neo, NSK specific information is not exposed so this this code
-  // is commented out.
-  description += " external_path: ";
-  description += getNARoutine()->getExternalPath();
-#endif
 
   description += " library: ";
   description += getEffectiveNARoutine()->getLibrarySqlName().getExternalName();
@@ -624,7 +610,7 @@ static short udr_codegen(Generator *generator,
 
   if (numInValues > 0)
   {
-    // requestVids represents values in the message buffer
+    // requestVids represents input parameter values in the message buffer
     ValueIdList requestVids;
     
     for (i = 0; i < numInValues; i++)
@@ -1050,7 +1036,6 @@ static short udr_codegen(Generator *generator,
     {
       TMUDFDllInteraction::processReturnStatus(
            e,
-           CmpCommon::diags(),
            (udrInvocationInfo ?
             udrInvocationInfo->getUDRName().data() :
             "unknown"));

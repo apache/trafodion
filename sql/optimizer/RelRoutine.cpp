@@ -298,7 +298,15 @@ TableMappingUDFChildInfo::TableMappingUDFChildInfo
   partType_ = other.partType_;
   partitionBy_ = other.partitionBy_;
   orderBy_ = other.orderBy_;
-  outputs_ = other.outputs_; 
+  outputs_ = other.outputs_;
+}
+
+void TableMappingUDFChildInfo::removeColumn(CollIndex i)
+{
+  CMPASSERT(!partitionBy_.contains(outputs_[i]));
+  CMPASSERT(!orderBy_.contains(outputs_[i]));
+  inputTabCols_.removeAt(i);
+  outputs_.removeAt(i);
 }
 
 // -----------------------------------------------------------------------
@@ -358,6 +366,7 @@ RelExpr * TableMappingUDF::copyTopNode(RelExpr *derivedNode,
   result->dllInteraction_ = dllInteraction_;
   result->invocationInfo_ = invocationInfo_;
   result->udrInterface_ = udrInterface_;
+  result->predsEvaluatedByUDF_ = predsEvaluatedByUDF_;
   result->udfOutputToChildInputMap_ = udfOutputToChildInputMap_;
   return TableValuedFunction::copyTopNode(result, outHeap);
 }
@@ -382,7 +391,13 @@ PredefinedTableMappingFunction * TableMappingUDF::castToPredefinedTableMappingFu
 
 void TableMappingUDF::addLocalExpr(LIST(ExprNode *) &xlist,
                             LIST(NAString) &llist) const
-{ 
+{
+  if (!predsEvaluatedByUDF_.isEmpty())
+    {
+      xlist.insert(predsEvaluatedByUDF_.rebuildExprTree());
+      llist.insert("preds_evaluated_by_udf");
+    }
+
   for(CollIndex i = 0; i < childInfo_.entries(); i++)
   {
     if (NOT childInfo_[i]->partitionBy_.isEmpty())
@@ -422,7 +437,17 @@ void TableMappingUDF::rewriteNode(NormWA & normWARef)
 } ;
 RelExpr * TableMappingUDF::normalizeNode(NormWA & normWARef)
 {
-  return RelExpr::normalizeNode(normWARef);
+  Lng32 initialSQLCode = CmpCommon::diags()->mainSQLCODE();
+  RelExpr *result = RelExpr::normalizeNode(normWARef);
+
+  // check for diagnostics, generated during pushdownCoveredExpr()
+  // and return NULL if we see any, since pushdownCoveredExpr()
+  // does not return a status code
+  if (CmpCommon::diags()->mainSQLCODE() < 0 &&
+      initialSQLCode >= 0)
+    return NULL;
+
+  return result;
 };
  
 void TableMappingUDF::primeGroupAnalysis()
@@ -478,34 +503,81 @@ void TableMappingUDF::recomputeOuterReferences()
 };
 
 void TableMappingUDF::pushdownCoveredExpr(
-                                   const ValueIdSet & outputExprOnOperator,
-                                   const ValueIdSet & newExternalInputs,
-                                   ValueIdSet& predOnOperator,
-				   const ValueIdSet *
-				      nonPredNonOutputExprOnOperator,
-                                   Lng32 childId)
+     const ValueIdSet & outputExprOnOperator,
+     const ValueIdSet & newExternalInputs,
+     ValueIdSet& predOnOperator,
+     const ValueIdSet *nonPredNonOutputExprOnOperator,
+     Lng32 childId)
 {
   ValueIdSet exprOnParent;
+  ValueIdSet predsToPushDown;
+  // At this point, we have determined the characteristic outputs
+  // of the TableMappingUDF and a set of selection predicates to
+  // be evaluated on the result of the UDF.
+
+  // Call the UDF code to determine which child outputs we should
+  // require as child characteristic outputs and what to do with the
+  // selection predicates
+
+  // The logic below only works if we push preds to all children
+  // at the same time.
+  CMPASSERT(childId == -MAX_REL_ARITY);
+
+  // interact with the UDF
+  NABoolean status = dllInteraction_->describeDataflow(
+       this,
+       exprOnParent,
+       selectionPred(),
+       predsEvaluatedByUDF_,
+       predsToPushDown);
+  // no good way to return failure, caller will check diags
+  // in TableMappingUDF::normalizeNode()
+
+  // rewrite the predicates to be pushed down in terms
+  // of the values produced by the table-valued inputs
+  ValueIdSet childPredsToPushDown;
+  udfOutputToChildInputMap_.rewriteValueIdSetDown(
+       predsToPushDown, childPredsToPushDown);
+
+  // remaining selection predicates stay with the parent
+  exprOnParent += selectionPred();
   if(nonPredNonOutputExprOnOperator)
-    exprOnParent = *nonPredNonOutputExprOnOperator;
-  for (Int32 i=0; i<getArity(); i++)
-  {
-    exprOnParent.insertList(childInfo_[i]->getOutputs());
-  }
+    exprOnParent += *nonPredNonOutputExprOnOperator;
 
   RelExpr::pushdownCoveredExpr(outputExprOnOperator,
-                                              newExternalInputs,
-                                              predOnOperator,
-					      &exprOnParent,
-                                              childId);
+                               newExternalInputs,
+                               childPredsToPushDown,
+                               &exprOnParent,
+                               childId);
+
+  // apply any leftover predicates back to the parent, but need
+  // to rewrite them in terms of the parent first
+  if (!childPredsToPushDown.isEmpty())
+    {
+      predsToPushDown.clear();
+      // Map the leftovers back to the language of out outputs.
+      // Note that since we rewrote these values on the way down,
+      // a simple mapping will suffice when going back up, as they
+      // are recorded already in the map table.
+      udfOutputToChildInputMap_.mapValueIdSetUp(predsToPushDown,
+                                                childPredsToPushDown);
+      selectionPred() += predsToPushDown;
+    }
 };
 
 
 void TableMappingUDF::synthLogProp(NormWA * normWAPtr)
 {
+  // avoid multiple calls
+  if (getGroupAttr()->existsLogExprForSynthesis())
+    return;
+
   RelExpr::synthLogProp(normWAPtr);
   // +1 on the TMUDFs
   getGroupAttr()->setNumTMUDFs(getGroupAttr()->getNumTMUDFs()+1);
+
+  NABoolean status = dllInteraction_->describeConstraints(this);
+  // rely on diags area to communicate failure
 };
 
 void TableMappingUDF::finishSynthEstLogProp()
@@ -777,8 +849,13 @@ void TableMappingUDF::createOutputVids(BindWA* bindWA)
   {
     NAColumn &naColumn = *(getOutputParams()[i]);
     const NAType &paramType = *(naColumn.getType());
-    NATypeToItem *paramTypeItem = new (bindWA->wHeap())
-                                      NATypeToItem (naColumn.mutateType());
+    // use a NamedTypeToItem, so EXPLAIN and other
+    // tools show a name instead of just the type
+    NamedTypeToItem *paramTypeItem =
+      new (bindWA->wHeap()) NamedTypeToItem(
+           naColumn.getColName().data(),
+           naColumn.mutateType(),
+           bindWA->wHeap());
     ItemExpr *outputExprToBind = NULL;
     outputExprToBind = paramTypeItem->bindNode (bindWA);
     if ( bindWA->errStatus()) return;

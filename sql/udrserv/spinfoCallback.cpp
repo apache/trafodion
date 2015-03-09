@@ -460,9 +460,10 @@ Int32 SpInfoEmitRow  (char            *rowData,
 
 }
 
-// This method is used for the TMUDF C++ interface. It sends an EOD row
-// for regular results and for an EOD indicator. The latter is generated
-// right after we return from the user code.
+// This method is used for the TMUDF C++ interface. It can also be used
+// to send an EOD row, which is included in the last reply buffer of
+// regular results. The EOD call is done by the caller of the UDF code,
+// not the UDF code itself.
 Int32 SpInfoEmitRowCpp(char            *rowData,           
                        Int32             tableIndex,         
                        SQLUDR_Q_STATE  *queue_state        

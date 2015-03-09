@@ -59,7 +59,9 @@ enum LmExprResult
 
 NABoolean LmTypeSupportsPrecision(const NAType &t);
 NABoolean LmTypeSupportsScale(const NAType &t);
-NABoolean LmTypeIsString(const NAType &t, ComRoutineLanguage language,
+NABoolean LmTypeIsString(const NAType &t,
+                         ComRoutineLanguage language,
+                         ComRoutineParamStyle style,
                          NABoolean isResultSet);
 NABoolean LmTypeIsObject(const NAType &t);
 

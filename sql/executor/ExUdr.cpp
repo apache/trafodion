@@ -1869,13 +1869,16 @@ NABoolean ExUdrTcb::sendControlMessage(UdrIpcObjectType t,
       if (myExeStmtGlobals()->castToExMasterStmtGlobals())
         parentQid = myExeStmtGlobals()->castToExMasterStmtGlobals()->
           getStatement()->getUniqueStmtId();
+      else if (myExeStmtGlobals()->castToExEspStmtGlobals())
+        parentQid = myExeStmtGlobals()->castToExEspStmtGlobals()->
+          getQueryId();
       else
         parentQid = "";
 
       //  set the instance number/numInstances
-      Lng32 numInstances = 0;
-      Lng32 instanceNum =0;
-	myExeStmtGlobals()->getMyNodeLocalInstanceNumber(instanceNum,numInstances);;
+      Lng32 numInstances = myExeStmtGlobals()->getNumOfInstances();
+      Lng32 instanceNum = myExeStmtGlobals()->getMyInstanceNumber();
+
       // Steps to create a LOAD message:
       // - First create a UdrLoadMsg instance on the IPC heap and initialize
       //   it with a UDR handle and UDR metadata
