@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@
 #ifndef ODBCS_SRVR_H
 #define ODBCS_SRVR_H
 
-void 
-DISPATCH_IOMessage( 
+void
+DISPATCH_IOMessage(
     /* In    */ CEE_tag_def objtag_
   , /* In    */ const CEE_handle_def *call_id_
   , /* Out   */ CEERCV_IOMessage_exc_ *exception_
@@ -41,7 +41,7 @@ SQLCONNECT_IOMessage(
 void
 SQLDISCONNECT_IOMessage(
     /* In    */ CEE_tag_def objtag_
-  , /* In    */ const CEE_handle_def *call_id_ 
+  , /* In    */ const CEE_handle_def *call_id_
   );
 
 void
@@ -173,15 +173,19 @@ ValidateToken_IOMessage(
   , /* In    */ const CEE_handle_def *call_id_
   );
 
+void LOG_MSG(CError* ierror, short level);
+
 void LOG_ERROR(CError* ierror);
 
 void LOG_INFO(CError* ierror);
+
+void LOG_WARNING(CError* ierror);
 
 //
 //========================== TCPIP ========================
 //
 void
-DISPATCH_TCPIPRequest( 
+DISPATCH_TCPIPRequest(
     /* In    */ CEE_tag_def objtag_
   , /* In    */ const CEE_handle_def *call_id_
   ,	short operation_id

@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1510,7 +1510,7 @@ MONITORCALL_IOMessage(
 	  );
 }
 
-void LOG_ERROR(CError* ierror)
+void LOG_MSG(CError* ierror, short level)
 {
 	char buffer[500];
 
@@ -1522,32 +1522,26 @@ void LOG_ERROR(CError* ierror)
 	strcpy(buffer,ERROR_TO_TEXT(ierror));
 
 	SendEventMsg( MSG_KRYPTON_ERROR,
-				EVENTLOG_ERROR_TYPE,
+				level,
 				GetCurrentProcessId(),
 				ODBCMX_SERVER,
 				objRef,
 				2, FORMAT_ERROR(ierror), buffer);
 }
 
+void LOG_ERROR(CError* ierror)
+{
+	LOG_MSG( ierror, EVENTLOG_ERROR_TYPE);
+}
+
+void LOG_WARNING(CError* ierror)
+{
+	LOG_MSG( ierror, EVENTLOG_WARNING_TYPE);
+}
+
 void LOG_INFO(CError* ierror)
 {
-	char buffer[500];
-
-	if (srvrGlobal != NULL && srvrGlobal->eventFlag >= EVENT_INFO_LEVEL2)
-	{
-		IDL_OBJECT_def objRef;
-		memset(&objRef, 0, sizeof(IDL_OBJECT_def));
-		memcpy(&objRef,&srvrGlobal->srvrObjRef,sizeof(IDL_OBJECT_def));
-
-		strcpy(buffer,ERROR_TO_TEXT(ierror));
-
-		SendEventMsg( MSG_SRVR_ENV,
-					EVENTLOG_INFORMATION_TYPE,
-					GetCurrentProcessId(),
-					ODBCMX_SERVER,
-					objRef,
-					2, FORMAT_ERROR(ierror), buffer);
-	}
+	LOG_MSG( ierror, EVENTLOG_INFORMATION_TYPE);
 }
 
 void

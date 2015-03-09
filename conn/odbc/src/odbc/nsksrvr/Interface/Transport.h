@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ public:
 	void log_error(CError* ierror);
     void initialize(void);
 	void log_info(CError* ierror);
+	void log_warning(CError* ierror);
 
 	bool m_tcpip_blocked;
 
@@ -74,6 +75,7 @@ private:
 
 extern void LOG_ERROR(CError* ierror);
 extern void LOG_INFO(CError* ierror);
+extern void LOG_WARNING(CError* ierror);
 extern CTransport GTransport;
 
 

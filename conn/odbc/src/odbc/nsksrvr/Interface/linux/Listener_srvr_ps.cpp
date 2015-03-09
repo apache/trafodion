@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -173,6 +173,7 @@ bool CNSKListenerSrvr::ListenToPort(int port)
 			error = bind(m_nListenSocketFnum, (struct sockaddr *)&m_ListenSocketAddr6, (int)sizeof(m_ListenSocketAddr6));
 		else
 			error = bind(m_nListenSocketFnum, (struct sockaddr *)&m_ListenSocketAddr, (int)sizeof(m_ListenSocketAddr));
+
 		if (error < 0)
 		{
 //LCOV_EXCL_START
@@ -595,7 +596,7 @@ bool CNSKListenerSrvr::verifyPortAvailable(const char * idForPort, int port)
 
 	if (m_nListenSocketFnum < 0)
 	{
-		SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, errorType_,
+		SET_WARNING((long)0, NSK, TCPIP, UNKNOWN_API, errorType_,
 				  "verifyPortAvailable", O_INIT_PROCESS, F_SOCKET, errno, 0);
 		return false;
 	}
@@ -622,7 +623,7 @@ bool CNSKListenerSrvr::verifyPortAvailable(const char * idForPort, int port)
 	error = setsockopt(m_nListenSocketFnum, SOL_SOCKET, SO_REUSEADDR, (char*)&optVal, sizeof(optVal));
 	if (error != 0)
 	{
-		SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, errorType_,
+		SET_WARNING((long)0, NSK, TCPIP, UNKNOWN_API, errorType_,
 				  "verifyPortAvailable", O_INIT_PROCESS, F_SETSOCOPT, errno,
 				  SO_REUSEADDR);
 		return false;
@@ -631,10 +632,11 @@ bool CNSKListenerSrvr::verifyPortAvailable(const char * idForPort, int port)
 		error = bind(m_nListenSocketFnum, (struct sockaddr *)&m_ListenSocketAddr6, (int)sizeof(m_ListenSocketAddr6));
 	else
 		error = bind(m_nListenSocketFnum, (struct sockaddr *)&m_ListenSocketAddr, (int)sizeof(m_ListenSocketAddr));
+
 	if (error < 0)
 	{
 		sprintf(tmp,"verifyPortAvailable:[%d]",port);
-		SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, errorType_,
+		SET_WARNING((long)0, NSK, TCPIP, UNKNOWN_API, errorType_,
 				  tmp, O_INIT_PROCESS, F_BIND, errno, 0);
 		return false;
 	}
@@ -643,7 +645,7 @@ bool CNSKListenerSrvr::verifyPortAvailable(const char * idForPort, int port)
 	error = setsockopt(m_nListenSocketFnum, SOL_SOCKET, SO_KEEPALIVE, (char*)&optVal, sizeof(optVal));
 	if (error != 0)
 	{
-		SET_ERROR((long)0, NSK, TCPIP, UNKNOWN_API, errorType_,
+		SET_WARNING((long)0, NSK, TCPIP, UNKNOWN_API, errorType_,
 				  "verifyPortAvailable", O_INIT_PROCESS, F_SETSOCOPT, errno,
 				  SO_KEEPALIVE);
 		return false;
