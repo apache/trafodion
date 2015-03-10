@@ -257,7 +257,7 @@ if [ ! -z $answer ]; then
 fi
 
 #Test if home directory is on a NFS disk
-diskType="$( df -P -T $answer | tail -n +2 | awk '{print $2}')"
+diskType="$( df -P -T $HOME_DIR | tail -n +2 | awk '{print $2}')"
 if [ "$diskType" == "nfs" ]; then
    echo "***ERROR: Trafodion userid's home directory ($HOME_DIR) cannot be on an NFS disk"
    echo "***ERROR: Please choose a different directory to install on."
@@ -410,6 +410,19 @@ echo "export TRAF_PACKAGE=\"$TRAF_PACKAGE\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $LOCAL_TRAF_CONFIG
 
+#Check if install_features file exists
+
+install_features_path=$(tar -tf $TRAF_BUILD | grep "install_features")
+
+if [[ ! -z $install_features_path ]]; then
+   tar -xzf $TRAF_BUILD $install_features_path
+   source $install_features_path
+   echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
+else
+   CDH_5_3_HDP_2_2_SUPPORT="N"
+   echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
+fi
+
 #>>> to allow failed installs to be rerun easily we need to do something
 #>>> about defaulting the tar file once the user specified it but maybe
 #>>> blank it out once the install completes successfully.
@@ -444,15 +457,31 @@ if [[ $ambari_installed -gt 0 ]]; then
       echo "***ERROR: Install on Hortonworks Sandbox not supported."
       exit -1
    fi
-   #Check that Hortonworks 2.2 is not installed
-   versionInstalled=`grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.* | wc -l`
-   if [[ $versionInstalled -eq "0" ]]; then
-      echo "***ERROR: Only Hortonworks version 2.1.* is currently supported."
-      echo "***ERROR: Detected Hortonworks version:"
-      cat hbaseVersion.txt
-      exit -1
+   if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+      #Check that Hortonworks 2.2 is not installed
+      versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.* | wc -l)
+      if [[ $versionInstalled -eq "0" ]]; then
+         echo "***ERROR: Only Hortonworks version 2.1.* is currently supported."
+         echo "***ERROR: Detected Hortonworks version:"
+         cat hbaseVersion.txt
+         exit -1
+      fi
+      nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.*)
+   else
+      nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.2.*)
    fi
-   nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.*)
+   
+   #Check that HDP 2.[n>2].* is not installed.
+   if [[ -z $nameOfVersion ]]; then
+       versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//'| grep 2.[3-9].* | wc -l)
+       if [[ $versionInstalled -gt "0" ]]; then
+          echo "***ERROR: Hortonworks version is not currently supported."
+          echo "***ERRO: Detected Hortonworks version:"
+          cat hbaseVersion.txt
+          exit -1
+       fi
+    fi
+
    hadoop_type="hortonworks"
    echo "export HADOOP_TYPE=\"$hadoop_type\"" >> $LOCAL_TRAF_CONFIG
    if [ -z "$URL" ]; then
@@ -462,20 +491,32 @@ fi
 
 if [[ $cloudera_installed -gt 0 ]]; then
    echo "***INFO: Cloudera detected"
-
-   #Check that Cloudera 5.2 or 5.3 are not installed.
-   versionInstalled=`grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.0.* | wc -l`
-   nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.0.*)
-   if [[ $versionInstalled -eq "0" ]]; then
-      versionInstalled=`grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.1.* | wc -l`
-      if [[ $versionInstalled -eq "0" ]];then
-         echo "***ERROR: Only Cloudera Versions 5.0.* or 5.1.* are currently supported."
+   if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then 
+      #Check that Cloudera 5.2 or 5.3 are not installed.
+      versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].* | wc -l)
+      nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[0-1].*)
+      if [[ $versionInstalled -eq "0" ]]; then
+         echo "***ERROR: Only Cloudera Versions 5.0.* or 5.1.* are currently supported"
          echo "***ERROR: Detected Cloudera version:"
          cat hbaseVersion.txt
          exit -1 
       fi
-      nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.1.*)
+   else 
+     nameOfVersion=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[2-3].*)
    fi
+
+   #Check that Cloudera 5.[n>3].* is not installed.
+   if [[ -z $nameOfVersion ]]; then 
+      versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[4-9].* | wc -l)i
+      if [[ $versionInstalled -gt "0" ]]; then 
+         echo "***ERROR: Cloudera version is not currently supported."
+         echo "***ERRO: Detected Cloudera version:"
+         cat hbaseVersion.txt
+         exit -1 
+      fi
+    
+   fi
+
    #Check for Cloudera parcels of packages.
    parcelsInstalled=`sudo ls /opt/cloudera/parcels/ | wc -l`
    if [[ $parcelsInstalled -gt "0" ]]; then
@@ -681,4 +722,4 @@ sudo cp $LOCAL_TRAF_CONFIG $TRAF_CONFIG
 sudo chmod 777 $TRAF_CONFIG_DIR
 echo "***INFO: Configuration file: $TRAF_CONFIG"
 
-echo "***INFO: Trafodion configuation setup complete"
+echo "***INFO: Trafodion configuration setup complete"

@@ -39,7 +39,11 @@ if [ "$JAVA_VERSION" == "1.6" ]; then
    echo "***ERROR: Java 1.6 not supported for Trafodion HBase 0.98"
    exit -1
 elif [ "$JAVA_VERSION" == "1.7" ]; then
-	hbase_trx_jar="hbase-trx-${TRAF_VERSION}.jar"
+   if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+      hbase_trx_jar="hbase-trx-${TRAF_VERSION}.jar"
+   else
+       hbase_trx_jar="hbase-trx-cdh5_3-${TRAF_VERSION}.jar"      
+   fi
 else
     echo "***ERROR: unable to determine Hadoop's java version"
     exit -1

@@ -231,7 +231,7 @@ if [[ $internetAccess ]]; then
    for group_package in $group_package_list
    do
        echo "***INFO: ... $group_package"
-       $TRAF_PDSH sudo yum --assumeyes groupinstall $group_package 2>> $YUM_LOG >> $YUM_LOG
+       $TRAF_PDSH sudo yum --assumeyes groupinstall \"$group_package\" 2>> $YUM_LOG >> $YUM_LOG
        if [ $? != 0 ]; then
            echo "***WARNING: Can't group install optional group package $group_package"
        fi
@@ -241,20 +241,20 @@ if [[ $internetAccess ]]; then
    # and won't work properly in a list even if escaped with quotes
    group_package="Desktop Platform"
    echo "***INFO: ... $group_package"
-   $TRAF_PDSH sudo yum --assumeyes groupinstall $group_package 2>> $YUM_LOG >> $YUM_LOG
+   $TRAF_PDSH sudo yum --assumeyes groupinstall \"$group_package\" 2>> $YUM_LOG >> $YUM_LOG
    if [ $? != 0 ]; then
        echo "***WARNING: Can't group install optional group package $group_package"
    fi
 
-   group_package="X Windows System"
+   group_package="X Window System"
    echo "***INFO: ... $group_package"
-   $TRAF_PDSH sudo yum --assumeyes groupinstall $group_package 2>> $YUM_LOG >> $YUM_LOG
+   $TRAF_PDSH sudo yum --assumeyes groupinstall \"$group_package\" 2>> $YUM_LOG >> $YUM_LOG
    if [ $? != 0 ]; then
       echo "***WARNING: Can't group install optional group package $group_package"
    fi
 else
   echo "***ERROR: No internet access"
-  echo "***ERROR: Please install 'Desktop Fonts' 'Desktop Platform' and 'X Windows System'"
+  echo "***ERROR: Please install 'Desktop Fonts' 'Desktop Platform' and 'X Window System'"
 fi
 
 #=======================================

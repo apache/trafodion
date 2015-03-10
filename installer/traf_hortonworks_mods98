@@ -44,7 +44,11 @@ if [ "$JAVA_VERSION" == "1.6" ]; then
    echo "***ERROR: JAVA 1.6 not supported for Trafodion HBase 0.98"
    exit -1
 elif [ "$JAVA_VERSION" == "1.7" ]; then
+     if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then 
 	hbase_trx_jar="hbase-trx-hdp2_1-${TRAF_VERSION}.jar"
+     else
+        hbase_trx_jar="hbase-trx-hdp2_2-${TRAF_VERSION}.jar"
+     fi
 else
     echo "***ERROR: unable to determine Hadoop's java version"
     exit -1
@@ -63,22 +67,37 @@ fi
 echo "***INFO: copying $hbase_trx_jar to all nodes"
 if [ $node_count -ne 1 ]; then
     pdsh $MY_NODES sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
+    pdsh $MY_NODES sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/hbase-trx* 2>/dev/null
     pdsh $MY_NODES sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
     pdsh $MY_NODES sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
+    pdsh $MY_NODES sudo rm -rf /usr/hdp/current/hbase-regionserver/lib/trafodion* 2>/dev/null
     pdsh $MY_NODES sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
     pdsh $MY_NODES mkdir -p $PWD 2>/dev/null
     cp $UNTAR_DIR/export/lib/$hbase_trx_jar $LOCAL_WORKDIR
     pdcp $MY_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
-    pdsh $MY_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar /usr/lib/hbase/lib
-    pdsh $MY_NODES sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
+
+    if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+       pdsh $MY_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar /usr/lib/hbase/lib
+       pdsh $MY_NODES sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
+    else
+       pdsh $MY_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar /usr/hdp/current/hbase-regionserver/lib
+       pdsh $MY_NODES sudo chmod 644 /usr/hdp/current/hbase-regionserver/lib/$hbase_trx_jar
+    fi
+
     pdsh $MY_NODES rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
 else
     sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
     sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
     sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
     sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
-    sudo cp $UNTAR_DIR/export/lib/$hbase_trx_jar /usr/lib/hbase/lib
-    sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
+
+    if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then 
+       sudo cp $UNTAR_DIR/export/lib/$hbase_trx_jar /usr/lib/hbase/lib
+       sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
+    else
+       sudo cp $UNTAR_DIR/export/lib/$hbase_trx_jar /usr/hdp/current/hbase-regionserver/lib
+       sudo chmod 644 /usr/hdp/current/hbase-regionserver/lib/$hbase_trx_jar
+    fi
 fi
 
 #=====================================
@@ -171,13 +190,13 @@ if [ $? != 0 ]; then
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $(hostname --long) $CLUSTER_NAME hbase-site hbase.snapshot.master.timeoutMillis 600000
+$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.snapshot.master.timeoutMillis 600000
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.snapshot.master.timeoutMillis through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $(hostname --long) $CLUSTER_NAME hbase-site hbase.snapshot.region.timeout 600000
+$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.snapshot.region.timeout 600000
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.snapshot.region.timeout through Ambari's configs.sh script."
     exit -1

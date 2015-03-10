@@ -154,6 +154,20 @@ else
       echo "***ERROR: unable to copy $USER_CONFIG to $TRAF_CONFIG"
       exit -1
    fi
+   sudo chmod 777 $TRAF_CONFIG
+   
+   #Check if install_features file exists
+   install_features_path=$(tar -tf $TRAF_BUILD | grep "install_features")
+
+   if [[ ! -z $install_features_path ]]; then
+      tar -xzf $TRAF_BUILD $install_features_path
+      source $install_features_path
+      echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
+   else
+      CDH_5_3_HDP_2_2_SUPPORT="N"
+      echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $TRAF_CONFIG
+   fi
+
 fi
 
 source $TRAF_CONFIG
@@ -376,17 +390,33 @@ do
    version=$(ssh -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
 
    if [[ $HADOOP_TYPE == "hortonworks" ]]; then
-      supportedHBase=$(echo $version | grep "0.98.0.2" | wc -l)
-      if [[ $supportedHBase -eq "0" ]]; then
-         echo "***ERROR: HBase installed must be 0.98.0.2 on node $node"
-         exit -1
+      if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+         supportedHBase=$(echo $version | grep "0.98.0.2" | wc -l)
+         if [[ $supportedHBase -eq "0" ]]; then
+            echo "***ERROR: HBase installed must be 0.98.0.2 on node $node"
+            exit -1
+         fi
+      else
+         supportedHBase=$(echo $version | grep "0.98.4" | wc -l)
+         if [[ $supportedHBase -eq "0" ]]; then
+            echo "***ERROR: HBase installed must be 0.98.4 on node $node"
+            exit -1
+         fi
       fi
    fi
    if [[ $HADOOP_TYPE == "cloudera" ]]; then
-      supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
-      if [[ $supportedHBase -eq "0" ]]; then
-         echo "***ERROR: HBase installed must be 0.98.1 on node $node"
-         exit -1
+      if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
+         supportedHBase=$(echo $version | grep "0.98.1" | wc -l)
+         if [[ $supportedHBase -eq "0" ]]; then
+            echo "***ERROR: HBase installed must be 0.98.1 on node $node"
+            exit -1
+         fi
+      else
+        supportedHBase=$(echo $version | grep "0.98.6" | wc -l)
+         if [[ $supportedHBase -eq "0" ]]; then
+            echo "***ERROR: HBase installed must be 0.98.6 on node $node"
+            exit -1
+         fi       
       fi
    fi
    hbaseVersion=$(echo "${version#*.}"| cut -f1 -d".")
