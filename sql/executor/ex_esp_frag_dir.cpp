@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -865,7 +865,7 @@ void ExEspFragInstanceDir::destroyEntry(ExFragInstanceHandle handle)
       Space    *sp = entry->globals_->getSpace();
       NAHeap *hp = (NAHeap *)entry->globals_->getDefaultHeap();
 
-      entry->globals_->deleteMe();
+      entry->globals_->deleteMe(FALSE);
       entry->globals_ = NULL;
       delete sp;
       delete hp;

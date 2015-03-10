@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public:
   NA_EIDPROC void reAllocate(short create_gui_sched = 0);
 
   // to be called instead of a destructor
-  NA_EIDPROC virtual void deleteMe();
+  NA_EIDPROC virtual void deleteMe(NABoolean fatalError);
 
   // operator to delete memory allocated with ::operator new(ex_globals *)
   // NOTE: this of course does NOT call the destructor for the object to delete

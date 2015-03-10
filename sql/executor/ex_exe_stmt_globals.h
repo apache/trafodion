@@ -168,7 +168,7 @@ public:
 
   // Deletes objects this object points to... does NOT destroy
   // this object
-  NA_EIDPROC virtual void deleteMe();
+  NA_EIDPROC virtual void deleteMe(NABoolean fatalError);
   
   NA_EIDPROC virtual ExExeStmtGlobals * castToExExeStmtGlobals();
   virtual ExMasterStmtGlobals * castToExMasterStmtGlobals();
@@ -462,7 +462,7 @@ public:
 
   // Deletes objects this object points to... does NOT destroy
   // this object
-  NA_EIDPROC virtual void deleteMe();
+  NA_EIDPROC virtual void deleteMe(NABoolean fatalError);
   
   virtual ExMasterStmtGlobals * castToExMasterStmtGlobals();
 
@@ -665,7 +665,7 @@ public:
                    char *queryId = NULL,
                    Lng32 queryIdLen = 0);
   
-  virtual void deleteMe();
+  virtual void deleteMe(NABoolean fatalError);
   virtual ExEspStmtGlobals * castToExEspStmtGlobals();
 
   virtual char * getFragmentPtr(ExFragId fragId) const;

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -269,9 +269,9 @@ ExExeStmtGlobals::ExExeStmtGlobals(short num_temps,
 // Warning! Despite the name, the following method does NOT delete
 // this object. Rather, it cleans up things this object points to...
 
-void ExExeStmtGlobals::deleteMe()
+void ExExeStmtGlobals::deleteMe(NABoolean fatalError)
 {
-  while (anyCancelMsgesOut())
+  while (!fatalError && anyCancelMsgesOut())
     {
       // work may have finished before a cancel request was answered
       // by some ESP or exe-in-dp2.  However, this little loop will
@@ -288,6 +288,21 @@ void ExExeStmtGlobals::deleteMe()
       getIpcEnvironment()->getAllConnections()->waitOnAll();
     }
 
+  // Note about cleanup after fatalError: When a fatalError happens,
+  // we can no longer user the data connections and ex_queues. The 
+  // query must be deallocated; it cannot be simply reexecuted. So 
+  // it is unreliable to depend on ESPs to reply to data messages.
+  // Therefore we skip it. What happens to the connections to ESPs?
+  // Any pending messages are subjected to BCANCELREQ when they
+  // timeout (from Statement::releaseTransaction or ex_root_tcb::cancel).
+  // The data connections are closed as part of the destructor of 
+  // the send top tcbs.  The control connections are closed as 
+  // part of ExEspManager::releaseEsp and this will cause any
+  // functioning ESP to exit when it get the system close message.
+  // Any hanging ESP will stick around. If it ever comes out of the
+  // hang, it will check for the system close message and exit.
+
+
   // Release the SeaMonster query ID. It is important that this step
   // happens before TCB destructors run. If TCB destructors run before
   // the ID is released, the reader thread could see arrivals for a
@@ -300,7 +315,7 @@ void ExExeStmtGlobals::deleteMe()
   }
 
   // This deleteMe() call will trigger the TCB destructors
-  ex_globals::deleteMe();
+  ex_globals::deleteMe(fatalError);
 
   // After TCB destructors run, wait for UDR messages to complete
   // before releasing this statement globals instance. If we don't
@@ -610,7 +625,7 @@ ExMasterStmtGlobals::ExMasterStmtGlobals(
 // Warning! Despite the name, this method does NOT destroy this
 // object... rather it cleans up the things it points to
 
-void ExMasterStmtGlobals::deleteMe(void)
+void ExMasterStmtGlobals::deleteMe(NABoolean fatalError)
 {
   
    // Deallocate all the parallel extract bookkeeping structures
@@ -651,7 +666,7 @@ void ExMasterStmtGlobals::deleteMe(void)
 
   // Warning! Despite the name, the following call does NOT delete
   // this object.
-  ExExeStmtGlobals::deleteMe();  
+  ExExeStmtGlobals::deleteMe(fatalError);  
 
   // $$$$ Note: the base class actually calls the destructor for the
   // object hanging off fragTable_. Two things should be done:
@@ -1125,7 +1140,7 @@ ExEspStmtGlobals::ExEspStmtGlobals(short num_temps,
                           // see ExEspStmtGlobals::getStmtStats().
 }
 
-void ExEspStmtGlobals::deleteMe()
+void ExEspStmtGlobals::deleteMe(NABoolean fatalError)
 {
   StatsGlobals *statsGlobals;
   statsGlobals = espFragInstanceDir_->getStatsGlobals();
@@ -1143,7 +1158,7 @@ void ExEspStmtGlobals::deleteMe()
     stmtStats_ = NULL;
 
   }
-  ExExeStmtGlobals::deleteMe();  
+  ExExeStmtGlobals::deleteMe(fatalError);  
 }
 
 ExEspStmtGlobals * ExEspStmtGlobals::castToExEspStmtGlobals()

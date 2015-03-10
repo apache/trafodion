@@ -2503,7 +2503,7 @@ Int32 ex_root_tcb::deallocAndDelete(ExExeStmtGlobals *glob,
   glob->castToExMasterStmtGlobals()->resetCancelState();
 
   // Warning:  deleteMe() will delete this tcb!!!!
-  glob->deleteMe(); 
+  glob->deleteMe(fatalError_); 
   return 0;
 }
 
@@ -2667,8 +2667,12 @@ Int32 ex_root_tcb::fatal_error( ExExeStmtGlobals * glob,
 
 void ex_root_tcb::completeOutstandingCancelMsgs()
 {
-  ExExeStmtGlobals *glob = getGlobals()->castToExExeStmtGlobals();
-  while (glob->anyCancelMsgesOut())
+  ExMasterStmtGlobals *glob = getGlobals()->castToExExeStmtGlobals()->
+                               castToExMasterStmtGlobals();
+  
+  while (!fatalError_ && 
+         (glob->getRtFragTable()->getState() != ExRtFragTable::ERROR) && 
+         glob->anyCancelMsgesOut())
   {
     if (root_tdb().getQueryUsesSM() && glob->getIpcEnvironment()->smEnabled())
       EXSM_TRACE(EXSM_TRACE_MAIN_THR | EXSM_TRACE_CANCEL,
@@ -2676,12 +2680,23 @@ void ex_root_tcb::completeOutstandingCancelMsgs()
                  this, (int) glob->numCancelMsgesOut());
 
     // work may have finished before a cancel request 
-    // was answered by some ESP or exe-in-dp2.  However, 
-    // this little loop will ensure that replies to
-    // these cancel messages will happen while the transid 
-    // is valid -- else ArkFs may raise an FEINVTRANSID.
+    // was answered by some ESP. 
     glob->getIpcEnvironment()->getAllConnections()->waitOnAll();
   }
+
+  // Note about cleanup after fatalError: When a fatalError happens,
+  // we can no longer user the data connections and ex_queues. The 
+  // query must be deallocated; it cannot be simply reexecuted. So 
+  // it is unreliable to depend on ESPs to reply to data messages.
+  // Therefore we skip it. What happens to the connections to ESPs?
+  // Any pending messages are subjected to BCANCELREQ when they
+  // timeout (from Statement::releaseTransaction or ex_root_tcb::cancel).
+  // The data connections are closed as part of the destructor of 
+  // the send top tcbs.  The control connections are closed as 
+  // part of ExEspManager::releaseEsp and this will cause any
+  // functioning ESP to exit when it get the system close message.
+  // Any hanging ESP will stick around. If it ever comes out of the
+  // hang, it will check for the system close message and exit.
 }
 
 NABoolean ex_root_tcb::externalEventCompleted(void)
