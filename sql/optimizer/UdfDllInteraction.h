@@ -62,18 +62,21 @@ class TMUDFDllInteraction : public NABasicObject
   public :
 
   TMUDFDllInteraction();
-  NABoolean describeParamsAndMaxOutputs(TableMappingUDF * tmudfNode, BindWA * bindWA);
-  NABoolean createOutputInputColumnMap(TableMappingUDF * tmudfNode, ValueIdMap &result);
-  NABoolean describeInputsAndOutputs(TableMappingUDF * tmudfNode);
-  NABoolean describeInputPartitionAndOrder(TableMappingUDF * tmudfNode);
-  NABoolean predicatePushDown(TableMappingUDF * tmudfNode);
-  NABoolean cardinality(TableMappingUDF * tmudfNode);
-  NABoolean constraints(TableMappingUDF * tmudfNode);
-  NABoolean cost(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws);
-  NABoolean degreeOfParallelism(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws, int &dop);
-  NABoolean generateInputPartitionAndOrder(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws);
-  NABoolean describeOutputOrder(TableMappingUDF * tmudfNode, TMUDFPlanWorkSpace * pws);
-  NABoolean finalizePlan(TableMappingUDF * tmudfNode, tmudr::UDRPlanInfo *planInfo);
+  NABoolean describeParamsAndMaxOutputs(TableMappingUDF * tmudfNode,
+                                        BindWA * bindWA);
+  NABoolean createOutputInputColumnMap(TableMappingUDF * tmudfNode,
+                                       ValueIdMap &result);
+  NABoolean describeDataflow(TableMappingUDF * tmudfNode,
+                             ValueIdSet &valuesRequiredByParent,
+                             ValueIdSet &selectionPreds,
+                             ValueIdSet &predsEvaluatedByUDF,
+                             ValueIdSet &predsToPushDown);
+  NABoolean describeConstraints(TableMappingUDF * tmudfNode);
+  NABoolean degreeOfParallelism(TableMappingUDF * tmudfNode,
+                                TMUDFPlanWorkSpace * pws,
+                                int &dop);
+  NABoolean finalizePlan(TableMappingUDF * tmudfNode,
+                         tmudr::UDRPlanInfo *planInfo);
 
   // helper methods for setup and return status
 
@@ -81,8 +84,10 @@ class TMUDFDllInteraction : public NABasicObject
   LmHandle getDllPtr() {return dllPtr_;}
   void setFunctionPtrs(const NAString& entryName);
   static void processReturnStatus(const tmudr::UDRException &e, 
-                                  ComDiagsArea *diags,
-                                  const char* routineName);
+                                  TableMappingUDF *tmudfNode);
+  static void processReturnStatus(const tmudr::UDRException &e, 
+                                  const char * routineName,
+                                  ComDiagsArea *diags = NULL);
 
 private:
 
@@ -124,6 +129,16 @@ public:
        tmudr::TableInfo &tgt,
        const NAColumnArray *src,
        ComDiagsArea *diags);
+  static NABoolean setPredicateInfoFromValueIdSet(
+       tmudr::UDRInvocationInfo *tgt,
+       const ValueIdList &udfOutputColumns,
+       const ValueIdSet &predicates,
+       ValueIdList &convertedPredicates,
+       NABitVector &usedColPositions);
+  static NABoolean removeUnusedColumnsAndPredicates(
+       tmudr::UDRInvocationInfo *tgt);
+  static NABoolean createConstraintInfoFromRelExpr(
+       TableMappingUDF * tmudfNode);
 
   // methods to convert tmudr objects to Trafodion objects (allocated on NAHeap)
   static NAType *createNATypeFromTypeInfo(
@@ -141,13 +156,17 @@ public:
        TableMappingUDF * tmudfNode,
        NAHeap *heap,
        ComDiagsArea *diags);
+  static NABoolean createConstraintsFromConstraintInfo(
+       const tmudr::TableInfo &tableInfo,
+       TableMappingUDF * tmudfNode,
+       NAHeap *heap);
 
   // invoke private constructors/destructors of the interface structs
   static tmudr::UDRPlanInfo *createUDRPlanInfo(
        tmudr::UDRInvocationInfo *invocationInfo);
   static void setCallPhase(
        tmudr::UDRInvocationInfo *invocationInfo,
-       tmudr::CallPhase cp);
+       tmudr::UDRInvocationInfo::CallPhase cp);
   static void resetCallPhase(
      tmudr::UDRInvocationInfo *invocationInfo);
   static void setOffsets(tmudr::UDRInvocationInfo *invocationInfo,

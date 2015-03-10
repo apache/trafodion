@@ -125,7 +125,7 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                                          JULIANTIMESTAMP(ts) as TS,
                                          ipAddr
                                   FROM clicks
-                                  PARTITION BY userid ORDER BY ts),
+                                  PARTITION BY 1 ORDER BY 2),
                             'USERID',
                             'TS',
                             60000000));
@@ -142,7 +142,38 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                             cast('TS' as char(2)),
                             60000000)) XO;
 
-cqd ATTEMPT_ESP_PARALLELISM 'off';
+-- uniqueness constraint avoids a groupby
+explain options 'f'
+SELECT distinct ipaddr, session_id, sequence_no
+FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
+                                         JULIANTIMESTAMP(ts) as TS,
+                                         ipAddr
+                                  FROM clicks
+                                  PARTITION BY ipaddr ORDER BY ts),
+                            'IPADDR',
+                            cast('TS' as char(2)),
+                            60000000)) XO
+where session_id < 10;
+
+-- predicate on IPADDR is evaluated in child,
+-- predicate on SESSION_ID is evaluated in the UDF
+prepare s from
+SELECT *
+FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
+                                         JULIANTIMESTAMP(ts) as TS,
+                                         ipAddr
+                                  FROM clicks
+                                  PARTITION BY ipaddr ORDER BY ts),
+                            'IPADDR',
+                            cast('TS' as char(2)),
+                            60000000)) XO
+where SESSION_ID < 2 and
+      IPADDR = '12.345.567.345';
+select count(*) from table(explain(null,'S'))
+where operator = 'TMUDF'
+  and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
+execute s;
+
 
 select *
 from UDF(fibonacci(1,10)) XO
@@ -178,3 +209,11 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
                             'USERID',
                             60000000)) XOX;
 -- non-existent column specified in input parameter
+SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id
+FROM UDF(sessionize_dynamic(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
+                                  FROM clicks
+                                  PARTITION BY 3 ORDER BY ts),
+                            'SESSION_ID',
+                            'TS',
+                            60000000)) XOX;
+-- PARTITION BY 3 has an invalid column number

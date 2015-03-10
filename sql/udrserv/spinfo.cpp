@@ -259,12 +259,20 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
           
           invocationInfo_ = new tmudr::UDRInvocationInfo();
           invocationInfo_->deserialize(buffer, bufferLen);
+          invocationInfo_->queryId_ = parentQid;
           invocationInfo_->totalNumInstances_ = totalNumInstances;
           invocationInfo_->myInstanceNum_ = myInstanceNum;
 #ifndef NDEBUG
           if (invocationInfo_->getDebugFlags() &
               tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME)
-            invocationInfo_->print();
+            {
+              // print checks the call phase, so set it to runtime
+              invocationInfo_->callPhase_ =
+                tmudr::UDRInvocationInfo::RUNTIME_WORK_CALL;
+              invocationInfo_->print();
+              invocationInfo_->callPhase_ =
+                tmudr::UDRInvocationInfo::UNKNOWN_CALL_PHASE;
+            }
 #endif
         }
       else
@@ -288,7 +296,7 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
     }
   catch (tmudr::UDRException e)
     {
-      TMUDFDllInteraction::processReturnStatus(e, &d, pSqlName);
+      TMUDFDllInteraction::processReturnStatus(e, pSqlName, &d);
     }
 
   // Now we create the data stream that will be used by this SPInfo

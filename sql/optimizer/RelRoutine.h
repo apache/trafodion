@@ -68,7 +68,7 @@ class TMUDFDllInteraction;
 namespace tmudr {
   class UDRInvocationInfo;
   class UDRPlanInfo;
-  class UDRInterface;
+  class UDR;
 }
 
 // -----------------------------------------------------------------------
@@ -653,8 +653,8 @@ class TableMappingUDFChildInfo : public NABasicObject
   const ValueIdList & getOrderBy() 	      {return orderBy_; }
   void setOrderBy(const ValueIdList & val)    {orderBy_ = val; }
   const ValueIdList & getOutputs() 	      {return outputs_; }
-  ValueIdList & getOutputIds() 	      {return outputs_; }
-  void setOutputs(const ValueIdList & val)    {outputs_ = val; }
+  ValueIdList & getOutputIds() 	              {return outputs_; }
+  void removeColumn(CollIndex i);
 
   private :
     NAString inputTabName_;
@@ -664,7 +664,6 @@ class TableMappingUDFChildInfo : public NABasicObject
     ValueIdList orderBy_;
     ValueIdList outputs_; // we need to know the actual order in which the 
                           // TMUDF needs the child output to be arranged
-
 };
 
 // -----------------------------------------------------------------------
@@ -886,7 +885,7 @@ public :
     return invocationInfo_;
   }
 
-  tmudr::UDRInterface * getUDRInterface()
+  tmudr::UDR * getUDRInterface()
   {
     return udrInterface_;
   }
@@ -906,13 +905,17 @@ public :
   inline void setOutputParams(NAColumnArray* val)
   {	outputParams_ = val;}
 
+  inline void removeOutputParam(CollIndex i)
+  {	outputParams_->removeAt(i);
+        getProcOutputParamsVids().removeAt(i); }
+
   inline       ComSInt32        getOutputParamCount()     const 
   { return outputParams_->entries();}
 
   inline void setInvocationInfo(tmudr::UDRInvocationInfo *invocationInfo)
   { invocationInfo_ = invocationInfo; }
 
-  inline void setUDRInterface(tmudr::UDRInterface *udrInterface)
+  inline void setUDRInterface(tmudr::UDR *udrInterface)
   { udrInterface_ = udrInterface; }
 
 protected:
@@ -926,7 +929,9 @@ protected:
   // the udrInterface should be in a cache, created when we invoke
   // a particular interface for the first time and deleted when
   // we unload the DLL
-  tmudr::UDRInterface *udrInterface_;
+  tmudr::UDR *udrInterface_;
+
+  ValueIdSet predsEvaluatedByUDF_;
 
 private:
 

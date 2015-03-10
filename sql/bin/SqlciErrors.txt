@@ -2000,6 +2000,7 @@ drop the default context
 11151 ZZZZZ 99999 BEGINNER MINOR LOGONLY Unable to use '$0~string0' '$1~string1' in a user-defined routine. Details: $2~string2.
 11152 ZZZZZ 99999 BEGINNER MINOR LOGONLY Unable to convert TypeInfo $0~int0 for column or parameter number $1~int1 from UDF compiler interface into an SQL internal type. Details: $2~string0.
 11153 ZZZZZ 99999 BEGINNER MINOR LOGONLY Unable to produce a query plan. This could be related to a TMUDF that failed to negotiate a query plan with the optimizer. One possible reason: $0~string0.
+11154 ZZZZZ 99999 BEGINNER MINOR LOGONLY Ordinal number $0~int0 used in $1~string0 clause of a UDF must be an integer ranging from 1 to the number of columns ($2~int1 in this case).
 11200 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU -----First Language Manager Error -----
 11201 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Language Manager initialization failed. Details: Errors occurred while loading Java class $0~String0.
 11202 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Language Manager initialization failed. Details: Unable to initialize the Java virtual machine. $0~string0

@@ -46,7 +46,7 @@
 LmRoutineCppObj::LmRoutineCppObj(
   tmudr::UDRInvocationInfo *invocationInfo,
   tmudr::UDRPlanInfo    *planInfo,
-  tmudr::UDRInterface   *interfaceObj,
+  tmudr::UDR            *interfaceObj,
   const char            *sqlName,
   const char            *externalName,
   const char            *librarySqlName,
@@ -117,7 +117,7 @@ LmRoutineCppObj::LmRoutineCppObj(
   outputRow_ += WALL_STRING_LEN;
   memset(outputRow_, 0, outputRowLen);
   setUpWall(outputRow_, outputRowLen);
-  invocationInfo->getOutputTableInfo().setRowPtr(outputRow_);
+  invocationInfo->out().setRowPtr(outputRow_);
 }
 
 LmRoutineCppObj::~LmRoutineCppObj()
@@ -156,7 +156,7 @@ LmResult LmRoutineCppObj::invokeRoutine(void *inputRow,
 }
 
 LmResult LmRoutineCppObj::invokeRoutineMethod(
-     tmudr::CallPhase phase,
+     tmudr::UDRInvocationInfo::CallPhase phase,
      void *parameterRow,
      ComDiagsArea *da)
 {
@@ -167,7 +167,7 @@ LmResult LmRoutineCppObj::invokeRoutineMethod(
       invocationInfo_->callPhase_ = phase;
       switch (phase)
         {
-        case tmudr::COMPILER_INITIAL_CALL:
+        case tmudr::UDRInvocationInfo::COMPILER_INITIAL_CALL:
 #ifndef NDEBUG
           {
             if (invocationInfo_->getDebugFlags() &
@@ -178,35 +178,35 @@ LmResult LmRoutineCppObj::invokeRoutineMethod(
           interfaceObj_->describeParamsAndColumns(*invocationInfo_);
           break;
 
-        case tmudr::COMPILER_DATAFLOW_CALL:
-          interfaceObj_->describeDataflow(*invocationInfo_);
+        case tmudr::UDRInvocationInfo::COMPILER_DATAFLOW_CALL:
+          interfaceObj_->describeDataflowAndPredicates(*invocationInfo_);
           break;
 
-        case tmudr::COMPILER_CONSTRAINTS_CALL:
+        case tmudr::UDRInvocationInfo::COMPILER_CONSTRAINTS_CALL:
           interfaceObj_->describeConstraints(*invocationInfo_);
           break;
 
-        case tmudr::COMPILER_STATISTICS_CALL:
+        case tmudr::UDRInvocationInfo::COMPILER_STATISTICS_CALL:
           interfaceObj_->describeStatistics(*invocationInfo_);
           break;
 
-        case tmudr::COMPILER_DOP_CALL:
+        case tmudr::UDRInvocationInfo::COMPILER_DOP_CALL:
           interfaceObj_->describeDesiredDegreeOfParallelism(
                *invocationInfo_,
                *planInfo_);
           break;
 
-        case tmudr::COMPILER_PLAN_CALL:
+        case tmudr::UDRInvocationInfo::COMPILER_PLAN_CALL:
           interfaceObj_->describePlanProperties(*invocationInfo_,
                                                 *planInfo_);
           break;
 
-        case tmudr::COMPILER_COMPLETION_CALL:
+        case tmudr::UDRInvocationInfo::COMPILER_COMPLETION_CALL:
           interfaceObj_->completeDescription(*invocationInfo_,
                                              *planInfo_);
           break;
 
-        case tmudr::RUNTIME_WORK_CALL:
+        case tmudr::UDRInvocationInfo::RUNTIME_WORK_CALL:
           {
             // copy parameter row
             memcpy(invocationInfo_->par().getRowPtr(), parameterRow, inputParamRowLen_);
@@ -253,16 +253,17 @@ LmResult LmRoutineCppObj::invokeRoutineMethod(
     }
   catch (tmudr::UDRException e)
     {
-      int iSQLState = e.getSQLState();
-      char sqlState[6];
-
+      strncpy(sqlState_, e.getSQLState(), sizeof(sqlState_));
+      sqlState_[SQLUDR_SQLSTATE_SIZE-1] = '\0';
       strncpy(msgText_, e.getText().data(), sizeof(msgText_));
       msgText_[SQLUDR_MSGTEXT_SIZE-1] = '\0';
 
       result = processReturnStatus(SQLUDR_ERROR, da);
     }
 
-  invocationInfo_->callPhase_ = tmudr::UNKNOWN_CALL_PHASE;
+  invocationInfo_->callPhase_ =
+    tmudr::UDRInvocationInfo::UNKNOWN_CALL_PHASE;
+
   return result;
 }
 

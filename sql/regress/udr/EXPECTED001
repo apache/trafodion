@@ -117,7 +117,7 @@ SCH.SESSIONIZE_STATIC
 +>                                         JULIANTIMESTAMP(ts) as TS,
 +>                                         ipAddr
 +>                                  FROM clicks
-+>                                  PARTITION BY userid ORDER BY ts),
++>                                  PARTITION BY 1 ORDER BY 2),
 +>                            'USERID',
 +>                            'TS',
 +>                            60000000));
@@ -144,19 +144,74 @@ SCH.SESSIONIZE_STATIC
 +>                            cast('TS' as char(2)),
 +>                            60000000)) XO;
 
-SESSION_ID            USERID                            TS                    IPADDR
---------------------  --------------------------------  --------------------  ---------------
+SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
+--------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1  super-user                          212289847199500000  12.345.567.345 
-                   2  super-user                          212289854399500000  12.345.567.345 
-                   2  super-services                      212289854399500000  12.345.567.345 
-                   2  super-services                      212289854399550000  12.345.567.345 
+                   1                     1  super-user                          212292179999500000  12.345.567.345 
+                   2                     1  super-user                          212292187199500000  12.345.567.345 
+                   2                     2  super-services                      212292187199500000  12.345.567.345 
+                   2                     3  super-services                      212292187199550000  12.345.567.345 
 
 --- 4 row(s) selected.
 >>
->>cqd ATTEMPT_ESP_PARALLELISM 'off';
+>>-- uniqueness constraint avoids a groupby
+>>explain options 'f'
++>SELECT distinct ipaddr, session_id, sequence_no
++>FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
++>                                         JULIANTIMESTAMP(ts) as TS,
++>                                         ipAddr
++>                                  FROM clicks
++>                                  PARTITION BY ipaddr ORDER BY ts),
++>                            'IPADDR',
++>                            cast('TS' as char(2)),
++>                            60000000)) XO
++>where session_id < 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+002
+2    .    3    tmudf                           XO                    1.00E+002
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  CLICKS                1.00E+002
 
 --- SQL operation complete.
+>>
+>>-- predicate on IPADDR is evaluated in child,
+>>-- predicate on SESSION_ID is evaluated in the UDF
+>>prepare s from
++>SELECT *
++>FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
++>                                         JULIANTIMESTAMP(ts) as TS,
++>                                         ipAddr
++>                                  FROM clicks
++>                                  PARTITION BY ipaddr ORDER BY ts),
++>                            'IPADDR',
++>                            cast('TS' as char(2)),
++>                            60000000)) XO
++>where SESSION_ID < 2 and
++>      IPADDR = '12.345.567.345';
+
+--- SQL command prepared.
+>>select count(*) from table(explain(null,'S'))
++>where operator = 'TMUDF'
++>  and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>execute s;
+
+SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
+--------------------  --------------------  --------------------------------  --------------------  ---------------
+
+                   1                     1  super-user                          212292352799500000  12.345.567.345 
+
+--- 1 row(s) selected.
+>>
 >>
 >>select *
 +>from UDF(fibonacci(1,10)) XO
@@ -209,7 +264,7 @@ ORDINAL      FIBONACCI_NUMBER
 >>-- too few input parameters
 >>select * from udf(sessionize_dynamic(table (select * from clicks), 1,2,3)) XOX;
 
-*** ERROR[11252] First scalar parameter must be a string constant (SQLSTATE 38001)
+*** ERROR[11252] Column 1 not found (SQLSTATE 38900)
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -249,4 +304,17 @@ ER BY ts), cast('TS' as char(2)),                     'USERID',
 *** ERROR[8822] The statement was not prepared.
 
 >>-- non-existent column specified in input parameter
+>>SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id
++>FROM UDF(sessionize_dynamic(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
++>                                  FROM clicks
++>                                  PARTITION BY 3 ORDER BY ts),
++>                            'SESSION_ID',
++>                            'TS',
++>                            60000000)) XOX;
+
+*** ERROR[11154] Ordinal number 3 used in PARTITION BY clause of a UDF must be an integer ranging from 1 to the number of columns (2 in this case).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- PARTITION BY 3 has an invalid column number
 >>log;

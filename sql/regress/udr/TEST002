@@ -145,8 +145,7 @@ where x.log_file_line <100;
 
 -- copy a file with known content to the log directory and see whether
 -- we get the correct results
--- currently disabled, since Jenkins environment does not have $MY_SQROOT set
---sh cp $$scriptsdir$$/udr/TEST002.sample_events $$MY_SQROOT$$/logs/master_exec_regr_999_99999.log;
+sh cp $$scriptsdir$$/udr/TEST002.sample_events $$MY_SQROOT$$/logs/master_exec_regr_999_99999.log;
 
 select count(*) as num_events,
        max(log_file_line) as num_lines,
@@ -162,7 +161,7 @@ where log_file_name = 'master_exec_regr_999_99999.log'
 order by log_file_line;
 -- lines 20, 30 and 31 have parse errors and are also displayed
 
---sh rm $$MY_SQROOT$$/logs/master_exec_regr_999_99999.log;
+sh rm $$MY_SQROOT$$/logs/master_exec_regr_999_99999.log;
 
 -- some negative test cases
 prepare s from select * from udf(event_log_reader(10));

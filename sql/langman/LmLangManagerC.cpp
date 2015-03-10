@@ -233,7 +233,7 @@ LmResult LmLanguageManagerC::getRoutine(
 
     // search the DLL for the method that creates the tmudr::UDRInterface object
     LmHandle factoryMethodPtr = getRoutinePtr(container->getHandle(), factoryMethodName);
-    tmudr::UDRInterface *interfacePtr = NULL;
+    tmudr::UDR *interfacePtr = NULL;
 
     if (factoryMethodPtr == NULL)
         {
@@ -252,7 +252,7 @@ LmResult LmLanguageManagerC::getRoutine(
           reinterpret_cast<tmudr::CreateInterfaceObjectFunc>(factoryMethodPtr);
 
         // call the factory method
-        interfacePtr = (*fPtr)(invocationInfo);
+        interfacePtr = (*fPtr)();
       }
     catch (tmudr::UDRException e)
       {
@@ -379,7 +379,7 @@ LmResult LmLanguageManagerC::invokeRoutine(
 
   if (routine->getParamStyle() == COM_STYLE_CPP_OBJ)
     result = static_cast<LmRoutineCppObj *>(routine)->invokeRoutineMethod(
-         tmudr::RUNTIME_WORK_CALL,
+         tmudr::UDRInvocationInfo::RUNTIME_WORK_CALL,
          inputRow,
          diagsArea);
   else
