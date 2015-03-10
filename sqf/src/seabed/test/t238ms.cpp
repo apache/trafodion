@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
 //
 // @@@ END COPYRIGHT @@@
 
+#include <assert.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,11 +28,71 @@
 
 #include "common/evl_sqlog_eventnum.h"
 
+enum { MAX_LOOP = 1000 };
+
+void *thr1(void *) {
+    int         inx;
+    const char *prefix;
+
+    prefix = "thr-log-thr1-prefix";
+    int ltype = SBX_LOG_TYPE_LOGFILE;
+    for (inx = 0; inx < MAX_LOOP; inx++) {
+        printf("thr1, inx=%d, ltype=%d\n", inx, ltype);
+        SBX_log_write(ltype,                       // log_type
+                      NULL,                        // dir
+                      prefix,                      // log_file_prefix
+                      SQEVL_SEABED,                // comp_id
+                      SB_EVENT_ID,                 // event_id
+                      SQ_LOG_SEAQUEST,             // facility
+                      SQ_LOG_CRIT,                 // severity
+                      "$test6",                    // name
+                      "msg-prefix6-1",             // msg_prefix
+                      "msg6-1\n",                  // msg
+                      NULL,                        // snmptrap_cmd,
+                      NULL,                        // msg_snmptrap
+                      NULL,                        // msg_ret
+                      0);                          // msg_ret_size
+        if (ltype == SBX_LOG_TYPE_LOGFILE)
+            ltype |= SBX_LOG_TYPE_LOGFILE_PERSIST;
+        else
+            ltype = SBX_LOG_TYPE_LOGFILE;
+    }
+    return NULL;
+}
+
+void *thr2(void *) {
+    const char *prefix;
+
+    prefix = "thr-log-thr2-prefix";
+    for (int inx = 0; inx < MAX_LOOP; inx++) {
+        printf("thr2, inx=%d\n", inx);
+        SBX_log_write(SBX_LOG_TYPE_LOGFILE,        // log_type
+                      NULL,                        // dir
+                      prefix,                      // log_file_prefix
+                      SQEVL_SEABED,                // comp_id
+                      SB_EVENT_ID,                 // event_id
+                      SQ_LOG_SEAQUEST,             // facility
+                      SQ_LOG_CRIT,                 // severity
+                      "$test6",                    // name
+                      "msg-prefix6-1",             // msg_prefix
+                      "msg6-1\n",                  // msg
+                      NULL,                        // snmptrap_cmd,
+                      NULL,                        // msg_snmptrap
+                      NULL,                        // msg_ret
+                      0);                          // msg_ret_size
+    }
+    return NULL;
+}
+
 int main() {
     char        cat[BUFSIZ];
+    int         err;
     char        host[BUFSIZ];
     char        log[BUFSIZ];
     const char *prefix;
+    void       *res;
+    pthread_t   t1;
+    pthread_t   t2;
 
     printf("stderr\n");
     SBX_log_write(SBX_LOG_TYPE_STDERR,         // log_type
@@ -162,6 +224,16 @@ int main() {
                   NULL,                        // msg_snmptrap
                   NULL,                        // msg_ret
                   0);                          // msg_ret_size
+    err = pthread_create(&t1, NULL, thr1, NULL);
+    assert(err == 0);
+    err = pthread_create(&t2, NULL, thr2, NULL);
+    assert(err == 0);
+    err = pthread_join(t1, &res);
+    assert(err == 0);
+    assert(res == 0);
+    err = pthread_join(t2, &res);
+    assert(err == 0);
+    assert(res == 0);
     printf("logfile-output-%s\n", prefix);
     gethostname(host, sizeof(host));
     sprintf(log, "%s.%s.%d.log", prefix, host, getpid());

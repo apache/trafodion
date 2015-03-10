@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -149,7 +149,7 @@ $(LIBEXPDIR)/libsbfs.so: $(OBJSBFS)
 
 
 $(LIBEXPDIR)/libsblogalt.so: $(OBJSBLOGALT)
-	$(OCXX) $(LNK_FLGS) -shared -o $@ $(OBJSBLOGALT)
+	$(OCXX) $(LNK_FLGS) -shared -o $@ $(OBJSBLOGALT) -pthread
 $(OUTDIR)/logalt.o: logalt.cpp
 	$(OCXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
 

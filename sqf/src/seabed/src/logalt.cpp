@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 // @@@ END COPYRIGHT @@@
 
 #include <limits.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
@@ -41,6 +42,29 @@ VERS_LIB(libsblogalt)
 #define SBX_LOG_DEFAULT_SNMPTRAP_ADDR2 "172.31.2.241"
 #define SBX_LOG_DEFAULT_SNMPTRAP_CMD   "snmptrap -v 1 -c public"
 #define SBX_LOG_PREFIX                 "SBX_log_write"
+
+// mutex
+static pthread_mutex_t sbx_log_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void sbx_log_lock() {
+    int lv_err;
+
+    lv_err = pthread_mutex_lock(&sbx_log_mutex);
+    if (lv_err != 0) {
+        fprintf(stderr, "pthread_mutex_lock err=%d\n", lv_err);
+        abort();
+    }
+}
+
+static void sbx_log_unlock() {
+    int lv_err;
+
+    lv_err = pthread_mutex_unlock(&sbx_log_mutex);
+    if (lv_err != 0) {
+        fprintf(stderr, "pthread_mutex_unlock err=%d\n", lv_err);
+        abort();
+    }
+}
 
 //
 // Purpose: log string
@@ -130,6 +154,8 @@ void SBX_log_write(int                     pv_log_type,
         pp_msg_ret[pv_msg_ret_size] = '\0';
     }
 
+    sbx_log_lock();
+
     // write to stderr?
     if (pv_log_type & SBX_LOG_TYPE_STDERR) {
         if (lv_debug)
@@ -216,7 +242,7 @@ void SBX_log_write(int                     pv_log_type,
         }
     }
 
-    // write to log file?
+    // write to syslog?
     if (pv_log_type & SBX_LOG_TYPE_SYSLOG) {
         sprintf(la_syslog_ident, "%s[%d]", la_cmdline, lv_pid);
         openlog(la_syslog_ident, 0, 0);
@@ -235,7 +261,7 @@ void SBX_log_write(int                     pv_log_type,
                pp_msg);
     }
 
-    // write to log file?
+    // write to snmptrap?
     if (pv_log_type & SBX_LOG_TYPE_SNMPTRAP) {
         if (pp_snmptrap_cmd == NULL)
             lp_snmptrap_prefix = SBX_LOG_DEFAULT_SNMPTRAP_CMD;
@@ -255,12 +281,16 @@ void SBX_log_write(int                     pv_log_type,
                 printf("%s: snmptrap: %s\n",
                        SBX_LOG_PREFIX,
                        la_snmptrap_cmd);
+            sbx_log_unlock();
             system(la_snmptrap_cmd);
+            sbx_log_lock();
             if (lp_snmptrap_addr_env == NULL)
                 lp_snmptrap_addr = SBX_LOG_DEFAULT_SNMPTRAP_ADDR2;
             else
                 break;
         }
     }
+    sbx_log_unlock();
+
 }
 
