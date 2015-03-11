@@ -93,7 +93,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
 				     char * server,
                                      char * zkPort,
 				     HbasePerfAttributes * hbasePerfAttributes,
-				     Float32 samplingRate
+				     Float32 samplingRate,
+				     HbaseSnapshotScanAttributes * hbaseSnapshotScanAttributes
+
 				     )
 : ComTdb( ComTdb::ex_HBASE_ACCESS,
 	  eye_HBASE_ACCESS,
@@ -168,11 +170,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   server_(server),
   zkPort_(zkPort),
   hbasePerfAttributes_(hbasePerfAttributes),
+  hbaseSnapshotScanAttributes_(hbaseSnapshotScanAttributes),
   LoadPrepLocation_ (NULL),
-  samplingRate_(samplingRate),
-  snapScanTmpLocation_(NULL),
-  snapName_(NULL),
-  snapshotScanTimeout_(0)
+  samplingRate_(samplingRate)
 {};
 
 ComTdbHbaseAccess::ComTdbHbaseAccess(
@@ -268,11 +268,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   zkPort_(zkPort),
 
   hbasePerfAttributes_(NULL),
+  hbaseSnapshotScanAttributes_(NULL),
   LoadPrepLocation_(NULL),
-  samplingRate_(-1),
-  snapScanTmpLocation_(NULL),
-  snapName_(NULL),
-  snapshotScanTimeout_(0)
+  samplingRate_(-1) 
 {
 }
 
@@ -398,8 +396,8 @@ Long ComTdbHbaseAccess::pack(void * space)
   zkPort_.pack(space);
   hbasePerfAttributes_.pack(space);
   LoadPrepLocation_.pack(space);
-  snapScanTmpLocation_.pack(space);
-  snapName_.pack(space);
+  hbaseSnapshotScanAttributes_.pack(space);
+
   // pack elements in listOfScanRows_
   if (listOfScanRows() && listOfScanRows()->numEntries() > 0)
     {
@@ -459,8 +457,8 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(zkPort_.unpack(base)) return -1;
   if(hbasePerfAttributes_.unpack(base, reallocator)) return -1;
   if(LoadPrepLocation_.unpack(base)) return -1;
-  if(snapScanTmpLocation_.unpack(base)) return -1;
-  if(snapName_.unpack(base)) return -1;
+  if (hbaseSnapshotScanAttributes_.unpack(base,reallocator)) return -1;
+
   // unpack elements in listOfScanRows_
   if(listOfScanRows_.unpack(base, reallocator)) return -1;
   if (listOfScanRows() && listOfScanRows()->numEntries() > 0)
@@ -1054,6 +1052,15 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 
 	    } // for
 	} // if
+      if (getHbaseSnapshotScanAttributes() &&
+          getHbaseSnapshotScanAttributes()->getUseSnapshotScan())
+      {
+        str_sprintf(buf, "use_snapshot_scan = %s, snapshot_name = %s, snapshot_temp_location = %s",
+                    "TRUE",
+                    getHbaseSnapshotScanAttributes()->getSnapshotName(),
+                    getHbaseSnapshotScanAttributes()->getSnapScanTmpLocation());
+        space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+      }
       
     }
   
@@ -1239,4 +1246,21 @@ Lng32 ComTdbHbaseAccess::HbasePerfAttributes::unpack(void * base, void * realloc
 {
   return NAVersionedObject::unpack(base, reallocator);
 }
+///////////////////////////////////////////////////////////////////
+// ComTdbHbaseAccess::HbaseSnapshotScanAttributes
+///////////////////////////////////////////////////////////////////
+Long ComTdbHbaseAccess::HbaseSnapshotScanAttributes::pack(void * space)
+{
+  if (snapScanTmpLocation_)
+    snapScanTmpLocation_.pack(space);
+  if (snapshotName_)
+    snapshotName_.pack(space);
+  return NAVersionedObject::pack(space);
+}
 
+Lng32 ComTdbHbaseAccess::HbaseSnapshotScanAttributes::unpack(void * base, void * reallocator)
+{
+  if(snapScanTmpLocation_.unpack(base)) return -1;
+  if(snapshotName_.unpack(base)) return -1;
+  return NAVersionedObject::unpack(base, reallocator);
+}

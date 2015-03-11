@@ -504,6 +504,9 @@ class Generator : public NABasicObject
 
   NASet<Int64> objectUids_;
 
+  NASet<NAString> objectNames_;
+  char * snapshotScanTmpLocation_;
+
 public:
   enum HalloweenProtectionType {
     DP2LOCKS,
@@ -1636,6 +1639,29 @@ public:
 
   NASet<Int64> &objectUids() { return objectUids_; }
 
+  NASet<NAString> &objectNames() { return objectNames_; }
+
+  char * getSnapshotScanTmpLocation()
+  {
+    if (snapshotScanTmpLocation_== NULL)
+    {
+      NAString tmpLoc = NAString(ActiveSchemaDB()->getDefaults().getValue(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION));
+      CMPASSERT(tmpLoc[tmpLoc.length()-1] =='/');
+      char  str[30];
+      time_t t;
+      time(&t);
+      struct tm * curgmtime = gmtime(&t);
+      strftime(str, 30, "%Y%m%d%H%M%S", curgmtime);
+      char str2[60];
+      srand(getpid());
+      sprintf (str2,"%s_%d", str, rand()% 1000);
+      tmpLoc.append(str);
+      tmpLoc.append("/");
+      snapshotScanTmpLocation_ = new (wHeap()) char[tmpLoc.length() + 1];
+      strcpy(snapshotScanTmpLocation_, tmpLoc.data());
+    }
+    return snapshotScanTmpLocation_;
+  }
 }; // class Generator
 #pragma warn(1506)   // warning elimination
 

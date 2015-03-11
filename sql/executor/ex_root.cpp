@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@
 #include "ExSMTrace.h"
 #include "ExSMGlobals.h"
 #include "ExSMCommon.h"
-
+#include "ExpHbaseInterface.h"
 // this contains the location where a longjmp is done after
 // an assertion failure in executor. See file ex_ex.h.
 jmp_buf ExeBuf;
@@ -1103,6 +1103,71 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
   return 0;
 }
 
+void ex_root_tcb::setupWarning(Lng32 retcode, const char * str,
+    const char * str2, ComDiagsArea* & diagsArea)
+{
+  ContextCli *currContext = GetCliGlobals()->currContext();
+  // Make sure retcode is positive.
+  if (retcode < 0)
+    retcode = -retcode;
+
+  if ((ABS(retcode) >= HBASE_MIN_ERROR_NUM)
+      && (ABS(retcode) <= HBASE_MAX_ERROR_NUM))
+  {
+    if (diagsArea == NULL)
+      diagsArea = ComDiagsArea::allocate(getHeap());
+    Lng32 cliError = 0;
+
+    Lng32 intParam1 = retcode;
+    ComDiagsArea * newDiags = NULL;
+    ExRaiseSqlWarning(getHeap(), &newDiags, (ExeErrorCode) (8448), NULL,
+        &intParam1, &cliError, NULL, (str ? (char*) str : (char*) " "),
+        getHbaseErrStr(retcode),
+        (str2 ? (char*) str2 : (char *) currContext->getJniErrorStr().data()));
+    diagsArea->mergeAfter(*newDiags);
+  }
+  ex_assert( 0, "invalid return code value");
+}
+
+Int32 ex_root_tcb::snapshotScanCleanup(ComDiagsArea* & diagsArea)
+{
+  const char * tmpLoc = root_tdb().getSnapshotScanTempLocation();
+  if (tmpLoc == NULL)
+    return 0;
+
+  ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
+                           (STMTHEAP, "", "");
+
+  ex_assert(ehi != NULL, "cannot connect to HBase");
+  Lng32 retcode = ehi->init(NULL);
+  if (retcode != 0)
+  {
+    setupWarning(retcode, "ExpHbaseInterface::init", "", diagsArea);
+    //issue with initialize connection -- return -1
+    return -1;
+  } 
+  else
+  {
+    retcode = ehi->cleanSnpTmpLocation(tmpLoc);
+    if (retcode != 0)
+      setupWarning(retcode, "ExpHbaseInterface::cleanSnpTmpLocation", "", diagsArea);
+    if (root_tdb().getListOfSnapshotScanTables())
+      root_tdb().getListOfSnapshotScanTables()->position();
+    for (int i = 0; i < root_tdb().getListOfSnapshotScanTables()->entries(); i++)
+    {
+      char * tbl = (char*) root_tdb().getListOfSnapshotScanTables()->getCurr();
+      retcode = ehi->setArchivePermissions((const char *) tbl);
+      if (retcode != 0)
+      {
+        setupWarning(retcode, "ExpHbaseInterface::setArchivePermissions", "", diagsArea);
+      }
+      root_tdb().getListOfSnapshotScanTables()->advance();
+
+    }
+    delete ehi;
+  }
+  return 0;
+}
 ////////////////////////////////////////////////////////
 // RETURNS: 0, success. 100, EOF. -1, error. 1, warning
 ////////////////////////////////////////////////////////
@@ -1716,7 +1781,7 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 	  
             // this may have woken up the scheduler, make sure we call it
             schedRetcode = WORK_CALL_AGAIN;
-          }
+          }//loop for(Lng32 i = 0; i < queueSize && (retcode == 0 || retcode ==1); i++)
 
 	if (retcode == 100)
 	  {
@@ -1731,6 +1796,10 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 	  if ((retcode < 0) || (retcode == 100) || ((retcode > 0) && doneWithRowsets))
 	  {
             ipcEnv->deleteCompletedMessages(); // cleanup messages
+            if (root_tdb().getSnapshotScanTempLocation())
+            {
+              snapshotScanCleanup(diagsArea);
+            }
 	    return retcode;
 	  }
 	}
@@ -2399,6 +2468,10 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
         {
           // deregister to avoid a leak in broker process MXSSMP.
           deregisterCB();
+          if (root_tdb().getSnapshotScanTempLocation())
+          {
+            snapshotScanCleanup(diagsArea);
+          }
           return fatal_error(glob, diagsArea, TRUE);
         }
 
@@ -2415,7 +2488,10 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
   glob->castToExMasterStmtGlobals()->clearCancelState();
 
   deregisterCB();
-
+  if (root_tdb().getSnapshotScanTempLocation())
+  {
+    snapshotScanCleanup(diagsArea);
+  }
   return 0;
 }
 

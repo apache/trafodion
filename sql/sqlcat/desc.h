@@ -125,6 +125,7 @@ struct table_desc_struct {
   void *constraintInfo;
   ULng32 constraintInfoLen;
   ComBoolean isInsertOnly;
+  char * snapshotName;
   desc_struct *columns_desc;
   desc_struct *indexes_desc;
   desc_struct *constrnts_desc;

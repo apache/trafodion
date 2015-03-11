@@ -19,6 +19,9 @@
 #######################################################################
 
 delete_snapshot 'TRAFODION.HBASE.CUSTOMER_ADDRESS_SNAP111'
+delete_snapshot 'TRAFODION.HBASE.CUSTOMER_ADDRESS_SNAP'
 delete_snapshot 'TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT_SNAP111'
+delete_snapshot 'TRAFODION.HBASE.CUSTOMER_SALT_SNAP'
+delete_snapshot 'TRAFODION.HBASE.CUSTOMER_SALT_SNAP111'
 exit
 

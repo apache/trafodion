@@ -1833,7 +1833,52 @@ short HbaseAccess::createHbaseColId(const NAColumn * nac,
 
   return 0;
 }
+NABoolean HbaseAccess::isSnapshotScanFeasible(
+    LatestSnpSupportEnum snpSupport, char * tabName)
+{
+  if (snpType_ == SNP_NONE)
+    return FALSE;
 
+  if (snpType_ != SNP_NONE
+      && (!getTableDesc()->getNATable()->isSeabaseTable()
+          || getTableDesc()->getNATable()->isSeabaseMDTable()
+          || (getTableDesc()->getNATable()->getTableName().getObjectName() == HBASE_HIST_NAME)
+          || (getTableDesc()->getNATable()->getTableName().getObjectName() == HBASE_HISTINT_NAME)))
+  {
+    snpType_ = SNP_NONE;
+  } else if (snpType_ == SNP_LATEST)
+  {
+    if ((snpSupport == latest_snp_index_table)
+        || (snpSupport == latest_snp_no_snapshot_available)
+        || (snpSupport == latest_snp_small_table)
+        || (snpSupport == latest_snp_not_trafodion_table))
+    {
+      //revert to regular scan
+      snpType_ = SNP_NONE;
+      char msg[200];
+      if (snpSupport == latest_snp_index_table)
+      {
+        sprintf(msg, "%s",
+            "snapshot scan is not supported with index tables yet");
+      } else if (snpSupport == latest_snp_no_snapshot_available)
+      {
+        sprintf(msg, "%s", "there are no snapshots associated with it");
+      } else if (snpSupport == latest_snp_small_table)
+      {
+        sprintf(msg, "%s %d MBs",
+            "its estimated size is less than the threshold of",
+            getDefault(TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD));
+      } else if (snpSupport == latest_snp_not_trafodion_table)
+      {
+        sprintf(msg, "%s", "it is not a Trafodion table");
+      }
+      //issue warning
+      *CmpCommon::diags() << DgSqlCode(4372) << DgString0(tabName)
+          << DgString1(msg);
+    }
+  }
+  return (snpType_ != SNP_NONE);
+}
 short HbaseAccess::createSortValue(ItemExpr * col_node,
 				   std::vector<SortValue> &myvector,
 				   NABoolean isSecondaryIndex)
@@ -2415,22 +2460,36 @@ short HbaseAccess::codeGen(Generator * generator)
   // But use at least the default buffer size.
   //
   buffersize = buffersize > cbuffersize ? buffersize : cbuffersize;
-  
+
+
   // Always get the index name -- it will be the base tablename for
   // primary access.
   char * tablename = NULL;
-
+  char * snapshotName = NULL;
+  LatestSnpSupportEnum  latestSnpSupport=  latest_snp_supported;
   if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
       (getTableDesc()->getNATable()->isHbaseCellTable()))
     {
       tablename = 
 	space->AllocateAndCopyToAlignedSpace(
 					     GenGetQualifiedName(getTableName().getQualifiedNameObj().getObjectName()), 0);
+      latestSnpSupport = latest_snp_not_trafodion_table;
     }
   else
     {
       if (getIndexDesc() && getIndexDesc()->getNAFileSet())
-	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
+      {
+         tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
+         if (getIndexDesc()->isClusteringIndex())
+         {
+            //base table
+            snapshotName = (char*)getTableDesc()->getNATable()->getSnapshotName() ;
+           if (snapshotName == NULL)
+             latestSnpSupport = latest_snp_no_snapshot_available;
+          }
+          else
+            latestSnpSupport = latest_snp_index_table;
+      }
     }
 
   if (! tablename)
@@ -2438,6 +2497,11 @@ short HbaseAccess::codeGen(Generator * generator)
       space->AllocateAndCopyToAlignedSpace(
 					   GenGetQualifiedName(getTableName()), 0);
   
+  Int32 computedHBaseRowSizeFromMetaData = getTableDesc()->getNATable()->computeHBaseRowSizeFromMetaData();
+  if (computedHBaseRowSizeFromMetaData * getEstRowsAccessed().getValue()  <
+                getDefault(TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD)*1024*1024)
+    latestSnpSupport = latest_snp_small_table;
+
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
   char * server = space->allocateAlignedSpace(serverNAS.length() + 1);
@@ -2445,16 +2509,53 @@ short HbaseAccess::codeGen(Generator * generator)
   char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
   strcpy(zkPort, zkPortNAS.data());
 
-  NAString snapNameNAS= tablename;
- snapNameNAS.append("_");
- snapNameNAS.append(ActiveSchemaDB()->getDefaults().getValue(TRAF_TABLE_SNAPSHOT_SCAN_SNAP_SUFFIX));
-  char * snapName= space->allocateAlignedSpace(snapNameNAS.length() + 1);
-  strcpy(snapName, snapNameNAS.data());
 
-  NAString tmpLocNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION);
-  char * tmpLoc = space->allocateAlignedSpace(tmpLocNAS.length() + 1);
-  strcpy(tmpLoc, tmpLocNAS.data());
 
+  NAString snapNameNAS;
+  char * snapName= NULL;
+  NAString tmpLocNAS ;
+  char * tmpLoc = NULL;
+  NAString snapScanRunIdNAS;
+  char * snapScanRunId = NULL;
+  NAString snapScanHelperTabNAS ;
+  char * snapScanHelperTab = NULL;
+
+
+  ComTdbHbaseAccess::HbaseSnapshotScanAttributes * snapAttrs =
+       new (space) ComTdbHbaseAccess::HbaseSnapshotScanAttributes();
+
+  if (isSnapshotScanFeasible( latestSnpSupport,tablename))
+  {
+    snapAttrs->setUseSnapshotScan(TRUE );
+    if (snpType_ == SNP_LATEST)
+    {
+      CMPASSERT(snapshotName != NULL);
+      snapNameNAS = snapshotName;
+    }
+    else if (snpType_ == SNP_SUFFIX)
+    {
+      //this case is mainly used with bulk unload
+      snapNameNAS= tablename;
+      snapNameNAS.append("_");
+      snapNameNAS.append( ActiveSchemaDB()->getDefaults().getValue(
+              TRAF_TABLE_SNAPSHOT_SCAN_SNAP_SUFFIX));
+    }
+    snapName= space->allocateAlignedSpace(snapNameNAS.length() + 1);
+    strcpy(snapName, snapNameNAS.data());
+    snapAttrs->setSnapshotName(snapName);
+
+    tmpLocNAS = generator->getSnapshotScanTmpLocation();
+    CMPASSERT(tmpLocNAS[tmpLocNAS.length()-1] =='/');
+    tmpLoc = space->allocateAlignedSpace(tmpLocNAS.length() + 1);
+    strcpy(tmpLoc, tmpLocNAS.data());
+
+    snapAttrs->setSnapScanTmpLocation(tmpLoc);
+
+    snapAttrs->setSnapshotScanTimeout(getDefault(TRAF_TABLE_SNAPSHOT_SCAN_TIMEOUT));
+    //create the strings from generator heap
+    NAString  * tbl = new NAString( tablename,generator->wHeap());
+    generator->objectNames().insert(*tbl);//verified that it detects duplicate names in the NASet
+  }
   ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
   if (CmpCommon::getDefault(COMP_BOOL_184) == DF_ON)
@@ -2462,8 +2563,7 @@ short HbaseAccess::codeGen(Generator * generator)
   generator->setHBaseNumCacheRows(MAXOF(getEstRowsAccessed().getValue(),
                                         getMaxCardEst().getValue()), 
                                   hbpa) ;
-  generator->setHBaseCacheBlocks(getTableDesc()->getNATable()->
-                                 computeHBaseRowSizeFromMetaData(),
+  generator->setHBaseCacheBlocks(computedHBaseRowSizeFromMetaData,
                                  getEstRowsAccessed().getValue(),hbpa);
 
   // create hbasescan_tdb
@@ -2536,7 +2636,8 @@ short HbaseAccess::codeGen(Generator * generator)
 		      server,
                       zkPort,
 		      hbpa,
-		      samplePercent()
+		      samplePercent(),
+		      snapAttrs
 		      );
 
   generator->initTdbFields(hbasescan_tdb);
@@ -2554,19 +2655,6 @@ short HbaseAccess::codeGen(Generator * generator)
         generator->objectUids().insert(
           getTableDesc()->getNATable()->objectUid().get_value());
     }
-  if (getTableDesc()->getNATable()->isSeabaseTable() &&
-      !getTableDesc()->getNATable()->isSeabaseMDTable() &&
-      !(getTableDesc()->getNATable()->getTableName().getObjectName()== HBASE_HIST_NAME) &&
-      !(getTableDesc()->getNATable()->getTableName().getObjectName()== HBASE_HISTINT_NAME) )
-  {
-    hbasescan_tdb->setUseSnapshotScan( useSnapshotScan_);
-    if (hbasescan_tdb->getUseSnapshotScan())
-    {
-      hbasescan_tdb->setSnapScanTmpLocation(tmpLoc);
-      hbasescan_tdb->setSnapshotName(snapName);
-      hbasescan_tdb->setSnapshotScanTimeout(getDefault(TRAF_TABLE_SNAPSHOT_SCAN_TIMEOUT));
-    }
- }
  
   if (keyInfo && searchKey() && searchKey()->isUnique())
     hbasescan_tdb->setUniqueKeyInfo(TRUE);

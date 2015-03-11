@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -125,7 +125,9 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 		      NABasicPtr rwrsInfo,
                       Int32 numObjectUIDs,
                       Int64 *objectUIDs,
-                      CompilationStatsData *compilationStatsData)
+                      CompilationStatsData *compilationStatsData,
+                      char * snapTmpLocation,
+                      Queue * listOfSnapshotscanTables)
 {
   rtFlags1_ = 0;
   rtFlags2_ = 0;
@@ -154,6 +156,9 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 
   fetchedCursorName_ = fetchedCursorName;
   fetchedCursorHvar_ = fetchedCursorHvar;
+
+  snapshotscanTempLocation_=snapTmpLocation;
+  listOfSnapshotScanTables_=listOfSnapshotscanTables;
 
   baseTablenamePosition_ = baseTablenamePosition;
   if ((fetchedCursorName_) ||
@@ -330,7 +335,8 @@ Long ComTdbRoot::pack(void * space)
     schemaLabelInfoList_.pack(space, schCount_);
 
   sikPtr_.pack(space);
-
+  snapshotscanTempLocation_.pack(space);
+  listOfSnapshotScanTables_.pack(space);
   return ComTdb::pack(space);
 }
 
@@ -382,6 +388,8 @@ Lng32 ComTdbRoot::unpack(void * base, void * reallocator)
   if(schemaLabelInfoList_.unpack (base, schCount_, reallocator)) return -1;
 
   if (sikPtr_.unpack(base, reallocator)) return -1;
+  if (snapshotscanTempLocation_.unpack(base)) return -1;
+  if (listOfSnapshotScanTables_.unpack(base, reallocator)) return -1;
 
   return ComTdb::unpack(base, reallocator);
 }

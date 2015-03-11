@@ -1157,6 +1157,21 @@ public:
     COPROC_AGGR_
   };
 
+  enum SNPType
+  {
+    SNP_NONE,
+    SNP_SUFFIX,
+    SNP_LATEST
+  };
+  //latest snapshot support --
+  enum LatestSnpSupportEnum  {
+    latest_snp_supported,
+    latest_snp_index_table,// index table not supported with latest snapshot
+    latest_snp_no_snapshot_available,//snapshot not available
+    latest_snp_not_trafodion_table, // not a trafodion table
+    latest_snp_small_table //table is smaller than a certain threshold
+  };
+
   class SortValue
   {
   public:
@@ -1409,6 +1424,8 @@ public:
 
   short extractHbaseFilterPreds(Generator * generator, ValueIdSet &preds,
                                 ValueIdSet &newExePreds);
+  NABoolean isSnapshotScanFeasible(LatestSnpSupportEnum snpNotSupported,
+                                   char * tableName);
 
  protected:
 
@@ -1445,7 +1462,7 @@ public:
   ValueIdList hbaseFilterColVIDlist_;
   ValueIdList hbaseFilterValueVIDlist_;
   NAList<NAString> opList_;
-  NABoolean useSnapshotScan_;
+  SNPType snpType_;
 
 }; // class HbaseAccess
 

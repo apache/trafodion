@@ -10,7 +10,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -136,6 +136,21 @@ ComDiagsArea *ExRaiseSqlError(CollHeap* heap, ComDiagsArea** diagsArea,
 			stringParam1, stringParam2, stringParam3);
 }
 
+NA_EIDPROC
+SQLEXP_LIB_FUNC
+ComDiagsArea *ExRaiseSqlWarning(CollHeap* heap, ComDiagsArea** diagsArea,
+                              ExeErrorCode err, ComCondition** cond,
+                              Lng32 * intParam1,
+                              Lng32 * intParam2,
+                              Lng32 * intParam3,
+                              const char * stringParam1,
+                              const char * stringParam2,
+                              const char * stringParam3)
+{
+  return ExAddCondition(heap, diagsArea,  (Lng32) err, cond,
+                        intParam1, intParam2, intParam3,
+                        stringParam1, stringParam2, stringParam3);
+}
 NA_EIDPROC
 SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseSqlWarning(CollHeap* heap, ComDiagsArea** diagsArea,

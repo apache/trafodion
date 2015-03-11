@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -86,7 +86,16 @@ NA_EIDPROC
 SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseSqlWarning(NAMemory * heap, ComDiagsArea** diagsArea,
 				ExeErrorCode err, ComCondition** cond=NULL);
-
+NA_EIDPROC
+SQLEXP_LIB_FUNC
+ComDiagsArea *ExRaiseSqlWarning(NAMemory * heap, ComDiagsArea** diagsArea,
+                              ExeErrorCode err, ComCondition** cond,
+                              Lng32 * intParam1,
+                              Lng32 * intParam2,
+                              Lng32 * intParam3 = NULL,
+                              const char * stringParam1 = NULL,
+                              const char * stringParam2 = NULL,
+                              const char * stringParam3 = NULL);
 NA_EIDPROC
 SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseFunctionSqlError(NAMemory * heap, 

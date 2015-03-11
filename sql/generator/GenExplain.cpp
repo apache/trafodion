@@ -725,7 +725,7 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
      sprintf(buf, "%g ", getEstRowsAccessed().getValue());
      description += buf;
   }
-  if (((ComTdbHbaseAccess *)tdb)->getUseSnapshotScan())
+  if (((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getUseSnapshotScan())
   {
     description += "use_snapshot_scan: ";
     sprintf(buf, "%s ", "TRUE" );
@@ -736,11 +736,11 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     description += buf;
 
     description += "snapshot_name: ";
-    sprintf(buf, "%s ", ((ComTdbHbaseAccess *)tdb)->getSnapshotName());
+    sprintf(buf, "%s ", ((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getSnapshotName());
     description += buf;
 
     description += "snapshot_temp_location: ";
-    sprintf(buf, "%s ", ((ComTdbHbaseAccess *)tdb)->getSnapScanTmpLocation());
+    sprintf(buf, "%s ", ((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getSnapScanTmpLocation());
     description += buf;
 
   }

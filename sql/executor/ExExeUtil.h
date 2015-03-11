@@ -3579,8 +3579,6 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   Int64 endTime_;
   Int64 rowsAffected_;
   char statusMsgBuf_[BUFFER_SIZE];
-
-  char tmpLocation_ [PATH_MAX];
   SequenceFileWriter* sequenceFileWriter_;
   NAList<struct snapshotStruct *> * snapshotsList_;
   NABoolean emptyTarget_;

@@ -454,10 +454,6 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-	    Lng32 snapTimeout = tcb_->hbaseAccessTdb().getSnapshotScanTimeout();
-            char * snapName = tcb_->hbaseAccessTdb().getSnapshotName();
-            char * tmpLoc = tcb_->hbaseAccessTdb().getSnapScanTmpLocation();
-            Lng32 espNum = tcb_->getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
 
 	    retcode = tcb_->ehi_->scanOpen(tcb_->table_, 
 					   tcb_->beginRowId_, tcb_->endRowId_,
@@ -473,11 +469,12 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 					   (tcb_->hbaseFilterValues_.entries() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
 					    tcb_->getSamplePercentage(),
-					    tcb_->hbaseAccessTdb().getUseSnapshotScan(),
-					    snapTimeout,
-					    snapName,
-					    tmpLoc,
-					    espNum);
+					    tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getUseSnapshotScan(),
+					    tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapshotScanTimeout(),
+					    tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapshotName(),
+					    tcb_->hbaseAccessTdb().getHbaseSnapshotScanAttributes()->getSnapScanTmpLocation(),
+					    tcb_->getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber()
+					    );
 
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;

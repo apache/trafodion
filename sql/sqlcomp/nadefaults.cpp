@@ -3280,12 +3280,26 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TRAF_NUM_OF_SALT_PARTNS,                     "-1"),
 
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
-  DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),   
-  DDkwd__(TRAF_TABLE_SNAPSHOT_SCAN,                    "OFF"),
+  DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
+  //TRAF_TABLE_SNAPSHOT_SCAN CQD can be set to :
+  //NONE-->    Snapshot scan is disabled and regular scan is used , 
+  //SUFFIX --> Snapshot scan enabled for the bulk unload (bulk unload 
+  //           behavior id not changed)
+  //LATEST --> enabled for the scan independently from bulk unload
+  //           the latest snapshot is used if it exists
+  DDkwd__(TRAF_TABLE_SNAPSHOT_SCAN,                    "NONE"),
   DD_____(TRAF_TABLE_SNAPSHOT_SCAN_SNAP_SUFFIX,        "SNAP"),
+  //when the estimated table size is below the threshold (in MBs)
+  //defined by  TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD
+  //regular scan instead of snapshot scan
+  //does not apply to bulk unload which maintains the old behavior
+  DDint__(TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD, "1000"), 
+  //timeout before we give up when trying to create the snapshot scanner
   DDint__(TRAF_TABLE_SNAPSHOT_SCAN_TIMEOUT,            "6000"),
-  DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_BASE_LOCATION,  "/bulkload/"),
-  DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION,       "sub/"),
+  //location for temporary links and files produced by snapshot scan
+  DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION,       "/bulkload/"),
+
+
 
   DDkwd__(TRAF_UNLOAD_BYPASS_LIBHDFS,                  "ON"),
   DD_____(TRAF_UNLOAD_DEF_DELIMITER,                   "|" ),
@@ -6161,6 +6175,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "JNI_TRX",
   "KEYINDEXES",
   "LASTROW",
+  "LATEST",
   "LOADNODUP",
   "LOCAL",
   "LOCAL_NODE",
@@ -6203,6 +6218,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "SQLMP",
   "SSD",
   "STOP",
+  "SUFFIX",
   "SYSTEM",
   "TANDEM",
   "THRIFT",
@@ -6803,7 +6819,10 @@ DefaultToken NADefaults::token(Int32 attrEnum,
     case USE_HIVE_SOURCE:
       isValid = TRUE;
       break;
-
+    case TRAF_TABLE_SNAPSHOT_SCAN:
+      if (tok  == DF_NONE || tok == DF_SUFFIX || tok == DF_LATEST)
+        isValid = TRUE;
+    break;
     // Nothing needs to be added here for ON/OFF/SYSTEM keywords --
     // instead, add to DEFAULT_ALLOWS_SEPARATE_SYSTEM code in the ctor.
 
