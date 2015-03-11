@@ -23,12 +23,16 @@
 
 package org.trafodion.jdbc.t2;
 
-import java.sql.*;
+import java.lang.ref.WeakReference;
+import java.sql.BatchUpdateException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.lang.ref.*;
 
 public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 	// java.sql.Statement interface Methods
@@ -1452,7 +1456,7 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			}
 			stmtLabelBase_ = getStmtLabel_();
 			SPJRSbaseStmtLabel_ = getStmtLabel_() + "RS";
-			fetchSize_ = 1;
+			fetchSize_ = SQLMXResultSet.DEFAULT_FETCH_SIZE;
 			maxRows_ = 0;
 			fetchDirection_ = ResultSet.FETCH_FORWARD;
 			pRef_ = new WeakReference<SQLMXStatement>(this, connection_.refQ_);

@@ -22,36 +22,45 @@
  */
 package org.trafodion.jdbc.t2;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.*;
-import javax.sql.PooledConnection;
-
-import org.trafodion.jdbc.t2.TCallableStatement;
-import org.trafodion.jdbc.t2.TConnection;
-import org.trafodion.jdbc.t2.TDatabaseMetaData;
-import org.trafodion.jdbc.t2.TPreparedStatement;
-import org.trafodion.jdbc.t2.TStatement;
-//import com.tandem.tmf.Current;		// Linux port - ToDo
-//import com.tandem.util.FSException;	// Linux port - ToDo
-
-import java.util.Locale; // JDK 1.2
-import java.util.Map;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import java.lang.ref.*;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
-import java.util.HashSet;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.HashMap;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.DatabaseMetaData;
+import java.sql.NClob;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLClientInfoException;
+import java.sql.SQLException;
+import java.sql.SQLXML;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Struct;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Locale; // JDK 1.2
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executor;
+
+import javax.sql.PooledConnection;
+//import com.tandem.tmf.Current;		// Linux port - ToDo
+//import com.tandem.util.FSException;	// Linux port - ToDo
 
 
 public class SQLMXConnection extends PreparedStatementManager implements
@@ -153,7 +162,6 @@ public class SQLMXConnection extends PreparedStatementManager implements
 		throw new SQLException(
 				"No Constructor available accepting ONLY java.lang.String parameter in the Specified Class.");
 	}
-
 
 	// java.sql.Connection interface methods
 	public void close() throws SQLException {
@@ -2968,8 +2976,6 @@ public class SQLMXConnection extends PreparedStatementManager implements
 		clobTableName_ = info.getClobTableName();
 		contBatchOnError_ = info.getContBatchOnError();
 		iso88591EncodingOverride_ = info.getIso88591EncodingOverride();
-
-
 
 		dsCatalog_ = catalog_;
 		dsSchema_ = schema_;

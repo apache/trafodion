@@ -2467,6 +2467,42 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 				debug[methodId_setFloat_I].methodExit();
 		}
 	}
+	
+	public void setFetchSize(int rows) throws SQLException {
+		if (JdbcDebugCfg.entryActive)
+			debug[methodId_setFetchSize].methodEntry();
+		try {
+			clearWarnings();
+			if (rows < 0)
+				throw Messages.createSQLException(connection_.locale_,
+						"invalid_fetchSize_value", null);
+			// Fetch size of zero means to take best guess.
+			// Since we have no statistics, just leave as is.
+			if (rows != 0) {
+				fetchSize_ = rows;
+
+				synchronized (connection_) {
+					// Pass the fetch size change to the driver
+					resetFetchSize(connection_.getDialogueId_(), stmtId_, fetchSize_);
+				}
+			}
+		} finally {
+			if (JdbcDebugCfg.entryActive)
+				debug[methodId_setFetchSize].methodExit();
+		}
+	}
+	
+	public int getFetchSize() throws SQLException {
+		if (JdbcDebugCfg.entryActive)
+			debug[methodId_getFetchSize].methodEntry();
+		try {
+			clearWarnings();
+			return fetchSize_;
+		} finally {
+			if (JdbcDebugCfg.entryActive)
+				debug[methodId_getFetchSize].methodExit();
+		}
+	}
 
 	/**
 	 * Sets the designated parameter to the given Java <tt>int</tt> value. The
@@ -5029,7 +5065,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			resultSetConcurrency_ = resultSetConcurrency;
 			resultSetHoldability_ = resultSetHoldability;
 			queryTimeout_ = connection_.queryTimeout_;
-			fetchSize_ = 1;
+			fetchSize_ = SQLMXResultSet.DEFAULT_FETCH_SIZE;
 			maxRows_ = 0;
 			fetchDirection_ = ResultSet.FETCH_FORWARD;
 			isClosed_ = false;
@@ -5211,7 +5247,7 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			isSelect_ = isSelect;
 
 			// Make Sure you initialize the other fields to the right value
-			fetchSize_ = 1;
+			fetchSize_ = SQLMXResultSet.DEFAULT_FETCH_SIZE;
 			maxRows_ = 0;
 			fetchDirection_ = ResultSet.FETCH_FORWARD;
 			queryTimeout_ = connection_.queryTimeout_;
@@ -5243,6 +5279,8 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 			int moduleVersion, long moduleTimestamp, String stmtName,
 			boolean isSelect, int queryTimeout, int holdability, int batchSize,
 			int fetchSize, String sql,boolean isISUD);
+	
+	private native void resetFetchSize(long dialogueId, long stmtId, int fetchSize);
 
 	// fields
 	SQLMXDesc[] inputDesc_;
@@ -5391,7 +5429,11 @@ public class SQLMXPreparedStatement extends SQLMXStatement implements
 	private static int methodId_cpqPrepare = 65;
 	private static int methodId_SQLMXPreparedStatement_LLIII = 66;
 	private static int methodId_SQLMXPreparedStatement_LLIJLZI = 67;
-	private static int totalMethodIds = 68;
+	private static int methodId_setFetchSize = 68;
+	private static int methodId_getFetchSize = 69;
+	
+	private static int totalMethodIds = 70;
+	
 	private static JdbcDebug[] debug;
 
 	static {

@@ -515,6 +515,19 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_execute
 	FUNCTION_RETURN_VOID((NULL));
 }
 
+JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_resetFetchSize
+  (JNIEnv *, jobject, jlong dialogueId, jlong stmtId, jint fetchSize)
+{
+	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_resetFetchSize",
+		("... dialogueId=0x%08x, , stmtId=%ld, fetchSize=%ld",
+		dialogueId,
+		stmtId,
+		fetchSize));
+
+	SRVR_STMT_HDL::resetFetchSize(dialogueId, stmtId, fetchSize);
+	FUNCTION_RETURN_VOID((NULL));
+}
+
 JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_cpqPrepareJNI
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,
  jint txid, jboolean autoCommit, jint txnMode,

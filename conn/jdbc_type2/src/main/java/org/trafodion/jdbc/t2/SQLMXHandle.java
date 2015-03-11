@@ -30,7 +30,7 @@ public abstract class SQLMXHandle
 {
 	SQLWarning sqlWarning_;
  	
-	public void clearWarnings() throws SQLException
+	public void clearWarnings()
 	{
 		if (JdbcDebugCfg.entryActive) debug[methodId_clearWarnings].methodEntry();
 		try
