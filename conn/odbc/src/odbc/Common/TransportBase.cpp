@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ bool CTempMemory_list::add_mem( const CEE_handle_def* call_id, void* p )
 	}
 	if((nnode = new CTempMemory(call_id,p,cnode))!=NULL)
 	{
-		if(pnode!=NULL) 
+		if(pnode!=NULL)
 			pnode->next = nnode;
 		else
 			list = nnode;
@@ -296,7 +296,7 @@ CError* CError_list::ins_error(long signature)
 	if((nnode = new CError())!=NULL)
 	{
 		nnode->signature = signature;
-		if(pnode!=NULL) 
+		if(pnode!=NULL)
 			pnode->next = nnode;
 		else
 			list = nnode;
@@ -374,6 +374,10 @@ void CTransportBase::log_info(CError* ierror)
 {
 }
 
+void CTransportBase::log_warning(CError* ierror)
+{
+}
+
 short CTransportBase::AWAITIOX(short* filenum,short* wcount, long* tag, long wtimeout)
 {
 #ifndef NSK_PLATFORM
@@ -383,7 +387,7 @@ short CTransportBase::AWAITIOX(short* filenum,short* wcount, long* tag, long wti
 #endif
 }
 
-void WINAPI 
+void WINAPI
 SET_ERROR(long signature, char platform, char transport, int api, ERROR_TYPE error_type, char* process, OPERATION operation, FUNCTION function, int error, int errordetail)
 {
 	CError* ierror;
@@ -424,7 +428,7 @@ SET_ERROR(long signature, char platform, char transport, int api, ERROR_TYPE err
 	   delete ierror;
 }
 
-void WINAPI 
+void WINAPI
 SET_INFO(long signature, char platform, char transport, int api, ERROR_TYPE error_type, char* process, OPERATION operation, FUNCTION function, int error, int errordetail)
 {
 #ifdef NSK_ODBC_SRVR
@@ -448,6 +452,39 @@ SET_INFO(long signature, char platform, char transport, int api, ERROR_TYPE erro
 		ierror->error = error;
 		ierror->errordetail = errordetail;
 		GTransport.log_info(ierror);
+	}
+
+#ifdef NSK_ODBC_SRVR
+	LeaveCriticalSection2(&GTransport.m_TransportCSObject);
+#else
+	LeaveCriticalSection (&GTransport.m_TransportCSObject);
+#endif
+}
+
+void WINAPI
+SET_WARNING(long signature, char platform, char transport, int api, ERROR_TYPE error_type, char* process, OPERATION operation, FUNCTION function, int error, int errordetail)
+{
+#ifdef NSK_ODBC_SRVR
+	EnterCriticalSection2(&GTransport.m_TransportCSObject);
+#else
+	EnterCriticalSection (&GTransport.m_TransportCSObject);
+#endif
+
+	CError* ierror = GTransport.m_error_list.ins_error(signature);
+	;
+	if (ierror != NULL)
+	{
+		ierror->platform = platform;
+		ierror->transport = transport;
+		ierror->api = api;
+		ierror->error_type = error_type;
+		strncpy(ierror->process_name,process,MAX_PROCESS_NAME);
+		ierror->process_name[MAX_PROCESS_NAME-1] = 0;
+		ierror->operation = operation;
+		ierror->function = function;
+		ierror->error = error;
+		ierror->errordetail = errordetail;
+		GTransport.log_warning(ierror);
 	}
 
 #ifdef NSK_ODBC_SRVR
@@ -718,7 +755,7 @@ FORMAT_SRVR_APIS(int api, char* buffer)
 	}
 }
 
-char* 
+char*
 FORMAT_ERROR(CError* ierror)
 {
 	char static s_buffer[500];
@@ -957,7 +994,7 @@ FORMAT_ERROR(CError* ierror)
 	return s_buffer;
 }
 
-char* 
+char*
 FORMAT_ERROR(long signature)
 {
 	CError* ierror = GTransport.m_error_list.find_error(signature);
@@ -978,7 +1015,7 @@ char* FORMAT_ERROR(char* text, long signature)
 }
 
 
-char* 
+char*
 FORMAT_LAST_ERROR()
 {
 	CError* ierror = GTransport.m_error_list.find_last_error();
@@ -1004,7 +1041,7 @@ ERROR_TO_TEXT(CError* ierror)
 	else if (ierror->error >= NSK_SOCKET_ERR)					// 4000
 		strcpy(s_buffer,DecodeNSKSocketErrors(ierror->error));
 	else
-		strcpy(s_buffer,DecodeSocketErrors(ierror->error));		// Probably standard POSIX socket errors 
+		strcpy(s_buffer,DecodeSocketErrors(ierror->error));		// Probably standard POSIX socket errors
 	return s_buffer;
 }
 
@@ -1026,7 +1063,7 @@ ERROR_TO_TEXT(long signature)
 	return ERROR_TO_TEXT(ierror);
 }
 
-char* 
+char*
 DecodeNSKSocketErrors(int error)
 {
 	char* msg = "";
@@ -1109,7 +1146,7 @@ DecodeNSKSocketErrors(int error)
 	case 4123:
 		msg = "Socket not connected";break;
 	case 4124:
-		msg = "The operation could not be performed because the specified socket was already shut down";break;	
+		msg = "The operation could not be performed because the specified socket was already shut down";break;
 	case 4126:
 		msg = "The connection timed out before the operation completed";break;
 	case 4127:
@@ -1188,58 +1225,58 @@ DecodeSocketErrors(int error)
 	return msg;
 }
 
-char* 
+char*
 DecodeNTSocketErrors(int error)
 {
 	char* msg = "";
 	switch(error)
 	{
-	case 10013:											//WSAEACCES 
+	case 10013:											//WSAEACCES
 		msg = "Permission denied";break;
-	case 10014:											//WSAEFAULT 
+	case 10014:											//WSAEFAULT
 		msg = "Bad address";break;
 	case 10024:											//WSAEMFILE
 		msg = "Too many open sockets";break;
-	case 10039:											//WSAEDESTADDRREQ 
+	case 10039:											//WSAEDESTADDRREQ
 		msg = "Destination address required";break;
-	case 10048:											//WSAEADDRINUSE 
+	case 10048:											//WSAEADDRINUSE
 		msg = "Address already in use";break;
-	case 10049:											//WSAEADDRNOTAVAIL 
+	case 10049:											//WSAEADDRNOTAVAIL
 		msg = "Cannot assign requested address";break;
-	case 10050:											//WSAENETDOWN 
+	case 10050:											//WSAENETDOWN
 		msg = "Network is down";break;
-	case 10051:											//WSAENETUNREACH 
+	case 10051:											//WSAENETUNREACH
 		msg = "Network is unreachable";break;
-	case 10052:											//WSAENETRESET 
+	case 10052:											//WSAENETRESET
 		msg = "Network dropped connection on reset";break;
-	case 10053:											//WSAECONNABORTED 
+	case 10053:											//WSAECONNABORTED
 		msg = "Software caused connection abort";break;
-	case 10054:											//WSAECONNRESET 
+	case 10054:											//WSAECONNRESET
 		msg = "Connection reset by peer";break;
-	case 10055:											//WSAENOBUFS 
+	case 10055:											//WSAENOBUFS
 		msg = "No buffer space available";break;
-	case 10060:											//WSAETIMEDOUT 
+	case 10060:											//WSAETIMEDOUT
 		msg = "Connection timed out";break;
-	case 10061:											//WSAECONNREFUSED 
+	case 10061:											//WSAECONNREFUSED
 		msg = "Connection refused";break;
-	case 10064:											//WSAEHOSTDOWN 
+	case 10064:											//WSAEHOSTDOWN
 		msg = "Host is down";break;
-	case 10065:											//WSAEHOSTUNREACH 
+	case 10065:											//WSAEHOSTUNREACH
 		msg = "No route to host";break;
-	case 10067:											//WSAEPROCLIM 
+	case 10067:											//WSAEPROCLIM
 		msg = "Too many processes using sockets";break;
-	case 10091:											//WSASYSNOTREADY 
+	case 10091:											//WSASYSNOTREADY
 		msg = "Winsock not available";break;
-	case 10093:											//WSANOTINITIALISED 
+	case 10093:											//WSANOTINITIALISED
 		msg = "Successful WSAStartup not yet performed";break;
-	case 10094:											//WSAEDISCON 
+	case 10094:											//WSAEDISCON
 		msg = "Graceful shutdown in progress";break;
-	case 11001:											//WSAHOST_NOT_FOUND 
+	case 11001:											//WSAHOST_NOT_FOUND
 		msg = "Host not found";break;
 	}
 	return msg;
 }
-char* 
+char*
 DecodeSRVRErrors(int error)
 {
 	char* msg = "";
@@ -1279,7 +1316,7 @@ DecodeSRVRErrors(int error)
 	return msg;
 }
 
-char* 
+char*
 DecodeDRVRErrors(int error)
 {
 	char* msg = "";
@@ -1534,7 +1571,7 @@ bool BUILD_OBJECTREF(char* ObjRef, char* BuildObjRef, char* ObjectName, int port
 	char* tcp;
 	char* ip_address;
 	IDL_OBJECT_def tmp_objref;
-	
+
 	strncpy(tmp_objref, ObjRef, sizeof(tmp_objref));
 	tmp_objref[sizeof(tmp_objref)-1]=0;
 
@@ -1592,21 +1629,21 @@ CEE_TMP_DEALLOCATE(
 	return CEE_SUCCESS;
 }
 
-extern void 
+extern void
 DEALLOCATE_TEMP_MEMORY(CEE_handle_def *call_id)
 {
 	if (call_id != NULL && GTransport.m_TempMemory_list.m_list_length )
 		GTransport.m_TempMemory_list.del_tmp_allocate(call_id);
 }
 //LCOV_EXCL_START
-extern void 
+extern void
 DEALLOCATE_ALL_TEMP_MEMORY()
 {
 	if (GTransport.m_TempMemory_list.m_list_length )
 		GTransport.m_TempMemory_list.del_tmp_allocate();
 }
 
-extern void 
+extern void
 DEALLOCATE_ALL_TEMP_MEMORY(void* p)
 {
 	if (GTransport.m_TempMemory_list.m_list_length )

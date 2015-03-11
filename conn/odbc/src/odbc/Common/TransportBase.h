@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ typedef struct request
 	short	request_code;
 } request_def;
 
-typedef SB_Phandle_Type Phandle_def; 
+typedef SB_Phandle_Type Phandle_def;
 
 typedef FS_Receiveinfo_Type receive_info_def;
 //=========== defines for FILE_GETINFOBYNAME_ =======
@@ -53,7 +53,7 @@ typedef FS_Receiveinfo_Type receive_info_def;
 //=========== as server apis ========================
 
 enum AS_API {
-	AS_API_INIT = AS_API_START, 
+	AS_API_INIT = AS_API_START,
 	AS_API_GETOBJREF_PRE_R22,					//OK NSKDRVR/CFGDRVR
 	AS_API_REGPROCESS,							//OK NSKSRVR/CFGSRVR
 	AS_API_UPDATESRVRSTATE,						//OK NSKSRVR
@@ -66,10 +66,10 @@ enum AS_API {
 	AS_API_STATUSDS,							//OK CFGDRVR
 	AS_API_STATUSDSDETAIL,						//OK CFGDRVR
 	AS_API_STATUSSRVRALL,						//OK CFGDRVR
-	AS_API_STOPSRVR,							//OK CFGDRVR							
+	AS_API_STOPSRVR,							//OK CFGDRVR
 	AS_API_STATUSDSALL,							//OK CFGDRVR
 	AS_API_DATASOURCECONFIGCHANGED,				//OK CFGSRVR
-	AS_API_ENABLETRACE,							//OK CFGDRVR							
+	AS_API_ENABLETRACE,							//OK CFGDRVR
 	AS_API_DISABLETRACE,						//OK CFGDRVR
 	AS_API_GETVERSIONAS,						//OK CFGDRVR
 	AS_API_GETOBJREF							//OK NSKDRVR/CFGDRVR
@@ -140,13 +140,13 @@ enum SRVR_API {
 
 enum DATA_FORMAT {
 	UNKNOWN_DATA_FORMAT  = 0,
-        ROWWISE_ROWSETS      = 1, 
-        COLUMNWISE_ROWSETS   = 2           
+        ROWWISE_ROWSETS      = 1,
+        COLUMNWISE_ROWSETS   = 2
 };
 
 //=========== message estimated lengths =======================
 
-#define FETCH2_REPLY_ESTIMATED_LENGTH  16  
+#define FETCH2_REPLY_ESTIMATED_LENGTH  16
 
 
 
@@ -217,7 +217,7 @@ enum DRVR_ERR {
 #define TCPI_SRVR_RECV_BUFFER		262144
 
 #ifdef COLLAPSED_CFGLIB
-#define OPEN_SESSION_TIMEOUT		10	//seconds 
+#define OPEN_SESSION_TIMEOUT		10	//seconds
 #define FIRST_READ_TIMEOUT			10	//seconds
 #else
 #define OPEN_SESSION_TIMEOUT		-1	//seconds, -1 for notimeout
@@ -245,14 +245,14 @@ enum DRVR_ERR {
 #define PC							'P'
 
 #define SWAP_YES					'Y'
-#define SWAP_NO						'N' 
+#define SWAP_NO						'N'
 
 #define COMP_YES					'Y'
 #define COMP_NO						'N'
 
 #define COMP_NO_COMPRESSION			Z_NO_COMPRESSION
 #define COMP_BEST_SPEED				Z_BEST_SPEED
-#define COMP_BEST_COMPRESSION		Z_BEST_COMPRESSION		
+#define COMP_BEST_COMPRESSION		Z_BEST_COMPRESSION
 #define COMP_DEFAULT				Z_DEFAULT_COMPRESSION  // this is value "balance" in DSN
 
 enum HDRTYPE {
@@ -280,7 +280,7 @@ typedef struct {
 	char	swap;
 	short	error;
 	short	error_detail;
-} 
+}
 HEADER;
 
 enum ERROR_TYPE {
@@ -392,7 +392,7 @@ private:
 
 //================== CTempMemory_list ============================
 
-class CTempMemory_list 
+class CTempMemory_list
 {
 public:
 	CTempMemory_list();
@@ -463,6 +463,7 @@ public:
 	CTempMemory_list m_TempMemory_list;
 	virtual void log_error(CError* ierror);
 	virtual void log_info(CError* ierror);
+	virtual void log_warning(CError* ierror);
 	virtual short AWAITIOX(short* filenum,short* wcount, long* tag, long wtimeout);
 	bool bMapErrors;
 protected:
@@ -481,22 +482,22 @@ CEE_TMP_DEALLOCATE(
   /* In  */ void    *ptr
 );
 
-extern void 
+extern void
 DEALLOCATE_TEMP_MEMORY(CEE_handle_def *handle);
 
-extern void 
+extern void
 DEALLOCATE_ALL_TEMP_MEMORY();
 
-extern void 
+extern void
 DEALLOCATE_ALL_TEMP_MEMORY(void* p);
 
-char* 
+char*
 DecodeNSKSocketErrors(int error);
-char* 
+char*
 DecodeNTSocketErrors(int error);
-char* 
+char*
 DecodeDRVRErrors(int error);
-char* 
+char*
 DecodeSRVRErrors(int error);
 char*
 DecodeERRNOErrors(int error);
@@ -505,21 +506,23 @@ DecodeSocketErrors(int error);
 
 void WINAPI
 SET_ERROR(long signature, char platform, char transport, int api, ERROR_TYPE error_type, char* process, OPERATION operation, FUNCTION function, int error, int errordetail);
-void WINAPI 
+void WINAPI
 SET_INFO(long signature, char platform, char transport, int api, ERROR_TYPE error_type, char* process, OPERATION operation, FUNCTION function, int error, int errordetail);
+void WINAPI
+SET_WARNING(long signature, char platform, char transport, int api, ERROR_TYPE error_type, char* process, OPERATION operation, FUNCTION function, int error, int errordetail);
 void WINAPI
 RESET_ERRORS(long signature);
 int WINAPI
 GET_ERROR(long signature);
 int WINAPI
 GET_ERROR_DETAIL(long signature);
-char* 
+char*
 FORMAT_ERROR(CError* ierror);
-char* 
+char*
 FORMAT_ERROR(long signature);
 char*
 FORMAT_ERROR(char* text, long signature);
-char* 
+char*
 FORMAT_LAST_ERROR();
 char*
 ERROR_TO_TEXT(CError* ierror);
@@ -535,7 +538,7 @@ FORMAT_CFG_APIS(int api, char* buffer);
 void
 FORMAT_SRVR_APIS(int api, char* buffer);
 
-bool 
+bool
 BUILD_OBJECTREF(char* ObjRef, char* BuildObjRef, char* capsula, int portNumber);
 
 void
