@@ -322,7 +322,7 @@ class CmpSeabaseDDL
   ExpHbaseInterface* allocEHI(NADefaults * defs = NULL);
   
   void deallocEHI(ExpHbaseInterface* &ehi);
-
+  void dropLOBHdfsFiles();
  protected:
 
   enum { 

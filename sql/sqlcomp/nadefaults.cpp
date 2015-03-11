@@ -2038,13 +2038,12 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   SDDkwd__(LIMIT_MAX_NUMERIC_PRECISION,		"SYSTEM"),
 
   DDint__(LOB_HDFS_PORT,                       "0"),
-  DD_____(LOB_HDFS_SERVER,                 "localhost"), 
+  DD_____(LOB_HDFS_SERVER,                 "default"), 
  
   // default size is 2 G  (2000 M)
   DDint__(LOB_MAX_SIZE,                         "2000"),
 
   DD_____(LOB_STORAGE_FILE_DIR,                 "/lobs"), 
-  //DD_____(LOB_STORAGE_FILE_DIR,                 "/h/linuxusr"), 
 
   // storage types defined in exp/ExpLOBenum.h. 
   // Default is hdfs_file (value = 1)

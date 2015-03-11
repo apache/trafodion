@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -37,6 +37,9 @@ const char CAT_SQL[]                           = "SQL";
 const char CAT_SQL_EXE[]                       = "SQL.EXE";
 const char CAT_SQL_COMP[]                      = "SQL.COMP";
 const char CAT_SQL_ESP[]                       = "SQL.ESP";
+const char CAT_SQL_LOB[]                       = "SQL.LOB";
+const char CAT_SQL_SSMP[]                      = "SQL.SSMP";
+const char CAT_SQL_SSCP[]                      = "SQL.SSCP";
 
 // hdfs
 const char CAT_SQL_HDFS_JNI_TOP[]              =  "SQL.HDFS.JniTop";
@@ -123,7 +126,46 @@ void getMyTopAncestor(char ancsNidPid[])
 
   snprintf (ancsNidPid, 5+2*sizeof(Int32), "_%d_%d.log", ancsNid, ancsPid);
 }
+// **************************************************************************
+// construct a string with the node number of the 
+//  process and the string ".log". This will be used as the suffix
+// of the log name forthis process . So if the log name specified by the 
+// user in the 
+// configuration file is "sql_events", the actual log name will be
+// something like "sql_events_<nid>.log"
+// **************************************************************************
+void getMyNidSuffix(char stringNidSuffix[])
+{
+  short result = 0;
 
+  NAProcessHandle myPhandle;
+  myPhandle.getmine();
+  myPhandle.decompose();
+  
+  char processName[MS_MON_MAX_PROCESS_NAME + 1];
+  
+
+  memset(processName, 0, sizeof(processName));
+  memcpy(processName, myPhandle.getPhandleString(), myPhandle.getPhandleStringLen());
+  memset(processName, 0, sizeof(processName));
+  memcpy(processName, myPhandle.getPhandleString(), myPhandle.getPhandleStringLen());
+
+ 
+
+  MS_Mon_Process_Info_Type procInfo;
+  Int32 rc = 0;
+
+  Int32 myNid = 0;
+  
+  do
+  {
+     rc = msg_mon_get_process_info_detail(processName, &procInfo);
+     myNid = procInfo.nid;
+   
+  } while ((rc == XZFIL_ERR_OK) && (procInfo.parent_nid != -1) && (procInfo.parent_pid != -1));
+
+  snprintf (stringNidSuffix, 5+sizeof(Int32), "_%d.log", myNid);
+}
 // **************************************************************************
 // Call the superclass to configure log4cpp from the config file.
 // If the configuration file is not found, perform default initialization:
@@ -138,17 +180,34 @@ NABoolean QRLogger::initLog4cpp(const char* configFileName)
   logFileName = "";
 
   // gets the top ancestor process name that will be used to name the file appender log
-  char acestor_nid_pid [100];
-  getMyTopAncestor(acestor_nid_pid);
+  char logFileSuffix [100]="";
+  
+  switch (module_)
+    {
+    case QRL_NONE:
+    case QRL_MXCMP:
+    case QRL_ESP:
+    case QRL_MXEXE:
+      getMyTopAncestor(logFileSuffix);
+      break;
+    case QRL_LOB:
+    case QRL_SSMP:
+    case QRL_SSCP:
+      getMyNidSuffix(logFileSuffix);
+      break;
+    default:
+      break;
+    }
 
-  if (CommonLogger::initLog4cpp(configFileName, acestor_nid_pid))
+  
+  if (CommonLogger::initLog4cpp(configFileName, logFileSuffix))
   {
     introduceSelf();
     return TRUE;
   }
 
   logFileName += "sql_events";
-  logFileName += acestor_nid_pid;
+  logFileName += logFileSuffix;
   
   fileAppender_ = new log4cpp::RollingFileAppender("FileAppender", logFileName.data());
 
@@ -183,6 +242,7 @@ NABoolean QRLogger::initLog4cpp(const char* configFileName)
       log4cpp::Category::getInstance(CAT_SQL_EXE).setPriority(log4cpp::Priority::INFO);
       log4cpp::Category::getInstance(CAT_SQL_EXE).setAdditivity(false);
       break;
+      
   }
 
   introduceSelf();
@@ -206,19 +266,29 @@ const char* QRLogger::getMyDefaultCat()
 {
   const char* myCat;
   switch (module_)
-  {
-      case QRL_MXCMP:
-          myCat = CAT_SQL_COMP;
-        break;
-      case QRL_MXEXE:
-          myCat = CAT_SQL_EXE;
-        break;
-      case QRL_ESP:
-          myCat = CAT_SQL_ESP;
-        break;
-      default:
-          myCat = CAT_SQL;   
-  }
+    {
+    case QRL_MXCMP:
+      myCat = CAT_SQL_COMP;
+      break;
+    case QRL_MXEXE:
+      myCat = CAT_SQL_EXE;
+      break;
+    case QRL_ESP:
+      myCat = CAT_SQL_ESP;
+      break;
+    case QRL_LOB:
+      myCat = CAT_SQL_LOB;
+      break;
+    case QRL_SSMP:
+      myCat = CAT_SQL_SSMP;
+      break;
+    case QRL_SSCP:
+      myCat = CAT_SQL_SSCP;
+      break;
+
+    default:
+      myCat = CAT_SQL;   
+    }
 
   return myCat;
 }
@@ -243,30 +313,39 @@ const char*  QRLogger::getMyProcessInfo()
 
 void QRLogger::introduceSelf ()
 {
-   char msg[300];
-   const char* myCat = getMyDefaultCat(); 
-   // save previous default priority
-   log4cpp::Priority::PriorityLevel defaultPriority = (log4cpp::Priority::PriorityLevel) log4cpp::Category::getInstance(myCat).getPriority();
+  char msg[300];
+  const char* myCat = getMyDefaultCat(); 
+  // save previous default priority
+  log4cpp::Priority::PriorityLevel defaultPriority = (log4cpp::Priority::PriorityLevel) log4cpp::Category::getInstance(myCat).getPriority();
 
-   NAString procInfo = getMyProcessInfo();
+  NAString procInfo = getMyProcessInfo();
 
-   // change default priority to INFO to be able to printout some infomational messages
-   log4cpp::Category::getInstance(myCat).setPriority(log4cpp::Priority::INFO);
-   switch (module_)
-   {
-     case QRL_NONE:
-     case QRL_MXCMP:
-       snprintf (msg, 200, "%s,,, A compiler process is launched.", procInfo.data());
-       break;
+  // change default priority to INFO to be able to printout some infomational messages
+  log4cpp::Category::getInstance(myCat).setPriority(log4cpp::Priority::INFO);
+  switch (module_)
+    {
+    case QRL_NONE:
+    case QRL_MXCMP:
+      snprintf (msg, 200, "%s,,, A compiler process is launched.", procInfo.data());
+      break;
  
-     case QRL_ESP:
-       snprintf (msg, 300, "%s,,, An ESP process is launched.", procInfo.data());
-       break;
+    case QRL_ESP:
+      snprintf (msg, 300, "%s,,, An ESP process is launched.", procInfo.data());
+      break;
  
-     case QRL_MXEXE:
-       snprintf (msg, 300, "%s,,, An executor process is launched.", procInfo.data());
-       break;
-   }
+    case QRL_MXEXE:
+      snprintf (msg, 300, "%s,,, An executor process is launched.", procInfo.data());
+      break;
+    case QRL_LOB:
+      snprintf (msg, 300, "%s,,, A lobserver  process is launched.", procInfo.data());
+      break;
+    case QRL_SSMP:
+      snprintf (msg, 300, "%s,,, An ssmp  process is launched.", procInfo.data());
+      break;
+    case QRL_SSCP:
+      snprintf (msg, 300, "%s,,, An sscp  process is launched.", procInfo.data());
+      break;     
+    }
 
    log4cpp::Category::getInstance(myCat).info(msg);
 

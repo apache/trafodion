@@ -230,7 +230,7 @@ catch(SB_Fatal_Excep sbfe)
 	 retcode = getInitParamSrvr(argc, argv, initParam, tmpString, tmpString3);
 	retcode = TRUE;
 
-    mxosrvr_init_seabed_trace_dll();
+        mxosrvr_init_seabed_trace_dll();
 	atexit(mxosrvr_atexit_function);
 
 	// +++ Todo: Duplicating calls here. Should try to persist in srvrGlobal
@@ -240,9 +240,9 @@ catch(SB_Fatal_Excep sbfe)
 	myPid = proc_info.pid;
 	myProcName = proc_info.process_name;
 
-	char logNamePrefix[32];
-	sprintf( logNamePrefix, "_%d_%d.log", myNid, myPid );
-	CommonLogger::instance().initLog4cpp("log4cpp.trafodion.config", logNamePrefix);
+	char logNameSuffix[32];
+	sprintf( logNameSuffix, "_%d_%d.log", myNid, myPid );
+	CommonLogger::instance().initLog4cpp("log4cpp.trafodion.masterexe.config", logNameSuffix);
 
     if(retcode == FALSE )
    {

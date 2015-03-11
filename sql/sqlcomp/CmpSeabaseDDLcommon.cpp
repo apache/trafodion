@@ -60,6 +60,8 @@
 #include "PrivMgrPrivileges.h"
 #include "PrivMgrRoles.h"
 #include "ComUser.h"
+#include "hdfs.h"
+void cleanupLOBDataDescFiles(const char*, int, const char *);
 
 class QualifiedSchema
 {
@@ -5995,12 +5997,27 @@ void CmpSeabaseDDL::dropSeabaseMD()
   dropSeabaseObjectsFromHbase("TRAFODION\\..*");
 
   SQL_EXEC_DeleteHbaseJNI();
+  
+  //drop all lob data and descriptor files
+  dropLOBHdfsFiles();
 
   CmpCommon::context()->setIsUninitializedSeabase(TRUE);
   CmpCommon::context()->uninitializedSeabaseErrNum() = -1393;
 
   return;
 }
+
+void CmpSeabaseDDL::dropLOBHdfsFiles()
+{
+  NAString lobHdfsServer; 
+  CmpCommon::getDefault(LOB_HDFS_SERVER,lobHdfsServer,FALSE);
+  Int32 lobHdfsPort = CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
+  NAString lobHdfsLoc;
+  CmpCommon::getDefault(LOB_STORAGE_FILE_DIR,lobHdfsLoc,FALSE);
+  cleanupLOBDataDescFiles(lobHdfsServer,lobHdfsPort,lobHdfsLoc);
+}
+
+
 
 void CmpSeabaseDDL::initSeabaseAuthorization()
 { 

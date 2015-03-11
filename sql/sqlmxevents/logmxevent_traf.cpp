@@ -154,7 +154,7 @@ void SQLMXLoggingArea::logExecRtInfo(const char *fileName,
 {
   bool lockedMutex = lockMutex();
 
-  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_INFO, "%s  Explain Sequence Numer: %d FILE: %s LINE: %d", msgTxt, explainSeqNum, fileName, lineNo);
+  QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_INFO, "%s  Explain Sequence Number: %d FILE: %s LINE: %d", msgTxt, explainSeqNum, fileName, lineNo);
 
   if (lockedMutex)
     unlockMutex();

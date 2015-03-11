@@ -341,6 +341,7 @@ typedef class ExLobCursor cursor_t;
 
 typedef map<string, cursor_t> lobCursors_t; // handle, offset
 typedef map<string, cursor_t>::iterator lobCursors_it;
+void cleanupLOBDataDescFiles(const char *hdfsServer, int hdfsPort, const char *hdfsLoc);
 
 ///////////////////////////////////////////////////////////////////////////////
 // ExLob 

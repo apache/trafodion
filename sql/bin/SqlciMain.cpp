@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -319,7 +319,7 @@ Int32 main (Int32 argc, char *argv[])
   // the log4cpp log name for this master and all its subordinates will be
   // based on this process' node number and its pid
   QRLogger::instance().setModule(QRLogger::QRL_MXEXE);
-  QRLogger::instance().initLog4cpp("log4cpp.trafodion.config");
+  QRLogger::instance().initLog4cpp("log4cpp.trafodion.masterexe.config");
 
   // run it -- this is where the action is!
   if (in_filename || input_string)
