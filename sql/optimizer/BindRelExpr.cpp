@@ -16378,7 +16378,7 @@ bool ControlRunningQuery::isUserAuthorized(BindWA *bindWA)
     // Set up the returned parameters
     // Max username can be (128 * 2) + 2 (delimiters) + 1 (null indicator)
     char username[2 * MAX_USERNAME_LEN + 2 + 1];
-    Int64 usernameLen = strlen(username) - 1;
+    Int64 usernameLen = sizeof(username) - 1;
  
     // Call function to extract the username from the QID
     Int32 retcode = ComSqlId::getSqlQueryIdAttr(ComSqlId::SQLQUERYID_USERNAME,
