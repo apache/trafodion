@@ -207,6 +207,7 @@ struct DefaultDefault
 #define XDDpct__(name,value)            XDD(name,value,&validatePct)
 #define SDDpct__(name,value)            SDD(name,value,&validatePct)
 #define  DDpct1_50(name,value)           DD(name,value,&validatePct1_t50)
+#define  DD0_10485760(name,value)	 DD(name,value,&validate0_10485760)
 #define  DD0_255(name,value)		 DD(name,value,&validate0_255)
 #define  DD0_200000(name,value)	         DD(name,value,&validate0_200000)
 #define XDD0_200000(name,value)	        XDD(name,value,&validate0_200000)
@@ -290,6 +291,7 @@ const ValidateIntNeg1         validateIntNeg1;// allows -1 to +infinity ints
 const ValidateIntNeg1         validateIntNeg2;// allows -1 to +infinity ints
 const ValidatePercent		validatePct;	// allows zero to 100 (integral %age)
 const ValidateNumericRange    validatePct1_t50(VALID_UINT, 1, (float)50);// allows 1 to 50 (integral %age)
+const Validate_0_10485760	validate0_10485760; // allows zero to 10Meg (integer)
 const Validate_0_255		validate0_255;	// allows zero to 255 (integer)
 const Validate_0_200000	validate0_200000;	// allows zero to 200000 (integer)
 const Validate_1_200000	validate1_200000;	// allows 1 to 200000 (integer)
@@ -2771,6 +2773,12 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // with Cascades plan stealing! Don't do it unless you have to!
   DDui1__(PARTITION_ACCESS_NODES_PER_ESP,	"1"),
 
+  DD_____(PCODE_DEBUG_LOGDIR,        ""  ), // Pathname of log directory for PCode work
+  DDint__(PCODE_EXPR_CACHE_CMP_ONLY, "0" ), // PCode Expr Cache compare-only mode
+  DDint__(PCODE_EXPR_CACHE_DEBUG,    "0" ), // PCode Expr Cache debug (set to 1 to enable dbg logging)
+  DDint__(PCODE_EXPR_CACHE_ENABLED,  "1" ), // PCode Expr Cache Enabled (set to 0 to disable the cache)
+  DD0_10485760(PCODE_EXPR_CACHE_SIZE,"2000000"), // PCode Expr Cache Max Size
+
   // Maximum number of PCODE Branch Instructions in an Expr
   // for which we will attempt PCODE optimizations.
   DDint__(PCODE_MAX_OPT_BRANCH_CNT,          "19000"),
@@ -2779,9 +2787,15 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // for which we will attempt PCODE optimizations.
   DDint__(PCODE_MAX_OPT_INST_CNT,            "50000"),
 
-  DDint__(PCODE_NE_DBG_LEVEL, "-1" ),  // Native Expression Debug Level
+  DDint__(PCODE_NE_DBG_LEVEL, "-1"), // Native Expression Debug Level
+  DDint__(PCODE_NE_ENABLED,   "1" ), // Native Expressions Enabled
   DDkwd__(PCODE_NE_IN_SHOWPLAN, "ON"), // Native Expression in Showplan output
-  DD_____(PCODE_NE_LOG_PATH, ""   ),  // Pathname of log file for Native Expression work
+
+  // This PCODE_NE_LOG_PATH cqd is now obsolete. Use PCODE_DEBUG_LOGDIR instead.
+  // Would delete the following line except that would also mean deleting the
+  // corresponding line in DefaultConstants.h which would change the values for
+  // the following definitions in the same enum.
+  DD_____(PCODE_NE_LOG_PATH,  ""  ), // Pathname of log file for Native Expression work - OBSOLETE
 
   DDint__(PCODE_OPT_FLAGS,                      "60"),
   DDkwd__(PCODE_OPT_LEVEL,		"MAXIMUM"),

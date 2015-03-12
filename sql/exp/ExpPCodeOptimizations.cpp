@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
 
+#include "BaseTypes.h"
 #include "ExpPCodeOptimizations.h"
+#include "CmpCommon.h"
+#include "PCodeExprCache.h"
 
 #if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
   #define DUMP_PHASE(str,flag1,flag2) \
@@ -1925,9 +1928,6 @@ void PCodeCfg::runtimeOptimize()
   if (getenv("PCODE_LLO_DEBUG"))
     debug = 1;
 
-  if ( NExDbgInfoPtr_ )
-       NExDbgInfoPtr_->getNExLogPath();
-
 #endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
 
   if (enableOpt) {
@@ -1972,6 +1972,9 @@ void PCodeCfg::optimize()
   Int32 optFlag = 1;
   Int32 debugSome = 0;
   Int32 debugAll = 0;
+  NABoolean pcodeExprIsCacheable = TRUE ;
+  NABoolean usingCachedPCodeExpr = FALSE ;
+  NABoolean foundCachedPCodeExpr = FALSE ;
 
   NABoolean overlapFound = FALSE;
   NABoolean bulkNullGenerated = FALSE;
@@ -2006,8 +2009,33 @@ void PCodeCfg::optimize()
   // If this pcode sequence can't be optimized, or if decided to disable opts,
   // return.
 
-  if ( !canPCodeBeOptimized(pCode) || !enableOpt )
+  UInt32 savedUnOptPCodeLen = 0 ;
+
+  if ( !canPCodeBeOptimized(pCode , pcodeExprIsCacheable , savedUnOptPCodeLen ) ||
+       !enableOpt )
+  {
+#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+   if ( debugSome )
+     NExLog( "FOUND: PCODE EXPRESSION NOT EVEN OPTIMIZABLE\n" );
+#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
     return;
+  }
+
+  // Set up optimization flags to enable/disable opts
+  optFlags_ = expr_->getPCodeOptFlags();
+
+  if ( optFlags_ & OPT_PCODE_CACHE_DISABLED )
+     pcodeExprIsCacheable = FALSE ;
+
+#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+  if ( debugSome )
+  {
+    if ( pcodeExprIsCacheable )
+       NExLog( "FOUND: PCODE EXPRESSION IS CACHEABLE\n" );
+    else
+       NExLog( "FOUND: PCODE EXPRESSION IS NOT cacheable\n" );
+  }
+#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
 
   // Initialize counters
   initInstructionCounters();
@@ -2028,14 +2056,205 @@ void PCodeCfg::optimize()
   // Initialize null mapping table
   initNullMapTable();
 
+  CollIndex oldConstsAreaLen = expr_->getConstsLength(); // Save the old Consts Length
+
+  // Now that we have the Constants needed for the unOptimized PCode ...
+
+  PCodeBinary * savedUnOptPCodePtr = pCode ;
+  PCodeBinary * optimizedPCode     = NULL  ;
+
+  char        * cachedConstsArea   = NULL ;
+  UInt32        cachedPCodeLen     = 0 ;
+  UInt32        cachedNewConstsLen = 0 ;
+  UInt32        cachedNEConstsLen  = 0 ;
+  UInt32        cachedTempsLen     = 0 ;
+  UInt32        origConstantsLen   = expr_->getConstsLength();
+  UInt32        origTempsLen       = expr_->getTempsLength() ;
+
+  if ( pcodeExprIsCacheable )
+  {
+
+#if OPT_PCC_DEBUG==1
+
+     struct rusage begSrch;
+
+     if ( CURROPTPCODECACHE->getPCECLoggingEnabled() )
+     {
+        if ( debugAll )
+        {
+           char NExBuf[100];
+           sprintf( NExBuf, "PCODE EXPR cacheable - searching cache: ThisPtr=%p: oldLen=%d\n",
+                                 CURROPTPCODECACHE->getThisPtr(), savedUnOptPCodeLen);
+           NExLog(  NExBuf );
+        }
+        (void) getrusage( RUSAGE_THREAD, &begSrch );
+     }
+#endif // OPT_PCC_DEBUG==1
+
+     PCECacheEntry * cachedPCE = NULL ;
+     if ( cachedPCE = CURROPTPCODECACHE->findPCodeExprInCache(
+                                           pCode
+                                         , expr_->getConstantsArea()
+                                         , optFlags_ & NATIVE_EXPR
+                                         , savedUnOptPCodeLen
+                                         , origConstantsLen
+#if OPT_PCC_DEBUG==1
+                                         , NExDbgInfoPtr_->getNExStmtSrc()
+#endif // OPT_PCC_DEBUG==1
+                                         ) )
+     {
+        foundCachedPCodeExpr = TRUE ;
+
+        optimizedPCode       = cachedPCE->getOptPCptr();
+        cachedPCodeLen       = cachedPCE->getOptPClen();
+        cachedNewConstsLen   = cachedPCE->getOptConstsLen();
+        cachedTempsLen       = cachedPCE->getTempsAreaLen();
+        cachedConstsArea     = cachedPCE->getConstsArea();
+        cachedNEConstsLen    = (optFlags_ & NATIVE_EXPR) ?
+                                cachedPCE->getNEConstsLen()  :
+                                cachedNewConstsLen           ;
+
+        if ( (optFlags_ & EXPR_CACHE_CMP_ONLY) == 0 ) // If NOT in Compare-Only mode
+           usingCachedPCodeExpr = TRUE ;
+
+#if OPT_PCC_DEBUG==1
+
+        if ( CURROPTPCODECACHE->getPCECLoggingEnabled() )
+        {
+           Int64 totalSearchTime = computeTimeUsed( begSrch.ru_utime ) ;
+           CURROPTPCODECACHE->addToTotalSearchTime( totalSearchTime );
+        }
+#endif // OPT_PCC_DEBUG==1
+
+     }
+
+     if ( usingCachedPCodeExpr )
+     {
+#if OPT_PCC_DEBUG==1
+        if ( debugSome )
+        {
+          char NExBuf1[80];
+          sprintf( NExBuf1, "GETTING PCODE EXPRESSION FROM CACHE: UniqCtr=%ld\n", cachedPCE->getUniqCtr() );
+          NExLog( NExBuf1 );
+        }
+        if ( debugAll )
+        {
+           char NExBuf[200];
+           sprintf( NExBuf, "PCODE EXPR FOUND in cache: ThisPtr=%p: Loc=%p, oldLen=%d, newLen=%d, #Lookups=%ld, #Hits=%ld\n", CURROPTPCODECACHE->getThisPtr(), cachedPCE, savedUnOptPCodeLen, cachedPCodeLen, CURROPTPCODECACHE->getNumLookups(), CURROPTPCODECACHE->getNumHits() );
+           NExLog(  NExBuf );
+        }
+#endif // OPT_PCC_DEBUG==1
+        if ( ! space_ )
+        {
+          if ( cachedPCodeLen <= savedUnOptPCodeLen ) // If new can go over the old PCode
+          {
+            memcpy( pCode, optimizedPCode, sizeof(PCodeBinary) * cachedPCodeLen );
+            optimizedPCode = pCode;
+          }
+          else { /* run with unoptimized PCODE and Constants */ }
+        }
+        else // Otherwise, we allocate space to hold the optimized code & constants
+        {
+           PCodeBinary * newPcode = new(space_) PCodeBinary[ cachedPCodeLen ];
+           memcpy( newPcode, optimizedPCode, sizeof(PCodeBinary) * cachedPCodeLen );
+
+           optimizedPCode = newPcode ;
+
+           char * newConstsArea = expr_->getConstantsArea() ;
+           if ( cachedNEConstsLen > 0 )
+           {
+              newConstsArea         = space_->allocateAlignedSpace( cachedNEConstsLen );
+              char * constantsToUse = NULL ;
+
+              if ( cachedNEConstsLen > oldConstsAreaLen )
+              {
+                 // We need ALL the constants in the PCEC entry.
+                 // Note: If a match was found despite the oldConstantsLen NOT being
+                 // the same as the cachedConstantsLen, it means the old constants
+                 // were EXACTLY the same as the first oldConstantsLen bytes of the
+                 // saved new constants.  Therefore, it doesn't matter which version
+                 // of those constants we use.
+
+                 constantsToUse = cachedConstsArea ;
+              }
+              else
+              {
+                 // If a match was found and the cachedConstantsLen == oldConstantsLen
+                 // then we want to run with *this* expr_'s constants, not some
+                 // cached version of the constants.
+
+                 constantsToUse = expr_->getConstantsArea() ;
+              }
+              memcpy( newConstsArea, constantsToUse, cachedNEConstsLen );
+           }
+
+           expr_->setConstantsArea( newConstsArea     );
+           expr_->setConstsLength(  cachedNEConstsLen );
+
+           // Since Native Expressions are always put on 8-byte boundary:
+           cachedNewConstsLen = ROUND8( cachedNewConstsLen ) ;
+
+           if ( ( optFlags_ & NATIVE_EXPR ) &&
+                ( cachedNewConstsLen < cachedNEConstsLen ) )
+           {
+              // Store offset into evalPtr_
+              expr_->setEvalPtr((ex_expr::evalPtrType)( cachedNewConstsLen ));
+
+              // Mark this expression appropriately so that the native function gets called
+              expr_->setPCodeMoveFastpath(TRUE);
+              expr_->setPCodeNative(TRUE);
+           }
+        }
+
+#if OPT_PCC_DEBUG==1
+        if ( debugAll ) NExLog("DECIDED TO USE cached PCode Expr\n");
+#endif // OPT_PCC_DEBUG==1
+
+        // Update the expression's pcode object with the new pcode segment
+        PCodeSegment* pcodeSegment = expr_->getPCodeSegment();
+        pcodeSegment->setPCodeSegmentSize(sizeof(PCodeBinary) * cachedPCodeLen );
+        pcodeSegment->setPCodeBinary( optimizedPCode );
+
+        // TempsLength may have started out bigger on the current expr
+        // than it did on the one we cached. So add it in just to be safe.
+        //
+        expr_->setTempsLength( cachedTempsLen + origTempsLen );
+     }
+     else if ( ! foundCachedPCodeExpr )
+     {
+#if OPT_PCC_DEBUG==1
+        if ( debugSome )
+           NExLog( "PCODE EXPRESSION NOT FOUND IN CACHE\n" );
+#endif // OPT_PCC_DEBUG==1
+
+        if (!space_) {
+           // Must save a copy of the unoptimized pcode because orig might
+           // be overwritten during layoutCode() ... but we still need the
+           // unoptimized pcode for when we add to the PCode Expr Cache.
+           //
+           savedUnOptPCodePtr = new(heap_) PCodeBinary[ savedUnOptPCodeLen ];
+           memcpy( savedUnOptPCodePtr, pCode, sizeof(PCodeBinary) * savedUnOptPCodeLen );
+        }
+     }
+  }
+
+  if ( usingCachedPCodeExpr )
+     goto considerNativeCodeGen ;
+
 #if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
   if (debugSome) NExLog("-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
 #endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
 
-  DUMP_PHASE("CFG [0]", debugSome, debugAll);
+#if OPT_PCC_DEBUG==1
 
-  // Set up optimization flags to enable/disable opts
-  optFlags_ = expr_->getPCodeOptFlags();
+  struct rusage begOpt;
+
+  if ( pcodeExprIsCacheable && CURROPTPCODECACHE->getPCECLoggingEnabled() )
+     (void) getrusage( RUSAGE_THREAD, &begOpt );
+
+#endif // OPT_PCC_DEBUG==1
+
+  DUMP_PHASE("CFG [0]", debugSome, debugAll);
 
   // Perform global constant propagation to get rid of stupid things
   // which may help later optimizations.
@@ -2260,29 +2479,158 @@ void PCodeCfg::optimize()
   // Dump instructions back into pcode bytecode and store in expression
   layoutCode();
 
+considerNativeCodeGen:
+
+#if OPT_PCC_DEBUG==1
+
+  UInt64 totalOptTime = 0 ;
+
+  if ( pcodeExprIsCacheable && CURROPTPCODECACHE->getPCECLoggingEnabled() )
+     totalOptTime = computeTimeUsed( begOpt.ru_utime ) ;
+
+#endif // OPT_PCC_DEBUG==1
+
+  Int32 constsLenAfterOpt = newConstsAreaLen_ ;
+
 #if defined(NA_LINUX) && ! defined(__EID)
 
+#if OPT_PCC_DEBUG==1
+  UInt64 totalNEgenTime = 0;
+#endif // OPT_PCC_DEBUG==1
 
-  Int32 debugNE = ( NExprDbgLvl_ >= VV_BD ) ; // Debugging Native Expr ?
+  if ( ! usingCachedPCodeExpr )
+  {
+    Int32 debugNE = ( NExprDbgLvl_ >= VV_BD ) ; // Debugging Native Expr ?
 
-  DUMP_PHASE("Before NE [15.5]", debugSome || debugNE , debugAll || debugNE );
+    DUMP_PHASE("Before NE [15.5]", debugSome || debugNE , debugAll || debugNE );
 
-  // Native code generation
-  
-  if ( (optFlags_ & NATIVE_EXPR) ) {
-    cfgRewiring(rewiringFlags);
-    computeLiveness(FALSE /* no DCE */);
-    layoutNativeCode();
+    // Native code generation
+    if ( optFlags_ & NATIVE_EXPR ) {
+
+#if OPT_PCC_DEBUG==1
+      struct rusage begNEtime;
+      if ( CURROPTPCODECACHE->getPCECLoggingEnabled() )
+         (void) getrusage( RUSAGE_THREAD, &begNEtime );
+#endif // OPT_PCC_DEBUG==1
+
+      cfgRewiring(rewiringFlags);
+      computeLiveness(FALSE /* no DCE */);
+      layoutNativeCode();
+
+#if OPT_PCC_DEBUG==1
+      if ( pcodeExprIsCacheable && CURROPTPCODECACHE->getPCECLoggingEnabled() )
+         totalNEgenTime = computeTimeUsed( begNEtime.ru_utime ) ;
+
+#endif // OPT_PCC_DEBUG==1
+    }
+    else
+      expr_->setEvalPtr( (ex_expr::evalPtrType)( (CollIndex) 0 ) );//Ensure NULL!
+
   }
-  else
-    expr_->setEvalPtr( (ex_expr::evalPtrType)( (CollIndex) 0 ) );//Ensure NULL!
-
 #endif // defined(NA_LINUX) && ! defined(__EID)
 
+  if ( ! usingCachedPCodeExpr )
+  {
     // Lay out any new constants back into the space object.
-  layoutConstants();
+    layoutConstants();
 
-  DUMP_PHASE("Layout [16]", debugSome, debugAll);
+    DUMP_PHASE("Layout [16]", debugSome, debugAll);
+
+    if ( pcodeExprIsCacheable )
+    {
+
+#if OPT_PCC_DEBUG==1
+
+      struct rusage begAdd;
+
+      if ( CURROPTPCODECACHE->getPCECLoggingEnabled() )
+         (void) getrusage( RUSAGE_THREAD, &begAdd );
+
+#endif // OPT_PCC_DEBUG==1
+
+      PCodeSegment* pcodeSegment = expr_->getPCodeSegment();
+      PCodeBinary * newPCode = pcodeSegment->getPCodeBinary();
+      UInt32     newPCodeLen = pcodeSegment->getPCodeSegmentSize() / sizeof(PCodeBinary);
+
+      if ( foundCachedPCodeExpr ) // TRUE if we are in Compare-Only mode
+      {
+         // We have the newly generated optimized PCode and/or N.E.,
+         // but we also found it was previously put in the PCode Expr Cache.
+         Int32 fatals = 0;
+
+         if ( cachedNewConstsLen !=  constsLenAfterOpt )               fatals |= 0x1;
+         if ( cachedPCodeLen     !=  newPCodeLen )                     fatals |= 0x2;
+         else if ( memcmp( optimizedPCode, newPCode,
+                           sizeof(PCodeBinary) * newPCodeLen) !=0 )    fatals |= 0x4;
+
+         if ( cachedNEConstsLen  !=  expr_->getConstsLength() )        fatals |= 0x8;
+         else if (memcmp( cachedConstsArea, expr_->getConstantsArea()
+                   , cachedNEConstsLen) != 0)                          fatals |= 0x10;
+         assert ( fatals == 0 );
+
+         //
+         // Note: Assuming we didn't assert on the above, we will return and
+         // use the optimized PCode and/or Native Expression we just generated. 
+         //
+      }
+      else // It wasn't already in cache
+      {
+        CMPASSERT( expr_->getConstsLength()   >= constsLenAfterOpt );
+        CMPASSERT( constsLenAfterOpt          >= oldConstsAreaLen );
+        CMPASSERT( savedUnOptPCodePtr && newPCode );
+        CMPASSERT( ( savedUnOptPCodeLen > 0 ) && ( newPCodeLen > 0 ) );
+
+        NAHeap * cHeap = CURROPTPCODECACHE->getCacheHeapPtr() ;
+
+        PCECacheEntry * newPCE = new(cHeap) PCECacheEntry( cHeap
+                                            , savedUnOptPCodePtr
+                                            , newPCode
+                                            , expr_->getConstantsArea()
+                                            , savedUnOptPCodeLen 
+                                            , newPCodeLen
+                                            , oldConstsAreaLen         // Before PC optimization
+                                            , constsLenAfterOpt        // After PC optimization
+                                            , expr_->getConstsLength() // Length with any Native Expr
+                                            , expr_->getTempsLength()  // Length of TempsArea needed
+#if OPT_PCC_DEBUG==1
+                                            , totalOptTime
+                                            , totalNEgenTime
+                                            , CURROPTPCODECACHE->genNewUniqCtrVal()
+#endif // OPT_PCC_DEBUG==1
+                                            );
+
+        CURROPTPCODECACHE->addPCodeExpr( newPCE
+#if OPT_PCC_DEBUG==1
+                                       , totalNEgenTime
+                                       , begAdd.ru_utime
+                                       , NExDbgInfoPtr_->getNExStmtSrc()
+#endif // OPT_PCC_DEBUG==1
+                                       );
+
+#if OPT_PCC_DEBUG==1
+        if ( debugSome )
+        {
+          char NExBuf7[80];
+          sprintf( NExBuf7, "ADDING PCODE EXPRESSION TO CACHE: UniqCtr=%ld\n", newPCE->getUniqCtr() );
+          NExLog( NExBuf7 );
+        }
+        if ( debugAll )
+        {
+           char NExBuf[200];
+           sprintf( NExBuf, "CACHED PCODE EXPR: ThisPtr=%p: Loc=%p oldLen=%d, newLen=%d, numExprCached=%d, curSiz=%d, maxSiz=%d\n",
+                    CURROPTPCODECACHE->getThisPtr(), newPCE,
+                    savedUnOptPCodeLen, newPCodeLen, CURROPTPCODECACHE->getNumEntries(),
+                    CURROPTPCODECACHE->getCurrSize(), CURROPTPCODECACHE->getMaxSize() );
+           NExLog(  NExBuf );
+        }
+#endif // OPT_PCC_DEBUG==1
+      }
+    }
+#if OPT_PCC_DEBUG==1
+      else if ( debugSome )
+           NExLog( "FINISHED OPTIMIZATION (and NE) ON PCODE EXPRESSION\n" );
+#endif // OPT_PCC_DEBUG==1
+  }
 }
 
 PCodeCfg::~PCodeCfg() {
@@ -2902,6 +3250,8 @@ void PCodeCfg::layoutConstants()
   char* newConstsArea = space_->allocateAlignedSpace(newConstsAreaLen_);
   str_cpy_all(newConstsArea, stk, oldConstsAreaLen);
 
+  // If any constants were added during optimization ...
+  if ( newConstsAreaLen_ > oldConstsAreaLen ) {
      PCodeConstants* key;
      CollIndex* value;
      NAHashDictionaryIterator<PCodeConstants, CollIndex> iter(*constToOffsetMap_);
@@ -2912,6 +3262,7 @@ void PCodeCfg::layoutConstants()
        // If constant added goes beyond that in the constants area, add it
        if (*value >= oldConstsAreaLen) {
          str_cpy_all(newConstsArea + *value, (char*)key->getData(), key->getLen());
+       }
      }
   }
 
@@ -6745,8 +7096,14 @@ void PCodeCfg::createCfg()
 // limiting factor is if the pcode graph contains a clause that will violate
 // the assumptions made by this infrastructure.
 //
-NABoolean PCodeCfg::canPCodeBeOptimized( PCodeBinary * pCode )
+NABoolean PCodeCfg::canPCodeBeOptimized( PCodeBinary * pCode
+                                       , NABoolean   & pExprCacheable /* OUT */
+                                       , UInt32      & totalPCodeLen  /* OUT */ )
 {
+  // Caller may have already set these, but initialize the "out" params just to be safe.
+  pExprCacheable = TRUE ;
+  totalPCodeLen  = 0 ;
+
   // Obviously if we have no pCode then we should return FALSE :)
   if (pCode == NULL)
     return FALSE;
@@ -6782,6 +7139,7 @@ NABoolean PCodeCfg::canPCodeBeOptimized( PCodeBinary * pCode )
   // opts framework.  This solution is, however, draconian, in that the entire
   // expression is un-optimized.
 
+  PCodeBinary * pCodeStart = pCode ;
   Int32 length = *(pCode++);
   pCode += (2*length);
 
@@ -6792,11 +7150,16 @@ NABoolean PCodeCfg::canPCodeBeOptimized( PCodeBinary * pCode )
       case PCIT::NULL_BYTES: 
         return FALSE;  
 
+      case PCIT::CLAUSE_EVAL :
+        pExprCacheable = FALSE ;
+	break;
+
       default:
         break;
     }
     pCode += PCode::getInstructionLength(pCode);
   }
+  totalPCodeLen = pCode - pCodeStart ;
   return TRUE;
 }
 
@@ -8903,3 +9266,507 @@ void PCodeCfg::loadOperandsOfInst (PCodeInst* newInst)
 
   newInst->modifyOperandsForVarchar(this);
 }
+
+//
+// computeTimeUsed() takes a beginning timeval argument and computes
+// the cpu time used (in microseconds) from the beginning time
+// until the present time.
+//
+Int64
+computeTimeUsed( timeval begTime )
+{
+   struct rusage endTime;
+   (void) getrusage( RUSAGE_THREAD, &endTime );
+
+   Int64 timeUsed  = ( endTime.ru_utime.tv_sec  - begTime.tv_sec ) * 1000000 +
+                     ( endTime.ru_utime.tv_usec - begTime.tv_usec ) ;
+   return ( timeUsed ) ;
+}
+
+//
+// addToCreateOrderList  -- add a new PCE Cache Entry to the Creation Order List
+//
+void
+OptPCodeCache::addToCreateOrderList( PCECacheEntry * PCEtoAdd )
+{
+  // Always put the new PCE cache entry at the tail of the Creating Order list
+
+  PCEtoAdd->setNextInCrOrder( NULL );
+  PCEtoAdd->setPrevInCrOrder( createOrderTail_ );
+
+  if ( createOrderTail_ )
+       createOrderTail_->setNextInCrOrder( PCEtoAdd );
+
+  createOrderTail_ = PCEtoAdd ;
+
+  if ( createOrderHead_ == NULL ) 
+       createOrderHead_ = PCEtoAdd ;
+}
+
+//
+// addToMRUList -- Add a PCE Cache Entry to the MRU list
+//
+void
+OptPCodeCache::addToMRUList( PCECacheEntry * PCEtoAdd )
+{
+  // Always put the new PCE cache entry at the head of the MRU list
+  PCEtoAdd->setNextInMRUOrder( MRUHead_ );
+  PCEtoAdd->setPrevInMRUOrder( NULL     );
+
+  if ( MRUHead_ )
+       MRUHead_->setPrevInMRUOrder( PCEtoAdd );
+
+  MRUHead_ = PCEtoAdd ;
+
+  if ( MRUTail_ == NULL ) 
+       MRUTail_ = PCEtoAdd ;
+}
+
+//
+// removeFromCreateOrderList -- remove a PCE Cache Entry from the Creation Order list
+//
+void
+OptPCodeCache::removeFromCreateOrderList( PCECacheEntry * PCEtoDel )
+{
+   PCECacheEntry * nextInCrOrder = PCEtoDel->getNextInCrOrder();
+   PCECacheEntry * prevInCrOrder = PCEtoDel->getPrevInCrOrder();
+
+   PCEtoDel->setNextInCrOrder( NULL );  //Just to keep things clean
+   PCEtoDel->setPrevInCrOrder( NULL );  //Just to keep things clean
+
+   if ( nextInCrOrder != NULL )
+      nextInCrOrder->setPrevInCrOrder( prevInCrOrder );
+
+   if ( prevInCrOrder != NULL )
+      prevInCrOrder->setNextInCrOrder( nextInCrOrder );
+
+   if ( PCEtoDel == createOrderHead_ )
+      createOrderHead_ = nextInCrOrder ;
+
+   if ( PCEtoDel == createOrderTail_ )
+      createOrderTail_ = prevInCrOrder ;
+}
+
+//
+// removeFromMRUList -- Remove a PCE Cache Entry from the MRU list
+//
+void
+OptPCodeCache::removeFromMRUList( PCECacheEntry * PCEtoRem )
+{
+   PCECacheEntry * nextInMRUOrder = PCEtoRem->getNextInMRUOrder();
+   PCECacheEntry * prevInMRUOrder = PCEtoRem->getPrevInMRUOrder();
+
+   PCEtoRem->setNextInMRUOrder( NULL );  //Just to keep things clean
+   PCEtoRem->setPrevInMRUOrder( NULL );  //Just to keep things clean
+
+   if ( nextInMRUOrder != NULL )
+      nextInMRUOrder->setPrevInMRUOrder( prevInMRUOrder );
+   if ( prevInMRUOrder != NULL )
+      prevInMRUOrder->setNextInMRUOrder( nextInMRUOrder );
+
+   if ( PCEtoRem == MRUHead_ )
+      MRUHead_ = nextInMRUOrder ;
+   if ( PCEtoRem == MRUTail_ )
+      MRUTail_ = prevInMRUOrder ;
+}
+
+//
+// This PCECacheEntry::matches(...) method checks the cached entry
+// (pointed to by 'this') to see if it is an acceptable match for the 
+// the unOptimized PCode and Associated Constants that are passed in.
+//
+// NOTE: This routine assumes the caller has already ensured that
+//       the length of the PCode matches AND that the length of the
+//       unOptimized ConstantsArea maches.
+//
+NABoolean
+PCECacheEntry::matches( PCodeBinary * unOptPCodePtr, char * unOptConstantsArea,
+                        UInt32 unOptPCodeLen, UInt32 unOptConstsLen, UInt32 NEflag )
+{
+  if ( ( unOptConstsLen != getOptConstsLen() ) ||
+       ( NEflag && ( getOptConstsLen() < getNEConstsLen() ) ) )
+  {
+     // There were constants added during PCode optimization
+     // OR we are using Native Exprs and this entry has an N.E.
+     // so in order to declare a match, the orginal constants
+     // must match exactly.
+
+     char * entryConstsArea = getConstsArea() ;
+     if ( memcmp( unOptConstantsArea, entryConstsArea, unOptConstsLen) !=0 )
+        return FALSE ;
+  }
+
+  // We know the unOptimized PC length matches, now compare PCode
+  PCodeBinary * entryUnOptPC = getUnOptPCptr() ;
+  if ( memcmp( unOptPCodePtr, entryUnOptPC,
+               sizeof(PCodeBinary) * unOptPCodeLen ) !=0 )
+     return FALSE ;
+
+  return ( TRUE ) ;
+}
+
+
+//
+// addPCodeExpr( ... ) -- Add PCode Expr to the cache
+//
+// Arguments: newPCE     - ptr to the PCECacheEntry object which the
+//                         caller should have just constructed.
+#if OPT_PCC_DEBUG==1
+//            NEgenTime  - a UInt64 giving time spent in Native Expr generation
+//            begAdd     - a timeval giving the time when we started adding the new entry
+//            sqlStmt    - ptr to original SQL query string being compiled
+#endif // OPT_PCC_DEBUG==1
+//
+void
+OptPCodeCache::addPCodeExpr( PCECacheEntry * newPCE
+
+#if OPT_PCC_DEBUG==1
+                           , UInt64          NEgenTime
+                           , timeval         begAdd
+                           , char     *      sqlStmt
+#endif // OPT_PCC_DEBUG==1
+                           )
+{
+  addToMRUList( newPCE );
+
+  addToCreateOrderList( newPCE );
+
+  numEntries_++ ;
+  currSize_ += newPCE->getTotalMemorySize() ;
+
+  if ( maxOptPCodeSize_ < newPCE->getOptPClen() )
+       maxOptPCodeSize_ = newPCE->getOptPClen() ;
+
+#if OPT_PCC_DEBUG==1
+  if ( PCECLoggingEnabled_ )
+  {
+     Int64 totalAddTime = computeTimeUsed( begAdd ) ;
+
+     //
+     // We now add the cpu time spent creating the new PCEC Entry
+     // to the PCode Optimization time for this PCEC entry.
+     // This is a little misleading since this time is really not
+     // optimization time, but it should be a very tiny amount of
+     // time and it isn't worth creating yet another stats counter.
+     //
+     newPCE->addToOptTime( totalAddTime );
+
+     totalOptTime_   += newPCE->getOptTime() ;
+     totalNEgenTime_ += NEgenTime ;
+
+     logPCCEvent( 2, newPCE, sqlStmt );
+  }
+#endif // OPT_PCC_DEBUG==1
+
+  throwOutExcessCacheEntries();
+
+  return ;
+}
+
+//
+// findPCodeExprInCache( ... ) - search PCode Expr cache 
+//
+// Arguments: unOptPCodePtr      - ptr to the Unoptimized PCode byte stream
+//            unOptConstantsArea - ptr to the ConstantsArea (before any optimization)
+//            NEflag             - Native Expressions in use flag
+//            unOptPCodeLen      - Length (in PCodeBinary units) of Unopt. PCode
+//            unOptConstsLen     - Length (in bytes) of Unoptimized ConstantsArea
+//
+// NOTE: We search the cache in the order that the cache entries were
+// created ... starting with the next entry after the last matched entry.
+// The reason for this is that there is a high likelihood that that next
+// entry is the one we want!  This is particularly true for the instance of
+// the PCode Expression Cache used by the Compiler instance used to compile
+// metadata queries.  There are 7 metadata queries used to interrogate each
+// user table referenced in an SQL statement.  For any particular user table,
+// those 7 queries vary from the previously interrogated user table only by
+// the constants that identify this particular user table.  Other than the
+// constants, the Expressions are the same AND they are encountered in the
+// same order in the compilation process as they were encountered when we
+// interrogated the previous table.   Even for user queries, there is a 
+// fairly good chance that the Expressions in the query currently being 
+// compiled are similar Expressions in previous user queries and in the
+// same order.   Of course, this is not a perfect scheme.  In the future
+// we will want to improve the search time by using hashing or something.
+//
+PCECacheEntry *
+OptPCodeCache::findPCodeExprInCache( PCodeBinary * unOptPCodePtr
+                                   , char    * unOptConstantsArea
+                                   , UInt32    NEflag        // Native Expr in use?
+                                   , UInt32    unOptPCodeLen
+                                   , UInt32    unOptConstsLen
+#if OPT_PCC_DEBUG==1
+                                   , char    * sqlStmt
+#endif // OPT_PCC_DEBUG==1
+                                   )
+{
+  CMPASSERT( unOptPCodePtr ) ;
+  CMPASSERT( unOptPCodeLen > 0 ) ;
+
+  PCECacheEntry * nextEntry   = lastMatchedEntry_ ;
+  if ( nextEntry != NULL )
+     nextEntry = nextEntry->getNextInCrOrder() ;
+
+  if ( nextEntry == NULL )
+       nextEntry = createOrderHead_ ;
+
+  PCECacheEntry * currEntry  = nextEntry ;
+  NABoolean     match_found  = FALSE ;
+
+  numLookups_++ ;
+
+  //
+  // Run through the Creation Order list ... starting at the next entry
+  // after the last matched entry and going in circular fashion until
+  // we get back to where we started.
+  //
+  Int32 nSrchd = 1;
+  for ( ; nSrchd <= numEntries_ ; nSrchd++, currEntry = nextEntry )
+  {
+     nextEntry = currEntry->getNextInCrOrder() ;
+     if ( nextEntry == NULL )
+          nextEntry = createOrderHead_ ;
+
+     // Make quick comparisons here (to avoid calling matches() if possible)
+     // 
+     if ( unOptPCodeLen  != currEntry->getUnOptPClen() )
+        continue ;          // cannot be a match
+
+     if ( unOptConstsLen != currEntry->getUnOptConstsLen() )
+        continue ;          // cannot be a match
+
+     match_found = currEntry->matches( unOptPCodePtr, unOptConstantsArea,
+                                       unOptPCodeLen, unOptConstsLen, NEflag) ;
+     if ( match_found )
+        break;
+  }
+
+  totSrchd_ += nSrchd;
+  if ( match_found )
+  {
+     lastMatchedEntry_ = currEntry ;
+
+     // Update statistical counters
+     //
+     numSrchd_ += nSrchd;
+     totByCfC_ += currEntry->getOptPClen() * sizeof( PCodeBinary ) + currEntry->getNEConstsLen();
+
+     numHits_++ ;
+     if ( NEflag && ( currEntry->getOptConstsLen() < currEntry->getNEConstsLen() ) )
+        numNEHits_++ ;
+     UInt64 nHits = currEntry->incrPCEHits() ;
+     if ( nHits > maxHits_ )
+        maxHits_ = nHits ;
+
+     // Put this cache entry at the head of the MRU list
+     //
+     if ( currEntry != MRUHead_ )
+     {
+        removeFromMRUList( currEntry ); // Remove from current position in MRU list
+        addToMRUList( currEntry );      // Add it back in as MRU head
+     }
+
+#if OPT_PCC_DEBUG==1
+     if ( PCECLoggingEnabled_ == 1 )
+     {
+        addToTotalSavedTime( currEntry->getOptTime() + currEntry->getNEgenTime() ) ;
+        logPCCEvent( 1, currEntry, sqlStmt );
+     }
+#endif // OPT_PCC_DEBUG==1
+
+     return currEntry ;
+  }
+  return NULL ;
+}
+
+//
+// setPCDlogDirPath() - Saves the specified log directory pathname
+// in memory allocated as part of this PCode Expr Cache
+//
+void
+OptPCodeCache::setPCDlogDirPath( NAString * logDirPth )
+{
+   // These should not happen, but just in case ...
+   if ( ( logDirPth == NULL ) || ( logDirPath_ != NULL ) )
+      return ;
+
+   Int32 len   = logDirPth->length() ;
+
+   if ( len == 0 ) 
+      return;
+
+   logDirPath_ = new( heap_ ) char[ len +1 ];
+
+   strncpy( logDirPath_, logDirPth->data(), len );
+   logDirPath_[len] = '\0';
+   PCECHeaderWritten_ = 0 ; // Need header line at start of file
+}
+
+void
+OptPCodeCache::clearStats()
+{
+    numLookups_      = 0 ;
+    numSrchd_        = 0 ;
+    totSrchd_        = 0 ;
+    numHits_         = 0 ;
+    numNEHits_       = 0 ;
+    maxHits_         = 0 ;
+    maxHitsDel_      = 0 ;
+    totByCfC_        = 0 ;
+    maxOptPCodeSize_ = 0 ;
+
+#if OPT_PCC_DEBUG==1
+    totalSavedTime_  = 0 ;
+    totalSearchTime_ = 0 ;
+    totalOptTime_    = 0 ;
+    totalNEgenTime_  = 0 ;
+#endif // OPT_PCC_DEBUG==1
+
+}
+
+void
+OptPCodeCache::resizeCache( Int32 newsiz )
+{
+   maxSize_ = newsiz ;
+   throwOutExcessCacheEntries() ;
+}
+
+void
+OptPCodeCache::throwOutExcessCacheEntries()
+{
+  while ( currSize_ > maxSize_ && numEntries_ > 0 )
+  {
+     PCECacheEntry * PCEtoDel    = MRUTail_ ;
+     if ( PCEtoDel == NULL )                  // Shouldn't happen, but just in case ...
+        break;
+
+     removeFromMRUList( PCEtoDel );
+
+     removeFromCreateOrderList( PCEtoDel );
+
+     numEntries_-- ;
+
+     if ( PCEtoDel->getPCEHits() > maxHitsDel_ )
+        maxHitsDel_ = PCEtoDel->getPCEHits() ;
+
+     if ( PCEtoDel == lastMatchedEntry_ )
+        lastMatchedEntry_ = NULL ;
+
+#if OPT_PCC_DEBUG==1
+     if ( maxSize_ > 0 ) // Don't log when we are deleting the entire cache.
+        logPCCEvent( 3, PCEtoDel, (char *)"Threw entry from cache" );
+#endif // OPT_PCC_DEBUG==1
+
+     currSize_ -= PCEtoDel->getTotalMemorySize() ;
+
+     NADELETEBASIC( PCEtoDel , heap_ );
+  }
+}
+
+#if OPT_PCC_DEBUG==1
+void
+OptPCodeCache::genUniqFileNamePart()
+{
+   if ( fileNameTime_ == -1 )
+   {
+     Int32 myPid = getpid();
+
+     timeval curTime;
+     GETTIMEOFDAY(&curTime, 0);
+     Int64 timeInMics = ((Int64)curTime.tv_sec) * 1000000 + curTime.tv_usec ;
+
+     fileNamePid_  = myPid ;
+     fileNameTime_ = timeInMics ;
+   }
+}
+
+void
+OptPCodeCache::logPCCEvent( Int32           eventType
+                          , PCECacheEntry * PCEptr
+                          , char          * sqlStmt
+                          )
+{
+#define LNGBUFLEN 1900
+
+   char longBuf[LNGBUFLEN];
+
+   if ( ( PCECLoggingEnabled_ == 0 ) ||
+        ( logDirPath_ == NULL) || (*logDirPath_ == '\0') )
+      return;
+
+   Int32 logDirPathLen = strlen( logDirPath_ ) ; 
+
+   //Form complete log file pathname, with unique part at end
+   longBuf[0]='\0';
+   sprintf(longBuf,"%s/PCEC.%x.%lx", logDirPath_, fileNamePid_, fileNameTime_);
+   
+   ofstream fileout( longBuf, ios::app); // Ensure file is created & open
+
+#define MAX_UNIQ_PART (7+4+16)
+   if ( ( PCECHeaderWritten_ == 0 ) &&
+        ( logDirPathLen <= (LNGBUFLEN - MAX_UNIQ_PART - 1 )) )
+   {
+     PCECHeaderWritten_ = 1 ; // Remember so we put file hdr out only once
+     sprintf(longBuf, "Ev Typ\tUniqCtr\tPCE Hits\t"
+                      "PC Len\t"
+                      "Opt PC Len\t"
+                      "NE Con Len\tOpt Time\t"
+                      "NEgen Tm\t"
+                      "# Lookups\tTot Hits\tTot NE Hits\tTot Srchd\t"
+                      "Num Srchd\tCurr SZ\tNum Entr\tCurr UniqCtr\t"
+                      "Saved Tm\tSearch Tm\tTot Opt Tm\t"
+                      "Tot NEgen Tm\tTotByCfC\tMX PCE Hits\tMX Hits Del\t"
+                      "Max PC Len\t"
+                      "SQL STATEMENT\n" );
+     fileout << longBuf ;
+   }
+   if ( PCECHeaderWritten_ == 0 )
+      return;
+
+   sprintf(longBuf, "%d\t %ld\t %ld\t"         // eventType ...
+                    "%ld\t "                   // PCEptr->getUnOptPClen()
+                    "%ld\t "                   // PCEptr->getOptPClen()
+                    "%d\t %ld\t "              // PCEptr->getNEConstsLen() ...
+                    "%ld\t "                   // PCEptr->getNEgenTime()
+                    "%ld\t %ld\t %ld\t %ld\t " // numLookups_     ...
+                    "%ld\t %d\t %d\t %ld\t "   // numSrchd_       ...
+                    "%ld\t %ld\t %ld\t "       // totalSavedTime_ ...
+                    "%ld\t %ld\t %ld\t %ld\t " // totalNEgenTime_ ...
+                    "%ld\t "                   // maxOptPCodeSize_ 
+                   , eventType , PCEptr->getUniqCtr() , PCEptr->getPCEHits()
+                   , PCEptr->getUnOptPClen()*sizeof(PCodeBinary)
+                   , PCEptr->getOptPClen()*sizeof(PCodeBinary)
+                   , PCEptr->getNEConstsLen() , PCEptr->getOptTime()
+                   , PCEptr->getNEgenTime()
+                   , numLookups_ , numHits_  , numNEHits_  , totSrchd_
+                   , numSrchd_   , currSize_ , numEntries_ , uniqueCtr_
+                   , totalSavedTime_ , totalSearchTime_     , totalOptTime_
+                   , totalNEgenTime_ , totByCfC_ , maxHits_ , maxHitsDel_
+                   , maxOptPCodeSize_ * sizeof(PCodeBinary)
+                   );
+   fileout << longBuf ;
+   if ( sqlStmt != NULL )
+   {
+      strncpy( longBuf, sqlStmt, (LNGBUFLEN - 4) );
+      longBuf[LNGBUFLEN - 4] = '\0'; // Ensure a null byte
+      fileout << longBuf ;
+   }
+   fileout << "\n" ;
+}
+#endif // OPT_PCC_DEBUG==1
+
+// LCOV_EXCL_START
+//
+// printPCodeExprCacheStats() -- intended to be called by gdb to give the
+// developer a formatted view of the cache's statistics.
+//
+void
+OptPCodeCache::printPCodeExprCacheStats()
+{
+   printf("\nPCode Expression Cache Statistics - for cache anchored at %p\n", this);
+   printf("MaxSize = %d (KB), CurrSize = %d, NumEntries = %d, NumLookups = %ld, NumHits = %ld\n",
+           maxSize_ ,         currSize_ ,    numEntries_ ,    numLookups_ ,     numHits_ );
+   printf("MaxOptPCodeSize = %d, MaxHitsForAnyOneEntry = %ld, MaxHitsForAnyDeletedEntry = %ld\n",
+           maxOptPCodeSize_ ,    maxHits_ ,                   maxHitsDel_ );
+}
+// LCOV_EXCL_STOP

@@ -67,6 +67,8 @@
 #include "ComDistribution.h"
 #include "CmUtil.h"
 
+#include "PCodeExprCache.h"
+
 // -----------------------------------------------------------------------
 // When called within arkcmp.exe, fixupVTblPtr() translates to a call
 // to fix up the TDB's to the Compiler version. This function is also
@@ -220,19 +222,55 @@ Generator::Generator(CmpContext* currentCmpContext) :
 
   NExLogPathNam_[0] = '\0' ;
 
-  NAString NExLogPth ;
-  CmpCommon::getDefault(PCODE_NE_LOG_PATH, NExLogPth, FALSE);
-  Int32 logPathLen = NExLogPth.length() ;
-  if ( logPathLen > 0 )
+  //
+  // If the PCode Expression Cache debugging CQDs are set up,
+  // we set the debugging-enabled flag in the current PCode
+  // Expression Cache object for the current Context and
+  // save the pathname for the *directory* we will use to
+  // leave debugging log files.
+  // NOTE: The same directory is used for debugging log
+  // files for debugging the Native Expressions feature
+  // but the names of the log files have a different prefix.
+  // Also, the PCODE_DEBUG_LOGDIR cqd is shared by the two
+  // debugging capabilities, so if that cqd is set up, then
+  // we also save the pathname of the Native Expressions
+  // debugging log file at this time.
+  //
+  Int32 PCEC_Dbg = getDefaultAsLong(PCODE_EXPR_CACHE_DEBUG) ;
+  CURROPTPCODECACHE->setPCECLoggingEnabled( PCEC_Dbg );
+
+  NAString PCDLogDir ;
+  CmpCommon::getDefault(PCODE_DEBUG_LOGDIR, PCDLogDir, FALSE);
+  Int32 logDirLen = PCDLogDir.length() ;
+
+  //
+  // If a PCode Debug Log Directory has already been specified
+  // then do nothing.  There is no known reason for changing
+  // log directories in the middle of a session and, furthermore,
+  // if we allowed it, only one context would see the new value
+  // for the CQD, so the overall results would probably not be
+  // what the user (developer) was hoping for.
+  //
+  if ( logDirLen > 0 && CURROPTPCODECACHE->getPCDlogDirPath() == NULL )
   {
-    strncpy( &NExLogPathNam_[0], NExLogPth.data(), logPathLen );
-    NExLogPathNam_[logPathLen] = '\0';
+     CURROPTPCODECACHE->setPCDlogDirPath( &PCDLogDir );
+
+#define MAX_UNIQ_PART (8+4+16)
+     if ( logDirLen < (sizeof(NExLogPathNam_) - MAX_UNIQ_PART - 1 ) )
+     {
+       strncpy( NExLogPathNam_ , PCDLogDir.data(), logDirLen );
+
+       // Add a unique value to end of PCODE_DEBUG_LOGDIR name
+       sprintf( &NExLogPathNam_[logDirLen], "/NELOG.%x.%lx"
+              , CURROPTPCODECACHE->getUniqFileNamePid()
+              , CURROPTPCODECACHE->getUniqFileNameTime() );
+
+       NExDbgInfoObj_.setNExLogPath( &NExLogPathNam_[0] );
+     }
   }
 
-  if ( NExLogPathNam_[0] != '\0' )
-     NExDbgInfoObj_.setNExLogPath( &NExLogPathNam_[0] );
-  else
-     NExDbgInfoObj_.setNExLogPath( NULL );
+  // Initialize other member variables.
+  //
   computeStats_ = FALSE;
   explainInRms_ = TRUE;
 }

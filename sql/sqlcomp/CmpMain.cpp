@@ -98,6 +98,7 @@
 #include "logmxevent.h"
 #include "hs_util.h"
 #include "CmpStatement.h"
+#include "PCodeExprCache.h"
 
 
 // -----------------------------------------------------------------------
@@ -1092,6 +1093,17 @@ CmpMain::CmpMain() : attrs()
     (getDefaultInK(QUERY_CACHE),
      getDefaultAsLong(QUERY_CACHE_MAX_VICTIMS),
      getDefaultInK(QUERY_CACHE_AVERAGE_PLAN_SIZE));
+
+  // Ensure PCEC is sized according to latest CQD value
+  Int32 newsiz = getDefaultAsLong(PCODE_EXPR_CACHE_SIZE);
+  if (newsiz >= 0) // Note: If negative, just leave cache alone
+  {
+     if ( newsiz != CURROPTPCODECACHE->getMaxSize() )
+     {
+        CURROPTPCODECACHE->resizeCache( newsiz );
+        CURROPTPCODECACHE->clearStats(); // Do this after resizeCache(...)
+     }
+  }
 }
 
 void CmpMain::setInputArrayMaxsize(const ULng32 maxsize)
