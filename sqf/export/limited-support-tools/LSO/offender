@@ -1,12 +1,27 @@
 #!/bin/bash
-#============================
+## @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
 
 # Constants and Defaults
 MAX_TIME_P1=32768
 MAX_NODE_P1=2048
 DEFAULT_TIME=30
 DEFAULT_MEMSIZE=250
-DEFAULT_PFS_USE_PERCENT=50
 
 function usage()
 {
@@ -14,7 +29,7 @@ function usage()
 
     This script runs a Lightweight SQL Offender script
     syntax:  -s|--script <script-name> [-t|--time <time>] [-n|--node <node>] 
-             [-m|--memsize] [-p|--pfsusepercent]
+             [-m|--memsize] 
              [-h|--help]
  
     Either the short form (-x) or long form (--name) of the parameters can be 
@@ -59,13 +74,12 @@ MEMSIZE=
 PREAMBLE=
 QUERY_TEXT=
 QUERY_FILE=
-PFS_USE_PERCENT=
 OFFENDER_NODE=-1
 LSO_DIR="$MY_SQROOT/export/limited-support-tools/LSO"
 ERROR_MESSAGE=
 
 # parse command line arguments
-args=$(getopt -o "hs:t:n:m:p:" -l "help,script:,time:,node:,memsize:,pfsusepercent:" -- "$@")
+args=$(getopt -o "hs:t:n:m:p:" -l "help,script:,time:,node:,memsize:" -- "$@")
 if [ $? -ne 0 ] ; then
         printf "\nARGS: $args\n"
 	usage
@@ -80,7 +94,6 @@ while true ; do
 		-t|--time)   TIME=$2; shift ;;
 		-n|--node)   NODE=$2; shift ;;
 		-m|--memsize)   MEMSIZE=$2; shift ;;
-		-p|--pfsusepercent)   PFS_USE_PERCENT=$2; shift ;;
                 --)                   shift; break;;
 
 		*) printf -v ERROR_MESSAGE "\nbad param: $1\n";;
@@ -145,10 +158,6 @@ fi
 
 if [ -z "$MEMSIZE" ]; then
    MEMSIZE="$DEFAULT_MEMSIZE"
-fi
-
-if [ -z "$PFS_USE_PERCENT" ]; then
-   PFS_USE_PERCENT="$DEFAULT_PFS_USE_PERCENT"
 fi
 
 case $SCRIPT in

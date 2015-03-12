@@ -1129,22 +1129,20 @@ void ex_root_tcb::setupWarning(Lng32 retcode, const char * str,
   ex_assert( 0, "invalid return code value");
 }
 
-Int32 ex_root_tcb::snapshotScanCleanup(ComDiagsArea* & diagsArea)
+void ex_root_tcb::snapshotScanCleanup(ComDiagsArea* & diagsArea)
 {
   const char * tmpLoc = root_tdb().getSnapshotScanTempLocation();
   if (tmpLoc == NULL)
-    return 0;
+    return;
 
   ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
                            (STMTHEAP, "", "");
 
   ex_assert(ehi != NULL, "cannot connect to HBase");
-  Lng32 retcode = ehi->init(NULL);
+  Int32 retcode = ehi->init(NULL);
   if (retcode != 0)
   {
     setupWarning(retcode, "ExpHbaseInterface::init", "", diagsArea);
-    //issue with initialize connection -- return -1
-    return -1;
   } 
   else
   {
@@ -1164,9 +1162,9 @@ Int32 ex_root_tcb::snapshotScanCleanup(ComDiagsArea* & diagsArea)
       root_tdb().getListOfSnapshotScanTables()->advance();
 
     }
-    delete ehi;
   }
-  return 0;
+  delete ehi;
+  return;
 }
 ////////////////////////////////////////////////////////
 // RETURNS: 0, success. 100, EOF. -1, error. 1, warning

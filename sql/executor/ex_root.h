@@ -180,7 +180,7 @@ public:
  
   Int32 requestCancel();
 
-  Int32 snapshotScanCleanup( ComDiagsArea* & diagsArea);
+  void snapshotScanCleanup( ComDiagsArea* & diagsArea);
   void setupWarning(Lng32 retcode, const char * str, const char * str2, ComDiagsArea* & diagsArea);
   // Called by the main thread for internal cancel.
   Int32 cancel(ExExeStmtGlobals * glob, ComDiagsArea* &diagsArea, 

@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -261,6 +261,7 @@ SRC_PKG_TAR ?= "../${PKG_PROD}-src.tgz"
 PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf src/seatrans/hbase-trx
 
 PKG_BIN_OBJS += trafci
+PKG_BIN_OBJS += export/limited-support-tools
 
 PKG_BIN_DIRS ?= sql export
 PKG_BIN_DIRS += trafci
