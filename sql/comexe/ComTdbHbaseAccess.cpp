@@ -705,7 +705,9 @@ ComTdbHbaseAccess::getNodeName() const
 
           case UPSERT_LOAD_:
             {
-              if ((vsbbInsert()) && (NOT hbaseSqlIUD()))
+              if (getIsTrafodionLoadPrep())
+                return ("EX_TRAF_LOAD_PREPARATION");
+              else if ((vsbbInsert()) && (NOT hbaseSqlIUD()))
                 return ("EX_TRAF_VSBB_UPSERT_LOAD");
               else
                 return ("EX_TRAF_UPSERT_LOAD");

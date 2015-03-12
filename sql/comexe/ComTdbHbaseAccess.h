@@ -647,7 +647,7 @@ public:
 
    void setIsTrafodionLoadPrep(NABoolean v)
     {(v ? flags2_ |= TRAF_LOAD_PREP : flags2_ &= ~TRAF_LOAD_PREP); };
-    NABoolean getIsTrafodionLoadPrep() { return (flags2_ & TRAF_LOAD_PREP) != 0; };
+    NABoolean getIsTrafodionLoadPrep() const { return (flags2_ & TRAF_LOAD_PREP) != 0; };
 
    void setWBSize(UInt32  v)
     {wbSize_ = v; };
