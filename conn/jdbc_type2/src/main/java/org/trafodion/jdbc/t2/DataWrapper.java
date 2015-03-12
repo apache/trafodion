@@ -2392,6 +2392,8 @@ public class DataWrapper
 		return this.dataTruncation[columnIndex - 1];
 	}
     public byte[] getSQLBytes(int col_num) {
+        if (SQLbytesValue == null)
+            return null;
         return(SQLbytesValue[col_num-1]);
     }
 }
