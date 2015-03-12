@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -80,7 +80,8 @@ public:
       SQLTEXT_COMPILE,
       SQLTEXT_STATIC_COMPILE,
       DESCRIBE,
-      PROCESSDDL,	DDL = PROCESSDDL,	// synonyms
+      PROCESSDDL,	
+      DDL = PROCESSDDL,	// synonyms
       UPDATE_HIST_STAT,
       SET_TRANS,
       INTERNALSP_REQUEST,
@@ -91,7 +92,7 @@ public:
       SQLTEXT_STATIC_RECOMPILE,
       END_SESSION,
       DATABASE_USER,
-      MD_UPGRADE,
+      DDL_WITH_STATUS,
       REPLY_CODE = IPC_MSG_SQLCOMP_FIRST + 700,
       REPLY_ISP,
       CONNECTION_TYPE = IPC_MSG_SQLCOMP_FIRST + 900,
@@ -302,8 +303,6 @@ protected:
 #pragma nowarn(1506)   // warning elimination 
 class CmpCompileInfo 
 {
-
-
 public:
   CmpCompileInfo(char * sourceStr, Lng32 sourceStrLen,
 		 Lng32 sourceStrCharSet,
@@ -313,7 +312,15 @@ public:
 		 char * recompControlInfo, Lng32 recompControlInfoLen,
 		 ULng32 inputArrayMaxsize,
 		 short rowsetAtomicity);
+  CmpCompileInfo();
+
+  void init();
+
+  short getClassSize() { return (short)sizeof(CmpCompileInfo); }
+  Lng32 getVarLength();
   Lng32 getLength();
+  void packVars(char * buffer, CmpCompileInfo *ci,
+                Lng32 &nextOffset);
   void pack(char * buffer);
   void unpack(char * base);
   
@@ -375,7 +382,7 @@ public:
 
   enum { FILLERSIZE = 56 /* used to be 60 - took 4 bytes for sqlTextCharSet_ */ } ; // of original 72
 
-private:
+protected:
   enum Flags 
   {
     // if nametype was specified as NSK at static compilation time.
@@ -808,10 +815,13 @@ private:
 }; // end of CmpMessageDDL
 
 // -----------------------------------------------------------------------
-// The Upgrade Metadata commands
+// Info about DDL operations that return status.
 // -----------------------------------------------------------------------
-class CmpMDupgradeInfo
+class CmpDDLwithStatusInfo : public CmpCompileInfo
 {
+ public:
+  //  enum { MAX_MSG_LEN_ = 500; };
+
   enum
   {
     DONE_                = 0x0001,
@@ -821,51 +831,78 @@ class CmpMDupgradeInfo
     START_               = 0x0010,
     END_                   = 0x0020,
     XN_STARTED_     = 0x0040,
-    GET_MD_VERSION_    = 0x0080,
-    GET_SW_VERSION_    = 0x0100
+    MD_UPGRADE_     = 0x0080,
+    GET_MD_VERSION_    = 0x0100,
+    GET_SW_VERSION_    = 0x0200,
+    MD_CLEANUP_           = 0x0400,
+    CHECK_ONLY_          = 0x0800,
+    RETURN_DETAILS_    = 0x1000
   };
 
  public:
-  CmpMDupgradeInfo()
-    {
-      step_ = 0;
-      substep_ = 0;
-      flags_ = 0;
-      msgLen_ = 0;
-    };
 
-  void setStartStep(NABoolean v) {(v ? flags_ |= START_ : flags_ &= ~START_); };
-  NABoolean startStep() { return (flags_ & START_) != 0; };
+  CmpDDLwithStatusInfo();
 
-  void setEndStep(NABoolean v) {(v ? flags_ |= END_ : flags_ &= ~END_); };
-  NABoolean endStep() { return (flags_ & END_) != 0; };
+  CmpDDLwithStatusInfo(char * sourceStr, Lng32 sourceStrLen,
+                       Lng32 sourceStrCharSet,
+                       char * schemaName, Lng32 schemaNameLen, 
+                       char * recompControlInfo, Lng32 recompControlInfoLen);
+  
+  short getClassSize() { return (short)sizeof(CmpDDLwithStatusInfo); }
+  Lng32 getLength();
+  void pack(char * buffer);
+  void unpack(char * base);
 
-  void setDone(NABoolean v) {(v ? flags_ |= DONE_ : flags_ &= ~DONE_); };
-  NABoolean done() { return (flags_ & DONE_) != 0; };
+  void copyStatusInfo(CmpDDLwithStatusInfo*from);
+
+  void setStartStep(NABoolean v) {(v ? statusFlags_ |= START_ : statusFlags_ &= ~START_); };
+  NABoolean startStep() { return (statusFlags_ & START_) != 0; };
+
+  void setEndStep(NABoolean v) {(v ? statusFlags_ |= END_ : statusFlags_ &= ~END_); };
+  NABoolean endStep() { return (statusFlags_ & END_) != 0; };
+
+  void setDone(NABoolean v) {(v ? statusFlags_ |= DONE_ : statusFlags_ &= ~DONE_); };
+  NABoolean done() { return (statusFlags_ & DONE_) != 0; };
 
   void setReturnET(NABoolean v) 
-  {(v ? flags_ |= RETURN_ET_ : flags_ &= ~RETURN_ET_); };
-  NABoolean returnET() { return (flags_ & RETURN_ET_) != 0; };
+  {(v ? statusFlags_ |= RETURN_ET_ : statusFlags_ &= ~RETURN_ET_); };
+  NABoolean returnET() { return (statusFlags_ & RETURN_ET_) != 0; };
 
   void setComputeST(NABoolean v) 
-  {(v ? flags_ |= COMPUTE_ST_ : flags_ &= ~COMPUTE_ST_); };
-  NABoolean computeST() { return (flags_ & COMPUTE_ST_) != 0; };
+  {(v ? statusFlags_ |= COMPUTE_ST_ : statusFlags_ &= ~COMPUTE_ST_); };
+  NABoolean computeST() { return (statusFlags_ & COMPUTE_ST_) != 0; };
 
   void setComputeET(NABoolean v) 
-  {(v ? flags_ |= COMPUTE_ET_ : flags_ &= ~COMPUTE_ET_); };
-  NABoolean computeET() { return (flags_ & COMPUTE_ET_) != 0; };
+  {(v ? statusFlags_ |= COMPUTE_ET_ : statusFlags_ &= ~COMPUTE_ET_); };
+  NABoolean computeET() { return (statusFlags_ & COMPUTE_ET_) != 0; };
 
   void setXnStarted(NABoolean v) 
-  {(v ? flags_ |= XN_STARTED_ : flags_ &= ~XN_STARTED_); };
-  NABoolean xnStarted() { return (flags_ & XN_STARTED_) != 0; };
+  {(v ? statusFlags_ |= XN_STARTED_ : statusFlags_ &= ~XN_STARTED_); };
+  NABoolean xnStarted() { return (statusFlags_ & XN_STARTED_) != 0; };
+
+  void setMDupgrade(NABoolean v)
+  {(v ? statusFlags_ |= MD_UPGRADE_ : statusFlags_ &= ~MD_UPGRADE_); }
+  NABoolean getMDupgrade() { return (statusFlags_ & MD_UPGRADE_) != 0;}
 
   void setGetMDVersion(NABoolean v)
-  {(v ? flags_ |= GET_MD_VERSION_ : flags_ &= ~GET_MD_VERSION_); }
-  NABoolean getMDVersion() { return (flags_ & GET_MD_VERSION_) != 0;}
+  {(v ? statusFlags_ |= GET_MD_VERSION_ : statusFlags_ &= ~GET_MD_VERSION_); }
+  NABoolean getMDVersion() { return (statusFlags_ & GET_MD_VERSION_) != 0;}
 
   void setGetSWVersion(NABoolean v)
-  {(v ? flags_ |= GET_SW_VERSION_ : flags_ &= ~GET_SW_VERSION_); }
-  NABoolean getSWVersion() { return (flags_ & GET_SW_VERSION_) != 0;}
+  {(v ? statusFlags_ |= GET_SW_VERSION_ : statusFlags_ &= ~GET_SW_VERSION_); }
+  NABoolean getSWVersion() { return (statusFlags_ & GET_SW_VERSION_) != 0;}
+
+  void setMDcleanup(NABoolean v)
+  {(v ? statusFlags_ |= MD_CLEANUP_ : statusFlags_ &= ~MD_CLEANUP_); }
+  NABoolean getMDcleanup() { return (statusFlags_ & MD_CLEANUP_) != 0;}
+
+  void setCheckOnly(NABoolean v)
+  {(v ? statusFlags_ |= CHECK_ONLY_ : statusFlags_ &= ~CHECK_ONLY_); }
+  NABoolean getCheckOnly() { return (statusFlags_ & CHECK_ONLY_) != 0;}
+
+  void setReturnDetails(NABoolean v)
+  {(v ? statusFlags_ |= RETURN_DETAILS_ : statusFlags_ &= ~RETURN_DETAILS_); }
+  NABoolean getReturnDetails() { return (statusFlags_ & RETURN_DETAILS_) != 0;}
 
   void setMsg(const char * msg)
   {
@@ -880,29 +917,42 @@ class CmpMDupgradeInfo
   void setStep(Lng32 step) { step_ = step; }
   void setSubstep(Lng32 substep) { substep_ = substep; }
 
+  Lng32 blackBoxLen() { return blackBoxLen_; }
+  char * blackBox() { return blackBox_; }
+  void setBlackBoxLen(Lng32 v) { blackBoxLen_ = v; }
+  void setBlackBox(char * v) { blackBox_ = v; }
+
  private:
   Lng32 step_;
   Lng32 substep_;
-  UInt32 flags_;
-  short msgLen_;
-  char msg_[510];
+  UInt32 statusFlags_;
+  Lng32 msgLen_;
+  char msg_[512];
+
+  // black box data that can be sent and received. Contents are interpreted
+  // based on the query that is being processed.
+  Lng32 blackBoxLen_;
+  char * blackBox_;
 };
 
-class CmpMessageMDupgrade : public CmpMessageRequest 
+class CmpMessageDDLwithStatus : public CmpMessageRequest 
 {
 public:
-  CmpMessageMDupgrade(char* stmt,CmpMsgBufLenType size,
-		      CollHeap* h=0):
-  CmpMessageRequest(MD_UPGRADE, stmt,size,h)
+  CmpMessageDDLwithStatus(char* stmt,CmpMsgBufLenType size,
+                          CollHeap* h=0):
+  CmpMessageRequest(DDL_WITH_STATUS, stmt,size,h)
     {};
 
-  virtual ~CmpMessageMDupgrade() {};
+  virtual ~CmpMessageDDLwithStatus() {};
    
+  CmpDDLwithStatusInfo * getCmpDDLwithStatusInfo() const 
+  { return (CmpDDLwithStatusInfo *)data();};
+ 
 private:
-  CmpMessageMDupgrade& operator=(const CmpMessageMDupgrade&);
-  CmpMessageMDupgrade(const CmpMessageMDupgrade&);
+  CmpMessageDDLwithStatus& operator=(const CmpMessageDDLwithStatus&);
+  CmpMessageDDLwithStatus(const CmpMessageDDLwithStatus&);
 
-}; // end of CmpMessageMDupgrade
+}; // end of CmpMessageDDLwithStatus
 
 // -----------------------------------------------------------------------
 // The Describe command

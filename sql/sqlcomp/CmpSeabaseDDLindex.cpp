@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -490,6 +490,19 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
      }
 
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+                                   btCatalogNamePart, btSchemaNamePart, btObjectNamePart,
+                                   COM_BASE_TABLE_OBJECT,
+                                   (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) 
+                                    ? FALSE : TRUE),
+                                   TRUE, TRUE);
+  if (retcode < 0)
+    {
+      processReturn();
+
+      return;
+    }
+
   ActiveSchemaDB()->getNATableDB()->useCache();
 
   // save the current parserflags setting
@@ -925,13 +938,10 @@ void CmpSeabaseDDL::createSeabaseIndex(
   return;
 
  label_error_drop_index:
-  if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
-    return;
-  
-  dropSeabaseObject(ehi, createIndexNode->getIndexName(),
-                    currCatName, currSchName, COM_INDEX_OBJECT);
-  
-  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
+
+  cleanupObjectAfterError(cliInterface, 
+                          catalogNamePart, schemaNamePart, objectNamePart,
+                          COM_INDEX_OBJECT);
 
   deallocEHI(ehi);
 
@@ -1380,8 +1390,11 @@ void CmpSeabaseDDL::dropSeabaseIndex(
       }
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
-				 catalogNamePart, schemaNamePart, objectNamePart,
-				 COM_INDEX_OBJECT);
+                                   catalogNamePart, schemaNamePart, objectNamePart,
+                                   COM_INDEX_OBJECT, 
+                                   (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) 
+                                    ? FALSE : TRUE),
+                                   TRUE, TRUE);
   if (retcode < 0)
     {
       deallocEHI(ehi); 
@@ -1595,12 +1608,21 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
   NABoolean isDisable = 
     (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DISABLE_INDEX);
 
+  const QualifiedName &btName = 
+    (isDisable ? alterDisableIndexNode->getTableNameAsQualifiedName() :
+     alterEnableIndexNode->getTableNameAsQualifiedName());
+
+  const NAString &btCatName = btName.getCatalogName();
+  const NAString &btSchName = btName.getSchemaName();
+  const NAString &btObjName = btName.getObjectName();
+  NAString extBTname = btCatName + "." + btSchName + "." + btObjName;
+
   const NAString &idxName = 
     (isDisable ? alterDisableIndexNode->getIndexName() : alterEnableIndexNode->getIndexName());
 
   ComObjectName indexName(idxName);
-  ComAnsiNamePart currCatAnsiName(currCatName);
-  ComAnsiNamePart currSchAnsiName(currSchName);
+  ComAnsiNamePart currCatAnsiName(NOT btCatName.isNull() ? btCatName : currCatName);
+  ComAnsiNamePart currSchAnsiName(NOT btSchName.isNull() ? btSchName : currSchName);
   indexName.applyDefaults(currCatAnsiName, currSchAnsiName);
 
   const NAString catalogNamePart = indexName.getCatalogNamePartAsAnsiString();
@@ -1611,8 +1633,29 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
   ExeCliInterface cliInterface(STMTHEAP);
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
-				 catalogNamePart, schemaNamePart, objectNamePart,
-				 COM_INDEX_OBJECT);
+                                   btCatName, btSchName, btObjName,
+                                   COM_BASE_TABLE_OBJECT, FALSE,
+                                   TRUE, TRUE);
+  if (retcode < 0)
+    {
+      processReturn();
+
+      return;
+    }
+
+  if (retcode == 0) // does not exist
+    {
+      *CmpCommon::diags() << DgSqlCode(-1389)
+			  << DgString0(extBTname);
+
+      processReturn();
+
+      return;
+    }
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+                                   catalogNamePart, schemaNamePart, objectNamePart,
+                                   COM_INDEX_OBJECT, FALSE, TRUE, TRUE);
   if (retcode < 0)
     {
       processReturn();
@@ -1630,16 +1673,13 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
       return;
     }
 
-  // get base table name
-  NAString btCatName;
-  NAString btSchName;
-  NAString btObjName;
   Int64 btUID;
   Int32 btObjOwner = 0;
   Int32 btSchemaOwner = 0;
-  if (getBaseTable(&cliInterface,
-		   catalogNamePart, schemaNamePart, objectNamePart,
-		   btCatName, btSchName, btObjName, btUID, btObjOwner, btSchemaOwner))
+  if ((getObjectUIDandOwners(&cliInterface,
+                             btCatName, btSchName, btObjName, 
+                             COM_BASE_TABLE_OBJECT,
+                             btObjOwner, btSchemaOwner)) < 0)
     {
       processReturn();
 
@@ -1736,7 +1776,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
   // Fix for launchpad bug 1381621
   Lng32 retcode = existsInSeabaseMDTable(&cliInterface,
                                          catalogNamePart, schemaNamePart, objectNamePart,
-                                         COM_BASE_TABLE_OBJECT);
+                                         COM_BASE_TABLE_OBJECT, TRUE, TRUE, TRUE);
   if (retcode < 0)
     {
       processReturn();

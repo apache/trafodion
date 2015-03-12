@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -284,21 +284,56 @@ CmpCompileInfo::CmpCompileInfo(char * sourceStr, Lng32 sourceStrLen,
   str_pad(fillerBytes_, FILLERSIZE, '\0');
 }
 
+CmpCompileInfo::CmpCompileInfo()
+  : flags_(0),
+    sqltext_(NULL), 
+    sqlTextLen_(0),
+    sqlTextCharSet_(0),
+    rlnil_(NULL), 
+    rlnilLen_(0),
+    schemaName_(NULL), 
+    schemaNameLen_(0),
+    recompControlInfo_(NULL), 
+    recompControlInfoLen_(0),
+    inputArrayMaxsize_(0)
+{
+  str_pad(fillerBytes_, FILLERSIZE, '\0');
+}
+
+void CmpCompileInfo::init()
+{
+  flags_ = 0;
+  sqltext_ = NULL; 
+  sqlTextLen_ = 0;
+  sqlTextCharSet_ = 0;
+  rlnil_ = NULL; 
+  rlnilLen_ = 0;
+  schemaName_ = NULL; 
+  schemaNameLen_ = 0;
+  recompControlInfo_ = NULL; 
+  recompControlInfoLen_ = 0;
+  inputArrayMaxsize_ = 0;
+}
+
 Lng32 CmpCompileInfo::getLength()
 {
-  return ROUND8(sizeof(*this)) + ROUND8(sqlTextLen_) + 
+  Lng32 sizeOfThis = getClassSize();
+  Lng32 totalLength = ROUND8(sizeOfThis) + getVarLength();
+  return totalLength;
+}
+
+Lng32 CmpCompileInfo::getVarLength()
+{
+  return ROUND8(sqlTextLen_) + 
     ROUND8(rlnilLen_) + ROUND8(schemaNameLen_) 
     + ROUND8(recompControlInfoLen_);
 }
 
-void CmpCompileInfo::pack(char * buffer)
+void CmpCompileInfo::packVars(char * buffer, CmpCompileInfo *ci,
+                              Lng32 &nextOffset)
 {
-  CmpCompileInfo * ci = (CmpCompileInfo *)buffer;
+  //  CmpCompileInfo * ci = (CmpCompileInfo *)buffer;
 
-  Lng32 nextOffset = 0;
-  str_cpy_all(buffer, (char *)this, sizeof(*this));
-
-  nextOffset += ROUND8(sizeof(*this));
   if (sqltext_ && (sqlTextLen_ > 0))
     {
       str_cpy_all(&buffer[nextOffset], sqltext_, sqlTextLen_);
@@ -324,7 +359,21 @@ void CmpCompileInfo::pack(char * buffer)
     {
       str_cpy_all(&buffer[nextOffset], (char *)recompControlInfo_, recompControlInfoLen_);
       ci->recompControlInfo_ = (char *)nextOffset;
+      nextOffset += ROUND8(recompControlInfoLen_);
     }
+}
+
+void CmpCompileInfo::pack(char * buffer)
+{
+  CmpCompileInfo * ci = (CmpCompileInfo *)buffer;
+
+  Lng32 classSize = getClassSize();
+  Lng32 nextOffset = 0;
+  str_cpy_all(buffer, (char *)this, classSize);
+
+  nextOffset += ROUND8(classSize);
+
+  packVars(buffer, ci, nextOffset);
 }
 
 void CmpCompileInfo::unpack(char * base)
@@ -403,6 +452,93 @@ const short CmpCompileInfo::getHoldableAttr()
   else
     return SQLCLIDEV_NONHOLDABLE;
 }
+
+// ---------------------------------------------------------
+// methos for CmpDDLwithStatusInfo
+// ---------------------------------------------------------
+CmpDDLwithStatusInfo::CmpDDLwithStatusInfo()
+    : CmpCompileInfo()
+{
+  statusFlags_ = 0;
+  step_ = 0;
+  substep_ = 0;
+  statusFlags_ = 0;
+  msgLen_ = 0;
+  blackBoxLen_ = 0;
+  blackBox_ = NULL;
+};
+
+CmpDDLwithStatusInfo::CmpDDLwithStatusInfo(char * sourceStr, Lng32 sourceStrLen,
+                                           Lng32 sourceStrCharSet,
+                                           char * schemaName, Lng32 schemaNameLen, 
+                                           char * recompControlInfo, Lng32 recompControlInfoLen)
+  : CmpCompileInfo(sourceStr, sourceStrLen, sourceStrCharSet,
+                   NULL, 0,
+                   schemaName, schemaNameLen,
+                   recompControlInfo, recompControlInfoLen,
+                   0, 0)
+{
+  statusFlags_ = 0;
+  step_ = 0;
+  substep_ = 0;
+  statusFlags_ = 0;
+  msgLen_ = 0;
+  blackBoxLen_ = 0;
+  blackBox_ = NULL;
+};
+
+void CmpDDLwithStatusInfo::copyStatusInfo(CmpDDLwithStatusInfo *from)
+{
+  if (! from)
+    return;
+
+  statusFlags_ = from->statusFlags_;
+  step_ = from->step_;
+  substep_ = from->substep_;
+  statusFlags_ = from->statusFlags_;
+}
+
+Lng32 CmpDDLwithStatusInfo::getLength()
+{
+  Lng32 sizeOfThis = getClassSize();
+  Lng32 totalLength = ROUND8(sizeOfThis) + getVarLength();
+
+  if ((blackBoxLen_ > 0) && (blackBox_))
+    totalLength += ROUND8(blackBoxLen_);
+  return totalLength;
+}
+
+void CmpDDLwithStatusInfo::pack(char * buffer)
+{
+  CmpDDLwithStatusInfo * ci = (CmpDDLwithStatusInfo *)buffer;
+
+  Lng32 classSize = getClassSize();
+  Lng32 nextOffset = 0;
+  str_cpy_all(buffer, (char *)this, classSize);
+
+  nextOffset += ROUND8(classSize);
+
+  packVars(buffer, ci, nextOffset);
+
+  if (blackBox_ && (blackBoxLen_ > 0))
+    {
+      str_cpy_all(&buffer[nextOffset], blackBox_, blackBoxLen_);
+      ci->blackBox_ = (char *)nextOffset;
+      nextOffset += ROUND8(blackBoxLen_);
+    }
+
+}
+
+void CmpDDLwithStatusInfo::unpack(char * base)
+{
+  CmpCompileInfo::unpack(base);
+
+  if (blackBox_)
+    {
+      blackBox_ = base + (Lng32)((Long)blackBox_);
+    }
+}
+
 // -----------------------------------------------------------------------
 // methods for CmpMessageReply
 // -----------------------------------------------------------------------

@@ -1796,6 +1796,12 @@ ElemDDLNode::castToStmtDDLCreateRole()
   return NULL;
 }
 
+StmtDDLCleanupObjects *
+ElemDDLNode::castToStmtDDLCleanupObjects()
+{
+  return NULL;
+}
+
 StmtDDLRoleGrant *
 ElemDDLNode::castToStmtDDLRoleGrant()
 {

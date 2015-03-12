@@ -1808,7 +1808,9 @@ ComTdbExeUtilGetMetadataInfo::ComTdbExeUtilGetMetadataInfo
      queue_index down,
      queue_index up,
      Lng32 num_buffers,
-     ULng32 buffer_size)
+     ULng32 buffer_size,
+     char * server,
+     char * zkPort)
      : ComTdbExeUtil(ComTdbExeUtil::GET_METADATA_INFO_,
 		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
 		     NULL, 0,
@@ -1823,7 +1825,9 @@ ComTdbExeUtilGetMetadataInfo::ComTdbExeUtilGetMetadataInfo
        cat_(cat), sch_(sch), obj_(obj),
        pattern_(pattern),
        param1_(param1),
-       flags_(0)
+       flags_(0),
+       server_(server),
+       zkPort_(zkPort)
 {
   setNodeType(ComTdb::ex_GET_METADATA_INFO);
 }
@@ -1840,6 +1844,10 @@ Long ComTdbExeUtilGetMetadataInfo::pack(void * space)
     pattern_.pack(space);
   if (param1_) 
     param1_.pack(space);
+  if (server_)
+    server_.pack(space);
+  if (zkPort_)
+    zkPort_.pack(space);
 
   return ComTdbExeUtil::pack(space);
 }
@@ -1855,6 +1863,10 @@ Lng32 ComTdbExeUtilGetMetadataInfo::unpack(void * base, void * reallocator)
   if (pattern_.unpack(base))
     return -1;
   if (param1_.unpack(base))
+    return -1;
+  if (server_.unpack(base))
+    return -1;
+  if (zkPort_.unpack(base))
     return -1;
 
   return ComTdbExeUtil::unpack(base, reallocator);
@@ -1944,7 +1956,8 @@ ComTdbExeUtilGetHiveMetadataInfo::ComTdbExeUtilGetHiveMetadataInfo
 				    work_cri_desc, work_atp_index,
 				    given_cri_desc, returned_cri_desc,
 				    down, up, 
-				    num_buffers, buffer_size),
+				    num_buffers, buffer_size,
+                                    NULL, NULL),
        unused1_(NULL),
        unused2_(NULL),
        unused3_(NULL),
@@ -2456,42 +2469,6 @@ void ComTdbExeUtilHiveMDaccess::displayContents(Space * space,ULng32 flag)
       displayChildren(space,flag);
     }
 }
-
-///////////////////////////////////////////////////////////////////////////
-//
-// Methods for class ComTdbExeUtilMetadataUpgrade
-//
-///////////////////////////////////////////////////////////////////////////
-ComTdbExeUtilMetadataUpgrade::ComTdbExeUtilMetadataUpgrade(
-					     ex_expr * output_expr,
-					     ULng32 output_rowlen,
-					     ex_cri_desc * workCriDesc,
-					     const unsigned short work_atp_index,
-					     ex_cri_desc *criDescParentDown,
-					     ex_cri_desc *criDescParentUp,
-					     queue_index queueSizeDown,
-					     queue_index queueSizeUp,
-					     Lng32 numBuffers,
-					     ULng32 bufferSize)
-  : ComTdbExeUtil(ComTdbExeUtil::UPGRADE_MD_,
-		  0, 0, 0, // query,querylen,querycharset
-		  NULL, 0, // tablename,tablenamelen
-		  NULL, 0,
-		  NULL, 0,
-		  NULL,
-		  workCriDesc, work_atp_index,
-		  criDescParentDown,
-		  criDescParentUp,
-		  queueSizeDown,
-		  queueSizeUp,
-		  numBuffers,  
-		  bufferSize),
-    flags_(0)
-{
-  setNodeType(ex_METADATA_UPGRADE);
-  setEyeCatcher(eye_METADATA_UPGRADE);
-}
-
 
 //*********************************************
 //ComTdbExeUtilHBaseBulkLoad

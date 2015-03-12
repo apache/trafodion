@@ -71,7 +71,8 @@ public:
       stmtTextCharSet_(stmtTextCharSet),
       heap_(oHeap),
       exprNode_(exprNode),
-      xnNeeded_(TRUE)
+    xnNeeded_(TRUE),
+    virtualTabId_(NULL)
   {
     setNonCacheable();
     if (stmtText)
@@ -91,6 +92,10 @@ public:
 		       ValueIdSet &pulledNewInputs);
   virtual short codeGen(Generator*);
 
+  short processOutputRow(Generator * generator,
+                         const Int32 work_atp, const Int32 output_row_atp_index,
+                         ex_cri_desc * returnedDesc);
+
   // The set of values that I can potentially produce as output.
   virtual void getPotentialOutputValues(ValueIdSet & vs) const;
 
@@ -102,6 +107,19 @@ public:
   // this is both logical and physical node
   virtual NABoolean isLogical() const{return TRUE;};
   virtual NABoolean isPhysical() const{return TRUE;};
+
+  virtual NABoolean producesOutput() { return FALSE; }
+  virtual const char 	*getVirtualTableName() { return NULL;};
+  virtual desc_struct 	*createVirtualTableDesc() { return NULL;};
+  TableDesc * getVirtualTableDesc() const
+  {
+    return virtualTabId_;
+  };
+
+  void setVirtualTableDesc(TableDesc * vtdesc)
+  {
+    virtualTabId_ = vtdesc;
+  };
 
   // various PC methods
 
@@ -146,7 +164,8 @@ public:
   }
 
   virtual NABoolean dontUseCache() { return FALSE; }
-private:
+
+ protected:
   // the parse tree version of the statement, if needed
   ExprNode * exprNode_;
 
@@ -158,6 +177,10 @@ private:
 
   // should master exe start a xn before executing this request?
   NABoolean xnNeeded_;
+
+  // a unique identifer for the virtual table
+  TableDesc * virtualTabId_;
+
 }; // class GenericUtilExpr
 
 // -----------------------------------------------------------------------
@@ -186,7 +209,7 @@ public:
     noLabelStats_(noLabelStats),
     numExplRows_(numExplRows),
     isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
-    isDrop_(FALSE), isAlter_(FALSE),
+    isDrop_(FALSE), isAlter_(FALSE), isCleanup_(FALSE),
     isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
     isLibrary_(FALSE), isRoutine_(FALSE),
     isUstat_(FALSE),
@@ -200,6 +223,7 @@ public:
     dropAuthorization_(FALSE),
     addSeqTable_(FALSE),
     addSchemaObjects_(FALSE),
+    returnStatus_(FALSE),
     flags_(0)
   {
     if (explObjName)
@@ -222,7 +246,7 @@ public:
     noLabelStats_(FALSE),
     numExplRows_(0),
     isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
-    isDrop_(FALSE), isAlter_(FALSE),
+    isDrop_(FALSE), isAlter_(FALSE), isCleanup_(FALSE),
     isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
     isLibrary_(FALSE), isRoutine_(FALSE),
     isUstat_(FALSE),
@@ -236,6 +260,7 @@ public:
     dropAuthorization_(dropAuthorization),
     addSeqTable_(addSeqTable),
     addSchemaObjects_(addSchemaObjects),
+    returnStatus_(FALSE),
     flags_(0)
   {
     if (createMDviews)
@@ -259,7 +284,7 @@ public:
     noLabelStats_(FALSE),
     numExplRows_(0),
     isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
-    isDrop_(FALSE), isAlter_(FALSE),
+    isDrop_(FALSE), isAlter_(FALSE), isCleanup_(FALSE),
     isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
     isUstat_(FALSE),
     isHbase_(FALSE),
@@ -272,6 +297,7 @@ public:
     dropAuthorization_(FALSE),
     addSeqTable_(FALSE),
     addSchemaObjects_(FALSE),
+    returnStatus_(FALSE),
     flags_(0)
   {
     purgedataTableName_ = purgedataTableName;
@@ -299,6 +325,10 @@ public:
   ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple, 
 				       ComTdb * tdb, 
 				       Generator *generator);
+
+  virtual NABoolean producesOutput() { return returnStatus_;}
+  virtual const char 	*getVirtualTableName();
+  virtual desc_struct 	*createVirtualTableDesc();
 
   ExprNode * getDDLNode(){return getExprNode();};
 
@@ -428,9 +458,14 @@ public:
 
   NABoolean isDrop_;
   NABoolean isAlter_;
+  NABoolean isCleanup_;
 
   CorrName purgedataTableName_;
   QualifiedName qualObjName_;
+
+  // if TRUE, then status is returned during ddl operation.
+  // Executor communicates with arkcmp and returns status rows.
+  NABoolean returnStatus_;
 
   UInt32 flags_;
 };
@@ -492,8 +527,7 @@ public:
     : GenericUtilExpr(stmtText, stmtTextCharSet, exprNode, child, REL_EXE_UTIL, oHeap),
 	 type_(type),
 	 tableName_(name, oHeap),
-	 tableId_(NULL),
-	 virtualTabId_(NULL)
+	 tableId_(NULL)
   {
   };
 
@@ -509,27 +543,15 @@ public:
 
   NABoolean pilotAnalysis(QueryAnalysis* qa);
 
-  virtual void getPotentialOutputValues(ValueIdSet &vs) const;
-
   virtual NABoolean producesOutput() { return FALSE; }
+  virtual const char 	*getVirtualTableName();
+  virtual desc_struct 	*createVirtualTableDesc();
 
   // exeutil statements whose query type need to be returned as 
   // SQL_EXE_UTIL. Set during RelRoot::codeGen in ComTdbRoot class.
   virtual NABoolean isExeUtilQueryType() { return FALSE; }
 
   virtual NABoolean aqrSupported() { return FALSE; }
-
-  virtual const char 	*getVirtualTableName();
-  virtual desc_struct 	*createVirtualTableDesc();
-  TableDesc * getVirtualTableDesc() const
-  {
-    return virtualTabId_;
-  };
-
-  void setVirtualTableDesc(TableDesc * vtdesc)
-  {
-    virtualTabId_ = vtdesc;
-  };
 
   virtual void unparse(NAString &result,
 		       PhaseEnum /* phase */,
@@ -557,9 +579,6 @@ protected:
 
   // a unique identifer for the table specified by tableName_
   TableDesc *tableId_;  
-
-  // a unique identifer for the virtual table
-  TableDesc * virtualTabId_;
 
 };
 
@@ -1449,7 +1468,8 @@ public:
     COMPONENTS_   = 9,               
     COMPONENT_PRIVILEGES_ = 10,
     INVALID_VIEWS_ = 11,
-    COMPONENT_OPERATIONS = 12     
+    COMPONENT_OPERATIONS = 12,
+    HBASE_OBJECTS_ = 13
   };
 
   enum InfoFor

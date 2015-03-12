@@ -199,7 +199,8 @@ class CmpSeabaseDDL
 			 NAString * hbaseErrStr = NULL);
 
   short executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
-			  NAString &currCatName, NAString &currSchName);
+			  NAString &currCatName, NAString &currSchName,
+                          CmpDDLwithStatusInfo *dws = NULL);
 
   desc_struct * getSeabaseTableDesc(const NAString &catName, 
 				    const NAString &schName, 
@@ -313,7 +314,25 @@ class CmpSeabaseDDL
                      const char * objName,
                      const char * inObjType,
                      const char * inObjTypeStr = NULL,
-                     char * outObjType = NULL);
+                     char * outObjType = NULL,
+                     NABoolean lookInObjectsIdx = FALSE);
+
+   short getObjectName(
+                       ExeCliInterface *cliInterface,
+                       Int64 objUID,
+                       NAString &catName,
+                       NAString &schName,
+                       NAString &objName,
+                       char * outObjType = NULL,
+                       NABoolean lookInObjects = FALSE,
+                       NABoolean lookInObjectsIdx = FALSE);
+
+   short getObjectValidDef(ExeCliInterface *cliInterface,
+                           const char * catName,
+                           const char * schName,
+                           const char * objName,
+                           const ComObjectType objectType,
+                           NABoolean &validDef);
 
    short switchCompiler(Int32 cntxtType = CmpContextInfo::CMPCONTEXT_TYPE_META);
 
@@ -481,7 +500,8 @@ class CmpSeabaseDDL
 			       const char * objName,
 			       const ComObjectType objectType = COM_UNKNOWN_OBJECT,
 			       NABoolean checkForValidDef = TRUE,
-			       NABoolean checkForValidHbaseName = TRUE);
+			       NABoolean checkForValidHbaseName = TRUE,
+                               NABoolean returnInvalidStateError = FALSE);
   
   Int64 getConstraintOnIndex(
 			     ExeCliInterface *cliInterface,
@@ -491,6 +511,7 @@ class CmpSeabaseDDL
 			     NAString &catName,
 			     NAString &schName,
 			     NAString &objName);
+
    Int64 getObjectUIDandOwners(
                      ExeCliInterface * cliInterface,
                      const char * catName,
@@ -499,7 +520,8 @@ class CmpSeabaseDDL
                      const ComObjectType objectType,
 		     Int32 & objectOwner,
 		     Int32 & schemaOwner,
-		     bool reportErrorNow = true );
+		     bool reportErrorNow = true,
+                     NABoolean checkForValidDef = FALSE);
   
   short getBaseTable(ExeCliInterface *cliInterface,
 		     const NAString &indexCatName,
@@ -784,6 +806,18 @@ class CmpSeabaseDDL
      StmtDDLCreateSchema  * createSchemaNode,
      NAString             & currCatName);
 
+  void cleanupObjectAfterError(
+                               ExeCliInterface &cliInterface,
+                               const NAString &catName, 
+                               const NAString &schName,
+                               const NAString &objName,
+                               const ComObjectType objectType);
+  
+  short createSeabaseTable2(
+                            ExeCliInterface &cliInterface,
+                            StmtDDLCreateTable * createTableNode,
+                            NAString &currCatName, NAString &currSchName);
+  
   void createSeabaseTable(
 			  StmtDDLCreateTable                  * createTableNode,
 			  NAString &currCatName, NAString &currSchName);
@@ -795,6 +829,11 @@ class CmpSeabaseDDL
   void createSeabaseTableLike(
 			      StmtDDLCreateTable                  * createTableNode,
 			      NAString &currCatName, NAString &currSchName);
+  
+  short dropSeabaseTable2(
+                          ExeCliInterface *cliInterface,
+                          StmtDDLDropTable * dropTableNode,
+                          NAString &currCatName, NAString &currSchName);
   
   void dropSeabaseTable(
 			StmtDDLDropTable                  * dropTableNode,

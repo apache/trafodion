@@ -81,10 +81,9 @@ public:
     GET_HIVE_METADATA_INFO_  = 29,
     HIVE_MD_ACCESS_          = 30,
     AQR_WNR_INSERT_          = 31,
-    UPGRADE_MD_              = 32,
-    HBASE_LOAD_              = 33,
-    HBASE_UNLOAD_            = 34,
-    HBASE_UNLOAD_TASK_       = 35
+    HBASE_LOAD_              = 32,
+    HBASE_UNLOAD_            = 33,
+    HBASE_UNLOAD_TASK_       = 34
   };
 
   ComTdbExeUtil()
@@ -2356,7 +2355,9 @@ public:
     TRIGTEMP_TABLE_ON_TABLE_,
     IUDLOG_TABLE_ON_MV_,
     RANGELOG_TABLE_ON_MV_,
-    TRIGTEMP_TABLE_ON_MV_
+    TRIGTEMP_TABLE_ON_MV_,
+
+    HBASE_OBJECTS_
     
   };
 
@@ -2379,11 +2380,16 @@ public:
        queue_index down,
        queue_index up,
        Lng32 num_buffers,
-       ULng32 buffer_size
+       ULng32 buffer_size,
+       char * server,
+       char * zkPort
        );
 
   Long pack(void *);
   Lng32 unpack(void *, void * reallocator);
+
+  const char * server() const { return server_; }
+  const char * zkPort() const { return zkPort_;}
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
@@ -2412,6 +2418,10 @@ public:
   void setAllObjs(NABoolean v)
   {(v ? flags_ |= ALL_OBJS : flags_ &= ~ALL_OBJS); };
   NABoolean allObjs() { return (flags_ & ALL_OBJS) != 0; };
+
+  void setExternalObjs(NABoolean v)
+  {(v ? flags_ |= EXTERNAL_OBJS : flags_ &= ~EXTERNAL_OBJS); };
+  NABoolean externalObjs() { return (flags_ & EXTERNAL_OBJS) != 0; };
 
   void setGroupBy(NABoolean v)
   {(v ? flags_ |= GROUP_BY : flags_ &= ~GROUP_BY); };
@@ -2464,7 +2474,8 @@ protected:
     GET_OBJECT_UID = 0x0100,
     IS_INDEX     = 0x0200,
     IS_MV        = 0x0400,
-    IS_HBASE   = 0x0800
+    IS_HBASE   = 0x0800,
+    EXTERNAL_OBJS = 0x1000
   };
 
   char * getCat() { return cat_; }
@@ -2493,6 +2504,9 @@ protected:
   UInt32 flags_;                                     // 48-51
 
   char filler2_[4];                                    // 52-55
+
+  NABasicPtr server_;
+  NABasicPtr zkPort_;
 
   char fillersComTdbExeUtilGetMetadataInfo_[80];     // 56-143
 };
@@ -3043,67 +3057,6 @@ private:
 
   NABasicPtr schema_;                                              // 16 - 23
 };
-
-////////////////////////////////////////////////////////////////////
-// class ComTdbExeUtilMetadataUpgrade
-////////////////////////////////////////////////////////////////////
-class ComTdbExeUtilMetadataUpgrade : public ComTdbExeUtil
-{
-  enum MUflags
-  {
-    GET_MD_VERSION          = 0x0001,
-    GET_SW_VERSION = 0x0002
-  };
-
-public:
-  
-  ComTdbExeUtilMetadataUpgrade()
-  : ComTdbExeUtil() {};
-  
-  ComTdbExeUtilMetadataUpgrade(
-			ex_expr * output_expr,
-			ULng32 output_rowlen,
-			ex_cri_desc * workCriDesc,
-			const unsigned short work_atp_index,
-			ex_cri_desc *criDescParentDown,
-			ex_cri_desc *criDescParentUp,
-			queue_index queueSizeDown,
-			queue_index queueSizeUp,
-			Lng32 numBuffers,
-			ULng32 bufferSize);
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
-  virtual unsigned char getClassVersionID()
-  {
-    return 1;
-  }
-
-  virtual void populateImageVersionIDArray()
-  {
-    setImageVersionID(1,getClassVersionID());
-    ComTdb::populateImageVersionIDArray();
-  }
-
-  virtual short getClassSize()   { return (short)sizeof(ComTdbExeUtilMetadataUpgrade); }
-  
-  void setGetMDVersion(NABoolean v)
-  {(v ? flags_ |= GET_MD_VERSION : flags_ &= ~GET_MD_VERSION); }
-  NABoolean getMDVersion() { return (flags_ & GET_MD_VERSION) != 0;}
-
-  void setGetSWVersion(NABoolean v)
-  {(v ? flags_ |= GET_SW_VERSION : flags_ &= ~GET_SW_VERSION); }
-  NABoolean getSWVersion() { return (flags_ & GET_SW_VERSION) != 0;}
-
-protected:
-
-  UInt32 flags_;                      
-  char fillersComTdbMU_[28];  
-
-};
-
-
 
 class ComTdbExeUtilHBaseBulkLoad : public ComTdbExeUtil
 {

@@ -439,6 +439,8 @@ typedef enum {
  ,HBC_ERROR_CREATE_EXCEPTION
  ,HBC_ERROR_DROP_PARAM
  ,HBC_ERROR_DROP_EXCEPTION
+ ,HBC_ERROR_LIST_PARAM
+ ,HBC_ERROR_LIST_EXCEPTION
  ,HBC_ERROR_EXISTS_PARAM
  ,HBC_ERROR_EXISTS_EXCEPTION
  ,HBC_ERROR_FLUSHALL_PARAM
@@ -497,6 +499,7 @@ public:
   HBC_RetCode drop(const char* fileName, JNIEnv* jenv); // thread specific
   HBC_RetCode dropAll(const char* pattern, bool async);
   HBC_RetCode copy(const char* currTblName, const char* oldTblName);
+  ByteArrayList* listAll(const char* pattern);
   static HBC_RetCode flushAllTablesStatic();
   HBC_RetCode flushAllTables();
   HBC_RetCode exists(const char* fileName);
@@ -542,6 +545,7 @@ private:
    ,JM_CREATEK
    ,JM_DROP
    ,JM_DROP_ALL
+   ,JM_LIST_ALL
    ,JM_COPY
    ,JM_EXISTS
    ,JM_FLUSHALL

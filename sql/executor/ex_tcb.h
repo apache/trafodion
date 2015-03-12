@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ class   ExOperStats;
 
 // forward
 class sql_buffer_pool;
+class ex_queue_pair;
 
 // -------------------------------------------------------------------------
 // TCBs
@@ -188,6 +189,15 @@ public:
   NA_EIDPROC virtual void cpuLimitExceeded();
   NA_EIDPROC inline char * getEyeCatcher()
                       { return eyeCatcher_.name_for_sun_compiler; }
+
+  virtual short moveRowToUpQueue(
+                                 ex_queue_pair *qparent,
+                                 UInt16 tuppIndex,
+                                 const char * row, Lng32 len = -1,
+                                 short * rc = NULL, NABoolean isVarchar = TRUE);
+
+  short handleError(ex_queue_pair *qparent, ComDiagsArea *inDiagsArea);
+  short handleDone(ex_queue_pair *qparent, ComDiagsArea *inDiagsArea);
 
 private:
 

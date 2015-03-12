@@ -1213,6 +1213,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_CHECK
 %token <tokval> TOK_CLEAN
 %token <tokval> TOK_CLEANUP
+%token <tokval> TOK_CLEANUP_OBSOLETE
 %token <tokval> TOK_CLEAR               /* Tandem extension */
 %token <tokval> TOK_CLEARONPURGE        /* Tandem extension */
 %token <tokval> TOK_COLUMN
@@ -1313,6 +1314,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_NOT_DROPPABLE       /* Tandem extension */
 %token <tokval> TOK_NOT_ENFORCED        /* Tandem extension */
 %token <tokval> TOK_OBSOLETE
+%token <tokval> TOK_OBJECT
 %token <tokval> TOK_OBJECTS
 %token <tokval> TOK_OFF
 %token <tokval> TOK_OFFLINE             /* Tandem extension */
@@ -2416,6 +2418,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>		create_sequence_statement
 %type <pStmtDDL>		alter_sequence_statement
 %type <pStmtDDL>		drop_sequence_statement
+%type <pStmtDDL>           cleanup_objects_statement
+%type <boolean>               optional_cleanup_return_details
 
 %type <pStmtDDL>  		catalog_definition
 %type <pStmtDDL>  		catalog_definition2
@@ -2813,6 +2817,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stringval> 		object_identifier
 %type <stringval> 		objects_identifier
 %type <stringval>             hivemd_identifier
+%type <stringval> 		cleanup_object_identifier
 
 /* Added the following two to avoid increase in shift/reduce conflicts */
 %type <stringval> 		privileges_identifier
@@ -13972,6 +13977,9 @@ sql_schema_definition_statement :
               | alter_sequence_statement
 	                        {
 				}                        
+              | cleanup_objects_statement
+                                {
+                                }
 
 /* type pStmtDDL */
 sql_schema_manipulation_statement :
@@ -14580,7 +14588,7 @@ exe_util_statement: TOK_INSERT TOK_USING TOK_ALTER TOK_INTO table_name query_exp
 
 	       }
 
-exe_util_cleanup_volatile_tables : TOK_CLEANUP TOK_OBSOLETE TOK_VOLATILE TOK_TABLES
+exe_util_cleanup_volatile_tables : TOK_CLEANUP_OBSOLETE TOK_VOLATILE TOK_TABLES
                {
 		 ExeUtilCleanupVolatileTables * volSch =
 		    new (PARSERHEAP ()) ExeUtilCleanupVolatileTables
@@ -14594,7 +14602,7 @@ exe_util_cleanup_volatile_tables : TOK_CLEANUP TOK_OBSOLETE TOK_VOLATILE TOK_TAB
 
 		 $$ = volSch;
 	       }
-              | TOK_CLEANUP TOK_OBSOLETE TOK_VOLATILE TOK_TABLES TOK_IN TOK_ALL TOK_CATALOGS
+              | TOK_CLEANUP_OBSOLETE TOK_VOLATILE TOK_TABLES TOK_IN TOK_ALL TOK_CATALOGS
                {
 		 ExeUtilCleanupVolatileTables * volSch =
 		    new (PARSERHEAP ()) ExeUtilCleanupVolatileTables
@@ -14608,13 +14616,13 @@ exe_util_cleanup_volatile_tables : TOK_CLEANUP TOK_OBSOLETE TOK_VOLATILE TOK_TAB
 
 		 $$ = volSch;
 	       }
-              | TOK_CLEANUP TOK_OBSOLETE TOK_VOLATILE TOK_TABLES TOK_IN TOK_CATALOG character_string_literal
+              | TOK_CLEANUP_OBSOLETE TOK_VOLATILE TOK_TABLES TOK_IN TOK_CATALOG character_string_literal
                {
                  // DEFAULT_CHARSET has no effect on character_string_literal in this context
 		 ExeUtilCleanupVolatileTables * volSch =
 		    new (PARSERHEAP ()) ExeUtilCleanupVolatileTables
 		   (ExeUtilCleanupVolatileTables::OBSOLETE_TABLES_IN_SPECIFIED_CAT,
-		    *$7,
+		    *$6,
 		    PARSERHEAP ());
 
 		 // xn will be started, if needed, when the exeutilstmt stmt
@@ -15159,6 +15167,62 @@ exe_util_get_metadata_info :
             delete $6; // component_name
             delete $7; // user_name
           }
+       | TOK_GET get_info_aus_clause TOK_HBASE TOK_OBJECTS
+         {
+           NAString ausStr(*$2);
+           if (*$2 == "NONE")
+             ausStr = "USER";
+
+           NAString infoType("HBASE_OBJECTS");
+           NAString iofStr;
+           NAString objectType;
+           CorrName objectName("DUMMY");
+           NAString pattern;
+
+           ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP())
+             ExeUtilGetMetadataInfo
+             ( ausStr          // NAString & 
+               , infoType      // NAString &
+               , iofStr          // NAString &
+               , objectType   // NAString &
+               , objectName   // CorrName &
+               , NULL         // NAString * pattern
+               , FALSE  // NABoolean returnFullyQualNames
+               , FALSE        // NABoolean getVersion
+               , NULL           // NAString * param1
+               , PARSERHEAP() // CollHeap * oHeap
+               );
+
+           $$ = gmi;
+         }
+       | TOK_GET get_info_aus_clause TOK_HBASE TOK_OBJECTS ',' TOK_MATCH QUOTED_STRING
+         {
+           NAString ausStr(*$2);
+           if (*$2 == "NONE")
+             ausStr = "USER";
+
+           NAString infoType("HBASE_OBJECTS");
+           NAString iofStr;
+           NAString objectType;
+           CorrName objectName("DUMMY");
+           NAString pattern(*$7);
+
+           ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP())
+             ExeUtilGetMetadataInfo
+             ( ausStr          // NAString & 
+               , infoType      // NAString &
+               , iofStr          // NAString &
+               , objectType   // NAString &
+               , objectName   // CorrName &
+               , &pattern         // NAString * pattern
+               , FALSE  // NABoolean returnFullyQualNames
+               , FALSE        // NABoolean getVersion
+               , NULL           // NAString * param1
+               , PARSERHEAP() // CollHeap * oHeap
+               );
+
+           $$ = gmi;
+         }
 
 optional_for_user_clause : empty { $$ = NULL; }
                          | TOK_FOR TOK_USER authorization_identifier
@@ -15180,6 +15244,7 @@ get_info_aus_clause :  empty { $$ = new (PARSERHEAP()) NAString("NONE"); }
                      | TOK_RANGELOG   { $$ = new (PARSERHEAP()) NAString("RANGELOG");}
                      | TOK_TEMP_TABLE   { $$ = new (PARSERHEAP()) NAString("TRIGTEMP");}
                      | TOK_SYSTEM { $$ = new (PARSERHEAP()) NAString("SYSTEM"); }
+                     | TOK_EXTERNAL { $$ = new (PARSERHEAP()) NAString("EXTERNAL"); }
                      | TOK_VERSION TOK_OF { $$ = new (PARSERHEAP()) NAString("VERSION_USER"); }
                      | TOK_VERSION TOK_OF TOK_ALL { $$ = new (PARSERHEAP()) NAString("VERSION_ALL"); }
                      | TOK_VERSION TOK_OF TOK_USER { $$ = new (PARSERHEAP()) NAString("VERSION_USER"); }
@@ -15196,6 +15261,7 @@ object_identifier :
                   | TOK_TABLE    { $$ = new (PARSERHEAP()) NAString("TABLE"); }
                   | TOK_TRIGGER  { $$ = new (PARSERHEAP()) NAString("TRIGGER"); }
                   | TOK_VIEW     { $$ = new (PARSERHEAP()) NAString("VIEW"); }
+                  | TOK_SEQUENCE     { $$ = new (PARSERHEAP()) NAString("SEQUENCE"); }
 
 objects_identifier : 
                     TOK_CATALOGS { $$ = new (PARSERHEAP()) NAString("CATALOGS"); }
@@ -29108,6 +29174,152 @@ alter_sequence_statement : TOK_ALTER TOK_INTERNAL TOK_SEQUENCE ddl_qualified_nam
 		      }
 
 /* type pStmtDDL */
+cleanup_objects_statement : TOK_CLEANUP cleanup_object_identifier ddl_qualified_name optional_cleanup_return_details
+               {
+                 StmtDDLCleanupObjects::ObjectType ot;
+                 if (*$2 == "TABLE")
+                   ot = StmtDDLCleanupObjects::TABLE_;
+                 else if (*$2 == "INDEX")
+                   ot = StmtDDLCleanupObjects::INDEX_;
+                 else if (*$2 == "VIEW")
+                   ot = StmtDDLCleanupObjects::VIEW_;
+                 else if (*$2 == "SEQUENCE")
+                   ot = StmtDDLCleanupObjects::SEQUENCE_;
+                 else if ((*$2 == "SCHEMA") ||
+                          (*$2 == "SCHEMA_P"))
+                   ot = StmtDDLCleanupObjects::SCHEMA_PRIVATE_;
+                 else if (*$2 == "SCHEMA_S")
+                   ot = StmtDDLCleanupObjects::SCHEMA_SHARED_;
+                 else if (*$2 == "OBJECT")
+                   ot = StmtDDLCleanupObjects::UNKNOWN_;
+                 else
+                   YYERROR;
+
+                 QualifiedName * qn = $3;
+                 if ((ot == StmtDDLCleanupObjects::SCHEMA_PRIVATE_) ||
+                     (ot == StmtDDLCleanupObjects::SCHEMA_SHARED_))
+                   {
+                     if ($3->fullyExpanded()) // cannot be a 3-part name
+                       YYERROR;
+
+                     qn = new(PARSERHEAP()) QualifiedName(SEABASE_SCHEMA_OBJECTNAME,
+                                                          $3->getObjectName(),
+                                                          $3->getSchemaName());
+                   }
+
+                 StmtDDLCleanupObjects *pNode = new (PARSERHEAP())
+                   StmtDDLCleanupObjects(ot,
+                                         qn->getQualifiedNameAsAnsiString(),
+                                         NULL,
+                                         PARSERHEAP());
+
+                 if ($4 == TRUE)
+                   {
+                     // not yet supported
+                     YYERROR;
+
+                     pNode->setGetStatus(TRUE);
+                     pNode->setReturnDetails(TRUE);
+                   }
+
+                 delete $3;
+
+		 $$ = pNode;
+	       }
+             | TOK_CLEANUP cleanup_object_identifier ddl_qualified_name ',' TOK_UID  NUMERIC_LITERAL_EXACT_NO_SCALE optional_cleanup_return_details
+               {
+                 StmtDDLCleanupObjects::ObjectType ot;
+                 if (*$2 == "TABLE")
+                   ot = StmtDDLCleanupObjects::TABLE_;
+                 else if (*$2 == "INDEX")
+                   ot = StmtDDLCleanupObjects::INDEX_;
+                 else if (*$2 == "VIEW")
+                   ot = StmtDDLCleanupObjects::VIEW_;
+                 else if (*$2 == "SEQUENCE")
+                   ot = StmtDDLCleanupObjects::SEQUENCE_;
+                 else if (*$2 == "OBJECT")
+                   ot = StmtDDLCleanupObjects::UNKNOWN_;
+                 else
+                   YYERROR;
+
+                 QualifiedName * qn = $3;
+                 StmtDDLCleanupObjects *pNode = new (PARSERHEAP())
+                   StmtDDLCleanupObjects(ot,
+                                         qn->getQualifiedNameAsAnsiString(),
+                                         $6,
+                                         PARSERHEAP());
+                 
+                 if ($7 == TRUE)
+                   {
+                     // not yet supported
+                     YYERROR;
+                     
+                     pNode->setGetStatus(TRUE);
+                     pNode->setReturnDetails(TRUE);
+                   }
+
+                 delete $3;
+                 delete $6;
+
+		 $$ = pNode;
+	       }
+            | TOK_CLEANUP TOK_UID NUMERIC_LITERAL_EXACT_NO_SCALE  
+               {
+                 StmtDDLCleanupObjects *pNode = new (PARSERHEAP())
+                   StmtDDLCleanupObjects(StmtDDLCleanupObjects::OBJECT_UID_,
+                                         *$3,
+                                         NULL,
+                                         PARSERHEAP());
+
+                 delete $3;
+
+		 $$ = pNode;
+	       }
+           | TOK_CLEANUP TOK_METADATA optional_cleanup_return_details
+               {
+                 StmtDDLCleanupObjects *pNode = new (PARSERHEAP())
+                   StmtDDLCleanupObjects(StmtDDLCleanupObjects::OBSOLETE_,
+                                         "",
+                                         NULL,
+                                         PARSERHEAP());
+
+                 pNode->setGetStatus(TRUE);
+                 if ($3 == TRUE)
+                   pNode->setReturnDetails(TRUE);
+
+		 $$ = pNode;
+	       }
+           | TOK_CLEANUP TOK_METADATA  ',' TOK_CHECK optional_cleanup_return_details
+               {
+                 StmtDDLCleanupObjects *pNode = new (PARSERHEAP())
+                   StmtDDLCleanupObjects(StmtDDLCleanupObjects::OBSOLETE_,
+                                         "",
+                                         NULL,
+                                         PARSERHEAP());
+                 pNode->setCheckOnly(TRUE);
+                 pNode->setGetStatus(TRUE);
+                 if ($5 == TRUE)
+                   pNode->setReturnDetails(TRUE);
+
+		 $$ = pNode;
+	       }
+
+cleanup_object_identifier : object_identifier
+                       | TOK_PRIVATE TOK_SCHEMA   { $$ = new (PARSERHEAP()) NAString("SCHEMA_P"); }
+                       | TOK_SHARED TOK_SCHEMA   { $$ = new (PARSERHEAP()) NAString("SCHEMA_S"); }
+                       | TOK_OBJECT { $$ = new (PARSERHEAP()) NAString("OBJECT");}
+
+/* type boolean */
+optional_cleanup_return_details : empty
+                                       {
+                                         $$ = FALSE;
+                                       }
+                                     | ',' TOK_RETURN TOK_DETAILS
+                                       {
+                                         $$ = TRUE;
+                                       }
+
+/* type pStmtDDL */
 drop_sequence_statement : TOK_DROP TOK_SEQUENCE ddl_qualified_name 
 		      {
 			$$ = new (PARSERHEAP())
@@ -32182,6 +32394,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_NULL_STRING
 		      | TOK_NUMBER
                       | TOK_OBSOLETE
+                      | TOK_OBJECT
                       | TOK_OBJECTS
                       | TOK_OFFLINE
                       | TOK_OJ                /* ODBC extension  */

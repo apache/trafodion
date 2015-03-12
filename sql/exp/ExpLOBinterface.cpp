@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -203,7 +203,7 @@ Lng32 ExpLOBinterfaceDrop(void * lobGlob,  char * lobHdfsServer ,
   Int64 cliError = -1;
   
   err = ExLobsOper(lobName,
-		   NULL,0,
+		   NULL, 0,
 		   lobHdfsServer, lobHdfsPort, 
 		   NULL, dummyParam, 0, dummyParam, 
                    dummyParam, 0, dummyParam, status, cliError,

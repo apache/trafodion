@@ -126,7 +126,7 @@ ComObjectName objName(catalogName,schemaNamePart,NAString(SEABASE_SCHEMA_OBJECTN
 NAString objectNamePart = objName.getObjectNamePartAsAnsiString(TRUE);
 
 Lng32 retcode = existsInSeabaseMDTable(&cliInterface,catalogName,schemaNamePart, 
-                                       objectNamePart);
+                                       objectNamePart, COM_UNKNOWN_OBJECT, FALSE);
    if (retcode < 0)
       return -1;
   

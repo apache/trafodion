@@ -909,6 +909,7 @@ enum OperatorTypeEnum {
                         DDL_REVOKE_SCHEMA,
                         DDL_REVOKE_ROLE,
                         DDL_CREATE_ROLE,
+                        DDL_CLEANUP_OBJECTS,
                         DDL_LAST_STMT_OP,
                         DDL_INITIALIZE_SECURITY,
 

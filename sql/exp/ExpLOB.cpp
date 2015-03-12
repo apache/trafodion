@@ -1,7 +1,7 @@
 /*********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -85,6 +85,17 @@ char * ExpLOBoper::ExpGetLOBDescName(Lng32 schNameLen, char * schName,
   return outBuf;
 }
 
+char * ExpLOBoper::ExpGetLOBDescHandleObjNamePrefix(Int64 uid, 
+					   char * outBuf, Lng32 outBufLen)
+{
+  if (outBufLen < 512)
+    return NULL;
+  
+  str_sprintf(outBuf, "LOBDescHandle_%020Ld", uid);
+  
+  return outBuf;
+}
+
 char * ExpLOBoper::ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName,
 					   Int64 uid, Lng32 num, 
 					   char * outBuf, Lng32 outBufLen)
@@ -97,6 +108,15 @@ char * ExpLOBoper::ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName,
 	      schName, uid, num);
   
   return outBuf;
+}
+
+Lng32 ExpLOBoper::ExpGetLOBnumFromDescName(char * descName, Lng32 descNameLen)
+{
+  // Desc Name Format: LOBDescHandle_%020Ld_%04d
+  char * lobNumPtr = &descName[strlen("LOBDescHandle_") + 20 + 1];
+  Lng32 lobNum = str_atoi(lobNumPtr, 4);
+  
+  return lobNum;
 }
 
 char * ExpLOBoper::ExpGetLOBDescChunksName(Lng32 schNameLen, char * schName,
@@ -141,7 +161,6 @@ char * ExpLOBoper::ExpGetLOBMDName(Lng32 schNameLen, char * schName,
 
   return outBuf;
 }
-
 Lng32 ExpLOBoper::createLOB(void * lobGlob, void * lobHeap, 
 			    char * lobLoc,
 			    Int64 uid, Lng32 num)

@@ -117,6 +117,9 @@ class ExpHbaseInterface : public NABasicObject
   // drops all objects from hbase that match the pattern
   virtual Lng32 dropAll(const char * pattern, NABoolean async) = 0;
 
+  // retrieve all objects from hbase that match the pattern
+  virtual ByteArrayList* listAll(const char * pattern) = 0;
+
   // make a copy of currTableName as oldTblName.
   virtual Lng32 copy(HbaseStr &currTblName, HbaseStr &oldTblName);
 
@@ -381,6 +384,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async);
   virtual Lng32 dropAll(const char * pattern, NABoolean async);
+
+  virtual ByteArrayList* listAll(const char * pattern);
 
   // make a copy of currTableName as oldTblName.
   virtual Lng32 copy(HbaseStr &currTblName, HbaseStr &oldTblName);

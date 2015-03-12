@@ -111,6 +111,57 @@ desc_struct * createVirtExplainTableDesc();
 void deleteVirtExplainTableDesc(desc_struct *);
 
 
+short GenericUtilExpr::processOutputRow(Generator * generator,
+                                        const Int32 work_atp, const Int32 output_row_atp_index,
+                                        ex_cri_desc * returnedDesc)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+  
+  // Assumption (for now): retrievedCols contains ALL columns from
+  // the table/index. This is because this operator does
+  // not support projection of columns. Add all columns from this table
+  // to the map table.
+  //
+  // The row retrieved from filesystem is returned as the last entry in
+  // the returned atp.
+
+  Attributes ** attrs =
+    new(generator->wHeap())
+    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
+
+  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+    {
+      ItemExpr * col_node
+	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
+	  getItemExpr();
+
+      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
+	getAttr();
+    }
+
+  ExpTupleDesc *tupleDesc = 0;
+  ULng32 tupleLength = 0;
+  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
+			    attrs, ExpTupleDesc::SQLMP_FORMAT,
+			    tupleLength,
+			    work_atp, output_row_atp_index,
+			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
+
+  // delete [] attrs;
+  // NADELETEBASIC is used because compiler does not support delete[]
+  // operator yet. Should be changed back later when compiler supports
+  // it.
+  NADELETEBASIC(attrs, generator->wHeap());
+
+  // The output row will be returned as the last entry of the returned atp.
+  // Change the atp and atpindex of the returned values to indicate that.
+  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+			       0, returnedDesc->noTuples()-1);
+  
+  return 0;
+}
+                                    
 /////////////////////////////////////////////////////////
 //
 // ExeUtilProcessVolatileTable::codeGen()
@@ -322,46 +373,12 @@ short ExeUtilDisplayExplain::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   Lng32 colDescSize =  
     (Lng32) CmpCommon::getDefaultNumeric(EXPLAIN_DESCRIPTION_COLUMN_SIZE);
@@ -470,47 +487,12 @@ short ExeUtilDisplayExplainComplex::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  CollIndex i = 0;
-  for (i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   ComTdbExeUtilDisplayExplainComplex * exe_util_tdb = new(space) 
     ComTdbExeUtilDisplayExplainComplex(
@@ -703,46 +685,12 @@ short ExeUtilLoadVolatileTable::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace
@@ -814,46 +762,12 @@ short ExeUtilCleanupVolatileTables::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLMP_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   char * catName = NULL;
   if (NOT catName_.isNull())
@@ -923,46 +837,12 @@ short ExeUtilGetVolatileInfo::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLMP_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   NABoolean vtCatSpecified = FALSE;
   NAString defCatName = 
@@ -1060,46 +940,12 @@ short ExeUtilGetErrorInfo::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLMP_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   ComTdbExeUtilGetErrorInfo * exe_util_tdb = new(space) 
     ComTdbExeUtilGetErrorInfo(
@@ -1182,46 +1028,12 @@ short ExeUtilCreateTableAs::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace(generator->genGetNameAsAnsiNAString(getTableName()), 0);
@@ -1297,46 +1109,12 @@ short ExeUtilGetStatistics::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLMP_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   char * stmtName = NULL;
   if (NOT statementName_.isNull())
@@ -1448,46 +1226,12 @@ short ExeUtilGetUID::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   ComTdbExeUtilGetUID * exe_util_tdb = new(space) 
     ComTdbExeUtilGetUID(
@@ -1546,46 +1290,12 @@ short ExeUtilPopulateInMemStats::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   NAString inMemHistogramsStr;
   inMemHistogramsStr = CmpCommon::context()->sqlSession()->volatileCatalogName();
@@ -1718,41 +1428,12 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
       GenExit();
     }
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLMP_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
 
   // if pattern is specified, add it as a LIKE predicate to selectionPred
   if (NOT pattern_.isNull())
@@ -1780,11 +1461,6 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
       expGen->generateExpr(pred->getValueId(),ex_expr::exp_SCAN_PRED,&scanExpr);
     }
   
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
-
   struct QueryInfoStruct
   {
     const char * ausStr;
@@ -2015,7 +1691,12 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "USER",   "SYNONYMS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SYNONYMS_FOR_USER_ },
     {  "USER",   "TABLES",    "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_FOR_USER_ },
     {  "USER",   "TRIGGERS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TRIGGERS_FOR_USER_ },
-    {  "USER",   "VIEWS",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_ }
+    {  "USER",   "VIEWS",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_FOR_USER_ },
+
+    {  "USER",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
+    {  "ALL",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
+    {  "SYSTEM",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ },
+    {  "EXTERNAL",   "HBASE_OBJECTS",     "",   "",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_ }
 
 //==================================================================================================================================
    // AUSStr   InfoType     IOFStr   ObjectType  Version MaxParts  GroupBy OrderBy QueryType
@@ -2303,6 +1984,13 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
       strcpy(param1, param1_.data());
     }
 
+  NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
+  NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
+  char * server = space->allocateAlignedSpace(serverNAS.length() + 1);
+  strcpy(server, serverNAS.data());
+  char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
+  strcpy(zkPort, zkPortNAS.data());
+
   ComTdb * exe_util_tdb = NULL;
   ComTdbExeUtilGetMetadataInfo * gm_exe_util_tdb = NULL;
 
@@ -2347,7 +2035,9 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 				     (queue_index)128,
 #pragma nowarn(1506)   // warning elimination 
 				     2, 
-				     32000); 
+				     32000,
+                                     server,
+                                     zkPort);
 #pragma warn(1506)  // warning elimination 
 
       if (hbaseObjects())
@@ -2368,6 +2058,9 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     gm_exe_util_tdb->setSystemObjs(TRUE);
   else if (ausStr == "ALL")
     gm_exe_util_tdb->setAllObjs(TRUE);
+  else if ((queryType == ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_) &&
+           (ausStr == "EXTERNAL"))
+    gm_exe_util_tdb->setExternalObjs(TRUE);
   gm_exe_util_tdb->setGetVersion(getVersion_);
   
   if ((queryType == ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_) ||
@@ -2478,52 +2171,16 @@ short ExeUtilMaintainObject::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   char * tablename = NULL;
   char *schemaName = NULL;
 
-
-    
   /*  if (type_ == CATALOG_)
     tablename = 
       space->AllocateAndCopyToAlignedSpace(
@@ -3400,47 +3057,12 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  i = 0;
-  for (i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   char * tablename = NULL;
   if ((getUtilTableDesc()) && 
@@ -3696,46 +3318,12 @@ short ExeUtilShowSet::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLMP_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   char * param1 = NULL;
   char * param2 = NULL;
@@ -3807,46 +3395,12 @@ short ExeUtilAQR::codeGen(Generator * generator)
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
 #pragma warn(1506)  // warning elimination
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+  short rc = processOutputRow(generator, 0, returnedDesc->noTuples()-1,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLMP_FORMAT,
-			    tupleLength,
-			    NULL, 0,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   Lng32 task = (Lng32)ComTdbExeUtilAQR::NONE_;
   if (task_ == GET_)
@@ -3932,46 +3486,12 @@ short ExeUtilLobExtract::codeGen(Generator * generator)
       childExplainTuple = generator->getExplainTuple();
     }
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex j = 0; j < getVirtualTableDesc()->getColumnList().entries(); j++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[j]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[j] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
 
   char * handle = NULL;
   Lng32 handleLen = 0;
@@ -4158,46 +3678,12 @@ short ExeUtilLobShowddl::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex j = 0; j < getVirtualTableDesc()->getColumnList().entries(); j++)
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
     {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[j]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[j] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
+      return -1;
     }
-
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
   
   NAString tn = "\"";
   tn += getTableName().getQualifiedNameObj().getCatalogName();
@@ -5073,50 +4559,16 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
     const Int32 work_atp = 1;
     const Int32 exe_util_row_atp_index = 2;
 
-    // Assumption (for now): retrievedCols contains ALL columns from
-    // the table/index. This is because this operator does
-    // not support projection of columns. Add all columns from this table
-    // to the map table.
-    //
-    // The row retrieved from filesystem is returned as the last entry in
-    // the returned atp.
-
-    Attributes ** attrs =
-      new(generator->wHeap())
-      Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-    for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
-      {
-        ItemExpr * col_node
-          = (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-            getItemExpr();
-
-        attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-          getAttr();
-      }
-
     // Check authorization
     if (!isAuthorized(generator))
       GenExit();
 
-    ExpTupleDesc *tupleDesc = 0;
-    ULng32 tupleLength = 0;
-    expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-                              attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-                              tupleLength,
-                              work_atp, exe_util_row_atp_index,
-                              &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-    // delete [] attrs;
-    // NADELETEBASIC is used because compiler does not support delete[]
-    // operator yet. Should be changed back later when compiler supports
-    // it.
-    NADELETEBASIC(attrs, generator->wHeap());
-
-    // The stats row will be returned as the last entry of the returned atp.
-    // Change the atp and atpindex of the returned values to indicate that.
-    expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-                                 0, returnedDesc->noTuples()-1);
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
 
     char * tablename =
       space->AllocateAndCopyToAlignedSpace(generator->genGetNameAsAnsiNAString(getTableName()), 0);
@@ -5413,51 +4865,17 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
     const Int32 work_atp = 1;
     const Int32 exe_util_row_atp_index = 2;
 
-    // Assumption (for now): retrievedCols contains ALL columns from
-    // the table/index. This is because this operator does
-    // not support projection of columns. Add all columns from this table
-    // to the map table.
-    //
-    // The row retrieved from filesystem is returned as the last entry in
-    // the returned atp.
-
-    Attributes ** attrs =
-      new(generator->wHeap())
-      Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-    for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
-      {
-        ItemExpr * col_node
-          = (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-            getItemExpr();
-
-        attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-          getAttr();
-      }
-
-    // Check authorization
+   // Check authorization
     if (!isAuthorized(generator))
       GenExit();
     
-    ExpTupleDesc *tupleDesc = 0;
-    ULng32 tupleLength = 0;
-    expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-                              attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-                              tupleLength,
-                              work_atp, exe_util_row_atp_index,
-                              &tupleDesc, ExpTupleDesc::LONG_FORMAT);
-
-    // delete [] attrs;
-    // NADELETEBASIC is used because compiler does not support delete[]
-    // operator yet. Should be changed back later when compiler supports
-    // it.
-    NADELETEBASIC(attrs, generator->wHeap());
-
-    // The stats row will be returned as the last entry of the returned atp.
-    // Change the atp and atpindex of the returned values to indicate that.
-    expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-                                 0, returnedDesc->noTuples()-1);
-
+    short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                                returnedDesc);
+    if (rc)
+      {
+        return -1;
+      }
+    
     char * tablename =
       space->AllocateAndCopyToAlignedSpace(generator->genGetNameAsAnsiNAString(getTableName()), 0);
 

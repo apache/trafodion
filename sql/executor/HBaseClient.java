@@ -441,6 +441,31 @@ public class HBaseClient {
             return cleanup();
     }
 
+    public ByteArrayList listAll(String pattern) 
+             throws MasterNotRunningException, IOException {
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.listAll(" + pattern + ") called.");
+            HBaseAdmin admin = new HBaseAdmin(config);
+
+            ByteArrayList hbaseTables = new ByteArrayList();
+
+	    HTableDescriptor[] htdl = 
+                (pattern.isEmpty() ? admin.listTables() : admin.listTables(pattern));
+
+	    for (HTableDescriptor htd : htdl) {
+		String tblName = htd.getNameAsString();
+
+                //                System.out.println(tblName);
+
+                byte[] b = tblName.getBytes();
+                hbaseTables.add(b);
+	    }
+ 	    
+            admin.close();
+            cleanup();
+            
+            return hbaseTables;
+    }
+
     public boolean copy(String currTblName, String oldTblName)
 	throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.copy(" + currTblName + oldTblName + ") called.");

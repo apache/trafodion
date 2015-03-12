@@ -816,7 +816,11 @@ short HbaseDelete::codeGen(Generator * generator)
     hasAddedColumns = TRUE;
 
   ValueIdList columnList;
-  HbaseAccess::sortValues(retColRefSet_, columnList,
+  ValueIdList srcVIDlist;
+  ValueIdList dupVIDlist;
+  HbaseAccess::sortValues(retColRefSet_, 
+                          columnList,
+                          srcVIDlist, dupVIDlist,
 			  (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE));
 
   const CollIndex numColumns = columnList.entries();
@@ -994,6 +998,18 @@ short HbaseDelete::codeGen(Generator * generator)
 	} // for
     } // getScanIndexDesc != NULL
 
+  // assign location attributes to dup vids that were returned earlier.
+  for (CollIndex i = 0; i < srcVIDlist.entries(); i++) 
+    {
+      ValueId srcValId = srcVIDlist[i];
+      ValueId dupValId = dupVIDlist[i];
+      
+      Attributes * srcAttr = (generator->getMapInfo(srcValId))->getAttr();
+      Attributes * dupAttr = (generator->addMapInfo(dupValId, 0))->getAttr();
+      
+      dupAttr->copyLocationAttrs(srcAttr);
+    } // for
+
   if (addDefaultValues) //hasAddedColumns)
     {
       expGen->addDefaultValues(columnList,
@@ -1016,9 +1032,9 @@ short HbaseDelete::codeGen(Generator * generator)
     }
 
   // generate explain selection expression, if present
-  if ((NOT (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE)) &&
-      (! executorPred().isEmpty()))
-    // if (! executorPred().isEmpty())
+  //  if ((NOT (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE)) &&
+  //      (! executorPred().isEmpty()))
+  if (! executorPred().isEmpty())
     {
       ItemExpr * newPredTree = executorPred().rebuildExprTree(ITM_AND,TRUE,TRUE);
       expGen->generateExpr(newPredTree->getValueId(), ex_expr::exp_SCAN_PRED,
@@ -1399,7 +1415,10 @@ short HbaseUpdate::codeGen(Generator * generator)
     hasAddedColumns = TRUE;
 
   ValueIdList columnList;
+  ValueIdList srcVIDlist;
+  ValueIdList dupVIDlist;
   HbaseAccess::sortValues(retColRefSet_, columnList,
+                          srcVIDlist, dupVIDlist,
 			  (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE));
 
   const CollIndex numColumns = columnList.entries();
@@ -1576,6 +1595,18 @@ short HbaseUpdate::codeGen(Generator * generator)
 	} // for
     } // getScanIndexDesc != NULL
 
+  // assign location attributes to dup vids that were returned earlier.
+  for (CollIndex i = 0; i < srcVIDlist.entries(); i++) 
+    {
+      ValueId srcValId = srcVIDlist[i];
+      ValueId dupValId = dupVIDlist[i];
+      
+      Attributes * srcAttr = (generator->getMapInfo(srcValId))->getAttr();
+      Attributes * dupAttr = (generator->addMapInfo(dupValId, 0))->getAttr();
+      
+      dupAttr->copyLocationAttrs(srcAttr);
+    } // for
+
   if (addDefaultValues) 
     {
       expGen->addDefaultValues(columnList,
@@ -1598,9 +1629,9 @@ short HbaseUpdate::codeGen(Generator * generator)
     }
 
   // generate explain selection expression, if present
-  if ((NOT (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE)) &&
-      (! executorPred().isEmpty()))
-    //  if (! executorPred().isEmpty())
+  //  if ((NOT (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE)) &&
+  //      (! executorPred().isEmpty()))
+  if (! executorPred().isEmpty())
     {
       ItemExpr * newPredTree = executorPred().rebuildExprTree(ITM_AND,TRUE,TRUE);
       expGen->generateExpr(newPredTree->getValueId(), ex_expr::exp_SCAN_PRED,
@@ -2118,21 +2149,6 @@ short HbaseUpdate::codeGen(Generator * generator)
     {
       if (noDTMxn())
         hbasescan_tdb->setUseHbaseXn(TRUE);
-
-#ifdef __ignore
-      // if internal update of the sequence generator table, then do not do the update
-      // within the user Xn. Use hbase xn instead.
-      // This allows seqgen updates to complete without being part of an enclosing
-      // transaction.
-      // See cli/Cli.cpp, method  SeqGenCliInterfaceUpdAndValidate for details.
-      if ((getTableDesc()->getNATable()->isSeabaseMDTable()) &&
-	  (getTableDesc()->getNATable()->getTableName().getObjectName() == SEABASE_SEQ_GEN) &&
-	  (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
-	{
-	  hbasescan_tdb->setUseHbaseXn(TRUE);
-	}
-#endif
-
     }
 
   generator->setFoundAnUpdate(TRUE);

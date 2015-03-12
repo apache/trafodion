@@ -75,8 +75,9 @@
 #include "StmtDDLDropLibrary.h"
 #include "StmtDDLCreateRoutine.h"
 #include "StmtDDLDropRoutine.h"
+#include "StmtDDLCleanupObjects.h"
 
-  #include <cextdecs/cextdecs.h>
+#include <cextdecs/cextdecs.h>
 #include "wstr.h"
 #include "Inlining.h"
 #include "Triggers.h"
@@ -122,7 +123,10 @@ RelExpr * GenericUtilExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
 void GenericUtilExpr::getPotentialOutputValues(ValueIdSet & outputValues) const
 {
-  outputValues.clear(); // for now, it produces no output values
+  outputValues.clear();
+  if ((getVirtualTableDesc()) &&
+      (((ExeUtilExpr*)this)->producesOutput()))
+    outputValues.insertList(getVirtualTableDesc()->getColumnList());
 } // GenericUtilExpr::getPotentialOutputValues()
 
 // -----------------------------------------------------------------------
@@ -135,10 +139,47 @@ RelExpr * GenericUtilExpr::bindNode(BindWA *bindWA)
     bindWA->getCurrentScope()->setRETDesc(getRETDesc());
     return this;
   }
-  //
-  // Allocate an empty RETDesc and attach it to this node and the BindScope.
-  //
-  setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA));
+
+  if (getVirtualTableName())
+    {
+      CorrName corrName(getVirtualTableName());
+      corrName.setSpecialType(ExtendedQualName::VIRTUAL_TABLE);
+      NATable *naTable = bindWA->getSchemaDB()->getNATableDB()->
+	get(&corrName.getExtendedQualNameObj());
+      
+      if (NOT naTable) {
+	desc_struct *tableDesc = createVirtualTableDesc();
+	naTable = bindWA->getNATable(corrName, FALSE/*catmanUsages*/, tableDesc);
+	if (bindWA->errStatus())
+	  return this;
+      }
+      
+      // Allocate a TableDesc and attach it to this.
+      //
+      setVirtualTableDesc(bindWA->createTableDesc(naTable, corrName));
+      if (bindWA->errStatus())
+	return this;
+      
+      //
+      // Allocate an RETDesc and attach it to this and the BindScope.
+      //
+      if (producesOutput())
+	{
+	  setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, getVirtualTableDesc()));
+	}
+      else
+	{
+          setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA));
+	}
+    }
+  else
+    {
+      // no rows are returned from this operator. 
+      // Allocate an empty RETDesc and attach it to this and the BindScope.
+      //
+      setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA));
+    }
+
   bindWA->getCurrentScope()->setRETDesc(getRETDesc());
 
   //since this is DDL statement, dont use the cached metadata
@@ -192,6 +233,7 @@ RelExpr * DDLExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->isCreateLike_ = isCreateLike_;
   result->isDrop_ = isDrop_;
   result->isAlter_ = isAlter_;
+  result->isCleanup_ = isCleanup_;
   result->qualObjName_ = qualObjName_;
   result->purgedataTableName_ = purgedataTableName_;
   result->isHbase_ = isHbase_;
@@ -203,6 +245,9 @@ RelExpr * DDLExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->purgedataHbase_ = purgedataHbase_;
   result->addSeqTable_ = addSeqTable_;
   result->addSchemaObjects_ = addSchemaObjects_;
+
+  result->returnStatus_ = returnStatus_;
+
   result->flags_ = flags_;
 
   return GenericUtilExpr::copyTopNode(result, outHeap);
@@ -241,14 +286,6 @@ NABoolean ExeUtilExpr::pilotAnalysis(QueryAnalysis* qa)
 
   return TRUE;
 }
-
-void ExeUtilExpr::getPotentialOutputValues(ValueIdSet & outputValues) const
-{
-  outputValues.clear();
-  if ((getVirtualTableDesc()) &&
-      (((ExeUtilExpr*)this)->producesOutput()))
-    outputValues.insertList(getVirtualTableDesc()->getColumnList());
-} // ExeUtilExpr::getPotentialOutputValues()
 
 RelExpr * ExeUtilExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
@@ -3389,43 +3426,10 @@ RelExpr * ExeUtilExpr::bindNode(BindWA *bindWA)
   if (bindWA->errStatus())
     return this;
 
-  if (getVirtualTableName())
-    {
-      CorrName corrName(getVirtualTableName());
-      corrName.setSpecialType(ExtendedQualName::VIRTUAL_TABLE);
-      NATable *naTable = bindWA->getSchemaDB()->getNATableDB()->
-	get(&corrName.getExtendedQualNameObj());
-      
-      if (NOT naTable) {
-	desc_struct *tableDesc = createVirtualTableDesc();
-	naTable = bindWA->getNATable(corrName, FALSE/*catmanUsages*/, tableDesc);
-	if (bindWA->errStatus())
-	  return this;
-      }
-      
-      // Allocate a TableDesc and attach it to this.
-      //
-      setVirtualTableDesc(bindWA->createTableDesc(naTable, corrName));
-      if (bindWA->errStatus())
-	return this;
-      
-      //
-      // Allocate an RETDesc and attach it to this and the BindScope.
-      //
-      if (producesOutput())
-	{
-	  setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, getVirtualTableDesc()));
-	}
-      else
-	{
-	  // no rows are returned from this operator. 
-	  // Allocate an empty RETDesc and attach it to this and the BindScope.
-	  //
-	  setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA));
-	}
-      bindWA->getCurrentScope()->setRETDesc(getRETDesc());
-    }
-  
+  RelExpr * boundExpr = GenericUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
   if (tableName_.getSpecialType()==ExtendedQualName::NORMAL_TABLE) 
     if (bindWA->violateAccessDefaultSchemaOnly(tableName_.getQualifiedNameObj()))
       return this;
@@ -3433,7 +3437,7 @@ RelExpr * ExeUtilExpr::bindNode(BindWA *bindWA)
   //
   // Bind the base class.
   //
-  RelExpr *boundExpr = bindSelf(bindWA);
+  boundExpr = bindSelf(bindWA);
   if (bindWA->errStatus()) 
     return boundExpr;
 
@@ -3516,14 +3520,11 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     return this;
   }
 
-  RelExpr * boundExpr = GenericUtilExpr::bindNode(bindWA);
-  if (bindWA->errStatus())
-    return NULL;
-
   isCreate_ = FALSE;
   isCreateLike_ = FALSE;
   isDrop_ = FALSE;
   isAlter_ = FALSE;
+  isCleanup_ = FALSE;
   isHbase_ = FALSE;
   isNative_ = FALSE;
   hbaseDDLNoUserXn_ = FALSE;
@@ -3543,30 +3544,34 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean alterDropConstr = FALSE;
   NABoolean alterRenameTable = FALSE;
   NABoolean alterIdentityCol = FALSE;
+  
+  returnStatus_ = FALSE;
 
   NABoolean specialType = FALSE;
   if (isUstat())  // special DDLExpr node for an Update Stats statement
-    return boundExpr;
-
-  if (initAuthorization() || dropAuthorization())
+    {
+      RelExpr * boundExpr = GenericUtilExpr::bindNode(bindWA);
+      if (bindWA->errStatus())
+        return NULL;
+      
+      return boundExpr;
+      //      isHbase_ = TRUE;
+    }
+  else if (initAuthorization() || dropAuthorization())
   {
     isHbase_ = TRUE;
     hbaseDDLNoUserXn_ = TRUE;
-    return boundExpr;
   }
-
-  if (initHbase_ || dropHbase_ || createMDViews() || dropMDViews() ||
+  else if (initHbase_ || dropHbase_ || createMDViews() || dropMDViews() ||
       addSeqTable() || addSchemaObjects() || updateVersion())
   {
     isHbase_ = TRUE;
     hbaseDDLNoUserXn_ = TRUE;
-    return boundExpr;
   }
   else if (createRepos() || dropRepos() || upgradeRepos())
     {
       isHbase_ = TRUE;
       hbaseDDLNoUserXn_ = TRUE;
-      return boundExpr;
     }
   else if (purgedataHbase_)
   {
@@ -3877,7 +3882,14 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       qualObjName_ = getExprNode()->castToElemDDLNode()->
         castToStmtDDLDropRoutine()->getRoutineNameAsQualifiedName();
     }
-    
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCleanupObjects())
+    {
+      isCleanup_ = TRUE;
+      hbaseDDLNoUserXn_ = TRUE;
+
+      returnStatus_ = 
+        getExprNode()->castToElemDDLNode()->castToStmtDDLCleanupObjects()->getStatus();
+    }
 
     if ((isCreateSchema || isDropSchema) ||
         ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&
@@ -3909,7 +3921,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 	if (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
 	  hbaseDDLNoUserXn_ = TRUE;
       }
-    else if (isAuth || isPrivilegeMngt)
+    else if (isAuth || isPrivilegeMngt || isCleanup_)
       {
         isHbase_ = TRUE;
       }
@@ -3930,6 +3942,10 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         return NULL;
       }
     }
+
+  RelExpr * boundExpr = GenericUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
 
   if (isHbase_)
     return boundExpr;

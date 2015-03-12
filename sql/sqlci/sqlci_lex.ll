@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -251,6 +251,7 @@ B			[ \t\n]+
                        }
 [Ll][Oo][Aa][Dd] 		       return_IDENT_or_TOKEN(LOADtoken, 0);
 [Mm][Ee][Rr][Gg][Ee]                   return_IDENT_or_TOKEN(MERGEtoken, 0);
+[Mm][Ee][Tt][Aa][Dd][Aa][Tt][Aa]                   return_IDENT_or_TOKEN(METADATAtoken, 0);
 [Mm][Aa][Ii][Nn][Tt][Aa][Ii][Nn]       return_IDENT_or_TOKEN(MAINTAINtoken, 0);
 [Mm][Aa][Pp]                           return_IDENT_or_TOKEN(MAPtoken, 0);
 [Mm][Oo][Dd][Ii][Ff][Yy]               return_IDENT_or_TOKEN(MODIFY, 0);

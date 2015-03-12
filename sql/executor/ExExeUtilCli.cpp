@@ -2159,5 +2159,34 @@ Lng32 ExeCliInterface::getCQDval(const char * defaultName,
   return 0;
 }
 
+Lng32 ExeCliInterface::setCQS(const char * shape, ComDiagsArea * globalDiags)
+{
+  Lng32 cliRC;
+
+  cliRC = executeImmediate(shape, NULL, NULL, TRUE, NULL, 0,globalDiags);
+  if (cliRC < 0)
+    {
+      return cliRC;
+    }
+
+  return 0;
+}
+  
+
+Lng32 ExeCliInterface::resetCQS(ComDiagsArea * globalDiags)
+{
+  Lng32 cliRC;
+
+  char buf[400];
+  
+  strcpy(buf, "control query shape cut ");
+  cliRC = executeImmediate(buf, NULL, NULL, TRUE, NULL, 0,globalDiags);
+  if (cliRC < 0)
+    {
+      return cliRC;
+    }
+
+  return 0;
+}
   
   

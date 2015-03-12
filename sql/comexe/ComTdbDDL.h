@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -151,9 +151,15 @@ protected:
 ////////////////////////////////////////////////////////////////////
 // class ComTdbDDL
 ////////////////////////////////////////////////////////////////////
+static const ComTdbVirtTableColumnInfo ddlVirtTableColumnInfo[] =
+{
+  { "DDL_OUTPUT",       0, COM_USER_COLUMN, REC_BYTE_V_ASCII,     2000, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0}
+};
+
 class ComTdbDDL : public ComTdbGenericUtil
 {
   friend class ExDDLTcb;
+  friend class ExDDLwithStatusTcb;
   friend class ExDDLPrivateState;
 
 public:
@@ -188,6 +194,26 @@ public:
 
   virtual const char *getNodeName() const { return "EX_DDL"; };
 
+  static Int32 getVirtTableNumCols()
+  {
+    return sizeof(ddlVirtTableColumnInfo)/sizeof(ComTdbVirtTableColumnInfo);
+  }
+
+  static ComTdbVirtTableColumnInfo * getVirtTableColumnInfo()
+  {
+    return (ComTdbVirtTableColumnInfo*)ddlVirtTableColumnInfo;
+  }
+
+  static Int32 getVirtTableNumKeys()
+  {
+    return 0;
+  }
+
+  static ComTdbVirtTableKeyInfo * getVirtTableKeyInfo()
+  {
+    return NULL;
+  }
+
   NABoolean createTable()
     { return (flags_ & CREATE_TABLE_DDL) != 0; }
   void setCreateTable(NABoolean v)
@@ -213,6 +239,11 @@ public:
   void setHbaseDDLNoUserXn(NABoolean v)
     { (v ? flags_ |= HBASE_DDL_NO_USER_XN : flags_ &= ~HBASE_DDL_NO_USER_XN); }
 
+ NABoolean returnStatus()
+    { return (flags_ & RETURN_STATUS) != 0; }
+  void setReturnStatus(NABoolean v)
+    { (v ? flags_ |= RETURN_STATUS : flags_ &= ~RETURN_STATUS); }
+
 protected:
   enum Flags 
   { 
@@ -221,7 +252,8 @@ protected:
     CREATE_INDEX_DDL         = 0x0004,
     CREATE_MV_DDL               = 0x0008,
     HBASE_DDL                       = 0x0010,
-    HBASE_DDL_NO_USER_XN  = 0x0020
+    HBASE_DDL_NO_USER_XN  = 0x0020,
+    RETURN_STATUS               = 0x0040
   };
  
   UInt16 flags_;                       // 00-01
@@ -233,6 +265,83 @@ protected:
   };
 };
 #pragma warn(1506)  // warning elimination 
+
+class ComTdbDDLwithStatus : public ComTdbDDL
+{
+  friend class ExDDLTcb;
+  friend class ExDDLwithStatusTcb;
+  friend class ExDDLPrivateState;
+
+public:
+  ComTdbDDLwithStatus()
+  : ComTdbDDL()
+  {}
+
+  ComTdbDDLwithStatus(char * ddl_query,
+	   ULng32 ddl_querylen,
+	   Int16 ddl_querycharset,
+	   char * schemaName,
+	   ULng32 schemaNameLen,
+	   ex_expr * input_expr,
+	   ULng32 input_rowlen,
+	   ex_expr * output_expr,
+	   ULng32 output_rowlen,
+	   ex_cri_desc * work_cri_desc,
+	   const unsigned short work_atp_index,
+           ex_cri_desc * given_cri_desc,
+	   ex_cri_desc * returned_cri_desc,
+           queue_index down,
+           queue_index up,
+           Lng32 num_buffers,
+           ULng32 buffer_size
+           );
+  
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize()        { return (short)sizeof(ComTdbDDLwithStatus); }
+
+  virtual const char *getNodeName() const { return "EX_DDL_WITH_STATUS"; };
+
+  void setGetMDVersion(NABoolean v)
+  {(v ? flags2_ |= GET_MD_VERSION : flags2_ &= ~GET_MD_VERSION); }
+  NABoolean getMDVersion() { return (flags2_ & GET_MD_VERSION) != 0;}
+
+  void setGetSWVersion(NABoolean v)
+  {(v ? flags2_ |= GET_SW_VERSION : flags2_ &= ~GET_SW_VERSION); }
+  NABoolean getSWVersion() { return (flags2_ & GET_SW_VERSION) != 0;}
+
+  void setMDupgrade(NABoolean v)
+  {(v ? flags2_ |= MD_UPGRADE : flags2_ &= ~MD_UPGRADE); }
+  NABoolean getMDupgrade() { return (flags2_ & MD_UPGRADE) != 0;}
+
+  void setMDcleanup(NABoolean v)
+  {(v ? flags2_ |= MD_CLEANUP : flags2_ &= ~MD_CLEANUP); }
+  NABoolean getMDcleanup() { return (flags2_ & MD_CLEANUP) != 0;}
+
+  void setCheckOnly(NABoolean v)
+  {(v ? flags2_ |= CHECK_ONLY : flags2_ &= ~CHECK_ONLY); }
+  NABoolean getCheckOnly() { return (flags2_ & CHECK_ONLY) != 0;}
+
+  void setReturnDetails(NABoolean v)
+  {(v ? flags2_ |= RETURN_DETAILS : flags2_ &= ~RETURN_DETAILS); }
+  NABoolean getReturnDetails() { return (flags2_ & RETURN_DETAILS) != 0;}
+
+protected:
+  enum Flags 
+  { 
+    GET_MD_VERSION          = 0x0001,
+    GET_SW_VERSION          = 0x0002,
+    MD_UPGRADE                 = 0x0004,
+    MD_CLEANUP                 = 0x0008,
+    CHECK_ONLY                 = 0x0010,
+    RETURN_DETAILS           = 0x0020
+  };
+ 
+  UInt16 flags2_;                       // 00-01
+  char fillersComTdbDDL_[30];          // 02-31
+
+};
 
 ////////////////////////////////////////////////////////////////////
 // class ComTdbProcessVolatileTable

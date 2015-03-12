@@ -33,6 +33,7 @@
  */
 
 #include "CmpSeabaseDDLincludes.h"
+#include "CmpSeabaseDDLcleanup.h"
 #include "RelExeUtil.h"
 #include "ControlDB.h"
 #include "NumericType.h"
@@ -1331,6 +1332,8 @@ short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext)
   Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
   
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
+
+  SQL_EXEC_SetParserFlagsForExSqlComp_Internal(ALLOW_SPECIALTABLETYPE);
 
   return 0;
 }
@@ -2642,7 +2645,8 @@ short CmpSeabaseDDL::existsInSeabaseMDTable(
                                           const char * objName,
                                           const ComObjectType objectType,
                                           NABoolean checkForValidDef,
-                                          NABoolean checkForValidHbaseName)
+                                          NABoolean checkForValidHbaseName,
+                                          NABoolean returnInvalidStateError)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -2693,7 +2697,7 @@ short CmpSeabaseDDL::existsInSeabaseMDTable(
                 catName, quotedSchName.data(), quotedObjName.data(),
                 cfvd);
   else
-    str_sprintf(buf, "select count(*) from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
+    str_sprintf(buf, "select count(*) from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' %s ",
                 getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                 catName, quotedSchName.data(), quotedObjName.data(), objectTypeLit,
                 cfvd);
@@ -2709,6 +2713,30 @@ short CmpSeabaseDDL::existsInSeabaseMDTable(
 
   if (rowCount > 0)
     return 1; // exists
+  else if (returnInvalidStateError)
+    {
+      NABoolean validDef = FALSE;
+      cliRC = getObjectValidDef(cliInterface,  
+                                catName, schName, objName,
+                                objectType,
+                                validDef);
+      if (cliRC < 0)
+        return -1;
+
+      if ((cliRC == 1) && (NOT validDef)) // found and not valid
+        {
+          // invalid object, return error.
+          NAString extTableName = NAString(catName) + "." + NAString(schName) + "."
+            + NAString(objName);
+          CmpCommon::diags()->clear();
+          *CmpCommon::diags() << DgSqlCode(-4254)
+                              << DgString0(extTableName);
+          
+          return -1;
+        }
+
+      return 0; // does not exist
+    }
   else
     return 0; // does not exist
 }
@@ -2774,6 +2802,101 @@ Int64 CmpSeabaseDDL::getObjectTypeandOwner(
 }
 
 
+short CmpSeabaseDDL::getObjectName(
+                                         ExeCliInterface *cliInterface,
+                                         Int64 objUID,
+                                         NAString &catName,
+                                         NAString &schName,
+                                         NAString &objName,
+                                         char * outObjType,
+                                         NABoolean lookInObjects,
+                                         NABoolean lookInObjectsIdx)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  char buf[4000];
+
+  ExeCliInterface cqdCliInterface(STMTHEAP);
+
+  if (lookInObjectsIdx)
+    str_sprintf(buf, "select catalog_name, schema_name, object_name, object_type from table(index_table %s.\"%s\".%s) where \"OBJECT_UID@\" = %Ld ",
+                getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS_UNIQ_IDX,
+                objUID);
+  else
+    {
+      str_sprintf(buf, "select catalog_name, schema_name, object_name, object_type from %s.\"%s\".%s where object_uid = %Ld ",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                  objUID);
+    }
+
+  if (lookInObjects)
+    {
+      char shapeBuf[1000];
+      str_sprintf(shapeBuf, "control query shape scan (path '%s.\"%s\".%s')",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS) ;
+      if (cqdCliInterface.setCQS(shapeBuf))
+        {
+          cqdCliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+    }
+
+  cliRC = cliInterface->fetchRowsPrologue(buf, TRUE/*no exec*/);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+    }
+
+  if (lookInObjects)
+    {
+      cqdCliInterface.resetCQS();
+    }
+
+  if (cliRC < 0)
+    {
+      return -1;
+    }
+
+  cliRC = cliInterface->clearExecFetchClose(NULL, 0);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  if (cliRC == 100) // did not find the row
+    {
+      *CmpCommon::diags() << DgSqlCode(-1389) << DgString0(objName);
+
+      return -1389;
+    }
+
+  char * ptr = NULL;
+  Lng32 len = 0;
+  cliInterface->getPtrAndLen(1, ptr, len);
+  catName = "";
+  catName.append(ptr, len);
+
+  cliInterface->getPtrAndLen(2, ptr, len);
+  schName = "";
+  schName.append(ptr, len);
+
+  cliInterface->getPtrAndLen(3, ptr, len);
+  objName = "";
+  objName.append(ptr, len);
+
+  if (outObjType)
+    {
+      cliInterface->getPtrAndLen(4, ptr, len);
+      str_cpy_and_null(outObjType, ptr, len, '\0', ' ', TRUE);
+    }
+
+  cliInterface->fetchRowsEpilogue(NULL, TRUE);
+
+  return 0;
+}
+
 Int64 CmpSeabaseDDL::getObjectUID(
                                    ExeCliInterface *cliInterface,
                                    const char * catName,
@@ -2781,7 +2904,8 @@ Int64 CmpSeabaseDDL::getObjectUID(
                                    const char * objName,
                                    const char * inObjType,
                                    const char * inObjTypeStr,
-                                   char * outObjType)
+                                   char * outObjType,
+                                   NABoolean lookInObjectsIdx)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -2793,20 +2917,34 @@ Int64 CmpSeabaseDDL::getObjectUID(
 
   char buf[4000];
   if (inObjType)
-    str_sprintf(buf, "select object_uid, object_type from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' ",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                catName, quotedSchName.data(), quotedObjName.data(),
-                inObjType);
+    {
+      if (lookInObjectsIdx)
+        str_sprintf(buf, "select \"OBJECT_UID@\", object_type from table(index_table %s.\"%s\".%s) where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' ",
+                    getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS_UNIQ_IDX,
+                    catName, quotedSchName.data(), quotedObjName.data(),
+                    inObjType);
+      else
+        str_sprintf(buf, "select object_uid, object_type from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' ",
+                    getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                    catName, quotedSchName.data(), quotedObjName.data(),
+                    inObjType);
+    }
   else if (inObjTypeStr)
     str_sprintf(buf, "select object_uid, object_type from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and ( %s ) ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                 catName, quotedSchName.data(), quotedObjName.data(),
                 inObjTypeStr);
-  else
-    str_sprintf(buf, "select object_uid, object_type from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' ",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                catName, quotedSchName.data(), quotedObjName.data());
-    
+  else // inObjType == NULL
+    {
+      if (lookInObjectsIdx)
+        str_sprintf(buf, "select \"OBJECT_UID@\", object_type from table(index_table %s.\"%s\".%s) where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' ",
+                    getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS_UNIQ_IDX,
+                    catName, quotedSchName.data(), quotedObjName.data());
+      else
+      str_sprintf(buf, "select object_uid, object_type from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' ",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                  catName, quotedSchName.data(), quotedObjName.data());
+    }
   cliRC = cliInterface->fetchRowsPrologue(buf, TRUE/*no exec*/);
   if (cliRC < 0)
     {
@@ -2852,7 +2990,8 @@ Int64 CmpSeabaseDDL::getObjectUIDandOwners(
                                    const ComObjectType objectType,
                                    Int32 & objectOwner,
                                    Int32 & schemaOwner,
-                                   bool reportErrorNow )
+                                   bool reportErrorNow,
+                                   NABoolean checkForValidDef)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -2865,11 +3004,16 @@ Int64 CmpSeabaseDDL::getObjectUIDandOwners(
   
   strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objectType),2);
 
+  char cfvd[100];
+  strcpy(cfvd, " ");
+  if (checkForValidDef)
+    strcpy(cfvd, " and valid_def = 'Y' ");
+
   char buf[4000];
-  str_sprintf(buf, "select object_uid, object_owner, schema_owner from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' ",
-            getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+  str_sprintf(buf, "select object_uid, object_owner, schema_owner from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' %s ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedObjName.data(),
-              objectTypeLit);
+              objectTypeLit, cfvd);
     
   cliRC = cliInterface->fetchRowsPrologue(buf, TRUE/*no exec*/);
   if (cliRC < 0)
@@ -2934,8 +3078,13 @@ short CmpSeabaseDDL::getObjectOwner(ExeCliInterface *cliInterface,
   stmt += schName;  
   stmt += "' and object_name = '";
   stmt += objName ;
-  stmt += "' and object_type = '";
-  stmt += objType;
+
+  if (objType)
+    {
+      stmt += "' and object_type = '";
+      stmt += objType;
+    }
+
   stmt += "' for read uncommitted access"; 
 
   cliRC = cliInterface->fetchRowsPrologue(stmt.data(), TRUE/*no exec*/);
@@ -2972,6 +3121,65 @@ short CmpSeabaseDDL::getObjectOwner(ExeCliInterface *cliInterface,
   cliInterface->fetchRowsEpilogue(NULL, TRUE);
 
   return 0;
+}
+
+short CmpSeabaseDDL::getObjectValidDef(ExeCliInterface *cliInterface,
+                                       const char * catName,
+                                       const char * schName,
+                                       const char * objName,
+                                       const ComObjectType objectType,
+                                       NABoolean &validDef)
+{
+  Int32 retcode = 0;
+  Int32 cliRC = 0;
+
+  char buf[4000];
+
+  NAString quotedSchName;
+  ToQuotedString(quotedSchName, NAString(schName), FALSE);
+  NAString quotedObjName;
+  ToQuotedString(quotedObjName, NAString(objName), FALSE);
+ 
+  char objectTypeLit[3] = {0};
+  strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objectType),2);
+
+  if (objectType == COM_UNKNOWN_OBJECT)
+    str_sprintf(buf, "select valid_def from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' ",
+                getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                catName, quotedSchName.data(), quotedObjName.data());
+  else
+    str_sprintf(buf, "select valid_def from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' ",
+                getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                catName, quotedSchName.data(), quotedObjName.data(),
+                objectTypeLit);
+    
+  cliRC = cliInterface->fetchRowsPrologue(buf, TRUE/*no exec*/);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  cliRC = cliInterface->clearExecFetchClose(NULL, 0);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  if (cliRC == 100) // did not find the row
+    {
+      return 0;
+    }
+
+  char * ptr = NULL;
+  Lng32 len = 0;
+  cliInterface->getPtrAndLen(1, ptr, len);
+  validDef =  ((memcmp(ptr, COM_YES_LIT, 1) == 0) ? TRUE : FALSE);
+
+  cliInterface->fetchRowsEpilogue(NULL, TRUE);
+
+  return 1;
 }
 
 Int64 CmpSeabaseDDL::getConstraintOnIndex(
@@ -4202,6 +4410,46 @@ short CmpSeabaseDDL::updateObjectAuditAttr(
   return 0;
 }
 
+void CmpSeabaseDDL::cleanupObjectAfterError(
+                                            ExeCliInterface &cliInterface,
+                                            const NAString &catName, 
+                                            const NAString &schName,
+                                            const NAString &objName,
+                                            const ComObjectType objectType)
+{
+  Lng32 cliRC = 0;
+  char buf[1000];
+
+  // save current diags area
+  ComDiagsArea * tempDiags = ComDiagsArea::allocate(heap_);
+  tempDiags->mergeAfter(*CmpCommon::diags());
+  
+  CmpCommon::diags()->clear();
+  if (objectType == COM_BASE_TABLE_OBJECT)
+    str_sprintf(buf, "cleanup table \"%s\".\"%s\".\"%s\" ",
+                catName.data(), schName.data(), objName.data());
+  else if (objectType == COM_INDEX_OBJECT)
+    str_sprintf(buf, "cleanup index \"%s\".\"%s\".\"%s\" ",
+                catName.data(), schName.data(), objName.data());
+  else 
+    str_sprintf(buf, "cleanup object \"%s\".\"%s\".\"%s\" ",
+                catName.data(), schName.data(), objName.data());
+    
+  cliRC = cliInterface.executeImmediate(buf);
+  CmpCommon::diags()->clear();
+  CmpCommon::diags()->mergeAfter(*tempDiags);
+
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    }
+
+  tempDiags->clear();
+  tempDiags->deAllocate();
+
+  return;
+}
+
 short CmpSeabaseDDL::buildColInfoArray(
                                        ElemDDLColDefArray *colArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
@@ -4980,10 +5228,10 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
             return -1;
           }
 
-            if (!deletePrivMgrInfo ( extTableName, objUID, objType )) 
-              {
-                return -1;
-              }
+        if (!deletePrivMgrInfo ( extTableName, objUID, objType )) 
+          {
+            return -1;
+          }
       }
 
       if (deleteFromSeabaseMDTable(&cliInterface, 
@@ -5964,7 +6212,6 @@ short CmpSeabaseDDL::dropSeabaseObjectsFromHbase(const char * pattern)
   if (ehi == NULL)
     return -1;
 
-
   short retcode = ehi->dropAll(pattern, FALSE);
 
   if (retcode < 0)
@@ -5993,6 +6240,7 @@ void CmpSeabaseDDL::dropSeabaseMD()
       *CmpCommon::diags() << DgSqlCode(-1393);
       return;
     }
+
   // drop all objects that match the pattern "TRAFODION.*"
   dropSeabaseObjectsFromHbase("TRAFODION\\..*");
 
@@ -6564,7 +6812,8 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
 }
 
 short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
-                                       NAString &currCatName, NAString &currSchName)
+                                       NAString &currCatName, NAString &currSchName,
+                                       CmpDDLwithStatusInfo *dws)
 {
   Lng32 cliRC = 0;
   ExeCliInterface cliInterface(STMTHEAP);
@@ -6582,18 +6831,19 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 
   NABoolean xnWasStartedHere = FALSE;
   NABoolean ignoreUninitTrafErr = FALSE;
-  if ((ddlExpr->dropHbase()) ||
-      (ddlExpr->initHbase()) ||
-      (ddlExpr->createMDViews()) ||
-      (ddlExpr->dropMDViews()) ||
-      (ddlExpr->addSeqTable()) ||
-      (ddlExpr->createRepos()) ||
-      (ddlExpr->dropRepos()) ||
-      (ddlExpr->upgradeRepos()) ||
-      (ddlExpr->addSchemaObjects()) ||
-      (ddlExpr->updateVersion()))
+  if ((ddlExpr) &&
+      ((ddlExpr->dropHbase()) ||
+       (ddlExpr->initHbase()) ||
+       (ddlExpr->createMDViews()) ||
+       (ddlExpr->dropMDViews()) ||
+       (ddlExpr->addSeqTable()) ||
+       (ddlExpr->createRepos()) ||
+       (ddlExpr->dropRepos()) ||
+       (ddlExpr->upgradeRepos()) ||
+       (ddlExpr->addSchemaObjects()) ||
+       (ddlExpr->updateVersion())))
     ignoreUninitTrafErr = TRUE;
-
+  
   // if metadata views are being created during initialize trafodion, then this
   // context will be uninitialized.
   // Check for that and ignore uninitialize traf error.
@@ -6640,6 +6890,22 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       return -1;
     }
   
+  if (dws)
+    {
+      if (dws->getMDcleanup())
+        {
+          StmtDDLCleanupObjects * co = 
+            (ddlNode ? ddlNode->castToStmtDDLNode()->castToStmtDDLCleanupObjects()
+             : NULL);
+
+          CmpSeabaseMDcleanup cmpSBDC(STMTHEAP);
+
+           cmpSBDC.cleanupObjects(co, currCatName, currSchName, dws);
+
+           return 0;
+         }
+    }
+
   NABoolean startXn = TRUE;
   if ((ddlExpr->dropHbase()) ||
       (ddlExpr->purgedataHbase()) ||
@@ -6656,14 +6922,13 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       (ddlExpr->updateVersion()) ||
       ((ddlNode) &&
        ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
+        (ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
         (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
         (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_SET_SG_OPTION) ||
         (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
         (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
-        ((ddlNode->getOperatorType() == DDL_CREATE_TABLE) &&
-         ((ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable()->getAddConstraintUniqueArray().entries() > 0) ||
-          (ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable()->getAddConstraintRIArray().entries() > 0) ||
-          (ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable()->getAddConstraintCheckArray().entries() > 0))))))
+        (ddlNode->getOperatorType() == DDL_CREATE_TABLE) ||
+        (ddlNode->getOperatorType() == DDL_DROP_TABLE))))
     {
       // transaction will be started and commited in called methods.
       startXn = FALSE;
@@ -7076,6 +7341,15 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            
            alterSeabaseTableAlterIdentityColumn(alterIdentityColNode, 
                                                 currCatName, currSchName);
+        }
+       else if (ddlNode->getOperatorType() ==  DDL_CLEANUP_OBJECTS)
+         {
+           StmtDDLCleanupObjects * co = 
+             ddlNode->castToStmtDDLNode()->castToStmtDDLCleanupObjects();
+
+           CmpSeabaseMDcleanup cmpSBDC(STMTHEAP);
+
+           cmpSBDC.cleanupObjects(co, currCatName, currSchName, dws);
         }
        
     } // else

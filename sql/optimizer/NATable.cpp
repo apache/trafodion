@@ -7866,24 +7866,6 @@ NABoolean NATableDB::isSQInternalStoredProcedure(CorrName& corrName)
 
 NABoolean NATableDB::isSQUmdTable(CorrName& corrName)
 {
-  static const char* sqUmdTableNames[] = {
-    "HISTOGRAMS", 
-    "HISTOGRAM_INTERVALS", 
-    "HISTOGRAMS_FREQ_VALS",
-    "MVS_UMD",
-    "MVS_TABLE_INFO_UMD",
-    "MVS_USED_UMD"
-  };
-
-  const char* tblName = corrName.getQualifiedNameObj().getObjectName();
-
-  if (tblName[0] == 'H' || tblName[0] == 'M') {
-     for (Int32 i=0; i<sizeof(sqUmdTableNames)/sizeof(const char*); i++ ) {
-        if ( strcmp(tblName, sqUmdTableNames[i]) == 0 )
-          return TRUE;
-     }
-  }
-
   return FALSE;
 }
   
@@ -8046,7 +8028,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	  isSeabase = TRUE;
 	  isSeabaseMD = TRUE;
 	}
-      else 
+      else if (! inTableDescStruct)
         {
           ComObjectType objectType = COM_BASE_TABLE_OBJECT;
           isSeabase = TRUE;
@@ -8083,6 +8065,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
                                 corrName.getQualifiedNameObj().getObjectName(),
                                 objectType);
         }
+
       if (inTableDescStruct)
          tableDesc = inTableDescStruct;
 

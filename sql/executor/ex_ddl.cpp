@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -55,7 +55,23 @@
 
 ex_tcb * ExDDLTdb::build(ex_globals * glob)
 {
-  ExDDLTcb * ddl_tcb = new(glob->getSpace()) ExDDLTcb(*this, glob);
+  ExDDLTcb * ddl_tcb = NULL;
+
+  if (returnStatus())
+    ddl_tcb = new(glob->getSpace()) ExDDLwithStatusTcb(*this, glob);
+  else
+    ddl_tcb = new(glob->getSpace()) ExDDLTcb(*this, glob);
+  
+  ddl_tcb->registerSubtasks();
+
+  return (ddl_tcb);
+}
+
+ex_tcb * ExDDLwithStatusTdb::build(ex_globals * glob)
+{
+  ExDDLTcb * ddl_tcb = NULL;
+
+  ddl_tcb = new(glob->getSpace()) ExDDLwithStatusTcb(*this, glob);
   
   ddl_tcb->registerSubtasks();
 
@@ -173,6 +189,7 @@ short ExDDLTcb::work()
 
       ExSqlComp *cmp = NULL;
       ExSqlComp::ReturnStatus cmpStatus;
+
       // the dummyReply is moved up because otherwise the compiler would complain about
       // initialization of variables afer goto statements.
       char* dummyReply = NULL;
@@ -182,17 +199,14 @@ short ExDDLTcb::work()
       ExDDLPrivateState & pstate =
 	*((ExDDLPrivateState*) pentry_down->pstate);
 
-#pragma nowarn(1506)   // warning elimination 
-     CmpCompileInfo c(ddlTdb().query_, ddlTdb().queryLen_ + 1, (Lng32)ddlTdb().queryCharSet_,
-#pragma warn(1506)  // warning elimination 
-		      NULL, 0,
-#pragma nowarn(1506)   // warning elimination 
-		      ddlTdb().objectName_, ddlTdb().objectNameLen_+1,
-		      masterGlob->getStatement()->recompControlInfo(), 
-		      masterGlob->getStatement()->recompControlInfoLen(),
-		      0, 0);
-#pragma warn(1506)  // warning elimination 
-
+      CmpCompileInfo c(ddlTdb().query_, ddlTdb().queryLen_ + 1, 
+                       (Lng32)ddlTdb().queryCharSet_,
+                       NULL, 0,
+                       ddlTdb().objectName_, ddlTdb().objectNameLen_+1,
+                       masterGlob->getStatement()->recompControlInfo(), 
+                       masterGlob->getStatement()->recompControlInfoLen(),
+                       0, 0);
+      
       size_t dataLen = c.getLength();
       char * data = new(getHeap()) char[dataLen];
 
@@ -231,9 +245,7 @@ short ExDDLTcb::work()
       if (ddlTdb().inputExpr_)
 	{
 	  pool_->get_free_tuple(workAtp_->getTupp(ddlTdb().workAtpIndex_),
-#pragma nowarn(1506)   // warning elimination 
 				ddlTdb().inputRowlen_);
-#pragma warn(1506)  // warning elimination 
 	  if (ddlTdb().inputExpr_->eval(pentry_down->getAtp(), workAtp_) == ex_expr::EXPR_ERROR)
  	    {
 	      // Using ExSqlComp::ERROR for uniformity in handleErrors.
@@ -399,9 +411,408 @@ short ExDDLTcb::work()
 	workAtp_->release();
 
     } // while 
-#pragma nowarn(203)   // warning elimination 
-	return WORK_OK;  // NT_PORT ( bd 10/17/96 )
-#pragma warn(203)  // warning elimination 
+  return WORK_OK;
+}
+
+ExDDLwithStatusTcb::ExDDLwithStatusTcb(const ComTdbDDL & ddl_tdb,
+                                       ex_globals * glob)
+  : ExDDLTcb(ddl_tdb, glob),
+    ddlStep_(0),
+    ddlSubstep_(0),
+    cmp_(NULL),
+    replyBuf_(NULL),
+    replyBufLen_(0),
+    mdi_(NULL),
+    replyDWS_(NULL),
+    data_(NULL),
+    dataLen_(0),
+    callEmbeddedCmp_(FALSE),
+    diagsArea_(NULL),
+    step_(NOT_STARTED_)
+{
+  diagsArea_ = ComDiagsArea::allocate(getHeap());
+}
+
+
+//////////////////////////////////////////////////////
+// work() for ExDDLTcb
+//////////////////////////////////////////////////////
+short ExDDLwithStatusTcb::work()
+{
+  short rc = 0;
+
+  // Get the globals stucture of the master executor.
+  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+  ContextCli *currContext = masterGlob->getStatement()->getContext();
+  ExTransaction *ta = currContext->getTransaction();
+
+  short indexToCmp = 0;
+
+  // If there are no master globals, this is not the master executor.
+  // The optimizer should ensure that this node executes in the master.
+  ex_assert(masterGlob,"ExDDLTcb : No master globals Available\n");
+
+  ComDiagsArea *cpDiagsArea = NULL;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+  
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+  
+  ExSqlComp::ReturnStatus cmpStatus;
+
+  char* dummyReply = NULL;
+  ULng32 dummyLength;
+  
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExDDLPrivateState & pstate =
+    *((ExDDLPrivateState*) pentry_down->pstate);
+  
+  while(1)
+    {
+      switch (step_)
+	{
+	case NOT_STARTED_:
+	  {
+            cmp_ = NULL;
+
+	    ddlStep_ = 0;
+	    ddlSubstep_ = 0;
+	    
+	    startTime_ = 0;
+	    endTime_ = 0;
+
+            numEntries_ = 0;
+            currEntry_ = 0;
+            currPtr_ = NULL;
+
+            if (ddlTdb().hbaseDDL())
+              {
+                if (ddlTdb().hbaseDDLNoUserXn())
+                  {
+                    // this seabase DDL cannot run under a user transaction or if autocommit
+                    // is off.
+                    if ((!ta->autoCommit()) || (ta->xnInProgress() &&
+                                                (NOT ta->implicitXn())))
+                      {
+                        if (cpDiagsArea == NULL)
+                          cpDiagsArea = ComDiagsArea::allocate(getHeap());
+                        
+                        if (ta->xnInProgress())
+                          *cpDiagsArea << DgSqlCode(-20123)
+                                       << DgString0("This DDL operation");
+                        else
+                          *cpDiagsArea << DgSqlCode(-20124)
+                                       << DgString0("This DDL");
+                        
+                        handleErrors (pentry_down, cpDiagsArea, ExSqlComp::ERROR);
+                        step_ = HANDLE_ERROR_;
+                        break;
+                      }
+                  }
+              } // hbaseddl
+            
+            step_ = SETUP_INITIAL_REQ_;
+          }
+          break;
+
+        case SETUP_INITIAL_REQ_:
+          {
+            mdi_ = new(getHeap()) 
+              CmpDDLwithStatusInfo(ddlTdb().query_, ddlTdb().queryLen_ + 1, 
+                                   (Lng32)ddlTdb().queryCharSet_,
+                                   ddlTdb().objectName_, ddlTdb().objectNameLen_+1,
+                                   masterGlob->getStatement()->recompControlInfo(), 
+                                   masterGlob->getStatement()->recompControlInfoLen());
+
+            if (ddlTdb().getMDVersion())
+              mdi_->setGetMDVersion(TRUE);
+            else if (ddlTdb().getSWVersion())
+              mdi_->setGetSWVersion(TRUE);
+            else if (ddlTdb().getMDupgrade())
+              mdi_->setMDupgrade(TRUE);
+            else if (ddlTdb().getMDcleanup())
+              {
+                mdi_->setMDcleanup(TRUE);
+                if (ddlTdb().getCheckOnly())
+                  mdi_->setCheckOnly(TRUE);
+                if (ddlTdb().getReturnDetails())
+                  mdi_->setReturnDetails(TRUE);
+              }
+            mdi_->setHbaseDDL(TRUE);            
+
+            if (ddlTdb().inputExpr_)
+              {
+                pool_->get_free_tuple(workAtp_->getTupp(ddlTdb().workAtpIndex_),
+                                      ddlTdb().inputRowlen_);
+                if (ddlTdb().inputExpr_->eval(pentry_down->getAtp(), workAtp_) 
+                    == ex_expr::EXPR_ERROR)
+                  {
+                    // Using ExSqlComp::ERROR for uniformity in handleErrors.
+                    handleErrors (pentry_down, pentry_down->getDiagsArea(), 
+                                  ExSqlComp::ERROR);
+                    step_ = HANDLE_ERROR_;
+                    break;
+                  }
+              }
+
+           // Call either the embedded arkcmp, if exists, or external arkcmp
+            // but not both
+            if ( currContext->isEmbeddedArkcmpInitialized() &&
+                 currContext->getSessionDefaults()->callEmbeddedArkcmp() 
+                 && ddlTdb().hbaseDDL() &&
+                 CmpCommon::context() && (CmpCommon::context()->getRecursionLevel() 
+                                          == 0))
+              {
+                callEmbeddedCmp_ = TRUE;
+              }
+            else
+              {
+                callEmbeddedCmp_ = FALSE;
+              }
+
+            // TEMP, until embedded call is fixed to handle returning status.
+            callEmbeddedCmp_ = FALSE;
+
+            step_ = SETUP_NEXT_STEP_;
+         }
+          break;
+          
+        case SETUP_NEXT_STEP_:
+          {
+            if (data_)
+              {
+                NADELETEBASIC(data_, getHeap());
+              }
+
+            dataLen_ = mdi_->getLength();
+            data_ = new(getHeap()) char[dataLen_];
+
+            mdi_->pack(data_);
+ 
+            if (callEmbeddedCmp_)
+              {
+                step_ = CALL_EMBEDDED_CMP_;
+              }
+            else
+              {
+                step_ = SEND_REQ_TO_CMP_;
+              }
+            }
+          break;
+          
+        case CALL_EMBEDDED_CMP_:
+          {
+            Int32 cmpStatus;
+            
+            if (cpDiagsArea == NULL)
+              cpDiagsArea = ComDiagsArea::allocate(getHeap());
+            cmpStatus = CmpCommon::context()->compileDirect(
+                                                           data_, dataLen_,
+                                                           currContext->exHeap(),
+                                                           ddlTdb().queryCharSet_,
+                                                           EXSQLCOMP::DDL_WITH_STATUS,
+                                                           replyBuf_, replyBufLen_,
+                                                           currContext->getSqlParserFlags(),
+                                                           cpDiagsArea);
+
+            getHeap()->deallocateMemory(data_);
+ 
+            if ((cpDiagsArea) &&
+                ((cpDiagsArea->getNumber(DgSqlCode::WARNING_) > 0) ||
+                 (cpDiagsArea->getNumber(DgSqlCode::ERROR_) > 0)))
+              {
+                getDiagsArea()->mergeAfter(*cpDiagsArea);
+              }
+
+            step_ = PROCESS_REPLY_;
+          }
+          break;
+
+        case SEND_REQ_TO_CMP_:
+          {
+            if (! getArkcmp())
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            cmp_ = getArkcmp();
+            
+            cmpStatus = 
+              cmp_->sendRequest(
+                                EXSQLCOMP::DDL_WITH_STATUS, data_, dataLen_,
+                                TRUE, NULL,
+                                (Lng32)ddlTdb().queryCharSet_,
+                                TRUE, /*resend, if needed*/
+                                masterGlob->getStatement()->getUniqueStmtId(),
+                                masterGlob->getStatement()->getUniqueStmtIdLen());
+
+            if (cmpStatus != ExSqlComp::SUCCESS)
+              {
+                // If its an error don't proceed further.
+                getDiagsArea()->mergeAfter(*cmp_->getDiags());
+                if (cmpStatus == ExSqlComp::ERROR)
+                  {
+                    step_ = HANDLE_ERROR_;
+                    break;
+                  }
+              }
+            
+            cmpStatus = cmp_->getReply(replyBuf_, replyBufLen_, 0, 0, TRUE);
+            if ((cmp_->getDiags()) &&
+                ((cmp_->getDiags()->getNumber(DgSqlCode::WARNING_) > 0) ||
+                 (cmp_->getDiags()->getNumber(DgSqlCode::ERROR_) > 0)))
+              {
+                getDiagsArea()->mergeAfter(*cmp_->getDiags());
+              }
+
+            step_ = PROCESS_REPLY_;
+          }
+          break;
+
+        case PROCESS_REPLY_:
+          {            
+            if (replyBuf_)
+              {
+                if (replyDWS_)
+                  {
+                    NADELETEBASIC(replyDWS_, getHeap());
+                    replyDWS_ = NULL;
+                  }
+                
+                replyDWS_ = (CmpDDLwithStatusInfo*)(new(getHeap()) char[replyBufLen_]);
+                memcpy((char*)replyDWS_, replyBuf_, replyBufLen_);
+                cmp_->getHeap()->deallocateMemory((void*)replyBuf_);
+                
+                replyDWS_->unpack((char*)replyDWS_);
+
+                if (mdi_->computeST())
+                  startTime_ = NA_JulianTimestamp();
+                else if (mdi_->computeET())
+                  endTime_ = NA_JulianTimestamp();
+              }
+            
+            if ((replyDWS_->blackBoxLen() > 0) && (replyDWS_->blackBox()))
+              {
+                Lng32 blackBoxLen = replyDWS_->blackBoxLen();
+                char * blackBox = replyDWS_->blackBox();
+                currPtr_ = blackBox;
+                
+                numEntries_ = *(Int32*)currPtr_;
+                currEntry_ = 0;
+                currPtr_ += sizeof(Int32);
+                
+                step_ = RETURN_DETAILS_;
+              }
+            else
+              step_ = RETURN_STATUS_;
+          }
+          break;
+          
+        case RETURN_STATUS_:
+          {
+	    // if no room in up queue, won't be able to return data/status.
+	    // Come back later.
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+            char buf[1000];
+            if (strlen(replyDWS_->msg()) > 0)
+              {
+                str_sprintf(buf, "%s", replyDWS_->msg());
+                if (moveRowToUpQueue(&qparent_, ddlTdb().tuppIndex(), buf, 0, &rc))
+                  return rc;
+              }
+            
+             if (replyDWS_->endStep())
+              {
+                if (moveRowToUpQueue(&qparent_, ddlTdb().tuppIndex(), " ", 0, &rc))
+                  return rc;
+              }
+            
+             step_ = RETURN_STATUS_END_STEP_;
+            return WORK_RESCHEDULE_AND_RETURN;
+          }
+          break;
+          
+       case RETURN_DETAILS_:
+          {
+	    // if no room in up queue, won't be able to return data/status.
+	    // Come back later.
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+            char buf[1000];
+
+            if (currEntry_ == numEntries_)
+              {
+                step_ = RETURN_STATUS_;
+                break;
+              }
+
+            Int32 currEntrySize = *(Int32*)currPtr_;
+            char * currValue = currPtr_ + sizeof(Int32);
+            if (moveRowToUpQueue(&qparent_, ddlTdb().tuppIndex(), currValue, 0, &rc))
+              return rc;
+
+            currPtr_ += sizeof(Int32);
+            currPtr_ += ROUND4(currEntrySize+1);
+            currEntry_++;
+
+            return WORK_RESCHEDULE_AND_RETURN;
+          }
+          break;
+          
+        case RETURN_STATUS_END_STEP_:
+          {
+            if (replyDWS_->done())
+              {
+                if ((getDiagsArea()) &&
+                    (getDiagsArea()->getNumber(DgSqlCode::ERROR_) > 0))
+                  step_ = HANDLE_ERROR_;
+                else
+                  step_ = DONE_;
+                break;
+              }
+
+            mdi_->init();
+            mdi_->copyStatusInfo(replyDWS_);    
+
+            step_ = SETUP_NEXT_STEP_;
+            return WORK_RESCHEDULE_AND_RETURN;
+          }
+          break;
+          
+        case HANDLE_ERROR_:
+          {
+            if (handleError(&qparent_, getDiagsArea()) == 1)
+              return WORK_OK;
+            
+            step_ = DONE_;
+          }
+          break;
+          
+        case DONE_:
+          {
+            if (handleDone(&qparent_, getDiagsArea()) == 1)
+              return WORK_OK;
+
+            step_ = NOT_STARTED_;
+            
+            return WORK_OK;
+          }
+          break;
+          
+        } // switch
+    } // while
+ 
+  return WORK_OK;
 }
 
 void ExDDLTcb::handleErrors(ex_queue_entry *pentry_down, ComDiagsArea *da, Int32 error)

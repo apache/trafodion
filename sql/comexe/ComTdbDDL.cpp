@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -142,6 +142,43 @@ ComTdbDDL::ComTdbDDL(char * ddl_query,
 
   if (mpRequest)
     flags_ |= SQLMP_RQST;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+//
+// Methods for class ComTdbDDL
+//
+///////////////////////////////////////////////////////////////////////////
+ComTdbDDLwithStatus::ComTdbDDLwithStatus(char * ddl_query,
+                                         ULng32 ddl_querylen,
+                                         Int16 ddl_querycharset,
+                                         char * schemaName,
+                                         ULng32 schemaNameLen,
+                                         ex_expr * input_expr,
+                                         ULng32 input_rowlen,
+                                         ex_expr * output_expr,
+                                         ULng32 output_rowlen,
+                                         ex_cri_desc * work_cri_desc,
+                                         const unsigned short work_atp_index,
+                                         ex_cri_desc * given_cri_desc,
+                                         ex_cri_desc * returned_cri_desc,
+                                         queue_index down,
+                                         queue_index up,
+                                         Lng32 num_buffers,
+                                         ULng32 buffer_size)
+  : ComTdbDDL(ddl_query, ddl_querylen, ddl_querycharset, 
+              schemaName, schemaNameLen,
+              input_expr, input_rowlen,
+              output_expr, output_rowlen,
+              work_cri_desc, work_atp_index,
+              given_cri_desc, returned_cri_desc,
+              down, up, 
+              num_buffers, buffer_size,
+              FALSE),
+    flags2_(0)
+{
+  setNodeType(ComTdb::ex_DDL_WITH_STATUS);
 }
 
 

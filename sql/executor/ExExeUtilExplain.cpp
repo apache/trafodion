@@ -1006,7 +1006,7 @@ void ExExeUtilDisplayExplainTcb::FormatForF()
 	--remaining_width;
       }
     }
-  else if (str_cmp_c(operName_, "INDEX_SCAN") == 0 || str_cmp_c(operName_, "INDEX_SCAN_UNIQUE") == 0 || str_cmp_c(operName_, "SEABASE_INDEX_SCAN") == 0)
+  else if (str_cmp_c(operName_, "INDEX_SCAN") == 0 || str_cmp_c(operName_, "INDEX_SCAN_UNIQUE") == 0 || str_cmp_c(operName_, "TRAFODION_INDEX_SCAN") == 0)
     {
       char* index_loc = str_str(description_, "index");
       char* index_loc_end = str_str(index_loc,"(");
