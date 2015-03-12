@@ -258,7 +258,7 @@ PKG_TAR_UN = "${PKG_PROD}_${SQ_BUILD_TYPE}.tar"
 SRC_PKG_BIN ?= "../${PKG_PROD}-src.bin"
 SRC_PKG_TAR ?= "../${PKG_PROD}-src.tgz"
 
-PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf src/seatrans/hbase-trx
+PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf src/seatrans/hbase-trx hbase_utilities/backup_and_restore
 
 PKG_BIN_OBJS += trafci
 
