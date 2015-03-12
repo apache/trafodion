@@ -54,8 +54,8 @@ public class trxTest98 {
       desc2.addFamily(new HColumnDescriptor("cf1"));
       hbadmin.createTable(desc2);
       
-      ttable  = new TransactionalTable(conf, "table1");
-      ttable2 = new TransactionalTable(conf, "table2");
+      ttable  = new TransactionalTable("table1");
+      ttable2 = new TransactionalTable("table2");
       
       TransactionState ts = tm.beginTransaction();
       Put p1 = new Put(Bytes.toBytes("row1"));

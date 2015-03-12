@@ -375,14 +375,13 @@ public class SequenceFileWriter {
       throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
   {
     logger.debug("SequenceFileWriter.init(" + zkServers + ", " + zkPort + ") called.");
-    if (conf != null)
-      return true;
-    
-    conf = HBaseConfiguration.create();
-    if (zkServers.length() > 0)
-      conf.set("hbase.zookeeper.quorum", zkServers);
-    if (zkPort.length() > 0)
-      conf.set("hbase.zookeeper.property.clientPort", zkPort);
+    if (conf != null)		
+       return true;		
+    conf = HBaseConfiguration.create();		
+    if (zkServers.length() > 0)		
+      conf.set("hbase.zookeeper.quorum", zkServers);		
+    if (zkPort.length() > 0)		
+      conf.set("hbase.zookeeper.property.clientPort", zkPort);		
     HBaseAdmin.checkHBaseAvailable(conf);
     return true;
   }

@@ -32,7 +32,6 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
@@ -109,11 +108,7 @@ public class HBulkLoadClient
   public HBulkLoadClient(Configuration conf) throws IOException
   {
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.HBulkLoadClient(...) called.");
-    if (conf == null)
-    {
-      throw new IOException("config not set");
-    }
-    config = HBaseConfiguration.create(conf);
+    config = conf;
   }
 
   public String getLastError() {
