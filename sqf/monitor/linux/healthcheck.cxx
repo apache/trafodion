@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -527,7 +527,7 @@ void CHealthCheck::processTimerEvent()
 
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], Quiesce timeout, node going down\n", method_name);
-        mon_log_write(MON_HEALTHCHECK_TEVENT_3, SQ_LOG_ERR, buf);
+        mon_log_write(MON_HEALTHCHECK_TEVENT_3, SQ_LOG_WARNING, buf);
 
         scheduleNodeDown(); // bring the node down
     }
@@ -607,7 +607,7 @@ void CHealthCheck::startQuiesce()
     char buf[MON_STRING_BUF_SIZE];
     sprintf(buf, "[%s], Quiesce req queued. Send pids = %d, Exit pids = %d\n", 
             method_name, MyNode->getNumQuiesceSendPids(), MyNode->getNumQuiesceExitPids());
-    mon_log_write(MON_HEALTHCHECK_QUIESCE_1, SQ_LOG_ERR, buf);
+    mon_log_write(MON_HEALTHCHECK_QUIESCE_1, SQ_LOG_WARNING, buf);
 
     TRACE_EXIT;
 }
@@ -636,7 +636,7 @@ void CHealthCheck::scheduleNodeDown()
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], Final node down req scheduled. QuiesceSendPids = %d, QuiesceExitPids = %d\n", 
                 method_name, MyNode->getNumQuiesceSendPids(), MyNode->getNumQuiesceExitPids());
-        mon_log_write(MON_HEALTHCHECK_SCH_1, SQ_LOG_ERR, buf);
+        mon_log_write(MON_HEALTHCHECK_SCH_1, SQ_LOG_WARNING, buf);
     }
 
     TRACE_EXIT; 

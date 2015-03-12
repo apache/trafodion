@@ -476,7 +476,7 @@ export SQ_LUNMGR_VERBOSITY=1
 export SQ_STARTUP=r
 
 # Alternative logging capability in monitor
-export SQ_MON_ALTLOG=1
+export SQ_MON_ALTLOG=0
 
 # Monitor sync thread responsiveness timeout
 # default 15 mins

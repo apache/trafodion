@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@
 
 using namespace std;
 
+#include "CommonLogger.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "common/evl_sqlog_eventnum.h"
 #include "lock.h"
@@ -43,11 +44,11 @@ int mon_log_write(int event_type, posix_sqlog_severity_t severity, char *evl_buf
 
 void mem_log_write(int eventType, int value1 = 0, int value2 = 0);
 
-// Used by SQWatchdog process (does not use Sealog by intention )
-int wdt_log_write(int event_type, posix_sqlog_severity_t severity, char *evl_buf);
+// Used by monitor primitive processes
+int monproc_log_write(int event_type, posix_sqlog_severity_t severity, char *evl_buf);
 
-// Used by monitor and SQWatchdog process (does not use Sealog by intention )
-int snmp_log_write(int event_type, const char *evl_buf);
+// Used by monitor and SQWatchdog process
+int snmp_log_write(int event_type, char *evl_buf);
 
 // header of the memory log buffer
 typedef struct memLogHeader
@@ -69,22 +70,38 @@ typedef struct memLogEntry
 class CMonLog
 {
 public:
-    CMonLog( const char *logFilePrefix );
+    CMonLog( const char *log4cppConfig
+           , const char *log4cppComponent
+           , const char *logFilePrefix
+           , int pnid
+           , int nid
+           , int pid
+           , const char *processName );
     ~CMonLog();
+
+    logLevel getLogLevel( posix_sqlog_severity_t severity );
 
     void memLogWrite(int event_type, int value1 = 0, int value2 = 0);
 
     void writeAltLog(int event_type, posix_sqlog_severity_t severity, char *msg);
 
-    void writeSnmpLog(int event_type, const char *msg);
+    void writeMonLog(int eventType, posix_sqlog_severity_t severity, char *msg);
 
-    int getLogFileNum();
+    void writeMonProcLog(int eventType, posix_sqlog_severity_t severity, char *msg);
+
+    void writeSnmpAltLog(int event_type, const char *msg);
+
+    inline int getLogFileNum() { return logFileNum_; }
 
     void setLogFileNum(int value);
 
-    void setLogFileType(int value);
+    void setLogFileType(int value) { logFileType_ = value; }
 
-    void setUseAltLog(bool value);
+    inline void setPNid(int pnid) { myPNid_ = pnid; }
+
+    inline int isUseAltLog() { return useAltLog_; }
+
+    inline void setUseAltLog(bool value) { useAltLog_ = value; }
 
     void setupInMemoryLog();
 
@@ -117,6 +134,24 @@ public:
 
 private:
 
+    // log4cpp configuration file name
+    string log4cppConfig_;
+
+    // log4cpp component
+    string log4cppComponent_;
+
+    // Physical Node Id
+    int myPNid_;
+
+    // Node Id
+    int myNid_;
+
+    // Process' Id
+    int myPid_;
+
+    // Process Name
+    string myProcessName_;
+
     // Monitor's start time. This is set when monitor starts.
     struct timeval startTime_;
 
@@ -127,7 +162,7 @@ private:
     // This helps in starting a new log file in real time.
     int logFileNum_;
 
-    // Log file name prefix
+    // Alternate Log file name prefix
     string logFileNamePrefix_;
 
     // Type of log file - just log, log with persist option etc. 

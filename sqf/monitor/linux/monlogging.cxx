@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 using namespace std;
 
 #include <stdlib.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <linux/unistd.h>
 #include <limits.h>
@@ -47,7 +48,14 @@ extern CMonLog *SnmpLog;
 
 int mon_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
-    MonLog->writeAltLog(eventType, severity, msg);
+    if (MonLog->isUseAltLog())
+    {
+        MonLog->writeAltLog(eventType, severity, msg);
+    }
+    else
+    {
+        MonLog->writeMonLog(eventType, severity, msg);
+    }
 
     if (trace_settings & TRACE_EVLOG_MSG)
     {
@@ -58,15 +66,29 @@ int mon_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
     return(0);
 }
 
-int wdt_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
+int monproc_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
-    MonLog->writeAltLog(eventType, severity, msg);
+    if (MonLog->isUseAltLog())
+    {
+        MonLog->writeAltLog(eventType, severity, msg);
+    }
+    else
+    {
+        MonLog->writeMonProcLog(eventType, severity, msg);
+    }
     return(0);
 }
 
-int snmp_log_write(int eventType, const char *msg)
+int snmp_log_write(int eventType, char *msg)
 {
-    SnmpLog->writeSnmpLog(eventType, msg);
+    if (SnmpLog->isUseAltLog())
+    {
+        SnmpLog->writeSnmpAltLog(eventType, msg);
+    }
+    else
+    {
+        SnmpLog->writeMonLog(eventType, SQ_LOG_CRIT, msg);
+    }
     return(0);
 }
 
@@ -76,15 +98,27 @@ void mem_log_write(int eventType, int value1, int value2)
     return;
 }
 
-CMonLog::CMonLog( const char *logFilePrefix ) :
-         memLogID_(0),
-         memLogHeader_(NULL),
-         memLogBase_(NULL)
+CMonLog::CMonLog( const char *log4cppConfig
+                , const char *log4cppComponent
+                , const char *logFilePrefix
+                , int pnid
+                , int nid
+                , int pid
+                , const char *processName )
+       : log4cppConfig_(log4cppConfig)
+       , log4cppComponent_(log4cppComponent)
+       , myPNid_(pnid)
+       , myNid_(nid)
+       , myPid_(pid)
+       , myProcessName_(processName)
+       , memLogID_(0)
+       , memLogHeader_(NULL)
+       , memLogBase_(NULL)
 {
     gettimeofday(&startTime_, NULL);
 
     struct tm * ltime = localtime(&startTime_.tv_sec);
-    sprintf(startTimeFmt_, "%02d%02d%02d.%02d.%02d.%02d", ltime->tm_mon+1, ltime->tm_mday, ltime->tm_year-100, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
+    sprintf(startTimeFmt_, "%04d%02d%02d.%02d.%02d.%02d", ltime->tm_year+1900, ltime->tm_mon+1, ltime->tm_mday, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 
     char *env = getenv("SQ_MON_ALTLOG");
     useAltLog_ = ( env && *env == '1' );
@@ -92,6 +126,37 @@ CMonLog::CMonLog( const char *logFilePrefix ) :
     logFileNum_ = 1;
     logFileNamePrefix_.assign( logFilePrefix );
     logFileType_ = SBX_LOG_TYPE_LOGFILE;
+
+    // Log4cpp logging
+    char   hostname[MAX_PROCESSOR_NAME] = {'\0'};
+    gethostname(hostname, MAX_PROCESSOR_NAME);
+
+    char   logFileSuffix[MAX_FILE_NAME];
+    if (myNid_ != -1)
+    {
+        sprintf( logFileSuffix, ".%s.%s.%d.%d.log"
+               , (char *)&startTimeFmt_
+               , hostname
+               , myNid_
+               , myPid_);
+    }
+    else if (myPNid_ != -1)
+    {
+        sprintf( logFileSuffix, ".%s.%s.%d.%d.log"
+               , (char *)&startTimeFmt_
+               , hostname
+               , myPNid_
+               , myPid_);
+    }
+    else
+    {
+        sprintf( logFileSuffix, ".%s.%s.%d.log"
+               , (char *)&startTimeFmt_
+               , hostname
+               , myPid_);
+    }
+
+    CommonLogger::instance().initLog4cpp(log4cppConfig_.c_str(), logFileSuffix);
 }
 
 CMonLog::~CMonLog()
@@ -111,100 +176,162 @@ CMonLog::~CMonLog()
     }
 }
 
+logLevel CMonLog::getLogLevel( posix_sqlog_severity_t severity )
+{
+    logLevel llevel = LL_INFO;
+
+    switch (severity)
+    {
+        case SQ_LOG_EMERG:
+            llevel = LL_FATAL;
+            break;
+        case SQ_LOG_ALERT:
+            llevel = LL_ALERT;
+            break;
+        case SQ_LOG_CRIT:
+            llevel = LL_FATAL;
+            break;
+        case SQ_LOG_ERR:
+            llevel = LL_ERROR;
+            break;
+        case SQ_LOG_WARNING:
+            llevel = LL_WARN;
+            break;
+        case SQ_LOG_NOTICE:
+            llevel = LL_INFO;
+            break;
+        case SQ_LOG_INFO:
+            llevel = LL_INFO;
+            break;
+        case SQ_LOG_DEBUG:
+            llevel = LL_DEBUG;
+            break;
+        default:
+            llevel = LL_INFO;
+    }
+
+    return( llevel );
+}
+
 void CMonLog::writeAltLog(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
     char   logFileDir[PATH_MAX];
     char  *logFileDirPtr;
-    char   logFilePrefix[30];
+    char   logFilePrefix[MAX_FILE_NAME];
     char  *rootDir;
 
-    rootDir = getenv("MY_SQROOT");
-    if (rootDir == NULL) 
+    if ( useAltLog_ )
     {
-        logFileDirPtr = NULL;
-    }
-    else 
-    {
-        sprintf(logFileDir, "%s/logs", rootDir);
-        logFileDirPtr = logFileDir;
-    }
+        rootDir = getenv("MY_SQROOT");
+        if (rootDir == NULL)
+        {
+            logFileDirPtr = NULL;
+        }
+        else
+        {
+            sprintf(logFileDir, "%s/logs", rootDir);
+            logFileDirPtr = logFileDir;
+        }
 
-    // log file prefix will be mon.<date>.hh.mm.ss.nn
-    // where mon.<date>.hh.mm.ss is the startup time of the monitor and 
-    // nn is the file number. If the log file becomes too big, 
-    // LogFileNum can be incremented.
-    sprintf( logFilePrefix, "%s.%s.%02d"
-           , logFileNamePrefix_.c_str(), (char *)&startTimeFmt_, logFileNum_);
+        // log file prefix will be mon.<date>.hh.mm.ss.nn
+        // where mon.<date>.hh.mm.ss is the startup time of the monitor and
+        // nn is the file number. If the log file becomes too big,
+        // LogFileNum can be incremented.
+        sprintf( logFilePrefix, "%s.%s.%02d"
+               , logFileNamePrefix_.c_str(), (char *)&startTimeFmt_, logFileNum_);
 
-    SBX_log_write(logFileType_,            // log_type
-                  logFileDirPtr,           // log_file_dir
-                  logFilePrefix,           // log_file_prefix
-                  SQEVL_MONITOR,           // component id
-                  eventType,               // event id
-                  SQ_LOG_SEAQUEST,         // facility
-                  severity,                // severity
-                  "monitor",               // name
-                  NULL,                    // msg_prefix
-                  msg,                     // msg
-                  NULL,                    // snmptrap_cmd
-                  NULL,                    // msg_snmptrap
-                  NULL,                    // msg_ret
-                  0);                      // msg_ret size
+        SBX_log_write(logFileType_,            // log_type
+                      logFileDirPtr,           // log_file_dir
+                      logFilePrefix,           // log_file_prefix
+                      SQEVL_MONITOR,           // component id
+                      eventType,               // event id
+                      SQ_LOG_SEAQUEST,         // facility
+                      severity,                // severity
+                      myProcessName_.c_str(),  // name
+                      NULL,                    // msg_prefix
+                      msg,                     // msg
+                      NULL,                    // snmptrap_cmd
+                      NULL,                    // msg_snmptrap
+                      NULL,                    // msg_ret
+                      0);                      // msg_ret size
 
-    // write to the same file in future without opening and closing it. 
-    if (logFileType_ == SBX_LOG_TYPE_LOGFILE)
-    {
-        logFileType_ |= SBX_LOG_TYPE_LOGFILE_PERSIST;
+        // write to the same file in future without opening and closing it.
+        if (logFileType_ == SBX_LOG_TYPE_LOGFILE)
+        {
+            logFileType_ |= SBX_LOG_TYPE_LOGFILE_PERSIST;
+        }
     }
 
     return;
 }
 
-void CMonLog::writeSnmpLog(int eventType, const char *msg)
+void CMonLog::writeSnmpAltLog(int eventType, const char *msg)
 {
     char   logFileDir[PATH_MAX];
     char  *logFileDirPtr;
-    char   logFilePrefix[30];
+    char   logFilePrefix[MAX_FILE_NAME];
     char  *rootDir;
 
-    rootDir = getenv("MY_SQROOT");
-    if (rootDir == NULL) 
+    if ( useAltLog_ )
     {
-        logFileDirPtr = NULL;
-    }
-    else 
-    {
-        sprintf(logFileDir, "%s/logs", rootDir);
-        logFileDirPtr = logFileDir;
-    }
+        rootDir = getenv("MY_SQROOT");
+        if (rootDir == NULL)
+        {
+            logFileDirPtr = NULL;
+        }
+        else
+        {
+            sprintf(logFileDir, "%s/logs", rootDir);
+            logFileDirPtr = logFileDir;
+        }
 
-    // log file prefix will be snmp.mon.nn
-    // nn is the file number. If the log file becomes too big, 
-    // LogFileNum can be incremented.
-    sprintf( logFilePrefix, "%s.%s.%02d"
-           , logFileNamePrefix_.c_str(), (char *)&startTimeFmt_, logFileNum_);
+        // log file prefix will be snmp.mon.nn
+        // nn is the file number. If the log file becomes too big,
+        // LogFileNum can be incremented.
+        sprintf( logFilePrefix, "%s.%s.%02d"
+               , logFileNamePrefix_.c_str(), (char *)&startTimeFmt_, logFileNum_);
 
-    SBX_log_write(logFileType_,            // log_type
-                  logFileDirPtr,           // log_file_dir
-                  logFilePrefix,           // log_file_prefix
-                  SQEVL_MONITOR,           // component id
-                  eventType,               // event id
-                  SQ_LOG_SEAQUEST,         // facility
-                  SQ_LOG_CRIT,             // severity
-                  "monitor",               // name
-                  NULL,                    // msg_prefix
-                  msg,                     // msg
-                  NULL,                    // snmptrap_cmd
-                  NULL,                    // msg_snmptrap
-                  NULL,                    // msg_ret
-                  0);                      // msg_ret size
+        SBX_log_write(logFileType_,            // log_type
+                      logFileDirPtr,           // log_file_dir
+                      logFilePrefix,           // log_file_prefix
+                      SQEVL_MONITOR,           // component id
+                      eventType,               // event id
+                      SQ_LOG_SEAQUEST,         // facility
+                      SQ_LOG_CRIT,             // severity
+                      myProcessName_.c_str(),  // name
+                      NULL,                    // msg_prefix
+                      msg,                     // msg
+                      NULL,                    // snmptrap_cmd
+                      NULL,                    // msg_snmptrap
+                      NULL,                    // msg_ret
+                      0);                      // msg_ret size
+    }
 
     return;
 }
 
-int CMonLog::getLogFileNum()
+void CMonLog::writeMonLog(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
-    return logFileNum_;
+    logLevel llevel = getLogLevel( severity );
+
+    // Log4cpp logging
+    CommonLogger::log( log4cppComponent_.c_str()
+                     , llevel
+                     , "Node Number: %u,, PIN: %u , Process Name: %s,,, TID: %d, Message ID: %u, %s"
+                     , myPNid_, myPid_, myProcessName_.c_str(), gettid(), eventType,  msg);
+    return;
+}
+
+void CMonLog::writeMonProcLog(int eventType, posix_sqlog_severity_t severity, char *msg)
+{
+    logLevel llevel = getLogLevel( severity );
+
+    // Log4cpp logging
+    CommonLogger::log( log4cppComponent_.c_str()
+                     , llevel
+                     , "Node Number: %u, CPU: %u, PIN: %u , Process Name: %s,,, TID: %u, Message ID: %u, %s"
+                     , myPNid_, myNid_, myPid_, myProcessName_.c_str(), gettid(), eventType, msg);
+    return;
 }
 
 void CMonLog::setLogFileNum(int value)
@@ -213,16 +340,6 @@ void CMonLog::setLogFileNum(int value)
     // remove the persist flag so that the previous log file will get closed
     // and a new file will be opened (in append mode) in the next log call.
     logFileType_ = SBX_LOG_TYPE_LOGFILE; 
-}
-
-void CMonLog::setLogFileType(int value)
-{
-    logFileType_ = value;
-}
-
-void CMonLog::setUseAltLog(bool value)
-{
-    useAltLog_ = value;
 }
 
 // Create a circular buffer in a shared memory segment for in-memory log data. 

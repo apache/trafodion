@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -34,11 +34,14 @@
 #include "SCMVersHelp.h"
 
 const char *MyName;
-int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connection port - not used
 
 long trace_settings = 0;
 int MyPNID = -1;
+int MyNid = -1;
+int MyPid = -1;
+int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+int gv_ms_su_pid = -1;          // Local IO pid to make compatible w/ Seabed
 SB_Verif_Type  gv_ms_su_verif = -1;
 bool tracing = false;
 bool shuttingDown = false;
@@ -46,7 +49,7 @@ bool shuttingDown = false;
 CMonUtil monUtil;
 CPStartD *pStartD;
 CMonLog *MonLog = NULL;
-CMonLog *SnmpLog =  NULL;
+CMonLog *SnmpLog = NULL;
 
 DEFINE_EXTERN_COMP_DOVERS(pstartd)
 DEFINE_EXTERN_COMP_PRINTVERS(pstartd)
@@ -86,7 +89,7 @@ void localIONoticeCallback(struct message_def *recv_msg, int )
         shuttingDown = true;
 
         snprintf( buf, sizeof(buf), "Received 'Shutdown' event.\n");
-        mon_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
+        monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
         
         CShutdownReq * reqShutdown;
         reqShutdown = new CShutdownReq();
@@ -127,7 +130,7 @@ void localIONoticeCallback(struct message_def *recv_msg, int )
         snprintf( buf, sizeof(buf),
                   "[%s], Unexpected callback notice, type=%d\n",
                   method_name, recv_msg->type );
-        mon_log_write( PSTARTD_UNEXP_NOTICE, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_UNEXP_NOTICE, SQ_LOG_ERR, buf );
 
     }
 }
@@ -156,7 +159,7 @@ void localIOEventCallback(struct message_def *recv_msg, int )
         snprintf( buf, sizeof(buf),
                   "[%s], Unable to convert event data [%s] to node id\n",
                   method_name, recv_msg->u.request.u.event_notice.data );
-        mon_log_write( PSTARTD_BAD_EVENT, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_BAD_EVENT, SQ_LOG_ERR, buf );
 
         return;
     }
@@ -179,7 +182,7 @@ void localIOEventCallback(struct message_def *recv_msg, int )
         snprintf( buf, sizeof(buf),
                   "[%s], Unexpected event id=%d (ignored)\n",
                   method_name, eventId );
-        mon_log_write( PSTARTD_BAD_EVENT, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_BAD_EVENT, SQ_LOG_ERR, buf );
     }
 
     if ( req != NULL )
@@ -241,7 +244,7 @@ bool CMonUtil::requestGet ( ConfigType type,
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s], Unable to acquire message buffer\n",
                   method_name );
-        mon_log_write( PSTARTD_ACQUIRE_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_ACQUIRE_ERROR, SQ_LOG_ERR, buf );
 
         return result;
     }
@@ -289,7 +292,7 @@ bool CMonUtil::requestGet ( ConfigType type,
                   "[%s] Get reply message invalid.  Reply tag=%d, count=%d "
                   "(expected %d)\n", method_name, msg->reply_tag,
                   count, (int) sizeof (struct message_def) );
-        mon_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
 
     }
     
@@ -318,7 +321,7 @@ void CMonUtil::requestExit ( void )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s], Unable to acquire message buffer\n",
                   method_name );
-        mon_log_write( PSTARTD_ACQUIRE_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_ACQUIRE_ERROR, SQ_LOG_ERR, buf );
 
         return;
     }
@@ -349,7 +352,7 @@ void CMonUtil::requestExit ( void )
                           "[%s], exit process failed, rc=%d (%s)\n",
                           method_name, msg->u.reply.u.generic.return_code,
                           MPIErrMsg(msg->u.reply.u.generic.return_code));
-                mon_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
+                monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
             }
         }
         else
@@ -358,7 +361,7 @@ void CMonUtil::requestExit ( void )
             snprintf( buf, sizeof(buf),
                       "[%s], Invalid MsgType(%d)/ReplyType(%d) for Exit "
                       "message\n", method_name, msg->type, msg->u.reply.type );
-            mon_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
         }
     }
     else
@@ -369,7 +372,7 @@ void CMonUtil::requestExit ( void )
                   "count=%d (expected %d)\n",
                   method_name, msg->reply_tag,
                   count, (int) sizeof (struct message_def) );
-        mon_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
     }
 
     gp_local_mon_io->release_msg(msg);
@@ -403,7 +406,7 @@ bool CMonUtil::requestNewProcess (int nid, PROCESSTYPE type,
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s], Unable to acquire message buffer\n",
                   method_name );
-        mon_log_write( PSTARTD_ACQUIRE_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_ACQUIRE_ERROR, SQ_LOG_ERR, buf );
 
         return result;
     }
@@ -467,7 +470,7 @@ bool CMonUtil::requestNewProcess (int nid, PROCESSTYPE type,
                           "[%s], new process failed to spawn, rc=%d (%s)\n",
                           method_name, msg->u.reply.u.new_process.return_code,
                           MPIErrMsg(msg->u.reply.u.new_process.return_code) );
-                mon_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
+                monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
             }
         }
         else
@@ -476,7 +479,7 @@ bool CMonUtil::requestNewProcess (int nid, PROCESSTYPE type,
             snprintf( buf, sizeof(buf),
                       "[%s], Invalid MsgType(%d)/ReplyType(%d) for Exit "
                       "message\n", method_name, msg->type, msg->u.reply.type );
-            mon_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
         }
     }
     else
@@ -486,7 +489,7 @@ bool CMonUtil::requestNewProcess (int nid, PROCESSTYPE type,
                   "  Reply tag=%d, count=%d (expected %d)\n",
                   method_name, msg->reply_tag,
                   count, (int) sizeof (struct message_def));
-        mon_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
     }
 
     gp_local_mon_io->release_msg(msg);
@@ -510,7 +513,7 @@ bool CMonUtil::requestProcInfo( const char *processName, int &nid, int &pid )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s], Unable to acquire message buffer\n",
                   method_name );
-        mon_log_write( PSTARTD_ACQUIRE_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_ACQUIRE_ERROR, SQ_LOG_ERR, buf );
 
         return result;
     }
@@ -575,7 +578,7 @@ bool CMonUtil::requestProcInfo( const char *processName, int &nid, int &pid )
                           "[%s] ProcessInfo failed, rc=%d (%s)\n",
                           method_name, msg->u.reply.u.process_info.return_code,
                           MPIErrMsg(msg->u.reply.u.process_info.return_code));
-                mon_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
+                monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
             }
         }
         else
@@ -585,7 +588,7 @@ bool CMonUtil::requestProcInfo( const char *processName, int &nid, int &pid )
                       "[%s], Invalid MsgType(%d)/ReplyType(%d) for "
                       "ProcessInfo\n", method_name, msg->type,
                       msg->u.reply.type );
-            mon_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
 
         }
     }
@@ -597,7 +600,7 @@ bool CMonUtil::requestProcInfo( const char *processName, int &nid, int &pid )
                   "count=%d (expected %d)\n",
                   method_name,  msg->reply_tag,
                   count, (int) sizeof (struct message_def) );
-        mon_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_MONCALL_ERROR, SQ_LOG_ERR, buf );
     }
 
     gp_local_mon_io->release_msg(msg);
@@ -621,7 +624,7 @@ void CMonUtil::requestStartup ( )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s], Unable to acquire message buffer\n",
                   method_name );
-        mon_log_write( PSTARTD_ACQUIRE_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_ACQUIRE_ERROR, SQ_LOG_ERR, buf );
 
         return;
     }
@@ -689,13 +692,13 @@ void CMonUtil::processArgs( int argc, char *argv[] )
         trace_printf( "%s@%d - %s\n", method_name, __LINE__, argInfo);
     }
 
+    pnid_ = atoi(argv[2]);
     nid_ = atoi(argv[3]);
     pid_ = atoi(argv[4]);
     gv_ms_su_verif  = verifier_ = atoi(argv[9]);
 
     strncpy( processName_, argv[5], sizeof(processName_) );
     processName_[sizeof(processName_)-1] = '\0';
-
 }
 
 void CNodeUpReq::performRequest()
@@ -705,7 +708,7 @@ void CNodeUpReq::performRequest()
     char buf[MON_STRING_BUF_SIZE];
     snprintf( buf, sizeof(buf), "Received 'Node Up' event for node %d, "
               "requires DTM flag=%d\n", nid_, requiresDTM_);
-    mon_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
+    monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
 
     //    [ todo: need to check if nid_ is any one of the logical nodes in 
     //      the physical node ]
@@ -752,7 +755,7 @@ CPStartD::CPStartD()
             char buf[MON_STRING_BUF_SIZE];
             snprintf( buf, sizeof(buf), "[%s] Can't open database: %s, %s\n",
                       method_name,  dbase, sqlite3_errmsg(db_) );
-            mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
 
             abort();
         }
@@ -768,7 +771,7 @@ CPStartD::CPStartD()
             snprintf( buf, sizeof(buf), "[%s] Can't set busy timeout for "
                       "database %s: %s (%d)\n",
                       method_name,  dbase, sqlite3_errmsg(db_), rc );
-            mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
         }
 
         char *sErrMsg = NULL;
@@ -779,7 +782,7 @@ CPStartD::CPStartD()
             snprintf( buf, sizeof(buf), "[%s] Can't set PRAGMA synchronous for "
                       "database %s: %s\n",
                       method_name,  dbase, sErrMsg );
-            mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
         }
 
     }
@@ -831,7 +834,7 @@ void CPStartD::startProcess ( const char * pName )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s] prepare failed: %s (%d)\n",
                   method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
 
         return;
     }
@@ -844,7 +847,7 @@ void CPStartD::startProcess ( const char * pName )
             snprintf( buf, sizeof(buf), 
                       "[%s] sqlite3_bind_text failed: %s (%d)\n",
                       method_name,  sqlite3_errmsg(db_), rc );
-            mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
 
             return;
         }
@@ -938,7 +941,7 @@ void CPStartD::startProcess ( const char * pName )
             snprintf( buf, sizeof(buf), 
                       "[%s] step failed: %s (%d)\n",
                       method_name,  sqlite3_errmsg(db_), rc );
-            mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
             break;
         }
     }
@@ -960,7 +963,7 @@ void CPStartD::startProcess ( const char * pName )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "Starting process %s on nid=%d, program="
                   "%s, type=%d\n", pName, progNid, progProgram.c_str(), progType);
-        mon_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
+        monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
 
         result = monUtil.requestNewProcess(progNid,
                                            (PROCESSTYPE) progType, pName,
@@ -1029,7 +1032,7 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf), "[%s] prepare failed: %s (%d)\n",
                   method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+        monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
 
         return;
     }
@@ -1042,7 +1045,7 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
             snprintf( buf, sizeof(buf), 
                       "[%s] sqlite3_bind_int failed: %s (%d)\n",
                       method_name,  sqlite3_errmsg(db_), rc );
-            mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
 
             if ( prepStmt != NULL )
                 sqlite3_finalize( prepStmt );
@@ -1057,7 +1060,7 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
             snprintf( buf, sizeof(buf), 
                       "[%s] sqlite3_bind_int failed: %s (%d)\n",
                       method_name,  sqlite3_errmsg(db_), rc );
-            mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
 
             if ( prepStmt != NULL )
                 sqlite3_finalize( prepStmt );
@@ -1091,7 +1094,7 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
                     snprintf( buf, sizeof(buf), "Not starting process %s "
                               "because it is already running\n",
                               procName);
-                    mon_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
+                    monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
 
                     if ( tracing )
                     {
@@ -1117,7 +1120,7 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
             snprintf( buf, sizeof(buf), 
                       "[%s] step failed: %s (%d)\n",
                       method_name,  sqlite3_errmsg(db_), rc );
-            mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+            monproc_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
             break;
         }
     }
@@ -1137,7 +1140,7 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
             snprintf( buf, sizeof(buf), "Not starting process %s "
                       "because SeaPilot is disabled.\n",
                       procName);
-            mon_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
+            monproc_log_write( PSTARTD_INFO, SQ_LOG_INFO, buf );
 
             if ( tracing )
             {
@@ -1235,7 +1238,7 @@ int main (int argc, char *argv[])
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf( buf, "[%s - main], pthread_sigmask error=%d\n", MyName, rc );
-        wdt_log_write( MON_PSTARTD_MAIN_1, SQ_LOG_ERR, buf );
+        monproc_log_write( MON_PSTARTD_MAIN_1, SQ_LOG_ERR, buf );
     }
 
     // This process does not use MPI.  But unless MPI is initialized
@@ -1243,12 +1246,11 @@ int main (int argc, char *argv[])
 
     monUtil.processArgs (argc, argv);
     MyName = monUtil.getProcName();
+    gv_ms_su_nid = MyPNID = monUtil.getPNid();
+    MyNid = monUtil.getNid();
+    MyPid = monUtil.getPid();
 
-    gv_ms_su_nid = MyPNID = monUtil.getNid();
-
-    MonLog = new CMonLog( "pstartd" );
-    SnmpLog = new CMonLog( "snmp" );
-    MonLog->setUseAltLog(true);
+    MonLog = new CMonLog( "log4cpp.monitor.psd.config", "PSD", "alt.pstartd", MyPNID, MyNid, MyPid, MyName );
 
     pStartD = new CPStartD;
 
@@ -1256,7 +1258,6 @@ int main (int argc, char *argv[])
 
     gp_local_mon_io->set_cb(localIONoticeCallback, "notice");
     gp_local_mon_io->set_cb(localIOEventCallback, "event");
-    //    gp_local_mon_io->set_cb(localIORecvCallback, "recv");
 
     monUtil.requestStartup ();
 

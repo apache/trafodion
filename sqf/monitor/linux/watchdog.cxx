@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@
 #include "monlogging.h"
 #include "montrace.h"
 #include "sdtimer.h"
-//#include "wdtimer.h"
 #include "procmon.h"
 #include "watchdog.h"
 
@@ -373,7 +372,7 @@ void process_startup(int argc, char *argv[])
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s - process_startup], Error: Invalid startup arguments, argc=%d, argv[0]=%s, argv[1]=%s, argv[2]=%s, argv[3]=%s, argv[4]=%s, argv[5]=%s, argv[6]=%s, argv[7]=%s, argv[8]=%s, argv[9]=%s\n"
                    , MyName, argc, argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8], argv[9]);
-        wdt_log_write(MON_WATCHDOG_PROCSTARTUP_1, SQ_LOG_ERR, buf);
+        monproc_log_write(MON_WATCHDOG_PROCSTARTUP_1, SQ_LOG_ERR, buf);
         exit (1);
     }
     else
@@ -524,7 +523,7 @@ void InitLocalIO( void )
             {
                 char buf[MON_STRING_BUF_SIZE];
                 sprintf(buf, "[%s - InitLocalIO], Error= Failed to load cluster configuration!\n", MyName);
-                wdt_log_write(MON_WATCHDOG_INITLOCALIO_1, SQ_LOG_ERR, buf);
+                monproc_log_write(MON_WATCHDOG_INITLOCALIO_1, SQ_LOG_ERR, buf);
                 abort();
             }
         }
@@ -532,11 +531,11 @@ void InitLocalIO( void )
         {
             char buf[MON_STRING_BUF_SIZE];
             sprintf(buf, "[%s - InitLocalIO], Warning: No cluster.conf found!\n", MyName);
-            wdt_log_write(MON_WATCHDOG_INITLOCALIO_2, SQ_LOG_ERR, buf);
+            monproc_log_write(MON_WATCHDOG_INITLOCALIO_2, SQ_LOG_ERR, buf);
             if (MyNid == -1)
             {
                 sprintf(buf, "[%s - InitLocalIO], Warning: set default virtual node ID = 0!\n", MyName);
-                wdt_log_write(MON_WATCHDOG_INITLOCALIO_3, SQ_LOG_ERR, buf);
+                monproc_log_write(MON_WATCHDOG_INITLOCALIO_3, SQ_LOG_ERR, buf);
                 MyNid = 0;
             }
             abort();
@@ -742,13 +741,8 @@ int main (int argc, char *argv[])
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf( buf, "[%s - main], pthread_sigmask error=%d\n", MyName, rc );
-        wdt_log_write( MON_WATCHDOG_MAIN_7, SQ_LOG_ERR, buf );
+        monproc_log_write( MON_WATCHDOG_MAIN_7, SQ_LOG_ERR, buf );
     }
-
-    MonLog = new CMonLog( "wdt" );
-    SnmpLog = new CMonLog( "snmp.wdt" );
-    Watchdog = new CWatchdog();
-    ProcessMonitor = new CProcessMonitor();
 
     MyName = new char [MAX_PROCESS_PATH];
     strcpy( MyName, argv[5] );
@@ -756,6 +750,12 @@ int main (int argc, char *argv[])
     MyNid = atoi(argv[3]);
     MyPid = atoi (argv[4]);
     gv_ms_su_verif  = MyVerifier = atoi(argv[9]);
+
+    MonLog = new CMonLog( "log4cpp.monitor.wdg.config", "WDG", "alt.wdg", MyPNID, MyNid, MyPid, MyName  );
+    SnmpLog = new CMonLog( "log4cpp.monitor.wdg.snmp.config", "WDG-SNMP", "alt.wdg.snmp", MyPNID, MyNid, MyPid, MyName );
+
+    Watchdog = new CWatchdog();
+    ProcessMonitor = new CProcessMonitor();
 
     if ( ! gp_local_mon_io )
     {
@@ -785,7 +785,7 @@ int main (int argc, char *argv[])
                 Watchdog->StartSoftdogTimer();
                 sprintf(la_buf, "[%s - main], Watchdog process timer started!\n"
                               , MyName);
-                wdt_log_write(MON_WATCHDOG_MAIN_1, SQ_LOG_INFO, la_buf);
+                monproc_log_write(MON_WATCHDOG_MAIN_1, SQ_LOG_INFO, la_buf);
                 break;
             case Watchdog_Refresh:
                 Watchdog->ResetSoftdogTimer();
@@ -793,34 +793,34 @@ int main (int argc, char *argv[])
             case Watchdog_Expire:
                 sprintf(la_buf, "[%s - main], Watchdog process timer expired!\n"
                               , MyName);
-                wdt_log_write(MON_WATCHDOG_MAIN_2, SQ_LOG_INFO, la_buf);
+                monproc_log_write(MON_WATCHDOG_MAIN_2, SQ_LOG_INFO, la_buf);
                 Watchdog->ExpireSoftdogTimer();
                 done = true;
                 break;
             case Watchdog_Shutdown:
                 sprintf(la_buf, "[%s - main], Watchdog process timer shutdown!\n"
                               , MyName);
-                wdt_log_write(MON_WATCHDOG_MAIN_3, SQ_LOG_INFO, la_buf);
+                monproc_log_write(MON_WATCHDOG_MAIN_3, SQ_LOG_INFO, la_buf);
                 Watchdog->ShutdownSoftdogTimer();
                 done = true;
                 break;
             case Watchdog_Stop:
                 sprintf(la_buf, "[%s - main], Watchdog process timer stopped!\n"
                               , MyName);
-                wdt_log_write(MON_WATCHDOG_MAIN_4, SQ_LOG_INFO, la_buf);
+                monproc_log_write(MON_WATCHDOG_MAIN_4, SQ_LOG_INFO, la_buf);
                 Watchdog->StopSoftdogTimer();
                 break;
             case Watchdog_Exit:
                 sprintf(la_buf, "[%s - main], Watchdog process is exiting!\n"
                               , MyName);
-                wdt_log_write(MON_WATCHDOG_MAIN_5, SQ_LOG_INFO, la_buf);
+                monproc_log_write(MON_WATCHDOG_MAIN_5, SQ_LOG_INFO, la_buf);
                 Watchdog->StopSoftdogTimer();
                 done = true;
                 break;
             default:
                 sprintf(la_buf, "[%s - main], Received invalid watchdog event_id.\n"
                               , MyName);
-                wdt_log_write(MON_WATCHDOG_MAIN_6, SQ_LOG_INFO, la_buf);
+                monproc_log_write(MON_WATCHDOG_MAIN_6, SQ_LOG_INFO, la_buf);
                 abort();
             }
         }

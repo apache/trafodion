@@ -70,6 +70,7 @@
 #define MAX_NODE_MASKS   (MAX_NODES/MAX_NODE_BITMASK) // Node bit mask array size
 
 #define MAX_FAULT_ZONES  16 
+#define MAX_FILE_NAME    256
 #define MAX_KEY_NAME     32
 #define MAX_KEY_LIST     32
 #define MAX_NODE_LIST    64
@@ -82,6 +83,7 @@
 #define MAX_PROCESS_NAME MAX_KEY_NAME
 #define MAX_PROCESS_NAME_STR 12 
 #define MAX_PROCESS_PATH 256
+#define MAX_PROCESSOR_NAME 128
 #define MAX_REASON_TEXT  256
 #define MAX_ROLEBUF_SIZE 84
 #define MAX_SEARCH_PATH  BUFSIZ

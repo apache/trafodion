@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -48,12 +48,14 @@ FLAGS+= -Wall -Wextra
 SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS)
 SBDIR = ../../src/seabed/src
 
+LOG4CPPDIR = ../../commonLogger
+
 INCLUDE = monitor.h msgdef.h internal.h monlogging.h clio.h mlio.h localio.h lock.h
 
 LIBS = -L$(LIBEXPDIR) -lrt -lsblogalt
 
 LIBS+= -lmpich
-#    LIBS += -L$(LIBEXPDIR) -lsbutil
+LIBS+= -llog4cpp
 
 ifeq ($(USE_DMALLOC),1)
     LIBS+= -L$(DMALLOCROOT) -ldmalloc
@@ -74,6 +76,8 @@ ifeq ($(USE_DMALLOC),1)
     INCLUDES+= -I$(DMALLOCROOT)
 endif
 INCLUDES+= -I../../inc
+INCLUDES+= -I../../../log4cpp/$(LOG4CPP_VER)/include
+INCLUDES+= -I../../commonLogger
 
 LIBS+=  -lsqlite3
 
@@ -200,6 +204,7 @@ endif
 MONITOROBJS += $(OUTDIR)/replicate.o
 MONITOROBJS += $(OUTDIR)/gentrap.o
 MONITOROBJS += $(OUTDIR)/monrobsem.o
+MONITOROBJS += $(OUTDIR)/CommonLogger.o
 
 SHELLOBJS = $(OUTDIR)/shell.o
 SHELLOBJS += $(OUTDIR)/monclio.o
@@ -227,12 +232,14 @@ WATCHDOGOBJS += $(OUTDIR)/system.o
 WATCHDOGOBJS += $(OUTDIR)/token.o
 WATCHDOGOBJS += $(OUTDIR)/verswatch.o
 WATCHDOGOBJS += $(OUTDIR)/gentrap.o
+WATCHDOGOBJS += $(OUTDIR)/CommonLogger.o
 
 PSTARTDOBJS = $(OUTDIR)/pstartd.o
 PSTARTDOBJS += $(OUTDIR)/monclio.o
 PSTARTDOBJS += $(OUTDIR)/lock.o
 PSTARTDOBJS += $(OUTDIR)/monlogging.o
 PSTARTDOBJS += $(OUTDIR)/verspstartd.o
+PSTARTDOBJS += $(OUTDIR)/CommonLogger.o
 
 MEMLOGOBJS = $(OUTDIR)/monmemlog.o
 MEMLOGOBJS += $(OUTDIR)/versmemlog.o
@@ -340,6 +347,14 @@ $(OUTDIR)/%.o:$(SBDIR)/%.cpp $(INCLUDE)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
+# For compiling log4cpp module
+$(OUTDIR)/%.o:$(LOG4CPPDIR)/%.cpp $(INCLUDE)
+	@echo 'Building target: $@'
+	@echo 'Invoking: C++ Compiler'
+	@echo $(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -c -o $@ $<
+	@$(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -c -o $@ $<
+	@echo 'Finished building target: $@'
+	@echo ' '
 
 # Targets
 # Uncomment the following target to disable parallel make

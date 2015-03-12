@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ static void *ProcessMonitorThread( void *arg )
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf( buf, "[%s], pthread_sigmask error=%d\n", method_name, rc );
-        wdt_log_write( MON_PROCMON_PROCESSMONITOR_TH_1, SQ_LOG_ERR, buf );
+        monproc_log_write( MON_PROCMON_PROCESSMONITOR_TH_1, SQ_LOG_ERR, buf );
     }
 
     processMonitor->MonitorProcesses();
@@ -162,7 +162,7 @@ void CProcessMonitor::CheckLunMgr( void )
             char la_buf[MON_STRING_BUF_SIZE];
             sprintf(la_buf, "[%s], Error= lunmgr process is hung! - killing pid=%d\n"
                           , method_name, lunMgrPid_);
-            wdt_log_write( MON_PROCMON_CHECKLUNMGR_1, SQ_LOG_ERR, la_buf);
+            monproc_log_write( MON_PROCMON_CHECKLUNMGR_1, SQ_LOG_ERR, la_buf);
             lunMgrPid_ = -1;
             SetCheckLunMgr( false );
         }
@@ -184,7 +184,7 @@ void CProcessMonitor::CheckMonitor( void )
             int err = errno;
             sprintf(la_buf, "[%s], Error= Monitor process exited! - pid=%d, errno=%d (%s)\n"
                           , method_name, monitorPid_, err, strerror(err));
-            wdt_log_write( MON_PROCMON_CHECKMONITOR_1, SQ_LOG_CRIT, la_buf);
+            monproc_log_write( MON_PROCMON_CHECKMONITOR_1, SQ_LOG_CRIT, la_buf);
             // Disable monitor process monitoring
             SetCheckMonitor( false );
 
@@ -408,7 +408,7 @@ int CProcessMonitor::StartWorker( void )
         char la_buf[MON_STRING_BUF_SIZE];
         int err = rc;
         sprintf(la_buf, "[%s], Error= Can't create thread! - errno=%d (%s)\n", method_name, err, strerror(err));
-        wdt_log_write( MON_PROCMON_STARTWORKER_1, SQ_LOG_ERR, la_buf);
+        monproc_log_write( MON_PROCMON_STARTWORKER_1, SQ_LOG_ERR, la_buf);
         TRACE_EXIT;
         return( rc );
     }
@@ -444,7 +444,7 @@ int CProcessMonitor::ShutdownWork( void )
         char buf[MON_STRING_BUF_SIZE];
         int err = rc;
         sprintf(buf, "[%s], Error= Can't join thread! - errno=%d (%s)\n", method_name, err, strerror(err));
-        wdt_log_write(MON_PROCMON_SHUTDOWNWORK_1, SQ_LOG_ERR, buf);
+        monproc_log_write(MON_PROCMON_SHUTDOWNWORK_1, SQ_LOG_ERR, buf);
     }
 
     TRACE_EXIT;

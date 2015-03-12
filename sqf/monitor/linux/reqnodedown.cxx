@@ -86,7 +86,7 @@ void CExtNodeDownReq::performRequest()
 
         char la_buf[MON_STRING_BUF_SIZE*2];
         snprintf( la_buf, sizeof(la_buf)
-                , "[%s], %s (%d,%d:%d) requested node down %d on Node %s (%s) \n"
+                , "[%s], Process %s (%d,%d:%d) requested node down %d on Node %s (%s) \n"
                 , method_name
                 , requester->GetName()
                 , requester->GetNid()
@@ -97,7 +97,7 @@ void CExtNodeDownReq::performRequest()
                 , msg_->u.request.u.down.reason);
         mon_log_write(MON_EXT_NODEDOWN_REQ, SQ_LOG_CRIT, la_buf); 
         snprintf( la_buf, sizeof(la_buf)
-                , "%s (%d,%d:%d) requested node down %d on Node %s (%s) \n"
+                , "Process %s (%d,%d:%d) requested node down %d on Node %s (%s) \n"
                 , requester->GetName()
                 , requester->GetNid()
                 , requester->GetPid()

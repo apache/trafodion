@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -39,10 +39,13 @@ class CMonUtil
     ~CMonUtil( void );
 
     int getNid() { return nid_; }
-    const char * getProcName() { return processName_; }
-    bool getTrace () { return trace_; }
+    int getPid() { return pid_; }
+    int getPNid() { return pnid_; }
+    const char *getProcName() { return processName_; }
+    bool getTrace() { return trace_; }
+    int getVerifier() { return verifier_; }
 
-    char * MPIErrMsg ( int code );
+    char *MPIErrMsg ( int code );
 
     void processArgs( int argc, char *argv[] );
 
@@ -71,9 +74,10 @@ class CMonUtil
 
  private:
     char   processName_[MAX_PROCESS_PATH];   // current process name
+    int    pnid_;          // current process physical node id
     int    nid_;           // current process node id
     int    pid_;           // current process process id
-    Verifier_t verifier_;   // current process verifier
+    Verifier_t verifier_;  // current process verifier
     char   port_[MPI_MAX_PORT_NAME]; // current process port
     bool   trace_;
 };

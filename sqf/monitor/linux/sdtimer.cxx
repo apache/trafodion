@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ static void *SoftdogThread( void *arg )
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf( buf, "[%s], pthread_sigmask error=%d\n", method_name, rc );
-        wdt_log_write( MON_SDTIMER_SOFTDOG_TH_1, SQ_LOG_ERR, buf );
+        monproc_log_write( MON_SDTIMER_SOFTDOG_TH_1, SQ_LOG_ERR, buf );
     }
 
     sdTimer->SoftdogTimer();
@@ -174,7 +174,7 @@ int CSdTimer::DumpMonitorProcess( void )
         sprintf(pidstr, "%d", gp_local_mon_io->get_monitor_pid());
         char la_buf[MON_STRING_BUF_SIZE];
         sprintf(la_buf, "Generating monitor core %s\n", pidstr);
-        wdt_log_write( MON_SDTIMER_STOPPROCESSES_1, SQ_LOG_ERR, la_buf);
+        monproc_log_write( MON_SDTIMER_STOPPROCESSES_1, SQ_LOG_ERR, la_buf);
 
         // save, close and restore stdin 
         int savedStdIn = dup(STDIN_FILENO);
@@ -186,7 +186,7 @@ int CSdTimer::DumpMonitorProcess( void )
         {
             char la_buf[MON_STRING_BUF_SIZE];
             sprintf(la_buf, "[%s], Error= Can't execute 'gcore' command!\n", method_name);
-            wdt_log_write( MON_SDTIMER_DUMPMONITORPROC_1, SQ_LOG_ERR, la_buf);
+            monproc_log_write( MON_SDTIMER_DUMPMONITORPROC_1, SQ_LOG_ERR, la_buf);
             dup2(savedStdIn, STDIN_FILENO);
             close(savedStdIn);
 
@@ -221,7 +221,7 @@ bool CSdTimer::IsMonitorInDebug( void )
         int err = errno;
         sprintf(buf, "[%s], Cannot monitor process status open %s, %s (%d)\n"
                 , method_name, filepath, strerror(err), err);
-        wdt_log_write(MON_SDTIMER_MONITORINDEBUG_1, SQ_LOG_ERR, buf);
+        monproc_log_write(MON_SDTIMER_MONITORINDEBUG_1, SQ_LOG_ERR, buf);
         TRACE_EXIT;
         return( false );
     }
@@ -269,7 +269,7 @@ void CSdTimer::NodeFailSafe( bool timerExpired, bool shutdown )
     {
         char la_buf[MON_STRING_BUF_SIZE];
         sprintf(la_buf, "[%s], Node fail safe is not supported in a virtual cluster!\n", method_name);
-        wdt_log_write( MON_SDTIMER_NODEFAILSAFE_1, SQ_LOG_INFO, la_buf);
+        monproc_log_write( MON_SDTIMER_NODEFAILSAFE_1, SQ_LOG_INFO, la_buf);
         return;
     }
     else
@@ -278,14 +278,14 @@ void CSdTimer::NodeFailSafe( bool timerExpired, bool shutdown )
         {
             char la_buf[MON_STRING_BUF_SIZE];
             sprintf(la_buf, "[%s], Node shutdown triggered - Node shutting down! \n", method_name );
-            wdt_log_write( MON_SDTIMER_NODEFAILSAFE_2, SQ_LOG_CRIT, la_buf);
+            monproc_log_write( MON_SDTIMER_NODEFAILSAFE_2, SQ_LOG_CRIT, la_buf);
          }
          else
          {
             char la_buf[MON_STRING_BUF_SIZE];
             sprintf(la_buf, "[%s], Node fail safe triggered - Node going down! Last refreshed at %ld(secs) %ld(nsecs). \n", 
                       method_name, expiredTime_.tv_sec - sdtKeepAliveTimerValue_, expiredTime_.tv_nsec);
-            wdt_log_write( MON_SDTIMER_NODEFAILSAFE_3, SQ_LOG_CRIT, la_buf);
+            monproc_log_write( MON_SDTIMER_NODEFAILSAFE_3, SQ_LOG_CRIT, la_buf);
          }
     }
     
@@ -528,7 +528,7 @@ int CSdTimer::StartWorker( void )
         char la_buf[MON_STRING_BUF_SIZE];
         int err = rc;
         sprintf(la_buf, "[%s], Error= Can't create thread! - errno=%d (%s)\n", method_name, err, strerror(err));
-        wdt_log_write( MON_SDTIMER_STARTWORKER_1, SQ_LOG_ERR, la_buf);
+        monproc_log_write( MON_SDTIMER_STARTWORKER_1, SQ_LOG_ERR, la_buf);
         TRACE_EXIT;
         return( rc );
     }
@@ -565,7 +565,7 @@ int CSdTimer::StopProcesses( void )
     {
         char la_buf[MON_STRING_BUF_SIZE];
         sprintf(la_buf, "[%s], Error= Can't execute 'pkillall -safekill' command!\n", method_name);
-        wdt_log_write( MON_SDTIMER_STOPPROCESSES_1, SQ_LOG_ERR, la_buf);
+        monproc_log_write( MON_SDTIMER_STOPPROCESSES_1, SQ_LOG_ERR, la_buf);
         dup2(savedStdIn, STDIN_FILENO);
         close(savedStdIn);
 
@@ -594,7 +594,7 @@ int CSdTimer::StopMonitorProcess( void )
             char buf[MON_STRING_BUF_SIZE];
             int err = rc;
             sprintf(buf, "[%s], Error= Can't kill monitor process! - errno=%d (%s)\n", method_name, err, strerror(err));
-            wdt_log_write(MON_SDTIMER_STOPMONITORPROC_1, SQ_LOG_ERR, buf);
+            monproc_log_write(MON_SDTIMER_STOPMONITORPROC_1, SQ_LOG_ERR, buf);
         }
         else
         {
@@ -626,7 +626,7 @@ int CSdTimer::SuspendMonitorProcess( void )
             char buf[MON_STRING_BUF_SIZE];
             int err = rc;
             sprintf(buf, "[%s], Error= Can't signal monitor process! - errno=%d (%s)\n", method_name, err, strerror(err));
-            wdt_log_write(MON_SDTIMER_SUSPENDMONITORPROC_1, SQ_LOG_ERR, buf);
+            monproc_log_write(MON_SDTIMER_SUSPENDMONITORPROC_1, SQ_LOG_ERR, buf);
         }
         else
         {
@@ -651,7 +651,7 @@ int CSdTimer::ShutdownWork( void )
 
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], Watchdog process timer stopped!\n", method_name);
-        wdt_log_write(MON_SDTIMER_SHUTDOWNWORK_1, SQ_LOG_INFO, buf);
+        monproc_log_write(MON_SDTIMER_SHUTDOWNWORK_1, SQ_LOG_INFO, buf);
     }
 
     // Wake up Softdog thread to exit.
@@ -668,7 +668,7 @@ int CSdTimer::ShutdownWork( void )
         char buf[MON_STRING_BUF_SIZE];
         int err = rc;
         sprintf(buf, "[%s], Error= Can't join thread! - errno=%d (%s)\n", method_name, err, strerror(err));
-        wdt_log_write(MON_SDTIMER_SHUTDOWNWORK_2, SQ_LOG_ERR, buf);
+        monproc_log_write(MON_SDTIMER_SHUTDOWNWORK_2, SQ_LOG_ERR, buf);
     }
 
     TRACE_EXIT;
