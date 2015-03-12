@@ -1050,10 +1050,9 @@ Lng32 main(Lng32 argc, char *argv[])
   // setup log4cpp, need to be done here so initLog4cpp can have access to
   // process information since it is needed to compose the log name
   // the log4cpp log name for this lob process  will be
-  // based on this process' node number and its pid
-  QRLogger::instance().setModule(QRLogger::QRL_MXEXE);
-  QRLogger::instance().initLog4cpp("log4cpp.trafodion.config");
-
+  // based on this process' node number mxlobsrvr_<nid>.log
+  QRLogger::instance().setModule(QRLogger::QRL_LOB);
+  QRLogger::instance().initLog4cpp("log4cpp.trafodion.lob.config");
     // initialize lob globals
     lobGlobals = new ExLobGlobals();
     if (lobGlobals == NULL) 

@@ -75,16 +75,12 @@ ExLob::ExLob() :
     storage_(Lob_Invalid_Storage),
     dir_(string()),
     lobGlobalHeap_(NULL),
-#ifdef SQ_USE_HDFS
+
     // fdDesc_(-1),
     fdDesc_(NULL),
     fs_(NULL),
     fdData_(NULL),
-    openFlags_(0)
-#else
-    fdData_(-1)
-   
-#endif
+    openFlags_(0)  
 {
     lobDataFile_[0] = '\0';
     lobDescFile_[0] = '\0'; 
@@ -93,8 +89,6 @@ ExLob::ExLob() :
 ExLob::~ExLob()
 {
     
-
-#ifdef SQ_USE_HDFS
     if (fdData_) {
       hdfsCloseFile(fs_, fdData_);
       fdData_ = NULL;
@@ -103,22 +97,14 @@ ExLob::~ExLob()
       hdfsCloseFile(fs_, fdDesc_);
       fdDesc_ = NULL;
     }
-    /* this is causing a hang 
+    
+     
     if (fs_){
      hdfsDisconnect(fs_);
-    fs_=NULL; */
-   
-  
-#else
-    if (fdData_ != -1) {
-      close(fdData_);
-      fdData_ = -1;
+    fs_=NULL;
     }
-#endif
-    /*if (fdDesc_ != -1) {
-      close(fdDesc_);
-      fdDesc_ = -1; 
-      }*/
+   
+
 
 }
 
@@ -129,72 +115,85 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
                                int bufferSize , short replication ,
                                int blockSize, ExLobGlobals *lobGlobals)
 {
-    int openFlags;
-    mode_t filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-    struct timespec startTime;
-    struct timespec endTime;
-    Int64 secs, nsecs, totalnsecs;
+  int openFlags;
+  mode_t filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+  struct timespec startTime;
+  struct timespec endTime;
+  Int64 secs, nsecs, totalnsecs;
 
-    if (dir) {
-      if (dir_.empty()) {
-        dir_ = string(dir);
-      }
+  if (dir) 
+    {
+      if (dir_.empty()) 
+	{
+	  dir_ = string(dir);
+	}
 
    
       snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s", dir_.c_str(), lobFile);
       snprintf(lobDescFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s.desc", dir_.c_str(), lobFile);
-    } else { 
+    } 
+  else 
+    { 
       snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s", lobFile);
       snprintf(lobDescFile_, MAX_LOB_FILE_NAME_LEN, "%s.desc", lobFile);
     }
 
-    if (storage_ != Lob_Invalid_Storage) {
+  if (storage_ != Lob_Invalid_Storage) 
+    {
       return LOB_INIT_ERROR;
-    } else {
+    } else 
+    {
       storage_ = storage;
     }
 
-    stats_.init(); 
+  stats_.init(); 
 
-    hdfsServer_ = hdfsServer;
-    hdfsPort_ = hdfsPort;
+  hdfsServer_ = hdfsServer;
+  hdfsPort_ = hdfsPort;
 
-    clock_gettime(CLOCK_MONOTONIC, &startTime);
+  clock_gettime(CLOCK_MONOTONIC, &startTime);
 
-    if (lobGlobals->getHdfsFs() == NULL) {
+  if (lobGlobals->getHdfsFs() == NULL)
+    {
       fs_ = hdfsConnect(hdfsServer_, hdfsPort_);
-      if (fs_ == NULL) {
-        return LOB_HDFS_CONNECT_ERROR;
-      }
+      if (fs_ == NULL) 
+	{
+	  return LOB_HDFS_CONNECT_ERROR;
+	}
       lobGlobals->setHdfsFs(fs_);
-    } else {
+    } 
+  else 
+    {
       fs_ = lobGlobals->getHdfsFs();
     }
 
-    clock_gettime(CLOCK_MONOTONIC, &endTime);
+  clock_gettime(CLOCK_MONOTONIC, &endTime);
 
-    secs = endTime.tv_sec - startTime.tv_sec;
-    nsecs = endTime.tv_nsec - startTime.tv_nsec;
-    if (nsecs < 0) {
+  secs = endTime.tv_sec - startTime.tv_sec;
+  nsecs = endTime.tv_nsec - startTime.tv_nsec;
+  if (nsecs < 0) 
+    {
       secs--;
       nsecs += NUM_NSECS_IN_SEC;
     }
-    totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
-    stats_.hdfsConnectionTime += totalnsecs;
+  totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
+  stats_.hdfsConnectionTime += totalnsecs;
     
-    if (mode == EX_LOB_CREATE) { 
-#ifdef SQ_USE_HDFS
+  if (mode == EX_LOB_CREATE) 
+    { 
       // check if file is already created
       hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_);
-      if (fInfo != NULL) {
-         hdfsFreeFileInfo(fInfo, 1);
-         return LOB_DATA_FILE_CREATE_ERROR;
-      } 
+      if (fInfo != NULL) 
+	{
+	  hdfsFreeFileInfo(fInfo, 1);
+	  return LOB_DATA_FILE_CREATE_ERROR;
+	} 
       openFlags = O_WRONLY | O_CREAT;   
       fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags, bufferSize, replication, blockSize);
-      if (!fdData_) {
+      if (!fdData_) 
+	{
           return LOB_DATA_FILE_CREATE_ERROR;
-      }
+	}
       hdfsCloseFile(fs_, fdData_);
       fdData_ = NULL;
       if (!lobGlobals->isHive())
@@ -202,9 +201,10 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
 	  //Create the desc header file that holds info about the 
 	  //lob data file offsets etc.   
 	  fdDesc_ = hdfsOpenFile(fs_, lobDescFile_, O_WRONLY, bufferSize, replication, blockSize);
-	  if (!fdDesc_) {
-	    return LOB_DESC_FILE_CREATE_ERROR;
-	  }
+	  if (!fdDesc_) 
+	    {
+	      return LOB_DESC_FILE_CREATE_ERROR;
+	    }
 	  //write empty header info into it. 
 	  ExLobDescHeader header(LOB_DATA_FILE_SIZE_MAX);
       
@@ -214,56 +214,17 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
 	    return LOB_DATA_WRITE_ERROR;
       
       
-	  if (hdfsFlush(fs_, fdDesc_)) {
-	    return LOB_DATA_FLUSH_ERROR;
-	  }
+	  if (hdfsFlush(fs_, fdDesc_)) 
+	    {
+	      return LOB_DATA_FLUSH_ERROR;
+	    }
 	  hdfsCloseFile(fs_, fdDesc_);
-	  fdDesc_ = NULL;
-
-      
+	  fdDesc_ = NULL;   
 	}
-#else
-      // check if already created, if so return error
-      int fd = open(lobDataFile_, O_RDONLY);
-
-      if (fd != -1) {
-          close(fd);
-          return LOB_DATA_FILE_CREATE_ERROR;
-      }
-
-      openFlags = O_CREAT | O_RDWR ;
-      int fdData = open(lobDataFile_, openFlags, filePerms);
-      if (fdData == -1) {
-          return LOB_DATA_FILE_CREATE_ERROR;
-      }	
-      close(fdData);
-
-    fdData_ = open(lobDataFile_, O_RDWR, filePerms);
-    if (fdData_ == -1) {
-      return LOB_DATA_FILE_OPEN_ERROR;
-    }	
-#endif
- // create the desc file
-      
-    /* openFlags = O_CREAT | O_RDWR ;
-      int fdDesc = open(lobDescFile_, openFlags, filePerms);
-      if (fdDesc == -1) {
-          return LOB_DESC_FILE_CREATE_ERROR;
-      }	
-       
-      ExLobDescHeader header(LOB_DATA_FILE_SIZE_MAX);
-      if (pwrite(fdDesc, &header, sizeof(ExLobDescHeader), 0) == -1) {
-         close(fdDesc);
-         return LOB_DESC_HEADER_WRITE_ERROR;
-      }
-      close(fdDesc);
-    
-    */
-    
     }
-    lobGlobalHeap_ = lobGlobals->getHeap();
-     
-    return LOB_OPER_OK;
+  lobGlobalHeap_ = lobGlobals->getHeap();    
+  return LOB_OPER_OK;
+    
 }
 
 Ex_Lob_Error ExLob::fetchCursor() 
@@ -341,7 +302,6 @@ Ex_Lob_Error ExLob::putDesc(ExLobDesc &desc, Int64 descNum)
 Ex_Lob_Error ExLob::writeData(Int64 offset, char *data, Int64 size, Int64 &operLen)
 { 
     Ex_Lob_Error err;
-#ifdef SQ_USE_HDFS
      if (!fdData_ || (openFlags_ != (O_WRONLY | O_APPEND))) // file is not open for write
     {
       // get file info
@@ -365,11 +325,6 @@ Ex_Lob_Error ExLob::writeData(Int64 offset, char *data, Int64 size, Int64 &operL
      if (hdfsFlush(fs_, fdData_)) {
        return LOB_DATA_FLUSH_ERROR;
      }
-#else
-    if (pwrite(fdData_, data, size, offset) == -1) {
-      return LOB_DATA_WRITE_ERROR;
-    }
-#endif
 
     operLen = size;
 
@@ -381,7 +336,7 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
 { 
     Ex_Lob_Error err;
 
-#ifdef SQ_USE_HDFS
+
     if (!fdData_ || (openFlags_ != (O_WRONLY | O_APPEND))) // file is not open for write
     {
       // get file info
@@ -397,7 +352,7 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
       }
       hdfsCloseFile(fs_, fdData_);
       fdData_=NULL;
-      openFlags_ = O_WRONLY | O_APPEND ; // should use  O_APPEND but does not work;
+      openFlags_ = O_WRONLY | O_APPEND ; 
       fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, bufferSize, replication, blockSize);
       if (!fdData_) {
          openFlags_ = -1;
@@ -410,7 +365,7 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
     if (hdfsFlush(fs_, fdData_)) {
       return LOB_DATA_FLUSH_ERROR;
     }
-#endif
+
 
     operLen = size;
 
@@ -560,14 +515,12 @@ Ex_Lob_Error ExLob::writeData(char *source, Int64 sourceLen, LobsSubOper subOper
        memSize = sourceLen;
     }
 
-#ifdef SQ_USE_HDFS
+
     
     err = writeData(NULL, memAddr, memSize, operLen);
     hdfsCloseFile(fs_, fdData_);
     fdData_=NULL;
-#else
-    err = writeData(desc.getOffset(), memAddr, memSize, operLen);
-#endif
+
 
     if (subOperation == Lob_File) {
        delete memAddr;
@@ -587,7 +540,7 @@ Ex_Lob_Error ExLob::readToMem(char *memAddr, Int64 size, Int64 descNumIn, Int64 
 
    operLen = 0;
 
-#ifdef SQ_USE_HDFS
+
    if (!fdData_ || (openFlags_ != O_RDONLY)) 
    {
       hdfsCloseFile(fs_, fdData_);
@@ -599,9 +552,6 @@ Ex_Lob_Error ExLob::readToMem(char *memAddr, Int64 size, Int64 descNumIn, Int64 
       }
    }
    err = readDataToMem(addr, dNum, 0 /*offset*/, sizeToRead, operLen);
-#else
-   err = readDataToMem(addr, dNum, 0 /*offset*/, sizeToRead, operLen);
-#endif
 
    return err;
 }
@@ -644,49 +594,16 @@ Ex_Lob_Error ExLob::append(char *data, Int64 size, Int64 headDescNum, Int64 &ope
     
     // write new lob desc
     if (size != -1)
-    {
-#ifdef SQ_USE_HDFS
-      
+    { 
       err = writeData(NULL, data, size, operLen);
       hdfsCloseFile(fs_, fdData_);
       fdData_ = NULL;
-#else
-      err = writeData(dataOffset, data, size, operLen);
-#endif
+
       if (err != LOB_OPER_OK)
         return err;
     }
-/*    else
-    {
-      char *fileData = NULL;
-      int fileSize;
-      err = readSourceFile(data, fileData, fileSize);
-      if (err != LOB_OPER_OK)
-        return err;
 
-      ExLobDesc desc(dataOffset, fileSize, -1);
-#ifdef SQ_USE_HDFS
-      if (openFlags_ == O_RDONLY)
-      {
-        hdfsCloseFile(fs_, fdData_);
-        openFlags_ = O_WRONLY;
-        fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-        if (!fdData_) {
-          return LOB_DATA_FILE_OPEN_ERROR;
-        }
-      }
-      err = desc.writeData(fdData_, fs_, fileData, operLen);
-#else
-      err = desc.writeData(fdData_, fileData, operLen);
-#endif
-      if (err != LOB_OPER_OK)
-        return err;
-
-      free(fileData);
-    }
-*/
     operLen = size;
-
     return LOB_OPER_OK;
 }
 
@@ -722,46 +639,16 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, Int64 headDescNum, Int64 &ope
     // write new lob desc
     if (size != -1)
     {
-#ifdef SQ_USE_HDFS
+
      
       err = writeData(NULL, data, size, operLen);
       hdfsCloseFile(fs_, fdData_);
       fdData_ = NULL;
-#else
-      err = writeData(dataOffset, data, size, operLen);
-#endif
+
       if (err != LOB_OPER_OK)
         return err;
     }
-/*    else
-    {
-      char *fileData = NULL;
-      int fileSize;
-      err = readSourceFile(data, fileData, fileSize);
-      if (err != LOB_OPER_OK)
-        return err;
 
-      ExLobDesc desc(dataOffset, fileSize, -1);
-#ifdef SQ_USE_HDFS
-      if (openFlags_ == O_RDONLY)
-      {
-        hdfsCloseFile(fs_, fdData_);
-        openFlags_ = O_WRONLY;
-        fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
-        if (!fdData_) {
-          return LOB_DATA_FILE_OPEN_ERROR;
-        }
-      }
-      err = desc.writeData(fdData_, fs_, fileData, operLen);
-#else
-      err = desc.writeData(fdData_, fileData, operLen);
-#endif
-      if (err != LOB_OPER_OK)
-        return err;
-
-      free(fileData);
-    }
-*/
     operLen = size;
 
     return LOB_OPER_OK;
@@ -783,34 +670,16 @@ Ex_Lob_Error ExLob::delDesc()
 
 Ex_Lob_Error ExLob::purgeLob()
 {
-    Ex_Lob_Error err;
+   
+     if (hdfsDelete(fs_, lobDataFile_, 0) != 0)
+       {
+	 return LOB_DATA_FILE_DELETE_ERROR;
+       }
+     if (hdfsDelete(fs_, lobDescFile_, 0) != 0) 
+       {
+	 return LOB_DESC_FILE_DELETE_ERROR;
+       }
 
-    /* no op the desc file is dropped below
-    request_.setType(Lob_Req_Purge_Desc);
-    request_.send();
-    err = request_.getError();
-    */
-
-#ifdef SQ_USE_HDFS   
-    if (hdfsDelete(fs_, lobDataFile_
-#ifndef USE_HADOOP_1
-                   , 0
-#endif
-                  ) != 0)
-    {
-      return LOB_DATA_FILE_DELETE_ERROR;
-    }
-   if (hdfsDelete(fs_, lobDescFile_, 0) != 0) {
-      return LOB_DESC_FILE_DELETE_ERROR;
-    }
-#else
-    close(fdData_);
-    fdData_ = -1;
-
-    if (remove(lobDataFile_) != 0) {
-      return LOB_DATA_FILE_DELETE_ERROR;
-    }
-#endif 
 
     return LOB_OPER_OK;
 }
@@ -2616,4 +2485,26 @@ Ex_Lob_Error ExLobsOper (
       lobPtr->getStats()->hdfsAccessLayerTime += totalnsecs; 
        
     return err;
+}
+
+void cleanupLOBDataDescFiles(const char *lobHdfsServer,int lobHdfsPort,const char *lobHdfsLoc)
+{ 
+  int numExistingFiles=0;
+  hdfsFS fs;
+  fs = hdfsConnect(lobHdfsServer, lobHdfsPort);
+  if (fs == NULL)
+    return;
+  // Get this list of all data and desc files in the lob sotrage location
+  hdfsFileInfo *fileInfos = hdfsListDirectory(fs, lobHdfsLoc, &numExistingFiles);
+  if (fileInfos == NULL)
+    return ;
+  //Delete each one in a loop
+  for (int i = 0; i < numExistingFiles; i++)      
+    hdfsDelete(fs, fileInfos[i].mName, 0);
+    
+  // *Note* : delete the memory allocated by libhdfs for the file info array  
+  if (fileInfos)
+    {
+      hdfsFreeFileInfo(fileInfos, numExistingFiles);
+    }
 }

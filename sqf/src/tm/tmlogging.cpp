@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -30,7 +30,13 @@ int gv_dual_logging =1; // Write to both SeaLog and stdout by default
 int tm_init_logging()
 {
 	// Log4cpp logging
-	CommonLogger::instance().initLog4cpp("log4cpp.trafodion.config");
+        MS_Mon_Process_Info_Type  proc_info;
+        msg_mon_get_process_info_detail(NULL, &proc_info);
+        int myNid = proc_info.nid;
+        char logNameSuffix[32];
+        sprintf( logNameSuffix, "_%d.log", myNid );
+
+	CommonLogger::instance().initLog4cpp("log4cpp.trafodion.tm.config",logNameSuffix);
 
     ms_getenv_int ("TM_DUAL_LOGGING", &gv_dual_logging);
     return gv_dual_logging; 

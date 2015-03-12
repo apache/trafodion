@@ -221,7 +221,7 @@ Int32 main(Int32 argc, char **argv)
     // since the master and all its subordinate processes log to the same
     // log4cpp file
     QRLogger::instance().setModule(QRLogger::QRL_ESP);
-    QRLogger::instance().initLog4cpp("log4cpp.trafodion.config");
+    QRLogger::instance().initLog4cpp("log4cpp.trafodion.masterexe.config");
   }
   catch (SB_Fatal_Excep &e) {
     SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, e.what(), 0);

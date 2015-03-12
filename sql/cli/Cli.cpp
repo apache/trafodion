@@ -10258,9 +10258,8 @@ Lng32 SQLCLI_LOBddlInterface
 	
 	if (cliRC < 0)
 	  {
-	    //	    cliInterface->retrieveSQLDiagnostics(&diags);
-	    
-	    //  goto error_return;
+	    cliInterface->retrieveSQLDiagnostics(&diags);	    
+	    goto error_return;
 	  }
 	
 	// drop descriptor table
@@ -10273,8 +10272,8 @@ Lng32 SQLCLI_LOBddlInterface
 	    
 	    if (rc)
 	      {
-		//	cliRC = -9999;
-		//goto error_return;
+		cliRC = -9999;
+		goto error_return;
 	      }
 	    
 	    // drop LOB descriptor and LOB header tables
