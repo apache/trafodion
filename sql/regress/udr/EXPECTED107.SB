@@ -926,13 +926,7 @@ DEFAULT
 >>
 >>values(getCollation('def'));
 
-*** ERROR[1389] Object GETCOLLATION does not exist in Trafodion.
-
-*** ERROR[1389] Object GETCOLLATION does not exist in Trafodion.
-
-*** ERROR[4450] Function TRAFODION.SCH.GETCOLLATION is not a built-in function or registered user-defined function.
-
-*** ERROR[4450] Function NEO.UDF.GETCOLLATION is not a built-in function or registered user-defined function.
+*** ERROR[4450] Function TRAFODION."_UDF_".GETCOLLATION is not a built-in function or registered user-defined function.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -954,13 +948,7 @@ DEFAULT
 >>
 >>values(getCollation('ghi'));
 
-*** ERROR[1389] Object GETCOLLATION does not exist in Trafodion.
-
-*** ERROR[1389] Object GETCOLLATION does not exist in Trafodion.
-
-*** ERROR[4450] Function TRAFODION.SCH.GETCOLLATION is not a built-in function or registered user-defined function.
-
-*** ERROR[4450] Function NEO.UDF.GETCOLLATION is not a built-in function or registered user-defined function.
+*** ERROR[4450] Function TRAFODION."_UDF_".GETCOLLATION is not a built-in function or registered user-defined function.
 
 *** ERROR[8822] The statement was not prepared.
 

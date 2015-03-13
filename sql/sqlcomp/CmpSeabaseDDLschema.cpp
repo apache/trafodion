@@ -661,7 +661,7 @@ bool histExists = false;
       {
          char buf [1000];
 
-         str_sprintf(buf, "DROP SEQUENCE \"%s\".\"%s\".\"%s\" CASCADE",
+         str_sprintf(buf, "DROP SEQUENCE \"%s\".\"%s\".\"%s\"",
                      (char*)catName.data(), (char*)schName.data(), objName);
          cliRC = cliInterface.executeImmediate(buf);
 

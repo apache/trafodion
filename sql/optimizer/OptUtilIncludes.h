@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -188,18 +188,22 @@ private:
 class OptUDFInfo : public NABasicObject
 {
 public:
-  OptUDFInfo(const ComObjectName& udfName,
+  OptUDFInfo(Int64 udfUID,
+             const ComObjectName& udfName,
 	     CollHeap *heap = CmpCommon::statementHeap())
-       : udfName_(udfName),
+       : udfUID_(udfUID),
+         udfName_(udfName),
          heap_(heap),
          nameSpace_(COM_UDF_NAME)
   {}
 
-  OptUDFInfo(const ComObjectName& udfName,
+  OptUDFInfo(Int64 udfUID,
+             const ComObjectName& udfName,
              const ComAnsiNameSpace& ansiNameSpace,
              const ComObjectName& internalObjectNameForAction,
 	     CollHeap *heap = CmpCommon::statementHeap())
-       : udfName_(udfName),
+       : udfUID_(udfUID),
+         udfName_(udfName),
          heap_(heap),
          nameSpace_(ansiNameSpace),
 	 internalObjectNameForAction_(internalObjectNameForAction)
@@ -212,6 +216,7 @@ public:
   inline const ComObjectName& getUDFName() const          { return udfName_; } 
   inline const NAString getUDFExternalName() const        { return udfName_.getExternalName(); } 
   inline const ComAnsiNameSpace getUDFNameSpace() const   { return nameSpace_; }
+  inline const Int64 getUDFUID() const          { return udfUID_; } 
 
   inline const ComObjectName& getInternalObjectNameForAction() const
     { return internalObjectNameForAction_; }
@@ -230,6 +235,7 @@ public:
 
 private:
    
+  Int64 udfUID_;
   ComObjectName udfName_;
   ComAnsiNameSpace nameSpace_;
   ComObjectName internalObjectNameForAction_;

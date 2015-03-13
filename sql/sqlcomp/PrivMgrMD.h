@@ -58,6 +58,7 @@ typedef struct {
 typedef struct {
   int64_t objectUID;
   int32_t objectOwner;
+  ComObjectType objectType;
   std::string objectName;
   PrivMgrDesc updatedPrivs;
 } ObjectReference;

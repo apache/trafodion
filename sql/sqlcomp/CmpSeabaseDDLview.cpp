@@ -315,6 +315,30 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
       
     } // for
 
+  // Views can also reference functions.  Add the list of functions
+  // referenced to the VIEWS_USAGE table.
+  const LIST(OptUDFInfo *) & uul = createViewParseNode->getUDFList();
+  for (CollIndex u = 0; u < uul.entries(); u++)
+    {
+
+      char query[1000];
+      str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
+		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
+		  viewUID,
+		  uul[u]->getUDFUID(),
+		  COM_USER_DEFINED_ROUTINE_OBJECT_LIT);
+      Lng32 cliRC = cliInterface->executeImmediate(query);
+      
+
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+
+          return -1;
+        }
+      
+    } // for
+
   return 0;
 } 
 
@@ -462,8 +486,9 @@ short CmpSeabaseDDL::getListOfReferencedTables(
     {
       objectRefdByMe objectRefd = tempRefdList[i];
 
-      // views should only be referencing tables or other views
+      // views should only be referencing tables, other views, or functions
       CMPASSERT(objectRefd.objectType == COM_BASE_TABLE_OBJECT_LIT ||
+                objectRefd.objectType == COM_USER_DEFINED_ROUTINE_OBJECT_LIT ||
                 objectRefd.objectType == COM_VIEW_OBJECT_LIT);
 
       // found a table, add to list

@@ -1022,8 +1022,67 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
      processReturn ();
      return;
   }
+  
+  // Determine if this function is referenced by any other objects.
+  Lng32 cliRC = 0;
+  Queue * usingViewsQueue = NULL;
+  if (dropRoutineNode->getDropBehavior() == COM_RESTRICT_DROP_BEHAVIOR)
+    {
+      NAString usingObjName;
+      cliRC = getUsingObject(&cliInterface, objUID, usingObjName);
+      if (cliRC < 0)
+        {
+          deallocEHI(ehi); 
+          processReturn();
+          
+          return;
+        }
 
-  // Removed routine from metadata and HBase
+      if (cliRC != 100) // found an object
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_DEPENDENT_VIEW_EXISTS)
+                              << DgTableName(usingObjName);
+
+          deallocEHI(ehi); 
+          processReturn();
+
+          return;
+        }
+    }
+  else 
+    if (dropRoutineNode->getDropBehavior() == COM_CASCADE_DROP_BEHAVIOR)
+    {
+      cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
+      if (cliRC < 0)
+        {
+          deallocEHI(ehi); 
+          processReturn();
+          
+          return;
+        }
+    }
+  
+  if (usingViewsQueue)
+    {
+      usingViewsQueue->position();
+      for (int idx = 0; idx < usingViewsQueue->numEntries(); idx++)
+        {
+          OutputInfo * vi = (OutputInfo*)usingViewsQueue->getNext(); 
+          
+          char * viewName = vi->get(0);
+          
+          if (dropOneTableorView(cliInterface,viewName,COM_VIEW_OBJECT,false))
+          
+            {
+              deallocEHI(ehi); 
+              processReturn();
+              
+              return;
+            }
+        }
+    }
+  
+  // Removed routine from metadata 
   if (dropSeabaseObject(ehi, dropRoutineNode->getRoutineName(),
                         currCatName, currSchName, COM_USER_DEFINED_ROUTINE_OBJECT,
                         TRUE, FALSE))

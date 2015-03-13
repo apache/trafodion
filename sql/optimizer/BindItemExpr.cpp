@@ -9109,9 +9109,10 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
     dftUdfSch = dftUdfLoc(index+1, dftUdfLoc.length()-index-1);
     if (dftUdfSch.first('.') != NA_NPOS) // A delimited name was used, such that
     {                                     // we can't be sure assign was correct.
-       dftUdfCat = "NEO"; // If there is a '.' in Sch, set to well known cat.sch
-       dftUdfSch = "UDF"; // Without this the QualifiedName creation in NARoutineDBKey
-    }                     // below may assert.
+       dftUdfCat = CmpSeabaseDDL::getSystemCatalogStatic().data(); 
+       dftUdfSch = SEABASE_UDF_SCHEMA; // If there is a '.' in Sch, set to well known cat.sch
+                                       // Without this the QualifiedName creation in NARoutineDBKey
+    }                                  // below may assert.
   }
 
 
@@ -9214,6 +9215,9 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
       for (Int32 err=-1004; err<=-1001; err++)
         while ((i=CmpCommon::diags()->returnIndex(err)) != NULL_COLL_INDEX)
           CmpCommon::diags()->deleteError(i);
+      // Remove -1389 (not found error) 
+      while ((i=CmpCommon::diags()->returnIndex(-1389)) != NULL_COLL_INDEX)
+        CmpCommon::diags()->deleteError(i);
      }
     else 
     {
@@ -9230,7 +9234,7 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
     //CatExceptionTypeEnum eType = e.getExceptionType();
     *CmpCommon::diags() << DgSqlCode(-4457)
                         << DgString0(functionName_.getExternalName())
-                        << DgString1("CatMan caused an Exception during UDF lookup");
+                        << DgString1("Exception occurred during UDF lookup");
   }
   // Set expanded UDF name for triggers, MVs, ...
   ParNameLocList *pNameLocList = bindWA->getNameLocListPtr();
@@ -9251,13 +9255,8 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
          (NULL == oldUdfMetadata 
           ) ))
     {
-      if (functionName1.getExternalName() != functionName2.getExternalName())
-        // If function names 1 and 2 are different, print two errors.
-        *CmpCommon::diags() << DgSqlCode(-4450)
-                            << DgString0(functionName1.getExternalName());
-
       *CmpCommon::diags() << DgSqlCode(-4450)
-                          << DgString0(functionName2.getExternalName());
+                          << DgString0(functionName_.getExternalName());
       bindWA->setErrStatus();
       return this;
     }
@@ -9532,97 +9531,60 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
   // But, first check to see if this UDF reference already exists in the UDF Info List.
   //
  
-  OptUDFInfo *udfInfo = NULL;
-  ULng32 numUdfs = 0;
-  NABoolean udfReferenced = FALSE;
+  if (bindWA->getUsageParseNodePtr())
+  {
+    LIST(OptUDFInfo *) *udfList = NULL;
+    
+    switch (bindWA->getUsageParseNodePtr()->getOperatorType())
+    {
+      case DDL_CREATE_TRIGGER:
+      {
+        udfList = &bindWA->getUDFList();
+    	break;
+      }
+      case DDL_CREATE_VIEW:
+      {
+        // Set the UDF list for view processing
+        StmtDDLCreateView *view = (StmtDDLCreateView *) bindWA->getUsageParseNodePtr();
+        CMPASSERT(view);
+        udfList = &view->getUDFList();
+    	break;
+      }
+      case DDL_CREATE_MV:
+      {
+        // Set the UDF list for materialized view processing
+        StmtDDLCreateMV *mv = (StmtDDLCreateMV *) bindWA->getUsageParseNodePtr();
+        CMPASSERT(mv);
+        udfList = &mv->getUDFList();
+    	break;
+      }
+      default:
+    	break;
+    }
+    
+    if (udfList != NULL)
+    {
+      OptUDFInfo *udfInfo = NULL;
+      bool isUDFReferenced = false;
+      ULng32 numUdfs = udfList->entries();
       
-  if (bindWA->getUsageParseNodePtr() &&
-      bindWA->getUsageParseNodePtr()->getOperatorType() == DDL_CREATE_TRIGGER)
-  {
-    LIST(OptUDFInfo *) udfList = bindWA->getUDFList();
-    numUdfs = udfList.entries();
-    for (ULng32 udfIndex = 0; udfIndex < numUdfs; udfIndex++)
-    {
-      if ( 0 ==
-           udfList[udfIndex]->getUDFExternalName().
-             compareTo(functionName_.getExternalName())
-         )
+      for (ULng32 udfIndex = 0; udfIndex < numUdfs; udfIndex++)
+        if ((*udfList)[udfIndex]->getUDFExternalName().compareTo(functionName_.getExternalName()) == 0)
+        {
+          isUDFReferenced = true;
+          break;
+        }
+
+      // If this is a new UDF reference, create and save on list
+      if (!isUDFReferenced)
       {
-        udfReferenced = TRUE;
-        break;
+        OptUDFInfo *udfInfo = new (bindWA->wHeap()) OptUDFInfo(udf->getRoutineID(), 
+                                                               functionName_, 
+                                                               bindWA->wHeap());
+        udfList->insert(udfInfo);
       }
-    }
-
-    // Create and save the new UDF reference
-    if ( FALSE == udfReferenced )
-    {
-       udfInfo = new (bindWA->wHeap ())OptUDFInfo (functionName_, bindWA->wHeap ());
-       bindWA->getUDFList().insert(udfInfo);
-    }
- 
+    }  
   }
-  else if (bindWA->getUsageParseNodePtr() &&
-           bindWA->getUsageParseNodePtr()->getOperatorType() == DDL_CREATE_VIEW)
-  {
-    // Save the UDF list for view processing
-    StmtDDLCreateView *view = (StmtDDLCreateView *) bindWA->getUsageParseNodePtr();
-    CMPASSERT(view);
-
-    // populate the list of all the UDF information for the view
-    LIST(OptUDFInfo *) udfList = view->getUDFList();
-    numUdfs = udfList.entries();
- 
-    for (ULng32 udfIndex = 0; udfIndex < numUdfs; udfIndex++)
-    {
-      if ( 0 ==
-           udfList[udfIndex]->getUDFExternalName().
-             compareTo(functionName_.getExternalName())
-         )
-      {
-        udfReferenced = TRUE;
-        break;
-      }
-    }
-
-    // Create and save the new UDF reference
-    if ( FALSE == udfReferenced )
-    {
-       udfInfo = new (bindWA->wHeap ())OptUDFInfo (functionName_, bindWA->wHeap ());
-       view->getUDFList().insert(udfInfo);
-    }
-  }
-  else if (bindWA->getUsageParseNodePtr() &&
-           bindWA->getUsageParseNodePtr()->getOperatorType() == DDL_CREATE_MV)
-  {
-    // Save the UDF list for view processing
-    StmtDDLCreateMV *mv = (StmtDDLCreateMV *) bindWA->getUsageParseNodePtr();
-    CMPASSERT(mv);
-
-    // populate the list of all the UDF information for the MV
-    LIST(OptUDFInfo *) udfList = mv->getUDFList();
-    numUdfs = udfList.entries();
- 
-    for (ULng32 udfIndex = 0; udfIndex < numUdfs; udfIndex++)
-    {
-      if ( 0 ==
-           udfList[udfIndex]->getUDFExternalName().
-             compareTo(functionName_.getExternalName())
-         )
-      {
-        udfReferenced = TRUE;
-        break;
-      }
-    }
-
-    // Create and save the new UDF reference
-    if ( FALSE == udfReferenced )
-    {
-       udfInfo = new (bindWA->wHeap ())OptUDFInfo (functionName_, bindWA->wHeap ());
-       mv->getUDFList().insert(udfInfo);
-    }
-  }
-  
-
 
   // Since our inParams list now accurately reflects our real inputs,
   // we need to update the children's array as it no longer reflects 
