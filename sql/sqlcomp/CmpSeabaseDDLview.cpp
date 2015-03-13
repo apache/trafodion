@@ -638,7 +638,7 @@ void CmpSeabaseDDL::createSeabaseView(
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
 				   catalogNamePart, schemaNamePart, objectNamePart, 
-				   COM_UNKNOWN_OBJECT, TRUE, FALSE);
+				   COM_UNKNOWN_OBJECT, FALSE, FALSE);
   if (retcode < 0)
     {
       deallocEHI(ehi); 

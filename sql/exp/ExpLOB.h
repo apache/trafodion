@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -211,6 +211,9 @@ public:
 				  Int64 uid, Lng32 lobNum, 
 				  char * outBuf, Lng32 outBufLen);
 
+  static char * ExpGetLOBDescHandleObjNamePrefix(Int64 uid, 
+                                                             char * outBuf, Lng32 outBufLen);
+
   static char * ExpGetLOBDescHandleName(Lng32 schNameLen, char * schName, 
 					Int64 uid, Lng32 lobNum, 
 					char * outBuf, Lng32 outBufLen);
@@ -222,6 +225,8 @@ public:
   static char * ExpGetLOBHdrName(Lng32 schNameLen, char * schName, 
 				 Int64 uid, Lng32 lobNum, 
 				 char * outBuf, Lng32 outBufLen);
+
+  static Lng32 ExpGetLOBnumFromDescName(char * descName, Lng32 descNameLen);
   
   static char * ExpGetLOBMDName(Lng32 schNameLen, char * schName,
 				Int64 uid,  

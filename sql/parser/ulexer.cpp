@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1344,6 +1344,50 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                 }
               }       // switch (keyWordEntry2->getTokenCode())
             }     // if !U_isAsciiAlNumUnd(cc) ... else ....
+
+          case TOK_CLEANUP:
+            if (!U_isAsciiAlNumUnd(cc)) {
+              // CLEANUP is a simple keyword. 
+              return anSQLMXKeyword(keyWordEntry1->getTokenCode(), lvalp);
+            }
+            else { 
+              beginRun2 = mark();
+              do { advance(); } while (U_isalnumund(cc=peekChar()));
+              // null-terminate 2nd part
+              holdChar2 = cc;
+              setCurrChar(0);
+              // is 2nd kwd part of a compound token?
+              //
+              // Look for the second word in the keyword table.  If it
+              // is not found, an IDENTIFIER keyword entry will be
+              // used.
+              //
+              keyWordEntry2 = ParKeyWords::lookupKeyWord(beginRun2);
+              // restore null-termination of 2nd part.
+              setCurrChar(holdChar2);
+              switch (keyWordEntry2->getTokenCode()) {
+              case TOK_OBSOLETE:
+                {
+                  return eitherCompoundOrSimpleKeyword
+                    (keyWordEntry2->getTokenCode() == TOK_OBSOLETE,
+                     TOK_CLEANUP_OBSOLETE,
+                     keyWordEntry1->getTokenCode(),
+                     end1, holdChar1, lvalp);
+                   
+                }
+                break;
+
+              default: 
+                {
+                  // CLEANUP is a simple keyword. 
+                  // retract to end of kwd1.
+                  retractToMark(end1);
+                  return anSQLMXKeyword(keyWordEntry1->getTokenCode(), lvalp);
+                }
+                break;
+              }       // switch (keyWordEntry2->getTokenCode())
+            }     // if !U_isAsciiAlNumUnd(cc) ... else ....
+            
           }     // switch (keyWordEntry1->getTokenCode())
           // control should not reach here. but if it does, we may be
           // seeing an identifier beginning with letter [Cc]

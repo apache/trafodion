@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -393,6 +393,14 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
+    case ex_DDL_WITH_STATUS:
+    {
+#pragma nowarn(1506)   // warning elimination 
+      GetVTblPtr(vtblptr,ExDDLwithStatusTdb);
+#pragma warn(1506)  // warning elimination 
+      break;
+    }
+
     case ex_DESCRIBE:
     {
 #pragma nowarn(1506)   // warning elimination 
@@ -645,14 +653,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
-  case ex_METADATA_UPGRADE:
-    {
-#pragma nowarn(1506)   // warning elimination
-      GetVTblPtr(vtblptr,ExExeUtilMetadataUpgradeTdb);
-#pragma warn(1506)  // warning elimination
-
-      break;
-    }
   case ex_HBASE_LOAD:
     {
 #pragma nowarn(1506)   // warning elimination

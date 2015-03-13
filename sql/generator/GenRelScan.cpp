@@ -1917,6 +1917,52 @@ short HbaseAccess::createSortValue(ItemExpr * col_node,
   return 0;
 }
 
+short HbaseAccess::returnDups(std::vector<HbaseAccess::SortValue> &myvector,
+                              ValueIdList &srcVIDlist, ValueIdList &dupVIDlist)
+{
+  size_t startPos = 0;
+  size_t currPos = 0;
+  HbaseAccess::SortValue startVal = myvector[startPos];
+
+  while (currPos <= myvector.size())
+    {
+      NABoolean greater = FALSE;
+      if (currPos == myvector.size())
+        greater = TRUE;
+      else
+        {
+          HbaseAccess::SortValue currVal = myvector[currPos];
+          if (currVal < startVal)
+            return -1; // error, must be sorted
+
+          if (NOT (currVal == startVal)) // currVal > startVal
+            greater = TRUE;
+        }
+
+      if (greater)
+        {
+          if ((currPos - startPos) > 1)
+            {
+              for (size_t j = startPos+1; j < currPos; j++)
+                {
+                  srcVIDlist.insert(myvector[startPos].vid_);
+                  dupVIDlist.insert(myvector[j].vid_);
+                }
+            }
+
+          if (currPos < myvector.size())
+            {
+              startPos = currPos;
+              startVal = myvector[startPos];
+            }
+        } // currVal > startVal
+
+      currPos++;
+    }
+
+  return 0;
+}
+
 short HbaseAccess::sortValues (const ValueIdList &inList,
 			       ValueIdList &sortedList,
 			       NABoolean isSecondaryIndex)
@@ -1944,7 +1990,9 @@ short HbaseAccess::sortValues (const ValueIdList &inList,
 }
 
 short HbaseAccess::sortValues (const ValueIdSet &inSet,
-			       ValueIdList &sortedList,
+			       ValueIdList &uniqueSortedList,
+                               ValueIdList &srcVIDlist,
+                               ValueIdList &dupVIDlist,
 			       NABoolean isSecondaryIndex)
 {
   std::vector<SortValue> myvector;
@@ -1959,11 +2007,16 @@ short HbaseAccess::sortValues (const ValueIdSet &inSet,
   // using object as comp
   std::sort (myvector.begin(), myvector.end()); 
 
+  if (isSecondaryIndex)
+    {
+      returnDups(myvector, srcVIDlist, dupVIDlist);
+    }
+
   myvector.erase( unique( myvector.begin(), myvector.end() ), myvector.end() );
 
   for (size_t ii = 0; ii < myvector.size(); ii++)
     {
-      sortedList.insert(myvector[ii].vid_);
+      uniqueSortedList.insert(myvector[ii].vid_);
     }
 
   return 0;
@@ -2255,7 +2308,6 @@ short HbaseAccess::codeGen(Generator * generator)
 				    FALSE,
 				    firstKeyColumnOffset,
 				    &encodedKeyExprVids);
-      //				    &convertExprCastVids);
     }
 
   Queue * listOfFetchedColNames = NULL;

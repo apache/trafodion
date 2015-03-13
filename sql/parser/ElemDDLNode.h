@@ -339,6 +339,7 @@ class StmtDDLRegisterComponent;
 class StmtDDLRegisterUser;
 class StmtDDLCreateRole;
 class StmtDDLRoleGrant;
+class StmtDDLCleanupObjects;
 
 class QualifiedName;
 
@@ -669,6 +670,8 @@ public:
   virtual StmtDDLRegisterUser           * castToStmtDDLRegisterUser();
   virtual StmtDDLCreateRole             * castToStmtDDLCreateRole();
   virtual StmtDDLRoleGrant             * castToStmtDDLRoleGrant();
+  virtual StmtDDLCleanupObjects          * castToStmtDDLCleanupObjects();
+
   //
   // operator
   //

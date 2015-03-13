@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -412,6 +412,7 @@ static char * FCString (const char *idString, int isFC)
 %token GENERATEtoken
 %token MAINTAINtoken
 %token MERGEtoken
+%token METADATAtoken
 %token REORGtoken
 %token REPLICATEtoken
 %token GETtoken
@@ -2146,10 +2147,11 @@ dml_type :
 	|	MERGEtoken  		{$$ = DML_UPDATE_TYPE;}
         |       CREATE  		{$$ = DML_DDL_TYPE;}
 	|	ALTER   		{$$ = DML_DDL_TYPE;}
-	|       CLEANUP 		{$$ = DML_DDL_TYPE;}
+	|       CLEANUP 		{$$ = DML_DESCRIBE_TYPE;}
 	|	DROP    		{$$ = DML_DDL_TYPE;}
 	|	UPD_STATS       	{$$ = DML_DDL_TYPE;}
 	|	UPD_HIST_STATS  	{$$ = DML_DDL_TYPE;}
+	|       METADATAtoken 		{$$ = DML_DDL_TYPE;}
         |       INITIALIZE              {$$ = DML_DESCRIBE_TYPE;}
         |       REINITIALIZE            {$$ = DML_DDL_TYPE;}
         |       GIVE                    {$$ = DML_DDL_TYPE;}

@@ -59,6 +59,8 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "PrivMgrCommands.h"
 
+#include "ExpHbaseInterface.h"
+
 //******************************************************************************
 //                                                                             *
 //  These definitions were stolen from CatWellKnownTables.h
@@ -92,6 +94,9 @@ ex_tcb * ExExeUtilGetMetadataInfoTdb::build(ex_globals * glob)
   else if (getVersion())
     exe_util_tcb =
       new(glob->getSpace()) ExExeUtilGetMetadataInfoVersionTcb(*this, glob);
+  else if (queryType() == ComTdbExeUtilGetMetadataInfo::HBASE_OBJECTS_)
+    exe_util_tcb =
+      new(glob->getSpace()) ExExeUtilGetHbaseObjectsTcb(*this, glob);
   else
     exe_util_tcb =
       new(glob->getSpace()) ExExeUtilGetMetadataInfoTcb(*this, glob);
@@ -2925,6 +2930,218 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
     }
 
   return 0;
+}
+
+////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilGetHbaseObjectsTcb
+///////////////////////////////////////////////////////////////
+ExExeUtilGetHbaseObjectsTcb::ExExeUtilGetHbaseObjectsTcb(
+     const ComTdbExeUtilGetMetadataInfo & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilGetMetadataInfoTcb( exe_util_tdb, glob)
+{
+  int jniDebugPort = 0;
+  int jniDebugTimeout = 0;
+  ehi_ = ExpHbaseInterface::newInstance(glob->getDefaultHeap(),
+					(char*)exe_util_tdb.server(), 
+					(char*)exe_util_tdb.zkPort(),
+                                        jniDebugPort,
+                                        jniDebugTimeout);
+
+  hbaseName_ = NULL;
+  hbaseNameBuf_ = new(getGlobals()->getDefaultHeap()) 
+    char[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6+1];
+  outBuf_ = new(getGlobals()->getDefaultHeap())
+    char[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6+1];
+}
+
+ExExeUtilGetHbaseObjectsTcb::~ExExeUtilGetHbaseObjectsTcb()
+{
+  if (ehi_)
+    delete ehi_;
+
+  if (hbaseNameBuf_)
+    NADELETEBASIC(hbaseNameBuf_, getGlobals()->getDefaultHeap());
+
+  if (outBuf_)
+    NADELETEBASIC(outBuf_, getGlobals()->getDefaultHeap());
+}
+
+//////////////////////////////////////////////////////
+// work() for ExExeUtilGetHbaseObjectsTcb
+//////////////////////////////////////////////////////
+short ExExeUtilGetHbaseObjectsTcb::work()
+{
+  short retcode = 0;
+  Lng32 cliRC = 0;
+  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
+
+ // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+  
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+  
+  // Get the globals stucture of the master executor.
+  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+  ContextCli * currContext = masterGlob->getStatement()->getContext();
+  
+  while (1)
+    {
+      switch (step_)
+	{
+	case INITIAL_:
+	  {
+            if (ehi_ == NULL)
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            step_ = SETUP_HBASE_QUERY_;
+	  }
+	break;
+
+        case SETUP_HBASE_QUERY_:
+          {
+            bal_ = ehi_->listAll("");
+            if (! bal_)
+              {
+                step_ = HANDLE_ERROR_;
+                break;
+              }
+
+            currIndex_ = 0;
+
+            step_ = PROCESS_NEXT_ROW_;
+          }
+          break;
+
+        case PROCESS_NEXT_ROW_:
+          {
+            if (currIndex_ == bal_->getSize())
+              {
+                step_ = DONE_;
+                break;
+              }
+
+            Int32 len = 0;
+            hbaseName_ = bal_->getEntry(currIndex_, hbaseNameBuf_, 
+                                        ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6, 
+                                        len);
+            hbaseName_[len] = 0;
+            
+            Lng32 numParts = 0;
+            char *parts[4];
+            LateNameInfo::extractParts(hbaseName_, outBuf_, numParts, parts, FALSE);
+
+            currIndex_++;
+
+            if (getMItdb().allObjs())
+              {
+                step_ = RETURN_ROW_;
+                break;
+              }
+
+            NABoolean sysObj = FALSE;
+            NABoolean externalObj = FALSE;
+
+            // only trafodion objects will be returned. They are 3-part name that
+            // start with TRAFODION.
+            if (numParts != 3)
+              {
+                externalObj = TRUE;
+              }
+            else
+              {
+                NAString catalogNamePart(parts[0]);
+                NAString schemaNamePart(parts[1]);
+                NAString objectNamePart(parts[2]);
+                
+                if (catalogNamePart != TRAFODION_SYSCAT_LIT)
+                  {
+                    externalObj = TRUE;
+                  }
+                else
+                  {
+                    if ((schemaNamePart ==  SEABASE_MD_SCHEMA) ||
+                        (schemaNamePart == SEABASE_REPOS_SCHEMA) ||
+                        (schemaNamePart == SEABASE_DTM_SCHEMA) ||
+                        (schemaNamePart == SEABASE_PRIVMGR_SCHEMA))
+                      {
+                        sysObj = TRUE;
+                      }
+                  }
+              }
+
+            if ((getMItdb().externalObjs()) &&
+                (externalObj))
+              {
+                step_ = RETURN_ROW_;
+                break;
+              }
+            else if ((getMItdb().systemObjs()) &&
+                (sysObj))
+              {
+                step_ = RETURN_ROW_;
+                break;
+              }
+            else if ((getMItdb().userObjs()) &&
+                     ((NOT sysObj) && (NOT externalObj)))
+             {
+                step_ = RETURN_ROW_;
+                break;
+              }
+ 
+            step_ = PROCESS_NEXT_ROW_;
+          }
+          break;
+
+        case RETURN_ROW_:
+          {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+	    short rc = 0;
+	    moveRowToUpQueue(hbaseName_, 0, &rc);
+
+            step_ = PROCESS_NEXT_ROW_;
+          }
+          break;
+
+	case HANDLE_ERROR_:
+	  {
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = DONE_;
+	  }
+	break;
+
+	case DONE_:
+	  {
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = INITIAL_;
+
+	    return WORK_OK;
+	  }
+	break;
+        }
+    }
+
+  return WORK_OK;
 }
 
 ////////////////////////////////////////////////////////////////

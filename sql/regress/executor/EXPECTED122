@@ -1253,7 +1253,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 2    .    3    root                                                  1.00E+000
 1    .    2    sort_scalar_aggr                                      1.00E+000
-.    .    1    trafodion_index_scan            T122T6                1.00E+002
+.    .    1    trafodion_index_scan            T122T6_IDX1                1.00E+002
 
 --- SQL operation complete.
 >>execute XX;
@@ -1276,7 +1276,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 3    .    4    root                                                  1.00E+000
 2    .    3    shortcut_scalar_aggr                                  1.00E+000
 1    .    2    firstn                                                1.00E+000
-.    .    1    trafodion_index_scan            T122T6                9.89E+001
+.    .    1    trafodion_index_scan            T122T6_IDX1                9.89E+001
 
 --- SQL operation complete.
 >>execute XX;

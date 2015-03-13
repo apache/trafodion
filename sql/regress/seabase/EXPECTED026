@@ -1,0 +1,408 @@
+>>
+>>drop table if exists t026t0;
+
+--- SQL operation complete.
+>>drop table if exists t026t1 cascade;
+
+--- SQL operation complete.
+>>
+>>create table t026t0 (a int not null primary key);
+
+--- SQL operation complete.
+>>create table t026t1 (a int not null primary key, b int not null);
+
+--- SQL operation complete.
+>>create index t026t1i1 on t026t1(b);
+
+--- SQL operation complete.
+>>
+>>set parserflags 131072;
+
+--- SQL operation complete.
+>>update "_MD_".objects set valid_def = 'N' where catalog_name = 'TRAFODION' and
++>     schema_name = 'SCH026' and object_name = 'T026T1' and object_type = 'BT';
+
+--- 1 row(s) updated.
+>>update "_MD_".objects set valid_def = 'N' where catalog_name = 'TRAFODION' and
++>     schema_name = 'SCH026' and object_name = 'T026T1I1' and object_type = 'IX';
+
+--- 1 row(s) updated.
+>>reset parserflags 131072;
+
+--- SQL operation complete.
+>>
+>>invoke t026t1;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+*** ERROR[4082] Object TRAFODION.SCH026.T026T1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>drop table t026t1;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>drop index t026t1i1;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1I1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>create index t026t1i2 on t026t1(b);
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>alter table t026t1 rename to t026t1new;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>alter table t026t1 add column c int;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>alter table t026t1 drop column b;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>alter table t026t1 add constraint t026t1c1 unique(b);
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>alter table t026t1 add constraint t026t1c2 foreign key (b) references t026t0;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>alter table t026t1 add constraint t026t1c3 check (b > 0);
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+*** ERROR[4082] Object TRAFODION.SCH026.T026T1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>alter table t026t1 drop constraint t026t1c3;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>
+>>cleanup table t026t0;
+
+--- SQL operation complete.
+>>cleanup index t026t1i1;
+
+--- SQL operation complete.
+>>cleanup table t026t1;
+
+--- SQL operation complete.
+>>
+>>invoke t026t0;
+
+*** ERROR[4082] Object TRAFODION.SCH026.T026T0 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>invoke t026t1;
+
+*** ERROR[4082] Object TRAFODION.SCH026.T026T1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>
+>>set parserflags 131072;
+
+--- SQL operation complete.
+>>update "_MD_".objects set valid_def = 'Y' where catalog_name = 'TRAFODION' and
++>     schema_name = 'SCH026' and object_name = 'T026T1' and object_type = 'BT';
+
+--- 0 row(s) updated.
+>>update "_MD_".objects set valid_def = 'Y' where catalog_name = 'TRAFODION' and
++>     schema_name = 'SCH026' and object_name = 'T026T1I1' and object_type = 'IX';
+
+--- 0 row(s) updated.
+>>reset parserflags 131072;
+
+--- SQL operation complete.
+>>
+>>cqd traf_blob_as_varchar 'OFF';
+
+--- SQL operation complete.
+>>set schema sch026;
+
+--- SQL operation complete.
+>>cleanup schema sch026;
+
+--- SQL operation complete.
+>>create private schema sch026;
+
+--- SQL operation complete.
+>>create table t026t20(a int not null primary key);
+
+--- SQL operation complete.
+>>create table t026t2 (a int not null primary key, 
++>                              b int not null unique, 
++>                              c int not null references t026t20(a),
++>                              d blob, 
++>                              e char(2) check (e > 'a'), 
++>                              f largeint generated by default as identity not null);
+
+--- SQL operation complete.
+>>create index t026t2i1 on t026t2(b);
+
+--- SQL operation complete.
+>>select count(*) from "_MD_".objects where schema_name = 'SCH026' and object_name like 'T026%';
+
+(EXPR)              
+--------------------
+
+                  10
+
+--- 1 row(s) selected.
+>>cleanup table t026t2;
+
+--- SQL operation complete.
+>>select count(*) from "_MD_".objects where schema_name = 'SCH026' and object_name like 'T026%';
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>cleanup schema sch026;
+
+--- SQL operation complete.
+>>select count(*) from "_MD_".objects where schema_name = 'SCH026' and object_name like 'T026%';
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>create private schema sch026;
+
+--- SQL operation complete.
+>>set schema sch026;
+
+--- SQL operation complete.
+>>create table t026t20(a int not null primary key);
+
+--- SQL operation complete.
+>>create table t026t2 (a int not null primary key, 
++>                              b int not null unique, 
++>                              c int not null references t026t20(a),
++>                              d blob, 
++>                              e char(2) check (e > 'a'), 
++>                              f largeint generated by default as identity not null);
+
+--- SQL operation complete.
+>>create index t026t2i1 on t026t2(b);
+
+--- SQL operation complete.
+>>
+>>drop hbase table "TRAFODION.SCH026.T026T2I1";
+
+--- SQL operation complete.
+>>set parserflags 131072;
+
+--- SQL operation complete.
+>>cqd hide_indexes 'ALL';
+
+--- SQL operation complete.
+>>delete from "_MD_".objects where catalog_name = 'TRAFODION' and
++>     schema_name = 'SCH026' and object_name = 'T026T2' and object_type = 'BT';
+
+--- 1 row(s) deleted.
+>>delete from "_MD_".objects where catalog_name = 'TRAFODION' and
++>     schema_name = 'SCH026' and object_type = 'PK';
+
+--- 4 row(s) deleted.
+>>cqd hide_indexes reset;
+
+--- SQL operation complete.
+>>reset parserflags 131072;
+
+--- SQL operation complete.
+>>
+>>select count(*) from "_MD_".objects where schema_name = 'SCH026' and object_name like 'T026%';
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>>cleanup table t026t2;
+
+--- SQL operation complete.
+>>select count(*) from "_MD_".objects where schema_name = 'SCH026' and object_name like 'T026%';
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>cleanup schema sch026;
+
+--- SQL operation complete.
+>>select count(*) from "_MD_".objects where schema_name = 'SCH026' and object_name like 'T026%';
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- test for CLEANUP METADATA
+>>cleanup schema sch026;
+
+*** WARNING[4255] Provided schema name does not exist in metadata. Cleanup will be performed on objects in this schema, if they exist.
+
+--- SQL operation complete.
+>>create schema sch026;
+
+--- SQL operation complete.
+>>set schema sch026;
+
+--- SQL operation complete.
+>>create table t026t10(a int);
+
+--- SQL operation complete.
+>>create table t026t11(a int);
+
+--- SQL operation complete.
+>>create table t026t12(a int);
+
+--- SQL operation complete.
+>>cleanup metadata, check;
+Metadata Cleanup: started, check only
+
+  Start: Cleanup Orphan Objects Entries
+  End:   Cleanup Orphan Objects Entries (0 entries found)
+
+  Start: Cleanup Orphan Hbase Entries
+  End:   Cleanup Orphan Hbase Entries (0 entries found)
+
+  Start: Cleanup Inconsistent Objects Entries
+  End:   Cleanup Inconsistent Objects Entries (0 entries found)
+
+  Start: Cleanup Inconsistent Views Entries
+  End:   Cleanup Inconsistent Views Entries (0 entries found)
+
+Metadata Cleanup: done
+
+
+--- SQL operation complete.
+>>drop hbase table "TRAFODION.SCH026.T026T10";
+
+--- SQL operation complete.
+>>set parserflags 131072;
+
+--- SQL operation complete.
+>>delete from "_MD_".objects where schema_name = 'SCH026' and object_name = 'T026T11';
+
+--- 1 row(s) deleted.
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>delete from table(index_table "_MD_".objects_uniq_idx) where schema_name = 'SCH026' and object_name = 'T026T12';
+
+--- 1 row(s) deleted.
+>>
+>>cleanup metadata, check;
+Metadata Cleanup: started, check only
+
+  Start: Cleanup Orphan Objects Entries
+  End:   Cleanup Orphan Objects Entries (1 entry found)
+
+  Start: Cleanup Orphan Hbase Entries
+  End:   Cleanup Orphan Hbase Entries (1 entry found)
+
+  Start: Cleanup Inconsistent Objects Entries
+  End:   Cleanup Inconsistent Objects Entries (2 entries found)
+
+  Start: Cleanup Inconsistent Views Entries
+  End:   Cleanup Inconsistent Views Entries (0 entries found)
+
+Metadata Cleanup: done
+
+
+--- SQL operation complete.
+>>cleanup metadata, check, return details;
+Metadata Cleanup: started, check only
+
+  Start: Cleanup Orphan Objects Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T10
+  End:   Cleanup Orphan Objects Entries (1 entry found)
+
+  Start: Cleanup Orphan Hbase Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T11
+  End:   Cleanup Orphan Hbase Entries (1 entry found)
+
+  Start: Cleanup Inconsistent Objects Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T12
+    Entry #2(UID)       : 88443543482317153
+  End:   Cleanup Inconsistent Objects Entries (2 entries found)
+
+  Start: Cleanup Inconsistent Views Entries
+  End:   Cleanup Inconsistent Views Entries (0 entries found)
+
+Metadata Cleanup: done
+
+
+--- SQL operation complete.
+>>cleanup metadata, return details;
+Metadata Cleanup: started
+
+  Start: Cleanup Orphan Objects Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T10
+  End:   Cleanup Orphan Objects Entries (1 entry cleaned up)
+
+  Start: Cleanup Orphan Hbase Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T11
+  End:   Cleanup Orphan Hbase Entries (1 entry cleaned up)
+
+  Start: Cleanup Inconsistent Objects Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T12
+    Entry #2(UID):    88443543482317153
+  End:   Cleanup Inconsistent Objects Entries (2 entries cleaned up)
+
+  Start: Cleanup Inconsistent Views Entries
+  End:   Cleanup Inconsistent Views Entries (0 entries cleaned up)
+
+Metadata Cleanup: done
+
+
+--- SQL operation complete.
+>>cleanup metadata, check;
+Metadata Cleanup: started, check only
+
+  Start: Cleanup Orphan Objects Entries
+  End:   Cleanup Orphan Objects Entries (0 entries found)
+
+  Start: Cleanup Orphan Hbase Entries
+  End:   Cleanup Orphan Hbase Entries (0 entries found)
+
+  Start: Cleanup Inconsistent Objects Entries
+  End:   Cleanup Inconsistent Objects Entries (0 entries found)
+
+  Start: Cleanup Inconsistent Views Entries
+  End:   Cleanup Inconsistent Views Entries (0 entries found)
+
+Metadata Cleanup: done
+
+
+--- SQL operation complete.
+>>cleanup schema sch026;
+
+--- SQL operation complete.
+>>
+>>log;

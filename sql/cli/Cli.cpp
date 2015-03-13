@@ -9503,6 +9503,47 @@ Lng32 SQLCLI_LOBcliInterface
       }
       break;
 
+    case LOB_CLI_CLEANUP:
+      {
+	str_sprintf(query, "cleanup table %s",
+		    lobDescHandleName);
+
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+	cliRC = cliInterface->executeImmediate(query);
+
+	currContext.resetSqlParserFlags(0x1);
+
+	if (cliRC < 0)
+	  {
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
+
+	str_sprintf(query, "cleanup table %s",
+		    lobDescChunksName);
+
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+	cliRC = cliInterface->executeImmediate(query);
+
+	currContext.resetSqlParserFlags(0x1);
+
+	if (cliRC < 0)
+	  {
+	    cliInterface->retrieveSQLDiagnostics(myDiags);
+	    
+	    goto error_return;
+	  }
+
+	
+	cliRC = 0;
+      }
+      break;
+
     case LOB_CLI_INSERT:
       {
 	// insert into lob descriptor handle table
@@ -9677,6 +9718,8 @@ Lng32 SQLCLI_LOBcliInterface
 	    
 	    goto error_return;
 	  }
+
+#ifdef __ignore
 	//***ssss** temp workaround for cursor delete problem 
 	cliRC = cliInterface->executeImmediate("cqd hbase_updel_cursor_opt 'OFF'; " );
        
@@ -9687,6 +9730,8 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 	//**** ssss*** end temp workaround
+#endif
+
 	// delete all chunks from lob descriptor chunks table
 	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %Ld and descSysKey = %Ld",
 		    lobDescChunksName, descPartnKey, inDescSyskey);
@@ -9753,6 +9798,7 @@ Lng32 SQLCLI_LOBcliInterface
 
     case LOB_CLI_DELETE:
       {
+#ifdef __ignore
 	//***ssss** temp workaround for cursor delete problem 
 	cliRC = cliInterface->executeImmediate("cqd hbase_updel_cursor_opt 'OFF'; " );
        
@@ -9763,6 +9809,8 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 	//**** ssss*** end temp workaround
+#endif
+
 	// delete from lob descriptor handle table
 	str_sprintf(query, "delete from table(ghost table %s) where descPartnKey = %Ld and syskey = %Ld",
 		    lobDescHandleName, descPartnKey, inDescSyskey);
@@ -10138,7 +10186,6 @@ Lng32 SQLCLI_LOBddlInterface
     ExpLOBoper::ExpGetLOBMDName(schNameLen, schName, objectUID,
 				lobMDNameBuf, lobMDNameLen);
   
-  
   char * query = new(currContext.exHeap()) char[4096];
 
   switch (qType)
@@ -10231,13 +10278,12 @@ Lng32 SQLCLI_LOBddlInterface
 					     NULL,
 					     NULL,
 					     0);
-	    if (rc < 0)
+	    if (cliRC < 0)
 	      {
 		cliInterface->retrieveSQLDiagnostics(myDiags);
 		
 		goto error_return;
 	      }
-	    
 	    
 	  } // for
 	
@@ -10299,13 +10345,79 @@ Lng32 SQLCLI_LOBddlInterface
 					     NULL,
 					     NULL,
 					     0);
-	    if (rc < 0)
+	    if (cliRC < 0)
 	      {
 		cliInterface->retrieveSQLDiagnostics(myDiags);
 		
 		goto error_return;
 	      }
 	    
+	  } // for
+	
+      }
+      break;
+
+    case LOB_CLI_CLEANUP:
+      {
+	str_sprintf(query, "cleanup table %s", lobMDName);
+	
+	// set parserflags to allow ghost table
+	currContext.setSqlParserFlags(0x1);
+	
+	cliRC = cliInterface->executeImmediate(query);
+	
+	currContext.resetSqlParserFlags(0x1);
+	
+	if (cliRC < 0)
+	  {
+	    //	    cliInterface->retrieveSQLDiagnostics(&diags);
+	    
+	    //  goto error_return;
+	  }
+	
+	// drop descriptor table
+	for (Lng32 i = 0; i < numLOBs; i++)
+	  {
+	    Lng32 rc = ExpLOBoper::dropLOB
+	      (NULL, currContext.exHeap(),
+	       lobLocList[i],
+	       objectUID, lobNumList[i]);
+	    
+	    if (rc)
+	      {
+		//	cliRC = -9999;
+		//goto error_return;
+	      }
+	    
+	    // drop LOB descriptor and LOB header tables
+	    char lobHandle[512];
+	    Lng32 handleLen = 0;
+	    ExpLOBoper::genLOBhandle(objectUID,
+				     lobNumList[i],
+				     lobTypList[i],
+				     0, 0, 0,
+				     schNameLen,
+				     schName,
+				     handleLen,
+				     lobHandle);
+	    
+	    cliRC = SQL_EXEC_LOBcliInterface(lobHandle, handleLen,
+					     NULL, 0,
+					     NULL, NULL,
+					     LOB_CLI_CLEANUP,
+					     LOB_CLI_ExecImmed,
+					     NULL,
+					     NULL,
+					     NULL,
+					     NULL,
+					     NULL,
+					     0);
+	    if (cliRC < 0)
+	      {
+		cliInterface->retrieveSQLDiagnostics(myDiags);
+		
+		goto error_return;
+	      }
 	    
 	  } // for
 	

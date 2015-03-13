@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -521,18 +521,148 @@ void ex_tcb::cpuLimitExceeded()
 
 void ex_tcb::cleanup()
 {
-	Int32 nc = numChildren();
-	for (Int32 i = 0; i < nc; i++)
-	{
-	  ex_tcb * childTcb = (ex_tcb*)getChild(i);
-
-	  if (childTcb)
-		{
-		  childTcb->cleanup();
-		}
-	}
+  Int32 nc = numChildren();
+  for (Int32 i = 0; i < nc; i++)
+    {
+      ex_tcb * childTcb = (ex_tcb*)getChild(i);
+      
+      if (childTcb)
+        {
+          childTcb->cleanup();
+        }
+    }
 }
 
+short ex_tcb::moveRowToUpQueue(ex_queue_pair *qparent,
+                               UInt16 tuppIndex,
+                               const char * row, Lng32 len, 
+                               short * rc, NABoolean isVarchar)
+{
+  if (qparent->up->isFull())
+    {
+      if (rc)
+	*rc = WORK_CALL_AGAIN;
+      return -1;
+    }
+
+  Lng32 length;
+  if (len <= 0)
+    length = strlen(row);
+  else
+    length = len;
+
+  tupp p;
+  if (pool_->get_free_tuple(p, (Lng32)
+			    ((isVarchar ? SQL_VARCHAR_HDR_SIZE : 0)
+			     + length)))
+    {
+      if (rc)
+	*rc = WORK_POOL_BLOCKED;
+      return -1;
+    }
+  
+  char * dp = p.getDataPointer();
+  if (isVarchar)
+    {
+      *(short*)dp = (short)length;
+      str_cpy_all(&dp[SQL_VARCHAR_HDR_SIZE], row, length);
+    }
+  else
+    {
+      str_cpy_all(dp, row, length);
+    }
+
+  ex_queue_entry * pentry_down = qparent->down->getHeadEntry();
+  ex_queue_entry * up_entry = qparent->up->getTailEntry();
+  
+  up_entry->copyAtp(pentry_down);
+  up_entry->getAtp()->getTupp((Lng32)tuppIndex) = p;
+
+  up_entry->upState.parentIndex = 
+    pentry_down->downState.parentIndex;
+  
+  up_entry->upState.setMatchNo(0);
+  up_entry->upState.status = ex_queue::Q_OK_MMORE;
+
+  // insert into parent
+  qparent->up->insert();
+
+  return 0;
+}
+
+short ex_tcb::handleError(ex_queue_pair *qparent, ComDiagsArea *inDiagsArea)
+{
+  if (qparent->up->isFull())
+    return 1;
+  
+  // Return EOF.
+  ex_queue_entry * up_entry = qparent->up->getTailEntry();
+  ex_queue_entry * pentry_down = qparent->down->getHeadEntry();
+  
+  up_entry->upState.parentIndex = 
+    pentry_down->downState.parentIndex;
+  
+  up_entry->upState.setMatchNo(0);
+  up_entry->upState.status = ex_queue::Q_SQLERROR;
+  
+  ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+  
+  if (diagsArea == NULL)
+    diagsArea = 
+      ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
+  else
+    diagsArea->incrRefCount (); // the setDiagsArea below will decr the ref count
+  
+  if (inDiagsArea)
+    diagsArea->mergeAfter(*inDiagsArea);
+  
+  up_entry->setDiagsArea (diagsArea);
+  
+  // insert into parent
+  qparent->up->insert();
+  
+  return 0;
+}
+
+short ex_tcb::handleDone(ex_queue_pair *qparent, ComDiagsArea *inDiagsArea)
+{
+  if (qparent->up->isFull())
+    return 1;
+  
+  // Return EOF.
+  ex_queue_entry * up_entry = qparent->up->getTailEntry();
+  ex_queue_entry * pentry_down = qparent->down->getHeadEntry();
+  
+  if (inDiagsArea && inDiagsArea->getNumber(DgSqlCode::WARNING_) > 0)
+    {
+      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+      
+      if (diagsArea == NULL)
+	diagsArea = 
+	  ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
+      else
+	diagsArea->incrRefCount (); // the setDiagsArea below will decr the ref count
+      
+      if (inDiagsArea)
+	diagsArea->mergeAfter(*inDiagsArea);
+      
+      up_entry->setDiagsArea (diagsArea);
+    }
+
+  up_entry->upState.parentIndex = 
+    pentry_down->downState.parentIndex;
+  
+  up_entry->upState.setMatchNo(0);
+  up_entry->upState.status = ex_queue::Q_NO_DATA;
+  
+  // insert into parent
+  qparent->up->insert();
+  
+  //	    pstate.matches_ = 0;
+  qparent->down->removeHead();
+  
+  return 0;
+}
 
 __declspec(dllexport)
 NA_EIDPROC

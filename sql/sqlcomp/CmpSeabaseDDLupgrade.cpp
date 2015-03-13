@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -243,7 +243,7 @@ short CmpSeabaseDDL::isOldMetadataInitialized(ExpHbaseInterface * ehi)
   return -1;
 }
 
-short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
+short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 						   NAString &currCatName, NAString &currSchName)
 {
   Lng32 cliRC = 0;
@@ -257,7 +257,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
   while (1)
     {
-      switch (mdui.step())
+      switch (mdui->step())
 	{
 	case UPGRADE_START: 
 	  {
@@ -267,29 +267,29 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		return -1;
 	      }
 
-	    if (mdui.getMDVersion())
+	    if (mdui->getMDVersion())
 	      {
-		mdui.setStep(GET_MD_VERSION);
-		mdui.setSubstep(0);
+		mdui->setStep(GET_MD_VERSION);
+		mdui->setSubstep(0);
 		break;
 	      }
 
-	    if (mdui.getSWVersion())
+	    if (mdui->getSWVersion())
 	      {
-		mdui.setStep(GET_SW_VERSION);
-		mdui.setSubstep(0);
+		mdui->setStep(GET_SW_VERSION);
+		mdui->setSubstep(0);
 		break;
 	      }
 
-	    mdui.setMsg("Metadata Upgrade: started");
-	    mdui.setStep(VERSION_CHECK);
-	    mdui.setSubstep(0);
-	    mdui.setEndStep(TRUE);
+	    mdui->setMsg("Metadata Upgrade: started");
+	    mdui->setStep(VERSION_CHECK);
+	    mdui->setSubstep(0);
+	    mdui->setEndStep(TRUE);
 	    
 	    if (sendAllControlsAndFlags())
 	      {
-		mdui.setStep(UPGRADE_FAILED);
-		mdui.setSubstep(0);
+		mdui->setStep(UPGRADE_FAILED);
+		mdui->setSubstep(0);
 	      }
 	    
 	    return 0;
@@ -298,7 +298,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	  
 	case GET_MD_VERSION:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
@@ -316,41 +316,41 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      // no version mismatch detected.
 		      // Metadata is uptodate.
-		      mdui.setSubstep(1);
+		      mdui->setSubstep(1);
 		    }
 		  else if (retcode == -1395) // mismatch in MAJOR version. Need to upgrade
 		    {
 		      if ((mdCurrMajorVersion == METADATA_OLD_MAJOR_VERSION) &&
 			  (mdCurrMinorVersion == METADATA_OLD_MINOR_VERSION))
 			{
-			  mdui.setSubstep(2);
+			  mdui->setSubstep(2);
 			}
 		      else
 			{
 			  // metadata cannot be upgraded with the current release.
-			  mdui.setSubstep(3);
+			  mdui->setSubstep(3);
 			}
 		    }
 		  else if (retcode == -1394) // mismatch in MAJOR version. Need to upgrade
 		    {
 		      // metadata cannot be upgraded with the current release.
-		      mdui.setSubstep(3);
+		      mdui->setSubstep(3);
 		    }
 		  else
 		    {
 		      *CmpCommon::diags() << DgSqlCode(retcode);
-		      mdui.setStep(DONE_RETURN);
+		      mdui->setStep(DONE_RETURN);
 		      
-		      mdui.setSubstep(0);
-		      mdui.setEndStep(TRUE);
+		      mdui->setSubstep(0);
+		      mdui->setEndStep(TRUE);
 		      break;
 		    }
 		  
 		  str_sprintf(msgBuf, "  Current Version %Ld.%Ld. Expected Version %Ld.%Ld.",
 			      mdCurrMajorVersion, mdCurrMinorVersion,
 			      METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION);   
-		  mdui.setMsg(msgBuf);
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg(msgBuf);
+		  mdui->setEndStep(FALSE);
 		  
 		  return 0;
 		} // case 0
@@ -359,11 +359,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	      case 1:
 		{
 		  str_sprintf(msgBuf, "  Metadata is current.");
-		  mdui.setMsg(msgBuf);
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg(msgBuf);
+		  mdui->setEndStep(FALSE);
 		  
-		  mdui.setStep(DONE_RETURN);
-		  mdui.setSubstep(0);
+		  mdui->setStep(DONE_RETURN);
+		  mdui->setSubstep(0);
 		  
 		  return 0;
 		}
@@ -372,11 +372,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	      case 2:
 		{
 		  str_sprintf(msgBuf, "  Metadata need to be upgraded or reinitialized.");
-		  mdui.setMsg(msgBuf);
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg(msgBuf);
+		  mdui->setEndStep(FALSE);
 		  
-		  mdui.setStep(DONE_RETURN);
-		  mdui.setSubstep(0);
+		  mdui->setStep(DONE_RETURN);
+		  mdui->setSubstep(0);
 		  
 		  return 0;
 		}
@@ -385,10 +385,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	      case 3:
 		{
 		  str_sprintf(msgBuf, "  Metadata cannot be upgraded with this version of software.");
-		  mdui.setMsg(msgBuf);
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg(msgBuf);
+		  mdui->setEndStep(FALSE);
 		  
-		  mdui.setSubstep(4);
+		  mdui->setSubstep(4);
 		  
 		  return 0;
 		}
@@ -397,11 +397,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	      case 4:
 		{
 		  str_sprintf(msgBuf, "  Install previous version of software or reinitialize metadata.");
-		  mdui.setMsg(msgBuf);
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg(msgBuf);
+		  mdui->setEndStep(FALSE);
 		  
-		  mdui.setStep(DONE_RETURN);
-		  mdui.setSubstep(0);
+		  mdui->setStep(DONE_RETURN);
+		  mdui->setSubstep(0);
 		  
 		  return 0;
 		}
@@ -413,7 +413,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	  
 	case GET_SW_VERSION:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
@@ -436,24 +436,24 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                                              &mdSWMinorVersion);
 		  
 		  deallocEHI(ehi);
-		  
+
 		  if (retcode == 0)
 		    {
 		      // no version mismatch detected between system and expected software.
                       if ((mdSWMajorVersion == sysSWMajorVersion) &&
                           (mdSWMinorVersion == sysSWMinorVersion))
                         // software version stored in metadata is uptodate
-                        mdui.setSubstep(1);
+                        mdui->setSubstep(1);
                       else
                         // Software version stored in metadata is not current.
                         // Initialize scripts need to be enhanced to store current software 
                         // version in metadata when trafodion is initialized or upgraded. 
                         // Until scripts are enhanced to do that, do not return an error.
-                        mdui.setSubstep(1);
+                        mdui->setSubstep(1);
 		    }
 		  else if (retcode == -1397) // mismatch in software version
 		    {
-                      mdui.setSubstep(3);
+                      mdui->setSubstep(3);
 		    }
                   else
                     {
@@ -465,10 +465,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                         str_sprintf(msgBuf, " Error %d returned while accessing metadata. Fix that error before running this command.",
                                     retcode);
 
-                      mdui.setSubstep(4);
+                      mdui->setSubstep(4);
 
-                      mdui.setMsg(msgBuf);
-                      mdui.setEndStep(FALSE);
+                      mdui->setMsg(msgBuf);
+                      mdui->setEndStep(FALSE);
                   
                       return 0;
                     }
@@ -479,8 +479,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  str_sprintf(msgBuf, "  System Version %Ld.%Ld.%Ld. Expected Version %Ld.%Ld.%Ld.",
 			      sysSWMajorVersion, sysSWMinorVersion, sysSWUpdVersion,
 			      expSWMajorVersion, expSWMinorVersion, expSWUpdVersion);
-		  mdui.setMsg(msgBuf);
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg(msgBuf);
+		  mdui->setEndStep(FALSE);
 		  
 		  return 0;
 		} // case 0
@@ -489,11 +489,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	      case 1:
 		{
 		  str_sprintf(msgBuf, "  Software is current.");
-		  mdui.setMsg(msgBuf);
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg(msgBuf);
+		  mdui->setEndStep(FALSE);
 		  
-		  mdui.setStep(DONE_RETURN);
-		  mdui.setSubstep(0);
+		  mdui->setStep(DONE_RETURN);
+		  mdui->setSubstep(0);
 		  
 		  return 0;
 		}
@@ -502,11 +502,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	      case 2:
 		{
 		  str_sprintf(msgBuf, "  Metadata need to be updated with current software version. Run 'initialize trafodion, update software version' to update it.");
-		  mdui.setMsg(msgBuf);
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg(msgBuf);
+		  mdui->setEndStep(FALSE);
 		  
-		  mdui.setStep(DONE_RETURN);
-		  mdui.setSubstep(0);
+		  mdui->setStep(DONE_RETURN);
+		  mdui->setSubstep(0);
 		  
 		  return 0;
 		}
@@ -515,11 +515,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	      case 3:
 		{
 		  str_sprintf(msgBuf, "  Version of software being used is not compatible with version of software on the system.");
-		  mdui.setMsg(msgBuf);
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg(msgBuf);
+		  mdui->setEndStep(FALSE);
 		  
-		  mdui.setStep(DONE_RETURN);
-		  mdui.setSubstep(0);
+		  mdui->setStep(DONE_RETURN);
+		  mdui->setSubstep(0);
 		  
 		  return 0;
 		}
@@ -527,10 +527,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		
               case 4:
                 {
-		  mdui.setEndStep(FALSE);
+		  mdui->setEndStep(FALSE);
 		  
-		  mdui.setStep(DONE_RETURN);
-		  mdui.setSubstep(0);
+		  mdui->setStep(DONE_RETURN);
+		  mdui->setSubstep(0);
                 }
                 break;
 
@@ -540,13 +540,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	  
 	case VERSION_CHECK:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui.setMsg("Version Check: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Version Check: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -571,10 +571,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		      // Metadata is uptodate.
 		      str_sprintf(msgBuf, "  Metadata is already at Version %Ld.%Ld.",
 				  mdCurrMajorVersion, mdCurrMinorVersion);
-		      mdui.setMsg(msgBuf);
-		      mdui.setEndStep(FALSE);
+		      mdui->setMsg(msgBuf);
+		      mdui->setEndStep(FALSE);
 
-		      mdui.setSubstep(2);
+		      mdui->setSubstep(2);
 		      
 		      return 0;
 		    }
@@ -587,9 +587,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 				      mdCurrMajorVersion, mdCurrMinorVersion,
 				      METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION);
 			  
-			  mdui.setMsg(msgBuf);
+			  mdui->setMsg(msgBuf);
 			  
-			  mdui.setSubstep(3);
+			  mdui->setSubstep(3);
 			  
 			  return 0;
 			}
@@ -600,9 +600,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 				      mdCurrMajorVersion, mdCurrMinorVersion,
 				      METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION);
 			  
-			  mdui.setMsg(msgBuf);
+			  mdui->setMsg(msgBuf);
 			  
-			  mdui.setSubstep(4);
+			  mdui->setSubstep(4);
 			  
 			  return 0;
 			}
@@ -610,10 +610,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  else
 		    {
 		      *CmpCommon::diags() << DgSqlCode(retcode);
-		      mdui.setStep(UPGRADE_DONE);
+		      mdui->setStep(UPGRADE_DONE);
 
-		      mdui.setSubstep(0);
-		      mdui.setEndStep(TRUE);
+		      mdui->setSubstep(0);
+		      mdui->setEndStep(TRUE);
 		    }
 
 		  return 0;
@@ -622,11 +622,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 2:
 		{
-		  mdui.setMsg("Version Check: done");
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Version Check: done");
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
-		  mdui.setStep(UPGRADE_DONE);
+		  mdui->setStep(UPGRADE_DONE);
 
 		  return 0;
 		}
@@ -634,11 +634,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 3:
 		{
-		  mdui.setMsg("Version Check: done");
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Version Check: done");
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
-		  mdui.setStep(OLD_MD_DROP_PRE);
+		  mdui->setStep(OLD_MD_DROP_PRE);
 
 		  return 0;
 		}
@@ -646,11 +646,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 4:
 		{
-		  mdui.setMsg("Version Check: done");
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Version Check: done");
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
-		  mdui.setStep(UPGRADE_FAILED);
+		  mdui->setStep(UPGRADE_FAILED);
 
 		  return 0;
 		}
@@ -662,13 +662,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case OLD_MD_DROP_PRE:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui.setMsg("Drop Old Metadata: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Drop Old Metadata: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -685,18 +685,18 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      deallocEHI(ehi); 
 
-		      mdui.setStep(UPGRADE_FAILED);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
 
 		  deallocEHI(ehi); 
 
-		  mdui.setMsg("Drop Old Metadata: done");
-		  mdui.setStep(CURR_MD_BACKUP);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Drop Old Metadata: done");
+		  mdui->setStep(CURR_MD_BACKUP);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  return 0;
 		}
@@ -707,13 +707,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case CURR_MD_BACKUP:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui.setMsg("Backup Current Metadata: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Backup Current Metadata: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -756,22 +756,22 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		      retcode = copyHbaseTable(ehi, &currHbaseTable, &oldHbaseTable);
 		      if (retcode < 0)
 			{
-			  mdui.setStep(UPGRADE_FAILED_DROP_OLD_MD);
-			  mdui.setSubstep(0);
+			  mdui->setStep(UPGRADE_FAILED_DROP_OLD_MD);
+			  mdui->setSubstep(0);
 			  break;
 			}
 		      
 		    } // for
 
-		  if (mdui.step() != CURR_MD_BACKUP)
+		  if (mdui->step() != CURR_MD_BACKUP)
 		    break;
 
 		  deallocEHI(ehi); 
 
-		  mdui.setMsg("Backup Current Metadata: done");
-		  mdui.setStep(CURR_MD_DROP);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Backup Current Metadata: done");
+		  mdui->setStep(CURR_MD_DROP);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  return 0;
 		}
@@ -783,13 +783,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case CURR_MD_DROP:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui.setMsg("Drop Current Metadata: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Drop Current Metadata: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -804,8 +804,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  //
 		  if (dropMDtables(ehi, FALSE)) // drop curr/new MD tables
 		    {
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 		      break;
 		    }
 
@@ -814,10 +814,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 		  deallocEHI(ehi); 
 
-		  mdui.setMsg("Drop Current Metadata: done");
-		  mdui.setStep(INITIALIZE_TRAF);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Drop Current Metadata: done");
+		  mdui->setStep(INITIALIZE_TRAF);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  return 0;
 		}
@@ -828,7 +828,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case INITIALIZE_TRAF:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
@@ -836,14 +836,14 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 		      break;
 		    }
 
-		  mdui.setMsg("Initialize New Metadata: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Initialize New Metadata: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -863,8 +863,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		      
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 		      break;
 		    }
 
@@ -872,8 +872,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 		      break;
 		    }
 
@@ -889,8 +889,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 		      break;
 		    }
 
@@ -904,8 +904,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		      
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 		      break;
 		    }
 
@@ -914,16 +914,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		      
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
 
-		  mdui.setMsg("Initialize New Metadata: done");
-		  mdui.setStep(COPY_MD_TABLES_PROLOGUE);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Initialize New Metadata: done");
+		  mdui->setStep(COPY_MD_TABLES_PROLOGUE);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  return 0;
 		}
@@ -934,17 +934,17 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case COPY_MD_TABLES_PROLOGUE:
 	  {
-	    mdui.setMsg("Copy Old Metadata: started");
-	    mdui.setStep(COPY_MD_TABLES);
-	    mdui.setSubstep(0);
-	    mdui.setEndStep(FALSE);
+	    mdui->setMsg("Copy Old Metadata: started");
+	    mdui->setStep(COPY_MD_TABLES);
+	    mdui->setSubstep(0);
+	    mdui->setEndStep(FALSE);
 
 	    if (xnInProgress(&cliInterface))
 	      {
 		*CmpCommon::diags() << DgSqlCode(-20123);
 
-		mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		mdui.setSubstep(0);
+		mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		mdui->setSubstep(0);
 
 		break;
 	      }
@@ -954,8 +954,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	      {
 		cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		mdui.setSubstep(0);
+		mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		mdui->setSubstep(0);
 
 		break;
 	      }
@@ -966,9 +966,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case COPY_MD_TABLES:
 	  {
-	    const MDUpgradeInfo &mdti = allMDupgradeInfo[mdui.subStep()];
+	    const MDUpgradeInfo &mdti = allMDupgradeInfo[mdui->subStep()];
 	  
-	    if ((mdui.subStep() < sizeof(allMDupgradeInfo)/sizeof(MDUpgradeInfo)) &&
+	    if ((mdui->subStep() < sizeof(allMDupgradeInfo)/sizeof(MDUpgradeInfo)) &&
 		((NOT mdti.addedTable) && (NOT mdti.droppedTable) && 
                  (NOT mdti.isIndex) && (NOT mdti.mdOnly)))
 	      {
@@ -986,23 +986,23 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			    (mdti.wherePred ? mdti.wherePred : ""));
 
 		// copy this table as is.
-		if (NOT mdui.startStep())
+		if (NOT mdui->startStep())
 		  {
 		    str_sprintf(msgBuf, "  Start: Copy %20s ==> %s",
 				mdti.oldName, mdti.newName);
 		      
-		    mdui.setStartStep(TRUE);
-		    mdui.setEndStep(FALSE);
+		    mdui->setStartStep(TRUE);
+		    mdui->setEndStep(FALSE);
 
-		    //mdui.setMsg(buf);
-		    mdui.setMsg(msgBuf);
+		    //mdui->setMsg(buf);
+		    mdui->setMsg(msgBuf);
 
 		    break;
 		    //return 0;
 		  }
 		
-		mdui.setStartStep(FALSE);
-		mdui.setEndStep(TRUE);
+		mdui->setStartStep(FALSE);
+		mdui->setEndStep(TRUE);
 
 		// execute the insert...select
 		cliRC = cliInterface.executeImmediate(buf);
@@ -1010,8 +1010,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  {
 		    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		    
-		    mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		    mdui.setSubstep(0);
+		    mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		    mdui->setSubstep(0);
 
 		    break;
 		  }
@@ -1019,18 +1019,18 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		str_sprintf(msgBuf, "  End:   Copy %20s ==> %s",
 			    mdti.oldName, mdti.newName);
 		
-		mdui.setMsg(msgBuf);
-		mdui.subStep()++;
+		mdui->setMsg(msgBuf);
+		mdui->subStep()++;
 
 		break;
 		//return 0;
 	      } // if
 
-	    mdui.subStep()++;
-	    if (mdui.subStep() >= sizeof(allMDupgradeInfo)/sizeof(MDUpgradeInfo))
+	    mdui->subStep()++;
+	    if (mdui->subStep() >= sizeof(allMDupgradeInfo)/sizeof(MDUpgradeInfo))
 	      {
-		mdui.setStep(COPY_MD_TABLES_EPILOGUE);
-		mdui.setSubstep(0);
+		mdui->setStep(COPY_MD_TABLES_EPILOGUE);
+		mdui->setSubstep(0);
 	      }
 
 	  }
@@ -1038,18 +1038,18 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	  
 	case COPY_MD_TABLES_EPILOGUE:
 	  {
-	    mdui.setMsg("Copy Old Metadata: done");
-	    mdui.setStep(VALIDATE_DATA_COPY);
-	    mdui.setSubstep(0);
-	    mdui.setEndStep(TRUE);
+	    mdui->setMsg("Copy Old Metadata: done");
+	    mdui->setStep(VALIDATE_DATA_COPY);
+	    mdui->setSubstep(0);
+	    mdui->setEndStep(TRUE);
 
             cliRC = autoCommit(&cliInterface, FALSE); // set to OFF
 	    if (cliRC < 0)
 	      {
 		cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		
-		mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		mdui.setSubstep(0);
+		mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		mdui->setSubstep(0);
 
 		break;
 	      }
@@ -1060,13 +1060,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case VALIDATE_DATA_COPY:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui.setMsg("Validate Metadata Copy: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Validate Metadata Copy: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -1079,10 +1079,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  //
 		  // TBD
 		  //
-		  mdui.setMsg("Validate Metadata Copy: done");
-		  mdui.setStep(CUSTOMIZE_NEW_MD);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Validate Metadata Copy: done");
+		  mdui->setStep(CUSTOMIZE_NEW_MD);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  return 0;
 		}
@@ -1093,21 +1093,21 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case CUSTOMIZE_NEW_MD:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui.setMsg("Customize New Metadata: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Customize New Metadata: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  // For other upgrades, it is not needed.
 		  // Customize this section as needed.
 		  if (NOT ((METADATA_OLD_MAJOR_VERSION == 2) && (METADATA_OLD_MINOR_VERSION == 3) &&
 			   (METADATA_MAJOR_VERSION == 3) && (METADATA_MINOR_VERSION == 0)))
 		    {
-		      mdui.setSubstep(9);
-		      mdui.setEndStep(FALSE);
+		      mdui->setSubstep(9);
+		      mdui->setEndStep(FALSE);
 
 		      return 0;
 		    }
@@ -1116,8 +1116,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1128,16 +1128,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		
 	      case 1:
 		{
-		  mdui.setMsg("  Start: Update COLUMNS");
-		  mdui.subStep()++;
+		  mdui->setMsg("  Start: Update COLUMNS");
+		  mdui->subStep()++;
 
 		  cliRC = beginXn(&cliInterface);
 		  if (cliRC < 0)
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1159,17 +1159,17 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                       *CmpCommon::diags() << DgSqlCode(-1423)
                                           << DgString0(SEABASE_TEXT);
                       
-                      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-                      mdui.setSubstep(0);
+                      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                      mdui->setSubstep(0);
                       
                       break;
                     }
                   
-		  if (mdui.step() != CUSTOMIZE_NEW_MD)
+		  if (mdui->step() != CUSTOMIZE_NEW_MD)
 		    break;
                   
-		  mdui.setMsg("  End: Update COLUMNS");
-		  mdui.subStep()++;
+		  mdui->setMsg("  End: Update COLUMNS");
+		  mdui->subStep()++;
                   
 		  if (xnInProgress(&cliInterface))
 		    {
@@ -1178,8 +1178,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			{
 			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-			  mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui.setSubstep(0);
+			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+			  mdui->setSubstep(0);
 
 			  break;
 			}
@@ -1191,16 +1191,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 3:
 		{
-		  mdui.setMsg("  Start: Update TABLES");
-		  mdui.subStep()++;
+		  mdui->setMsg("  Start: Update TABLES");
+		  mdui->subStep()++;
 
 		  cliRC = beginXn(&cliInterface);
 		  if (cliRC < 0)
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1220,8 +1220,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1271,8 +1271,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			  *CmpCommon::diags() << DgSqlCode(-1423)
 					      << DgString0(SEABASE_TABLES);
 			  
-			  mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui.setSubstep(0);
+			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+			  mdui->setSubstep(0);
 
 			  break;
 			}
@@ -1286,15 +1286,15 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                               *CmpCommon::diags() << DgSqlCode(-1423)
                                                   << DgString0(SEABASE_TABLES);
                               
-                              mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-                              mdui.setSubstep(0);
+                              mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                              mdui->setSubstep(0);
                               
                               break;
                             }
                         }
 		    } // for
 
- 		  if (mdui.step() != CUSTOMIZE_NEW_MD)
+ 		  if (mdui->step() != CUSTOMIZE_NEW_MD)
 		    break;
 
                  str_sprintf(buf, "merge into %s.\"%s\".%s using (select C.object_uid, sum(C.column_size  + case when C.nullable != 0 then 1 else 0 end) from %s.\"%s\".%s C, %s.\"%s\".%s K where C.object_uid = K.object_uid and C.column_number = K.column_number group by 1) T(a, b) on table_uid = T.a when matched then update set key_length = T.b",
@@ -1310,8 +1310,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                       *CmpCommon::diags() << DgSqlCode(-1423)
                                           << DgString0(SEABASE_TABLES);
                       
-                      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-                      mdui.setSubstep(0);
+                      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                      mdui->setSubstep(0);
                       
                       break;
                     }
@@ -1330,17 +1330,17 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                       *CmpCommon::diags() << DgSqlCode(-1423)
                                           << DgString0(SEABASE_TABLES);
                       
-                      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-                      mdui.setSubstep(0);
+                      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                      mdui->setSubstep(0);
                       
                       break;
                     }
                   
- 		  if (mdui.step() != CUSTOMIZE_NEW_MD)
+ 		  if (mdui->step() != CUSTOMIZE_NEW_MD)
 		    break;
 
-		  mdui.setMsg("  End: Update TABLES");
-		  mdui.subStep()++;
+		  mdui->setMsg("  End: Update TABLES");
+		  mdui->subStep()++;
 
 		  if (xnInProgress(&cliInterface))
 		    {
@@ -1349,8 +1349,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			{
 			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-			  mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui.setSubstep(0);
+			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+			  mdui->setSubstep(0);
 
 			  break;
 			}
@@ -1362,16 +1362,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 5:
 		{
-		  mdui.setMsg("  Start: Update TEXT");
-		  mdui.subStep()++;
+		  mdui->setMsg("  Start: Update TEXT");
+		  mdui->subStep()++;
 
 		  cliRC = beginXn(&cliInterface);
 		  if (cliRC < 0)
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1393,17 +1393,17 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                       *CmpCommon::diags() << DgSqlCode(-1423)
                                           << DgString0(SEABASE_TEXT);
                       
-                      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-                      mdui.setSubstep(0);
+                      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                      mdui->setSubstep(0);
                       
                       break;
                     }
                   
-		  if (mdui.step() != CUSTOMIZE_NEW_MD)
+		  if (mdui->step() != CUSTOMIZE_NEW_MD)
 		    break;
                   
-		  mdui.setMsg("  End: Update TEXT");
-		  mdui.subStep()++;
+		  mdui->setMsg("  End: Update TEXT");
+		  mdui->subStep()++;
                   
 		  if (xnInProgress(&cliInterface))
 		    {
@@ -1412,8 +1412,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			{
 			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-			  mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui.setSubstep(0);
+			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+			  mdui->setSubstep(0);
 
 			  break;
 			}
@@ -1425,16 +1425,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 7:
 		{
-		  mdui.setMsg("  Start: Update SEQ_GEN");
-		  mdui.subStep()++;
+		  mdui->setMsg("  Start: Update SEQ_GEN");
+		  mdui->subStep()++;
 
 		  cliRC = beginXn(&cliInterface);
 		  if (cliRC < 0)
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1456,8 +1456,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1472,17 +1472,17 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
 
-		  if (mdui.step() != CUSTOMIZE_NEW_MD)
+		  if (mdui->step() != CUSTOMIZE_NEW_MD)
 		    break;
                   
-		  mdui.setMsg("  End: Update SEQ_GEN");
-		  mdui.subStep()++;
+		  mdui->setMsg("  End: Update SEQ_GEN");
+		  mdui->subStep()++;
                   
 		  if (xnInProgress(&cliInterface))
 		    {
@@ -1491,8 +1491,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			{
 			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-			  mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui.setSubstep(0);
+			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+			  mdui->setSubstep(0);
 
 			  break;
 			}
@@ -1504,8 +1504,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 9:
 		{
-		  mdui.setMsg("  Start: Create Schema Objects");
-		  mdui.subStep()++;
+		  mdui->setMsg("  Start: Create Schema Objects");
+		  mdui->subStep()++;
 
 		  return 0;
 		}
@@ -1516,17 +1516,17 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                   cliRC = createSchemaObjects(&cliInterface);
  		  if (cliRC < 0)
 		    {
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
 
-		  if (mdui.step() != CUSTOMIZE_NEW_MD)
+		  if (mdui->step() != CUSTOMIZE_NEW_MD)
 		    break;
                   
-		  mdui.setMsg("  End: Create Schema Objects");
-		  mdui.subStep()++;
+		  mdui->setMsg("  End: Create Schema Objects");
+		  mdui->subStep()++;
                   
 		  return 0;
 		}
@@ -1534,10 +1534,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 11:
 		{
-		  mdui.setMsg("Customize New Metadata: done");
-		  mdui.setStep(OLD_TABLES_MD_DELETE);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Customize New Metadata: done");
+		  mdui->setStep(OLD_TABLES_MD_DELETE);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 		  
 		  return 0;
 		}
@@ -1545,8 +1545,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	      }
           default:
             {
-              mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-              mdui.setSubstep(0);
+              mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+              mdui->setSubstep(0);
             }
             break;
 	  }
@@ -1554,7 +1554,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case OLD_TABLES_MD_DELETE:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
@@ -1562,8 +1562,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1573,15 +1573,15 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
 
-		  mdui.setMsg("Delete Old Metadata Info: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Delete Old Metadata Info: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -1654,14 +1654,14 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			{
 			  deallocEHI(ehi); 
 
-			  mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui.setSubstep(0);
+			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+			  mdui->setSubstep(0);
 
 			  break;
 			}
 		    } // for
 
-		  if (mdui.step() != OLD_TABLES_MD_DELETE)
+		  if (mdui->step() != OLD_TABLES_MD_DELETE)
 		    break;
 
 		  // drop info about old metadata views from the new metadata.
@@ -1699,22 +1699,22 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			{
 			  deallocEHI(ehi); 
 
-			  mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui.setSubstep(0);
+			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+			  mdui->setSubstep(0);
 
 			  break;
 			}
 		    } // for
 
-		  if (mdui.step() != OLD_TABLES_MD_DELETE)
+		  if (mdui->step() != OLD_TABLES_MD_DELETE)
 		    break;
 
 		  deallocEHI(ehi); 
 
-		  mdui.setMsg("Delete Old Metadata Info: done");
-		  mdui.setStep(UPDATE_MD_VIEWS);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Delete Old Metadata Info: done");
+		  mdui->setStep(UPDATE_MD_VIEWS);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  if (xnInProgress(&cliInterface))
 		    {
@@ -1723,8 +1723,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			{
 			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 			  
-			  mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui.setSubstep(0);
+			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+			  mdui->setSubstep(0);
 
 			  break;
 			}
@@ -1740,13 +1740,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
         case UPDATE_MD_VIEWS:
           {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui.setMsg("Update Metadata Views: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Update Metadata Views: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -1758,8 +1758,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1769,8 +1769,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1778,8 +1778,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  cliRC = dropMetadataViews(&cliInterface);
 		  if (cliRC < 0)
 		    {
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1787,8 +1787,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  cliRC = createMetadataViews(&cliInterface);
 		  if (cliRC < 0)
 		    {
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1798,16 +1798,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		    
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
 		  
-		  mdui.setMsg("Update Metadata Views: done");
-		  mdui.setStep(UPDATE_PRIV_MGR);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Update Metadata Views: done");
+		  mdui->setStep(UPDATE_PRIV_MGR);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  return 0;
 		}
@@ -1819,13 +1819,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
         case UPDATE_PRIV_MGR:
           {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui.setMsg("Update Priv Mgr: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Update Priv Mgr: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -1837,8 +1837,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1848,8 +1848,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1857,8 +1857,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  cliRC = upgradePrivMgr();
 		  if (cliRC != 0)
 		    {
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1868,16 +1868,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		    
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
 		  
-		  mdui.setMsg("Update Priv Mgr: done");
-		  mdui.setStep(UPDATE_REPOS);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Update Priv Mgr: done");
+		  mdui->setStep(UPDATE_REPOS);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  return 0;
 		}
@@ -1889,13 +1889,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
         case UPDATE_REPOS:
           {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui.setMsg("Update Repository: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Update Repository: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -1907,8 +1907,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1916,16 +1916,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  cliRC = upgradeRepos(&cliInterface);
 		  if (cliRC != 0)
 		    {
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
 
-		  mdui.setMsg("Update Repository: done");
-		  mdui.setStep(UPDATE_VERSION);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Update Repository: done");
+		  mdui->setStep(UPDATE_VERSION);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  return 0;
 		}
@@ -1937,13 +1937,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case UPDATE_VERSION:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui.setMsg("Update Metadata Version: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Update Metadata Version: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -1955,8 +1955,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1966,8 +1966,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1975,8 +1975,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  cliRC = updateSeabaseVersions(&cliInterface, TRAFODION_SYSCAT_LIT);
 		  if (cliRC < 0)
 		    {
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
@@ -1986,16 +1986,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		    
-		      mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui.setSubstep(0);
+		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setSubstep(0);
 
 		      break;
 		    }
 		  
-		  mdui.setMsg("Update Metadata Version: done");
-		  mdui.setStep(OLD_MD_TABLES_HBASE_DELETE);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Update Metadata Version: done");
+		  mdui->setStep(OLD_MD_TABLES_HBASE_DELETE);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  return 0;
 		}
@@ -2006,7 +2006,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case OLD_MD_TABLES_HBASE_DELETE:
 	  {
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
@@ -2014,7 +2014,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
 
-		      mdui.setStep(METADATA_UPGRADED);
+		      mdui->setStep(METADATA_UPGRADED);
 		      break;
 		    }
 		  
@@ -2023,13 +2023,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui.setStep(METADATA_UPGRADED);
+		      mdui->setStep(METADATA_UPGRADED);
 		      break;
 		    }
 
-		  mdui.setMsg("Drop Old Metadata from Hbase: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Drop Old Metadata from Hbase: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -2063,10 +2063,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 		  deallocEHI(ehi); 
 
-		  mdui.setMsg("Drop Old Metadata from Hbase: done");
-		  mdui.setStep(METADATA_UPGRADED);
-		  mdui.setSubstep(0);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Drop Old Metadata from Hbase: done");
+		  mdui->setStep(METADATA_UPGRADED);
+		  mdui->setSubstep(0);
+		  mdui->setEndStep(TRUE);
 
 		  if (xnInProgress(&cliInterface))
 		    {
@@ -2075,7 +2075,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 			{
 			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-			  mdui.setStep(METADATA_UPGRADED);
+			  mdui->setStep(METADATA_UPGRADED);
 			  break;
 			}
 		    }
@@ -2093,8 +2093,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	    str_sprintf(msgBuf, "Metadata Upgrade to Version %Ld.%Ld: done",
 				  METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION);
 
-	    mdui.setMsg(msgBuf);
-	    mdui.setDone(TRUE);
+	    mdui->setMsg(msgBuf);
+	    mdui->setDone(TRUE);
 
 	    return 0;
 	  }
@@ -2102,8 +2102,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case UPGRADE_DONE:
 	  {
-	    mdui.setMsg("Metadata Upgrade: done");
-	    mdui.setDone(TRUE);
+	    mdui->setMsg("Metadata Upgrade: done");
+	    mdui->setDone(TRUE);
 
 	    return 0;
 	  }
@@ -2111,8 +2111,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	case DONE_RETURN:
 	  {
-	    mdui.setMsg("");
-	    mdui.setDone(TRUE);
+	    mdui->setMsg("");
+	    mdui->setDone(TRUE);
 
 	    return 0;
 	  }
@@ -2131,23 +2131,23 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                   }
               }
             
-	    switch (mdui.subStep())
+	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  if (mdui.step() == UPGRADE_FAILED_DROP_OLD_MD)
+		  if (mdui->step() == UPGRADE_FAILED_DROP_OLD_MD)
 		    {
-		      mdui.setSubstep(1);
+		      mdui->setSubstep(1);
 		      break;
 		    }
-		  else if (mdui.step() == UPGRADE_FAILED_RESTORE_OLD_MD)
+		  else if (mdui->step() == UPGRADE_FAILED_RESTORE_OLD_MD)
 		    {
-		      mdui.setSubstep(4);
+		      mdui->setSubstep(4);
 		      break;
 		    }
 		  else
 		    {
-		      mdui.setSubstep(7);
+		      mdui->setSubstep(7);
 		      break;
 		    }
 		}
@@ -2155,9 +2155,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		
 	      case 1:
 		{
-		  mdui.setMsg("Drop Old Metadata: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Drop Old Metadata: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 		  
 		  return 0;
 		}
@@ -2171,16 +2171,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  dropMDtables(ehi, TRUE); // drop old MD
 		  deallocEHI(ehi);
 		  
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 		}
 		break;
 
 	      case 3:
 		{
-		  mdui.setMsg("Drop Old Metadata: done");
-		  mdui.setSubstep(7);
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Drop Old Metadata: done");
+		  mdui->setSubstep(7);
+		  mdui->setEndStep(TRUE);
 
 		  return 0;
 		}
@@ -2188,9 +2188,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      case 4:
 		{
-		  mdui.setMsg("Restore from Old Metadata: started");
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->setMsg("Restore from Old Metadata: started");
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 
 		  return 0;
 		}
@@ -2204,16 +2204,16 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		  restoreOldMDtables(ehi); // restore old MD and make them current
 		  deallocEHI(ehi);
 
-		  mdui.subStep()++;
-		  mdui.setEndStep(FALSE);
+		  mdui->subStep()++;
+		  mdui->setEndStep(FALSE);
 		}
 		break;
 		
 	      case 6:
 		{
-		  mdui.setMsg("Restore from Old Metadata: done");
-		  mdui.setSubstep(1); // now drop old metadata tables
-		  mdui.setEndStep(TRUE);
+		  mdui->setMsg("Restore from Old Metadata: done");
+		  mdui->setSubstep(1); // now drop old metadata tables
+		  mdui->setEndStep(TRUE);
 		  
 		  return 0;
 		}
@@ -2223,8 +2223,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		{
 		  deallocEHI(ehi);
 		  
-		  mdui.setMsg("Metadata Upgrade: failed");
-		  mdui.setDone(TRUE);
+		  mdui->setMsg("Metadata Upgrade: failed");
+		  mdui->setDone(TRUE);
 		  
 		  return 0;
 		}

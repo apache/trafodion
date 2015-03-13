@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -353,9 +353,12 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
 
   if (!sqlStr)
     {
-      cmpStmt->error(- CLI_EMPTY_SQL_STMT, "");
-      sqlStrLen = 0;
-      return TRUE;
+      if (cmpStmt)
+        {
+          cmpStmt->error(- CLI_EMPTY_SQL_STMT, "");
+          sqlStrLen = 0;
+          return TRUE;
+        }
     }
 
   Lng32 defaultCS;
@@ -862,8 +865,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
   ReturnStatus status = CmpStatement_SUCCESS;
   if (statement.getCmpCompileInfo()->isHbaseDDL())
     {
-
-
       CmpMain::ReturnStatus rs = CmpMain::SUCCESS;
       
       QueryText qText(sqlStr, inputCS);
@@ -953,6 +954,207 @@ CmpStatement::process (const CmpMessageDDL& statement)
   *diags() << DgSqlCode(-4222)
            << DgString0("SQL Compiler DDL");
   return CmpStatement_ERROR;
+}
+
+short CmpStatement::getDDLExprAndNode(char * sqlStr, Lng32 inputCS,
+                                      DDLExpr* &ddlExpr, ExprNode* &ddlNode)
+{
+
+  ddlNode = NULL;
+  ddlExpr = NULL;
+      
+  if (! sqlStr)
+    return 0;
+
+  // C control character embedded in sqlStr is not handled.  Now replace 
+  // control characters tabs, line feeds, spaces with spaces. (no longer 
+  // substitute for \n so we can recognized embedded comments)
+  for (Int32 i = 0; sqlStr[i]; i++)
+    if (sqlStr[i] != '\n' && isSpace8859_1((unsigned char)sqlStr[i])) sqlStr[i] = ' ';
+  
+  // skip leading blanks
+  NAString ns(sqlStr);
+  ns = ns.strip(NAString::leading, ' ');
+  
+  ReturnStatus status = CmpStatement_SUCCESS;
+  CmpMain::ReturnStatus rs = CmpMain::SUCCESS;
+  
+  QueryText qText(sqlStr, inputCS);
+  
+  //  CmpMessageReplyCode
+  //    *bound = new(outHeap_) CmpMessageReplyCode(outHeap_, statement.id(), 0, 0, outHeap_);
+  
+  Set_SqlParser_Flags(DELAYED_RESET);	// sqlcompCleanup resets for us
+  Parser parser(CmpCommon::context());
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), TRUE);
+
+  ExprNode *boundDDL = NULL;
+  RelExpr * rRoot = NULL;
+  
+  // save parser flags
+  Int32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
+  ExprNode * exprNode = NULL;
+  if (parser.parseDML(qText, &exprNode, NULL))
+    {
+      error(arkcmpErrorNoDiags, sqlStr);
+      sqlTextStr_=NULL;
+      goto label_error;
+    }
+  
+  if (exprNode->getOperatorType() EQU STM_QUERY)
+    {
+      rRoot = (RelRoot*)exprNode->getChild(0);
+    }
+  else if (exprNode->getOperatorType() EQU REL_ROOT)
+    {
+      rRoot = (RelRoot*)exprNode;
+    }
+  
+  CMPASSERT(rRoot);
+  
+  boundDDL = rRoot->bindNode(&bindWA);
+  CMPASSERT(boundDDL);
+  
+  if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
+    {
+      goto label_error;
+    }
+  
+  ddlExpr = (DDLExpr*)rRoot->getChild(0);
+  ddlNode = ddlExpr->getDDLNode();
+  
+  if (ddlNode)
+    {
+      boundDDL = ddlNode->castToStmtDDLNode()->bindNode(&bindWA);
+      CMPASSERT(boundDDL);
+      
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
+        {
+          goto label_error;
+        }
+      
+      ddlNode = boundDDL;
+    }
+
+  Set_SqlParser_Flags (savedParserFlags);
+  return 0;
+
+ label_error:  
+  // reset saved flags
+  Set_SqlParser_Flags (savedParserFlags);
+  return CmpStatement_ERROR;
+}
+
+CmpStatement::ReturnStatus
+CmpStatement::process(const CmpMessageDDLwithStatus &statement)
+{
+  CmpMain cmpmain;
+
+  CMPASSERT(statement.getCmpCompileInfo());
+  
+  char * sqlStr = NULL;
+  Int32 sqlStrLen = 0;
+  Lng32 inputCS = 0;
+  NAString currCatName;
+  NAString currSchName;
+  char * recompControlInfo = NULL;
+  NABoolean isSchNameRecvd;
+  NABoolean nametypeNsk;
+  NABoolean odbcProcess;
+  NABoolean noTextCache;
+  NABoolean aqrPrepare;
+  NABoolean standaloneQuery;
+  isDDL_ = TRUE;
+
+  Lng32 ij = 0;
+  while (ij)
+    {
+      ij = 2 - ij;
+    }
+
+  if (processRecvdCmpCompileInfo(NULL,
+				 statement,
+  				 statement.getCmpCompileInfo(),
+				 context_,
+				 sqlStr, 
+				 sqlStrLen, // out - long &
+				 inputCS,
+				 isSchNameRecvd, 
+				 currCatName, currSchName, 
+				 recompControlInfo,
+				 nametypeNsk,
+				 odbcProcess,
+				 noTextCache,
+				 aqrPrepare,
+				 standaloneQuery))
+    return CmpStatement_ERROR;
+  CmpCommon::context()->sqlSession()->setParentQid(statement.getParentQid());
+
+  // process recompControlInfo, if received
+  if (recompControlInfo)
+    setupRecompControlInfo(recompControlInfo, &cmpmain);
+
+  cmpmain.setSqlParserFlags(statement.getFlags());
+
+  // set the current catalog and schema names.
+  InitSchemaDB();
+
+  DDLExpr *ddlExpr = NULL;
+  ExprNode *ddlNode = NULL;
+  if (sqlStr)
+    {
+      if (getDDLExprAndNode(sqlStr, inputCS, ddlExpr, ddlNode))
+        {
+          return CmpStatement_ERROR;
+        }
+    }
+
+  CmpDDLwithStatusInfo *dws = statement.getCmpDDLwithStatusInfo();
+  if ((dws->getMDupgrade()) || (dws->getMDVersion()) || (dws->getSWVersion()))
+    {
+      CmpSeabaseMDupgrade cmpMDU(heap_);
+      
+      if (cmpMDU.executeSeabaseMDupgrade(dws,
+                                         currCatName, currSchName))
+        return CmpStatement_ERROR;
+    }
+  else if (dws->getMDcleanup())
+    {
+      CmpSeabaseDDL cmpSBD(heap_);
+      if (cmpSBD.executeSeabaseDDL(ddlExpr, ddlNode,
+                                   currCatName, currSchName,
+                                   dws))
+        {
+          Set_SqlParser_Flags(0);
+          return CmpStatement_ERROR;
+        }
+      Set_SqlParser_Flags (0);
+    }
+  else
+    {
+      return CmpStatement_ERROR;
+    }
+
+  /*
+  CmpDDLwithStatusInfo * replyDWS = NULL;
+  replyDWS = new(outHeap_) CmpDDLwithStatusInfo(); 
+  replyDWS->copyStatusInfo(dws);
+  */
+
+  dws->init();
+
+  Lng32 replyDataLen = dws->getLength();
+  char * replyData = new(outHeap_) char[replyDataLen];
+  dws->pack(replyData);
+
+  CmpDDLwithStatusInfo * replyDWS = (CmpDDLwithStatusInfo*)replyData;
+  
+  reply_ =
+    new(outHeap_) CmpMessageReplyCode( outHeap_, statement.id(), 0, 0, outHeap_);
+  reply_->data() = replyData;
+  reply_->size() = replyDataLen;
+
+  return CmpStatement_SUCCESS;
 }
 
 CmpStatement::ReturnStatus
@@ -1090,40 +1292,6 @@ CmpStatement::process(const CmpMessageDatabaseUser &statement)
   
   return CmpStatement_SUCCESS;
 
-}
-
-CmpStatement::ReturnStatus
-CmpStatement::process(const CmpMessageMDupgrade &statement)
-{
-  Int32 userID = 0;
-
-  CmpMain cmpmain;
-  cmpmain.setSqlParserFlags(statement.getFlags());
-
-  CmpMDupgradeInfo mdi;
-  memcpy(&mdi, statement.data(), sizeof(mdi));
-  
-  NAString currCatName;
-  NAString currSchName;
-
-  NAString inMsg;
-  NAString outMsg;
-
-  CmpSeabaseMDupgrade cmpMDU(heap_);
-  
-  if (cmpMDU.executeSeabaseMDupgrade(mdi,
-				     currCatName, currSchName))
-    return CmpStatement_ERROR;
-
-  char * replyMD = new(outHeap_) char[sizeof(mdi)];
-  memcpy(replyMD, &mdi, sizeof(mdi));
-
-  reply_ =
-    new(outHeap_) CmpMessageReplyCode( outHeap_, statement.id(), 0, 0, outHeap_);
-  reply_->data() = replyMD;
-  reply_->size() = sizeof(mdi);
-
-  return CmpStatement_SUCCESS;
 }
 
 //-----------------------------------------------------------------------------
@@ -1365,8 +1533,8 @@ CmpStatement::process (const CmpMessageObj& request)
 	ret = process(*(CmpMessageDatabaseUser*)(&request));
 	break;
 
-      case (CmpMessageObj::MD_UPGRADE) :
-	ret = process(*(CmpMessageMDupgrade*)(&request));
+      case (CmpMessageObj::DDL_WITH_STATUS) :
+	ret = process(*(CmpMessageDDLwithStatus*)(&request));
 	break;
 
       case (CmpMessageObj::INTERNALSP_REQUEST) :

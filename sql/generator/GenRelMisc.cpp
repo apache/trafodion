@@ -84,6 +84,8 @@
 #include "hs_cont.h"
 #include "ComUnits.h"
 
+#include "StmtDDLCleanupObjects.h"
+
 #ifndef HFS2DM
 #define HFS2DM
 #endif // HFS2DM
@@ -93,8 +95,6 @@
 #include "ComSmallDefs.h"
 #include "sql_buffer_size.h"
 #include "ExSqlComp.h"		// for NAExecTrans
-
-
 
 #include "ComLocationNames.h"
 #include "ComDistribution.h"
@@ -353,6 +353,29 @@ short GenericUtilExpr::codeGen(Generator * generator)
 // DDLExpr::codeGen()
 //
 /////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+//
+// ExeUtilExpr::codeGen()
+//
+/////////////////////////////////////////////////////////
+const char * DDLExpr::getVirtualTableName()
+{ return (producesOutput() ? "DDL_EXPR__" : NULL); }
+
+desc_struct *DDLExpr::createVirtualTableDesc()
+{
+  desc_struct * table_desc = NULL;
+  if (producesOutput())
+    {
+      table_desc = 
+        Generator::createVirtualTableDesc(getVirtualTableName(),
+                                          ComTdbDDL::getVirtTableNumCols(),
+                                          ComTdbDDL::getVirtTableColumnInfo(),
+                                          ComTdbDDL::getVirtTableNumKeys(),
+                                          ComTdbDDL::getVirtTableKeyInfo());
+    }
+  return table_desc;
+}
+
 short DDLExpr::codeGen(Generator * generator)
 {
   Space * space = generator->getSpace();
@@ -379,6 +402,27 @@ short DDLExpr::codeGen(Generator * generator)
  
   ddlStmt[i] = '\0';
 
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+  ex_cri_desc * returnedDesc = givenDesc;
+  ex_cri_desc * workCriDesc = NULL;
+  const Int32 work_atp = 1;
+  const Int32 ddl_row_atp_index = 2;
+  if (producesOutput())
+    {
+      // allocate a map table for the retrieved columns
+      generator->appendAtEnd();
+
+      returnedDesc = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+      workCriDesc = new(space) ex_cri_desc(4, space);
+      short rc = processOutputRow(generator, work_atp, ddl_row_atp_index,
+                                  returnedDesc);
+      if (rc)
+        {
+          return -1;
+        }
+    }
+
   NAString catSchName = 
     generator->currentCmpContext()->schemaDB_->getDefaultSchema().getSchemaNameAsAnsiString();
   
@@ -389,34 +433,67 @@ short DDLExpr::codeGen(Generator * generator)
   strcpy(catSchNameStr, catSchName.data());
 
   ComTdbDDL * ddl_tdb = NULL;
+
+  if (returnStatus_)
     {
-      ddl_tdb = new(space)
-	ComTdbDDL(ddlStmt,
-		  strlen(ddlStmt),
-		  (Int16)getDDLStmtTextCharSet(),
-		  catSchNameStr, strlen(catSchNameStr),
-		  0, 0, // no input expr
-		  0, 0, // no output expr
-		  0, 0, // no work cri desc
-		  (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-		  (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-		  (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
-		  (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination
-		  getDefault(GEN_DDL_NUM_BUFFERS),
-		  getDefault(GEN_DDL_BUFFER_SIZE),
-		  mpRequest());
-#pragma warn(1506)  // warning elimination
+      ComTdbDDLwithStatus *ddl_ws_tdb = new(space)
+        ComTdbDDLwithStatus(ddlStmt,
+                            strlen(ddlStmt),
+                            (Int16)getDDLStmtTextCharSet(),
+                            catSchNameStr, strlen(catSchNameStr),
+                            0, 0, // no input expr
+                            0, 0, // no output expr
+                            workCriDesc, (producesOutput() ? ddl_row_atp_index : 0),
+                            givenDesc,
+                            returnedDesc,
+                            (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+                            (queue_index)getDefault(GEN_DDL_SIZE_UP),
+                            getDefault(GEN_DDL_NUM_BUFFERS),
+                            getDefault(GEN_DDL_BUFFER_SIZE));
+      
+      ddl_ws_tdb->setReturnStatus(TRUE);
 
-      if (isHbase_)
-	{
-	  ddl_tdb->setHbaseDDL(TRUE);
+      if (isCleanup_)
+        {
+          ddl_ws_tdb->setMDcleanup(TRUE);
 
-	  if (hbaseDDLNoUserXn_)
-	    ddl_tdb->setHbaseDDLNoUserXn(TRUE);
-	}
+          StmtDDLCleanupObjects * co = 
+            getExprNode()->castToElemDDLNode()->castToStmtDDLCleanupObjects();
+
+          if (co->checkOnly())
+            ddl_ws_tdb->setCheckOnly(TRUE);
+
+          if (co->returnDetails())
+            ddl_ws_tdb->setReturnDetails(TRUE);
+
+        }
+      ddl_tdb = ddl_ws_tdb;
     }
-
+  else
+    ddl_tdb = new(space)
+      ComTdbDDL(ddlStmt,
+                strlen(ddlStmt),
+                (Int16)getDDLStmtTextCharSet(),
+                catSchNameStr, strlen(catSchNameStr),
+                0, 0, // no input expr
+                0, 0, // no output expr
+                workCriDesc, (producesOutput() ? ddl_row_atp_index : 0),
+                givenDesc,
+                returnedDesc,
+                (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+                (queue_index)getDefault(GEN_DDL_SIZE_UP),
+                getDefault(GEN_DDL_NUM_BUFFERS),
+                getDefault(GEN_DDL_BUFFER_SIZE),
+                mpRequest());
+  
+  if (isHbase_)
+    {
+      ddl_tdb->setHbaseDDL(TRUE);
+      
+      if (hbaseDDLNoUserXn_)
+        ddl_tdb->setHbaseDDLNoUserXn(TRUE);
+    }
+  
   generator->initTdbFields(ddl_tdb);
       
   if(!generator->explainDisabled()) {
@@ -460,69 +537,36 @@ short ExeUtilMetadataUpgrade::codeGen(Generator * generator)
   ex_cri_desc * returnedDesc
     = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
 
-  // Assumption (for now): retrievedCols contains ALL columns from
-  // the table/index. This is because this operator does
-  // not support projection of columns. Add all columns from this table
-  // to the map table.
-  //
-  // The row retrieved from filesystem is returned as the last entry in
-  // the returned atp.
-
-  Attributes ** attrs =
-    new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
-
-  for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
-    {
-      ItemExpr * col_node
-	= (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
-	  getItemExpr();
-
-      attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
-	getAttr();
-    }
-
   ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
-  expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLMP_FORMAT,
-			    tupleLength,
-			    work_atp, exe_util_row_atp_index,
-			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
 
-  // delete [] attrs;
-  // NADELETEBASIC is used because compiler does not support delete[]
-  // operator yet. Should be changed back later when compiler supports
-  // it.
-  NADELETEBASIC(attrs, generator->wHeap());
-
-  // The stats row will be returned as the last entry of the returned atp.
-  // Change the atp and atpindex of the returned values to indicate that.
-  expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
-			       0, returnedDesc->noTuples()-1);
-
-  ComTdbExeUtilMetadataUpgrade * upgd_tdb = NULL;
-  
-  upgd_tdb = new(space)
-    ComTdbExeUtilMetadataUpgrade(
-				 0, 0, // no output expr
-				 0, 0, // no work cri desc
-				 givenDesc,
-				 returnedDesc,
-				 (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
-				 (queue_index)getDefault(GEN_DDL_SIZE_UP),
-				 4,
-				 32000);
+  ComTdbDDLwithStatus * upgd_tdb = new(space)
+    ComTdbDDLwithStatus(NULL, 0, 0,
+                        NULL, 0, 
+                        0, 0, // no input expr
+                        0, 0, // no output expr
+                        NULL, 0,
+                        givenDesc,
+                        returnedDesc,
+                        (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+                        (queue_index)getDefault(GEN_DDL_SIZE_UP),
+                        getDefault(GEN_DDL_NUM_BUFFERS),
+                        getDefault(GEN_DDL_BUFFER_SIZE));
 
   if (getMDVersion())
     upgd_tdb->setGetMDVersion(TRUE);
-
-  if (getSWVersion())
+  else if (getSWVersion())
     upgd_tdb->setGetSWVersion(TRUE);
+  else
+    upgd_tdb->setMDupgrade(TRUE);
 
   generator->initTdbFields(upgd_tdb);
   
@@ -2416,24 +2460,24 @@ short RelRoot::codeGen(Generator * generator)
       NAString ddlStr = NAString(stmt);
       ddlStr = ddlStr.strip(NAString::leading, ' ');
       // If this is a ustat statement, set the type 
-        Int32 foundUpdStat = 0;
-
-	// check if the first token is UPDATE
-	size_t position = ddlStr.index("UPDATE", 0, NAString::ignoreCase);
-	if (position == 0)
-	  {
-	    // found UPDATE. See if the next token is STATISTICS.
-	    ddlStr = ddlStr(6, ddlStr.length()-6); // skip over UPDATE
-	    ddlStr = ddlStr.strip(NAString::leading, ' ');
-
-	    position = ddlStr.index("STATISTICS", 0, NAString::ignoreCase);
-	    if (position == 0)
-	      foundUpdStat = -1;
-	  }
-	if (foundUpdStat)
-	  { 
-	    root_tdb->setQueryType(ComTdbRoot::SQL_CAT_UTIL);     
-	  }
+      Int32 foundUpdStat = 0;
+      
+      // check if the first token is UPDATE
+      size_t position = ddlStr.index("UPDATE", 0, NAString::ignoreCase);
+      if (position == 0)
+        {
+          // found UPDATE. See if the next token is STATISTICS.
+          ddlStr = ddlStr(6, ddlStr.length()-6); // skip over UPDATE
+          ddlStr = ddlStr.strip(NAString::leading, ' ');
+          
+          position = ddlStr.index("STATISTICS", 0, NAString::ignoreCase);
+          if (position == 0)
+            foundUpdStat = -1;
+        }
+      if (foundUpdStat)
+        { 
+          root_tdb->setQueryType(ComTdbRoot::SQL_CAT_UTIL);     
+        }
     }
   // Disable Cancel for some queries.  But start the logic with 
   // "all queries can be canceled."
@@ -2517,6 +2561,14 @@ short RelRoot::codeGen(Generator * generator)
 	{
 	   root_tdb->setQueryType(ComTdbRoot::SQL_EXE_UTIL);
 	}
+    }
+  else if ((child(0)) &&
+	   (child(0)->castToRelExpr()->getOperatorType() == REL_DDL))
+    {
+      DDLExpr *ddlExpr = (DDLExpr *)child(0)->castToRelExpr();
+      
+      if (ddlExpr->producesOutput())
+        root_tdb->setQueryType(ComTdbRoot::SQL_EXE_UTIL);     
     }
   else if (generator->getBindWA()->hasCallStmts())
   {

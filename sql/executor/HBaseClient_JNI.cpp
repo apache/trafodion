@@ -414,6 +414,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_DROP       ].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_DROP_ALL       ].jm_name      = "dropAll";
     JavaMethods_[JM_DROP_ALL       ].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_LIST_ALL       ].jm_name      = "listAll";
+    JavaMethods_[JM_LIST_ALL       ].jm_signature = "(Ljava/lang/String;)Lorg/trafodion/sql/HBaseAccess/ByteArrayList;";
     JavaMethods_[JM_COPY       ].jm_name      = "copy";
     JavaMethods_[JM_COPY       ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_EXISTS     ].jm_name      = "exists";
@@ -1127,6 +1129,52 @@ HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async)
   }
 
   return HBC_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////
+ByteArrayList* HBaseClient_JNI::listAll(const char* pattern)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::listAll(%s) called.", pattern);
+
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+       return NULL;
+
+  jstring js_pattern = jenv_->NewStringUTF(pattern);
+  if (js_pattern == NULL) 
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DROP_PARAM));
+    return NULL;
+  }
+
+  // boolean drop(java.lang.String);
+  jobject jByteArrayList = 
+    jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_LIST_ALL].methodID, js_pattern);
+
+  jenv_->DeleteLocalRef(js_pattern);  
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(jenv_);
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::listAll()", getLastError());
+    return NULL;
+  }
+
+  if (jByteArrayList == NULL)
+    return NULL;
+
+  ByteArrayList* hbaseTables = new (heap_) ByteArrayList(heap_, jByteArrayList);
+  jenv_->DeleteLocalRef(jByteArrayList);
+  if (hbaseTables->init() != BAL_OK)
+    {
+      NADELETE(hbaseTables, ByteArrayList, heap_);
+      return NULL;
+    }
+  
+  return hbaseTables;
 }
 
 //////////////////////////////////////////////////////////////////////////////

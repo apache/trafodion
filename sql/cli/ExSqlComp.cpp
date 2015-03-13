@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1292,8 +1292,8 @@ ExSqlComp::ReturnStatus ExSqlComp::sendRequest (Operator op,
 					    (CmpMsgBufLenType)size, h_);
       break;
       
-    case EXSQLCOMP::MD_UPGRADE :
-      request = new(h_)CmpMessageMDupgrade(input_data, 
+    case EXSQLCOMP::DDL_WITH_STATUS :
+      request = new(h_)CmpMessageDDLwithStatus(input_data, 
 					   (CmpMsgBufLenType)size, h_);
       break;
       

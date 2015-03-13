@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -52,6 +52,8 @@ namespace tmudr {
   class UDRInvocationInfo;
   class UDRPlanInfo;
 }
+class DDLExpr;
+class ExprNode;
 
 // contents
 class CmpStatement;
@@ -93,7 +95,7 @@ public:
   ReturnStatus process(const CmpMessageDatabaseUser&);
   ReturnStatus process(const CmpMessageReadTableDef&);
   ReturnStatus process(const CmpMessageEndSession&);
-  ReturnStatus process(const CmpMessageMDupgrade&);
+  ReturnStatus process(const CmpMessageDDLwithStatus&);
 
   // retrieve the reply
   CmpMessageReply* reply() { return reply_; }
@@ -212,6 +214,9 @@ public:
   const LIST(const NAString *) *getDetailsOnRefusedRequirements() const
                                             { return detailsOnRefusedRequirements_; }
   void setTMUDFRefusedRequirements(const char *details);
+
+  short getDDLExprAndNode(char * sqlStr, Lng32 inputCS,
+                          DDLExpr* &ddlExpr, ExprNode* &ddlNode);
 
 protected:
   // CmpStatement(const CmpStatement&); please remove this line

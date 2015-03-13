@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -51,6 +51,9 @@ enum LOBcliQueryType
 
     // drops the desc table
     LOB_CLI_DROP,
+
+    // cleanup LOBs. Cant use CLI_DROP as MD may be in an inconsistent state.
+    LOB_CLI_CLEANUP,
 
     // inserts first/new chunk into the desc table
     LOB_CLI_INSERT,

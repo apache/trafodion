@@ -332,56 +332,8 @@ NABoolean ExExeUtilTcb::isUpQueueFull(short size)
 short ExExeUtilTcb::moveRowToUpQueue(const char * row, Lng32 len, 
 				     short * rc, NABoolean isVarchar)
 {
-  if (qparent_.up->isFull())
-    {
-      if (rc)
-	*rc = WORK_CALL_AGAIN;
-      return -1;
-    }
-
-  Lng32 length;
-  if (len <= 0)
-    length = strlen(row);
-  else
-    length = len;
-
-  tupp p;
-  if (pool_->get_free_tuple(p, (Lng32)
-			    ((isVarchar ? SQL_VARCHAR_HDR_SIZE : 0)
-			     + length)))
-    {
-      if (rc)
-	*rc = WORK_POOL_BLOCKED;
-      return -1;
-    }
-  
-  char * dp = p.getDataPointer();
-  if (isVarchar)
-    {
-      *(short*)dp = (short)length;
-      str_cpy_all(&dp[SQL_VARCHAR_HDR_SIZE], row, length);
-    }
-  else
-    {
-      str_cpy_all(dp, row, length);
-    }
-
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-  
-  up_entry->copyAtp(pentry_down);
-  up_entry->getAtp()->getTupp((Lng32)exeUtilTdb().tuppIndex_) = p;
-
-  up_entry->upState.parentIndex = 
-    pentry_down->downState.parentIndex;
-  
-  up_entry->upState.setMatchNo(0);
-  up_entry->upState.status = ex_queue::Q_OK_MMORE;
-
-  // insert into parent
-  qparent_.up->insert();
-
-  return 0;
+  return ex_tcb::moveRowToUpQueue(&qparent_, exeUtilTdb().tuppIndex_,
+                                  row, len, rc, isVarchar);
 }
 
 char * ExExeUtilTcb::getTimeAsString(Int64 elapsedTime, char * timeBuf)
@@ -1497,78 +1449,14 @@ short ExExeUtilTcb::alterAuditFlag(NABoolean audited, char * tableName,
 
 short ExExeUtilTcb::handleError()
 {
-  if (qparent_.up->isFull())
-    return 1;
-  
-  // Return EOF.
-  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-  
-  up_entry->upState.parentIndex = 
-    pentry_down->downState.parentIndex;
-  
-  up_entry->upState.setMatchNo(0);
-  up_entry->upState.status = ex_queue::Q_SQLERROR;
-  
-  ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-  
-  if (diagsArea == NULL)
-    diagsArea = 
-      ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-  else
-    diagsArea->incrRefCount (); // the setDiagsArea below will decr the ref count
-  
-  if (getDiagsArea())
-    diagsArea->mergeAfter(*getDiagsArea());
-  
-  up_entry->setDiagsArea (diagsArea);
-  
-  // insert into parent
-  qparent_.up->insert();
-  
-  return 0;
+  return ex_tcb::handleError(&qparent_, getDiagsArea());
 }
 
 short ExExeUtilTcb::handleDone()
 {
-  if (qparent_.up->isFull())
-    return 1;
-  
-  // Return EOF.
-  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
-  
-  if (getDiagsArea()->getNumber(DgSqlCode::WARNING_) > 0)
-    {
-      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-      
-      if (diagsArea == NULL)
-	diagsArea = 
-	  ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
-      else
-	diagsArea->incrRefCount (); // the setDiagsArea below will decr the ref count
-      
-      if (getDiagsArea())
-	diagsArea->mergeAfter(*getDiagsArea());
-      
-      up_entry->setDiagsArea (diagsArea);
-    }
-
-  up_entry->upState.parentIndex = 
-    pentry_down->downState.parentIndex;
-  
-  up_entry->upState.setMatchNo(0);
-  up_entry->upState.status = ex_queue::Q_NO_DATA;
-  
-  // insert into parent
-  qparent_.up->insert();
-  
-  //	    pstate.matches_ = 0;
-  qparent_.down->removeHead();
-  
-  return 0;
+  return ex_tcb::handleDone(&qparent_, getDiagsArea());
 }
-
+    
 short ExExeUtilTcb::createServer(char *serverName,
 				 const char * inPName,
 				 IpcServerTypeEnum serverType,

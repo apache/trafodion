@@ -10250,7 +10250,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 1    .    2    root                                                  1.00E+009
-.    .    1    trafodion_index_scan            T010T4                1.00E+009
+.    .    1    trafodion_index_scan            T010IX1                1.00E+009
 
 --- SQL operation complete.
 >>execute s;

@@ -524,6 +524,22 @@ Lng32 ExpHbaseInterface_JNI::dropAll(const char * pattern, NABoolean async)
 }
 
 //----------------------------------------------------------------------------
+ByteArrayList* ExpHbaseInterface_JNI::listAll(const char * pattern)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return NULL;
+  }
+    
+  ByteArrayList* bal = client_->listAll(pattern);
+  if (bal == NULL)
+    return NULL;
+
+  return bal;
+}
+
+//----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::copy(HbaseStr &currTblName, HbaseStr &oldTblName)
 {
   if (client_ == NULL)

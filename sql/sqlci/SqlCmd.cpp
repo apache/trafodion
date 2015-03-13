@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2244,15 +2244,15 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
     case DML_CALL_STMT_RS_TYPE:
     case DML_SELECT_TYPE:
       {
-	    if (! noScreenOutput)
-	      sprintf(donemsg, SELECTED_MESSAGE, num_rows_returned);
-	    else
-	      {
-		if (displayFirstRow)
-		  sprintf(donemsg, SELECTED_FIRST_ROW_DISPLAY_MESSAGE, num_rows_returned);
-		else
-		  sprintf(donemsg, SELECTED_BUT_MESSAGE, num_rows_returned);
-	      }
+        if (! noScreenOutput)
+          sprintf(donemsg, SELECTED_MESSAGE, num_rows_returned);
+        else
+          {
+            if (displayFirstRow)
+              sprintf(donemsg, SELECTED_FIRST_ROW_DISPLAY_MESSAGE, num_rows_returned);
+            else
+              sprintf(donemsg, SELECTED_BUT_MESSAGE, num_rows_returned);
+          }
       }
     break;
 

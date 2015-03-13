@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -442,14 +442,14 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
           break;
         } // end of case (CmpMessageObj::DATABASE_USER)
 
-      case (CmpMessageObj::MD_UPGRADE) :
+      case (CmpMessageObj::DDL_WITH_STATUS) :
         {
           cmpStatement = new CTXTHEAP CmpStatement(cmpContext_, 0, NAMemory::SYSTEM_MEMORY);
-          CmpMessageMDupgrade statement(NULL, 0, CTXTHEAP);
+          CmpMessageDDLwithStatus statement(NULL, 0, CTXTHEAP);
 	  receiveAndSetUp(this, statement);
           cmpStatement->process(statement);
           break;
-        } // end of case (CmpMessageObj::MD_UPGRADE)
+        } // end of case (CmpMessageObj::DDL_WITH_STATUS)
 
       case (CmpMessageObj::END_SESSION) :
         {

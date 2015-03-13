@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -258,10 +258,13 @@ private:
 		  char * val,
 		  ComDiagsArea * globalDiags = NULL);
 
-    void setNotExeUtilInternalQuery(NABoolean v)
-    {(v ? flags_ |= NOT_EXEUTIL_INTERNAL_QUERY : flags_ &= ~NOT_EXEUTIL_INTERNAL_QUERY); };
-    NABoolean notExeUtilInternalQuery() { return (flags_ & NOT_EXEUTIL_INTERNAL_QUERY) != 0; };
+  Lng32 setCQS(const char * shape, ComDiagsArea * globalDiags = NULL);
+  Lng32 resetCQS(ComDiagsArea * globalDiags = NULL);
 
+  void setNotExeUtilInternalQuery(NABoolean v)
+  {(v ? flags_ |= NOT_EXEUTIL_INTERNAL_QUERY : flags_ &= ~NOT_EXEUTIL_INTERNAL_QUERY); };
+  NABoolean notExeUtilInternalQuery() { return (flags_ & NOT_EXEUTIL_INTERNAL_QUERY) != 0; };
+  
 private:
   struct Attrs
     {

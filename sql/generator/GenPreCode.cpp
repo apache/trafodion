@@ -4498,181 +4498,6 @@ RelExpr * MergeDelete::preCodeGen(Generator * generator,
   return this;
 }
 
-
-#ifdef __ignore
-RelExpr * DP2Delete::preCodeGen(Generator * generator,
-				const ValueIdSet & externalInputs,
-				ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  // start with input olt eid opt indication
-  oltOptInfo().setOltEidOpt(generator->oltOptInfo()->oltEidOpt());
-
-  generator->oltOptInfo()->setMultipleRowsReturned(FALSE);
-
-  NABoolean isAUniqueDelete = FALSE;
-  if ((getOperatorType() == REL_DP2_DELETE_UNIQUE) ||
-      ((getOperatorType() == REL_DP2_DELETE_CURSOR) &&
-       (! getenv("NO_OLT_DELETE_CURSOR"))))
-    isAUniqueDelete = TRUE;
-
-  if (NOT isAUniqueDelete)
-    {
-      oltOptInfo().setOltEidOpt(FALSE);
-    }
-
-  // 'merge' stmt not supported for olt opt delete
-  if (isMergeDelete())
-    {
-      oltOptInfo().setOltEidOpt(FALSE);
-    }
-
-  if (isFastDelete())
-    {
-      generator->setUpdAbortOnError(TRUE);
-      generator->setUpdSavepointOnError(FALSE);
-    }
-    
-  // Make sure we don't try to expand short rows if
-  //  - there are no added columns
-  //  - the feature is turned off
-  //  - a vertical partition table
-  //  - is not a base table (no expand needed for index tables)
-  if ( getTableDesc()->getNATable()->hasAddedColumn() &&
-       (CmpCommon::getDefault(EXPAND_DP2_SHORT_ROWS) == DF_ON) &&
-       (NOT getTableDesc()->getNATable()->isSQLMPTable()) &&
-       getTableDesc()->getVerticalPartitions().isEmpty() &&
-       getIndexDesc()->isClusteringIndex()   // true if base table not an index
-       )
-  {
-    // In specific cases for SQL/MX tables that have added columns we will expand
-    // the row data to include any missing column default values allowing
-    // other optimizations and PCode.
-    setExpandShortRows( TRUE );
-  }
-
-  // if subset delete or a non-delete-curr-of cursor delete,
-  // turn off 'error on error'.
-  // A non-delete-curr-of cursor could be chosen for a
-  // delete query with the shape:    tuple_flow(scan, delete)
-  if ((getOperatorType() == REL_DP2_DELETE_SUBSET) ||
-      (getOperatorType() == REL_DP2_DELETE_CURSOR &&
-       NOT updateCurrentOf()))
-    {
-      generator->setUpdErrorOnError(FALSE);
-    }
-
-
-  if (getTableDesc()->getNATable()->hasLobColumn())
-    {
-      ValueIdSet vidL;
-      
-      for (CollIndex i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
-	{
-	  ValueId vid = getIndexDesc()->getIndexColumns()[i];
-
-	  if (vid.getType().isLob())
-	    {
-	      LOBdelete * ld = new(generator->wHeap())
-		LOBdelete(vid.getItemExpr());
-
-	      NAColumn * col = getIndexDesc()->getIndexColumns()[i].getNAColumn(TRUE);
-	      if (col)
-		{
-		  ld->lobNum() = col->lobNum();
-		  ld->lobStorageType() = col->lobStorageType();
-		  ld->lobStorageLocation() = col->lobStorageLocation();
-		}
-
-	      // evaluate ld expr and return TRUE. This is needed so
-	      // the executorPred processing works right.
-	      ItemExpr * ie
-		= new(generator->wHeap()) BoolVal(ITM_RETURN_TRUE, ld);
-
-	      ie->bindNode(generator->getBindWA());
-	      ie->preCodeGen(generator);
-	      
-	      vidL.insert(ie->getValueId());
-	    }
-	}
-
-      executorPred().insert(vidL);
-    }
-  // ssss #endif
-
-  PartitioningFunction *partFunc =
-    getTableDesc() ?
-      getTableDesc()->getClusteringIndex()->
-        getNAFileSet()->getPartitioningFunction()
-    : 0;
-
-  // Cannot do olt msg opt if:
-  //   -- values are to be returned and unique operation is not being used.
-  //   -- or table is partitioned and unique operation is not being used.
-
-  GenAssert(partFunc, "DP2Delete::preCodeGen : missing partition");
-  if ((NOT isAUniqueDelete) &&
-      ((producesOutputs()) || (partFunc->isPartitioned())))
-    {
-      generator->oltOptInfo()->setOltMsgOpt(FALSE);
-
-      if (producesOutputs())
-	{
-	  // set an indication that multiple rows will be returned.
-	  generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
-	}
-    }
-
-  // eid olt opt done for key seq non-compressed tables with user
-  // defined primary key.
-  if ((NOT getIndexDesc()->getNAFileSet()->isKeySequenced()) ||
-      //      (getIndexDesc()->getAllColumns()[0]->isSystemColumn()) ||
-      (getIndexDesc()->getNAFileSet()->isCompressed()))
-  {
-    oltOptInfo().setOltOpt(FALSE);
-    setExpandShortRows( FALSE );
-  }
-
-
-  if (getIndexDesc()->getAllColumns()[0]->isSyskeyColumn())
-    {
-      oltOptInfo().setOltEidOpt(FALSE);
-    }
-
-  // The OLT optimized nodes do not support logging yet.
-  ValueId   epochValueId;
-  if (getOutputFunctionsForMV(epochValueId, ITM_CURRENTEPOCH))
-  {
-    oltOptInfo().setOltOpt(FALSE);
-    setExpandShortRows( FALSE );
-  }
-
-  if (oltOpt() &&
-      (NOT expandShortRows()) &&
-      getTableDesc()->getNATable()->hasAddedColumn())
-  {
-    oltOptInfo().setOltEidOpt(FALSE);
-  }
-
-  // see if 'lean' olt opt could be done.
-  oltOptInfo().setOltEidLeanOpt(FALSE);
-  if ((oltOpt()) &&
-      (generator->oltOptInfo()->oltEidLeanOpt()))
-  {
-    oltOptInfo().setOltEidLeanOpt(TRUE);
-    setExpandShortRows( FALSE );   // not yet for opt lean ...
-  }
-
-  generator->compilerStatsInfo().dp2RowsAccessed() += 
-    getEstRowsUsed().value();
-
-  return DeleteCursor::preCodeGen(generator, externalInputs, pulledNewInputs);
-}
-#endif
-
-
 static NABoolean hasColReference(ItemExpr * ie)
 {
   if (! ie)
@@ -4926,6 +4751,21 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
       // first add all columns referenced in the executor pred.
       HbaseAccess::addColReferenceFromVIDset(executorPred(), colRefSet);
 
+      if ((getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE))
+        {
+	  for (ValueId valId = executorPred().init();
+	       executorPred().next(valId);
+	       executorPred().advance(valId))
+            {
+              ItemExpr * ie = valId.getItemExpr();
+              if (ie->getOperatorType() == ITM_EQUAL)
+                {
+                  BiRelat * br = (BiRelat*)ie;
+                  br->setSpecialNulls(TRUE);
+                }
+            }
+        }
+
       if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
 	  (getTableDesc()->getNATable()->isHbaseCellTable()) ||
           (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
@@ -5138,6 +4978,21 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
       // create the list of columns that need to be retrieved from hbase .
       // first add all columns referenced in the executor pred.
       HbaseAccess::addColReferenceFromVIDset(executorPred(), colRefSet);
+
+      if ((getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE))
+        {
+	  for (ValueId valId = executorPred().init();
+	       executorPred().next(valId);
+	       executorPred().advance(valId))
+            {
+              ItemExpr * ie = valId.getItemExpr();
+              if (ie->getOperatorType() == ITM_EQUAL)
+                {
+                  BiRelat * br = (BiRelat*)ie;
+                  br->setSpecialNulls(TRUE);
+                }
+            }
+        }
 
       // add all columns referenced in the right side of the update expr.
       HbaseAccess::addColReferenceFromRightChildOfVIDarray(newRecExprArray(), colRefSet);

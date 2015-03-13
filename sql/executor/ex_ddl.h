@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -106,6 +106,57 @@ private:
 };
 
 
+// -----------------------------------------------------------------------
+// ExDDLwithStatusTdb
+// -----------------------------------------------------------------------
+class ExDDLwithStatusTdb : public ComTdbDDLwithStatus
+{
+public:
+
+  // ---------------------------------------------------------------------
+  // Constructor is only called to instantiate an object used for
+  // retrieval of the virtual table function pointer of the class while
+  // unpacking. An empty constructor is enough.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC ExDDLwithStatusTdb()
+  {}
+
+  NA_EIDPROC virtual ~ExDDLwithStatusTdb()
+  {}
+
+  // ---------------------------------------------------------------------
+  // Build a TCB for this TDB. Redefined in the Executor project.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+
+private:
+  // ---------------------------------------------------------------------
+  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
+  // *********************************************************************
+  // The Executor TDB's are only used for the sole purpose of providing a
+  // way to supplement the Compiler TDB's (in comexe) with methods whose
+  // implementation depends on Executor objects. This is done so as to
+  // decouple the Compiler from linking in Executor objects unnecessarily.
+  //
+  // When a Compiler generated TDB arrives at the Executor, the same data
+  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
+  // a requirement that a Compiler TDB has the same object layout as its
+  // corresponding Executor TDB. As a result of this, all Executor TDB's
+  // must have absolutely NO data members, but only member functions. So,
+  // if you reach here with an intention to add data members to a TDB, ask
+  // yourself two questions:
+  //
+  // 1. Are those data members Compiler-generated?
+  //    If yes, put them in the ComTdbDLL instead.
+  //    If no, they should probably belong to someplace else (like TCB).
+  // 
+  // 2. Are the classes those data members belong defined in the executor
+  //    project?
+  //    If your answer to both questions is yes, you might need to move
+  //    the classes to the comexe project.
+  // ---------------------------------------------------------------------
+};
+
 
 //
 // Task control block
@@ -114,7 +165,6 @@ class ExDDLTcb : public ex_tcb
 {
   friend class ExDDLTdb;
   friend class ExDDLPrivateState;
-
 
 public:
   enum Step
@@ -166,15 +216,81 @@ protected:
   ContextCli * currContext (void)
     { return getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getCliGlobals()->currContext(); };
 
-private:
   inline ExDDLTdb & ddlTdb() const{return (ExDDLTdb &) tdb;};
   inline NABoolean mpRequest() const {return ddlTdb().mpRequest();}; 
 
 };
 
+//
+// Task control block
+//
+class ExDDLwithStatusTcb : public ExDDLTcb
+{
+  friend class ExDDLTdb;
+  friend class ExDDLPrivateState;
+
+public:
+  enum Step
+  {
+    NOT_STARTED_,
+    SETUP_INITIAL_REQ_,
+    CALL_EMBEDDED_CMP_,
+    SEND_REQ_TO_CMP_,
+    PROCESS_REPLY_,
+    SETUP_NEXT_STEP_,
+    RETURN_STATUS_,
+    RETURN_DETAILS_,
+    RETURN_STATUS_END_STEP_,
+    DONE_,
+    HANDLE_ERROR_,
+    CANCELLED_
+  };
+
+  // Constructor
+  ExDDLwithStatusTcb(const ComTdbDDL & ddl_tdb,
+                     ex_globals * glob = 0);
+
+  ~ExDDLwithStatusTcb()
+    {}
+
+  virtual short work();
+
+  ComDiagsArea * getDiagsArea() { return diagsArea_; }
+  inline ExDDLwithStatusTdb & ddlTdb() const{return (ExDDLwithStatusTdb &) tdb;};
+
+ private:
+  Step step_;
+  Lng32 ddlStep_;
+  Lng32 ddlSubstep_;
+
+  char * upgdMsg_;
+
+  ExSqlComp * cmp_;
+  char * replyBuf_;
+  ULng32 replyBufLen_;
+
+  CmpDDLwithStatusInfo * mdi_;
+  CmpDDLwithStatusInfo * replyDWS_;
+
+  Int64 startTime_;
+  Int64 endTime_;
+
+  char * data_;
+  size_t dataLen_;
+
+  NABoolean callEmbeddedCmp_;
+
+  Int32 numEntries_;
+  Int32 currEntry_;
+  char * currPtr_;
+
+  ComDiagsArea * diagsArea_;
+};
+
 class ExDDLPrivateState : public ex_tcb_private_state
 {
   friend class ExDDLTcb;
+  friend class ExDDLwithStatusTcb;
   friend class ExDescribeTcb;
   
 public:	
@@ -195,7 +311,6 @@ protected:
   ULng32 dataLen_;
   ULng32 currLen_;
 };
-
 
 
 ////////////////////////////////////////////////////////////////////

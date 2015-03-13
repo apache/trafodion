@@ -1392,6 +1392,9 @@ public:
 				NAString &cid,
 				NABoolean isSecondaryIndex = FALSE);
 
+  static short returnDups(std::vector<SortValue> &myvector,
+                          ValueIdList &srcVIDlist, ValueIdList &dupVIDlist);
+
   static short createSortValue(ItemExpr * col_node,
 			       std::vector<SortValue> &myvector,
 			       NABoolean isSecondaryIndex = FALSE);
@@ -1401,7 +1404,9 @@ public:
 			   NABoolean isSecondaryIndex = FALSE);
 
   static short sortValues (const ValueIdSet &inSet,
-			   ValueIdList &sortedList, 
+                           ValueIdList &sortedList,
+                           ValueIdList &srcVIDlist,
+                           ValueIdList &dupVIDlist,
 			   NABoolean isSecondaryIndex = FALSE);
 
   static short sortValues (NASet<NAString> &inSet,
