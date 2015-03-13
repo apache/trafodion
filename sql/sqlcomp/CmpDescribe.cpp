@@ -548,6 +548,17 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
                   char* &outbuf, ULng32 &outbuflen,
                   CollHeap *heap)
 {
+  // save the current parserflags setting
+
+  ULng32 savedParserFlags;
+  SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedParserFlags);
+
+ // add an exception handler around all the SQL specific code
+ try
+ {
+  Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+  SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
+ 
   // Display triggers using this object
   NABoolean showUsingTriggers = !!getenv("SQLMX_SHOW_USING_TRIGGERS");
 
@@ -869,12 +880,7 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   NABoolean isInMemoryObjectDefn = 
                   FALSE;
 
-  ULng32 saved_SqlParser_Flags = SqlParser_Flags;
 
- // add an exception handler around all the SQL specific code
- // fix for genesis case 10-050325-9899 
- try
- {
   if(isVolatile)
         Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
 
@@ -999,10 +1005,13 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   space.makeContiguous(outbuf, outbuflen);
 
   Reset_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
-  Set_SqlParser_Flags(saved_SqlParser_Flags);
 
   NADELETEBASIC(buf, CmpCommon::statementHeap());
   CmpCommon::context()->readTableDef_->deleteTree(tabledesc);
+  // Restore parser flags settings to what they originally were
+  Assign_SqlParser_Flags(savedParserFlags);
+  SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedParserFlags);
+  
   return 0;
  }
 
@@ -1011,14 +1020,16 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
  catch(...)
  {
 
-   SqlParser_Flags = saved_SqlParser_Flags;
+   // Restore parser flags settings to what they originally were
+   Assign_SqlParser_Flags(savedParserFlags);
+   SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedParserFlags);
 
     // Check diags area, if it doesn't contain an error, add an
     // internal exception
     if (CmpCommon::diags()->getNumber() == 0)
     {
       *CmpCommon::diags() << DgSqlCode(-2006);
-      *CmpCommon::diags() << DgString0("Unknown error returned while retrieving metadata from catalog manager");
+      *CmpCommon::diags() << DgString0("Unknown error returned while retrieving metadata");
       *CmpCommon::diags() << DgString1(__FILE__);
       *CmpCommon::diags() << DgInt0(__LINE__);
     }

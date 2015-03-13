@@ -223,7 +223,6 @@ PrivStatus privStatus = objectPrivileges.getPrivBitmaps(whereClause,
    if (privStatus == STATUS_NOTFOUND)
       return false;
       
-      
    if (privStatus == STATUS_ERROR)
    {
       PRIVMGR_INTERNAL_ERROR("Could not fetch privileges for referenced objects");
@@ -235,7 +234,6 @@ PrivStatus privStatus = objectPrivileges.getPrivBitmaps(whereClause,
    for (size_t pb = 0; pb < privBitmaps.size(); pb++)
       if (privBitmaps[pb].test(privType))
          return true;
-          
           
 // Priv not found among remaining granted privileges.
    return false;
@@ -407,18 +405,30 @@ PrivMgrMDAdmin admin(trafMetadataLocation_,metadataLocation_,pDiags_);
             {
                whereClause = whereClauseHeader +
                              UIDToString(referencedObjectsList[obj]->objectUID);
-               
-               // If the user still has the SELECT privilage on the referenced 
-               // table or view without this role, the user is not dependent on   
-               // the role's privileges for this table or view.  
-               if (areRemainingGrantedPrivsSufficient(whereClause,SELECT_PRIV))
+               PrivType privType = ALL_PRIVS;
+               switch (referencedObjectsList[obj]->objectType)
+               {
+                  case COM_BASE_TABLE_OBJECT:
+                     privType = SELECT_PRIV;
+                     break;
+                  case COM_USER_DEFINED_ROUTINE_OBJECT:
+                     privType = EXECUTE_PRIV;
+                     break;
+                  default:
+                     PRIVMGR_INTERNAL_ERROR("Unrecognized PrivType");
+                     return true;
+               }
+               // If the user still has the requesite privilege on the referenced 
+               // object without this role, the user is not dependent on the role's   
+               // privileges in order to create and therefore retain this object.  
+               if (areRemainingGrantedPrivsSufficient(whereClause,privType))
                   continue;
                
                //TODO: for cascade, drop the object instead of reporting dependency error.
                // for CASCADE, need to handle case where views in this list
                // no longer exist because a previous referenced object resulted
                // in the referencing object being dropped.  Could short-circuit
-               // as beginning of for loop.  
+               // at beginning of for loop.  
                //
                // if (objectUID not found) continue;
                //

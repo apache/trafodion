@@ -1352,10 +1352,10 @@ PrivStatus PrivMgrMDAdmin::getObjectsThatViewReferences (
   std::string viewUsageMDTable = trafMetadataLocation_ + ".VIEWS_USAGE u";
 
   // Select all the objects that are referenced by the view
-  std::string selectStmt = "select o.object_uid, o.object_owner, ";
+  std::string selectStmt = "select o.object_uid, o.object_owner, o.object_type, ";
   selectStmt += "trim(o.catalog_name) || '.\"' || ";
-  selectStmt += "trim (o.schema_name) || '\".\"' ||";
-  selectStmt += "trim (o.object_name)|| '\"' from ";
+  selectStmt += "trim (o.schema_name) || '\".\"' || ";
+  selectStmt += "trim (o.object_name) || '\"' from ";
   selectStmt += objectMDTable;
   selectStmt += ", ";
   selectStmt += viewUsageMDTable;
@@ -1402,8 +1402,14 @@ int32_t diagsMark = pDiags_->mark();
     pCliRow->get(1,ptr,len);
     pObjectReference->objectOwner = *(reinterpret_cast<int32_t*>(ptr));
 
-    // column 2: object name
+    // column 2: object type
     pCliRow->get(2,ptr,len);
+    strncpy(value, ptr, len);
+    value[len] = 0;
+    pObjectReference->objectType = ObjectLitToEnum(value);
+
+    // column 3: object name
+    pCliRow->get(3,ptr,len);
     strncpy(value, ptr, len);
     value[len] = 0;
     pObjectReference->objectName = value;
@@ -1430,7 +1436,7 @@ PrivStatus PrivMgrMDAdmin::getUdrsThatReferenceLibrary(
   std::string roleUsageMDTable = metadataLocation_ + ".ROLE_USAGE r";
 
   // Select all the objects that are referenced by the library
-  std::string selectStmt = "select o.object_uid, o.object_owner, ";
+  std::string selectStmt = "select o.object_uid, o.object_owner, o.object_type, ";
   selectStmt += "trim(o.catalog_name) || '.\"' || ";
   selectStmt += "trim (o.schema_name) || '\".\"' ||";
   selectStmt += "trim (o.object_name)|| '\"' from ";
@@ -1486,8 +1492,14 @@ PrivStatus PrivMgrMDAdmin::getUdrsThatReferenceLibrary(
     pCliRow->get(1,ptr,len);
     pObjectReference->objectOwner = *(reinterpret_cast<int32_t*>(ptr));
 
-    // column 2: object name
+    // column 2: object type
     pCliRow->get(2,ptr,len);
+    strncpy(value, ptr, len);
+    value[len] = 0;
+    pObjectReference->objectType = ObjectLitToEnum(value);
+
+    // column 3: object name
+    pCliRow->get(3,ptr,len);
     strncpy(value, ptr, len);
     value[len] = 0;
     pObjectReference->objectName = value;
@@ -1558,7 +1570,7 @@ PrivStatus PrivMgrMDAdmin::getReferencingTablesForConstraints (
 
   // Select all the constraints that are referenced by the table
   // create_time is included to order by the oldest to newest
-  std::string selectStmt = "select distinct o.object_uid, o.object_owner, o.create_time, ";
+  std::string selectStmt = "select distinct o.object_uid, o.object_owner, o.object_type, o.create_time, ";
   selectStmt += "trim(o.catalog_name) || '.\"' || ";
   selectStmt += "trim (o.schema_name) || '\".\"' ||";
   selectStmt += "trim (o.object_name)|| '\"' from ";
@@ -1609,8 +1621,14 @@ int32_t diagsMark = pDiags_->mark();
     pCliRow->get(1,ptr,len);
     pObjectReference->objectOwner = *(reinterpret_cast<int32_t*>(ptr));
 
-    // column 2: object name
+    // column 2: object type
     pCliRow->get(2,ptr,len);
+    strncpy(value, ptr, len);
+    value[len] = 0;
+    pObjectReference->objectType = ObjectLitToEnum(value);
+
+    // column 3: object name
+    pCliRow->get(3,ptr,len);
     strncpy(value, ptr, len);
     value[len] = 0;
     pObjectReference->objectName = value;

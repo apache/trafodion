@@ -121,6 +121,7 @@ typedef NABoolean               ComBoolean;
 #define TRAFODION_SYSCAT_LIT              "TRAFODION"
 #define SEABASE_SYSTEM_SCHEMA           "SEABASE"
 #define SEABASE_PRIVMGR_SCHEMA         "PRIVMGR_MD"
+#define SEABASE_UDF_SCHEMA             "_UDF_"
 
 #define SEABASE_DEFAULT_COL_FAMILY "#1"
 

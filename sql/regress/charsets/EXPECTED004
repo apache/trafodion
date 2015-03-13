@@ -374,25 +374,13 @@ abc
 >>--disabled old func names
 >>select unicode_value(_ucs2 x'0390', ucs2) from (values(1))x;
 
-*** ERROR[1389] Object UNICODE_VALUE does not exist in Trafodion.
-
-*** ERROR[1389] Object UNICODE_VALUE does not exist in Trafodion.
-
-*** ERROR[4450] Function TRAFODION.SCH.UNICODE_VALUE is not a built-in function or registered user-defined function.
-
-*** ERROR[4450] Function NEO.UDF.UNICODE_VALUE is not a built-in function or registered user-defined function.
+*** ERROR[4450] Function TRAFODION."_UDF_".UNICODE_VALUE is not a built-in function or registered user-defined function.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select unicode_char(0390, ucs2) from (values(1))x;
 
-*** ERROR[1389] Object UNICODE_CHAR does not exist in Trafodion.
-
-*** ERROR[1389] Object UNICODE_CHAR does not exist in Trafodion.
-
-*** ERROR[4450] Function TRAFODION.SCH.UNICODE_CHAR is not a built-in function or registered user-defined function.
-
-*** ERROR[4450] Function NEO.UDF.UNICODE_CHAR is not a built-in function or registered user-defined function.
+*** ERROR[4450] Function TRAFODION."_UDF_".UNICODE_CHAR is not a built-in function or registered user-defined function.
 
 *** ERROR[8822] The statement was not prepared.
 

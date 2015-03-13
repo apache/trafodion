@@ -3338,8 +3338,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   // UDF scalar indicating maximum number of rows out for each row in.
   DDui___(UDF_FANOUT,                            "1"),
-  DD_____(UDF_METADATA_SCHEMA,                  "NEO.UDF"), // Must be in form <cat>.<sch>
-                                                            // Delimited names not allowed.
+  // Must be in form <cat>.<sch>.  Delimited catalog names not allowed.
+  DD_____(UDF_METADATA_SCHEMA,                  "TRAFODION.\"_UDF_\""), 
+                                                                         
   DDkwd__(UDF_SUBQ_IN_AGGS_AND_GBYS,            "SYSTEM"),
 
  XDDui___(UDR_DEBUG_FLAGS,                      "0"), // see sqludr/sqludr.h for values
