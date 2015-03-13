@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ LIBSTMOBJS = $(OUTDIR)/tmtransid.o \
 			 $(OUTDIR)/tmmap.o \
 			 $(OUTDIR)/tmmutex.o \
 			 $(OUTDIR)/tmregisterregion.o \
+		 	 $(OUTDIR)/javaobjectinterfacetm.o \
 			 $(OUTDIR)/versstmlib.o 
 LIBSXATMOBJS  = $(OUTDIR)/tmmap.o \
 				$(OUTDIR)/tmmmap.o \
@@ -120,8 +121,8 @@ TMOBJS		= $(OUTDIR)/tmregistry.o \
 		      $(OUTDIR)/CommonLogger.o  
 ALLOBJS	= $(LIBSTMOBJS) \
 		  $(LIBSXATMOBJS) \
+		  $(TMOBJS) \
 		  $(LIBXARMOBJS) \
-		  $(TMOBJS)
 
 CFILES		= `ls *.c`
 

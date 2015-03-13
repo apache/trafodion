@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -159,7 +159,7 @@ public class TransactionalScanner extends AbstractClientScanner {
                 Bytes.equals(this.currentEndKey, HConstants.EMPTY_BYTE_ARRAY) ||
                 checkScanStopRow(this.currentEndKey) || 
                 done) {
-                LOG.trace("endKey: " + Bytes.toString(this.currentEndKey));
+                if(LOG.isTraceEnabled()) LOG.trace("endKey: " + Bytes.toString(this.currentEndKey));
                 if(LOG.isTraceEnabled()) LOG.trace("nextScanner() -- EXIT -- returning false txID: " + ts.getTransactionId());
                 this.moreScanners = false;
                 return false;

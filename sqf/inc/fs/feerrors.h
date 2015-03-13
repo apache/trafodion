@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1997-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -176,7 +176,7 @@ enum {
   FEINVALIDSTATE               = fe_base + 160,   // invalid state/ protocol error
   FEBADSTATE                   = fe_base + 161,   // impossible state
   FERETRIESEXHAUSTED           = fe_base + 162,   // retry count exhausted
-  FEOPERATIONTIMEDOUT          = FERETRIESEXHAUSTED,	//operation timed out
+  FEOPERATIONTIMEDOUT          = FERETRIESEXHAUSTED,    //operation timed out
   FERECEIVEDEOT                = fe_base + 163,   // eot was received
   FERECEIVEDDISC               = fe_base + 164,   // disconnect received
   FERECEIVEDRVI                = fe_base + 165,   // rvi was received
@@ -386,42 +386,50 @@ enum {
 
 //----------------------------------------------------------------------------
 //
-//									OPENTMF ERRORS
+//                                    OPENTMF ERRORS
 //
 //----------------------------------------------------------------------------
-  FERMALREADYREGISTERED        = fe_base + 712,   // The resource manager is already registered
-	FERMOUTSTANDINGTRANS				 = fe_base + 713,	  // An attempt was made to remove a recoverable resource manager which still has unresolved transactions
-	FEINVALIDPROTOCOL					   = fe_base + 714,	  // Invalid or unsupported protocol option
-	FEINVALIDTXHANDLE					   = fe_base + 715,	  // Invalid Transaction handle specified
-	FETXSUSPENDREJECTED				   = fe_base + 716,	  // The suspend operation is rejected because process is not the beginner of the transaction nor did it resume the transaction
-	FETXNOTSUSPENDED					   = fe_base + 717,   // The transaction has not been suspended
-	FEINVALIDSIGNAL					     = fe_base + 718,	  // Invalid signal supplied
-	FEDATASIZEEXCEEDED				   = fe_base + 719,	  // The branch data exceeded the maximum allowable limit
-	FERMWRONGSESSION					   = fe_base + 720,	  // There is a mismatch in the session between the resource manager and CLOSE/RECOVER messages
-	FEBEGINTXNOTCOMPLETED			   = fe_base + 721,	  // Begin transaction is not yet complete
-	FENOMORERMCBS						     = fe_base + 722,	  // There are no more empty resource manager control blocks
-	FENOMOREBCBS						     = fe_base + 723,	  // There are no more empty branch control blocks
-	FENOTNOWAITTFILE					   = fe_base + 724,	  // The TFILE is not opened in nowait mode
-	FEIMPORTINVALOP					     = fe_base + 725,	  // Invalid operation on an imported transaction ( for example, calling ENDTRANSACTION )
-	FEINVALIDTUBADDR					   = fe_base + 726,	  // Invalid TUB address specified for the branch
-	FETOOMANYRECRMS					     = fe_base + 727,	  // The total allowable recoverable resource managers for a system has been exceeded
-	FESETTXHANDLEINVALOP				 = fe_base + 728,	  // The volatile resource manager has already prepared the branch. If the volatile resource manager has to do more work on the transaction, it must export a transaction branch
-	FEBRANCHISPREPARED				   = fe_base + 729,	  // After a transaction branch is prepared, its branch data will not be allowed to be updated
-	FEJOINSOUTSTANDING				   = fe_base + 730,	  // There are outstanding JOINs for the process. This error is given during ENDTRANSACTION processing
-	FEALREADYJOINED					     = fe_base + 731,	  // The transaction is already joined by the process
-	FEALREADYRESUMED					   = fe_base + 732,	  // The transaction is already resumed by the process
-	FEBRANCHISFAILED					   = fe_base + 733,	  // The transaction branch has already failed. This error is given if branch data is updated while transaction is being aborted
+  FERMALREADYREGISTERED        = fe_base + 712,      // The resource manager is already registered
+   FERMOUTSTANDINGTRANS        = fe_base + 713,      // An attempt was made to remove a recoverable resource manager which still has unresolved transactions
+   FEINVALIDPROTOCOL           = fe_base + 714,      // Invalid or unsupported protocol option
+   FEINVALIDTXHANDLE           = fe_base + 715,      // Invalid Transaction handle specified
+   FETXSUSPENDREJECTED         = fe_base + 716,      // The suspend operation is rejected because process is not the beginner of the transaction nor did it resume the transaction
+   FETXNOTSUSPENDED            = fe_base + 717,      // The transaction has not been suspended
+   FEINVALIDSIGNAL             = fe_base + 718,      // Invalid signal supplied
+   FEDATASIZEEXCEEDED          = fe_base + 719,      // The branch data exceeded the maximum allowable limit
+   FERMWRONGSESSION            = fe_base + 720,      // There is a mismatch in the session between the resource manager and CLOSE/RECOVER messages
+   FEBEGINTXNOTCOMPLETED       = fe_base + 721,      // Begin transaction is not yet complete
+   FENOMORERMCBS               = fe_base + 722,      // There are no more empty resource manager control blocks
+   FENOMOREBCBS                = fe_base + 723,      // There are no more empty branch control blocks
+   FENOTNOWAITTFILE            = fe_base + 724,      // The TFILE is not opened in nowait mode
+   FEIMPORTINVALOP             = fe_base + 725,      // Invalid operation on an imported transaction ( for example, calling ENDTRANSACTION )
+   FEINVALIDTUBADDR            = fe_base + 726,      // Invalid TUB address specified for the branch
+   FETOOMANYRECRMS             = fe_base + 727,      // The total allowable recoverable resource managers for a system has been exceeded
+   FESETTXHANDLEINVALOP        = fe_base + 728,      // The volatile resource manager has already prepared the branch. If the volatile resource manager has to do more work on the transaction, it must export a transaction branch
+   FEBRANCHISPREPARED          = fe_base + 729,      // After a transaction branch is prepared, its branch data will not be allowed to be updated
+   FEJOINSOUTSTANDING          = fe_base + 730,      // There are outstanding JOINs for the process. This error is given during ENDTRANSACTION processing
+   FEALREADYJOINED             = fe_base + 731,      // The transaction is already joined by the process
+   FEALREADYRESUMED            = fe_base + 732,      // The transaction is already resumed by the process
+   FEBRANCHISFAILED            = fe_base + 733,      // The transaction branch has already failed. This error is given if branch data is updated while transaction is being aborted
+
+//----------------------------------------------------------------------------
+//                Trafodion transaction errors
+//----------------------------------------------------------------------------
+   FETRANSEXCEPTION     = fe_base + 734,	// The transaction operation failed with exception.
+   FETRANSIOEXCEPTION	= fe_base + 735,	// The transaction operation failed with I/O exception.
+   FEHASCONFLICT        = fe_base + 736,	// MVCC Conflict detected in transaction during prepare.
+   FETRANSERRUNKNOWN    = fe_base + 737,	// An unknown transaction error occurred.
 
 //----------------------------------------------------------------------------
 //
-//				TRANSACTION INTERNET PROTOCOL (TIP) ERRORS
+//                TRANSACTION INTERNET PROTOCOL (TIP) ERRORS
 //
 //----------------------------------------------------------------------------
-	FETRANSNOTPUSHED					   = fe_base + 751,	  // Transaction not pushed
-	FETRANSNOTPULLED					   = fe_base + 752,	  // Transaction not pulled
-	FETRANSALREADYPULLED				 = fe_base + 753,	  // Transaction was already pulled
-	FESERVICEDISABLED					   = fe_base + 754,	  // Service disabled
-	FERETRY								       = fe_base + 755,	  // Retry the operation
+   FETRANSNOTPUSHED           = fe_base + 751,      // Transaction not pushed
+   FETRANSNOTPULLED           = fe_base + 752,      // Transaction not pulled
+   FETRANSALREADYPULLED       = fe_base + 753,      // Transaction was already pulled
+   FESERVICEDISABLED          = fe_base + 754,      // Service disabled
+   FERETRY                    = fe_base + 755,      // Retry the operation
 
       //  Error numbers 900 - 950 are reserved for use by PATHSEND
       
@@ -598,13 +606,13 @@ enum {
   FE_ENOCPU                    = fe_base + 4207,  // Cpu unavailable
   FE_EUNKNOWN                  = fe_base + 4208,  // something impossible happened
   FE_EISGUARDIAN               = fe_base + 4209,  // OSS operation attempted on Guardian file descriptor
-  FE_EGUARDIANOPEN             = FEINUSE,	//OSS unlink open against open Guardian file
-  FE_EWRONGID                  = FEWRONGID,	//Stale openid
+  FE_EGUARDIANOPEN             = FEINUSE,         //OSS unlink open against open Guardian file
+  FE_EWRONGID                  = FEWRONGID,       //Stale openid
   FE_ENONSTOP                  = fe_base + 4210,  // NONSTOP C language problem
   FE_ECWDTOOLONG               = fe_base + 4211,  // either cwd or cwd/file name is longer PATHMAX
   FE_EDEFINEERR                = fe_base + 4212,  // A Guardian define error was encountered
   FE_EHLDSEM                   = fe_base + 4213,  // An OSS process is trying to do a cross cpu exec while having an active semundo
-  FE_EGUARDIANLOCKED           = FELOCKED,	///G-file is locked by Guardian API
+  FE_EGUARDIANLOCKED           = FELOCKED,        ///G-file is locked by Guardian API
   FE_EBADMSG                   = fe_base + 4214,  // An invalid message tag was encountered
   FE_EBIGDIR                   = fe_base + 4215,  // Positioning of an OSS directory failed because there were more than 65535 names in the directory beginning with the same first two characters
   FE_ENOTSUP                   = fe_base + 4216,  // Operation not supported on referenced object (but supported on some object).
@@ -669,11 +677,11 @@ enum {
   FE_WRONG_CRVSN               = fe_base + 4605,  // Wrong crvsn for the open file.
   FE_NFS_SYMLINK               = fe_base + 4606,  // Mount call found a symbolic link
   FE_OSS_INTERNAL              = fe_base + 4900,  // OSS internal error
-  FE_PX_INTERNAL               = FE_OSS_INTERNAL,	//to be deleted
+  FE_PX_INTERNAL               = FE_OSS_INTERNAL, //to be deleted
       // New errors go here--
       
 
-  FE_HIGHEST_POSSIBLE          = 32767,	//
+  FE_HIGHEST_POSSIBLE          = 32767,    //
 
 //*********************************************
 // DFS2FE
@@ -719,8 +727,8 @@ enum {
   FE_FILE_MISSING              = fe_base + 1059,  // Unable to access a protection view whose underlying table does not exist or is inconsistent
   FE_BAD_SBB                   = fe_base + 1060,  // SQL internal error
   FEWRONGCBID                  = fe_base + 1061,  // Cursor is no longer defined in the NonStop Services Data Access Manager
-  FEWRONGSCBID                 = FEWRONGCBID,	//SCB^ID no longer identifies a
-  FEWRONGICBID                 = FEWRONGCBID,	//ICB^ID no longer identifies a
+  FEWRONGSCBID                 = FEWRONGCBID,     //SCB^ID no longer identifies a
+  FEWRONGICBID                 = FEWRONGCBID,     //ICB^ID no longer identifies a
   FE_SCB_RESYNC                = fe_base + 1062,  // SQL internal error
   FEMISSINGLOCK                = fe_base + 1063,  // SQL internal error
   FEINVDROP                    = fe_base + 1064,  // SQL internal error
@@ -910,7 +918,7 @@ enum {
 
 
   FEASSERTNUMBASE              = fe_base + 2047,  // is used as a base to encode and decode assertion numbers = fefs2lasterr
-  FEMAXASSERTNUMS              = 250,	//is the number of error numbers reserved to report assertion violations
+  FEMAXASSERTNUMS              = 250,             //is the number of error numbers reserved to report assertion violations
   FEFS2LASTERR                 = fe_base + 2047   // This is the last error number
   };                                 // reserved for use by FS2.
                                      //------------------------------

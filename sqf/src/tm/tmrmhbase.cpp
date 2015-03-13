@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ int32 RM_Info_HBASE::num_rm_failed(CTmTxBase *pp_txn)
    }
    else
    {
-      TMTrace(1, ("RM_Info_HBASE::num_rm_failed : ENTRY : Get the total number of failed RMs.\n"));
+      TMTrace(2, ("RM_Info_HBASE::num_rm_failed : ENTRY : Get the total number of failed RMs.\n"));
       lv_count = gv_HbaseTM.failedRegions(0);
    }
 
@@ -366,16 +366,16 @@ int32 RM_Info_HBASE::registerRegion (CTmTxBase *pp_txn,  int64 pv_flags, CTmTxMe
 
    TMTrace (2, ("RM_Info_HBASE::registerRegion ENTRY : Txn ID (%d,%d), ENTRY, flags " PFLL ", region %s.\n",
                 pp_txn->node(), pp_txn->seqnum(), pv_flags,
-		pp_msg->request()->u.iv_register_region.ia_regioninfo2));
+                pp_msg->request()->u.iv_register_region.ia_regioninfo2));
 
     lv_err = gv_HbaseTM.registerRegion(lv_transid,
-				       pp_msg->request()->u.iv_register_region.iv_port,
-				       pp_msg->request()->u.iv_register_region.ia_hostname,
-				       pp_msg->request()->u.iv_register_region.iv_hostname_length,
-				       pp_msg->request()->u.iv_register_region.iv_startcode,
-				       pp_msg->request()->u.iv_register_region.ia_regioninfo2,
-				       pp_msg->request()->u.iv_register_region.iv_regioninfo_length
-				       );
+                   pp_msg->request()->u.iv_register_region.iv_port,
+                   pp_msg->request()->u.iv_register_region.ia_hostname,
+                   pp_msg->request()->u.iv_register_region.iv_hostname_length,
+                   pp_msg->request()->u.iv_register_region.iv_startcode,
+                   pp_msg->request()->u.iv_register_region.ia_regioninfo2,
+                   pp_msg->request()->u.iv_register_region.iv_regioninfo_length
+                   );
 
    TMTrace (2, ("RM_Info_HBASE::registerRegion EXIT : Txn ID (%d,%d), returning %d.\n",
                 pp_txn->node(), pp_txn->seqnum(), lv_err));

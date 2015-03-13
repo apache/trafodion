@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -529,7 +529,7 @@ void TM_Info::initialize()
                      "Max %d, steady state low %d, steady state high %d.\n",
                      lv_max_num_threads, lv_ss_low_threads, lv_ss_high_threads));
     }
-     
+
     // get incarnation num
     char la_incarnation[9];
     lv_error = tm_reg_get(MS_Mon_ConfigType_Process,
@@ -2381,7 +2381,7 @@ void TM_Info::write_control_point(bool pv_cp_only, bool pv_startup)
     TMTrace (2, ("TM_Info::write_control_point: ENTRY (Lead TM).\n"));
  
     iv_write_cp = false;
-    iv_cps_in_curr_file++;; // gets reset on rollover
+    iv_cps_in_curr_file++; // gets reset on rollover
 
     //initialize lv_pid_msgid
     for (int32 i = 0; i <= tms_highest_index_used(); i++)
@@ -3641,16 +3641,12 @@ unsigned int TM_Info::tm_new_seqNum()
 
       TMTrace (1, ("TM_Info::tm_new_seqNum: Sequence number %u already in use", lv_seqNum));
 
-      if (iv_globalUniqueSeqNum)
-         msg_mon_get_tm_seq((int *) &lv_seqNum);
+      if (lv_seqNum >= iv_nextSeqNumBlockStart)
+         lv_seqNum = setNextSeqNumBlock();
       else
-      {
-         if (lv_seqNum >= iv_nextSeqNumBlockStart)
-            lv_seqNum = setNextSeqNumBlock();
-         else
-            lv_seqNum = iv_nextSeqNum;
-         iv_nextSeqNum++;
-      }
+         lv_seqNum = iv_nextSeqNum;
+      iv_nextSeqNum++;
+
       if (iv_nextSeqNum == lv_start)
       {
          lv_noMoreSeqNums = true;
@@ -3672,6 +3668,24 @@ unsigned int TM_Info::tm_new_seqNum()
                    lv_seqNum));
    return lv_seqNum;
 } //tm_new_seqNum
+
+//----------------------------------------------------------------------------
+// TM_Info::tm_new_seqNumBlock
+// Purpose: This methods returns a block of sequence number.s
+// Because sequence number is monotonically increasing, we can only get a 
+// collision when we wraparound. 
+// The caller must lock the TM_Info object prior to calling tm_new_seqNumBlock.
+//----------------------------------------------------------------------------
+void TM_Info::tm_new_seqNumBlock(int pv_blockSize, unsigned int *pp_start, int *pp_count)
+{
+   TMTrace (2, ("TM_Info::tm_new_seqNumBlock: ENTRY, block Size %d.\n", pv_blockSize));
+   *pp_start = getSeqNumBlock(pv_blockSize);
+   *pp_count = pv_blockSize;
+
+   TMTrace (2, ("TM_Info::tm_new_seqNumBlock: EXIT. Returned block starting at %d, for %d seqNums.\n",
+            *pp_start, *pp_count));
+} //tm_new_seqNumBlock
+
 
 //----------------------------------------------------------------------------
 // TM_Info::tm_up
@@ -3786,11 +3800,13 @@ void TM_Info::terminate_all_threads()
 // TM_Info::setNextSeqNumBlock
 // Purpose : Gets the iv_nextSeqNum based on the DTM_NEXT_SEQNUM_BLOCK registry
 // value the first time it is called by the TM. 
-// On subsequent calls it increments teh sequence number block.
+// On subsequent calls it increments the sequence number block.
 // Finally it sets the next sequence number  block in the registry by adding 
 // iv_SeqNumInterval to the next sequence number.
 // This function handles sequence number and block wraparound.
 // Returns the sequence number which begins the next block.
+// Trafodion: Changed to use the next sequence number 
+// as base for next block rather than Registry value.
 // The caller is expected to lock the TM_Info object.
 //----------------------------------------------------------------------------
 unsigned int TM_Info::setNextSeqNumBlock()
@@ -3820,7 +3836,7 @@ unsigned int TM_Info::setNextSeqNumBlock()
          lv_startSeqNum = (unsigned int) strtoul((char *) &la_seq_num, &lp_stop, 10);
    }
    else
-      lv_startSeqNum = iv_nextSeqNumBlockStart;
+      lv_startSeqNum = iv_nextSeqNum;
    
    // Check for sequence number wraparound
    if (lv_startSeqNum >= MAX_SEQNUM)
@@ -3863,6 +3879,90 @@ unsigned int TM_Info::setNextSeqNumBlock()
 
    return lv_startSeqNum;
 } //setNextSeqNumBlock
+
+
+//----------------------------------------------------------------------------
+// TM_Info::getSeqNumBlock
+// Purpose : (Trafodion only)
+// Returns the next sequence number.
+// Allocates the next sequence number block to the caller.
+// This is used by local transactions to allocate a block of
+// sequence numbers to a client process.
+// Added a TM Library specified block size which must be less
+// than the iv_SeqNumInterval.  This allows the Library to 
+// grab a block without always updating the registry value.
+// The caller is expected to lock the TM_Info object.
+//----------------------------------------------------------------------------
+unsigned int TM_Info::getSeqNumBlock(int32 pv_blockSize)
+{
+   char          la_seq_num[20];
+   char          la_tm_name[8];
+   int32         lv_error = 0;
+   unsigned int  lv_startSeqNum = iv_nextSeqNum;
+   bool          lv_updateRegistry = false;
+
+   sprintf(la_tm_name, "$tm%d", iv_nid);
+
+   TMTrace (2, ("TM_Info::getSeqNumBlock : ENTRY blockSize %d, nextSeqNum %u, startNextSeqNumBlock %u "
+            "seqNumBlockSize %u.\n", pv_blockSize, iv_nextSeqNum, iv_nextSeqNumBlockStart, iv_SeqNumInterval));
+
+   // Check for sequence number wraparound 
+   //  We need to check that there is more than a full block left as we're allocating the block to the client.
+   if (lv_startSeqNum >= MAX_SEQNUM - pv_blockSize)
+   {
+      // EMS DTM_SEQNUM_WRAPAROUND
+      tm_log_event (DTM_SEQNUM_WRAPAROUND, SQ_LOG_WARNING, "DTM_SEQNUM_WRAPAROUND");
+      TMTrace (1, ("TM_Info::getSeqNumBlock: Sequence number wraparound\n"));
+
+      lv_startSeqNum = iv_SeqNumBlockStart = 1;
+      lv_updateRegistry = true;
+   }
+   else
+      // set the sequence number block for the TM
+      lv_startSeqNum = iv_nextSeqNum;
+
+   iv_nextSeqNum = lv_startSeqNum + pv_blockSize;
+
+   // if we exceeded the TM's allocation, get the next block
+   if (iv_nextSeqNum >= iv_nextSeqNumBlockStart) {
+      iv_nextSeqNumBlockStart = iv_nextSeqNum + iv_SeqNumInterval;
+
+      // Check for sequence number wraparound 
+      //  We need to check that there is more than a full block left as we're allocating the block to the client.
+      if (iv_nextSeqNum >= MAX_SEQNUM - iv_SeqNumInterval)
+      {
+         // EMS DTM_SEQNUM_WRAPAROUND
+         tm_log_event (DTM_SEQNUM_WRAPAROUND, SQ_LOG_WARNING, "DTM_SEQNUM_WRAPAROUND");
+         TMTrace (1, ("TM_Info::getSeqNumBlock: Sequence number wraparound\n"));
+
+         iv_nextSeqNum = iv_SeqNumBlockStart = 1;
+         iv_nextSeqNumBlockStart = 1 + iv_SeqNumInterval;
+         lv_updateRegistry = true;
+      }
+   }
+
+   if (lv_updateRegistry) {
+      // Copy new sequence number block back to the registry
+      sprintf(la_seq_num, "%u", iv_nextSeqNumBlockStart);
+      lv_error = tm_reg_set(MS_Mon_ConfigType_Process,
+                            la_tm_name, (char *) DTM_NEXT_SEQNUM_BLOCK, la_seq_num);
+
+      if (lv_error)
+      {
+           tm_log_event(DTM_TM_REGISTRY_SET_ERROR, SQ_LOG_CRIT, "DTM_TM_REGISTRY_SET_ERROR", lv_error);
+           TMTrace (1, ("Failed to write the DTM next seqnum value %u into the registry.  Error %d\n", 
+                    iv_nextSeqNumBlockStart, lv_error));
+           abort (); 
+       }
+   }
+
+   TMTrace (1, ("TM_Info::getSeqNumBlock : EXIT returning seqNum block %u - %u, "
+            "current TM seqNum block: %u - %u.\n", 
+            lv_startSeqNum, (lv_startSeqNum + pv_blockSize-1),
+            iv_SeqNumBlockStart, (iv_nextSeqNumBlockStart-1)));
+
+   return lv_startSeqNum;
+} //getSeqNumBlock
 
 
 //----------------------------------------------------------------------------
@@ -4003,7 +4103,7 @@ void TM_Info::stopTimerEvent()
       {
          TMTrace(1, ("TM_Info::stopTimerEvent : Have waited %d sec for Timer "
              "thread to exit.\n", (lv_waitCount/100)));
-         tm_log_event(DTM_TIMER_TH_WAITING_FOR_EXIT, SQ_LOG_WARNING, "DTM_TIMER_TH_WAITING_FOR_EXIT");
+         //tm_log_event(DTM_TIMER_TH_WAITING_FOR_EXIT, SQ_LOG_WARNING, "DTM_TIMER_TH_WAITING_FOR_EXIT");
       }
    }
    //tmTimer()->stop(); //Stop the thread now

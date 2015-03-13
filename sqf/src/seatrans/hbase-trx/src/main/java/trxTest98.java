@@ -30,7 +30,7 @@ public class trxTest98 {
       e.printStackTrace();
     }
     try {
-      tm = new TransactionManager(conf);
+      tm = TransactionManager.getInstance(conf);
       hbadmin = new HBaseAdmin(conf);
       if(hbadmin.isTableAvailable("table1")) {
         TableName tablename = TableName.valueOf("table1");

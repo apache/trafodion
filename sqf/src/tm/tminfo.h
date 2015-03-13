@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@
 #include "tmxatxn.h"
 
 
-#define MAX_SEQNUM UINT_MAX
+#define MAX_SEQNUM (UINT_MAX-1)
 
 using namespace std;
 
@@ -390,6 +390,7 @@ class TM_Info
        unsigned int tm_new_seqNum();        // Allocate next txn sequence number
        unsigned int  setNextSeqNumBlock();  // Get/set the next sequence number block in
                                             // registry.
+       unsigned int  getSeqNumBlock(int32 pv_blockSize);  // Get/set the next sequence number block for local Transactions.
        bool  tm_active_seqNum(int32 pv_seqNum); // Check whether this seqnum is in use
               
        void  write_control_point(bool pv_cp_only, bool pv_startup = false);
@@ -420,6 +421,8 @@ class TM_Info
        int32 tms_highest_index_used() { return iv_tms_highest_index_used;}
        int16 incarnation_num() {return iv_incarnation_num;} 
        int32 SeqNumBlockStart () {return iv_SeqNumBlockStart;}
+       void tm_new_seqNumBlock(int pv_blockSize, unsigned int *pp_start, int *pp_count);
+
 
        void  lead_tm(bool pv_lead_tm);
        bool  lead_tm();

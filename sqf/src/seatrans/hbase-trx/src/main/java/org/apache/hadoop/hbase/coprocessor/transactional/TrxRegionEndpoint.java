@@ -1,20 +1,20 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
 package org.apache.hadoop.hbase.coprocessor.transactional;
 
 import java.io.IOException;
@@ -1488,6 +1488,16 @@ CoprocessorService, Coprocessor {
    rsh = scanners.get(scannerId);
 
    nextCallSeq++;
+ 
+   if (rsh == null)
+   {
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan rsh is null");
+          use =  new UnknownScannerException(
+            "ScannerId: " + scannerId + ", already closed?");
+   }
+   else
+   {
+     rsh.nextCallSeq = nextCallSeq;
 
    if (rsh == null)
    {
@@ -1504,6 +1514,7 @@ CoprocessorService, Coprocessor {
 
    }
 
+   }
     org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PerformScanResponse.Builder performResponseBuilder = PerformScanResponse.newBuilder();
     performResponseBuilder.setHasMore(hasMore);
     performResponseBuilder.setNextCallSeq(nextCallSeq);
@@ -3317,7 +3328,7 @@ CoprocessorService, Coprocessor {
               try {
               startRegionAfterRecovery();
                } catch (IOException exp1) {
-                    LOG.debug("Trafodion Recovery: flush error during region start");
+                    if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery: flush error during region start");
                }
               return;
             }
@@ -3564,6 +3575,8 @@ CoprocessorService, Coprocessor {
             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit HHH " + commitStatus);
             state.setCommitProgress(CommitProgress.COMMITTING);
     commit(state);
+
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit(txId) -- EXIT txId: " + transactionId);
   } 
     }
 
@@ -3600,7 +3613,7 @@ CoprocessorService, Coprocessor {
     try {
       state = getTransactionState(transactionId);
     } catch (UnknownTransactionException e) {
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: Unknown transaction [" + transactionId
+      if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest Unknown transaction [" + transactionId
                  + "] in region [" 
                  + m_Region.getRegionInfo().getRegionNameAsString()
                  + "], ignoring");

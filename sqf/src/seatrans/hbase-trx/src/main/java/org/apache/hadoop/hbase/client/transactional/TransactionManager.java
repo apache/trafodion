@@ -1,13 +1,20 @@
-/**
-l * Copyright 2009 The Apache Software Foundation Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements. See the NOTICE file distributed with this work for additional information regarding
- * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License. You may obtain a copy of the License at
- * http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and limitations under the
- * License.
- */
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
 package org.apache.hadoop.hbase.client.transactional;
 
 import java.io.IOException;
@@ -56,6 +63,8 @@ import com.google.protobuf.ByteString;
  */
 public class TransactionManager {
 
+  // Singleton TransactionManager class
+  private static TransactionManager g_TransactionManager = null;
   static final Log LOG = LogFactory.getLog(TransactionManager.class);
  
   private int RETRY_ATTEMPTS;
@@ -70,6 +79,16 @@ public class TransactionManager {
   
   static ExecutorService    cp_tpe;
 
+
+  // getInstance to return the singleton object for TransactionManager
+  public synchronized static TransactionManager getInstance(final Configuration conf) throws ZooKeeperConnectionException, IOException {
+    if (g_TransactionManager == null) {
+      g_TransactionManager = new TransactionManager(conf);
+    }
+    return g_TransactionManager;
+  }
+  
+  
   /* increment/deincrement for positive value */
   /* This method copied from o.a.h.h.utils.Bytes */ 
   public static byte [] binaryIncrementPos(byte [] value, long amount) {
@@ -528,7 +547,7 @@ public class TransactionManager {
      * @param conf
      * @throws ZooKeeperConnectionException
      */
-    public TransactionManager(final Configuration conf) throws ZooKeeperConnectionException, IOException {
+    private TransactionManager(final Configuration conf) throws ZooKeeperConnectionException, IOException {
         this(LocalTransactionLogger.getInstance(), conf);
 
         int intThreads = 16;
@@ -568,7 +587,7 @@ public class TransactionManager {
      * @param conf
      * @throws ZooKeeperConnectionException
      */
-    public TransactionManager(final TransactionLogger transactionLogger, final Configuration conf)
+    protected TransactionManager(final TransactionLogger transactionLogger, final Configuration conf)
             throws ZooKeeperConnectionException, IOException {
         this.transactionLogger = transactionLogger;        
 	conf.setInt("hbase.client.retries.number", 3);
@@ -611,7 +630,13 @@ public class TransactionManager {
        if (LOG.isTraceEnabled()) LOG.trace("Enter prepareCommit, txid: " + transactionState.getTransactionId());
        boolean allReadOnly = true;
        int loopCount = 0;
-
+       if (transactionState.islocalTransaction()){
+         //System.out.println("prepare islocal");
+         if(LOG.isTraceEnabled()) LOG.trace("TransactionManager.prepareCommit local transaction " + transactionState.getTransactionId());
+       }
+       else
+         if(LOG.isTraceEnabled()) LOG.trace("TransactionManager.prepareCommit global transaction " + transactionState.getTransactionId());
+        
        // (need one CompletionService per request for thread safety, can share pool of threads
        CompletionService<Integer> compPool = new ExecutorCompletionService<Integer>(threadPool);
        try {
@@ -777,7 +802,7 @@ public class TransactionManager {
       }
       */
     	
-      transactionState.setStatus(TransactionState.TM_TX_STATE_ABORTED);
+      transactionState.setStatus(TransState.STATE_ABORTED);
       // (Asynchronously send aborts
       for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
           if (transactionState.getRegionsToIgnore().contains(location)) {

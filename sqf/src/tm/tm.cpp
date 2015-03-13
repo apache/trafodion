@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ void tm_start_timerThread()
       lp_timer->addControlpointEvent(gv_tm_info.cp_interval());
       if (gv_tm_info.lead_tm())
       {
-          TMTrace(2, ("tm_start_timerThread lead DTM, adding timer events\n")); 
+         TMTrace(2, ("tm_start_timerThread lead DTM, adding timer events\n")); 
          lp_timer->addStatsEvent(gv_tm_info.stats_interval());
       }
      lp_timer->addRMRetryEvent(gv_tm_info.RMRetry_interval());
@@ -488,6 +488,30 @@ void tm_process_req_requestregioninfo(CTmTxMessage * pp_msg)
 
    TMTrace(2, ("tm_process_req_requestregioninfo EXIT\n"));
 }
+
+
+// ----------------------------------------------------------------
+// tm_process_req_GetNextSeqNum
+// Purpose : Retrieve the next transaction sequence number
+// block.  This is used to implement local transactions
+// in Trafodion.
+// ----------------------------------------------------------------
+void tm_process_req_GetNextSeqNum(CTmTxMessage * pp_msg)
+{
+    TMTrace(2, ("tm_process_req_GetNextSeqNum ENTRY.\n")); 
+    
+    gv_tm_info.lock();
+    gv_tm_info.tm_new_seqNumBlock(pp_msg->request()->u.iv_GetNextSeqNum.iv_block_size,
+                                  &pp_msg->response()->u.iv_GetNextSeqNum.iv_seqNumBlock_start,
+                                  &pp_msg->response()->u.iv_GetNextSeqNum.iv_seqNumBlock_count);
+    gv_tm_info.unlock();
+    pp_msg->reply(FEOK);
+
+    TMTrace(2, ("tm_process_req_GetNextSeqNum EXIT returning Next seqNum start %d, block size %d\n",
+            pp_msg->response()->u.iv_GetNextSeqNum.iv_seqNumBlock_start, 
+            pp_msg->response()->u.iv_GetNextSeqNum.iv_seqNumBlock_count)); 
+    delete pp_msg;
+} // tm_process_req_GetNextSeqNum
 
 
 // ----------------------------------------------------------------
@@ -3084,7 +3108,10 @@ void tm_process_msg(BMS_SRE *pp_sre)
         break;
    case TM_MSG_TYPE_REQUESTREGIONINFO:
         tm_process_req_requestregioninfo(lp_msg);
-   break;
+        break;
+   case TM_MSG_TYPE_GETNEXTSEQNUMBLOCK:
+        tm_process_req_GetNextSeqNum(lp_msg);
+        break;
    default:
 
         // EMS message here, DTM_INVALID_MESSAGE_TYPE

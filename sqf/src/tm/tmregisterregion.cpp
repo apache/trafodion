@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,12 +23,12 @@
 using namespace std;
 
 /*
- * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
+ * Class:     org_apache_hadoop_hbase_client_transactional_TransactionState
  * Method:    registerRegion2
  * Signature: (I[B[B)V   
  */
-JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_registerRegion
-(JNIEnv *pp_env, jobject pv_object, jint pv_port, jbyteArray pv_hostname, jlong pv_startcode, jbyteArray pv_dos)
+JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_TransactionState_registerRegion
+(JNIEnv *pp_env, jobject pv_object, jlong pv_transid, jint pv_port, jbyteArray pv_hostname, jlong pv_startcode, jbyteArray pv_dos)
 {
    short lv_ret;
    char la_hostname[TM_MAX_REGIONSERVER_STRING];
@@ -46,13 +46,13 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
    //cout << "registerRegion 1 lp_hostname length: " << lv_hostname_length << " data: " << lp_hostname << endl;
    //cout << "registerRegion 2 lp_dos length: " << lv_dos_length << " data: " << lp_dos << endl;
    memcpy(la_hostname,
-	  lp_hostname,
-	  lv_hostname_length);
+          lp_hostname,
+          lv_hostname_length);
    memcpy(la_dos,
-	  lp_dos,
-	  lv_dos_length);
+          lp_dos,
+          lv_dos_length);
 
-   lv_ret = REGISTERREGION(pv_port, la_hostname, lv_hostname_length, pv_startcode, la_dos, lv_dos_length);
+   lv_ret = REGISTERREGION(pv_transid, pv_port, la_hostname, lv_hostname_length, pv_startcode, la_dos, lv_dos_length);
    //cout << "REGISTERREGION Error: " << lv_ret << endl;
    pp_env->ReleaseByteArrayElements(pv_hostname, lp_hostname, 0);
    pp_env->ReleaseByteArrayElements(pv_dos, lp_dos, 0);

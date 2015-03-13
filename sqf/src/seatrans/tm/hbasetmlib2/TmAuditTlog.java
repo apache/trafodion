@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import org.apache.hadoop.hbase.client.transactional.CommitUnsuccessfulException;
 import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.transactional.HBaseBackedTransactionLogger;
 import org.apache.hadoop.hbase.client.transactional.TransactionRegionLocation;
+import org.apache.hadoop.hbase.client.transactional.TransState;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
@@ -712,7 +713,7 @@ public class TmAuditTlog {
 
    public static int getRecord(final long lvTransid) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("getRecord start");
-      int lvTxState = -1;
+      TransState lvTxState = TransState.STATE_NOTX;
       String stateString;
       int lv_lockIndex = (int)(lvTransid & tLogHashKey);
       try {
@@ -728,61 +729,61 @@ public class TmAuditTlog {
             stateString =  new String (Bytes.toString(value));
             if (LOG.isTraceEnabled()) LOG.trace("stateString is " + stateString);
             if (stateString.compareTo("COMMITTED") == 0){
-               lvTxState = TM_TX_STATE_COMMITTED;
+               lvTxState = TransState.STATE_COMMITTED;
             }
             else if (stateString.compareTo("ABORTED") == 0){
-               lvTxState = TM_TX_STATE_ABORTED;
+               lvTxState = TransState.STATE_ABORTED;
             }
             else if (stateString.compareTo("ACTIVE") == 0){
-               lvTxState = TM_TX_STATE_ACTIVE;
+               lvTxState = TransState.STATE_ACTIVE;
             }
             else if (stateString.compareTo("PREPARED") == 0){
-               lvTxState = TM_TX_STATE_PREPARED;
+               lvTxState = TransState.STATE_PREPARED;
             }
             else if (stateString.compareTo("NOTX") == 0){
-               lvTxState = TM_TX_STATE_NOTX;
+               lvTxState = TransState.STATE_NOTX;
             }
             else if (stateString.compareTo("FORGOTTEN") == 0){
-               lvTxState = TM_TX_STATE_FORGOTTEN;
+               lvTxState = TransState.STATE_FORGOTTEN;
             }
             else if (stateString.compareTo("ABORTING") == 0){
-               lvTxState = TM_TX_STATE_ABORTING;
+               lvTxState = TransState.STATE_ABORTING;
             }
             else if (stateString.compareTo("COMMITTING") == 0){
-               lvTxState = TM_TX_STATE_COMMITTING;
+               lvTxState = TransState.STATE_COMMITTING;
             }
             else if (stateString.compareTo("PREPARING") == 0){
-               lvTxState = TM_TX_STATE_PREPARING;
+               lvTxState = TransState.STATE_PREPARING;
             }
             else if (stateString.compareTo("FORGETTING") == 0){
-               lvTxState = TM_TX_STATE_FORGETTING;
+               lvTxState = TransState.STATE_FORGETTING;
             }
             else if (stateString.compareTo("FORGETTING_HEUR") == 0){
-               lvTxState = TM_TX_STATE_FORGETTING_HEUR;
+               lvTxState = TransState.STATE_FORGETTING_HEUR;
             }
             else if (stateString.compareTo("BEGINNING") == 0){
-               lvTxState = TM_TX_STATE_BEGINNING;
+               lvTxState = TransState.STATE_BEGINNING;
             }
             else if (stateString.compareTo("HUNGCOMMITTED") == 0){
-              lvTxState = TM_TX_STATE_HUNGCOMMITTED;
+              lvTxState = TransState.STATE_HUNGCOMMITTED;
             }
             else if (stateString.compareTo("HUNGABORTED") == 0){
-               lvTxState = TM_TX_STATE_HUNGABORTED;
+               lvTxState = TransState.STATE_HUNGABORTED;
             }
             else if (stateString.compareTo("IDLE") == 0){
-               lvTxState = TM_TX_STATE_IDLE;
+               lvTxState = TransState.STATE_IDLE;
             }
             else if (stateString.compareTo("FORGOTTEN_HEUR") == 0){
-               lvTxState = TM_TX_STATE_FORGOTTEN_HEUR;
+               lvTxState = TransState.STATE_FORGOTTEN_HEUR;
             }
             else if (stateString.compareTo("ABORTING_PART2") == 0){
-               lvTxState = TM_TX_STATE_ABORTING_PART2;
+               lvTxState = TransState.STATE_ABORTING_PART2;
             }
             else if (stateString.compareTo("TERMINATING") == 0){
-               lvTxState = TM_TX_STATE_TERMINATING;
+               lvTxState = TransState.STATE_TERMINATING;
             }
             else {
-               lvTxState = -1;
+               lvTxState = TransState.STATE_BAD;
             }
 
             if (LOG.isTraceEnabled()) LOG.trace("transid: " + lvTransid + " state: " + lvTxState);
@@ -802,7 +803,7 @@ public class TmAuditTlog {
       }
 
       if (LOG.isTraceEnabled()) LOG.trace("getRecord end; returning " + lvTxState);
-      return lvTxState;
+      return lvTxState.getValue();
    }
 
    public static String getRecord(final String transidString) throws IOException {
@@ -1102,7 +1103,7 @@ public class TmAuditTlog {
          long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
          if (LOG.isTraceEnabled()) LOG.trace("key: " + key + ", hexkey: " + Long.toHexString(key) + ", transid: " +  lvTransid);
          g = new Get(Bytes.toBytes(key));
-         int lvTxState = TM_TX_STATE_NOTX;
+         TransState lvTxState = TransState.STATE_NOTX;
          String stateString = "";
          String transidToken = "";
          try {
@@ -1115,12 +1116,12 @@ public class TmAuditTlog {
             }
             byte [] value = r.getValue(TLOG_FAMILY, ASN_STATE);
             if (value == null) {
-               ts.setStatus(TM_TX_STATE_NOTX);
+               ts.setStatus(TransState.STATE_NOTX);
                if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: tLog value is null: " + transidString);
                return;
             }
             if (value.length == 0) {
-               ts.setStatus(TM_TX_STATE_NOTX);
+               ts.setStatus(TransState.STATE_NOTX);
                if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: tLog transaction not found: " + transidString);
                return;
             }
@@ -1134,19 +1135,19 @@ public class TmAuditTlog {
                if (LOG.isTraceEnabled()) LOG.trace("getTransactionState: transaction: " + transidToken + " stateString is: " + stateString);
             }
             if (stateString.compareTo("COMMITTED") == 0){
-               lvTxState = TM_TX_STATE_COMMITTED;
+               lvTxState = TransState.STATE_COMMITTED;
             }
             else if (stateString.compareTo("ABORTED") == 0){
-               lvTxState = TM_TX_STATE_ABORTED;
+               lvTxState = TransState.STATE_ABORTED;
             }
             else if (stateString.compareTo("ACTIVE") == 0){
-               lvTxState = TM_TX_STATE_ACTIVE;
+               lvTxState = TransState.STATE_ACTIVE;
             }
             else if (stateString.compareTo("PREPARED") == 0){
-               lvTxState = TM_TX_STATE_PREPARED;
+               lvTxState = TransState.STATE_PREPARED;
             }
             else if (stateString.compareTo("NOTX") == 0){
-               lvTxState = TM_TX_STATE_NOTX;
+               lvTxState = TransState.STATE_NOTX;
             }
             else if (stateString.compareTo("FORGOTTEN") == 0){
                // Need to get the previous state record so we know how to drive the regions
@@ -1167,7 +1168,7 @@ public class TmAuditTlog {
                      if ((stateToken.compareTo("COMMITTED") == 0) || (stateToken.compareTo("ABORTED") == 0)) {
                          String rowKey = new String(r.getRow());
                          if (LOG.isTraceEnabled()) LOG.trace("Secondary search found record for (" + transidToken + ") with state: " + stateToken);
-                         lvTxState = (stateToken.compareTo("COMMITTED") == 0 ) ? TM_TX_STATE_COMMITTED : TM_TX_STATE_ABORTED;
+                         lvTxState = (stateToken.compareTo("COMMITTED") == 0 ) ? TransState.STATE_COMMITTED : TransState.STATE_ABORTED;
                          break;
                      }
                      else {
@@ -1178,43 +1179,43 @@ public class TmAuditTlog {
                }
             }
             else if (stateString.compareTo("ABORTING") == 0){
-               lvTxState = TM_TX_STATE_ABORTING;
+               lvTxState = TransState.STATE_ABORTING;
             }
             else if (stateString.compareTo("COMMITTING") == 0){
-               lvTxState = TM_TX_STATE_COMMITTING;
+               lvTxState = TransState.STATE_COMMITTING;
             }
             else if (stateString.compareTo("PREPARING") == 0){
-               lvTxState = TM_TX_STATE_PREPARING;
+               lvTxState = TransState.STATE_PREPARING;
             }
             else if (stateString.compareTo("FORGETTING") == 0){
-               lvTxState = TM_TX_STATE_FORGETTING;
+               lvTxState = TransState.STATE_FORGETTING;
             }
             else if (stateString.compareTo("FORGETTING_HEUR") == 0){
-               lvTxState = TM_TX_STATE_FORGETTING_HEUR;
+               lvTxState = TransState.STATE_FORGETTING_HEUR;
             }
             else if (stateString.compareTo("BEGINNING") == 0){
-               lvTxState = TM_TX_STATE_BEGINNING;
+               lvTxState = TransState.STATE_BEGINNING;
             }
             else if (stateString.compareTo("HUNGCOMMITTED") == 0){
-               lvTxState = TM_TX_STATE_HUNGCOMMITTED;
+               lvTxState = TransState.STATE_HUNGCOMMITTED;
             }
             else if (stateString.compareTo("HUNGABORTED") == 0){
-               lvTxState = TM_TX_STATE_HUNGABORTED;
+               lvTxState = TransState.STATE_HUNGABORTED;
             }
             else if (stateString.compareTo("IDLE") == 0){
-               lvTxState = TM_TX_STATE_IDLE;
+               lvTxState = TransState.STATE_IDLE;
             }
             else if (stateString.compareTo("FORGOTTEN_HEUR") == 0){
-               lvTxState = TM_TX_STATE_FORGOTTEN_HEUR;
+               lvTxState = TransState.STATE_FORGOTTEN_HEUR;
             }
             else if (stateString.compareTo("ABORTING_PART2") == 0){
-               lvTxState = TM_TX_STATE_ABORTING_PART2;
+               lvTxState = TransState.STATE_ABORTING_PART2;
             }
             else if (stateString.compareTo("TERMINATING") == 0){
-               lvTxState = TM_TX_STATE_TERMINATING;
+               lvTxState = TransState.STATE_TERMINATING;
             }
             else {
-               lvTxState = -1;
+               lvTxState = TransState.STATE_BAD;
             }
 
             // get past the filler

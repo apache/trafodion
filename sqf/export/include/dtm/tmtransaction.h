@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ public:
     TM_Transaction(int abort_timeout, int64 transactiontype_bits);
         // join a transaction
     TM_Transaction(TM_Transid transid, bool server_tx);
+    TM_Transaction();
     ~TM_Transaction();
 
         // transaction actions
@@ -51,6 +52,8 @@ public:
     TM_Transaction *release();
     short status(short *status);
     TM_Transid * getTransid();
+    void setTransid(TM_Transid pv_transid) {iv_transid = pv_transid;}
+    void setTag(unsigned int pv_tag) {iv_tag = pv_tag;}
 
     int getTag() { return iv_tag;}
     void setTag(int32 pv_tag) {iv_tag = pv_tag;}
@@ -70,10 +73,11 @@ private:
     bool       iv_server;
     TM_Transid iv_transid;
     unsigned int iv_tag;
+    int iv_abort_timeout;
+    int64 iv_transactiontype;
 
     short begin(int abort_timeout, int64 transactiontype_bits);
     short join(bool pv_coordinator_role);
-    TM_Transaction() {}
 };
 
 #endif

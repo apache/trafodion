@@ -1,3 +1,20 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
 package org.apache.hadoop.hbase.client.transactional;
 
 import java.io.IOException;
@@ -26,6 +43,9 @@ import org.apache.hadoop.hbase.client.transactional.CommitUnsuccessfulException;
 import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.transactional.HBaseBackedTransactionLogger;
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
+import org.apache.hadoop.hbase.client.transactional.TransState;
+import org.apache.hadoop.hbase.client.transactional.TransReturnCode;
+import org.apache.hadoop.hbase.client.transactional.TransactionMap;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,9 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class RMInterface extends TransactionalTable{
     static final Log LOG = LogFactory.getLog(RMInterface.class);
-
-    static Map<Long, TransactionState> mapTransactionStates;
-    
+    static Map<Long, TransactionState> mapTransactionStates = TransactionMap.getInstance();
     static Map<Long, Set<RMInterface>> mapRMsPerTransaction = new HashMap<Long,  Set<RMInterface>>();
 
     static {
@@ -54,6 +72,7 @@ public class RMInterface extends TransactionalTable{
     public RMInterface(final String tableName) throws IOException {
         super(Bytes.toBytes(tableName));
         mapTransactionStates = new ConcurrentHashMap<Long, TransactionState>();
+        if (LOG.isTraceEnabled()) LOG.trace("RMInterface ctor.");
     }
 
     public synchronized TransactionState registerTransaction(final long transactionID, final byte[] row) throws IOException {
@@ -62,15 +81,19 @@ public class RMInterface extends TransactionalTable{
         short ret = 0;
 
         TransactionState ts = mapTransactionStates.get(transactionID);
+        if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
         
         // if we don't have a TransactionState for this ID we need to register it with the TM
         if (ts == null) {
             ts = new TransactionState(transactionID);
-	    if (LOG.isTraceEnabled()) LOG.trace("registerTransaction, created TransactionState " + ts);
+            if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, created TransactionState " + ts);
             mapTransactionStates.put(transactionID, ts);
             register = true;
         }
-        HRegionLocation location = super.getRegionLocation(row, false /*reload*/);        
+        else {
+            if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction - Found TS in map for id " + transactionID);
+        }
+        HRegionLocation location = super.getRegionLocation(row, false /*reload*/);
 
         TransactionRegionLocation trLocation = new TransactionRegionLocation(location.getRegionInfo(),
                                                                              location.getServerName());                                                                             
@@ -78,28 +101,16 @@ public class RMInterface extends TransactionalTable{
             
         // if this region hasn't been registered as participating in the transaction, we need to register it
         if (ts.addRegion(trLocation)) {
-            register = true;
-            if (LOG.isTraceEnabled()) LOG.trace("registerTransaction, added TransactionRegionLocation to ts");
+          register = true;
+          if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, added TransactionRegionLocation to ts");
         }
 
         // register region with TM.
         if (register) {
-
-    	    byte [] lv_hostname = location.getHostname().getBytes();
-    	    int lv_port = location.getPort();
-	    long lv_startcode = location.getServerName().getStartcode();
-    
-	    byte [] lv_byte_region_info = location.getRegionInfo().toByteArray();
-    	    if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, byte region info, length: " + lv_byte_region_info.length + 
-		      ", val: " + new String(lv_byte_region_info));
-	    try {
-		if (LOG.isTraceEnabled()) LOG.trace("Deserialized HRegionInfo: " + HRegionInfo.parseFrom(lv_byte_region_info));
-	    } catch (DeserializationException de) {
-		LOG.error("RMInterface:registerTransaction. error in deserializing HRegionInfo" + de);
-	    }
-
-    	    registerRegion(lv_port, lv_hostname, lv_startcode, lv_byte_region_info);
-
+            ts.registerLocation(location);
+        }
+        else {
+          if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction did not send registerRegion.");
         }
 
         if ((ts == null) || (ret != 0)) {
@@ -113,18 +124,29 @@ public class RMInterface extends TransactionalTable{
    
     
     static public void clearTransactionStates(final long transactionID) {
-	if (LOG.isTraceEnabled()) LOG.trace("cts1 Enter txid: " + transactionID);
+      if (LOG.isTraceEnabled()) LOG.trace("cts1 Enter txid: " + transactionID);
 
-	unregisterTransaction(transactionID);
+      unregisterTransaction(transactionID);
 
-	if (LOG.isTraceEnabled()) LOG.trace("cts2 txid: " + transactionID);
+      if (LOG.isTraceEnabled()) LOG.trace("cts2 txid: " + transactionID);
     }
     
     static public synchronized void unregisterTransaction(final long transactionID) {
-	if (LOG.isTraceEnabled()) LOG.trace("Enter txid: " + transactionID);
-        mapTransactionStates.remove(transactionID);
+      TransactionState ts = null;
+      if (LOG.isTraceEnabled()) LOG.trace("Enter txid: " + transactionID);
+      try {
+        ts = mapTransactionStates.remove(transactionID);
+      } catch (Exception e) {
+        LOG.warn("Ignoring exception. mapTransactionStates.remove for transid " + transactionID + 
+                 " failed with exception " + e);
+        return;
+      }
+      if (ts == null) {
+        LOG.warn("mapTransactionStates.remove did not find transid " + transactionID);
+      }
     }
 
+    // Not used?
     static public synchronized void unregisterTransaction(TransactionState ts) {
         mapTransactionStates.remove(ts.getTransactionId());
     }
@@ -154,6 +176,7 @@ public class RMInterface extends TransactionalTable{
         if (LOG.isTraceEnabled()) LOG.trace("Exit delete (list of deletes) txid: " + transactionID);
     }
 
+    
     public synchronized ResultScanner getScanner(final long transactionID, final Scan scan) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("getScanner txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, scan.getStartRow());

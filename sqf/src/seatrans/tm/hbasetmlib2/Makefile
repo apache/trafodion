@@ -97,6 +97,7 @@ setup:
 	@echo "LIBSTMOBJS =" $(LIBSTMOBJS)
 	@echo "JAVA_HOME =" $(JAVA_HOME)
 	@echo "INCLUDES = " $(INCLUDES)
+	@echo "CDEP_DIR = " $(CDEP_DIR)
 	@# do nothing
 
 clean:

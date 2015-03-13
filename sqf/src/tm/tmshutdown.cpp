@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ void TMShutdown::coordinate_shutdown()
    {  //I'm leadTM
       do
       {
-         lv_tm_error = send_shutdown_msg_to_opened_TMs();  //YCC
+         lv_tm_error = send_shutdown_msg_to_opened_TMs();  
          if (lv_tm_error == FETMSHUTDOWN_NOTREADY)
          {
             XWAIT(0, 4*TM_SHUTDOWN_WAKEUP_INTERVAL);
@@ -145,10 +145,10 @@ int32 TMShutdown::close_all_rms_for_shutdown(bool pv_leadTM, bool pv_clean)
 // Purpose: This function is invoked only by the lead TM.  Send a 
 //          SHUTDOWN_COMPLETE message to each open TM and check their replies.
 // -----------------------------------------------------------------
-int32 TMShutdown::send_shutdown_msg_to_opened_TMs()  //YCC
+int32 TMShutdown::send_shutdown_msg_to_opened_TMs()  
 {
    short          la_results[6];
-   int32          lv_error = FEOK;;
+   int32          lv_error = FEOK;
    static int32   lv_fatal_error = FEOK; // Persists over calls!!
    int32          lv_index = 0; 
    int32          lv_not_ready_error = FEOK;
@@ -174,7 +174,7 @@ int32 TMShutdown::send_shutdown_msg_to_opened_TMs()  //YCC
       {
          lp_shutdown_msg_info[lv_idx].iv_tag = lv_idx + 1;
          lp_shutdown_msg_info[lv_idx].iv_req.iv_msg_hdr.rr_type.request_type = 
-                                                                 TM_MSG_TYPE_SHUTDOWN_COMPLETE;  //YCC
+                                                                 TM_MSG_TYPE_SHUTDOWN_COMPLETE;  
          lp_shutdown_msg_info[lv_idx].iv_req.iv_msg_hdr.version.request_version = 
                                                                  TM_SQ_MSG_VERSION_CURRENT;
          lp_shutdown_msg_info[lv_idx].iv_nid = lv_idx;
@@ -253,7 +253,7 @@ int32 TMShutdown::send_shutdown_msg_to_opened_TMs()  //YCC
 
                switch (lp_shutdown_msg_info[lv_index].iv_rsp.iv_error)
                {
-                  case FEOK:  //YCC
+                  case FEOK:  
                   {
                      ip_tm_info->close_tm(lv_index);
                      break;

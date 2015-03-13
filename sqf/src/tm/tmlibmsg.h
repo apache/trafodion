@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -265,7 +265,7 @@ typedef enum {
 // for this TM process.
 // You may override this value by setting the DTM_SEQ_NUM_INTERVAL
 // environment variable.
-#define TM_DEFAULT_SEQ_NUM_INTERVAL 1000
+#define TM_DEFAULT_SEQ_NUM_INTERVAL 10000
 
 // OVERRIDE_AUDIT_INCONSISTENCY is the default value for DTM_OVERRIDE_AUDIT_INCONSISTENCY.
 // This determines whether the Lead TM will ignore additional trans state records
@@ -417,8 +417,11 @@ typedef enum {
     TM_MSG_TYPE_REGISTERREGION           = 335, // TOPL
     TM_MSG_TYPE_REGISTERREGION_REPLY     = 336, // TOPL
 
-    TM_MSG_TYPE_REQUESTREGIONINFO        = 337,
-    TM_MSG_TYPE_REQUESTREGIONINFO_REPLY  = 338,
+    TM_MSG_TYPE_REQUESTREGIONINFO        = 337, // TOPL
+    TM_MSG_TYPE_REQUESTREGIONINFO_REPLY  = 338, // TOPL
+
+    TM_MSG_TYPE_GETNEXTSEQNUMBLOCK       = 339, // TOPL
+    TM_MSG_TYPE_GETNEXTSEQNUMBLOCK_REPLY = 340, // TOPL
 
     TM_MSG_TYPE_QUIESCE                  = 9001, // Testing only!
     TM_MSG_TYPE_QUIESCE_REPLY            = 9002,
@@ -690,13 +693,17 @@ typedef struct _tmlibmsg_h_as_21 {
     int32 iv_nid;
 } TxInternal_TMRecovery_Req_Type;
 
+typedef struct _tmlibmsg_h_as_22 {
+    int32 iv_block_size;
+} TM_GetNextSeqNum_Req_Type;
+
 typedef struct Tm_RolloverCP_Req_Type {
     MESSAGE_HEADER_SQ    iv_msg_hdr;
     int32 iv_nid;
     int64 iv_sequence_no;
 } Tm_RolloverCP_Req_Type;
 
-typedef struct _tmlibmsg_h_as_22 {
+typedef struct _tmlibmsg_h_as_23 {
     MESSAGE_HEADER_SQ iv_msg_hdr;
     union {
         Abort_Trans_Req_Type    iv_abort_trans;
@@ -726,6 +733,7 @@ typedef struct _tmlibmsg_h_as_22 {
         Tm_RolloverCP_Req_Type  iv_control_point;
         Register_Region_Req_Type iv_register_region;
         HbaseRegionInfo_Req_Type iv_hbase_regioninfo;
+        TM_GetNextSeqNum_Req_Type iv_GetNextSeqNum;
 
         // TM internal Tx Thread events
         TxTh_Initialize_Req_Type iv_init_txthread;
@@ -893,10 +901,16 @@ typedef struct _tmlibmsg_h_as_41 {
 typedef struct _tmlibmsg_h_as_42 {
 } Wait_TmUp_Rsp_Type;
 
+typedef struct _tmlibmsg_h_as_43 {
+   uint32 iv_seqNumBlock_start;
+   int32 iv_seqNumBlock_count;
+} TM_GetNextSeqNum_Rsp_Type;
+
 typedef struct Tm_RolloverCP_Rsp_Type {
+   
 } Tm_RolloverCP_Rsp_Type;
 
-typedef struct _tmlibmsg_h_as_43 {
+typedef struct _tmlibmsg_h_as_44 {
     MESSAGE_HEADER_SQ  iv_msg_hdr;
     union {
         Abort_Trans_Rsp_Type    iv_abort_trans;
@@ -926,6 +940,7 @@ typedef struct _tmlibmsg_h_as_43 {
         Tm_RolloverCP_Rsp_Type  iv_control_point;
 #ifndef HP_CLOSED_SOURCE_1
         HbaseRegionInfo_Rsp_Type iv_hbaseregion_info;
+        TM_GetNextSeqNum_Rsp_Type iv_GetNextSeqNum;
 #endif
 
         // XARM Responses

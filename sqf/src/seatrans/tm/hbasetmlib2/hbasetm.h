@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -121,6 +121,7 @@ private:
       JM_ABORT,
       JM_PRECOMMIT, 
       JM_DOCOMMIT, 
+      JM_TRYCOMMIT,
       JM_COMPLETEREQUEST,
       JM_REGREGION,
       JM_PARREGION,
@@ -140,6 +141,7 @@ public:
    CHbaseTM(JavaVM *jvm, JNIEnv *jenv);
 #endif
    ~CHbaseTM();
+   int initialize(short pv_nid);
    int initialize(HBASETM_TraceMask pv_traceMask, bool pv_tm_stats, CTmTimer *pp_tmTimer, short pv_nid);
    bool Trace(HBASETM_TraceMask pv_traceMask);
    void setTrace(HBASETM_TraceMask pv_traceMask);      // Set HBASETM tracing.
@@ -167,16 +169,17 @@ public:
    short beginTransaction(int64 *pp_transid);
    short prepareCommit(int64 pv_transid);
    short doCommit(int64 pv_transid);
+   short tryCommit(int64 pv_transid);
    short completeRequest(int64 pv_transid);
    short abortTransaction(int64 pv_transid);
    int registerRegion(int64 pv_transid, const char pa_region[], const char pa_regionInfo[], int pv_regionInfo_Length);
    int registerRegion(int64 pv_transid,
- 		      int pv_port,
- 		      const char pa_hostname[],
- 		      int pv_hostname_Length,
-		      long pv_startcode,
- 		      const char pa_regionInfo[],
- 		      int pv_regionInfo_Length);
+            int pv_port,
+            const char pa_hostname[],
+            int pv_hostname_Length,
+            long pv_startcode,
+            const char pa_regionInfo[],
+            int pv_regionInfo_Length);
    short addControlPoint();
    int recoverRegion(int64 *pp_count, int64 *pp_transidList[], int64 *pp_flags);
       // pp_count :input Maximum number of transids to be returned in a single reply
@@ -215,6 +218,8 @@ private:
 extern CHbaseTM gv_HbaseTM;      // One global HbaseTM object
 extern const char *ms_getenv_str(const char *pp_key);
 extern const char *ms_getenv_int(const char *pp_key, int *pp_val);
+
+short HBasetoTxnError(short pv_HBerr);
 
 #endif //HBASETM_H_
 
