@@ -27,10 +27,21 @@ JNIEXPORT void JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_cleanup
 }
 #endif
 #endif
-/* Header for class org_trafodion_sql_HBaseAccess_HTableClient_QualifiedColumn */
+/* Header for class org_trafodion_sql_HBaseAccess_HTableClient_ScanHelper */
 
-#ifndef _Included_org_trafodion_sql_HBaseAccess_HTableClient_QualifiedColumn
-#define _Included_org_trafodion_sql_HBaseAccess_HTableClient_QualifiedColumn
+#ifndef _Included_org_trafodion_sql_HBaseAccess_HTableClient_ScanHelper
+#define _Included_org_trafodion_sql_HBaseAccess_HTableClient_ScanHelper
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class org_trafodion_sql_HBaseAccess_HTableClient_SnapshotScanHelper */
+
+#ifndef _Included_org_trafodion_sql_HBaseAccess_HTableClient_SnapshotScanHelper
+#define _Included_org_trafodion_sql_HBaseAccess_HTableClient_SnapshotScanHelper
 #ifdef __cplusplus
 extern "C" {
 #endif

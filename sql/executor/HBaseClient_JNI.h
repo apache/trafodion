@@ -293,6 +293,7 @@ public:
         jlongArray jTimestamp, 
         jobjectArray jKvBuffer, jobjectArray jRowIDs,
         jintArray jKvsPerRow, jint numCellsReturned);
+  void getResultInfo();
   void cleanupResultInfo();
   HTC_RetCode fetchRows();
   HTC_RetCode nextRow();

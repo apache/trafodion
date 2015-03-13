@@ -2031,9 +2031,9 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_SCAN_OPEN  ].jm_name      = "startScan";
     JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[B[Ljava/lang/Object;JZI[Ljava/lang/Object;[Ljava/lang/Object;[Ljava/lang/Object;FZZILjava/lang/String;Ljava/lang/String;I)Z";
     JavaMethods_[JM_GET_OPEN   ].jm_name      = "startGet";
-    JavaMethods_[JM_GET_OPEN   ].jm_signature = "(J[B[Ljava/lang/Object;J)Z";
+    JavaMethods_[JM_GET_OPEN   ].jm_signature = "(J[B[Ljava/lang/Object;J)I";
     JavaMethods_[JM_GETS_OPEN  ].jm_name      = "startGet";
-    JavaMethods_[JM_GETS_OPEN  ].jm_signature = "(J[Ljava/lang/Object;[Ljava/lang/Object;J)Z";
+    JavaMethods_[JM_GETS_OPEN  ].jm_signature = "(J[Ljava/lang/Object;[Ljava/lang/Object;J)I";
     JavaMethods_[JM_DELETE     ].jm_name      = "deleteRow";
     JavaMethods_[JM_DELETE     ].jm_signature = "(J[B[Ljava/lang/Object;J)Z";
     JavaMethods_[JM_CHECKANDDELETE     ].jm_name      = "checkAndDeleteRow";
@@ -2225,11 +2225,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
    }
 
   if (hbs_)
-  {
-    //these 2 lines seem to get changed when doing the merge. putting them back
-    hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
-    hbs_->incHbaseCalls();
-  }
+      hbs_->getTimer().start();
 
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
             JavaMethods_[JM_SCAN_OPEN].methodID, 
@@ -2237,8 +2233,12 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
             j_colnamestofilter, j_compareoplist, j_colvaluestocompare, 
             j_smplPct, j_preFetch, j_useSnapshotScan,
             j_snapTimeout, js_snapName, js_tmp_loc, j_espNum);
+
   if (hbs_)
-      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+  {
+    hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+    hbs_->incHbaseCalls();
+  }
 
   jenv_->DeleteLocalRef(jba_startRowID);  
   jenv_->DeleteLocalRef(jba_stopRowID);  
@@ -2308,7 +2308,7 @@ HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const HbaseStr& rowID,
   
   if (hbs_)
     hbs_->getTimer().start();
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
+  jint jresult = jenv_->CallIntMethod(javaObj_, 
             JavaMethods_[JM_GET_OPEN].methodID, j_tid, jba_rowID, 
             j_cols, j_ts);
   if (hbs_)
@@ -2330,10 +2330,10 @@ HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const HbaseStr& rowID,
   }
 
   fetchMode_ = GET_ROW;
-  if (jresult == false) 
+  if (jresult == 0) 
      numRowsReturned_ = -1;
   else
-     numRowsReturned_ = 0;
+     numRowsReturned_ = 1;
   return HTC_OK;
 }
 
@@ -2375,7 +2375,7 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const LIST(HbaseStr)& row
   
   if (hbs_)
     hbs_->getTimer().start();
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
+  jint jresult = jenv_->CallIntMethod(javaObj_, 
       JavaMethods_[JM_GETS_OPEN].methodID, j_tid, j_rows, j_cols, j_ts);
   if (hbs_)
     {
@@ -2394,14 +2394,19 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const LIST(HbaseStr)& row
     logError(CAT_SQL_HBASE, "HTableClient_JNI::getRowsOpen()", getLastError());
     return HTC_ERROR_GETROWSOPEN_EXCEPTION;
   }
-
+/*
   if (jresult == false) 
   {
 
     logError(CAT_SQL_HBASE, "HTableClient_JNI::getRowsOpen()", getLastError());
     return HTC_ERROR_GETROWSOPEN_EXCEPTION;
   }
+*/
   fetchMode_ = BATCH_GET;
+  if (jresult == 0) 
+     numRowsReturned_ = -1;
+  else
+     numRowsReturned_ = jresult;
   return HTC_OK;
 }
 
@@ -3624,7 +3629,6 @@ void HTableClient_JNI::setResultInfo( jintArray jKvValLen, jintArray jKvValOffse
          exceptionFound = TRUE;
    }
    numCellsReturned_ = numCellsReturned;
-   currentRowNum_ = 0;
    prevRowCellNum_ = 0;
    cleanupDone_ = FALSE;
    ex_assert(! exceptionFound, "Exception in HTableClient_JNI::setResultInfo");
@@ -3670,79 +3674,53 @@ HTC_RetCode HTableClient_JNI::nextRow()
     HTC_RetCode retCode;
 
     ex_assert(fetchMode_ != UNKNOWN, "invalid fetchMode_");
-    if (fetchMode_ == GET_ROW && numRowsReturned_ == -1)
-       return HTC_DONE;
-    if (currentRowNum_ == -1 || ((currentRowNum_+1) >= numRowsReturned_))
+    switch (fetchMode_) {
+       case GET_ROW:
+          if (numRowsReturned_ == -1)
+             return HTC_DONE;
+          if (currentRowNum_ == -1)
+          {
+             getResultInfo();
+             return HTC_OK;
+	  }
+          else
+          {
+             cleanupResultInfo();   
+             return HTC_DONE;
+          }
+          break;
+       case BATCH_GET:
+          if (numRowsReturned_ == -1)
+             return HTC_DONE_RESULT;
+          if (currentRowNum_ == -1)
+          {
+             getResultInfo();
+             return HTC_OK;
+          }
+          else
+          if ((currentRowNum_+1) >= numRowsReturned_)
+          {
+             cleanupResultInfo();   
+             return HTC_DONE_RESULT;
+          }
+          break;
+       default:
+          break;
+    }
+    if (fetchMode_ == SCAN_FETCH && (currentRowNum_ == -1 || ((currentRowNum_+1) >= numRowsReturned_)))
     {
-        if (currentRowNum_ != -1)
+        if (currentRowNum_ != -1 && (numRowsReturned_ < numReqRows_))
         {
-            switch (fetchMode_)
-            {
-              case BATCH_GET:
-                cleanupResultInfo();
-                return HTC_DONE_RESULT;
-              case GET_ROW:
-                cleanupResultInfo();
-                return HTC_DONE;
-              case SCAN_FETCH:
-                if (numRowsReturned_ < numReqRows_)
-                {
-                   cleanupResultInfo();
-                   return HTC_DONE;
-                }   
-                break;
-            }
-        }
+            cleanupResultInfo();
+            return HTC_DONE;
+        }   
         retCode = fetchRows();
         if (retCode != HTC_OK)
         {
            cleanupResultInfo();
            return retCode;
         }
-        // Allocate Buffer and copy the cell info
-        int numCellsNeeded;
-        if (numCellsAllocated_ == 0 || 
-			numCellsAllocated_ < numCellsReturned_)
-        {
-           NAHeap *heap = getHeap();
-           if (numCellsAllocated_ > 0)
-           {
-              NADELETEBASIC(p_kvValLen_, heap);
-              NADELETEBASIC(p_kvValOffset_, heap);
-              NADELETEBASIC(p_kvFamLen_, heap);
-              NADELETEBASIC(p_kvFamOffset_, heap);
-              NADELETEBASIC(p_kvQualLen_, heap);
-              NADELETEBASIC(p_kvQualOffset_, heap);
-              NADELETEBASIC(p_timestamp_, heap);
-              numCellsNeeded = numCellsReturned_;
-           }
-           else
-           {  
-              if (numColsInScan_ == 0)
-                  numCellsNeeded = numCellsReturned_;
-              else    
-                  numCellsNeeded = 2 * numReqRows_ * numColsInScan_;
-           }
-           p_kvValLen_ = new (heap) jint[numCellsNeeded];
-           p_kvValOffset_ = new (heap) jint[numCellsNeeded];
-           p_kvFamLen_ = new (heap) jint[numCellsNeeded];
-           p_kvFamOffset_ = new (heap) jint[numCellsNeeded];
-           p_kvQualLen_ = new (heap) jint[numCellsNeeded];
-           p_kvQualOffset_ = new (heap) jint[numCellsNeeded];
-           p_timestamp_ = new (heap) jlong[numCellsNeeded];
-           numCellsAllocated_ = numCellsNeeded;
-        }
-        jenv_->GetIntArrayRegion(jKvValLen_, 0, numCellsReturned_, p_kvValLen_);
-        jenv_->GetIntArrayRegion(jKvValOffset_, 0, numCellsReturned_, p_kvValOffset_);
-        jenv_->GetIntArrayRegion(jKvQualLen_, 0, numCellsReturned_, p_kvQualLen_);
-        jenv_->GetIntArrayRegion(jKvQualOffset_, 0, numCellsReturned_, p_kvQualOffset_);
-        jenv_->GetIntArrayRegion(jKvFamLen_, 0, numCellsReturned_, p_kvFamLen_);
-        jenv_->GetIntArrayRegion(jKvFamOffset_, 0, numCellsReturned_, p_kvFamOffset_);
-        jenv_->GetLongArrayRegion(jTimestamp_, 0, numCellsReturned_, p_timestamp_);
-        p_kvsPerRow_ = jenv_->GetIntArrayElements(jKvsPerRow_, NULL);
-        currentRowNum_ = 0;
-        currentRowCellNum_ = 0;
-        prevRowCellNum_ = 0;
+        getResultInfo();
     }
     else
     {
@@ -3760,6 +3738,51 @@ HTC_RetCode HTableClient_JNI::nextRow()
        jenv_->DeleteGlobalRef(jba_rowID_);
     }
     return HTC_OK;
+}
+
+void HTableClient_JNI::getResultInfo()
+{
+   // Allocate Buffer and copy the cell info
+   int numCellsNeeded;
+   if (numCellsAllocated_ == 0 || 
+		numCellsAllocated_ < numCellsReturned_) {
+      NAHeap *heap = getHeap();
+      if (numCellsAllocated_ > 0) {
+          NADELETEBASIC(p_kvValLen_, heap);
+          NADELETEBASIC(p_kvValOffset_, heap);
+          NADELETEBASIC(p_kvFamLen_, heap);
+          NADELETEBASIC(p_kvFamOffset_, heap);
+          NADELETEBASIC(p_kvQualLen_, heap);
+          NADELETEBASIC(p_kvQualOffset_, heap);
+          NADELETEBASIC(p_timestamp_, heap);
+          numCellsNeeded = numCellsReturned_;
+       }
+       else {  
+          if (numColsInScan_ == 0)
+              numCellsNeeded = numCellsReturned_;
+          else    
+              numCellsNeeded = 2 * numReqRows_ * numColsInScan_;
+       }
+       p_kvValLen_ = new (heap) jint[numCellsNeeded];
+       p_kvValOffset_ = new (heap) jint[numCellsNeeded];
+       p_kvFamLen_ = new (heap) jint[numCellsNeeded];
+       p_kvFamOffset_ = new (heap) jint[numCellsNeeded];
+       p_kvQualLen_ = new (heap) jint[numCellsNeeded];
+       p_kvQualOffset_ = new (heap) jint[numCellsNeeded];
+       p_timestamp_ = new (heap) jlong[numCellsNeeded];
+       numCellsAllocated_ = numCellsNeeded;
+    }
+    jenv_->GetIntArrayRegion(jKvValLen_, 0, numCellsReturned_, p_kvValLen_);
+    jenv_->GetIntArrayRegion(jKvValOffset_, 0, numCellsReturned_, p_kvValOffset_);
+    jenv_->GetIntArrayRegion(jKvQualLen_, 0, numCellsReturned_, p_kvQualLen_);
+    jenv_->GetIntArrayRegion(jKvQualOffset_, 0, numCellsReturned_, p_kvQualOffset_);
+    jenv_->GetIntArrayRegion(jKvFamLen_, 0, numCellsReturned_, p_kvFamLen_);
+    jenv_->GetIntArrayRegion(jKvFamOffset_, 0, numCellsReturned_, p_kvFamOffset_);
+    jenv_->GetLongArrayRegion(jTimestamp_, 0, numCellsReturned_, p_timestamp_);
+    p_kvsPerRow_ = jenv_->GetIntArrayElements(jKvsPerRow_, NULL);
+    currentRowNum_ = 0;
+    currentRowCellNum_ = 0;
+    prevRowCellNum_ = 0;
 }
 
 HTC_RetCode HTableClient_JNI::getColName(int colNo,
@@ -3958,7 +3981,7 @@ HTC_RetCode HTableClient_JNI::fetchRows()
    jlong jniObject = (jlong)this;
    if (hbs_)
      hbs_->getTimer().start();
-   jlong jRowsReturned = jenv_->CallLongMethod(javaObj_, 
+   jint jRowsReturned = jenv_->CallIntMethod(javaObj_, 
              JavaMethods_[JM_FETCH_ROWS].methodID,
              jniObject);
    if (hbs_)

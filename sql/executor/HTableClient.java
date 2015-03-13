@@ -470,7 +470,7 @@ public class HTableClient {
 	  return true;
 	}
 
-	public boolean startGet(long transID, byte[] rowID, 
+	public int  startGet(long transID, byte[] rowID, 
                      Object[] columns,
 		     long timestamp) throws IOException {
 
@@ -498,13 +498,12 @@ public class HTableClient {
 		}
 		if (getResult == null
                     || getResult.isEmpty()) {
-			return false;
+			return 0;
 		}
 		if (logger.isTraceEnabled()) logger.trace("startGet, result: " + getResult);
-		getResultSet = new Result[1];
-		getResultSet[0] = getResult;
-		if (logger.isTraceEnabled()) logger.trace("Exit 2 startGet. size: " + getResult.size());
-		return true;
+		pushRowsToJni(getResult);
+		return 1;
+
 	}
 
 	// The TransactionalTable class is missing the batch get operation,
@@ -524,7 +523,7 @@ public class HTableClient {
 		return results;
 	}
 
-	public boolean startGet(long transID, Object[] rows,
+	public int startGet(long transID, Object[] rows,
 			Object[] columns, long timestamp)
                         throws IOException {
 
@@ -552,7 +551,11 @@ public class HTableClient {
 		} else {
 			getResultSet = table.get(listOfGets);
 		}
-		return true;
+                pushRowsToJni(getResultSet);
+		if (getResultSet != null)
+			return getResultSet.length;
+		else
+			return 0;
 	}
 
 	public int fetchRows() throws IOException, 
@@ -626,6 +629,7 @@ public class HTableClient {
 			kvTimestamp = new long[numTotalCells];
 			kvBuffer = new byte[numTotalCells][];
 		}
+               
 		if (rowIDs == null || (rowIDs != null &&
 				rowsReturned > rowIDs.length))
 		{
@@ -669,6 +673,65 @@ public class HTableClient {
 		setResultInfo(jniObject, kvValLen, kvValOffset,
 			kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
 			kvTimestamp, kvBuffer, rowIDs, kvsPerRow, cellsReturned);
+		return rowsReturned;	
+	}		
+	
+	protected int pushRowsToJni(Result result) 
+			throws IOException {
+		int rowsReturned = 1;
+		int numTotalCells;
+		if (numColsInScan == 0)
+			numTotalCells = result.size();
+		else
+		// There can be maximum of 2 versions per kv
+		// So, allocate place holder to keep cell info
+		// for that many KVs
+			numTotalCells = 2 * rowsReturned * numColsInScan;
+		int numColsReturned;
+		Cell[] kvList;
+		Cell kv;
+
+		if (kvValLen == null ||
+	 		(kvValLen != null && numTotalCells > kvValLen.length))
+		{
+			kvValLen = new int[numTotalCells];
+			kvValOffset = new int[numTotalCells];
+			kvQualLen = new int[numTotalCells];
+			kvQualOffset = new int[numTotalCells];
+			kvFamLen = new int[numTotalCells];
+			kvFamOffset = new int[numTotalCells];
+			kvTimestamp = new long[numTotalCells];
+			kvBuffer = new byte[numTotalCells][];
+		}
+		if (rowIDs == null)
+		{
+			rowIDs = new byte[rowsReturned][];
+			kvsPerRow = new int[rowsReturned];
+		}
+		kvList = result.rawCells();
+ 		if (kvList == null)
+			numColsReturned = 0; 
+		else
+			numColsReturned = kvList.length;
+		if ((numColsReturned) > numTotalCells)
+			throw new IOException("Insufficient cell array pre-allocated");
+ 		rowIDs[0] = result.getRow();
+		kvsPerRow[0] = numColsReturned;
+		for (int colNum = 0 ; colNum < numColsReturned ; colNum++)
+		{ 
+			kv = kvList[colNum];
+			kvValLen[colNum] = kv.getValueLength();
+			kvValOffset[colNum] = kv.getValueOffset();
+			kvQualLen[colNum] = kv.getQualifierLength();
+			kvQualOffset[colNum] = kv.getQualifierOffset();
+			kvFamLen[colNum] = kv.getFamilyLength();
+			kvFamOffset[colNum] = kv.getFamilyOffset();
+			kvTimestamp[colNum] = kv.getTimestamp();
+			kvBuffer[colNum] = kv.getValueArray();
+		}
+		setResultInfo(jniObject, kvValLen, kvValOffset,
+			kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
+			kvTimestamp, kvBuffer, rowIDs, kvsPerRow, numColsReturned);
 		return rowsReturned;	
 	}		
 	
