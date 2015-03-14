@@ -291,6 +291,33 @@ End of MXCI Session
 >>
 >>sh sqlci -i"TEST131(priv_cancel)" -u"SQL_User7"  ;
 >>
+>>-- cancel my own query is allowed with no grant
+>>prepare s1 from
++>values(user());
+
+--- SQL command prepared.
+>>
+>>execute s1;
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER7                                                                                                                        
+
+--- 1 row(s) selected.
+>>
+>>log;
+>>
+>>sh grep "^QID is " QIDLOG | cut -c 8- | sed "s/^/control query cancel qid /g" | sed "s/$/;/g"  > cancel_cmd;
+>>
+>>-- expect error 8031 since the query is not running.
+>>obey cancel_cmd;
+>>control query cancel qid MXID11000016863212292950782635718000000000206U3334000_44_S1;
+
+*** ERROR[8031] Server declined cancel request for query ID MXID11000016863212292950782635718000000000206U3334000_44_S1. The query is not in OPEN or FETCH or EXECUTE state.
+
+--- SQL operation failed with errors.
+>>
 >>-- expect error 8029
 >>control query cancel qid
 +>MXID11000023943212197828612249700000000000206U6553500_20_S1;

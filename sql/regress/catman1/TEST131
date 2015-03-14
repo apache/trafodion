@@ -207,6 +207,24 @@ select * from t131a;
 ?section priv_cancel
 log LOG131;
 
+-- cancel my own query is allowed with no grant
+prepare s1 from
+values(user());
+
+execute s1;
+
+log;
+log QIDLOG clear;
+display qid for s1;
+
+log;
+log LOG131;
+
+sh grep "^QID is " QIDLOG | cut -c 8- | sed "s/^/control query cancel qid /g" | sed "s/$/;/g"  > cancel_cmd;
+
+-- expect error 8031 since the query is not running.
+obey cancel_cmd;
+
 -- expect error 8029
 control query cancel qid
 MXID11000023943212197828612249700000000000206U6553500_20_S1;
