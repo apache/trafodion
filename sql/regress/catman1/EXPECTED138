@@ -407,6 +407,9 @@ USER1_T2
 >>set schema t138sch;
 
 --- SQL operation complete.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
+
+--- SQL operation complete.
 >>log LOG138;
 >>get tables;
 
@@ -1123,6 +1126,9 @@ End of MXCI Session
 >>set schema t138sch;
 
 --- SQL operation complete.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
+
+--- SQL operation complete.
 >>log LOG138;
 >>get tables;
 
@@ -1422,6 +1428,9 @@ End of MXCI Session
 --- SQL operation complete.
 >>obey TEST138(drop_tbl);
 >>set schema t138sch;
+
+--- SQL operation complete.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'on';
 
 --- SQL operation complete.
 >>log LOG138;
