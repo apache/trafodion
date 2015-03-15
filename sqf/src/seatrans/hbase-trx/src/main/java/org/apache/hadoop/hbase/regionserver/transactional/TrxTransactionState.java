@@ -11,6 +11,12 @@
 package org.apache.hadoop.hbase.regionserver.transactional;
 
 import java.io.IOException;
+
+import java.lang.Class;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,6 +49,7 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.regionserver.wal.HLog;
 import org.apache.hadoop.hbase.regionserver.InternalScanner;
 import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
+import org.apache.hadoop.hbase.regionserver.RegionCoprocessorHost;
 import org.apache.hadoop.hbase.regionserver.ScanQueryMatcher;
 import org.apache.hadoop.hbase.regionserver.ScanType;
 import org.apache.hadoop.hbase.regionserver.ScanInfo;
@@ -56,6 +63,55 @@ import org.apache.hadoop.io.DataInputBuffer;
  * information about which other transactions we need to check against.
  */
 public class TrxTransactionState  extends TransactionState{
+
+    static boolean sb_sqm_98_1;
+    static boolean sb_sqm_98_4;
+    static java.lang.reflect.Constructor c98_1 = null;
+    static java.lang.reflect.Constructor c98_4 = null;
+
+    static {
+	sb_sqm_98_1 = true;
+	try {
+	    NavigableSet<byte[]> lv_nvg = (NavigableSet<byte[]>) null;
+	    c98_1 = ScanQueryMatcher.class.getConstructor(
+							  new Class [] {
+							      Scan.class,
+							      ScanInfo.class,
+							      java.util.NavigableSet.class,
+							      ScanType.class,
+							      long.class,
+							      long.class,
+							      long.class
+							  });
+	}
+	catch (NoSuchMethodException exc_nsm) {
+	    sb_sqm_98_1 = false;
+	    sb_sqm_98_4 = true;
+	    try {
+		c98_4 = ScanQueryMatcher.class.getConstructor(
+							      new Class [] {
+								  Scan.class,
+								  ScanInfo.class,
+								  java.util.NavigableSet.class,
+								  ScanType.class,
+								  long.class,
+								  long.class,
+								  long.class,
+								  RegionCoprocessorHost.class
+							      });
+	    }
+	    catch (NoSuchMethodException exc_nsm2) {
+		sb_sqm_98_4 = false;
+	    }
+	}
+
+	if (sb_sqm_98_1) {
+	    LOG.info("Got info of Class ScanQueryMatcher for HBase 98.1");
+	}
+	if (sb_sqm_98_4) {
+	    LOG.info("Got info of Class ScanQueryMatcher for HBase 98.4");
+	}
+    }
 
     /**
      * Simple container of the range of the scanners we've opened. Used to check for conflicting writes.
@@ -550,15 +606,51 @@ public class TrxTransactionState  extends TransactionState{
             ScanInfo scaninfo = new ScanInfo(null, 0, 1, HConstants.FOREVER, false, 0, KeyValue.COMPARATOR);
             
             try {
-              matcher = new ScanQueryMatcher(scan,
-            
-                scaninfo,
-                null,
-                ScanType.USER_SCAN,
-                Long.MAX_VALUE,
-                HConstants.LATEST_TIMESTAMP,
-					     0);
-	      //null); # Not with HBase 0.98.1 
+		if (sb_sqm_98_1) {
+		    try {
+			matcher = (ScanQueryMatcher) c98_1.newInstance(scan,
+								       scaninfo,
+								       null,
+								       ScanType.USER_SCAN,
+								       Long.MAX_VALUE,
+								       HConstants.LATEST_TIMESTAMP,
+								       0);
+			if (LOG.isTraceEnabled()) LOG.trace("Created matcher using reflection for HBase 98.1");
+		    }
+		    catch (InstantiationException exc_ins) {
+			LOG.error("InstantiationException: " + exc_ins);
+		    }
+		    catch (IllegalAccessException exc_ill_acc) {
+			LOG.error("IllegalAccessException: " + exc_ill_acc);
+		    }
+		    catch (InvocationTargetException exc_inv_tgt) {
+			LOG.error("InvocationTargetException: " + exc_inv_tgt);
+		    }
+		    
+		}
+		else {
+		    try {
+		    matcher = (ScanQueryMatcher) c98_4.newInstance(scan,
+								   scaninfo,
+								   null,
+								   ScanType.USER_SCAN,
+								   Long.MAX_VALUE,
+								   HConstants.LATEST_TIMESTAMP,
+								   (long) 0,
+								   null);
+		    if (LOG.isTraceEnabled()) LOG.trace("Created matcher using reflection for HBase 98.4");
+		    }
+		    catch (InstantiationException exc_ins) {
+			LOG.error("InstantiationException: " + exc_ins);
+		    }
+		    catch (IllegalAccessException exc_ill_acc) {
+			LOG.error("IllegalAccessException: " + exc_ill_acc);
+		    }
+		    catch (InvocationTargetException exc_inv_tgt) {
+			LOG.error("InvocationTargetException: " + exc_inv_tgt);
+		    }
+
+		}
             }
             catch (Exception e) {
               LOG.error("error while instantiating the ScanQueryMatcher()" + e);

@@ -10385,8 +10385,8 @@ Lng32 SQLCLI_LOBddlInterface
 	    
 	    if (rc)
 	      {
-		//	cliRC = -9999;
-		//goto error_return;
+		cliRC = -9999;
+		goto error_return;
 	      }
 	    
 	    // drop LOB descriptor and LOB header tables

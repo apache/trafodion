@@ -441,8 +441,11 @@ HADOOP_1_TAR=hadoop-1.0.4-bin.tar.gz
 
 # Hive 0.9 requires Hadoop 0.20 or higher
 # HBase seems fine with Hadoop 0.20 or higher
-HADOOP_MIRROR_URL=http://www.bizdirusa.com/mirrors/apache/hadoop/common/hadoop-2.4.0
-HADOOP_TAR=hadoop-2.4.0.tar.gz
+HADOOP_MIRROR_URL=http://www.bizdirusa.com/mirrors/apache/hadoop/common/hadoop-2.5.0
+HADOOP_TAR=hadoop-2.5.0-cdh5.3.0.tar.gz
+if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
+    HADOOP_TAR=hadoop-2.6.0.2.2.0.0-2041.tar.gz
+fi
 
 # Alternative: Use MariaDB (not validated)
 # MARIADB_MIRROR_URL=https://downloads.mariadb.org/f/mariadb-5.5.29/kvm-bintar-hardy-amd64/mariadb-5.5.29-linux-x86_64.tar.gz/from/http:/ftp.osuosl.org/pub/mariadb
@@ -459,9 +462,12 @@ HIVE_PREFIX=apache-hive-0.13.1-bin
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
 
 #HBASE_MIRROR_URL=http://psg.mtu.edu/pub/apache/hbase/hbase-0.98.3
-#HBASE_TAR=hbase-0.98.3-hadoop2-bin.tar.gz
 HBASE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
-HBASE_TAR=hbase-0.98.1-cdh5.1.0.tar.gz
+
+HBASE_TAR=hbase-0.98.6-cdh5.3.0.tar.gz
+if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
+    HBASE_TAR=hbase-0.98.4.2.2.0.0-2041-hadoop2.tar.gz
+fi
 
 
 # Default location of DCS code
@@ -1309,7 +1315,7 @@ else
   cd $MY_SW_ROOT
 
   # Setup HBase TRX JAR in HBase' CLASSPATH
-  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/${HBASE_TRX_JAR}" >> ${HBASE_ENV_FILE}
+  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/\${HBASE_TRX_JAR}" >> ${HBASE_ENV_FILE}
 
   echo "Updating file $HBASE_CONFIG_FILE ..."
 

@@ -129,7 +129,10 @@ export MY_SQROOT=$PWD
 export SQ_HOME=$PWD
 
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
-export HBASE_TRX_JAR=hbase-trx-${TRAFODION_VER}.jar
+export HBASE_TRX_JAR=hbase-trx-cdh5_3-${TRAFODION_VER}.jar
+if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
+    export HBASE_TRX_JAR=hbase-trx-hdp2_2-${TRAFODION_VER}.jar
+fi
 
 # check for workstation env
 # want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart
@@ -319,7 +322,7 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   # ----------------------------------------------
 
   # native library directories and include directories
-  export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native/Linux-*-${SQ_MTYPE}:/usr/lib/hadoop/lib/native
+  export HADOOP_LIB_DIR=/usr/hdp/current/hadoop-client/lib/native/Linux-*-${SQ_MTYPE}:/usr/hdp/current/hadoop-client/lib/native
   export HADOOP_INC_DIR=/usr/include
   # The supported HDP version, HDP 1.3 uses Hadoop 1
   export USE_HADOOP_1=1
@@ -329,25 +332,25 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
 
   # directories with jar files and list of jar files
-  export HADOOP_JAR_DIRS="/usr/lib/hadoop
-                          /usr/lib/hadoop/lib"
-  export HADOOP_JAR_FILES="/usr/lib/hadoop/client/hadoop-hdfs-*.jar"
-  export HBASE_JAR_FILES="/usr/lib/hbase/hbase-*-security.jar
-                          /usr/lib/hbase/lib/hbase-common.jar
-                          /usr/lib/hbase/lib/hbase-client.jar
-                          /usr/lib/hbase/lib/hbase-server.jar
-                          /usr/lib/hbase/lib/hbase-protocol.jar
-                          /usr/lib/hbase/lib/htrace-core*.jar
-                          /usr/lib/hbase/lib/zookeeper.jar
-                          /usr/lib/hbase/lib/protobuf-*.jar
-                         /usr/lib/hbase/lib/snappy-java-*.jar 
-                         /usr/lib/hbase/lib/high-scale-lib-*.jar 
-                         /usr/lib/hbase/lib/hbase-hadoop-compat-*-hadoop2.jar "
+  export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
+                          /usr/hdp/current/hadoop-client/lib"
+  export HADOOP_JAR_FILES="/usr/hdp/current/hadoop-client/client/hadoop-hdfs-*.jar"
+  export HBASE_JAR_FILES="/usr/hdp/current/hbase-client/hbase-*-security.jar
+                          /usr/hdp/current/hbase-client/lib/hbase-common.jar
+                          /usr/hdp/current/hbase-client/lib/hbase-client.jar
+                          /usr/hdp/current/hbase-client/lib/hbase-server.jar
+                          /usr/hdp/current/hbase-client/lib/hbase-protocol.jar
+                          /usr/hdp/current/hbase-client/lib/htrace-core*.jar
+                          /usr/hdp/current/hbase-client/lib/zookeeper.jar
+                          /usr/hdp/current/hbase-client/lib/protobuf-*.jar
+                         /usr/hdp/current/hbase-client/lib/snappy-java-*.jar 
+                         /usr/hdp/current/hbase-client/lib/high-scale-lib-*.jar 
+                         /usr/hdp/current/hbase-client/lib/hbase-hadoop-compat-*-hadoop2.jar "
                          
-  export HIVE_JAR_DIRS="/usr/lib/hive/lib"
-  export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core*.jar"
+  export HIVE_JAR_DIRS="/usr/hdp/current/hive-client/lib"
+  export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
-  export HBASE_TRX_JAR=hbase-trx-hdp2_1-${TRAFODION_VER}.jar
+  export HBASE_TRX_JAR=hbase-trx-hdp2_2-${TRAFODION_VER}.jar
 
   # Configuration directories
 
@@ -414,7 +417,7 @@ elif [[ -d /opt/mapr ]]; then
   export HIVE_CNF_DIR=$MAPR_HIVEDIR/conf
 
   # HBase-trx jar with some modifications to work with MapR HBase 0.94.13
-  export HBASE_TRX_JAR=hbase_mapr-trx-0.94.13.jar
+  export HBASE_TRX_JAR=hbase-trx-mapr4_0-trx-${TRAFODION_VER}.jar
 
 elif [[ -e $MY_SQROOT/sql/scripts/install_local_hadoop
      && -e $MY_SQROOT/export/bin${SQ_MBTYPE}/monitor
