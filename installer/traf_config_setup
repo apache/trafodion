@@ -411,6 +411,16 @@ echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $LOCAL_TRAF_CONFIG
 
 #Check if install_features file exists
+if [[ -z $TRAF_BUILD ]]; then
+   TRAF_BUILD=$(tar -tf $TRAF_PACKAGE | grep "trafodion_server")
+   tar -xzf $TRAF_PACKAGE --directory $LOCAL_WORKDIR
+fi
+
+if [[ -z $TRAF_BUILD ]]; then 
+   echo "***ERROR: trafodion_server-n.n.n.tgz not included in $TRAF_PACKAGE"
+   echo "***ERROR: Workaround may be to enter trafodion_server-n.n.n.tgz as trafodion tar package."
+   exit -1
+fi
 
 install_features_path=$(tar -tf $TRAF_BUILD | grep "install_features")
 

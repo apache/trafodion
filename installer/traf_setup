@@ -148,7 +148,7 @@ EPEL_INSTALLED=$( rpm -qa | grep epel | wc -l)
 if [[ $EPEL_INSTALLED == 0 ]]; then
    echo "***INFO: ... EPEL rpm"
    if [[ "$EPEL_RPM" != "" ]]; then
-      sudo cp -rf $EPEL_RPM/$epel_rpm $TRAF_WORKDIR
+      sudo cp -rf $EPEL_RPM $TRAF_WORKDIR
    else
       if [[ $internetAccess == "true" ]]; then
          epel_rpm="epel-release-6-8.noarch.rpm"
