@@ -647,7 +647,7 @@ public class HBaseTxClient {
       * Thread to gather recovery information for regions that need to be recovered 
       */
      private static class RecoveryThread extends Thread{
-             final int SLEEP_DELAY = 180000; // Initially set to run every 3min
+             final int SLEEP_DELAY = 10000; // Initially set to run every 10sec
              private TmAuditTlog audit;
              private HBaseTmZK zookeeper;
              private TransactionManager txnManager;
