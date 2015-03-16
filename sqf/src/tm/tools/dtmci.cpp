@@ -449,48 +449,68 @@ void print_txnstatus(int32 pv_status)
 } // print_txnstatus
 
 
-void process_tmstats_node(bool pv_reset, int32 pv_nid)
+void process_tmstats_node(bool pv_reset, int32 pv_nid, bool json)
 {
     short lv_error = 0;
     TM_TMSTATS lv_stats;
 
     lv_error = TMSTATS(pv_nid, &lv_stats, pv_reset);
-    if (lv_error)
-        printf("Node %d\t**Error %d.", pv_nid, lv_error);
-    else
-    {
-        printf("Node %d:", pv_nid);
 
-        print_txnStats(&lv_stats.iv_txn);
+    if(json==false) {
+        if (lv_error)
+            printf("Node %d\t**Error %d.", pv_nid, lv_error);
+        else
+        {
+            printf("Node %d:", pv_nid);
 
-        // Pool statistics
-        printf("\n  Txn Pool:\t");
-        print_poolStats(lv_stats.iv_transactionPool_stats);
-        printf("\n  Thrd Pool:\t");
-        print_poolStats(lv_stats.iv_threadPool_stats);
-        printf("\n  RMMsg Pool:\t");
-        print_poolStats(lv_stats.iv_RMMessagePool_stats);
+            print_txnStats(&lv_stats.iv_txn);
+
+            // Pool statistics
+            printf("\n  Txn Pool:\t");
+            print_poolStats(lv_stats.iv_transactionPool_stats);
+            printf("\n  Thrd Pool:\t");
+            print_poolStats(lv_stats.iv_threadPool_stats);
+            printf("\n  RMMsg Pool:\t");
+            print_poolStats(lv_stats.iv_RMMessagePool_stats);
+        }
+        printf("\n");
+    } 
+    else {
+        printf("{\"node\": %d", pv_nid);
+        printf(",\"txnStats\":{\"txnBegins\": %d", lv_stats.iv_txn.iv_txnBegin.iv_count);
+        printf(",\"txnAborts\": %d", lv_stats.iv_txn.iv_txnAbort.iv_count);
+        printf(",\"txnCommits\": %d}}", lv_stats.iv_txn.iv_txnCommit.iv_count);
     }
-    printf("\n");
 } //process_tmstats_node
 
 
-void process_tmstats(bool pv_reset, int32 pv_node)
+void process_tmstats(bool pv_reset, int32 pv_node, bool json)
 {
     int lv_error = 0;
     int lv_dtm_count = 0;
+    bool del = false;
+
+    if(json==true)
+        printf("[");
 
     if (pv_node != -1)
-        process_tmstats_node(pv_reset, pv_node);
+        process_tmstats_node(pv_reset, pv_node, json);
     else
     {
         lv_error = msg_mon_get_node_info        ( &lv_dtm_count,
                                                   MAX_NODES,
                                                   NULL);
         
-        for (int lv_inx = 0; lv_inx < lv_dtm_count; lv_inx++)
-            process_tmstats_node(pv_reset, lv_inx);
+        for (int lv_inx = 0; lv_inx < lv_dtm_count; lv_inx++) {
+            if(del==true)
+                printf(",");
+            process_tmstats_node(pv_reset, lv_inx, json);
+            del=true;
+        }
     }
+
+    if(json==true)
+        printf("]\n");
 } //process_tmstats
 
 bool sort_comparator(TM_STATUS_ALL_TRANS a, TM_STATUS_ALL_TRANS b)
@@ -693,7 +713,7 @@ void process_attachrm(char* pp_rmname)
 
 } //process_attachrm
 
-bool process_statustm_node(int32 pv_node, bool pv_detail, bool pv_sortrmid)
+bool process_statustm_node(int32 pv_node, bool pv_detail, bool pv_sortrmid, bool json)
 {
     RM_INFO temp_rm;
     char lv_buffer[TM_MsgSize(Statustm_Rsp_Type) + (sizeof(RM_INFO) * MAX_OPEN_RMS)];
@@ -706,6 +726,18 @@ bool process_statustm_node(int32 pv_node, bool pv_detail, bool pv_sortrmid)
     {
        printf("%d\tTM process down. Returned error: %d\n", pv_node, lv_error);
        return false; // fail
+    }
+    if (json==true)
+    {
+       printf("{\"node\":%d", lp_tmstatus->iv_node);
+       printf(", \"isLeadTM\":%s", booltoa(lp_tmstatus->iv_isLeadTM));
+       printf(", \"state\":\"%s\"",tmstatetoa(lp_tmstatus->iv_state));
+       printf(", \"sys_recovery_state\":\"%s\"",tmsysrecovstatetoa(lp_tmstatus->iv_sys_recovery_state));
+       lp_string = tmshutdownleveltoa(lp_tmstatus->iv_shutdown_level);
+       printf(", \"tmshutdown_level\":\"%s\"", lp_string);
+       printf(", \"number_active_txns\":%d}", lp_tmstatus->iv_number_active_txns);
+
+       return true;
     }
     else
     {
@@ -797,17 +829,23 @@ bool process_statustm_node(int32 pv_node, bool pv_detail, bool pv_sortrmid)
 } //process_statustm_node
 
 
-void process_statustm(int32 pv_node, bool pv_sortrmid)
+void process_statustm(int32 pv_node, bool pv_sortrmid, bool json)
 {
    short lv_error = 0;
    static int lv_max_dtm_count = 0;
    int lv_dtm_count = 0;
+   bool jdel = false;
+
+   if(json==true)
+      printf("[");
+   else {
+      printf("Node\tLeadTM\tState\tSysRec\tShutdownLevel\tIncarn"
+              "\tTxns\tIsolTM\tRMs\n");
+   }
 
    if (pv_node != -1)
    {
-       printf("Node\tLeadTM\tState\tSysRec\tShutdownLevel\tIncarn"
-              "\tTxns\tIsolTM\tRMs\n");
-       process_statustm_node(pv_node, true, pv_sortrmid);
+       process_statustm_node(pv_node, true, pv_sortrmid, json);
    }
    else
    {
@@ -826,15 +864,19 @@ void process_statustm(int32 pv_node, bool pv_sortrmid)
              cout << "** No TMs running." << endl;
          else
          {
-             printf("Node\tLeadTM\tState\tSysRec\tShutdownLevel\tIncarn"
-                  "\tTxns\tIsolTM\tRMs\n");
-
-             for (int lv_inx = 0; lv_inx < lv_max_dtm_count; lv_inx++)
-                  process_statustm_node(lv_inx, false, false);
+            for (int lv_inx = 0; lv_inx < lv_max_dtm_count; lv_inx++) {
+               if (jdel==true)
+                  printf(",");
+               process_statustm_node(lv_inx, false, false, json);
+               jdel = true;    
+            }
          }
 
       }
    }
+   if(json==true)
+       printf("]\n");
+
 } //process_statustm
 
 void process_statussystem()
@@ -1639,28 +1681,36 @@ int main(int argc, char *argv[])
         {
             get_cmd(lp_inputstr, lp_nextcmd);
             if (lp_nextcmd[0] == '\0')
-                process_tmstats(false, -1);
+                process_tmstats(false, -1, false);
             else
             {
-                if (!strcmp(lp_nextcmd, "*"))
-                    lv_param1 = -1;
-                else
-                    lv_param1 = atoi(lp_nextcmd);
-
-                get_cmd(lp_inputstr, lp_nextcmd);
-                if (lp_nextcmd[0] == '\0')
-                    process_tmstats(false, lv_param1);
-                else
-                {
-                    if (!strcmp(lp_nextcmd, "reset"))
-                        process_tmstats(true, lv_param1);
+                if(!strcmp(lp_nextcmd, "-j")) {
+                    process_tmstats(false, -1, true);
+                } else {
+                    if (!strcmp(lp_nextcmd, "*"))
+                        lv_param1 = -1;
                     else
-                        cout << "** Stats invalid qualifier " << lp_nextcmd << "." << endl;
+                        lv_param1 = atoi(lp_nextcmd);
+
+                    get_cmd(lp_inputstr, lp_nextcmd);
+                    if (lp_nextcmd[0] == '\0') 
+                        process_tmstats(false, lv_param1, false);                    
+                    else if (!strcmp(lp_nextcmd, "-j"))
+                        process_tmstats(false, lv_param1, true);
+                    else
+                    {
+                        if (!strcmp(lp_nextcmd, "reset"))
+                            process_tmstats(true, lv_param1, false);
+                        else
+                            cout << "** Stats invalid qualifier " << lp_nextcmd << "." << endl;
+                    }
                 }
             }
         }
         else if (!strcmp(lp_nextcmd, "status"))
         {
+            bool b_rmid, b_json = false;
+
             get_cmd(lp_inputstr, lp_nextcmd);
             if (!strcmp(lp_nextcmd, "tm"))
             {
@@ -1673,13 +1723,18 @@ int main(int argc, char *argv[])
                 else {
                     lv_param1 = -1;
                 }
+                if(!strcmp(lp_nextcmd, "-j"))
+                    b_json = true;
                 get_cmd(lp_inputstr, lp_nextcmd);
                 if(!strcmp(lp_nextcmd, "rmid")) {
-                    process_statustm(lv_param1, true);
+                    //process_statustm(lv_param1, true);
+                    b_rmid = true;
                 }
-                else{
-                    process_statustm(lv_param1, false);
+                else if(!strcmp(lp_nextcmd, "-j")) {
+                    b_json = true;
+                    //process_statustm(lv_param1, false);
                 }
+                process_statustm(lv_param1, b_rmid, b_json);
             }
             else if (!strcmp(lp_nextcmd, "transaction") || !strcmp(lp_nextcmd, "trans")) 
             {
