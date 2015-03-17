@@ -195,7 +195,6 @@ typedef enum {
  ,HTC_ERROR_FLUSHTABLE_EXCEPTION
  ,HTC_GET_COLNAME_EXCEPTION
  ,HTC_GET_COLVAL_EXCEPTION
- ,HTC_SET_JNIOBJECT_EXCEPTION
  ,HTC_GET_ROWID_EXCEPTION
  ,HTC_NEXTCELL_EXCEPTION
  ,HTC_LAST
@@ -204,6 +203,13 @@ typedef enum {
 class HTableClient_JNI : public JavaObjectInterface
 {
 public:
+  enum FETCH_MODE {
+      UNKNOWN = 0
+    , SCAN_FETCH
+    , GET_ROW
+    , BATCH_GET
+  };
+
   HTableClient_JNI(NAHeap *heap, jobject jObj = NULL)
   :  JavaObjectInterface(heap, jObj)
   {
@@ -336,17 +342,29 @@ public:
     tableName_ = new (heap_) char[len+1];
     strcpy(tableName_, tableName);
   } 
-  HTC_RetCode setJniObject();
 
   void setHbaseStats(ExHbaseAccessStats *hbs)
   {
     hbs_ = hbs;
   }
+  void setNumColsInScan(int numColsInScan) {
+     numColsInScan_ = numColsInScan;
+  }
+  void setNumReqRows(int numReqRows) {
+     numReqRows_ = numReqRows;
+  }
+  void setFetchMode(HTableClient_JNI::FETCH_MODE  fetchMode) {
+     fetchMode_ = fetchMode;
+  }
+  void setNumRowsReturned(int numRowsReturned) {
+     numRowsReturned_ = numRowsReturned; 
+  }
+  HTableClient_JNI::FETCH_MODE getFetchMode() {
+     return fetchMode_;
+  }
 
 private:
   NAString getLastJavaError();
-
-private:  
   enum JAVA_METHODS {
     JM_CTOR = 0
    ,JM_GET_ERROR 
@@ -368,14 +386,7 @@ private:
    ,JM_DIRECT_INSERT_ROWS
    ,JM_DIRECT_DELETE_ROWS
    ,JM_FETCH_ROWS
-   ,JM_SET_JNIOBJECT
    ,JM_LAST
-  };
-  enum FETCH_MODE {
-      UNKNOWN = 0
-    , SCAN_FETCH
-    , GET_ROW
-    , BATCH_GET
   };
   char *tableName_; 
   jintArray jKvValLen_;
@@ -465,6 +476,8 @@ typedef enum {
  ,HBC_ERROR_CLEAN_SNP_TMP_LOC_EXCEPTION
  ,HBC_ERROR_SET_ARC_PERMS_PARAM
  ,HBC_ERROR_SET_ARC_PERMS_EXCEPTION
+ ,HBC_ERROR_STARTGET_EXCEPTION
+ ,HBC_ERROR_STARTGETS_EXCEPTION
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -527,6 +540,12 @@ public:
   
   static void logIt(const char* str);
 
+  HTableClient_JNI *startGet(NAHeap *heap, const char* tableName, bool useTRex, 
+            ExHbaseAccessStats *hbs, Int64 transID, const HbaseStr& rowID, 
+            const LIST(HbaseStr) & cols, Int64 timestamp);
+  HTableClient_JNI *startGets(NAHeap *heap, const char* tableName, bool useTRex, 
+            ExHbaseAccessStats *hbs, Int64 transID, const LIST(HbaseStr)& rowIDs, 
+            const LIST(HbaseStr) & cols, Int64 timestamp);
 private:   
   // private default constructor
   HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
@@ -559,6 +578,8 @@ private:
    ,JM_GET_LATEST_SNP
    ,JM_CLEAN_SNP_TMP_LOC
    ,JM_SET_ARC_PERMS
+   ,JM_START_GET
+   ,JM_START_GETS
    ,JM_LAST
   };
   static jclass          javaClass_; 

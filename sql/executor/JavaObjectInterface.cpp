@@ -67,11 +67,18 @@ JavaObjectInterface::~JavaObjectInterface()
 {
   // commenting out for now - this may cause mxorsvr core during mxsorvr shutdown
   //QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "JavaObjectInterface destructor called.");
-  jenv_->DeleteGlobalRef(javaObj_);
+  if ((long)javaObj_ != -1)
+      jenv_->DeleteGlobalRef(javaObj_);
   javaObj_ = NULL;
   isInitialized_ = FALSE;
 }
  
+void JavaObjectInterface::setJavaObject(jobject jobj) {
+  if ((long)javaObj_ != -1)
+      jenv_->DeleteGlobalRef(javaObj_);
+  javaObj_ = jenv_->NewGlobalRef(jobj);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////

@@ -96,7 +96,7 @@ protected:
     // When jObj is not null in the constructor
     // it is assumed that the object is created on the Java side and hence
     // just create a Global Reference in the JNI side
-    if (jObj != NULL)
+    if (jObj != NULL && (long)jObj != -1)
        javaObj_ = jenv_->NewGlobalRef(jObj);
     else
        javaObj_ = jObj;
@@ -135,9 +135,10 @@ protected:
     return isHBaseCompatibilityMode_;
   }
 
-  char* buildClassPath();
+  char* buildClassPath();  
   
 public:
+  void setJavaObject(jobject jobj);
   jobject getJavaObject()
   {
     return javaObj_;

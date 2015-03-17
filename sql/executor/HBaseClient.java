@@ -514,7 +514,7 @@ public class HBaseClient {
             return result;
     }
 
-    public HTableClient getHTableClient(String tblName, 
+    public HTableClient getHTableClient(long jniObject, String tblName, 
                   boolean useTRex) throws IOException 
     {
        if (logger.isDebugEnabled()) logger.debug("HBaseClient.getHTableClient(" + tblName
@@ -528,11 +528,13 @@ public class HBaseClient {
           }
           if (logger.isDebugEnabled()) logger.debug("  ==> Created new object.");
           hTableClientsInUse.put(htable.getTableName(), htable);
+          htable.setJniObject(jniObject);
           return htable;
        } else {
             if (logger.isDebugEnabled()) logger.debug("  ==> Returning existing object, removing from container.");
             hTableClientsInUse.put(htable.getTableName(), htable);
             htable.resetAutoFlush();
+           htable.setJniObject(jniObject);
             return htable;
        }
     }
@@ -987,6 +989,20 @@ public class HBaseClient {
     FileStatus[] files = FSUtils.listStatus(myfs,tabArcPath);
     updatePermissionForEntries(files,  hbaseUser, myfs); 
     return true;
+  }
+
+  public int startGet(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
+                        Object[] columns, long timestamp)
+                        throws IOException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      return htc.startGet(transID, rowID, columns, timestamp);
+  }
+
+  public int startGet(long jniObject, String tblName, boolean useTRex, long transID, Object[] rowIDs,
+                        Object[] columns, long timestamp)
+                        throws IOException {
+      HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
+      return htc.startGet(transID, rowIDs, columns, timestamp);
   }
 }
     

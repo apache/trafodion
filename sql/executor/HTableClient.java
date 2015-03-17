@@ -89,6 +89,9 @@ import java.util.UUID;
 import java.security.InvalidParameterException;
 
 public class HTableClient {
+	private static final int GET_ROW = 1;
+	private static final int BATCH_GET = 2;
+	private static final int SCAN_FETCH = 3;
 	private boolean useTRex;
 	private boolean useTRexScanner;
 	private String tableName;
@@ -115,7 +118,7 @@ public class HTableClient {
         static ExecutorService executorService = null;
         Future future = null;
 	boolean preFetch = false;
-
+	int fetchType = 0;
 	long jniObject = 0;
 	SnapshotScanHelper snapHelper = null;
 
@@ -465,7 +468,7 @@ public class HTableClient {
 	    scanHelper = new ScanHelper(); 
             future = executorService.submit(scanHelper);
 	  }
-
+          fetchType = SCAN_FETCH;
 	  if (logger.isTraceEnabled()) logger.trace("Exit startScan().");
 	  return true;
 	}
@@ -477,7 +480,7 @@ public class HTableClient {
 	    if (logger.isTraceEnabled()) logger.trace("Enter startGet(" + tableName + 
 			     " #cols: " + ((columns == null) ? 0:columns.length ) +
 			     " rowID: " + new String(rowID));
-
+		fetchType = GET_ROW;
 		Get get = new Get(rowID);
 		if (columns != null)
 		{
@@ -498,6 +501,7 @@ public class HTableClient {
 		}
 		if (getResult == null
                     || getResult.isEmpty()) {
+                        setJavaObject(jniObject);
 			return 0;
 		}
 		if (logger.isTraceEnabled()) logger.trace("startGet, result: " + getResult);
@@ -548,14 +552,19 @@ public class HTableClient {
 			numColsInScan = 0;
 		if (useTRex && (transID != 0)) {
 			getResultSet = batchGet(transID, listOfGets);
+                        fetchType = GET_ROW; 
 		} else {
 			getResultSet = table.get(listOfGets);
+			fetchType = BATCH_GET;
 		}
-                pushRowsToJni(getResultSet);
-		if (getResultSet != null)
+		if (getResultSet != null && getResultSet.length > 0) {
+                	 pushRowsToJni(getResultSet);
 			return getResultSet.length;
-		else
+		}
+		else {
+			setJavaObject(jniObject);
 			return 0;
+		}
 	}
 
 	public int fetchRows() throws IOException, 
@@ -1114,6 +1123,8 @@ public class HTableClient {
 
     private void cleanScan()
     {
+        if (fetchType == GET_ROW || fetchType == BATCH_GET)
+           return;
         numRowsCached = 1;
         numColsInScan = 0;
         kvValLen = null;
@@ -1128,9 +1139,9 @@ public class HTableClient {
         kvsPerRow = null;
     }
 
-   	 private void setJniObject(long inJniObject) {
-		jniObject = inJniObject;
-	}    
+    protected void setJniObject(long inJniObject) {
+       jniObject = inJniObject;
+    }    
 
     private native int setResultInfo(long jniObject,
 				int[] kvValLen, int[] kvValOffset,
@@ -1141,6 +1152,8 @@ public class HTableClient {
 				int[] kvsPerRow, int numCellsReturned);
 
    private native void cleanup(long jniObject);
+
+   private native int setJavaObject(long jniObject);
  
    static {
      executorService = Executors.newCachedThreadPool();
