@@ -2,7 +2,7 @@
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@
 my $node_context=readpipe("echo \$MY_NODES");
 my %node_hash=();
 my $sq_mon_ssh_options=readpipe("echo -n \$SQ_MON_SSH_OPTIONS");
+my $json=$ARGV[0];
 
 &main();
 
@@ -49,10 +50,29 @@ sub main()
 
 sub print_node_status()
 {
-    foreach my $node(sort keys %node_hash)
+    if ($json) 
     {
-       my $status=$node_hash{$node}{"status"};
-       print "${node} \[ ${status} \]\n";
+        $comma="";
+        print "[";
+        foreach my $node(sort keys %node_hash)
+        {
+           if($comma)
+           {
+             print ",";
+           }
+           my $status=$node_hash{$node}{"status"};
+           print "{\"NODE\":\"${node}\",\"STATUS\":\"${status}\"}";
+           $comma="1"
+        }
+        print "]";
+    }
+    else
+    {
+        foreach my $node(sort keys %node_hash)
+        {
+           my $status=$node_hash{$node}{"status"};
+           print "${node} \[ ${status} \]\n";
+        }
     }
 }
 

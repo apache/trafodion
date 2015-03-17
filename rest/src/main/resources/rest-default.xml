@@ -193,12 +193,17 @@
   <!-- End of properties that are directly mapped from ZooKeeper's zoo.cfg -->
   
   <property>
-    <name>trafodion.rest.port</name>
+    <name>rest.port</name>
     <value>4200</value>
-    <description>The port for the REST server.</description>
+    <description>The http port for the REST server.</description>
+  </property>
+   <property>
+    <name>rest.https.port</name>
+    <value>4201</value>
+    <description>The https port for the REST server.</description>
   </property>
   <property>
-    <name>trafodion.rest.readonly</name>
+    <name>rest.readonly</name>
     <value>false</value>
     <description>
     Defines the mode the REST server will be started in. Possible values are:

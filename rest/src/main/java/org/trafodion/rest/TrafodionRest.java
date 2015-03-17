@@ -28,17 +28,19 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.net.DNS;
-
 import org.trafodion.rest.util.RestConfiguration;
-import org.trafodion.rest.util.Strings;
 import org.trafodion.rest.util.VersionInfo;
-
+import org.trafodion.rest.script.ScriptManager;
+import org.trafodion.rest.script.ScriptContext;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.nio.SelectChannelConnector;
+import org.mortbay.jetty.security.Constraint;
+import org.mortbay.jetty.security.ConstraintMapping;
+import org.mortbay.jetty.security.SecurityHandler;
+import org.mortbay.jetty.security.SslSocketConnector;
+import org.mortbay.jetty.security.Password;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.thread.QueuedThreadPool;
@@ -56,7 +58,7 @@ public class TrafodionRest implements Runnable, RestConstants {
 		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp("bin/rest rest start", "", options,
 				"\nTo run the REST server as a daemon, execute " +
-				"bin/rest-daemon.sh start|stop rest [--infoport <port>] [-p <port>] [-ro]\n", true);
+				"bin/rest-daemon.sh start|stop rest [-p <port>] [-sp <https port>] [-ro]\n", true);
 		System.exit(exitCode);
 	}
 
@@ -65,7 +67,8 @@ public class TrafodionRest implements Runnable, RestConstants {
 		conf = RestConfiguration.create();
 		
 		Options options = new Options();
-		options.addOption("p", "port", true, "Port to bind to [default: 8080]");
+		options.addOption("p", "port", true, "Http port to bind to [default: 4200]");
+	    options.addOption("sp", "httpsport", true, "Https port to bind to [default: 4201]");
 		options.addOption("ro", "readonly", false, "Respond only to GET HTTP " +
 		"method requests [default: false]");
 		//options.addOption(null, "infoport", true, "Port for web UI");
@@ -89,23 +92,23 @@ public class TrafodionRest implements Runnable, RestConstants {
 		// check for user-defined port setting, if so override the conf
 		if (commandLine != null && commandLine.hasOption("port")) {
 			String val = commandLine.getOptionValue("port");
-			servlet.getConfiguration().setInt("trafodion.rest.port", Integer.valueOf(val));
-			LOG.debug("port set to " + val);
+			servlet.getConfiguration().setInt("rest.port", Integer.valueOf(val));
+		    LOG.info("port set to " + val);
 		}
+		
+	    // check for user-defined https port setting, if so override the conf
+        if (commandLine != null && commandLine.hasOption("httpsport")) {
+            String val = commandLine.getOptionValue("httpsport");
+            servlet.getConfiguration().setInt("rest.https.port", Integer.valueOf(val));
+            LOG.info("https port set to " + val);
+        }
 
 		// check if server should only process GET requests, if so override the conf
 		if (commandLine != null && commandLine.hasOption("readonly")) {
-			servlet.getConfiguration().setBoolean("trafodion.rest.readonly", true);
-			LOG.debug("readonly set to true");
+			servlet.getConfiguration().setBoolean("rest.port.readonly", true);
+		    LOG.info("readonly set to true");
 		}
-/*
-		// check for user-defined info server port setting, if so override the conf
-		if (commandLine != null && commandLine.hasOption("infoport")) {
-			String val = commandLine.getOptionValue("infoport");
-			servlet.getConfiguration().setInt("rest.rest.info.port", Integer.valueOf(val));
-			LOG.debug("Web UI port set to " + val);
-		}
-*/
+
 		@SuppressWarnings("unchecked")
 		List<String> remainingArgs = commandLine != null ?	commandLine.getArgList() : new ArrayList<String>();
 		if (remainingArgs.size() != 1) {
@@ -151,10 +154,88 @@ public class TrafodionRest implements Runnable, RestConstants {
 		// set up Jetty and run the embedded server
 		Server server = new Server();
 
-		Connector connector = new SelectChannelConnector();
-		connector.setPort(servlet.getConfiguration().getInt("trafodion.rest.port", 8080));
-		connector.setHost(servlet.getConfiguration().get("trafodion.rest.host", "0.0.0.0"));
+		SelectChannelConnector connector = new SelectChannelConnector();
+		connector.setPort(servlet.getConfiguration().getInt("rest.port", 4200));
+		LOG.info("HTTP port:" + servlet.getConfiguration().getInt("rest.port", 4200));
+		connector.setHost(servlet.getConfiguration().get("rest.host", "0.0.0.0"));
 
+		//Get the obfuscated SSL keystore password property. This is set by Trafodion installer
+        //Presence of property triggers SSL setup otherwise SSL disabled.
+        //See http://docs.codehaus.org/display/JETTY/Securing+Passwords for more detail
+        boolean setupSSL = false;
+        String sKeyStoreObfPswd = servlet.getConfiguration().get(Constants.REST_SSL_PASSWORD, ""); 
+        if(sKeyStoreObfPswd.length() > 0) {
+            setupSSL = true;
+            LOG.info("Setting up SSL");
+        } else {
+            LOG.info("SSL disabled");
+        }
+        
+        SslSocketConnector sslConnector = null;
+        if(setupSSL) {
+            int sslPort = servlet.getConfiguration().getInt("rest.https.port", 4201);
+            LOG.info("HTTPS port:" + sslPort);
+            connector.setConfidentialPort(sslPort);
+            String sKeyStore = servlet.getConfiguration().get(Constants.REST_KEYSTORE, Constants.DEFAULT_REST_KEYSTORE); 
+            String sKeyStorePswd = new Password(sKeyStoreObfPswd).toString();
+            if(LOG.isDebugEnabled())
+                LOG.debug("setPort(" + sslPort + ")" +
+                        ",setKeystore(" + sKeyStore + ")" +
+                        ",setTruststore(" + sKeyStore + ")" +
+                        ",setPassword(" + sKeyStorePswd + ")" +
+                        ",setKeyPassword(" + sKeyStorePswd + ")" +
+                        ",setTrustPassword(" + sKeyStorePswd + ")");
+            
+            //Create the keystore 
+            String keyStoreCommand = servlet.getConfiguration().get(Constants.REST_KEYSTORE_COMMAND,Constants.DEFAULT_REST_KEYSTORE_COMMAND); 
+            if(LOG.isDebugEnabled())
+                LOG.debug("keyStoreCommand:" + keyStoreCommand);
+            String command = keyStoreCommand
+                    .replace(Constants.REST_KEYSTORE, sKeyStore)
+                    .replace(Constants.REST_SSL_PASSWORD, sKeyStorePswd);
+            if(LOG.isDebugEnabled())
+                LOG.debug("command:" + command);
+           ScriptContext scriptContext = new ScriptContext();
+           scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+           scriptContext.setCommand(command);
+           if(LOG.isDebugEnabled())
+               LOG.debug("keystore exec [" + scriptContext.getCommand() + "]");
+           ScriptManager.getInstance().runScript(scriptContext);// This will block while script runs
+           if(LOG.isDebugEnabled())
+               LOG.debug("keystore exit [" + scriptContext.getExitCode() + "]");
+           StringBuilder sb = new StringBuilder();
+           sb.append("exit code [" + scriptContext.getExitCode() + "]");
+           if (!scriptContext.getStdOut().toString().isEmpty())
+               sb.append(", stdout [" + scriptContext.getStdOut().toString()  + "]");
+           if (!scriptContext.getStdErr().toString().isEmpty())
+               sb.append(", stderr [" + scriptContext.getStdErr().toString()  + "]");
+           if(LOG.isDebugEnabled())
+               LOG.debug(sb.toString());
+           
+           switch (scriptContext.getExitCode()) {
+           case 0:
+               LOG.info("Keystore created successfully");
+               break;
+            default:
+               LOG.error("Keystore creation failure...exiting");
+               System.exit(-1);
+           }
+
+            // Second, construct and populate a SSL Context object (for use in the Channel Connector)
+            sslConnector = new SslSocketConnector( );
+            sslConnector.setPort(sslPort);
+            sslConnector.setKeystore(sKeyStore);
+            sslConnector.setTruststore(sKeyStore);
+            sslConnector.setPassword(sKeyStorePswd);
+            sslConnector.setKeyPassword(sKeyStorePswd);
+            sslConnector.setTrustPassword(sKeyStorePswd);
+        }
+        
+        // Finally, register both connectors with this server object 
+        if(setupSSL) 
+            server.setConnectors(new Connector[ ] { connector, sslConnector});
+        else
+            server.setConnectors(new Connector[ ] { connector });
 		server.addConnector(connector);
 
 		// Set the default max thread number to 100 to limit
@@ -170,10 +251,27 @@ public class TrafodionRest implements Runnable, RestConstants {
 		server.setSendServerVersion(false);
 		server.setSendDateHeader(false);
 		server.setStopAtShutdown(true);
+		
+        SecurityHandler shd = null;
+        if(setupSSL) {
+            //Create the internal mechanisms to handle secure connections and redirects
+            Constraint constraint = new Constraint();
+            constraint.setDataConstraint(Constraint.DC_CONFIDENTIAL);
+
+            ConstraintMapping cm = new ConstraintMapping();
+            cm.setConstraint(constraint);
+            cm.setPathSpec("/*");
+
+            shd = new SecurityHandler();
+            shd.setConstraintMappings(new ConstraintMapping[] { cm });
+        }
 
 		Context context = new Context(server, "/", Context.SESSIONS);
 		context.addServlet(sh, "/*");
 		
+		if(setupSSL)		
+		    context.addHandler(shd);
+
 		try {
 			server.start();
 			server.join();
