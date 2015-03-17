@@ -28,7 +28,6 @@ package org.trafodion.jdbc.t2;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.lang.Integer;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
@@ -4209,7 +4208,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 			connection_ = dbMetaData.connection_;
 			outputDesc_ = outputDesc;
 			stmtId_ = stmtId;
-			fetchSize_ = 1;
+			fetchSize_ = DEFAULT_FETCH_SIZE;
 			stmt_ = null;
 
 			// update all the resultSet stmt fields w/o stmt
@@ -4328,7 +4327,8 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 
 	boolean txnStarted_;
 	boolean isAnyLob_;
-
+	protected static final int DEFAULT_FETCH_SIZE = 100;
+	
 	private static int methodId_absolute = 0;
 	private static int methodId_afterLast = 1;
 	private static int methodId_beforeFirst = 2;
