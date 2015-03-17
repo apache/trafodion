@@ -1176,6 +1176,7 @@ public:
   //  returns a const char pointer to the name of the virtual Table
   // should return a CorrName?##
   virtual const char *getVirtualTableName();  
+  static const char * getVirtualTableNameStr() { return "EXPLAIN__";}
 
   //! getArity method
   // get the degree of this node (it is a leaf op).
@@ -1291,6 +1292,7 @@ public:
   //  returns a const char pointer to the name of the Virtual Table
   // should return a CorrName?##
   virtual const char *getVirtualTableName();
+  static const char * getVirtualTableNameStr() { return "STATISTICS__";}
 
   //! getArity method
   //  get the degree of this node (it is a leaf op).

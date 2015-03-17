@@ -1128,43 +1128,52 @@ struct MDViewInfo
   const QString *viewDefnQuery;
 
   Lng32 sizeOfDefnArr;
+
+  NABoolean upgradeNeeded;
 };
  
 static const MDViewInfo allMDviewsInfo[] = {
   {
     TRAF_COLUMNS_VIEW,
     createTrafColumnsViewQuery,
-    sizeof(createTrafColumnsViewQuery)
+    sizeof(createTrafColumnsViewQuery),
+    FALSE
   },
   {
     TRAF_INDEXES_VIEW,
     createTrafIndexesViewQuery,
-    sizeof(createTrafIndexesViewQuery)
+    sizeof(createTrafIndexesViewQuery),
+    FALSE
   },
   {
     TRAF_KEYS_VIEW,
     createTrafKeysViewQuery,
-    sizeof(createTrafKeysViewQuery)
+    sizeof(createTrafKeysViewQuery),
+    FALSE
   },
   {
     TRAF_REF_CONSTRAINTS_VIEW,
     createTrafRefConstraintsViewQuery,
-    sizeof(createTrafRefConstraintsViewQuery)
+    sizeof(createTrafRefConstraintsViewQuery),
+    FALSE
   },
   {
     TRAF_SEQUENCES_VIEW,
     createTrafSequencesViewQuery,
-    sizeof(createTrafSequencesViewQuery)
+    sizeof(createTrafSequencesViewQuery),
+    FALSE
   },
   {
     TRAF_TABLES_VIEW,
     createTrafTablesViewQuery,
-    sizeof(createTrafTablesViewQuery)
+    sizeof(createTrafTablesViewQuery),
+    FALSE
   },
   {
     TRAF_VIEWS_VIEW,
     createTrafViewsViewQuery,
-    sizeof(createTrafViewsViewQuery)
+    sizeof(createTrafViewsViewQuery),
+    FALSE
   },
 
 };

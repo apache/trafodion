@@ -74,6 +74,9 @@
 #include "SqlciList_templ.h"
 #include "ComCextMisc.h"
 
+#include "ComQueue.h"
+#include "ExExeUtilCli.h"
+
 extern SqlciEnv * global_sqlci_env; // global sqlci_env for break key handling purposes.
 extern ComDiagsArea sqlci_DA;
 extern NAHeap sqlci_Heap;
@@ -698,6 +701,72 @@ short SqlCmd::showShape(SqlciEnv *sqlci_env, const char *query)
   return 0;
 }
 
+short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryId)
+{
+ Lng32 retcode = 0;
+
+  // get explain fragment.
+  Lng32 explainDataLen = 50000; // start with 50K bytes
+  Int32 retExplainLen = 0;
+  char * explainData = new char[explainDataLen + 1];
+  retcode = SQL_EXEC_GetExplainData(stmt,
+                                    explainData, explainDataLen, &retExplainLen
+                                    );
+  if (retcode == -CLI_GENCODE_BUFFER_TOO_SMALL)
+    {
+      delete explainData;
+
+      explainDataLen = retExplainLen;
+      explainData = new char[explainDataLen + 1];
+
+      SqlCmd::clearCLIDiagnostics();
+      retcode = SQL_EXEC_GetExplainData(stmt,
+                                        explainData, explainDataLen, &retExplainLen
+                                        );
+    }
+  
+  if (retcode < 0)
+    {
+      delete explainData;
+
+      return retcode;
+    }
+
+  explainDataLen = retExplainLen;
+
+  // update repository
+  ExeCliInterface cliInterface;
+  
+  SQL_EXEC_SetParserFlagsForExSqlComp_Internal(0x20000);
+
+  char * queryBuf = new char[4000];
+  str_sprintf(queryBuf, "insert into %s.\"%s\".%s (instance_id, tenant_id, host_id, exec_start_utc_ts, query_id, explain_plan) values (0,0,0, current_timestamp, '%s', cast(? as char(%d) not null))",
+              TRAFODION_SYSCAT_LIT, SEABASE_REPOS_SCHEMA, REPOS_METRIC_QUERY_TABLE,
+              queryId, explainDataLen+10);
+
+  retcode = cliInterface.executeImmediatePrepare(queryBuf);
+  if (retcode < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(&sqlci_env->diagsArea());
+      goto label_return;
+    }
+
+  retcode = cliInterface.clearExecFetchClose(explainData, explainDataLen);
+  if (retcode < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(&sqlci_env->diagsArea());
+      goto label_return;
+    }
+
+ label_return:
+  SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(0x20000);
+
+  delete explainData;
+  delete queryBuf;
+
+  return retcode;
+}
+
 short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
 			 PrepStmt * prep_stmt,
 			 char * sqlStmt,
@@ -902,7 +971,7 @@ short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
     if (*uniqueQueryIdLenPtr > 0)
       {
 	prep_stmt->uniqueQueryIdLen() = *uniqueQueryIdLenPtr;
-	
+
 	prep_stmt->uniqueQueryId() = new char[prep_stmt->uniqueQueryIdLen() + 1];
 	memcpy(prep_stmt->uniqueQueryId(), uniqueQueryIdPtr, 
 	       prep_stmt->uniqueQueryIdLen());
@@ -913,7 +982,7 @@ short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
       *prepcode = retcode;
     HandleCLIError(retcode, sqlci_env);
 
-    // if SQL_EXEC_Prepare returned a value < 0, it is an error.
+      // if SQL_EXEC_Prepare returned a value < 0, it is an error.
     // Clean up and return.
     if (retcode < 0)
     {
@@ -956,6 +1025,20 @@ short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
       &subqueryType, NULL, 0, NULL);
     HandleCLIError(retcode, sqlci_env);
     prep_stmt->setSubqueryType(subqueryType);
+
+    if ((retcode == 0) &&
+        ((prep_stmt->queryType() == SQL_SELECT_UNIQUE) || 
+         (prep_stmt->queryType() == SQL_SELECT_NON_UNIQUE) ||
+         (prep_stmt->queryType() == SQL_INSERT_UNIQUE) ||
+         (prep_stmt->queryType() == SQL_INSERT_NON_UNIQUE)) &&
+        (getenv("SQLCI_UPDATE_REPOS")))
+      {
+        retcode = updateRepos(sqlci_env, stmt, prep_stmt->uniqueQueryId());
+        if (retcode < 0)
+          {
+            return (short)SQL_Error; 
+          }
+      }
   }
   else if (isResultSet)
     prep_stmt->queryType() = SQL_SP_RESULT_SET;

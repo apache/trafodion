@@ -170,7 +170,7 @@ A       B            C
 +>                              i date not null serialized,
 +>                              j interval year to month serialized);
 
-*** ERROR[1191] SERIALIZE option is not yet supported for this datatype.
+*** ERROR[1191] SERIALIZE option is not yet supported for REAL datatype.
 
 --- SQL operation failed with errors.
 >>

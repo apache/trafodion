@@ -471,11 +471,18 @@ SQLCLI_LIB_FUNC	Lng32 SQLCLI_GetDiagnosticsCondInfo3 (
 			/*INOUT*/ Lng32 * uniqueStmtIdLen,
 			/*IN*/    ULng32 flags);
 
+   Lng32 SQLCLI_GetExplainData(
+                               /*IN*/ CliGlobals * cliGlobals,
+                               /*IN*/    SQLSTMT_ID * statement_id,
+                               /*INOUT*/ char * explain_ptr,
+                               /*IN*/    Int32 explain_len,
+                               /*INOUT*/ Int32 * ret_explain_len);
+  
    Lng32 SQLCLI_ResDescName(/*IN*/          CliGlobals * cliGlobals,
-                           /*INOUT*/       SQLDESC_ID * statement_id,
-                           /*IN OPTIONAL*/ SQLSTMT_ID * from_statement,
-          /* (SQLWHAT_DESC) *IN OPTIONAL*/       Lng32   what_desc);
-
+                            /*INOUT*/       SQLDESC_ID * statement_id,
+                            /*IN OPTIONAL*/ SQLSTMT_ID * from_statement,
+                            /* (SQLWHAT_DESC) *IN OPTIONAL*/       Lng32   what_desc);
+  
    Lng32 SQLCLI_ResStmtName(/*IN*/    CliGlobals * cliGlobals,
                            /*INOUT*/ SQLSTMT_ID * statement_id);
 

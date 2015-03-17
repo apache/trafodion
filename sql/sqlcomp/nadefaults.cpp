@@ -1362,7 +1362,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPAND_DP2_SHORT_ROWS,		"ON"),
 
- XDDui___(EXPLAIN_DESCRIPTION_COLUMN_SIZE,    "3000"),
+ XDDui___(EXPLAIN_DESCRIPTION_COLUMN_SIZE,    "-1"),
 
   DDkwd__(EXPLAIN_DETAIL_COST_FOR_CALIBRATION,  "FALSE"),
 
@@ -1375,6 +1375,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(EXPLAIN_ROOT_INPUT_VARS_MAX,           "2000"), // maximum number of inputs that we can tolerate to 
                                                           // explain information for inputVars expression
                                                           // this is needed to avoid stack overflow
+
+  DDkwd__(EXPLAIN_SPACE_OPT, 		        "ON"),
 
   DDkwd__(EXPLAIN_STRATEGIZER_PARAMETERS,  "OFF"),
   DDflte_(EX_OP_ALLOCATE_ATP,                   ".02"),
@@ -4631,8 +4633,9 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
       CmpSeabaseDDL cmpSBD((NAHeap *)heap_, FALSE);
       Lng32 hbaseErr = 0;
       NAString hbaseErrStr;
-      Lng32 errNum = cmpSBD.validateVersions(this, NULL, NULL, NULL, NULL, NULL, 
-                                             NULL, NULL, NULL,
+      Lng32 errNum = cmpSBD.validateVersions(this, NULL, NULL, NULL, 
+                                             NULL, NULL, NULL, 
+                                             NULL, NULL, NULL, NULL,
                                              &hbaseErr, &hbaseErrStr);
       if (errNum == 0) // seabase is initialized properly
         {

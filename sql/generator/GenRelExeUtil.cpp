@@ -380,10 +380,20 @@ short ExeUtilDisplayExplain::codeGen(Generator * generator)
       return -1;
     }
 
-  Lng32 colDescSize =  
-    (Lng32) CmpCommon::getDefaultNumeric(EXPLAIN_DESCRIPTION_COLUMN_SIZE);
+  ExplainFunc ef;
+  desc_struct * desc = ef.createVirtualTableDesc();
 
- Lng32 outputRowSize =  
+  desc_struct * column_desc = desc->body.table_desc.columns_desc;
+  Lng32 ij = 0;
+  while (ij < EXPLAIN_DESCRIPTION_INDEX)
+    {
+      column_desc = column_desc->header.next;
+      ij++;
+    }
+
+  Lng32 colDescSize =  column_desc->body.columns_desc.length;
+
+  Lng32 outputRowSize =  
     (Lng32) CmpCommon::getDefaultNumeric(EXPLAIN_OUTPUT_ROW_SIZE);
 
   ComTdbExeUtilDisplayExplain * exe_util_tdb = new(space) 
@@ -1416,7 +1426,8 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
   const Int32 work_atp = 1;
   const Int32 exe_util_row_atp_index = 2;
 
-  if (CmpCommon::context()->isUninitializedSeabase())
+  if ((CmpCommon::context()->isUninitializedSeabase()) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       if (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398)
         *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())

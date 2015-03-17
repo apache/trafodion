@@ -184,7 +184,11 @@ RelExpr::addExplainInfo(ComTdb * tdb,
   // upshift
   operText.toUpper();
 
-  explainTuple->init(space);
+  NABoolean doExplainSpaceOpt = FALSE;
+  if (CmpCommon::getDefault(EXPLAIN_SPACE_OPT) == DF_ON)
+    doExplainSpaceOpt = TRUE;
+  explainTuple->init(space, doExplainSpaceOpt);
+
   explainTuple->setPlanId(generator->getPlanId());
 
   explainTuple->setOperator(operText);
@@ -466,6 +470,8 @@ RelExpr::addExplainInfo(ComTdb * tdb,
 
   //finishes up the processing, used to be inside of ifndef __ignore
   addExplainPredicates(explainTuple, generator);
+
+  explainTuple->genExplainTupleData(space);
 
   return(explainTuple);
 
@@ -1785,7 +1791,8 @@ ExplainTuple * ExeUtilWnrInsert::addSpecificExplainInfo(
 }
 
 const char * ExplainFunc::getVirtualTableName()
-{ return "EXPLAIN__"; }
+//{ return "EXPLAIN__"; }
+{return getVirtualTableNameStr();}
 
 desc_struct * ExplainFunc::createVirtualTableDesc()
 {
@@ -1827,7 +1834,18 @@ desc_struct * ExplainFunc::createVirtualTableDesc()
   ComTdbVirtTableColumnInfo * vtci = ComTdbExplain::getVirtTableColumnInfo();
 
   Lng32 descLen = (Lng32) CmpCommon::getDefaultNumeric(EXPLAIN_DESCRIPTION_COLUMN_SIZE);
-  vtci[ EXPLAIN_DESCRIPTION_INDEX].length = descLen;
+  if (descLen > 0) // explicitly specified, use it
+    vtci[ EXPLAIN_DESCRIPTION_INDEX].length = descLen;
+  else if (CmpCommon::getDefault(EXPLAIN_SPACE_OPT) == DF_OFF)
+    {
+      // no space opt, use default length of 3000 for backward compatibility
+      vtci[EXPLAIN_DESCRIPTION_INDEX].length = 3000; 
+    }
+  else
+    {
+      // length will be what was specified in explain descriptor
+      // in comexe/ComTdbExplain.h
+    }
   columnDesc = Generator::createColDescs(getVirtualTableName(),
 					 vtci, //ComTdbExplain::getVirtTableColumnInfo(),
    					 colnumber,

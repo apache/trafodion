@@ -61,6 +61,8 @@
 
 #include "ComRegAPI.h"
 
+#include "ExExplain.h"
+#include "ExplainTuple.h"
 
 #include "CmpMessage.h"
 #include "ExSqlComp.h"
@@ -84,7 +86,6 @@
 #include "dtm/tm.h"
 
 #include "CmpContext.h"
-
 
 #define DISPLAY_DONE_WARNING 1032
 extern Lng32 getTotalTcbSpace(char * tdb, char * otherInfo, 
@@ -5813,7 +5814,6 @@ Lng32 SQLCLI_Prepare2(/*IN*/ CliGlobals * cliGlobals,
 		     /*IN*/    ULng32 flags)
 {
   Lng32 retcode = 0;
-  
 
   // create initial context, if first call, and add module, if any.
   retcode = CliPrologue(cliGlobals,statement_id->module);
@@ -6058,6 +6058,82 @@ Lng32 SQLCLI_Prepare2(/*IN*/ CliGlobals * cliGlobals,
       return retcode;
     }
 }
+
+Lng32 SQLCLI_GetExplainData(
+                            /*IN*/ CliGlobals * cliGlobals,
+                            /*IN*/    SQLSTMT_ID * statement_id,
+                            /*INOUT*/ char * explain_ptr,
+                            /*IN*/    Int32 explain_buf_len,
+                            /*INOUT*/ Int32 * ret_explain_len)
+{
+  Lng32 retcode = 0;
+
+  // create initial context, if first call, and add module, if any.
+  retcode = CliPrologue(cliGlobals,statement_id->module);
+  if (isERROR(retcode))
+    {
+      return retcode;
+    }
+
+  ContextCli   & currContext = *(cliGlobals->currContext());
+  ComDiagsArea & diags       = currContext.diags();
+
+  /* prepare the statement */
+  Statement * stmt = currContext.getStatement(statement_id);
+
+  /* stmt must exist */
+  if ((!stmt) || (!stmt->getRootTdb()) || (! ret_explain_len))
+    {
+      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+    }
+
+  *ret_explain_len = 0;
+ 
+  ex_root_tdb *rootTdb = stmt->getRootTdb();
+
+  Lng32 fragOffset;
+  Lng32 fragLen;
+  Lng32 topNodeOffset;
+
+  if (rootTdb->getFragDir()->getExplainFragDirEntry
+                 (fragOffset, fragLen, topNodeOffset) != 0)
+    {
+      return 0; // no explain info.
+    }
+
+  *ret_explain_len = fragLen;
+  
+  if ((! explain_ptr) || (explain_buf_len < fragLen))
+    {
+      diags << DgSqlCode(-CLI_GENCODE_BUFFER_TOO_SMALL);
+      return SQLCLI_ReturnCode(&currContext,-CLI_GENCODE_BUFFER_TOO_SMALL);
+    }
+
+  char * fragExplPtr = ((char *)rootTdb)+fragOffset;
+
+  /*
+  Space space;
+  ExplainDescPtr((ExplainDesc *)fragExplPtr).pack(&space);
+  if (space.makeContiguous(explain_ptr, fragLen) == 0)
+   {
+      diags << DgSqlCode(-CLI_GENCODE_BUFFER_TOO_SMALL);
+      return SQLCLI_ReturnCode(&currContext,-CLI_GENCODE_BUFFER_TOO_SMALL);
+    }
+  */
+
+  memcpy(explain_ptr, fragExplPtr, fragLen);
+
+  if (cliGlobals->currContext()->diags().getNumber())
+    {
+      return cliGlobals->currContext()->diags().mainSQLCODE();
+    }
+  else
+    {
+      return retcode;
+    }
+}
+
 //LCOV_EXCL_START
 Lng32 SQLCLI_ResDescName(/*IN*/           CliGlobals * cliGlobals,
 			/*INOUT*/        SQLDESC_ID * descriptor_id,

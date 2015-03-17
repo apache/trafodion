@@ -360,8 +360,9 @@ std::tr1::shared_ptr<SESSION_AGGREGATION> ResStatisticsSession::getAggrStats()
 	pAggr_info->m_ip_address_id = srvrGlobal->IpAddress;
 	pAggr_info->m_process_name = srvrGlobal->m_ProcName;
 	pAggr_info->m_sessionId = srvrGlobal->sessionId;
-	pAggr_info->m_aggregation_start_utc_ts = startTime_ts;
-	pAggr_info->m_aggregation_end_utc_ts = JULIANTIMESTAMP();
+	pAggr_info->m_session_start_utc_ts = startTime_ts;
+	pAggr_info->m_aggregation_last_update_utc_ts = JULIANTIMESTAMP();
+	pAggr_info->m_aggregation_last_elapsed_time = srvrGlobal->m_iAggrInterval * 1000;	// milliseconds
 	pAggr_info->m_user_id = srvrGlobal->userID;
 	pAggr_info->m_user_name = srvrGlobal->userSID;
 	pAggr_info->m_role_name = srvrGlobal->QSRoleName;
@@ -380,7 +381,7 @@ std::tr1::shared_ptr<SESSION_AGGREGATION> ResStatisticsSession::getAggrStats()
 	pAggr_info->m_delta_estimated_rows_used = max(double(0),sessWlStats.deltaStats.EstimatedRowsUsed);
 	pAggr_info->m_delta_rows_accessed = max(int64(0),sessWlStats.deltaStats.RowsAccessed);
 	pAggr_info->m_delta_rows_retrieved = max(int64(0),sessWlStats.deltaStats.RowsRetrieved);
-	pAggr_info->m_delta_num_rows_uid = max(int64(0),sessWlStats.deltaStats.NumRowsIUD);
+	pAggr_info->m_delta_num_rows_iud = max(int64(0),sessWlStats.deltaStats.NumRowsIUD);
 	pAggr_info->m_delta_total_selects = max(int64(0),sessWlStats.deltaStats.totalSelects);
 	pAggr_info->m_delta_total_inserts = max(int64(0),sessWlStats.deltaStats.totalInserts);
 	pAggr_info->m_delta_total_updates = max(int64(0),sessWlStats.deltaStats.totalUpdates);

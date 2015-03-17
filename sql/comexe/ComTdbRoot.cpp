@@ -547,6 +547,18 @@ void ComTdbRoot::displayContents(Space * space,ULng32 flag)
 	  str_sprintf(buf,"flags_ = %b ", getRWRSInfo()->flags_);
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
+
+      Lng32 fragOffset;
+      Lng32 fragLen;
+      Lng32 topNodeOffset;
+      if (getFragDir()->getExplainFragDirEntry
+          (fragOffset, fragLen, topNodeOffset) == 0)
+        {
+          char buf[64];
+          str_sprintf(buf, "explain_plan_size = %d", fragLen);
+	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        }
+
     }
   
   if(flag & 0x00000001)

@@ -183,7 +183,7 @@ Tom                                                 White Socks
 >>-- this set of tests run basic initialize authorization tests
 >>-- =================================================================
 >>
->>set schema privmgr_md;
+>>set schema "_PRIVMGR_MD_";
 
 --- SQL operation complete.
 >>get tables;
@@ -192,22 +192,22 @@ Tom                                                 White Socks
 >>
 >>create table t133_t1 (c1 int not null primary key, c2 int);
 
-*** ERROR[1118] Creating object TRAFODION.PRIVMGR_MD.T133_T1 is not allowed in a reserved system schema.
+*** ERROR[1118] Creating object TRAFODION."_PRIVMGR_MD_".T133_T1 is not allowed in a reserved system schema.
 
 --- SQL operation failed with errors.
 >>create view t133_v1 as select * from t133_t1;
 
-*** ERROR[4082] Object TRAFODION.PRIVMGR_MD.T133_T1 does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION."_PRIVMGR_MD_".T133_T1 does not exist or is inaccessible.
 
 --- SQL operation failed with errors.
 >>create index t133_i1 on t133_t1(c2);
 
-*** ERROR[1118] Creating object TRAFODION.PRIVMGR_MD.T133_I1 is not allowed in a reserved system schema.
+*** ERROR[1118] Creating object TRAFODION."_PRIVMGR_MD_".T133_I1 is not allowed in a reserved system schema.
 
 --- SQL operation failed with errors.
 >>create table t133_t2 like t133_t1;
 
-*** ERROR[1118] Creating object TRAFODION.PRIVMGR_MD.T133_T2 is not allowed in a reserved system schema.
+*** ERROR[1118] Creating object TRAFODION."_PRIVMGR_MD_".T133_T2 is not allowed in a reserved system schema.
 
 --- SQL operation failed with errors.
 >>
@@ -215,7 +215,7 @@ Tom                                                 White Socks
 
 --- SQL operation complete.
 >>obey TEST133(set_up);
->>set schema privmgr_md;
+>>set schema "_PRIVMGR_MD_";
 
 --- SQL operation complete.
 >>prepare get_owner_privs from
@@ -231,16 +231,16 @@ Tom                                                 White Socks
 +>     (select object_uid
 +>      from "_MD_".objects
 +>      where object_type in ('VI','BT','LB','UR')
-+>        and schema_name in ('PRIVMGR_MD', 'T133SCH'))
-+>  order by 1, 2
++>        and schema_name in ('_PRIVMGR_MD_', 'T133SCH'))
++>  order by 1, 2, 3, 4, 5
 +>;
 
 --- SQL command prepared.
 >>
 >>get tables;
 
-Tables in Schema TRAFODION.PRIVMGR_MD
-=====================================
+Tables in Schema TRAFODION._PRIVMGR_MD_
+=======================================
 
 COMPONENTS
 COMPONENT_OPERATIONS
@@ -254,11 +254,6 @@ ROLE_USAGE
 OBJECT_NAME                                                                                                                                                       TYPE  GRANTEE     PRIVILEGES_BITMAP     GRANTABLE_BITMAP
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------  ----  ----------  --------------------  --------------------
 
-TRAFODION."PRIVMGR_MD"."COMPONENTS"                                                                                                                               BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."COMPONENT_OPERAT                                                                                                                          BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."COMPONENT_PRIVIL                                                                                                                          BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."OBJECT_PRIVILEGE                                                                                                                          BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."ROLE_USAGE"                                                                                                                               BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."GAMES"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."GAMES_BY_PLAYER"                                                                                                                             VI    DB__ROOT                       1                     0
 TRAFODION."T133SCH"."HOME_TEAMS_GAMES"                                                                                                                            VI    DB__ROOT                       1                     0
@@ -267,6 +262,11 @@ TRAFODION."T133SCH"."PLAYERS_ON_TEAM"                                           
 TRAFODION."T133SCH"."STANDINGS"                                                                                                                                   BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COMPONENTS"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COMPONENT_OPER                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COMPONENT_PRIV                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."OBJECT_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."ROLE_USAGE"                                                                                                                             BT    DB__ROOT                      47                    47
 
 --- 13 row(s) selected.
 >>
@@ -282,8 +282,8 @@ TRAFODION."T133SCH"."TEAM_STATISTICS"                                           
 --- SQL operation complete.
 >>get tables;
 
-Tables in Schema TRAFODION.PRIVMGR_MD
-=====================================
+Tables in Schema TRAFODION._PRIVMGR_MD_
+=======================================
 
 COMPONENTS
 COMPONENT_OPERATIONS
@@ -321,11 +321,6 @@ ROLE_USAGE
 OBJECT_NAME                                                                                                                                                       TYPE  GRANTEE     PRIVILEGES_BITMAP     GRANTABLE_BITMAP
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------  ----  ----------  --------------------  --------------------
 
-TRAFODION."PRIVMGR_MD"."COMPONENTS"                                                                                                                               BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."COMPONENT_OPERAT                                                                                                                          BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."COMPONENT_PRIVIL                                                                                                                          BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."OBJECT_PRIVILEGE                                                                                                                          BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."ROLE_USAGE"                                                                                                                               BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."GAMES"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."GAMES_BY_PLAYER"                                                                                                                             VI    DB__ROOT                       1                     0
 TRAFODION."T133SCH"."HOME_TEAMS_GAMES"                                                                                                                            VI    DB__ROOT                       1                     0
@@ -334,6 +329,11 @@ TRAFODION."T133SCH"."PLAYERS_ON_TEAM"                                           
 TRAFODION."T133SCH"."STANDINGS"                                                                                                                                   BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COMPONENTS"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COMPONENT_OPER                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COMPONENT_PRIV                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."OBJECT_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."ROLE_USAGE"                                                                                                                             BT    DB__ROOT                      47                    47
 
 --- 13 row(s) selected.
 >>set parserflags 131072;
@@ -344,8 +344,8 @@ TRAFODION."T133SCH"."TEAM_STATISTICS"                                           
 --- SQL operation complete.
 >>get tables;
 
-Tables in Schema TRAFODION.PRIVMGR_MD
-=====================================
+Tables in Schema TRAFODION._PRIVMGR_MD_
+=======================================
 
 COMPONENTS
 COMPONENT_OPERATIONS
@@ -356,21 +356,21 @@ OBJECT_PRIVILEGES
 >>
 >>initialize authorization;
 
-*** WARNING[1022] Schema TRAFODION.PRIVMGR_MD already exists.
+*** WARNING[1022] Schema TRAFODION."_PRIVMGR_MD_" already exists.
 
-*** WARNING[1390] Object TRAFODION.PRIVMGR_MD.OBJECT_PRIVILEGES already exists in Trafodion.
+*** WARNING[1390] Object TRAFODION."_PRIVMGR_MD_".OBJECT_PRIVILEGES already exists in Trafodion.
 
-*** WARNING[1390] Object TRAFODION.PRIVMGR_MD.COMPONENTS already exists in Trafodion.
+*** WARNING[1390] Object TRAFODION."_PRIVMGR_MD_".COMPONENTS already exists in Trafodion.
 
-*** WARNING[1390] Object TRAFODION.PRIVMGR_MD.COMPONENT_OPERATIONS already exists in Trafodion.
+*** WARNING[1390] Object TRAFODION."_PRIVMGR_MD_".COMPONENT_OPERATIONS already exists in Trafodion.
 
-*** WARNING[1390] Object TRAFODION.PRIVMGR_MD.COMPONENT_PRIVILEGES already exists in Trafodion.
+*** WARNING[1390] Object TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES already exists in Trafodion.
 
 --- SQL operation complete.
 >>get tables;
 
-Tables in Schema TRAFODION.PRIVMGR_MD
-=====================================
+Tables in Schema TRAFODION._PRIVMGR_MD_
+=======================================
 
 COMPONENTS
 COMPONENT_OPERATIONS
@@ -384,10 +384,6 @@ ROLE_USAGE
 OBJECT_NAME                                                                                                                                                       TYPE  GRANTEE     PRIVILEGES_BITMAP     GRANTABLE_BITMAP
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------  ----  ----------  --------------------  --------------------
 
-TRAFODION."PRIVMGR_MD"."COMPONENTS"                                                                                                                               BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."COMPONENT_OPERAT                                                                                                                          BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."COMPONENT_PRIVIL                                                                                                                          BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."OBJECT_PRIVILEGE                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."GAMES"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."GAMES_BY_PLAYER"                                                                                                                             VI    DB__ROOT                       1                     0
 TRAFODION."T133SCH"."HOME_TEAMS_GAMES"                                                                                                                            VI    DB__ROOT                       1                     0
@@ -396,7 +392,11 @@ TRAFODION."T133SCH"."PLAYERS_ON_TEAM"                                           
 TRAFODION."T133SCH"."STANDINGS"                                                                                                                                   BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
-TRAFODION.PRIVMGR_MD.ROLE_USAGE                                                                                                                                   BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COMPONENTS"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COMPONENT_OPER                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COMPONENT_PRIV                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."OBJECT_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION._PRIVMGR_MD_.ROLE_USAGE                                                                                                                                 BT    DB__ROOT                      47                    47
 
 --- 13 row(s) selected.
 >>
@@ -405,8 +405,8 @@ TRAFODION.PRIVMGR_MD.ROLE_USAGE                                                 
 --- SQL operation complete.
 >>get tables;
 
-Tables in Schema TRAFODION.PRIVMGR_MD
-=====================================
+Tables in Schema TRAFODION._PRIVMGR_MD_
+=======================================
 
 COMPONENT_OPERATIONS
 COMPONENT_PRIVILEGES

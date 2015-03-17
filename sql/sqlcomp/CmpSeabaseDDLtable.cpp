@@ -3131,7 +3131,8 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
 
-  if (isSeabaseReservedSchema(tableName))
+  if ((isSeabaseReservedSchema(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_CREATE_TABLE_NOT_ALLOWED_IN_SMD)
                           << DgTableName(extTableName);
@@ -7291,7 +7292,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   NAString * extTableName =
     new(STMTHEAP) NAString(coName.getExternalName(TRUE));
   const NAString extNameForHbase = catName + "." + schName + "." + objName;
-  
+
   indexInfoQueue->position();
   for (int idx = 0; idx < indexInfoQueue->numEntries(); idx++)
     {
@@ -7883,7 +7884,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
   
   if (! tDesc)
     {
-      if (CmpCommon::context()->isUninitializedSeabase())
+      if ((CmpCommon::context()->isUninitializedSeabase()) &&
+          (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
         {
           if (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398)
             *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())

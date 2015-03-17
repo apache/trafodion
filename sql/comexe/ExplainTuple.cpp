@@ -119,10 +119,11 @@ ExplainTuple::ExplainTuple(ExplainTuple *leftChild,
                            ExplainTuple *rightChild,
                            ExplainDesc *explainDesc)
 : state_(NO_EXPLAIN_INFO),
-  explainTuple_(),
+  explainTupleData_(),
   descCursor_(0),
   explainDesc_(explainDesc),
   parent_(0),
+  explainTupleStr_(NULL),
   NAVersionedObject(-1)
 {
   // Eye catcher.  Helps with debugging.
@@ -141,12 +142,37 @@ ExplainTuple::ExplainTuple(ExplainTuple *leftChild,
   
   if(rightChild)
     rightChild->setParent(this);
+
+  usedRecLength_ = getRecLength();
+}
+
+short ExplainTuple::genExplainTupleData(Space * space)
+{
+  if (explainTupleStr_)
+    {
+      // find out used record size by removing unused bytes in description field.
+      Lng32 descrColSize = getColLength(EX_COL_DESCRIPT);
+      Lng32 usedRecLength = getRecLength() - (descrColSize - descCursor_);
+      setUsedRecLength(usedRecLength);
+      explainTupleData_ = space->allocateAndCopyToAlignedSpace(
+                                                               explainTupleStr_, 
+                                                               usedRecLength);
+
+      delete explainTupleStr_;
+      explainTupleStr_ = NULL;
+    } 
+  else
+    {
+      setUsedRecLength(getRecLength());
+    }
+
+  return 0;
 }
 
 // Pack this node and all it children
 Long ExplainTuple::pack(void *space)
 {
-  explainTuple_.pack(space);
+  explainTupleData_.pack(space);
 
   // Since the explainDesc is at the start of the Fragment,
   // the offset will end up being zero.  During unpack, a zero
@@ -184,7 +210,7 @@ Lng32 ExplainTuple::unpack(void * base, void * reallocator)
   if(explainDesc_.unpackShallow(base)) return -1;
   explainDesc_--;
 
-  if(explainTuple_.unpack(base)) return -1;
+  if(explainTupleData_.unpack(base)) return -1;
   return NAVersionedObject::unpack(base, reallocator);
 }
 
@@ -200,12 +226,20 @@ Lng32 ExplainTuple::unpack(void * base, void * reallocator)
 //  called during the generate phase (not at run time)
 //
 Int32
-ExplainTupleMaster::init(Space *space)
+ExplainTupleMaster::init(Space *space, NABoolean doExplainSpaceOpt)
 {
   descCursor_ = 0;
   
-  explainTuple_ = new (space) char[getRecLength()];
+  explainTupleStr_ = NULL;
+  explainTupleData_ = NULL;
 
+  // if space opt is to be done, start by allocating max length.
+  // this will be trimmed and reset in ExplainTuple::genExplainData at end.
+  if (doExplainSpaceOpt)
+    explainTupleStr_ = new char[getRecLength()];
+  else
+    explainTupleData_ = new (space) char[getRecLength()];
+  
   setModuleName("");
   setStatementName("");
   setPlanId(0);
@@ -238,7 +272,13 @@ ExplainTuple::setCol(Int32 col,
 		     UInt32 dataLength, // Used only by VarChar fields
 		     UInt32 cursor)
 {
-  if (explainTuple_) 
+  char * e = NULL;
+  if (explainTupleStr_)
+    e = explainTupleStr_;
+  else if (explainTupleData_)
+    e = explainTupleData_;
+
+  if (e)
     {
       // Get the relative position of this column in the explainTuple.
       // For varchars len is the declared varchar max length
@@ -261,7 +301,7 @@ ExplainTuple::setCol(Int32 col,
       // If the column can have NULL values...
       if (isNullable)
 	{
-          p = explainTuple_ + nullOffset;
+          p = e + nullOffset;
 	  // and if the value is non-null or something has
 	  // already been placed in this field.
 	  if (v || (cursor > 0))
@@ -313,7 +353,7 @@ ExplainTuple::setCol(Int32 col,
 	  if (bytesToCopy)
 	    {
   	      // Set the length field.
-              p = explainTuple_ + vcOffset;
+              p = e + vcOffset;
 	      Int16 actualLength = (Int16) desiredLength;
 	      *p++ = ((char *)&actualLength)[0];
 	      *p++ = ((char *)&actualLength)[1];
@@ -322,7 +362,7 @@ ExplainTuple::setCol(Int32 col,
 	}
 
       // Destination pointer is now indexed into field by cursor.
-      p = explainTuple_ + colOffset + cursor;
+      p = e + colOffset + cursor;
 
       // If field is Fixed Char. it must be pad extended to the declared size.
       // Otherwise, just copy the bytes.
@@ -352,7 +392,7 @@ ExplainTuple::setCol(Int32 col,
 	    //
 	    if ( (*(p-2)) & 0x80 ) // If non-ASCII char
 	    { 
-	       char *pSt = findStartOfChar( p-2, explainTuple_ + colOffset + 2 );
+	       char *pSt = findStartOfChar( p-2, e + colOffset + 2 );
 	       // Note: We don't care if pSt -> valid UTF8 or not.
 	       while ( p > (pSt + 2) ) *--p = '\0'; // replace char with zeroes
 	    }
@@ -405,7 +445,13 @@ Int32
 ExplainTuple::getSeqNum()
 {
   Int32 retval = 0;
-  if (explainTuple_) 
+  char * e = NULL;
+  if (explainTupleStr_)
+    e = explainTupleStr_;
+  else if (explainTupleData_)
+    e = explainTupleData_;
+    
+  if (e)
     {
       // Get the relative position of this column in the explainTuple.
       UInt32 len = (UInt32) getColLength(EX_COL_SEQNUM);
@@ -419,14 +465,14 @@ ExplainTuple::getSeqNum()
                            &nullOffset);
 
       if ((isNullable) &&
-          (*((Int16 *) ((char *)explainTuple_ + nullOffset)) != 0))
+          (*((Int16 *) ((char *)e + nullOffset)) != 0))
         {
           // the NULL flag is set, return a -1 in this case
           return -1;
         }
 
       // Get pointer to seqnum and cast it to an Int32
-      Int32 *r = ((Int32 *) ((char *)explainTuple_ + colOffset));
+      Int32 *r = ((Int32 *) ((char *)e + colOffset));
       retval = *r;
     }
   return retval;

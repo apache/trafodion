@@ -5123,7 +5123,8 @@ void TableValuedFunction::deleteVirtualTableDesc(desc_struct *vtd)
 // StatisticsFunc methods
 // -----------------------------------------------------------------------
 const char * StatisticsFunc::getVirtualTableName()
-{ return "STATISTICS__"; }
+//{ return "STATISTICS__"; }
+{return getVirtualTableNameStr();}
 
 desc_struct *StatisticsFunc::createVirtualTableDesc()
 {

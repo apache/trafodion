@@ -175,7 +175,13 @@ public:
 		       ex_cri_desc *criDescParams,
 		       Lng32 lengthModName,
 		       Lng32 lengthStmtPattern);
+
   void setQid(char *qid, Lng32 len);
+  void setReposQid(char *reposQid, Lng32 len);
+
+  void setExplainAddr(char *addr, Lng32 len);
+  void setExplainAddr(Int64 addr);
+  void setExplainStmt(char *stmt, Lng32 len);
 
   RtsExplainFrag *sendToSsmp();
 
@@ -219,6 +225,9 @@ private:
   // When no more matches exist, NULL is returned.
   ExplainDesc *getNextExplainTree();
 
+  // explain data is at explainFragAddr. Unpack it and return
+  ExplainDesc * getNextExplainTree(Int64 explainFragAddr);
+
   // Method used to  traverse the Explain tree.  Enough state must be kept
   // in the TCB so that if necessary the routine can return and later be
   // restarted where it left off.  The routine will return if the traversal
@@ -242,6 +251,10 @@ private:
 
   Int32 loadModule();
   
+  short processExplainStmt();
+
+  short getExplainFromRepos(char * qid, Lng32 qidLen);
+
   // private state
 
   // Queues used to communicate with the parent TCB.
@@ -325,8 +338,20 @@ private:
 
   // The current state of the work procedure.
   explain_work_state workState_;
+
   // Contains the queryId, if stmtPattern_ starts with QID=
   char *qid_;
+
+  // query id of explain information that will be read from repository.
+  char * reposQid_;
+
+  Int64 explainAddr_;
+  NABoolean explainFromAddrProcessed_;
+
+  char * explainStmt_;
+  char * explainFrag_;
+  Lng32 explainFragLen_;
+  
   ComDiagsArea * diagsArea_;
   Lng32 retryAttempts_;
   char *stmtName_;

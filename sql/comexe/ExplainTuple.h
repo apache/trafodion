@@ -294,6 +294,8 @@ public:
   Long pack(void *);
   Lng32 unpack(void *, void * reallocator);
 
+  short genExplainTupleData(Space * space);
+
   // Copy the data pointed to by value to the specified col of the
   // explain tuple.
   void setCol(Int32 col,
@@ -343,6 +345,9 @@ public:
   inline short getColNullFlag(Int32 col);
   inline Lng32 getColDataType(Int32 col);
   
+  Int32 getUsedRecLength() { return usedRecLength_; }
+  void setUsedRecLength(Int32 v) { usedRecLength_ = v;}
+
 protected:
   // Used for debugging and self checks.
   char eyeCatcher_[4];                                      // 00-03
@@ -358,7 +363,7 @@ protected:
   Int32 fillersExplainTuple2_;                              // 12-15
 
   // A pointer to the data.
-  NABasicPtr explainTuple_;                                 // 16-23
+  NABasicPtr explainTupleData_;                                 // 16-23
 
   // A pointer back to the root of the explain tree.
   ExplainDescPtr explainDesc_;                              // 24-31
@@ -369,7 +374,12 @@ protected:
   // Pointers to the children nodes.
   ExplainTuplePtr children_[MAX_REL_ARITYS];                // 40-55
 
-  char fillersExplainTuple_[40];                            // 56-95
+  char * explainTupleStr_;
+
+  // Number of actual bytes of data in explainTuple.
+  Int32 usedRecLength_;                             
+
+  char fillersExplainTuple_[36];                            // 56-95
 };
 
 // Inline routines for ExplainTuple.
@@ -407,7 +417,7 @@ ExplainTuple::getParent()
 inline char *
 ExplainTuple::getExplainTuple()
 {
-  return explainTuple_;
+  return explainTupleData_;
 };
 
 inline ExplainDesc *

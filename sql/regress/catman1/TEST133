@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@
 --   authorized - runs authorization tests
 -- ============================================================================
 
-cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd metadata_cache_size '0';
+cqd QUERY_CACHE '0';
 obey TEST133(clean_up);
 register user sql_user4;
 log LOG133 clear;
@@ -44,7 +45,7 @@ obey TEST133(clean_up);
 exit;
 
 ?section clean_up
-set schema privmgr_md;
+set schema "_PRIVMGR_MD_";
 drop sequence t133sch.team_number_sequence;
 -- drop database
 drop schema t133sch cascade;
@@ -173,7 +174,7 @@ create volatile table home_games as
 create sequence team_number_sequence;
 
 ?section set_up
-set schema privmgr_md;
+set schema "_PRIVMGR_MD_";
 prepare get_owner_privs from
 select distinct
    substring (object_name,1,40) as object_name,
@@ -187,8 +188,8 @@ where grantor_id = -2
      (select object_uid
       from "_MD_".objects
       where object_type in ('VI','BT','LB','UR')
-        and schema_name in ('PRIVMGR_MD', 'T133SCH'))
-  order by 1, 2
+        and schema_name in ('_PRIVMGR_MD_', 'T133SCH'))
+  order by 1, 2, 3, 4, 5
 ;
 
 ?section tests
@@ -196,7 +197,7 @@ where grantor_id = -2
 -- this set of tests run basic initialize authorization tests
 -- =================================================================
 
-set schema privmgr_md;
+set schema "_PRIVMGR_MD_";
 get tables;
 
 create table t133_t1 (c1 int not null primary key, c2 int);
@@ -232,7 +233,7 @@ initialize authorization, drop;
 get tables;
 
 ?section authorized
-set schema privmgr_md;
+set schema "_PRIVMGR_MD_";
 log LOG133;
 initialize authorization;
 initialize authorization, drop;

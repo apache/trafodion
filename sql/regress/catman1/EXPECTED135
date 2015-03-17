@@ -17,10 +17,10 @@
 >>initialize authorization;
 
 --- SQL operation complete.
->>get tables in schema privmgr_md;
+>>get tables in schema "_PRIVMGR_MD_";
 
-Tables in Schema TRAFODION.PRIVMGR_MD
-=====================================
+Tables in Schema TRAFODION._PRIVMGR_MD_
+=======================================
 
 COMPONENTS
 COMPONENT_OPERATIONS
@@ -33,7 +33,7 @@ ROLE_USAGE
 >>-- Prepare metadata queries
 >>prepare check_privs from 
 +>select object_name, grantee_name, grantor_name 
-+>from privmgr_md.object_privileges
++>from "_PRIVMGR_MD_".object_privileges
 +>where 
 +>  object_name in ('TRAFODION.T135SCH.T135_T1', 'TRAFODION.T135SCH.T135_T2', 'TRAFODION.T135SCH.T135_V1', 'TRAFODION.T135SCH.T135_V2', 'TRAFODION.T135SCH.T135_L1', 'TRAFODION.T135SCH.T135_L2', 'TRAFODION.T135SCH.T135_SESSIONIZE', 'TRAFODION.T135SCH.T135_ADD2')
 +>for read uncommitted access;

@@ -84,4 +84,24 @@
 
 #include "ComCextdecs.h"
 
+// get software major and minor versions from -D defs defined in sqlcomp/Makefile.
+// These defs pick up values from export vars defined in sqf/sqenvcom.sh.
+#define SOFTWARE_MAJOR_VERSION TRAF_SOFTWARE_VERS_MAJOR
+#define SOFTWARE_MINOR_VERSION TRAF_SOFTWARE_VERS_MINOR
+#define SOFTWARE_UPDATE_VERSION TRAF_SOFTWARE_VERS_UPDATE
+#define HBASE_OPTIONS_MAX_LENGTH 6000
+
+// new metadata version 1.1.0 changed for release 1.1.0.
+// Old metadata version 3.0.
+enum { 
+  METADATA_MAJOR_VERSION = 1,
+  METADATA_OLD_MAJOR_VERSION = 3,
+  METADATA_MINOR_VERSION = 1,
+  METADATA_UPDATE_VERSION = 0,
+  METADATA_OLD_MINOR_VERSION = 0,
+  METADATA_OLD_UPDATE_VERSION = 0,
+  DATAFORMAT_MAJOR_VERSION = 1,
+  DATAFORMAT_MINOR_VERSION = 1
+};
+
 #endif

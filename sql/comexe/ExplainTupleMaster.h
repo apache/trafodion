@@ -47,8 +47,7 @@ public:
 			    ExplainDesc *explainDesc);
   ~ExplainTupleMaster(){};
   
-  Int32 init(Space *space);
-
+  Int32 init(Space *space, NABoolean doExplainSpaceOpt);
   void setPlanId(Int64 planId);
   void setOperator(const char * op);
   void setTableName(const char *tabName);

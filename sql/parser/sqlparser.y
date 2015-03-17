@@ -16068,13 +16068,13 @@ exe_util_display_explain: explain_starting_tokens TOK_PROCEDURE '(' QUOTED_STRIN
 		 
                  $$ = eue;
 	       }
-exe_util_display_explain: explain_starting_tokens TOK_FOR TOK_QID qid_identifier
+exe_util_display_explain: explain_starting_tokens TOK_QID qid_identifier TOK_FROM TOK_RMS
               {
                 char * tmpString = 
-			  new (PARSERHEAP()) char[$4->length() + 5];
+			  new (PARSERHEAP()) char[$3->length() + 5];
 	        strcpy(tmpString, "QID=");
-	        strncpy(tmpString+4, $4->data(), $4->length());
-	        tmpString[$4->length()+4] = '\0';
+	        strncpy(tmpString+4, $3->data(), $3->length());
+	        tmpString[$3->length()+4] = '\0';
                 ExeUtilDisplayExplain * eue = 
 		   new (PARSERHEAP ()) ExeUtilDisplayExplain
 		   (ExeUtilExpr::DISPLAY_EXPLAIN_,
@@ -16088,6 +16088,28 @@ exe_util_display_explain: explain_starting_tokens TOK_FOR TOK_QID qid_identifier
 		 
 		 // xn will be started, if needed, when the exeutilstmt stmt
 		 // is processed.
+		 eue->xnNeeded() = FALSE;
+		 
+                 $$ = eue;
+              }
+exe_util_display_explain: explain_starting_tokens TOK_QID qid_identifier 
+              {
+                Int32 prefixLen = strlen("EXPLAIN_QID=");
+                char * tmpString = 
+			  new (PARSERHEAP()) char[$3->length() + prefixLen + 1];
+	        strcpy(tmpString, "EXPLAIN_QID=");
+	        strncpy(tmpString+prefixLen, $3->data(), $3->length());
+	        tmpString[$3->length()+prefixLen] = '\0';
+                ExeUtilDisplayExplain * eue = 
+		   new (PARSERHEAP ()) ExeUtilDisplayExplain
+		   (ExeUtilExpr::DISPLAY_EXPLAIN_,
+		    (char*)NULL, CharInfo::UnknownCharSet,
+		    NULL,
+		    tmpString,
+		    ($1 ? (char*)$1->data() : NULL),
+		    NULL,
+		    PARSERHEAP());
+
 		 eue->xnNeeded() = FALSE;
 		 
                  $$ = eue;

@@ -118,6 +118,8 @@ ExeCliInterface::ExeCliInterface(CollHeap * heap, Int32 isoMapping,
        parentQid_(parentQid),
        inputAttrs_(NULL),
        outputAttrs_(NULL),
+       explainData_(NULL),
+       explainDataLen_(0),
        flags_(0)
 {
 }
@@ -589,6 +591,54 @@ Lng32 ExeCliInterface::prepare(const char * stmtStr,
   return 0;
 }
 
+Lng32 ExeCliInterface::setupExplainData(SQLMODULE_ID * module,
+                                        SQLSTMT_ID * stmt)
+{
+  Lng32 retcode = 0;
+
+  if (explainData_)
+    NADELETEBASIC(explainData_, getHeap());
+
+  explainData_ = NULL;
+  explainDataLen_ = 0;
+
+  // get explain fragment.
+  explainDataLen_ = 50000; // start with 50K bytes
+  Int32 retExplainLen = 0;
+  explainData_ = new(getHeap()) char[explainDataLen_ + 1];
+  retcode = SQL_EXEC_GetExplainData(stmt,
+                                    explainData_, explainDataLen_, &retExplainLen
+                                    );
+  if (retcode == -CLI_GENCODE_BUFFER_TOO_SMALL)
+    {
+      NADELETEBASIC(explainData_, getHeap());
+
+      explainDataLen_ = retExplainLen;
+      explainData_ = new(getHeap()) char[explainDataLen_ + 1];
+
+      retcode = SQL_EXEC_GetExplainData(stmt,
+                                        explainData_, explainDataLen_, &retExplainLen
+                                        );
+    }
+  
+  if (retcode != SUCCESS)
+    {
+      NADELETEBASIC(explainData_, getHeap());
+      explainData_ = NULL;
+      explainDataLen_ = 0;
+
+      return retcode;
+    }
+  
+  return retcode;
+}
+
+Lng32 ExeCliInterface::setupExplainData()
+{
+  return setupExplainData(module_, stmt_);
+}
+
+
 Lng32 ExeCliInterface::exec(char * inputBuf, Lng32 inputBufLen)
 {
   Lng32 retcode = 0;
@@ -610,8 +660,8 @@ Lng32 ExeCliInterface::exec(char * inputBuf, Lng32 inputBufLen)
 	}
     }
 
-  if ((inputBuf) && (inputBuf_) && (inputDatalen_ > 0))
-    memcpy(inputBuf_, inputBuf, inputDatalen_);
+  if ((inputBuf) && (inputBuf_) && (inputDatalen_ > 0) && (inputBufLen > 0))
+    memcpy(inputBuf_, inputBuf, MINOF(inputDatalen_, inputBufLen));
 
   retcode = SQL_EXEC_Exec(stmt_, input_desc_, 0);
 
@@ -1223,10 +1273,7 @@ short ExeCliInterface::clearExecFetchClose(char * inputBuf,
 
   SQL_EXEC_ClearDiagnostics(NULL);
 
-  if (inputBuf)
-    str_cpy_all(inputBuf_, inputBuf, inputDatalen_);
-
-  retcode = exec(inputBuf_,inputDatalen_);
+  retcode = exec(inputBuf, inputBufLen);
   if (retcode < 0)
     {
       return (short)retcode;

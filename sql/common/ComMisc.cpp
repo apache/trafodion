@@ -54,8 +54,30 @@
 // Define both
 #define ComDefXLateFuncs(L2E,E2L,eType,array) ComDefXLateL2E(L2E,eType,array);ComDefXLateE2L(E2L,eType,array)
 
-// -----------------------------------------------------------------------
-// ComUudfParamKind translation
-// -----------------------------------------------------------------------
+// systemCatalog: if passed in, is the name of traf system catalog. 
+//                         default is TRAFODION.
+NABoolean ComIsTrafodionReservedSchema(
+                                    const NAString &systemCatalog,
+                                    const NAString &catName,
+                                    const NAString &schName)
+{
+  if (catName.isNull())
+    return FALSE;
 
+  NAString trafSysCat;
+
+  if (NOT systemCatalog.isNull())
+    trafSysCat = systemCatalog;
+  else
+    trafSysCat = TRAFODION_SYSCAT_LIT;
+
+  if ((catName == trafSysCat) &&
+      ((schName == SEABASE_MD_SCHEMA) ||
+       (schName == SEABASE_DTM_SCHEMA) ||
+       (schName == SEABASE_PRIVMGR_SCHEMA) ||
+       (schName == SEABASE_REPOS_SCHEMA) ))
+    return TRUE;  
+
+  return FALSE;
+}
 

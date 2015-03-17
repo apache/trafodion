@@ -197,7 +197,7 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 // *****************************************************************************
 // *                                                                           *
 // * Function: PrivMgrComponentPrivileges::describeComponentPrivileges         *
-// *  lookup "PRIVMGR_MD".COMPONENT_PRIVILEGES joined with "_MD_".AUTHS        *
+// *  lookup "_PRIVMGR_MD_".COMPONENT_PRIVILEGES joined with "_MD_".AUTHS        *
 // *  to generate GRANT COMPONENT PRIVILEGE statements                         *
 // *  for a specified operation code and component name/UID.                   *
 // *                                                                           *
@@ -247,7 +247,7 @@ CP.COMPONENT_UID,
 CP.OPERATION_CODE,
 CP.GRANT_DEPTH
 FROM 
-TRAFODION."PRIVMGR_MD".COMPONENT_PRIVILEGES CP 
+TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES CP 
 LEFT JOIN 
 TRAFODION."_MD_".AUTHS AU
 ON
@@ -266,7 +266,7 @@ CP.COMPONENT_UID = componentUIDString;
                         "CP.OPERATION_CODE, "
                         "CP.GRANT_DEPTH "
                        "FROM " 
-                        "TRAFODION.\"PRIVMGR_MD\".COMPONENT_PRIVILEGES CP "
+                        "TRAFODION.\"_PRIVMGR_MD_\".COMPONENT_PRIVILEGES CP "
                        "LEFT JOIN " 
                         "TRAFODION.\"_MD_\".AUTHS AU "
                        "ON "

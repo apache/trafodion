@@ -209,13 +209,15 @@ short ExExeUtilDisplayExplainTcb::work()
 	case EMPTY_:
 	  {
 	    if (exeUtilTdb().getStmtName())
-	      pstate.step_ = SETUP_EXPLAIN_;
-	    else
-	      pstate.step_ = PREPARE_;
-	  }
-	break;
-	
-	case PREPARE_:
+              {
+                pstate.step_ = SETUP_EXPLAIN_;
+              }
+            else
+              pstate.step_ = PREPARE_;
+          }
+          break;
+          
+        case PREPARE_:
 	  {
 	    // if generate_explain is to OFF, issue CQD to turn it on.
 	    // first, hold the current default value for generate_explain.
@@ -319,9 +321,9 @@ short ExExeUtilDisplayExplainTcb::work()
 	      strcpy(explArg1, "NULL");
 	    
 	    strcpy(explArg2, "_iso88591'");
-	    if (exeUtilTdb().getStmtName())
+            if (exeUtilTdb().getStmtName())
 	      strcat(explArg2, exeUtilTdb().getStmtName());
-	    else
+            else
 	      strcat(explArg2, "__EXPL_STMT_NAME__");
 	    strcat(explArg2, "'");
 	    

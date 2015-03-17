@@ -1769,6 +1769,12 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetPfsSize(
 		/*OUT*/ Int32 *pfsCurUse,
                 /*OUT*/ Int32 *pfsMaxUse);
 
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetExplainData(
+                                              /*IN*/    SQLSTMT_ID * statement_id,
+                                              /*INOUT*/ char * explain_ptr,
+                                              /*IN*/    Int32 explain_len,
+                                              /*INOUT*/ Int32 * ret_explain_len);
+
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_CleanUpPfsResources();
 
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_Prepare(
