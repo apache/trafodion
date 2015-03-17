@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1239,6 +1239,7 @@ void CProcess::setEnvFromRegistry ( char **envp, int &countEnv )
 
 bool CProcess::Create (CProcess *parent, int & result)
 {
+    bool monAltLogEnabled = false;
     bool seamonsterEnabled = false;
     bool shellTrace = false;
     bool successful = false;
@@ -1405,6 +1406,10 @@ bool CProcess::Create (CProcess *parent, int & result)
            wdtDumpMonitor = true;
     }
 
+    env = getenv( "SQ_MON_ALTLOG" );
+    if (env && strcmp( env, "1" ) == 0)
+       monAltLogEnabled = true;
+
     env = getenv( "SQ_SEAMONSTER" );
     if (env && strcmp( env, "1" ) == 0)
        seamonsterEnabled = true;
@@ -1545,6 +1550,17 @@ bool CProcess::Create (CProcess *parent, int & result)
         if ( wdtDumpMonitor )
         {
             setEnvStr ( childEnv, nextEnv, "SQ_WDT_DUMP_MONITOR=1" );
+        }
+        if ( monAltLogEnabled )
+        {
+            setEnvStr ( childEnv, nextEnv, "SQ_MON_ALTLOG=1" );
+        }
+    }
+    if ( Type == ProcessType_PSD || Type == ProcessType_SMS )
+    {
+        if ( monAltLogEnabled )
+        {
+            setEnvStr ( childEnv, nextEnv, "SQ_MON_ALTLOG=1" );
         }
     }
     if ( seamonsterEnabled )

@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ void genSnmpTrap ( const char *event )
        trace_printf( "%s@%d - snmptrap(%d): %s\n"
                    , method_name, __LINE__, genSnmpTrapEnabled, event);
 
-    snmp_log_write( MON_GEN_SNMP_TRAP, event );
+    snmp_log_write( MON_GEN_SNMP_TRAP, (char *)event );
 
     if ( genSnmpTrapEnabled )
     {

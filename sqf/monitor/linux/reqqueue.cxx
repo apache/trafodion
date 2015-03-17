@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2312,7 +2312,7 @@ void CQuiesceReq::performRequest()
 
     char buf[MON_STRING_BUF_SIZE];
     sprintf(buf, "[%s], Quiesce notices sent.\n", method_name);
-    mon_log_write(MON_REQQUEUE_QUIESCE_1, SQ_LOG_ERR, buf);
+    mon_log_write(MON_REQQUEUE_QUIESCE_1, SQ_LOG_WARNING, buf);
 
     // if nothing in exit list, schedule a node down. 
     // if not, node down will be scheduled when exit list becomes empty.

@@ -501,7 +501,7 @@ void CNode::CheckShutdownProcessing( void )
            trace_printf("%s@%d" " - Broadcasting shutdown notice, level=" "%d" "\n", method_name, __LINE__, shutdownLevel_);
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "Broadcasting shutdown notice, level = %d\n", shutdownLevel_);
-        mon_log_write(MON_NODE_SHUTDOWN_1, SQ_LOG_ERR, buf);
+        mon_log_write(MON_NODE_SHUTDOWN_1, SQ_LOG_WARNING, buf);
         Bcast (msg);
         delete msg;
     }
@@ -1092,35 +1092,35 @@ void CNode::SetAffinity( CProcess *process )
 
 void CNode::StartWatchdogProcess( void )
 {
+    const char method_name[] = "CNode::StartWatchdogProcess";
+    TRACE_ENTRY;
+
     char path[MAX_SEARCH_PATH];
     char *ldpath = NULL; // = getenv("LD_LIBRARY_PATH");
     char filename[MAX_PROCESS_PATH];
     char name[MAX_PROCESS_NAME];
-    char persistZonesKey[MAX_PROCESS_NAME] = {"PERSIST_ZONES"};
-    char persistZones[MAX_PROCESS_NAME];
-    char persistRetriesKey[MAX_PROCESS_NAME] = {"PERSIST_RETRIES"};
-    char la_buf[MON_STRING_BUF_SIZE];
+    char stdout[MAX_PROCESS_PATH];
     CProcess * watchdogProcess;
     CConfigGroup *group;
     
-    sprintf( name, "$WDT%03d", MyNode->GetZone() );
+    snprintf( name, sizeof(name), "$WDG%03d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "stdout_WDG%03d", MyNode->GetZone() );
+
     group = Config->GetGroup( name );
     if (group==NULL)
     {
+        char persistZones[MAX_VALUE_SIZE];
         sprintf( persistZones, "%d", MyPNID);
         // Add the watchdog persistence configuration
         group = Config->AddGroup( name, ConfigType_Process );
-        group->Set( persistZonesKey , persistZones );
-        group->Set( persistRetriesKey , (char *)"10,60" );
+        group->Set( (char *) "PERSIST_ZONES" , persistZones );
+        group->Set( (char *) "PERSIST_RETRIES", (char *)"10,60" );
     }
     // The following variables are used to retrieve the proper startup and keepalive environment variable
     // values, and to use as arguments for the lower level ioctl calls that interface with the watchdog 
     // timer package.
 
     char *WDT_KeepAliveTimerValueC;
-
-    const char method_name[] = "CNode::StartWatchdogProcess";
-    TRACE_ENTRY;
 
     // If the SQ_WDT_KEEPALIVETIMERVALUE are not defined in this case,
     // we will use the default values defined above.
@@ -1163,7 +1163,7 @@ void CNode::StartWatchdogProcess( void )
                                       ldpathStrId,
                                       programStrId,
                                       (char *) "", //infile,
-                                      (char *) "", //outfile,
+                                      stdout, //outfile,
                                       result
                                       );
     if ( watchdogProcess  )
@@ -1175,6 +1175,7 @@ void CNode::StartWatchdogProcess( void )
     }
     else
     {
+        char la_buf[MON_STRING_BUF_SIZE];
         sprintf(la_buf, "[CNode::StartWatchdogProcess], Watchdog Process creation failed. Timer disabled\n");
         mon_log_write( MON_NODE_STARTWATCHDOG_1, SQ_LOG_ERR, la_buf );
     }
@@ -1201,9 +1202,9 @@ void CNode::StartPStartDProcess( void )
     group = Config->GetGroup( name );
     if (group==NULL)
     {
-        char persistZones[MAX_PROCESS_NAME];
+        char persistZones[MAX_VALUE_SIZE];
         sprintf( persistZones, "%d", MyPNID);
-        // Add the watchdog persistence configuration
+        // Add the pstartd persistence configuration
         group = Config->AddGroup( name, ConfigType_Process );
         group->Set( (char *) "PERSIST_ZONES" , persistZones );
         group->Set( (char *) "PERSIST_RETRIES", (char *)"10,60" );
@@ -1390,9 +1391,9 @@ void CNode::StartSMServiceProcess( void )
     group = Config->GetGroup( name );
     if (group==NULL)
     {
-        char persistZones[MAX_PROCESS_NAME];
+        char persistZones[MAX_VALUE_SIZE];
         sprintf( persistZones, "%d", MyPNID);
-        // Add the watchdog persistence configuration
+        // Add the smservice persistence configuration
         group = Config->AddGroup( name, ConfigType_Process );
         group->Set( (char *) "PERSIST_ZONES" , persistZones );
         group->Set( (char *) "PERSIST_RETRIES", (char *)"2,30" );

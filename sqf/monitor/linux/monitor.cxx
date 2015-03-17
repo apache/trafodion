@@ -801,8 +801,8 @@ int main (int argc, char *argv[])
 
     const char method_name[] = "main";
 
-    MonLog = new CMonLog( "mon" );
-    SnmpLog = new CMonLog( "snmp.mon" );
+    MonLog = new CMonLog( "log4cpp.monitor.mon.config", "MON", "alt.mon", -1, -1, getpid(), "$MONITOR" );
+    SnmpLog = new CMonLog( "log4cpp.monitor.mon.snmp.config", "MON-SNMP", "alt.mon.snmp", -1, -1, getpid(), "$MONITOR" );
 
     MonLog->setupInMemoryLog();
 
@@ -920,6 +920,9 @@ int main (int argc, char *argv[])
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
     MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyPNID);
+    MonLog->setPNid( MyPNID );
+    SnmpLog->setPNid( MyPNID );
+
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
 
 #ifdef MULTI_TRACE_FILES

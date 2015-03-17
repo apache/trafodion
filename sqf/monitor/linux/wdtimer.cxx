@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -159,7 +159,7 @@ void CWdTimer::ResetWatchdogTimer( void )
                 char la_buf[MON_STRING_BUF_SIZE];
                 int err = errno;
                 sprintf(la_buf, "[CWdTimer::ResetWatchdogTimer], Keep alive failed. (Error: %s)\n", strerror(err));
-                wdt_log_write(MON_WDTIMER_RESET_WATCHTIMER, SQ_LOG_ERR, la_buf);
+                monproc_log_write(MON_WDTIMER_RESET_WATCHTIMER, SQ_LOG_ERR, la_buf);
                 abort();
             }
             gettimeofday(&wdTimerStart_, NULL);
@@ -190,7 +190,7 @@ void CWdTimer::RestoreWatchdogTimer( void )
         {
             err = errno;
             sprintf(la_buf, "[CWdTimer::RestoreWatchdogTimer], Set timeout failed. (Error: %s)\n", strerror(err));
-            wdt_log_write(MON_WDTIMER_RESTORE_WATCHTIMER_1, SQ_LOG_ERR, la_buf);
+            monproc_log_write(MON_WDTIMER_RESTORE_WATCHTIMER_1, SQ_LOG_ERR, la_buf);
             abort();
         }
 
@@ -198,7 +198,7 @@ void CWdTimer::RestoreWatchdogTimer( void )
         {
             err = errno;
             sprintf(la_buf, "[CWdTimer::RestoreWatchdogTimer], Keep alive failed. (Error: %s)\n", strerror(err));
-            wdt_log_write(MON_WDTIMER_RESTORE_WATCHTIMER_2, SQ_LOG_ERR, la_buf);
+            monproc_log_write(MON_WDTIMER_RESTORE_WATCHTIMER_2, SQ_LOG_ERR, la_buf);
             abort();
         }
         if (trace_settings & TRACE_INIT)
@@ -241,7 +241,7 @@ void CWdTimer::SetWatchdogTimerMin( void )
             {
                 err = errno;
                 sprintf(la_buf, "[CWdTimer::SetWatchdogTimerMin], Set timeout failed. (Error: %s)\n", strerror(err));
-                wdt_log_write(MON_WDTIMER_SETMIN_WATCHTIMER_1, SQ_LOG_ERR, la_buf);
+                monproc_log_write(MON_WDTIMER_SETMIN_WATCHTIMER_1, SQ_LOG_ERR, la_buf);
                 abort();
             }
 
@@ -249,7 +249,7 @@ void CWdTimer::SetWatchdogTimerMin( void )
             {
                 err = errno;
                 sprintf(la_buf, "[CWdTimer::SetWatchdogTimerMin], Keep alive failed. (Error: %s)\n", strerror(err));
-                wdt_log_write(MON_WDTIMER_SETMIN_WATCHTIMER_2, SQ_LOG_ERR, la_buf);
+                monproc_log_write(MON_WDTIMER_SETMIN_WATCHTIMER_2, SQ_LOG_ERR, la_buf);
                 abort();
             }
 
@@ -347,7 +347,7 @@ void CWdTimer::StartWatchdogTimer( void )
         {
             err = errno;
             sprintf(la_buf, "[CWdTimer::StartWatchdogTimer], Open watchdog failed. Timer disabled (Error: %s)\n", strerror(err));
-            wdt_log_write(MON_WDTIMER_START_WATCHTIMER_1, SQ_LOG_ERR, la_buf);
+            monproc_log_write(MON_WDTIMER_START_WATCHTIMER_1, SQ_LOG_ERR, la_buf);
             watchdog_ = false;
         }
         
@@ -372,7 +372,7 @@ void CWdTimer::StartWatchdogTimer( void )
             {
                 err = errno;
                 sprintf(la_buf, "[CWdTimer::StartWatchdogTimer], Set timeout failed. (Error: %s)\n", strerror(err));
-                wdt_log_write(MON_WDTIMER_START_WATCHTIMER_2, SQ_LOG_ERR, la_buf);
+                monproc_log_write(MON_WDTIMER_START_WATCHTIMER_2, SQ_LOG_ERR, la_buf);
                 abort();
             }
 
@@ -380,7 +380,7 @@ void CWdTimer::StartWatchdogTimer( void )
             {
                 err = errno;
                 sprintf(la_buf, "[CWdTimer::StartWatchdogTimer], Keep alive failed. (Error: %s)\n", strerror(err));
-                wdt_log_write(MON_WDTIMER_START_WATCHTIMER_3, SQ_LOG_ERR, la_buf);
+                monproc_log_write(MON_WDTIMER_START_WATCHTIMER_3, SQ_LOG_ERR, la_buf);
                 abort();
             }
 
@@ -389,7 +389,7 @@ void CWdTimer::StartWatchdogTimer( void )
             {
                 err = errno;
                 sprintf(la_buf, "[CWdTimer::StartWatchdogTimer], Set Timeout failed. (Error: %s)\n", strerror(err));
-                wdt_log_write(MON_WDTIMER_START_WATCHTIMER_4, SQ_LOG_ERR, la_buf);
+                monproc_log_write(MON_WDTIMER_START_WATCHTIMER_4, SQ_LOG_ERR, la_buf);
                 abort();
             }
             else

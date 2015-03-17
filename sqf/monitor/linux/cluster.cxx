@@ -761,7 +761,7 @@ void CCluster::MarkDown (int pnid, bool communicate_state)
         snprintf(buf, sizeof(buf),
                  "[CCluster::MarkDown], Node %s (%d) is going down.\n",
                  node->GetName(), node->GetPNid());
-        mon_log_write(MON_CLUSTER_MARKDOWN_2, SQ_LOG_ERR, buf); 
+        mon_log_write(MON_CLUSTER_MARKDOWN_2, SQ_LOG_CRIT, buf);
 
         node->SetKillingNode( true ); 
         
