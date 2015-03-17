@@ -115,7 +115,7 @@ for read uncommitted access;
 prepare get_components from
 select substring (component_name,1,20) as component,
        substring (component_description,1,30) as description
-from trafodion.privmgr_md.components
+from trafodion."_PRIVMGR_MD_".components
 where component_name like 'LIBRARY%'
 order by 1
 for read uncommitted access;
@@ -124,8 +124,8 @@ prepare get_component_operations from
 select substring (c.component_name,1,20) as component,
        substring (o.operation_name,1,20) as operation_name,
        substring (o.operation_code,1,2) as operation_code
-from trafodion.privmgr_md.component_operations o,
-     trafodion.privmgr_md.components c 
+from trafodion."_PRIVMGR_MD_".component_operations o,
+     trafodion."_PRIVMGR_MD_".components c 
 where (component_name like 'LIBRARY%' and 
        c.component_uid = o.component_uid)
 order by 1,2, 3
@@ -136,9 +136,9 @@ select substring (component_name,1,20) as component,
        substring (operation_name,1,20) as operation_name,
        substring (grantee_name,1,20) as grantee_name,
        grant_depth as grant_depth
-from trafodion.privmgr_md.components c,
-     trafodion.privmgr_md.component_operations p,
-     trafodion.privmgr_md.component_privileges d
+from trafodion."_PRIVMGR_MD_".components c,
+     trafodion."_PRIVMGR_MD_".component_operations p,
+     trafodion."_PRIVMGR_MD_".component_privileges d
 where c.component_uid = p.component_uid
   and p.operation_code = d.operation_code
   and p.component_uid = d.component_uid

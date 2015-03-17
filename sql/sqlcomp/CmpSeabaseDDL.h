@@ -121,7 +121,7 @@ class NAColumnArray;
 struct routine_desc_struct;
 struct MDDescsInfo;
 
-class MDUpgradeInfo;
+class CmpDDLwithStatusInfo;
 
 #include "CmpSeabaseDDLmd.h"
 
@@ -190,11 +190,13 @@ class CmpSeabaseDDL
 			 ExpHbaseInterface * inEHI = NULL,
 			 Int64 * mdMajorVersion = NULL,
 			 Int64 * mdMinorVersion = NULL,
+                         Int64 * mdUpdateVersion = NULL,
                          Int64 * sysSWMajorVersion = NULL,
                          Int64 * sysSWMinorVersion = NULL,
                          Int64 * sysSWUpdVersion = NULL,
                          Int64 * mdSWMajorVersion = NULL,
                          Int64 * mdSWMinorVersion = NULL,
+                         Int64 * mdSWUpdateVersion = NULL,
 			 Lng32 * hbaseErr = NULL,
 			 NAString * hbaseErrStr = NULL);
 
@@ -343,19 +345,6 @@ class CmpSeabaseDDL
   void deallocEHI(ExpHbaseInterface* &ehi);
   void dropLOBHdfsFiles();
  protected:
-
-  enum { 
-    METADATA_MAJOR_VERSION = 3,
-    METADATA_OLD_MAJOR_VERSION = 2,
-    METADATA_MINOR_VERSION = 0,
-    METADATA_OLD_MINOR_VERSION = 3,
-    DATAFORMAT_MAJOR_VERSION = 1,
-    DATAFORMAT_MINOR_VERSION = 1,
-
-    // next 2 definitions have been moved to CmpSeabaseDDLcommon.cpp
-    //    SOFTWARE_MAJOR_VERSION = 0,
-    //    SOFTWARE_MINOR_VERSION = 9
-  };
 
   enum {
     SEABASE_SERIALIZED = 0x0001
@@ -1003,6 +992,7 @@ class CmpSeabaseDDL
 
   void initSeabaseAuthorization();
   void dropSeabaseAuthorization();
+  void dropSeabaseAuthorization(NAString schemaName);
   NABoolean insertPrivMgrInfo(const Int64 objUID,
                               const NAString &objName,
                               const ComObjectType objectType,
@@ -1022,8 +1012,11 @@ class CmpSeabaseDDL
 			   NAString &currCatName, NAString &currSchName);
 
   short createRepos(ExeCliInterface * cliInterface);
-  short dropRepos(ExeCliInterface * cliInterface);
-  short upgradeRepos(ExeCliInterface * cliInterface);
+  short dropRepos(ExeCliInterface * cliInterface, 
+                  NABoolean oldRepos = FALSE, NABoolean dropSchema = TRUE);
+  short alterRenameRepos(ExeCliInterface * cliInterface, NABoolean newToOld);
+  short copyOldReposToNew(ExeCliInterface * cliInterface);
+  short upgradeRepos(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
 
   void processRepository(NABoolean createR, NABoolean dropR, NABoolean upgradeR);
 

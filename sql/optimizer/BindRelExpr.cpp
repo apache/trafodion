@@ -1287,6 +1287,20 @@ desc_struct *generateSpecialDesc(const CorrName& corrName)
 {
   desc_struct * desc = NULL;
 
+  if (corrName.getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
+    {
+      if (corrName.getQualifiedNameObj().getObjectName() == ExplainFunc::getVirtualTableNameStr())
+        {
+          ExplainFunc ef;
+          desc = ef.createVirtualTableDesc();
+        }
+      else if (corrName.getQualifiedNameObj().getObjectName() == StatisticsFunc::getVirtualTableNameStr())
+        {
+          StatisticsFunc sf;
+          desc = sf.createVirtualTableDesc();
+        }
+    }
+
   return desc;
 } // generateSpecialDesc()
 

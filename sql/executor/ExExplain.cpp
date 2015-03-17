@@ -51,6 +51,7 @@
 #include "SqlStats.h"
 #include "ssmpipc.h"
 #include "ComCextdecs.h"
+
 // Default Constructor.  This is used by the ex_tdb::fixupVTblPtr()
 // routine which fixes up the virtual function table pointer after
 // a node has been unpacked.
@@ -114,6 +115,12 @@ ExExplainTcb::ExExplainTcb(const ExExplainTdb &explainTdb, ex_globals *glob)
   modDir_(NULL),
   stmtPattern_(0),
   qid_(NULL),
+  reposQid_(NULL),
+  explainAddr_(-1),
+  explainFromAddrProcessed_(FALSE),
+  explainStmt_(NULL),
+  explainFrag_(NULL),
+  explainFragLen_(NULL),
   diagsArea_(NULL),
   retryAttempts_(0),
   stmtName_(NULL)
@@ -307,7 +314,7 @@ ExExplainTcb::visitNode()
       // Should eventually be able to get one.
 
       if (pool_->get_free_tuple(pEntryUp->getTupp(explainTdb().getTuppIndex()),
-				currentExplain_->getRecLength()))
+				currentExplain_->getUsedRecLength()))
 	return 0;
 
       // Keep track of the sequence number for each node.
@@ -324,7 +331,7 @@ ExExplainTcb::visitNode()
       else
 	currentExplain_->setModuleName(modName_);
       
-      if (qid_ == NULL)
+      if ((qid_ == NULL) && (explainAddr_ == -1) && (explainStmt_ == NULL))
         currentExplain_->setStatementName(currentStmt_->getIdentifier());
       else
         currentExplain_->setStatementName(stmtName_);
@@ -335,7 +342,7 @@ ExExplainTcb::visitNode()
 
       str_cpy_all(pEntryUp->getTupp(explainTdb().getTuppIndex()).getDataPointer(),
 		  currentExplain_->getExplainTuple(),
-		  currentExplain_->getRecLength());
+		  currentExplain_->getUsedRecLength());
 
       // Apply scan Predicate to the explain Info. (now in the
       // tail of the parent up queue.  If the predicat evaluates
@@ -425,7 +432,7 @@ ExExplainTcb::traverseReturnCode ExExplainTcb::traverseTree()
       // to process
       if ((request == ex_queue::GET_NOMORE) ||
 	  ((request == ex_queue::GET_N) && 
-	   ((UInt32)pEntryDown->downState.requestValue <= matchNo_)))  // NT_PORT  ( bd 10/22/96 ) cast to unsigned
+	   ((UInt32)pEntryDown->downState.requestValue <= matchNo_)))
 	return EXPL_TRAV_DONE;
       
       // Visit each child node.  If we have already visited this
@@ -488,6 +495,72 @@ ExExplainTcb::traverseReturnCode ExExplainTcb::traverseTree()
   
   // Traversal of this tree is complete.
   return EXPL_TRAV_DONE;
+}
+// process explainStmt_. Get explain info from repository 
+// and set it up to be pointed to by explainAddr_
+// That will be used later to return explain details.
+short ExExplainTcb::processExplainStmt()
+{
+  Lng32 cliRC = 0;
+
+  CliGlobals *cliGlobals = getGlobals()->castToExExeStmtGlobals()->
+	                castToExMasterStmtGlobals()->getCliGlobals();
+  ExeCliInterface cliInterface(getHeap(), 0, cliGlobals->currContext());
+  ex_queue_entry *pEntryDown = qParent_.down->getHeadEntry();
+  ComDiagsArea *diagsArea =
+    pEntryDown->getAtp()->getDiagsArea();
+
+  if (! explainStmt_)
+    return 0;
+
+  if (explainFrag_)
+    NADELETEBASIC(explainFrag_, getHeap());
+  explainFrag_ = NULL;
+  
+  cliRC = cliInterface.executeImmediate("control session 'EXPLAIN' 'ON';");
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(diagsArea);
+      return -1;
+    }
+
+  cliRC = cliInterface.executeImmediatePrepare(explainStmt_);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(diagsArea);
+      goto label_error;
+    }
+
+  cliRC = cliInterface.setupExplainData();
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(diagsArea);
+      goto label_error;
+    }
+
+  if (cliInterface.getExplainDataPtr())
+    {
+      explainFragLen_ = cliInterface.getExplainDataLen();
+      explainFrag_ = new(getHeap()) char[explainFragLen_];
+      memcpy(explainFrag_, cliInterface.getExplainDataPtr(), explainFragLen_);
+      explainAddr_ = (Int64)explainFrag_;
+    }
+  else
+    {
+      ExRaiseSqlError(getGlobals()->getDefaultHeap(),
+                      &diagsArea, EXE_NO_EXPLAIN_INFO);
+      if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
+        pEntryDown->getAtp()->setDiagsArea(diagsArea);
+      goto label_error;
+    }
+
+ label_return:
+  cliInterface.executeImmediate("control session reset 'EXPLAIN';");
+  return 0;
+  
+ label_error:
+  cliInterface.executeImmediate("control session reset 'EXPLAIN';");
+  return -1;
 }
 
 // Explain work procedure:  The explain work procedure is responsible for
@@ -612,6 +685,23 @@ short ExExplainTcb::work()
 	  // treated as C-strings
 	  copyParameters();
 	  
+          if (explainStmt_)
+            {
+              // query has been specified as a param. Process it and set up explain info.
+              processExplainStmt();
+            }
+          
+          if (reposQid_)
+            {
+              rc = getExplainFromRepos(reposQid_, strlen(reposQid_));
+              if (rc < 0)
+                {
+                  workState_ = EXPL_ERROR;
+                  break;
+                }
+              
+            }
+
 	  // starts with an '/'. It is an oss pathname.
 	  if ((modDir_) &&
 	      (strlen(modDir_) >= 3) &&
@@ -700,7 +790,7 @@ short ExExplainTcb::work()
             {
               if (qid_ != NULL)
                 NADELETEBASIC((char *)explainTree_, cliGlobals->getIpcHeap());
-              else
+              else if ((explainAddr_ == -1) && (explainStmt_ == NULL))
 	        NADELETEBASIC((char *)explainTree_, getHeap());
 	      workState_ = EXPL_GETNEXT_EXPLAINTREE;
             }
@@ -823,6 +913,49 @@ short ExExplainTcb::work()
 }
 
 
+ExplainDesc *
+ExExplainTcb::getNextExplainTree(Int64 explainFragAddr)
+{
+  if (NOT explainFromAddrProcessed_)
+    {
+      // Unpack the EXPLAIN Fragment
+      char * explainFrag = (char*)explainFragAddr;
+      
+      ExplainDesc *expDesc = (ExplainDesc*)explainFrag;
+
+      // Set up space for reallocating objects during unpacking when
+      // there is a difference in image sizes at version migration.
+      //
+      
+      ExplainDesc dummyExpDesc;
+      if ( (expDesc = (ExplainDesc *)
+            expDesc->driveUnpack(explainFrag,&dummyExpDesc,getSpace())) == NULL )
+        {
+          // ERROR during unpacking.
+          // Most likely case is verison-unsupported.
+          //
+          // Add code for erroring handling !!!
+          workState_ = EXPL_ERROR;
+          return 0;
+        }
+      else
+        {
+          // The expDescPtr might have been relocated after unpacking
+          // due to a version upgrade. Return its new location.
+          //
+          explainFromAddrProcessed_ = TRUE;
+          
+          return expDesc;
+        }
+    }
+
+  explainFromAddrProcessed_ = FALSE;
+ 
+  workState_ = EXPL_DONE;
+
+  return 0;
+}
+
 // getNextExplainTree: Get the next explainTree from the next statement
 // that matches the parameters of the xplain function (module name and
 // statement pattern.  getNextExplainTree uses the Like pattern matching
@@ -837,6 +970,11 @@ short ExExplainTcb::work()
 ExplainDesc *
 ExExplainTcb::getNextExplainTree()
 {
+  if (explainAddr_ != -1)
+    {
+      return getNextExplainTree(explainAddr_);
+    }
+
   // If the statement pattern is NULL then no statements match
   if(!isNullStmtPattern())
     {
@@ -965,7 +1103,7 @@ ExExplainTcb::getNextExplainTree()
 	            expDesc->driveUnpack(explainFrag,&dummyExpDesc,stmt->getUnpackSpace())) == NULL )
 	      {
 		// ERROR during unpacking.
-		// Most likely case is verison-unsupported.
+		// Most likely case is version-unsupported.
 		//
                 // Add code for erroring handling !!!
 		workState_ = EXPL_ERROR;
@@ -1141,8 +1279,16 @@ ExExplainTcb::copyParameters()
   if (modName_[0] == '\0')
   {
     Lng32 len = str_len(stmtPattern_);
-    if (len > 4 && str_ncmp(stmtPattern_, "QID=", 4) == 0)
+    if (len > strlen("QID=") && str_ncmp(stmtPattern_, "QID=", 4) == 0)
       setQid(&stmtPattern_[4], len-4);
+    else if (len > strlen("EXPLAIN_QID=") && str_ncmp(stmtPattern_, 
+                                                    "EXPLAIN_QID=", strlen("EXPLAIN_QID=")) == 0)
+      setReposQid(&stmtPattern_[strlen("EXPLAIN_QID=")], len-strlen("EXPLAIN_QID="));
+    else if (len > strlen("EXPLAIN_STMT=") && 
+             str_ncmp(stmtPattern_, "EXPLAIN_STMT=", strlen("EXPLAIN_STMT=")) == 0)
+      {
+        setExplainStmt(&stmtPattern_[strlen("EXPLAIN_STMT=")], len-strlen("EXPLAIN_STMT="));
+      }
   }
 }
 
@@ -1213,6 +1359,38 @@ void ExExplainTcb::setQid(char *qid, Lng32 len)
     str_cpy_all(stmtName_, "Unknown Stmt", 12);
     stmtName_[12] = '\0';
   }
+}
+
+void ExExplainTcb::setReposQid(char *reposQid, Lng32 len)
+{
+  if (reposQid_)
+    {
+      NADELETEBASIC(reposQid_, getHeap());
+    }
+
+  reposQid_ = NULL;
+
+  if (! reposQid)
+    return;
+
+  reposQid_ = new (getHeap()) char[len+1];
+  str_cpy_all(reposQid_, reposQid, len);
+  reposQid_[len] = '\0';
+}
+
+void ExExplainTcb::setExplainAddr(char *addr, Lng32 len)
+{
+  explainAddr_ = str_atoi(addr, len);
+}
+
+void ExExplainTcb::setExplainAddr(Int64 addr)
+{
+  explainAddr_ = addr;
+}
+
+void ExExplainTcb::setExplainStmt(char *stmt, Lng32 len)
+{
+  explainStmt_ = stmt;
 }
 
 RtsExplainFrag *ExExplainTcb::sendToSsmp()
@@ -1320,3 +1498,86 @@ RtsExplainFrag *ExExplainTcb::sendToSsmp()
   explainReq->decrRefCount();
   return explainFrag;
 }
+
+short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
+{
+  Lng32 cliRC = 0;
+
+  CliGlobals *cliGlobals = getGlobals()->castToExExeStmtGlobals()->
+	                castToExMasterStmtGlobals()->getCliGlobals();
+  ExeCliInterface cliInterface(getHeap(), 0, cliGlobals->currContext());
+
+  ex_queue_entry *pEntryDown = qParent_.down->getHeadEntry();
+  ComDiagsArea *diagsArea =
+    pEntryDown->getAtp()->getDiagsArea();
+
+  if (! qid || (qidLen == 0))
+    return -1;
+
+  if (explainFrag_)
+    NADELETEBASIC(explainFrag_, getHeap());
+  explainFrag_ = NULL;
+  explainFragLen_ = 0;
+
+  Queue *infoList = NULL;
+
+  char * queryBuf = new(getHeap()) char[4000];
+  str_sprintf(queryBuf, "select explain_plan from %s.\"%s\".%s where query_id = '%s'",
+              TRAFODION_SYSCAT_LIT, SEABASE_REPOS_SCHEMA, REPOS_METRIC_QUERY_TABLE, qid);
+  OutputInfo * vi = NULL;
+  char * ptr = NULL;
+  Lng32 len = 0;
+  
+  if (cliInterface.initializeInfoList(infoList, TRUE))
+    {
+      cliInterface.retrieveSQLDiagnostics(diagsArea);
+      goto label_error;
+    }
+
+  cliRC = cliInterface.fetchAllRows(infoList, queryBuf, 0, FALSE, FALSE);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(diagsArea);
+      goto label_error;
+    }
+
+  if ((infoList->numEntries() == 0) ||
+      (infoList->numEntries() > 1))
+    {
+      ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
+                      &diagsArea, EXE_NO_EXPLAIN_INFO);
+
+      goto label_error;
+    }
+
+  infoList->position();
+  vi = (OutputInfo*)infoList->getCurr();
+  
+  if (vi->get(0, ptr, len))
+    goto label_error;
+  
+  if ((len >= strlen("MULTI_CHUNK_EXPLAIN")) &&
+      (memcmp(ptr, "MULTI_CHUNK_EXPLAIN", strlen("MULTI_CHUNK_EXPLAIN")) == 0))
+    {
+      // explain data is stored in multiple chunks/rows in METRIC_TEXT table.
+      // Get data from there and glue it.
+      // TBD. Not yet supported.
+      // Return error.
+      goto label_error;
+    }
+
+  explainFragLen_ = len;
+  explainFrag_ = new(getHeap()) char[len];
+  memcpy(explainFrag_, ptr, len);
+
+  setExplainAddr((Int64)explainFrag_);  
+  setReposQid(NULL, 0);
+
+  return 0;
+
+ label_error:
+  
+  NADELETEBASIC(queryBuf, getHeap());
+  return -1;
+}
+

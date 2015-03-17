@@ -625,7 +625,6 @@ class ExExeUtilDisplayExplainTcb : public ExExeUtilTcb
 
   ExExeUtilDisplayExplainTdb & exeUtilTdb() const
     {return (ExExeUtilDisplayExplainTdb &) tdb;};
-
 };
 
 

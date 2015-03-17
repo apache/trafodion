@@ -35,13 +35,8 @@
 #include "CmpSeabaseDDLincludes.h"
 #include "CmpDDLCatErrorCodes.h"
 #include "CmpSeabaseDDLupgrade.h"
+#include "CmpSeabaseDDLrepos.h"
 #include "PrivMgrMD.h"
-
-// get software major and minor versions from -D defs defined in sqlcomp/Makefile.
-// These defs pick up values from export vars defined in sqf/sqenvcom.sh.
-#define SOFTWARE_MAJOR_VERSION TRAF_SOFTWARE_VERS_MAJOR
-#define SOFTWARE_MINOR_VERSION TRAF_SOFTWARE_VERS_MINOR
-#define SOFTWARE_UPDATE_VERSION TRAF_SOFTWARE_VERS_UPDATE
 
 NABoolean CmpSeabaseMDupgrade::isOldMDtable(const NAString &objName)
 {
@@ -49,6 +44,47 @@ NABoolean CmpSeabaseMDupgrade::isOldMDtable(const NAString &objName)
     return TRUE;
   else
     return FALSE;
+}
+
+NABoolean CmpSeabaseMDupgrade::isMDUpgradeNeeded()
+{
+  for (Lng32 i = 0; i < sizeof(allMDupgradeInfo)/sizeof(MDUpgradeInfo); i++)
+    {
+      const MDUpgradeInfo &mdti = allMDupgradeInfo[i];
+      if (mdti.upgradeNeeded)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+NABoolean CmpSeabaseMDupgrade::isViewsUpgradeNeeded()
+{
+  for (Lng32 i = 0; i < sizeof(allMDviewsInfo)/sizeof(MDViewInfo); i++)
+    {
+      const MDViewInfo &mdti = allMDviewsInfo[i];
+      if (mdti.upgradeNeeded)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+NABoolean CmpSeabaseMDupgrade::isReposUpgradeNeeded()
+{
+  for (Lng32 i = 0; i < sizeof(allReposUpgradeInfo)/sizeof(MDUpgradeInfo); i++)
+    {
+      const MDUpgradeInfo &mdti = allReposUpgradeInfo[i];
+      if (mdti.upgradeNeeded)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+NABoolean CmpSeabaseMDupgrade::isPrivsUpgradeNeeded()
+{
+  return TRUE;
 }
 
 short CmpSeabaseMDupgrade::dropMDtables(ExpHbaseInterface *ehi, 
@@ -291,7 +327,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		mdui->setStep(UPGRADE_FAILED);
 		mdui->setSubstep(0);
 	      }
-	    
+
 	    return 0;
 	  }
 	  break;
@@ -306,9 +342,11 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		  
 		  Int64 mdCurrMajorVersion;
 		  Int64 mdCurrMinorVersion;
+                  Int64 mdCurrUpdateVersion;
 		  retcode = validateVersions(&ActiveSchemaDB()->getDefaults(), ehi,
 					     &mdCurrMajorVersion,
-					     &mdCurrMinorVersion);
+					     &mdCurrMinorVersion,
+                                             &mdCurrUpdateVersion);
 		  
 		  deallocEHI(ehi);
 		  
@@ -321,7 +359,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		  else if (retcode == -1395) // mismatch in MAJOR version. Need to upgrade
 		    {
 		      if ((mdCurrMajorVersion == METADATA_OLD_MAJOR_VERSION) &&
-			  (mdCurrMinorVersion == METADATA_OLD_MINOR_VERSION))
+			  (mdCurrMinorVersion == METADATA_OLD_MINOR_VERSION) &&
+			  (mdCurrUpdateVersion == METADATA_OLD_UPDATE_VERSION))
 			{
 			  mdui->setSubstep(2);
 			}
@@ -346,9 +385,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      break;
 		    }
 		  
-		  str_sprintf(msgBuf, "  Current Version %Ld.%Ld. Expected Version %Ld.%Ld.",
-			      mdCurrMajorVersion, mdCurrMinorVersion,
-			      METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION);   
+		  str_sprintf(msgBuf, "  Current Version %Ld.%Ld.%Ld. Expected Version %Ld.%Ld.%Ld.",
+			      mdCurrMajorVersion, 
+                              mdCurrMinorVersion,
+                              mdCurrUpdateVersion,
+			      METADATA_MAJOR_VERSION, 
+                              METADATA_MINOR_VERSION,
+                              METADATA_UPDATE_VERSION);
 		  mdui->setMsg(msgBuf);
 		  mdui->setEndStep(FALSE);
 		  
@@ -421,27 +464,34 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		  
 		  Int64 mdCurrMajorVersion;
 		  Int64 mdCurrMinorVersion;
+                  Int64 mdCurrUpdateVersion;
 		  Int64 sysSWMajorVersion;
 		  Int64 sysSWMinorVersion;
                   Int64 sysSWUpdVersion;
                   Int64 mdSWMajorVersion;
                   Int64 mdSWMinorVersion;
+                  Int64 mdSWUpdateVersion;
 		  retcode = validateVersions(&ActiveSchemaDB()->getDefaults(), ehi,
 					     &mdCurrMajorVersion,
 					     &mdCurrMinorVersion,
+                                             &mdCurrUpdateVersion,
 					     &sysSWMajorVersion,
 					     &sysSWMinorVersion,
                                              &sysSWUpdVersion,
                                              &mdSWMajorVersion,
-                                             &mdSWMinorVersion);
+                                             &mdSWMinorVersion,
+                                             &mdSWUpdateVersion);
 		  
 		  deallocEHI(ehi);
-
-		  if (retcode == 0)
+		  
+		  if ((retcode == 0) ||
+                      (retcode == -1393) ||
+                      (retcode == -1395))
 		    {
 		      // no version mismatch detected between system and expected software.
                       if ((mdSWMajorVersion == sysSWMajorVersion) &&
-                          (mdSWMinorVersion == sysSWMinorVersion))
+                          (mdSWMinorVersion == sysSWMinorVersion) &&
+                          (mdSWUpdateVersion == sysSWUpdVersion))
                         // software version stored in metadata is uptodate
                         mdui->setSubstep(1);
                       else
@@ -458,9 +508,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
                   else
                     {
                       if (retcode == -1395)
-                        str_sprintf(msgBuf, "   Metadata need to be upgraded or reinitialized (Current Version %Ld.%Ld, Expected Version %Ld.%Ld).",
-                                    mdCurrMajorVersion, mdCurrMinorVersion,
-                                    METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION);   
+                        str_sprintf(msgBuf, "   Metadata need to be upgraded or reinitialized (Current Version %Ld.%Ld.%Ld, Expected Version %Ld.%Ld.%Ld).",
+                                    mdCurrMajorVersion, mdCurrMinorVersion, mdCurrUpdateVersion,
+                                    (Int64)METADATA_MAJOR_VERSION, (Int64)METADATA_MINOR_VERSION, (Int64)METADATA_UPDATE_VERSION);   
                       else
                         str_sprintf(msgBuf, " Error %d returned while accessing metadata. Fix that error before running this command.",
                                     retcode);
@@ -583,9 +633,39 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      if ((mdCurrMajorVersion == METADATA_OLD_MAJOR_VERSION) &&
 			  (mdCurrMinorVersion == METADATA_OLD_MINOR_VERSION))
 			{
-			  str_sprintf(msgBuf, "  Metadata need to be upgraded from Version %Ld.%Ld to %Ld.%Ld",
-				      mdCurrMajorVersion, mdCurrMinorVersion,
-				      METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION);
+                          NAString upgItems;
+                          if (isUpgradeNeeded())
+                            {
+                              upgItems = "\n  Upgrade needed for";
+
+                              if (isMDUpgradeNeeded())
+                                {
+                                  upgItems += " Catalogs, ";
+                                }
+                              if (isViewsUpgradeNeeded())
+                                {
+                                  upgItems += " Views,";
+                                }
+                              if (isPrivsUpgradeNeeded())
+                                {
+                                  upgItems += " Privileges,";
+                                }
+                              if (isReposUpgradeNeeded())
+                                {
+                                  upgItems += " Repository,";
+                                }
+                              if (NOT upgItems.isNull())
+                                {
+                                  upgItems = upgItems.strip(NAString::trailing, ',');
+                                  upgItems += ".";
+                                }
+                            }
+			  str_sprintf(msgBuf, "  Metadata need to be upgraded from Version %Ld.%Ld.%Ld to %Ld.%Ld.%Ld.%s",
+				      mdCurrMajorVersion, mdCurrMinorVersion/10, 
+                                      (mdCurrMinorVersion - (mdCurrMinorVersion/10)*10),
+				      METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION,
+                                      METADATA_UPDATE_VERSION,
+                                      (upgItems.isNull() ? " " : upgItems.data()));
 			  
 			  mdui->setMsg(msgBuf);
 			  
@@ -637,8 +717,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		  mdui->setMsg("Version Check: done");
 		  mdui->setSubstep(0);
 		  mdui->setEndStep(TRUE);
-
-		  mdui->setStep(OLD_MD_DROP_PRE);
+                  mdui->setStep(OLD_MD_DROP_PRE);
 
 		  return 0;
 		}
@@ -666,6 +745,14 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 	      {
 	      case 0:
 		{
+                  if ((NOT isMDUpgradeNeeded()) &&
+                      (NOT isViewsUpgradeNeeded()))
+                    {
+                      mdui->setStep(UPDATE_MD_VIEWS);
+                      mdui->setSubstep(0);
+                      break;
+                    }
+
 		  mdui->setMsg("Drop Old Metadata: started");
 		  mdui->subStep()++;
 		  mdui->setEndStep(FALSE);
@@ -787,6 +874,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 	      {
 	      case 0:
 		{
+                 if (NOT isMDUpgradeNeeded())
+                    {
+                      mdui->setStep(UPDATE_MD_VIEWS);
+                      mdui->setSubstep(0);
+                      break;
+                    }
+
 		  mdui->setMsg("Drop Current Metadata: started");
 		  mdui->subStep()++;
 		  mdui->setEndStep(FALSE);
@@ -1093,464 +1187,19 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 
 	case CUSTOMIZE_NEW_MD:
 	  {
-	    switch (mdui->subStep())
-	      {
-	      case 0:
-		{
-		  mdui->setMsg("Customize New Metadata: started");
-		  mdui->subStep()++;
-		  mdui->setEndStep(FALSE);
-
-		  // For other upgrades, it is not needed.
-		  // Customize this section as needed.
-		  if (NOT ((METADATA_OLD_MAJOR_VERSION == 2) && (METADATA_OLD_MINOR_VERSION == 3) &&
-			   (METADATA_MAJOR_VERSION == 3) && (METADATA_MINOR_VERSION == 0)))
-		    {
-		      mdui->setSubstep(9);
-		      mdui->setEndStep(FALSE);
-
-		      return 0;
-		    }
-
-		  if (xnInProgress(&cliInterface))
-		    {
-		      *CmpCommon::diags() << DgSqlCode(-20123);
-
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-		  
-		  return 0;
-		}
-		break;
-		
-	      case 1:
-		{
-		  mdui->setMsg("  Start: Update COLUMNS");
-		  mdui->subStep()++;
-
-		  cliRC = beginXn(&cliInterface);
-		  if (cliRC < 0)
-		    {
-		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-		  
-		  return 0;
-		}
-		break;
-
-	      case 2:
-		{
-                  str_sprintf(buf, "update %s.\"%s\".%s set sql_data_type = cast( case when fs_data_type = 130 then '"COM_SMALLINT_SIGNED_SDT_LIT"' when fs_data_type = 131 then '"COM_SMALLINT_UNSIGNED_SDT_LIT"' when fs_data_type = 132 then '"COM_INTEGER_SIGNED_SDT_LIT"' when fs_data_type = 133 then '"COM_INTEGER_UNSIGNED_SDT_LIT"' when fs_data_type = 134 then '"COM_LARGEINT_SIGNED_SDT_LIT"' when fs_data_type = 135 then '"COM_SMALLINT_UNSIGNED_SDT_LIT"' when fs_data_type = 140 then '"COM_REAL_SDT_LIT"' when fs_data_type = 141 then '"COM_DOUBLE_SDT_LIT"' when fs_data_type = 150 then '"COM_DECIMAL_UNSIGNED_SDT_LIT"' when fs_data_type = 151 then '"COM_DECIMAL_SIGNED_SDT_LIT"' when fs_data_type = 155 then '"COM_NUMERIC_UNSIGNED_SDT_LIT"' when fs_data_type = 156 then '"COM_NUMERIC_SIGNED_SDT_LIT"' when fs_data_type = 0     then '"COM_CHARACTER_SDT_LIT"' when fs_data_type = 2     then '"COM_CHARACTER_SDT_LIT"' when fs_data_type = 70    then '"COM_LONG_VARCHAR_SDT_LIT"' when fs_data_type = 64    then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 66    then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 100   then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 101   then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 192 then '"COM_DATETIME_SDT_LIT"' when fs_data_type >= 196 and fs_data_type <= 207 then '"COM_INTERVAL_SDT_LIT"' else '' end as char(24))    ",
-                              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS);
-                  cliRC = cliInterface.executeImmediate(buf);
-                  
-                  if (cliRC < 0)
-                    {
-                      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-                      
-                      *CmpCommon::diags() << DgSqlCode(-1423)
-                                          << DgString0(SEABASE_TEXT);
-                      
-                      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-                      mdui->setSubstep(0);
-                      
-                      break;
-                    }
-                  
-		  if (mdui->step() != CUSTOMIZE_NEW_MD)
-		    break;
-                  
-		  mdui->setMsg("  End: Update COLUMNS");
-		  mdui->subStep()++;
-                  
-		  if (xnInProgress(&cliInterface))
-		    {
-		      cliRC = commitXn(&cliInterface);
-		      if (cliRC < 0)
-			{
-			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui->setSubstep(0);
-
-			  break;
-			}
-		    }
-		  
-		  return 0;
-		}
-		break;
-
-	      case 3:
-		{
-		  mdui->setMsg("  Start: Update TABLES");
-		  mdui->subStep()++;
-
-		  cliRC = beginXn(&cliInterface);
-		  if (cliRC < 0)
-		    {
-		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-		  
-		  return 0;
-		}
-		break;
-
-	      case 4:
-		{
-		  str_sprintf(buf, "select table_uid, hbase_create_options from %s.\"%s\".%s where char_length(hbase_create_options) > 0",
-			      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES_OLD_MD);
-		  
-		  Queue * tablesQueue = NULL;
-		  cliRC = cliInterface.fetchAllRows(tablesQueue, buf, 0, FALSE, FALSE, TRUE);
-		  if (cliRC < 0)
-		    {
-		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-		  
-		  tablesQueue->position();
-		  for (int idx = 0; idx < tablesQueue->numEntries(); idx++)
-		    {
-		      OutputInfo * oi = (OutputInfo*)tablesQueue->getNext(); 
-
-		      Int64 tableUID = *(Int64*)oi->get(0);
-                      NAString hbaseCreateOptions((char*)oi->get(1));
-		      
-                      Lng32 numSaltPartns = 0;
-                      NAString newHbaseCreateOptions;
-
-                      // get num salt partns from hbaseCreateOptions.
-                      // It is stored as:  NUM_SALT_PARTNS=>NNNN
-                      size_t idx2 = hbaseCreateOptions.index("NUM_SALT_PARTNS=>");
-                      if ((int)idx2 >= 0)
-                        {
-                          char  numSaltPartnsCharStr[5];
-                          const char * startNumSaltPartns = 
-                            &hbaseCreateOptions.data()[idx2 + strlen("NUM_SALT_PARTNS=>")];
-                          memcpy(numSaltPartnsCharStr, startNumSaltPartns, 4);
-                          numSaltPartnsCharStr[4] = 0;
-                          
-                          numSaltPartns = str_atoi(numSaltPartnsCharStr, 4);
-
-                          hbaseCreateOptions.remove(idx2, strlen("NUM_SALT_PARTNS=>")+4);
-                          hbaseCreateOptions = hbaseCreateOptions.strip();
-
-                          if (NOT hbaseCreateOptions.isNull())
-                            ToQuotedString(newHbaseCreateOptions, hbaseCreateOptions.data(), 
-                                           FALSE);
-                        }
-
-		      str_sprintf(buf, "update %s.\"%s\".%s set num_salt_partns = %d where table_uid = %Ld",
-				  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
-                                  numSaltPartns,
-				  tableUID);
-		      cliRC = cliInterface.executeImmediate(buf);
-		      
-		      if (cliRC < 0)
-			{
-			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-			  
-			  *CmpCommon::diags() << DgSqlCode(-1423)
-					      << DgString0(SEABASE_TABLES);
-			  
-			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui->setSubstep(0);
-
-			  break;
-			}
-
-                      if (NOT newHbaseCreateOptions.isNull())
-                        {
-                          if (updateTextTable(&cliInterface, tableUID, 
-                                              COM_HBASE_OPTIONS_TEXT, 0,
-                                              newHbaseCreateOptions))
-                            {
-                              *CmpCommon::diags() << DgSqlCode(-1423)
-                                                  << DgString0(SEABASE_TABLES);
-                              
-                              mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-                              mdui->setSubstep(0);
-                              
-                              break;
-                            }
-                        }
-		    } // for
-
- 		  if (mdui->step() != CUSTOMIZE_NEW_MD)
-		    break;
-
-                 str_sprintf(buf, "merge into %s.\"%s\".%s using (select C.object_uid, sum(C.column_size  + case when C.nullable != 0 then 1 else 0 end) from %s.\"%s\".%s C, %s.\"%s\".%s K where C.object_uid = K.object_uid and C.column_number = K.column_number group by 1) T(a, b) on table_uid = T.a when matched then update set key_length = T.b",
-                              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
-                              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-                              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS);
-                  cliRC = cliInterface.executeImmediate(buf);
-                  
-                  if (cliRC < 0)
-                    {
-                      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-                      
-                      *CmpCommon::diags() << DgSqlCode(-1423)
-                                          << DgString0(SEABASE_TABLES);
-                      
-                      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-                      mdui->setSubstep(0);
-                      
-                      break;
-                    }
-                  
-                  str_sprintf(buf, "merge into %s.\"%s\".%s using (select object_uid, sum(column_size + case when nullable != 0 then 1 else 0 end), sum(column_size + case when nullable != 0 then 1 else 0 end + %d + %d), count(*) from %s.\"%s\".%s group by 1) T(a,b,c,d) on table_uid = T.a when matched then update set (row_data_length, row_total_length) = (T.b, T.c + key_length * T.d)",
-                              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
-                              sizeof(Int64),
-                              5,
-                              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS);
-                  cliRC = cliInterface.executeImmediate(buf);
-                  
-                  if (cliRC < 0)
-                    {
-                      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-                      
-                      *CmpCommon::diags() << DgSqlCode(-1423)
-                                          << DgString0(SEABASE_TABLES);
-                      
-                      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-                      mdui->setSubstep(0);
-                      
-                      break;
-                    }
-                  
- 		  if (mdui->step() != CUSTOMIZE_NEW_MD)
-		    break;
-
-		  mdui->setMsg("  End: Update TABLES");
-		  mdui->subStep()++;
-
-		  if (xnInProgress(&cliInterface))
-		    {
-		      cliRC = commitXn(&cliInterface);
-		      if (cliRC < 0)
-			{
-			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui->setSubstep(0);
-
-			  break;
-			}
-		    }
-		  
-		  return 0;
-		}
-		break;
-
-	      case 5:
-		{
-		  mdui->setMsg("  Start: Update TEXT");
-		  mdui->subStep()++;
-
-		  cliRC = beginXn(&cliInterface);
-		  if (cliRC < 0)
-		    {
-		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-		  
-		  return 0;
-		}
-		break;
-
-	      case 6:
-		{
-                  str_sprintf(buf, "update %s.\"%s\".%s set text_type = 1 where text not like 'CREATE VIEW %%' and text not like 'HBASE_OPTIONS=>%%' and NOT (text_type = 4 and text like 'HASH2PARTFUNC%%' ) ",
-                              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT);
-                  cliRC = cliInterface.executeImmediate(buf);
-                  
-                  if (cliRC < 0)
-                    {
-                      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-                      
-                      *CmpCommon::diags() << DgSqlCode(-1423)
-                                          << DgString0(SEABASE_TEXT);
-                      
-                      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-                      mdui->setSubstep(0);
-                      
-                      break;
-                    }
-                  
-		  if (mdui->step() != CUSTOMIZE_NEW_MD)
-		    break;
-                  
-		  mdui->setMsg("  End: Update TEXT");
-		  mdui->subStep()++;
-                  
-		  if (xnInProgress(&cliInterface))
-		    {
-		      cliRC = commitXn(&cliInterface);
-		      if (cliRC < 0)
-			{
-			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui->setSubstep(0);
-
-			  break;
-			}
-		    }
-		  
-		  return 0;
-		}
-		break;
-
-	      case 7:
-		{
-		  mdui->setMsg("  Start: Update SEQ_GEN");
-		  mdui->subStep()++;
-
-		  cliRC = beginXn(&cliInterface);
-		  if (cliRC < 0)
-		    {
-		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-		  
-		  return 0;
-		}
-		break;
-
-	      case 8:
-		{
-                  str_sprintf(buf, "delete from %s.\"%s\".%s where object_type = 'PK' and object_uid = (select TC.constraint_uid from %s.\"%s\".%s TC where TC.constraint_type = 'P' and TC.table_uid = (select O2.object_uid from %s.\"%s\".%s O2 where O2.catalog_name = '%s' and O2.schema_name = '%s' and O2.object_name = '%s' and O2.object_type = 'BT')) ",
-                              TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                              TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
-                              TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                              TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN_OLD_MD);                          
-                  
-                  cliRC = cliInterface.executeImmediate(buf);
- 		  if (cliRC < 0)
-		    {
-		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-
-                  str_sprintf(buf, "delete from %s.\"%s\".%s  where constraint_type = 'P' and table_uid = (select O.object_uid from %s.\"%s\".%s O where O.catalog_name = '%s' and O.schema_name = '%s' and O.object_name = '%s' and O.object_type = 'BT') ",
-                              TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
-                              TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-                              TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN_OLD_MD);                          
-                  
-                  cliRC = cliInterface.executeImmediate(buf);
- 		  if (cliRC < 0)
-		    {
-		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-
-		  if (mdui->step() != CUSTOMIZE_NEW_MD)
-		    break;
-                  
-		  mdui->setMsg("  End: Update SEQ_GEN");
-		  mdui->subStep()++;
-                  
-		  if (xnInProgress(&cliInterface))
-		    {
-		      cliRC = commitXn(&cliInterface);
-		      if (cliRC < 0)
-			{
-			  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-			  mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-			  mdui->setSubstep(0);
-
-			  break;
-			}
-		    }
-
-		  return 0;
-		}
-		break;
-
-	      case 9:
-		{
-		  mdui->setMsg("  Start: Create Schema Objects");
-		  mdui->subStep()++;
-
-		  return 0;
-		}
-		break;
-
-	      case 10:
-		{
-                  cliRC = createSchemaObjects(&cliInterface);
- 		  if (cliRC < 0)
-		    {
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-
-		  if (mdui->step() != CUSTOMIZE_NEW_MD)
-		    break;
-                  
-		  mdui->setMsg("  End: Create Schema Objects");
-		  mdui->subStep()++;
-                  
-		  return 0;
-		}
-		break;
-
-	      case 11:
-		{
-		  mdui->setMsg("Customize New Metadata: done");
-		  mdui->setStep(OLD_TABLES_MD_DELETE);
-		  mdui->setSubstep(0);
-		  mdui->setEndStep(TRUE);
-		  
-		  return 0;
-		}
-		break;
-	      }
-          default:
-            {
-              mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-              mdui->setSubstep(0);
-            }
-            break;
-	  }
-	  break;
+            short rc = customizeNewMD(mdui, cliInterface);
+            if (rc == 1)
+              {
+                mdui->setStep(OLD_TABLES_MD_DELETE);
+                mdui->setSubstep(0);
+                mdui->setEndStep(TRUE);
+              }
+            else if (rc == -1)
+              break;
+            
+            return 0;
+          }
+          break;
 
 	case OLD_TABLES_MD_DELETE:
 	  {
@@ -1744,6 +1393,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 	      {
 	      case 0:
 		{
+                  if (NOT isViewsUpgradeNeeded())
+                    {
+                      mdui->setStep(UPGRADE_PRIV_MGR);
+                      mdui->setSubstep(0);
+                      break;
+                    }
+
 		  mdui->setMsg("Update Metadata Views: started");
 		  mdui->subStep()++;
 		  mdui->setEndStep(FALSE);
@@ -1805,7 +1461,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		    }
 		  
 		  mdui->setMsg("Update Metadata Views: done");
-		  mdui->setStep(UPDATE_PRIV_MGR);
+		  mdui->setStep(UPGRADE_PRIV_MGR);
 		  mdui->setSubstep(0);
 		  mdui->setEndStep(TRUE);
 
@@ -1817,13 +1473,20 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
           }
           break;
 
-        case UPDATE_PRIV_MGR:
+        case UPGRADE_PRIV_MGR:
           {
 	    switch (mdui->subStep())
 	      {
 	      case 0:
 		{
-		  mdui->setMsg("Update Priv Mgr: started");
+                  if (NOT isPrivsUpgradeNeeded())
+                    {
+                      mdui->setStep(UPGRADE_REPOS);
+                      mdui->setSubstep(0);
+                      break;
+                    }
+
+		  mdui->setMsg("Upgrade Priv Mgr: started");
 		  mdui->subStep()++;
 		  mdui->setEndStep(FALSE);
 
@@ -1837,7 +1500,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		    {
 		      *CmpCommon::diags() << DgSqlCode(-20123);
 
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setStep(UPGRADE_FAILED);
 		      mdui->setSubstep(0);
 
 		      break;
@@ -1848,7 +1511,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setStep(UPGRADE_FAILED);
 		      mdui->setSubstep(0);
 
 		      break;
@@ -1857,7 +1520,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		  cliRC = upgradePrivMgr();
 		  if (cliRC != 0)
 		    {
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setStep(UPGRADE_FAILED);
 		      mdui->setSubstep(0);
 
 		      break;
@@ -1868,14 +1531,14 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		    {
 		      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 		    
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+		      mdui->setStep(UPGRADE_FAILED);
 		      mdui->setSubstep(0);
 
 		      break;
 		    }
 		  
 		  mdui->setMsg("Update Priv Mgr: done");
-		  mdui->setStep(UPDATE_REPOS);
+		  mdui->setStep(UPGRADE_REPOS);
 		  mdui->setSubstep(0);
 		  mdui->setEndStep(TRUE);
 
@@ -1887,51 +1550,41 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
           }
           break;
 
-        case UPDATE_REPOS:
+        case UPGRADE_REPOS:
           {
-	    switch (mdui->subStep())
-	      {
-	      case 0:
-		{
-		  mdui->setMsg("Update Repository: started");
-		  mdui->subStep()++;
-		  mdui->setEndStep(FALSE);
+            if (NOT isReposUpgradeNeeded())
+              {
+                mdui->setStep(UPDATE_VERSION);
+                mdui->setSubstep(0);
+                break;
+              }
 
-		  return 0;
-		}
-		break;
-		
-	      case 1:
-		{
-		  if (xnInProgress(&cliInterface))
-		    {
-		      *CmpCommon::diags() << DgSqlCode(-20123);
-
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-		  
-		  cliRC = upgradeRepos(&cliInterface);
-		  if (cliRC != 0)
-		    {
-		      mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
-		      mdui->setSubstep(0);
-
-		      break;
-		    }
-
-		  mdui->setMsg("Update Repository: done");
-		  mdui->setStep(UPDATE_VERSION);
-		  mdui->setSubstep(0);
-		  mdui->setEndStep(TRUE);
-
-		  return 0;
-		}
-		break;
-	      } // case
-
+            if (xnInProgress(&cliInterface))
+              {
+                *CmpCommon::diags() << DgSqlCode(-20123);
+                
+                mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                mdui->setSubstep(0);
+                
+                break;
+              }
+            
+            cliRC = upgradeRepos(&cliInterface, mdui);
+            if (cliRC != 0)
+              {
+                mdui->setStep(UPGRADE_FAILED);
+                mdui->setSubstep(0);
+                
+                break;
+              }
+            
+            if (mdui->endStep())
+              {
+                mdui->setStep(UPDATE_VERSION);
+                mdui->setSubstep(0);
+              }
+            
+            return 0;
           }
           break;
 
@@ -1981,6 +1634,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		      break;
 		    }
 
+                  CmpCommon::context()->setIsUninitializedSeabase(FALSE);
+                  CmpCommon::context()->uninitializedSeabaseErrNum() = 0;
+
 		  cliRC = commitXn(&cliInterface);
 		  if (cliRC < 0)
 		    {
@@ -1993,10 +1649,15 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 		    }
 		  
 		  mdui->setMsg("Update Metadata Version: done");
-		  mdui->setStep(OLD_MD_TABLES_HBASE_DELETE);
+
+                  if ((NOT isMDUpgradeNeeded()) &&
+                      (NOT isViewsUpgradeNeeded()))
+                    mdui->setStep(METADATA_UPGRADED);
+                  else
+                    mdui->setStep(OLD_MD_TABLES_HBASE_DELETE);
 		  mdui->setSubstep(0);
 		  mdui->setEndStep(TRUE);
-
+                  
 		  return 0;
 		}
 		break;
@@ -2090,8 +1751,10 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 
 	case METADATA_UPGRADED:
 	  {
-	    str_sprintf(msgBuf, "Metadata Upgrade to Version %Ld.%Ld: done",
-				  METADATA_MAJOR_VERSION, METADATA_MINOR_VERSION);
+	    str_sprintf(msgBuf, "Metadata Upgrade to Version %Ld.%Ld.%Ld: done",
+                        METADATA_MAJOR_VERSION, 
+                        METADATA_MINOR_VERSION,
+                        METADATA_UPDATE_VERSION);
 
 	    mdui->setMsg(msgBuf);
 	    mdui->setDone(TRUE);
@@ -2235,12 +1898,553 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 
 	} // step
     } // while
-
+  
   return 0;
+}
+
+short CmpSeabaseMDupgrade::customizeNewMD(CmpDDLwithStatusInfo *mdui,
+                                          ExeCliInterface &cliInterface)
+{
+  if ((METADATA_OLD_MAJOR_VERSION == 2) && (METADATA_OLD_MINOR_VERSION == 3) &&
+      (METADATA_MAJOR_VERSION == 3) && (METADATA_MINOR_VERSION == 0))
+    return customizeNewMDv23tov30(mdui, cliInterface);
+
+  // done, move to next step.
+  return 1;
+}
+
+short CmpSeabaseMDupgrade::customizeNewMDv23tov30(CmpDDLwithStatusInfo *mdui,
+                                                  ExeCliInterface &cliInterface)
+{
+  Lng32 cliRC = 0;
+  char buf[10000];
+
+  if (NOT ((METADATA_OLD_MAJOR_VERSION == 2) && (METADATA_OLD_MINOR_VERSION == 3) &&
+           (METADATA_MAJOR_VERSION == 3) && (METADATA_MINOR_VERSION == 0)))
+    {
+      // done, move to next step.
+      return 1;
+    }
+
+  switch (mdui->subStep())
+    {
+    case 0:
+      {
+        mdui->setMsg("Customize New Metadata: started");
+        mdui->subStep()++;
+        mdui->setEndStep(FALSE);
+        
+        // For other upgrades, it is not needed.
+        // Customize this section as needed.
+        if (NOT ((METADATA_OLD_MAJOR_VERSION == 2) && (METADATA_OLD_MINOR_VERSION == 3) &&
+                 (METADATA_MAJOR_VERSION == 3) && (METADATA_MINOR_VERSION == 0)))
+          {
+            mdui->setSubstep(11);
+            mdui->setEndStep(FALSE);
+            
+            return 0;
+          }
+        
+        if (xnInProgress(&cliInterface))
+          {
+            *CmpCommon::diags() << DgSqlCode(-20123);
+            
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+            
+            return -1;
+          }
+        
+        return 0;
+      }
+      return -1;
+      
+    case 1:
+      {
+        mdui->setMsg("  Start: Update COLUMNS");
+        mdui->subStep()++;
+        
+        cliRC = beginXn(&cliInterface);
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+            
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+            
+            return -1;
+          }
+        
+        return 0;
+      }
+      return -1;
+      
+    case 2:
+      {
+        str_sprintf(buf, "update %s.\"%s\".%s set sql_data_type = cast( case when fs_data_type = 130 then '"COM_SMALLINT_SIGNED_SDT_LIT"' when fs_data_type = 131 then '"COM_SMALLINT_UNSIGNED_SDT_LIT"' when fs_data_type = 132 then '"COM_INTEGER_SIGNED_SDT_LIT"' when fs_data_type = 133 then '"COM_INTEGER_UNSIGNED_SDT_LIT"' when fs_data_type = 134 then '"COM_LARGEINT_SIGNED_SDT_LIT"' when fs_data_type = 135 then '"COM_SMALLINT_UNSIGNED_SDT_LIT"' when fs_data_type = 140 then '"COM_REAL_SDT_LIT"' when fs_data_type = 141 then '"COM_DOUBLE_SDT_LIT"' when fs_data_type = 150 then '"COM_DECIMAL_UNSIGNED_SDT_LIT"' when fs_data_type = 151 then '"COM_DECIMAL_SIGNED_SDT_LIT"' when fs_data_type = 155 then '"COM_NUMERIC_UNSIGNED_SDT_LIT"' when fs_data_type = 156 then '"COM_NUMERIC_SIGNED_SDT_LIT"' when fs_data_type = 0     then '"COM_CHARACTER_SDT_LIT"' when fs_data_type = 2     then '"COM_CHARACTER_SDT_LIT"' when fs_data_type = 70    then '"COM_LONG_VARCHAR_SDT_LIT"' when fs_data_type = 64    then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 66    then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 100   then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 101   then '"COM_VARCHAR_SDT_LIT"' when fs_data_type = 192 then '"COM_DATETIME_SDT_LIT"' when fs_data_type >= 196 and fs_data_type <= 207 then '"COM_INTERVAL_SDT_LIT"' else '' end as char(24))    ",
+                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS);
+        cliRC = cliInterface.executeImmediate(buf);
+        
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+            
+            *CmpCommon::diags() << DgSqlCode(-1423)
+                                << DgString0(SEABASE_TEXT);
+            
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+            
+            return -1;
+          }
+        
+        if (mdui->step() != CUSTOMIZE_NEW_MD)
+          return -1;
+        
+        mdui->setMsg("  End: Update COLUMNS");
+        mdui->subStep()++;
+        
+        if (xnInProgress(&cliInterface))
+          {
+            cliRC = commitXn(&cliInterface);
+            if (cliRC < 0)
+              {
+                cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+                
+                mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                mdui->setSubstep(0);
+                
+                return -1;
+              }
+          }
+        
+        return 0;
+      }
+      return -1;
+      
+    case 3:
+      {
+        mdui->setMsg("  Start: Update TABLES");
+        mdui->subStep()++;
+        
+        cliRC = beginXn(&cliInterface);
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+            
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+            
+            return -1;
+          }
+        
+        return 0;
+      }
+      return -1;
+      
+    case 4:
+      {
+        str_sprintf(buf, "select table_uid, hbase_create_options from %s.\"%s\".%s where char_length(hbase_create_options) > 0",
+                    getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES_OLD_MD);
+        
+        Queue * tablesQueue = NULL;
+        cliRC = cliInterface.fetchAllRows(tablesQueue, buf, 0, FALSE, FALSE, TRUE);
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+               
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+               
+            return -1;
+          }
+           
+        tablesQueue->position();
+        for (int idx = 0; idx < tablesQueue->numEntries(); idx++)
+          {
+            OutputInfo * oi = (OutputInfo*)tablesQueue->getNext(); 
+               
+            Int64 tableUID = *(Int64*)oi->get(0);
+            NAString hbaseCreateOptions((char*)oi->get(1));
+               
+            Lng32 numSaltPartns = 0;
+            NAString newHbaseCreateOptions;
+               
+            // get num salt partns from hbaseCreateOptions.
+            // It is stored as:  NUM_SALT_PARTNS=>NNNN
+            size_t idx2 = hbaseCreateOptions.index("NUM_SALT_PARTNS=>");
+            if ((int)idx2 >= 0)
+              {
+                char  numSaltPartnsCharStr[5];
+                const char * startNumSaltPartns = 
+                  &hbaseCreateOptions.data()[idx2 + strlen("NUM_SALT_PARTNS=>")];
+                memcpy(numSaltPartnsCharStr, startNumSaltPartns, 4);
+                numSaltPartnsCharStr[4] = 0;
+                   
+                numSaltPartns = str_atoi(numSaltPartnsCharStr, 4);
+                   
+                hbaseCreateOptions.remove(idx2, strlen("NUM_SALT_PARTNS=>")+4);
+                hbaseCreateOptions = hbaseCreateOptions.strip();
+                   
+                if (NOT hbaseCreateOptions.isNull())
+                  ToQuotedString(newHbaseCreateOptions, hbaseCreateOptions.data(), 
+                                 FALSE);
+              }
+               
+            str_sprintf(buf, "update %s.\"%s\".%s set num_salt_partns = %d where table_uid = %Ld",
+                        getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
+                        numSaltPartns,
+                        tableUID);
+            cliRC = cliInterface.executeImmediate(buf);
+               
+            if (cliRC < 0)
+              {
+                cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+                   
+                *CmpCommon::diags() << DgSqlCode(-1423)
+                                    << DgString0(SEABASE_TABLES);
+                   
+                mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                mdui->setSubstep(0);
+                   
+                return -1;
+              }
+               
+            if (NOT newHbaseCreateOptions.isNull())
+              {
+                if (updateTextTable(&cliInterface, tableUID, 
+                                    COM_HBASE_OPTIONS_TEXT, 0,
+                                    newHbaseCreateOptions))
+                  {
+                    *CmpCommon::diags() << DgSqlCode(-1423)
+                                        << DgString0(SEABASE_TABLES);
+                       
+                    mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                    mdui->setSubstep(0);
+                       
+                    return -1;
+                  }
+              }
+          } // for
+           
+        if (mdui->step() != CUSTOMIZE_NEW_MD)
+          return -1;
+           
+        str_sprintf(buf, "merge into %s.\"%s\".%s using (select C.object_uid, sum(C.column_size  + case when C.nullable != 0 then 1 else 0 end) from %s.\"%s\".%s C, %s.\"%s\".%s K where C.object_uid = K.object_uid and C.column_number = K.column_number group by 1) T(a, b) on table_uid = T.a when matched then update set key_length = T.b",
+                    getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
+                    getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                    getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS);
+        cliRC = cliInterface.executeImmediate(buf);
+           
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+               
+            *CmpCommon::diags() << DgSqlCode(-1423)
+                                << DgString0(SEABASE_TABLES);
+               
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+               
+            return -1;
+          }
+           
+        str_sprintf(buf, "merge into %s.\"%s\".%s using (select object_uid, sum(column_size + case when nullable != 0 then 1 else 0 end), sum(column_size + case when nullable != 0 then 1 else 0 end + %d + %d), count(*) from %s.\"%s\".%s group by 1) T(a,b,c,d) on table_uid = T.a when matched then update set (row_data_length, row_total_length) = (T.b, T.c + key_length * T.d)",
+                    getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
+                    sizeof(Int64),
+                    5,
+                    getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS);
+        cliRC = cliInterface.executeImmediate(buf);
+           
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+               
+            *CmpCommon::diags() << DgSqlCode(-1423)
+                                << DgString0(SEABASE_TABLES);
+               
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+               
+            return -1;
+          }
+           
+        if (mdui->step() != CUSTOMIZE_NEW_MD)
+          return -1;
+           
+        mdui->setMsg("  End: Update TABLES");
+        mdui->subStep()++;
+           
+        if (xnInProgress(&cliInterface))
+          {
+            cliRC = commitXn(&cliInterface);
+            if (cliRC < 0)
+              {
+                cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+                   
+                mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                mdui->setSubstep(0);
+                   
+                return -1;
+              }
+          }
+           
+        return 0;
+      }
+      return -1;
+         
+    case 5:
+      {
+        mdui->setMsg("  Start: Update TEXT");
+        mdui->subStep()++;
+           
+        cliRC = beginXn(&cliInterface);
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+               
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+               
+            return -1;
+          }
+           
+        return 0;
+      }
+      return -1;
+         
+    case 6:
+      {
+        str_sprintf(buf, "update %s.\"%s\".%s set text_type = 1 where text not like 'CREATE VIEW %%' and text not like 'HBASE_OPTIONS=>%%' and NOT (text_type = 4 and text like 'HASH2PARTFUNC%%' ) ",
+                    getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT);
+        cliRC = cliInterface.executeImmediate(buf);
+           
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+               
+            *CmpCommon::diags() << DgSqlCode(-1423)
+                                << DgString0(SEABASE_TEXT);
+               
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+               
+            return -1;
+          }
+           
+        if (mdui->step() != CUSTOMIZE_NEW_MD)
+          return -1;
+           
+        mdui->setMsg("  End: Update TEXT");
+        mdui->subStep()++;
+           
+        if (xnInProgress(&cliInterface))
+          {
+            cliRC = commitXn(&cliInterface);
+            if (cliRC < 0)
+              {
+                cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+                   
+                mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                mdui->setSubstep(0);
+                   
+                return -1;
+              }
+          }
+           
+        return 0;
+      }
+      return -1;
+         
+    case 7:
+      {
+        mdui->setMsg("  Start: Update SEQ_GEN");
+        mdui->subStep()++;
+           
+        cliRC = beginXn(&cliInterface);
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+               
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+               
+            return -1;
+          }
+           
+        return 0;
+      }
+      return -1;
+         
+    case 8:
+      {
+        str_sprintf(buf, "delete from %s.\"%s\".%s where object_type = 'PK' and object_uid = (select TC.constraint_uid from %s.\"%s\".%s TC where TC.constraint_type = 'P' and TC.table_uid = (select O2.object_uid from %s.\"%s\".%s O2 where O2.catalog_name = '%s' and O2.schema_name = '%s' and O2.object_name = '%s' and O2.object_type = 'BT')) ",
+                    TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                    TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
+                    TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                    TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN_OLD_MD);                          
+           
+        cliRC = cliInterface.executeImmediate(buf);
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+               
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+               
+            return -1;
+          }
+           
+        str_sprintf(buf, "delete from %s.\"%s\".%s  where constraint_type = 'P' and table_uid = (select O.object_uid from %s.\"%s\".%s O where O.catalog_name = '%s' and O.schema_name = '%s' and O.object_name = '%s' and O.object_type = 'BT') ",
+                    TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
+                    TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                    TRAFODION_SYSCAT_LIT, SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN_OLD_MD);                          
+           
+        cliRC = cliInterface.executeImmediate(buf);
+        if (cliRC < 0)
+          {
+            cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+               
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+               
+            return -1;
+          }
+           
+        if (mdui->step() != CUSTOMIZE_NEW_MD)
+          return -1;
+           
+        mdui->setMsg("  End: Update SEQ_GEN");
+        mdui->subStep()++;
+           
+        if (xnInProgress(&cliInterface))
+          {
+            cliRC = commitXn(&cliInterface);
+            if (cliRC < 0)
+              {
+                cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+                   
+                mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+                mdui->setSubstep(0);
+                   
+                return -1;
+              }
+          }
+           
+        return 0;
+      }
+      return -1;
+         
+    case 9:
+      {
+        mdui->setMsg("  Start: Create Schema Objects");
+        mdui->subStep()++;
+           
+        return 0;
+      }
+      return -1;
+         
+    case 10:
+      {
+        cliRC = createSchemaObjects(&cliInterface);
+        if (cliRC < 0)
+          {
+            mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+            mdui->setSubstep(0);
+               
+            return -1;
+          }
+           
+        if (mdui->step() != CUSTOMIZE_NEW_MD)
+          return -1;
+           
+        mdui->setMsg("  End: Create Schema Objects");
+        mdui->subStep()++;
+           
+        return 0;
+      }
+      return -1;
+         
+    case 11:
+      {
+        mdui->setMsg("Customize New Metadata: done");
+
+        // done, move to next step.
+        return 1;
+      }
+      return -1;
+      
+    default:
+      {
+        mdui->setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+        mdui->setSubstep(0);
+      }
+      return -1;
+    }
+
+  return -1;
 }
 
 short CmpSeabaseMDupgrade::upgradePrivMgr()
 {
+   NABoolean authCurrentlyEnabled = FALSE;
+   NAString privMgrName = getSystemCatalog() +
+                          NAString(".") +
+                          NAString(SEABASE_OLD_PRIVMGR_SCHEMA) +
+                          NAString(".OBJECT_PRIVILEGES");
+
+   Lng32 ij = 0;
+   while (ij)
+     {
+       ij = 2 - ij;
+     }
+
+   // See if authorization is currently enabled by checking for the
+   // existence of the TRAFODION.PRIVMGR_MD.OBJECT_PRIVILEGES table.
+   ExpHbaseInterface * ehi = allocEHI();
+   if (existsInHbase(privMgrName, ehi)  == 1)
+      authCurrentlyEnabled = TRUE;
+   deallocEHI(ehi);
+
+   // During a Trafodion upgrade, the customer can choose to enable security 
+   // features through a new installation option.  When chosen, the installer 
+   // sets the environment variable TRAFODION_ENABLE_AUTHENTICATION to YES
+   char * env = getenv("TRAFODION_ENABLE_AUTHENTICATION");
+   NABoolean securityFeaturesEnabled = FALSE;
+   if (env)
+      securityFeaturesEnabled = (strcmp(env, "YES") == 0) ? TRUE : FALSE;
+
+   // Upgrade privmgr based on following table:
+   //
+   // --------------------  -----------------------  ------ 
+   //   ** flag **               ** flag **         
+   // authCurrentlyEnabled  securityFeaturesEnabled  action
+   // --------------------  -----------------------  ------
+   //
+   //  TRUE                  YES                      D, E
+   //  TRUE                  NO                       D, E
+   //  FALSE                 YES                      E
+   //  FALSE                 NO                       --
+
+   //      D  => drop existing privilege infrastructure
+   //      E  => enable privilege infrastructure
+   //      -- => do nothing
+
+   // If authorization is currently enabled - disable it
+   if (authCurrentlyEnabled)
+   {
+      dropSeabaseAuthorization(SEABASE_OLD_PRIVMGR_SCHEMA);
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+        {
+          return -1;
+        }
+   }
+
+   if (securityFeaturesEnabled || authCurrentlyEnabled)
+   {
+      initSeabaseAuthorization();
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+        return -1;
+   }
    return 0;
 }
-

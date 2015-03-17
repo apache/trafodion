@@ -6796,7 +6796,7 @@ Int64 NATable::lookupObjectUid()
 
 bool NATable::isEnabledForDDLQI() const
 {
-  if (isSeabaseMD_ || isSMDTable_)
+  if (isSeabaseMD_ || isSMDTable_ || (getSpecialType() == ExtendedQualName::VIRTUAL_TABLE))
     return false;
   else 
   {

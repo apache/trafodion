@@ -3683,6 +3683,9 @@ enum DefaultConstants
   PCODE_NE_ENABLED,
   PCODE_EXPR_CACHE_SIZE,
 
+  // if on, store only the needed explain data. See ExplainTuple::genExplainTupleData.
+  EXPLAIN_SPACE_OPT,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

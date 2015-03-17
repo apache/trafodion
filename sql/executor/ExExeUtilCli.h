@@ -114,6 +114,12 @@ private:
 		SQL_QUERY_COMPILER_STATS_INFO *comp_stats_info = NULL,
 		NABoolean monitorThis = FALSE);
 
+  Lng32 setupExplainData(SQLMODULE_ID * module,
+                       SQLSTMT_ID * stmt);
+  Lng32 setupExplainData();
+  char* getExplainDataPtr() { return explainData_;}
+  Lng32 getExplainDataLen() { return explainDataLen_; }
+
   Lng32 exec(char * inputBuf = NULL, Lng32 inputBufLen = 0);
   Lng32 fetch();
   Lng32 close();
@@ -258,13 +264,13 @@ private:
 		  char * val,
 		  ComDiagsArea * globalDiags = NULL);
 
+  void setNotExeUtilInternalQuery(NABoolean v)
+    {(v ? flags_ |= NOT_EXEUTIL_INTERNAL_QUERY : flags_ &= ~NOT_EXEUTIL_INTERNAL_QUERY); };
+  NABoolean notExeUtilInternalQuery() { return (flags_ & NOT_EXEUTIL_INTERNAL_QUERY) != 0; };
+
   Lng32 setCQS(const char * shape, ComDiagsArea * globalDiags = NULL);
   Lng32 resetCQS(ComDiagsArea * globalDiags = NULL);
 
-  void setNotExeUtilInternalQuery(NABoolean v)
-  {(v ? flags_ |= NOT_EXEUTIL_INTERNAL_QUERY : flags_ &= ~NOT_EXEUTIL_INTERNAL_QUERY); };
-  NABoolean notExeUtilInternalQuery() { return (flags_ & NOT_EXEUTIL_INTERNAL_QUERY) != 0; };
-  
 private:
   struct Attrs
     {
@@ -283,6 +289,9 @@ private:
   char         * outputBuf_;
   Int32          isoMapping_;
   Int32          outputDatalen_;
+
+  char * explainData_;
+  Int32 explainDataLen_;
 
   Int32          numInputEntries_;
   Int32          numOutputEntries_;

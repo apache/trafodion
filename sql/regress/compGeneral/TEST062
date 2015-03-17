@@ -59,6 +59,8 @@ obey TEST062(run_skewed_nulls_test);
 --obey TEST062(run_mcsb_with_mcskews_test);
 log;
 
+obey TEST062(clean_up);
+
 exit;
 
 ?section simple_tests
@@ -696,8 +698,8 @@ obey mcsb(int_test);
 obey mcsb(char_test);
 
 
-log off;
-
+?section clean_up
+cqd * reset;
 drop table t062A;
 drop table t062B;
 drop table t062_seed;
@@ -706,3 +708,6 @@ drop table t062_mc_f;
 drop table t062_mc_d1;
 drop table t062_mc_d3;
 drop table t062_mc_seed;
+
+drop table skc;
+drop table dm2c;

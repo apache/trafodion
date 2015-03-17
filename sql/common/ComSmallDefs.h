@@ -120,7 +120,8 @@ typedef NABoolean               ComBoolean;
 #define HBASE_HISTINT_PK               "SB_HISTOGRAM_INTERVALS_PK"
 #define TRAFODION_SYSCAT_LIT              "TRAFODION"
 #define SEABASE_SYSTEM_SCHEMA           "SEABASE"
-#define SEABASE_PRIVMGR_SCHEMA         "PRIVMGR_MD"
+#define SEABASE_OLD_PRIVMGR_SCHEMA         "PRIVMGR_MD"
+#define SEABASE_PRIVMGR_SCHEMA         "_PRIVMGR_MD_"
 #define SEABASE_UDF_SCHEMA             "_UDF_"
 
 #define SEABASE_DEFAULT_COL_FAMILY "#1"
@@ -162,6 +163,9 @@ typedef NABoolean               ComBoolean;
 
 // Trafodion statistics repository reserved schema
 #define SEABASE_REPOS_SCHEMA  "_REPOS_"
+#define REPOS_METRIC_QUERY_AGGR_TABLE "METRIC_QUERY_AGGR_TABLE"
+#define REPOS_METRIC_QUERY_TABLE "METRIC_QUERY_TABLE"
+#define REPOS_METRIC_SESSION_TABLE "METRIC_SESSION_TABLE"
 
 /******    *****/
 enum ComActivationTime { COM_UNKNOWN_TIME, COM_BEFORE , COM_AFTER };

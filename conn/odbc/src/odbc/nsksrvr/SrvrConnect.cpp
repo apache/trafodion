@@ -677,7 +677,9 @@ static void* SessionWatchDog(void* arg)
 				else
 					ss << "NULL,";
 				ss << pQueryAdd->m_master_execution_time << ",";
-				ss << pQueryAdd->m_master_elapse_time << ",";
+				ss << pQueryAdd->m_master_elapse_time << ",'";
+				ss << pQueryAdd->m_query_status << "','";
+				ss << pQueryAdd->m_query_sub_status << "',";
 				ss << pQueryAdd->m_error_code << ",";
 				ss << pQueryAdd->m_sql_error_code << ",'";
 				ss << pQueryAdd->m_error_text.c_str() << "','";
@@ -746,6 +748,8 @@ static void* SessionWatchDog(void* arg)
 					ss << "EXEC_END_UTC_TS= CONVERTTIMESTAMP(" << pQueryUpdate->m_exec_end_utc_ts << "),";
 				ss << "MASTER_EXECUTION_TIME= " << pQueryUpdate->m_master_execution_time << ",";
 				ss << "MASTER_ELAPSED_TIME= " << pQueryUpdate->m_master_elapse_time << ",";
+				ss << "QUERY_STATUS= '" << pQueryUpdate->m_query_status << "',";
+				ss << "QUERY_SUB_STATUS= '" << pQueryUpdate->m_query_sub_status << "',";
 				ss << "ERROR_CODE= " << pQueryUpdate->m_error_code << ",";
 				ss << "SQL_ERROR_CODE= " << pQueryUpdate->m_sql_error_code << ",";
 				ss << "ERROR_TEXT= '" << pQueryUpdate->m_error_text.c_str()<< "',";
@@ -802,8 +806,9 @@ static void* SessionWatchDog(void* arg)
 				ss << pAggrStat->m_sequence_number << ",'";
 				ss << pAggrStat->m_process_name.c_str() << "','";
 				ss << pAggrStat->m_sessionId.c_str() << "',CONVERTTIMESTAMP(";
-				ss << pAggrStat->m_aggregation_start_utc_ts << "),CONVERTTIMESTAMP(";
-				ss << pAggrStat->m_aggregation_end_utc_ts << "),";
+				ss << pAggrStat->m_session_start_utc_ts << "),CONVERTTIMESTAMP(";
+				ss << pAggrStat->m_aggregation_last_update_utc_ts << "),";
+				ss << pAggrStat->m_aggregation_last_elapsed_time << ",";
 				ss << pAggrStat->m_user_id << ",'";
 				ss << pAggrStat->m_user_name.c_str() << "','";
 				ss << pAggrStat->m_role_name.c_str() << "','";
@@ -818,16 +823,44 @@ static void* SessionWatchDog(void* arg)
 				ss << pAggrStat->m_total_inserts << ",";
 				ss << pAggrStat->m_total_updates << ",";
 				ss << pAggrStat->m_total_deletes << ",";
+				//
+				ss << pAggrStat->m_total_ddl_stmts << ",";
+				ss << pAggrStat->m_total_util_stmts << ",";
+				ss << pAggrStat->m_total_catalog_stmts << ",";
+				ss << pAggrStat->m_total_other_stmts << ",";
+				//
+				ss << pAggrStat->m_total_insert_errors << ",";
+				ss << pAggrStat->m_total_delete_errors << ",";
+				ss << pAggrStat->m_total_update_errors << ",";
+				ss << pAggrStat->m_total_select_errors << ",";
+				ss << pAggrStat->m_total_ddl_errors << ",";
+				ss << pAggrStat->m_total_util_errors << ",";
+				ss << pAggrStat->m_total_catalog_errors << ",";
+				ss << pAggrStat->m_total_other_errors << ",";
+				//
 				ss << pAggrStat->m_delta_estimated_rows_accessed << ",";
 				ss << pAggrStat->m_delta_estimated_rows_used << ",";
 				ss << pAggrStat->m_delta_rows_accessed << ",";
 				ss << pAggrStat->m_delta_rows_retrieved << ",";
-				ss << pAggrStat->m_delta_num_rows_uid << ",";
+				ss << pAggrStat->m_delta_num_rows_iud << ",";
 				ss << pAggrStat->m_delta_total_selects << ",";
 				ss << pAggrStat->m_delta_total_inserts << ",";
 				ss << pAggrStat->m_delta_total_updates << ",";
-				ss << pAggrStat->m_delta_total_deletes << ")";
-
+				ss << pAggrStat->m_delta_total_deletes << ",";
+				//
+				ss << pAggrStat->m_delta_total_ddl_stmts << ",";
+				ss << pAggrStat->m_delta_total_util_stmts << ",";
+				ss << pAggrStat->m_delta_total_catalog_stmts << ",";
+				ss << pAggrStat->m_delta_total_other_stmts << ",";
+				//
+				ss << pAggrStat->m_delta_insert_errors << ",";
+				ss << pAggrStat->m_delta_delete_errors << ",";
+				ss << pAggrStat->m_delta_update_errors << ",";
+				ss << pAggrStat->m_delta_select_errors << ",";
+				ss << pAggrStat->m_delta_ddl_errors << ",";
+				ss << pAggrStat->m_delta_util_errors << ",";
+				ss << pAggrStat->m_delta_catalog_errors << ",";
+				ss << pAggrStat->m_delta_other_errors << ")";
 			}
 			else if (repos_stats.m_pub_type == PUB_TYPE_SESSION_UPDATE_AGGREGATION || repos_stats.m_pub_type == PUB_TYPE_SESSION_END_AGGREGATION)
 			{
@@ -842,7 +875,8 @@ static void* SessionWatchDog(void* arg)
 
 				ss << "update Trafodion.\"_REPOS_\".metric_query_aggr_table ";
 
-				ss << "set AGGREGATION_END_UTC_TS = CONVERTTIMESTAMP(" << pAggrStat->m_aggregation_end_utc_ts << "),";
+				ss << "set AGGREGATION_LAST_UPDATE_UTC_TS = CONVERTTIMESTAMP(" << pAggrStat->m_aggregation_last_update_utc_ts << "),";
+				ss << "AGGREGATION_LAST_ELAPSED_TIME = " << pAggrStat->m_aggregation_last_elapsed_time << ",";
 				ss << "TOTAL_EST_ROWS_ACCESSED = " << pAggrStat->m_total_est_rows_accessed << ",";
 				ss << "TOTAL_EST_ROWS_USED = " << pAggrStat->m_total_est_rows_used << ",";
 				ss << "TOTAL_ROWS_RETRIEVED = " << pAggrStat->m_total_rows_retrieved << ",";
@@ -855,13 +889,12 @@ static void* SessionWatchDog(void* arg)
 				ss << "DELTA_ESTIMATED_ROWS_USED = " << pAggrStat->m_delta_estimated_rows_used << ",";
 				ss << "DELTA_ROWS_ACCESSED = " << pAggrStat->m_delta_rows_accessed << ",";
 				ss << "DELTA_ROWS_RETRIEVED = " << pAggrStat->m_delta_rows_retrieved << ",";
-				ss << "DELTA_NUM_ROWS_UID = " << pAggrStat->m_delta_num_rows_uid << ",";
-				ss << "DELTA_TOTAL_SELECTS = " << pAggrStat->m_delta_total_selects << ",";
-				ss << "DELTA_TOTAL_INSERTS = " << pAggrStat->m_delta_total_inserts << ",";
-				ss << "DELTA_TOTAL_UPDATES = " << pAggrStat->m_delta_total_updates << ",";
-				ss << "DELTA_TOTAL_DELETES = " << pAggrStat->m_delta_total_deletes;
-				ss << " where AGGREGATION_START_UTC_TS = CONVERTTIMESTAMP(" << pAggrStat->m_aggregation_start_utc_ts << ")";
-				ss << " and SESSION_ID = '" << pAggrStat->m_sessionId.c_str() << "'";
+				ss << "DELTA_NUM_ROWS_IUD = " << pAggrStat->m_delta_num_rows_iud << ",";
+				ss << "DELTA_SELECTS = " << pAggrStat->m_delta_total_selects << ",";
+				ss << "DELTA_INSERTS = " << pAggrStat->m_delta_total_inserts << ",";
+				ss << "DELTA_UPDATES = " << pAggrStat->m_delta_total_updates << ",";
+				ss << "DELTA_DELETES = " << pAggrStat->m_delta_total_deletes;
+				ss << " where SESSION_ID = '" << pAggrStat->m_sessionId.c_str() << "'";
 
 			}
 			else
@@ -898,7 +931,7 @@ static void* SessionWatchDog(void* arg)
 	if (pSrvrStmt != NULL)
 		pSrvrStmt->cleanupAll();
 
-	// Statements allocated earlier will get cleaned up 
+	// Statements allocated earlier will get cleaned up
 	// during stop processing
 
 	WSQL_EXEC_DeleteContext(thread_context_handle);

@@ -41,6 +41,7 @@
 #include  "ComTdb.h"
 #include  "ex_tcb.h"
 #include  "ComSqlId.h"
+#include  "ComMisc.h"
 
 #include  "ExExeUtil.h"
 #include  "ex_exe_stmt_globals.h"
@@ -3072,10 +3073,7 @@ short ExExeUtilGetHbaseObjectsTcb::work()
                   }
                 else
                   {
-                    if ((schemaNamePart ==  SEABASE_MD_SCHEMA) ||
-                        (schemaNamePart == SEABASE_REPOS_SCHEMA) ||
-                        (schemaNamePart == SEABASE_DTM_SCHEMA) ||
-                        (schemaNamePart == SEABASE_PRIVMGR_SCHEMA))
+                    if (ComIsTrafodionReservedSchema("", catalogNamePart, schemaNamePart))
                       {
                         sysObj = TRUE;
                       }

@@ -13,7 +13,7 @@
  *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -37,5 +37,9 @@
 #include "ComSmallDefs.h"
 #include "NAString.h"
 
+NABoolean ComIsTrafodionReservedSchema(
+                                       const NAString &systemCatalog,
+                                       const NAString &catName,
+                                       const NAString &schName);
 
 #endif // COMMISC_H

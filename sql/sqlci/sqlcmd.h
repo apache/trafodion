@@ -89,6 +89,8 @@ public:
                           Int32 *prepcode = NULL,
                           Lng32 *statisticsType = NULL);
 
+  static short updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryId);
+
   static short do_execute(SqlciEnv *, PrepStmt *, 
 			  Int32 numUnnamedParams = 0,
 			  char ** unnamedParamArray = NULL,

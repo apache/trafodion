@@ -45,6 +45,7 @@
 #include "CmpSeabaseDDLauth.h"
 #include "NAUserId.h"
 #include "StmtDDLCreateView.h"
+#include "StmtDDLDropView.h"
 #include "StmtDDLAlterTableDisableIndex.h"
 #include "StmtDDLAlterTableEnableIndex.h"
 #include "StmtDDLCreateComponentPrivilege.h"
@@ -61,6 +62,7 @@
 #include "PrivMgrPrivileges.h"
 #include "PrivMgrRoles.h"
 #include "ComUser.h"
+#include "ComMisc.h"
 #include "hdfs.h"
 void cleanupLOBDataDescFiles(const char*, int, const char *);
 
@@ -99,13 +101,6 @@ static bool hasValue(
 
 #include "EncodedKeyValue.h"
 #include "SCMVersHelp.h"
-
-// get software major and minor versions from -D defs defined in sqlcomp/Makefile.
-// These defs pick up values from export vars defined in sqf/sqenvcom.sh.
-#define SOFTWARE_MAJOR_VERSION TRAF_SOFTWARE_VERS_MAJOR
-#define SOFTWARE_MINOR_VERSION TRAF_SOFTWARE_VERS_MINOR
-#define SOFTWARE_UPDATE_VERSION TRAF_SOFTWARE_VERS_UPDATE
-#define HBASE_OPTIONS_MAX_LENGTH 6000
 
 CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
 {
@@ -247,7 +242,7 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
             }
           else
             tableInfo = mddi.tableInfo;
-          
+
           return TRUE;
         }
       else  //if (mdti.oldName && (objName == mdti.oldName))
@@ -773,21 +768,14 @@ NABoolean CmpSeabaseDDL::isSeabaseReservedSchema(
                                                  const NAString &catName,
                                                  const NAString &schName)
 {
-  if (NOT catName.isNull())
-    {
-      NAString seabaseDefCatName = "";
-      CmpCommon::getDefault(SEABASE_CATALOG, seabaseDefCatName, FALSE);
-      seabaseDefCatName.toUpper();
-      
-      if ((catName == seabaseDefCatName) &&
-          ((schName == SEABASE_MD_SCHEMA) ||
-           (schName == SEABASE_DTM_SCHEMA) ||
-           (schName == SEABASE_PRIVMGR_SCHEMA) ||
-           (schName == SEABASE_REPOS_SCHEMA) ))
-        return TRUE;
-    }
+  if (catName.isNull())
+    return FALSE;
 
-  return FALSE;
+  NAString seabaseDefCatName = "";
+  CmpCommon::getDefault(SEABASE_CATALOG, seabaseDefCatName, FALSE);
+  seabaseDefCatName.toUpper();
+  
+  return ComIsTrafodionReservedSchema(seabaseDefCatName, catName, schName);
 }
 
 NABoolean CmpSeabaseDDL::isSeabaseReservedSchema(
@@ -1034,11 +1022,13 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
                                       ExpHbaseInterface * inEHI,
                                       Int64 * mdMajorVersion,
                                       Int64 * mdMinorVersion,
+                                      Int64 * mdUpdateVersion,
                                       Int64 * sysSWMajorVersion,
                                       Int64 * sysSWMinorVersion,
                                       Int64 * sysSWUpdVersion,
                                       Int64 * mdSWMajorVersion,
                                       Int64 * mdSWMinorVersion,
+                                      Int64 * mdSWUpdateVersion,
                                       Lng32 * hbaseErrNum,
                                       NAString * hbaseErrStr)
 {
@@ -1046,6 +1036,10 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
   Lng32 cliRC = 0;
 
   processSystemCatalog(defs);
+
+  Int64 sysMajorVersion = 0;
+  Int64 sysMinorVersion = 0;
+  Int64 sysUpdVersion = 0;
 
   HbaseStr hbaseVersions;
 
@@ -1121,8 +1115,27 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
       goto label_return;
     }
 
+  getSystemSoftwareVersion(sysMajorVersion, sysMinorVersion, sysUpdVersion);
+  if (sysSWMajorVersion || sysSWMinorVersion || sysSWUpdVersion)
+    {
+      if (sysSWMajorVersion)
+        *sysSWMajorVersion = sysMajorVersion;
+      if (sysSWMinorVersion)
+        *sysSWMinorVersion = sysMinorVersion;
+      if (sysSWUpdVersion)
+        *sysSWUpdVersion = sysUpdVersion;
+    }
+
   if (retcode == 0) // not initialized
     {
+      if ((sysMajorVersion != SOFTWARE_MAJOR_VERSION) ||
+          (sysMinorVersion != SOFTWARE_MINOR_VERSION) ||
+          (sysUpdVersion != SOFTWARE_UPDATE_VERSION))
+        {
+          retcode = -1397;
+          goto label_return;
+        }
+      
       retcode = -1393;
       goto label_return;
     }
@@ -1196,18 +1209,24 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
       NAString temp = versionType.strip(NAString::trailing, ' ');
       if (temp == "METADATA")
         {
+          Int64 updateVersion = minorVersion - (minorVersion / 10) * 10;
           if (mdMajorVersion)
             *mdMajorVersion = majorVersion;
           if (mdMinorVersion)
-            *mdMinorVersion = minorVersion;
+            *mdMinorVersion = minorVersion / 10;
+          if (mdUpdateVersion)
+            *mdUpdateVersion = updateVersion;
 
           mdVersionFound = TRUE;
           if ((majorVersion != METADATA_MAJOR_VERSION) ||
-              (minorVersion != METADATA_MINOR_VERSION))
+              (minorVersion/10 != METADATA_MINOR_VERSION) ||
+              (updateVersion != METADATA_UPDATE_VERSION))
             {
               // version mismatch. Check if metadata is corrupt or need to be upgraded.
               if (isOldMetadataInitialized(ehi))
-                retcode = -1395;
+                {
+                  retcode = -1395;
+                }
               else
                 {
                   retcode = -1394;
@@ -1243,7 +1262,9 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
           if (mdSWMajorVersion)
             *mdSWMajorVersion = majorVersion;
           if (mdSWMinorVersion)
-            *mdSWMinorVersion = minorVersion;
+            *mdSWMinorVersion = minorVersion / 10;
+          if (mdSWUpdateVersion)
+            *mdSWUpdateVersion = minorVersion - (minorVersion / 10)*10;
 
           if ((sysMajorVersion != SOFTWARE_MAJOR_VERSION) ||
               (sysMinorVersion != SOFTWARE_MINOR_VERSION) ||
@@ -1327,6 +1348,10 @@ short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext)
   if (cliRC < 0)
     return -1;
 
+  cliRC = cliInterface.holdAndSetCQD("hbase_rowset_vsbb_opt", "OFF");
+  if (cliRC < 0)
+    return -1;
+
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
 
   Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
@@ -1354,6 +1379,8 @@ void CmpSeabaseDDL::restoreAllControlsAndFlags()
   cliRC = cliInterface.restoreCQD("attempt_esp_parallelism");
 
   cliRC = cliInterface.restoreCQD("traf_no_dtm_xn");
+
+  cliRC = cliInterface.restoreCQD("hbase_rowset_vsbb_opt");
 
   // Restore parser flags settings of cmp and exe context to what they originally were
   Set_SqlParser_Flags (savedCmpParserFlags_);
@@ -2286,7 +2313,8 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
               setFlags(hbaseColFlags, SEABASE_SERIALIZED);
             else if (numericType->isEncodingNeeded())
               {
-                *CmpCommon::diags() << DgSqlCode(-1191);
+                *CmpCommon::diags() << DgSqlCode(-1191)
+                                    << DgString0(numericType->getSimpleTypeName());
                 return -1;
               }
           }
@@ -2315,7 +2343,9 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
         if ((serializedOption == 1) &&
             (dtiCommonType->isEncodingNeeded()))
           {
-            *CmpCommon::diags() << DgSqlCode(-1191);
+            *CmpCommon::diags() << DgSqlCode(-1191)
+                                << DgString0(dtiCommonType->getSimpleTypeName());
+
             return -1;
           }
       }
@@ -5317,9 +5347,10 @@ short CmpSeabaseDDL::updateSeabaseVersions(
   str_sprintf(buf, "insert into %s.\"%s\".%s values ('METADATA', %d, %d, %Ld, 'initialize trafodion'), ('DATAFORMAT', %d, %d, %Ld, 'initialize trafodion'), ('SOFTWARE', %d, %d, %Ld, 'initialize trafodion') ",
               sysCat, SEABASE_MD_SCHEMA, SEABASE_VERSIONS,
               (majorVersion != -1 ? majorVersion : METADATA_MAJOR_VERSION),
-              METADATA_MINOR_VERSION, initTime,
+              (METADATA_MINOR_VERSION * 10 + METADATA_UPDATE_VERSION), initTime,
               DATAFORMAT_MAJOR_VERSION, DATAFORMAT_MINOR_VERSION, initTime,
-              SOFTWARE_MAJOR_VERSION, SOFTWARE_MINOR_VERSION, initTime);
+              SOFTWARE_MAJOR_VERSION, 
+              (SOFTWARE_MINOR_VERSION * 10 + SOFTWARE_UPDATE_VERSION), initTime);
   cliRC = cliInterface->executeImmediate(buf);
   if (cliRC < 0)
     {
@@ -5373,6 +5404,12 @@ void CmpSeabaseDDL::initSeabaseMD()
 
   Queue * tempQueue = NULL;
 
+  // Determine if security features should be enabled
+  NABoolean securityFeaturesEnabled = FALSE;
+  char * env = getenv("TRAFODION_ENABLE_AUTHENTICATION");
+  if (env)
+     securityFeaturesEnabled = (strcmp(env, "YES") == 0) ? TRUE : FALSE;
+
   // create metadata tables in hbase
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
@@ -5385,7 +5422,7 @@ void CmpSeabaseDDL::initSeabaseMD()
   Lng32 hbaseErrNum = 0;
   NAString hbaseErrStr;
   Lng32 errNum = validateVersions(&ActiveSchemaDB()->getDefaults(), ehi,
-                                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, 
+                                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                                   &hbaseErrNum, &hbaseErrStr);
   if (errNum != 0)
     {
@@ -5567,6 +5604,17 @@ void CmpSeabaseDDL::initSeabaseMD()
    {
      goto label_error;
    }
+
+  // During install, the customer can choose to enable security features through 
+  // a new installation option but not initialize trafodion.  When this happens,
+  // the installer sets the environment variable TRAFODION_ENABLE_AUTHENTICATION
+  // to YES. In this case initialize trafodion needs to enable authorization 
+  if (securityFeaturesEnabled)
+    {
+      initSeabaseAuthorization();
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+        goto label_error;
+    }
 
   cliRC = cliInterface.restoreCQD("traf_bootstrap_md_mode");
 
@@ -6298,9 +6346,14 @@ void CmpSeabaseDDL::initSeabaseAuthorization()
 
 void CmpSeabaseDDL::dropSeabaseAuthorization()
 {
-  NAString privMgrMDLoc;
-  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+  dropSeabaseAuthorization(SEABASE_PRIVMGR_SCHEMA);
+  return;
+}
 
+void CmpSeabaseDDL::dropSeabaseAuthorization (NAString schemaName)
+{
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), schemaName);
   PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
   PrivStatus retcode = privInterface.dropAuthorizationMetadata(); 
   if (retcode == STATUS_ERROR && 
@@ -6831,9 +6884,9 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 
   NABoolean xnWasStartedHere = FALSE;
   NABoolean ignoreUninitTrafErr = FALSE;
+
   if ((ddlExpr) &&
-      ((ddlExpr->dropHbase()) ||
-       (ddlExpr->initHbase()) ||
+      ((ddlExpr->initHbase()) ||
        (ddlExpr->createMDViews()) ||
        (ddlExpr->dropMDViews()) ||
        (ddlExpr->addSeqTable()) ||
@@ -6843,38 +6896,11 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
        (ddlExpr->addSchemaObjects()) ||
        (ddlExpr->updateVersion())))
     ignoreUninitTrafErr = TRUE;
-  
-  // if metadata views are being created during initialize trafodion, then this
-  // context will be uninitialized.
-  // Check for that and ignore uninitialize traf error.
-  if ((ddlNode) && (ddlNode->getOperatorType() == DDL_CREATE_VIEW))
+
+  if ((Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+      (CmpCommon::context()->isUninitializedSeabase()))
     {
-      StmtDDLCreateView * createViewParseNode =
-        ddlNode->castToStmtDDLNode()->castToStmtDDLCreateView();
-      
-      ComObjectName viewName(createViewParseNode->getViewName());
-      if ((isSeabaseMD(viewName)) &&
-          (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
-          (CmpCommon::context()->isUninitializedSeabase()))
-        {
-          ignoreUninitTrafErr = TRUE;
-        }
-    }
-  // if metadata tables are being created during initialize trafodion, then this
-  // context will be uninitialized.
-  // Check for that and ignore uninitialize traf error.
-  else if ((ddlNode) && (ddlNode->getOperatorType() == DDL_CREATE_TABLE))
-    {
-      StmtDDLCreateTable * createTableParseNode =
-        ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable();
-      
-      ComObjectName tableName(createTableParseNode->getTableName());
-      if ((isSeabaseMD(tableName)) &&
-          (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
-          (CmpCommon::context()->isUninitializedSeabase()))
-        {
-          ignoreUninitTrafErr = TRUE;
-        }
+      ignoreUninitTrafErr = TRUE;
     }
 
   if ((CmpCommon::context()->isUninitializedSeabase()) &&

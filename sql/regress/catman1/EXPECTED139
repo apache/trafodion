@@ -1,5 +1,5 @@
 >>obey TEST139(set_up);
->>set schema privmgr_md;
+>>set schema "_PRIVMGR_MD_";
 
 --- SQL operation complete.
 >>initialize authorization;
@@ -18,7 +18,7 @@
 +>     (select object_uid
 +>      from "_MD_".objects
 +>      where object_type in ('VI','BT','LB','UR')
-+>        and schema_name in ('PRIVMGR_MD', 'T139SCH'))
++>        and schema_name in ('_PRIVMGR_MD_', 'T139SCH'))
 +>  order by 1, 2
 +>;
 
@@ -31,7 +31,7 @@
 +>  substring (grantee_name,1,10) as grantee,
 +>  privileges_bitmap as privs,
 +>  grantable_bitmap as wgo
-+>from privmgr_md.object_privileges
++>from "_PRIVMGR_MD_".object_privileges
 +>where object_name like ?tblname 
 +>order by 1, 2, 3;
 
@@ -45,7 +45,7 @@
 +>  substring (grantee_name,1,10) as grantee,
 +>  privileges_bitmap as privs,
 +>  grantable_bitmap as wgo
-+>from privmgr_md.object_privileges
++>from "_PRIVMGR_MD_".object_privileges
 +>where object_uid in
 +>   (select object_uid from "_MD_".objects
 +>    where schema_name in ('T139SCH'))
