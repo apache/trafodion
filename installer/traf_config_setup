@@ -708,17 +708,6 @@ fi
 echo "export DCS_SERVERS_PARM=\"$DCS_SERVERS_PARM\"" >> $LOCAL_TRAF_CONFIG
 
 #==============================================
-#Run the scanner
-echo -n "Run the Trafodion Scanner to check system configuration (Y/N), default N: "
-read answer
-
-if [ ! -z $answer ]; then
-   RUN_SCANNER="${answer^}"
-fi
-
-echo "export RUN_SCANNER=\"$RUN_SCANNER\"" >> $LOCAL_TRAF_CONFIG
-
-#==============================================
 #All items added to config file
 #Will add setup complete flag
 

@@ -43,7 +43,8 @@ Options:
                        the Trafodion license.
     --config_file      If provided, all install prompts will be
                        taken from this file and not prompted for.
-
+    --run_scanner      If provided, the Trafodion scanner will be run
+                       to check system configuation. 
 EOF
 }
 
@@ -51,6 +52,8 @@ EOF
 #Parse input
 USER_CONFIG=""
 ACCEPT_LICENSE="N"
+RUN_SCANNER="N"
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --help)
@@ -74,6 +77,9 @@ while [[ $# -gt 0 ]]; do
                exit -1
             fi
             shift
+            ;;
+        --run_scanner)
+            RUN_SCANNER="Y"
             ;;
         *)
             echo "***ERROR: unknown parameter '$1'"
