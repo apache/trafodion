@@ -15,6 +15,7 @@
 //  limitations under the License.
 //
 // @@@ END COPYRIGHT @@@
+
 package org.apache.hadoop.hbase.client.transactional;
 
 import java.io.IOException;
@@ -58,6 +59,28 @@ import org.apache.hadoop.ipc.RemoteException;
 
 import com.google.protobuf.ByteString;
 
+// Sscc imports
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRegionService;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccBeginTransactionRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccBeginTransactionResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccAbortTransactionRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccAbortTransactionResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest;
+import org.apache.hadoop.hbase.client.transactional.SsccUpdateConflictException;
+
 /**
  * Transaction Manager. Responsible for committing transactions.
  */
@@ -66,7 +89,8 @@ public class TransactionManager {
   // Singleton TransactionManager class
   private static TransactionManager g_TransactionManager = null;
   static final Log LOG = LogFactory.getLog(TransactionManager.class);
- 
+  public AlgorithmType TRANSACTION_ALGORITHM;
+
   private int RETRY_ATTEMPTS;
   private final HConnection connection;
   private final TransactionLogger transactionLogger;
@@ -79,6 +103,9 @@ public class TransactionManager {
   
   static ExecutorService    cp_tpe;
 
+  public enum AlgorithmType{
+    MVCC, SSCC
+  }
 
   // getInstance to return the singleton object for TransactionManager
   public synchronized static TransactionManager getInstance(final Configuration conf) throws ZooKeeperConnectionException, IOException {
@@ -154,6 +181,7 @@ public class TransactionManager {
         boolean refresh = false;
 
         int retryCount = 0;
+        if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC){
         do {
           try {
 
@@ -255,7 +283,111 @@ public class TransactionManager {
              retryCount++;
            }
         } while (retryCount < RETRY_ATTEMPTS && retry == true); 
+        }
 
+        if( TRANSACTION_ALGORITHM == AlgorithmType.SSCC){
+        do {
+          try {
+
+            if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- ENTRY txid: " + transactionId +
+                                                  " ignoreUnknownTransactionException: " + ignoreUnknownTransactionException);
+            Batch.Call<SsccRegionService, SsccCommitResponse> callable =
+               new Batch.Call<SsccRegionService, SsccCommitResponse>() {
+                 ServerRpcController controller = new ServerRpcController();
+                 BlockingRpcCallback<SsccCommitResponse> rpcCallback =
+                    new BlockingRpcCallback<SsccCommitResponse>();
+
+                    @Override
+                    public SsccCommitResponse call(SsccRegionService instance) throws IOException {
+                      org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest.Builder builder = SsccCommitRequest.newBuilder();
+                      builder.setTransactionId(transactionId);
+                      builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName))); //ByteString.copyFromUtf8(Bytes.toString(regionName)));
+                      builder.setIgnoreUnknownTransactionException(ignoreUnknownTransactionException);
+
+                      instance.commit(controller, builder.build(), rpcCallback);
+                      return rpcCallback.get();
+                  }
+               };
+
+               Map<byte[], SsccCommitResponse> result = null;
+               try {
+                 if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- before coprocessorService txid: " + transactionId +
+                        " ignoreUnknownTransactionException: " + ignoreUnknownTransactionException + " table: " +
+                        table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
+                 result = table.coprocessorService(SsccRegionService.class, startKey, endKey, callable);
+               } catch (Throwable e) {
+                  String msg = "ERROR occurred while calling doCommitX coprocessor service in doCommitX";
+                  LOG.error(msg + ":" + e);
+                  throw new Exception(msg);
+               }
+               if(result.size() != 1) {
+                  LOG.error("doCommitX, received incorrect result size: " + result.size());
+                  refresh = true;
+                  retry = true;
+               }
+               else {
+                  // size is 1
+                  for (SsccCommitResponse cresponse : result.values()){
+                    if(cresponse.getHasException()) {
+                      String exceptionString = new String (cresponse.getException().toString());
+                      if (exceptionString.contains("UnknownTransactionException")) {
+                        if (ignoreUnknownTransactionException == true) {
+                          if (LOG.isTraceEnabled()) LOG.trace("doCommitX, ignoring UnknownTransactionException in cresponse");
+                        }
+                        else {
+                          LOG.error("doCommitX, coprocessor UnknownTransactionException: " + cresponse.getException());
+                          throw new UnknownTransactionException();
+                        }
+                      }
+                      else {
+                        if (LOG.isTraceEnabled()) LOG.trace("doCommitX coprocessor exception: " + cresponse.getException());
+                        throw new Exception(cresponse.getException());
+                      }
+                  }
+               }
+               retry = false;
+             }
+          }
+          catch (UnknownTransactionException ute) {
+              LOG.error("exception in doCommitX for transaction: " + transactionId + " " + ute);
+              LOG.info("Got unknown exception during commit. Transaction: [" + transactionId + "]");
+              transactionState.requestPendingCountDec(true);
+              throw new UnknownTransactionException();
+          }
+          catch (Exception e) {
+             LOG.error("doCommitX retrying due to Exception: " + e);
+             refresh = true;
+             retry = true;
+          }
+          if (refresh) {
+
+             HRegionLocation lv_hrl = table.getRegionLocation(startKey);
+             HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
+             String          lv_node = lv_hrl.getHostname();
+             int             lv_length = lv_node.indexOf('.');
+
+             if(retryCount == RETRY_ATTEMPTS) {
+                LOG.error("Exceeded retry attempts (" + retryCount + ") in doCommitX for transaction: " + transactionId);
+                // We have received our reply in the form of an exception,
+                // so decrement outstanding count and wake up waiters to avoid
+                // getting hung forever
+                transactionState.requestPendingCountDec(true);
+                throw new CommitUnsuccessfulException("Exceeded retry attempts (" + retryCount + ") in doCommitX for transaction: " + transactionId);
+             }
+
+//             if ((location.getRegionInfo().getEncodedName().compareTo(lv_hri.getEncodedName()) != 0) ||  // Encoded name is different
+//                 (location.getHostname().regionMatches(0, lv_node, 0, lv_length) == false)) {            // Node is different
+                if (LOG.isWarnEnabled()) LOG.warn("doCommitX -- " + table.toString() + " location being refreshed");
+                if (LOG.isWarnEnabled()) LOG.warn("doCommitX -- lv_hri: " + lv_hri);
+                if (LOG.isWarnEnabled()) LOG.warn("doCommitX -- location.getRegionInfo(): " + location.getRegionInfo());
+                table.getRegionLocation(startKey, true);
+//             }
+             if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- setting retry, count: " + retryCount);
+             refresh = false;
+             retryCount++;
+           }
+        } while (retryCount < RETRY_ATTEMPTS && retry == true);
+        }
         // We have received our reply so decrement outstanding count
         transactionState.requestPendingCountDec(false);
 
@@ -283,6 +415,7 @@ public class TransactionManager {
        boolean refresh = false;
        boolean retry = false;
        int retryCount = 0;
+       if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC){
        do {
           try {
              Batch.Call<TrxRegionService, CommitRequestResponse> callable =
@@ -386,7 +519,94 @@ public class TransactionManager {
              retryCount++;
           }
        } while (retryCount < RETRY_ATTEMPTS && retry == true); 
+       }
+       if( TRANSACTION_ALGORITHM == AlgorithmType.SSCC){
+       do {
+          try {
+             Batch.Call<SsccRegionService, SsccCommitRequestResponse> callable =
+                new Batch.Call<SsccRegionService, SsccCommitRequestResponse>() {
+                   ServerRpcController controller = new ServerRpcController();
+                BlockingRpcCallback<SsccCommitRequestResponse> rpcCallback =
+                   new BlockingRpcCallback<SsccCommitRequestResponse>();
 
+                @Override
+                public SsccCommitRequestResponse call(SsccRegionService instance) throws IOException {
+                   org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest.Builder builder = SsccCommitRequestRequest.newBuilder();
+                   builder.setTransactionId(transactionId);
+                   builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName)));
+
+                   instance.commitRequest(controller, builder.build(), rpcCallback);
+                   return rpcCallback.get();
+                }
+             };
+
+             Map<byte[], SsccCommitRequestResponse> result = null;
+
+             try {
+                result = table.coprocessorService(SsccRegionService.class, startKey, endKey, callable);
+             } catch (Throwable e) {
+                LOG.error("doPrepareX coprocessor error for " + Bytes.toString(regionName) + " txid: " + transactionId + ":" + e);
+                throw new CommitUnsuccessfulException("Unable to call prepare, coprocessor error");
+             }
+
+             if(result.size() != 1)  {
+                LOG.error("doPrepareX, received incorrect result size: " + result.size());
+                refresh = true;
+                retry = true;
+             }
+             else {
+                // size is 1
+                for (SsccCommitRequestResponse cresponse : result.values()){
+                   // Should only be one result
+                   int value = cresponse.getResult();
+                   commitStatus = value;
+                   if(cresponse.getHasException()) {
+                      if (LOG.isTraceEnabled()) LOG.trace("doPrepareX coprocessor exception: " + cresponse.getException());
+                      throw new Exception(cresponse.getException());
+                   }
+                }
+                retry = false;
+             }
+          }
+          catch(UnknownTransactionException ute) {
+             LOG.warn("doPrepareX Exception: " + ute);
+             throw new UnknownTransactionException();
+          }
+          catch(Exception e) {
+             LOG.error("doPrepareX retrying due to Exception: " + e);
+             refresh = true;
+             retry = true;
+          }
+          if (refresh) {
+
+             HRegionLocation lv_hrl = table.getRegionLocation(startKey);
+             HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
+             String          lv_node = lv_hrl.getHostname();
+             int             lv_length = lv_node.indexOf('.');
+
+             if(retryCount == RETRY_ATTEMPTS){
+                LOG.error("Exceeded retry attempts in doPrepareX: " + retryCount);
+                // We have received our reply in the form of an exception,
+                // so decrement outstanding count and wake up waiters to avoid
+                // getting hung forever
+                transactionState.requestPendingCountDec(true);
+                throw new CommitUnsuccessfulException("Exceeded retry attempts in doPrepareX: " + retryCount);
+             }
+//             if ((location.getRegionInfo().getEncodedName().compareTo(lv_hri.getEncodedName()) != 0) ||  // Encoded name is different
+//                 (location.getHostname().regionMatches(0, lv_node, 0, lv_length) == false)) {            // Node is different
+                if (LOG.isWarnEnabled()) LOG.warn("doPrepareX -- " + table.toString() + " location being refreshed");
+                if (LOG.isWarnEnabled()) LOG.warn("doPrepareX -- lv_hri: " + lv_hri);
+                if (LOG.isWarnEnabled()) LOG.warn("doPrepareX -- location.getRegionInfo(): " + location.getRegionInfo());
+
+                table.getRegionLocation(startKey, true);
+                LOG.debug("doPrepareX retry count: " + retryCount);
+//             }
+             if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- setting retry, count: " + retryCount);
+             refresh = false;
+             retryCount++;
+          }
+       } while (retryCount < RETRY_ATTEMPTS && retry == true);
+       }
        if (LOG.isTraceEnabled()) LOG.trace("commitStatus: " + commitStatus);
        boolean canCommit = true;
        boolean readOnly = false;
@@ -441,6 +661,7 @@ public class TransactionManager {
 	    boolean retry = false;
             boolean refresh = false;
 	    int retryCount = 0;
+        if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC){
 	    do {
 	    	try {
 
@@ -523,7 +744,91 @@ public class TransactionManager {
 
               }
 	  } while (retryCount < RETRY_ATTEMPTS && retry == true);	     
-      
+        }
+        if( TRANSACTION_ALGORITHM == AlgorithmType.SSCC){
+        do {
+             try {
+
+	          Batch.Call<SsccRegionService, SsccAbortTransactionResponse> callable =
+	            new Batch.Call<SsccRegionService, SsccAbortTransactionResponse>() {
+	          ServerRpcController controller = new ServerRpcController();
+	          BlockingRpcCallback<SsccAbortTransactionResponse> rpcCallback =
+	            new BlockingRpcCallback<SsccAbortTransactionResponse>();
+
+	          @Override
+	          public SsccAbortTransactionResponse call(SsccRegionService instance) throws IOException {
+	            org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccAbortTransactionRequest.Builder builder = SsccAbortTransactionRequest.newBuilder();
+	            builder.setTransactionId(transactionId);
+	            builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName)));
+
+	            instance.abortTransaction(controller, builder.build(), rpcCallback);
+	            return rpcCallback.get();
+	          }
+	        };
+
+	        Map<byte[], SsccAbortTransactionResponse> result = null;
+	          try {
+                      if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- before coprocessorService txid: " + transactionId + " table: " +
+                        table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
+                      result = table.coprocessorService(SsccRegionService.class, startKey, endKey, callable);
+	          } catch (Throwable e) {
+	              String msg = "ERROR occurred while calling doAbortX coprocessor service";
+	              LOG.error(msg + ":" + e);
+	              throw new Exception(msg);
+	          }
+
+	          if(result.size() != 1) {
+                     LOG.error("doAbortX, received incorrect result size: " + result.size());
+                     refresh = true;
+                     retry = true;
+                  }
+                  else {
+                     for (SsccAbortTransactionResponse cresponse : result.values()) {
+	            if(cresponse.getHasException()) {
+	              String exceptionString = cresponse.getException().toString();
+	              LOG.error("Abort HasException true: " + exceptionString);
+	              if(exceptionString.contains("UnknownTransactionException")) {
+                         throw new UnknownTransactionException();
+	              }
+	              throw new Exception(cresponse.getException());
+	            }
+	          }
+	          retry = false;
+	      }
+              }
+	      catch (UnknownTransactionException ute) {
+                 LOG.debug("UnknownTransactionException in doAbortX for transaction: " + transactionId + "(ignoring): " + ute);
+	      }
+	      catch (Exception e) {
+                LOG.error("doAbortX retrying due to Exception: " + e );
+                refresh = true;
+                retry = true;
+              }
+              if (refresh) {
+
+                 HRegionLocation lv_hrl = table.getRegionLocation(startKey);
+                 HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
+                 String          lv_node = lv_hrl.getHostname();
+                 int             lv_length = lv_node.indexOf('.');
+
+                 if(retryCount == RETRY_ATTEMPTS){
+                    LOG.error("Exceeded retry attempts in doAbortX: " + retryCount + " (ingoring)");
+                 }
+
+//                 if ((location.getRegionInfo().getEncodedName().compareTo(lv_hri.getEncodedName()) != 0) ||  // Encoded name is different
+//                     (location.getHostname().regionMatches(0, lv_node, 0, lv_length) == false)) {            // Node is different
+                    if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- " + table.toString() + " location being refreshed");
+                    if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- lv_hri: " + lv_hri);
+                    if (LOG.isWarnEnabled()) LOG.warn("doAbortX -- location.getRegionInfo(): " + location.getRegionInfo());
+                    table.getRegionLocation(startKey, true);
+//                 }
+                 if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- setting retry, count: " + retryCount);
+                 refresh = false;
+                 retryCount++;
+
+              }
+	  } while (retryCount < RETRY_ATTEMPTS && retry == true);
+        }
       // We have received our reply so decrement outstanding count
       transactionState.requestPendingCountDec(false);
       					
@@ -556,6 +861,7 @@ public class TransactionManager {
         String retryAttempts = System.getenv("TMCLIENT_RETRY_ATTEMPTS");
         String numThreads = System.getenv("TM_JAVA_THREAD_POOL_SIZE");
         String numCpThreads = System.getenv("TM_JAVA_CP_THREAD_POOL_SIZE");
+        String useSSCC = System.getenv("TM_USE_SSCC");
 
         if (retryAttempts != null) 
         	RETRY_ATTEMPTS = Integer.parseInt(retryAttempts);
@@ -568,7 +874,11 @@ public class TransactionManager {
         int intCpThreads = intThreads;
         if (numCpThreads != null)
             intCpThreads = Integer.parseInt(numCpThreads);
-	
+
+        TRANSACTION_ALGORITHM = AlgorithmType.MVCC;
+        if (useSSCC != null)
+           TRANSACTION_ALGORITHM = (Integer.parseInt(useSSCC) == 1) ? AlgorithmType.SSCC :AlgorithmType.MVCC ;
+
         threadPool = Executors.newFixedThreadPool(intThreads);      
 
 	cp_tpe = Executors.newFixedThreadPool(intCpThreads);
