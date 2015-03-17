@@ -203,6 +203,9 @@ JNIEXPORT jlong JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connect
 
 	SQLRETURN rc;
 
+	// Initialize gDescItems array
+	initSqlCore(0, NULL);
+
 	if (uid)
 		nUid = JNI_GetStringUTFChars(jenv,uid, NULL);
 	else

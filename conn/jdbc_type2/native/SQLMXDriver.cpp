@@ -177,12 +177,6 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_SQLMXInitialize(JNIEn
 		break;
 	}
 
-	char *arr[2] = {"T2Sample", "test"};
-	if (initSqlCore(1, arr))
-	{
-
-	}
-
 #ifdef NSK_PLATFORM		// Linux port
 	// setup MP system catalog name
 	if (envGetSystemCatalogName (&srvrGlobal->NskSystemCatalogName[0]) != TRUE)

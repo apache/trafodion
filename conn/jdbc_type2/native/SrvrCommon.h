@@ -76,7 +76,7 @@ struct SRVR_SESSION_HDL {
 // Following are the global variables
 #define				NO_OF_DESC_ITEMS		15
 
-extern __thread SRVR_GLOBAL_Def		*srvrGlobal;
+extern SRVR_GLOBAL_Def		*srvrGlobal;
 //extern ODBCMXEventMsg		*srvrEventLogger;
 extern __thread SQLDESC_ITEM		gDescItems[];
 extern __thread char				CatalogNm[MAX_ANSI_NAME_LEN+1];
