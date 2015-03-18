@@ -210,7 +210,7 @@ CoprocessorService, Coprocessor {
   // Map of recent transactions that are COMMIT_PENDING or COMMITED keyed 
   // by their sequence number
 
-  private SortedMap<Integer, TrxTransactionState> commitedTransactionsBySequenceNumber = Collections.synchronizedSortedMap(new TreeMap<Integer, TrxTransactionState>());
+  private SortedMap<Long, TrxTransactionState> commitedTransactionsBySequenceNumber = Collections.synchronizedSortedMap(new TreeMap<Long, TrxTransactionState>());
 
   // Collection of transactions that are COMMIT_PENDING
   private Set<TrxTransactionState> commitPendingTransactions = Collections.synchronizedSet(new HashSet<TrxTransactionState>());
@@ -232,7 +232,7 @@ CoprocessorService, Coprocessor {
 
   // Atomic values to manage region scanners
   private AtomicLong performScannerId = new AtomicLong(0);
-  private AtomicInteger nextSequenceId = new AtomicInteger(0);
+  private AtomicLong nextSequenceId = new AtomicLong(0);
 
   private Object commitCheckLock = new Object();
   private Object recoveryCheckLock = new Object();
@@ -3835,7 +3835,7 @@ CoprocessorService, Coprocessor {
     // Check transactions that were committed while we were running
       
     synchronized (commitedTransactionsBySequenceNumber) {
-      for (int i = state.getStartSequenceNumber(); i < nextSequenceId.get(); i++)
+      for (long i = state.getStartSequenceNumber(); i < nextSequenceId.get(); i++)
       {
         TrxTransactionState other = commitedTransactionsBySequenceNumber.get(i);
         if (other == null) {
@@ -4271,17 +4271,17 @@ CoprocessorService, Coprocessor {
    */
   synchronized public void removeUnNeededCommitedTransactions() {
 
-      Integer minStartSeqNumber = getMinStartSequenceNumber();
+      Long minStartSeqNumber = getMinStartSequenceNumber();
       TrxTransactionState state = null;
       int numRemoved = 0;
-      int key = 0;
+      long key = 0;
 
       if (minStartSeqNumber == null) {
-        minStartSeqNumber = Integer.MAX_VALUE;  
+        minStartSeqNumber = Long.MAX_VALUE;
       }
 
       synchronized (commitedTransactionsBySequenceNumber) {
-      for (Entry<Integer, TrxTransactionState> entry : new LinkedList<Entry<Integer, TrxTransactionState>>(
+      for (Entry<Long, TrxTransactionState> entry : new LinkedList<Entry<Long, TrxTransactionState>>(
         commitedTransactionsBySequenceNumber.entrySet())) {
           key = entry.getKey();
           if (key >= minStartSeqNumber) {
@@ -4303,7 +4303,7 @@ CoprocessorService, Coprocessor {
          if (numRemoved > 0) {
             traceMessage.append("TrxRegionEndpoint coprocessor: removeUnNeededCommitedTransactions: Removed [").append(numRemoved).append("] commited transactions");
 
-            if (minStartSeqNumber == Integer.MAX_VALUE) {
+            if (minStartSeqNumber == Long.MAX_VALUE) {
               traceMessage.append(" with any sequence number.");
             } else {
                traceMessage.append(" with sequence lower than [").append(minStartSeqNumber).append("].");
@@ -4395,7 +4395,7 @@ CoprocessorService, Coprocessor {
    * Returns the minimum start sequence number
    * @return Integer
    */
-  private Integer getMinStartSequenceNumber() {
+  private Long getMinStartSequenceNumber() {
 
     List<TrxTransactionState> transactionStates;
 
@@ -4404,7 +4404,7 @@ CoprocessorService, Coprocessor {
       transactionsById.values());
     }
 
-    Integer min = null;
+    Long min = null;
 
     for (TrxTransactionState transactionState : transactionStates) {
       try {

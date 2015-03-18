@@ -1,13 +1,21 @@
-/**
- * Copyright 2009 The Apache Software Foundation Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements. See the NOTICE file distributed with this work for additional information regarding
- * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License. You may obtain a copy of the License at
- * http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and limitations under the
- * License.
- */
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
 package org.apache.hadoop.hbase.client.transactional;
 
 import java.io.IOException;
@@ -20,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.io.InterruptedIOException;
+import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
+
 
 
 import org.apache.commons.logging.Log;
@@ -71,7 +82,7 @@ import com.google.protobuf.ServiceException;
 /**
  * Table with transactional support.
  */
-public class TransactionalTable extends HTable {
+public class TransactionalTable extends HTable implements TransactionalTableClient {
     static final Log LOG = LogFactory.getLog(RMInterface.class);
     static private HConnection connection = null;
     static Configuration       config = HBaseConfiguration.create();
@@ -613,5 +624,85 @@ public class TransactionalTable extends HTable {
 	}
 	
 	private int maxKeyValueSize;
+public HRegionLocation getRegionLocation(byte[] row, boolean f)
+                                  throws IOException {
+        return super.getRegionLocation(row,f);
+    }
+    public void close()  throws IOException { super.close(); }
+        public void setAutoFlush(boolean autoFlush, boolean b)
+    {
+        super.setAutoFlush(autoFlush, b);
+    }
+    public org.apache.hadoop.conf.Configuration getConfiguration()
+    {
+        return super.getConfiguration();
+    }
+    public void flushCommits()
+                  throws InterruptedIOException,
+                RetriesExhaustedWithDetailsException {
+         super.flushCommits();
+    }
+    public HConnection getConnection()
+    {
+        return super.getConnection();
+    }
+    public byte[][] getEndKeys()
+                    throws IOException
+    {
+        return super.getEndKeys();
+    }
+    public byte[][] getStartKeys() throws IOException
+    {
+        return super.getStartKeys();
+    }
+    public void setWriteBufferSize(long writeBufferSize) throws IOException
+    {
+        super.setWriteBufferSize(writeBufferSize);
+    }
+    public long getWriteBufferSize()
+    {
+        return super.getWriteBufferSize();
+    }
+    public byte[] getTableName()
+    {
+        return super.getTableName();
+    }
+    public ResultScanner getScanner(Scan scan) throws IOException
+    {
+        return super.getScanner(scan);
+    }
+    public Result get(Get g) throws IOException
+    {
+        return super.get(g);
+    }
+
+    public Result[] get( List<Get> g) throws IOException
+    {
+        return super.get(g);
+    }
+    public void delete(Delete d) throws IOException
+    {
+        super.delete(d);
+    }
+    public void delete(List<Delete> deletes) throws IOException
+    {
+        super.delete(deletes);
+    }
+    public boolean checkAndPut(byte[] row, byte[] family, byte[] qualifier, byte[] value, Put put) throws IOException
+    {
+        return super.checkAndPut(row,family,qualifier,value,put);
+    }
+    public void put(Put p) throws  InterruptedIOException,RetriesExhaustedWithDetailsException
+    {
+        super.put(p);
+    }
+    public void put(List<Put> p) throws  InterruptedIOException,RetriesExhaustedWithDetailsException
+    {
+        super.put(p);
+    }
+    public boolean checkAndDelete(byte[] row, byte[] family, byte[] qualifier, byte[] value,  Delete delete) throws IOException
+    {
+        return super.checkAndDelete(row,family,qualifier,value,delete);
+    }
 	
 }
