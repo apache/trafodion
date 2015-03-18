@@ -128,13 +128,6 @@ int ndcsStopProcess(TPT_PTR(phandle), int attempts)
 }
 
 
-//moved to nsksrvr/linux/SrvrMain_ps.cpp
-/****************************************************************************
-// Obtain the local host name and ip address
-int host_addr_get( char* iTcpProcessName, char* IpAddress, char* HostName )
-
-****************************************************************************/
-
 // Check whether or not the given process exists.
 BOOL checkProcess( char* processName )
 {

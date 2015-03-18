@@ -68,6 +68,7 @@ string dcsRegisteredNode;
 string availSrvrData;
 string regSrvrData;
 char regZnodeName[256];
+char hostname[256];
 char instanceId[8];
 char childId[8];
 char zkHost[256];
@@ -135,8 +136,6 @@ char errStrBuf2[141];
 char errStrBuf3[141];
 char errStrBuf4[141];
 char errStrBuf5[141];
-
-int host_addr_get( char* TcpProcessName, char* IpAddress, char* HostName );
 
 char *sCapsuleName = "ODBC/MX Server";
 extern SRVR_GLOBAL_Def *srvrGlobal;
@@ -230,7 +229,7 @@ catch(SB_Fatal_Excep sbfe)
 	 retcode = getInitParamSrvr(argc, argv, initParam, tmpString, tmpString3);
 	retcode = TRUE;
 
-        mxosrvr_init_seabed_trace_dll();
+	mxosrvr_init_seabed_trace_dll();
 	atexit(mxosrvr_atexit_function);
 
 	// +++ Todo: Duplicating calls here. Should try to persist in srvrGlobal
@@ -347,7 +346,9 @@ catch(SB_Fatal_Excep sbfe)
 	char *tkn;
 	char tmpStr[256];
 	strcpy( tmpStr,  regZnodeName );
-	tkn = strtok(tmpStr, ":" );			// Skip hostname part
+	tkn = strtok(tmpStr, ":" );			
+	if(tkn!=NULL)
+		strcpy(hostname,tkn);
 	tkn = strtok(NULL, ":" );
 	if( tkn != NULL )
 		strcpy( instanceId, tkn );
@@ -773,31 +774,24 @@ catch(SB_Fatal_Excep sbfe)
 		}
 	}
 
-	if (host_addr_get( initParam.TcpProcessName, srvrGlobal->IpAddress, srvrGlobal->HostName ) != CEE_SUCCESS)
+    // TCPADD and RZ are required parameters.
+	// The address is passed in with TCPADD parameter .
+	// The hostname is passed in with RZ parameter.
+	if( strlen(trafIPAddr) > 0 && strlen(hostname)>0 )
 	{
-//LCOV_EXCL_START
-        SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
-                                      srvrGlobal->nskProcessInfo.processId,
-                                      ODBCMX_SERVICE, srvrGlobal->srvrObjRef,
-                                      1, "host_addr_get failed");
-		exit(0);
-//LCOV_EXCL_STOP
-	}
-    else
-    {  		
-	    // If a address is passed in with TCPADD param then use that.
-	    // Set the host name as unresolved if the TCPADD is different with the ip returned from host_addr_get
-	    if(( strlen(trafIPAddr) > 0 )&&(strcmp(srvrGlobal->IpAddress,trafIPAddr)))
-	    {
-	           strcpy(srvrGlobal->IpAddress,trafIPAddr);
-			    strcpy(srvrGlobal->HostName,"UNRESOLVED");
-	    }
-	    // Log an informational event giving our ip address and host name
+		strcpy( srvrGlobal->IpAddress, trafIPAddr );
+		strcpy( srvrGlobal->HostName, hostname);
         sprintf( errStrBuf1, "Server: IPaddr = %s, hostname = %s",
-                 srvrGlobal->IpAddress, srvrGlobal->HostName);
+                 srvrGlobal->IpAddress,srvrGlobal->HostName);
 	}
-	SendEventMsg(MSG_SRVR_ENV,
-								  EVENTLOG_INFORMATION_TYPE,
+	else
+	{
+		SendEventMsg(  MSG_SET_SRVR_CONTEXT_FAILED,EVENTLOG_ERROR_TYPE,
+                           processId,ODBCMX_SERVER,srvrObjRef,
+                           1,"Cannot get TCPADD or RZ information from startup parameters");                           
+	    exit(0);
+	}	                            
+	SendEventMsg(MSG_SRVR_ENV, EVENTLOG_INFORMATION_TYPE,
 								  srvrGlobal->nskProcessInfo.processId,
 								  ODBCMX_SERVICE, srvrGlobal->srvrObjRef,
 								  1, errStrBuf1);
@@ -1063,6 +1057,7 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 	strcpy(initParam.QSProcessName, DEFAULT_QS_PROCESS_NAME);
 	strcpy(initParam.QSsyncProcessName, DEFAULT_SYNC_PROCESS_NAME);
 	memset(trafIPAddr,0,sizeof(trafIPAddr));
+	memset(hostname,0,sizeof(hostname));
 	aggrInterval = 60;
 	queryPubThreshold = 60;
 	statisticsPubType = STATISTICS_AGGREGATED;
@@ -1447,102 +1442,4 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 
 }
 
-int host_addr_get( char* iTcpProcessName, char* IpAddress, char* HostName )
-{
-char *topDomain[] = {".com", ".net", ".org", ".edu", ".gov",
-                         ".biz", ".mil", ".name"};
 
-    struct ifaddrs *ifa = NULL, *ifp = NULL;
-
-    char ip[ 20 ];
-    char name[ 200 ];
-    socklen_t salen;
-    int result;
-
-    if (IpAddress != NULL) *IpAddress = '\0';
-    if (HostName != NULL) *HostName = '\0';
-
-    bool bBindToSpecificInterface = false;
-
-    if(strncmp(iTcpProcessName,"$ZTC0",5) != 0)
-	   bBindToSpecificInterface = true;
-
-    // Get all interface addresses
-    if (getifaddrs (&ifp) < 0)
-    {
-        perror ("getifaddrs");
-        return 1;
-    }
-
-    // Look through all interfaces to determine if there is one
-    // that is visible on the external network.
-    for (ifa = ifp; ifa; ifa = ifa->ifa_next)
-    {
-        if(! ifa->ifa_addr)
-            continue;
-
-        if(bBindToSpecificInterface)
-		{
-           if((ifa->ifa_addr->sa_family != AF_INET) ||
-              (strcmp(ifa->ifa_name,iTcpProcessName) != 0) )
-              continue;
-		}
-		else
-		{
-	        if (ifa->ifa_addr->sa_family == AF_INET)
-	            salen = sizeof (struct sockaddr_in);
-	        //else if (ifa->ifa_addr->sa_family == AF_INET6)
-	        //    salen = sizeof (struct sockaddr_in6);
-	        else
-	            continue;
-		}
-
-        // Get numeric ip address associated with the interface
-        if ((result = getnameinfo (ifa->ifa_addr, salen,
-                              ip, sizeof (ip), NULL, 0, NI_NUMERICHOST) != 0))
-        {
-            printf("host_addr_get: %s\n", gai_strerror(result));
-            continue;
-        }
-
-        // Get host name associated with the interface
-        if ((result = getnameinfo (ifa->ifa_addr, salen,
-                                   name, sizeof (name), NULL, 0, 0)) != 0)
-        {
-            printf("host_addr_get: %s\n", gai_strerror(result));
-            continue;
-        }
-
-        if(bBindToSpecificInterface)
-		{
-           strcpy(IpAddress, ip);
-           strcpy(HostName, name);
-           freeifaddrs (ifp);
-	       return 0;
-		}
-		else
-		{
-	        // Use heuristic to determine if this is an externally visible
-	        // address: check if final component of host name is one of
-	        // the usual top level domain names.
-	        int hostnamelen = strlen(name);
-	        int numDomains = sizeof(topDomain)/sizeof(char *);
-	        for (int domain=0; domain < numDomains; ++domain)
-	        {
-	            if (hostnamelen >= strlen(topDomain[domain])
-	                && strcmp(&name[hostnamelen-4], topDomain[domain]) == 0)
-	            {
-	                // Found what appears to be an externally visible address
-	                strcpy(IpAddress, ip);
-	                strcpy(HostName, name);
-	                freeifaddrs (ifp);
-	                return 0;
-	            }
-	        }
-		}
-	}
-    freeifaddrs (ifp);
-    // Failed to find and externally visible address
-    return 1;
-
-} // host_addr_get()

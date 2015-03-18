@@ -37,12 +37,6 @@ int ndcsStopProcess(TPT_PTR(phandle), int attempts);
 bool processExists(char *processName, TPT_PTR(pHandleAddr) );
 short getProcessHandle(char *processName, TPT_PTR(pHandleAddr) );
 
-//moved to SrvrMain_ps.cpp
-/*----------------------------------------------------------
- int host_addr_get( char* iTcpProcessName, char* IpAddress,
-                    char* HostName );
-----------------------------------------------------------*/
-
 BOOL checkProcess( char* strProcessName );
 bool getProcessName(char *processName, TPT_PTR(pHandleAddr), int maxLen);
 bool checkProcessHandle(TPT_DECL(processHandle));
