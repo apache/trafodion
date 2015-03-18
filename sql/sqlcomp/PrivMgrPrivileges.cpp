@@ -343,7 +343,7 @@ PrivStatus PrivMgrPrivileges::buildSecurityKeys(
 
    for ( size_t i = 0; i < roleIDs.size(); i++ )
    {
-      ComSecurityKey *key = new ComSecurityKey(roleIDs[i],userID,
+      ComSecurityKey *key = new ComSecurityKey(userID,roleIDs[i],
                                                ComSecurityKey::SUBJECT_IS_USER);
       if (key->isValid())
          secKeySet.push_back(key);
@@ -2551,6 +2551,15 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
   for (int32_t i = 0; i < rowList.size();++i)
   {
     ObjectPrivsMDRow &row = static_cast<ObjectPrivsMDRow &> (*rowList[i]);
+    
+    if (secKeySet != NULL)
+    {
+      PrivMgrCoreDesc privs(row.privsBitmap_,0);
+      retcode = buildSecurityKeys(row.granteeID_,privs,*secKeySet);
+      if (retcode != STATUS_GOOD)
+        return retcode;    
+    }
+
     PrivMgrCoreDesc temp (row.privsBitmap_, row.grantableBitmap_);
     coreTablePrivs.unionOfPrivs(temp);
   }
@@ -3487,7 +3496,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
 
   // Make sure rows were inserted correctly.
   // Get the expected number of rows
- sprintf(buf, "select count(*) from %s o where o.object_type in ('VI','BT','LB','UR', 'SG')"
+ sprintf(buf, "select count(*) from %s o where o.object_type in ('VI','BT','LB','UR', 'SG')"  
               " and object_owner > 0",
               objectsLocation.c_str());
   Lng32 len = 0;

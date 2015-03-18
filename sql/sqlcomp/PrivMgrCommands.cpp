@@ -376,16 +376,6 @@ PrivStatus PrivMgrCommands::getPrivileges(
                                                              secKeySet);
     if (retcode != STATUS_GOOD)
       return retcode;
-  
-    // Add security keys to passed vector if non-null.
-    if (secKeySet)
-    {
-       PrivMgrCoreDesc privs(objPrivs,grantablePrivs);
-     
-       retcode = objectPrivs.buildSecurityKeys(userID,privs,*secKeySet);
-       if (retcode != STATUS_GOOD)
-        return retcode;
-    }
   }
 
   // authorization is not enabled, return bitmaps with all bits set
