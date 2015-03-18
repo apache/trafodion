@@ -173,10 +173,22 @@ typedef struct txnstats {
    int32 iv_RMNonParticCount;
 } TXNSTATS;
 
+typedef struct tmcounts {
+   int64 iv_tx_count;
+   int64 iv_begin_count;
+   int64 iv_abort_count;
+   int64 iv_commit_count;
+   int32 iv_current_tx_count;
+   int64 iv_tm_initiated_aborts;
+   int32 iv_tx_hung_count;
+   int32 iv_current_tx_hung_count; // Current txn hung count
+} TMCOUNTS;
+
 typedef struct tmstats {
    int iv_node;
    double iv_tmStartTime;
    double iv_statsSentTime;
+   TMCOUNTS iv_counts;
    TXNSTATS iv_txn;
    TMPOOLSTATS iv_threadPool_stats;
    TMPOOLSTATS iv_transactionPool_stats;

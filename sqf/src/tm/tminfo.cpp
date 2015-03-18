@@ -72,14 +72,14 @@ TM_Info::TM_Info()
    lock();
 
    iv_all_rms_closed = true;
-   iv_perf_tx_count = iv_perf_abort_count =
-   iv_perf_commit_count = iv_perf_tm_initiated_aborts = 
-   iv_perf_tx_hung_count = iv_rm_wait_time = iv_stall_phase_2 = 0;
+   iv_counts.iv_tx_count = iv_counts.iv_abort_count =
+   iv_counts.iv_commit_count = iv_counts.iv_tm_initiated_aborts = 
+   iv_counts.iv_tx_hung_count = iv_rm_wait_time = iv_stall_phase_2 = 0;
 
    iv_run_mode = iv_incarnation_num = iv_lead_tm_nid = iv_sys_recov_state = 
    iv_sys_recov_lead_tm_nid = iv_stats_interval = iv_RMRetry_interval =  
    iv_TMRestartRetry_interval = iv_SeqNumBlockStart = iv_nextSeqNumBlockStart = 
-   iv_perf_current_tx_count = iv_tx_hung_count = 0;
+   iv_counts.iv_current_tx_count = iv_counts.iv_current_tx_hung_count = 0;
    iv_shutdown_coordination_started = iv_TSE_xa_start = false; 
    iv_threadModel = none;
    iv_shutdown_level = MS_Mon_ShutdownLevel_Undefined;
@@ -947,9 +947,6 @@ void TM_Info::initialize()
      }
 #endif //deug_mode       
 
-
-    initialize_perf_data(); 
-
     int result = tm_init_logging();
     TMTrace (1, ("TM DUAL logging set to %d\n", result));
     unlock();
@@ -985,33 +982,6 @@ void TM_Info::init_tracing(bool pv_unique, const char *pp_trace_file, int32 pv_d
       iv_trace_level = pv_detail;
       gv_tm_trace_level = iv_trace_level;
       TMTrace (1, ("TM Tracing is on, trace level %d.\n", iv_trace_level));
-}
-
-
-void TM_Info::send_begin_tx(CTmTxBase *pp_tx)
-{
-    inc_tx_count();
-}
-
-void TM_Info::send_commit_tx(CTmTxBase *pp_tx)
-{
-    inc_commit_count();
-}
-
-void TM_Info::send_abort_tx(CTmTxBase *pp_tx)
-{
-    inc_abort_count();
-}
-
-void TM_Info::send_resource_data()
-{
-}
-void TM_Info::initialize_perf_data()
-{
-}
-
-void TM_Info::send_tx_perf_stats()
-{
 }
 
 void TM_Info::send_system_status(TM_STATUSSYS *pp_system_status)
