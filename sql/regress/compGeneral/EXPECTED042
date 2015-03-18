@@ -1,9 +1,9 @@
 >>showstats for table t042_orderline on ol_o_id detail;
 
 Detailed Histogram data for Table TRAFODION.ORDERENTRY.T042_ORDERLINE
-Table ID: 111524151150068848
+Table ID: 118280766025127377
 
-Hist ID:    1719719887
+Hist ID:    1706159698
 Column(s):  OL_O_ID
 Total Rows: 10
 Total UEC:  4
@@ -1793,10 +1793,10 @@ HQC key=SELECT T . VARCHAR0_UNIQ AS T_VARCHAR0_UNIQ , T . CHAR2_2 AS T_CHAR2_2 ,
 
 --- SQL command prepared.
 
-Start Time             2015/03/04 01:34:25.511275
-End Time               2015/03/04 01:34:25.511978
-Elapsed Time                      00:00:00.000703
-Compile Time                      00:00:00.000703
+Start Time             2015/03/17 20:12:09.344071
+End Time               2015/03/17 20:12:09.345813
+Elapsed Time                      00:00:00.001742
+Compile Time                      00:00:00.001742
 Execution Time                    00:00:00.000000
 
 
@@ -1827,10 +1827,10 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 
 --- SQL command prepared.
 
-Start Time             2015/03/04 01:34:25.553918
-End Time               2015/03/04 01:34:25.554642
-Elapsed Time                      00:00:00.000724
-Compile Time                      00:00:00.000724
+Start Time             2015/03/17 20:12:09.437445
+End Time               2015/03/17 20:12:09.439066
+Elapsed Time                      00:00:00.001621
+Compile Time                      00:00:00.001621
 Execution Time                    00:00:00.000000
 
 
@@ -1981,7 +1981,7 @@ NUM_HITS    NUM_PARAMS
          0           2
          0           1
          0           2
-         0           4
+         0           5
          0           3
          0           2
          0           1
@@ -1989,7 +1989,7 @@ NUM_HITS    NUM_PARAMS
          0           1
          0           4
          1           3
-         1           4
+         1           5
          1           3
          1           1
          1           1
@@ -2038,7 +2038,7 @@ NUM_HITS    NUM_PARAMS
          0           2
          0           3
          0           1
-         0           4
+         0           5
          0           2
          0           0
          0           1
@@ -2088,7 +2088,7 @@ NUM_HITS    NUM_PARAMS
          1           3
          1           2
          1           4
-         1           4
+         1           5
          1           1
          1           1
          1           3
@@ -2227,7 +2227,7 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
        179           0              4               0
        179           0              4               0
        179           0              4               0
-       179           0              4               0
+       200           0              5               0
        201           0              2               1
        222           0              3               1
        314           0              3               1
@@ -2310,7 +2310,7 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
        179           0              4               0
        179           0              4               0
        179           0              4               0
-       179           0              4               0
+       200           0              5               0
        201           0              2               1
        222           0              3               1
        314           0              3               1

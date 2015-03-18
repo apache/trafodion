@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -262,7 +262,8 @@ public:
     SOME_EXPLAIN_INFO
   };
 
-  ExplainTuple() : NAVersionedObject(-1)
+ ExplainTuple() : NAVersionedObject(-1),
+    explainTupleStr_(NULL)
   {}
 
   // Contructor - called by RelExpr::addExplainInfo()
@@ -270,10 +271,7 @@ public:
                ExplainTuple *rightChild,
                ExplainDesc *explainDesc);
 
-  // Destructor - no implementation.  This node should be allocated
-  // using a Space object and will be reclaimed in bulk.
-
-  ~ExplainTuple() {}
+  ~ExplainTuple();
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
@@ -374,6 +372,11 @@ protected:
   // Pointers to the children nodes.
   ExplainTuplePtr children_[MAX_REL_ARITYS];                // 40-55
 
+  // this field is initially allocated from heap for max length of explain tuple.
+  // At end of explain, only the used up bytes are moved to explainTupleData
+  // to be stored in explain fragment.
+  // This is done to reduce the amount of data in explain fragment since that
+  // could be stored in trafodion repository.
   char * explainTupleStr_;
 
   // Number of actual bytes of data in explainTuple.

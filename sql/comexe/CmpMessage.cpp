@@ -332,8 +332,6 @@ Lng32 CmpCompileInfo::getVarLength()
 void CmpCompileInfo::packVars(char * buffer, CmpCompileInfo *ci,
                               Lng32 &nextOffset)
 {
-  //  CmpCompileInfo * ci = (CmpCompileInfo *)buffer;
-
   if (sqltext_ && (sqlTextLen_ > 0))
     {
       str_cpy_all(&buffer[nextOffset], sqltext_, sqlTextLen_);

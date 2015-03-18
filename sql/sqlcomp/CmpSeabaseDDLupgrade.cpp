@@ -2393,12 +2393,6 @@ short CmpSeabaseMDupgrade::upgradePrivMgr()
                           NAString(SEABASE_OLD_PRIVMGR_SCHEMA) +
                           NAString(".OBJECT_PRIVILEGES");
 
-   Lng32 ij = 0;
-   while (ij)
-     {
-       ij = 2 - ij;
-     }
-
    // See if authorization is currently enabled by checking for the
    // existence of the TRAFODION.PRIVMGR_MD.OBJECT_PRIVILEGES table.
    ExpHbaseInterface * ehi = allocEHI();

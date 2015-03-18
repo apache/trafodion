@@ -25903,9 +25903,6 @@ file_attribute_owner_clause : TOK_BY authorization_identifier
 /* type pElemDDL */
 file_attribute_row_format_clause : TOK_ALIGNED TOK_FORMAT
                                 {
-                                  yyerror("");
-                                  YYERROR;
- 
                                   $$ = new (PARSERHEAP()) ElemDDLFileAttrRowFormat
 				    (ElemDDLFileAttrRowFormat::eALIGNED);
                                 }

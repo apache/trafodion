@@ -6078,7 +6078,7 @@ Lng32 SQLCLI_GetExplainData(
   ContextCli   & currContext = *(cliGlobals->currContext());
   ComDiagsArea & diags       = currContext.diags();
 
-  /* prepare the statement */
+  /* get the statement from context */
   Statement * stmt = currContext.getStatement(statement_id);
 
   /* stmt must exist */
