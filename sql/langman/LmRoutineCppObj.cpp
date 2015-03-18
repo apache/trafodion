@@ -72,7 +72,11 @@ LmRoutineCppObj::LmRoutineCppObj(
   LmContainer           *container,
   ComDiagsArea          *diags)
   : LmRoutineC(sqlName, externalName, librarySqlName, numSqlParam, routineSig,
-               maxResultSets, COM_STYLE_CPP_OBJ, transactionAttrs, sqlAccessMode,
+               maxResultSets,
+               COM_LANGUAGE_CPP,
+               COM_STYLE_CPP_OBJ,
+               transactionAttrs,
+               sqlAccessMode,
                externalSecurity, 
 	       routineOwnerId,
                queryId, inputParamRowLen, outputRowLen, 

@@ -125,8 +125,6 @@ static void getRoutineTypeLit(ComRoutineType val, NAString& result)
       result = COM_PROCEDURE_TYPE_LIT;
     else if (val == COM_SCALAR_UDF_TYPE)
       result = COM_SCALAR_UDF_TYPE_LIT;
-    else if (val == COM_AGGREGATE_UDF_TYPE)
-      result = COM_AGGREGATE_UDF_TYPE_LIT;
     else if (val == COM_TABLE_UDF_TYPE)
       result = COM_TABLE_UDF_TYPE_LIT;
     else
@@ -546,7 +544,12 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   const NAString objectNamePart = 
     routineName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extRoutineName = routineName.getExternalName(TRUE);
-  
+  ComRoutineType rType          = createRoutineNode->getRoutineType();
+  ComRoutineLanguage language   = createRoutineNode->getLanguageType();
+  ComRoutineParamStyle ddlStyle = createRoutineNode->getParamStyle();
+  ComRoutineParamStyle style    = ddlStyle;
+  NABoolean isJava              = (language == COM_LANGUAGE_JAVA);
+
   // Check to see if user has the authority to create the routine
   ExeCliInterface cliInterface(STMTHEAP);
   Int32 objectOwnerID = SUPER_USER;
@@ -603,6 +606,8 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   NAString libSchNamePart = libName.getSchemaNamePartAsAnsiString(TRUE);
   NAString libObjNamePart = libName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extLibraryName = libName.getExternalName(TRUE);
+  char externalPath[512] ;
+  Lng32 cliRC = 0;
 	
   // this call needs to change
   Int64 libUID = getObjectUID(&cliInterface, 
@@ -625,6 +630,143 @@ void CmpSeabaseDDL::createSeabaseRoutine(
       processReturn();
       return;
     }
+
+  // read the library path name from the LIBRARIES metadata table
+
+  char * buf = new(STMTHEAP) char[200];
+  str_sprintf(buf, "select library_filename from %s.\"%s\".%s"
+              " where library_uid = %Ld for read uncommitted access",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, libUID);
+
+  cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+
+  cliRC = cliInterface.clearExecFetchClose(NULL, 0);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+  if (cliRC == 100) // did not find the row
+    {
+      *CmpCommon::diags() << DgSqlCode(-1231)
+                          << DgString0(extRoutineName);
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+
+  char * ptr = NULL;
+  Lng32 len = 0;
+  cliInterface.getPtrAndLen(1, ptr, len);
+  str_cpy_all(externalPath, ptr, len);
+  externalPath[len] = '\0'; 
+
+  // determine language and parameter styles based on the library
+  // type, unless already specified
+  if (!createRoutineNode->isLanguageTypeSpecified())
+    {
+      NAString extPath(externalPath);
+      size_t lastDot = extPath.last('.');
+      NAString libSuffix;
+
+      if (lastDot != NA_NPOS)
+        libSuffix = extPath(lastDot,extPath.length()-lastDot);
+
+      libSuffix.toUpper();
+
+      if (libSuffix == ".JAR")
+        {
+          isJava = TRUE;
+          language = COM_LANGUAGE_JAVA;
+        }
+      else if (libSuffix == ".SO" ||
+               libSuffix == ".DLL")
+        {
+          // a known C/C++ library, set
+          // language and parameter style below
+        }
+      else
+        {
+          // language not specified and library name
+          // is inconclusive, issue an error
+          *CmpCommon::diags() << DgSqlCode( -3284 )
+                              << DgString0( externalPath );
+          processReturn();
+        }
+    }
+
+  // set parameter style and also language, if not already
+  // specified, based on routine type and type of library
+  if (isJava)
+    {
+      // library is a jar file
+
+      if (rType == COM_PROCEDURE_TYPE)
+        // Java stored procedures use the older Java style
+        style = COM_STYLE_JAVA_CALL;
+      else
+        // Java UDFs use the newer Java object style
+        style = COM_STYLE_JAVA_OBJ;
+    }
+  else
+    {
+      // assume the library is a DLL with C or C++ code
+      if (rType == COM_TABLE_UDF_TYPE &&
+          (language == COM_LANGUAGE_CPP ||
+           !createRoutineNode->isLanguageTypeSpecified()))
+        {
+          // Table UDFs (TMUDFs) default to the new
+          // C++ interface, unless language is specified
+          // as C
+          language = COM_LANGUAGE_CPP;
+          style    = COM_STYLE_CPP_OBJ;
+        }
+      else if (rType == COM_SCALAR_UDF_TYPE &&
+               (language == COM_LANGUAGE_C ||
+                !createRoutineNode->isLanguageTypeSpecified()))
+        {
+          // scalar UDFs default to C and SQL parameter style
+          language = COM_LANGUAGE_C;
+          style    = COM_STYLE_SQL;
+        }
+      else if (rType == COM_UNIVERSAL_UDF_TYPE ||
+               rType == COM_ACTION_UDF_TYPE ||
+               (rType == COM_TABLE_UDF_TYPE &&
+                language == COM_LANGUAGE_C))
+        {
+          // these deprecated routine types use the older C row style
+          language = COM_LANGUAGE_C;
+          style    = COM_STYLE_SQLROW_TM;
+          // issue a warning
+          *CmpCommon::diags() << DgSqlCode(3285);
+        }
+      else
+        {
+          // some invalid combination of routine type, language and
+          // library type
+          *CmpCommon::diags() << DgSqlCode(-3286);
+          processReturn();
+          return;
+        }
+    } // C/C++ DLL
+
+  if (createRoutineNode->isParamStyleSpecified() &&
+      ddlStyle != style)
+        {
+          // An unsupported PARAMETER STYLE was specified
+          *CmpCommon::diags() << DgSqlCode(-3280);
+          processReturn();
+          return;
+        }
 
   // Verify that current user has authority to create the routine
   // User must be DB__ROOT or have privileges
@@ -666,9 +808,8 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   // Allocate buffer for generated signature
   char sigBuf[MAX_SIGNATURE_LENGTH];
   sigBuf[0] = '\0';
-  Lng32 cliRC = 0;
   // validate routine
-  if (createRoutineNode->getLanguageType() == COM_LANGUAGE_JAVA) 
+  if (language == COM_LANGUAGE_JAVA) 
   {
      Lng32 numJavaParam = 0;
      ComFSDataType *paramType = new ComFSDataType[numParams];
@@ -754,46 +895,6 @@ void CmpSeabaseDDL::createSeabaseRoutine(
 
      numJavaParam = (isJavaMain ? 1 : numParams);
 
-     char * buf = new(STMTHEAP) char[200];
-     str_sprintf(buf, "select library_filename from %s.\"%s\".%s"
-                 " where library_uid = %Ld for read uncommitted access",
-                 getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, libUID);
-
-
-     cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
-     if (cliRC < 0)
-     {
-       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-       deallocEHI(ehi); 
-       processReturn();
-       return;
-         
-     }
-
-     cliRC = cliInterface.clearExecFetchClose(NULL, 0);
-     if (cliRC < 0)
-     {
-       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-       deallocEHI(ehi); 
-       processReturn();
-       return;
-     }
-     if (cliRC == 100) // did not find the row
-     {
-       *CmpCommon::diags() << DgSqlCode(-1231)
-                           << DgString0(extRoutineName);
-       deallocEHI(ehi); 
-       processReturn();
-       return;
-     }
-
-     char * ptr = NULL;
-     Lng32 len = 0;
-     char externalPath[512] ;
-     cliInterface.getPtrAndLen(1, ptr, len);
-     str_cpy_all(externalPath, ptr, len);
-     externalPath[len] = '\0'; 
-
      if (validateRoutine(&cliInterface, 
                          createRoutineNode->getJavaClassName(),
                          createRoutineNode->getJavaMethodName(),
@@ -846,15 +947,14 @@ void CmpSeabaseDDL::createSeabaseRoutine(
       return;
     }
 
-
   NAString udrType;
   getRoutineTypeLit(createRoutineNode->getRoutineType(), udrType);
   NAString languageType;
-  getLanguageTypeLit(createRoutineNode->getLanguageType(), languageType);
+  getLanguageTypeLit(language, languageType);
   NAString sqlAccess;
   getSqlAccessLit(createRoutineNode->getSqlAccess(), sqlAccess);
   NAString paramStyle;
-  getParamStyleLit(createRoutineNode->getParamStyle(), paramStyle);
+  getParamStyleLit(style, paramStyle);
   NAString transactionAttributes;
   getTransAttributesLit(createRoutineNode->getTransactionAttributes(), transactionAttributes);
   NAString parallelism;
@@ -864,7 +964,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   NAString executionMode;
   getExecutionModeLit(createRoutineNode->getExecutionMode(), executionMode);
   NAString externalName;
-  if (createRoutineNode->getLanguageType() == COM_LANGUAGE_JAVA)
+  if (language == COM_LANGUAGE_JAVA)
     {
       externalName = createRoutineNode->getJavaClassName();
       externalName += "." ;

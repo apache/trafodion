@@ -351,11 +351,14 @@ LmResult LmLanguageManagerC::putRoutine(
 
   // For now we assume all C routine bodies require a FINAL call. In
   // the future we can make the FINAL optional, controlled by a flag
-  // in the LmRoutine instance.
+  // in the LmRoutine instance. C++ routines do not have a final call.
   LmRoutineC *routine = (LmRoutineC *) handle;
-  routine->setFinalCall();
-  result = routine->invokeRoutine(NULL, NULL, diagsArea);
 
+  if (routine->getLanguage() == COM_LANGUAGE_C)
+    {
+      routine->setFinalCall();
+      result = routine->invokeRoutine(NULL, NULL, diagsArea);
+    }
 
   // De-ref the container.
   if (routine->container())

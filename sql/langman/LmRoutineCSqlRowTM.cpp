@@ -93,7 +93,11 @@ LmRoutineCSqlRowTM::LmRoutineCSqlRowTM(
   LmContainer           *container,
   ComDiagsArea          *diags)
   : LmRoutineC(sqlName, externalName, librarySqlName, numSqlParam, routineSig,
-               maxResultSets, COM_STYLE_SQLROW_TM, transactionAttrs, sqlAccessMode,
+               maxResultSets,
+               COM_LANGUAGE_C,
+               COM_STYLE_SQLROW_TM,
+               transactionAttrs,
+               sqlAccessMode,
                externalSecurity, 
 	       routineOwnerId,
                parentQid, inputRowLen, outputRowLen, 

@@ -78,6 +78,7 @@ CharType::CharType( const NAString&  adtName,
                                          ? SQL_VARCHAR_HDR_SIZE_4
                                          : SQL_VARCHAR_HDR_SIZE)
                               : 0) // computes length of VarCharLen field (0 or 2 or 4 bytes)
+                                   // see also ../sqludr/sqludr.cpp, method TypeInfo::TypeInfo
 		, CharInfo::minBytesPerChar(cs)
 	      ),
 	qualifier_	(CHARACTER_STRING_TYPE),

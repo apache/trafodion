@@ -603,22 +603,24 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
       break;
 
     case NUMERIC:
-      d_.length_ = 4;
+      d_.length_ = convertToBinaryPrecision(d_.precision_);
       if (d_.scale_ < 0 || scale > 18)
         throw UDRException(38900,"Scale %d of a numeric in TypeInfo::TypeInfo is out of the allowed range of 0-18", d_.scale_);
-      if (d_.precision_ < 0 || d_.precision_ > 18)
-        throw UDRException(38900,"Precision %d of a numeric in TypeInfo::TypeInfo is out of the allowed range of 0-18", d_.precision_);
       if (scale > precision)
         throw UDRException(38900,"Scale %d of a numeric in TypeInfo::TypeInfo is greater than precision %d", d_.scale_, d_.precision_);
       break;
 
     case DECIMAL_LSE:
-      if (d_.scale_ < 0 || scale > 18)
+      if (scale < 0 || scale > 18)
         throw UDRException(38900,"Scale %d of a decimal in TypeInfo::TypeInfo is out of the allowed range of 0-18", d_.scale_);
-      if (d_.precision_ < 0 || d_.precision_ > 18)
-        throw UDRException(38900,"Precision %d of a decimal in TypeInfo::TypeInfo is out of the allowed range of 0-18", d_.precision_);
+      if (precision < 1 || precision > 18)
+        throw UDRException(38900,"Precision %d of a decimal in TypeInfo::TypeInfo is out of the allowed range of 1-18", d_.precision_);
       if (scale > precision)
         throw UDRException(38900,"Scale %d of a decimal in TypeInfo::TypeInfo is greater than precision %d", d_.scale_, d_.precision_);
+      // format [-]mmmm[.sss]  - total number of digits = precision
+      d_.length_ = d_.precision_ + 1; // add one for the sign
+      if (d_.scale_ > 0)
+        d_.length_ += 1; // for the decimal point
       break;
 
     case SMALLINT_UNSIGNED:
@@ -630,11 +632,9 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
       break;
 
     case NUMERIC_UNSIGNED:
-      d_.length_ = 4;
+      d_.length_ = convertToBinaryPrecision(d_.precision_);
       if (d_.scale_ < 0 || scale > 18)
         throw UDRException(38900,"Scale %d of a numeric unsigned in TypeInfo::TypeInfo is out of the allowed range of 0-18", d_.scale_);
-      if (d_.precision_ < 0 || d_.precision_ > 18)
-        throw UDRException(38900,"Precision %d of a numeric unsigned in TypeInfo::TypeInfo is out of the allowed range of 0-18", d_.precision_);
       if (scale > precision)
         throw UDRException(38900,"Scale %d of a numeric unsigned in TypeInfo::TypeInfo is greater than precision %d", d_.scale_, d_.precision_);
       break;
@@ -642,10 +642,14 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
     case DECIMAL_UNSIGNED:
       if (scale < 0 || scale > 18)
         throw UDRException(38900,"Scale %d of a decimal unsigned in TypeInfo::TypeInfo is out of the allowed range of 0-18", d_.scale_);
-      if (d_.precision_ < 0 || d_.precision_ > 18)
-        throw UDRException(38900,"Precision %d of a decimal unsigned in TypeInfo::TypeInfo is out of the allowed range of 0-18", d_.precision_);
+      if (d_.precision_ < 1 || d_.precision_ > 18)
+        throw UDRException(38900,"Precision %d of a decimal unsigned in TypeInfo::TypeInfo is out of the allowed range of 1-18", d_.precision_);
       if (scale > precision)
         throw UDRException(38900,"Scale %d of a decimal unsigned in TypeInfo::TypeInfo is greater than precision %d", d_.scale_, d_.precision_);
+      // format mmmm[.sss]  - total number of digits = precision
+      d_.length_ = d_.precision_;
+      if (d_.scale_ > 0)
+        d_.length_ += 1; // for the decimal point
       break;
 
     case REAL:
@@ -666,8 +670,22 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
         throw UDRException(38900,"Charset must be specified for CHAR type in TypeInfo::TypeInfo");
       if (d_.collation_ == UNDEFINED_COLLATION)
         throw UDRException(38900,"Collation must be specified for CHAR type in TypeInfo::TypeInfo");
+      // length is the length in characters, but d_.length_ is
+      // the byte length, multiply by min bytes per char
+      d_.length_ = length * minBytesPerChar();
       if (d_.length_ > 32767)
+        // see also CharType::CharType in ../common/CharType.cpp
         d_.flags_ |= TYPE_FLAG_4_BYTE_VC_LEN;
+      break;
+
+    case CLOB:
+    case BLOB:
+      // BLOB and CLOB are represented by a handle that looks like a VARCHAR
+      // but may contain binary data (use ISO8859-1 to be able to represent
+      // binary data)
+      d_.charset_ = CHARSET_ISO88591;
+      // should we check the provided length if it comes from the UDR writer?
+      // or just let it error out at runtime with an overflow?
       break;
 
     case DATE:
@@ -680,6 +698,10 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
       // string hh:mm:ss
       d_.length_ = 8;
       d_.scale_ = 0;
+      if (scale > 0)
+        d_.length_ += scale+1;
+      if (scale < 0 || scale > 6)
+        throw UDRException(38900,"Scale %d of time in TypeInfo::TypeInfo is outside the allowed range of 0-6", scale);
       break;
 
     case TIMESTAMP:
@@ -689,17 +711,84 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
       if (scale > 0)
         d_.length_ += scale+1;
       if (scale < 0 || scale > 6)
-        throw UDRException(38900,"Scale %d of timestamp in TypeInfo::TypeInfo is outside the allowed range of 0-6", sqlType);
+        throw UDRException(38900,"Scale %d of timestamp in TypeInfo::TypeInfo is outside the allowed range of 0-6", scale);
       break;
 
     case INTERVAL:
-      // all intervals are treated like numbers
-      d_.length_ = 4;
-      if (d_.intervalCode_ == UNDEFINED_INTERVAL_CODE)
-        throw UDRException(38900,"Interval code in TypeInfo::TypeInfo is undefined");
-      if (scale < 0 || scale > 6)
-        throw UDRException(38900,"Scale %d of interval in TypeInfo::TypeInfo is outside the allowed range of 0-6", sqlType);
-      // todo: Check scale and precision in more detail
+      {
+        int totalPrecision = 0;
+        bool allowScale = false;
+
+        if (d_.intervalCode_ == UNDEFINED_INTERVAL_CODE)
+          throw UDRException(38900,"Interval code in TypeInfo::TypeInfo is undefined");
+        if (scale < 0 || scale > 6)
+          throw UDRException(38900,"Scale %d of interval in TypeInfo::TypeInfo is outside the allowed range of 0-6", sqlType);
+
+        // all intervals are treated like signed numbers, need to compute
+        // the length from the combined precision of all parts, see method
+        // IntervalType::getStorageSize() in ../common/IntervalType.cpp and
+        // see also the defaults for leading precision in the SQL Reference
+        // Manual. Note that the default for fraction precision in this
+        // constructor is 0, the default scale for other types. This is
+        // different from the default fraction precision of 6 in Trafodion
+        // SQL!!
+
+        // start with the leading precision
+        if (precision == 0)
+          totalPrecision = 2; // default leading precision
+        else
+          totalPrecision = precision;
+
+        switch (d_.intervalCode_)
+          {
+          case INTERVAL_YEAR:
+          case INTERVAL_MONTH:
+          case INTERVAL_DAY:
+          case INTERVAL_HOUR:
+          case INTERVAL_MINUTE:
+            // we are all set
+            break;
+          case INTERVAL_SECOND:
+            // add the fraction precision (scale)
+            totalPrecision += scale;
+            allowScale = true;
+            break;
+          case INTERVAL_YEAR_MONTH:
+          case INTERVAL_DAY_HOUR:
+          case INTERVAL_HOUR_MINUTE:
+            // leading field + 1 more field
+            totalPrecision += 2;
+            break;
+          case INTERVAL_DAY_MINUTE:
+            // leading field + 2 more fields
+            totalPrecision += 4;
+            break;
+          case INTERVAL_DAY_SECOND:
+            totalPrecision += 6 + scale;
+            allowScale = true;
+            break;
+          case INTERVAL_HOUR_SECOND:
+            totalPrecision += 4 + scale;
+            allowScale = true;
+            break;
+          case INTERVAL_MINUTE_SECOND:
+            totalPrecision += 2 + scale;
+            allowScale = true;
+            break;
+          default:
+            throw UDRException(
+                 38900,
+                 "TypeInfo::TypeInfo() for interval type with invalid interval code");
+          }
+
+        if (scale > 0 && !allowScale)
+          throw UDRException(
+               38900,
+               "TypeInfo::TypeInfo(): Scale (fraction precision) should not be specified for a type when end field is not SECOND");
+
+        // convert decimal to binary precision
+        d_.length_ = convertToBinaryPrecision(totalPrecision);
+      }
       break;
 
     case UNDEFINED_SQL_TYPE:
@@ -785,6 +874,10 @@ TypeInfo::SQLTypeClassCode TypeInfo::getSQLTypeClass() const
     case INTERVAL:
       return INTERVAL_TYPE;
 
+    case BLOB:
+    case CLOB:
+      return LOB_TYPE;
+
     default:
       break;
     }
@@ -851,6 +944,10 @@ TypeInfo::SQLTypeSubClassCode TypeInfo::getSQLTypeSubClass() const
         default:
           break;
         }
+
+    case BLOB:
+    case CLOB:
+      return LOB_SUB_CLASS;
 
     default:
       break;
@@ -945,14 +1042,55 @@ TypeInfo::SQLCollationCode TypeInfo::getCollation() const
  *  Getting the length is useful for CHAR/VARCHAR data types
  *  but probably not as useful for other types that may have
  *  an internal representation unknown to a UDR writer.
+ *  This returns the length in bytes, not in characters.
  *
- *  TBD: For UCS-2, will this be the length in bytes or in characters?
+ *  @see getCharLength()
  *
  *  @return Length in bytes.
  */
-int TypeInfo::getLength() const
+int TypeInfo::getByteLength() const
 {
   return d_.length_;
+}
+
+/**
+ *  @brief Get the maximum number of characters that can be stored in this type.
+ *
+ *  This method should be used only for character types that
+ *  have a fixed-width encoding. For variable-length encoding, like
+ *  UTF-8, the method returns the highest possible number of characters
+ *  (assuming single byte characters in the case of UTF-8). Right now,
+ *  UTF-8 data types all have byte semantics, meaning there is no
+ *  limit for the number of characters stored in a type, it is only
+ *  limited by the number of bytes. The method returns 0 for numeric
+ *  types. It returns the length of the string representation for
+ *  types that are represented by a string, like datetime types.
+ *
+ *  @see getByteLength()
+ *
+ *  @return Length in bytes.
+ *  @throws UDRException
+ */
+int TypeInfo::getMaxCharLength() const
+{
+  switch (getSQLTypeClass())
+    {
+    case CHARACTER_TYPE:
+      return d_.length_ * minBytesPerChar();
+    case NUMERIC_TYPE:
+      return 0;
+    case DATETIME_TYPE:
+      // return the length of the string representation
+      // in ISO88591/UTF-8
+      return d_.length_;
+    case INTERVAL_TYPE:
+      return 0;
+    default:
+      throw UDRException(
+           38900,
+           "Called TypeInfo::getMaxCharLength() on an unsupported type: %d",
+           d_.sqlType_);
+    }
 }
 
 int TypeInfo::getInt(const char *row, bool &wasNull) const
@@ -995,22 +1133,23 @@ long TypeInfo::getLong(const char *row, bool &wasNull) const
 
   // convert NUMERIC to the corresponding type with binary precision
   // see also code in LmTypeIsString() in file ../generator/LmExpr.cpp
-  if (d_.sqlType_ == NUMERIC || d_.sqlType_ == NUMERIC_UNSIGNED)
+  if (d_.sqlType_ == NUMERIC ||
+      d_.sqlType_ == NUMERIC_UNSIGNED ||
+      d_.sqlType_ == INTERVAL)
     {
-      if (d_.precision_ <= 4)
-        if (d_.sqlType_ == NUMERIC)
-          tempSQLType = SMALLINT;
-        else
+      if (d_.length_ == 2)
+        if (d_.sqlType_ == NUMERIC_UNSIGNED)
           tempSQLType = SMALLINT_UNSIGNED;
-      else if (d_.precision_ <= 9)
-        if (d_.sqlType_ == NUMERIC)
-          tempSQLType = INT;
         else
+          tempSQLType = SMALLINT;
+      else if (d_.length_ == 4)
+        if (d_.sqlType_ == NUMERIC_UNSIGNED)
           tempSQLType = INT_UNSIGNED;
-      else if (d_.precision_ <= 18)
-        if (d_.sqlType_ == NUMERIC)
-          tempSQLType = LARGEINT;
-        // else unsigned 8 byte integer is not supported
+        else
+          tempSQLType = INT;
+      else if (d_.length_ == 8)
+        tempSQLType = LARGEINT;
+        // unsigned 8 byte integer is not supported
     }
 
   switch (tempSQLType)
@@ -1035,9 +1174,82 @@ long TypeInfo::getLong(const char *row, bool &wasNull) const
       result = *((int *) data);
       break;
 
+    case DECIMAL_LSE:
+    case DECIMAL_UNSIGNED:
+      {
+        long fractionalPart = 0;
+        bool isNegative = false;
+        bool overflow = false;
+        char buf[200];
+        int dataLen = d_.length_;
+
+        if (*data == '-')
+          {
+            isNegative = true;
+            data++;
+            dataLen--;
+          }
+
+        // copy the value to be able to add a terminating NUL byte
+        memcpy(buf, data, dataLen);
+        buf[dataLen] = 0;
+
+        if (d_.scale_ == 0)
+          {
+            if (sscanf(buf, "%ld", &result) != 1)
+              throw UDRException(
+                   38900,
+                   "Error converting decimal value %s to a long",
+                   buf);
+          }
+        else
+          {
+            if (sscanf(buf, "%ld.%ld", &result, &fractionalPart) != 2)
+              throw UDRException(
+                   38900,
+                   "Error converting decimal value %s (with scale) to a long",
+                   buf);
+            for (int s=0; s<d_.scale_; s++)
+              if (result <= LONG_MAX/10)
+                result *= 10;
+              else
+                overflow = true;
+            if (result <= LONG_MAX - fractionalPart)
+              result += fractionalPart;
+            else
+              overflow = true;
+          }
+
+        if (isNegative)
+          if (result < LONG_MAX)
+            result = -result;
+          else
+            overflow = true;
+
+        if (overflow)
+          throw UDRException(
+               38900,
+               "Under or overflow occurred, converting decimal to a long");
+      }
+      break;
+
+    case REAL:
+    case DOUBLE_PRECISION:
+      {
+        double dresult = getDouble(row, wasNull);
+
+        if (dresult < LONG_MIN || dresult > LONG_MAX)
+            throw UDRException(
+                 38900, 
+                 "Under or overflow in getInt() or getLong(), float value %g does not fit in a long",
+                 dresult);
+        result = static_cast<long>(dresult);
+      }
+      break;
+
     default:
       throw UDRException(38902,
-                         "TypeInfo::getNumericValue() not supported for SQL type %d",
+                         "TypeInfo::getLong() and getDouble() not supported for SQL type %d",
                          d_.sqlType_);
       break;
     }
@@ -1079,11 +1291,143 @@ double TypeInfo::getDouble(const char *row, bool &wasNull) const
       result = *((double *) data);
       break;
 
+    case SMALLINT:
+    case INT:
+    case LARGEINT:
+    case NUMERIC:
+    case DECIMAL_LSE:
+    case SMALLINT_UNSIGNED:
+    case INT_UNSIGNED:
+    case NUMERIC_UNSIGNED:
+    case DECIMAL_UNSIGNED:
+    case INTERVAL:
+      result = static_cast<double>(getLong(row, wasNull));
+      break;
+
     default:
       throw UDRException(38900,
                          "getDouble() not supported for SQL type %d",
                          d_.sqlType_);
       break;
+    }
+
+  return result;
+}
+
+time_t TypeInfo::getTime(const char *row, bool &wasNull) const
+{
+  time_t result = 0;
+
+  if (d_.sqlType_ == INTERVAL)
+    {
+      long longVal = getLong(row, wasNull);
+
+      if (wasNull)
+        return 0;
+
+      // convert the interval value to seconds
+
+      // NOTE: This relies on the assumption that time_t
+      //       uses seconds as its unit, which is true for
+      //       current Linux systems but may not always remain
+      //       true
+      switch (d_.intervalCode_)
+        {
+        case INTERVAL_DAY:
+          result = longVal * 86400;
+          break;
+        case INTERVAL_HOUR:
+        case INTERVAL_DAY_HOUR:
+          result = longVal * 3600;
+          break;
+        case INTERVAL_MINUTE:
+        case INTERVAL_DAY_MINUTE:
+        case INTERVAL_HOUR_MINUTE:
+          result = longVal * 60;
+          break;
+        case INTERVAL_SECOND:
+        case INTERVAL_DAY_SECOND:
+        case INTERVAL_HOUR_SECOND:
+        case INTERVAL_MINUTE_SECOND:
+          {
+            // scale the value down and ignore fractional seconds
+            for (int s=0; s<d_.scale_; s++)
+              longVal /= 10;
+
+            result = longVal;
+          }
+          break;
+        default:
+          throw UDRException(
+               38900,
+               "getTime() is not supported for year-month intervals");
+        }
+    } // intervals
+  else
+    {
+      int stringLen = 0;
+      const char *val = getRaw(row, wasNull, stringLen);
+      char buf[200];
+      struct tm t;
+      bool ok = true;
+
+      if (wasNull)
+        return 0;
+
+
+      t.tm_sec =
+        t.tm_min =
+        t.tm_hour =
+        t.tm_mday =
+        t.tm_mon =
+        t.tm_year =
+        t.tm_wday =
+        t.tm_yday =
+        t.tm_isdst = 0;
+
+      if (stringLen+1 > sizeof(buf))
+        throw UDRException(
+             38900,
+             "Datetime string of length %d exceeds size limit of %d for time_t conversion",
+             stringLen, (int) sizeof(buf) - 1);
+      memcpy(buf, val, stringLen);
+      buf[stringLen] = 0;
+
+      switch (d_.sqlType_)
+        {
+        case DATE:
+          // yyyy-mm-dd
+          ok = (sscanf(buf,"%4d-%2d-%2d", &t.tm_year, &t.tm_mon, &t.tm_mday) == 3);
+          break;
+
+        case TIME:
+          ok = (sscanf(buf,"%2d:%2d:%2d", &t.tm_hour, &t.tm_min, &t.tm_sec) == 3);
+          break;
+
+        case TIMESTAMP:
+          ok = (sscanf(buf,"%4d-%2d-%2d %2d:%2d:%2d", &t.tm_year, &t.tm_mon, &t.tm_mday,
+                                                      &t.tm_hour, &t.tm_min, &t.tm_sec) == 6);
+          break;
+
+        default:
+          throw UDRException(38900,
+                             "getTime() not supported for SQL type %d",
+                             d_.sqlType_);
+        }
+
+      if (!ok)
+        throw UDRException(
+             38900,
+             "Unable to parse datetime string %s for conversion to time_t",
+             buf);
+
+      result = mktime(&t);
+
+      if (result < 0)
+        throw UDRException(
+             38900,
+             "Unable to convert datetime string %s to time_t",
+             buf);
     }
 
   return result;
@@ -1118,6 +1462,8 @@ const char * TypeInfo::getRaw(const char *row,
   switch (d_.sqlType_)
     {
     case VARCHAR:
+    case BLOB:
+    case CLOB:
       if (d_.flags_ & TYPE_FLAG_4_BYTE_VC_LEN)
         {
           const int32_t *vcLen4 =
@@ -1136,16 +1482,35 @@ const char * TypeInfo::getRaw(const char *row,
 
     case UNDEFINED_SQL_TYPE:
       throw UDRException(38900,
-                         "getString() not supported for SQL type %d",
+                         "getString()/getRaw() not supported for SQL type %d",
                          d_.sqlType_);
       break;
 
     default:
       byteLen = d_.length_;
       if (d_.sqlType_ == CHAR)
-        // trim trailing blanks from the value
-        while (byteLen > 0 && result[byteLen-1] == ' ')
-          byteLen--;
+        switch (d_.charset_)
+          {
+          case CHARSET_ISO88591:
+          case CHARSET_UTF8:
+            // trim trailing blanks from the value
+            while (byteLen > 0 && result[byteLen-1] == ' ')
+              byteLen--;
+            break;
+          case CHARSET_UCS2:
+            // trim trailing little-endian UCS2 blanks
+            // from the value
+            while (byteLen > 1 &&
+                   result[byteLen-1] == 0 &&
+                   result[byteLen-2] == ' ')
+              byteLen -= 2;
+            break;
+          default:
+            throw UDRException(
+                 38900,
+                 "Unsupported character set in TupleInfo::getRaw(): %d",
+                 d_.charset_);
+          }
       break;
     }
 
@@ -1173,25 +1538,26 @@ void TypeInfo::setLong(long val, char *row) const
     *(reinterpret_cast<short *>(row + d_.nullIndOffset_)) = 0;
 
   int tempSQLType = d_.sqlType_;
-  const char *data = row + d_.dataOffset_;
+  char *data = row + d_.dataOffset_;
 
   // convert NUMERIC to the corresponding type with binary precision
-  if (d_.sqlType_ == NUMERIC || d_.sqlType_ == NUMERIC_UNSIGNED)
+  if (d_.sqlType_ == NUMERIC ||
+      d_.sqlType_ == NUMERIC_UNSIGNED ||
+      d_.sqlType_ == INTERVAL)
     {
-      if (d_.precision_ <= 4)
-        if (d_.sqlType_ == NUMERIC)
-          tempSQLType = SMALLINT;
-        else
+      if (d_.length_ == 2)
+        if (d_.sqlType_ == NUMERIC_UNSIGNED)
           tempSQLType = SMALLINT_UNSIGNED;
-      else if (d_.precision_ <= 9)
-        if (d_.sqlType_ == NUMERIC)
-          tempSQLType = INT;
         else
+          tempSQLType = SMALLINT;
+      else if (d_.length_ == 4)
+        if (d_.sqlType_ == NUMERIC_UNSIGNED)
           tempSQLType = INT_UNSIGNED;
-      else if (d_.precision_ <= 18)
-        if (d_.sqlType_ == NUMERIC)
-          tempSQLType = LARGEINT;
-        // else unsigned 8 byte integer is not supported
+        else
+          tempSQLType = INT;
+      else if (d_.length_ == 8)
+        tempSQLType = LARGEINT;
+        // unsigned 8 byte integer is not supported
     }
 
   switch (tempSQLType)
@@ -1214,6 +1580,77 @@ void TypeInfo::setLong(long val, char *row) const
 
     case INT_UNSIGNED:
       *((int *) data) = val;
+      break;
+
+    case DECIMAL_LSE:
+    case DECIMAL_UNSIGNED:
+      {
+        bool overflow = false;
+        bool isNegative = false;
+
+        const long maxvals[] = {9L,
+                                99L,
+                                999L,
+                                9999L,
+                                99999L,
+                                999999L,
+                                9999999L,
+                                99999999L,
+                                999999999L,
+                                9999999999L,
+                                99999999999L,
+                                999999999999L,
+                                9999999999999L,
+                                99999999999999L,
+                                999999999999999L,
+                                9999999999999999L,
+                                99999999999999999L,
+                                999999999999999999L};
+
+        if (d_.precision_ < 1 || d_.precision_ > 18 ||
+            d_.scale_ < 0 || d_.scale_ > d_.precision_)
+          throw UDRException(
+               38900, "Invalid precision (%d) or scale (%d) for a decimal data type",
+               d_.precision_, d_.scale_);
+
+        if (val < 0)
+          {
+            if (tempSQLType == DECIMAL_UNSIGNED)
+              throw UDRException(
+                   38900,
+                   "Trying to assign a negative value to a DECIMAL UNSIGNED type");
+            val = -val;
+            isNegative = true;
+            *data = '-';
+            data++;
+          }
+
+        if (val > maxvals[d_.precision_-1])
+          throw UDRException(
+               38900,
+               "Overflow occurred whild converting value %ld to a DECIMAL(%d, %d)",
+               val, d_.precision_, d_.scale_);
+
+        if (d_.scale_ == 0)
+          {
+            sprintf(data,"%0*ld", d_.precision_, val);
+          }
+        else
+          {
+            long fractionalValue = 0;
+
+            for (int s=0; s<d_.scale_; s++)
+              {
+                fractionalValue = fractionalValue * 10 + val % 10;
+                val /= 10;
+              }
+            sprintf(data, "%0*ld.%0*ld",
+                    d_.precision_-d_.scale_,
+                    val,
+                    d_.scale_,
+                    fractionalValue);
+          }
+      }
       break;
 
     case REAL:
@@ -1257,6 +1694,100 @@ void TypeInfo::setDouble(double val, char *row) const
     }
 }
 
+void TypeInfo::setTime(time_t val, char *row) const
+{
+  if (d_.sqlType_ == INTERVAL)
+    {
+      long tVal = static_cast<long>(val);
+      long result = 0;
+
+      // convert the time_t value to the base units of the interval
+
+      // NOTE: This relies on the assumption that time_t
+      //       uses seconds as its unit, which is true for
+      //       current Linux systems but may not always remain
+      //       true. It may also some day become bigger than long.
+      switch (d_.intervalCode_)
+        {
+        case INTERVAL_DAY:
+          result = tVal/86400;
+          break;
+        case INTERVAL_HOUR:
+        case INTERVAL_DAY_HOUR:
+          result = tVal/3600;
+          break;
+        case INTERVAL_MINUTE:
+        case INTERVAL_DAY_MINUTE:
+        case INTERVAL_HOUR_MINUTE:
+          result = tVal/60;
+          break;
+        case INTERVAL_SECOND:
+        case INTERVAL_DAY_SECOND:
+        case INTERVAL_HOUR_SECOND:
+        case INTERVAL_MINUTE_SECOND:
+          {
+            // scale the value up
+            for (int s=0; s<d_.scale_; s++)
+              tVal *= 10;
+
+            result = tVal;
+          }
+          break;
+        default:
+          throw UDRException(
+               38900,
+               "getTime() is not supported for year-month intervals");
+        }
+
+      setLong(result, row);
+    } // intervals
+  else
+    {
+      struct tm t;
+      time_t temp = val;
+      char buf[64];
+      const char *fraction = ".000000";
+      int strLimit = sizeof(buf) - strlen(fraction);
+
+      if (gmtime_r(&temp, &t) != &t)
+        throw UDRException(
+             38900,
+             "Unable to interpret time_t value %ld",
+             (long) val);
+
+      switch (d_.sqlType_)
+        {
+        case DATE:
+          // yyyy-mm-dd
+          snprintf(buf, strLimit, "%4d-%2d-%2d", t.tm_year, t.tm_mon, t.tm_mday);
+          break;
+
+        case TIME:
+          // hh:mm:ss
+          snprintf(buf, strLimit, "%2d:%2d:%2d", t.tm_hour, t.tm_min, t.tm_sec);
+          break;
+
+        case TIMESTAMP:
+          // yyyy-mm-d hh:mm:ss
+          snprintf(buf, strLimit, "%4d-%2d-%2d %2d:%2d:%2d",
+                   t.tm_year, t.tm_mon, t.tm_mday,
+                   t.tm_hour, t.tm_min, t.tm_sec);
+          break;
+
+        default:
+          throw UDRException(38900,
+                             "setTime() not supported for SQL type %d",
+                             d_.sqlType_);
+        }
+
+      // add fraction (with value 0) if needed
+      if (d_.scale_ > 0)
+        strncat(buf, fraction, d_.scale_+1);
+
+      setString(buf, strlen(buf), row);
+    } // types other than intervals
+}
+
 void TypeInfo::setString(const char *val, int stringLen, char *row) const
 {
   if (row == NULL ||
@@ -1295,17 +1826,20 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
     case DATE:
     case TIME:
     case TIMESTAMP:
-      // for both CHAR and VARCHAR, copy the string and pad with blanks
+    case BLOB:
+    case CLOB:
+      // for these types, copy the string and pad with blanks
+      // of the appropriate charset for fixed-length strings
       memcpy(data, val, stringLen);
-      if (stringLen < d_.length_)
-        memset(data+stringLen, ' ', d_.length_ - stringLen);
 
-      if (d_.sqlType_ == VARCHAR)
+      if (d_.sqlType_ == VARCHAR ||
+          d_.sqlType_ == BLOB ||
+          d_.sqlType_ == CLOB)
         {
           // set the varchar length indicator
           if (d_.vcLenIndOffset_ < 0)
             throw UDRException(38900,
-                               "Internal error, VARCHAR without length indicator");
+                               "Internal error, VARCHAR/BLOB/CLOB without length indicator");
 
           if (d_.flags_ & TYPE_FLAG_4_BYTE_VC_LEN)
             *(reinterpret_cast<int32_t *>(row + d_.vcLenIndOffset_)) =
@@ -1314,6 +1848,35 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
             *(reinterpret_cast<int16_t *>(row + d_.vcLenIndOffset_)) =
               stringLen;
         }
+      else if (stringLen < d_.length_)
+        // fill fixed character value with blanks of the appropriate
+        // character set
+        switch (d_.charset_)
+          {
+          case CHARSET_ISO88591:
+          case CHARSET_UTF8:
+            memset(data+stringLen, ' ', d_.length_ - stringLen);
+            break;
+          case CHARSET_UCS2:
+            {
+              int paddedLen = stringLen;
+
+              // pad with little-endian UCS-2 blanks
+              while (paddedLen+1 < d_.length_)
+                {
+                  data[paddedLen] = ' ';
+                  data[paddedLen+1] = 0;
+                  paddedLen += 2;
+                }
+            }
+            break;
+          default:
+            throw UDRException(
+                 38900,
+                 "Unsupported character set in TupleInfo::setString(): %d",
+                 d_.charset_);
+          }
+
       break;
 
     case REAL:
@@ -1332,15 +1895,24 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
     case DECIMAL_UNSIGNED:
       {
         char buf[200];
-        int valLen = (stringLen >= sizeof(buf) ? sizeof(buf)-1 : stringLen);
         long lval;
         double dval;
         int numCharsConsumed = 0;
         int rc = 0;
 
+        // ignore trailing blanks
+        while (val[stringLen-1] == ' ')
+          stringLen--;
+
+        if (stringLen+1 > sizeof(buf))
+          throw UDRException(
+               38900,
+               "String of length %d exceeds size limit of %d for numeric conversion",
+               stringLen, (int) sizeof(buf) - 1);
+
         // copy the value to be able to add a terminating NUL byte
-        memcpy(buf, val, valLen);
-        buf[valLen] = 0;
+        memcpy(buf, val, stringLen);
+        buf[stringLen] = 0;
 
         if (isApproxNumeric)
           rc = sscanf(buf,"%lf%n", &dval, &numCharsConsumed) < 0;
@@ -1354,7 +1926,7 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
                buf);
 
         // check for any non-white space left after conversion
-        while (numCharsConsumed < valLen)
+        while (numCharsConsumed < stringLen)
           if (buf[numCharsConsumed] != ' ' &&
               buf[numCharsConsumed] != '\t')
             throw UDRException(
@@ -1371,8 +1943,170 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
       }
       break;
 
-    case UNDEFINED_SQL_TYPE:
     case INTERVAL:
+      {
+        char buf[100];
+        char *strVal;
+        unsigned long years, months, days, hours, minutes, seconds, singleField;
+        long result = 0;
+        unsigned long fractionalVal = 0;
+        int numLeaderChars   = 0;
+        int numCharsConsumed = 0;
+        int numFractionChars = 0;
+        bool ok = true;
+        bool readFraction = false;
+        bool isNegative = false;
+
+        // ignore trailing blanks
+        while (val[stringLen-1] == ' ')
+          stringLen--;
+
+        if (stringLen+1 > sizeof(buf))
+          throw UDRException(
+               38900,
+               "String of length %d exceeds size limit of %d for interval conversion",
+               stringLen, (int) sizeof(buf) - 1);
+
+        // copy the value to be able to add a terminating NUL byte
+        memcpy(buf, val, stringLen);
+        buf[stringLen] = 0;
+        strVal = buf;
+
+        // check for the sign
+        while (*strVal == ' ')
+          strVal++;
+        if (*strVal == '-')
+          {
+            isNegative = true;
+            strVal++;
+          }
+
+        numLeaderChars = strVal - buf;
+
+        // Use sscanf to convert string representation to a number.
+        // Note that this does not check for overflow, which cannot occur
+        // for valid interval literals, and that it also may allow some
+        // string that aren't quite legal, such as 01:120:00 (should be 03:00:00).
+        // We treat such overflows like other overflows that could occur in the
+        // user-written code.
+
+        switch (d_.intervalCode_)
+          {
+          case INTERVAL_YEAR:
+          case INTERVAL_MONTH:
+          case INTERVAL_DAY:
+          case INTERVAL_HOUR:
+          case INTERVAL_MINUTE:
+            ok = (sscanf(strVal, "%lu%n", &singleField, &numCharsConsumed) >= 1);
+            result = singleField;
+            break;
+          case INTERVAL_SECOND:
+            ok = (sscanf(strVal, "%lu%n", &singleField, &numCharsConsumed) >= 1);
+            result = singleField;
+            readFraction = true;
+            break;
+          case INTERVAL_YEAR_MONTH:
+            ok = (sscanf(strVal, "%lu-%lu%n", &years, &months, &numCharsConsumed) >= 2);
+            result = years * 12 + months;
+            break;
+          case INTERVAL_DAY_HOUR:
+            ok = (sscanf(strVal, "%lu %lu%n", &days, &hours, &numCharsConsumed) >= 2);
+            result = days * 24 + hours;
+            break;
+          case INTERVAL_DAY_MINUTE:
+            ok = (sscanf(strVal, "%lu %lu:%lu%n", &days, &hours, &minutes, &numCharsConsumed) >= 3);
+            result = days * 1440 + hours * 60 + minutes;
+            break;
+          case INTERVAL_DAY_SECOND:
+            ok = (sscanf(strVal, "%lu %lu:%lu:%lu%n", &days, &hours, &minutes, &seconds, &numCharsConsumed) >= 4);
+            result = days * 86400 + hours * 3600 + minutes * 60 + seconds;
+            readFraction = true;
+            break;
+          case INTERVAL_HOUR_MINUTE:
+            ok = (sscanf(strVal, "%lu:%lu%n", &hours, &minutes, &numCharsConsumed) >= 2);
+            result = hours * 60 + minutes;
+            break;
+          case INTERVAL_HOUR_SECOND:
+            ok = (sscanf(strVal, "%lu:%lu:%lu%n", &hours, &minutes, &seconds, &numCharsConsumed) >= 3);
+            result = hours * 3600 + minutes * 60 + seconds;
+            readFraction = true;
+            break;
+          case INTERVAL_MINUTE_SECOND:
+            ok = (sscanf(strVal, "%lu:%lu%n", &minutes, &seconds, &numCharsConsumed) >= 2);
+            result = minutes * 60 + seconds;
+            readFraction = true;
+            break;
+          default:
+            throw UDRException(
+                 38900,
+                 "Invalid interval code in TupleInfo::setString()");
+          }
+
+        strVal += numCharsConsumed;
+
+        // allow fractional seconds, regardless of whether fraction precision is >0
+        if (ok && readFraction && *strVal == '.')
+          {
+            ok = (sscanf(strVal,".%ld%n", &fractionalVal, &numFractionChars) >= 1);
+            strVal += numFractionChars;
+
+            // then, if the fractional seconds are not 0, complain if fraction
+            // precision is 0.
+            if (fractionalVal > 0 && d_.scale_ == 0)
+              throw UDRException(
+                   38900,
+                   "Encountered a fractional second part in a string value for an interval type that doesn't allow fractional values: %s",
+                   buf);
+          }
+
+        if (!ok)
+          throw UDRException(
+               38900,
+               "Error in setString(), \"%s\" is not an interval value for interval code %d",
+               buf, d_.intervalCode_);
+
+        // check for any non-white space left after conversion
+        while (strVal - buf < stringLen)
+          if (*strVal != ' ' &&
+              *strVal != '\t')
+            throw UDRException(
+                 38900,
+                 "Found non-numeric character in setString for an interval column: %s",
+                 buf);
+          else
+            strVal++;
+
+        if (d_.scale_ > 0)
+          {
+            long fractionOverflowTest = fractionalVal;
+
+            // scale up the result
+            for (int s=0; s<d_.scale_; s++)
+              {
+                result *= 10;
+                fractionOverflowTest /= 10;
+              }
+
+            if (fractionOverflowTest != 0)
+              throw UDRException(
+                   38900,
+                   "Fractional value %ld exceeds allowed range for interval fraction precision %d",
+                   fractionalVal, d_.scale_);
+
+            // add whole and fractional seconds (could overflow in extreme cases)
+            result += fractionalVal;
+          }
+
+        // could overflow in extreme cases
+        if (isNegative)
+          result = -result;
+
+        // result could exceed allowed precision, will cause an executor error when processed further
+        setDouble(result, row);
+      }
+      break;
+
+    case UNDEFINED_SQL_TYPE:
     default:
       throw UDRException(38900,
                          "setString() is not yet supported for data type %d",
@@ -1392,6 +2126,38 @@ void TypeInfo::setNull(char *row) const
   else
     throw UDRException(38900,
                        "Trying to set a non-nullable value to NULL");
+}
+
+int TypeInfo::minBytesPerChar() const
+{
+  switch (d_.charset_)
+    {
+    case CHARSET_ISO88591:
+    case CHARSET_UTF8:
+      return 1;
+    case CHARSET_UCS2:
+      return 2;
+    default:
+      throw UDRException(
+           38900, "Minimum bytes per char not defined for charset %d",
+           d_.charset_);
+    }
+}
+
+int TypeInfo::convertToBinaryPrecision(int decimalPrecision) const
+{
+  if (decimalPrecision < 1 || decimalPrecision > 18)
+    throw UDRException(
+         38900,
+         "Decimal precision %d is out of the allowed range of 1-18",
+         decimalPrecision);
+
+  if (decimalPrecision < 5)
+    return 2;
+  else if (decimalPrecision < 10)
+    return 4;
+  else
+    return 8;
 }
 
 void TypeInfo::toString(std::string &s, bool longForm) const
@@ -1469,7 +2235,7 @@ void TypeInfo::toString(std::string &s, bool longForm) const
 
       snprintf(buf, sizeof(buf), "%s(%d%s) CHARACTER SET %s",
                (d_.sqlType_ == CHAR ? "CHAR" : "VARCHAR"),
-               getLength(),
+               getMaxCharLength(),
                (getCharset() == CHARSET_UTF8 ? " BYTES" : ""),
                csName);
       s += buf;
@@ -1551,6 +2317,12 @@ void TypeInfo::toString(std::string &s, bool longForm) const
           snprintf(buf, sizeof(buf), "invalid interval code!");
         }
       s += buf;
+      break;
+    case BLOB:
+      s += "BLOB";
+      break;
+    case CLOB:
+      s += "CLOB";
       break;
     default:
       s += "invalid SQL type!";
@@ -2596,6 +3368,36 @@ PartitionInfo::PartitionTypeCode PartitionInfo::getType() const
 }
 
 /**
+ *  @brief Get the number of columns that form the partitioning key
+ *
+ *  Returns the number of columns in the list of partitioning keys
+ *  or zero if there are no such columns.
+ *
+ *  @return Number of partitioning key columns (could be zero)
+ */
+int PartitionInfo::getNumEntries() const
+{
+  return partCols_.size();
+}
+
+/**
+ *  @brief Get the number/ordinal of the ith partitioning column.
+ *
+ *  @return Number/ordinal (0-based) of the ith partitioning column in
+ *          the list of partitioning columns.
+ *  @throws UDRException
+ */
+int PartitionInfo::getColumnNum(int i) const
+{
+  if (i < 0 || i >= partCols_.size())
+    throw UDRException(
+         38900,
+         "Trying to access column %d of a PartitionInfo with %d partitioning columns",
+         i, partCols_.size());
+  return partCols_[i];
+}
+
+/**
  *  @brief  Set the partitioning type.
  *  @param type Partition type enum.
  */
@@ -2604,18 +3406,44 @@ void PartitionInfo::setType(PartitionTypeCode type)
   type_ = type;
 }
 
+/**
+ *  @brief  Add a new column to the list of partitioning columns
+ *
+ *  Add a new column to the list of column numbers that form the
+ *  partitioning key. Use this only if the type of the partitioning
+ *  is set to PARTITION.
+ *
+ *  @param colNum Number of the column (ordinal, 0-based) of the
+ *                associated table.
+ *  @throws UDRException
+ */
+void PartitionInfo::addEntry(int colNum)
+{
+  // don't allow duplicates
+  for (std::vector<int>::iterator it = partCols_.begin();
+       it != partCols_.end();
+       it++)
+    if (*it == colNum)
+      throw UDRException(
+           38900,
+           "Trying to add column number %d more than once to a PartitionInfo object",
+           colNum);
+
+  partCols_.push_back(colNum);
+}
+
 void PartitionInfo::mapColumnNumbers(const std::vector<int> &map)
 {
-  for (int i=0; i<size(); i++)
+  for (int i=0; i<partCols_.size(); i++)
     {
-      int colNum = (*this)[i];
+      int colNum = partCols_[i];
 
       if (map[colNum] < 0)
         throw UDRException(
              38900,
              "Invalid mapping for PARTITION BY column %d",
              colNum);
-      (*this)[i] = map[colNum];
+      partCols_[i] = map[colNum];
     }
 }
 
@@ -3030,6 +3858,30 @@ const char * TupleInfo::getRaw(int colNum, int &byteLen) const
 }
 
 /**
+ *  @brief Get a datetime or interval column value as time_t
+ *
+ *  This method can be used to convert column values with
+ *  a datetime type or a day-second interval type to the
+ *  POSIX type time_t. Note that this may result in the loss
+ *  of fractional seconds.
+ *
+ *  Use this method at runtime. It can also be used for
+ *  actual parameters that are available at compile time.
+ *
+ *  @param colNum Column number.
+ *  @throws UDRException
+ */
+time_t TupleInfo::getTime(int colNum) const
+{
+  bool &nonConstWasNull = const_cast<TupleInfo *>(this)->wasNull_;
+
+  nonConstWasNull = false;
+
+  return getType(colNum).getTime(rowPtr_,
+                                 nonConstWasNull);
+}
+
+/**
  *  @brief Check whether a parameter is available at compile-time.
  *
  *  Use this method to check in the compiler interfaces whether
@@ -3057,13 +3909,18 @@ bool TupleInfo::isAvailable(int colNum) const
  *
  *  Only use this method at runtime.
  *
+ *  Note: This method may return a string that contains multiple
+ *        character sets, if columns with different character sets
+ *        are involved. Using this method with UCS-2 columns is not
+ *        recommended.
+ *
  *  @param row         String reference in which the result delimited row
  *                     will be returned.
- *  @param delim       Field delimiter to use.
+ *  @param delim       US ASCII field delimiter to use.
  *  @param quote       Whether to quote character field values that contain
  *                     the delimiter symbol or a quote symbol. Quote symbols
  *                     will be duplicated to escape them.
- *  @param quoteSymbol Quote character to use, if quote is true.
+ *  @param quoteSymbol US ASCII quote character to use, if quote is true.
  *  @param firstColumn First column to read.
  *  @param lastColumn  Last column to read (inclusive) or -1 to read until
  *                     the last column in the row.
@@ -3159,11 +4016,15 @@ std::string TupleInfo::getString(int colNum) const
 
   switch (sqlType)
     {
+    case TypeInfo::DECIMAL_LSE:
+    case TypeInfo::DECIMAL_UNSIGNED:
     case TypeInfo::CHAR:
     case TypeInfo::VARCHAR:
     case TypeInfo::DATE:
     case TypeInfo::TIME:
     case TypeInfo::TIMESTAMP:
+    case TypeInfo::BLOB:
+    case TypeInfo::CLOB:
       {
         // these types are stored as strings
         const char *buf = getRaw(colNum, stringLen);
@@ -3185,6 +4046,9 @@ std::string TupleInfo::getString(int colNum) const
         char buf[32];
         long num = getLong(colNum);
 
+        if (wasNull_)
+          return "";
+
         snprintf(buf, sizeof(buf), "%ld", num);
 
         return buf;
@@ -3202,13 +4066,110 @@ std::string TupleInfo::getString(int colNum) const
         if (sqlType == TypeInfo::REAL)
           numSignificantDigits = 7;
 
-        snprintf(buf, sizeof(buf), "%*g", numSignificantDigits, num);
+        if (wasNull_)
+          return "";
+
+        snprintf(buf, sizeof(buf), "%*lf", numSignificantDigits, num);
 
         return buf;
       }
-    case TypeInfo::DECIMAL_LSE:
-    case TypeInfo::DECIMAL_UNSIGNED:
     case TypeInfo::INTERVAL:
+      {
+        char buf[32];
+        long longVal       = getLong(colNum);
+        long fractionalVal = 0;
+        const TypeInfo typ = getType(colNum);
+        TypeInfo::SQLIntervalCode intervalCode = typ.getIntervalCode();
+        int precision      = typ.getPrecision();
+        int scale          = typ.getScale();
+        const char *sign   = "";
+        const char *dot    = (scale == 0 ? "" : ".");
+
+        if (wasNull_)
+          return "";
+
+        if (longVal < 0)
+          {
+            longVal = -longVal;
+            sign = "-";
+          }
+
+        // split the number into integer and fractional values
+        for (int d=0; d<scale; d++)
+          {
+            fractionalVal = 10*fractionalVal + longVal % 10;
+            longVal /= 10;
+          }
+
+        switch (intervalCode)
+          {
+          case TypeInfo::INTERVAL_YEAR:
+          case TypeInfo::INTERVAL_MONTH:
+          case TypeInfo::INTERVAL_DAY:
+          case TypeInfo::INTERVAL_HOUR:
+          case TypeInfo::INTERVAL_MINUTE:
+            // Example: "59"
+            snprintf(buf, sizeof(buf), "%s%*ld", sign, precision, longVal);
+            break;
+          case TypeInfo::INTERVAL_SECOND:
+            // Example: "99999.000001"
+            snprintf(buf, sizeof(buf), "%s%*ld%s%0*ld", sign, precision, longVal,
+                                                                         dot, scale, fractionalVal);
+            break;
+          case TypeInfo::INTERVAL_YEAR_MONTH:
+            // Example: "100-01"
+            snprintf(buf, sizeof(buf), "%s%*ld-%02d", sign, precision, (long) (longVal/12),
+                                                                       (int)  (longVal%12));
+            break;
+          case TypeInfo::INTERVAL_DAY_HOUR:
+            // Example: "365 06"
+            snprintf(buf, sizeof(buf), "%s%*ld %02d", sign, precision, (long) (longVal/24),
+                                                                       (int)  (longVal%24));
+            break;
+          case TypeInfo::INTERVAL_DAY_MINUTE:
+            // Example: "365:05:49"
+            snprintf(buf, sizeof(buf), "%s%*ld %02d:%02d", sign, precision, (long) (longVal/1440),
+                                                                            (int)  (longVal%1440/60),
+                                                                            (int)  (longVal%60));
+            break;
+          case TypeInfo::INTERVAL_DAY_SECOND:
+            // Example: "365:05:49:12.00"
+            snprintf(buf, sizeof(buf), "%s%*ld %02d:%02d:%02d%s%0*ld", sign, precision,
+                     (long) (longVal/86400),
+                     (int)  (longVal%86400/3600),
+                     (int)  (longVal%3600/60),
+                     (int)  (longVal%60),
+                     dot, scale, fractionalVal);
+            break;
+          case TypeInfo::INTERVAL_HOUR_MINUTE:
+            // Example: "12:00"
+            snprintf(buf, sizeof(buf), "%s%*ld:%02d", sign, precision, (long) (longVal/60),
+                                                                       (int)  (longVal%60));
+            break;
+          case TypeInfo::INTERVAL_HOUR_SECOND:
+            // Example: "100:00:00"
+            snprintf(buf, sizeof(buf), "%s%*ld:%02d:%02d%s%0*ld", sign, precision,
+                     (long) (longVal/3600),
+                     (int)  (longVal%3600/60),
+                     (int)  (longVal%60),
+                     dot, scale, fractionalVal);
+            break;
+          case TypeInfo::INTERVAL_MINUTE_SECOND:
+            // Example: "3600:00.000000"
+            snprintf(buf, sizeof(buf), "%s%*ld:%02d%s%0*ld", sign, precision,
+                     (long) (longVal/60),
+                     (int)  (longVal%60),
+                     dot, scale, fractionalVal);
+            break;
+          default:
+            throw UDRException(
+                 38900,
+                 "Invalid interval code in TypeInfo::getString()");
+          }
+
+        return buf;
+      }
+
     default:
       throw UDRException(
            38900,
@@ -3297,7 +4258,8 @@ void TupleInfo::setDouble(int colNum, double val) const
 /**
  *  @brief Set an output column to a specified string value.
  *
- *  Use this method at runtime.
+ *  Use this method at runtime. The length of the string is determined
+ *  by calling strlen().
  *
  *  @param colNum Index/ordinal of the column to set.
  *  @param val    The new string value for the column to set.
@@ -3340,6 +4302,24 @@ void TupleInfo::setString(int colNum, const std::string &val) const
 }
 
 /**
+ *  @brief Set a datetime or interval output column to a value specified as time_t
+ *
+ *  This method cannot be used with year-month intervals or data types that
+ *  are not datetime or interval types. It is not possible to set fractional
+ *  seconds with this method.
+ *
+ *  Use this method at runtime.
+ *
+ *  @param colNum    Index/ordinal of the column to set.
+ *  @param val       The new time_t value for the column to set.
+ *  @throws UDRException
+ */
+void TupleInfo::setTime(int colNum, time_t val) const
+{
+  getType(colNum).setTime(val, rowPtr_);
+}
+
+/**
  *  @brief Set the result row from a string with delimited field values.
  *
  *  This method can be used to read delimited text files and
@@ -3357,16 +4337,21 @@ void TupleInfo::setString(int colNum, const std::string &val) const
  *      2);   // numDelimColsToSkip @endcode
  *  would set output column 10 to 3 and output column 11 to delim|and'Quote.
  *
+ *  Note: The delimited row may need to contain strings of multiple
+ *        character sets. Using this method with UCS2 columns is not
+ *        recommended, since that might require special handling.
+ *
  *  @see getDelimitedRow()
  *
  *  @param row    A string with delimited field values to read.
- *  @param delim  Delimiter between field values.
+ *  @param delim  Delimiter between field values. Use a US ASCII symbol
+ *                as the delimiter.
  *  @param quote  true if the method should assume that text fields
  *                use quotes to quote special symbols like delimiters
  *                that are embedded within fields, and that quote symbols
  *                embedded in text fields will be doubled.
- *  @param quoteSymbol Quote symbol used to quote text. Meaningful only
- *                     if quote is set to true.
+ *  @param quoteSymbol US ASCII Quote symbol used to quote text. Meaningful
+ *                     only if quote is set to true.
  *  @param firstColumnToSet First column in the output table to be set
  *                          from the delimited row (0-based).
  *  @param lastColumnToSet  Last column in the output table to be set
@@ -4058,13 +5043,11 @@ void TableInfo::print()
       {
         bool needsComma = false;
         printf("(");
-        for (std::vector<int>::const_iterator it1 = getQueryPartitioning().begin();
-             it1 != getQueryPartitioning().end();
-             it1++)
+        for (int p=0; p<getQueryPartitioning().getNumEntries(); p++)
           {
             if (needsComma)
               printf(", ");
-            printf("%s", getColumn(*it1).getColName().c_str());
+            printf("%s", getColumn(getQueryPartitioning().getColumnNum(p)).getColName().c_str());
             needsComma = true;
           }
         printf(")\n");
@@ -4135,7 +5118,7 @@ int TableInfo::serializedLength()
     serializedLengthOfLong() +
     4 * serializedLengthOfInt() +
     serializedLengthOfBinary(
-         (getQueryPartitioning().size() +
+         (getQueryPartitioning().getNumEntries() +
           2 * getQueryOrdering().getNumEntries()) * sizeof(int));
 
   for (int c=0; c<constraints_.size(); c++)
@@ -4150,7 +5133,7 @@ int TableInfo::serialize(Bytes &outputBuffer,
   int result = 
     TupleInfo::serialize(outputBuffer,
                          outputBufferLength);
-  int numPartCols = queryPartitioning_.size();
+  int numPartCols = queryPartitioning_.getNumEntries();
   int numOrderCols = queryOrdering_.getNumEntries();
   int numConstraints = constraints_.size();
   int *intArray = new int[numPartCols + 2*numOrderCols];
@@ -4173,7 +5156,7 @@ int TableInfo::serialize(Bytes &outputBuffer,
                          outputBufferLength);
 
   for (c=0; c<numPartCols; c++)
-    intArray[c] = queryPartitioning_[c];
+    intArray[c] = queryPartitioning_.getColumnNum(c);
   for (c=0; c<numOrderCols; c++)
     {
       intArray[numPartCols+2*c] = queryOrdering_.getColumnNum(c);
@@ -4243,7 +5226,7 @@ int TableInfo::deserialize(Bytes &inputBuffer,
   queryPartitioning_.setType(
        static_cast<PartitionInfo::PartitionTypeCode>(partType));
   for (c=0; c<numPartCols; c++)
-    queryPartitioning_.push_back(intArray[c]);
+    queryPartitioning_.addEntry(intArray[c]);
   for (c=0; c<numOrderCols; c++)
     queryOrdering_.addEntry(
          intArray[numPartCols+2*c],
@@ -5255,6 +6238,7 @@ void UDRInvocationInfo::copyPassThruData(int inputTableNum,
             case TypeInfo::DATE_TYPE:
             case TypeInfo::TIME_TYPE:
             case TypeInfo::TIMESTAMP_TYPE:
+            case TypeInfo::LOB_SUB_CLASS:
               {
                 int strLen = 0;
                 const char *str = in(it).getRaw(ic, strLen);
@@ -5265,7 +6249,10 @@ void UDRInvocationInfo::copyPassThruData(int inputTableNum,
                   out().setString(oc, str, strLen);
               }
               break;
+
             case TypeInfo::EXACT_NUMERIC_TYPE:
+            case TypeInfo::YEAR_MONTH_INTERVAL_TYPE:
+            case TypeInfo::DAY_SECOND_INTERVAL_TYPE:
               {
                 long l = in(it).getLong(ic);
 
@@ -5275,6 +6262,7 @@ void UDRInvocationInfo::copyPassThruData(int inputTableNum,
                   out().setLong(oc, l);
               }
               break;
+
             case TypeInfo::APPROXIMATE_NUMERIC_TYPE:
               {
                 double d = in(it).getDouble(ic);
@@ -5286,18 +6274,11 @@ void UDRInvocationInfo::copyPassThruData(int inputTableNum,
               }
               break;
 
-            case TypeInfo::YEAR_MONTH_INTERVAL_TYPE:
-            case TypeInfo::DAY_SECOND_INTERVAL_TYPE:
-              throw UDRException(
-                   38900,
-                   "UDRInvocationInfo::copyPassThruData not yet supported for type subclass %d",
-                   (int) ty.getSQLTypeSubClass());
-
             case TypeInfo::UNDEFINED_TYPE_SUB_CLASS:
             default:
               throw UDRException(
                    38900,
-                   "Invalid type subclass in UDRInvocationInfo::copyPassThruData: %d",
+                   "Invalid or unsupported type subclass in UDRInvocationInfo::copyPassThruData: %d",
                    (int) ty.getSQLTypeSubClass());
             }
         }
@@ -5357,7 +6338,10 @@ void UDRInvocationInfo::print()
   printf("Num of table-valued inputs : %d\n", getNumTableInputs());
   printf("Call phase                 : %s\n", callPhaseToString(callPhase_));
   printf("Debug flags                : 0x%x\n", getDebugFlags());
-  printf("Function type              : TBD\n");
+  printf("Function type              : %s\n", (funcType_ == GENERIC ? "GENERIC" :
+                                               (funcType_ == MAPPER ? "MAPPER" :
+                                                (funcType_ == REDUCER ? "REDUCER" :
+                                                 "Invalid function type"))));
   printf("User id                    : %s\n", getCurrentUser().c_str());
   printf("Session user id            : %s\n", getSessionUser().c_str());
   printf("User role                  : %s\n", getCurrentRole().c_str());
@@ -6231,18 +7215,27 @@ void UDR::describeDataflowAndPredicates(UDRInvocationInfo &info)
                   // a predicate on column "predCol"
                   int predCol = 
                     info.getComparisonPredicate(p).getColumnNumber();
+                  const ColumnInfo &colInfo = info.out().getColumn(predCol);
+                  const ProvenanceInfo &prov = colInfo.getProvenance();
 
-                  // check whether predCol appears in the PARTITION BY clause
-                  for (std::vector<int>::const_iterator it = partInfo.begin();
-                       it != partInfo.end();
-                       it++)
-                    if (predCol == *it)
-                      // yes, this is a predicate on a partitioning column,
-                      // push it down if possible
-                      info.pushPredicatesOnPassthruColumns(p);
-                }
-          }
-      }
+                  // find the corresponding child table and child column #
+                  if (prov.getInputTableNum() == partitionedChild)
+                    {
+                      int inputColNum = prov.getInputColumnNum();
+
+                      // check whether inputColNum appears in the PARTITION BY clause
+                      for (int pbColIx=0; pbColIx<partInfo.getNumEntries(); pbColIx++)
+                        if (partInfo.getColumnNum(pbColIx) == inputColNum)
+                          {
+                            // yes, this is a predicate on a partitioning column,
+                            // push it down if possible
+                            info.pushPredicatesOnPassthruColumns(p, p);
+                            break;
+                          }
+                    } // column is from the partitioned input table
+                } // is a comparison predicate
+          } // found a partitioned child table
+      } // REDUCER
       break;
 
     default:
@@ -6474,6 +7467,16 @@ bool UDR::getNextRow(UDRInvocationInfo &info, int tableIndex)
           std::string row;
 
           info.in(tableIndex).getDelimitedRow(row,'|',true);
+          // replace any control characters with escape sequences
+          for (int c=row.size()-1; c>=0; c--)
+            if (row[c] < 32)
+              {
+                char buf[5];
+
+                // print \x0a for an ASCII line feed (decimal 10)
+                snprintf(buf, sizeof(buf), "\\x%02hhx", row[c]);
+                row.replace(c, 1, buf);
+              }
           printf("(%d) Input row from table %d: %s\n",
                  info.getMyInstanceNum(), tableIndex, row.c_str());
         }
@@ -6516,6 +7519,16 @@ void UDR::emitRow(UDRInvocationInfo &info)
       std::string row;
 
       info.out().getDelimitedRow(row,'|',true);
+      // replace any control characters with escape sequences
+      for (int c=row.size()-1; c>=0; c--)
+        if (row[c] < 32)
+          {
+            char buf[5];
+
+            // print \x0a for an ASCII line feed (decimal 10)
+            snprintf(buf, sizeof(buf), "\\x%02hhx", row[c]);
+            row.replace(c, 1, buf);
+          }
       printf("(%d) Emitting row: %s\n",
              info.getMyInstanceNum(), row.c_str());
     }

@@ -192,9 +192,9 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
           {
             childPartType = SPECIFIED_PARTITIONING;
             // convert column numbers back to ValueIds
-            for (int p=0; p<childPartInfo.size(); p++)
+            for (int p=0; p<childPartInfo.getNumEntries(); p++)
               {
-                int colNum = childPartInfo[p];
+                int colNum = childPartInfo.getColumnNum(p);
 
                 if (colNum < childCols.entries() && colNum >= 0)
                   {
@@ -433,14 +433,16 @@ NABoolean TMUDFDllInteraction::describeDataflow(
       const tmudr::OrderInfo &oi = ti.getQueryOrdering();
       ValueIdList &childOutputs = tmudfNode->getChildInfo(i)->getOutputIds();
       int numInputCols = ti.getNumColumns();
+      int numPartCols  = pi.getNumEntries();
+      int numOrderCols = oi.getNumEntries();
 
       // mark all columns used by PARTITION BY or ORDER BY as used,
       // in case the UDF didn't
-      for (std::vector<int>::const_iterator it = pi.begin();
-           it != pi.end();
-           it++)
-        invocationInfo->setChildColumnUsage(i,*it,tmudr::ColumnInfo::USED);
-      for (int oc=0; oc<oi.getNumEntries(); oc++)
+      for (int pc=0; pc<numPartCols; pc++)
+        invocationInfo->setChildColumnUsage(i,
+                                            pi.getColumnNum(pc),
+                                            tmudr::ColumnInfo::USED);
+      for (int oc=0; oc<numOrderCols; oc++)
         invocationInfo->setChildColumnUsage(i,
                                             oi.getColumnNum(oc),
                                             tmudr::ColumnInfo::USED);
@@ -638,13 +640,22 @@ NABoolean TMUDFDllInteraction::finalizePlan(
   return TRUE;
 }
 
-void TMUDFDllInteraction::setFunctionPtrs(
-     const NAString& entryName)
+NABoolean TMUDFDllInteraction::setFunctionPtrs(
+     const NAString& entryName,
+     const NAString &libraryFileName)
 {
   if (dllPtr_ == NULL)
-    return ;
+    return FALSE;
 
   createInterfaceObjectPtr_ = getRoutinePtr(dllPtr_, entryName.data());
+  if (createInterfaceObjectPtr_ == NULL)
+    {
+      (*CmpCommon::diags()) << DgSqlCode(-LME_DLL_METHOD_NOT_FOUND)
+                            << DgString0(entryName)
+                            << DgString1(libraryFileName);
+      return FALSE;
+    }
+  return TRUE;
 }
 
 void TMUDFDllInteraction::processReturnStatus(const tmudr::UDRException &e, 
@@ -867,7 +878,7 @@ tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
                 CollIndex ordinal = childCols.index(p);
 
                 CMPASSERT(ordinal != NULL_COLL_INDEX);
-                pi.push_back(ordinal);
+                pi.addEntry(ordinal);
               }
           }
           break;
@@ -943,14 +954,17 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
   // follows code in TMUDFDllInteraction::setParamInfo() - approximately
   NABoolean result = TRUE;
 
-  tgt.d_.scale_        = 0;
-  tgt.d_.precision_    = 0;
-  tgt.d_.collation_    = tmudr::TypeInfo::SYSTEM_COLLATION;
-  tgt.d_.nullable_     = ((src->supportsSQLnullLogical() != FALSE) ? 1 : 0);
-  tgt.d_.charset_      = tmudr::TypeInfo::UNDEFINED_CHARSET;
-  tgt.d_.intervalCode_ = tmudr::TypeInfo::UNDEFINED_INTERVAL_CODE;
-  tgt.d_.length_       = src->getNominalSize();
-  
+  tmudr::TypeInfo::SQLTypeCode sqlType = tmudr::TypeInfo::UNDEFINED_SQL_TYPE;
+  int length    = src->getNominalSize();
+  bool nullable = false;
+  int scale     = 0;
+  tmudr::TypeInfo::SQLCharsetCode charset = tmudr::TypeInfo::CHARSET_UTF8;
+  tmudr::TypeInfo::SQLIntervalCode intervalCode =
+    tmudr::TypeInfo::UNDEFINED_INTERVAL_CODE;
+  int precision = 0;
+  tmudr::TypeInfo::SQLCollationCode collation =
+    tmudr::TypeInfo::SYSTEM_COLLATION;
+
   // sqlType_, cType_, scale_, charset_, intervalCode_, precision_, collation_
   // are somewhat dependent on each other and are set in the following
   switch (src->getTypeQualifier())
@@ -963,14 +977,14 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
         NABoolean isDecimalPrecision = numType->decimalPrecision();
         NABoolean isExact = numType->isExact();
 
-        tgt.d_.scale_ = src->getScale();
+        scale = src->getScale();
 
         if (isDecimalPrecision)
           {
             // only decimal precision is stored for SQL type NUMERIC
-            tgt.d_.sqlType_ = tmudr::TypeInfo::NUMERIC;
+            sqlType = tmudr::TypeInfo::NUMERIC;
             // C type will be set below, same as non-decimal exact numeric
-            tgt.d_.precision_ = src->getPrecision();
+            precision = src->getPrecision();
           }
 
         if (isDecimal)
@@ -979,24 +993,24 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
             // NOTE: For signed LSE decimals, the most significant
             //       bit in the first digit is the sign
             if (isUnsigned)
-              tgt.d_.sqlType_ = tmudr::TypeInfo::DECIMAL_UNSIGNED;
+              sqlType = tmudr::TypeInfo::DECIMAL_UNSIGNED;
             else
-              tgt.d_.sqlType_ = tmudr::TypeInfo::DECIMAL_LSE;
+              sqlType = tmudr::TypeInfo::DECIMAL_LSE;
           }
         else if (isExact)
-          switch (tgt.d_.length_)
+          switch (length)
             {
               // SMALLINT, INT, LARGEINT, NUMERIC, signed and unsigned
             case 2:
               if (isUnsigned)
                 {
                   if (!isDecimalPrecision)
-                    tgt.d_.sqlType_ = tmudr::TypeInfo::SMALLINT_UNSIGNED;
+                    sqlType = tmudr::TypeInfo::SMALLINT_UNSIGNED;
                 }
               else
                 {
                   if (!isDecimalPrecision)
-                    tgt.d_.sqlType_ = tmudr::TypeInfo::SMALLINT;
+                    sqlType = tmudr::TypeInfo::SMALLINT;
                 }
               break;
               
@@ -1004,39 +1018,39 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
               if (isUnsigned)
                 {
                   if (!isDecimalPrecision)
-                    tgt.d_.sqlType_ = tmudr::TypeInfo::INT_UNSIGNED;
+                    sqlType = tmudr::TypeInfo::INT_UNSIGNED;
                 }
               else
                 {
                   if (!isDecimalPrecision)
-                    tgt.d_.sqlType_ = tmudr::TypeInfo::INT;
+                    sqlType = tmudr::TypeInfo::INT;
                 }
               break;
 
             case 8:
               CMPASSERT(!isUnsigned);
               if (!isDecimalPrecision)
-                tgt.d_.sqlType_ = tmudr::TypeInfo::LARGEINT;
+                sqlType = tmudr::TypeInfo::LARGEINT;
               break;
 
             default:
-              *diags << DgSqlCode(11151)
+              *diags << DgSqlCode(-11151)
                      << DgString0("type")
                      << DgString1(src->getTypeSQLname())
                      << DgString2("unsupported length");
               result = FALSE;
             }
         else // inexact numeric
-          if (tgt.d_.length_ == 4)
+          if (length == 4)
             {
-              tgt.d_.sqlType_ = tmudr::TypeInfo::REAL;
+              sqlType = tmudr::TypeInfo::REAL;
             }
           else
             {
               // note that there is no SQL FLOAT in UDFs, SQL FLOAT
               // gets mapped to REAL or DOUBLE PRECISION
-              CMPASSERT(tgt.d_.length_ == 8);
-              tgt.d_.sqlType_ = tmudr::TypeInfo::DOUBLE_PRECISION;
+              CMPASSERT(length == 8);
+              sqlType = tmudr::TypeInfo::DOUBLE_PRECISION;
             }
       }
       break;
@@ -1046,31 +1060,27 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
         CharInfo::CharSet cs = (CharInfo::CharSet) src->getScaleOrCharset();
 
         if (src->isVaryingLen())
-          {
-            tgt.d_.sqlType_ = tmudr::TypeInfo::VARCHAR;
-            if (src->getVarLenHdrSize() == 4)
-              tgt.d_.flags_ |= tmudr::TypeInfo::TYPE_FLAG_4_BYTE_VC_LEN;
-          }
+          sqlType = tmudr::TypeInfo::VARCHAR;
         else
-          tgt.d_.sqlType_ = tmudr::TypeInfo::CHAR;
+          sqlType = tmudr::TypeInfo::CHAR;
 
         // character set
         switch (cs)
           {
           case CharInfo::ISO88591:
-            tgt.d_.charset_ = tmudr::TypeInfo::CHARSET_ISO88591;
+            charset = tmudr::TypeInfo::CHARSET_ISO88591;
             break;
 
           case CharInfo::UTF8:
-            tgt.d_.charset_ = tmudr::TypeInfo::CHARSET_UTF8;
+            charset = tmudr::TypeInfo::CHARSET_UTF8;
             break;
 
           case CharInfo::UCS2:
-            tgt.d_.charset_ = tmudr::TypeInfo::CHARSET_UCS2;
+            charset = tmudr::TypeInfo::CHARSET_UCS2;
             break;
 
           default:
-            *diags << DgSqlCode(11151)
+            *diags << DgSqlCode(-11151)
                    << DgString0("character set")
                    << DgString1(CharInfo::getCharSetName(
                                      (CharInfo::CharSet) src->getScaleOrCharset()))
@@ -1078,6 +1088,9 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
             result = FALSE;
           }
 
+        // length is specified in characters for this constructor,
+        // divide the nominal size by the min. character width
+        length /= CharInfo::minBytesPerChar(cs);
         // collation stays at 0 for now
       }
       break;
@@ -1086,29 +1099,28 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
       {
         const DatetimeType *dType = static_cast<const DatetimeType *>(src);
 
-        // fraction precision for time/timestamp
-        tgt.d_.precision_ = dType->getFractionPrecision();
+        // fraction precision for time/timestamp, which is really
+        // the scale of the second part
+        scale = dType->getFractionPrecision();
 
         switch (dType->getSubtype())
           {
           case DatetimeType::SUBTYPE_SQLDate:
-            tgt.d_.sqlType_ = tmudr::TypeInfo::DATE;
+            sqlType = tmudr::TypeInfo::DATE;
             break;
           case DatetimeType::SUBTYPE_SQLTime:
-            tgt.d_.sqlType_ = tmudr::TypeInfo::TIME;
+            sqlType = tmudr::TypeInfo::TIME;
             break;
           case DatetimeType::SUBTYPE_SQLTimestamp:
-            tgt.d_.sqlType_ = tmudr::TypeInfo::TIMESTAMP;
+            sqlType = tmudr::TypeInfo::TIMESTAMP;
             break;
           default:
-            *diags << DgSqlCode(11151)
+            *diags << DgSqlCode(-11151)
                    << DgString0("type")
                    << DgString1(src->getTypeSQLname())
                    << DgString2("unsupported datetime subtype");
             result = FALSE;
           }
-
-        // Todo, translate to time_t C type or to string??
       }
       break;
 
@@ -1116,53 +1128,53 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
       {
         const IntervalType *iType = static_cast<const IntervalType *>(src);
 
-        tgt.d_.sqlType_ = tmudr::TypeInfo::INTERVAL;
-        tgt.d_.precision_ = iType->getLeadingPrecision();
-        tgt.d_.scale_ = iType->getFractionPrecision();
+        sqlType   = tmudr::TypeInfo::INTERVAL;
+        precision = iType->getLeadingPrecision();
+        scale     = iType->getFractionPrecision();
 
         switch (src->getFSDatatype())
           {
           case REC_INT_YEAR:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_YEAR;
+            intervalCode = tmudr::TypeInfo::INTERVAL_YEAR;
             break;
           case REC_INT_MONTH:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_MONTH;
+            intervalCode = tmudr::TypeInfo::INTERVAL_MONTH;
             break;
           case REC_INT_YEAR_MONTH:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_YEAR_MONTH;
+            intervalCode = tmudr::TypeInfo::INTERVAL_YEAR_MONTH;
             break;
           case REC_INT_DAY:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_DAY;
+            intervalCode = tmudr::TypeInfo::INTERVAL_DAY;
             break;
           case REC_INT_HOUR:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_HOUR;
+            intervalCode = tmudr::TypeInfo::INTERVAL_HOUR;
             break;
           case REC_INT_DAY_HOUR:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_DAY_HOUR;
+            intervalCode = tmudr::TypeInfo::INTERVAL_DAY_HOUR;
             break;
           case REC_INT_MINUTE:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_MINUTE;
+            intervalCode = tmudr::TypeInfo::INTERVAL_MINUTE;
             break;
           case REC_INT_HOUR_MINUTE:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_HOUR_MINUTE;
+            intervalCode = tmudr::TypeInfo::INTERVAL_HOUR_MINUTE;
             break;
           case REC_INT_DAY_MINUTE:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_DAY_MINUTE;
+            intervalCode = tmudr::TypeInfo::INTERVAL_DAY_MINUTE;
             break;
           case REC_INT_SECOND:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_SECOND;
+            intervalCode = tmudr::TypeInfo::INTERVAL_SECOND;
             break;
           case REC_INT_MINUTE_SECOND:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_MINUTE_SECOND;
+            intervalCode = tmudr::TypeInfo::INTERVAL_MINUTE_SECOND;
             break;
           case REC_INT_HOUR_SECOND:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_HOUR_SECOND;
+            intervalCode = tmudr::TypeInfo::INTERVAL_HOUR_SECOND;
             break;
           case REC_INT_DAY_SECOND:
-            tgt.d_.intervalCode_ = tmudr::TypeInfo::INTERVAL_DAY_SECOND;
+            intervalCode = tmudr::TypeInfo::INTERVAL_DAY_SECOND;
             break;
           default:
-            *diags << DgSqlCode(11151)
+            *diags << DgSqlCode(-11151)
                    << DgString0("type")
                    << DgString1("interval")
                    << DgString2("unsupported interval subtype");
@@ -1172,12 +1184,23 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
       break;
 
     default:
-      *diags << DgSqlCode(11151)
+      *diags << DgSqlCode(-11151)
              << DgString0("type")
              << DgString1(src->getTypeSQLname())
              << DgString2("unsupported type class");
       result = FALSE;
     }
+
+  // call the constructor and use that logic to set all the individual values
+  tgt = tmudr::TypeInfo(
+       sqlType,
+       length,
+       nullable,
+       scale,
+       charset,
+       intervalCode,
+       precision,
+       collation);
 
   return result;
 }
@@ -1551,8 +1574,8 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
       {
         int storageSize = getBinaryStorageSize(src.getPrecision());
         // if the storage size is specified, it must match
-        if (src.getLength() > 0 &&
-            src.getLength() != storageSize)
+        if (src.getByteLength() > 0 &&
+            src.getByteLength() != storageSize)
           {
             *diags << DgSqlCode(-11152)
                    << DgInt0(typeCode)
@@ -1618,7 +1641,7 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
             // assume that any UTF8 strings are
             // limited by their byte length, not
             // the number of UTF8 characters
-            CharLenInfo lenInfo(0,src.getLength());
+            CharLenInfo lenInfo(0,src.getByteLength());
 
             if (typeCode == tmudr::TypeInfo::CHAR)
               result = new(heap)

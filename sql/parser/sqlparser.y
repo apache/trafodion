@@ -23737,6 +23737,7 @@ routine_parameter_style_sql : TOK_PARAMETER TOK_STYLE TOK_SQL
 routine_parameter_style_sqlrow : TOK_PARAMETER TOK_STYLE TOK_SQLROW
                                 {
                                   $$ = new (PARSERHEAP()) ElemDDLUdrParamStyle(COM_STYLE_SQLROW);
+                                  YYERROR; // this style is no longer allowed in DDL syntax
                                 }
 
 /* type pElemDDL */

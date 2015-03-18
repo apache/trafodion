@@ -960,7 +960,6 @@ void UDFunction::transformToRelExpr(NormWA & normWARef,
 
        break;
      }
-     case COM_AGGREGATE_UDF_TYPE:
      case COM_TABLE_UDF_TYPE:
      case COM_UNKNOWN_ROUTINE_TYPE:
      default:

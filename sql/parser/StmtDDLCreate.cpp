@@ -2567,13 +2567,6 @@ StmtDDLCreateRoutine::StmtDDLCreateRoutine(const QualifiedName & aRoutineName,
 
   if (routineType_ NEQ COM_PROCEDURE_TYPE) // Different default values for UDF
   {
-    languageType_ = COM_LANGUAGE_C ;
-    if (routineType_ EQU COM_UNIVERSAL_UDF_TYPE OR
-        routineType_ EQU COM_ACTION_UDF_TYPE OR // actions
-        routineType_ EQU COM_TABLE_UDF_TYPE) // table-mapping function
-      paramStyle_ = COM_STYLE_SQLROW_TM;
-    else
-      paramStyle_ = COM_STYLE_SQL;
     paramStyleVersion_ = 1;
     deterministic_ = FALSE;
     sqlAccess_ = COM_NO_SQL;
@@ -2821,11 +2814,6 @@ StmtDDLCreateRoutine::synthesize()
       *SqlParser_Diags << DgSqlCode(-3201);
       return;
     }
-    if ( ! paramStyleSpecified_ )
-    {
-      *SqlParser_Diags << DgSqlCode(-3202);
-      return;
-    }
     if ( ! languageTypeSpecified_ )
     {
       *SqlParser_Diags << DgSqlCode(-3203);
@@ -2833,12 +2821,6 @@ StmtDDLCreateRoutine::synthesize()
     }
 
     if (stateAreaSizeSpecified_ || parallelismSpecified_ || finalCallSpecified_)
-    {
-      *SqlParser_Diags << DgSqlCode(-15001);
-      return;
-    }
-
-    if ((languageType_ != COM_LANGUAGE_JAVA) || (paramStyle_ != COM_STYLE_JAVA_CALL))
     {
       *SqlParser_Diags << DgSqlCode(-15001);
       return;
@@ -2911,38 +2893,6 @@ StmtDDLCreateRoutine::synthesize()
     // ALTER FUNCTION statement case.  The catman/CatExecAlterRoutine layer
     // will look up the information from the metadata tables to determine
     // whether the function is a scalar and universal function.
-
-    if (NOT paramStyleSpecified_)
-    {
-      // set default parameter style
-      switch (getRoutineType())
-      {
-      case COM_PROCEDURE_TYPE:
-        paramStyle_ = COM_STYLE_JAVA_CALL; // unreachable (dead) code
-        break;
-      case COM_TABLE_UDF_TYPE:
-      case COM_UNIVERSAL_UDF_TYPE:
-      case COM_ACTION_UDF_TYPE:
-        // UDFs written in C++ or Java use the object-oriented style
-        if (languageType_ == COM_LANGUAGE_CPP)
-          paramStyle_ = COM_STYLE_CPP_OBJ;
-        else if (languageType_ == COM_LANGUAGE_JAVA)
-          paramStyle_ = COM_STYLE_JAVA_OBJ;
-        else
-          paramStyle_ = COM_STYLE_SQLROW_TM;
-        break;
-      case COM_UNKNOWN_ROUTINE_TYPE:
-        if (isStmtDDLAlterRoutineParseNode())
-          paramStyle_ = COM_UNKNOWN_ROUTINE_PARAM_STYLE;
-        else
-          paramStyle_ = COM_STYLE_SQL;
-        break;
-      case COM_SCALAR_UDF_TYPE:
-      default:
-        paramStyle_ = COM_STYLE_SQL;
-        break;
-      } // switch
-    } // if (NOT paramStyleSpecified_)
 
     NABoolean isErrorFound = FALSE;
 

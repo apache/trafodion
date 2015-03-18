@@ -662,7 +662,9 @@ namespace tmudr
         DATE,                 ///< date
         TIME,                 ///< time
         TIMESTAMP,            ///< timestamp
-        INTERVAL              ///< interval
+        INTERVAL,             ///< interval
+        BLOB,                 ///< Binary Large Object
+        CLOB                  ///< Character Large Object
       };
   
     /** Classes of types defined in the SQL standard */
@@ -672,6 +674,7 @@ namespace tmudr
         NUMERIC_TYPE,         ///< exact and approximate numerics
         DATETIME_TYPE,        ///< date/time/timestamp
         INTERVAL_TYPE,        ///< day/month or hour/second intervals
+        LOB_TYPE,             ///< BLOBs and CLOBs
         UNDEFINED_TYPE_CLASS  ///< undefined value
       };
   
@@ -689,6 +692,7 @@ namespace tmudr
         YEAR_MONTH_INTERVAL_TYPE,  ///< Intervals involving year and month
         DAY_SECOND_INTERVAL_TYPE,  ///< Intervals involving
                                    ///< days/hours/minutes/seconds
+        LOB_SUB_CLASS,             ///< LOBs
         UNDEFINED_TYPE_SUB_CLASS   ///< undefined value
       };
   
@@ -758,13 +762,15 @@ namespace tmudr
     SQLIntervalCode getIntervalCode() const;
     int getPrecision() const;
     SQLCollationCode getCollation() const;
-    int getLength() const;
+    int getByteLength() const;
+    int getMaxCharLength() const;
 
     // UDR writers can ignore these methods
 
     int getInt(const char *row, bool &wasNull) const;
     long getLong(const char *row, bool &wasNull) const;
     double getDouble(const char *row, bool &wasNull) const;
+    time_t getTime(const char *row, bool &wasNull) const;
     const char * getRaw(const char *row,
                         bool &wasNull,
                         int &byteLen) const;
@@ -773,9 +779,12 @@ namespace tmudr
     void setInt(int val, char *row) const;
     void setLong(long val, char *row) const;
     void setDouble(double val, char *row) const;
+    void setTime(time_t val, char *row) const;
     void setString(const char *val, int stringLen, char *row) const;
     void setNull(char *row) const;
 
+    int minBytesPerChar() const;
+    int convertToBinaryPrecision(int decimalPrecision) const;
     void toString(std::string &s, bool longForm) const;
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
@@ -1134,7 +1143,7 @@ namespace tmudr
    *  same key, not a single key and a list of values.
   */
 
-  class PartitionInfo : public std::vector<int>
+  class PartitionInfo
   {
   public:
 
@@ -1152,10 +1161,17 @@ namespace tmudr
         REPLICATE  ///< Replicate the data to each parallel instance.
       };
 
+    // const Functions for use by UDR writer, both at compile and at run time
     PartitionInfo();
     PartitionTypeCode getType() const;
     
+
+    int getNumEntries() const;
+    int getColumnNum(int i) const;
+
+    // Functions available at compile time only
     void setType(PartitionTypeCode type);
+    void addEntry(int colNum);
 
     // UDR writers can ignore these methods
     void mapColumnNumbers(const std::vector<int> &map);
@@ -1163,7 +1179,8 @@ namespace tmudr
   private:
 
     PartitionTypeCode type_;
-  };
+    std::vector<int>  partCols_;
+};
 
   /**
    *  @brief Ordering of a table by some ascending or descending columns
@@ -1243,6 +1260,7 @@ namespace tmudr
     std::string getString(int colNum) const;
     std::string getString(const std::string &colName) const;
     const char * getRaw(int colNum, int &byteLen) const;
+    time_t getTime(int colNum) const;
     bool isAvailable(int colNum) const;
     void getDelimitedRow(std::string &row,
                          char delim='|',
@@ -1259,6 +1277,7 @@ namespace tmudr
     void setString(int colNum, const char *val) const;
     void setString(int colNum, const char *val, int stringLen) const;
     void setString(int colNum, const std::string &val) const;
+    void setTime(int colNum, time_t val) const;
     const char * setFromDelimitedRow(const char *row,
                                      char delim='|',
                                      bool quote = false,

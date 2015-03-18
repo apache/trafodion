@@ -2007,6 +2007,7 @@ void SPInfo::workTM()
   {
     dataErrorReply(udrGlobals_, *dataStream_, UDR_ERR_MESSAGE_PROCESSING,
                    INVOKE_ERR_NO_REPLY_DATA_BUFFER, NULL, rowDiags_);
+    rowDiags_ = NULL;
 
     if (traceInvokeIPMS)
       ServerDebug("[UdrServ (%s)] Send Invoke Error Reply", moduleName);
@@ -2015,6 +2016,11 @@ void SPInfo::workTM()
     currentRequest_ = NULL;
     return;
   }
+
+  // release the row in the SqlBuffer before we allocate new buffers
+  // and do other cleanup
+  requestRow.release();
+  requestData = NULL;
 
   if (paramStyle_ != COM_STYLE_CPP_OBJ)
     {

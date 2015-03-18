@@ -66,12 +66,14 @@ create library TEST002 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$;
 create table_mapping function tokenizer(pattern char(1))
 returns (outval char(40))
 external name 'TOKENIZER'
+language c
 library TEST002;
 
 -- Register tokenizer1 without column information
 create table_mapping function tokenizer1(pattern char(1))
 returns (outval char(40))
 external name 'TOKENIZER1'
+language c
 library TEST002;
 
 ?section tests

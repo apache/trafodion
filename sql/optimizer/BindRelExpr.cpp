@@ -16121,7 +16121,13 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
 
   dllInteraction_ = new (bindWA->wHeap()) TMUDFDllInteraction();
   dllInteraction_->setDllPtr(dllPtr);
-  dllInteraction_->setFunctionPtrs(tmudfRoutine->getExternalName());
+  if (dllPtr)
+    if (!dllInteraction_->setFunctionPtrs(tmudfRoutine->getExternalName(),
+                                          tmudfRoutine->getFile()))
+      {
+        bindWA->setErrStatus();
+        return this;
+      }
 
   // ValueIDList of the actual input parameters 
   // (tmudfRoutine has formal parameters)

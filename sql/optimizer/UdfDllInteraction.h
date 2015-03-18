@@ -82,7 +82,8 @@ class TMUDFDllInteraction : public NABasicObject
 
   void setDllPtr(LmHandle val) {dllPtr_ = val;}
   LmHandle getDllPtr() {return dllPtr_;}
-  void setFunctionPtrs(const NAString& entryName);
+  NABoolean setFunctionPtrs(const NAString &entryName,
+                            const NAString &libraryFileName);
   static void processReturnStatus(const tmudr::UDRException &e, 
                                   TableMappingUDF *tmudfNode);
   static void processReturnStatus(const tmudr::UDRException &e, 

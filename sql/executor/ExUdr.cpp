@@ -1485,7 +1485,7 @@ void ExUdrTcb::reportLoadReply(NABoolean loadWasSuccessful)
 
     if (d && d->contains(-11202))
     {
-      udrServer_->stop();
+      udrServer_->setState(ExUdrServer::EX_UDR_BROKEN);
       setUdrTcbState(IPC_ERROR);
     }
     else
@@ -2603,8 +2603,9 @@ UdrDataBuffer *ExUdrTcb::getReplyBuffer()
               integrityCheckResult = FALSE;
             }
         }
+        break;
         
-        default:
+      default:
         {
           //
           // An unexpected message type arrived. Treat this the same
@@ -4123,31 +4124,7 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 	  // read rows from child specified in the reply from server
 	  // if nothing returned from any child. Get outta here.
 	  Int32 currChild = pstate.currentChildTcbIndex_;
-          UdrDebug1("TMUDF BEGIN READING CHILD  %lu", currChild);
-
-	  // pass the parent request to the child downqueue
-	   if (!qChild_[currChild].down->isFull() )
-	     {
-	       if (tmudfStates_[currChild] != READING_FROM_CHILD)
-		 {
-		   ex_queue_entry * centry = qChild_[currChild].down->getTailEntry();
-
-		   if (request == ex_queue::GET_N)
-		     centry->downState.request = ex_queue::GET_ALL;
-		   else           
-		     centry->downState.request = request;
-
-		   centry->downState.requestValue = downEntry->downState.requestValue;
-		   centry->downState.parentIndex = parentQueueIndex;
-		   // set the child's input atp
-		   centry->passAtp(downEntry->getAtp());
-		   qChild_[currChild].down->insert();
-		   tmudfStates_[currChild] = READING_FROM_CHILD;
-		 }
-	    }
-	  else
-	    // couldn't pass request to child, return
-	    return WORK_OK;
+          UdrDebug1("TMUDF READING FROM CHILD  %lu", currChild);
 
 	  // If this table's buffer is empty, allocate it on the stream
 	  if (childInputBuffers_[currChild] == NULL)
@@ -4182,13 +4159,34 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 		      return WORK_POOL_BLOCKED;
 		      printDataStreamState();
 		    }
-		  else
-		    setUdrTcbState(RETURN_ROWS_FROM_CHILD);
 		}
 	    }
-	  else
-	    setUdrTcbState(RETURN_ROWS_FROM_CHILD);
 	   	 		
+	  // pass the parent request to the child downqueue, if not already done
+          if (tmudfStates_[currChild] != READING_FROM_CHILD)
+            if (!qChild_[currChild].down->isFull())
+              {
+                ex_queue_entry * centry = qChild_[currChild].down->getTailEntry();
+
+                if (request == ex_queue::GET_N)
+                  centry->downState.request = ex_queue::GET_ALL;
+                else           
+                  centry->downState.request = request;
+
+                centry->downState.requestValue = downEntry->downState.requestValue;
+                centry->downState.parentIndex = parentQueueIndex;
+                // set the child's input atp
+                centry->passAtp(downEntry->getAtp());
+                qChild_[currChild].down->insert();
+
+                tmudfStates_[currChild] = READING_FROM_CHILD;
+              }
+            else
+              // couldn't pass request to child, return
+              return WORK_OK;
+
+          // we are now ready to read (more) rows from this child
+          setUdrTcbState(RETURN_ROWS_FROM_CHILD);
 	}// case READ_TABLE_INPUT_FROM_CHILD
 	break;
 	case RETURN_ROWS_FROM_CHILD :
@@ -4202,7 +4200,7 @@ UdrDebug1("  [WORK] BEGIN ExUdrTcb::buildAndSendTmudfInput() 0x%08x",
 	    // input should reach in it's own buffer
 	    Int32 currChild = pstate.currentChildTcbIndex_;
 	    SqlBuffer *childSqlBuf = childInputBuffers_[currChild]->getSqlBuffer();
-	    ex_assert(childSqlBuf, "UDR childinput buffer is corrupt or contains no data");
+	    ex_assert(childSqlBuf, "UDR childinput buffer is missing");
 
    
 	    if ( (qChild_[currChild].up->isEmpty()))

@@ -94,7 +94,7 @@ static void setCharOutputColumn(const UDRInvocationInfo &info,
 {
   int srcLen = strlen(src);
   const tmudr::TypeInfo &outType = info.out().getColumn(paramNum).getType();
-  int tgtLen = outType.getLength();
+  int tgtLen = outType.getByteLength();
 
   if (srcLen > tgtLen)
     {
