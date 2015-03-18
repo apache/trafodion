@@ -24,7 +24,7 @@ all:
 
 # This makes the utility on Linux
 mkmsghdr_linux: mkmsghdr.c
-	gcc $(UNIX_CFLAGS) -o $@ $<
+	/usr/bin/gcc $(UNIX_CFLAGS) -o $@ $<
 
 # This makes the utility on Windows
 mkmsghdr.exe: mkmsghdr.c
