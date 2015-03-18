@@ -3714,21 +3714,17 @@ StmtDDLCreateSchema::synthesize()
       ToAnsiIdentifier(schemaQualName_.getSchemaName());
   }
 
-  // schema names of pattern  "_%_" are reserved for internal system schemas.
-  // Users cannot create them.
+  // If the schema name specified is reserved name, users cannot create them.
   // They can only be created internally.
-  if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) 
+  if ((! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+      (ComIsTrafodionReservedSchemaName(schemaQualName_.getSchemaName())))
     {
-      const NAString &schName = schemaQualName_.getSchemaName();
-      if ((schName.data()[0] == '_') &&
-          (schName.data()[schName.length()-1] == '_'))
-        {
-          // error.
-          *SqlParser_Diags << DgSqlCode(-1430)
-                           << DgSchemaName(schemaName_);
-
-        }
+      // error.
+      *SqlParser_Diags << DgSqlCode(-1430)
+                       << DgSchemaName(schemaName_);
+      
     }
+
 } // StmtDDLCreateSchema::synthesize()
 
 

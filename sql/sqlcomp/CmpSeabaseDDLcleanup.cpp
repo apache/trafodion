@@ -1680,12 +1680,6 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
   Lng32 cliRC = 0;
   ExeCliInterface cliInterface(STMTHEAP);
 
-  ExpHbaseInterface * ehi = allocEHI();
-  if (ehi == NULL)
-    {
-      return;
-    }
-
   if (xnInProgress(&cliInterface))
     {
       *CmpCommon::diags() << DgSqlCode(-20123);
@@ -1700,6 +1694,12 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
     {
       if (validateInputValues(stmtCleanupNode, &cliInterface))
         return;
+    }
+
+  ExpHbaseInterface * ehi = allocEHI();
+  if (ehi == NULL)
+    {
+      return;
     }
 
   checkOnly_ = FALSE;
@@ -1726,7 +1726,7 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
   if (gatherDependentObjects(&cliInterface))
     {
       if (stopOnError_)
-        return;
+        goto label_return;
     }
 
   if (((objType_ == COM_BASE_TABLE_OBJECT_LIT) ||
@@ -1775,39 +1775,34 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
       // drop this object from hbase
       cliRC = dropHbaseTable(ehi, &hbaseObject, FALSE);
       if (cliRC)
-        {
           if (stopOnError_)
-            {
-              deallocEHI(ehi); 
-              return;
-            }
-        }
+            goto label_return;
     }
 
   cliRC = dropIndexes(&cliInterface);
   if (cliRC)
     if (stopOnError_)
-      return;
+      goto label_return;
 
   cliRC = dropSequences(&cliInterface);
   if (cliRC)
     if (stopOnError_)
-      return;
+      goto label_return;
 
   cliRC = dropUsingViews(&cliInterface);
   if (cliRC)
     if (stopOnError_)
-      return;
+      goto label_return;
 
   cliRC = dropLOBs(&cliInterface);
   if (cliRC)
     if (stopOnError_)
-      return;
+      goto label_return;
   
   cliRC = deletePrivs(&cliInterface);
   if (cliRC)
     if (stopOnError_)
-      return;
+      goto label_return;
 
   deallocEHI(ehi);
   
@@ -1832,6 +1827,9 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
                                                       NATableDB::REMOVE_FROM_ALL_USERS, 
                                                       COM_BASE_TABLE_OBJECT);
     }
+
+ label_return:
+  deallocEHI(ehi);
 
   return;
 }

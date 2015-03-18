@@ -37,6 +37,11 @@
 #include "ComSmallDefs.h"
 #include "NAString.h"
 
+// schema names of pattern  "_%_" are reserved for internal system schemas.
+NABoolean ComIsTrafodionReservedSchemaName(
+                                           const NAString &schName);
+
+// list of schemas that have been created as reserved schemas.
 NABoolean ComIsTrafodionReservedSchema(
                                        const NAString &systemCatalog,
                                        const NAString &catName,

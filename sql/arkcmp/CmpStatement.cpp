@@ -1066,12 +1066,6 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
   NABoolean standaloneQuery;
   isDDL_ = TRUE;
 
-  Lng32 ij = 0;
-  while (ij)
-    {
-      ij = 2 - ij;
-    }
-
   if (processRecvdCmpCompileInfo(NULL,
 				 statement,
   				 statement.getCmpCompileInfo(),

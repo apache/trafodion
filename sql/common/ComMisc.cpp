@@ -11,7 +11,7 @@
  *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -72,12 +72,27 @@ NABoolean ComIsTrafodionReservedSchema(
     trafSysCat = TRAFODION_SYSCAT_LIT;
 
   if ((catName == trafSysCat) &&
-      ((schName == SEABASE_MD_SCHEMA) ||
+      (
        (schName == SEABASE_DTM_SCHEMA) ||
+       (schName == SEABASE_MD_SCHEMA) ||
        (schName == SEABASE_PRIVMGR_SCHEMA) ||
-       (schName == SEABASE_REPOS_SCHEMA) ))
+       (schName == SEABASE_REPOS_SCHEMA) ||
+       (schName == SEABASE_UDF_SCHEMA)
+       )
+      )
     return TRUE;  
 
+  return FALSE;
+}
+
+// schema names of pattern  "_%_" are reserved for internal system schemas.
+NABoolean ComIsTrafodionReservedSchemaName(
+                                    const NAString &schName)
+{
+  if ((schName.data()[0] == '_') &&
+      (schName.data()[schName.length()-1] == '_'))
+    return TRUE;
+  
   return FALSE;
 }
 

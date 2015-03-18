@@ -7164,7 +7164,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       
       numSaltPartns = *(Lng32*)vi->get(1);
 
-      char * format = vi->get(1);
+      char * format = vi->get(2);
       alignedFormat = (memcmp(format, COM_ALIGNED_FORMAT_LIT, 2) == 0);
 
       if (getTextFromMD(&cliInterface, objUID, COM_HBASE_OPTIONS_TEXT, 0,

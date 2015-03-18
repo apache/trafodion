@@ -2954,6 +2954,8 @@ ExExeUtilGetHbaseObjectsTcb::ExExeUtilGetHbaseObjectsTcb(
     char[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6+1];
   outBuf_ = new(getGlobals()->getDefaultHeap())
     char[ComMAX_3_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+6+1];
+
+  bal_ = NULL;
 }
 
 ExExeUtilGetHbaseObjectsTcb::~ExExeUtilGetHbaseObjectsTcb()

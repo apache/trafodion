@@ -555,21 +555,17 @@ StmtDDLDropSchema::StmtDDLDropSchema(//const SchemaName & schemaName,
       ToAnsiIdentifier(schemaQualName_.getSchemaName());
   }
 
-  // schema names of pattern  "_%_" are reserved for internal system schemas.
-  // Users cannot drop them.
+  // If the schema name specified is reserved name, users cannot drop them.
   // They can only be dropped internally.
-  if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) 
+  if ((! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+      (ComIsTrafodionReservedSchemaName(schemaQualName_.getSchemaName())))
     {
-      const NAString &schName = schemaQualName_.getSchemaName();
-      if ((schName.data()[0] == '_') &&
-          (schName.data()[schName.length()-1] == '_'))
-        {
-          // error.
-          *SqlParser_Diags << DgSqlCode(-1017)
-                           << DgSchemaName(schemaName_);
-
-        }
+      // error.
+      *SqlParser_Diags << DgSqlCode(-1430)
+                       << DgSchemaName(schemaName_);
+      
     }
+
 }
 
 //

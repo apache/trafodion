@@ -748,8 +748,6 @@ short ExDDLwithStatusTcb::work()
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
 
-            char buf[1000];
-
             if (currEntry_ == numEntries_)
               {
                 step_ = RETURN_STATUS_;

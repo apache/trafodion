@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -507,8 +507,7 @@ short ExExplainTcb::processExplainStmt()
 	                castToExMasterStmtGlobals()->getCliGlobals();
   ExeCliInterface cliInterface(getHeap(), 0, cliGlobals->currContext());
   ex_queue_entry *pEntryDown = qParent_.down->getHeadEntry();
-  ComDiagsArea *diagsArea =
-    pEntryDown->getAtp()->getDiagsArea();
+  ComDiagsArea *diagsArea = NULL;
 
   if (! explainStmt_)
     return 0;
@@ -520,21 +519,18 @@ short ExExplainTcb::processExplainStmt()
   cliRC = cliInterface.executeImmediate("control session 'EXPLAIN' 'ON';");
   if (cliRC < 0)
     {
-      cliInterface.retrieveSQLDiagnostics(diagsArea);
-      return -1;
+      goto label_error;
     }
 
   cliRC = cliInterface.executeImmediatePrepare(explainStmt_);
   if (cliRC < 0)
     {
-      cliInterface.retrieveSQLDiagnostics(diagsArea);
       goto label_error;
     }
 
   cliRC = cliInterface.setupExplainData();
   if (cliRC < 0)
     {
-      cliInterface.retrieveSQLDiagnostics(diagsArea);
       goto label_error;
     }
 
@@ -547,19 +543,32 @@ short ExExplainTcb::processExplainStmt()
     }
   else
     {
+      diagsArea = pEntryDown->getAtp()->getDiagsArea();
       ExRaiseSqlError(getGlobals()->getDefaultHeap(),
                       &diagsArea, EXE_NO_EXPLAIN_INFO);
       if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
         pEntryDown->getAtp()->setDiagsArea(diagsArea);
-      goto label_error;
+      goto label_error2;
     }
 
- label_return:
+label_return:
   cliInterface.executeImmediate("control session reset 'EXPLAIN';");
   return 0;
   
- label_error:
+label_error:
+  diagsArea = pEntryDown->getAtp()->getDiagsArea();
+
+  if (diagsArea == NULL)
+    diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+  
+  cliInterface.retrieveSQLDiagnostics(diagsArea);
+  
+  if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
+    pEntryDown->getAtp()->setDiagsArea(diagsArea);
+
+label_error2:
   cliInterface.executeImmediate("control session reset 'EXPLAIN';");
+
   return -1;
 }
 
@@ -688,7 +697,12 @@ short ExExplainTcb::work()
           if (explainStmt_)
             {
               // query has been specified as a param. Process it and set up explain info.
-              processExplainStmt();
+              rc = processExplainStmt();
+              if (rc < 0)
+                {
+                  workState_ = EXPL_ERROR;
+                  break;
+                }
             }
           
           if (reposQid_)
@@ -1530,31 +1544,32 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
   
   if (cliInterface.initializeInfoList(infoList, TRUE))
     {
-      cliInterface.retrieveSQLDiagnostics(diagsArea);
       goto label_error;
     }
 
   cliRC = cliInterface.fetchAllRows(infoList, queryBuf, 0, FALSE, FALSE);
   if (cliRC < 0)
     {
-      cliInterface.retrieveSQLDiagnostics(diagsArea);
       goto label_error;
     }
 
   if ((infoList->numEntries() == 0) ||
       (infoList->numEntries() > 1))
     {
+      diagsArea = pEntryDown->getAtp()->getDiagsArea();
       ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
                       &diagsArea, EXE_NO_EXPLAIN_INFO);
+      if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
+        pEntryDown->getAtp()->setDiagsArea(diagsArea);
 
-      goto label_error;
+      goto label_error2;
     }
 
   infoList->position();
   vi = (OutputInfo*)infoList->getCurr();
   
   if (vi->get(0, ptr, len))
-    goto label_error;
+    goto label_error2;
   
   if ((len >= strlen("MULTI_CHUNK_EXPLAIN")) &&
       (memcmp(ptr, "MULTI_CHUNK_EXPLAIN", strlen("MULTI_CHUNK_EXPLAIN")) == 0))
@@ -1573,10 +1588,23 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
   setExplainAddr((Int64)explainFrag_);  
   setReposQid(NULL, 0);
 
+  NADELETEBASIC(queryBuf, getHeap());
+
   return 0;
 
  label_error:
+  diagsArea = pEntryDown->getAtp()->getDiagsArea();
+
+  if (diagsArea == NULL)
+    diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
   
+  cliInterface.retrieveSQLDiagnostics(diagsArea);
+  
+  if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
+    pEntryDown->getAtp()->setDiagsArea(diagsArea);
+
+label_error2:
+
   NADELETEBASIC(queryBuf, getHeap());
   return -1;
 }
