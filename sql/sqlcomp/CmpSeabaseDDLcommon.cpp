@@ -1491,8 +1491,7 @@ NABoolean CmpSeabaseDDL::isAuthorizationEnabled()
 // returns the result of the request:
 //  (return codes based as same values returned for isMetadataInitialized)
 //   0: no metadata tables exist, authorization is not enabled
-//   1: all metadata tables exists, authorization is enabled
-//   2: some metadata tables exist, privmgr metadata is corrupted
+//   1: at least one metadata tables exists, authorization is enabled
 //  -nnnn: an unexpected error occurred
 // ----------------------------------------------------------------------------               
 short CmpSeabaseDDL::isPrivMgrMetadataInitialized(NADefaults *defs)
@@ -1504,9 +1503,9 @@ short CmpSeabaseDDL::isPrivMgrMetadataInitialized(NADefaults *defs)
   // process/context to be started which then causes another compiler instance
   // to be started - ad infinitem. So for now Hbase is called directly
    
-  // This code verifies that the PrivMgr tables exist in HBase but it does not  
-  // verify that the tables are defined correctly in the Trafodion metadata.
-  // A subsequent call to access a PrivMgr table returns an error if the 
+  // This code verifies that at least one the PrivMgr metadata table exist in 
+  // HBase but it does not verify that the tables are defined correctly. A 
+  // subsequent call to access a PrivMgr metadata table returns an error if the 
   // Trafodion metadata is corrupted.
   const char * server = defs->getValue(HBASE_SERVER);
   const char * zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
@@ -1521,7 +1520,7 @@ short CmpSeabaseDDL::isPrivMgrMetadataInitialized(NADefaults *defs)
       return -1398;
     }
 
-  // Call existsInHbase for each PrivMgr tables. 
+  // Call existsInHbase for one Privmgr metadata table
   NAString hbaseObjPrefix = getSystemCatalog();
   hbaseObjPrefix += ".";
   hbaseObjPrefix += SEABASE_PRIVMGR_SCHEMA;
@@ -1529,39 +1528,25 @@ short CmpSeabaseDDL::isPrivMgrMetadataInitialized(NADefaults *defs)
 
   HbaseStr hbaseObjStr;
   NAString hbaseObject;
-  int numTablesFound = 0;
-  short retcode = 0;
+
+  // test code to verify the last privmgr metadata table exists
   size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
-  for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
-    {
-      const PrivMgrTableStruct &tableDef = privMgrTables[ndx_tl];
+  const PrivMgrTableStruct &tableDef = privMgrTables[numTables -1];
 
-      hbaseObject = hbaseObjPrefix + tableDef.tableName;
-      hbaseObjStr.val = (char*)hbaseObject.data();
-      hbaseObjStr.len = hbaseObject.length();
+  hbaseObject = hbaseObjPrefix + tableDef.tableName;
+  hbaseObjStr.val = (char*)hbaseObject.data();
+  hbaseObjStr.len = hbaseObject.length();
 
-      // existsInHbase returns 1 - found, 0 not found, anything else error
-      retcode = existsInHbase(hbaseObject, ehi);
-      if (retcode == 1) // found the table
-         numTablesFound ++;
-  
-      // If an unexpected error occurs, just return the error
-      if (retcode < 0)
-        {
-           deallocEHI(ehi);
-           return retcode;
-        }
-    }
+  // existsInHbase returns 1 - found, 0 not found, anything else error
+  short retcode = existsInHbase(hbaseObject, ehi);
   deallocEHI(ehi);
-
-  if (numTablesFound == 0)
-    retcode = 0;
-  else if (numTablesFound == numTables)
-    retcode = 1;
-  else
-    retcode = 2;
-
-  return retcode;
+  if (retcode == 1) // found the table
+    return 1;
+  
+  // If an unexpected error occurs, just return the error
+  if (retcode < 0)
+   return retcode;
+  return 0;
 }
 
 short CmpSeabaseDDL::existsInHbase(const NAString &objName,
