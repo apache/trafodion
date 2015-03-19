@@ -615,15 +615,16 @@ void ResStatisticsStatement::start(Int32 inState,
 	if (catFlagOn == true) return;
 
 	statementStartTime = JULIANTIMESTAMP();
-	if(inState == STMTSTAT_PREPARE)
-		prepareStartTime = statementStartTime;
-	queryStartTime = statementStartTime;
-
- // get cpu time ( Process_getInfo)
+	if(inState == STMTSTAT_PREPARE)	
+		prepareStartTime = statementStartTime;		
+	
+    // get cpu time ( Process_getInfo)
  	statementStartCpuTime = getCpuTime();
-
-	queryStartCpuTime = statementStartCpuTime;
-
+	if(inState==STMTSTAT_EXECUTE||inState == STMTSTAT_PREPARE)
+	{
+		queryStartTime = statementStartTime;  
+		queryStartCpuTime = statementStartCpuTime;
+	}	
 	if (pSrvrStmt != NULL)
 	{
 		inQueryId  = pSrvrStmt->sqlUniqueQueryID;
@@ -648,16 +649,10 @@ void ResStatisticsStatement::start(Int32 inState,
 			estTotalMem = cost_info.estimatedTotalMem * comp_stats_info.dop;
 		else
 			estTotalMem = cost_info.estimatedTotalMem;
-		if (pSrvrStmt->queryStartTime > 0)
-		{
-			queryStartTime    = pSrvrStmt->queryStartTime;
-			queryStartCpuTime = pSrvrStmt->queryStartCpuTime;
-		}
-		else
-		{
-			pSrvrStmt->queryStartTime = queryStartTime;
-			pSrvrStmt->queryStartCpuTime = queryStartCpuTime;
-		}
+		
+		pSrvrStmt->queryStartTime = queryStartTime;
+		pSrvrStmt->queryStartCpuTime = queryStartCpuTime;
+		
 		inSqlNewQueryType = pSrvrStmt->sqlNewQueryType;
 	
 		if (comp_stats_data.compilerId[0] == 0)
