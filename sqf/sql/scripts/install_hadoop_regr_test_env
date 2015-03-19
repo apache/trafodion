@@ -103,7 +103,6 @@ done
 
 #####################################################
 echo "Downloading TPC-DS setup tools..."
-set -x
 
 if [ -z "$MY_TPCDS_UNPACK_DIR" ]; then
   MY_TPCDS_UNPACK_DIR=.
@@ -122,7 +121,14 @@ else
   echo "Unzipping TPC-DS kit ${TPCDS_ZIP} into ${PWD} and making the tools..."
   unzip ${TPCDS_ZIP} >/dev/null
 
-  cd tools
+  if [ -d tools ]; then
+    # older version of tpcds_kit
+    cd tools
+  else
+    # more recent version
+    cd TPCDSVersion*/tools
+  fi
+
   echo "Making objects for TPC-DS database generator..." | tee -a ${MY_LOG_FILE}
   make clean >>${MY_LOG_FILE} 2>&1 
   make >>${MY_LOG_FILE} 2>&1 
