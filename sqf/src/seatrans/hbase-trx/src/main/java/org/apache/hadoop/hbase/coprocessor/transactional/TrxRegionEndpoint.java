@@ -289,6 +289,7 @@ CoprocessorService, Coprocessor {
   private AtomicBoolean closing = new AtomicBoolean(false);
   private boolean fullEditInCommit = true;
   private boolean configuredEarlyLogging = false;
+  private boolean configuredConflictReinstate = false;
   private static Object zkRecoveryCheckLock = new Object();
   private static ZooKeeperWatcher zkw1 = null;
   String lv_hostName;
@@ -1488,7 +1489,7 @@ CoprocessorService, Coprocessor {
    rsh = scanners.get(scannerId);
 
    nextCallSeq++;
- 
+
    if (rsh == null)
    {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan rsh is null");
@@ -2392,6 +2393,10 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: early logging setting is " + this.configuredEarlyLogging +
                   "\nTrxRegionEndpoint coprocessor: get the reference from Region CoprocessorEnvironment ");
 
+    this.configuredConflictReinstate = tmp_env.getConfiguration().getBoolean("hbase.regionserver.region.transactional.conflictreinstate", false);
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: conflict reinstate  setting is " + this.configuredConflictReinstate +
+                  "\nTrxRegionEndpoint coprocessor: get the reference from Region CoprocessorEnvironment ");
+
     if (tmp_env.getSharedData().isEmpty())
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: shared map is empty ");
     else
@@ -2720,7 +2725,7 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commit - txId " + transactionId + ", region " + m_Region.getRegionInfo().getRegionNameAsString() + ", transactionsById " + transactionsById.size() + ", commitedTransactionsBySequenceNumber " + commitedTransactionsBySequenceNumber.size() + ", commitPendingTransactions " + commitPendingTransactions.size());
      
-    if (state.isReinstated()) {
+    if (state.isReinstated() && !this.configuredConflictReinstate) {
       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit Trafodion Recovery: commit reinstated indoubt transactions " + transactionId + 
                               " in region " + m_Region.getRegionInfo().getRegionNameAsString());
       synchronized (indoubtTransactionsById) {  
@@ -2740,7 +2745,7 @@ CoprocessorService, Coprocessor {
              if (kv.getTypeByte() == KeyValue.Type.Put.getCode()) {
 		put = new Put(CellUtil.cloneRow(kv)); // kv.getRow()
                 put.add(CellUtil.cloneFamily(kv), CellUtil.cloneQualifier(kv), kv.getTimestamp(), CellUtil.cloneValue(kv));
-                state.addWrite(put);
+                //state.addWrite(put); // no need to add since add has been done in constructInDoubtTransactions
               try {
                 m_Region.put(put);
               }
@@ -2757,7 +2762,7 @@ CoprocessorService, Coprocessor {
 	        } else if (kv.isDeleteType()) {
 	             del.deleteColumn(CellUtil.cloneFamily(kv), CellUtil.cloneQualifier(kv));
 	        }
-                state.addDelete(del);
+                //state.addDelete(del);  // no need to add since add has been done in constructInDoubtTransactions
                try {
                  m_Region.delete(del);
                   }
@@ -2772,7 +2777,7 @@ CoprocessorService, Coprocessor {
         } // for WALEdit
       } // for ediList
     }  // reinstated transactions
-    else {
+    else { // either non-reinstated transaction, or reinstate transaction with conflict reinstate TRUE (write from TS write ordering)
       // Perform write operations timestamped to right now
       // maybe we can turn off WAL here for HLOG since THLOG has contained required edits in phase 1
       List<WriteAction> writeOrdering = state.getWriteOrdering();
@@ -2813,8 +2818,7 @@ CoprocessorService, Coprocessor {
        }
     } // normal transactions
 
-    // Now the transactional writes live in the core WAL, we can write a commit to the log
-    // so we don't have to recover it from the transactional WAL.
+    // Now write a commit edit to HLOG
 
     List<Tag> tagList = new ArrayList<Tag>();
     if (state.hasWrite() || state.isReinstated()) {
@@ -3339,39 +3343,87 @@ CoprocessorService, Coprocessor {
             if (reconstructIndoubts == 0) {
             //Retrieve (tid,Edits) from indoubt Transaction and construct/add into desired transaction data list
             for (Entry<Long, List<WALEdit>> entry : indoubtTransactionsById.entrySet()) {
+                      long txid = 0;
                       long transactionId = entry.getKey();
 		      String key = String.valueOf(transactionId);
-                      if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint Coprocessor:E11 Region " + regionInfo.getRegionNameAsString() + " process in-doubt transaction " + transactionId);
+                      ArrayList<WALEdit> editList = (ArrayList<WALEdit>) entry.getValue();
+                      //editList = (ArrayList<WALEdit>) indoubtTransactionsById.get(transactionId);
 
-                      //TBD Need to get HLOG ???
+                      if (LOG.isTraceEnabled()) LOG.trace("TrafodionEPCP: reconstruct transaction in Region " + regionInfo.getRegionNameAsString() + " process in-doubt transaction " + transactionId);
 		      TrxTransactionState state = new TrxTransactionState(transactionId, /* 1L my_Region.getLog().getSequenceNumber()*/
                                                                                 nextLogSequenceId.getAndIncrement(), nextLogSequenceId, 
                                                                                 regionInfo, m_Region.getTableDesc(), tHLog, false);
-
-                      if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint Coprocessor:E22 Region " + regionInfo.getRegionNameAsString() + " create transaction state for " + transactionId);
-
+                      if (LOG.isTraceEnabled()) LOG.trace("TrafodionEPCP: reconstruct transaction in Region " + regionInfo.getRegionNameAsString() + " create transaction state for " + transactionId);
                       state.setFullEditInCommit(true);
 		      state.setStartSequenceNumber(nextSequenceId.get());
     		      transactionsById.put(getTransactionalUniqueId(transactionId), state);
+
+                      // Re-establish write ordering (put and get) for in-doubt transactional
+
+                     int num  = editList.size();
+                     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP: reconstruct transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() + 
+                               " with number of edit list kvs size " + num);
+                    for (int i = 0; i < num; i++){
+                          WALEdit b = editList.get(i);
+                          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP: reconstruction transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() +
+                               " with " + b.size() + " kv in WALEdit " + i);
+                          for (KeyValue kv : b.getKeyValues()) {
+                             Put put;
+                             Delete del;
+                             synchronized (editReplay) {
+                             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP:reconstruction transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() +
+                               " re-establish write ordering Op Code " + kv.getType());
+                             if (kv.getTypeByte() == KeyValue.Type.Put.getCode()) {
+		                put = new Put(CellUtil.cloneRow(kv)); // kv.getRow()
+                                put.add(CellUtil.cloneFamily(kv), CellUtil.cloneQualifier(kv), kv.getTimestamp(), CellUtil.cloneValue(kv));
+                                state.addWrite(put);
+                             }
+                             else if (CellUtil.isDelete(kv))  {
+	   	                del = new Delete(CellUtil.cloneRow(kv));
+	                         if (CellUtil.isDeleteFamily(kv)) {
+	 	                    del.deleteFamily(CellUtil.cloneFamily(kv));
+	                         } else if (kv.isDeleteType()) {
+	                            del.deleteColumn(CellUtil.cloneFamily(kv), CellUtil.cloneQualifier(kv));
+	                         }
+                                 state.addDelete(del);
+                             } // handle put/delete op code
+                             } // sync editReplay
+                          } // for all kv in edit b
+                    } // for all edit b in ediList
 
                       state.setReinstated();
 		      state.setStatus(Status.COMMIT_PENDING);
 		      commitPendingTransactions.add(state);
 		      state.setSequenceNumber(nextSequenceId.getAndIncrement());
 		      commitedTransactionsBySequenceNumber.put(state.getSequenceNumber(), state);
+
+                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP: reconstruct transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() + 
+                              " complete in prepared state");
+
+                     // Rewrite HLOG for prepared edit (this method should be invoked in postOpen Observer ??
+
+                    try {
+                       txid = this.tHLog.appendNoSync(this.regionInfo, this.regionInfo.getTable(),
+                       state.getEdit(), new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
+                       nextLogSequenceId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
+                       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest COMMIT_OK -- EXIT txId: " + transactionId + " HLog seq " + txid);
+                       this.tHLog.sync(txid);
+                    } 
+                    catch (IOException exp) {
+                       LOG.warn("TrxRegionEPCP: reconstruct transaction - Caught IOException in HLOG appendNoSync -- EXIT txId: " + transactionId + " HLog seq " + txid);
+                       //throw exp;
+                    }      
+                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP: reconstruct transaction: rewrite to HLOG CR edit for transaction " + transactionId);
+
                       int tmid = (int) (transactionId >> 32);
-                      if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint Coprocessor:E33 Region " + regionInfo.getRegionNameAsString() + " add prepared " + transactionId + " to TM " + tmid);              
+                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP " + regionInfo.getRegionNameAsString() + " reconstruct transaction " + transactionId + " for TM " + tmid);              
              } // for all txns in indoubt transcation list
              } // not reconstruct indoubtes yet
              reconstructIndoubts = 1;
+             if (this.configuredConflictReinstate) {
+                regionState = REGION_STATE_START; // set region state START , so new transaction can start with conflict re-established
+             }
         } // synchronized
-        /* //TBD cleanup lists (this is for testing purpose only)
-        if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint Coprocessor:EEE Clean up recovery test for indoubt transactions");
-        transactionsById.clear();
-        commitPendingTransactions.clear();
-        commitedTransactionsBySequenceNumber.clear();
-        if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint Coprocessor:EEE Clean up indoubt transactions in data lists");
-        */
   }
 
   /**
@@ -3572,7 +3624,7 @@ CoprocessorService, Coprocessor {
             }
         }
         else if (commitStatus == CommitProgress.NONE) {
-            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit HHH " + commitStatus);
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit " + commitStatus);
             state.setCommitProgress(CommitProgress.COMMITTING);
     commit(state);
 
