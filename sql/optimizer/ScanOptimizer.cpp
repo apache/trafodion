@@ -8503,7 +8503,13 @@ void MDAMCostWA::compute()
       {
         if (optimizer_.getIndexDesc()->getPrimaryTableDesc()->getNATable()->isHbaseTable())
         {
-          scmCost_ = optimizer_.scmComputeMDAMCostForHbase(totalRows, totalSeeks, 
+          // Cost of sending 'probes' to materialize values of prefix key column(s) with 
+          // missing predicate(s) should be accounted. For each such probe Hbase Region server
+          // returns 1 row. So, totalRqsts (probes) should be added to seeks as well as 
+          // rows processed.
+          CostScalar totRowsProcessed = totalRows + totalRqsts;
+          CostScalar totSeeks = totalSeeks + totalRqsts;
+          scmCost_ = optimizer_.scmComputeMDAMCostForHbase(totRowsProcessed, totSeeks, 
                                                            totalSeqKBRead, incomingProbes_);
 
         }

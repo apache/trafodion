@@ -234,7 +234,7 @@
 (EXPR)              
 --------------------
 
-                   7
+                  10
 
 --- 1 row(s) selected.
 >>cleanup table t026t2;
@@ -245,7 +245,7 @@
 (EXPR)              
 --------------------
 
-                   1
+                   3
 
 --- 1 row(s) selected.
 >>cleanup schema sch026;
@@ -256,7 +256,7 @@
 (EXPR)              
 --------------------
 
-                   0
+                   2
 
 --- 1 row(s) selected.
 >>
@@ -349,7 +349,7 @@ Metadata Cleanup: started, check only
 
   Start: Cleanup Inconsistent Objects Entries
     Entry #1(OBJECT): TRAFODION.SCH026.T026T12
-    Entry #2(UID)       : 88443543482317153
+    Entry #2(UID):    42282662492813585
   End:   Cleanup Inconsistent Objects Entries (2 entries found)
 
   Start: Cleanup Inconsistent Views Entries
@@ -372,7 +372,7 @@ Metadata Cleanup: started
 
   Start: Cleanup Inconsistent Objects Entries
     Entry #1(OBJECT): TRAFODION.SCH026.T026T12
-    Entry #2(UID):    88443543482317153
+    Entry #2(UID):    42282662492813585
   End:   Cleanup Inconsistent Objects Entries (2 entries cleaned up)
 
   Start: Cleanup Inconsistent Views Entries
