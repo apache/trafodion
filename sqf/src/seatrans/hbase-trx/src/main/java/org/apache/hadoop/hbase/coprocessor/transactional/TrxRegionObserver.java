@@ -409,7 +409,7 @@ public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
      byte [] lv_byte_region_info = regionInfo.toByteArray();
      String lv_encoded = regionInfo.getEncodedName();
    
-     // loop for every tm, call TRS.createzNode (tmid, region encoded name, zNodedata)
+     // loop for every tm, call createzNode (tmid, region encoded name, zNodedata)
      for (int node  : indoubtTransactionsCountByTmid.keySet()) {
            try {
                  if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: ZKW Create Recovery zNode TM " + node + " region encoded name " + lv_encoded + " region info bytes " + new String(lv_byte_region_info));

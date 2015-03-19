@@ -116,7 +116,7 @@ public class TransactionState {
     public TransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId, final HRegionInfo regionInfo,
                                                  HTableDescriptor htd, HLog hLog, boolean logging) {
         Tag transactionalTag = null;
-        if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: EEE create TS object for " + transactionId + " early logging " + logging);
+        if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: create TS object for " + transactionId + " early logging " + logging);
         this.transactionId = transactionId;
         this.hLogStartSequenceId = rLogStartSequenceId;
         this.logSeqId = hlogSeqId;
