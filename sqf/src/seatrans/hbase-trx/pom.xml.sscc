@@ -19,6 +19,14 @@
  * limitations under the License.
  */
 -->
+<!--
+  <parent>
+    <artifactId>hbase</artifactId>
+    <groupId>org.apache.hbase</groupId>
+    <version>0.98.3</version>
+    <relativePath>..</relativePath>
+  </parent>
+-->
 <repositories>
     <repository>
       <releases>
@@ -39,30 +47,30 @@
   </repositories> 
 
   <properties>
-    <hadoop.version>2.5.0</hadoop.version>
-    <hbase.version>0.98.4.2.2.0.0-2041-hadoop2</hbase.version>
+    <hadoop.version>2.4.0</hadoop.version>
+    <hbase.version>0.98.0.2.1.4.0-632-hadoop2</hbase.version>
     <!--<hbase.version>0.98.3-hadoop2</hbase.version>-->
     <!--<hbase.version>0.98.3-hadoop1</hbase.version>-->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.7</java.version>
-    <trx-suffix>hdp2_2</trx-suffix>
+    <trx-suffix></trx-suffix>
   </properties>
 
 
   <groupId>org.apache</groupId>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>hbase-trx-hdp2_2</artifactId>
+  <artifactId>hbase-trx-sscc</artifactId>
   <version>${env.TRAFODION_VER}</version>
-  <name>HBase - Trx</name>
-  <description>Trx of HBase usage</description>
+  <name>HBase - TrxSscc</name>
+  <description>TrxSscc of HBase usage</description>
 
 
   <build>
     <defaultGoal>package</defaultGoal>
       <!-- allow for different build targets with separate classes directories and
            output jars, used for Java 6 compile for now -->
-      <outputDirectory>${project.build.directory}/classes_${trx-suffix}</outputDirectory>
-      <finalName>${project.artifactId}-${project.version}</finalName>
+      <outputDirectory>${project.build.directory}/classes_sscc_${trx-suffix}</outputDirectory>
+      <finalName>${project.artifactId}-${project.version}${trx-suffix}</finalName>
       <!-- Some plugins (javadoc for example) can be used in the normal build- and the site phase.
            These plugins inherit their options from the <reporting> section below. These settings
            can be overwritten here. -->
@@ -327,7 +335,6 @@ if we can combine these profiles somehow -->
                     <directory>${basedir}/src/main/protobuf</directory>
                     <includes>
                       <include>TrxRegion.proto</include>
-                      <include>SsccRegion.proto</include>
                     </includes>
                   </source>
                   <output>${basedir}/src/main/java/</output>

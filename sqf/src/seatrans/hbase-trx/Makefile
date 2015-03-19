@@ -22,6 +22,7 @@ BLD_HBASE_APACHE_TRX_JARNAME     =hbase-trx-hbase_98_4-$(TRAFODION_VER).jar
 BLD_HBASE_CDH_TRX_JARNAME        =hbase-trx-cdh5_3-$(TRAFODION_VER).jar
 BLD_HBASE_MAPR_TRX_JARNAME       =hbase-trx-mapr4_0-$(TRAFODION_VER).jar
 BLD_HBASE_HDP_TRX_JARNAME        =hbase-trx-hdp2_2-$(TRAFODION_VER).jar
+BLD_HBASE_SSCC_TRX_JARNAME       =hbase-trx-sscc-$(TRAFODION_VER).jar
 
 VFILE			    =hbase-trx.jar.versions
 GENVERS			    =./genvers
