@@ -241,14 +241,8 @@ class TM_Info
        int32            iv_receivingBroadcastSeqNum;
 
        CTmStats         iv_stats;
-       // DTM stats - begin
-       int64            iv_perf_tx_count;
-       int64            iv_perf_abort_count;
-       int64            iv_perf_commit_count;
-       int32            iv_perf_current_tx_count;
-       int64            iv_perf_tm_initiated_aborts;
-       int32            iv_perf_tx_hung_count;
-       int32            iv_tx_hung_count; // Current txn hung count
+       TMCOUNTS         iv_counts;
+
        TM_DEQUE         iv_tx_start_list;     
        // DTM stats - end
 
@@ -290,29 +284,32 @@ class TM_Info
        void recovery_unlock();
 
        // methods
-       void initialize_perf_data();
-       void send_tx_perf_stats();
        void send_system_status(TM_STATUSSYS *pp_system_status);
        bool perf_stats_on() {if (iv_perf_stats == TM_PERF_STATS_ON) return true; return false;}
-       void inc_tx_count() {iv_perf_tx_count++; iv_perf_current_tx_count++;}
-       void inc_abort_count() {iv_perf_abort_count++; iv_perf_current_tx_count--;}
-       void inc_commit_count() {iv_perf_commit_count++; iv_perf_current_tx_count--;}
-       void inc_tm_initiated_aborts() {iv_perf_tm_initiated_aborts++;}
+       void inc_tx_count() {iv_counts.iv_tx_count++; iv_counts.iv_current_tx_count++;}
+       void inc_abort_count() {iv_counts.iv_abort_count++; iv_counts.iv_current_tx_count--;}
+       void inc_begin_count() {iv_counts.iv_begin_count++;}
+       void inc_commit_count() {iv_counts.iv_commit_count++; iv_counts.iv_current_tx_count--;}
+       void inc_tm_initiated_aborts() {iv_counts.iv_tm_initiated_aborts++;}
        void inc_tx_hung_count() 
-       {iv_perf_tx_hung_count++; iv_tx_hung_count++;}
-       void dec_tx_hung_count() {iv_tx_hung_count--;}
-       void send_resource_data();
-       void send_begin_tx(CTmTxBase *pp_tx);
-       void send_commit_tx(CTmTxBase *pp_tx);
-       void send_abort_tx(CTmTxBase *pp_tx);
+       {iv_counts.iv_tx_hung_count++; iv_counts.iv_current_tx_hung_count++;}
+       void dec_tx_hung_count() {iv_counts.iv_current_tx_hung_count--;}
+       void clearCounts() {
+          iv_counts.iv_abort_count = iv_counts.iv_commit_count = iv_counts.iv_tm_initiated_aborts = 0;
+          iv_counts.iv_tx_hung_count = iv_counts.iv_current_tx_hung_count;
+          iv_counts.iv_tx_count = iv_counts.iv_begin_count = iv_counts.iv_current_tx_count;
+       }
 
-       int64 perf_tx_count () { return iv_perf_tx_count;}
-       int64 perf_abort_count () { return iv_perf_abort_count; }
-       int64 perf_commit_count () { return iv_perf_commit_count; }
-       int32 perf_current_tx_count () { return iv_perf_current_tx_count; }
-       int64 perf_tm_initiated_aborts () { return iv_perf_tm_initiated_aborts; }
-       int32 perf_tx_hung_count () { return iv_perf_tx_hung_count; }
-       void remove_tx_from_oldest_list (CTmTxBase *pp_tx) {iv_tx_start_list.remove(pp_tx->transid());}
+
+       int64 tx_count () { return iv_counts.iv_tx_count;}
+       int64 begin_count() { return iv_counts.iv_begin_count; }
+       int64 abort_count() { return iv_counts.iv_abort_count; }
+       int64 commit_count() { return iv_counts.iv_commit_count; }
+       int32 current_tx_count () { return iv_counts.iv_current_tx_count; }
+       int64 tm_initiated_aborts () { return iv_counts.iv_tm_initiated_aborts; }
+       int32 tx_hung_count () { return iv_counts.iv_tx_hung_count; }
+       int32 current_tx_hung_count() { return iv_counts.iv_current_tx_hung_count; }
+       void remove_tx_from_oldest_list(CTmTxBase *pp_tx) { iv_tx_start_list.remove(pp_tx->transid()); }
        bool oldest_timestamp(TM_Txid_Internal *pp_tx) 
                              { TM_Txid_Internal *lp_tx = NULL;
                                iv_tx_start_list.lock();

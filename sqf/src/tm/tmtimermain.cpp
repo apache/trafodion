@@ -66,8 +66,7 @@ void tmTimer_initiate_cp ()
 // -------------------------------------------------------------
 void tmTimer_stats()
 {
-   TMTrace(2, ("tmTimer_stats : ENTRY (writing tx_stats).\n"));
-   gv_tm_info.send_tx_perf_stats();
+   TMTrace(2, ("tmTimer_stats : ENTRY (writing tx_stats - noop in Trafodion).\n"));
 }
 
 

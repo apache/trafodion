@@ -79,12 +79,12 @@ CTmThreadExample  *gp_tmExampleThread;
 void tm_fill_perf_stats_buffer (Tm_Perf_Stats_Rsp_Type *pp_buffer)
 {
 
-    int64 lv_tx_count = gv_tm_info.perf_tx_count();
-    int64 lv_abort_count = gv_tm_info.perf_abort_count();
-    int64 lv_commit_count = gv_tm_info.perf_commit_count();
-    int64 lv_current_tx_count =  gv_tm_info.perf_current_tx_count();
-    int32 lv_tm_abort_count =  gv_tm_info.perf_tm_initiated_aborts();
-    int32 lv_hung_tx_count = gv_tm_info.perf_tx_hung_count();
+    int64 lv_tx_count = gv_tm_info.tx_count();
+    int64 lv_abort_count = gv_tm_info.abort_count();
+    int64 lv_commit_count = gv_tm_info.commit_count();
+    int64 lv_current_tx_count =  gv_tm_info.current_tx_count();
+    int32 lv_tm_abort_count =  gv_tm_info.tm_initiated_aborts();
+    int32 lv_hung_tx_count = gv_tm_info.tx_hung_count();
 
     TMTrace (2, ("tm_fill_perf_stats_buffer : tx count : " PFLL ", abort count " PFLL ", commit count " PFLL ", current tx count " PFLL ".\n", lv_tx_count, lv_abort_count, lv_commit_count, lv_current_tx_count));
 
@@ -869,8 +869,10 @@ void tm_process_req_tmstats(CTmTxMessage *pp_msg)
 
    gv_tm_info.stats()->readStats(&pp_msg->response()->u.iv_tmstats.iv_stats);
 
-   if (pp_msg->request()->u.iv_tmstats.iv_reset)
+   if (pp_msg->request()->u.iv_tmstats.iv_reset) {
+      gv_tm_info.clearCounts();
       gv_tm_info.stats()->clearCounters();
+   }
 
    pp_msg->reply(FEOK);
    delete pp_msg;
@@ -2834,8 +2836,6 @@ void tm_process_msg(BMS_SRE *pp_sre)
                 0,                       // errorclass
                 NULL);                   // newphandle
 
-         // now send the pool stats and tx state for this node.
-         gv_tm_info.send_resource_data();
          TMTrace(2, ("tm_process_msg EXIT\n")); 
          return; 
     }

@@ -1141,7 +1141,8 @@ bool TM_TX_Info::req_begin(CTmTxMessage * pp_msg)
    if (gv_tm_info.TSMode() >= TS_BEGINONLY)
       iv_beginTime = Ctimeval::now();
    
-   gv_tm_info.send_begin_tx(this);
+   gv_tm_info.inc_begin_count();
+   gv_tm_info.inc_tx_count();
    memcpy (&pp_msg->response()->u.iv_begin_trans.iv_transid, transid(), 
             TM_TRANSID_BYTE_SIZE);
 
@@ -1235,7 +1236,7 @@ bool TM_TX_Info::req_end(CTmTxMessage * pp_msg)
       return false;
    } 
 
-   gv_tm_info.send_commit_tx(this);
+   gv_tm_info.inc_commit_count();
 
    // change state
    state_change (TX_COMMIT, gv_tm_info.nid(), gv_tm_info.pid(), pp_msg);
@@ -1280,7 +1281,7 @@ bool TM_TX_Info::req_abort(CTmTxMessage * pp_msg)
             "(%d, %d).\n", node(), seqnum(), lv_nid, lv_pid));
 
    pp_msg->validate();
-   gv_tm_info.send_abort_tx(this);
+   gv_tm_info.inc_abort_count();
    if (pp_msg->requestType() == TM_MSG_TYPE_TSE_DOOMTX)
    {
      
@@ -1333,6 +1334,10 @@ bool TM_TX_Info::req_abort(CTmTxMessage * pp_msg)
        // If it did, then we no longer have a pp_msg object and have replied.
        if (transactionBusy())
           req_abort_complete(pp_msg);
+       else {
+          if (tx_state() != TM_TX_STATE_HUNGABORTED)
+             stats()->txnAbort()->stop();
+       }
        lv_terminateThread = req_forget();
    }
 
@@ -1491,6 +1496,9 @@ int32 TM_TX_Info::internal_abortTrans(bool pv_takeover_or_shutdown)
    lp_msg->request()->u.iv_rollback_internal.iv_takeover_or_shutdown = pv_takeover_or_shutdown;
 
    queueToTransaction(&iv_transid, lp_msg);
+
+   gv_tm_info.inc_abort_count();
+   gv_tm_info.inc_tm_initiated_aborts();
 
    TMTrace (2, ("TM_TX_Info::internal_abortTrans : EXIT\n"));
     

@@ -155,6 +155,15 @@ void CTmStats::readStats(TM_TMSTATS *pp_stats)
    pp_stats->iv_tmStartTime = lv_start.get();
    pp_stats->iv_statsSentTime = lv_sent.get();
 
+   pp_stats->iv_counts.iv_tx_count = gv_tm_info.tx_count();
+   pp_stats->iv_counts.iv_begin_count = gv_tm_info.begin_count();
+   pp_stats->iv_counts.iv_abort_count = gv_tm_info.abort_count();
+   pp_stats->iv_counts.iv_commit_count = gv_tm_info.commit_count();
+   pp_stats->iv_counts.iv_current_tx_count = gv_tm_info.current_tx_count();
+   pp_stats->iv_counts.iv_tm_initiated_aborts = gv_tm_info.tm_initiated_aborts();
+   pp_stats->iv_counts.iv_tx_hung_count = gv_tm_info.tx_hung_count();
+   pp_stats->iv_counts.iv_current_tx_hung_count = gv_tm_info.current_tx_hung_count();
+
    pp_stats->iv_txn.iv_txnTotal = iv_txnTotal.read();
    pp_stats->iv_txn.iv_RMSend = iv_RMSend.read();
    pp_stats->iv_txn.iv_txnBegin = iv_txnBegin.read();

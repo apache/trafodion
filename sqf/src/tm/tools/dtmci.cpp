@@ -355,6 +355,16 @@ void print_txnStats(TXNSTATS *pp_stats)
 } //print_txnStats
 
 
+void print_counters(TMCOUNTS *pp_counts)
+{
+   printf("\n  Counts: Total = %ld, Current = %d, Begins = %ld, Aborts = %ld, Commits = %ld, "
+      "TM Aborts = %ld, Hung total = %d, current = %d", pp_counts->iv_tx_count,
+      pp_counts->iv_current_tx_count, pp_counts->iv_begin_count, pp_counts->iv_abort_count,
+      pp_counts->iv_commit_count, pp_counts->iv_tm_initiated_aborts,
+      pp_counts->iv_tx_hung_count, pp_counts->iv_current_tx_hung_count);
+} //print_counters
+
+
 void print_poolStats(TMPOOLSTATS pv_pool)
 {
    int32 lv_secs;
@@ -462,7 +472,7 @@ void process_tmstats_node(bool pv_reset, int32 pv_nid, bool json)
         else
         {
             printf("Node %d:", pv_nid);
-
+            print_counters(&lv_stats.iv_counts);
             print_txnStats(&lv_stats.iv_txn);
 
             // Pool statistics
@@ -477,9 +487,9 @@ void process_tmstats_node(bool pv_reset, int32 pv_nid, bool json)
     } 
     else {
         printf("{\"node\": %d", pv_nid);
-        printf(",\"txnStats\":{\"txnBegins\": %d", lv_stats.iv_txn.iv_txnBegin.iv_count);
-        printf(",\"txnAborts\": %d", lv_stats.iv_txn.iv_txnAbort.iv_count);
-        printf(",\"txnCommits\": %d}}", lv_stats.iv_txn.iv_txnCommit.iv_count);
+        printf(",\"txnStats\":{\"txnBegins\": %ld", lv_stats.iv_counts.iv_begin_count);
+        printf(",\"txnAborts\": %ld", lv_stats.iv_counts.iv_abort_count);
+        printf(",\"txnCommits\": %ld}}", lv_stats.iv_counts.iv_commit_count);
     }
 } //process_tmstats_node
 
@@ -1257,7 +1267,7 @@ void print_helptext()
         << endl << "        : only one node."
         << endl << "        : Immediately causes all active transactions"
         << endl << "        : in the node to be aborted.";
-   cout << endl << " e | commit ";
+   cout << endl << " end | commit ";
    cout << endl << "        : Will end the current transaction";
    cout << endl << " enable trans[actions] ";
    cout << endl << "        : Enable transaction processing in DTM.";
@@ -1267,13 +1277,13 @@ void print_helptext()
    cout << endl << " r | t | resume [<tag>]";
    cout << endl << "        : Will suspend the current transaction if no tag is supplied.";
    cout << endl << "        : if tag is specified it will resume work on the given tag";
-   cout << endl << " s | stats [<nid> | [reset]]";
+   cout << endl << " s | stats [<nid> | [reset] -j]";
    cout << endl << "        : Will list the current TM statistics";
    cout << endl << "        : If reset is specified, reset statistics after ";
    cout << endl << "        : displaying them.";
    cout << endl << " status system";
    cout << endl << "        : Prints system TM information";
-   cout << endl << " status tm [<nid>] [rmid]";
+   cout << endl << " status tm [<nid>] [rmid] -j";
    cout << endl << "        : Status of the TM in node <nid>.  Returns TM information ";
    cout << endl << "        : for all nodes if none specified.  Specifying a node gives ";
    cout << endl << "        : RM details.";
@@ -1620,7 +1630,7 @@ int main(int argc, char *argv[])
             }
         } //quiesce
    
-       else if (!strcmp(lp_nextcmd, "e") || !strcmp(lp_nextcmd, "commit"))
+       else if (!strcmp(lp_nextcmd, "end") || !strcmp(lp_nextcmd, "commit"))
         {
             int lv_end_error = ENDTRANSACTION();
             if(lv_end_error != 0) {
@@ -1786,8 +1796,8 @@ int main(int argc, char *argv[])
               process_gettransinfo(lp_nextcmd, false);
            }
         }
-        else if (!strcmp(lp_nextcmd, "q") || !strcmp(lp_nextcmd, "quit") ||
-                !strcmp(lp_nextcmd, "exit"))
+        else if (!strcmp(lp_nextcmd, "e") || !strcmp(lp_nextcmd, "q") ||
+                !strcmp(lp_nextcmd, "quit") || !strcmp(lp_nextcmd, "exit"))
         {
             cout << "dtmci exiting, goodbye." << endl;
             lv_done = true;
