@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -3636,6 +3636,11 @@ void msg_mon_init() {
     SB_util_static_assert(static_cast<int>(MS_Mon_State_Mounted) ==
                           static_cast<int>(State_Mounted)); // sw fault
 
+    SB_util_static_assert(static_cast<int>(MS_Mon_JoiningPhase_Unknown) ==
+                          static_cast<int>(JoiningPhase_Unknown)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_Mon_JoiningPhase_Invalid) ==
+                          static_cast<int>(JoiningPhase_Invalid)); // sw fault
+
     SB_util_static_assert(static_cast<int>(MS_Mon_State_Unknown) ==
                           static_cast<int>(State_Unknown)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_Mon_State_Initializing) ==
@@ -3682,6 +3687,8 @@ void msg_mon_init() {
                           sizeof(NewProcess_Notice_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeDown_def) ==
                           sizeof(NodeDown_def)); // sw fault
+    SB_util_static_assert(sizeof(MS_Mon_NodeJoining_def) ==
+                          sizeof(NodeJoining_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodePrepare_def) ==
                           sizeof(NodePrepare_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeQuiesce_def) ==
@@ -3694,6 +3701,8 @@ void msg_mon_init() {
                           sizeof(ProcessDeath_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_Shutdown_def) ==
                           sizeof(Shutdown_def)); // sw fault
+    SB_util_static_assert(sizeof(MS_Mon_SpareUp_def) ==
+                          sizeof(SpareUp_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_TmSyncNotice_def) ==
                           sizeof(TmSyncNotice_def)); // sw fault
     // More structs

@@ -139,6 +139,13 @@ typedef enum {
     MS_Mon_State_Mounted
 } MS_MON_DEVICE_STATE;
 typedef enum {
+    MS_Mon_JoiningPhase_Unknown = 0,
+    MS_Mon_JoiningPhase_1,
+    MS_Mon_JoiningPhase_2,
+    MS_Mon_JoiningPhase_3,
+    MS_Mon_JoiningPhase_Invalid
+} MS_MON_JOINING_PHASE;
+typedef enum {
     MS_Mon_State_Unknown = 0,
     MS_Mon_State_Up,
     MS_Mon_State_Down,
@@ -456,6 +463,11 @@ struct MS_Mon_NodeDown_def {
     int  takeover;
     char reason[MS_MON_MAX_REASON_TEXT];
 };
+struct MS_Mon_NodeJoining_def {
+    int                  pnid;
+    char                 node_name[MS_MON_MAX_PROCESSOR_NAME];
+    MS_MON_JOINING_PHASE phase;
+};
 struct MS_Mon_NodePrepare_def {
     int  nid;
     char node_name[MS_MON_MAX_PROCESSOR_NAME];
@@ -499,6 +511,10 @@ struct MS_Mon_Shutdown_def {
     int                  pid;
     MS_MON_ShutdownLevel level;
 };
+struct MS_Mon_SpareUp_def {
+    int  pnid;
+    char node_name[MS_MON_MAX_PROCESSOR_NAME];
+};
 struct MS_Mon_TmSyncNotice_def {
     int                 nid[MS_MON_MAX_TM_SYNCS];
     int                 orig_count;
@@ -526,11 +542,13 @@ typedef struct MS_Mon_Msg {
         struct MS_Mon_Close_def               close;
         struct MS_Mon_ProcessDeath_def        death;
         struct MS_Mon_NodeDown_def            down;
+        struct MS_Mon_NodeJoining_def         joining;
         struct MS_Mon_Open_def                open;
         struct MS_Mon_NodePrepare_def         prepare;
         struct MS_Mon_NewProcess_Notice_def   process_created;
         struct MS_Mon_NodeQuiesce_def         quiesce;
         struct MS_Mon_Shutdown_def            shutdown;
+        struct MS_Mon_SpareUp_def             spare_up;
         struct MS_Mon_TmSyncNotice_def        tmsync;
         struct MS_Mon_NodeUp_def              up;
     } u;
