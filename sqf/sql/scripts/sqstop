@@ -83,14 +83,14 @@ fi
 
 rm -f $SQSTOP_EXIT_STATUS
 
+# Stop the REST Service
+reststop
+
 # Stop the DCS Service
 dcsstop
 
 # Stop the lob Service
 lobstop
-
-
-
 
 # Issue the shutdown request
 echoLog "Shutting down ($shutdowntype) the SQ environment!"
