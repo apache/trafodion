@@ -778,7 +778,7 @@ public class HBaseTxClient {
                                       }
 
                                       LOG.warn ("TRAF RCOV THREAD:Starting recovery with " + regions.size() +
-                                           " regions to recover.  First region hostnamet: " + hostname +
+                                           " regions to recover.  First region hostname: " + hostnamePort +
                                            " Recovery iterations: " + recoveryIterations);
                                    }
                                 }
@@ -792,7 +792,7 @@ public class HBaseTxClient {
                                             throw new IllegalArgumentException("hostnamePort format is incorrect");
                                          }
                                          LOG.warn("TRAF RCOV THREAD:Recovery thread encountered " + regions.size() +
-                                           " regions to recover.  First region hostname: " + hostname +
+                                           " regions to recover.  First region hostname: " + hostnamePort +
                                            " Recovery iterations: " + recoveryIterations);
                                       }
                                    }
@@ -897,7 +897,7 @@ public class HBaseTxClient {
                                 // TransactionState ts = new TransactionState(txID);
                                 try {
                                     audit.getTransactionState(ts);
-                                    if (ts.getStatus().equals("COMMITTED")) {
+                                    if (ts.getStatus().equals(TransState.STATE_COMMITTED.toString())) {
                                         if (LOG.isDebugEnabled())
                                             LOG.debug("TRAF RCOV THREAD:Redriving commit for " + txID + " number of regions " + ts.getParticipatingRegions().size() +
                                                     " and tolerating UnknownTransactionExceptions");
@@ -906,7 +906,7 @@ public class HBaseTxClient {
                                             long nextAsn = tLog.getNextAuditSeqNum((int)(txID >> 32));
                                             tLog.putSingleRecord(txID, "FORGOTTEN", null, forceForgotten, nextAsn);
                                         }
-                                    } else if (ts.getStatus().equals("ABORTED")) {
+                                    } else if (ts.getStatus().equals(TransState.STATE_ABORTED.toString())) {
                                         if (LOG.isDebugEnabled())
                                             LOG.debug("TRAF RCOV THREAD:Redriving abort for " + txID);
                                         txnManager.abort(ts);
