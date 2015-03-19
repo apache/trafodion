@@ -460,6 +460,13 @@ fi
 
 echo "exit" | hbase shell &> hbaseVersion.txt
 
+if [[ ! -f hbaseVersion.txt ]]; then
+   echo "***ERROR: Could not find file hbaseVersion.txt"
+   echo "***ERROR: Error while running hbase shell" 
+   echo "***ERROR: Check that hbase is installed and working."
+   exit -1
+fi
+
 if [[ $ambari_installed -gt 0 ]]; then
    echo "***INFO: Hortonworks detected"
    #Check that not trying to install on Hortonworks Sandbox
@@ -483,9 +490,11 @@ if [[ $ambari_installed -gt 0 ]]; then
    
    #Check that HDP 2.[n>2].* is not installed.
    if [[ -z $nameOfVersion ]]; then
-       versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//'| grep 2.[3-9].* | wc -l)
+       versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//'| grep [1-3].[0-9].* | wc -l)
        if [[ $versionInstalled -gt "0" ]]; then
-          echo "***ERROR: Hortonworks version is not currently supported."
+          echo "***ERROR: Trafodion and Hortonworks versions may not be compatible"
+          echo "***ERROR: Trafodion 1.1.0 is compatible with Hortonworks 2.2"
+          echo "***ERROR: Trafodion 1.0.1 and 1.0.0 are compatbile with Hortonworks 2.1"
           echo "***ERRO: Detected Hortonworks version:"
           cat hbaseVersion.txt
           exit -1
@@ -517,14 +526,15 @@ if [[ $cloudera_installed -gt 0 ]]; then
 
    #Check that Cloudera 5.[n>3].* is not installed.
    if [[ -z $nameOfVersion ]]; then 
-      versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh5.[4-9].* | wc -l)i
+      versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/.*\-//' | grep cdh[4-6].[0-9].* | wc -l)
       if [[ $versionInstalled -gt "0" ]]; then 
-         echo "***ERROR: Cloudera version is not currently supported."
+         echo "***ERROR: Trafodion and Cloudera versions may not be compatible"
+         echo "***ERROR: Trafodion 1.1.0 is compatible with Cloudera 5.2 and 5.3"
+         echo "***ERROR: Trafodion 1.0.1 and 1.0.0 are compatible with Cloudera 5.1.2 and 5.1.3"
          echo "***ERRO: Detected Cloudera version:"
          cat hbaseVersion.txt
          exit -1 
       fi
-    
    fi
 
    #Check for Cloudera parcels of packages.

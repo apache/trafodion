@@ -138,12 +138,7 @@ sed -e "s@export TOOLSDIR=.*@export TOOLSDIR=$TRAF_TOOLSDIR@" <bashrc_temp >$HOM
 #cp .bashrc bashrc_temp
 #grep -vE "MY_NODES|NODE_LIST" bashrc_temp > $HOME/.bashrc
 
-# Create NODE_LIST and MY_NODES variable.
-# These variables will contain the list of nodes from the sqconfig file.
-NODES=$(grep "node-name=" $SQCONFIG_MASTER | sed -e "s@^.*node-name=\(.*\);cores.*@\1@" | sort)
-if [[ -z $NODES ]]; then
-   # single node case
-   NODES=$(hostname)
+if [[ $node_count == "1" ]]; then
    
    # since sqgen uses the existence of /usr/bin/pdsh to determine multi-node cluster
    # and sqgen uses the existence of /usr/bin/pdcp to determine if it needs to copy 
@@ -157,8 +152,6 @@ if [[ -z $NODES ]]; then
    fi
 fi
 
-NODE_LIST=$(echo $NODES)
-MY_NODES=$(echo $NODES | sed 's@^@ @g' | sed 's@ @ -w @g' | sed 's@$@ @')
 cp .bashrc bashrc_temp
 sed -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" <bashrc_temp >$HOME/.bashrc
 cp .bashrc bashrc_temp
@@ -231,7 +224,11 @@ else
     echo "***INFO: starting Trafodion instance" | tee -a $INSTALL_LOG
 
     # get first node listed in MY_NODES
-    STARTING_NODE=$(echo $MY_NODES | awk '{print $2}')
+    if [[ "$node_count" -eq "1" ]]; then
+       STARTING_NODE=$NODE_LIST
+    else
+       STARTING_NODE=$(echo $MY_NODES | awk '{print $2}')  
+    fi
 
     ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts; sqstart"
     SQSTART_RC=$?

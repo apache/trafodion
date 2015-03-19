@@ -39,7 +39,7 @@ echo "***INFO: Starting Trafodion environment setup ($timestamp)"
 #==============================================
 # display license text and get acceptance
 echo "=== $timestamp ==="
-if [ ! "$ACCEPT_LICENSE" == "Y" ]; then
+if [ "$ACCEPT_LICENSE" != "Y" ]; then
    cat $( cd "$( dirname "$0" )" && pwd )/trafodion_license
    echo -n "BY TYPING \"ACCEPT\" YOU AGREE TO THE TERMS OF THIS AGREEMENT: " 
    read answer
