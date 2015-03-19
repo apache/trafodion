@@ -53,6 +53,7 @@ public:
              ComUInt32    numSqlParam,
              char         *routineSig,
              ComUInt32    maxResultSets,
+             ComRoutineLanguage language,
              ComRoutineParamStyle paramStyle,
              ComRoutineTransactionAttributes transactionAttrs,
              ComRoutineSQLAccess sqlAccessMode,

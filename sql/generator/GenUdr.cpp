@@ -428,6 +428,7 @@ static short udr_codegen(Generator *generator,
   ULng32 replyRowLen = 0;
   ULng32 outputRowLen = 0;
   ULng32 childInputRowLen = 0;
+  ULng32 combinedRequestChildOutputRowLen = 0;
   ExpTupleDesc *requestTupleDesc = NULL;     // input params in langman format
   ExpTupleDesc *replyTupleDesc = NULL;       // output row/params in langman format
   ExpTupleDesc *outputTupleDesc = NULL;      // output row/params in executor format
@@ -656,6 +657,8 @@ static short udr_codegen(Generator *generator,
     // Add the tuple descriptor for request values to the work ATP
     //
     work_cri_desc->setTupleDescriptor(requestTuppIndex, requestTupleDesc);
+
+    combinedRequestChildOutputRowLen = requestRowLen;
     
   } // if (numInValues > 0)
 
@@ -708,6 +711,9 @@ static short udr_codegen(Generator *generator,
     // Add the tuple descriptor for request values to the work ATP
     //
     work_cri_desc->setTupleDescriptor(childInputTuppIndex, childInputTupleDesc);
+
+    combinedRequestChildOutputRowLen =
+      MAXOF(combinedRequestChildOutputRowLen, childInputRowLen);
     
   } // if ((numChildInputs == 1)&&(numChildInputCols > 0))
   
@@ -840,8 +846,13 @@ static short udr_codegen(Generator *generator,
   // Make sure all buffer sizes are large enough to accomodate two
   // control rows plus one data row.
   const ULng32 bufferPad = min_sql_buffer_overhead();
-  requestBufferSize = MAXOF(requestBufferSize, requestRowLen + bufferPad);
+  // request buffer is used to sent parent down queue entries to
+  // udrserver, and also to send child output rows to udrserver
+  requestBufferSize = MAXOF(requestBufferSize, combinedRequestChildOutputRowLen + bufferPad);
+  // reply buffer is used to send UDF result rows back to the executor
   replyBufferSize = MAXOF(replyBufferSize, replyRowLen + bufferPad);
+  // output buffer is used to store result rows that are inserted
+  // in the up queue to the parent
   outputBufferSize = MAXOF(outputBufferSize, outputRowLen + bufferPad);
   
   //

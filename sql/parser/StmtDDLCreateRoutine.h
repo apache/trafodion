@@ -104,11 +104,13 @@ public:
   inline const ComRoutineType      getRoutineType(void) const;
 
   inline const ComRoutineLanguage  getLanguageType(void) const;
+  inline const NABoolean           isLanguageTypeSpecified() const;
   inline const NABoolean           isDeterministic(void) const;
   inline const ComRoutineSQLAccess getSqlAccess(void) const;
   inline const NABoolean           isCallOnNull(void) const;
   inline const NABoolean           isIsolate(void) const;
   inline const ComRoutineParamStyle getParamStyle(void) const;
+  inline const NABoolean           isParamStyleSpecified() const;
   inline const NABoolean           isFinalCall(void) const;
   inline const ComRoutineParallelism getParallelism(void) const { return parallelism_; }
   inline const NABoolean             canBeParallel(void) const;
@@ -499,6 +501,12 @@ StmtDDLCreateRoutine::getLanguageType(void) const
 }
 
 inline const NABoolean
+StmtDDLCreateRoutine::isLanguageTypeSpecified() const
+{
+  return languageTypeSpecified_;
+}
+
+inline const NABoolean
 StmtDDLCreateRoutine::isDeterministic(void) const
 {
   return deterministic_;
@@ -526,6 +534,12 @@ inline const ComRoutineParamStyle
 StmtDDLCreateRoutine::getParamStyle(void) const
 {
   return paramStyle_;
+}
+
+inline const NABoolean
+StmtDDLCreateRoutine::isParamStyleSpecified() const
+{
+  return paramStyleSpecified_;
 }
 
 inline const ComRoutineTransactionAttributes

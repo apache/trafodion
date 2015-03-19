@@ -23,7 +23,10 @@
 >>create table_mapping function tokenizer(pattern char(1))
 +>returns (outval char(40))
 +>external name 'TOKENIZER'
++>language c
 +>library TEST002;
+
+*** WARNING[3285] The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
 
 --- SQL operation complete.
 >>
@@ -31,7 +34,10 @@
 >>create table_mapping function tokenizer1(pattern char(1))
 +>returns (outval char(40))
 +>external name 'TOKENIZER1'
++>language c
 +>library TEST002;
+
+*** WARNING[3285] The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
 
 --- SQL operation complete.
 >>
@@ -6574,9 +6580,7 @@ LOG_TS                      SEVERITY    COMPONENT                 NODE_NUMBER  C
 >>-- parameter must be a string
 >>prepare s from select * from udf(event_log_reader(?));
 
-*** WARNING[11151] Unable to use 'type' 'UNSUPPORTED TYPE' in a user-defined routine. Details: unsupported type class.
-
-*** ERROR[2005] Internal error: from compilation, no errors in diagnostics yet for statement: select * from udf(event_log_reader(?));
+*** ERROR[11151] Unable to use 'type' 'UNSUPPORTED TYPE' in a user-defined routine. Details: unsupported type class.
 
 *** ERROR[8822] The statement was not prepared.
 

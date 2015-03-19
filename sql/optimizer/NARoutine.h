@@ -191,7 +191,6 @@ public:
   inline NABoolean isSQL()                const { return (language_ == COM_LANGUAGE_SQL); }
   inline NABoolean isProcedure()          const { return (UDRType_  == COM_PROCEDURE_TYPE); }
   inline NABoolean isScalarUDF()          const { return (UDRType_  == COM_SCALAR_UDF_TYPE); }
-  inline NABoolean isAggregateUDF()       const { return (UDRType_  == COM_AGGREGATE_UDF_TYPE); }
   inline NABoolean isTableValuedUDF()     const { return (UDRType_  == COM_TABLE_UDF_TYPE); }
   inline NABoolean isDeterministic()      const { return isDeterministic_; }  
   inline NABoolean isCallOnNull()         const { return isCallOnNull_; } 

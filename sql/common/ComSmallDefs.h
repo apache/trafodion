@@ -1410,7 +1410,6 @@ enum ComRoutineTransactionAttributes { COM_UNKNOWN_ROUTINE_TRANSACTION_ATTRIBUTE
 enum ComRoutineType { COM_UNKNOWN_ROUTINE_TYPE
                     , COM_PROCEDURE_TYPE
                     , COM_SCALAR_UDF_TYPE
-                    , COM_AGGREGATE_UDF_TYPE
                     , COM_TABLE_UDF_TYPE
                     , COM_UNIVERSAL_UDF_TYPE
                     , COM_ACTION_UDF_TYPE
@@ -1419,7 +1418,6 @@ enum ComRoutineType { COM_UNKNOWN_ROUTINE_TYPE
 #define COM_UNKNOWN_ROUTINE_TYPE_LIT                "  "
 #define COM_PROCEDURE_TYPE_LIT                      "P "
 #define COM_SCALAR_UDF_TYPE_LIT                     "F "
-#define COM_AGGREGATE_UDF_TYPE_LIT                  "A "
 #define COM_TABLE_UDF_TYPE_LIT                      "T "
 #define COM_UNIVERSAL_UDF_TYPE_LIT                  "U "
 #define COM_ACTION_UDF_TYPE_LIT                     "AC"

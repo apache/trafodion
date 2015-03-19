@@ -271,8 +271,9 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
   outputValue = NULL;
   NAMemory *h = cmpContext->statementHeap();
   NAType *replyType = NULL;
+  NABoolean isString = LmTypeIsString(formalType, language, style, isResultSet);
 
-  if (LmTypeIsString(formalType, language, style, isResultSet) &&
+  if (isString &&
       (formalType.getTypeQualifier() != NA_CHARACTER_TYPE))
   {
     if (isResultSet || language != COM_LANGUAGE_JAVA)
@@ -313,7 +314,7 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
       // though there is no actual casting of data, because we need to
       // move data from buffer to up Queue in the root node.
 
-      if (formalType.getTypeQualifier() == NA_INTERVAL_TYPE)
+      if (formalType.getTypeQualifier() == NA_INTERVAL_TYPE && isString)
         outputValue = CreateIntervalExpr(*normalizedValue,
                                          formalType,
                                          cmpContext);
@@ -367,6 +368,12 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
 //  FLOAT -> float or double
 //  REAL -> float
 //  DOUBLE PREC -> double
+//
+// For the object-oriented Java and C++ parameter styles, we represent
+// intervals as a signed numeric of 2, 4, or 8 bytes, in the other
+// parameter styles it is represented as a string.
+//
+//  INTERVAL -> short or int or long or string
 //
 // Note: When changing this, a change in file ../sqludr/sqludr.cpp
 //       may be required as well (and other places, of course)
@@ -424,6 +431,14 @@ NABoolean LmTypeIsString(const NAType &t,
       // DOUBLE PRECISION = FLOAT(52)
       result = FALSE;
     }
+  }
+  else if (t.getTypeQualifier() == NA_INTERVAL_TYPE &&
+           (style == COM_STYLE_JAVA_OBJ ||
+            style == COM_STYLE_CPP_OBJ))
+  {
+    // in the object-oriented styles, use the native
+    // interval representation as a number
+    result = FALSE;
   }
 
   return result;

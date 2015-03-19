@@ -2829,8 +2829,13 @@ Int32 PerformWaitedReplyToClient(UdrGlobals *UdrGlob,
   NAList<UdrServerReplyStream *> &replyStreams =
         UdrGlob->getReplyStreams();
 
-  // Make sure we didn't get a reply already in the sendDataReply() above
-  if(!replyStreams.entries())
+  // Make sure we wait for a new message, even it it takes multiple
+  // I/Os due to multi-chunking. Also try to avoid hanging at this
+  // point, due to errors.
+  while (!replyStreams.entries() &&
+         ctrlConn->getConnection()->receiveIOPending() &&
+         ctrlConn->getConnection()->getState() != IpcConnection::ERROR_STATE &&
+         ctrlConn->getNumRequestors() > 0)
   {
     // Nothing on the queue, go ahead and wait...
     // we have performed a reply, now wait indefinitely

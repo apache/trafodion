@@ -31,25 +31,25 @@
 --- SQL operation complete.
 >>
 >>create procedure T100_io_nn(IN IN1 numeric(9,3), OUT OUT2 numeric(9,3))
-+>external name 't100.T100_io_nn' language java parameter style java no sql
++>external name 't100.T100_io_nn' language java no sql
 +>library T100;
 
 --- SQL operation complete.
 >>
 >>create procedure T100_io_bb(IN IN1 numeric(128,5), OUT OUT2 numeric(128,5))
-+>external name 't100.T100_io_nn' language java parameter style java no sql
++>external name 't100.T100_io_nn' language java no sql
 +>library T100;
 
 --- SQL operation complete.
 >>
 >>create procedure T100_io_bb_2(IN IN1 numeric(128,5), OUT OUT2 numeric(50,5))
-+>external name 't100.T100_io_nn' language java parameter style java no sql
++>external name 't100.T100_io_nn' language java no sql
 +>library T100;
 
 --- SQL operation complete.
 >>
 >>create procedure T100_io_ee(IN IN1 decimal(9,3), OUT OUT2 decimal(9,3))
-+>external name 't100.T100_io_ee' language java parameter style java no sql
++>external name 't100.T100_io_ee' language java no sql
 +>library T100;
 
 --- SQL operation complete.
@@ -259,6 +259,24 @@
 +>library T100;
 
 --- SQL operation complete.
+>>
+>>-- negative test case, wrong language and parameter style
+>>create procedure t100_invalidlang(in int, in int, out int)
++>external name 't100.divide' language c no sql
++>library T100;
+
+*** ERROR[3286] The specified routine type, routine language and possibly the name of the library are not supported together.
+
+--- SQL operation failed with errors.
+>>
+>>create procedure t100_invalidstyle(in int, in int, out int)
++>external name 't100.divide' language java parameter style sql no sql
++>library T100;
+
+*** ERROR[3280] A syntax error occurred. The specified parameter style is not supported for this type of routine.
+
+--- SQL operation failed with errors.
+>>
 >>
 >>-- Create a table for SUBQUERY operations
 >>create table  t100sq (A int);

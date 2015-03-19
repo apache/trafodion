@@ -277,7 +277,11 @@ public:
   InternalColumns(int idCol, int tsCol) :
        idCol_(idCol), tsCol_(tsCol) {}
 
-  // make data members public for this simple struct
+  int getIdColumn() const { return idCol_; }
+  int getTsColumn() const { return tsCol_; }
+
+private:
+
   int idCol_;
   int tsCol_;
 };
@@ -310,15 +314,15 @@ void Sessionize::describeParamsAndColumns(UDRInvocationInfo &info)
       // make sure the query didn't specify a conflicting
       // PARTITION BY clause
       if (queryPartInfo.getType() == PartitionInfo::PARTITION &&
-          (queryPartInfo.size() != 1 ||
-           queryPartInfo[0] != idCol))
+          (queryPartInfo.getNumEntries() != 1 ||
+           queryPartInfo.getColumnNum(0) != idCol))
         throw UDRException(38001,
                            "Query PARTITION BY not compatible with id column %s",
                            info.par().getString(0).c_str());
 
       // Set this user id column as the required PARTITION BY column
       newPartInfo.setType(PartitionInfo::PARTITION);
-      newPartInfo.push_back(idCol);
+      newPartInfo.addEntry(idCol);
       info.setChildPartitioning(0, newPartInfo);
     }
   else
@@ -391,23 +395,18 @@ void Sessionize::describeDataflowAndPredicates(UDRInvocationInfo &info)
   // column numbers for our id and timestamp columns!
   info.setUnusedPassthruColumns();
 
-  // first, get back the state saved in the previous call
-  InternalColumns *state =
-    dynamic_cast<InternalColumns *>(info.getUDRWriterCompileTimeData());
-  // TBD: remove this later
-  if (!state)
-    state = new InternalColumns(-1,-1);
-  // end of temp code
+  // That could have set our timestamp column or user id
+  // column as unused, however. So, make sure these two
+  // columns are definitely included.
 
-  // update the column numbers in the state
-  state->idCol_ = info.in().getColNum(info.par().getString(0));
-  state->tsCol_ = info.in().getColNum(info.par().getString(1));
-    
-  // The previous calls could have set our timestamp column or user id
-  // column as unused, however. Make sure these two columns are
-  // definitely included.
-  info.setChildColumnUsage(0, state->idCol_, ColumnInfo::USED);
-  info.setChildColumnUsage(0, state->tsCol_, ColumnInfo::USED);
+  // first, recompute the id and timestamp column numbers
+  InternalColumns state(
+         info.in().getColNum(info.par().getString(0)),
+         info.in().getColNum(info.par().getString(1)));
+
+  // then include the columns
+  info.setChildColumnUsage(0, state.getIdColumn(), ColumnInfo::USED);
+  info.setChildColumnUsage(0, state.getTsColumn(), ColumnInfo::USED);
 
   bool generatedColsAreUsed =
     (info.out().getColumn(0).getUsage() == ColumnInfo::USED ||
