@@ -324,6 +324,10 @@
   	<jackson.version>1.8.8</jackson.version>
   	<jasper.version>5.5.23</jasper.version>
   	<jaxb-api.version>2.1</jaxb-api.version>
+<!-- 
+    org.eclipse.jetty
+  	<jetty.version>9.2.6</jetty.version>
+ -->
   	<jetty.version>6.1.26</jetty.version>
   	<jetty.jspapi.version>6.1.14</jetty.jspapi.version>
   	<jersey.version>1.8</jersey.version>

@@ -22,7 +22,7 @@ import java.io.PrintWriter;
 import org.trafodion.rest.VersionAnnotation;
 import org.apache.commons.logging.Log;
 /**
- * This class finds the package info for dcs and the VersionAnnotation
+ * This class finds the package info for rest and the VersionAnnotation
  * information.  Taken from hadoop.  Only name of annotation is different.
  */
 public class VersionInfo {
@@ -36,7 +36,7 @@ public class VersionInfo {
   }
 
   /**
-   * Get the meta-data for the dcs package.
+   * Get the meta-data for the rest package.
    * @return package
    */
   static Package getPackage() {
@@ -44,8 +44,8 @@ public class VersionInfo {
   }
 
   /**
-   * Get the dcs version.
-   * @return the dcs version string, eg. "1.0.0-alpha"
+   * Get the rest version.
+   * @return the rest version string, eg. "1.0.0-alpha"
    */
   public static String getVersion() {
     return version != null ? version.version() : "Unknown";
@@ -60,7 +60,7 @@ public class VersionInfo {
   }
 
   /**
-   * The date that dcs was compiled.
+   * The date that rest was compiled.
    * @return the compilation date in unix date format
    */
   public static String getDate() {
@@ -76,7 +76,7 @@ public class VersionInfo {
   }
 
   /**
-   * Get the subversion URL for the root dcs directory.
+   * Get the subversion URL for the root rest directory.
    * @return the url
    */
   public static String getUrl() {

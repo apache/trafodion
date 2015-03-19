@@ -73,23 +73,11 @@ public class VersionResource extends ResourceBase {
     if (LOG.isDebugEnabled()) {
       LOG.debug("GET " + uriInfo.getAbsolutePath());
     }
-    //servlet.getMetrics().incrementRequests(1);
     ResponseBuilder response = Response.ok(new VersionModel(context));
     response.cacheControl(cacheControl);
-    //servlet.getMetrics().incrementSucessfulGetRequests(1);
     return response.build();
   }
  
-  /**
-   * Dispatch to StorageClusterVersionResource
-   */
-/*  
-  @Path("cluster")
-  public StorageClusterVersionResource getClusterVersionResource() 
-      throws IOException {
-    return new StorageClusterVersionResource();
-  }
-*/
   /**
    * Dispatch <tt>/version/rest</tt> to self.
    */

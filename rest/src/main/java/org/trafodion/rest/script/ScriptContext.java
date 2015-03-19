@@ -29,6 +29,8 @@ public final class ScriptContext {
 	private String hostName;
 	private String command;
 	private boolean debug=false;
+	private boolean stripStdOut=true;
+	private boolean stripStdErr=true;
 	private int exitCode=0;
 	private StringBuilder stdOut = new StringBuilder();
 	private StringBuilder stdErr = new StringBuilder();
@@ -50,6 +52,24 @@ public final class ScriptContext {
 	}
 	public String getCommand(){
 		return command;
+	}
+	public void setDebug(boolean value){
+	    this.debug=value;
+	}
+	public boolean getDebug(){
+	    return debug;
+	}
+	public void setStripStdOut(boolean value){
+	    this.stripStdOut=value;
+	}
+	public boolean getStripStdOut(){
+	    return stripStdOut;
+	}
+	public void setStripStdErr(boolean value){
+	    this.stripStdErr=value;
+	}
+	public boolean getStripStdErr(){
+	    return stripStdErr;
 	}
 	public void setExitCode(int value){
 		this.exitCode=value;

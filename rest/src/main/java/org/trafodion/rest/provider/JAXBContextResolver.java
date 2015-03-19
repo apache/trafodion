@@ -24,8 +24,6 @@ import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 import javax.xml.bind.JAXBContext;
 
-import org.trafodion.rest.model.ServerListModel;
-import org.trafodion.rest.model.ServerModel;
 import org.trafodion.rest.model.VersionModel;
 
 import com.sun.jersey.api.json.JSONConfiguration;
@@ -45,8 +43,6 @@ public class JAXBContextResolver implements ContextResolver<JAXBContext> {
 	private final Set<Class<?>> types;
 
 	private final Class<?>[] cTypes = {
-	  ServerListModel.class,
-      ServerModel.class,
  	  VersionModel.class
 	};
 

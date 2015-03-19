@@ -26,6 +26,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -51,46 +52,29 @@ public class RootResource extends ResourceBase {
 	public RootResource() throws IOException {
 		super();
 	}
-	
-	@GET
-	@Produces({MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON})
-	public Response get(final @Context UriInfo uriInfo) {
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("GET " + uriInfo.getAbsolutePath());
-		}
-		
-		try {
-			return new WorkloadResource().get(uriInfo);
-		} catch (IOException e) {
-			return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-			.type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
-			.build();
-		}
-
-	}
 
 	@Path("/v1/servers")
 	public ServerResource getServerResource() throws IOException {
 		//To test:
-		//curl -v -X GET -H "Accept: application/json" http://<Rest server IP address>:8080/v1/servers
+		//curl -v -L -k -X GET -H "Accept: application/json" http://<Rest server IP address>:8080/v1/servers
 		//
 		return new ServerResource();
 	}
 	
-	@Path("/v1/workloads")
-	public WorkloadResource getWorkloadResource() throws IOException { 
-		//To test:
-		//curl -v -X GET -H "Accept: application/json" http://<Rest server IP address>:8080/v1/workloads
-		//
-		return new WorkloadResource();
-	}
-
-	@Path("/v1/version")
-	public VersionResource getVersionResource() throws IOException {
-		//To test:
-		//curl -v -X GET -H "Accept: application/json" http://<Rest server IP address>:8080/v1/version
-		//
-		return new VersionResource();
-	}
+  @Path("/v1/transactions")
+   public TransactionsResource getTransactionsTm() throws IOException {
+       //To test:
+       //curl -v -L -k -X GET -H "Accept: application/json" http://<Rest server IP address>:8080/v1/transactions 
+       //
+       return new TransactionsResource();
+   }  
+	
+   @Path("/v1/version")
+   public VersionResource getVersionResource() throws IOException {
+       //To test:
+       //curl -v -L -k -X GET -H "Accept: application/json" http://<Rest server IP address>:8080/v1/version
+       //
+       return new VersionResource();
+   }
 
 }

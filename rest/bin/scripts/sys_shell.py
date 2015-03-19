@@ -28,9 +28,15 @@ def runScript ():
     proc = subprocess.Popen(command,shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     scriptcontext.setExitCode(proc.wait())
     for line in proc.stdout:
-         scriptcontext.getStdOut().append(line.rstrip())
+         if scriptcontext.getStripStdOut() == True :
+            scriptcontext.getStdOut().append(line.rstrip())
+         else :
+            scriptcontext.getStdOut().append(line)
     for line in proc.stderr:
-         scriptcontext.getStdErr().append(line.rstrip())
+         if scriptcontext.getStripStdErr() == True :
+            scriptcontext.getStdErr().append(line.rstrip())
+         else :
+           scriptcontext.getStdErr().append(line)         
          
     if isDebug() == True :
         print 'exitCode[%d]' % scriptcontext.getExitCode()

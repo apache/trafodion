@@ -28,13 +28,14 @@
 function Usage {
 
     echo 
-    echo "Usage: $0 [ -c <cc> | -i <nn> | -d <nn> | -h | -f | -q | -v | -r ]"
+    echo "Usage: $0 [ -c <cc> | -i <nn> | -d <nn> | -h | -f | -q | -v | -r | -j ]"
     echo 
     echo "-i <nn>  Number of times the check for SQ processes be done (Default $max_checks)"
     echo "-d <nn>  Duration of sleep (in seconds) between each check  (Default $sleep_duration)"
     echo "-c <cc>  Which component to check: [all | dtm | dcs | rms ] (Default $sqck_component)"
     echo "-f       fast - (it's like running $0 -i 1 -d 0)"
     echo "-r       reset the iteration counter if the process count increases (as compared to the count in the last iteration)"
+    echo "-j       Format the output in JSON. Used by REST server"
     echo "-h       Help"
     echo "-v       Verbose"
     echo "-q       Quiet"
@@ -44,7 +45,7 @@ function Usage {
 
 function GetOpts {
 
-    while getopts "c:i:d:fqvrh" arg
+    while getopts "c:i:d:fqvrjh" arg
       do
       case $arg in 
       c)
@@ -81,6 +82,9 @@ function GetOpts {
       r)
           reset_counter=1
           ;;
+      j)
+          json_output=1
+          ;;
       h)
       Usage;
       exit 1;
@@ -105,11 +109,13 @@ declare -i max_checks
 declare -i sleep_duration
 declare -i sqc_verbose
 declare -i reset_counter
+declare -i json_output
 
 let max_checks=2
 let sleep_duration=1
 let sqc_verbose=0
 let reset_counter=0
+let json_output=0
 
 # Set debug_display to 1 to eanble debugging display of values
 let debug_display=0
@@ -246,7 +252,9 @@ if [[ $? != 0 ]]; then
     exit 3
 fi
 
-echo  "Checking if processes are up."
+if [ $json_output '==' 0 ]; then
+    echo  "Checking if processes are up."
+fi
 
 declare -i pcmp_result
 declare -i total_procs_result
@@ -260,7 +268,9 @@ do
   current_time_seconds=$(date +%s)
   let elapsed_seconds=current_time_seconds-begin_time_seconds
 
+if [ $json_output '==' 0 ]; then
   echo -en "\rChecking attempt: $num_checks; user specified max: $max_checks. Execution time in seconds: $elapsed_seconds."
+fi
 
   # Get the current process status (all processes)
   sqps > $sq_tmp_ps 2>&1
@@ -392,18 +402,20 @@ do
   fi
   if [ $cmp_result '==' 1 ]; then
       let sq_up=1
-      if [[ $sqck_component == "all" ]]; then
-          if ([ $act_lnode_up_cnt == $cfg_lnode_cnt ] ); then
-              echo
-              echo
-              echo "The SQ environment is up!"
-          else
-              echo
-              echo
-              echo "The SQ environment is up! Node(s) are down and environment is in a degraded state."
-              echo
-              echo
-              sqshell -c node info
+      if [ $json_output '==' 0 ]; then
+          if [[ $sqck_component == "all" ]]; then
+              if ([ $act_lnode_up_cnt == $cfg_lnode_cnt ] ); then
+                  echo
+                  echo
+                  echo "The SQ environment is up!"
+              else
+                  echo
+                  echo
+                  echo "The SQ environment is up! Node(s) are down and environment is in a degraded state."
+                  echo
+                  echo
+                  sqshell -c node info
+              fi
           fi
       fi
       break
@@ -424,33 +436,53 @@ fi
 
 rm -f $sq_tmp_ps
 
-echo
+if [ $json_output '==' 0 ]; then
+    echo
 
-if [[ $sqck_component == "all" ]]; then
-    if [ $sq_up '==' 1 ]; then
-        if [ $pcmp_result '==' 1 ]; then
+    if [[ $sqck_component == "all" ]]; then
+        if [ $sq_up '==' 1 ]; then
+            if [ $pcmp_result '==' 1 ]; then
+                echo
+                echo "The SQ environment is partially up and operational."
+            fi
+        else
             echo
-            echo "The SQ environment is partially up and operational."
+            echo "The SQ environment is not up all, or partially up and not operational. Check the logs."
         fi
-    else
-        echo
-        echo "The SQ environment is not up all, or partially up and not operational. Check the logs."
     fi
 fi
 
-echo
-echo -e "Process\t\tConfigured\tActual\t    Down"
-echo -e "-------\t\t----------\t------\t    ----"
-if [[ $sqck_component == "all" ]]; then
-    echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}"
-    echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}"
-    echo -e "MXOSRVR\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt}\n"
-elif [[ $sqck_component == "dtm" ]]; then
-    echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}\n"
-elif [[ $sqck_component == "rms" ]]; then
-    echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}\n"
-elif [[ $sqck_component == "dcs" ]]; then
-    echo -e "MXOSRVR\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt}\n"
+if [ $json_output '==' 1 ]; then
+    if [[ $sqck_component == "all" ]]; then
+        json_dtm=""\""PROCESS"\"":"\""DTM"\"","\""CONFIGURED"\"":$cfg_dtm_cnt,"\""ACTUAL"\"":$act_dtm_cnt,"\""DOWN"\"":\"${down_dtms[*]}\""
+        json_rms=""\""PROCESS"\"":"\""RMS"\"","\""CONFIGURED"\"":$cfg_rms_cnt,"\""ACTUAL"\"":$act_rms_cnt,"\""DOWN"\"":\"${down_rms[*]}\""
+        json_mxosrvr=""\""PROCESS"\"":"\""MXOSRVR"\"","\""CONFIGURED"\"":$cfg_mxo_cnt,"\""ACTUAL"\"":$act_mxo_cnt,"\""DOWN"\"":\"${act_mxo_down_cnt}\""
+        echo "[{$json_dtm},{$json_rms},{$json_mxosrvr}]" 
+    elif [[ $sqck_component == "dtm" ]]; then
+        json_dtm=""\""PROCESS"\"":"\""DTM"\"","\""CONFIGURED"\"":$cfg_dtm_cnt,"\""ACTUAL"\"":$act_dtm_cnt,"\""DOWN"\"":\"${down_dtms[*]}\""
+        echo "[{$json_dtm}]" 
+    elif [[ $sqck_component == "rms" ]]; then
+        json_rms=""\""PROCESS"\"":"\""RMS"\"","\""CONFIGURED"\"":$cfg_rms_cnt,"\""ACTUAL"\"":$act_rms_cnt,"\""DOWN"\"":\"${down_rms[*]}\""
+        echo "[{$json_rms}]" 
+    elif [[ $sqck_component == "dcs" ]]; then
+        json_mxosrvr=""\""PROCESS"\"":"\""MXOSRVR"\"","\""CONFIGURED"\"":$cfg_mxo_cnt,"\""ACTUAL"\"":$act_mxo_cnt,"\""DOWN"\"":\"${act_mxo_down_cnt}\""
+        echo "[{$json_mxosrvr}]" 
+    fi
+else
+    echo
+    echo -e "Process\t\tConfigured\tActual\t    Down"
+    echo -e "-------\t\t----------\t------\t    ----"
+    if [[ $sqck_component == "all" ]]; then
+        echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}"
+        echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}"
+        echo -e "MXOSRVR\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt}\n"
+    elif [[ $sqck_component == "dtm" ]]; then
+        echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}\n"
+    elif [[ $sqck_component == "rms" ]]; then
+        echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}\n"
+    elif [[ $sqck_component == "dcs" ]]; then
+        echo -e "MXOSRVR\t\t$cfg_mxo_cnt\t\t$act_mxo_cnt\t    ${act_mxo_down_cnt}\n"
+    fi
 fi
 
 if [ $sq_up '==' 1 ]; then
@@ -460,8 +492,10 @@ if [ $sq_up '==' 1 ]; then
         exit 0;
     fi
 elif ( [ $total_procs_result '==' 0 ] ); then
-    echo
-    echo "The SQ environment is down."
+    if [ $json_output '==' 0 ]; then
+        echo
+        echo "The SQ environment is down."]
+    fi
     exit -1;
 else
     exit 2;

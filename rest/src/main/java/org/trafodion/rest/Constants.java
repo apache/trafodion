@@ -83,9 +83,14 @@ public final class Constants {
   /** Default wait time for the recoverable zookeeper */
   public static final long DEFAULT_ZOOKEPER_RECOVERABLE_WAITIME = 10000;
 
-  /** Parameter name for the root dir in ZK for this cluster */
+  /** Parameter name for the dcs root dir in ZK for this cluster */
   public static final String ZOOKEEPER_ZNODE_PARENT = "zookeeper.znode.parent";
-  public static final String DEFAULT_ZOOKEEPER_ZNODE_PARENT = "/rest";
+  public static final String DEFAULT_ZOOKEEPER_ZNODE_PARENT = "/dcs";
+  public static final String DEFAULT_ZOOKEEPER_ZNODE_MASTER = DEFAULT_ZOOKEEPER_ZNODE_PARENT + "/master";
+  public static final String DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER = DEFAULT_ZOOKEEPER_ZNODE_PARENT + "/leader";
+  public static final String DEFAULT_ZOOKEEPER_ZNODE_SERVERS = DEFAULT_ZOOKEEPER_ZNODE_PARENT + "/servers";
+  public static final String DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING = DEFAULT_ZOOKEEPER_ZNODE_SERVERS + "/running";
+  public static final String DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED = DEFAULT_ZOOKEEPER_ZNODE_SERVERS + "/registered";
  
   /**
    * Parameter name for the limit on concurrent client-side zookeeper
@@ -162,9 +167,6 @@ public final class Constants {
   /** The sys_shell script name */
   public static final String SYS_SHELL_SCRIPT_NAME = "sys_shell.py";
   
-  /** The servers script name */
-  public static final String SERVERS_SCRIPT_NAME = "servers.py";
-   
   /** Rest Trafodion query tools is not enabled */
   public static final boolean REST_MASTER_TRAFODION_QUERY_TOOLS_IS_NOT_ENABLED = false;
 
@@ -211,6 +213,21 @@ public final class Constants {
   /** Default value for Rest authorization feature */
   public static final boolean DEFAULT_REST_MASTER_AUTHORIZATION = REST_MASTER_AUTHORIZATION_IS_NOT_ENABLED;
 
+   /** Rest ssl password */
+  public static final String REST_SSL_PASSWORD = "rest.ssl.password";
+  
+  /** Rest ssl keystore*/
+  public static final String REST_KEYSTORE = "rest.keystore";
+  
+  /** Default ssl keystore */
+  public static final String DEFAULT_REST_KEYSTORE = "${rest.conf.dir}/rest-keystore";
+    
+  /** Rest keystore command */
+  public static final String REST_KEYSTORE_COMMAND = "rest.keystore.command";
+  
+  /** Rest Keystore creation command */
+  public static final String DEFAULT_REST_KEYSTORE_COMMAND =  "rm rest.keystore;cd ${rest.conf.dir};keytool -genkey -alias rest -keyalg RSA -dname \"cn=localhost,ou=rest,o=HP,l=Palo Alto,st=CA,c=US\" -keypass rest.ssl.password -storepass rest.ssl.password -keystore rest-keystore -validity 36500";
+  
   private Constants() {
     // Can't be instantiated with this ctor.
   }
