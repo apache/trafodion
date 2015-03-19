@@ -190,55 +190,6 @@ int ndcsStopProcess(NSK_PROCESS_HANDLE phandle, int attempts)
     return nskError;
 }
 
-//moved to nsk/SrvrMain_ps.cpp
-/************************************************************************************************************************************************
- // Obtain the local host name and ip address
- int host_addr_get( char* iTcpProcessName, char* IpAddress, char* HostName )
- {
- 	int					sts = CEE_SUCCESS;
- 	ip_address			sIpAddress;
- 	char				   TcpProcessName[50];
-    char              tmpBuf[141];
- 	IpAddress[0] = 0;
- 	HostName[0] = 0;
- 
- 	sprintf(TcpProcessName,"%s.%s",GTransport.myNodename,iTcpProcessName);
- 	socket_set_inet_name(TcpProcessName);
- 
- 	sIpAddress.u.ipaddr = gethostid();
- 	if (sIpAddress.u.ipaddr == 0)
- 	{
- 		//sprintf( TfdsStrBuf1, "Server:host_addr_get:gethostid failed, IP Address not configured correctly on segment %s",GTransport.myNodename);
- 		sprintf( tmpBuf, "Server:host_addr_get:gethostid failed, IP Address not configured correctly on segment %s",GTransport.myNodename);
- 		sts = CEE_UNKNOWN;
- 		goto error;
- 	}
- 
- 	sprintf(IpAddress, "%d.%d.%d.%d", sIpAddress.u.ip[0],sIpAddress.u.ip[1],sIpAddress.u.ip[2],sIpAddress.u.ip[3]);
- 
- 	if (gethostname(HostName, MAX_HOST_NAME_LEN))
- 	{
- 		//sprintf( TfdsStrBuf1, "SrvrMain:host_addr_get:gethostname errno %d",errno);
- 		sprintf( tmpBuf, "SrvrMain:host_addr_get:gethostname errno %d",errno);
- 		sts = CEE_UNKNOWN;
- 		goto error;
- 	}
- 
- 	//sprintf( TfdsStrBuf1, "Server: IPaddr = %s, hostname = %s",IpAddress, HostName);
- 	sprintf( tmpBuf, "Server: IPaddr = %s, hostname = %s",IpAddress, HostName);
- 	SendEventMsg(MSG_SRVR_ENV, EVENTLOG_INFORMATION_TYPE,
- 		srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVICE, srvrGlobal->srvrObjRef,
- 	//		1, TfdsStrBuf1);
- 			1, tmpBuf);
- 	return CEE_SUCCESS;
- error:
- 	SendEventMsg(MSG_KRYPTON_ERROR, EVENTLOG_ERROR_TYPE,
- 		srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVICE, srvrGlobal->srvrObjRef,
- 	//		1, TfdsStrBuf1);
- 		   1, tmpBuf);
- 	return sts;
- }
-************************************************************************************************************************************************/
 
 BOOL checkProcess( char* strProcessName )
 {
