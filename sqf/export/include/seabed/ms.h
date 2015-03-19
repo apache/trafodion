@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -527,6 +527,7 @@ typedef struct MS_Mon_Msg {
         struct MS_Mon_ProcessDeath_def        death;
         struct MS_Mon_NodeDown_def            down;
         struct MS_Mon_Open_def                open;
+        struct MS_Mon_NodePrepare_def         prepare;
         struct MS_Mon_NewProcess_Notice_def   process_created;
         struct MS_Mon_NodeQuiesce_def         quiesce;
         struct MS_Mon_Shutdown_def            shutdown;
