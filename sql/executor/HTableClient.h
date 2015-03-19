@@ -7,6 +7,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef org_trafodion_sql_HBaseAccess_HTableClient_GET_ROW
+#define org_trafodion_sql_HBaseAccess_HTableClient_GET_ROW 1L
+#undef org_trafodion_sql_HBaseAccess_HTableClient_BATCH_GET
+#define org_trafodion_sql_HBaseAccess_HTableClient_BATCH_GET 2L
+#undef org_trafodion_sql_HBaseAccess_HTableClient_SCAN_FETCH
+#define org_trafodion_sql_HBaseAccess_HTableClient_SCAN_FETCH 3L
 /*
  * Class:     org_trafodion_sql_HBaseAccess_HTableClient
  * Method:    setResultInfo
@@ -21,6 +27,14 @@ JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setResult
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_cleanup
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     org_trafodion_sql_HBaseAccess_HTableClient
+ * Method:    setJavaObject
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setJavaObject
   (JNIEnv *, jobject, jlong);
 
 #ifdef __cplusplus
