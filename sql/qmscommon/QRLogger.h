@@ -166,7 +166,8 @@ public:
     QRL_ESP,
     QRL_LOB,
     QRL_SSMP,
-    QRL_SSCP
+    QRL_SSCP,
+    QRL_UDR
   };
 
   /**

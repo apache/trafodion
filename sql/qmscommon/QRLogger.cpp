@@ -40,6 +40,7 @@ const char CAT_SQL_ESP[]                       = "SQL.ESP";
 const char CAT_SQL_LOB[]                       = "SQL.LOB";
 const char CAT_SQL_SSMP[]                      = "SQL.SSMP";
 const char CAT_SQL_SSCP[]                      = "SQL.SSCP";
+const char CAT_SQL_UDR[]                      = "SQL.UDR";
 
 // hdfs
 const char CAT_SQL_HDFS_JNI_TOP[]              =  "SQL.HDFS.JniTop";
@@ -188,6 +189,7 @@ NABoolean QRLogger::initLog4cpp(const char* configFileName)
     case QRL_MXCMP:
     case QRL_ESP:
     case QRL_MXEXE:
+    case QRL_UDR:
       getMyTopAncestor(logFileSuffix);
       break;
     case QRL_LOB:
@@ -285,6 +287,9 @@ const char* QRLogger::getMyDefaultCat()
     case QRL_SSCP:
       myCat = CAT_SQL_SSCP;
       break;
+    case QRL_UDR:
+      myCat = CAT_SQL_UDR;
+      break;
 
     default:
       myCat = CAT_SQL;   
@@ -344,7 +349,11 @@ void QRLogger::introduceSelf ()
       break;
     case QRL_SSCP:
       snprintf (msg, 300, "%s,,, An sscp  process is launched.", procInfo.data());
-      break;     
+      break;
+   case QRL_UDR:
+      snprintf (msg, 300, "%s,,, A udrserver  process is launched.", procInfo.data());
+      break;
+           
     }
 
    log4cpp::Category::getInstance(myCat).info(msg);

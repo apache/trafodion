@@ -98,14 +98,16 @@ ExLob::~ExLob()
       fdDesc_ = NULL;
     }
     
-     
+    /*   
+    Commenting this out. It is causing cores during hive access.
+    Note :  Not calling hdfsDisconnect this will cause a leak that needs to be 
+            fixed at a different place  
     if (fs_){
      hdfsDisconnect(fs_);
     fs_=NULL;
-    }
+    
+    }*/
    
-
-
 }
 
 Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode, 
