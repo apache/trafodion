@@ -31,45 +31,43 @@
 #include "PortProcessCalls.h"
 #include "seabed/ms.h"
 #include "seabed/fserr.h"
-
 // SQL categories
-const char CAT_SQL[]                           = "SQL";
-const char CAT_SQL_EXE[]                       = "SQL.EXE";
-const char CAT_SQL_COMP[]                      = "SQL.COMP";
-const char CAT_SQL_ESP[]                       = "SQL.ESP";
-const char CAT_SQL_LOB[]                       = "SQL.LOB";
-const char CAT_SQL_SSMP[]                      = "SQL.SSMP";
-const char CAT_SQL_SSCP[]                      = "SQL.SSCP";
-const char CAT_SQL_UDR[]                      = "SQL.UDR";
-
+std::string CAT_SQL                           = "SQL";
+std::string CAT_SQL_EXE                       = "SQL.EXE";
+std::string CAT_SQL_COMP                      = "SQL.COMP";
+std::string CAT_SQL_ESP                       = "SQL.ESP";
+std::string CAT_SQL_LOB                       = "SQL.LOB";
+std::string CAT_SQL_SSMP                      = "SQL.SSMP";
+std::string CAT_SQL_SSCP                      = "SQL.SSCP";
+std::string CAT_SQL_UDR                       = "SQL.UDR";
 // hdfs
-const char CAT_SQL_HDFS_JNI_TOP[]              =  "SQL.HDFS.JniTop";
-const char CAT_SQL_HDFS_SEQ_FILE_READER[]      =  "SQL.HDFS.SeqFileReader";
-const char CAT_SQL_HDFS_SEQ_FILE_WRITER[]      =  "SQL.HDFS.SeqFileWriter";
-const char CAT_SQL_HDFS_ORC_FILE_READER[]      =  "SQL.HDFS.OrcFileReader";
-const char CAT_SQL_HBASE[]                     =  "SQL.HBase";
+std::string CAT_SQL_HDFS_JNI_TOP              =  "SQL.HDFS.JniTop";
+std::string CAT_SQL_HDFS_SEQ_FILE_READER      =  "SQL.HDFS.SeqFileReader";
+std::string CAT_SQL_HDFS_SEQ_FILE_WRITER      =  "SQL.HDFS.SeqFileWriter";
+std::string CAT_SQL_HDFS_ORC_FILE_READER      =  "SQL.HDFS.OrcFileReader";
+std::string CAT_SQL_HBASE                     =  "SQL.HBase";
 
 // these categories are currently not used 
-const char CAT_SQL_QMP[]                       = "SQL.Qmp";
-const char CAT_SQL_QMM[]                       = "SQL.Qmm";
-const char CAT_SQL_COMP_QR_DESC_GEN[]          = "SQL.Comp.DescGen";
-const char CAT_SQL_COMP_QR_HANDLER[]           = "SQL.Comp.QRHandler";
-const char CAT_SQL_COMP_QR_COMMON[]            = "SQL.COMP.QRCommon";
-const char CAT_SQL_COMP_QR_IPC[]               = "SQL.COMP.QRCommon.IPC";
-const char CAT_SQL_COMP_MV_REFRESH[]           = "SQL.COMP.MV.REFRESH";
-const char CAT_SQL_COMP_MVCAND[]               = "SQL.Comp.MVCandidates";
-const char CAT_SQL_MEMORY[]                    = "SQL.Memory";
-const char CAT_SQL_COMP_RANGE[]                = "SQL.COMP.Range";
-const char CAT_QR_TRACER[]                     = "QRCommon.Tracer";
-const char CAT_SQL_QMS[]                       = "SQL.Qms";
-const char CAT_SQL_QMS_MAIN[]                  = "SQL.Qms.Main";
-const char CAT_SQL_QMS_INIT[]                  = "SQL.Qms.Init";
-const char CAT_SQL_MVMEMO_JOINGRAPH[]          = "SQL.Qms.MvmemoJoingraph";
-const char CAT_SQL_MVMEMO_STATS[]              = "SQL.Qms.MvmemoStats";
-const char CAT_SQL_QMS_GRP_LATTCE_INDX[]       = "SQL.Qms.LatticeIndex";
-const char CAT_SQL_QMS_MATCHTST_MVDETAILS[]    = "SQL.Qms.MatchTest";
-const char CAT_SQL_QMS_XML[]                   = "SQL.Qms.XML";
-const char CAT_SQL_COMP_XML[]                  = "SQL.Comp.XML";
+std::string CAT_SQL_QMP                       = "SQL.Qmp";
+std::string CAT_SQL_QMM                       = "SQL.Qmm";
+std::string CAT_SQL_COMP_QR_DESC_GEN          = "SQL.Comp.DescGen";
+std::string CAT_SQL_COMP_QR_HANDLER           = "SQL.Comp.QRHandler";
+std::string CAT_SQL_COMP_QR_COMMON            = "SQL.COMP.QRCommon";
+std::string CAT_SQL_COMP_QR_IPC               = "SQL.COMP.QRCommon.IPC";
+std::string CAT_SQL_COMP_MV_REFRESH           = "SQL.COMP.MV.REFRESH";
+std::string CAT_SQL_COMP_MVCAND               = "SQL.Comp.MVCandidates";
+std::string CAT_SQL_MEMORY                    = "SQL.Memory";
+std::string CAT_SQL_COMP_RANGE                = "SQL.COMP.Range";
+std::string CAT_QR_TRACER                     = "QRCommon.Tracer";
+std::string CAT_SQL_QMS                       = "SQL.Qms";
+std::string CAT_SQL_QMS_MAIN                  = "SQL.Qms.Main";
+std::string CAT_SQL_QMS_INIT                  = "SQL.Qms.Init";
+std::string CAT_SQL_MVMEMO_JOINGRAPH          = "SQL.Qms.MvmemoJoingraph";
+std::string CAT_SQL_MVMEMO_STATS              = "SQL.Qms.MvmemoStats";
+std::string CAT_SQL_QMS_GRP_LATTCE_INDX       = "SQL.Qms.LatticeIndex";
+std::string CAT_SQL_QMS_MATCHTST_MVDETAILS    = "SQL.Qms.MatchTest";
+std::string CAT_SQL_QMS_XML                   = "SQL.Qms.XML";
+std::string CAT_SQL_COMP_XML                  = "SQL.Comp.XML";
 
 // **************************************************************************
 // **************************************************************************
@@ -256,7 +254,7 @@ NABoolean QRLogger::initLog4cpp(const char* configFileName)
 
 // **************************************************************************
 // **************************************************************************
-void QRLogger::initCategory(const char* cat, log4cpp::Priority::PriorityLevel defaultPriority)
+void QRLogger::initCategory(std::string &cat, log4cpp::Priority::PriorityLevel defaultPriority)
 {
   log4cpp::Category& catObj = log4cpp::Category::getInstance(cat);
   catObj.setAppender(fileAppender_);
@@ -264,38 +262,36 @@ void QRLogger::initCategory(const char* cat, log4cpp::Priority::PriorityLevel de
 }
 
 
-const char* QRLogger::getMyDefaultCat()
+std::string &QRLogger::getMyDefaultCat()
 {
-  const char* myCat;
   switch (module_)
     {
     case QRL_MXCMP:
-      myCat = CAT_SQL_COMP;
+      return CAT_SQL_COMP;
       break;
     case QRL_MXEXE:
-      myCat = CAT_SQL_EXE;
+      return CAT_SQL_EXE;
       break;
     case QRL_ESP:
-      myCat = CAT_SQL_ESP;
+      return CAT_SQL_ESP;
       break;
     case QRL_LOB:
-      myCat = CAT_SQL_LOB;
+      return CAT_SQL_LOB;
       break;
     case QRL_SSMP:
-      myCat = CAT_SQL_SSMP;
+      return CAT_SQL_SSMP;
       break;
     case QRL_SSCP:
-      myCat = CAT_SQL_SSCP;
+      return CAT_SQL_SSCP;
       break;
     case QRL_UDR:
-      myCat = CAT_SQL_UDR;
+      return CAT_SQL_UDR;
       break;
 
     default:
-      myCat = CAT_SQL;   
+      return CAT_SQL;   
     }
 
-  return myCat;
 }
 
 const char*  QRLogger::getMyProcessInfo()
@@ -319,7 +315,7 @@ const char*  QRLogger::getMyProcessInfo()
 void QRLogger::introduceSelf ()
 {
   char msg[300];
-  const char* myCat = getMyDefaultCat(); 
+  std::string &myCat = getMyDefaultCat(); 
   // save previous default priority
   log4cpp::Priority::PriorityLevel defaultPriority = (log4cpp::Priority::PriorityLevel) log4cpp::Category::getInstance(myCat).getPriority();
 
@@ -378,7 +374,7 @@ void QRLogger::introduceSelf ()
 // LCOV_EXCL_START :rfi
 void QRLogger::logError(const char* file, 
                             Int32       line, 
-                            const char* cat,
+                            std::string &cat,
                             logLevel    level,
                             const char* logMsgTemplate...)
 {
@@ -422,7 +418,7 @@ void QRLogger::logError(const char* file,
 // stream is merged into the mainline. For now, we avoid making changes that
 // affect MVQR to minimize merge difficulties.
 void QRLogger::logQVP(ULng32 eventId,
-                          const char* cat,
+                          std::string &cat,
                           logLevel    level,
                           const char* logMsgTemplate...)
 {
@@ -442,7 +438,7 @@ void QRLogger::logQVP(ULng32 eventId,
 }
 
 
-void QRLogger::logDiags(ComDiagsArea* diagsArea, const char* cat)
+void QRLogger::logDiags(ComDiagsArea* diagsArea, std::string &cat)
 {
   const NAWchar* diagMsg;
   NAString* diagStr;
@@ -479,7 +475,7 @@ void QRLogger::logDiags(ComDiagsArea* diagsArea, const char* cat)
 // **************************************************************************
 CommonTracer::CommonTracer(const char*   fnName,
                            CommonLogger& logger,
-                           const char*   logCategory,
+                           std::string &logCategory,
                            TraceLevel    level,
                            const char*   file,
                            Int32         line)
@@ -531,35 +527,7 @@ CommonTracer::~CommonTracer()
   }
 }
 
-
-// **************************************************************************
-// The generic message logging method for any message type and length.
-// adds information about the current process
-// **************************************************************************
-void QRLogger::log(const char  *cat,
-                   logLevel    level,
-                   const char  *logMsgTemplate...)
-{
-  log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  if (myCat.getPriority() < level)
-    return;
-
-  va_list args ;
-  va_start(args, logMsgTemplate);
-
-  char* buffer = buildMsgBuffer(cat, level, logMsgTemplate, args);
-  NAString logData = QRLogger::instance().getMyProcessInfo();
-  // SQLCode and Query id are not provided in this flavor
-  logData += ",,,";
-  logData += buffer;
-  log1(cat, level, logData.data());
-  delete [] buffer;
-
-  va_end(args);
-}
-
-
-void QRLogger::log(const char  *cat,
+void QRLogger::log(std::string &cat,
                    logLevel    level,
                    int         sqlCode,
                    const char  *queryId,
@@ -589,6 +557,28 @@ void QRLogger::log(const char  *cat,
       logData += queryId;
     }
   logData += ", ";
+  logData += buffer;
+  log1(cat, level, logData.data());
+  delete [] buffer;
+
+  va_end(args);
+}
+
+void QRLogger::log(std::string &cat,
+                   logLevel    level,
+                   const char  *logMsgTemplate...)
+{
+  log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
+  if (myCat.getPriority() < level)
+    return;
+
+  va_list args ;
+  va_start(args, logMsgTemplate);
+
+  char* buffer = buildMsgBuffer(cat, level, logMsgTemplate, args);
+  NAString logData = QRLogger::instance().getMyProcessInfo();
+  // SQLCode and Query id are not provided in this flavor
+  logData += ",,,";
   logData += buffer;
   log1(cat, level, logData.data());
   delete [] buffer;

@@ -105,16 +105,15 @@ CommonLogger& CommonLogger::instance()
 // This method should be used when the work of producing the logging text
 // is expensive, such as a join graph or an extensive dump.
 // **************************************************************************
-bool CommonLogger::isCategoryInDebug(const char* cat)
+bool CommonLogger::isCategoryInDebug(std::string &cat)
 {
   log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
   return (myCat.getPriority() >= log4cpp::Priority::DEBUG);
 }
-
 // **************************************************************************
 // The generic message logging method for any message type and length.
 // **************************************************************************
-void CommonLogger::log1(const char* cat,
+void CommonLogger::log1(std::string &cat,
                         logLevel    level,
                         const char* cmsg,
                         unsigned int eventId)
@@ -160,7 +159,7 @@ void CommonLogger::log1(const char* cat,
   }
 }
 
-char* CommonLogger::buildMsgBuffer(const char* cat,
+char* CommonLogger::buildMsgBuffer(std::string &cat,
                                    logLevel    level,
                                    const char* logMsgTemplate,
                                    va_list     args)
@@ -224,11 +223,11 @@ char* CommonLogger::buildMsgBuffer(const char* cat,
   va_end(args2);
   return buffer;
 }
-
+//
 // **************************************************************************
 // The generic message logging method for any message type and length.
 // **************************************************************************
-void CommonLogger::log(const char* cat,
+void CommonLogger::log(std::string &cat,
                        logLevel    level,
                        const char* logMsgTemplate...)
 {

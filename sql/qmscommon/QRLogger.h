@@ -24,45 +24,44 @@
 #include "NABoolean.h"
 #include "NAString.h"
 #include "CommonLogger.h"
-
 // -----  these categories are currently not used
 // qmscomon
-extern const char CAT_SQL_COMP_QR_COMMON[];
-extern const char CAT_SQL_COMP_QR_IPC[];
-extern const char CAT_SQL_MEMORY[];
-extern const char CAT_SQL_COMP_RANGE[];
-extern const char CAT_QR_TRACER[];
+extern std::string CAT_SQL_COMP_QR_COMMON;
+extern std::string CAT_SQL_COMP_QR_IPC;
+extern std::string CAT_SQL_MEMORY;
+extern std::string CAT_SQL_COMP_RANGE;
+extern std::string CAT_QR_TRACER;
 // QMM
-extern const char CAT_SQL_QMM[];
+extern std::string CAT_SQL_QMM;
 // QMP
-extern const char CAT_SQL_QMP[];
+extern std::string CAT_SQL_QMP;
 // QMS
-extern const char CAT_SQL_QMS_MAIN[];
-extern const char CAT_SQL_QMS_INIT[];
-extern const char CAT_SQL_QMS_MVMEMO_JOINGRAPH[];
-extern const char CAT_SQL_QMS_MVMEMO_STATS[];
-extern const char CAT_SQL_QMS_GRP_LATTCE_INDX[];
-extern const char CAT_SQL_QMS_MATCHTST_MVDETAILS[];
-extern const char CAT_SQL_QMS_XML[];
+extern std::string CAT_SQL_QMS_MAIN;
+extern std::string CAT_SQL_QMS_INIT;
+extern std::string CAT_SQL_QMS_MVMEMO_JOINGRAPH;
+extern std::string CAT_SQL_QMS_MVMEMO_STATS;
+extern std::string CAT_SQL_QMS_GRP_LATTCE_INDX;
+extern std::string CAT_SQL_QMS_MATCHTST_MVDETAILS;
+extern std::string CAT_SQL_QMS_XML;
 
 // MXCMP
-extern const char CAT_SQL_COMP_QR_DESC_GEN[];
-extern const char CAT_SQL_COMP_QR_HANDLER[];
-extern const char CAT_SQL_COMP_MV_REFRESH[];
-extern const char CAT_SQL_COMP_MVCAND[];
-extern const char CAT_SQL_COMP_XML[];
+extern std::string CAT_SQL_COMP_QR_DESC_GEN;
+extern std::string CAT_SQL_COMP_QR_HANDLER;
+extern std::string CAT_SQL_COMP_MV_REFRESH;
+extern std::string CAT_SQL_COMP_MVCAND;
+extern std::string CAT_SQL_COMP_XML;
 
 // ---- these categories are currently used
-extern const char CAT_SQL_EXE[];
-extern const char CAT_SQL_COMP[];
-extern const char CAT_SQL_ESP[];
+extern std::string CAT_SQL_EXE;
+extern std::string CAT_SQL_COMP;
+extern std::string CAT_SQL_ESP;
 
 // HDFS
-extern const char CAT_SQL_HDFS_JNI_TOP[];
-extern const char CAT_SQL_HDFS_SEQ_FILE_READER[];
-extern const char CAT_SQL_HDFS_SEQ_FILE_WRITER[];
-extern const char CAT_SQL_HDFS_ORC_FILE_READER[];
-extern const char CAT_SQL_HBASE[];
+extern std::string CAT_SQL_HDFS_JNI_TOP;
+extern std::string CAT_SQL_HDFS_SEQ_FILE_READER;
+extern std::string CAT_SQL_HDFS_SEQ_FILE_WRITER;
+extern std::string CAT_SQL_HDFS_ORC_FILE_READER;
+extern std::string CAT_SQL_HBASE;
 
 class ComDiagsArea;
 
@@ -203,20 +202,18 @@ public:
     return module_;
   }
 
-  const char* getMyDefaultCat();
+  std::string &getMyDefaultCat();
   const char* getMyProcessInfo();
 
   // overrides the method in CommonLogger so process information can be added
-  static void log(const char* cat,
+  static void log(std::string &cat,
                   logLevel    level,
                   const char* logMsgTemplate ...);
-
-  static void log(const char* cat,
+  static void log(std::string &cat,
                   logLevel    level,
                   int         sqlCode,
                   const char* queryId,
                   const char* logMsgTemplate ...);
-
 
   /**
     * Returns a reference to the %QRLogger singelton instance in use.
@@ -225,10 +222,10 @@ public:
   static QRLogger& instance();
 
   static void logDiags(ComDiagsArea* diagsArea,
-                       const char*   cat);
+                       std::string &cat);
 
   static void logQVP(ULng32      eventId,
-                     const char* cat,
+                     std::string &cat,
                      logLevel    level,
                      const char* logMsgTemplate ...);
 
@@ -252,7 +249,7 @@ public:
     */
   static void logError(const char* file, 
                        Int32       line, 
-                       const char* cat, 
+                       std::string &cat,
                        logLevel    level, 
                        const char *logMsgTemplate ...);
 
@@ -260,7 +257,7 @@ public:
 
 protected:
 
-    void initCategory(const char* cat, log4cpp::Priority::PriorityLevel defaultPriority);
+    void initCategory(std::string &cat, log4cpp::Priority::PriorityLevel defaultPriority);
 
 private:
     /**
@@ -344,7 +341,7 @@ class CommonTracer
      */
     CommonTracer(const char*   fnName,
                  CommonLogger& logger,
-                 const char*   logCategory,
+                 std::string   &logCategory,
                  TraceLevel    level = TL_exceptionOnly,
                  const char*   file = "",
                  Int32         line = 0);
@@ -371,7 +368,7 @@ class CommonTracer
     CommonLogger& logger_;
 
     // The logger category
-    const char* category_;
+    std::string &category_;
 };  // CommonTracer
 
 /**

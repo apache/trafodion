@@ -121,9 +121,9 @@ protected:
   NAString getLastError();
 
   // Write the description of a Java error to the log file.
-  void logError(const char* cat, const char* methodName, const char *result);
-  void logError(const char* cat, const char* methodName, jstring jresult);
-  void logError(const char* cat, const char* file, int line);
+  void logError(std::string &cat, const char* methodName, const char *result);
+  void logError(std::string &cat, const char* methodName, jstring jresult);
+  void logError(std::string &cat, const char* file, int line);
 
   void setHBaseCompatibilityMode(bool val)
   {

@@ -32,6 +32,7 @@ extern const char CAT_MXOSRVR[];
 static bool	gv_trace_ems_dll = false;
 static bool	gv_trace_legacy_dll = false;
 
+static std::string MXOSRVR_COMPONENT = "MXOSRVR";
 inline long getLongEventId(int type, int component_id, int event_id, int max_len)
 {
    char *buff = new char[max_len+1];
@@ -143,7 +144,7 @@ void send_to_eventlog (short evt_num, short EventLogType, char *ComponentName, c
       severity = LL_ERROR;
    }
 
-	CommonLogger::log("MXOSRVR", severity, logMsgStr);
+   CommonLogger::log(MXOSRVR_COMPONENT, severity, logMsgStr);
 }
 
 void SendEventMsg(DWORD EventId, short EventLogType, DWORD Pid, char *ComponentName,

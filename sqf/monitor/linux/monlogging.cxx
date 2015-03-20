@@ -315,7 +315,7 @@ void CMonLog::writeMonLog(int eventType, posix_sqlog_severity_t severity, char *
     logLevel llevel = getLogLevel( severity );
 
     // Log4cpp logging
-    CommonLogger::log( log4cppComponent_.c_str()
+    CommonLogger::log( log4cppComponent_
                      , llevel
                      , "Node Number: %u,, PIN: %u , Process Name: %s,,, TID: %d, Message ID: %u, %s"
                      , myPNid_, myPid_, myProcessName_.c_str(), gettid(), eventType,  msg);
@@ -327,7 +327,7 @@ void CMonLog::writeMonProcLog(int eventType, posix_sqlog_severity_t severity, ch
     logLevel llevel = getLogLevel( severity );
 
     // Log4cpp logging
-    CommonLogger::log( log4cppComponent_.c_str()
+    CommonLogger::log( log4cppComponent_
                      , llevel
                      , "Node Number: %u, CPU: %u, PIN: %u , Process Name: %s,,, TID: %u, Message ID: %u, %s"
                      , myPNid_, myNid_, myPid_, myProcessName_.c_str(), gettid(), eventType, msg);
