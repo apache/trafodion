@@ -2182,6 +2182,9 @@ func_exit:
 		long							sqlcode;
 		short							txn_status;
 
+		//intialize exception_ structure, so that if catalog api run successfully, there is no exception
+		memset((void*)&exception_,0,sizeof(ExceptionStruct));
+
 		const char	*nCatalogNm;
 		const char	*nSchemaNm;
 		const char	*nTableNm;
@@ -2291,7 +2294,6 @@ func_exit:
 
 		if (fktableNm)
 			JNI_ReleaseStringUTFChars(jenv,fktableNm, nfkTableNm);
-
 		if ((txn_status = endTxnControl(jenv, currentTxid, txid, autoCommit,
 			exception_.exception_nr, TRUE, txnMode, externalTxid)) != 0)
 		{

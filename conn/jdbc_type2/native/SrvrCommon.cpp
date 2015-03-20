@@ -1,7 +1,7 @@
 /************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -51,6 +51,9 @@
 #endif
 #define SQL_API_JDBC					9999
 #define SQL_API_SQLTABLES_JDBC			SQL_API_SQLTABLES + SQL_API_JDBC
+
+
+#define CRTASIZE    1024
 // Global Variables
 
 SRVR_GLOBAL_Def		*srvrGlobal = NULL;
@@ -410,7 +413,6 @@ void removeSrvrStmt(long dialogueId, long stmtId)
 	pConnect->removeSrvrStmt((SRVR_STMT_HDL *)stmtId);
 	FUNCTION_RETURN_VOID((NULL));
 }
-
 // Assuming outName is of sufficient size for efficiency
 void convertWildcard(unsigned long metadataId, BOOL isPV, const char *inName, char *outName)
 {
@@ -952,7 +954,8 @@ short do_ExecSMD(
 	*stmtId = (long)pSrvrStmt;
 	SQLValue_def *sqlString = NULL;
 	// allocate space for the sqlString
-	MEMORY_ALLOC_ARRAY(sqlString, SQLValue_def, totalSize);
+	MEMORY_ALLOC(sqlString, SQLValue_def)
+	MEMORY_ALLOC_ARRAY(sqlString->dataValue._buffer,unsigned char, totalSize)
 	pSrvrStmt->sqlStmtType = TYPE_SELECT;
 
 	switch(APIType)
@@ -1274,25 +1277,38 @@ short do_ExecSMD(
 		case SQL_API_SQLCOLUMNS :
 			if (tableNm[0] != '$' && tableNm[0] != '\\')
 						{
+							char schcriteria[CRTASIZE];
+							char tblcriteria[CRTASIZE];
+							char colcriteria[CRTASIZE];
 							if (strcmp(catalogNm,"") == 0)
 								strcpy(tableName1,SEABASE_MD_CATALOG);
 							else
 								strcpy(tableName1, catalogNm);
 							tableParam[0] = tableName1;
-							convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
 							convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
-							convertWildcard(metadataId, TRUE, tableNm, expTableNm);
 							convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
-							convertWildcard(metadataId, TRUE, columnNm, expColumnNm);
 							convertWildcardNoEsc(metadataId, TRUE, columnNm, columnNmNoEsc);
-							inputParam[0] = schemaNmNoEsc;
-							inputParam[1] = expSchemaNm;
-							inputParam[2] = tableNmNoEsc;
-							inputParam[3] = expTableNm;
-							inputParam[4] = columnNmNoEsc;
-							inputParam[5] = expColumnNm;
-							inputParam[6] = odbcAppVersion;
-							inputParam[7] = NULL;
+							inputParam[0] = odbcAppVersion;
+							inputParam[1] = NULL;
+					if(schemaNm[0]=='"'){
+						snprintf(schcriteria,CRTASIZE,"and ob.SCHEMA_NAME = '%s' ",schemaNmNoEsc);
+					}
+					else{
+						snprintf(schcriteria,CRTASIZE,"and trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\' ",schemaNmNoEsc);
+					}
+					if(tableNm[0]=='"'){
+						snprintf(tblcriteria,CRTASIZE,"and ob.OBJECT_NAME = '%s' ",tableNmNoEsc);
+					}
+					else{
+						snprintf(tblcriteria,CRTASIZE,"and trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\' ",tableNmNoEsc);
+					}
+					if(columnNm[0]=='"'){
+						snprintf(colcriteria,CRTASIZE,"and co.COLUMN_NAME = '%s' ",columnNmNoEsc);
+					}
+					else{
+						snprintf(colcriteria,CRTASIZE,"and trim(co.COLUMN_NAME) LIKE '%s' ESCAPE '\\' ",columnNmNoEsc);
+					}
+
 					snprintf((char *)sqlString->dataValue._buffer, totalSize,
 		"select " "cast('%s' as varchar(128) ) TABLE_CAT, "
 		"cast(trim(ob.SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM, "
@@ -1371,17 +1387,56 @@ short do_ExecSMD(
 		  "and co.OBJECT_UID = co1.OBJECT_UID and co1.COLUMN_NUMBER = 0 "
 		  "and (dt.DATETIMESTARTFIELD = co.DATETIME_START_FIELD) "
 		  "and (dt.DATETIMEENDFIELD = co.DATETIME_END_FIELD) "
-		  "and (ob.SCHEMA_NAME = '%s' or trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
-		  "and (ob.OBJECT_NAME = '%s' or trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
-		  "and (co.COLUMN_NAME = '%s' or trim(co.COLUMN_NAME) LIKE '%s' ESCAPE '\\')  "
+		  "%s%s%s"
 		  "and (ob.OBJECT_TYPE in ('BT' , 'VI') ) "
 		  "and (trim(co.COLUMN_CLASS) not in ('S', 'M')) "
 		  "and dt.APPLICATION_VERSION = %s "
 		"FOR READ UNCOMMITTED ACCESS order by 1, 2, 3, co.COLUMN_NUMBER ; ",
-		            tableParam[0], inputParam[0], inputParam[1],
-		            inputParam[2], inputParam[3], inputParam[4],
-		            inputParam[5], inputParam[6]);
+								tableParam[0], schcriteria, tblcriteria, colcriteria , inputParam[0]);
 					}
+					break;
+				case SQL_API_SQLPRIMARYKEYS:
+					if ((!checkIfWildCard(catalogNm, catalogNmNoEsc) || !checkIfWildCard(schemaNm, schemaNmNoEsc) || !checkIfWildCard(tableNm, tableNmNoEsc)) && !metadataId)
+					{
+						executeException->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+						executeException->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_WILDCARD_NOT_SUPPORTED;
+						FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
+					}
+
+					if (strcmp(catalogNm,"") == 0)
+						strcpy(tableName1,SEABASE_MD_CATALOG);
+					else
+						strcpy(tableName1, catalogNm);
+					tableParam[0] = tableName1;
+					convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+					convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+					convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+					convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+					inputParam[0] = schemaNmNoEsc;
+					inputParam[1] = expSchemaNm;
+					inputParam[2] = tableNmNoEsc;
+					inputParam[3] = expTableNm;
+					inputParam[4] = NULL;
+
+					
+					snprintf((char *)sqlString->dataValue._buffer, totalSize,
+								"select "
+								"cast('%s' as varchar(128) ) TABLE_CAT,"
+								"cast(trim(ob.SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM,"
+								"cast(trim(ob.OBJECT_NAME) as varchar(128) ) TABLE_NAME,"
+								"trim(ky.COLUMN_NAME) COLUMN_NAME,"
+								"cast((ky.keyseq_number) as smallint) KEY_SEQ,"
+								"trim(ob.OBJECT_NAME) PK_NAME "
+								" from TRAFODION.\"_MD_\".OBJECTS ob, "
+								"TRAFODION.\"_MD_\".KEYS ky "
+								" where (ob.SCHEMA_NAME = '%s' or "
+								" trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+								" and (ob.OBJECT_NAME = '%s' or "
+								" trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+								" and ob.OBJECT_UID = ky.OBJECT_UID and ky.COLUMN_NAME <> '_SALT_' "
+								" FOR READ UNCOMMITTED ACCESS order by 1, 2, 3, 5 ;",
+                        tableParam[0], inputParam[0], inputParam[1],
+                        inputParam[2], inputParam[3]);
 					break;
 			}
 	if (pSrvrStmt == NULL)
@@ -1394,7 +1449,8 @@ short do_ExecSMD(
 		executeException->u.SQLError.errorList._buffer = ModuleError.errorList._buffer;
 		FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
 	}
-
+	//make pSrvrStmt->Prepare() happy
+	sqlString->dataValue._length=strlen((const char*)sqlString->dataValue._buffer);
 	rc = pSrvrStmt->Prepare(sqlString, sqlStmtType, holdability, queryTimeout,false);
 	if (rc == SQL_ERROR)
 	{
@@ -1402,7 +1458,12 @@ short do_ExecSMD(
 		executeException->u.SQLError.errorList._length = pSrvrStmt->sqlError.errorList._length;
 		executeException->u.SQLError.errorList._buffer = pSrvrStmt->sqlError.errorList._buffer;
 		FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
+
 	}
+
+	//free RAM for sqlString
+	MEMORY_DELETE(sqlString->dataValue._buffer)
+	MEMORY_DELETE(sqlString)
 
 	pSrvrStmt->InternalStmtClose(SQL_CLOSE);
 	outputDesc->_length = pSrvrStmt->outputDescList._length;
@@ -1453,9 +1514,10 @@ short do_ExecSMD(
 		(char *) stmtLabel,
 		sqlStmtType, 1, &pSrvrStmt->inputValueList, SQL_ASYNC_ENABLE_OFF, 0,
 		&pSrvrStmt->outputValueList, sqlWarning);
-
-	if (executeException->exception_nr != CEE_SUCCESS)
+	if (executeException->exception_nr != CEE_SUCCESS){
 		FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
+
+	}
 
 	FUNCTION_RETURN_NUMERIC(0,(NULL));
 }
@@ -1661,9 +1723,9 @@ short executeAndFetchSMDQuery(
 		odbc_SQLSvc_FetchN_sme_(objtag_, call_id_, fetchException, dialogueId, *stmtId, SQL_MAX_COLUMNS_IN_SELECT,
 								SQL_ASYNC_ENABLE_OFF, 0, &rowsRead, &fetchOutputValueList, sqlWarning);
 
-		if (fetchException->exception_nr != CEE_SUCCESS)
+		if (fetchException->exception_nr != CEE_SUCCESS){
 			FUNCTION_RETURN_NUMERIC(FETCH_EXCEPTION,("FETCH_EXCEPTION - odbc_SQLSvc_FetchN_sme_() Failed"));
-
+		}
 		*rowsAffected += rowsRead;
 		if (rowsRead==SQL_MAX_COLUMNS_IN_SELECT) appendOutputValueList(outputValueList,&fetchOutputValueList,true);
 	} while (rowsRead==SQL_MAX_COLUMNS_IN_SELECT);
