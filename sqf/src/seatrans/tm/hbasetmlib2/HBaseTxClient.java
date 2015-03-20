@@ -35,6 +35,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.HTable;
@@ -268,6 +269,9 @@ public class HBaseTxClient {
             LOG.error("Unable to create TransactionManager, Exception: " + e + "throwing new RuntimeException");
             throw new RuntimeException(e);
       }
+
+      if(useDDLTrans)
+          trxManager.init();
 
       if (useRecovThread) {
          if (LOG.isDebugEnabled()) LOG.debug("Entering recovThread Usage");
@@ -557,7 +561,49 @@ public class HBaseTxClient {
     if (LOG.isDebugEnabled()) LOG.debug("Exit completeRequest txid: " + transactionId + " mapsize: " + mapTransactionStates.size());
     return TransReturnCode.RET_OK.getShort();
   }
-   
+
+   public short callCreateTable(long transactionId, byte[] pv_htbldesc) throws Exception
+   {
+      TransactionState ts;
+      HTableDescriptor htdesc;
+
+      if (LOG.isTraceEnabled()) LOG.trace("Enter callCreateTable, txid: [" + transactionId + "],  htbldesc bytearray: " + pv_htbldesc + "desc in hex: " + Hex.encodeHexString(pv_htbldesc));
+
+      ts = mapTransactionStates.get(transactionId);
+      if(ts == null) {
+         LOG.error("Returning from HBaseTxClient:callCreateTable, (null tx) retval: " + TransReturnCode.RET_NOTX.getShort()  + " txid: " + transactionId);
+         return TransReturnCode.RET_NOTX.getShort();
+      }
+
+      try {
+         htdesc = HTableDescriptor.parseFrom(pv_htbldesc);
+      }
+      catch(Exception e) {
+         if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callCreateTable exception in htdesc parseFrom, retval: " +
+            TransReturnCode.RET_EXCEPTION.toString() +
+            " txid: " + transactionId +
+            " DeserializationException: " + e);
+         StringWriter sw = new StringWriter();
+         PrintWriter pw = new PrintWriter(sw);
+         e.printStackTrace(pw);
+         LOG.error(sw.toString());
+
+         throw new Exception("DeserializationException in callCreateTable parseFrom, unable to send callCreateTable");
+      }
+
+      try {
+         trxManager.createTable(ts, htdesc);
+      }
+      catch (Exception cte) {
+         if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callCreateTable exception trxManager.createTable, retval: " +
+            TransReturnCode.RET_EXCEPTION.toString() +" txid: " + transactionId +" Exception: " + cte);
+         StringWriter sw = new StringWriter();
+         PrintWriter pw = new PrintWriter(sw);
+         cte.printStackTrace(pw);
+         LOG.error(sw.toString());
+      }
+      return TransReturnCode.RET_OK.getShort();
+   }
    
     public short callRegisterRegion(long transactionId,
 				    int  pv_port,

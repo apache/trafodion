@@ -56,6 +56,7 @@ public class TransactionState {
     private Object commitSendLock;
     private boolean hasError;
     private boolean localTransaction;
+    private boolean ddlTrans;
     
     public Set<String> tableNames = Collections.synchronizedSet(new HashSet<String>());
     public Set<TransactionRegionLocation> participatingRegions = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
@@ -80,6 +81,7 @@ public class TransactionState {
         requestReceivedCount = 0;
         commitSendDone = false;
         hasError = false;
+        ddlTrans = false;
         String localTxns = System.getenv("DTM_LOCAL_TRANSACTIONS");
         if (localTxns != null) {
           localTransaction = (Integer.parseInt(localTxns)==0)?false:true;
@@ -325,4 +327,11 @@ public class TransactionState {
       this.status = status;
     }
 
+    public boolean getDDLTxStatus() {
+        return ddlTrans;   
+    }
+
+    public void setDDLTxStatus(final boolean status) {
+        this.ddlTrans = status;
+    }
 }
