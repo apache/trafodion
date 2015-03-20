@@ -35,6 +35,7 @@
 #include "ComDiags.h"
 // CmpCommon.h contains STMTHEAP declaration
 #include "CmpCommon.h"
+#include "CmpContext.h"
 #include "CmpDDLCatErrorCodes.h"
 #include "ComUser.h"
 
@@ -1293,7 +1294,8 @@ std::string selectStmt ("SELECT COMPONENT_UID, OPERATION_CODE, OPERATION_NAME, I
    selectStmt += " ";
    selectStmt += whereClause;
    
-ExeCliInterface cliInterface(STMTHEAP);
+ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
    
 PrivStatus privStatus = CLIFetch(cliInterface,selectStmt);   
    
@@ -1499,7 +1501,8 @@ PrivStatus MyTable::selectWhere(
 // set pointer in diags area
 int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   Queue * tableQueue = NULL;
   int32_t cliRC =  cliInterface.fetchAllRows(tableQueue, 
                                              (char *)selectStmt.c_str(), 

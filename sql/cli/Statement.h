@@ -930,7 +930,7 @@ public:
   // auto query retry
   AQRStatementInfo * aqrStmtInfo() { return aqrStmtInfo_; };
   void setAqrStmtInfo(AQRStatementInfo * v) { aqrStmtInfo_ = v; }
-  void updateChildQid();
+  NABoolean updateChildQid();
   void updateStatsAreaInContext();
   Lng32 setChildQueryInfo(ComDiagsArea *diagsArea, char * uniqueQueryId,
         Lng32 uniqueQueryIdLen,

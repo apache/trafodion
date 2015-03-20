@@ -288,7 +288,8 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
   char msgBuf[1000];
   char buf[10000];
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+    CmpCommon::context()->sqlSession()->getParentQid());
   ExpHbaseInterface * ehi = NULL;
 
   while (1)

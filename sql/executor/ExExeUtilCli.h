@@ -49,7 +49,7 @@ private:
  public:
   ExeCliInterface(CollHeap * heap = NULL, Int32 isoMapping = 0,
                   ContextCli * currContext = NULL,
-                  char *parentQid = NULL);
+                  const char *parentQid = NULL);
 
   virtual ~ExeCliInterface();
 
@@ -324,7 +324,7 @@ private:
   CollHeap * heap_;
 
   ContextCli * currContext_;
-  char       * parentQid_;
+  const char * parentQid_;
 
   Lng32 flags_;
 };

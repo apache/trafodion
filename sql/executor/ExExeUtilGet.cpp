@@ -1260,7 +1260,18 @@ Lng32 ExExeUtilGetMetadataInfoTcb::setupPrivilegesTypeForUserQuery()
 
   char * user_name = getMItdb().getParam1();  // ucs2 or utf8 param1?
 
-  ExeCliInterface cliInterface(getHeap());
+  const char *parentQid = NULL;
+  ExExeStmtGlobals *stmtGlobals = getGlobals()->castToExExeStmtGlobals();
+  if (stmtGlobals->castToExMasterStmtGlobals())
+    parentQid = stmtGlobals->castToExMasterStmtGlobals()->
+      getStatement()->getUniqueStmtId();
+  else 
+  {
+    ExEspStmtGlobals *espGlobals = stmtGlobals->castToExEspStmtGlobals();
+    if (espGlobals && espGlobals->getStmtStats())
+      parentQid = espGlobals->getStmtStats()->getQueryId();
+  }
+  ExeCliInterface cliInterface(getHeap(), NULL, NULL, parentQid);
 
   cliRC = cliInterface.executeImmediate(
     "create volatile table privsForUser "
@@ -1408,7 +1419,18 @@ Lng32 ExExeUtilGetMetadataInfoTcb::setupObjectTypeForUserQuery()
       return -1;
   }
 
-  ExeCliInterface cliInterface(getHeap());
+  const char *parentQid = NULL;
+  ExExeStmtGlobals *stmtGlobals = getGlobals()->castToExExeStmtGlobals();
+  if (stmtGlobals->castToExMasterStmtGlobals())
+    parentQid = stmtGlobals->castToExMasterStmtGlobals()->
+      getStatement()->getUniqueStmtId();
+  else
+  {
+    ExEspStmtGlobals *espGlobals = stmtGlobals->castToExEspStmtGlobals();
+    if (espGlobals && espGlobals->getStmtStats())
+      parentQid = espGlobals->getStmtStats()->getQueryId();
+  }
+  ExeCliInterface cliInterface(getHeap(), NULL, NULL, parentQid);
 
   cliRC = cliInterface.executeImmediate(
     "create volatile table objsForUser "

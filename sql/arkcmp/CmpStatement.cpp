@@ -785,7 +785,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
 				 aqrPrepare,
 				 standaloneQuery))
     return CmpStatement_ERROR;
-  CmpCommon::context()->sqlSession()->setParentQid(statement.getParentQid());
 
   // process recompControlInfo, if received
   if (recompControlInfo)
