@@ -242,7 +242,7 @@ public class TransactionalScanner extends AbstractClientScanner {
                     response = trxService.performScan(null, perfScanRequest);
                     String exception = response.getException();
                     if(response.getHasException()) {
-                        String errMsg = "peformScan encountered Exception txID: " +
+                        String errMsg = "performScan encountered Exception txID: " +
                                 ts.getTransactionId() + " Exception: " + exception;
                             LOG.error(errMsg);
                             throw new IOException(errMsg);
