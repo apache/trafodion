@@ -3466,7 +3466,7 @@ CoprocessorService, Coprocessor {
       if (scanner != null)
         scanner.next(results);       
     } catch(Exception e) {
-      LOG.warn("TrxRegionEndpoint coprocessor: get - txId " + transactionId + ", Caught internal exception " + e.getMessage() + " " + stackTraceToString(e));
+      if (LOG.isWarnEnabled()) LOG.warn("TrxRegionEndpoint coprocessor: get - txId " + transactionId + ", Caught internal exception " + e.getMessage() + " " + stackTraceToString(e));
     }
     finally {
       if (scanner != null) {
@@ -3707,6 +3707,12 @@ CoprocessorService, Coprocessor {
         }
     }
 
+    if (cleanScannersForTransactions.contains(transactionId)) {
+      if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: beginTransaction, txid: "
+                    + transactionId + ", is in the list of transactions that have already been retired");
+      throw new IOException("Transaction id " + transactionId + " is in the list of transactions that have already been retired");
+    }
+
     TrxTransactionState state;
     synchronized (transactionsById) {
 //      if (transactionsById.get(getTransactionalUniqueId(transactionId)) != null) {
@@ -3800,12 +3806,6 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: beginTransIfNotExist, txid: "
               + transactionId + " transactionsById size: "
               + transactionsById.size());
-
-    if (cleanScannersForTransactions.contains(transactionId)) {
-      if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: beginTransactionIfNotExist, txid: "
-                    + transactionId + ", is in the list of transactions that have already been retired");
-      throw new IOException("Transaction id " + transactionId + " is in the list of transactions that have already been retired");
-    }
 
     String key = getTransactionalUniqueId(transactionId);
     synchronized (transactionsById) {
