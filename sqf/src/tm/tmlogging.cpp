@@ -26,7 +26,7 @@
 #include "CommonLogger.h"
 
 int gv_dual_logging =1; // Write to both SeaLog and stdout by default
-
+static std::string TM_COMPONENT = "TM";
 int tm_init_logging()
 {
 	// Log4cpp logging
@@ -282,7 +282,7 @@ int tm_log_stdout(int event_id,
     printf("\n");
 
 	// Log4cpp logging
-	CommonLogger::log("TM", ll_severity, "Node Number: %u, CPU: %u, PIN: %u , Process Name: %s,,, Message: %s", my_nid, my_nid, my_pid, my_name, temp_string);
+	CommonLogger::log(TM_COMPONENT, ll_severity, "Node Number: %u, CPU: %u, PIN: %u , Process Name: %s,,, Message: %s", my_nid, my_nid, my_pid, my_name, temp_string);
 
     return error;
 } 

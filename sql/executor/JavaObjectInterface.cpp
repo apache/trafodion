@@ -383,7 +383,7 @@ JOI_RetCode JavaObjectInterface::init(char *className,
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-void JavaObjectInterface::logError(const char* cat, const char* methodName, const char *result)
+void JavaObjectInterface::logError(std::string &cat, const char* methodName, const char *result)
 {
     if (result == NULL)
        QRLogger::log(cat, LL_ERROR, "Unknown Java error in %s.", methodName);
@@ -392,7 +392,7 @@ void JavaObjectInterface::logError(const char* cat, const char* methodName, cons
 }
 //
 //////////////////////////////////////////////////////////////////////////////
-void JavaObjectInterface::logError(const char* cat, const char* methodName, jstring jresult)
+void JavaObjectInterface::logError(std::string  &cat, const char* methodName, jstring jresult)
 {
   if (jresult == NULL)
     QRLogger::log(cat, LL_ERROR, "Unknown Java error in %s.", methodName);
@@ -408,7 +408,7 @@ void JavaObjectInterface::logError(const char* cat, const char* methodName, jstr
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-void JavaObjectInterface::logError(const char* cat, const char* file, int line)
+void JavaObjectInterface::logError(std::string &cat, const char* file, int line)
 {
   QRLogger::log(cat, LL_ERROR, "Java exception in file %s, line %d.", file, line);
 }

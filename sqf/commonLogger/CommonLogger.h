@@ -93,12 +93,12 @@ public:
     *                message template.
     */
 
-  static void log1(const char* cat,
+  static void log1(std::string &cat,
                    logLevel    level,
                    const char* cmsg,
                    unsigned int eventId = 0);
 
-  static void log(const char* cat,
+  static void log(std::string &cat,
                   logLevel    level,
                   const char* logMsgTemplate ...);
 
@@ -109,11 +109,11 @@ public:
     * @param cat The name of the category to check.
     * @return TRUE if DEBUG messages are logged.
     */
-  static bool isCategoryInDebug(const char* cat);
+  static bool isCategoryInDebug(std::string &cat);
 
 
 protected:
-  static char* buildMsgBuffer(const char* cat,
+  static char* buildMsgBuffer(std::string &cat,
                               logLevel    level,
                               const char* logMsgTemplate,
                               va_list     args);
