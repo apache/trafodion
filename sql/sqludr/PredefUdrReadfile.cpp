@@ -588,7 +588,15 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
          strstr(fileName, "tmf")                   == fileName ||
          strstr(fileName, "master_exec_")          == fileName ||
          strstr(fileName, eventLogFileName.data()) == fileName ||
-         strstr(fileName, "tm.log")                == fileName))
+         strstr(fileName, "tm.log")                == fileName||
+	 strstr(fileName, "mxlobsrvr")          == fileName ||
+	 strstr(fileName, "sscp")          == fileName ||
+	 strstr(fileName, "ssmp")          == fileName ||
+	 strstr(fileName, "mon")          == fileName ||
+   	 strstr(fileName, "pstartd")          == fileName ||
+	 strstr(fileName, "wdg")          == fileName) 
+	
+	)
       {
         if (infile_ != NULL)
           {
