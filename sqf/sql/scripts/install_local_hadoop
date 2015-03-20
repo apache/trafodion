@@ -435,13 +435,7 @@ MY_HADOOP_TASK_TRACKER_PORT_NUM=`expr $MY_START_PORT + 60`
 # Specify mirrors and versions of needed components
 #####################################################
 
-# Hadoop 1.0.4 - no longer used in this setup
-HADOOP_1_MIRROR_URL=http://www.carfab.com/apachesoftware/hadoop/common/hadoop-1.0.4
-HADOOP_1_TAR=hadoop-1.0.4-bin.tar.gz
-
-# Hive 0.9 requires Hadoop 0.20 or higher
-# HBase seems fine with Hadoop 0.20 or higher
-HADOOP_MIRROR_URL=http://www.bizdirusa.com/mirrors/apache/hadoop/common/hadoop-2.5.0
+HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
 HADOOP_TAR=hadoop-2.5.0-cdh5.3.0.tar.gz
 if [[ "$SQ_HBASE_DISTRO" = "HDP" ]]; then
     HADOOP_TAR=hadoop-2.6.0.2.2.0.0-2041.tar.gz
@@ -457,7 +451,7 @@ MYSQL_TAR=mysql-5.6.10-linux-glibc2.5-x86_64.tar.gz
 MYSQL_JDBC_URL=http://cdn.mysql.com/archives/mysql-connector-java-5.1
 MYSQL_JDBC_TAR=mysql-connector-java-5.1.23.tar.gz
 
-HIVE_MIRROR_URL=http://mirrors.ibiblio.org/apache/hive/stable
+HIVE_MIRROR_URL=http://apache.cs.utah.edu/hive/hive-0.13.1
 HIVE_PREFIX=apache-hive-0.13.1-bin
 HIVE_TAR=${HIVE_PREFIX}.tar.gz
 
@@ -1576,6 +1570,13 @@ EOF
 
 fi
 # end of Phoenix setup
+
+if [ ! -r $YARN_HOME/lib/native/libhdfs.so ]; then
+  echo "------------------------------------------------------------"
+  echo "-- WARNING: libhdfs.so is not present on this system. Please"
+  echo "--          build it, otherwise Trafodion will not compile."
+  echo "------------------------------------------------------------"
+fi
 
 echo
 echo "Installed directory size and name = $(du -sh $MY_SW_ROOT)" | tee -a ${MY_LOG_FILE}
