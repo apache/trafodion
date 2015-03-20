@@ -158,7 +158,7 @@ public class HBaseTxClient {
          }
       }
       try {
-            trxManager = TransactionManager.getInstance(config);
+        trxManager = TransactionManager.getInstance(config);
       } catch (IOException e ){
             LOG.error("Unable to create TransactionManager, throwing exception");
             throw new RuntimeException(e);
@@ -263,7 +263,7 @@ public class HBaseTxClient {
          }
       }
       try {
-            trxManager = TransactionManager.getInstance(config);
+          trxManager = TransactionManager.getInstance(config);
       } catch (IOException e ){
             LOG.error("Unable to create TransactionManager, Exception: " + e + "throwing new RuntimeException");
             throw new RuntimeException(e);
@@ -411,7 +411,7 @@ public class HBaseTxClient {
    public short prepareCommit(long transactionId) throws Exception {
      if (LOG.isDebugEnabled()) LOG.debug("Enter prepareCommit, txid: " + transactionId);
      if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
-     TransactionState ts = mapTransactionStates.get(transactionId);
+        TransactionState ts = mapTransactionStates.get(transactionId);
      if(ts == null) {
        LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + TransReturnCode.RET_NOTX.toString());
        return TransReturnCode.RET_NOTX.getShort(); 

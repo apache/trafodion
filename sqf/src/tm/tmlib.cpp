@@ -2205,6 +2205,8 @@ TMLIB::TMLIB() : JavaObjectInterfaceTM()
 
     localBegin(false);
     ms_getenv_bool("DTM_LOCAL_TRANSACTIONS", &iv_localBegin);
+    //if (localBegin())
+    //   printf("!! Using local transactions. !!\n");
 
     seqNum_blockSize(1000);
     ms_getenv_int("DTM_LOCAL_BLOCKSIZE", &iv_seqNum_blockSize);
@@ -2779,7 +2781,8 @@ short TMLIB::endTransactionLocal(long transactionID)
   //  simply means the transaction hasn't been seen by the HBase client code, so no work was done on it.
   if (jresult == RET_NOTX)
   {
-    return RET_OK;
+     // printf("TMLIB::endTransactionLocal returning RET_NOTX(1) - empty txn.\n");
+     return RET_OK;
   } 
 
   return jresult;

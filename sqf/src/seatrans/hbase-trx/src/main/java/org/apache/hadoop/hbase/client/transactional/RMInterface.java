@@ -99,7 +99,6 @@ public class RMInterface {
             ttable = new SsccTransactionalTable( Bytes.toBytes(tableName));
         }
 
-        mapTransactionStates = new ConcurrentHashMap<Long, TransactionState>();
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface ctor.");
     }
 
@@ -222,29 +221,29 @@ public class RMInterface {
 
     public synchronized void put(final long transactionID, final List<Put> puts) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("Enter put (list of puts) txid: " + transactionID);
-	TransactionState ts;
-	for (Put put : puts) {
-	    ts = registerTransaction(transactionID, put.getRow());
-	}
-	ts = mapTransactionStates.get(transactionID);
-        ttable.put(ts, puts);
-        if (LOG.isTraceEnabled()) LOG.trace("Exit put (list of puts) txid: " + transactionID);
+        TransactionState ts;
+      	for (Put put : puts) {
+      	    ts = registerTransaction(transactionID, put.getRow());
+      	}
+      	ts = mapTransactionStates.get(transactionID);
+              ttable.put(ts, puts);
+              if (LOG.isTraceEnabled()) LOG.trace("Exit put (list of puts) txid: " + transactionID);
     }
 
     public synchronized boolean checkAndPut(final long transactionID, byte[] row, byte[] family, byte[] qualifier,
                        byte[] value, Put put) throws IOException {
 
         if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndPut txid: " + transactionID);
-	TransactionState ts = registerTransaction(transactionID, row);
-	return ttable.checkAndPut(ts, row, family, qualifier, value, put);
+        TransactionState ts = registerTransaction(transactionID, row);
+        return ttable.checkAndPut(ts, row, family, qualifier, value, put);
     }
 
     public synchronized boolean checkAndDelete(final long transactionID, byte[] row, byte[] family, byte[] qualifier,
                        byte[] value, Delete delete) throws IOException {
 
         if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndDelete txid: " + transactionID);
-	TransactionState ts = registerTransaction(transactionID, row);
-	return ttable.checkAndDelete(ts, row, family, qualifier, value, delete);
+        TransactionState ts = registerTransaction(transactionID, row);
+        return ttable.checkAndDelete(ts, row, family, qualifier, value, delete);
     }
 
     public void close()  throws IOException

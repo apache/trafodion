@@ -18,6 +18,7 @@
 
 package org.apache.hadoop.hbase.client.transactional;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -29,13 +30,13 @@ import org.apache.hadoop.hbase.client.transactional.TransactionState;
 
 
 // Singleton TransactionState map.
-// 
+//
 public class TransactionMap {
   private static final ConcurrentHashMap<Long, TransactionState> g_mapTransactionStates
                        = new ConcurrentHashMap<Long, TransactionState>();
   
   public TransactionMap() {
-    System.out.println("TransactionMap ctor");
+    //System.out.println("TransactionMap ctor");
   }
   public static synchronized ConcurrentHashMap<Long, TransactionState> getInstance() {
     return g_mapTransactionStates;
