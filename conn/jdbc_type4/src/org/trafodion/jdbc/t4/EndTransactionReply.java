@@ -34,7 +34,7 @@ class EndTransactionReply {
 		m_p1 = new odbc_SQLSvc_EndTransaction_exc_();
 		m_p1.extractFromByteArray(buf, addr, ic);
 
-		if (m_p1.exception_nr == TRANSPORT.CEE_SUCCESS) {
+		if (m_p1.exception_nr != TRANSPORT.CEE_SUCCESS) {
 			int totalLen = buf.extractInt();
 			
 			if(totalLen > 0) {
