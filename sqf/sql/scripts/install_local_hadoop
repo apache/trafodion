@@ -54,6 +54,12 @@
 # DCS_SRC - Optionally specify a local source tree to use
 # If none specified, download latest code from github
 #
+# Trafodion REST to use. This list is in order of precedent.
+# REST_TAR - Optionally specify a local tar file to use
+# REST_URL - Optionally specify a URL to download
+# REST_SRC - Optionally specify a local source tree to use
+# If none specified, download latest code from github
+#
 # phoenix_test
 # PHX_SRC - Optionally specify a local source tree to use
 #  otherwise, download latest code from github
@@ -375,6 +381,12 @@ if [ $USE_DEFAULT_PORTS == 'yes' ]; then
   MY_HBASE_REST_PORT_NUM=8080
   # dcs.master.port
   MY_DCS_MASTER_PORT=37800
+  # dcs.master.info.port
+  MY_DCS_MASTER_INFO_PORT=40010
+  # trafodion.rest.port
+  MY_REST_SERVER_PORT=4200
+  # trafodion.rest.https.port
+  MY_REST_SERVER_SECURE_PORT=4201
 else
   # fs.default.name
   MY_HADOOP_HDFS_PORT_NUM=$MY_START_PORT
@@ -397,6 +409,9 @@ else
   # unique port # for MySQL (default is 3306)
   MY_SQL_PORT_NUM=`expr $MY_START_PORT + 46`
   MY_DCS_MASTER_PORT=`expr $MY_START_PORT + 172`
+  MY_DCS_MASTER_INFO_PORT=`expr $MY_START_PORT + 182`
+  MY_REST_SERVER_PORT=`expr $MY_START_PORT + 183`
+  MY_REST_SERVER_SECURE_PORT=`expr $MY_START_PORT + 184`
 fi
 
 # handle ports in the range of 50000 to 50199
@@ -466,6 +481,8 @@ fi
 
 # Default location of DCS code
 DCS_GIT=https://github.com/trafodion/dcs
+# Default location of REST code
+REST_GIT=https://github.com/trafodion/core
 
 # phoenix_test
 # PHX_SRC - Optionally specify a local source tree to use
@@ -1499,7 +1516,7 @@ else
      <name>dcs.master.port</name> <value>$MY_DCS_MASTER_PORT</value>
     </property>
     <property>
-     <name>dcs.master.info.port</name> <value>-1</value>
+     <name>dcs.master.info.port</name> <value>$MY_DCS_MASTER_INFO_PORT</value>
     </property>
     <property>
      <name>dcs.server.info.port</name> <value>-1</value>
@@ -1570,6 +1587,102 @@ EOF
 
 fi
 # end of Phoenix setup
+
+# Begin of Trafodion REST Server setup
+
+if [ -d rest-* ]; then
+  echo "Trafodion REST files already exist, skipping REST setup"
+else
+  #####################################################
+  # three options, depend on user Env variables, as described above
+  if [[ -f $REST_TAR ]]
+  then
+    echo "Using REST Tar: $REST_TAR" | tee -a ${MY_LOG_FILE}
+  elif [[ -n $REST_URL ]]
+  then
+    echo "Downloading REST Tar: $REST_URL" | tee -a ${MY_LOG_FILE}
+    rm -f rest_download.tar
+    curl ${REST_URL} -o rest_download.tar
+    REST_TAR=./rest_download.tar
+  elif [[ -d $REST_SRC ]]
+  then
+    if [[ -f $REST_SRC/target/rest*tar.gz ]]
+    then
+      echo "Using REST tar file in source tree: $REST_SRC" | tee -a ${MY_LOG_FILE}
+    else
+      echo "No REST tar file found, building REST: $REST_SRC" | tee -a ${MY_LOG_FILE}
+      cd $REST_SRC
+      ${MAVEN:-mvn} package >>${MY_LOG_FILE} 2>&1
+      cd $MY_SW_ROOT
+    fi
+    REST_TAR=$(ls $REST_SRC/target/rest*tar.gz)
+  elif [[ -d $MY_SQROOT/../rest ]]
+  then
+    cd $MY_SQROOT/../rest 
+    echo "Building REST Source in $MY_SQROOT/../rest" | tee -a ${MY_LOG_FILE}
+    ${MAVEN:-mvn} package     >>${MY_LOG_FILE} 2>&1
+    cd $MY_SW_ROOT
+    REST_TAR=$(ls $MY_SQROOT/../rest/target/rest*tar.gz)
+  else
+    echo "Downloading REST Source: $REST_GIT" | tee -a ${MY_LOG_FILE}
+    mkdir -p $MY_SW_ROOT/src
+    cd $MY_SW_ROOT/src
+    git clone $REST_GIT core >>${MY_LOG_FILE} 2>&1
+    cd $MY_SW_ROOT/src/core/rest
+    ${MAVEN:-mvn} package     >>${MY_LOG_FILE} 2>&1
+    cd $MY_SW_ROOT
+    REST_TAR=$(ls $MY_SW_ROOT/src/core/rest/target/rest*tar.gz)
+  fi
+  if [[ ! -f $REST_TAR ]]
+  then
+    echo '**** ERROR:'  | tee -a ${MY_LOG_FILE}
+    echo "REST tar file not found: $REST_TAR"  | tee -a ${MY_LOG_FILE}
+    exit 2
+  fi
+  # install
+  echo "Installing REST from: $REST_TAR"  | tee -a ${MY_LOG_FILE}
+  tar xzf $REST_TAR
+  REST_HOME=$(ls -d $MY_SW_ROOT/rest-*)
+
+  # configure REST
+
+  #   use ~/.trafodion to avoid modifying sqenv*.sh in source tree
+  echo "Adding REST_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
+  echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
+  if [[ -f ~/.trafodion ]]
+  then
+    mv -f ~/.trafodion ~/.trafodion.orig
+    grep -v 'REST_INSTALL_DIR=' ~/.trafodion.orig >> ~/.trafodion
+  fi
+  echo "export REST_INSTALL_DIR=$REST_HOME" >> ~/.trafodion
+  cd $REST_HOME/conf/
+  mv rest-env.sh rest-env.sh.orig
+   # SQROOT env var does not propagate thru ssh command
+  echo "MY_SQROOT=$MY_SQROOT" > rest-env.sh
+  sed -e "s@#[ ]*export REST_MANAGES_ZK=true@export REST_MANAGES_ZK=false@" rest-env.sh.orig >> rest-env.sh
+  mv -f rest-site.xml rest-site.xml.orig
+  sed -e "s@</configuration>@@" rest-site.xml.orig > rest-site.xml
+  cat >>rest-site.xml <<EOF
+    <property>
+     <name>rest.port</name> <value>$MY_REST_SERVER_PORT</value>
+    </property>
+    <property>
+     <name>rest.https.port</name> <value>$MY_REST_SERVER_SECURE_PORT</value>
+    </property>
+    <property>
+     <name>rest.zookeeper.peerport</name> <value>$MY_HBASE_ZOOKEEPER_PEERPORT_NUM</value>
+    </property>
+    <property>
+     <name>rest.zookeeper.leaderport</name> <value>$MY_HBASE_ZOOKEEPER_LEADERPORT_NUM</value>
+    </property>
+    <property>
+     <name>rest.zookeeper.property.clientPort</name> <value>$MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM</value>
+    </property>
+  </configuration>
+EOF
+fi
+
+# End of Trafodion REST Server setup
 
 if [ ! -r $YARN_HOME/lib/native/libhdfs.so ]; then
   echo "------------------------------------------------------------"

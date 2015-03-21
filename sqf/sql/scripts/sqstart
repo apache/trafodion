@@ -540,6 +540,8 @@ sleep 10
 sqcheck | tee -a $SQMON_LOG
 # Start the LOB Service
 lobstart
+# Start the REST Service
+reststart
 
 echo
 echo "You can monitor the SQ shell log file : $SQMON_LOG"
