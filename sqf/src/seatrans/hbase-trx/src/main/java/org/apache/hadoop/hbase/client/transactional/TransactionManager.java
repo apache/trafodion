@@ -33,10 +33,14 @@ import java.util.concurrent.Executors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.MasterNotRunningException;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HConnectionManager;
 import org.apache.hadoop.hbase.client.HTable;
@@ -95,6 +99,8 @@ public class TransactionManager {
   private final HConnection connection;
   private final TransactionLogger transactionLogger;
   private JtaXAResource xAResource;
+  private HBaseAdmin hbadmin;
+  Configuration     config;
 
   public static final int TM_COMMIT_FALSE = 0;     
   public static final int TM_COMMIT_READ_ONLY = 1; 
@@ -140,6 +146,18 @@ public class TransactionManager {
       if (amo == 0) return value;
     }
     return value;
+  }
+
+  public void init() throws IOException {
+    this.config = HBaseConfiguration.create();
+    try {
+      hbadmin = new HBaseAdmin(config);
+    }
+    catch(Exception e) {
+      System.out.println("ERROR: Unable to obtain HBase accessors, Exiting");
+      e.printStackTrace();
+      System.exit(1);
+    }
   }
 
   /** 
@@ -1163,7 +1181,34 @@ public class TransactionManager {
     	}
         if (LOG.isTraceEnabled()) LOG.trace("registerRegion EXIT");
     }
-    
+
+    public void createTable(final TransactionState transactionState, HTableDescriptor desc)
+            throws MasterNotRunningException, IOException {
+        if (LOG.isTraceEnabled()) LOG.trace("createTable ENTRY, transactionState: " + transactionState);
+
+        try {
+            hbadmin.createTable(desc);
+
+            // Set transaction state object as participating as ddl transaction
+            transactionState.setDDLTxStatus(true);
+        }
+        catch (Exception e) {
+            if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: createTable exception " + e);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            LOG.error("createTable error: " + sw.toString());
+        }
+
+    }
+
+    public void dropTable(final TransactionState transactionState, String tblName)
+            throws MasterNotRunningException, IOException {
+
+        // TODO: Check if no other tables in TDDL, set DDLStatus to false for this transaction
+        transactionState.setDDLTxStatus(false);
+    }
+
     /**
      * @param hostnamePort
      * @param regionArray
