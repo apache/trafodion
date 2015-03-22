@@ -21,11 +21,15 @@ package org.apache.hadoop.hbase.client.transactional;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.client.HConnection;
@@ -72,6 +76,7 @@ public class RMInterface {
    }
 
     private native void registerRegion(int port, byte[] hostname, long startcode, byte[] regionInfo);
+    private native void createTableReq(byte[] lv_byte_htabledesc);
 
     public static void main(String[] args) {
       System.out.println("MAIN ENTRY");      
@@ -100,6 +105,10 @@ public class RMInterface {
         }
 
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface ctor.");
+    }
+
+    public RMInterface() throws IOException {
+        mapTransactionStates = new ConcurrentHashMap<Long, TransactionState>();
     }
 
     public synchronized TransactionState registerTransaction(final long transactionID, final byte[] row) throws IOException {
@@ -148,6 +157,22 @@ public class RMInterface {
 
         if (LOG.isTraceEnabled()) LOG.trace("Exit registerTransaction, transaction ID: " + transactionID);
         return ts;
+    }
+
+    public void createTable(HTableDescriptor desc, byte[][] keys) throws IOException {
+        if (LOG.isTraceEnabled()) LOG.trace("createTable ENTER: ");
+
+        try { 
+            byte[] lv_byte_desc = desc.toByteArray();
+            if (LOG.isTraceEnabled()) LOG.trace("createTable: htabledesc bytearray: " + lv_byte_desc + "desc in hex: " + Hex.encodeHexString(lv_byte_desc));
+            createTableReq(lv_byte_desc);
+        } catch (Exception e) {
+            if (LOG.isTraceEnabled()) LOG.trace("Unable to createTable or convert table descriptor to byte array " + e);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            LOG.error("desc.ByteArray or createTableReq  error " + sw.toString()); 
+        }
     }
 
     static public void clearTransactionStates(final long transactionID) {

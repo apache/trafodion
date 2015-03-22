@@ -510,6 +510,29 @@ short REGISTERREGION(long transid, int pv_port, char *pa_hostname, int pv_hostna
    return lv_error;
 } //REGISTERREGION
 
+// -------------------------------------------------------------------
+// CREATETABLE
+//
+// Purpose: send CREATETABLE message to the TM
+// Params: pa_tabledesc, pv_tabledesc_length
+// -------------------------------------------------------------------
+short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length)
+{
+    short lv_error = FEOK;
+
+    if (gp_trans_thr == NULL)
+       gp_trans_thr = new TMLIB_ThreadTxn_Object();
+
+    TM_Transaction *lp_trans = gp_trans_thr->get_current();
+
+    TMlibTrace(("TMLIB_TRACE : CREATETABLE ENTRY: txid: %d\n", lp_trans->getTransid()->get_seq_num()), 1);
+    TMlibTrace(("TMLIB_TRACE : ENTER CREATETABLE DDLREQUEST: %s", pa_tbldesc), 2);
+
+    lv_error =  lp_trans->create_table(pa_tbldesc, pv_tbldesc_length);
+
+    return lv_error;
+}
+
 short HBASETM_REQUESTREGIONINFO(TM_HBASEREGIONINFO pa_trans[], short *pp_count)
 {
     TMlibTrace(("TRY::TEST::: TMLIB_TRACE : REQUESTREGIONINFO entry\n"), 2);

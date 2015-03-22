@@ -416,6 +416,24 @@ void tm_process_req_registerregion(CTmTxMessage * pp_msg)
 
 } // tm_process_req_registerregion
 
+// -----------------------------------------------------------------
+// tm_process_req_ddlrequest
+// Purpose : process message of type TM_MSG_TYPE_DDLREQUEST
+// -----------------------------------------------------------------
+void tm_process_req_ddlrequest(CTmTxMessage * pp_msg)
+{
+    TM_Txid_Internal * lp_transid = (TM_Txid_Internal *)
+                                    &pp_msg->request()->u.iv_ddl_request.iv_transid;
+
+    TMTrace(2, ("tm_process_req_ddlrequest ENTRY for Txn ID (%d, %d) ", lp_transid->iv_node, lp_transid->iv_seq_num));
+
+    TM_TX_Info *lp_tx = (TM_TX_Info*) gv_tm_info.get_tx(lp_transid);
+    lp_tx->req_ddloperation(pp_msg);
+    pp_msg->reply(FEOK);
+
+    TMTrace(2, ("tm_process_req_ddlrequest EXIT for Txn ID"));
+}
+
 //-----------------------------------------------------------------
 // tm_process_req_requestregioninfo
 // Purpose: process message of type TM_MSG_TYPE_REQUESTREGIONINFO
@@ -3105,6 +3123,9 @@ void tm_process_msg(BMS_SRE *pp_sre)
         break;
    case TM_MSG_TYPE_REGISTERREGION:
         tm_process_req_registerregion(lp_msg);
+        break;
+   case TM_MSG_TYPE_DDLREQUEST:
+        tm_process_req_ddlrequest(lp_msg);
         break;
    case TM_MSG_TYPE_REQUESTREGIONINFO:
         tm_process_req_requestregioninfo(lp_msg);

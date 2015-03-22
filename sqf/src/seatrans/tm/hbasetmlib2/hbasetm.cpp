@@ -242,9 +242,10 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_NODEDOWN   ].jm_signature = "(I)V";
   JavaMethods_[JM_NODEUP     ].jm_name      = "nodeUp";
   JavaMethods_[JM_NODEUP     ].jm_signature = "(I)V";
+  JavaMethods_[JM_CREATETABLE ].jm_name      = "callCreateTable";
+  JavaMethods_[JM_CREATETABLE ].jm_signature = "(J[B)S";
   JavaMethods_[JM_RQREGINFO  ].jm_name      = "callRequestRegionInfo";
   JavaMethods_[JM_RQREGINFO  ].jm_signature = "()Lorg/trafodion/dtm/HashMapArray;";
-
 
   char className[]="org/trafodion/dtm/HBaseTxClient";
   return (HBTM_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, (JavaMethodInit*)&JavaMethods_, (int)JM_LAST, false);
@@ -836,6 +837,55 @@ short CHbaseTM::nodeUp(int32 nid){
   }
   return RET_OK;
 }
+
+//----------------------------------------------------------------------------
+// CHbaseTM: createTable
+// Purpose: To handle create table transactional requests
+//----------------------------------------------------------------------------
+int CHbaseTM::createTable(int64 pv_transid,
+                           const char* pa_tbldesc,
+                           int pv_tbldesc_len)
+{
+   int lv_error = FEOK;
+   jlong jlv_transid = pv_transid;
+   CTmTxKey lv_tid(pv_transid);
+
+   HBASETrace(HBASETM_TraceExitError,
+              (HDR "CHbaseTM::createTable returning %d.\n", lv_error));
+
+   jthrowable exc;
+   JOI_RetCode lv_joi_retcode = JOI_OK;
+   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   if (lv_joi_retcode != JOI_OK) {
+      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
+      fflush(stdout);
+      abort();
+   }
+
+   jbyteArray jba_tbldesc = _tlp_jenv->NewByteArray(pv_tbldesc_len);
+   if (jba_tbldesc == NULL)
+      return RET_ADD_PARAM;
+   _tlp_jenv->SetByteArrayRegion(jba_tbldesc, 0, pv_tbldesc_len, (const jbyte*) pa_tbldesc);
+
+   lv_error = _tlp_jenv->CallShortMethod(javaObj_,
+                    JavaMethods_[JM_CREATETABLE].methodID,
+                    jlv_transid,
+                    jba_tbldesc);
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      lv_error = RET_EXCEPTION;
+   }
+
+   _tlp_jenv->DeleteLocalRef(jba_tbldesc);
+
+   HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::createTable : Error %d, Txn ID (%d,%d), hostname %s.\n",
+                lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tbldesc));
+
+   return lv_error;
+}
+
 
 //----------------------------------------------------------------------------
 // CHbaseTM::shutdown

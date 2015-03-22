@@ -1,7 +1,7 @@
 
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -381,6 +381,27 @@ int32 CTmTxBranches::registerRegion (CTmTxBase *pp_txn, int64 pv_flags, CTmTxMes
                 pp_txn->node(), pp_txn->seqnum(), num_rms_unresolved(pp_txn)));
    return lv_err;
 } // registerRegion
+
+
+//------------------------------------------------------------------------------
+// ddlOperation
+// Purpose - Handles ddlOperation requests 
+// -----------------------------------------------------------------------------
+
+int32 CTmTxBranches::ddlOperation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg)
+{
+   int32 lv_err = FEOK;
+
+   TMTrace (2, ("CTmTxBranches::ddlOperation, Txn ID (%d,%d), ENTRY, flags " PFLL "\n",
+                pp_txn->node(), pp_txn->seqnum(), pv_flags));
+
+   lv_err = iv_HBASEBranches.hb_ddl_operation(pp_txn, pv_flags, pp_msg);
+
+   TMTrace (2, ("CTmTxBranches::ddlOperation, Txn ID (%d,%d), EXIT, UnResolved branches %d.\n",
+                pp_txn->node(), pp_txn->seqnum(), num_rms_unresolved(pp_txn)));
+
+   return lv_err;
+}
 
 
 //------------------------------------------------------------------------------
