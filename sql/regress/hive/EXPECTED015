@@ -401,12 +401,14 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>
 >>--------------------------------------------------------------------------
 >>
->>select count(*) from hive.hive.customer_address;
+>>select count(*) from hive.hive.customer_address where ca_address_sk <= 5000;
+
+*** WARNING[6008] Statistics for column (CA_ADDRESS_SK) from table HIVE.HIVE.CUSTOMER_ADDRESS were not available. As a result, the access path chosen might not be the best possible.
 
 (EXPR)              
 --------------------
 
-               50000
+                5000
 
 --- 1 row(s) selected.
 >>select count(*) from customer_address;
@@ -420,7 +422,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>
 >>prepare s from 
 +>load transform into customer_address 
-+>select * from hive.hive.customer_address;
++>select * from hive.hive.customer_address where ca_address_sk <= 5000;
+
+*** WARNING[6008] Statistics for column (CA_ADDRESS_SK) from table HIVE.HIVE.CUSTOMER_ADDRESS were not available. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
 >>explain options 'f' s;
@@ -428,39 +432,39 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-6    .    7    root                                                  5.19E+004
-5    .    6    esp_exchange                    1:5(hash2)            5.19E+004
-3    4    5    tuple_flow                                            5.19E+004
+6    .    7    root                                                  1.73E+004
+5    .    6    esp_exchange                    1:5(hash2)            1.73E+004
+3    4    5    tuple_flow                                            1.73E+004
 .    .    4    trafodion_load_prepa            CUSTOMER_ADDRESS      1.00E+000
-2    .    3    sort                                                  5.19E+004
-1    .    2    esp_exchange                    5(hash2):1            5.19E+004
-.    .    1    hive_scan                       CUSTOMER_ADDRESS      5.19E+004
+2    .    3    sort                                                  1.73E+004
+1    .    2    esp_exchange                    5(hash2):1            1.73E+004
+.    .    1    hive_scan                       CUSTOMER_ADDRESS      1.73E+004
 
 --- SQL operation complete.
 >>
 >>load  with no populate indexes  into customer_address 
-+>select * from hive.hive.customer_address;
++>select * from hive.hive.customer_address where ca_address_sk <= 5000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
-       Rows Processed: 50000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:04.854
+       Rows Processed: 5000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:04.266
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.281
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.599
 
---- 50000 row(s) loaded.
+--- 5000 row(s) loaded.
 >>
 >>select count(*) from customer_address;
 
 (EXPR)              
 --------------------
 
-               50000
+                5000
 
 --- 1 row(s) selected.
 >>
->>select [first 20] * from customer_address order by ca_address_sk ;
+>>select [first 20] * from customer_address  where ca_address_sk <= 5000 order by ca_address_sk ;
 
 CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME                                                CA_STREET_TYPE   CA_SUITE_NUMBER  CA_CITY                                                       CA_COUNTY                       CA_STATE  CA_ZIP      CA_COUNTRY                      CA_GMT_OFFSET  CA_LOCATION_TYPE
 -------------  ----------------  ----------------  ------------------------------------------------------------  ---------------  ---------------  ------------------------------------------------------------  ------------------------------  --------  ----------  ------------------------------  -------------  --------------------
@@ -501,7 +505,9 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
 >>
 >>prepare s from 
 +>load transform into customer_address_NOPK 
-+>select * from hive.hive.customer_address;
++>select * from hive.hive.customer_address  where ca_address_sk <= 5000;
+
+*** WARNING[6008] Statistics for column (CA_ADDRESS_SK) from table HIVE.HIVE.CUSTOMER_ADDRESS were not available. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
 >>explain options 'f' s;
@@ -509,34 +515,34 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  5.19E+004
-4    .    5    esp_exchange                    1:5(hash2)            5.19E+004
-2    3    4    tuple_flow                                            5.19E+004
+5    .    6    root                                                  1.73E+004
+4    .    5    esp_exchange                    1:5(hash2)            1.73E+004
+2    3    4    tuple_flow                                            1.73E+004
 .    .    3    trafodion_load_prepa            CUSTOMER_ADDRESS_NOP  1.00E+000
-1    .    2    esp_exchange                    5(hash2):1            5.19E+004
-.    .    1    hive_scan                       CUSTOMER_ADDRESS      5.19E+004
+1    .    2    esp_exchange                    5(hash2):1            1.73E+004
+.    .    1    hive_scan                       CUSTOMER_ADDRESS      1.73E+004
 
 --- SQL operation complete.
 >>
 >>load  with no populate indexes  into customer_address_NOPK 
-+>select * from hive.hive.customer_address;
++>select * from hive.hive.customer_address where ca_address_sk <= 5000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
 Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
-       Rows Processed: 50000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:01.973
+       Rows Processed: 5000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.826
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.222
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.476
 
---- 50000 row(s) loaded.
+--- 5000 row(s) loaded.
 >>
 >>select count(*) from customer_address_NOPK;
 
 (EXPR)              
 --------------------
 
-               50000
+                5000
 
 --- 1 row(s) selected.
 >>
@@ -570,14 +576,14 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
 >>
 >>---------------------
 >>
->>select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;
+>>select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
 *** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
 (EXPR)              
 --------------------
 
-              500000
+                5000
 
 --- 1 row(s) selected.
 >>select count(*) from customer_demographics;
@@ -591,7 +597,7 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
 >>
 >>prepare s from 
 +>load transform into customer_demographics 
-+>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
 *** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
@@ -620,24 +626,24 @@ ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
                              (HIVE.CUSTOMER_DEMOGRAPHICS.CD_DEMO_SK)
 >>
 >>load  with no populate indexes  into customer_demographics 
-+>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-       Rows Processed: 500000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:10.599
+       Rows Processed: 5000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:02.925
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.354
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.404
 
---- 500000 row(s) loaded.
+--- 5000 row(s) loaded.
 >>
 >>select count(*) from customer_demographics;
 
 (EXPR)              
 --------------------
 
-              500000
+                5000
 
 --- 1 row(s) selected.
 >>
@@ -671,14 +677,14 @@ CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_EST
 >>
 >>
 >>---------------------
->>select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;
+>>select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
 *** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
 (EXPR)              
 --------------------
 
-              500000
+                5000
 
 --- 1 row(s) selected.
 >>select count(*) from customer_demographics_salt;
@@ -692,7 +698,7 @@ CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_EST
 >>
 >>prepare s from 
 +>load transform into customer_demographics_salt 
-+>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
 *** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
 
@@ -726,17 +732,17 @@ ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
                              HIVE.HIVE.CUSTOMER_DEMOGRAPHICS.CD_DEMO_SK) with
 >>
 >>load  with no populate indexes  into customer_demographics_salt 
-+>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-       Rows Processed: 500000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:14.025
+       Rows Processed: 5000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:04.246
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.431
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.400
 
---- 500000 row(s) loaded.
+--- 5000 row(s) loaded.
 >>
 >>
 >>select count(*) from customer_demographics_salt;
@@ -744,7 +750,7 @@ Task:  COMPLETION      Status: Ended      ET: 00:00:01.431
 (EXPR)              
 --------------------
 
-              500000
+                5000
 
 --- 1 row(s) selected.
 >>
@@ -1326,154 +1332,64 @@ Task:  POPULATE INDEX  Status: Ended      ET: 00:00:18.199
 >>
 >>
 >>
->>--load with upsert using load
->>drop table customer_demographics_salt cascade;
-
---- SQL operation complete.
->>drop table customer_demographics cascade;
-
---- SQL operation complete.
->>create table customer_demographics
-+>(
-+>  cd_demo_sk              int not null,
-+>  cd_gender               char(1),
-+>  cd_marital_status       char(1),
-+>  cd_education_status     char(20),
-+>  cd_purchase_estimate    int,
-+>  cd_credit_rating        char(10),
-+>  cd_dep_count            int,
-+>  cd_dep_employed_count   int,
-+>  cd_dep_college_count    int,
-+>  primary key (cd_demo_sk)
-+>);
-
---- SQL operation complete.
->>
->>create table customer_demographics_salt
-+>(
-+>  cd_demo_sk              int not null,
-+>  cd_gender               char(1),
-+>  cd_marital_status       char(1),
-+>  cd_education_status     char(20),
-+>  cd_purchase_estimate    int,
-+>  cd_credit_rating        char(10),
-+>  cd_dep_count            int,
-+>  cd_dep_employed_count   int,
-+>  cd_dep_college_count    int,
-+>  primary key (cd_demo_sk)
-+>)
-+>salt using 4 partitions on (cd_demo_sk);
-
---- SQL operation complete.
->>create index cd_dep_count_IDX on customer_demographics(cd_dep_count) no populate ;
-
---- SQL operation complete.
->>create index cd_dep_college_count_IDX on customer_demographics(cd_dep_college_count) no populate;
-
---- SQL operation complete.
->>
->>load with upsert using load into customer_demographics 
-+>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
-Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  UPSERT USING L  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-       Rows Processed: 5000 
-Task:  UPSERT USING L  Status: Ended      ET: 00:00:05.860
-Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  POPULATE INDEX  Status: Ended      ET: 00:00:11.011
-
---- 5000 row(s) loaded.
->>
->>set parserflags 1;
-
---- SQL operation complete.
->>select count(*) from customer_demographics;
-
-(EXPR)              
---------------------
-
-                5000
-
---- 1 row(s) selected.
->>select count(*) from table(index_table cd_dep_count_IDX);
-
-(EXPR)              
---------------------
-
-                5000
-
---- 1 row(s) selected.
->>select count(*) from table(index_table cd_dep_college_count_IDX);
-
-(EXPR)              
---------------------
-
-                5000
-
---- 1 row(s) selected.
->>
->>drop index cd_dep_count_IDX;
-
---- SQL operation complete.
->>drop index cd_dep_college_count_IDX;
-
---- SQL operation complete.
->>
->>create index cd_dep_count_IDX2 on customer_demographics_salt(cd_dep_count) no populate ;
-
---- SQL operation complete.
->>create index cd_dep_college_count_IDX2 on customer_demographics_salt(cd_dep_college_count) no populate;
-
---- SQL operation complete.
->>---------------------------
->>load with upsert using load into customer_demographics_salt 
-+>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
-Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  UPSERT USING L  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-       Rows Processed: 5000 
-Task:  UPSERT USING L  Status: Ended      ET: 00:00:05.725
-Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  POPULATE INDEX  Status: Ended      ET: 00:00:11.384
-
---- 5000 row(s) loaded.
->>
->>set parserflags 1;
-
---- SQL operation complete.
->>select count(*) from customer_demographics_salt;
-
-(EXPR)              
---------------------
-
-                5000
-
---- 1 row(s) selected.
->>select count(*) from table(index_table cd_dep_count_IDX2);
-
-(EXPR)              
---------------------
-
-                5000
-
---- 1 row(s) selected.
->>select count(*) from table(index_table cd_dep_college_count_IDX2);
-
-(EXPR)              
---------------------
-
-                5000
-
---- 1 row(s) selected.
->>
->>drop index cd_dep_count_IDX2;
-
---- SQL operation complete.
->>drop index cd_dep_college_count_IDX2;
-
---- SQL operation complete.
+>>-- --load with upsert using load
+>>-- drop table customer_demographics_salt cascade;
+>>-- drop table customer_demographics cascade;
+>>-- create table customer_demographics
+>>-- (
+>>--   cd_demo_sk              int not null,
+>>--   cd_gender               char(1),
+>>--   cd_marital_status       char(1),
+>>--   cd_education_status     char(20),
+>>--   cd_purchase_estimate    int,
+>>--   cd_credit_rating        char(10),
+>>--   cd_dep_count            int,
+>>--   cd_dep_employed_count   int,
+>>--   cd_dep_college_count    int,
+>>--   primary key (cd_demo_sk)
+>>-- ); 
+>>-- 
+>>-- create table customer_demographics_salt
+>>-- (
+>>--   cd_demo_sk              int not null,
+>>--   cd_gender               char(1),
+>>--   cd_marital_status       char(1),
+>>--   cd_education_status     char(20),
+>>--   cd_purchase_estimate    int,
+>>--   cd_credit_rating        char(10),
+>>--   cd_dep_count            int,
+>>--   cd_dep_employed_count   int,
+>>--   cd_dep_college_count    int,
+>>--   primary key (cd_demo_sk)
+>>-- )
+>>-- salt using 4 partitions on (cd_demo_sk);
+>>-- create index cd_dep_count_IDX on customer_demographics(cd_dep_count) no populate ;
+>>-- create index cd_dep_college_count_IDX on customer_demographics(cd_dep_college_count) no populate;
+>>-- 
+>>-- load with upsert using load into customer_demographics 
+>>-- select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
+>>-- 
+>>-- set parserflags 1;
+>>-- select count(*) from customer_demographics;
+>>-- select count(*) from table(index_table cd_dep_count_IDX);
+>>-- select count(*) from table(index_table cd_dep_college_count_IDX);
+>>-- 
+>>-- drop index cd_dep_count_IDX;
+>>-- drop index cd_dep_college_count_IDX;
+>>-- 
+>>-- create index cd_dep_count_IDX2 on customer_demographics_salt(cd_dep_count) no populate ;
+>>-- create index cd_dep_college_count_IDX2 on customer_demographics_salt(cd_dep_college_count) no populate;
+>>-- ---------------------------
+>>-- load with upsert using load into customer_demographics_salt 
+>>-- select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
+>>-- 
+>>-- set parserflags 1;
+>>-- select count(*) from customer_demographics_salt;
+>>-- select count(*) from table(index_table cd_dep_count_IDX2);
+>>-- select count(*) from table(index_table cd_dep_college_count_IDX2);
+>>-- 
+>>-- drop index cd_dep_count_IDX2;
+>>-- drop index cd_dep_college_count_IDX2;
 >>
 >>-----
 >>drop table customer_address cascade;
@@ -1504,12 +1420,14 @@ Task:  POPULATE INDEX  Status: Ended      ET: 00:00:11.384
 
 --- SQL operation complete.
 >>
->>select count(*) from hive.hive.customer_address;
+>>select count(*) from hive.hive.customer_address  where ca_address_sk <= 5000;
+
+*** WARNING[6008] Statistics for column (CA_ADDRESS_SK) from table HIVE.HIVE.CUSTOMER_ADDRESS were not available. As a result, the access path chosen might not be the best possible.
 
 (EXPR)              
 --------------------
 
-               50000
+                5000
 
 --- 1 row(s) selected.
 >>select count(*) from customer_address;
@@ -1523,7 +1441,9 @@ Task:  POPULATE INDEX  Status: Ended      ET: 00:00:11.384
 >>
 >>prepare s from 
 +>load transform into customer_address 
-+>select * from hive.hive.customer_address;
++>select * from hive.hive.customer_address  where ca_address_sk <= 5000;
+
+*** WARNING[6008] Statistics for column (CA_ADDRESS_SK) from table HIVE.HIVE.CUSTOMER_ADDRESS were not available. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
 >>explain options 'f' s;
@@ -1531,35 +1451,35 @@ Task:  POPULATE INDEX  Status: Ended      ET: 00:00:11.384
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-6    .    7    root                                                  5.19E+004
-5    .    6    esp_exchange                    1:4(range)            5.19E+004
-3    4    5    tuple_flow                                            5.19E+004
+6    .    7    root                                                  1.73E+004
+5    .    6    esp_exchange                    1:4(range)            1.73E+004
+3    4    5    tuple_flow                                            1.73E+004
 .    .    4    trafodion_load_prepa            CUSTOMER_ADDRESS      1.00E+000
-2    .    3    sort                                                  5.19E+004
-1    .    2    esp_exchange                    4(range):1            5.19E+004
-.    .    1    hive_scan                       CUSTOMER_ADDRESS      5.19E+004
+2    .    3    sort                                                  1.73E+004
+1    .    2    esp_exchange                    4(range):1            1.73E+004
+.    .    1    hive_scan                       CUSTOMER_ADDRESS      1.73E+004
 
 --- SQL operation complete.
 >>
 >>load  with no populate indexes  into customer_address 
-+>select * from hive.hive.customer_address;
++>select * from hive.hive.customer_address  where ca_address_sk <= 5000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
-       Rows Processed: 50000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:03.626
+       Rows Processed: 5000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:03.169
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.552
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.397
 
---- 50000 row(s) loaded.
+--- 5000 row(s) loaded.
 >>
 >>select count(*) from customer_address;
 
 (EXPR)              
 --------------------
 
-               50000
+                5000
 
 --- 1 row(s) selected.
 >>
