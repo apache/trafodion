@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -71,30 +71,62 @@ protected:
   NAHeap* heap_;
 };
 
+class simple_cbf_key : public NABasicObject
+{
+public:
+
+   simple_cbf_key(char* key = NULL, UInt32 key_len = 0, NAHeap* heap = NULL);
+   simple_cbf_key(const simple_cbf_key&);
+   ~simple_cbf_key();
+
+   // equality operator
+   NABoolean operator ==(const simple_cbf_key& other) const
+   {
+      return ( keyLen_ == other.keyLen_ &&
+               strncmp(key_, other.key_, keyLen_) == 0 );
+   }
+
+   simple_cbf_key& operator =(const simple_cbf_key& other);
+
+   char* getKey() const { return key_; };
+   UInt32 getKeyLen() const { return keyLen_; };
+
+   friend ULng32 scbfHashFunc(const simple_cbf_key& key);
+
+protected:
+   UInt32 keyLen_;
+   char* key_;
+   NAHeap* heap_;
+};
+
 // The data structure to represent a key to look up the 
 // overflow table.
 //
 // The bucket_ (0-based) field stores the bucket number (the interval in
 // a histogram) that the key is associated with.
-class cbf_key : public NABasicObject
+class cbf_key : public simple_cbf_key
 {
 public:
 
    enum MFV_ENUM { NONE=2, MFV=0, MFV2=1 };
 
    cbf_key(char* key, UInt32 key_len, UInt32 bucket, cbf_key::MFV_ENUM mfv, NAHeap* heap);
+   // This one declared but not defined in fast-stats prototype.
+   cbf_key(char* key = NULL, UInt32 key_len = 0, NAHeap* heap = NULL);
    cbf_key(const cbf_key&);
-   ~cbf_key();
+   ~cbf_key() {}
+
+   cbf_key& operator =(const cbf_key& other);
 
    // equality operator
-   NABoolean operator ==(const cbf_key& other) const 
-   {
-      return ( keyLen_ == other.keyLen_ && 
-               strncmp(key_, other.key_, keyLen_) == 0 );
-   }
+//   NABoolean operator ==(const cbf_key& other) const
+//   {
+//      return ( keyLen_ == other.keyLen_ &&
+//               strncmp(key_, other.key_, keyLen_) == 0 );
+//   }
 
-   char* getKey() const { return key_; };
-   UInt32 getKeyLen() const { return keyLen_; };
+   //char* getKey() const { return key_; };
+   //UInt32 getKeyLen() const { return keyLen_; };
    UInt32 getBucket() const { return bucket_; };
 
    MFV_ENUM getMFV() const { return mfv_; }
@@ -102,13 +134,13 @@ public:
    friend ULng32 cbfHashFunc(const cbf_key& key);
 
 protected:
-   char* key_;
-   UInt32 keyLen_;
+   //char* key_;
+   //UInt32 keyLen_;
 
    UInt32 bucket_;
    MFV_ENUM mfv_;
 
-   NAHeap* heap_;
+   //NAHeap* heap_;
 };
 
 
@@ -413,6 +445,67 @@ protected:
   void computeSumOfFrequencySquaredHighFreq(double* sumSq);
 
 protected:
+};
+
+//-----------------------  new code for faststats ---------------------------
+
+class FastStatsCountingBloomFilter : public BloomFilter
+{
+public:
+
+    FastStatsCountingBloomFilter(NAHeap* heap,
+                             UInt32 maxHashFuncs, // # of distinct elements
+                             UInt32 n, // # of distinct elements
+                             float p,  // probability of false positives
+                             UInt32 maxNonOverflowFreq  // max of non-overflow
+                                                        // freq of n elements
+                            );
+
+
+  ~FastStatsCountingBloomFilter();
+
+  NABoolean insert(char * key, UInt32 key_len, UInt32 frequency = 1);
+  NABoolean remove(char * key, UInt32 key_len);
+  NABoolean contain(char * key, UInt32 key_len, UInt64* freq = 0);
+
+  virtual UInt32 getOverflowEntries()
+         { return overflowCountTable_.entries(); };
+
+  NABoolean canHandleArbitrarySkewedValue() { return TRUE; } ;
+
+  void computeSumOfFrequencySquaredHighFreq(double* sumSq);
+
+  void printfreq(const char* colNames);
+
+  const NAList<simple_cbf_key>& getAllKeys() {  return keys_; };
+
+  UInt64 getSizeInBytes(
+                UInt32 maxHashFuncs,
+                UInt32 n, // # of distinct elements
+                float p,  // probability of false positives
+                UInt32 nonOverflowFreq, // non-overflow freq
+                NABoolean isChar, Int32 actualFixAmount
+                       );
+
+protected:
+  virtual void insertIntoOverflowTable(const simple_cbf_key&, UInt32 freq = 1);
+  virtual void removeFromOverflowTable(const simple_cbf_key&);
+
+  virtual UInt64* searchOverflowTable(const simple_cbf_key& key)
+         { return overflowCountTable_.getFirstValue(&key); };
+
+
+  virtual void computeOverflowF2s();
+
+  static
+   UInt64 estimateMemoryInBytesForOverflowTable(UInt32 avgSkewedElements,
+                                                UInt32 numBuckets
+                                                );
+
+protected:
+   VarUIntArray counters_;   // counters for low freq keys
+   NAList<simple_cbf_key> keys_;
+   NAHashDictionary<simple_cbf_key, UInt64> overflowCountTable_;
 };
 
 #endif

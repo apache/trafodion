@@ -33,6 +33,7 @@
 #include "key_range.h"
 #include "key_single_subset.h"
 #include "ex_mdam.h"
+#include "hdfs.h"
 
 #define ROWSET_MAX_NO_ROWS     1000
 
@@ -292,7 +293,8 @@ protected:
   short createDirectRowBuffer(UInt16 tuppIndex, char * tuppRow, 
                         Queue * listOfColNames,
 			NABoolean isUpdate = FALSE,
-			std::vector<UInt32> * posVec = NULL);
+			std::vector<UInt32> * posVec = NULL,
+			double sampleRate = 0.0);
   short createDirectRowBuffer(Text &colFamily,
                          Text &colName,
                          Text &colVal);
@@ -433,6 +435,11 @@ protected:
   HbaseStr row_;
   // Structure to keep track of current position in direct row buffer
   HbaseStr rows_;
+
+  // Redefined and used by ExHbaseAccessBulkLoadPrepSQTcb.
+
+  virtual hdfsFS getHdfs() const { return NULL; }
+  virtual hdfsFile getHdfsSampleFile() const { return NULL; }
 };
 
 class ExHbaseTaskTcb : public ExGod
@@ -836,9 +843,20 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
   public:
     ExHbaseAccessBulkLoadPrepSQTcb( const ExHbaseAccessTdb &tdb,
                                 ex_globals *glob );
-
+    virtual ~ExHbaseAccessBulkLoadPrepSQTcb();
 
     virtual ExWorkProcRetcode work();
+
+  protected:
+    virtual hdfsFS getHdfs() const
+    {
+      return hdfs_;
+    }
+
+    virtual hdfsFile getHdfsSampleFile() const
+    {
+      return hdfsSampleFile_;
+    }
 
    private:
     NABoolean hFileParamsInitialized_;  ////temporary-- need better mechanism later
@@ -846,12 +864,14 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     Text   importLocation_;
     Text   hFileName_;
 
-
     //Queue * sortedListOfColNames_;
     std::vector<UInt32> posVec_;
 
     char * prevRowId_;
 
+    // HDFS file system and output file ptrs used for ustat sample table.
+    hdfsFS hdfs_;
+    hdfsFile hdfsSampleFile_;
 };
 // UMD SQ: UpdMergeDel on Trafodion table
 class ExHbaseUMDtrafSubsetTaskTcb  : public ExHbaseTaskTcb

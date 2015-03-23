@@ -3295,6 +3295,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TRAF_NUM_OF_SALT_PARTNS,                     "-1"),
 
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
+  DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/sample/"),
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
   //TRAF_TABLE_SNAPSHOT_SCAN CQD can be set to :
   //NONE-->    Snapshot scan is disabled and regular scan is used , 
@@ -3494,7 +3495,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_SHOW_MFV_INFO,                  "OFF"),
   DDflte_(USTAT_UEC_HI_RATIO,                   "0.5"),
   DDflte_(USTAT_UEC_LOW_RATIO,                  "0.1"),
-  DDkwd__(USTAT_USE_BULK_LOAD,      "OFF"),
+  DDkwd__(USTAT_USE_BACKING_SAMPLE,             "OFF"),  //@ZXtemp
+  DDkwd__(USTAT_USE_BULK_LOAD,                  "OFF"),
   DDkwd__(USTAT_USE_GROUPING_FOR_SAMPLING,      "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "OFF"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_LOOP,  "ON"),

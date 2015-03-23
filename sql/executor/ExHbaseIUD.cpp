@@ -979,13 +979,29 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
           const ExHbaseAccessTdb &hbaseAccessTdb,
           ex_globals * glob ) :
     ExHbaseAccessUpsertVsbbSQTcb( hbaseAccessTdb, glob),
-    prevRowId_ (NULL)
+    prevRowId_ (NULL),
+    hdfs_(NULL),
+    hdfsSampleFile_(NULL)
 {
    hFileParamsInitialized_ = false;  ////temporary-- need better mechanism later
    //sortedListOfColNames_ = NULL;
    posVec_.clear();
 }
 
+ExHbaseAccessBulkLoadPrepSQTcb::~ExHbaseAccessBulkLoadPrepSQTcb()
+{
+  // Flush and close sample file if used, and disconnect from HDFS.
+  if (hdfs_)
+    {
+      if (hdfsSampleFile_)
+        {
+          hdfsFlush(hdfs_, hdfsSampleFile_);
+          hdfsCloseFile(hdfs_, hdfsSampleFile_);
+        }
+      hdfsDisconnect(hdfs_);
+    }
+
+}
 
 ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 {
@@ -1052,7 +1068,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
         if (!hFileParamsInitialized_)
         {
-              importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
+          importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
                                         ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
           familyLocation_ = std::string(importLocation_ + "/#1");
           Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
@@ -1063,6 +1079,18 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
           retcode = ehi_->initHFileParams(table_, familyLocation_, hFileName_,hbaseAccessTdb().getMaxHFileSize() );
           hFileParamsInitialized_ = true;
+
+//          // Seed random number generator (used to select rows to write to sample table).
+//          srand(time(0));
+//
+//          // Set up HDFS file for sample table.
+//          hdfs_ = hdfsConnect("default", 0);
+//          Text samplePath = std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getSampleLocation()) +
+//                                        ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
+//          char filePart[10];
+//          sprintf(filePart, "/%d", fileNum);
+//          samplePath.append(filePart);
+//          hdfsSampleFile_ = hdfsOpenFile(hdfs_, samplePath.data(), O_WRONLY|O_CREAT, 0, 0, 0);
 
 //              sortedListOfColNames_ = new  Queue(); //delete wehn done
           posVec_.clear();

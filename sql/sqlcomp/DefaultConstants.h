@@ -693,6 +693,7 @@ enum DefaultConstants
   USTAT_UEC_HI_RATIO,          // When the estimated UEC/ROWCOUNT ratio is
   USTAT_UEC_LOW_RATIO,         // between HI_RATIO and LOW_RATIO, we will avoid
                                // calling xValue() to find the root value.
+  USTAT_USE_BACKING_SAMPLE,    // Use Hive persistent sample table instead of reading from full table. @ZXtemp
   USTAT_USE_SIDETREE_INSERT,   // Use sidetree insert when populating scratch table
   USTAT_USE_SLIDING_SAMPLE_RATIO,  // Vary sampling rate according to table size
   USTAT_AUTOMATION_INTERVAL,   // set the ustat automation interval
@@ -3560,6 +3561,9 @@ enum DefaultConstants
   // of salted partitions on primary key columns.
   TRAF_NUM_OF_SALT_PARTNS,
   TRAF_LOAD_PREP_CLEANUP,
+
+  // HDFS root location of backing sample tables.
+  TRAF_SAMPLE_TABLE_LOCATION,
 
   HBASE_SALTED_TABLE_MAX_FILE_SIZE,
   HBASE_SALTED_TABLE_SET_SPLIT_POLICY,

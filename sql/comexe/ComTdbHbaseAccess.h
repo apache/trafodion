@@ -670,7 +670,17 @@ public:
   {
     LoadPrepLocation_ = loadPrepLocation;
   }
- 
+
+  const char * getSampleLocation() const
+  {
+    return sampleLocation_;
+  }
+
+  void setSampleLocation(char * sampleLocation)
+  {
+    sampleLocation_ = sampleLocation;
+  }
+
   UInt32 getRowLen()
   {
     UInt32 rowLen;
@@ -858,6 +868,7 @@ public:
 
  HbasePerfAttributesPtr hbasePerfAttributes_;
   Float32 samplingRate_;
+  NABasicPtr sampleLocation_;
 
   NABasicPtr LoadPrepLocation_;
   UInt32 flags2_;

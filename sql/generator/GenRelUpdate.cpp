@@ -2711,6 +2711,12 @@ short HbaseInsert::codeGen(Generator *generator)
         hbasescan_tdb->setLoadPrepLocation(tlpTmpLocation);
         hbasescan_tdb->setNoDuplicates(CmpCommon::getDefault(TRAF_LOAD_PREP_SKIP_DUPLICATES) == DF_OFF);
         hbasescan_tdb->setMaxHFileSize(CmpCommon::getDefaultLong(TRAF_LOAD_MAX_HFILE_SIZE));
+
+        // For sample file. Move later, when sampling not limited to bulk loads.
+//        NAString sampleLocationNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_SAMPLE_TABLE_LOCATION);
+//        char * sampleLocation = space->allocateAlignedSpace(sampleLocationNAS.length() + 1);
+//        strcpy(sampleLocation, sampleLocationNAS.data());
+//        hbasescan_tdb->setSampleLocation(sampleLocation);
       }
 
       // setting parameters for upsert statement// not related to the hbase bulk load intergration
