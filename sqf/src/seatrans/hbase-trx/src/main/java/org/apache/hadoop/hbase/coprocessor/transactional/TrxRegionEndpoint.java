@@ -3707,12 +3707,6 @@ CoprocessorService, Coprocessor {
         }
     }
 
-    if (cleanScannersForTransactions.contains(transactionId)) {
-      if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: beginTransaction, txid: "
-                    + transactionId + ", is in the list of transactions that have already been retired");
-      throw new IOException("Transaction id " + transactionId + " is in the list of transactions that have already been retired");
-    }
-
     TrxTransactionState state;
     synchronized (transactionsById) {
 //      if (transactionsById.get(getTransactionalUniqueId(transactionId)) != null) {
