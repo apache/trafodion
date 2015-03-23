@@ -1795,8 +1795,8 @@ HQC key=SELECT T . VARCHAR0_UNIQ AS T_VARCHAR0_UNIQ , T . CHAR2_2 AS T_CHAR2_2 ,
 
 Start Time             2015/03/17 20:12:09.344071
 End Time               2015/03/17 20:12:09.345813
-Elapsed Time                      00:00:00.001742
-Compile Time                      00:00:00.001742
+Elapsed Time                      00:00:00.000742
+Compile Time                      00:00:00.000742
 Execution Time                    00:00:00.000000
 
 
@@ -1829,8 +1829,8 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 
 Start Time             2015/03/17 20:12:09.437445
 End Time               2015/03/17 20:12:09.439066
-Elapsed Time                      00:00:00.001621
-Compile Time                      00:00:00.001621
+Elapsed Time                      00:00:00.000621
+Compile Time                      00:00:00.000621
 Execution Time                    00:00:00.000000
 
 
