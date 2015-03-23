@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@ public:
                                       bool system_messages,
                                       struct timespec *creation_time );
     void    PrepareForTransactions( bool activatingSpare );
+    void    SendDTMRestarted( void );
     inline void SetCpuUser( long long num ) { cpuUser_ = num; }
     inline void SetCpuNice( long long num ) { cpuNice_ = num; }
     inline void SetCpuSystem( long long num ) { cpuSystem_ = num; }

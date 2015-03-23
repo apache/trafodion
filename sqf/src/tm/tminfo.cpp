@@ -3541,6 +3541,54 @@ void TM_Info::open_other_tms()
 }
 
 // -------------------------------------------------------------------
+// open_restarted_tm
+// Purpose : open the restarted TM by the lead TM
+// This routine is ONLY called in response to a monitor TMRestarted message!
+// ------------------------------------------------------------------- 
+ int32 TM_Info::open_restarted_tm(int32  pv_nid)
+ {
+   char	la_buffer[20];
+   int		lv_oid;
+   int		lv_error;
+
+   if (!iv_lead_tm)
+   	   return (FEOK);
+   
+   TMTrace (2, ("TM_Info::open_restarted_tm : ENTRY.\n"));
+  
+   sprintf(la_buffer, "$tm%d", pv_nid);
+   lock();
+   lv_error = msg_mon_open_process(la_buffer,
+   	   			&(iv_open_tms[pv_nid].iv_phandle),
+   	   			&lv_oid);
+   if (lv_error)
+   	{   
+	TMTrace(1, ("TM_Info::open_restarted_tm : msg_mon_open_process error %d, trying to open %s.\n",
+				 lv_error, la_buffer));
+	 tm_log_event(DTM_CANNOT_OPEN_DTM, SQ_LOG_WARNING, "DTM_CANNOT_OPEN_DTM", lv_error, 
+				  -1, pv_nid);
+	 // The new tm died before we could open it? 
+	 iv_open_tms[pv_nid].iv_in_use = 0;
+	 return (-1);
+	}
+
+   if (lv_error == FEOK)
+	{
+	  iv_open_tms[pv_nid].iv_in_use = 1;
+	  if (pv_nid > iv_tms_highest_index_used)
+		iv_tms_highest_index_used = pv_nid;
+	  restart_tm_process_helper(pv_nid);
+	}
+
+	if (lv_error != 0 && iv_trace_level)
+       		 trace_printf("TM_Info::open_restarted_tm : Error opening TM %d\n",pv_nid);
+    unlock();
+
+    TMTrace (2, ("TM_Info::open_restarted_tm : EXIT"));
+    return lv_error;
+}
+
+// -------------------------------------------------------------------
 // get_opened_tm_phandle
 // Purpose : return the phandle of another TM opened by the lead TM
 // ------------------------------------------------------------------- 

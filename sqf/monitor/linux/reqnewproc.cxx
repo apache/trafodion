@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -194,6 +194,45 @@ void CExtNewProcReq::performRequest()
                         target_nid);
                 mon_log_write(MON_MONITOR_STARTPROCESS_2, SQ_LOG_ERR, la_buf);
                 return;
+            }
+        }
+        if ( msg_->u.request.u.new_process.type == ProcessType_DTM )
+        {
+            if (( msg_->u.request.u.new_process.nid < 0  ||
+                  msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )
+            {
+                // Nid must be specified
+                msg_->u.reply.type = ReplyType_NewProcess;
+                msg_->u.reply.u.new_process.return_code = MPI_ERR_SPAWN;
+                // Send reply to requester
+                lioreply(msg_, pid_);
+
+                sprintf(la_buf, "[%s], Invalid Node ID (%d).\n", method_name,
+                        target_nid);
+                mon_log_write(MON_MONITOR_STARTPROCESS_3, SQ_LOG_ERR, la_buf);
+                return;
+            }
+            node = Nodes->GetLNode(msg_->u.request.u.new_process.nid)->GetNode();
+            lnode = node->GetFirstLNode();
+            for ( ; lnode; lnode = lnode->GetNext() )
+            {
+                if ( lnode->GetNid() == msg_->u.request.u.new_process.nid  )
+                {
+                    CProcess *process = lnode->GetProcessLByType( ProcessType_DTM );
+                    if ( process )
+                    {
+                        msg_->u.reply.type = ReplyType_NewProcess;
+                        msg_->u.reply.u.new_process.return_code = MPI_ERR_SPAWN;
+                        // Send reply to requester
+                        lioreply(msg_, pid_);
+
+                        sprintf(la_buf, "[%s], DTM process already exists in "
+                                " Node ID %d.\n", method_name,
+                                target_nid);
+                        mon_log_write(MON_MONITOR_STARTPROCESS_4, SQ_LOG_ERR, la_buf);
+                        return;
+                    }
+                }
             }
         }
         if ( msg_->u.request.u.new_process.type == ProcessType_SPX ) 

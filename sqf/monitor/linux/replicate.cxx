@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -65,7 +65,9 @@ void CReplObj::validateObj()
 // Determine the maximum size of a replication object (excluding CReplEvent)
 int CReplObj::calcAllocSize()
 {
-    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplSchedData),
+    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplSoftNodeUp),
+                                                                                sizeof(CReplSoftNodeDown)),
+                                                                            sizeof(CReplSchedData)),
                                                                         sizeof(CReplActivateSpare)),
                                                                     sizeof(CReplConfigData)),
                                                                 sizeof(CReplOpen)),
@@ -1183,24 +1185,6 @@ CReplShutdown::~CReplShutdown()
     memcpy(&eyecatcher_, "rpld", 4);
 }
 
-CReplNodeDown::CReplNodeDown(int pnid) : pnid_(pnid)
-{
-    // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RPLN", 4);
-
-    // Compute message size (adjust if needed to conform to
-    // internal_msg_def structure alignment).
-    replSize_ = (MSG_HDR_SIZE + sizeof ( down_def ) + msgAlignment_)
-                & ~msgAlignment_;
-
-    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
-    {
-        const char method_name[] = "CReplNodeDown::CReplNodeDown";
-        trace_printf("%s@%d  - Queuing node down, pnid=%d\n",
-                     method_name, __LINE__, pnid_);
-    }
-}
-
 bool CReplShutdown::replicate(struct internal_msg_def *&msg)
 {
     const char method_name[] = "CReplShutdown::replicate";
@@ -1219,6 +1203,24 @@ bool CReplShutdown::replicate(struct internal_msg_def *&msg)
     TRACE_EXIT;
 
     return true;
+}
+
+CReplNodeDown::CReplNodeDown(int pnid) : pnid_(pnid)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RPLN", 4);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( down_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+    {
+        const char method_name[] = "CReplNodeDown::CReplNodeDown";
+        trace_printf("%s@%d  - Queuing node down, pnid=%d\n",
+                     method_name, __LINE__, pnid_);
+    }
 }
 
 CReplNodeDown::~CReplNodeDown()
@@ -1373,6 +1375,104 @@ bool CReplNodeUp::replicate(struct internal_msg_def *&msg)
     // build message to replicate this process kill to other nodes
     msg->type = InternalType_Up;
     msg->u.up.pnid = pnid_;
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
+CReplSoftNodeDown::CReplSoftNodeDown(int pnid) : pnid_(pnid)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RPLX", 4);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( down_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+    {
+        const char method_name[] = "CReplSoftNodeDown::CReplSoftNodeDown";
+        trace_printf("%s@%d  - Queuing soft node down, pnid=%d\n",
+                     method_name, __LINE__, pnid_);
+    }
+}
+
+CReplSoftNodeDown::~CReplSoftNodeDown()
+{
+    const char method_name[] = "CReplSoftNodeDown::~CReplSoftNodeDown";
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+        trace_printf("%s@%d - Soft node down replication for pnid=%d\n", method_name, __LINE__, pnid_ );
+
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rplx", 4);
+}
+
+bool CReplSoftNodeDown::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplSoftNodeDown::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
+        trace_printf("%s@%d" " - Replicating soft node down, pnid=%d\n", method_name, __LINE__, pnid_);
+
+    // build message to replicate this soft node down to other nodes
+    msg->type = InternalType_SoftNodeDown;
+    msg->u.down.pnid = pnid_;
+
+    // Advance sync buffer pointer
+    Nodes->AddMsg( msg, replSize() );
+
+    TRACE_EXIT;
+
+    return true;
+}
+
+CReplSoftNodeUp::CReplSoftNodeUp(int pnid) : pnid_(pnid)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RPLY", 4);
+
+    // Compute message size (adjust if needed to conform to
+    // internal_msg_def structure alignment).
+    replSize_ = (MSG_HDR_SIZE + sizeof ( down_def ) + msgAlignment_)
+                & ~msgAlignment_;
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+    {
+        const char method_name[] = "CReplSoftNodeUp::CReplSoftNodeUp";
+        trace_printf("%s@%d  - Queuing soft node up, pnid=%d\n",
+                     method_name, __LINE__, pnid_);
+    }
+}
+
+CReplSoftNodeUp::~CReplSoftNodeUp()
+{
+    const char method_name[] = "CReplSoftNodeUp::~CReplSoftNodeUp";
+
+    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
+        trace_printf("%s@%d - Soft node up replication for pnid=%d\n", method_name, __LINE__, pnid_ );
+
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rply", 4);
+}
+
+bool CReplSoftNodeUp::replicate(struct internal_msg_def *&msg)
+{
+    const char method_name[] = "CReplSoftNodeUp::replicate";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
+        trace_printf("%s@%d" " - Replicating soft node up, pnid=%d\n", method_name, __LINE__, pnid_);
+
+    // build message to replicate this soft node up to other nodes
+    msg->type = InternalType_SoftNodeUp;
+    msg->u.down.pnid = pnid_;
 
     // Advance sync buffer pointer
     Nodes->AddMsg( msg, replSize() );

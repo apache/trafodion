@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -126,14 +126,16 @@ public:
     int GetNumNodes() { return cfgPNodes_; }
     bool ImAlive( bool needed=false, struct sync_def *sync = NULL );
     int  MapRank( int current_rank );
-    void MarkDown( int nid, bool communicate_state=false );
+    void HardNodeDown( int nid, bool communicate_state=false );
+    void SoftNodeDown( int pnid );
+    int  SoftNodeUpPrepare( int pnid );
     bool CheckSpareSet( int pnid );
     inline bool  IsIntegrating( void ) { return( (joinSock_ != -1 || joinComm_ != MPI_COMM_NULL) || integratingPNid_ != -1 ); }
     struct message_def *JoinMessage( const char *node_name, int pnid, JOINING_PHASE phase );
     struct message_def *SpareUpMessage( const char *node_name, int nid );
     struct message_def *ReIntegErrorMessage( const char *msgText );
     void SetIntegratingNid( int nid ) { integratingPNid_ = nid; };
-    int MarkUp( int pnid, char *node_name );
+    int HardNodeUp( int pnid, char *node_name );
     CNode* GetIntegratingNode() { return Node[integratingPNid_]; }
     static char *Timestamp( void );
     void WakeUp( void );
@@ -291,7 +293,7 @@ private:
     // Set of nodes that are up, one bit per node
     upNodes_t upNodes_;  // Array of 64 bits
 
-    // Container to store new communicators or socket from MarkUp
+    // Container to store new communicators or socket from HardNodeUp
     typedef struct commInfo_s
     { int pnid; int otherRank; MPI_Comm comm; int socket; struct timespec ts;} commInfo_t;
     typedef list<commInfo_t> newComms_t;

@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -230,6 +230,7 @@ static const char *ga_ms_mon_msg_type_labels[] = {
     "MS_MsgType_Service",
     "MS_MsgType_SpareUp",
     "MS_MsgType_Shutdown",
+    "MS_MsgType_TmRestarted",
     "MS_MsgType_TmSyncAbort",
     "MS_MsgType_TmSyncCommit",
     "MS_MsgType_UnsolicitedMessage",
@@ -252,6 +253,7 @@ static const char *ga_ms_mon_msg_type_short_labels[] = {
     "Service",
     "SpareUp",
     "Shutdown",
+    "TmRestarted",
     "TmSyncAbort",
     "TmSyncCommit",
     "UnsolicitedMessage",
@@ -526,6 +528,7 @@ static const char *ga_sb_utrace_api_mon_msgtype_labels[] = {
     "MsgType_Service",
     "MsgType_SpareUp",
     "MsgType_Shutdown",
+    "MsgType_TmRestarted",
     "MsgType_TmSyncAbort",
     "MsgType_TmSyncCommit",
     "MsgType_UnsolicitedMessage",

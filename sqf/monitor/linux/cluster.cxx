@@ -93,6 +93,33 @@ const char *StateString( STATE state);
 const char *SyncStateString( SyncState state);
 const char *EpollEventString( __uint32_t events );
 const char *EpollOpString( int op );
+const char *NodePhaseString( NodePhase phase );
+
+const char *NodePhaseString( NodePhase phase )
+{
+    const char *str;
+
+    switch( phase )
+    {
+        case Phase_Ready:
+            str = "Phase_Ready";
+            break;
+        case Phase_Activating:
+            str = "Phase_Activating";
+            break;
+        case Phase_SoftDown:
+            str = "Phase_SoftDown";
+            break;
+        case Phase_SoftUp:
+            str = "Phase_SoftDown";
+            break;
+        default:
+            str = "NodePhase - Undefined";
+            break;
+    }
+
+    return( str );
+}
 
 void CCluster::ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealth )
 {
@@ -249,17 +276,38 @@ void CCluster::NodeTmReady( int nid )
 
     tmReadyCount_++;
     
+    if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+    {
+        trace_printf( "%s@%d - TmReady, nid=%d, tm count=%d, soft node down=%d\n"
+                    , method_name, __LINE__
+                    , nid
+                    , tmReadyCount_
+                    , MyNode->IsSoftNodeDown() );
+    }
+
     MyNode->StartPStartDPersistentDTM( nid );
-    
+
     if ( MyNode->GetNumLNodes() == tmReadyCount_ )
     {
-        char la_buf[MON_STRING_BUF_SIZE];
-        sprintf(la_buf, "[%s], Node activated! pnid=%d, name=(%s) \n", method_name, MyNode->GetPNid(), MyNode->GetName());
-        mon_log_write(MON_CLUSTER_NODE_TM_READY, SQ_LOG_INFO, la_buf); 
+        if ( MyNode->IsSoftNodeDown() )
+        {
+            MyNode->ResetSoftNodeDown();
 
-        // Let other monitors know the node is up
-        CReplActivateSpare *repl = new CReplActivateSpare( MyPNID, -1 );
-        Replicator.addItem(repl);
+            char la_buf[MON_STRING_BUF_SIZE];
+            sprintf( la_buf, "[%s], Soft Node up! pnid=%d, name=(%s)\n"
+                   , method_name, MyNode->GetPNid(), MyNode->GetName());
+            mon_log_write(MON_CLUSTER_NODE_TM_READY, SQ_LOG_INFO, la_buf);
+        }
+        else
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            sprintf(la_buf, "[%s], Node activated! pnid=%d, name=(%s) \n", method_name, MyNode->GetPNid(), MyNode->GetName());
+            mon_log_write(MON_CLUSTER_NODE_TM_READY, SQ_LOG_INFO, la_buf);
+
+            // Let other monitors know the node is up
+            CReplActivateSpare *repl = new CReplActivateSpare( MyPNID, -1 );
+            Replicator.addItem(repl);
+        }
     }
 
     TRACE_EXIT;
@@ -377,7 +425,10 @@ void CCluster::AssignTmLeader(int pnid)
 
         node = Node[TmLeaderPNid];
 
-        if ( (node->GetState() != State_Up) || node->IsSpareNode() || (node->GetPhase() != Phase_Ready) )
+        if ( node->IsSpareNode() ||
+             node->IsSoftNodeDown() ||
+             node->GetState() != State_Up ||
+             node->GetPhase() != Phase_Ready )
         {
             continue; // skip this node for any of the above reasons 
         }  
@@ -681,7 +732,7 @@ unsigned long long CCluster::EnsureAndGetSeqNum(cluster_state_def_t nodestate[])
 }
 
 
-void CCluster::MarkDown (int pnid, bool communicate_state)
+void CCluster::HardNodeDown (int pnid, bool communicate_state)
 {
     char port_fname[MAX_PROCESS_PATH];
     char temp_fname[MAX_PROCESS_PATH];
@@ -689,7 +740,7 @@ void CCluster::MarkDown (int pnid, bool communicate_state)
     CLNode *lnode;
     char    buf[MON_STRING_BUF_SIZE];
     
-    const char method_name[] = "CCluster::MarkDown";
+    const char method_name[] = "CCluster::HardNodeDown";
     TRACE_ENTRY;
 
     node = Nodes->GetNode(pnid);
@@ -753,13 +804,12 @@ void CCluster::MarkDown (int pnid, bool communicate_state)
         sprintf(temp_fname, "%s.bak", port_fname);
         remove(temp_fname);
         rename(port_fname, temp_fname);
-
     }
 
     if (node->GetState() != State_Down || node->isInQuiesceState())
     {
         snprintf(buf, sizeof(buf),
-                 "[CCluster::MarkDown], Node %s (%d) is going down.\n",
+                 "[CCluster::HardNodeDown], Node %s (%d) is going down.\n",
                  node->GetName(), node->GetPNid());
         mon_log_write(MON_CLUSTER_MARKDOWN_2, SQ_LOG_CRIT, buf);
 
@@ -789,7 +839,7 @@ void CCluster::MarkDown (int pnid, bool communicate_state)
                     // make sure no processes are alive if in the middle of re-integration
                     node->KillAllDown();
                     snprintf(buf, sizeof(buf),
-                             "[CCluster::MarkDown], Node %s (%d)is down.\n",
+                             "[CCluster::HardNodeDown], Node %s (%d)is down.\n",
                              node->GetName(), node->GetPNid());
                     mon_log_write(MON_CLUSTER_MARKDOWN_3, SQ_LOG_ERR, buf); 
                     // Don't generate a core file, abort is intentional
@@ -833,6 +883,7 @@ void CCluster::MarkDown (int pnid, bool communicate_state)
             }
             node->KillAllDown();
             node->SetState( State_Down ); 
+            // Send node down message to local node's processes
             lnode = node->GetFirstLNode();
             for ( ; lnode; lnode = lnode->GetNext() )
             {
@@ -857,6 +908,88 @@ void CCluster::MarkDown (int pnid, bool communicate_state)
         IAmIntegrated = false;
         AssignTmLeader(pnid);
     }
+
+    TRACE_EXIT;
+}
+
+void CCluster::SoftNodeDown( int pnid )
+{
+    CNode  *node;
+    char    buf[MON_STRING_BUF_SIZE];
+
+    const char method_name[] = "CCluster::SoftNodeDown";
+    TRACE_ENTRY;
+
+    node = Nodes->GetNode(pnid);
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+       trace_printf( "%s@%d - pnid=%d, state=%s, isInQuiesceState=%d,"
+                     " (local pnid=%d, state=%s, isInQuiesceState=%d, "
+                     "shutdown level=%d)\n"
+                   , method_name, __LINE__
+                   , pnid, StateString(node->GetState())
+                   , node->isInQuiesceState()
+                   , MyPNID, StateString(MyNode->GetState())
+                   , MyNode->isInQuiesceState(), MyNode->GetShutdownLevel() );
+
+    if (( MyPNID == pnid              ) &&
+        ( MyNode->GetState() == State_Down ||
+          MyNode->IsKillingNode() ) )
+    {
+        // we are coming down ... don't process it
+        return;
+    }
+
+    snprintf( buf, sizeof(buf)
+            , "[%s], Node %s (%d) is going soft down.\n"
+            , method_name, node->GetName(), node->GetPNid());
+    mon_log_write(MON_CLUSTER_SOFTNODEDOWN_1, SQ_LOG_ERR, buf);
+
+    node->SetKillingNode( true );
+
+    if ( node->GetState() == State_Up )
+    {
+        node->SetSoftNodeDown();            // Set soft down flag
+        node->SetPhase( Phase_SoftDown );   // Suspend TMSync on node
+        node->KillAllDownSoft();            // Kill all processes
+
+        snprintf( buf, sizeof(buf)
+                , "[%s], Node %s (%d) executed soft down.\n"
+                , method_name, node->GetName(), node->GetPNid() );
+        mon_log_write(MON_CLUSTER_SOFTNODEDOWN_2, SQ_LOG_ERR, buf);
+
+        if ( node->GetPNid() == MyPNID )
+        {
+            // and tell remote monitor processes the node is soft down
+            CReplSoftNodeDown *repl = new CReplSoftNodeDown( MyPNID );
+            Replicator.addItem(repl);
+        }
+    }
+    else
+    {
+        snprintf( buf, sizeof(buf),
+                  "[%s], Node %s (%d) soft node down not executed, state=%s\n"
+                , method_name, node->GetName()
+                , node->GetPNid()
+                , StateString(MyNode->GetState()) );
+        mon_log_write(MON_CLUSTER_SOFTNODEDOWN_3, SQ_LOG_ERR, buf);
+        // Probably a programmer bonehead!
+        abort();
+    }
+
+    // we need to abort any active TmSync
+    if (( MyNode->GetTmSyncState() == SyncState_Start    ) ||
+        ( MyNode->GetTmSyncState() == SyncState_Continue ) ||
+        ( MyNode->GetTmSyncState() == SyncState_Commit   )   )
+    {
+        MyNode->SetTmSyncState( SyncState_Abort );
+        Monitor->SetAbortPendingTmSync();
+        if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+           trace_printf("%s@%d - Node %s (pnid=%d) TmSyncState updated (%d)(%s)\n", method_name, __LINE__, MyNode->GetName(), MyPNID, MyNode->GetTmSyncState(), SyncStateString( MyNode->GetTmSyncState() ));
+    }
+
+    IAmIntegrated = false;
+    AssignTmLeader(pnid);
 
     TRACE_EXIT;
 }
@@ -939,7 +1072,7 @@ bool CCluster::CheckSpareSet( int pnid )
     {
         // assume implicit spare node activation 
         // (no need to move logical nodes to physical node)
-        // since MarkUp() already set State_Up, 
+        // since HardNodeUp() already set State_Up,
         // just reset spare node flag and remove from available spare nodes
         newNode->ResetSpareNode();
         Nodes->RemoveFromSpareNodesList( newNode );
@@ -1104,7 +1237,7 @@ struct message_def *CCluster::ReIntegErrorMessage( const char *msgText )
     return msg;
 }
 
-int CCluster::MarkUp( int pnid, char *node_name )
+int CCluster::HardNodeUp( int pnid, char *node_name )
 {
     bool    spareNodeActivated = false;
     int     rc = MPI_SUCCESS;
@@ -1113,7 +1246,7 @@ int CCluster::MarkUp( int pnid, char *node_name )
     CLNode *lnode;
     STATE   nodeState;
     
-    const char method_name[] = "CCluster::MarkUp";
+    const char method_name[] = "CCluster::HardNodeUp";
     TRACE_ENTRY;
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
@@ -1174,9 +1307,9 @@ int CCluster::MarkUp( int pnid, char *node_name )
                     HealthCheck.initializeVars(); 
                     SMSIntegrating = true;
                     Monitor->StartPrimitiveProcesses();
-                        // Let other monitors know this node is up
-                        CReplNodeUp *repl = new CReplNodeUp(MyPNID);
-                        Replicator.addItem(repl);
+                    // Let other monitors know this node is up
+                    CReplNodeUp *repl = new CReplNodeUp(MyPNID);
+                    Replicator.addItem(repl);
                 }
                 else
                 {
@@ -1203,7 +1336,7 @@ int CCluster::MarkUp( int pnid, char *node_name )
             else
             {
                 if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-                    trace_printf( "%s@%d - Unexpectedly executing MarkUp.  Expecting to do accept in commAccept thread\n",
+                    trace_printf( "%s@%d - Unexpectedly executing HardNodeUp.  Expecting to do accept in commAccept thread\n",
                                   method_name, __LINE__ );
 
             }
@@ -1241,7 +1374,7 @@ int CCluster::MarkUp( int pnid, char *node_name )
             if ( MyPNID == pnid )
             {
                 // request and process revive packet from the creator.
-                // when complete, this will call MarkUp again.
+                // when complete, this will call HardNodeUp again.
                 ReqQueue.enqueueReviveReq( ); 
             }
         }
@@ -1362,6 +1495,96 @@ int CCluster::MarkUp( int pnid, char *node_name )
     TRACE_EXIT;
     return( rc );
 }
+
+int CCluster::SoftNodeUpPrepare( int pnid )
+{
+    char    buf[MON_STRING_BUF_SIZE];
+    int     rc = MPI_SUCCESS;
+    int     tmCount = 0;
+    CNode  *node;
+    CLNode *lnode;
+    STATE   nodeState;
+
+    const char method_name[] = "CCluster::SoftNodeUpPrepare";
+    TRACE_ENTRY;
+
+    node = Nodes->GetNode( pnid );
+    if ( node == NULL )
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+           trace_printf( "%s@%d - Invalid node, pnid=%d\n"
+                       , method_name, __LINE__, pnid );
+
+        return( MPI_ERR_NAME );
+    }
+
+    nodeState = node->GetState();
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+       trace_printf( "%s@%d - Node name=%s, pnid=%d, state=%s, soft down=%d\n"
+                   , method_name, __LINE__
+                   , node->GetName()
+                   , node->GetPNid()
+                   , StateString( nodeState )
+                   , node->IsSoftNodeDown() );
+
+    if ( nodeState != State_Up )
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+            trace_printf( "%s@%d - Unexpectedly executing SoftNodeUp\n",
+                          method_name, __LINE__ );
+        // Programmer bonehead!
+        abort();
+    }
+
+    node->SetKillingNode( false );
+
+    if ( MyPNID == pnid )
+    {
+        SMSIntegrating = true;
+        Monitor->StartPrimitiveProcesses();
+        // Let other monitors know this node is preparing to soft up
+        CReplSoftNodeUp *repl = new CReplSoftNodeUp(MyPNID);
+        Replicator.addItem(repl);
+    }
+    else
+    {
+        // Any DTMs running?
+        for ( int i=0; !tmCount && i < Nodes->GetNodesCount(); i++ )
+        {
+            CNode  *tempNode = Nodes->GetNode( i );
+            lnode = tempNode->GetFirstLNode();
+            for ( ; lnode; lnode = lnode->GetNext() )
+            {
+                CProcess *process = lnode->GetProcessLByType( ProcessType_DTM );
+                if ( process  ) tmCount++;
+            }
+        }
+        if ( tmCount )
+        {
+            // Send DTM restarted notice to local DTM processes
+            lnode = node->GetFirstLNode();
+            for ( ; lnode; lnode = lnode->GetNext() )
+            {
+                lnode->SendDTMRestarted();
+            }
+        }
+        else
+        {
+            snprintf( buf, sizeof(buf),
+                      "[%s], Node %s (%d) soft node up prepare not executed, state=%s, tmCount=%d\n"
+                    , method_name, node->GetName()
+                    , node->GetPNid()
+                    , StateString(MyNode->GetState())
+                    , tmCount );
+            mon_log_write(MON_CLUSTER_SOFTNODEUP_1, SQ_LOG_WARNING, buf);
+        }
+    }
+
+    TRACE_EXIT;
+    return( rc );
+}
+
 
 
 
@@ -1661,6 +1884,22 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
 
         // Queue the node down request for processing by a worker thread.
         ReqQueue.enqueueDownReq( recv_msg->u.down.pnid );
+        break;
+
+    case InternalType_SoftNodeDown:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Internal soft node down request for pnid=%d\n", method_name, __LINE__, recv_msg->u.down.pnid);
+
+        // Queue the node down request for processing by a worker thread.
+        ReqQueue.enqueueSoftNodeDownReq( recv_msg->u.down.pnid );
+        break;
+
+    case InternalType_SoftNodeUp:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Internal soft node up request for pnid=%d\n", method_name, __LINE__, recv_msg->u.up.pnid);
+
+        // Queue the node up request for processing by a worker thread.
+        ReqQueue.enqueueSoftNodeUpReq( recv_msg->u.up.pnid );
         break;
 
     case InternalType_Up:
@@ -2150,6 +2389,16 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
     case InternalType_Down:
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
             trace_printf("%s@%d - Internal down node request for pnid=%d\n", method_name, __LINE__, recv_msg->u.down.pnid);
+        break;
+
+    case InternalType_SoftNodeDown:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Internal soft down node request for pnid=%d\n", method_name, __LINE__, recv_msg->u.down.pnid);
+        break;
+
+    case InternalType_SoftNodeUp:
+        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Internal soft up node request for pnid=%d\n", method_name, __LINE__, recv_msg->u.up.pnid);
         break;
 
     case InternalType_Up:
@@ -5282,12 +5531,11 @@ bool CCluster::checkIfDone (  )
                 // we need to sync one more time so other nodes see our state
                 return false;
             }
-            else if ( (Nodes->ProcessCount() <= (CurNodes*2)) // only WDTs and 
-                                                              // SMSs are alive
-                      && !MyNode->isInQuiesceState()      // post-quiescing will
-                                                          //    expire WDT
-                      && !waitForWatchdogExit_ )          // watchdog not yet
-                                                          //    exiting
+            else if ( (Nodes->ProcessCount() <=
+                      (CurNodes*MAX_PRIMITIVES))        // only WDGs alive
+                      && !MyNode->isInQuiesceState()    // post-quiescing will
+                                                        // expire WDG (cluster)
+                      && !waitForWatchdogExit_ )        // WDG not yet exiting
             {
                 if (trace_settings & TRACE_SYNC)
                    trace_printf("%s@%d - Stopping watchdog process.\n",

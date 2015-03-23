@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@
 #define MAX_OPEN_LIST    256
 #define MAX_OPEN_CONTEXT 5
 #define MAX_PID_VALUE    0x00FFD1C9
+#define MAX_PRIMITIVES   1    // SQWatchog (WDG) is last to exit on shutdown
 #define MAX_PROC_LIST    256
 #define MAX_PROCINFO_LIST 64
 #define MAX_PROC_CONTEXT 5
@@ -307,6 +308,7 @@ typedef enum {
     MsgType_Service,                        // request a service from the monitor
     MsgType_SpareUp,                        // spare node is up notification
     MsgType_Shutdown,                       // system shutdown notification
+    MsgType_TmRestarted,                    // DTM process restarted notification
     MsgType_TmSyncAbort,                    // request to abort TM sync data previously received
     MsgType_TmSyncCommit,                   // request to commit previously received TM sync data
     MsgType_UnsolicitedMessage,             // Outgoing monitor msg expecting a reply 
@@ -916,6 +918,13 @@ struct TmReady_def
     int pid;                                // Requesting TM's process id
 };
 
+struct TmRestarted_def
+{
+    int  nid;                               // Restarted TM's logical node id
+    int  pnid;                              // Restarted TM's physical node id
+    char node_name[MPI_MAX_PROCESSOR_NAME]; // Restarted TM's physical node name
+};
+
 struct TmSync_def
 {
     int  nid;                               // Requesting TM's node id
@@ -1034,6 +1043,7 @@ struct request_def
 #endif
         struct TmLeader_def          leader;
         struct TmReady_def           tm_ready;
+        struct TmRestarted_def       tm_restart;
         struct TmSync_def            tm_sync;
         struct TmSyncNotice_def      tm_sync_notice;
         struct TransInfo_def         trans_info;

@@ -2520,12 +2520,33 @@ void tm_process_monitor_msg(BMS_SRE *pp_sre, char *pp_buf)
     }
     case MS_MsgType_NodePrepare:
     {
-        TMTrace(1, ("tm_process_monitor_msg NodePrepare notice for nid %d\n", lv_msg.u.up.nid));
+        TMTrace(1, ("tm_process_monitor_msg NodePrepare notice for nid %d\n", lv_msg.u.prepare.nid));
         tm_log_event(DTM_NODEPREPARE, SQ_LOG_INFO, "DTM_NODEPREPARE", 
             -1,-1,gv_tm_info.nid(),-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-           NULL,lv_msg.u.up.nid);
+           NULL,lv_msg.u.prepare.nid);
         if (gv_tm_info.lead_tm()) {
-           gv_tm_info.restart_tm_process(lv_msg.u.up.nid);
+           gv_tm_info.restart_tm_process(lv_msg.u.prepare.nid);
+        }
+        break;
+    }
+    case MS_MsgType_TmRestarted:
+    {
+        TMTrace(1, ("tm_process_monitor_msg TMRestarted notice for nid %d\n", lv_msg.u.tmrestarted.nid));
+
+        // Appoint new Lead TM if necessary.
+         tm_get_leader_info();
+         if (gv_tm_info.lead_tm() == false)
+         {
+            gv_tm_info.down_without_sync(lv_msg.u.tmrestarted.nid, true);
+            TMTrace(3, ("tm_process_monitor_msg - setting down_without_sync to TRUE for node %d\n",
+                        lv_msg.u.tmrestarted.nid))
+         }
+        	
+        tm_log_event(DTM_TMRESTARTED, SQ_LOG_INFO, "DTM_TMRESTARTED", 
+            -1,-1,gv_tm_info.nid(),-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+           NULL,lv_msg.u.tmrestarted.nid);
+        if (gv_tm_info.lead_tm()) {
+           gv_tm_info.open_restarted_tm(lv_msg.u.tmrestarted.nid);
         }
         break;
     }
@@ -2607,7 +2628,6 @@ void tm_process_monitor_msg(BMS_SRE *pp_sre, char *pp_buf)
                     -1,-1,gv_tm_info.nid(),-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                     lv_msg.u.death.process_name);
                 TMTrace(1, ("tm_process_monitor_msg death notice for DTM%d\n", lv_msg.u.death.nid));
-
                 break;
              }
              // most likely application death.  If not, then the tx will come back NULL

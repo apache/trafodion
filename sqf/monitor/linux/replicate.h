@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -286,6 +286,31 @@ class CReplNodeUp: public CReplObj
 public:
     CReplNodeUp(int pnid);
     virtual ~CReplNodeUp();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    int pnid_;
+};
+
+
+class CReplSoftNodeDown: public CReplObj
+{
+public:
+    CReplSoftNodeDown(int pnid);
+    virtual ~CReplSoftNodeDown();
+
+    bool replicate(struct internal_msg_def *& msg);
+
+private:
+    int pnid_;
+};
+
+class CReplSoftNodeUp: public CReplObj
+{
+public:
+    CReplSoftNodeUp(int pnid);
+    virtual ~CReplSoftNodeUp();
 
     bool replicate(struct internal_msg_def *& msg);
 

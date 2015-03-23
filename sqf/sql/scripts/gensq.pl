@@ -2,7 +2,7 @@
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -125,6 +125,7 @@ my $HOME = $ENV{'HOME'};
 my $MPI_TMPDIR = $ENV{'MPI_TMPDIR'};
 my $SQ_SEAMONSTER = $ENV{'SQ_SEAMONSTER'};
 my $SQ_TRANS_SOCK = $ENV{'SQ_TRANS_SOCK'};
+my $SQ_DTM_PERSISTENT_PROCESS = $ENV{'SQ_DTM_PERSISTENT_PROCESS'};
 
 # define the error values that are being returned
 my $CONFIG_ERROR = 5;
@@ -480,8 +481,8 @@ sub genDTM {
     genSQShellStart();
     printScript(1, "\n! Start DTM\n");
     printScript(1, "set DTM_RUN_MODE=2\n");
-	printScript(1, "set SQ_AUDITSVC_READY=1\n");
-	printScript(1, "set DTM_TLOG_PER_TM=1\n");
+    printScript(1, "set SQ_AUDITSVC_READY=1\n");
+    printScript(1, "set DTM_TLOG_PER_TM=1\n");
     addDbClusterData("DTM_RUN_MODE", "2");
     addDbClusterData("SQ_AUDITSVC_READY", "1");
     addDbClusterData("DTM_TLOG_PER_TM", "1");
@@ -494,9 +495,15 @@ sub genDTM {
         printScript(1, "if [[ \$node_up_value == 1 ]]; then\n");
 
         genSQShellStart();
-        printScript(1, "set {process \\\$tm$i} TMASE=TLOG$i\n");
-        addDbProcData('$tm'."$i", "TMASE", "TLOG$i");
-        printScript(1, "exec {type dtm, nowait, name \\\$tm$i, nid $i, out stdout_dtm_$i} tm");
+         if ($SQ_DTM_PERSISTENT_PROCESS == 1) {
+            printScript(1, "set {process \\\$TM$i } PERSIST_RETRIES=2,30\n");
+            addDbProcData('$TM'."$i", "PERSIST_RETRIES", "2,30");
+            printScript(1, "set {process \\\$TM$i } PERSIST_ZONES=$i\n");
+            addDbProcData('$TM'."$i", "PERSIST_ZONES", "$i");
+        }
+        printScript(1, "set {process \\\$TM$i} TMASE=TLOG$i\n");
+        addDbProcData('$TM'."$i", "TMASE", "TLOG$i");
+        printScript(1, "exec {type dtm, nowait, name \\\$TM$i, nid $i, out stdout_dtm_$i} tm");
         if ($i == 0 || $i == ($gdNumNodes-1)) {
             printScript(1, "\ndelay 5");
         }

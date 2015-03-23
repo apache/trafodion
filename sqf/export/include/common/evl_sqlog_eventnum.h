@@ -2,7 +2,7 @@
  *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@
 // @@@ END COPYRIGHT @@@
  *
  *  This library is a centralized location to define event numbers for
- *  all Seaquest components.
+ *  all Trafodion components.
  *  Event(Log message) number has to follow specific pattern:
- *  Level one(first digit), "1" is used represent Seaquest.
+ *  Level one(first digit), "1" is used represent Trafodion.
  *  Level two (the next two digits) represents component ID, such as 01 is for Monitor
  *  Level three (the rest numbers) are for event ID within the component.
  *  Level three should be exactly 6 digits. Thus, all event numbers are 9 digits.
@@ -178,6 +178,10 @@
 #define MON_CLUSTER_INITSERVERSOCK_2        101014202
 #define MON_CLUSTER_INITSERVERSOCK_3        101014203
 #define MON_CLUSTER_INITSERVERSOCK_4        101014204
+#define MON_CLUSTER_SOFTNODEDOWN_1          101014301
+#define MON_CLUSTER_SOFTNODEDOWN_2          101014302
+#define MON_CLUSTER_SOFTNODEDOWN_3          101014303
+#define MON_CLUSTER_SOFTNODEUP_1            101014401
 
 /* Module: monitor.cxx = 02 */
 
@@ -321,6 +325,7 @@
 #define MON_PROCESS_PERSIST_2               101032202
 #define MON_PROCESS_PERSIST_3               101032203
 #define MON_PROCESS_PERSIST_4               101032204
+#define MON_PROCESS_PERSIST_5               101032205
 #define MON_PROCESSCONT_KILLALLDOWN_1       101032301
 #define MON_PROCESS_SETSTATE_1              101032401
 #define MON_PROCESS_SETSTATE_2              101032402
@@ -995,6 +1000,7 @@
 #define DTM_ROLLOVER_OPENPROC_FAILED 103005307
 #define DTM_BEGINTX_PROC_NOTEXIST 103005308
 #define DTM_ROLLOVER_CP_ERROR 103005309
+#define DTM_TMRESTARTED 103005310
 
 /**********************************************/
 /**********************************************/

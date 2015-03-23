@@ -98,6 +98,9 @@ extern bool isInvalid( _TM_Txid_External transid );
 extern bool IAmIntegrated;
 extern bool SMSIntegrating;
 
+extern const char *NodePhaseString( NodePhase phase );
+extern const char *ProcessTypeString( PROCESSTYPE type );
+
 CProcess::CProcess (CProcess * parent, int nid, int pid, PROCESSTYPE type,
                     int priority, int backup, bool debug, bool unhooked,
                     char *name, strId_t pathStrId, strId_t ldpathStrId,
@@ -803,12 +806,18 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
             HealthCheck.setState(MON_START_WATCHDOG);
         }
         if ( Type == ProcessType_PSD && 
-            (IAmIntegrated || MyNode->IsActivatingSpare()) )
+            (IAmIntegrated || MyNode->IsActivatingSpare() || MyNode->IsSoftNodeDown()) )
         {
              MyNode->StartPStartDPersistent();
             
              if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_INIT))
                  trace_printf("%s%d: Sent start persistent processes event to PSD process %s (pid=%d)\n", method_name, __LINE__, GetName(), GetPid());
+        }
+        if ( Type == ProcessType_DTM  &&
+             MyNode->IsSoftNodeDown() )
+        {
+            // Tell remote DTMs that this DTM was restarted
+            Monitor->SoftNodeUpPrepare( MyPNID );
         }
     }
 
@@ -2511,7 +2520,9 @@ void CProcess::Exit( CProcess *parent )
     { 
         CNode * node = Nodes->GetLNode(GetNid())->GetNode();
         // if process' node is being killed, do not supply process death notices
-        supplyProcessDeathNotices = !node->IsKillingNode();
+        supplyProcessDeathNotices = node->IsSoftNodeDown()
+                                        ? node->IsSoftNodeDown()
+                                        : !node->IsKillingNode();
     }
 
     if(  NoticeHead &&
@@ -2553,6 +2564,7 @@ void CProcess::Exit( CProcess *parent )
                        trace_printf( "%s@%d - DTM abended %s (%d, %d:%d)\n"
                                    , method_name, __LINE__, Name, Nid, Pid, Verifier);
                     if ( !MyNode->IsKillingNode() &&
+                         !IsPersistent() &&
                           MyNode->GetShutdownLevel() != ShutdownLevel_Abrupt )
                     {
                         MyNode->SetDTMAborted( true );
@@ -2563,6 +2575,7 @@ void CProcess::Exit( CProcess *parent )
                     if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
                        trace_printf("%s@%d" " - DTM stopped normally" "\n", method_name, __LINE__);
                     if ( !MyNode->IsKillingNode() &&
+                         !IsPersistent() &&
                           MyNode->GetShutdownLevel() == ShutdownLevel_Undefined )
                     {
                         MyNode->SetDTMAborted( true );
@@ -2716,6 +2729,14 @@ void CProcess::Exit( CProcess *parent )
                 }
             }
         }
+
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL | TRACE_REQUEST_DETAIL))
+            trace_printf( "%s@%d" " - Death message check of %s (%d,%d:%d) type=%s, node phase=%s, send death notices=%d\n"
+                        , method_name, __LINE__
+                        , GetName(), GetNid(), GetPid(), GetVerifier()
+                        , ProcessTypeString(GetType()), NodePhaseString( MyNode->GetPhase() )
+                        , supplyProcessDeathNotices );
+
         if ( Type == ProcessType_DTM && 
              MyNode->GetPhase() == Phase_Ready &&
              supplyProcessDeathNotices )
@@ -4596,6 +4617,14 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
 
     if (process)
     {
+        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+            trace_printf( "%s@%d - Process %s (abended=%d) is exiting, abend=%d, downNode=%d\n"
+                        , method_name, __LINE__
+                        , process->GetName()
+                        , process->IsAbended()
+                        , abend
+                        , downNode );
+
         if ( process->GetState() == State_Down && abend && !process->IsAbended() )
         {
             process->SetAbended( abend );
@@ -4634,11 +4663,11 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
         }
       
         if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-            trace_printf( "%s@%d - Process %s is exiting with abend=%d, downNode=%d\n"
+            trace_printf( "%s@%d - Process %s is exiting, persistent=%d, abended=%d\n"
                         , method_name, __LINE__
                         , process->GetName()
-                        , process->IsAbended()
-                        , downNode );
+                        , process->IsPersistent()
+                        , process->IsAbended() );
 
         if ( process->IsPersistent() &&
             (process->IsAbended() || process->GetType() == ProcessType_SPX))
@@ -4676,7 +4705,6 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
             if ( !restarted )
             {
                 if (!process->IsClone() && !MyNode->isInQuiesceState())
-// todo: is this test needed or will the process always be a non-clone at this point?
                 {
                     // Replicate the exit to other nodes
                     CReplExit *repl = new CReplExit(process->GetNid(),
@@ -4705,7 +4733,7 @@ void CProcessContainer::Exit_Process (CProcess *process, bool abend, int downNod
         {
             process->SetState (State_Stopped);
             if ( !process->IsClone() && 
-                 !MyNode->IsKillingNode() && 
+                 (!MyNode->IsKillingNode() || MyNode->IsSoftNodeDown()) &&
                  !MyNode->isInQuiesceState() &&
                  !(process->GetType() == ProcessType_DTM && 
                    process->IsAbended() &&
@@ -5155,6 +5183,98 @@ void CProcessContainer::KillAllDown()
     TRACE_EXIT;
 }
 
+void CProcessContainer::KillAllDownSoft()
+{
+    const char method_name[] = "CProcessContainer::KillAllDownSoft";
+    TRACE_ENTRY;
+
+    CProcess *process  = NULL;
+    int nid = -1;
+    int pid = -1;
+    PROCESSTYPE type;
+    nameMap_t::iterator nameMapIt;
+
+    while ( true )
+    {
+        nameMapLock_.lock();
+        nameMapIt = nameMap_->begin();
+
+        if (nameMap_->size() == 0)
+        {
+            nameMapLock_.unlock();
+            break; // all done
+        }
+
+        process = nameMapIt->second;
+
+        // Delete name map entry
+        nameMap_->erase (nameMapIt);
+
+        nameMapLock_.unlock();
+
+        nid = process->GetNid();
+        pid = process->GetPid();
+        type = process->GetType();
+
+        if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
+        {
+            trace_printf("%s@%d removed from nameMap %p: %s (%d, %d)\n",
+                         method_name, __LINE__, nameMap_,
+                         process->GetName(), nid, pid);
+        }
+
+        // valid for virtual cluster or soft node down only.
+        if ( type != ProcessType_DTM )
+        {
+            // Delete pid map entry
+            DelFromPidMap ( process );
+
+            // valid for virtual cluster only.
+            if ( !process->IsClone() && pid != -1 )
+            {
+                // killing the process will not remove the process object because
+                // exit processing will get queued until this completes.
+                kill( pid, SIGKILL );
+                PROCESSTYPE type = process->GetType();
+                if ( type == ProcessType_TSE ||
+                     type == ProcessType_ASE )
+                {
+                    // unmount volume would acquire nameMapLock_ internally.
+                    Devices->UnMountVolume( process->GetName(), process->IsBackup() );
+                }
+                if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+                    trace_printf("%s@%d - Completed kill for %s (%d, %d)\n", method_name, __LINE__, process->GetName(), nid, pid);
+            }
+            // Remove all processes
+            // PSD will re-create persistent processes on spare node activation
+            Exit_Process( process, true, nid );
+        }
+    }
+
+    // clean up clone processes on this node that do not have entries in
+    // nameMap_ or pidMap_ yet and restart persistent processes
+    CProcess *nextProc = NULL;
+    process = head_;
+
+    while (process)
+    {
+        nextProc = process->GetNext();
+
+        PROCESSTYPE type = process->GetType();
+        if ( type != ProcessType_DTM )
+        {
+            // Delete pid map entry
+            DelFromPidMap ( process );
+
+            Exit_Process( process, true, nid );
+        }
+
+        process = nextProc;
+    }
+
+    TRACE_EXIT;
+}
+
 char *CProcessContainer::NormalizeName (char *name)
 {
     char *ptr;
@@ -5439,8 +5559,18 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNod
                              method_name, process->GetName(), retryCount);
                     mon_log_write(MON_PROCESS_PERSIST_1, SQ_LOG_INFO, buf);
 
-                    if ( process->GetType() == ProcessType_SMS )
+                    if ( process->GetType() == ProcessType_DTM ||
+                         process->GetType() == ProcessType_SMS )
                     {
+                        if ( process->GetType() == ProcessType_DTM )
+                        {
+                            MyNode->SetDTMAborted( true );
+                        }
+                        if ( process->GetType() == ProcessType_SMS )
+                        {
+                            MyNode->SetSMSAborted( true );
+                        }
+
                         snprintf(buf, sizeof(buf), "[%s], Critial persistent process %s "
                                  "not restarted, "
                                  "scheduling node down on node %s (%d)!\n",
@@ -5450,7 +5580,6 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNod
                         ReqQueue.enqueueDownReq(MyPNID);
                     }
 
-
                     return false;
                 }
             }
@@ -5459,6 +5588,12 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNod
                 process->SetPersistentRetries ( 0 );
                 if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                     trace_printf("%s@%d" " - Retries count reset for process " "%s" "\n", method_name, __LINE__, process->GetName());
+            }
+
+            if ( process->GetType() == ProcessType_DTM )
+            {
+                // Kill all local processes
+                Monitor->SoftNodeDown( MyPNID );
             }
 
             // OK ... just restart the process on the same node
@@ -5472,15 +5607,34 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNod
             successful = process->Create(parent, result);
             if (successful)
             {
+                process->SetAbended( false );
                 Nodes->GetLNode (process->GetNid())->GetNode()
                     ->AddToNameMap(process);
                 Nodes->GetLNode (process->GetNid())->GetNode()
                     ->AddToPidMap(process->GetPid(), process);
                 process->SetPersistentCreateTime ( time(NULL) );
-
                 if ( process->GetType() == ProcessType_SSMP )
                 {
                     Nodes->GetLNode ( process->GetNid() )->SetSSMProc ( process );
+                }
+            }
+            else
+            {
+                if ( process->GetType() == ProcessType_DTM )
+                {
+                    char buf[MON_STRING_BUF_SIZE];
+                    snprintf( buf, sizeof(buf)
+                            , "[%s], DTM (%s) persistent restart failed, Node %s going down\n"
+                            , method_name, process->GetName(), MyNode->GetName());
+                    mon_log_write(MON_PROCESS_PERSIST_5, SQ_LOG_INFO, buf);
+
+                    snprintf( buf, sizeof(buf),
+                              "DTM (%s) persistent restart failed, Node %s going down\n",
+                              process->GetName(), MyNode->GetName());
+                    genSnmpTrap( buf );
+
+                    // DTM just died unexpectedly, so bring the node down
+                    Monitor->HardNodeDown(MyPNID, true);
                 }
             }
         }
@@ -5769,7 +5923,7 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                             genSnmpTrap( buf );
         
                             // DTM just died unexpectedly, so bring the node down
-                            Monitor->MarkDown(MyPNID, true);
+                            Monitor->HardNodeDown(MyPNID, true);
                         }
                         break;
                     case ProcessType_SMS:
@@ -5788,7 +5942,7 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                             genSnmpTrap( buf );
         
                             // SMS just died unexpectedly, so bring the node down
-                            Monitor->MarkDown(MyPNID, true);
+                            Monitor->HardNodeDown(MyPNID, true);
                         }
                         break;
                     default: // no special handling

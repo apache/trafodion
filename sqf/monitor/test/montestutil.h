@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -59,7 +59,8 @@ class MonTestUtil
                           , int &newNid
                           , int &newPid
                           , Verifier_t &newVerifier
-                          , char *newProcName );
+                          , char *newProcName
+                          , bool unhooked = false );
 
     bool requestNotice( int nid
                       , int pid
@@ -94,6 +95,8 @@ class MonTestUtil
     void requestShutdown ( ShutdownLevel level );
 
     void requestStartup ( void );
+
+    bool requestTmReady ( void );
 
     bool requestNodeInfo ( int targetNid,
                            bool resumeFlag,

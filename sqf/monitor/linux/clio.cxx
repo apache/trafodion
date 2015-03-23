@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -998,6 +998,7 @@ int Local_IO_To_Monitor::process_notice(struct message_def *pp_msg) {
     case MsgType_SpareUp:
     case MsgType_ProcessDeath:
     case MsgType_Shutdown:
+    case MsgType_TmRestarted:
     case MsgType_TmSyncAbort:
     case MsgType_TmSyncCommit:
     case MsgType_ReintegrationError:

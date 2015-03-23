@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -130,6 +130,7 @@ class CProcessContainer
     CProcess *GetProcessLByType( PROCESSTYPE type );
     void KillAll( STATE node_State, CProcess *process );
     void KillAllDown();
+    void KillAllDownSoft();
     char *NormalizeName( char *name );
     bool Open_Process( int nid, int pid, Verifier_t verifier, int death_notification, CProcess *process );
     int ProcessCount( void ) { CAutoLock alock(pidMapLock_.getLocker()); return(numProcs_); }

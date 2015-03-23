@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ enum InternalType
     InternalType_ActivateSpare,     // activate a spare node
     InternalType_Clone,             // Add clone process to monitor
     InternalType_Device,            // Add or Change device to monitor
-    InternalType_Down,              // Node down (watchdog not enabled)
+    InternalType_Down,              // Node down
     InternalType_Dump,              // Dump process
     InternalType_DumpComplete,      // Dump process complete
     InternalType_Event,             // Send Event to process
@@ -55,6 +55,8 @@ enum InternalType
     , InternalType_TmReady          // DTM ready for transactions
     , InternalType_Shutdown         // Shutdown
     , InternalType_SchedData        // Processor & memory statistics
+    , InternalType_SoftNodeDown     // Soft Node down (SQWatchdog not triggered)
+    , InternalType_SoftNodeUp       // Soft Node up
 };
 
 enum SyncType

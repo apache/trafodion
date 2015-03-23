@@ -450,6 +450,7 @@ class TM_Info
        void  num_active_txs_dec ();
        int32 num_active_txs ();
        void  open_other_tms();
+       int32  open_restarted_tm(int32  pv_nid);
        SB_Phandle_Type *
        get_opened_tm_phandle(int32 pv_index);
        void  pid (int32 pv_pid);

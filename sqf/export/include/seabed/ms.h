@@ -378,6 +378,7 @@ typedef enum {
     MS_MsgType_Service,
     MS_MsgType_SpareUp,
     MS_MsgType_Shutdown,
+    MS_MsgType_TmRestarted,
     MS_MsgType_TmSyncAbort,
     MS_MsgType_TmSyncCommit,
     MS_MsgType_UnsolicitedMessage,
@@ -412,7 +413,8 @@ typedef enum {
     MS_ReqType_TmSync,
     MS_ReqType_TransInfo,
     MS_ReqType_MonStats,
-    MS_ReqType_ZoneInfo
+    MS_ReqType_ZoneInfo,
+    MS_ReqType_TmRestarted
 } MS_Mon_REQTYPE;
 typedef enum {
     MS_ProcessType_Undefined = 0,
@@ -523,6 +525,11 @@ struct MS_Mon_TmSyncNotice_def {
     int                 count;
     int                 handle[MS_MON_MAX_TM_SYNCS];
 };
+struct MS_Mon_TmRestarted_def {
+    int  nid;
+    int  pnid;
+    char node_name[MS_MON_MAX_PROCESSOR_NAME];
+};
 // TODO: make less kludgy
 #if __WORDSIZE == 64
 enum { _MS_REQ_FILL = 3 };
@@ -551,6 +558,7 @@ typedef struct MS_Mon_Msg {
         struct MS_Mon_SpareUp_def             spare_up;
         struct MS_Mon_TmSyncNotice_def        tmsync;
         struct MS_Mon_NodeUp_def              up;
+        struct MS_Mon_TmRestarted_def         tmrestarted;        
     } u;
 } MS_Mon_Msg;
 typedef struct MS_Mon_Open_Comp_Type {
