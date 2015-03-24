@@ -111,7 +111,7 @@ const char *NodePhaseString( NodePhase phase )
             str = "Phase_SoftDown";
             break;
         case Phase_SoftUp:
-            str = "Phase_SoftDown";
+            str = "Phase_SoftUp";
             break;
         default:
             str = "NodePhase - Undefined";
