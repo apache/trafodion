@@ -432,6 +432,11 @@ void CHealthCheck::sendEventToSMService(SMServiceEvent_t event)
 
     if ( smserviceProcess_ ) 
     {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC))
+        {
+            trace_printf( "%s@%d - Sending event=%d\n"
+                        , method_name, __LINE__, event );
+        }
         smserviceProcess_->GenerateEvent( event, 0, NULL );
     }
 
@@ -446,6 +451,11 @@ void CHealthCheck::sendEventToWatchDog(WatchdogEvent_t event)
 
     if ( watchdogProcess_ ) 
     {
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC))
+        {
+            trace_printf( "%s@%d - Sending event=%d\n"
+                        , method_name, __LINE__, event );
+        }
         watchdogProcess_->GenerateEvent( event, 0, NULL );
     }
 

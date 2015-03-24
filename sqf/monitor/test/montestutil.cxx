@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1186,7 +1186,8 @@ bool MonTestUtil::requestNewProcess (int nid, PROCESSTYPE type, bool nowait,
                                      int progArgC, char *progArgV[],
                                      int &newNid, int &newPid,
                                      Verifier_t &newVerifier,
-                                     char *newProcName)
+                                     char *newProcName,
+                                     bool unhooked)
 {
     int count;
     MPI_Status status;
@@ -1214,7 +1215,7 @@ bool MonTestUtil::requestNewProcess (int nid, PROCESSTYPE type, bool nowait,
     msg->u.request.u.new_process.debug = 0;
     msg->u.request.u.new_process.priority = 0;
     msg->u.request.u.new_process.backup = 0;
-    msg->u.request.u.new_process.unhooked = false;
+    msg->u.request.u.new_process.unhooked = unhooked;
     msg->u.request.u.new_process.nowait = nowait;
     msg->u.request.u.new_process.tag = 0;
     strcpy (msg->u.request.u.new_process.process_name, processName);
@@ -1557,6 +1558,80 @@ bool MonTestUtil::requestSendEvent( int targetNid
 
     return result;
 }
+
+bool MonTestUtil::requestTmReady( void )
+{
+    int count;
+    MPI_Status status;
+    struct message_def *msg;
+    bool result = false;
+
+    if ( trace_ )
+    {
+        printf ("[%s] Request TmReady by %s (%d, %d:%d)\n"
+               , processName_, processName_, nid_, pid_, verifier_ );
+    }
+
+    if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
+    {
+        printf ("[%s] Unable to acquire message buffer.\n", processName_);
+        return result;
+    }
+
+    msg->type = MsgType_Service;
+    msg->noreply = false;
+    msg->reply_tag = REPLY_TAG;
+    msg->u.request.type = ReqType_TmReady;
+    msg->u.request.u.tm_ready.nid = nid_;
+    msg->u.request.u.tm_ready.pid = pid_;
+
+    gp_local_mon_io->send_recv( msg );
+    count = sizeof (*msg);
+    status.MPI_TAG = msg->reply_tag;
+
+    if ((status.MPI_TAG == REPLY_TAG) &&
+        (count == sizeof (struct message_def)))
+    {
+        if ((msg->type == MsgType_Service) &&
+            (msg->u.reply.type == ReplyType_Generic))
+        {
+            if (msg->u.reply.u.generic.return_code == MPI_SUCCESS)
+            {
+                if ( trace_ )
+                {
+                    printf ("[%s] TmReady request succeeded\n",
+                            processName_);
+                }
+                result = true;
+            }
+            else
+            {
+                printf ("[%s] TmReady request failed for (%d, %d), rc=%d\n",
+                        processName_,
+                        msg->u.reply.u.generic.return_code,
+                        msg->u.reply.u.generic.nid,
+                        msg->u.reply.u.generic.pid);
+            }
+        }
+        else
+        {
+            printf
+                ("[%s] Invalid MsgType(%d)/ReplyType(%d) for TmReady message\n",
+                 processName_, msg->type, msg->u.reply.type);
+        }
+    }
+    else
+    {
+        printf ("[%s] TmReady process reply message invalid.  Reply tag=%d,"
+                " count=%d (expected %d)\n", processName_, msg->reply_tag,
+                count, (int) sizeof (struct message_def));
+    }
+
+    gp_local_mon_io->release_msg(msg);
+
+    return result;
+}
+
 
 char * MonTestUtil::MPIErrMsg ( int code )
 {

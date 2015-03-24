@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ void CExtNodeDownReq::performRequest()
     if ( requester )
     {
         node = Nodes->GetLNode( msg_->u.request.u.down.nid )->GetNode();
-        Monitor->MarkDown( node->GetPNid(), true );
+        Monitor->HardNodeDown( node->GetPNid(), true );
 
         char la_buf[MON_STRING_BUF_SIZE*2];
         snprintf( la_buf, sizeof(la_buf)

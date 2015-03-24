@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -860,6 +860,34 @@ private:
     int pnid_;
 };
 
+class CIntSoftNodeDownReq: public CInternalReq
+{
+public:
+    CIntSoftNodeDownReq( int pnid );
+    virtual ~CIntSoftNodeDownReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int pnid_;
+};
+
+class CIntSoftNodeUpReq: public CInternalReq
+{
+public:
+    CIntSoftNodeUpReq( int pnid );
+    virtual ~CIntSoftNodeUpReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int pnid_;
+};
+
 class CIntUpReq: public CInternalReq
 {
 public:
@@ -996,6 +1024,8 @@ class CReqQueue
     void enqueueChildDeathReq ( pid_t pid );
     void enqueueAttachedDeathReq ( pid_t pid );
     void enqueueDownReq( int pnid );
+    void enqueueSoftNodeDownReq( int pnid );
+    void enqueueSoftNodeUpReq( int pnid );
     void enqueueShutdownReq( int level );
     void enqueueActivateSpareReq( CNode *spareNode, CNode *downNode, bool checkHealth=false );
     void enqueueUpReq( int pnid, char *node_name, int merge_lead );
@@ -1093,8 +1123,8 @@ private:
       RQIU   CQuiesceReq
       RQIV   (unused)
       RQIW   CIntCreatePrimitiveReq
-      RQIX   (unused)
-      RQIY   (unused)
+      RQIX   CIntSoftNodeDownReq
+      RQIY   CIntSoftNodeUpReq
       RQIZ   (unused)
 
    CExternalReq:

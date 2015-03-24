@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -41,7 +41,8 @@ class CNode;
 typedef enum {
     Phase_Ready=0,                          // Node ready for use
     Phase_Activating,                       // Spare node going active
-    Phase_Reviving                          // Node integrating into cluster
+    Phase_SoftDown,                         // Node soft down
+    Phase_SoftUp                            // Node soft up
 } NodePhase;
 typedef vector<int>     PNidVector;
 typedef list<CNode *>   NodesList;
@@ -228,11 +229,13 @@ public:
     inline bool  IsKillingNode( void ) { return( killingNode_ ); }
     inline bool  IsRankFailure( void ) { return( rankFailure_ ); }
     inline bool  IsSpareNode( void ) { return( spareNode_ ); }
+    inline bool  IsSoftNodeDown( void ) { return( softDown_ ); }
 
     CNode  *Link( CNode *entry );
     void    MoveLNodes( CNode *targetNode );
     inline void ResetSpareNode( void ) { spareNode_ = false; }
     void    ResetWatchdogTimer( void );
+    inline void ResetSoftNodeDown( void ) { softDown_ = false; }
     inline void SetActivatingSpare( int activatingSpare ) { activatingSpare_ = activatingSpare; }
     void    SetAffinity( int nid, pid_t pid, PROCESSTYPE type );
     void    SetAffinity( CProcess *process );
@@ -262,6 +265,7 @@ public:
     inline void SetKillingNode( bool killingNode ) { killingNode_ = killingNode; }
     inline void SetNumCores( int numCores ) { numCores_ = numCores; }
     inline void SetPhase( NodePhase phase ) { phase_ = phase; }
+    inline void SetSoftNodeDown( void ) { softDown_ = true; }
     inline void SetSparePNids( PNidVector &sparePNids ) { sparePNids_ = sparePNids; }
     inline void SetRank( int rank ) { rank_ = rank; }
     inline void SetRankFailure( bool failed ) { rankFailure_ = failed; 
@@ -324,6 +328,7 @@ private:
     string        hostname_;     // physical node name without domain
     STATE         state_;        // Physical node's current operating state
     NodePhase     phase_;        // Physical node's current phase during spare node activation
+    bool          softDown_;     // true when soft down node in process
     bool          killingNode_;  // true when down node in process
     bool          dtmAborted_;   // true when DTM process terminates abnormally
     bool          smsAborted_;   // true when SMS process terminates abnormally

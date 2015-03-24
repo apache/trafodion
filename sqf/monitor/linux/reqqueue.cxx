@@ -611,7 +611,7 @@ void CIntCloneProcReq::performRequest()
     const char method_name[] = "CIntCloneProcReq::performRequest";
     TRACE_ENTRY;
 
-    CProcess * process;
+    CProcess *process;
     CProcess *parent;
 
     // Trace info about request
@@ -623,6 +623,11 @@ void CIntCloneProcReq::performRequest()
         process = Nodes->GetProcess( nid_, priorPid_, false );
         if (process)
         {
+            parent = Nodes->GetProcess( process->GetParentNid(),
+                                        process->GetParentPid() );
+            // Handle prior process termination
+            process->Exit( parent );
+
             if (trace_settings & (TRACE_SYNC | TRACE_REQUEST
                                   | TRACE_PROCESS))
             {
@@ -1606,7 +1611,7 @@ void CIntShutdownReq::performRequest()
     else
     {
         // Stop all processes
-        Monitor->MarkDown( MyPNID );
+        Monitor->HardNodeDown( MyPNID );
         MyNode->EmptyQuiescingPids();
         // now stop the Watchdog process
         HealthCheck.setState(MON_NODE_DOWN);
@@ -1659,7 +1664,80 @@ void CIntDownReq::performRequest()
     if (trace_settings & (TRACE_SYNC | TRACE_REQUEST))
         trace_printf("%s@%d - Node down request, pnid=%d\n",
                      method_name, __LINE__, pnid_);
-    Monitor->MarkDown( pnid_ );
+    Monitor->HardNodeDown( pnid_ );
+
+    TRACE_EXIT;
+}
+
+CIntSoftNodeDownReq::CIntSoftNodeDownReq( int pnid )
+                    : CInternalReq()
+                    , pnid_ ( pnid )
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RQIX", 4);
+}
+
+CIntSoftNodeDownReq::~CIntSoftNodeDownReq()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rqix", 4);
+}
+
+void CIntSoftNodeDownReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    sprintf( strBuf, "IntReq(%s) req #=%ld (pnid=%d)"
+                   , CReqQueue::intReqType[InternalType_SoftNodeDown]
+                   , getId(), pnid_ );
+    requestString_.assign( strBuf );
+}
+
+void CIntSoftNodeDownReq::performRequest()
+{
+    const char method_name[] = "CIntSoftNodeDownReq::performRequest";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST))
+        trace_printf("%s@%d - Node soft down request, pnid=%d\n",
+                     method_name, __LINE__, pnid_);
+    Monitor->SoftNodeDown( pnid_ );
+
+    TRACE_EXIT;
+}
+
+CIntSoftNodeUpReq::CIntSoftNodeUpReq( int pnid )
+                  : CInternalReq()
+                  , pnid_ ( pnid )
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RQIY", 4);
+
+}
+
+CIntSoftNodeUpReq::~CIntSoftNodeUpReq()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rqiy", 4);
+}
+
+void CIntSoftNodeUpReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    sprintf( strBuf, "IntReq(%s) req #=%ld (pnid=%d)"
+                   , CReqQueue::intReqType[InternalType_SoftNodeUp]
+                   , getId(), pnid_ );
+    requestString_.assign( strBuf );
+}
+
+void CIntSoftNodeUpReq::performRequest()
+{
+    const char method_name[] = "CIntSoftNodeUpReq::performRequest";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST))
+        trace_printf("%s@%d - Soft node up request, pnid=%d\n",
+                     method_name, __LINE__, pnid_ );
+    Monitor->SoftNodeUpPrepare( pnid_ );
 
     TRACE_EXIT;
 }
@@ -1699,7 +1777,7 @@ void CIntUpReq::performRequest()
     if (trace_settings & (TRACE_SYNC | TRACE_REQUEST))
         trace_printf("%s@%d - Node up request, pnid=%d, name=%s\n",
                      method_name, __LINE__, pnid_, nodeName_.c_str());
-    Monitor->MarkUp( pnid_, (char *) nodeName_.c_str() );
+    Monitor->HardNodeUp( pnid_, (char *) nodeName_.c_str() );
 
     TRACE_EXIT;
 }
@@ -2368,7 +2446,7 @@ void CPostQuiesceReq::performRequest()
     else
     {
         // Stop all processes
-        Monitor->MarkDown( MyPNID );
+        Monitor->HardNodeDown( MyPNID );
         MyNode->EmptyQuiescingPids();
         // now stop the Watchdog process
         HealthCheck.setState(MON_NODE_DOWN);
@@ -2831,6 +2909,26 @@ void CReqQueue::enqueueDownReq( int pnid )
     request = new CIntDownReq ( pnid );
 
     request->setPriority(CRequest::High);
+
+    enqueueReq ( request );
+}
+
+void CReqQueue::enqueueSoftNodeDownReq( int pnid )
+{
+    CInternalReq * request;
+
+    request = new CIntSoftNodeDownReq ( pnid );
+
+    request->setPriority(CRequest::High);
+
+    enqueueReq ( request );
+}
+
+void CReqQueue::enqueueSoftNodeUpReq( int pnid )
+{
+    CInternalReq * request;
+
+    request = new CIntSoftNodeUpReq ( pnid );
 
     enqueueReq ( request );
 }
@@ -3588,5 +3686,7 @@ const char * CReqQueue::intReqType[] = {
     , "TMReady"
     , "Shutdown"
     , "SchedData"
+    , "SoftNodeDown"
+    , "SoftNodeUp"
 };
 

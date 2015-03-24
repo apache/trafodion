@@ -3666,7 +3666,7 @@ void msg_mon_init() {
     SB_util_static_assert(static_cast<int>(MS_MsgType_Change) ==
                           static_cast<int>(MsgType_Change)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_MsgType_ReintegrationError) ==
-                          static_cast<int>(MsgType_ReintegrationError)); // sw fault
+                          static_cast<int>(MS_MsgType_ReintegrationError)); // sw fault
 
     SB_util_static_assert(static_cast<int>(MS_ReqType_Close) ==
                           static_cast<int>(ReqType_Close)); // sw fault

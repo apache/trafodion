@@ -2,7 +2,7 @@
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -49,10 +49,11 @@ function Usage
     echo "         3     - Registry"
     echo "         4     - Death Notice"
     echo "         5     - Persistent Process"
-    echo "         6     - SPX Process"
-    echo "         7     - Process Create"
-    echo "         8     - Node down before startup"
-    echo "         9     - TmSync"
+    echo "         6     - DTM Process"
+    echo "         7     - SPX Process"
+    echo "         8     - Process Create"
+    echo "         9     - Node down before startup"
+    echo "        10     - TmSync"
     echo
 }
 
@@ -112,7 +113,13 @@ else
 fi
 fi
 
-echo Executing test $test
+if [ ! -z "$SQ_DTM_PERSISTENT_PROCESS" ]; then
+    let dtm_persistent_process=`echo $SQ_DTM_PERSISTENT_PROCESS`
+else
+    let dtm_persistent_process="0"
+fi
+
+echo ************ Executing test $test ************
 
 export SQ_SHELL_NOCWD=1
 # Uncomment to enable LIO tracing in test programs
@@ -283,7 +290,31 @@ eof
  fi
 fi
 
-if ( [ $test '==' -1 ] || [ $test '==' 6 ] ); then
+if ( [[ $dtm_persistent_process == "1" ]] &&
+      ([ $test '==' -1 ] || [ $test '==' 6 ]) ); then
+ echo "***"
+ echo "*** Executing DTM Process test"
+ echo "***"
+shell <<eof
+ startup
+ exec {name \$DTMCTRL, nid 0, out $MY_SQROOT/monitor/test/dtmTest.lst} dtmCtrl $trace
+ shutdown
+ exit
+eof
+ sleep 1
+ cstat -h
+ if [ "$cluster" = "-cluster" ]; then
+     pdsh $MY_NODES grep PASSED $PWD/dtmTest.lst
+     pdsh $MY_NODES grep FAILED $PWD/dtmTest.lst
+ else
+     grep PASSED $PWD/dtmTest.lst
+     grep FAILED $PWD/dtmTest.lst
+ fi
+else
+ echo "DTM is not configured as a persistent process. Skipping test 6!"
+fi
+
+if ( [ $test '==' -1 ] || [ $test '==' 7 ] ); then
  echo "***"
  echo "*** Executing SPX Process test"
  echo "***"
@@ -304,7 +335,7 @@ eof
  fi
 fi
 
-if ( [ $test '==' -1 ] || [ $test '==' 7 ] ); then
+if ( [ $test '==' -1 ] || [ $test '==' 8 ] ); then
  echo "***"
  echo "*** Executing Process Create test"
  echo "***"
@@ -324,7 +355,7 @@ eof
  fi
 fi
 
-if ( [ $test '==' -1 ] || [ $test '==' 8 ] ); then
+if ( [ $test '==' -1 ] || [ $test '==' 9 ] ); then
  echo "***"
  echo "*** Executing Process Creates Node down before startup test"
  echo "***"
@@ -367,7 +398,7 @@ eof
   pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
   pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
   echo "***"
-  echo "*** Executing TmSync cluster test 9"
+  echo "*** Executing TmSync cluster test 10"
   echo "***"
 shell <<eof
  startup
@@ -438,18 +469,20 @@ if ( [ $test '==' -1 ] ); then
      pdsh $MY_NODES grep FAILED $PWD/deathNotice.lst
      pdsh $MY_NODES grep PASSED $PWD/persistentProc.lst
      pdsh $MY_NODES grep FAILED $PWD/persistentProc.lst
+     pdsh $MY_NODES grep PASSED $PWD/dtmTest.lst
+     pdsh $MY_NODES grep FAILED $PWD/dtmTest.lst
      pdsh $MY_NODES grep PASSED $PWD/spxTest.lst
      pdsh $MY_NODES grep FAILED $PWD/spxTest.lst
      pdsh $MY_NODES grep PASSED $PWD/procCreate.lst
      pdsh $MY_NODES grep FAILED $PWD/procCreate.lst
      pdsh $MY_NODES grep PASSED $PWD/nodeDown.lst
      pdsh $MY_NODES grep FAILED $PWD/nodeDown.lst
-     pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
-     pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
-     pdsh $MY_NODES grep PASSED $PWD/tmSync9.lst
-     pdsh $MY_NODES grep FAILED $PWD/tmSync9.lst
-     pdsh $MY_NODES grep PASSED $PWD/tmSync10.lst
-     pdsh $MY_NODES grep FAILED $PWD/tmSync10.lst
+#     pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
+#     pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
+#     pdsh $MY_NODES grep PASSED $PWD/tmSync9.lst
+#     pdsh $MY_NODES grep FAILED $PWD/tmSync9.lst
+#     pdsh $MY_NODES grep PASSED $PWD/tmSync10.lst
+#     pdsh $MY_NODES grep FAILED $PWD/tmSync10.lst
  else
      grep PASSED $PWD/childExit.lst
      grep FAILED $PWD/childExit.lst
@@ -461,6 +494,8 @@ if ( [ $test '==' -1 ] ); then
      grep FAILED $PWD/deathNotice.lst
      grep PASSED $PWD/persistentProc.lst
      grep FAILED $PWD/persistentProc.lst
+     grep PASSED $PWD/dtmTest.lst
+     grep FAILED $PWD/dtmTest.lst
      grep PASSED $PWD/spxTest.lst
      grep FAILED $PWD/spxTest.lst
      grep PASSED $PWD/procCreate.lst

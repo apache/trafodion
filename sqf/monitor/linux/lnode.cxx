@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -437,6 +437,58 @@ void CLNode::PrepareForTransactions( bool activatingSpare )
                     trace_printf( "%s@%d - Sending node %d prepare notice to SPX %s (pid=%d)\n"
                                 , method_name, __LINE__, Nid
                                 , process->GetName(), process->GetPid());
+                }
+            }
+        }
+    }
+
+    TRACE_EXIT;
+}
+
+void CLNode::SendDTMRestarted( void )
+{
+    const char method_name[] = "CLNode::SendDTMRestarted";
+    TRACE_ENTRY;
+
+    struct  message_def *msg;
+
+    if ( trace_settings &
+        (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC | TRACE_INIT) )
+    {
+        trace_printf( "%s@%d -  %s (pnid=%d, state=%d) sending DTM restarted in nid=%d notice to local DTMs\n"
+                    , method_name, __LINE__
+                    , MyNode->GetName(), MyNode->GetPNid(), MyNode->GetState(), GetNid() );
+    }
+
+    if ( MyNode->GetState() == State_Up )
+    {
+        CLNode *lnode = MyNode->GetFirstLNode();
+        for ( ; lnode; lnode = lnode->GetNext() )
+        {
+            // Send local DTM processes a DTM restarted message
+            CProcess   *process = lnode->GetProcessLByType( ProcessType_DTM );
+            if ( process )
+            {
+                // send node prepare notice to our node's DTM process
+                msg = new struct message_def;
+                msg->type = MsgType_TmRestarted;
+                msg->noreply = true;
+                msg->u.request.type = ReqType_Notice;
+                msg->u.request.u.tm_restart.nid = Nid;
+                msg->u.request.u.tm_restart.pnid = GetNode()->GetPNid();
+                const char * nodeName = GetNode()->GetName();
+                STRCPY(msg->u.request.u.tm_restart.node_name, nodeName);
+                SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid()
+                                                       , process->GetVerifier()
+                                                       , msg
+                                                       , NULL);
+
+                if ( trace_settings &
+                    (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC | TRACE_INIT) )
+                {
+                    trace_printf( "%s@%d - Sending nid=%d DTM restarted notice to DTM %s (nid=%d,pid=%d)\n"
+                                , method_name, __LINE__
+                                , Nid , process->GetName(), process->GetNid(), process->GetPid() );
                 }
             }
         }

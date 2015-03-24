@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -50,6 +50,8 @@ TEST_PGMS	+= $(OUTDIR)/deathUnreg
 TEST_PGMS	+= $(OUTDIR)/deathWatch
 TEST_PGMS	+= $(OUTDIR)/persistentProc
 TEST_PGMS	+= $(OUTDIR)/procCreate
+TEST_PGMS	+= $(OUTDIR)/dtmCtrl
+TEST_PGMS	+= $(OUTDIR)/dtmProc
 TEST_PGMS	+= $(OUTDIR)/spxCtrl
 TEST_PGMS	+= $(OUTDIR)/spxProc
 #TEST_PGMS	+= $(OUTDIR)/tmSyncTest
@@ -90,6 +92,8 @@ $(OUTDIR)/deathUnreg: deathUnreg.cxx $(CLIENTOBJS)
 $(OUTDIR)/deathWatch: deathWatch.cxx $(CLIENTOBJS)
 $(OUTDIR)/persistentProc: persistentProc.cxx $(CLIENTOBJS)
 $(OUTDIR)/procCreate : procCreate.cxx $(CLIENTOBJS)
+$(OUTDIR)/dtmCtrl : spxCtrl.cxx $(CLIENTOBJS)
+$(OUTDIR)/dtmProc : spxProc.cxx $(CLIENTOBJS)
 $(OUTDIR)/spxCtrl : spxCtrl.cxx $(CLIENTOBJS)
 $(OUTDIR)/spxProc : spxProc.cxx $(CLIENTOBJS)
 $(OUTDIR)/tmSyncTest: tmSyncTest.cxx  $(CLIENTOBJS)
