@@ -1361,7 +1361,7 @@ ImplInit (
 
 	resStatSession = NULL;
 	resStatStatement = NULL;
-	if (srvrGlobal->srvrVersion.componentId != CLPS_SRVR_COMPONENT)
+	if (srvrGlobal->m_bStatisticsEnabled)
 	{
 		resStatSession = new ResStatisticsSession();
 //LCOV_EXCL_START
