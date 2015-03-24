@@ -10109,6 +10109,16 @@ public final class SsccRegionProtos {
      */
     org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getDeleteOrBuilder(
         int index);
+
+    // optional bool isStateless = 4;
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    boolean hasIsStateless();
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    boolean getIsStateless();
   }
   /**
    * Protobuf type {@code SsccDeleteMultipleTransactionalRequest}
@@ -10177,6 +10187,11 @@ public final class SsccRegionProtos {
                 mutable_bitField0_ |= 0x00000004;
               }
               delete_.add(input.readMessage(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.PARSER, extensionRegistry));
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000004;
+              isStateless_ = input.readBool();
               break;
             }
           }
@@ -10290,10 +10305,27 @@ public final class SsccRegionProtos {
       return delete_.get(index);
     }
 
+    // optional bool isStateless = 4;
+    public static final int ISSTATELESS_FIELD_NUMBER = 4;
+    private boolean isStateless_;
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    public boolean hasIsStateless() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    public boolean getIsStateless() {
+      return isStateless_;
+    }
+
     private void initFields() {
       transactionId_ = 0L;
       regionName_ = com.google.protobuf.ByteString.EMPTY;
       delete_ = java.util.Collections.emptyList();
+      isStateless_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -10330,6 +10362,9 @@ public final class SsccRegionProtos {
       for (int i = 0; i < delete_.size(); i++) {
         output.writeMessage(3, delete_.get(i));
       }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBool(4, isStateless_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -10350,6 +10385,10 @@ public final class SsccRegionProtos {
       for (int i = 0; i < delete_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(3, delete_.get(i));
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(4, isStateless_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -10478,6 +10517,8 @@ public final class SsccRegionProtos {
         } else {
           deleteBuilder_.clear();
         }
+        isStateless_ = false;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -10523,6 +10564,10 @@ public final class SsccRegionProtos {
         } else {
           result.delete_ = deleteBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.isStateless_ = isStateless_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -10570,6 +10615,9 @@ public final class SsccRegionProtos {
               deleteBuilder_.addAllMessages(other.delete_);
             }
           }
+        }
+        if (other.hasIsStateless()) {
+          setIsStateless(other.getIsStateless());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -10919,6 +10967,39 @@ public final class SsccRegionProtos {
           delete_ = null;
         }
         return deleteBuilder_;
+      }
+
+      // optional bool isStateless = 4;
+      private boolean isStateless_ ;
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public boolean hasIsStateless() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public boolean getIsStateless() {
+        return isStateless_;
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public Builder setIsStateless(boolean value) {
+        bitField0_ |= 0x00000008;
+        isStateless_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public Builder clearIsStateless() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        isStateless_ = false;
+        onChanged();
+        return this;
       }
 
       // @@protoc_insertion_point(builder_scope:SsccDeleteMultipleTransactionalRequest)
@@ -11793,6 +11874,16 @@ public final class SsccRegionProtos {
      * <code>required .MutationProto delete = 3;</code>
      */
     org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getDeleteOrBuilder();
+
+    // optional bool isStateless = 4;
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    boolean hasIsStateless();
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    boolean getIsStateless();
   }
   /**
    * Protobuf type {@code SsccDeleteTransactionalRequest}
@@ -11866,6 +11957,11 @@ public final class SsccRegionProtos {
                 delete_ = subBuilder.buildPartial();
               }
               bitField0_ |= 0x00000004;
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              isStateless_ = input.readBool();
               break;
             }
           }
@@ -11962,10 +12058,27 @@ public final class SsccRegionProtos {
       return delete_;
     }
 
+    // optional bool isStateless = 4;
+    public static final int ISSTATELESS_FIELD_NUMBER = 4;
+    private boolean isStateless_;
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    public boolean hasIsStateless() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    public boolean getIsStateless() {
+      return isStateless_;
+    }
+
     private void initFields() {
       transactionId_ = 0L;
       regionName_ = com.google.protobuf.ByteString.EMPTY;
       delete_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+      isStateless_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -12004,6 +12117,9 @@ public final class SsccRegionProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeMessage(3, delete_);
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBool(4, isStateless_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -12024,6 +12140,10 @@ public final class SsccRegionProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(3, delete_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(4, isStateless_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -12152,6 +12272,8 @@ public final class SsccRegionProtos {
           deleteBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000004);
+        isStateless_ = false;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -12196,6 +12318,10 @@ public final class SsccRegionProtos {
         } else {
           result.delete_ = deleteBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.isStateless_ = isStateless_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -12220,6 +12346,9 @@ public final class SsccRegionProtos {
         }
         if (other.hasDelete()) {
           mergeDelete(other.getDelete());
+        }
+        if (other.hasIsStateless()) {
+          setIsStateless(other.getIsStateless());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -12448,6 +12577,39 @@ public final class SsccRegionProtos {
           delete_ = null;
         }
         return deleteBuilder_;
+      }
+
+      // optional bool isStateless = 4;
+      private boolean isStateless_ ;
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public boolean hasIsStateless() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public boolean getIsStateless() {
+        return isStateless_;
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public Builder setIsStateless(boolean value) {
+        bitField0_ |= 0x00000008;
+        isStateless_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public Builder clearIsStateless() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        isStateless_ = false;
+        onChanged();
+        return this;
       }
 
       // @@protoc_insertion_point(builder_scope:SsccDeleteTransactionalRequest)
@@ -18148,6 +18310,16 @@ public final class SsccRegionProtos {
      * <code>required .MutationProto put = 3;</code>
      */
     org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getPutOrBuilder();
+
+    // optional bool isStateless = 4;
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    boolean hasIsStateless();
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    boolean getIsStateless();
   }
   /**
    * Protobuf type {@code SsccPutTransactionalRequest}
@@ -18221,6 +18393,11 @@ public final class SsccRegionProtos {
                 put_ = subBuilder.buildPartial();
               }
               bitField0_ |= 0x00000004;
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              isStateless_ = input.readBool();
               break;
             }
           }
@@ -18317,10 +18494,27 @@ public final class SsccRegionProtos {
       return put_;
     }
 
+    // optional bool isStateless = 4;
+    public static final int ISSTATELESS_FIELD_NUMBER = 4;
+    private boolean isStateless_;
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    public boolean hasIsStateless() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    public boolean getIsStateless() {
+      return isStateless_;
+    }
+
     private void initFields() {
       transactionId_ = 0L;
       regionName_ = com.google.protobuf.ByteString.EMPTY;
       put_ = org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.getDefaultInstance();
+      isStateless_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -18359,6 +18553,9 @@ public final class SsccRegionProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeMessage(3, put_);
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBool(4, isStateless_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -18379,6 +18576,10 @@ public final class SsccRegionProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(3, put_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(4, isStateless_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -18507,6 +18708,8 @@ public final class SsccRegionProtos {
           putBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000004);
+        isStateless_ = false;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -18551,6 +18754,10 @@ public final class SsccRegionProtos {
         } else {
           result.put_ = putBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.isStateless_ = isStateless_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -18575,6 +18782,9 @@ public final class SsccRegionProtos {
         }
         if (other.hasPut()) {
           mergePut(other.getPut());
+        }
+        if (other.hasIsStateless()) {
+          setIsStateless(other.getIsStateless());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -18803,6 +19013,39 @@ public final class SsccRegionProtos {
           put_ = null;
         }
         return putBuilder_;
+      }
+
+      // optional bool isStateless = 4;
+      private boolean isStateless_ ;
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public boolean hasIsStateless() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public boolean getIsStateless() {
+        return isStateless_;
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public Builder setIsStateless(boolean value) {
+        bitField0_ |= 0x00000008;
+        isStateless_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public Builder clearIsStateless() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        isStateless_ = false;
+        onChanged();
+        return this;
       }
 
       // @@protoc_insertion_point(builder_scope:SsccPutTransactionalRequest)
@@ -19688,6 +19931,16 @@ public final class SsccRegionProtos {
      */
     org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProtoOrBuilder getPutOrBuilder(
         int index);
+
+    // optional bool isStateless = 4;
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    boolean hasIsStateless();
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    boolean getIsStateless();
   }
   /**
    * Protobuf type {@code SsccPutMultipleTransactionalRequest}
@@ -19756,6 +20009,11 @@ public final class SsccRegionProtos {
                 mutable_bitField0_ |= 0x00000004;
               }
               put_.add(input.readMessage(org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto.PARSER, extensionRegistry));
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000004;
+              isStateless_ = input.readBool();
               break;
             }
           }
@@ -19869,10 +20127,27 @@ public final class SsccRegionProtos {
       return put_.get(index);
     }
 
+    // optional bool isStateless = 4;
+    public static final int ISSTATELESS_FIELD_NUMBER = 4;
+    private boolean isStateless_;
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    public boolean hasIsStateless() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional bool isStateless = 4;</code>
+     */
+    public boolean getIsStateless() {
+      return isStateless_;
+    }
+
     private void initFields() {
       transactionId_ = 0L;
       regionName_ = com.google.protobuf.ByteString.EMPTY;
       put_ = java.util.Collections.emptyList();
+      isStateless_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -19909,6 +20184,9 @@ public final class SsccRegionProtos {
       for (int i = 0; i < put_.size(); i++) {
         output.writeMessage(3, put_.get(i));
       }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBool(4, isStateless_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -19929,6 +20207,10 @@ public final class SsccRegionProtos {
       for (int i = 0; i < put_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(3, put_.get(i));
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(4, isStateless_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -20057,6 +20339,8 @@ public final class SsccRegionProtos {
         } else {
           putBuilder_.clear();
         }
+        isStateless_ = false;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -20102,6 +20386,10 @@ public final class SsccRegionProtos {
         } else {
           result.put_ = putBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.isStateless_ = isStateless_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -20149,6 +20437,9 @@ public final class SsccRegionProtos {
               putBuilder_.addAllMessages(other.put_);
             }
           }
+        }
+        if (other.hasIsStateless()) {
+          setIsStateless(other.getIsStateless());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -20498,6 +20789,39 @@ public final class SsccRegionProtos {
           put_ = null;
         }
         return putBuilder_;
+      }
+
+      // optional bool isStateless = 4;
+      private boolean isStateless_ ;
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public boolean hasIsStateless() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public boolean getIsStateless() {
+        return isStateless_;
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public Builder setIsStateless(boolean value) {
+        bitField0_ |= 0x00000008;
+        isStateless_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool isStateless = 4;</code>
+       */
+      public Builder clearIsStateless() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        isStateless_ = false;
+        onChanged();
+        return this;
       }
 
       // @@protoc_insertion_point(builder_scope:SsccPutMultipleTransactionalRequest)
@@ -26322,105 +26646,107 @@ public final class SsccRegionProtos {
       "\n\027SsccCloseScannerRequest\022\025\n\rtransaction" +
       "Id\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\021\n\tscannerI" +
       "d\030\003 \002(\003\"C\n\030SsccCloseScannerResponse\022\021\n\te" +
-      "xception\030\001 \001(\t\022\024\n\014hasException\030\002 \001(\010\"s\n&" +
-      "SsccDeleteMultipleTransactionalRequest\022\025" +
-      "\n\rtransactionId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(",
-      "\014\022\036\n\006delete\030\003 \003(\0132\016.MutationProto\"{\n\'Ssc" +
-      "cDeleteMultipleTransactionalResponse\022\027\n\006" +
-      "result\030\001 \001(\0132\007.Result\022\021\n\texception\030\002 \001(\t" +
-      "\022\024\n\014hasException\030\003 \001(\010\022\016\n\006status\030\004 \001(\005\"k" +
-      "\n\036SsccDeleteTransactionalRequest\022\025\n\rtran" +
-      "sactionId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\036\n\006d" +
-      "elete\030\003 \002(\0132\016.MutationProto\"s\n\037SsccDelet" +
-      "eTransactionalResponse\022\027\n\006result\030\001 \001(\0132\007" +
-      ".Result\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExcepti" +
-      "on\030\003 \001(\010\022\016\n\006status\030\004 \001(\005\"[\n\033SsccGetTrans",
+      "xception\030\001 \001(\t\022\024\n\014hasException\030\002 \001(\010\"\210\001\n" +
+      "&SsccDeleteMultipleTransactionalRequest\022" +
+      "\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregionName\030\002 \002",
+      "(\014\022\036\n\006delete\030\003 \003(\0132\016.MutationProto\022\023\n\013is" +
+      "Stateless\030\004 \001(\010\"{\n\'SsccDeleteMultipleTra" +
+      "nsactionalResponse\022\027\n\006result\030\001 \001(\0132\007.Res" +
+      "ult\022\021\n\texception\030\002 \001(\t\022\024\n\014hasException\030\003" +
+      " \001(\010\022\016\n\006status\030\004 \001(\005\"\200\001\n\036SsccDeleteTrans" +
       "actionalRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022" +
-      "\n\nregionName\030\002 \002(\014\022\021\n\003get\030\003 \002(\0132\004.Get\"`\n" +
-      "\034SsccGetTransactionalResponse\022\027\n\006result\030" +
-      "\001 \001(\0132\007.Result\022\021\n\texception\030\002 \001(\t\022\024\n\014has" +
-      "Exception\030\003 \001(\010\"X\n\026SsccOpenScannerReques" +
-      "t\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregionName\030\002" +
-      " \002(\014\022\023\n\004scan\030\003 \002(\0132\005.Scan\"U\n\027SsccOpenSca" +
-      "nnerResponse\022\021\n\tscannerId\030\001 \002(\003\022\021\n\texcep" +
-      "tion\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"\227\001\n\026Ssc" +
-      "cPerformScanRequest\022\025\n\rtransactionId\030\001 \002",
-      "(\003\022\022\n\nregionName\030\002 \002(\014\022\021\n\tscannerId\030\003 \002(" +
-      "\003\022\024\n\014numberOfRows\030\004 \002(\005\022\024\n\014closeScanner\030" +
-      "\005 \002(\010\022\023\n\013nextCallSeq\030\006 \002(\003\"\220\001\n\027SsccPerfo" +
-      "rmScanResponse\022\027\n\006result\030\001 \003(\0132\007.Result\022" +
-      "\r\n\005count\030\002 \002(\003\022\023\n\013nextCallSeq\030\003 \002(\003\022\017\n\007h" +
-      "asMore\030\004 \002(\010\022\021\n\texception\030\005 \001(\t\022\024\n\014hasEx" +
-      "ception\030\006 \001(\010\"e\n\033SsccPutTransactionalReq" +
-      "uest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregionNam" +
-      "e\030\002 \002(\014\022\033\n\003put\030\003 \002(\0132\016.MutationProto\"p\n\034" +
-      "SsccPutTransactionalResponse\022\027\n\006result\030\001",
+      "\n\nregionName\030\002 \002(\014\022\036\n\006delete\030\003 \002(\0132\016.Mut" +
+      "ationProto\022\023\n\013isStateless\030\004 \001(\010\"s\n\037SsccD" +
+      "eleteTransactionalResponse\022\027\n\006result\030\001 \001" +
+      "(\0132\007.Result\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExc",
+      "eption\030\003 \001(\010\022\016\n\006status\030\004 \001(\005\"[\n\033SsccGetT" +
+      "ransactionalRequest\022\025\n\rtransactionId\030\001 \002" +
+      "(\003\022\022\n\nregionName\030\002 \002(\014\022\021\n\003get\030\003 \002(\0132\004.Ge" +
+      "t\"`\n\034SsccGetTransactionalResponse\022\027\n\006res" +
+      "ult\030\001 \001(\0132\007.Result\022\021\n\texception\030\002 \001(\t\022\024\n" +
+      "\014hasException\030\003 \001(\010\"X\n\026SsccOpenScannerRe" +
+      "quest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregionNa" +
+      "me\030\002 \002(\014\022\023\n\004scan\030\003 \002(\0132\005.Scan\"U\n\027SsccOpe" +
+      "nScannerResponse\022\021\n\tscannerId\030\001 \002(\003\022\021\n\te" +
+      "xception\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"\227\001\n",
+      "\026SsccPerformScanRequest\022\025\n\rtransactionId" +
+      "\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\021\n\tscannerId\030" +
+      "\003 \002(\003\022\024\n\014numberOfRows\030\004 \002(\005\022\024\n\014closeScan" +
+      "ner\030\005 \002(\010\022\023\n\013nextCallSeq\030\006 \002(\003\"\220\001\n\027SsccP" +
+      "erformScanResponse\022\027\n\006result\030\001 \003(\0132\007.Res" +
+      "ult\022\r\n\005count\030\002 \002(\003\022\023\n\013nextCallSeq\030\003 \002(\003\022" +
+      "\017\n\007hasMore\030\004 \002(\010\022\021\n\texception\030\005 \001(\t\022\024\n\014h" +
+      "asException\030\006 \001(\010\"z\n\033SsccPutTransactiona" +
+      "lRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\nregio" +
+      "nName\030\002 \002(\014\022\033\n\003put\030\003 \002(\0132\016.MutationProto",
+      "\022\023\n\013isStateless\030\004 \001(\010\"p\n\034SsccPutTransact" +
+      "ionalResponse\022\027\n\006result\030\001 \001(\0132\007.Result\022\021" +
+      "\n\texception\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\022" +
+      "\016\n\006status\030\004 \001(\005\"\202\001\n#SsccPutMultipleTrans" +
+      "actionalRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022" +
+      "\n\nregionName\030\002 \002(\014\022\033\n\003put\030\003 \003(\0132\016.Mutati" +
+      "onProto\022\023\n\013isStateless\030\004 \001(\010\"x\n$SsccPutM" +
+      "ultipleTransactionalResponse\022\027\n\006result\030\001" +
       " \001(\0132\007.Result\022\021\n\texception\030\002 \001(\t\022\024\n\014hasE" +
-      "xception\030\003 \001(\010\022\016\n\006status\030\004 \001(\005\"m\n#SsccPu" +
-      "tMultipleTransactionalRequest\022\025\n\rtransac" +
-      "tionId\030\001 \002(\003\022\022\n\nregionName\030\002 \002(\014\022\033\n\003put\030" +
-      "\003 \003(\0132\016.MutationProto\"x\n$SsccPutMultiple" +
-      "TransactionalResponse\022\027\n\006result\030\001 \001(\0132\007." +
-      "Result\022\021\n\texception\030\002 \001(\t\022\024\n\014hasExceptio" +
-      "n\030\003 \001(\010\022\016\n\006status\030\004 \001(\005\"U\n\032SsccRecoveryR" +
-      "equestRequest\022\025\n\rtransactionId\030\001 \002(\003\022\022\n\n" +
-      "regionName\030\002 \002(\014\022\014\n\004tmId\030\003 \002(\005\"V\n\033SsccRe",
-      "coveryRequestResponse\022\016\n\006result\030\001 \003(\003\022\021\n" +
-      "\texception\030\002 \001(\t\022\024\n\014hasException\030\003 \001(\010\"\247" +
-      "\001\n!SsccTransactionalAggregateRequest\022\022\n\n" +
-      "regionName\030\001 \002(\014\022\025\n\rtransactionId\030\002 \002(\003\022" +
-      "\036\n\026interpreter_class_name\030\003 \002(\t\022\023\n\004scan\030" +
-      "\004 \002(\0132\005.Scan\022\"\n\032interpreter_specific_byt" +
-      "es\030\005 \001(\014\"M\n\"SsccTransactionalAggregateRe" +
-      "sponse\022\022\n\nfirst_part\030\003 \003(\014\022\023\n\013second_par" +
-      "t\030\004 \001(\0142\206\016\n\021SsccRegionService\022O\n\020abortTr" +
-      "ansaction\022\034.SsccAbortTransactionRequest\032",
-      "\035.SsccAbortTransactionResponse\022O\n\020beginT" +
-      "ransaction\022\034.SsccBeginTransactionRequest" +
-      "\032\035.SsccBeginTransactionResponse\022I\n\016check" +
-      "AndDelete\022\032.SsccCheckAndDeleteRequest\032\033." +
-      "SsccCheckAndDeleteResponse\022@\n\013checkAndPu" +
-      "t\022\027.SsccCheckAndPutRequest\032\030.SsccCheckAn" +
-      "dPutResponse\022C\n\014closeScanner\022\030.SsccClose" +
-      "ScannerRequest\032\031.SsccCloseScannerRespons" +
-      "e\0221\n\006commit\022\022.SsccCommitRequest\032\023.SsccCo" +
-      "mmitResponse\022O\n\020commitIfPossible\022\034.SsccC",
-      "ommitIfPossibleRequest\032\035.SsccCommitIfPos" +
-      "sibleResponse\022F\n\rcommitRequest\022\031.SsccCom" +
-      "mitRequestRequest\032\032.SsccCommitRequestRes" +
-      "ponse\022K\n\006delete\022\037.SsccDeleteTransactiona" +
-      "lRequest\032 .SsccDeleteTransactionalRespon" +
-      "se\022c\n\016deleteMultiple\022\'.SsccDeleteMultipl" +
-      "eTransactionalRequest\032(.SsccDeleteMultip" +
-      "leTransactionalResponse\022B\n\003get\022\034.SsccGet" +
-      "TransactionalRequest\032\035.SsccGetTransactio" +
-      "nalResponse\022@\n\013performScan\022\027.SsccPerform",
-      "ScanRequest\032\030.SsccPerformScanResponse\022@\n" +
-      "\013openScanner\022\027.SsccOpenScannerRequest\032\030." +
-      "SsccOpenScannerResponse\022B\n\003put\022\034.SsccPut" +
-      "TransactionalRequest\032\035.SsccPutTransactio" +
-      "nalResponse\022Z\n\013putMultiple\022$.SsccPutMult" +
-      "ipleTransactionalRequest\032%.SsccPutMultip" +
-      "leTransactionalResponse\022L\n\017recoveryReque" +
-      "st\022\033.SsccRecoveryRequestRequest\032\034.SsccRe" +
-      "coveryRequestResponse\022Q\n\006GetMax\022\".SsccTr" +
-      "ansactionalAggregateRequest\032#.SsccTransa",
-      "ctionalAggregateResponse\022Q\n\006GetMin\022\".Ssc" +
-      "cTransactionalAggregateRequest\032#.SsccTra" +
-      "nsactionalAggregateResponse\022Q\n\006GetSum\022\"." +
-      "SsccTransactionalAggregateRequest\032#.Sscc" +
-      "TransactionalAggregateResponse\022T\n\tGetRow" +
-      "Num\022\".SsccTransactionalAggregateRequest\032" +
-      "#.SsccTransactionalAggregateResponse\022Q\n\006" +
-      "GetAvg\022\".SsccTransactionalAggregateReque" +
-      "st\032#.SsccTransactionalAggregateResponse\022" +
-      "Q\n\006GetStd\022\".SsccTransactionalAggregateRe",
-      "quest\032#.SsccTransactionalAggregateRespon" +
-      "se\022T\n\tGetMedian\022\".SsccTransactionalAggre" +
-      "gateRequest\032#.SsccTransactionalAggregate" +
-      "ResponseBT\n;org.apache.hadoop.hbase.copr" +
-      "ocessor.transactional.generatedB\020SsccReg" +
-      "ionProtosH\001\210\001\001"
+      "xception\030\003 \001(\010\022\016\n\006status\030\004 \001(\005\"U\n\032SsccRe",
+      "coveryRequestRequest\022\025\n\rtransactionId\030\001 " +
+      "\002(\003\022\022\n\nregionName\030\002 \002(\014\022\014\n\004tmId\030\003 \002(\005\"V\n" +
+      "\033SsccRecoveryRequestResponse\022\016\n\006result\030\001" +
+      " \003(\003\022\021\n\texception\030\002 \001(\t\022\024\n\014hasException\030" +
+      "\003 \001(\010\"\247\001\n!SsccTransactionalAggregateRequ" +
+      "est\022\022\n\nregionName\030\001 \002(\014\022\025\n\rtransactionId" +
+      "\030\002 \002(\003\022\036\n\026interpreter_class_name\030\003 \002(\t\022\023" +
+      "\n\004scan\030\004 \002(\0132\005.Scan\022\"\n\032interpreter_speci" +
+      "fic_bytes\030\005 \001(\014\"M\n\"SsccTransactionalAggr" +
+      "egateResponse\022\022\n\nfirst_part\030\003 \003(\014\022\023\n\013sec",
+      "ond_part\030\004 \001(\0142\206\016\n\021SsccRegionService\022O\n\020" +
+      "abortTransaction\022\034.SsccAbortTransactionR" +
+      "equest\032\035.SsccAbortTransactionResponse\022O\n" +
+      "\020beginTransaction\022\034.SsccBeginTransaction" +
+      "Request\032\035.SsccBeginTransactionResponse\022I" +
+      "\n\016checkAndDelete\022\032.SsccCheckAndDeleteReq" +
+      "uest\032\033.SsccCheckAndDeleteResponse\022@\n\013che" +
+      "ckAndPut\022\027.SsccCheckAndPutRequest\032\030.Sscc" +
+      "CheckAndPutResponse\022C\n\014closeScanner\022\030.Ss" +
+      "ccCloseScannerRequest\032\031.SsccCloseScanner",
+      "Response\0221\n\006commit\022\022.SsccCommitRequest\032\023" +
+      ".SsccCommitResponse\022O\n\020commitIfPossible\022" +
+      "\034.SsccCommitIfPossibleRequest\032\035.SsccComm" +
+      "itIfPossibleResponse\022F\n\rcommitRequest\022\031." +
+      "SsccCommitRequestRequest\032\032.SsccCommitReq" +
+      "uestResponse\022K\n\006delete\022\037.SsccDeleteTrans" +
+      "actionalRequest\032 .SsccDeleteTransactiona" +
+      "lResponse\022c\n\016deleteMultiple\022\'.SsccDelete" +
+      "MultipleTransactionalRequest\032(.SsccDelet" +
+      "eMultipleTransactionalResponse\022B\n\003get\022\034.",
+      "SsccGetTransactionalRequest\032\035.SsccGetTra" +
+      "nsactionalResponse\022@\n\013performScan\022\027.Sscc" +
+      "PerformScanRequest\032\030.SsccPerformScanResp" +
+      "onse\022@\n\013openScanner\022\027.SsccOpenScannerReq" +
+      "uest\032\030.SsccOpenScannerResponse\022B\n\003put\022\034." +
+      "SsccPutTransactionalRequest\032\035.SsccPutTra" +
+      "nsactionalResponse\022Z\n\013putMultiple\022$.Sscc" +
+      "PutMultipleTransactionalRequest\032%.SsccPu" +
+      "tMultipleTransactionalResponse\022L\n\017recove" +
+      "ryRequest\022\033.SsccRecoveryRequestRequest\032\034",
+      ".SsccRecoveryRequestResponse\022Q\n\006GetMax\022\"" +
+      ".SsccTransactionalAggregateRequest\032#.Ssc" +
+      "cTransactionalAggregateResponse\022Q\n\006GetMi" +
+      "n\022\".SsccTransactionalAggregateRequest\032#." +
+      "SsccTransactionalAggregateResponse\022Q\n\006Ge" +
+      "tSum\022\".SsccTransactionalAggregateRequest" +
+      "\032#.SsccTransactionalAggregateResponse\022T\n" +
+      "\tGetRowNum\022\".SsccTransactionalAggregateR" +
+      "equest\032#.SsccTransactionalAggregateRespo" +
+      "nse\022Q\n\006GetAvg\022\".SsccTransactionalAggrega",
+      "teRequest\032#.SsccTransactionalAggregateRe" +
+      "sponse\022Q\n\006GetStd\022\".SsccTransactionalAggr" +
+      "egateRequest\032#.SsccTransactionalAggregat" +
+      "eResponse\022T\n\tGetMedian\022\".SsccTransaction" +
+      "alAggregateRequest\032#.SsccTransactionalAg" +
+      "gregateResponseBT\n;org.apache.hadoop.hba" +
+      "se.coprocessor.transactional.generatedB\020" +
+      "SsccRegionProtosH\001\210\001\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -26528,7 +26854,7 @@ public final class SsccRegionProtos {
           internal_static_SsccDeleteMultipleTransactionalRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccDeleteMultipleTransactionalRequest_descriptor,
-              new java.lang.String[] { "TransactionId", "RegionName", "Delete", });
+              new java.lang.String[] { "TransactionId", "RegionName", "Delete", "IsStateless", });
           internal_static_SsccDeleteMultipleTransactionalResponse_descriptor =
             getDescriptor().getMessageTypes().get(17);
           internal_static_SsccDeleteMultipleTransactionalResponse_fieldAccessorTable = new
@@ -26540,7 +26866,7 @@ public final class SsccRegionProtos {
           internal_static_SsccDeleteTransactionalRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccDeleteTransactionalRequest_descriptor,
-              new java.lang.String[] { "TransactionId", "RegionName", "Delete", });
+              new java.lang.String[] { "TransactionId", "RegionName", "Delete", "IsStateless", });
           internal_static_SsccDeleteTransactionalResponse_descriptor =
             getDescriptor().getMessageTypes().get(19);
           internal_static_SsccDeleteTransactionalResponse_fieldAccessorTable = new
@@ -26588,7 +26914,7 @@ public final class SsccRegionProtos {
           internal_static_SsccPutTransactionalRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccPutTransactionalRequest_descriptor,
-              new java.lang.String[] { "TransactionId", "RegionName", "Put", });
+              new java.lang.String[] { "TransactionId", "RegionName", "Put", "IsStateless", });
           internal_static_SsccPutTransactionalResponse_descriptor =
             getDescriptor().getMessageTypes().get(27);
           internal_static_SsccPutTransactionalResponse_fieldAccessorTable = new
@@ -26600,7 +26926,7 @@ public final class SsccRegionProtos {
           internal_static_SsccPutMultipleTransactionalRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_SsccPutMultipleTransactionalRequest_descriptor,
-              new java.lang.String[] { "TransactionId", "RegionName", "Put", });
+              new java.lang.String[] { "TransactionId", "RegionName", "Put", "IsStateless", });
           internal_static_SsccPutMultipleTransactionalResponse_descriptor =
             getDescriptor().getMessageTypes().get(29);
           internal_static_SsccPutMultipleTransactionalResponse_fieldAccessorTable = new
