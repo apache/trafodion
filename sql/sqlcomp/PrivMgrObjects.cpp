@@ -37,6 +37,7 @@
 #include "CmpCommon.h"
 #include "CmpDDLCatErrorCodes.h"
 #include "ComUser.h"
+#include "CmpContext.h"
 
 namespace Objects 
 {
@@ -742,7 +743,8 @@ std::string selectStmt("SELECT CATALOG_NAME, SCHEMA_NAME, OBJECT_NAME,"
    selectStmt += " ";
    selectStmt += whereClause;
 
-ExeCliInterface cliInterface(STMTHEAP);
+ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+  CmpCommon::context()->sqlSession()->getParentQid());
 
 PrivStatus privStatus = CLIFetch(cliInterface,selectStmt);   
    

@@ -418,7 +418,8 @@ void CmpSeabaseDDL::createSeabaseIndex(
       return;
     }
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+       CmpCommon::context()->sqlSession()->getParentQid());
   NABoolean isVolatileTable = FALSE;
   ComObjectName volTabName ;
 
@@ -1110,7 +1111,8 @@ void CmpSeabaseDDL::populateSeabaseIndex(
       return;
     }
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+       CmpCommon::context()->sqlSession()->getParentQid());
 
   //  If an index was created with NO POPULATE option, then
   // it will be marked as invalid in metadata. The regular table descriptor will
@@ -1301,7 +1303,8 @@ void CmpSeabaseDDL::dropSeabaseIndex(
   NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extIndexName = indexName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+       CmpCommon::context()->sqlSession()->getParentQid());
 
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
@@ -1630,7 +1633,8 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
   const NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extIndexName = indexName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+       CmpCommon::context()->sqlSession()->getParentQid());
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
                                    btCatName, btSchName, btObjName,
@@ -1732,7 +1736,8 @@ short CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
  Lng32 cliRC = 0;
 
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+       CmpCommon::context()->sqlSession()->getParentQid());
 
   sprintf (buf, " ALTER TABLE \"%s\".\"%s\".\"%s\"  %s INDEX \"%s\" ;", catName, schName, tabName,
       isDisable ? "DISABLE" : "ENABLE",idxName);
@@ -1771,7 +1776,8 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
   CMPASSERT (catalogNamePart == currCatName);
   CMPASSERT (schemaNamePart == currSchName);
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+       CmpCommon::context()->sqlSession()->getParentQid());
 
   // Fix for launchpad bug 1381621
   Lng32 retcode = existsInSeabaseMDTable(&cliInterface,

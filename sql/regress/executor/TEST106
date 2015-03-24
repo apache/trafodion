@@ -199,6 +199,10 @@ obey TEST106(qc1314);
 
 obey TEST106(qc1351);
 
+-- this one removes histograms for t106a so do it at the end.
+obey TEST106(ustats_test);
+
+
 ?section cursor_close_early
 -- From bug 2583
 
@@ -668,6 +672,85 @@ select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
+'escalation1, execute s1, finished');
+
+obey TEST106(synch_cancel);
+
+obey TEST106(append_cancel_log);
+
+?section ustats_test
+
+update statistics for table t106a clear;
+
+prepare s1 from
+update statistics for table t106a on
+c10k, c1k, c100, c10, c1, uniq
+,  (c10k, c1k)
+,  (c10k, c100)
+,  (c10k, c10)
+,  (c10k, c1)
+,  (c10k, uniq)
+,  (c1k,  c10k)
+,  (c1k,  c100)
+,  (c1k,  c10)
+,  (c1k,  c1)
+,  (c1k,  uniq)
+,  (c100, c10k)
+,  (c100, c1k)
+,  (c100, c10)
+,  (c100, c1)
+,  (c100,  uniq)
+,  (c10,  c10k)
+,  (c10,  c1k)
+,  (c10,  c100)
+,  (c10,  c1)
+,  (c10,  uniq)
+,  (c1,   c10k)
+,  (c1,   c1k)
+,  (c1,   c100)
+,  (c1,   c10)
+,  (c1,   uniq)
+,  (c10k, c1k, c100)
+,  (c10k, c10, c100)
+,  (c10k, c1, c100)
+,  (c10k, uniq, c100)
+,  (c1k,  c10k, c100)
+,  (c1k,  c10, c100)
+,  (c1k,  c1, c100)
+
+,  (c1k,  uniq, c100)
+,  (c10,  c10k, c100)
+,  (c10,  c1k, c100)
+,  (c10,  c1, c100)
+,  (c10,  uniq, c100)
+,  (c1,   c10k, c100)
+,  (c1,   c1k, c100)
+,  (c1,   c10, c100)
+,  (c1,   uniq, c100)
+;
+
+obey TEST106(make_cancel_stmt);
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'escalation1, launch canceler, start');
+
+sh sqlci -i"TEST106(do_cancel)" & ;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'escalation1, launch canceler, finished');
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
+'escalation1, execute s1, start');
+
+execute s1;
+
+select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
+
+insert into T106_interleaved_log values
+(CURRENT_TIME (6),
 'escalation1, execute s1, finished');
 
 obey TEST106(synch_cancel);

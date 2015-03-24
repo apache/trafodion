@@ -488,7 +488,8 @@ short CmpSeabaseDDL::upgradeRepos(ExeCliInterface * cliInterface,
 void CmpSeabaseDDL::processRepository(
                                       NABoolean createR, NABoolean dropR, NABoolean upgradeR)
 {
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+    CmpCommon::context()->sqlSession()->getParentQid());
 
   if (createR)
     createRepos(&cliInterface);

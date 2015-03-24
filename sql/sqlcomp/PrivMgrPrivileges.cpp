@@ -35,6 +35,7 @@
 #include "ComDiags.h"
 #include "ComQueue.h"
 #include "CmpCommon.h"
+#include "CmpContext.h"
 #include "CmpDDLCatErrorCodes.h"
 #include "ComSecurityKey.h"
 #include "NAUserId.h"
@@ -3024,7 +3025,8 @@ PrivStatus ObjectPrivsMDTable::selectWhere(
   // set pointer in diags area
   int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   Queue * tableQueue = NULL;
   int32_t cliRC =  cliInterface.fetchAllRows(tableQueue, (char *)selectStmt.c_str(), 0, false, false, true);
 
@@ -3182,7 +3184,8 @@ PrivStatus ObjectPrivsMDTable::insert(const PrivMgrMDRow &rowIn)
               privilegesBitmapLong,
               grantableBitmapLong);
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   int32_t cliRC = cliInterface.executeImmediate(insertStmt);
 
    if (cliRC < 0)
@@ -3250,7 +3253,8 @@ PrivStatus ObjectPrivsMDTable::deleteWhere(const std::string & whereClause)
   // set pointer in diags area
   int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
 
   int32_t cliRC = cliInterface.executeImmediate(deleteStmt.c_str());
   if (cliRC < 0)
@@ -3335,7 +3339,8 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
   // set pointer in diags area
   int32_t diagsMark = pDiags_->mark();
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   int32_t cliRC = cliInterface.executeImmediate(updateStmt.c_str());
   if (cliRC < 0)
     {
@@ -3409,7 +3414,8 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   sprintf(buf, "select count(*) from %s", tableName_.c_str());
   Int64 rowsSelected = 0;
   Lng32 theLen = 0;
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   int32_t cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &theLen, NULL);
   if (cliRC < 0)
   {
@@ -3551,7 +3557,8 @@ PrivStatus ObjectPrivsMDTable::insertSelectOnAuthsToPublic(
   int32_t diagsMark = pDiags_->mark();
 
   Int64 rowsInserted = 0;
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   int32_t cliRC = cliInterface.executeImmediate(buf, NULL, NULL, FALSE, &rowsInserted);
   if (cliRC < 0)
   {

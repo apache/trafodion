@@ -1003,7 +1003,8 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
 
   static short dropVolatileSchema(ContextCli * currContext,
                                   char * schemaName,
-                                  CollHeap * heap);
+                                  CollHeap * heap,
+                                  ex_globals *globals = NULL);
   static short dropVolatileTables(ContextCli * currContext, CollHeap * heap);
 
  private:

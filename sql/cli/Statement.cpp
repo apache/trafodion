@@ -960,28 +960,9 @@ RETCODE Statement::releaseTransaction(NABoolean allWorkRequests,
   // fatalErrorOccurred or if in the wait loop some problem happened that
   // caused the loop to exit early, then here we must wait for cancel broker
   // to reply to start  and finish message.
-  NABoolean cbDidTimedOut = FALSE;
-  while (root_tcb && root_tcb->anyCbMessages() && !statementRemainsOpen)
-  {
-    // Allow the Control Broker 5 minutes to reply.  The time spend waiting
-    // for ESPs is included in this interval.
-    Int64 timeSinceCBMsgSentMicroSecs = NA_JulianTimestamp() - cbWaitStartTime;
-    IpcTimeout timeSinceCBMsgSentCentiSecs = (IpcTimeout)
-                              (timeSinceCBMsgSentMicroSecs / 10000);
+  if (root_tcb && !statementRemainsOpen)
+    root_tcb->cbMessageWait(cbWaitStartTime);
 
-    IpcTimeout cbTimeout = (5*60*100) - timeSinceCBMsgSentCentiSecs;
-    if (cbTimeout <= 0)
-      cbTimeout = IpcImmediately;
-    statementGlobals_->getIpcEnvironment()->getAllConnections()->
-      waitOnAll(cbTimeout, FALSE, &cbDidTimedOut);
-    if (cbDidTimedOut)
-    {
-      SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__,
-              "Dumping the MXSSMP after IPC timeout.", 0);
-      root_tcb->dumpCb();
-      ex_assert(!cbDidTimedOut, "Timeout waiting for control broker.");
-    }
-  }
   // If there is an error either in Context diagsArea or
   // in StatementGlobals_ diagsArea, do not update the end time
   ComDiagsArea *diagsArea = context_->getDiagsArea();
@@ -4421,7 +4402,13 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		      }
 		  }
               }
-	    updateChildQid();
+	    NABoolean parentIsCanceled = updateChildQid();
+	    if (parentIsCanceled)
+	    {
+	      diagsArea << DgSqlCode(-EXE_CANCELED);
+	      state_ = ERROR_;
+	      break;
+	    }
 	    //decide if this query needs to be monitored by WMS
 	    NABoolean monitorThisQuery = FALSE;
 	    // If there is no parent qid then filter out certain query types before monitoring
@@ -8868,8 +8855,9 @@ Lng32 Statement::initStrTarget(SQLDESC_ID * sql_source,
   return 0;
 }
 
-void Statement::updateChildQid()
+NABoolean Statement::updateChildQid()
 {
+  NABoolean parentIsCanceled = FALSE;
   StatsGlobals *statsGlobals = cliGlobals_->getStatsGlobals();
   
   if (statsGlobals != NULL && uniqueStmtId_ != NULL && parentQid_ != NULL &&
@@ -8882,10 +8870,19 @@ void Statement::updateChildQid()
     ex_assert(error == 0, "getStatsSemaphore() returned an error");
     StmtStats *ss = statsGlobals->getMasterStmtStats(parentQid_, str_len(parentQid_), RtsQueryId::ANY_QUERY_);
     if (ss != NULL)
-      ss->getMasterStats()->setChildQid(uniqueStmtId_, uniqueStmtIdLen_);
+    {
+      ExMasterStats *parentMasterStats = ss->getMasterStats();
+      if (parentMasterStats)
+      {
+        parentMasterStats->setChildQid(uniqueStmtId_, uniqueStmtIdLen_);
+        if (parentMasterStats->getCanceledTime() != -1)
+          parentIsCanceled = TRUE;
+      }
+    }
     statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
                     savedPriority, savedStopMode);
   }
+  return parentIsCanceled;
 }
 /*
 // make the context's stats point to this statement's stats. 

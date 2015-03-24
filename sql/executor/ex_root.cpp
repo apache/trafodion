@@ -2486,6 +2486,8 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
   glob->castToExMasterStmtGlobals()->clearCancelState();
 
   deregisterCB();
+  cbMessageWait(0);
+
   if (root_tdb().getSnapshotScanTempLocation())
   {
     snapshotScanCleanup(diagsArea);
@@ -3163,7 +3165,34 @@ void ex_root_tcb::setCbFinishedMessageReplied()
     cbServer_ = NULL;
   }
 }
-
+void ex_root_tcb::cbMessageWait(Int64 waitStartTime)
+{
+  ExMasterStmtGlobals *master_glob = getGlobals()->
+                  castToExExeStmtGlobals()->castToExMasterStmtGlobals();
+  NABoolean cbDidTimedOut = FALSE;
+  while (anyCbMessages())
+  {
+    // Allow the Control Broker 5 minutes to reply.
+    // The time already spent waiting (see caller 
+    // Statement::releaseTransaction) is counted in this 5 minutes.
+    Int64 timeSinceCBMsgSentMicroSecs = waitStartTime ? 
+      NA_JulianTimestamp() - waitStartTime : 0 ;
+    IpcTimeout timeSinceCBMsgSentCentiSecs = (IpcTimeout)
+      (timeSinceCBMsgSentMicroSecs / 10000);
+    IpcTimeout cbTimeout = (5*60*100) - timeSinceCBMsgSentCentiSecs;
+    if (cbTimeout <= 0)
+      cbTimeout = IpcImmediately;
+    master_glob->getIpcEnvironment()->getAllConnections()->
+      waitOnAll(cbTimeout, FALSE, &cbDidTimedOut);
+    if (cbDidTimedOut)
+    {
+      SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__,
+             "Dumping the MXSSMP after IPC timeout.", 0);
+      dumpCb();
+      ex_assert(!cbDidTimedOut, "Timeout waiting for control broker.");
+    }
+  }
+}
 void ex_root_tcb::dumpCb()
 {
   ExMasterStmtGlobals *master_glob = getGlobals()->

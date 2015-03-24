@@ -95,7 +95,7 @@ void OutputInfo::dealloc(CollHeap * heap)
 /////////////////////////////////////////////////////////////////
 ExeCliInterface::ExeCliInterface(CollHeap * heap, Int32 isoMapping,
 				 ContextCli * currContext,
-                                 char *parentQid)
+                                 const char *parentQid)
      : heap_(heap),
        module_(NULL),
        stmt_(NULL),
@@ -122,6 +122,14 @@ ExeCliInterface::ExeCliInterface(CollHeap * heap, Int32 isoMapping,
        explainDataLen_(0),
        flags_(0)
 {
+  if (parentQid_)
+  {
+    Int32 len = str_len(parentQid_);
+    ex_assert( len >= ComSqlId::MIN_QUERY_ID_LEN, "parentQid too short.");
+    ex_assert( len <= ComSqlId::MAX_QUERY_ID_LEN, "parentQid too long.");
+    ex_assert( !str_cmp(parentQid_, COM_SESSION_ID_PREFIX, 4), 
+               "invalid parentQid.");
+  }  
 }
 
 ExeCliInterface::~ExeCliInterface()
@@ -310,7 +318,17 @@ Lng32 ExeCliInterface::prepare(const char * stmtStr,
   if (retcode != SUCCESS)
     return retcode;
 
-  retcode = SQL_EXEC_SetStmtAttr(stmt, SQL_ATTR_PARENT_QID, 0, parentQid_);
+  char parentQid[ComSqlId::MAX_QUERY_ID_LEN + 1];
+  char *pQidPtr = NULL;
+  if (parentQid_)
+  {
+    // The parentQid_ is a const char *, but the CLI doesn't 
+    // want a const char * arg, so convert it safely here.
+    memset(parentQid, 0, sizeof(parentQid));
+    memcpy(parentQid,  parentQid_, ComSqlId::MAX_QUERY_ID_LEN);
+    pQidPtr = parentQid;
+  }
+  retcode = SQL_EXEC_SetStmtAttr(stmt, SQL_ATTR_PARENT_QID, 0, pQidPtr);
   if (retcode < 0)
     return retcode;
 

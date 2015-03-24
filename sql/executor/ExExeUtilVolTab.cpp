@@ -534,7 +534,7 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 	    char * schemaName = vi->get(0);
 	    retcode =
 	      dropVolatileSchema(masterGlob->getStatement()->getContext(),
-				 schemaName, getHeap());
+				 schemaName, getHeap(), getGlobals());
 	    if (retcode < 0)
 	      {
 		// clear diags and move on to next schema.
@@ -596,9 +596,24 @@ short ExExeUtilCleanupVolatileTablesTcb::work()
 short ExExeUtilCleanupVolatileTablesTcb::dropVolatileSchema
 (ContextCli * currContext,
  char * schemaName,
- CollHeap * heap)
+ CollHeap * heap,
+ ex_globals *glob)
 {
-  ExeCliInterface cliInterface(heap, 0, currContext);
+  const char *parentQid = NULL;
+  if (glob)
+  {
+    ExExeStmtGlobals *stmtGlobals = glob->castToExExeStmtGlobals();
+    if (stmtGlobals->castToExMasterStmtGlobals())
+      parentQid = stmtGlobals->castToExMasterStmtGlobals()->
+        getStatement()->getUniqueStmtId();
+    else
+    {
+      ExEspStmtGlobals *espGlobals = stmtGlobals->castToExEspStmtGlobals();
+      if (espGlobals && espGlobals->getStmtStats())
+        parentQid = espGlobals->getStmtStats()->getQueryId();
+    }
+  }
+  ExeCliInterface cliInterface(heap, 0, currContext, parentQid);
 
   char * dropSchema = NULL;
 

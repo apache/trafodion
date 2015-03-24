@@ -587,7 +587,8 @@ void CmpSeabaseDDL::createSeabaseView(
   const NAString extViewName = viewName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
   
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   Int32 objectOwnerID = SUPER_USER;
   Int32 schemaOwnerID = SUPER_USER;
   ComSchemaClass schemaClass;
@@ -951,7 +952,8 @@ void CmpSeabaseDDL::dropSeabaseView(
   const NAString objectNamePart = viewName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extViewName = viewName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
 
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)

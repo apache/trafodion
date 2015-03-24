@@ -295,6 +295,8 @@ public:
   // Let the cancel broker know this query is finished.
   void deregisterCB();
 
+  void cbMessageWait(Int64 waitStartTime);
+
   void dumpCb();
 
   // Enforce query CPU limit.

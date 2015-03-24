@@ -237,7 +237,8 @@ NAString catName = schemaName.getCatalogNamePartAsAnsiString();
 ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
 NAString schName = schNameAsComAnsi.getInternalName();
 
-ExeCliInterface cliInterface(STMTHEAP);
+ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+CmpCommon::context()->sqlSession()->getParentQid());
 ComSchemaClass schemaClass;
 Int32 objectOwner = NA_UserIdDefault;
 Int32 schemaOwner = NA_UserIdDefault;
@@ -315,7 +316,8 @@ bool CmpSeabaseDDL::describeSchema(
    
 {
 
-ExeCliInterface cliInterface(STMTHEAP);
+ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+CmpCommon::context()->sqlSession()->getParentQid());
 ComSchemaClass schemaClass;
 Int32 objectOwner;
 Int32 schemaOwner;
@@ -401,7 +403,8 @@ NAString catName = schemaName.getCatalogNamePartAsAnsiString();
 ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
 NAString schName = schNameAsComAnsi.getInternalName();
 
-ExeCliInterface cliInterface(STMTHEAP);
+ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+CmpCommon::context()->sqlSession()->getParentQid());
 Int32 objectOwnerID = 0;
 Int32 schemaOwnerID = 0;
 ComObjectType objectType;
@@ -773,7 +776,8 @@ NAString schemaName = giveSchemaNode->getSchemaName();
    if (catalogName.isNull())
       catalogName = currentCatalogName;  
 
-ExeCliInterface cliInterface(STMTHEAP);
+ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+CmpCommon::context()->sqlSession()->getParentQid());
 Int32 objectOwnerID = 0;
 Int32 schemaOwnerID = 0;
 ComObjectType objectType;

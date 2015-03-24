@@ -287,7 +287,8 @@ void CmpSeabaseDDL::createSeabaseLibrary(
     }
 
   // Check to see if user has the authority to create the library
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
+    CmpCommon::context()->sqlSession()->getParentQid());
   Int32 objectOwnerID = SUPER_USER;
   Int32 schemaOwnerID = SUPER_USER;
   ComSchemaClass schemaClass;
@@ -427,7 +428,8 @@ void CmpSeabaseDDL::dropSeabaseLibrary(StmtDDLDropLibrary * dropLibraryNode,
     getObjectNamePartAsAnsiString(TRUE);
   const NAString extLibraryName = libraryName.getExternalName(TRUE);
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+    CmpCommon::context()->sqlSession()->getParentQid());
 
   ExpHbaseInterface * ehi = allocEHI();
   if (ehi == NULL)
@@ -551,7 +553,8 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   NABoolean isJava              = (language == COM_LANGUAGE_JAVA);
 
   // Check to see if user has the authority to create the routine
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+    CmpCommon::context()->sqlSession()->getParentQid());
   Int32 objectOwnerID = SUPER_USER;
   Int32 schemaOwnerID = SUPER_USER;
   ComSchemaClass schemaClass;
@@ -1053,7 +1056,8 @@ void CmpSeabaseDDL::dropSeabaseRoutine(StmtDDLDropRoutine * dropRoutineNode,
   const NAString extRoutineName = routineName.getExternalName(TRUE);
   
   ExpHbaseInterface * ehi = NULL;
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+    CmpCommon::context()->sqlSession()->getParentQid());
 
   ehi = allocEHI();
   if (ehi == NULL)

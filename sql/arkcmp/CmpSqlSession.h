@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@
 #include "NABoolean.h"
 #include "NAStringDef.h"
 #include "ObjectNames.h"
+#include "ComSqlId.h"
 
 class CmpSqlSession : public NABasicObject
 {
@@ -92,12 +93,7 @@ public:
   void disableVolatileSchemaInUse();
   void saveVolatileSchemaInUse();
   void restoreVolatileSchemaInUse();
-  void setParentQid(const char *parentQid) 
-  { 
-     // Need to revisit the parentQid concept with embedded compiler
-     // For now, it is not supported
-     parentQid_ = NULL;
-  }
+  void setParentQid(const char *parentQid);
   const char *getParentQid() { return parentQid_; }
 
   inline Lng32 getNumSessions() { return numSessions_; }
@@ -127,7 +123,7 @@ private:
 
   NABoolean vsiuWasSaved_;
   NABoolean savedVSIU_;
-  const char *parentQid_;
+  char *parentQid_;
 
   // Private method to retrieve user information from CLI and store a
   // copy in the databaseUserID_ and databaseUserName_ members. The

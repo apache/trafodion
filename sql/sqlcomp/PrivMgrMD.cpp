@@ -50,6 +50,7 @@
 #include "ComDiags.h"
 #include "ComQueue.h"
 #include "CmpCommon.h"
+#include "CmpContext.h"
 #include "CmpDDLCatErrorCodes.h"
 #include "ComUser.h"
 
@@ -182,7 +183,8 @@ PrivMgr::PrivMDStatus PrivMgr::authorizationEnabled()
   sprintf(buf, "get tables in schema %s.%s, no header",
               catName.c_str(), schName.c_str());
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   Queue * schemaQueue = NULL;
 
 // set pointer in diags area
@@ -1052,7 +1054,8 @@ PrivStatus PrivMgrMDAdmin::initializeMetadata (const std::string &objectsLocatio
       return STATUS_GOOD;
       
     // Create the privilege manager schema.
-    ExeCliInterface cliInterface(STMTHEAP);
+    ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
     std::string schemaCommand("CREATE PRIVATE SCHEMA ");
     
     schemaCommand += metadataLocation_;
@@ -1171,7 +1174,8 @@ PrivStatus PrivMgrMDAdmin::dropMetadata (const std::vector<std::string> &objects
 
     // Call Trafodion to drop the requested tables
     // If one of the tables fail to drop, save retcode and continue
-    ExeCliInterface cliInterface(STMTHEAP);
+    ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
     for (int32_t i = 0; i < objectsToDrop.size();++i)
     {
       std::string objectName = objectsToDrop[i];
@@ -1262,7 +1266,8 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
 
   selectStmt += ")) order by o.create_time ";
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
 // set pointer in diags area
@@ -1364,7 +1369,8 @@ PrivStatus PrivMgrMDAdmin::getObjectsThatViewReferences (
   selectStmt += " and u.used_object_uid = o.object_uid ";
   selectStmt += " order by o.create_time ";
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
 // set pointer in diags area
@@ -1454,7 +1460,8 @@ PrivStatus PrivMgrMDAdmin::getUdrsThatReferenceLibrary(
   selectStmt += UIDToString(objectUsage.objectOwner);
   selectStmt += ")) order by o.create_time ";
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
   // set pointer in diags area
@@ -1582,7 +1589,8 @@ PrivStatus PrivMgrMDAdmin::getReferencingTablesForConstraints (
   selectStmt += " and t.constraint_uid = u.unique_constraint_uid)";
   selectStmt += " order by o.create_time ";
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
 // set pointer in diags area
@@ -1711,7 +1719,8 @@ bool PrivMgrMDAdmin::getConstraintName(
   selectStmt += " where t.table_uid = " + UIDToString(referencedTableUID);
   selectStmt += "))";
 
-  ExeCliInterface cliInterface(STMTHEAP);
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
   Queue * objectsQueue = NULL;
 
 // set pointer in diags area
