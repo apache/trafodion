@@ -1326,9 +1326,7 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 					memset(statisticsOpt,0,sizeof(statisticsOpt));
 					strcpy(statisticsOpt, argv[count]);
 					if (stricmp(statisticsOpt, "session") == 0)
-						statisticsPubType = STATISTICS_SESSION;
-					else if (stricmp(statisticsOpt, "query") == 0)
-						statisticsPubType = STATISTICS_QUERY;
+						statisticsPubType = STATISTICS_SESSION;						
 					else
 						statisticsPubType = STATISTICS_AGGREGATED;
 				}
