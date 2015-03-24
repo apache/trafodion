@@ -231,7 +231,7 @@ select count(*) from customer_salt;
 load  with no populate indexes  no recovery into store_sales_salt 
 select * from hive.hive.store_sales where ss_item_sk <= 1000;
 --
-select count(*) from hive.hive.store_sales;
+--select count(*) from hive.hive.store_sales  where ss_item_sk <= 1000;
 select count(*) from store_sales_salt;
 -------------------------------
 --hive insert 0
