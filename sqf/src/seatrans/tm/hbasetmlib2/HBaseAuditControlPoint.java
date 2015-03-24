@@ -303,7 +303,7 @@ public class HBaseAuditControlPoint {
          s.setCaching(10);
          s.setCacheBlocks(false);
          if (LOG.isTraceEnabled()) LOG.trace("getNextAuditSeqNum resultScanner");
-         ResultScanner ss = table.getScanner(s);
+         ResultScanner ss = remoteTable.getScanner(s);
          try {
             long currValue;
             String rowKey;
