@@ -51,13 +51,16 @@ Options:
    --logFile=<file2>    Log file for diagnostic messages
    --hdfsCmd=<cmd1>     HDFS command
    --hiveCmd=<cmd2>     Hive command
-   -h | --help:         Display this help information
+   --force              Force re-install
+   -h | --help          Display this help information
 
 Set environment variable MY_LOCAL_SW_DIST to the directory of a local
 copy of the TPC-DS zip file, if possible.
 
 EOF
 }
+
+FORCE=""
 
 while [ $# -gt 0 ];
 do
@@ -82,6 +85,10 @@ do
                      MY_HIVE_CMD=${1#--hiveCmd=}
                      ;;
 
+    --force)
+                     FORCE="true"
+                     ;;
+
     -h)
                      usage
                      exit 1
@@ -100,6 +107,19 @@ do
   esac
   shift
 done
+
+#####################################################
+# Check the last thing done by this script
+# (or most recently added item)
+if [[ "$FORCE" != "true" ]]
+then
+  $MY_HIVE_CMD -e 'describe store_orc;' >/dev/null 2>&1
+  if (( $? == 0 ))
+  then
+    echo "Hive table store_orc found. Skipping TPC-DS set-up."
+    exit 0
+  fi
+fi
 
 #####################################################
 echo "Downloading TPC-DS setup tools..."

@@ -1475,6 +1475,7 @@ else
     echo "Downloading DCS Source: $DCS_GIT" | tee -a ${MY_LOG_FILE}
     mkdir -p src
     git clone $DCS_GIT src/dcs >>${MY_LOG_FILE} 2>&1
+    DCS_SRC="$MY_SW_ROOT/src/dcs"
     echo "Building DCS Source..." | tee -a ${MY_LOG_FILE}
     cd src/dcs
     ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
@@ -1533,6 +1534,21 @@ else
   </configuration>
 EOF
   echo "$(hostname -f) 4" > servers
+
+  # Configure DCS test scripts
+  if [[ -n "$DCS_SRC" ]]
+  then
+    echo "Adding swjdbc script...." | tee -a ${MY_LOG_FILE}
+    cat <<EOF >$MY_SW_SCRIPTS_DIR/swjdbc
+#!/bin/sh
+# command to run JDBC tests
+cd $DCS_SRC/src/test/jdbc_test
+./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
+  --target=localhost:$MY_DCS_MASTER_PORT \\
+  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar "\$@"
+EOF
+    chmod +x $MY_SW_SCRIPTS_DIR/swjdbc
+  fi
 fi
 # end of DCS setup
 
