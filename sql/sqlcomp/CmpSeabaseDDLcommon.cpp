@@ -1332,6 +1332,11 @@ short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext)
   if (cliRC < 0)
     return -1;
 
+  // We have to turn NJ on for meta query compilation.
+  cliRC = cliInterface.holdAndSetCQD("nested_joins", "ON");
+  if (cliRC < 0)
+    return -1;
+
   // turn off esp parallelism until optimizer fixes esp plan issue pbm.
   cliRC = cliInterface.holdAndSetCQD("attempt_esp_parallelism", "OFF");
   if (cliRC < 0)
@@ -1373,6 +1378,8 @@ void CmpSeabaseDDL::restoreAllControlsAndFlags()
   cliRC = cliInterface.restoreCQD("volatile_schema_in_use");
 
   cliRC = cliInterface.restoreCQD("hbase_filter_preds");
+
+  cliRC = cliInterface.restoreCQD("nested_joins");
 
   cliRC = cliInterface.restoreCQD("hide_indexes");
 
