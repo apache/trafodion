@@ -39,6 +39,7 @@ import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.transactional.RMInterface;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.FSUtils;
 import org.apache.hadoop.hbase.util.HFileArchiveUtil;
@@ -88,6 +89,9 @@ public class HBaseClient {
     static Logger logger = Logger.getLogger(HBaseClient.class.getName());
     public static Configuration config = HBaseConfiguration.create();
     String lastError;
+    RMInterface table = null;
+    boolean useDDLTrans;
+
     private PoolMap<String, HTableClient> hTableClientsFree;
     private PoolMap<String, HTableClient> hTableClientsInUse;
     // this set of constants MUST be kept in sync with the C++ enum in
@@ -151,10 +155,27 @@ public class HBaseClient {
     public boolean init(String zkServers, String zkPort) 
 	throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
     {
-         if (logger.isDebugEnabled()) logger.debug("HBaseClient.init(" + zkServers + ", " + zkPort
+        if (logger.isDebugEnabled()) logger.debug("HBaseClient.init(" + zkServers + ", " + zkPort
                          + ") called.");
-         HBaseAdmin.checkHBaseAvailable(config);
-         return true;
+        HBaseAdmin.checkHBaseAvailable(config);
+
+        try {
+            table = new RMInterface();
+        } catch (Exception e) {
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.init: Error in RMInterface instace creation.");
+        }
+        
+        this.useDDLTrans = false;
+        try {
+            String useDDLTransactions = System.getenv("TM_ENABLE_DDL_TRANS");
+            if (useDDLTransactions != null) {
+                useDDLTrans = (Integer.parseInt(useDDLTransactions) !=0);
+            }
+        } catch (Exception e) {
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.init TM_ENABLE_DDL_TRANS is not in ms.env.");
+        }
+
+        return true;
     }
  
     private void  cleanup(PoolMap hTableClientsPool) throws IOException
@@ -226,7 +247,7 @@ public class HBaseClient {
    } 
 
     public boolean createk(String tblName, Object[] tableOptions, 
-        Object[]  beginEndKeys) 
+        Object[]  beginEndKeys, long transID) 
         throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
@@ -391,15 +412,32 @@ public class HBaseClient {
             }
             desc.addFamily(colDesc);
             HBaseAdmin admin = new HBaseAdmin(config);
-            if (beginEndKeys != null && beginEndKeys.length > 0)
-            {
-               byte[][] keys = new byte[beginEndKeys.length][];
-               for (int i = 0; i < beginEndKeys.length; i++) 
-                   keys[i] = (byte[])beginEndKeys[i]; 
-               admin.createTable(desc, keys);
+
+            try {
+               if (beginEndKeys != null && beginEndKeys.length > 0)
+               {
+                  byte[][] keys = new byte[beginEndKeys.length][];
+                  for (int i = 0; i < beginEndKeys.length; i++) 
+                     keys[i] = (byte[])beginEndKeys[i]; 
+                  if (transID != 0 && useDDLTrans == true) {
+                     table.createTable(desc, keys, transID);
+                  } else {
+                     admin.createTable(desc, keys);
+                  }
+               }
+               else {
+                  if (transID != 0 && useDDLTrans == true) {
+                     table.createTable(desc, null, transID);
+                  } else {
+                     admin.createTable(desc);
+                  }
+               }
             }
-            else
-               admin.createTable(desc);
+            catch (IOException e)
+            {
+               if (logger.isDebugEnabled()) logger.debug("HbaseClient.createk : createTable error" + e);
+               throw e;
+            }
             admin.close();
         return true;
     }

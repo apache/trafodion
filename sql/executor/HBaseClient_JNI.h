@@ -508,7 +508,7 @@ public:
   HBC_RetCode releaseHTableClient(HTableClient_JNI* htc);
   HBC_RetCode create(const char* fileName, HBASE_NAMELIST& colFamilies);
   HBC_RetCode create(const char* fileName, NAText*  hbaseOptions, 
-                     int numSplits, int keyLength, const char** splitValues);
+                     int numSplits, int keyLength, const char** splitValues, Int64 transID);
   HBC_RetCode drop(const char* fileName, bool async);
   HBC_RetCode drop(const char* fileName, JNIEnv* jenv); // thread specific
   HBC_RetCode dropAll(const char* pattern, bool async);

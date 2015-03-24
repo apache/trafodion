@@ -49,7 +49,7 @@ public:
     short suspend(TM_Transid *transid, bool coordinator_role=true);
     short resume();
     short register_region(int port, char *hostname, int hostname_length, long startcode, char *regionInfo, int regionInfoLength); //TOPL
-    short create_table(char* pa_tbldesc, int pv_tbldesc_len);
+    short create_table(char* pa_tbldesc, int pv_tbldesc_len, char* pa_tblname);
     TM_Transaction *release();
     short status(short *status);
     TM_Transid * getTransid();

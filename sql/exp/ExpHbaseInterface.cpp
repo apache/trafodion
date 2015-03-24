@@ -476,9 +476,11 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
     if (init(hbs_) != HBASE_ACCESS_SUCCESS)
       return -HBASE_ACCESS_ERROR;
   }
-    
+  
+  Int64 transID = getTransactionIDFromContext();
+ 
   retCode_ = client_->create(tblName.val, hbaseCreateOptionsArray,
-                             numSplits, keyLength, splitValues); 
+                             numSplits, keyLength, splitValues, transID);
   //close();
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
