@@ -718,7 +718,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDkwd__(COMP_BOOL_181,      "OFF"),
   DDkwd__(COMP_BOOL_182,      "OFF"), // internal usage
   DDkwd__(COMP_BOOL_183,      "OFF"),
-  DDkwd__(COMP_BOOL_184,      "OFF"), // ON => use min probe size for mdam. Using min probe size of 1 or 2 currently has a bug so this is not the default.
+  DDkwd__(COMP_BOOL_184,      "ON"), // ON => use min probe size for mdam. Using min probe size of 1 or 2 currently has a bug so this is not the default. OFF => use default probe size of 100
   DDkwd__(COMP_BOOL_185,      "ON"), //Fix, allows extract(year from current_date) to be treated as a userinput
   DDkwd__(COMP_BOOL_186,      "OFF"),
   DDkwd__(COMP_BOOL_187,      "OFF"), // reserved for internal usage
