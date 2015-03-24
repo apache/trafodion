@@ -423,6 +423,9 @@ typedef enum {
     TM_MSG_TYPE_GETNEXTSEQNUMBLOCK       = 339, // TOPL
     TM_MSG_TYPE_GETNEXTSEQNUMBLOCK_REPLY = 340, // TOPL
 
+    TM_MSG_TYPE_DDLREQUEST               = 341,
+    TM_MSG_TYPE_DDLREQUEST_REPLY         = 342,
+
     TM_MSG_TYPE_QUIESCE                  = 9001, // Testing only!
     TM_MSG_TYPE_QUIESCE_REPLY            = 9002,
 
@@ -537,6 +540,19 @@ typedef struct registerregion_req {
     char ia_regioninfo2[TM_MAX_REGIONSERVER_STRING];
     int                 iv_regioninfo_length;
 } Register_Region_Req_Type;
+
+typedef enum {
+    TM_DDL_CREATE     = 0,
+    TM_DDL_DROP       = 1,
+    TM_DDL_TRUNCATE   = 2
+} TM_DDL_REQ;
+
+typedef struct ddlmessage_req {
+    TM_Transid_Type     iv_transid;
+    char                ddlreq[TM_MAX_DDLREQUEST_STRING];
+    int                 ddlreq_len;
+    TM_DDL_REQ          ddlreq_type;
+} Ddl_Message_Req_Type;
 
 typedef struct hbaseregioninfo_req {
 } HbaseRegionInfo_Req_Type;
@@ -732,6 +748,7 @@ typedef struct _tmlibmsg_h_as_23 {
         Test_Tx_Count           iv_count;
         Tm_RolloverCP_Req_Type  iv_control_point;
         Register_Region_Req_Type iv_register_region;
+        Ddl_Message_Req_Type    iv_ddl_request;
         HbaseRegionInfo_Req_Type iv_hbase_regioninfo;
         TM_GetNextSeqNum_Req_Type iv_GetNextSeqNum;
 
@@ -792,6 +809,9 @@ typedef enum {
 //TOPL
 typedef struct registerregion_rsp {
 } Register_Region_Rsp_Type;
+
+typedef struct ddlrequest_rsp {
+} Ddl_Request_Rsp_Type;
 
 typedef struct hbaseregioninfo_rsp {
   TM_HBASEREGIONINFO iv_status;

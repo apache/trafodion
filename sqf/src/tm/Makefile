@@ -49,6 +49,7 @@ LIBSTMOBJS = $(OUTDIR)/tmtransid.o \
 			 $(OUTDIR)/tmmap.o \
 			 $(OUTDIR)/tmmutex.o \
 			 $(OUTDIR)/tmregisterregion.o \
+             $(OUTDIR)/tmddlrequests.o\
 		 	 $(OUTDIR)/javaobjectinterfacetm.o \
 			 $(OUTDIR)/versstmlib.o 
 LIBSXATMOBJS  = $(OUTDIR)/tmmap.o \

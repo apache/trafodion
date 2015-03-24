@@ -382,6 +382,38 @@ int32 RM_Info_HBASE::registerRegion (CTmTxBase *pp_txn,  int64 pv_flags, CTmTxMe
    return lv_err;
 } // registerRegion
 
+//------------------------------------------------------------------------------
+// hb_ddl_operation
+// Purpose: Call hb_ddl_operation for this transaction
+// ------------------------------------------------------------------------------
+int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg)
+{
+   int32 lv_err = FEOK;
+   int64 lv_transid = pp_txn->legacyTransid();
+
+   TMTrace (2, ("RM_Info_HBASE::hb_ddl_operation ENTRY\n"));
+
+   switch(pp_msg->request()->u.iv_ddl_request.ddlreq_type)
+   {
+      case TM_DDL_CREATE:
+         lv_err = gv_HbaseTM.createTable(lv_transid,
+                         pp_msg->request()->u.iv_ddl_request.ddlreq,
+                         pp_msg->request()->u.iv_ddl_request.ddlreq_len);
+      case TM_DDL_DROP:
+         break;
+      case TM_DDL_TRUNCATE:
+         break;
+      default:
+         TMTrace (1, ("RM_Info_HBASE::hb_ddl_operation : Invalid ddl operation\n"));
+         break;
+   }
+   TMTrace (2, ("RM_Info_HBASE::hb_ddl_operation EXIT : Txn ID (%d,%d), returning %d.\n",
+                pp_txn->node(), pp_txn->seqnum(), lv_err));
+
+   return lv_err;
+
+} //hb_ddl_operation
+
 
 //------------------------------------------------------------------------------
 // shutdown_branches

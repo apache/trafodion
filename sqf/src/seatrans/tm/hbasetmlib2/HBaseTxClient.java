@@ -600,7 +600,7 @@ public class HBaseTxClient {
          StringWriter sw = new StringWriter();
          PrintWriter pw = new PrintWriter(sw);
          cte.printStackTrace(pw);
-         LOG.error(sw.toString());
+         LOG.error("HBaseTxClient createTable call error: " + sw.toString());
       }
       return TransReturnCode.RET_OK.getShort();
    }
