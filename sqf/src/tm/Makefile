@@ -16,7 +16,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-PROGS          = $(OUTDIR)/tm
+PROGS          = $(OUTDIR)/tm $(OUTDIR)/idtmsrv
 ###########################################################################
 
 include ../../macros.gmk
@@ -120,6 +120,8 @@ TMOBJS		= $(OUTDIR)/tmregistry.o \
 		      $(OUTDIR)/tmxarmmain.o \
 		      $(OUTDIR)/tm.o \
 		      $(OUTDIR)/CommonLogger.o  
+IDSRVOBJS	= $(OUTDIR)/idtmsrv.o \
+		      $(OUTDIR)/versidtmsrv.o
 ALLOBJS	= $(LIBSTMOBJS) \
 		  $(LIBSXATMOBJS) \
 		  $(TMOBJS) \
@@ -147,6 +149,10 @@ $(OUTDIR)/tm: $(TMOBJS) $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libshbasetmlib.
 
 $(OUTDIR)/ra: $(RAOBJS) 
 	$(CXX) $(LNK_FLGS) -o $@ $(RAOBJS) $(LIBSTM) 
+
+$(OUTDIR)/idtmsrv: $(IDSRVOBJS)
+	$(CXX) $(LNK_FLGS) -o $@ $(IDSRVOBJS) $(LIBSBMSX)
+	cp -fup $(OUTDIR)/idtmsrv $(BINEXPDIR)
 
 $(LIBEXPDIR)/libstmlib.so: $(LIBSTMOBJS) 
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBSBMSX) $(LIBJVM) -L$(LIBEXPDIR) -llog4cpp -shared -o $@ $(LIBSTMOBJS)  

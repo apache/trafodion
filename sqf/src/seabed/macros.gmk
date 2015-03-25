@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -87,6 +87,7 @@ JAR		= $(JAVA_HOME)/bin/jar
 JAVA		= $(JAVA_HOME)/bin/java
 JAVAC		= $(JAVA_HOME)/bin/javac
 JAVADOC		= $(JAVA_HOME)/bin/javadoc
+JAVAH		= $(JAVA_HOME)/bin/javah
 
 # cover
 COVFILES	= $(OUTDIR)/*.gcda $(OUTDIR)/*.gcno $(OUTDIR)/*.gcov *.gcda *.gcno *.gcov
@@ -117,4 +118,3 @@ $(OUTDIR)/%.o: %.c
 
 $(OUTDIR)/%.o: %.cpp
 	$(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
-
