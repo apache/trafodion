@@ -128,13 +128,13 @@ short  TM_Transaction::register_region(int port, char *hostName, int hostname_Le
 
 }
 
-short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len)
+short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* pa_tblname)
 {
     short lv_error = FEOK;
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
 
-    TMlibTrace(("TMLIB_TRACE : TM_Transaction::create_table ENTRY\n"), 2);
+    TMlibTrace(("TMLIB_TRACE : TM_Transaction::create_table ENTRY tablename: %s\n", pa_tblname), 1);
 
     if (!gv_tmlib.is_initialized())
          gv_tmlib.initialize();

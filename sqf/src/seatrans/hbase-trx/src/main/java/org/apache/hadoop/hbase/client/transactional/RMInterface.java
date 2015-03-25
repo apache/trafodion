@@ -76,7 +76,7 @@ public class RMInterface {
    }
 
     private native void registerRegion(int port, byte[] hostname, long startcode, byte[] regionInfo);
-    private native void createTableReq(byte[] lv_byte_htabledesc);
+    private native void createTableReq(byte[] lv_byte_htabledesc, byte[][] keys, long transID, byte[] tblName);
 
     public static void main(String[] args) {
       System.out.println("MAIN ENTRY");      
@@ -159,19 +159,20 @@ public class RMInterface {
         return ts;
     }
 
-    public void createTable(HTableDescriptor desc, byte[][] keys) throws IOException {
+    public void createTable(HTableDescriptor desc, byte[][] keys, long transID) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("createTable ENTER: ");
-
-        try { 
+    
+        try {
             byte[] lv_byte_desc = desc.toByteArray();
+            byte[] lv_byte_tblname = desc.getNameAsString().getBytes();
             if (LOG.isTraceEnabled()) LOG.trace("createTable: htabledesc bytearray: " + lv_byte_desc + "desc in hex: " + Hex.encodeHexString(lv_byte_desc));
-            createTableReq(lv_byte_desc);
+            createTableReq(lv_byte_desc, keys, transID, lv_byte_tblname);
         } catch (Exception e) {
             if (LOG.isTraceEnabled()) LOG.trace("Unable to createTable or convert table descriptor to byte array " + e);
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
-            LOG.error("desc.ByteArray or createTableReq  error " + sw.toString()); 
+            LOG.error("desc.ByteArray error " + sw.toString());
         }
     }
 

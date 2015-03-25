@@ -408,7 +408,7 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_CREATE     ].jm_name      = "create";
     JavaMethods_[JM_CREATE     ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;)Z";
     JavaMethods_[JM_CREATEK    ].jm_name      = "createk";
-    JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/Object;)Z";
+    JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/Object;J)Z";
     JavaMethods_[JM_DROP       ].jm_name      = "drop";
     JavaMethods_[JM_DROP       ].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_DROP_ALL       ].jm_name      = "dropAll";
@@ -755,7 +755,8 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFam
 HBC_RetCode HBaseClient_JNI::create(const char* fileName, 
                                     NAText* createOptionsArray,
                                     int numSplits, int keyLength,
-                                    const char ** splitValues)
+                                    const char ** splitValues,
+                                    Int64 transID)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::create(%s) called.", fileName);
   if (jenv_ == NULL)
@@ -792,8 +793,9 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
         return HBC_ERROR_CREATE_PARAM;
      }
   }
+  jlong j_tid = transID;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
-          JavaMethods_[JM_CREATEK].methodID, js_fileName, j_opts, j_keys);
+          JavaMethods_[JM_CREATEK].methodID, js_fileName, j_opts, j_keys, transID);
 
   jenv_->DeleteLocalRef(js_fileName); 
   jenv_->DeleteLocalRef(j_opts);
