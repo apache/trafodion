@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 
 CPPSRC := hs_cli.cpp \
 	hs_cont.cpp \
+        hs_faststats.cpp \
 	hs_globals.cpp \
 	hs_la.cpp \
 	hs_log.cpp \

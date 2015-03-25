@@ -36,6 +36,8 @@
 #include  "cli_stdh.h"
 #include "exp_function.h"
 #include "jni.h"
+#include "hdfs.h"
+#include <random>
 
 // forward declare
 Int64 generateUniqueValueFast ();
@@ -2036,7 +2038,7 @@ Lng32 ExHbaseAccessTcb::copyColToDirectBuffer( BYTE *rowCurPtr,
    memcpy(temp, colVal, colValLen);
    temp += colValLen;
    bytesCopied = (temp-rowCurPtr); 
-   ex_assert((bytesCopied > 0), "Corrputed buffer while copying column");
+   ex_assert((bytesCopied > 0), "Corrupted buffer while copying column");
    return bytesCopied;
 }
 
@@ -2060,12 +2062,27 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
                  char * tuppRow,
                   Queue * listOfColNames, 
                   NABoolean isUpdate,
-                  std::vector<UInt32> * posVec )
+                  std::vector<UInt32> * posVec,
+                  double samplingRate )
 {
+  char hiveBuff[500]; //@ZXtemp
+  size_t hiveBuffInx = 0;
+  NABoolean includeInSample = (samplingRate > 0 && (rand() / (double)RAND_MAX) < samplingRate);
+  Int16 datatype;
+  Int16 scale = 0;
+  union
+  {
+    Int32 i;
+    UInt32 ui;
+    Int64 i64;
+    Int16 i16;
+    float f;
+    double d;
+  } numUnion;
+
   if (hbaseAccessTdb().alignedFormat())
     return createDirectAlignedRowBuffer(tuppIndex, tuppRow, listOfColNames,
                                         isUpdate, posVec);
-
   ExpTupleDesc * rowTD =
     hbaseAccessTdb().workCriDesc_->getTupleDescriptor
     (tuppIndex);
@@ -2116,6 +2133,57 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
 
 	  colVal = &tuppRow[attr->getOffset()];
 
+          if (includeInSample)
+            {
+              datatype = attr->getDatatype();
+              if (DFS2REC::isNumeric(datatype))
+                {
+                  scale = attr->getScale();
+                  strncpy((char*)&numUnion, colVal, 8);
+                }
+              switch (datatype)
+              {
+                case REC_BIN32_SIGNED:
+                  hiveBuffInx += snprintf(hiveBuff+hiveBuffInx, 500 - hiveBuffInx, "%d|", numUnion.i);
+                  break;
+                case REC_BIN32_UNSIGNED:
+                  hiveBuffInx += snprintf(hiveBuff+hiveBuffInx, 500 - hiveBuffInx, "%d|", numUnion.ui);
+                  break;
+                case REC_BIN64_SIGNED:
+                  //printf("Scale of column %d is %d\n", i, attr->getScale());
+                  hiveBuffInx += snprintf(hiveBuff+hiveBuffInx, 500 - hiveBuffInx, PFP64 "|", attr->getScale(), numUnion.i64);
+                  if (scale)
+                    {
+                      hiveBuffInx -= (scale + 1);
+                      memmove(hiveBuff+hiveBuffInx+1, hiveBuff+hiveBuffInx, scale + 1);
+                      hiveBuff[hiveBuffInx] = '.';
+                      hiveBuffInx += (scale + 2);
+                    }
+                  break;
+                case REC_BYTE_F_ASCII:
+                  strncpy(hiveBuff+hiveBuffInx, colVal, attr->getLength());
+                  hiveBuffInx += attr->getLength();
+                  hiveBuff[hiveBuffInx++] = '|';
+                  break;
+                case REC_BYTE_V_ASCII:
+                  hiveBuffInx += snprintf(hiveBuff+hiveBuffInx, 500 - hiveBuffInx, "%s|", colVal);
+                  break;
+                case REC_DATETIME:
+                  //@ZXbl -- need to account for datetime code
+                  strncpy((char*)&numUnion, colVal, 2);
+                  hiveBuffInx += snprintf(hiveBuff+hiveBuffInx, 500 - hiveBuffInx,
+                                          "%.4d-%.2d-%.2d|", numUnion.i16,
+                                          *(colVal+1), *(colVal+2));
+                  break;
+                default:
+                  printf("Length of column %d is %d, data type is %d\n", i, attr->getLength(), datatype);
+                  //strncpy((char*)&numUnion, colVal, 4);
+                  //printf("Value of column %d is %d\n", i, numUnion.i);
+                  hiveBuffInx += sprintf(hiveBuff+hiveBuffInx, "???|");
+                  break;
+              }
+            }
+
 	  prependNullVal = FALSE;
 	  nullVal = 0;
 	  if (attr->getNullFlag())
@@ -2154,6 +2222,15 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
       listOfColNames->advance();
     }	// for
   *numColsPtr = bswap_16(numCols);
+
+  if (includeInSample)
+    {
+      //hiveBuff[hiveBuffInx-1] = '\0';
+      //printf("%s\n", hiveBuff);
+      // Overwrite trailing delimiter with newline.
+      hiveBuff[hiveBuffInx-1] = '\n';
+      hdfsWrite(getHdfs(), getHdfsSampleFile(), hiveBuff, hiveBuffInx);
+    }
   return 0;
 }
 

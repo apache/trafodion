@@ -47,6 +47,7 @@
 #include "hs_la.h"
 #include "hs_auto.h"
 #include "hs_parser.h"
+#include "hs_faststats.h"
 #include "ComCextdecs.h"
 #include "NAString.h"
 #include "Collections.h"
@@ -3067,11 +3068,17 @@ Lng32 HSGlobalsClass::Initialize()
                                              /*==============================*/
     if (actualRowCount > 0)
       {
+        if (CmpCommon::getDefault(USTAT_USE_BACKING_SAMPLE) == DF_ON)
+          {
+            if (optFlags & SAMPLE_REQUESTED)
+              LM->Log("SAMPLE OPTION IGNORED. USING BACKING SAMPLE TABLE.");
+            sampleRowCount = actualRowCount / 100;  //@ZXtemp -- assume 1% sample for now
+          }
         //If the number of rows are less than the minimum for which we do sampling,
         //then ignore the sampling option. The table is small enough for a full
         //table scan. We make an exception for this if a persistent sample (IUS)
         //was requested.
-        if ((optFlags & SAMPLE_REQUESTED) &&
+        else if ((optFlags & SAMPLE_REQUESTED) &&
             !(optFlags & IUS_PERSIST) &&
             (convertInt64ToDouble(actualRowCount) < getMinRowCountForSample()))
           {
@@ -4968,7 +4975,17 @@ Lng32 HSGlobalsClass::CollectStatistics()
     // where xxx is the size of the specified sample table.
     NAString sampleTableFromCQD;
     CmpCommon::getDefault(USTAT_SAMPLE_TABLE_NAME, sampleTableFromCQD, FALSE);
-    if (! IsNAStringSpaceOrEmpty(sampleTableFromCQD))
+    NABoolean useBackingSample = (CmpCommon::getDefault(USTAT_USE_BACKING_SAMPLE) == DF_ON);
+    if (useBackingSample)
+      {
+        externalSampleTable = TRUE;
+        sampleTableUsed     = TRUE;
+        samplingUsed        = TRUE;
+        *hssample_table = "HIVE.HIVE";
+        hssample_table->append(user_table->data() + catSch->length()).append("_SAMPLE");
+        printf("Using external sample table %s\n", hssample_table->data());
+      }
+    else if (! IsNAStringSpaceOrEmpty(sampleTableFromCQD))
       {
         *hssample_table = sampleTableFromCQD;
         externalSampleTable = TRUE;
@@ -5005,9 +5022,11 @@ Lng32 HSGlobalsClass::CollectStatistics()
     else   
       externalSampleTable = FALSE;
 
-    NABoolean tryIUS = canDoIUS();
-
-    if ( tryIUS )
+    if (useBackingSample)
+      {
+        return CollectStatisticsWithFastStats();
+      }
+    else if ( canDoIUS() )
       {
         // Make sure the Where clause doesn't contain any constructs we don't allow
         // in the context of an IUS statement.
@@ -10521,32 +10540,15 @@ Int32 HSGlobalsClass::allocateMemoryForInternalSortColumns(Int64 rows)
   return allocateMemoryForColumns(singleGroup, rows, multiGroup);
 }
 
-/***********************************************/
-/* METHOD: readColumnsIntoMem()                */
-/* PURPOSE: reads a set of columns from a      */
-/*          table into memory so they can be   */
-/*          sorted internally.                 */
-/* PARAMETERS:                                 */
-/*   cursor -- Cursor to use to read rows from */
-/*             the table (may be a temporary   */
-/*             sample table).                  */
-/*   rows -- Maximum number of rows to read.   */
-/*           Memory for the column values has  */
-/*           been allocated based on this, so  */
-/*           don't exceed it.                  */
-/* RETURN CODE: 0 on success.                  */
-/*              -1 on failure.                 */
-/***********************************************/
-Lng32 HSGlobalsClass::readColumnsIntoMem(HSCursor *cursor, Int64 rows)
+Lng32 HSGlobalsClass::prepareToReadColumnsIntoMem(HSCursor *cursor, Int64 rows)
 {
   HSLogMan *LM = HSLogMan::Instance();
   Lng32 retcode = 0;
   HSColGroupStruct *group = singleGroup;
   NAString internalSortQuery;
-  Int64 rowsLeft;
 
   HSErrorCatcher errorCatcher(retcode, - UERR_INTERNAL_ERROR, 
-                              "READ_COLS_INTO_MEM", TRUE);
+                              "PREPARE_TO_READ_COLS_INTO_MEM", TRUE);
 
   // Create query to get data for the desired columns.
   internalSortQuery = "SELECT ";
@@ -10595,13 +10597,43 @@ Lng32 HSGlobalsClass::readColumnsIntoMem(HSCursor *cursor, Int64 rows)
   LM->Log("Preparing rowset...");
   // Allocate descriptors and statements for CLI and prepare rowset by
   // assigning location for results to be written.
-  rowsLeft = rows;
   // prepareRowset may do retries
   retcode = cursor->prepareRowset(internalSortQuery.data(), FALSE, singleGroup,
-       (Lng32)MINOF(MAX_ROWSET, rowsLeft));
+       (Lng32)MINOF(MAX_ROWSET, rows));
   if (retcode < 0) HSHandleError(retcode) else retcode=0; // Set to 0 for warnings.
   LM->Log("...rowset prepared");
-   
+
+  return retcode;
+}
+
+
+/***********************************************/
+/* METHOD: readColumnsIntoMem()                */
+/* PURPOSE: reads a set of columns from a      */
+/*          table into memory so they can be   */
+/*          sorted internally.                 */
+/* PARAMETERS:                                 */
+/*   cursor -- Cursor to use to read rows from */
+/*             the table (may be a temporary   */
+/*             sample table).                  */
+/*   rows -- Maximum number of rows to read.   */
+/*           Memory for the column values has  */
+/*           been allocated based on this, so  */
+/*           don't exceed it.                  */
+/* RETURN CODE: 0 on success.                  */
+/*              -1 on failure.                 */
+/***********************************************/
+Lng32 HSGlobalsClass::readColumnsIntoMem(HSCursor *cursor, Int64 rows)
+{
+  HSLogMan *LM = HSLogMan::Instance();
+  Lng32 retcode = 0;
+  Int64 rowsLeft = rows;
+
+  HSErrorCatcher errorCatcher(retcode, - UERR_INTERNAL_ERROR,
+                              "READ_COLS_INTO_MEM", TRUE);
+
+  prepareToReadColumnsIntoMem(cursor, rows);
+
   LM->Log("fetching rowsets...");
   if (LM->LogNeeded())
     LM->StartTimer("Fetching rowsets for internal sort");
@@ -10630,7 +10662,7 @@ Lng32 HSGlobalsClass::readColumnsIntoMem(HSCursor *cursor, Int64 rows)
   // some post-reading to memory processing to support MC in-memory computation
   if (CmpCommon::getDefault(USTAT_USE_INTERNAL_SORT_FOR_MC) == DF_ON)
   {
-     group = singleGroup;
+      HSColGroupStruct* group = singleGroup;
      do
      {
         if (group->state == PENDING) 
@@ -15176,4 +15208,175 @@ void HSInMemoryTable::logState(const char* title)
   sprintf(LM->msg, " ");
   LM->Log(LM->msg);
 
+}
+
+//CollIndex HSGlobalsClass::selectFastStatsBatch(NAArray<HSColGroupStruct*>& colGroups)
+CollIndex HSGlobalsClass::selectFastStatsBatch(HSColGroupStruct** colGroups)
+{
+  HSColGroupStruct* group = singleGroup;
+  CollIndex groupCount = 0;
+  while (group != NULL)
+    {
+      if (group->state == UNPROCESSED
+          && !DFS2REC::isAnyCharacter(group->ISdatatype))  //@ZXbl -- temp restriction
+        {
+          //@ZXbl -- for now just return 1 column. Later, return as many as we
+          //         have memory for.
+          group->state = PENDING;
+          colGroups[groupCount++] = group;
+          break;    //@ZXbl -- for now, do 1 column at a time
+        }
+      group = group->next;
+    }
+
+  return groupCount;
+}
+
+//Lng32 HSGlobalsClass::processFastStatsBatch(CollIndex numCols, NAArray<HSColGroupStruct*> colGroups)
+Lng32 HSGlobalsClass::processFastStatsBatch(CollIndex numCols, HSColGroupStruct** colGroups)
+{
+  Lng32 retcode = 0;
+  HSCursor cursor;
+  CollIndex i;
+  HSColGroupStruct* group = NULL;
+  HSLogMan *LM = HSLogMan::Instance();
+
+  for (i=0; i<numCols; i++)
+    {
+      group = colGroups[i];
+
+      //@ZXbl -- memory alloc may be moved later
+      if (!group->allocateISMemory(MAX_ROWSET,
+                                   TRUE,        // alloc strdata if a char type
+                                   FALSE))      // no recalc memneeded (IUS)
+        {
+          diagsArea << DgSqlCode(UERR_IUS_NO_SUFFICIENT_MEMORY);
+          retcode = -1;
+          HSHandleError(retcode);
+        }
+
+      // setRowsetPointers() binds group->nextData to output. It is also used by
+      // internal sort, which fetches all rowsets into memory before processing
+      // any data.
+      group->nextData = group->data;
+
+      // This will be owned by the FastStatsHist object it is used to construct below.
+      FastStatsCountingBloomFilter* cbf =
+          new(STMTHEAP) FastStatsCountingBloomFilter(STMTHEAP, 5, sampleRowCount/2,
+              .01, 255);
+
+      switch (group->ISdatatype)
+      {
+        case REC_BIN16_SIGNED:
+          group->fastStatsHist = new(STMTHEAP) FastStatsHist<Int16>(group, cbf);
+          break;
+
+        case REC_BIN16_UNSIGNED:
+          group->fastStatsHist = new(STMTHEAP) FastStatsHist<UInt16>(group, cbf);
+          break;
+
+        case REC_BIN32_SIGNED:
+          group->fastStatsHist = new(STMTHEAP) FastStatsHist<Int32>(group, cbf);
+          break;
+
+        case REC_BIN32_UNSIGNED:
+          group->fastStatsHist = new(STMTHEAP) FastStatsHist<UInt32>(group, cbf);
+          break;
+
+        case REC_BIN64_SIGNED:
+          group->fastStatsHist = new(STMTHEAP) FastStatsHist<Int64>(group, cbf);
+          break;
+
+        case REC_IEEE_FLOAT32:
+        case REC_TDM_FLOAT32:
+          group->fastStatsHist = new(STMTHEAP) FastStatsHist<Float32>(group, cbf);
+          break;
+
+        case REC_IEEE_FLOAT64:
+        case REC_TDM_FLOAT64:
+          group->fastStatsHist = new(STMTHEAP) FastStatsHist<Float64>(group, cbf);
+          break;
+
+        case REC_BYTE_F_ASCII:
+        case REC_BYTE_F_DOUBLE:
+          //group->fastStatsHist = new(STMTHEAP) FastStatsHist<ISFixedChar*>(group, cbf);
+          LM->Log("char types not yet supported for fast-stats");
+          retcode=-1;
+          HSHandleError(retcode);
+          break;
+
+        case REC_BYTE_V_ASCII:
+        case REC_BYTE_V_DOUBLE:
+          //group->fastStatsHist = new(STMTHEAP) FastStatsHist<ISVarChar*>(group, cbf);
+          LM->Log("char types not yet supported for fast-stats");
+          retcode=-1;
+          HSHandleError(retcode);
+          break;
+
+        default:
+          sprintf(LM->msg, "processFastStatsBatch(): unknown type %d",
+                           group->ISdatatype);
+          LM->Log(LM->msg);
+          retcode=-1;
+          HSHandleError(retcode);
+          break;
+      }
+    }
+
+  retcode = prepareToReadColumnsIntoMem(&cursor, MAX_ROWSET);
+  while (retcode >= 0          // allow warnings
+         && retcode != HS_EOF) // exit if no more data
+    {
+      retcode = cursor.fetchRowset();
+      if (retcode == 0)  // 1 or more rows successfully read
+        {
+          for (i=0; i<numCols; i++)
+            {
+              colGroups[i]->fastStatsHist->addRowset(cursor.rowsetSize());
+            }
+        }
+    }
+
+  cursor.close();
+
+  // All the data is now represented in CBFs, so the buffers used to read the
+  // data into can be freed.
+  for (i=0; i<numCols; i++)
+    {
+      colGroups[i]->freeISMemory();
+    }
+
+  // Finish processing the histogram for each column and mark it as completed.
+  for (i=0; i<numCols; i++)
+    {
+      group = colGroups[i];
+      group->fastStatsHist->actuate(intCount);
+      group->state = PROCESSED;
+      delete group->fastStatsHist;
+      group->fastStatsHist = NULL;
+    }
+
+  return retcode;
+}
+
+Lng32 HSGlobalsClass::CollectStatisticsWithFastStats()
+{
+  Lng32 retcode = 0;
+
+  mapInternalSortTypes(singleGroup);
+  getMemoryRequirements(singleGroup, MAX_ROWSET);
+
+  //NAArray<HSColGroupStruct*> colGroups(20); //singleGroupCount);
+  HSColGroupStruct** colGroups;
+  colGroups = new(STMTHEAP) HSColGroupStruct*[singleGroupCount];
+
+  CollIndex numCols;
+  do
+  {
+    numCols = selectFastStatsBatch(colGroups);
+    if (numCols > 0)
+      processFastStatsBatch(numCols, colGroups);
+  } while (numCols > 0);
+
+  return retcode;
 }

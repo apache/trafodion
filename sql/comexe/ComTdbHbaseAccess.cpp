@@ -172,7 +172,8 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   hbasePerfAttributes_(hbasePerfAttributes),
   hbaseSnapshotScanAttributes_(hbaseSnapshotScanAttributes),
   LoadPrepLocation_ (NULL),
-  samplingRate_(samplingRate)
+  samplingRate_(samplingRate),
+  sampleLocation_(NULL)
 {};
 
 ComTdbHbaseAccess::ComTdbHbaseAccess(
@@ -270,7 +271,8 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   hbasePerfAttributes_(NULL),
   hbaseSnapshotScanAttributes_(NULL),
   LoadPrepLocation_(NULL),
-  samplingRate_(-1) 
+  samplingRate_(-1),
+  sampleLocation_(NULL)
 {
 }
 
@@ -395,9 +397,9 @@ Long ComTdbHbaseAccess::pack(void * space)
   server_.pack(space);
   zkPort_.pack(space);
   hbasePerfAttributes_.pack(space);
+  sampleLocation_.pack(space);
   LoadPrepLocation_.pack(space);
   hbaseSnapshotScanAttributes_.pack(space);
-
   // pack elements in listOfScanRows_
   if (listOfScanRows() && listOfScanRows()->numEntries() > 0)
     {
@@ -456,6 +458,7 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(server_.unpack(base)) return -1;
   if(zkPort_.unpack(base)) return -1;
   if(hbasePerfAttributes_.unpack(base, reallocator)) return -1;
+  if(sampleLocation_.unpack(base)) return -1;
   if(LoadPrepLocation_.unpack(base)) return -1;
   if (hbaseSnapshotScanAttributes_.unpack(base,reallocator)) return -1;
 

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ class HSGlobalsClass;
 class HSInterval;
 class HSHistogram;
 class HSInMemoryTable;
+class AbstractFastStatsHist;
 
 Lng32 AddNecessaryColumns();
 Lng32 AddAllColumnsForIUS();
@@ -1135,6 +1136,8 @@ struct HSColGroupStruct : public NABasicObject
     void* boundaryValues;                          /* List of bounary values for IUS */
     void* MFVValues;                               /* List of MFV values for IUS */
 
+    AbstractFastStatsHist* fastStatsHist;
+
     // These member items are used for internal sort of multi-column groups.
     NABitVector*       mcis_nullIndBitMap;           /* used by MC */
     NABitVector*       mcis_colsUsedMap;             /* used by MC: which single cols used by this MC */
@@ -1404,6 +1407,16 @@ public:
 
     //Determines histograms for Single-Column groups
     Lng32 CollectStatistics();
+
+    //Determines histograms for Single-Column groups using Hive backing sample
+    // and fast-stats algorithm with CBFs.
+    Lng32 CollectStatisticsWithFastStats();
+
+    // Select the next set of columns to process with faststats.
+    CollIndex selectFastStatsBatch(HSColGroupStruct** colGroups);
+
+    // Process columns marked PENDING with faststats.
+    Lng32 processFastStatsBatch(CollIndex numCols, HSColGroupStruct** colGroups);
 
     //Update histogram tables with newly generated statistics
     Lng32 FlushStatistics(NABoolean &statsWritten);
@@ -1696,6 +1709,8 @@ private:
     // Allocate memory for the columns selected for an internal sort batch.
     //Int32 allocateMemoryForColumns(Int64 rows);
     Int32 allocateMemoryForInternalSortColumns(Int64 rows);
+
+    Lng32 prepareToReadColumnsIntoMem(HSCursor *cursor, Int64 rows);
 
     // Reads all values for selected columns into memory, where they can be
     // sorted and then grouped into intervals.

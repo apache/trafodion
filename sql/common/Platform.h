@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -296,13 +296,16 @@ typedef double          Float64;
 /*
 // additional format strings used only in SQL code
 // PFV64 and PFLV64 for variable width field and left pad 0s
+// PFP64 added for variable precision.
 */
 #ifdef NA_64BIT
  #define PFV64  "%*ld"
  #define PFLV64  "%0*ld"
+#define PFP64  "%.*ld"
 #else
  #define PFV64  "%*lld"
  #define PFLV64  "%0*lld"
+ #define PFP64  "%.*lld"
 #endif // NA_64BIT
 
 /* Lng32 to replace "long" or "signed long" */

@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -142,6 +142,11 @@ ULng32 BloomFilter::unpackBuffer(char*& buffer)
 //
 //
 ///////////////////////////////////////////////////////////////
+
+ULng32 scbfHashFunc(const simple_cbf_key& key)
+{
+   return ExHDPHash::hash(key.key_, ExHDPHash::NO_FLAGS, key.keyLen_);
+}
 
 ULng32 cbfHashFunc(const cbf_key& key)
 {
@@ -463,29 +468,57 @@ void CountingBloomFilter::display_hash_entry(const char* msg, UInt32 hash)
    cout << msg << endl << "hash=" << hash << ", count[" << hash << "] =" << freqsL_[hash] << endl;
 }
 
+simple_cbf_key::simple_cbf_key(char* key, UInt32 key_len, NAHeap* heap) :
+keyLen_(key_len), heap_(heap)
+{
+   key_ = new (heap_) char[keyLen_];
+   memmove(key_, key, keyLen_);
+}
+
+simple_cbf_key::simple_cbf_key(const simple_cbf_key& key) :
+heap_(key.heap_), keyLen_(key.keyLen_)
+{
+   key_ = new (heap_) char[keyLen_];
+   memmove(key_, key.key_, keyLen_);
+}
+
+
+simple_cbf_key::~simple_cbf_key()
+{
+   NADELETEBASIC(key_, heap_);
+}
+
+simple_cbf_key& simple_cbf_key::operator=(const simple_cbf_key& other)
+{
+   heap_ = other.heap_;
+   keyLen_ = other.keyLen_;
+   key_ = new (heap_) char[keyLen_];
+   memmove(key_, other.key_, keyLen_);
+   return *this;
+}
+
 void CountingBloomFilter::display_msg(const char* msg)
 {
    cout << msg << endl;
 }
 
 cbf_key::cbf_key(char* key, UInt32 key_len, UInt32 bucket, MFV_ENUM mfv, NAHeap* heap) : 
-keyLen_(key_len), heap_(heap), bucket_(bucket), mfv_(mfv)
+simple_cbf_key(key, key_len), bucket_(bucket), mfv_(mfv)
 {
-   key_ = new (heap_) char[keyLen_];
-   memmove(key_, key, keyLen_);
 }
 
-
-cbf_key::cbf_key(const cbf_key& key) : 
-keyLen_(key.keyLen_), heap_(key.heap_), bucket_(key.bucket_), mfv_(key.mfv_)
+cbf_key::cbf_key(const cbf_key& key) :
+simple_cbf_key(key), bucket_(key.bucket_), mfv_(key.mfv_)
 {
-   key_ = new (heap_) char[keyLen_];
-   memmove(key_, key.key_, keyLen_);
 }
 
-cbf_key::~cbf_key()
+cbf_key& cbf_key::operator=(const cbf_key& other)
 {
-   NADELETEBASIC(key_, heap_);
+   simple_cbf_key::operator=(other);
+   bucket_ = other.bucket_;
+   mfv_ = other.mfv_;
+
+   return *this;
 }
 
 //
@@ -1096,5 +1129,340 @@ UInt64 CountingBloomFilter::totalFreqForAll()
   return ct;
 }
 
+//--------------------------  code for faststats  ---------------------------------
+void FastStatsCountingBloomFilter::computeSumOfFrequencySquaredHighFreq(double * sumSq)
+{
+  assert(0); // not implemented yet.
+}
 
+FastStatsCountingBloomFilter::FastStatsCountingBloomFilter(NAHeap* heap,
+                                         UInt32 maxHashFuncs,
+                                         UInt32 n, // # of distinct elements
+                                         float p,  // probability of false positives
+                                         UInt32 maxNonOverflowFreq
+                                         ):
+  BloomFilter(heap, maxHashFuncs, n, p),
+  overflowCountTable_(scbfHashFunc, 1000 /* initial # of elements */,
+                      TRUE/*uniqueness enforced*/, heap),
+  counters_(m_, (UInt32)bitsNeeded(maxNonOverflowFreq), heap_),
+  keys_(n/* initial # of elements*/, heap)
+{
+}
+
+FastStatsCountingBloomFilter::~FastStatsCountingBloomFilter()
+{
+}
+
+
+UInt64 FastStatsCountingBloomFilter::getSizeInBytes(
+                                UInt32 maxHashFuncs,
+                                UInt32 n, // # of distinct elements
+                                float p,  // probability of false positives
+                                 // non-overflow freq of n elements
+                                UInt32 nonOverflowFreq,
+                                NABoolean isChar, Int32 actualFixAmount)
+{
+   UInt32 m;
+   UInt16 k;
+
+   computeParams(maxHashFuncs, n, p, m, k);
+
+   UInt64 totalMem = sizeof(BloomFilter);
+
+   // for counters_
+   totalMem += VarUIntArray::estimateMemoryInBytes(
+                    m, (UInt32)bitsNeeded(nonOverflowFreq));
+
+
+   // for keys_, covering all allocated memory
+   totalMem += keys_.getByteSize();
+
+   // include the keys
+   if ( isChar ) {
+      for (CollIndex i=0; i<keys_.entries(); i++ ) {
+         const simple_cbf_key& key = keys_[i];
+         totalMem += key.getKeyLen();
+      }
+   } else {
+      // if it is a non-character key, subtract the amount if the actual
+      // data is stored instead of the pointer.
+      // -sizoef(key*) + actualFixAmount
+
+      totalMem -= (keys_.entries() * sizeof(void*));
+      totalMem += (keys_.entries() * actualFixAmount);
+   }
+
+
+   // for hash directory
+   totalMem += overflowCountTable_.getByteSize();
+
+   return totalMem;
+}
+
+NABoolean
+FastStatsCountingBloomFilter::insert(char * key, UInt32 key_len, UInt32 freq)
+{
+   UInt32 hashValueCommon = ExHDPHash::hash(key, keyLenInfo_, key_len);
+
+   UInt32 f = 0xFFFFFFFF;
+   ULng32 newFreq=0;
+   NABoolean slotFound = FALSE;
+
+   for(Lng32 i = 0; i < k_; i++)
+   {
+      UInt32 hash_index = computeFinalHash(hashValueCommon, i);
+
+      counters_.add(hash_index, freq, newFreq);
+
+      if ( i == 0 || f > newFreq ) {
+         f = newFreq;
+         slotFound = TRUE;
+      }
+   }
+
+   simple_cbf_key ckey(key, key_len, heap_);
+
+   if ( f == 1 ) { // a new key, insert into keys_
+      keys_.insert(ckey);
+   }
+
+   if ( f >= counters_.getMaxVal() ) {
+
+      // The key overflows
+
+      // Check if it is the first time to insert the key in the high freq area
+      UInt64* currentFreq = searchOverflowTable(ckey);
+      if ( currentFreq ) {
+         (*currentFreq) += freq; // yes, increment the frequency by freq
+      } else {
+
+         // No, insert the key with a frquency of freq-1
+         insertIntoOverflowTable(ckey, freq-1);
+      }
+
+   }
+   else
+   {
+      // The key stays in the low freq area. Do nothing as we have already
+      // increment the frequency for each bit touched by the key.
+   }
+   DISPLAY_MSG("insert complete");
+
+   return TRUE;
+}
+
+
+NABoolean FastStatsCountingBloomFilter::remove(char * key, UInt32 key_len)
+{
+   DISPLAY_KEY4("remove start", key, key_len, bucket);
+
+   UInt32 flags = ExHDPHash::NO_FLAGS;
+   UInt32 hashValueCommon = ExHDPHash::hash(key, keyLenInfo_, key_len);
+
+   ULng32 currentFreq =0;
+   UInt32 f = 0xFFFFFFFF;
+   NABoolean slotFound = FALSE;
+
+   //
+   // max value for CQD USTAT_IUS_TOTAL_UEC_CHANGE_THRESHOLD is 6.
+   //
+   UInt32 cached_hash[6];
+
+   for(Lng32 i = 0; i < k_; i++)
+   {
+      UInt32 hash_index = cached_hash[i] = computeFinalHash(hashValueCommon, i);
+
+      // If the content is zero, the key is not in CBF
+      if ( counters_[hash_index] == 0 )
+         return FALSE;
+
+      // Decrement the counter, if the counter already overflows, sub is a no-op.
+      // The minuend is saved in currentFreq.
+      counters_.sub(hash_index,1,currentFreq);
+
+      // Compute the min freq among slots occupied by the keys from the same bucket.
+      if ( i==0 || f > currentFreq ) {
+        f=currentFreq;
+        slotFound = TRUE;
+      }
+   }
+
+   ULng32 dummy;
+
+   NABoolean lowFreq = TRUE;
+
+   if ( f >= counters_.getMaxVal() ) {
+
+       simple_cbf_key ckey(key, key_len, heap_);
+
+       UInt64* freq = searchOverflowTable(ckey);
+
+       if ( freq ) {      // test if a high frequency key
+         lowFreq = FALSE;
+         if ( *freq  == counters_.getMaxVal() ) {
+
+           // The overflow condition is no longer true. Remove it from overflow area
+           removeFromOverflowTable(ckey);
+
+           // Set the count entry to max-1, as the content of the entry is
+           // sticky once reach the max value.
+           for(Lng32 i = 0; i < k_; i++)
+             counters_.put(cached_hash[i], counters_.getMaxVal()-1);
+         } else
+           (*freq) --;
+       }
+   }
+
+   if ( lowFreq ) {
+      // A low freq key. Do nothing here as we have already decrement the
+      // counters.
+   }
+
+   return TRUE;
+}
+
+NABoolean
+FastStatsCountingBloomFilter::contain(char * key, UInt32 key_len, UInt64* freq)
+{
+   DISPLAY_KEY("contain() start", key, key_len);
+
+   UInt32 hashValueCommon = ExHDPHash::hash(key, keyLenInfo_, key_len);
+   UInt32 f = 0;
+   UInt32 hash_index = 0;
+
+   for(Lng32 i = 0; i < k_; i++)
+   {
+      hash_index = computeFinalHash(hashValueCommon, i);
+
+      DISPLAY_HASH_ENTRY("", hash_index);
+
+      if ( counters_[hash_index] == 0 )
+      {
+        DISPLAY_MSG("contain(): not found");
+        return FALSE;
+      }
+
+      if ( freq ) {
+         UInt32 currentFreq = counters_[hash_index];
+
+         if (i==0 || f > currentFreq) {
+           f=currentFreq;
+         }
+      }
+   }
+
+   if ( freq ) {
+
+      if ( f == counters_.getMaxVal() ) {
+         simple_cbf_key ckey(key, key_len, heap_);
+         UInt64* fptr = searchOverflowTable(ckey);
+         if ( fptr ) {
+            (*freq) = *fptr;
+         } else {
+
+            // the key is not in hash table, whicih means that
+            // all bits associated with the key is set by collisions.
+            // Here we have to guess the frequency to be the
+            // max value -1.
+            (*freq) = counters_.getMaxVal() -1;
+         }
+      } else {
+         *freq = f;
+      }
+   }
+
+   DISPLAY_MSG("contain(): found");
+   return TRUE;
+}
+
+void
+FastStatsCountingBloomFilter::insertIntoOverflowTable(
+              const simple_cbf_key& key, UInt32 freq)
+{
+   overflowCountTable_.insert(new (heap_)simple_cbf_key(key),
+                              new UInt64(counters_.getMaxVal() + freq - 1)
+                             );
+}
+
+
+void FastStatsCountingBloomFilter::removeFromOverflowTable(const simple_cbf_key& key)
+{
+   overflowCountTable_.remove((cbf_key*)(&key));
+}
+
+void FastStatsCountingBloomFilter::printfreq(const char* colNames)
+{
+   printf("\nCBF keys/frequencies for %s\n", colNames);
+
+   for (CollIndex i=0; i < 100;/*keys_.entries();*/ i++) {
+      const simple_cbf_key& ckey = keys_.at(i);
+      UInt64 freq;
+      NABoolean ok = contain(ckey.getKey(), ckey.getKeyLen(), &freq);
+
+      if ( ok ) {
+        printf("key=%d, freq=" PF64 "\n", *((Int32*)ckey.getKey()), freq);
+      }
+   }
+}
+
+void FastStatsCountingBloomFilter::computeOverflowF2s()
+{
+/*
+   NADELETEBASIC(freqsH_, heap_);
+   NADELETEBASIC(freq2sH_, heap_);
+   freqsH_ = NULL;
+   freq2sH_ = NULL;
+
+   actualOverflowF2s_ = 0;
+
+   UInt32 overflowed = getOverflowEntries();
+
+
+   if ( overflowed == 0 )
+     return;
+
+   // cout << "overflowed=" << overflowed << endl;
+
+   freqsH_ = (freqStruct*) (new (heap_) char[sizeof(freqStruct) * overflowed]);
+   //freqsH_ = new (heap_) freqStruct[overflowed]; // does not work with NADELETEARRAY
+                                                         // or NADELETEBASIC
+
+   freq2sH_ = new (heap_) UInt64[overflowed];
+
+   NAHashDictionaryIterator<cbf_key, UInt64> cItor(overflowCountTable_);
+
+   cbf_key* key;
+   UInt64* freq;
+   CollIndex i;
+   for ( i = 0 ; i < cItor.entries() ; i++) {
+       cItor.getNext(key, freq);
+       freqsH_[i].setFreq(*freq);
+       freqsH_[i].setBucket(key->getBucket());
+   }
+
+   // do a quick sort
+   qsort(freqsH_, cItor.entries(), sizeof(freqStruct), compareTwoFreqStructs);
+
+
+   // compute freqOfFreq by walking through the sorted list in one pass
+   UInt64 f = 0;
+   i = 0;
+   CollIndex j = 0;
+
+   while (i<overflowed)
+   {
+      f=1;
+      j=i+1;
+
+      while ( j<overflowed && freqsH_[i] == freqsH_[j] ) {
+        f++; j++;
+      }
+
+      freqsH_[actualOverflowF2s_] = freqsH_[i];
+      freq2sH_[actualOverflowF2s_++] = f;
+
+      i=j;
+   }
+*/
+}
 

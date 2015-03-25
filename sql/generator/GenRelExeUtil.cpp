@@ -4681,6 +4681,12 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
   strcpy(tlpTmpLocation, tlpTmpLocationNAS.data());
   load_tdb->setLoadPrepLocation(tlpTmpLocation);
 
+  // For sample file. Move later, when sampling not limited to bulk loads.
+//  NAString sampleLocationNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_SAMPLE_TABLE_LOCATION);
+//  char * sampleLocation = space->allocateAlignedSpace(sampleLocationNAS.length() + 1);
+//  strcpy(sampleLocation, sampleLocationNAS.data());
+//  load_tdb->setSampleLocation(sampleLocation);
+
   load_tdb->setQuasiSecure(FALSE);
   load_tdb->setTakeSnapshot((CmpCommon::getDefault(TRAF_LOAD_TAKE_SNAPSHOT) == DF_ON));
 
