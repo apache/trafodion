@@ -23,6 +23,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
@@ -63,6 +65,8 @@ import org.apache.hadoop.ipc.RemoteException;
 
 import com.google.protobuf.ByteString;
 
+import org.apache.hadoop.hbase.client.transactional.TmDDL;
+
 // Sscc imports
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRegionService;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccBeginTransactionRequest;
@@ -100,6 +104,7 @@ public class TransactionManager {
   private final TransactionLogger transactionLogger;
   private JtaXAResource xAResource;
   private HBaseAdmin hbadmin;
+  private TmDDL tmDDL;
   Configuration     config;
 
   public static final int TM_COMMIT_FALSE = 0;     
@@ -148,8 +153,9 @@ public class TransactionManager {
     return value;
   }
 
-  public void init() throws IOException {
+  public void init(final TmDDL tmddl) throws IOException {
     this.config = HBaseConfiguration.create();
+	this.tmDDL = tmddl;
     try {
       hbadmin = new HBaseAdmin(config);
     }
@@ -1110,7 +1116,69 @@ public class TransactionManager {
         try {
           Thread.sleep(500);
         } catch(Exception e) {}
-        */
+         */
+
+        //if DDL is involved with this transaction, need to unwind it.
+        if(transactionState.hasDDLTx())
+        {
+
+            //First wait for commit requests sent to all regions is received back.
+        	//This TM thread gets SUSPENDED until all commit threads complete!!!
+        	try{
+        		transactionState.completeRequest();
+        	}
+        	catch(Exception e){
+        		LOG.error("exception in doCommit completeRequest: " + e);
+        		if(LOG.isTraceEnabled()) LOG.trace("Exception in doCommit completeRequest: txID: " + transactionState.getTransactionId());
+        		//return; //Do not return here. This thread should continue servicing DDL operations.
+        	}
+        	//if tables were created, then nothing else needs to be done.
+        	//if tables were recorded dropped, then they need to be physically dropped.
+        	//Tables recorded dropped would already be disabled as part of prepare commit.
+        	ArrayList<String> createList = new ArrayList<String>(); //This list is ignored.
+        	ArrayList<String> dropList = new ArrayList<String>();
+        	StringBuilder state = new StringBuilder ();
+        	try {
+        		tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList);
+        	}
+        	catch(Exception e){
+        		LOG.error("exception in doCommit getRow: " + e);
+        		if(LOG.isTraceEnabled()) LOG.trace("exception in doCommit getRow: txID: " + transactionState.getTransactionId());
+        		state.append("INVALID"); //to avoid processing further down this path.
+        	}
+
+
+        	if(state.toString().equals("VALID") && dropList.size() > 0)
+        	{
+        		Iterator<String> di = dropList.iterator();
+        		while (di.hasNext()) 
+        		{
+        			try {
+        				//physical drop of table from hbase.
+        				deleteTable(transactionState, di.next(), false);
+        			}
+        			catch(Exception e){
+        				if(LOG.isTraceEnabled()) LOG.trace("exception in doCommit deleteTable: txID: " + transactionState.getTransactionId());
+        				LOG.error("exception in doCommit, Step : DeleteTable: " + e);
+        				//return; //Do not return, continue to deleteTable remaining tables. 
+        				//TODO: Retry logic will be added to retry in case of exceptions.
+        				//TODO: Inspite of retry, if exceptions are encountered, these tables
+        				//will be recorded  and not forgotten. House keepong thread will attempt retry.
+        			}
+        		}
+        	}
+
+        	//update TDDL post operation
+        	try{
+        		tmDDL.putRow(transactionState.getTransactionId(), "INVALID");
+        		//TODO: In the case of any failure scenarios, Tddl entry will  
+        		//not be forgotten.
+        	}
+        	catch(Exception e)
+        	{
+        		LOG.error("exception in doCommit() putRow: " + e);
+        	}
+        }
     }
 
     /**
@@ -1163,6 +1231,87 @@ public class TransactionManager {
          
         // all requests sent at this point, can record the count
         transactionState.completeSendInvoke(loopCount);
+		
+		//if DDL is involved with this transaction, need to unwind it.
+		if(transactionState.hasDDLTx())
+		{
+			
+			//First wait for abort requests sent to all regions is received back.
+			//This TM thread gets SUSPENDED until all abort threads complete!!!
+			try{
+				transactionState.completeRequest();
+			}
+			catch(Exception e){
+				LOG.error("exception in abort completeRequest: " + e);
+				if(LOG.isTraceEnabled()) LOG.trace("Exception in abort completeRequest: txID: " + transactionState.getTransactionId());
+				//return; //Do not return here. This thread should continue servicing DDL operations.
+			}
+			
+			//if tables were created, then they need to be dropped.
+			ArrayList<String> createList = new ArrayList<String>();
+			ArrayList<String> dropList = new ArrayList<String>();
+			StringBuilder state = new StringBuilder ();
+			try {
+				tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList);
+			}
+			catch(Exception e){
+				LOG.error("exception in abort getRow: " + e);
+				if(LOG.isTraceEnabled()) LOG.trace("exception in abort getRow: txID: " + transactionState.getTransactionId());
+				state.append("INVALID"); //to avoid processing further down this path.
+			}
+			
+			if(state.toString().equals("VALID") && createList.size() > 0)
+			{
+				Iterator<String> ci = createList.iterator();
+				while (ci.hasNext()) 
+				{
+					try {
+						deleteTable(transactionState, ci.next(), true);
+					}
+					catch(Exception e){
+						LOG.error("exception in abort, phase: dropTable: " + e);
+						if(LOG.isTraceEnabled()) LOG.trace("exception in abort, phase:dropTable: txID: " + transactionState.getTransactionId());
+						//return; //Do not return, continue to drop remaining tables.
+						//TODO: Retry logic will be added to retry in case of exceptions.
+        				//TODO: Inspite of retry, if exceptions are encountered, these tables
+        				//will be recorded  and not forgotten. House keeping thread will attempt retry.
+						
+					}
+				}
+			}
+			
+			//if tables were recorded dropped, then they need to be reinstated,
+			//depending on the state of the transaction. The table recorded as dropped in phase 0,
+			//will be disabled as part of prepareCommit and physically dropped as part of doCommit.
+			if(state.toString().equals("VALID") && dropList.size() > 0 /*TODO: && transactionState.phase1 */)
+			{
+				Iterator<String> di = dropList.iterator();
+				while (di.hasNext()) 
+				{
+					try {
+						   enableTable(transactionState, di.next());
+					}
+					catch(Exception e){
+						LOG.error("exception in abort, phase: EnableTable: " + e);
+						if(LOG.isTraceEnabled()) LOG.trace("exception in abort dropTable: txID: " + transactionState.getTransactionId());
+						//return; //Do not return, continue to Enable remaining tables.
+						//TODO: Retry logic will be added to retry in case of exceptions.
+        				//TODO: Inspite of retry, if exceptions are encountered, these tables
+        				//will be recorded  and not forgotten. House keeping thread will attempt retry.
+					}
+				}
+			}
+			
+			//update TDDL post operation
+			try{
+				tmDDL.putRow(transactionState.getTransactionId(), "INVALID");
+			}
+			catch(Exception e)
+			{
+				LOG.error("exception in abort() putRow: " + e);
+			}
+		}
+		
         if(LOG.isTraceEnabled()) LOG.trace("Abort -- EXIT txID: " + transactionState.getTransactionId());
         
     }
@@ -1189,8 +1338,11 @@ public class TransactionManager {
         try {
             hbadmin.createTable(desc);
 
-            // Set transaction state object as participating as ddl transaction
-            transactionState.setDDLTxStatus(true);
+            // Set transaction state object as participating in ddl transaction
+            transactionState.setDDLTx(true);
+			
+			//record this create in TmDDL.
+			tmDDL.putRow( transactionState.getTransactionId(), "CREATE", desc.getNameAsString());
         }
         catch (Exception e) {
             if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: createTable exception " + e);
@@ -1205,10 +1357,62 @@ public class TransactionManager {
     public void dropTable(final TransactionState transactionState, String tblName)
             throws MasterNotRunningException, IOException {
 
-        // TODO: Check if no other tables in TDDL, set DDLStatus to false for this transaction
-        transactionState.setDDLTxStatus(false);
+        //Record this drop table request in TmDDL.
+		//Note that physical disable of this table happens in prepare phase.
+		//Followed by physical drop of this table in commit phase.
+		try {
+			tmDDL.putRow( transactionState.getTransactionId(), "DROP", tblName);
+			
+			// Set transaction state object as participating in ddl transaction.
+			transactionState.setDDLTx(true);
+		}
+        catch (Exception e) {
+            if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: dropTable exception " + e);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            LOG.error("dropTable error: " + sw.toString());
+        }
     }
+	
+	//Called only by Abort or Commit processing.
+	public void deleteTable(final TransactionState transactionState, final String tblName, final boolean alsoDisable )
+            throws MasterNotRunningException, IOException {
+        if (LOG.isTraceEnabled()) LOG.trace("deleteTable ENTRY, transactionState: " + transactionState);
 
+        try {
+			if(alsoDisable)
+			{
+				hbadmin.disableTable(tblName);
+			}
+			hbadmin.deleteTable(tblName);
+        }
+        catch (Exception e) {
+            if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: deleteTable exception " + e);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            LOG.error("deleteTable error: " + sw.toString());
+        }
+	}
+	
+	//Called only by Abort processing.
+	public void enableTable(final TransactionState transactionState, String tblName)
+            throws MasterNotRunningException, IOException {
+        if (LOG.isTraceEnabled()) LOG.trace("enableTable ENTRY, transactionState: " + transactionState);
+
+        try {
+            hbadmin.enableTable(tblName);
+        }
+        catch (Exception e) {
+            if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: enableTable exception " + e);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            LOG.error("enableTable error: " + sw.toString());
+        }
+	}
+	
     /**
      * @param hostnamePort
      * @param regionArray

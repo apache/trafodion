@@ -327,11 +327,11 @@ public class TransactionState {
       this.status = status;
     }
 
-    public boolean getDDLTxStatus() {
+    public boolean hasDDLTx() {
         return ddlTrans;   
     }
 
-    public void setDDLTxStatus(final boolean status) {
+    public void setDDLTx(final boolean status) {
         this.ddlTrans = status;
     }
 }

@@ -49,6 +49,7 @@ import org.apache.hadoop.hbase.client.transactional.TransState;
 import org.apache.hadoop.hbase.client.transactional.TransReturnCode;
 import org.apache.hadoop.hbase.client.transactional.TransactionMap;
 import org.apache.hadoop.hbase.client.transactional.TransactionalReturn;
+import org.apache.hadoop.hbase.client.transactional.TmDDL;
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
@@ -61,7 +62,6 @@ import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.trafodion.dtm.HBaseTmZK;
 import org.trafodion.dtm.TmAuditTlog;
-import org.trafodion.dtm.TmDDL;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -271,7 +271,7 @@ public class HBaseTxClient {
       }
 
       if(useDDLTrans)
-          trxManager.init();
+          trxManager.init(tmDDL);
 
       if (useRecovThread) {
          if (LOG.isDebugEnabled()) LOG.debug("Entering recovThread Usage");
