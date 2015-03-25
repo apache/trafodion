@@ -254,6 +254,7 @@ CoprocessorService, Coprocessor {
   CleanOldTransactionsChore cleanOldTransactionsThread;
   static MemoryUsageChore memoryUsageThread = null;
   static Stoppable stoppable = new StoppableImplementation();
+  static Stoppable stoppable2 = new StoppableImplementation();
   private int cleanTimer = 5000; // Five minutes
   private int memoryUsageTimer = 60000; // One minute   
   private int regionState = 0; 
@@ -2577,7 +2578,7 @@ CoprocessorService, Coprocessor {
             memoryUsageThread == null) {
           LOG.warn("TrxRegionEndpoint coprocessor: start - starting memoryUsageThread");
 
-          memoryUsageThread = new MemoryUsageChore(this, memoryUsageTimer, stoppable);
+          memoryUsageThread = new MemoryUsageChore(this, memoryUsageTimer, stoppable2);
 
           UncaughtExceptionHandler handler2 = new UncaughtExceptionHandler() {
 
@@ -2711,6 +2712,7 @@ CoprocessorService, Coprocessor {
   @Override
   public void stop(CoprocessorEnvironment env) throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: stop ");
+    stoppable.stop("stop() TrxRegionEndpoint");
   }
 
   // Internal support methods

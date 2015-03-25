@@ -544,4 +544,14 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
         }
         closing.set(true);
     }
+
+    @Override
+    public void postClose(ObserverContext<RegionCoprocessorEnvironment> c, boolean abortRequested) {
+        String regionName = my_Region.getRegionNameAsString();
+        transactionsRefMap.remove(regionName+trxkeypendingTransactionsById);
+        transactionsRefMap.remove(regionName+trxkeyindoubtTransactionsCountByTmid);
+        transactionsRefMap.remove(regionName+trxkeytransactionsById);
+        transactionsRefMap.remove(regionName+trxkeycommitPendingTransactions);
+        transactionsRefMap.remove(regionName+trxkeyClosingVar);
+    }
 } // end of TrxRegionObserver Class
