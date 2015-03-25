@@ -823,12 +823,10 @@ static void* SessionWatchDog(void* arg)
 				ss << pAggrStat->m_total_inserts << ",";
 				ss << pAggrStat->m_total_updates << ",";
 				ss << pAggrStat->m_total_deletes << ",";
-				//
 				ss << pAggrStat->m_total_ddl_stmts << ",";
 				ss << pAggrStat->m_total_util_stmts << ",";
 				ss << pAggrStat->m_total_catalog_stmts << ",";
 				ss << pAggrStat->m_total_other_stmts << ",";
-				//
 				ss << pAggrStat->m_total_insert_errors << ",";
 				ss << pAggrStat->m_total_delete_errors << ",";
 				ss << pAggrStat->m_total_update_errors << ",";
@@ -837,7 +835,6 @@ static void* SessionWatchDog(void* arg)
 				ss << pAggrStat->m_total_util_errors << ",";
 				ss << pAggrStat->m_total_catalog_errors << ",";
 				ss << pAggrStat->m_total_other_errors << ",";
-				//
 				ss << pAggrStat->m_delta_estimated_rows_accessed << ",";
 				ss << pAggrStat->m_delta_estimated_rows_used << ",";
 				ss << pAggrStat->m_delta_rows_accessed << ",";
@@ -847,12 +844,10 @@ static void* SessionWatchDog(void* arg)
 				ss << pAggrStat->m_delta_total_inserts << ",";
 				ss << pAggrStat->m_delta_total_updates << ",";
 				ss << pAggrStat->m_delta_total_deletes << ",";
-				//
 				ss << pAggrStat->m_delta_total_ddl_stmts << ",";
 				ss << pAggrStat->m_delta_total_util_stmts << ",";
 				ss << pAggrStat->m_delta_total_catalog_stmts << ",";
 				ss << pAggrStat->m_delta_total_other_stmts << ",";
-				//
 				ss << pAggrStat->m_delta_insert_errors << ",";
 				ss << pAggrStat->m_delta_delete_errors << ",";
 				ss << pAggrStat->m_delta_update_errors << ",";
@@ -885,6 +880,18 @@ static void* SessionWatchDog(void* arg)
 				ss << "TOTAL_INSERTS = " << pAggrStat->m_total_inserts << ",";
 				ss << "TOTAL_UPDATES = " << pAggrStat->m_total_updates << ",";
 				ss << "TOTAL_DELETES = " << pAggrStat->m_total_deletes << ",";
+				ss << "TOTAL_DDL_STMTS = " << pAggrStat->m_total_ddl_stmts << ",";
+				ss << "TOTAL_UTIL_STMTS = " << pAggrStat->m_total_util_stmts << ",";
+				ss << "TOTAL_CATALOG_STMTS = " << pAggrStat->m_total_catalog_stmts << ",";
+				ss << "TOTAL_OTHER_STMTS = " << pAggrStat->m_total_other_stmts << ",";
+				ss << "TOTAL_INSERT_ERRORS = " << pAggrStat->m_total_insert_errors << ",";
+				ss << "TOTAL_DELETE_ERRORS = " << pAggrStat->m_total_delete_errors << ",";
+				ss << "TOTAL_UPDATE_ERRORS = " << pAggrStat->m_total_update_errors << ",";
+				ss << "TOTAL_SELECT_ERRORS = " << pAggrStat->m_total_select_errors << ",";
+				ss << "TOTAL_DDL_ERRORS = " << pAggrStat->m_total_ddl_errors << ",";
+				ss << "TOTAL_UTIL_ERRORS = " << pAggrStat->m_total_util_errors << ",";
+				ss << "TOTAL_CATALOG_ERRORS = " << pAggrStat->m_total_catalog_errors << ",";
+				ss << "TOTAL_OTHER_ERRORS = " << pAggrStat->m_total_other_errors << ",";
 				ss << "DELTA_ESTIMATED_ROWS_ACCESSED = " << pAggrStat->m_delta_estimated_rows_accessed << ",";
 				ss << "DELTA_ESTIMATED_ROWS_USED = " << pAggrStat->m_delta_estimated_rows_used << ",";
 				ss << "DELTA_ROWS_ACCESSED = " << pAggrStat->m_delta_rows_accessed << ",";
@@ -893,8 +900,21 @@ static void* SessionWatchDog(void* arg)
 				ss << "DELTA_SELECTS = " << pAggrStat->m_delta_total_selects << ",";
 				ss << "DELTA_INSERTS = " << pAggrStat->m_delta_total_inserts << ",";
 				ss << "DELTA_UPDATES = " << pAggrStat->m_delta_total_updates << ",";
-				ss << "DELTA_DELETES = " << pAggrStat->m_delta_total_deletes;
-				ss << " where SESSION_ID = '" << pAggrStat->m_sessionId.c_str() << "'";
+				ss << "DELTA_DELETES = " << pAggrStat->m_delta_total_deletes << ",";
+				ss << "DELTA_DDL_STMTS = " << pAggrStat->m_delta_total_ddl_stmts << ",";
+				ss << "DELTA_UTIL_STMTS = " << pAggrStat->m_delta_total_util_stmts << ",";
+				ss << "DELTA_CATALOG_STMTS = " << pAggrStat->m_delta_total_catalog_stmts << ",";
+				ss << "DELTA_OTHER_STMTS = " << pAggrStat->m_delta_total_other_stmts << ",";
+				ss << "DELTA_INSERT_ERRORS = " << pAggrStat->m_delta_insert_errors << ",";
+				ss << "DELTA_DELETE_ERRORS = " << pAggrStat->m_delta_delete_errors << ",";
+				ss << "DELTA_UPDATE_ERRORS = " << pAggrStat->m_delta_update_errors << ",";
+				ss << "DELTA_SELECT_ERRORS = " << pAggrStat->m_delta_select_errors << ",";
+				ss << "DELTA_DDL_ERRORS = " << pAggrStat->m_delta_ddl_errors << ",";
+				ss << "DELTA_UTIL_ERRORS = " << pAggrStat->m_delta_util_errors << ",";
+				ss << "DELTA_CATALOG_ERRORS = " << pAggrStat->m_delta_catalog_errors << ",";
+				ss << "DELTA_OTHER_ERRORS = " << pAggrStat->m_delta_other_errors;
+				ss << " where SESSION_START_UTC_TS = CONVERTTIMESTAMP(" << pAggrStat->m_session_start_utc_ts << ")";
+				ss << " and SESSION_ID = '" << pAggrStat->m_sessionId.c_str() << "'";
 
 			}
 			else
@@ -9203,6 +9223,10 @@ short DO_WouldLikeToExecute(
 		resStatStatement->pubStarted = false;
 		resStatStatement->queryFinished = false;
 	}
+
+	// Update the query status
+	pSrvrStmt->m_state = QUERY_EXECUTING;
+
 	pQueryStmt = pSrvrStmt;
 	pSrvrStmt->m_bDoneWouldLikeToExecute = true;
 	return 0;
@@ -9257,6 +9281,10 @@ short qrysrvc_ExecuteFinished(
 			return 0;
 		}
 	}
+
+	// Update the query status
+	if (pSrvrStmt->m_bqueryFinish)
+		pSrvrStmt->m_state = QUERY_COMPLETED;
 
 	if (resStatStatement != NULL)
 	{

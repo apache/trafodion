@@ -879,6 +879,7 @@ void ResStatisticsStatement::end(Int32 inState,
 	ps.state = inState;
     stmtType = inStmtType;
 	ps.stmtType = inStmtType;
+	ps.sqlNewQueryType = inSqlNewQueryType;
 	estimatedCost = inEstimatedCost;
 
 	if (inQueryId == NULL) 
@@ -2481,6 +2482,7 @@ void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStm
 	pQuery_info->m_exec_end_utc_ts = endtime;
 	pQuery_info->m_master_execution_time = queryExecutionTime;
 	pQuery_info->m_master_elapse_time = queryElapseTime;
+	pQuery_info->m_query_status = getQueryStateStringRes(pSrvrStmt->m_state);
 	pQuery_info->m_error_code = errorCode;
 	pQuery_info->m_sql_error_code = sqlErrorCode;
 	pQuery_info->m_error_text = getErrorText(inSqlError, inSqlErrorLength, MAX_ERROR_TEXT_LENGTH);

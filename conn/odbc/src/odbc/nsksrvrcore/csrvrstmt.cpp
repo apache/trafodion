@@ -231,6 +231,9 @@ SRVR_STMT_HDL::SRVR_STMT_HDL()
 	//for publishing compiler error to repository
 	queryStartTime = 0;
 
+	// Query status in repository
+	m_state = QUERY_INIT;
+
 	SRVRTRACE_EXIT(FILE_CSTMT+1);
 }
 
