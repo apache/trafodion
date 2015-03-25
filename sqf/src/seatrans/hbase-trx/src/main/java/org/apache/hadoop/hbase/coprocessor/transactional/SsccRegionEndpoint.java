@@ -692,7 +692,6 @@ CoprocessorService, Coprocessor {
            verPut.add(DtmConst.TRANSACTION_META_FAMILY , SsccConst.VERSION_COL,SsccConst.generateVersionValue(startId,false));
            m_Region.put(verPut);
            //mutList.add(verPut);
-           
          }
          for (Delete d: delToDoList)
          {
@@ -708,9 +707,8 @@ CoprocessorService, Coprocessor {
            Put verPut = new Put(dKey, commitId);
            verPut.add(DtmConst.TRANSACTION_META_FAMILY , SsccConst.VERSION_COL,SsccConst.generateVersionValue(startId,true));
            m_Region.put(verPut);
-           
            m_Region.delete(d);
-         }  
+         }
          //DO a batch mutation
          //Mutation[] m = (Mutation[])mutList.toArray();
          //m_Region.batchMutate(m);
@@ -1893,20 +1891,24 @@ CoprocessorService, Coprocessor {
     statusGet.setMaxVersions();
 
     Result statusResult = m_Region.get(statusGet);
-    //get the versionList
-    Get verGet = new Get(rowkey);
-
-    //verGet.setTimeStamp(startId);
-    verGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.VERSION_COL);
-
-    verGet.setMaxVersions(DtmConst.MAX_VERSION);
-
-    Result verResult = m_Region.get(verGet);
 
     List<Cell> sl = null;
     List<Cell> vl = null;
+
+    //get the versionList
+    //  If this is a stateless put we don't need the version list
+    if (stateless == false) {
+       Get verGet = new Get(rowkey);
+
+       //verGet.setTimeStamp(startId);
+       verGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.VERSION_COL);
+       verGet.setMaxVersions(DtmConst.MAX_VERSION);
+
+       Result verResult = m_Region.get(verGet);
+       if(verResult != null )  vl = verResult.listCells();
+    }
+
     if(statusResult != null ) sl = statusResult.listCells();
-    if(verResult != null )  vl = verResult.listCells();
     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: put stateless: " + stateless  );
     if(state.hasConflict(sl,vl,stateless,startId,transactionId) == false) {
         state.addToPutList(rowkey);
@@ -2013,7 +2015,7 @@ CoprocessorService, Coprocessor {
 
     //clone the delete
     //just to change the timestamp. But I hope the overhead is not too big a concern here
-    byte[] rowkey = delete.getRow();  
+    byte[] rowkey = delete.getRow();
     Delete newDelete = new Delete( rowkey,startId );
     NavigableMap<byte[], List<Cell>> familyCellMap = delete.getFamilyCellMap();
     byte[] mergedColsV = null;
@@ -2029,7 +2031,7 @@ CoprocessorService, Coprocessor {
             cv = byteMerger(cv,"|".getBytes());
             byte[] currentCollist =  state.getColList(rowkey);
             newDelete.deleteColumns(family,qualifier,startId);  //NOTE: HBase 1.0 this API will change ...
-            //here use deleteColumns with timestamp, so it will delete all history version of this row 
+            //here use deleteColumns with timestamp, so it will delete all history version of this row
             //but the real delete is not done at this point, but when doCommit
             //Only when it goes to doCommit(), it is safe to delete all versions
             //Otherwise, SSCC use MVCC in hbase to save history versions, those versions may need in other transaction
@@ -3456,7 +3458,7 @@ CoprocessorService, Coprocessor {
        if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor: reference map is NOT empty Yes ... ");
 
     if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor: UUU Region " + this.m_Region.getRegionNameAsString() + " check indoubt list from reference map ");
-   
+
     indoubtTransactionsById = (TreeMap<Long, WALEdit>)transactionsByIdTestz.get(
                                this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeypendingTransactionsById);
 
@@ -3476,6 +3478,7 @@ CoprocessorService, Coprocessor {
   @Override
   public void stop(CoprocessorEnvironment env) throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: stop ");
+    stoppable.stop("stop() SsccRegionEndpoint");
   }
 
   // Internal support methods
@@ -3723,30 +3726,6 @@ CoprocessorService, Coprocessor {
     }
 
     return m_Region.getRegionInfo().getRegionNameAsString() + transactionId;
-  }
-
-  /**
-   * Determines if the transaction has any conflicts
-   * @param SsccTransactionState state
-   * @return boolean
-   */
-  private boolean hasConflict(final SsccTransactionState state) {
-    // Check transactions that were committed while we were running
-
-    synchronized (commitedTransactionsBySequenceNumber) {
-    for (long i = state.getStartSequenceNumber(); i < nextSsccSequenceId.get(); i++)
-    {
-      SsccTransactionState other = commitedTransactionsBySequenceNumber.get(i);
-      if (other == null) {
-        continue;
-      }
-        //if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: has Conflict state.getStartSequenceNumber  is " + i + ", nextSequenceId.get() is " + nextSequenceId.get() + ", state object is " + state.toString() + ", calling addTransactionToCheck");
-      //state.addTransactionToCheck(other);
-    }
-    }
-
-    //return state.hasConflict();
-    return false;
   }
 
   /**
