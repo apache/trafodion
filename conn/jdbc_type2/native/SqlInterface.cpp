@@ -4187,7 +4187,7 @@ void CreateModulePlan(long inputParamCount, InputDescInfo *inputDescInfo, char *
 	{
 		fprintf(ModuleCachingFile,"EXEC SQL %s;\n", iter->c_str());
 	}
-	if(strcmp(pConnect->CurrentSchema, "PUBLIC_ACCESS_SCHEMA") != 0 && strcmp(srvrGlobal->CurrentCatalog, "NONSTOP_SQLMX_NSK") != 0)
+	if(strcmp(pConnect->CurrentSchema, "SEABASE") != 0 && strcmp(srvrGlobal->CurrentCatalog, "TRAFODION") != 0)
 	{
 		fprintf(ModuleCachingFile,"EXEC SQL DECLARE SCHEMA %s.%s ; \n",srvrGlobal->CurrentCatalog,srvrGlobal->CurrentSchema);
 		fprintf(ModuleCachingFile,"EXEC SQL SET SCHEMA %s.%s ; \n", srvrGlobal->CurrentCatalog,srvrGlobal->CurrentSchema);

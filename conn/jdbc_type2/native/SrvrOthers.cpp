@@ -1071,7 +1071,7 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 	case SET_CATALOG:
 	case SQL_ATTR_CURRENT_CATALOG:
 		if (optionValueStr == NULL || (optionValueStr != NULL && optionValueStr[0] == '\0'))
-			strcpy(valueStr, "NONSTOP_SQLMX_NSK");
+			strcpy(valueStr, "TRAFODION");
 		else
 		{
 			if (strlen(optionValueStr) >= sizeof(valueStr))
@@ -1096,7 +1096,7 @@ odbc_SQLSvc_SetConnectionOption_sme_(
 		break;
 	case SET_SCHEMA:
 		if (optionValueStr == NULL || (optionValueStr != NULL && optionValueStr[0] == '\0'))
-			strcpy(schemaValueStr, "NONSTOP_SQLMX_NSK.PUBLIC_ACCESS_SCHEMA");
+			strcpy(schemaValueStr, "TRAFODION.SEABASE");
 		else
 		{
 			if (strlen(optionValueStr) >= sizeof(schemaValueStr))

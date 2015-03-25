@@ -1,7 +1,7 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -656,14 +656,14 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_cpqPrep
 		{
 			strcpy(pstmtLabel,"SQLMX_DEFAULT_STATEMENT_");
 			int n = -1;
-			if(strcmp(srvrGlobal->CurrentSchema, "PUBLIC_ACCESS_SCHEMA") != 0 &&
-				strcmp(srvrGlobal->CurrentCatalog, "NONSTOP_SQLMX_NSK") != 0)
+			if(strcmp(srvrGlobal->CurrentSchema, "SEABASE") != 0 &&
+				strcmp(srvrGlobal->CurrentCatalog, "TRAFODION") != 0)
 			{
 				//n = srvrGlobal->setOfCQD.size()+4;
 				n = pConnection->listOfCQDs.size()+4;
 			}
-			else if(strcmp(srvrGlobal->CurrentSchema, "PUBLIC_ACCESS_SCHEMA") == 0 &&
-				strcmp(srvrGlobal->CurrentCatalog, "NONSTOP_SQLMX_NSK") == 0)
+			else if(strcmp(srvrGlobal->CurrentSchema, "SEABASE") == 0 &&
+				strcmp(srvrGlobal->CurrentCatalog, "TRAFODION") == 0)
 			{
 				//n = srvrGlobal->setOfCQD.size()+2;
 				n = pConnection->listOfCQDs.size()+2;
