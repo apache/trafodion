@@ -144,7 +144,7 @@ public class SsccTransactionState extends TransactionState{
     public void addToDelList(Delete del) {
        delRows.add(del);
     }
-    
+
     public void clearStateResource()
     {
         //TODO, clear all resources here
@@ -400,37 +400,52 @@ public class SsccTransactionState extends TransactionState{
        return -1;
     }
 
-    public boolean hasConflict(List<Cell> statusList,List<Cell> versionList, boolean stateful,long startId,long gTransId) {
+    public boolean hasConflict(List<Cell> statusList,List<Cell> versionList, boolean stateless,long startId,long gTransId) {
+        LOG.info("Entry hasConflict, stateless: " + stateless + ", startId: " + startId + ", transId: " + gTransId );
+
         /*
         if(statusList==null && versionList == null) //non-transactional data, user put it directly
         {
              //maybe we can set a CQD for this?
              //Now, I make this one visible.
             return true;
-        }          
+        }
         */
         //if the status list is empty
         // no other update at this point
-        LOG.info("hasConflict : ENTER with startId " + startId);
-        if( statusList == null)
-        {
-            LOG.info("hasConflict statusList is null");
-            return checkVersionListForConflict(  versionList,stateful,startId);
+        if((statusList == null) && (stateless == true)){
+            // Cannot have a conflict
+            LOG.info("hasConflict statusList is null for stateless update: no conflict");
+            return false;
         }
-        if( statusList.size() ==0)
-        {
-            LOG.info("hasConflict statusList size 0");
-            return checkVersionListForConflict(versionList,stateful,startId);
-        }
-        else {        //status is not null
-            LOG.info("hasConflict statusList size > 0");
-            if(checkStatusListForConflict( statusList,stateful,startId,gTransId) == true)
-                return true;
-        }
-        return checkVersionListForConflict( versionList,stateful,startId);
+        if (statusList != null) {
+           //status is not null
+           if((statusList.size() == 0) && (stateless == true)){
+              // Cannot have a conflict with an empty statusList
+              LOG.info("hasConflict statusList size 0 for stateless update: no conflict");
+              return false;
+           }
+           else {
+              // StatusList > 0
+              LOG.info("hasConflict statusList size > 0");
+              if(checkStatusListForConflict( statusList,stateless,startId,gTransId) == true) {
+                 LOG.info("hasConflict checkStatusListForConflict returned true");
+                 return true;
+              }
+              else {
+                 // If we are a stateless update we don't need to check the version
+                 if (stateless) {
+                    LOG.info("hasConflict checkStatusListForConflict returned false and this is a stateless update:  Skipping version checks");
+                    return false;
+                 }
+              }
+           } //  statusList.size() > 0
+        }  // statusList == null
+        LOG.info("hasConflict checking versionList for conflict");
+        return checkVersionListForConflict( versionList,startId);
     }
 
-    private boolean checkVersionListForConflict(List<Cell> versionList, boolean stateful,long startId)
+    private boolean checkVersionListForConflict(List<Cell> versionList,long startId)
     {
         boolean ret = false;
         LOG.info("checkVersionListForConflict : ENTER startId is " + startId );
@@ -452,14 +467,18 @@ public class SsccTransactionState extends TransactionState{
         LOG.info("checkVersionListForConflict : 4");
         return ret;
     }
-    
-    private boolean checkStatusListForConflict(List<Cell> statusList, boolean stateful,long startId,long gTransId) 
+
+    private boolean checkStatusListForConflict(List<Cell> statusList, boolean stateless,long startId,long gTransId)
     {
-        boolean ret = true;
         LOG.info("checkStatusListForConflict: ENTER with startId " + startId );
         if(statusList == null) return false;
         LOG.info("checkStatusListForConflict: statusList is not null");
         int count = statusList.size();
+
+        if(count == 0) {
+           return false;
+        }
+
         if(count == 1)
         {
             //get the status Cell
@@ -473,11 +492,23 @@ public class SsccTransactionState extends TransactionState{
             LOG.info("checkStatusListForConflict : check gTransId " + gTransId + " with status's transactionId " + SsccConst.getTransactionId( CellUtil.cloneValue(c) ) );
             return !(gTransId==SsccConst.getTransactionId( CellUtil.cloneValue(c) ));
         }
-        LOG.info("checkStatusListForConflict: statusList counter > 1");
-        if(count > 1 && stateful == true)  return true; //there are more than 1 update, and this is a stateful update
-        return ret;        
+
+        if(count > 1){
+           LOG.info("checkStatusListForConflict: statusList counter > 1, stateless: " + stateless);
+           if (stateless != true) {
+             return true; //there are more than 1 update, and this is a stateful update
+           }
+           for (Cell c : statusList) {
+              if (SsccConst.getStatusValue(CellUtil.cloneValue(c)) == SsccConst.S_STATEFUL_BYTE) {
+                 LOG.info("checkStatusListForConflict: stateful update already pending");
+                 return true; //there is already a stateful update
+              }
+           }
+        }
+
+        return false;
     }
-    	
+
     public static byte[] byteMerger(byte[] byte_1, byte[] byte_2){
         if (byte_1 == null) 
         {
