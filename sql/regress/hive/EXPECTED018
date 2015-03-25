@@ -262,14 +262,7 @@ Task:  COMPLETION      Status: Ended      ET: 00:00:02.346
 
 --- 160756 row(s) loaded.
 >>--
->>select count(*) from hive.hive.store_sales;
-
-(EXPR)              
---------------------
-
-             2880404
-
---- 1 row(s) selected.
+>>--select count(*) from hive.hive.store_sales  where ss_item_sk <= 1000;
 >>select count(*) from store_sales_salt;
 
 (EXPR)              
