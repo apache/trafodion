@@ -1805,7 +1805,8 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
                                    cliGlobals_->getArkcmp(indexIntoCompilerArray)->getHeap(),
                                    charset, op,
                                    fetched_gen_code, fetched_gen_code_len,
-                                   context_->getSqlParserFlags(), da);
+                                   context_->getSqlParserFlags(), 
+                                   NULL, 0, da);
 
                   diagsArea.mergeAfter(*da);
                   da->decrRefCount();

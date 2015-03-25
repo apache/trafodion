@@ -357,6 +357,7 @@ public :
   compileDirect(char *data, UInt32 dataLen, CollHeap *outHeap, Int32 charset,
                 CmpMessageObj::MessageTypeEnum op, char *&gen_code,
                 UInt32 &gen_code_len, UInt32 parserFlags,
+                const char *parentQid, Int32 parentQidLen,
                 ComDiagsArea *diagsArea = NULL);
 
   // set/reset an env in compiler envs
