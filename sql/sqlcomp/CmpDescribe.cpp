@@ -155,6 +155,12 @@ static bool CmpDescribeLibrary(
    ULng32           & outbuflen,
    CollHeap         * heap);
 
+static short CmpDescribeRoutine(
+     const CorrName   & corrName,
+     char           * & outbuf,
+     ULng32           & outbuflen,
+     CollHeap         * heap);
+  
 static short CmpDescribePlan(
    const char   *query,
    ULng32 flags,
@@ -686,6 +692,15 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
   if (d->getDescribedTableName().getQualifiedNameObj().getObjectNameSpace() == COM_LIBRARY_NAME)
     {
       if (!CmpDescribeLibrary(d->getDescribedTableName(),outbuf,outbuflen,heap))
+         return -1;
+         
+      return 0;
+    }
+
+  if (d->getDescribedTableName().getQualifiedNameObj().getObjectNameSpace() == 
+      COM_UDF_NAME)
+    {
+      if (!CmpDescribeRoutine(d->getDescribedTableName(),outbuf,outbuflen,heap))
          return -1;
          
       return 0;
@@ -3324,25 +3339,25 @@ bool CmpDescribeLibrary(
    
 {
 
-CmpSeabaseDDL cmpSBD((NAHeap *)heap);
-CorrName cn(corrName, heap);
+  CmpSeabaseDDL cmpSBD((NAHeap *)heap);
+  CorrName cn(corrName, heap);
 
-   cn.setSpecialType(ExtendedQualName::LIBRARY_TABLE);
+  cn.setSpecialType(ExtendedQualName::LIBRARY_TABLE);
 
-const NAString& libraryName = cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
+  const NAString& libraryName = cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
 
 
-ComObjectName libName(libraryName);
-NAString libCatNamePart = libName.getCatalogNamePartAsAnsiString();
-NAString libSchNamePart = libName.getSchemaNamePartAsAnsiString(TRUE);
-NAString libObjNamePart = libName.getObjectNamePartAsAnsiString(TRUE);
-const NAString extLibraryName = libName.getExternalName(TRUE);
+  ComObjectName libName(libraryName);
+  NAString libCatNamePart = libName.getCatalogNamePartAsAnsiString();
+  NAString libSchNamePart = libName.getSchemaNamePartAsAnsiString(TRUE);
+  NAString libObjNamePart = libName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extLibraryName = libName.getExternalName(TRUE);
 
-ExeCliInterface cliInterface(heap);
+  ExeCliInterface cliInterface(heap);
         
-Int64 libraryUID = -1;
+  Int64 libraryUID = -1;
 
-   libraryUID = cmpSBD.getObjectUID(&cliInterface, 
+  libraryUID = cmpSBD.getObjectUID(&cliInterface, 
                                     libCatNamePart, 
                                     libSchNamePart, 
                                     libObjNamePart,
@@ -3461,3 +3476,500 @@ char buf[1000];
 //************************ End of CmpDescribeLibrary ***************************
 
 
+// Routine to support SHOWDDL [ PROCEDURE | FUNCTION | TABLE_MAPPING FUNCTION ]
+// <routine-name>
+short CmpDescribeRoutine (const CorrName   & cn,
+                          char           * & outbuf,
+                          ULng32           & outbuflen,
+                          CollHeap         * heap)
+{
+
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  NARoutine *routine = bindWA.getNARoutine(cn.getQualifiedNameObj()); 
+  const NAString& rName =
+    cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
+  if (routine == NULL || bindWA.errStatus())
+  {
+    *CmpCommon::diags() << DgSqlCode(-4082) 
+                        << DgTableName(rName.data());
+    return 0;
+  }
+
+   // Verify user can perform commands
+  if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
+                               routine->getPrivInfo(),
+                               COM_USER_DEFINED_ROUTINE_OBJECT))
+    return 0;
+
+
+  NABoolean logFormat = 
+    (CmpCommon::getDefault(SHOWDDL_DISPLAY_FORMAT) == DF_LOG);
+
+
+  Space localSpace;
+  Space * space = &localSpace;
+
+  outputShortLine(*space," ");
+
+  // Start populating our output buffer
+  // buffer is reused for each line of output. Longets line will be the 
+  // java signature for SPJs. Currently this has an upper limit of 8K.
+  // We allocate another 2K bytes for the name and any small changes 
+  // in size due to formatting.
+  char * buf = new (STMTHEAP) char[10000];
+  CMPASSERT(buf);
+
+  NABoolean buildRETURNSclause = TRUE;
+  switch (routine->getRoutineType())
+  {
+  case COM_SCALAR_UDF_TYPE:
+    sprintf ( buf, "CREATE FUNCTION %s", rName.data() );
+    break;
+  case COM_TABLE_UDF_TYPE:
+    sprintf ( buf, "CREATE TABLE_MAPPING FUNCTION %s", rName.data() );
+    break;
+  case COM_PROCEDURE_TYPE:
+    sprintf ( buf, "CREATE PROCEDURE %s", rName.data() );
+    buildRETURNSclause = FALSE;
+    break;
+  default:
+    ComASSERT(FALSE);
+  }
+  if (logFormat)
+      outputShortLine(*space,"--> UR ");
+  outputShortLine(*space, buf);
+  outputShortLine (*space, "  (" );
+
+  // Format the parameters
+  Int32 numParams = routine->getParamCount();
+  Int32 firstRETURNSparamIndex = -1;
+  const NAColumnArray &paramList = routine->getParams();
+  for ( Int32 i=0; i < numParams; i++ )
+  {
+    NAColumn &param = *(paramList[i]);
+    ComColumnDirection direction = param.getColumnMode ();
+
+    if (buildRETURNSclause AND direction EQU COM_OUTPUT_COLUMN)
+    {
+      firstRETURNSparamIndex = i;
+      i = numParams; // i.e., exit loop
+      continue;
+    }
+
+    if (i == 0)
+      strcpy(buf, "    ");
+    else
+      strcpy(buf, "  , ");
+
+      switch ( direction )
+      {
+      case COM_INPUT_COLUMN:
+        strcat ( buf, "IN " );
+        break;
+      case COM_OUTPUT_COLUMN:
+        strcat ( buf, "OUT " );
+        break;
+      case COM_INOUT_COLUMN:
+        strcat ( buf, "INOUT " );
+        break;
+      } // switch
+
+      // Next step for this parameter is to print its name. If a heading
+      // is defined we print that. Otherwise if a column name is defined
+      // we print that. Otherwise it is an unnamed parameter and we do
+      // nothing.
+      const NAString &heading = param.getHeading ();
+      const NAString &colName = param.getColName ();
+      if (heading.compareTo("") != 0)
+      {
+        strcat(buf, ANSI_ID(heading));
+        strcat(buf, " ");
+      }
+      else if (colName.compareTo("") != 0)
+      {
+        strcat(buf, ANSI_ID(colName));
+        strcat(buf, " ");
+      }
+
+      char typeString[80];
+      strcpy (typeString, (param.getType ())->getTypeSQLname (TRUE));
+      if (routine->getLanguage() EQU COM_LANGUAGE_JAVA)
+      {
+    // Java does not support unsigned / signed as
+        // it converts NUMERIC types to a Java BigDecimal.
+        Int32 typeLen = static_cast<Int32>(strlen(typeString));
+        if (typeLen >= 9 &&
+            0 == strcmp ( &typeString[typeLen - 9], " UNSIGNED" ))
+        {
+          typeString[typeLen - 9] = '\0';
+        }
+        else if (typeLen >= 7 &&
+                 0 == strcmp ( &typeString[typeLen - 7], " SIGNED" ))
+        {
+          typeString[typeLen - 7] = '\0';
+        }
+      } // if Language Java
+      strcat ( buf, typeString );
+
+      outputShortLine (*space, buf);
+  } // for
+
+  // add the closing ")" for the formal parameter list
+  strcpy ( buf, "  )");
+  outputShortLine (*space, buf);
+
+  if (buildRETURNSclause AND firstRETURNSparamIndex > -1)
+  {
+    strcpy ( buf, "  RETURNS " );
+    outputShortLine (*space, buf);
+    outputShortLine (*space, "  (" );
+    // Build RETURN[S] clause from param list
+    for (Int32 i7 = firstRETURNSparamIndex; i7 < numParams; i7++)
+    {
+      NAColumn &param7 = *(paramList[i7]);
+      ComColumnDirection direction7 = param7.getColumnMode ();
+
+      if (i7 EQU firstRETURNSparamIndex)
+        strcpy(buf, "    ");
+      else
+        strcpy(buf, "  , ");
+
+      switch ( direction7 )
+      {
+      case COM_INPUT_COLUMN:
+        strcat ( buf, "IN " );     // not supposed to happen
+        break;
+      case COM_OUTPUT_COLUMN:
+        strcat ( buf, "OUT " );
+        break;
+      case COM_INOUT_COLUMN:
+        strcat ( buf, "INOUT " );  // not supposed to happen
+        break;
+      } // switch
+
+      // Next step for this parameter is to print its name. If a heading
+      // is defined we print that. Otherwise if a column name is defined
+      // we print that. Otherwise it is an unnamed parameter and we do
+      // nothing.
+      const NAString &heading7 = param7.getHeading ();
+      const NAString &colName7 = param7.getColName ();
+      if (heading7.compareTo("") != 0)
+      {
+        strcat(buf, ANSI_ID(heading7));
+        strcat(buf, " ");
+      }
+      else if (colName7.compareTo("") != 0)
+      {
+        strcat(buf, ANSI_ID(colName7));
+        strcat(buf, " ");
+      }
+
+      char typeString7[80];
+      strcpy (typeString7, (param7.getType ())->getTypeSQLname (TRUE));
+      if (routine->getLanguage() EQU COM_LANGUAGE_JAVA)
+      {
+        // Java does not support UNSIGNED and SIGNED as
+        // it converts NUMERIC types to a Java BigDecimal.
+        Int32 typeLen7 = static_cast<Int32>(strlen(typeString7));
+        if (typeLen7 >= 9 AND 0 EQU
+            strcmp ( &typeString7[typeLen7 - 9], " UNSIGNED" ))
+        {
+          typeString7[typeLen7 - 9] = '\0';
+        }
+        else if (typeLen7 >= 7 AND 0 EQU
+                 strcmp ( &typeString7[typeLen7 - 7], " SIGNED" ))
+        {
+          typeString7[typeLen7 - 7] = '\0';
+        }
+      } // if Language Java
+      strcat (buf, typeString7);
+
+      outputShortLine (*space, buf);
+    } // for
+
+    strcpy ( buf, "  )");
+    outputShortLine (*space, buf);
+
+  } // if (buildRETURNSclause AND firstRETURNSparamIndex > -1)
+
+  // EXTERNAL NAME clause
+  NABoolean isProcedure = 
+    (routine->getRoutineType() EQU COM_PROCEDURE_TYPE ? TRUE : FALSE);
+
+  if (isProcedure)
+  {
+    strcpy ( buf, "  EXTERNAL NAME '" );
+
+    NAString exNamePrefixInStrLitFormat44;
+    NAString exNamePrefixInInternalFormat;
+    exNamePrefixInInternalFormat += routine->getFile();
+    exNamePrefixInInternalFormat += ".";
+    exNamePrefixInInternalFormat += routine->getExternalName();
+    ToQuotedString ( exNamePrefixInStrLitFormat44  // out - NAString &
+                   , exNamePrefixInInternalFormat  // in  - const NAString &
+                   , FALSE                         // in  - NABoolean encloseInQuotes
+                   );
+    strcat ( buf, exNamePrefixInStrLitFormat44.data() );
+
+    // Get the actual signature size
+
+    LmJavaSignature lmSig(routine->getSignature().data(), heap);
+    Int32 sigSize = lmSig.getUnpackedSignatureSize();
+
+    if ( 0 == sigSize)
+    {
+      *CmpCommon::diags() << DgSqlCode(-11223) 
+                          << DgString0(". Unable to determine signature size.");
+      return 0;
+    }
+
+    char *sigBuf = new (STMTHEAP) char[sigSize + 1];
+
+    if (lmSig.unpackSignature(sigBuf) == -1)
+    {
+      *CmpCommon::diags() << DgSqlCode(-11223) 
+                          << DgString0(". Unable to determine signature."); 
+      return 0;
+    }
+
+    sigBuf[sigSize] = '\0';
+
+    strcat ( buf, " " );
+    strcat ( buf, sigBuf );
+    strcat ( buf, "'" );
+    outputShortLine (*space, buf);
+
+  }
+  else // this is not a procedure
+  {
+      strcpy ( buf, "  EXTERNAL NAME " );
+
+      NAString externalNameInStrLitFormat(STMTHEAP);
+      ToQuotedString ( externalNameInStrLitFormat          // out - NAString &
+                     , routine->getExternalName()  // in  - const NAString &
+                     , TRUE               // in  - NABoolean encloseInQuotes
+                     );
+      strcat ( buf, externalNameInStrLitFormat.data() );
+      outputShortLine (*space, buf);
+  }
+
+  // LIBRARY clause
+  NAString libName(routine->getLibrarySqlName().getExternalName()); 
+  if ((libName.length() > 0) && (libName.data()[0] != ' '))
+    {
+      strcpy ( buf, "  LIBRARY " );
+      strcat ( buf, libName.data());
+      outputShortLine (*space, buf);    
+    }   
+ 
+  // EXTERNAL SECURITY clause
+  if (isProcedure)
+  {
+    switch ( routine->getExternalSecurity ())
+    {
+    case COM_ROUTINE_EXTERNAL_SECURITY_INVOKER:
+      outputShortLine (*space, "  EXTERNAL SECURITY INVOKER");
+      break;
+    case COM_ROUTINE_EXTERNAL_SECURITY_DEFINER:
+      outputShortLine (*space, "  EXTERNAL SECURITY DEFINER");
+      break;
+    default:
+      ComASSERT(FALSE);
+      break;
+    }
+  }
+
+
+
+  switch ( routine->getLanguage ())
+  {
+  case COM_LANGUAGE_JAVA:
+    outputShortLine (*space, "  LANGUAGE JAVA");
+    break;
+  case COM_LANGUAGE_C:
+    outputShortLine (*space, "  LANGUAGE C");
+    break;
+  case COM_LANGUAGE_SQL:
+    outputShortLine (*space, "  LANGUAGE SQL");
+    break;
+  case COM_LANGUAGE_CPP:
+    outputShortLine (*space, "  LANGUAGE CPP");
+    break;
+  default:
+    ComASSERT(FALSE);
+    break;
+  }
+
+  switch ( routine->getParamStyle ())
+  {
+  case COM_STYLE_GENERAL:
+    outputShortLine (*space, "  PARAMETER STYLE GENERAL");
+    break;
+  case COM_STYLE_JAVA_CALL:
+    outputShortLine (*space, "  PARAMETER STYLE JAVA");
+    break;
+  case COM_STYLE_SQL:
+    outputShortLine (*space, "  PARAMETER STYLE SQL");
+    break;
+  case COM_STYLE_SQLROW:
+    outputShortLine (*space, "  PARAMETER STYLE SQLROW");
+    break;
+  case COM_STYLE_JAVA_OBJ:
+  case COM_STYLE_CPP_OBJ:
+  case COM_STYLE_SQLROW_TM:
+    break;
+  default:
+    ComASSERT(FALSE);
+    break;
+  }
+
+  switch (routine->getSqlAccess ())
+  {
+  case COM_NO_SQL:
+    outputShortLine (*space, "  NO SQL");
+    break;
+  case COM_MODIFIES_SQL:
+    outputShortLine (*space, "  MODIFIES SQL DATA");
+    break;
+  case COM_CONTAINS_SQL:
+    outputShortLine (*space, "  CONTAINS SQL");
+    break;
+  case COM_READS_SQL:
+    outputShortLine (*space, "  READS SQL DATA");
+    break;
+  default:
+    // Unknown SQL access mode
+    ComASSERT(FALSE);
+    break;
+  } // switch
+
+  if (isProcedure)
+  {
+    // max result sets
+    strcpy ( buf, "  DYNAMIC RESULT SETS " );
+    sprintf ( &buf[strlen (buf)], "%d", (Int32) routine->getMaxResults () );
+    outputShortLine (*space, buf);
+
+    // transaction required clause needs to be shown in the output from M9
+    switch ( routine->getTxAttrs () )
+    {
+    case COM_NO_TRANSACTION_REQUIRED:
+      strcpy ( buf, "  NO TRANSACTION REQUIRED" );
+      break;
+    case COM_TRANSACTION_REQUIRED:
+      strcpy ( buf, "  TRANSACTION REQUIRED" );
+      break;
+    default:
+      ComASSERT(FALSE);
+      break;
+    }
+    outputShortLine (*space, buf);
+  }
+  else
+  {
+    // final call
+    if (routine->isFinalCall()) // same as isExtraCall()
+      strcpy ( buf, "  FINAL CALL" );
+    else
+      strcpy ( buf, "  NO FINAL CALL" );
+    outputShortLine (*space, buf);
+
+    // state area size
+    if ( routine->getStateAreaSize () > 0 )
+    {
+      strcpy ( buf, "  STATE AREA SIZE " );
+      sprintf ( &buf[strlen (buf)], "%d", routine->getStateAreaSize ());
+    }
+    else
+    {
+      strcpy ( buf, "  NO STATE AREA" );
+    }
+    outputShortLine (*space, buf);
+  }
+
+  if (routine->isScalarUDF())
+  {
+    if ( routine->getParallelism() == "AP")
+      strcpy ( buf, "  ALLOW ANY PARALLELISM" );
+    else
+      strcpy ( buf, "  NO PARALLELISM" );
+    outputShortLine (*space, buf);
+
+    // Deterministic clause
+    if ( routine->isDeterministic ())
+      strcpy ( buf, "  DETERMINISTIC" );
+    else
+      strcpy ( buf, "  NOT DETERMINISTIC" );
+    outputShortLine (*space, buf);
+  }
+
+  if (!isProcedure)
+  {
+    switch ( routine->getExecutionMode() )
+    {
+    case COM_ROUTINE_FAST_EXECUTION:
+      strcpy ( buf, "  FAST EXECUTION MODE" );
+      break;
+    case COM_ROUTINE_SAFE_EXECUTION:
+      strcpy ( buf, "  SAFE EXECUTION MODE" );
+      break;
+    default:
+      ComASSERT(FALSE);
+      break;
+    }
+    outputShortLine (*space, buf);
+  }
+
+  if (isProcedure)
+  {
+    if ( routine->isIsolate ())
+    {
+      strcpy ( buf, "  ISOLATE" );
+    }
+    else
+    {
+      strcpy ( buf, "  NO ISOLATE" );
+    }
+    outputShortLine (*space, buf);
+  } // routine type is SPJ
+
+  outputShortLine (*space, "  ;");
+
+  char * sqlmxRegr = getenv("SQLMX_REGRESS");
+  NABoolean displayPrivilegeGrants = TRUE;
+  if (((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM) && sqlmxRegr) ||
+       (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF))
+    displayPrivilegeGrants = FALSE;
+
+  // If authorization enabled, display grant statements
+  if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
+  {
+    // now get the grant stmts
+    int64_t objectUID = (int64_t)routine->getRoutineID();
+    NAString privMDLoc;
+    CONCAT_CATSCH(privMDLoc, CmpSeabaseDDL::getSystemCatalogStatic(), SEABASE_MD_SCHEMA);
+    NAString privMgrMDLoc;
+    CONCAT_CATSCH(privMgrMDLoc, CmpSeabaseDDL::getSystemCatalogStatic(), SEABASE_PRIVMGR_SCHEMA);
+    PrivMgrCommands privInterface(std::string(privMDLoc.data()), 
+                                  std::string(privMgrMDLoc.data()),
+                                  CmpCommon::diags());
+
+    std::string objectName(rName);
+    std::string privilegeText;
+    if (privInterface.describePrivileges(objectUID, objectName, privilegeText))
+    {
+      outputShortLine(*space, " ");
+      outputLine(*space, privilegeText.c_str(), 0);
+    }
+  }
+
+
+
+  outbuflen = space->getAllocatedSpaceSize();
+  outbuf = new (heap) char[outbuflen];
+  space->makeContiguous(outbuf, outbuflen);
+
+  
+  NADELETEBASIC(buf, CmpCommon::statementHeap());  
+  return 1;
+} // CmpDescribeShowddlProcedure

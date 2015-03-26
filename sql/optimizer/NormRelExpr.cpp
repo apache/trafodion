@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2093,11 +2093,14 @@ Join * Join::leftLinearizeJoinTree(NormWA & normWARef,
     availableInputs.getOuterReferences(outerReferences);
     availableInputs -= outerReferences ;
 
-    ValueIdSet emptySet;
+    ValueIdSet nonPredExpr;
+    if (R1->getOperatorType() == REL_ROUTINE_JOIN)
+      nonPredExpr += R1->child(1)->getGroupAttr()->getCharacteristicInputs() ;
+
     R1->pushdownCoveredExprSQO(R1->getGroupAttr()->getCharacteristicOutputs(),
                                availableInputs, 
                                R1->selectionPred(),
-                               emptySet,
+                               nonPredExpr,
                                TRUE, // keepPredsNotCoveredByLeftChild
                                TRUE);  // keepPredsNotCoveredByRightChild
 

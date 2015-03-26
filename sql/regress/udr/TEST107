@@ -60,7 +60,6 @@ set pattern $$QUOTE$$ '''';
 --------------------------------------------------------------------------
 -- Main test driver section
 --------------------------------------------------------------------------
-cqd allow_udf 'on';
 obey TEST107(clean_up);
 obey TEST107(copy_files);
 log LOG107 clear;
@@ -338,6 +337,8 @@ library TEST107
 deterministic no sql final call allow any parallelism state area size 1024 ;
 
 get functions for library TEST107;
+
+showddl function errorwarn ;
 
 ?section tests
 --------------------------------------------------------------------------

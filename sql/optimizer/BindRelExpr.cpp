@@ -1325,6 +1325,52 @@ static NABoolean checkForReservedObjectName(QualifiedName &inName)
 
 // LCOV_EXCL_STOP
 
+NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
+{
+  NARoutineDBKey key(name, wHeap());
+  NARoutine * naRoutine = getSchemaDB()->getNARoutineDB()->get(this, &key);
+  if (!naRoutine)
+  {
+     desc_struct *udfMetadata = NULL;
+     CmpSeabaseDDL cmpSBD(STMTHEAP);
+     udfMetadata =  cmpSBD.getSeabaseRoutineDesc(
+				       name.getCatalogName(),
+				       name.getSchemaName(),
+				       name.getObjectName());
+     if (!udfMetadata)
+       return NULL;
+
+     NAHeap *routineHeap;
+     if (getSchemaDB()->getNARoutineDB()->cachingMetaData()) 
+     {
+       const Lng32 size = 16 * 1024;  // The initial size
+       routineHeap = new CTXTHEAP NAHeap("NARoutine Heap", (NAHeap *)CTXTHEAP, 
+                                         size);
+       routineHeap->setJmpBuf(CmpInternalErrorJmpBufPtr);
+     }
+     else 
+       routineHeap=CmpCommon::statementHeap(); 
+
+     Int32 errors=0;
+     naRoutine = new (routineHeap)
+       NARoutine(name,
+                 udfMetadata, 
+                 this,
+                 errors,
+                 routineHeap);
+     if ( NULL == naRoutine || errors != 0)
+     {
+       setErrStatus();
+       return NULL;
+     }
+     
+     // Add NARoutine to the NARoutineDB cache.
+     if (getSchemaDB()->getNARoutineDB()->cachingMetaData()) 
+       getSchemaDB()->getNARoutineDB()->put(naRoutine);
+  }
+  return naRoutine;
+}
+
 NATable *BindWA::getNATable(CorrName& corrName,
                             NABoolean catmanCollectTableUsages, // default TRUE
                             desc_struct *inTableDescStruct)     // default NULL
