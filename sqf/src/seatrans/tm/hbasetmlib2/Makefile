@@ -16,7 +16,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-PROGS          = $(LIBEXPDIR)/libshbasetmlib.so $(TMCLASS_FULL)/HBaseAuditControlPoint.class $(TMCLASS_FULL)/HBaseTmZK.class $(TMCLASS_FULL)/TmAuditTlog.class $(TMCLASS_FULL)/HBaseTxClient.class $(TMCLASS_FULL)/HashMapArray.class $(TMCLASS_FULL)/TrafInfo.class testrun
+PROGS          = $(LIBEXPDIR)/libshbasetmlib.so $(LIBEXPDIR)/libidtm.so $(TMCLASS_FULL)/HBaseAuditControlPoint.class $(TMCLASS_FULL)/HBaseTmZK.class $(TMCLASS_FULL)/TmAuditTlog.class $(TMCLASS_FULL)/HBaseTxClient.class $(TMCLASS_FULL)/HashMapArray.class $(TMCLASS_FULL)/TrafInfo.class testrun
 ###########################################################################
 
 include ../../../../macros.gmk
@@ -50,6 +50,8 @@ endif
 LIBSTMOBJS	= $(OUTDIR)/hbasetm.o \
               $(OUTDIR)/javaobjectinterfacetm.o \
 	      $(OUTDIR)/vershbasetmlib.o
+LIBIDTMOBJS	= $(OUTDIR)/idtm.o \
+	      $(OUTDIR)/versidtm.o
 
 CFILES		= `ls *.c`
 
@@ -64,6 +66,11 @@ all:  $(PROGS)
 
 $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSTMOBJS)
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBTMB) -shared -o $@ $(LIBSTMOBJS)
+
+$(LIBEXPDIR)/libidtm.so: $(LIBIDTMOBJS)
+	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBIDTMOBJS) -L$(LIBEXPDIR) -lsbms
+$(OUTDIR)/idtm.o: idtm.cpp
+	$(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
 
 $(TMCLASS_FULL)/HBaseTxClient.class: HBaseTxClient.java
 	$(JAVAC) -Xlint -Xlint:-path  HBaseTxClient.java TmAuditTlog.java HBaseAuditControlPoint.java HBaseTmZK.java HashMapArray.java -d $(TMCLASS_DIR)

@@ -44,7 +44,7 @@ PROGS		= t2 t3 t4 t5 t6 t9 t14 t15 t16 t17 t18 t19 \
 		  t250           t253                               \
 		       t261 t262 t263           t266           \
 		                                     t277      t279 \
-		  t280 t281 t282 \
+		  t280 t281 t282 t284 \
 		  tcheck tsock ttee
 PROGSI		= t2fs t3ms t4ms \
 		  t5ms t6ms t9thread t14ms \
@@ -97,7 +97,7 @@ PROGSI		= t2fs t3ms t4ms \
 		  t261ms t262ms t263ms \
 		  t266ms \
 	          t277fs t279ms \
-	          t280fs t281ms t282ms
+	          t280fs t281ms t282ms t284cli t284srv
 
 ###########################################################################
 
@@ -116,6 +116,7 @@ DEFINES		= -D_MPICC_H -DDEBUG
 # Tests always need assert
 CXXFLAGS       += -UNDEBUG
 INCLUDESX	= $(INCLUDES)
+INCLUDESJNIX	= $(INCLUDES) -I$(OUTDIR) -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 INCLUDESMONX	= $(INCLUDES) -I$(INCMONDIR)
 INCLUDESSRCX	= -I../src $(INCLUDESX)
 LIBS		= $(LIBTMSUTIL) \
@@ -134,9 +135,10 @@ OBJTUTIL	= $(OUTDIR)/tutil.o
 OBJTUTILP	= $(OUTDIR)/targ.o \
 		  $(OUTDIR)/thook.o \
 		  $(OUTDIR)/tstats.o
-PURGE		= *.a *.so $(OUTDIR)/*.o $(LIBS) $(PROGS) $(PROGSI) \
+PURGE		= *.a *.so $(OUTDIR)/*.o $(OUTDIR)/com/hp/traf/*.class $(LIBS) $(PROGS) $(PROGSI) \
                   $(OUTDIR)/*.gcda $(OUTDIR)/*.gcno *.gcno $(OUTDIR)/*.gcov \
 		  c core.* dgt* m monitor.* s \
+		  $(OUTDIR)/com_hp_traf_t284cli.h \
 		  test.status \
 		  z70.*file z136sdp-port z204 \
 		  zjunk zos zrpc zns
@@ -958,6 +960,26 @@ t281ms: $(OUTDIR)/t281ms.o $(TMS)
 t282: $(CHK) t282ms
 t282ms: $(OUTDIR)/t282ms.o $(TMS)
 	$(LINKITCXX) -o $@ $< $(RMS)
+
+t284: $(CHK) t284cli t284srv t284clij t284jni
+t284cli: $(OUTDIR)/t284cli.o $(TMS)
+	$(LINKITCXX) -o $@ $< $(RMS)
+
+t284srv: $(OUTDIR)/t284srv.o $(TMS)
+	$(LINKITCXX) -o $@ $< $(RMS)
+
+t284clij: $(OUTDIR)/com/hp/traf/t284cli.class $(OUTDIR)/com/hp/traf/t284cb.class $(OUTDIR)/com/hp/traf/t284exc.class $(OUTDIR)/com/hp/traf/t284id.class
+$(OUTDIR)/com/hp/traf/t284cli.class $(OUTDIR)/com/hp/traf/t284cb.class $(OUTDIR)/com/hp/traf/t284exc.class $(OUTDIR)/com/hp/traf/t284id.class: t284cli.java t284cb.java t284exc.java t284id.java
+	$(JAVAC) -cp $(OUTDIR) -d $(OUTDIR) t284cli.java t284cb.java t284exc.java t284id.java
+
+t284jni: $(LIBEXPDIR)/libsbzt284.so
+$(LIBEXPDIR)/libsbzt284.so: $(OUTDIR)/t284lib.o
+	$(CXX) $(OPTIM_FLGS) -shared -o $@ $< $(LIBSBMSX)
+$(OUTDIR)/t284lib.o: t284lib.cpp $(OUTDIR)/com_hp_traf_t284cli.h
+	$(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDESJNIX) -o $@ -c $<
+$(OUTDIR)/com_hp_traf_t284cli.h: $(OUTDIR)/com/hp/traf/t284cli.class
+	$(JAVAH) -d $(OUTDIR) -cp $(OUTDIR) com.hp.traf.t284cli
+	@touch $(OUTDIR)/com_hp_traf_t284cli.h
 
 
 tcheck: $(OUTDIR)/tcheck.o

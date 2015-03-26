@@ -126,6 +126,7 @@ my $MPI_TMPDIR = $ENV{'MPI_TMPDIR'};
 my $SQ_SEAMONSTER = $ENV{'SQ_SEAMONSTER'};
 my $SQ_TRANS_SOCK = $ENV{'SQ_TRANS_SOCK'};
 my $SQ_DTM_PERSISTENT_PROCESS = $ENV{'SQ_DTM_PERSISTENT_PROCESS'};
+my $SQ_IDTMSRV = $ENV{'SQ_IDTMSRV'};
 
 # define the error values that are being returned
 my $CONFIG_ERROR = 5;
@@ -475,6 +476,28 @@ sub genComponentWait {
     printScript(1, "fi\n");
 }
 
+
+sub genIdTmSrv {
+    if ($SQ_IDTMSRV > 0) {
+        my $l_pn = "";
+        for ($i=0; $i < $gdNumNodes; $i++) {
+            $l_pn = $l_pn . $i;
+            if ($i + 1 < $gdNumNodes) {
+                $l_pn = $l_pn . ",";
+            }
+        }
+        printScript(1, "\n");
+        printScript(1, "\n! Start TSID\n");
+        for ($i=0; $i < $SQ_IDTMSRV; $i++) {
+            printScript(1, "set {process \\\$TSID$i } PERSIST_RETRIES=2,30\n");
+            addDbProcData('$TSID'."$i", "PERSIST_RETRIES", "2,30");
+            printScript(1, "set {process \\\$TSID$i } PERSIST_ZONES=$l_pn\n");
+            addDbProcData('$TSID'."$i", "PERSIST_ZONES", "$l_pn");
+            printScript(1, "exec {nowait, name \\\$TSID$i, nid 0, out stdout_idtmsrv_$i} idtmsrv\n");
+        }
+        printScript(1, "delay 1\n");
+    }
+}
 
 sub genDTM {
 
@@ -1391,6 +1414,8 @@ while (<SRC>) {
 
 #printZoneList;
 
+
+    genIdTmSrv();
 
     genDTM();
 
