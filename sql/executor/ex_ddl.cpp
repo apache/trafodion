@@ -263,8 +263,9 @@ short ExDDLTcb::work()
 	   CmpCommon::context() && (CmpCommon::context()->getRecursionLevel() == 0)
 	  )
         {
-          CmpCommon::context()->sqlSession()->setParentQid(
-            masterGlob->getStatement()->getUniqueStmtId());
+          const char *parentQid = masterGlob->getStatement()->
+            getUniqueStmtId();
+          CmpCommon::context()->sqlSession()->setParentQid(parentQid);
           if (cpDiagsArea == NULL)
 	    cpDiagsArea = ComDiagsArea::allocate(getHeap());
           // Despite its name, the compileDirect method is where 
@@ -276,6 +277,7 @@ short ExDDLTcb::work()
                                  EXSQLCOMP::PROCESSDDL,
                                  dummyReply, dummyLength,
                                  currContext->getSqlParserFlags(),
+                                 parentQid, str_len(parentQid),
                                  cpDiagsArea);
           getHeap()->deallocateMemory(data);
           if (dummyReply != NULL)
@@ -609,19 +611,20 @@ short ExDDLwithStatusTcb::work()
         case CALL_EMBEDDED_CMP_:
           {
             Int32 cmpStatus;
-            CmpCommon::context()->sqlSession()->setParentQid(
-              masterGlob->getStatement()->getUniqueStmtId());
+            const char *parentQid = masterGlob->getStatement()->
+              getUniqueStmtId();
+            CmpCommon::context()->sqlSession()->setParentQid(parentQid);
             
             if (cpDiagsArea == NULL)
               cpDiagsArea = ComDiagsArea::allocate(getHeap());
             cmpStatus = CmpCommon::context()->compileDirect(
-                                                           data_, dataLen_,
-                                                           currContext->exHeap(),
-                                                           ddlTdb().queryCharSet_,
-                                                           EXSQLCOMP::DDL_WITH_STATUS,
-                                                           replyBuf_, replyBufLen_,
-                                                           currContext->getSqlParserFlags(),
-                                                           cpDiagsArea);
+               data_, dataLen_,
+               currContext->exHeap(),
+               ddlTdb().queryCharSet_,
+               EXSQLCOMP::DDL_WITH_STATUS,
+               replyBuf_, replyBufLen_,
+               currContext->getSqlParserFlags(),
+               parentQid, str_len(parentQid), cpDiagsArea);
 
             getHeap()->deallocateMemory(data_);
  
@@ -985,8 +988,9 @@ short ExDescribeTcb::work()
 		CmpCommon::context() && (CmpCommon::context()->getRecursionLevel() == 0))
               {
                 Int32 compStatus;
-                CmpCommon::context()->sqlSession()->setParentQid(
-                  masterGlob->getStatement()->getUniqueStmtId());
+                const char *parentQid = masterGlob->getStatement()->
+                  getUniqueStmtId();
+                CmpCommon::context()->sqlSession()->setParentQid(parentQid);
 
                 if (da == NULL)
                   da = ComDiagsArea::allocate(arkcmpHeap);
@@ -997,7 +1001,8 @@ short ExDescribeTcb::work()
                                  describeTdb().queryCharSet_,
                                  EXSQLCOMP::DESCRIBE,
                                  pstate.dataPtr_, pstate.dataLen_,
-                                 currContext()->getSqlParserFlags(), da);
+                                 currContext()->getSqlParserFlags(), 
+                                 parentQid, str_len(parentQid), da);
                 if (compStatus == ExSqlComp::SUCCESS)
                   {
                     // clear diagsArea of cli context which may have warnings
@@ -1515,9 +1520,9 @@ short ExProcessVolatileTableTcb::work()
 	  )
         {
           Int32 embCmpStatus;
-
-          CmpCommon::context()->sqlSession()->setParentQid(
-            masterGlob->getStatement()->getUniqueStmtId());
+          const char *parentQid = masterGlob->getStatement()->
+            getUniqueStmtId();
+          CmpCommon::context()->sqlSession()->setParentQid(parentQid);
           if (embCmpDiagsArea == NULL)
 	    embCmpDiagsArea = ComDiagsArea::allocate(getHeap());
           embCmpStatus = CmpCommon::context()->compileDirect(
@@ -1527,6 +1532,7 @@ short ExProcessVolatileTableTcb::work()
                                  EXSQLCOMP::PROCESSDDL,
                                  dummyReply, dummyLength,
                                  currContext->getSqlParserFlags(),
+                                 parentQid, str_len(parentQid),
                                  embCmpDiagsArea);
           getHeap()->deallocateMemory(data);
           if (dummyReply != NULL)

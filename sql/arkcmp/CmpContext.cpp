@@ -582,7 +582,9 @@ Int32
 CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
                           Int32 charset, CmpMessageObj::MessageTypeEnum op,
                           char *&gen_code, UInt32 &gen_code_len,
-                          UInt32 parserFlags, ComDiagsArea *diagsArea)
+                          UInt32 parserFlags, const char *parentQid,
+                          Int32 parentQidLen,
+                          ComDiagsArea *diagsArea)
 {
 
   CmpStatement::ReturnStatus rs = CmpStatement::CmpStatement_SUCCESS;
@@ -728,7 +730,9 @@ CmpContext::compileDirect(char *data, UInt32 data_len, CollHeap *outHeap,
       {
         // request is from ExDDLTcb::work() to get statement explain
         cmpStatement = new CTXTHEAP CmpStatement(this);
-        CmpMessageDDL ddlStmt(data, data_len, CTXTHEAP, charset);
+        CmpMessageDDL ddlStmt(data, data_len, CTXTHEAP, charset,
+                             parentQid, parentQidLen);
+ 
         Set_SqlParser_Flags(parserFlags);
         rs = cmpStatement->process(ddlStmt);
         copyData = TRUE;

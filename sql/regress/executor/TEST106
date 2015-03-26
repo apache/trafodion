@@ -49,7 +49,6 @@ exit;
 ?section clnup
 
 drop table t106a;
-drop table t106b;
 drop table t106c;
 log T106_INTERLEAVED_LOG;
 select * from T106_interleaved_log 
@@ -97,37 +96,6 @@ upsert using load into t106a
   ;
 
 update statistics for table t106a on every column;
-
-create table t106b
-  (uniq int not null,
-   c10K int ,
-   c1K   int,
-   c100  int,
-   c10   int,
-   c1    int,
-   primary key (uniq)
-  )
-salt using 4 partitions ;
-
-upsert using load into t106b
-  select
-  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100)
-    + (10 * x10) +( 1 * x1),
-  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
-  0 + (100 * x100) + (10 * x10) + (1 * x1),
-  0 + (10 * x10) + (1 * x1),
-  0 + (1 * x1),
-  0
-  from (values(1)) as t1
-    transpose 0,1                 as x100000
-    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
-    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
-    transpose 0,1,2,3,4,5,6,7,8,9 as x100
-    transpose 0,1,2,3,4,5,6,7,8,9 as x10
-    transpose 0,1,2,3,4,5,6,7,8,9 as x1
-  ;
-
-update statistics for table t106b on every column;
 
 create table t106c
   (uniq int not null,
@@ -680,53 +648,95 @@ obey TEST106(append_cancel_log);
 
 ?section ustats_test
 
+upsert using load into t106a
+  select
+  200000 + 
+  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100)
+    + (10 * x10) +( 1 * x1),
+  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (10 * x10) + (1 * x1),
+  0 + (1 * x1),
+  0
+  from (values(1)) as t1
+    transpose 0,1                 as x100000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ;
+upsert using load into t106a
+  select
+  400000 + 
+  0 + (100000 * x100000) + (10000 * x10000) + (1000 * x1000) + (100 * x100)
+    + (10 * x10) +( 1 * x1),
+  0 + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (100 * x100) + (10 * x10) + (1 * x1),
+  0 + (10 * x10) + (1 * x1),
+  0 + (1 * x1),
+  0
+  from (values(1)) as t1
+    transpose 0,1                 as x100000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ;
+
+
 update statistics for table t106a clear;
 
 prepare s1 from
 update statistics for table t106a on
 c10k, c1k, c100, c10, c1, uniq
+,  (uniq, c10k)
+,  (uniq, c1k)
+,  (uniq, c100)
+,  (uniq, c10)
+,  (uniq, c1)
 ,  (c10k, c1k)
 ,  (c10k, c100)
 ,  (c10k, c10)
 ,  (c10k, c1)
-,  (c10k, uniq)
-,  (c1k,  c10k)
 ,  (c1k,  c100)
 ,  (c1k,  c10)
 ,  (c1k,  c1)
-,  (c1k,  uniq)
-,  (c100, c10k)
-,  (c100, c1k)
 ,  (c100, c10)
 ,  (c100, c1)
-,  (c100,  uniq)
-,  (c10,  c10k)
-,  (c10,  c1k)
-,  (c10,  c100)
 ,  (c10,  c1)
-,  (c10,  uniq)
-,  (c1,   c10k)
-,  (c1,   c1k)
-,  (c1,   c100)
-,  (c1,   c10)
-,  (c1,   uniq)
-,  (c10k, c1k, c100)
-,  (c10k, c10, c100)
-,  (c10k, c1, c100)
-,  (c10k, uniq, c100)
-,  (c1k,  c10k, c100)
-,  (c1k,  c10, c100)
-,  (c1k,  c1, c100)
-
-,  (c1k,  uniq, c100)
-,  (c10,  c10k, c100)
-,  (c10,  c1k, c100)
-,  (c10,  c1, c100)
-,  (c10,  uniq, c100)
-,  (c1,   c10k, c100)
-,  (c1,   c1k, c100)
-,  (c1,   c10, c100)
-,  (c1,   uniq, c100)
+,  (uniq, c10k, c1k)
+,  (uniq, c10k, c100)
+,  (uniq, c10k, c10)
+,  (uniq, c10k, c1)
+,  (uniq, c1k,  c100)
+,  (uniq, c1k,  c10)
+,  (uniq, c1k,  c1)
+,  (uniq, c100, c10)
+,  (uniq, c100, c1)
+,  (uniq, c10,  c1)
+,  (c10k, c1k,  c100)
+,  (c10k, c1k,  c10)
+,  (c10k, c1k,  c1)
+,  (c10k, c100, c10)
+,  (c10k, c100, c1)
+,  (c10k, c10,  c1)
+,  (c1k, c100, c10)
+,  (c1k, c100, c1)
+,  (c1k, c10,  c1)
+,  (uniq, c10k, c1k,  c100)
+,  (uniq, c10k, c1k,  c10)
+,  (uniq, c10k, c1k,  c1)
+,  (uniq, c10k, c100, c10)
+,  (uniq, c10k, c100, c1)
+,  (uniq, c10k, c10,  c1)
+,  (uniq, c1k, c100, c10)
+,  (uniq, c1k, c100, c1)
+,  (uniq, c1k, c10,  c1)
+,  (c10k, c1k, c100, c10)
+,  (c10k, c1k, c100, c1)
+,  (c10k, c1k, c10,  c1)
 ;
 
 obey TEST106(make_cancel_stmt);

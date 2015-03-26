@@ -205,7 +205,9 @@ short ExControlTcb::work()
                                (char *) data, dataLen, arkcmpHeap,
                                SQLCHARSETCODE_UTF8,
                                EXSQLCOMP::SQLTEXT_STATIC_COMPILE,
-                               dummyReply, dummyLen, currCtxt->getSqlParserFlags(), da);
+                               dummyReply, dummyLen, 
+                               currCtxt->getSqlParserFlags(), 
+                               NULL, 0, da);
         if (cmpStatus != 0)
           {
             char emsText[120];
