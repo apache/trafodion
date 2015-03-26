@@ -2864,8 +2864,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // Do the query analysis phase
   DDkwd__(QUERY_ANALYSIS,	"ON"),
 
- // IpcGuardianServer::spawnProcess sets a 384 MB limit on mxcmp heap.
- // Exceeding this limit crashes mxcmp. So set query_cache max to 200 MB.
+ // query_cache max should be 200 MB. Set it 0 to turn off query cache
  //XDD0_200000(QUERY_CACHE,                  "0"),
  XDD0_200000(QUERY_CACHE,                  "16384"),
 

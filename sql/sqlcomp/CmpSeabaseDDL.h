@@ -348,7 +348,9 @@ class CmpSeabaseDDL
  protected:
 
   enum {
-    SEABASE_SERIALIZED = 0x0001
+    SEABASE_SERIALIZED = 0x0001,
+    // set if we need to get the hbase snapshot info of the table
+    GET_SNAPSHOTS = 0x0002
   };
 
   void setFlags(ULng32 &flags, ULng32 flagbits)
@@ -379,10 +381,10 @@ class CmpSeabaseDDL
   ExpHbaseInterface* allocEHI(const char * server, const char * zkPort,
                               NABoolean raiseError);
   
-  // if prevContext is defined, get the controlDB from the previous context so the
-  // defaults are copied from the previous cmp context to the new cmp context. This is only
-  // required for embedded compilers where a SWITCH is taking place
-  short sendAllControlsAndFlags(CmpContext* prevContext=NULL);
+  // if prevContext is defined, get user CQDs from the controlDB of
+  // previous context and send them to the new cmp context
+  short sendAllControlsAndFlags(CmpContext* prevContext=NULL,
+				Int32 cntxtType=-1);
 
   void restoreAllControlsAndFlags();
   
@@ -1072,7 +1074,8 @@ class CmpSeabaseDDL
 					const NAString &schName, 
 					const NAString &objName,
 					const ComObjectType objType,
-					NABoolean includeInvalidDefs);
+					NABoolean includeInvalidDefs,
+					Int32 ctlFlags);
  
   static NABoolean getMDtableInfo(const NAString &objName,
                                   ComTdbVirtTableTableInfo* &tableInfo,

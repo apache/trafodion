@@ -7104,7 +7104,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
                                                      const NAString &schName, 
                                                      const NAString &objName,
                                                      const ComObjectType objType,
-                                                     NABoolean includeInvalidDefs)
+                                                     NABoolean includeInvalidDefs,
+                                                     Int32 ctlFlags)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -7308,7 +7309,6 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   //Make sure to restore the CQDs after this query including error paths.            
   cliInterface.holdAndSetCQD("MERGE_JOINS", "OFF");
   cliInterface.holdAndSetCQD("HASH_JOINS", "OFF");
-  cliInterface.holdAndSetCQD("OPTIMIZATION_LEVEL", "3");
   
   Queue * indexInfoQueue = NULL;
   cliRC = cliInterface.fetchAllRows(indexInfoQueue, query, 0, FALSE, FALSE, TRUE);
@@ -7324,7 +7324,6 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   //restore CQDs.
   cliInterface.restoreCQD("MERGE_JOINS");
   cliInterface.restoreCQD("HASH_JOINS");
-  cliInterface.restoreCQD("OPTIMIZATION_LEVEL");
   
   if (cliRC < 0)
     return NULL;
@@ -7856,8 +7855,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
           return NULL;
         }
 
-      DefaultToken  tok = CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN);
-      if (tok == DF_LATEST)
+      if (ctlFlags & GET_SNAPSHOTS)
       {
         char * snapName = NULL;
         Lng32 retcode = ehi->getLatestSnapshot(extNameForHbase.data(), snapName, STMTHEAP);
@@ -7966,7 +7964,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
               break;
             default:
               tDesc = getSeabaseUserTableDesc(catName, schName, objName, 
-                                              objType, includeInvalidDefs);
+                                              objType, includeInvalidDefs,
+                                              GET_SNAPSHOTS /* get snapshot */);
 	  }
           switchBackCompiler();
         }

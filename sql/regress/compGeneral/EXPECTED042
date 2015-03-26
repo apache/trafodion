@@ -1,9 +1,9 @@
 >>showstats for table t042_orderline on ol_o_id detail;
 
 Detailed Histogram data for Table TRAFODION.ORDERENTRY.T042_ORDERLINE
-Table ID: 118280766025127377
+Table ID: 123348064660174280
 
-Hist ID:    1706159698
+Hist ID:    1277796312
 Column(s):  OL_O_ID
 Total Rows: 10
 Total UEC:  4
@@ -1793,10 +1793,10 @@ HQC key=SELECT T . VARCHAR0_UNIQ AS T_VARCHAR0_UNIQ , T . CHAR2_2 AS T_CHAR2_2 ,
 
 --- SQL command prepared.
 
-Start Time             2015/03/17 20:12:09.344071
-End Time               2015/03/17 20:12:09.345813
-Elapsed Time                      00:00:00.000742
-Compile Time                      00:00:00.000742
+Start Time             2015/03/26 11:16:24.176744
+End Time               2015/03/26 11:16:24.178514
+Elapsed Time                      00:00:00.000770
+Compile Time                      00:00:00.000770
 Execution Time                    00:00:00.000000
 
 
@@ -1827,10 +1827,10 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 
 --- SQL command prepared.
 
-Start Time             2015/03/17 20:12:09.437445
-End Time               2015/03/17 20:12:09.439066
-Elapsed Time                      00:00:00.000621
-Compile Time                      00:00:00.000621
+Start Time             2015/03/26 11:16:24.272455
+End Time               2015/03/26 11:16:24.274090
+Elapsed Time                      00:00:00.000635
+Compile Time                      00:00:00.000635
 Execution Time                    00:00:00.000000
 
 
@@ -1871,8 +1871,8 @@ NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS
 NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS 
 -----------  ------------  ----------
 
-         22             0          22
-          4             0           4
+         27             0          27
+          1             0           1
 
 --- 2 row(s) selected.
 >>select num_entries, text_entries, num_plans from table(querycache('ustats', 'local'));
@@ -1884,8 +1884,8 @@ NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS
 -----------  ------------  ----------
 
          65            10          65
-         22             0          22
-          4             0           4
+         27             0          27
+          1             0           1
 
 --- 3 row(s) selected.
 >>
@@ -1976,34 +1976,36 @@ NUM_HITS    NUM_PARAMS
 NUM_HITS    NUM_PARAMS
 ----------  ----------
 
-         0           1
-         0           3
          0           2
-         0           1
+         0           3
+         0           5
+         0           2
+         0           3
          0           2
          0           5
+         0           1
+         0           3
+         0           5
+         0           1
+         0           2
+         0           1
+         0           1
+         0           1
+         0           2
+         0           3
+         0           3
          0           3
          0           2
          0           1
-         0           2
-         0           1
-         0           4
-         1           3
-         1           5
-         1           3
-         1           1
          1           1
          1           3
+         1           2
          1           3
-         1           2
-         1           4
-         1           2
-         2           4
          2           1
          2           1
-         4           4
+        10           4
 
---- 26 row(s) selected.
+--- 28 row(s) selected.
 >>select num_hits, num_params from table(querycacheentries('ustats', 'local')) order by 1;
 
 --- 0 row(s) selected.
@@ -2025,35 +2027,48 @@ NUM_HITS    NUM_PARAMS
          0           0
          0           0
          0           0
-         0           4
+         0           0
+         0           0
+         0           0
+         0           5
+         0           0
          0           0
          0           0
          0           0
          0           0
          0           1
-         0           0
-         0           0
-         0           3
-         0           2
-         0           2
-         0           3
          0           1
          0           5
-         0           2
-         0           0
          0           1
          0           2
+         0           3
+         0           3
+         0           1
+         0           2
+         0           2
+         0           3
+         0           5
+         0           3
+         0           2
+         0           1
+         0           0
+         0           2
+         0           2
+         0           3
+         0           1
+         0           3
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
+         0           0
          0           0
          0           0
          0           1
-         0           0
-         0           0
-         0           1
-         0           0
-         0           1
-         0           0
-         0           0
-         0           0
          0           0
          0           0
          0           0
@@ -2071,50 +2086,39 @@ NUM_HITS    NUM_PARAMS
          0           0
          0           0
          0           0
-         0           1
-         0           0
-         0           0
-         0           0
          0           0
          0           0
          0           1
          0           1
+         0           1
          0           0
          0           0
          0           0
-         0           0
-         0           0
+         0           1
+         1           1
          1           1
          1           3
          1           2
-         1           4
-         1           5
          1           1
          1           1
          1           3
-         1           1
-         1           3
-         1           3
-         1           1
+         1           0
          1           1
          1           1
          1           1
          1           9
-         1           0
          1           2
-         1           1
-         1           1
-         1           1
          1           4
-         1           2
+         1           1
+         1           1
+         1           1
          1           1
          2           1
          2           1
-         2           4
-         4           4
          5           1
+        10           4
 
---- 101 row(s) selected.
+--- 103 row(s) selected.
 >>
 >>
 >>--Stats in Hybrid Query Cache
@@ -2131,8 +2135,8 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
 NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
 ----------  ----------  ----------------------  ----------------------
 
-        10          10                       5                     211
-         3           3                       5                     211
+        15          15                       5                     211
+         1           1                       5                     211
 
 --- 2 row(s) selected.
 >>select * from table(hybridquerycache('ustats', 'local'));
@@ -2144,8 +2148,8 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
 ----------  ----------  ----------------------  ----------------------
 
         37          60                       5                     211
-        10          10                       5                     211
-         3           3                       5                     211
+        15          15                       5                     211
+         1           1                       5                     211
 
 --- 3 row(s) selected.
 >>
@@ -2221,21 +2225,24 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
 (EXPR)      NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
 ----------  ----------  -------------  --------------
 
+       134           1              1               0
        134           0              1               0
        134           0              1               0
+       150           0              3               0
        150           1              3               0
        179           0              4               0
-       179           0              4               0
-       179           0              4               0
+       200           0              5               0
        200           0              5               0
        201           0              2               1
        222           0              3               1
+       222           0              3               1
        314           0              3               1
-       454           0              2               3
+       454           1              2               3
+       492           0              2               1
        492           0              2               1
        619           0              1              14
 
---- 13 row(s) selected.
+--- 16 row(s) selected.
 >>select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1;
 
 --- 0 row(s) selected.
@@ -2244,8 +2251,8 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
 (EXPR)      NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
 ----------  ----------  -------------  --------------
 
-        27           0              0               1
         27           0              1               0
+        27           0              0               1
         42           0              0               1
         42           0              0               1
         42           0              0               1
@@ -2275,15 +2282,15 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
         59           1              1               0
         60           0              0               1
         60           0              1               1
-        60           0              1               1
         60           0              0               1
+        60           0              1               1
         61           1              1               0
-        63           0              1               0
-        63           0              1               0
         63           1              4               0
+        63           0              1               0
+        63           0              1               0
         64           0              0               2
-        67           0              0               2
         67           1              1               2
+        67           0              0               2
         67           0              0               2
         69           0              0               2
         69           1              0               1
@@ -2294,8 +2301,8 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
         77           1              1               1
         78           0              0               2
         78           0              0               2
-        79           0              0               3
         79           0              0               1
+        79           0              0               3
         79           0              0               1
         79           0              0               3
         80           0              0               1
@@ -2305,20 +2312,23 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
         90           0              0               3
         98           1              1               0
        134           0              1               0
+       134           1              1               0
        134           0              1               0
+       150           0              3               0
        150           1              3               0
        179           0              4               0
-       179           0              4               0
-       179           0              4               0
+       200           0              5               0
        200           0              5               0
        201           0              2               1
        222           0              3               1
+       222           0              3               1
        314           0              3               1
-       454           0              2               3
+       454           1              2               3
+       492           0              2               1
        492           0              2               1
        619           0              1              14
 
---- 73 row(s) selected.
+--- 76 row(s) selected.
 >>
 >>
 >>-- virtual table ISP queries are not cacheable.
