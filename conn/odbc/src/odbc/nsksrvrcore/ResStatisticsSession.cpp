@@ -237,17 +237,44 @@ void ResStatisticsSession::accumulateStatistics(passSession *ps)
 	{
 	case TYPE_SELECT:
 		totalSelectStatements++;
+		if (ps->errorStatement)
+			totalSelectErrors++;
 		break;
 	case TYPE_INSERT:
 		totalInsertStatements++;
+		if (ps->errorStatement)
+			totalInsertErrors++;
 		break;
 	case TYPE_DELETE:
 		totalDeleteStatements++;
+		if (ps->errorStatement)
+			totalDeleteErrors++;
 		break;
 	case TYPE_UPDATE:
 		totalUpdateStatements++;
+		if (ps->errorStatement)
+			totalUpdateErrors++;
 		break;
 	default:
+		switch (ps->sqlNewQueryType)
+		{
+		case SQL_OTHER:
+		case SQL_CALL_NO_RESULT_SETS:
+		case SQL_CALL_WITH_RESULT_SETS:
+		case SQL_SP_RESULT_SET:
+			totalOtherStatements++;
+			if (ps->errorStatement)
+				totalOtherErrors++;
+			break;
+		case SQL_CAT_UTIL:
+		case SQL_EXE_UTIL:
+			totalUtilStatements++;
+			if (ps->errorStatement)
+				totalUtilErrors++;
+			break;
+		default:
+			break;
+		}
 		break;
 	}
 	totalOdbcElapseTime = totalOdbcElapseTime + ps->odbcElapseTime;
@@ -305,6 +332,18 @@ void ResStatisticsSession::accumulateStatistics(const ResStatistics * const pRes
 	sessWlStats.aggrStats.totalInserts			= totalInsertStatements;
 	sessWlStats.aggrStats.totalUpdates			= totalUpdateStatements;
 	sessWlStats.aggrStats.totalDeletes			= totalDeleteStatements;
+	sessWlStats.aggrStats.totalDDLs				= totalDDLStatements;
+	sessWlStats.aggrStats.totalUtils			= totalUtilStatements;
+	sessWlStats.aggrStats.totalCatalogs			= totalCatalogStatements;
+	sessWlStats.aggrStats.totalOthers			= totalOtherStatements;
+	sessWlStats.aggrStats.totalSelectErrors		= totalSelectErrors;
+	sessWlStats.aggrStats.totalInsertErrors		= totalInsertErrors;
+	sessWlStats.aggrStats.totalUpdateErrors		= totalUpdateErrors;
+	sessWlStats.aggrStats.totalDeleteErrors		= totalDeleteErrors;
+	sessWlStats.aggrStats.totalDDLErrors		= totalDDLErrors;
+	sessWlStats.aggrStats.totalUtilErrors		= totalUtilErrors;
+	sessWlStats.aggrStats.totalCatalogErrors	= totalCatalogErrors;
+	sessWlStats.aggrStats.totalOtherErrors		= totalOtherErrors;
 	sessWlStats.aggrStats.NumRowsIUD			= (totalInsertStatements+totalUpdateStatements+totalDeleteStatements);
 
 }
@@ -330,6 +369,16 @@ void ResStatisticsSession::init()
 	totalDeleteStatements = 0;
 	totalUpdateStatements = 0;
 	totalSelectStatements = 0;
+	totalDDLStatements = 0;
+	totalUtilStatements = 0;
+	totalOtherStatements = 0;
+	totalInsertErrors = 0;
+	totalUpdateErrors = 0;
+	totalDeleteErrors = 0;
+	totalSelectErrors = 0;
+	totalDDLErrors = 0;
+	totalUtilErrors = 0;
+	totalOtherErrors = 0;
 	totalPrepares = 0;
 	totalExecutes = 0;
 	totalFetches = 0;
@@ -377,6 +426,18 @@ std::tr1::shared_ptr<SESSION_AGGREGATION> ResStatisticsSession::getAggrStats()
 	pAggr_info->m_total_inserts = sessWlStats.aggrStats.totalInserts;
 	pAggr_info->m_total_updates = sessWlStats.aggrStats.totalUpdates;
 	pAggr_info->m_total_deletes = sessWlStats.aggrStats.totalDeletes;
+	pAggr_info->m_total_ddl_stmts = sessWlStats.aggrStats.totalDDLs;
+	pAggr_info->m_total_util_stmts = sessWlStats.aggrStats.totalUtils;
+	pAggr_info->m_total_catalog_stmts = sessWlStats.aggrStats.totalCatalogs;
+	pAggr_info->m_total_other_stmts = sessWlStats.aggrStats.totalOthers;
+	pAggr_info->m_total_select_errors = sessWlStats.aggrStats.totalSelectErrors;
+	pAggr_info->m_total_insert_errors = sessWlStats.aggrStats.totalInsertErrors;
+	pAggr_info->m_total_update_errors = sessWlStats.aggrStats.totalUpdateErrors;
+	pAggr_info->m_total_delete_errors = sessWlStats.aggrStats.totalDeleteErrors;
+	pAggr_info->m_total_ddl_errors = sessWlStats.aggrStats.totalDDLErrors;
+	pAggr_info->m_total_util_errors = sessWlStats.aggrStats.totalUtilErrors;
+	pAggr_info->m_total_catalog_errors = sessWlStats.aggrStats.totalCatalogErrors;
+	pAggr_info->m_total_other_errors = sessWlStats.aggrStats.totalOtherErrors;
 	pAggr_info->m_delta_estimated_rows_accessed =max(double(0), sessWlStats.deltaStats.EstimatedRowsAccessed);
 	pAggr_info->m_delta_estimated_rows_used = max(double(0),sessWlStats.deltaStats.EstimatedRowsUsed);
 	pAggr_info->m_delta_rows_accessed = max(int64(0),sessWlStats.deltaStats.RowsAccessed);
@@ -386,6 +447,19 @@ std::tr1::shared_ptr<SESSION_AGGREGATION> ResStatisticsSession::getAggrStats()
 	pAggr_info->m_delta_total_inserts = max(int64(0),sessWlStats.deltaStats.totalInserts);
 	pAggr_info->m_delta_total_updates = max(int64(0),sessWlStats.deltaStats.totalUpdates);
 	pAggr_info->m_delta_total_deletes = max(int64(0),sessWlStats.deltaStats.totalDeletes);
+	pAggr_info->m_delta_total_ddl_stmts = max(int64(0),sessWlStats.deltaStats.totalDDLs);
+	pAggr_info->m_delta_total_util_stmts = max(int64(0),sessWlStats.deltaStats.totalUtils);
+	pAggr_info->m_delta_total_catalog_stmts = max(int64(0),sessWlStats.deltaStats.totalCatalogs);
+	pAggr_info->m_delta_total_other_stmts = max(int64(0),sessWlStats.deltaStats.totalOthers);
+	pAggr_info->m_delta_select_errors = max(int64(0),sessWlStats.deltaStats.totalSelectErrors);
+	pAggr_info->m_delta_insert_errors = max(int64(0),sessWlStats.deltaStats.totalInsertErrors);
+	pAggr_info->m_delta_update_errors = max(int64(0),sessWlStats.deltaStats.totalUpdateErrors);
+	pAggr_info->m_delta_delete_errors = max(int64(0),sessWlStats.deltaStats.totalDeleteErrors);
+	pAggr_info->m_delta_ddl_errors = max(int64(0),sessWlStats.deltaStats.totalDDLErrors);
+	pAggr_info->m_delta_util_errors = max(int64(0),sessWlStats.deltaStats.totalUtilErrors);
+	pAggr_info->m_delta_catalog_errors = max(int64(0),sessWlStats.deltaStats.totalCatalogErrors);
+	pAggr_info->m_delta_other_errors = max(int64(0),sessWlStats.deltaStats.totalOtherErrors);
+
 	return pAggr_info;
 }
 

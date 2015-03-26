@@ -41,6 +41,7 @@ struct passSession
 	long                                    state;
 	char                                    statementId[MAX_STMT_LABEL_LEN + 1];
 	short                                   stmtType;
+	Int32                                   sqlNewQueryType;
 	long                                    errorStatement;
 	long                                    warningStatement;
 };
@@ -88,6 +89,18 @@ typedef struct SESSION_STATS
 			, totalInserts(0)
 			, totalUpdates(0)
 			, totalDeletes(0)
+			, totalDDLs(0)
+			, totalUtils(0)
+			, totalCatalogs(0)
+			, totalOthers(0)
+			, totalInsertErrors(0)
+			, totalUpdateErrors(0)
+			, totalDeleteErrors(0)
+			, totalSelectErrors(0)
+			, totalDDLErrors(0)
+			, totalUtilErrors(0)
+			, totalCatalogErrors(0)
+			, totalOtherErrors(0)
 			  {}
 
 	void reset()
@@ -132,6 +145,18 @@ typedef struct SESSION_STATS
 		totalInserts			= 0;
 		totalUpdates			= 0;
 		totalDeletes			= 0;
+		totalDDLs				= 0;
+		totalUtils				= 0;
+		totalCatalogs			= 0;
+		totalOthers				= 0;
+		totalInsertErrors		= 0;
+		totalUpdateErrors		= 0;
+		totalDeleteErrors		= 0;
+		totalSelectErrors		= 0;
+		totalDDLErrors			= 0;
+		totalUtilErrors			= 0;
+		totalCatalogErrors		= 0;
+		totalOtherErrors		= 0;
 	}
 
 	SESSION_STATS& operator=(const SESSION_STATS& rhs)
@@ -179,6 +204,18 @@ typedef struct SESSION_STATS
 		totalInserts			= rhs.totalInserts;
 		totalUpdates			= rhs.totalUpdates;
 		totalDeletes			= rhs.totalDeletes;
+		totalDDLs				= rhs.totalDDLs;
+		totalUtils				= rhs.totalUtils;
+		totalCatalogs			= rhs.totalCatalogs;
+		totalOthers				= rhs.totalOthers;
+		totalInsertErrors		= rhs.totalInsertErrors;
+		totalUpdateErrors		= rhs.totalUpdateErrors;
+		totalDeleteErrors		= rhs.totalDeleteErrors;
+		totalSelectErrors		= rhs.totalSelectErrors;
+		totalDDLErrors			= rhs.totalDDLErrors;
+		totalUtilErrors			= rhs.totalUtilErrors;
+		totalCatalogErrors		= rhs.totalCatalogErrors;
+		totalOtherErrors		= rhs.totalOtherErrors;
 
 		return *this;
 	}
@@ -227,6 +264,19 @@ typedef struct SESSION_STATS
 		totalInserts			= cur.totalInserts - last.totalInserts;
 		totalUpdates			= cur.totalUpdates - last.totalUpdates;
 		totalDeletes			= cur.totalDeletes - last.totalDeletes;
+		totalDDLs				= cur.totalDDLs - last.totalDDLs;
+		totalUtils				= cur.totalUtils - last.totalUtils;
+		totalCatalogs			= cur.totalCatalogs - last.totalCatalogs;
+		totalOthers				= cur.totalOthers - last.totalOthers;
+		totalInsertErrors		= cur.totalInsertErrors - last.totalInsertErrors;
+		totalUpdateErrors		= cur.totalUpdateErrors - last.totalUpdateErrors;
+		totalDeleteErrors		= cur.totalDeleteErrors - last.totalDeleteErrors;
+		totalSelectErrors		= cur.totalSelectErrors - last.totalSelectErrors;
+		totalDDLErrors			= cur.totalDDLErrors - last.totalDDLErrors;
+		totalUtilErrors			= cur.totalUtilErrors - last.totalUtilErrors;
+		totalCatalogErrors		= cur.totalCatalogErrors - last.totalCatalogErrors;
+		totalOtherErrors		= cur.totalOtherErrors - last.totalOtherErrors;
+
 		return *this;
 	}
 
@@ -272,6 +322,18 @@ typedef struct SESSION_STATS
 	int64 totalInserts;
 	int64 totalUpdates;
 	int64 totalDeletes;
+	int64 totalDDLs;
+	int64 totalUtils;
+	int64 totalCatalogs;
+	int64 totalOthers;
+	int64 totalInsertErrors;
+	int64 totalUpdateErrors;
+	int64 totalDeleteErrors;
+	int64 totalSelectErrors;
+	int64 totalDDLErrors;
+	int64 totalUtilErrors;
+	int64 totalCatalogErrors;
+	int64 totalOtherErrors;
 
 } SessionStats;
 
@@ -323,6 +385,17 @@ private:
         long                                    totalDeleteStatements;
         long                                    totalUpdateStatements;
         long                                    totalSelectStatements;
+        long                                    totalDDLStatements;
+        long                                    totalUtilStatements;
+        long                                    totalOtherStatements;
+        long                                    totalInsertErrors;
+        long                                    totalUpdateErrors;
+        long                                    totalDeleteErrors;
+        long                                    totalSelectErrors;
+        long                                    totalDDLErrors;
+        long                                    totalUtilErrors;
+        long                                    totalOtherErrors;
+
         long                                    totalErrors;
         long                                    totalWarnings;
         long                                    totalPrepares;

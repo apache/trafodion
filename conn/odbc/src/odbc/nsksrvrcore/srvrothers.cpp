@@ -4126,6 +4126,8 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
 	CloseException.exception_nr=0;
 	fetchException.exception_nr=0;
 
+	if (resStatSession != NULL)
+		resStatSession->totalCatalogStatements++;
 	char catalogNmNoEsc[MAX_ANSI_NAME_LEN+1];
 	char schemaNmNoEsc[MAX_ANSI_NAME_LEN+1];
 	char tableNmNoEsc[MAX_ANSI_NAME_LEN+1];
