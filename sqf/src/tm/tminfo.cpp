@@ -1581,7 +1581,12 @@ int32 TM_Info::restart_tm_process(int32 pv_nid)
     }
 
     unlock();
-    TMTrace(2, ("TM_Info::restart_tm_process : EXIT.\n"));
+    
+    dummy_link_to_refresh_phandle(pv_nid);
+    SB_Thread::Sthr::sleep(100); // in msec
+    dummy_link_to_refresh_phandle(pv_nid); // The second one actually updates the phandle
+    
+     TMTrace(2, ("TM_Info::restart_tm_process : EXIT.\n"));
     return lv_error;
 } // TM_Info::restart_tm_process
 
@@ -3581,6 +3586,10 @@ void TM_Info::open_other_tms()
       trace_printf("TM_Info::open_restarted_tm : Error opening TM %d\n",pv_nid);
    unlock();
 
+    dummy_link_to_refresh_phandle(pv_nid);
+    SB_Thread::Sthr::sleep(100); // in msec
+    dummy_link_to_refresh_phandle(pv_nid); // The second one actually updates the phandle
+    
    TMTrace (2, ("TM_Info::open_restarted_tm : EXIT"));
    return lv_error;
 }
@@ -5506,4 +5515,121 @@ char * TM_Info::tmStatetoa(int32 pv_state)
    return lp_tmState;
 } // TM_Info::tmStatetoa
 
+// ---------------------------------------------------------------------------
+// TM_Info::dummy_link_to_refresh_phandle
+// Purpose : On NodeUp or TmRestarted, the new TM phandle will be stale
+// This procedure will force a refresh in seabed and is ONLY called by the Lead DTM!
+// ---------------------------------------------------------------------------
+void TM_Info::dummy_link_to_refresh_phandle(int32 pv_nid)
+{
+    short                      la_results[6];
+    Tm_Req_Msg_Type     *lp_req = NULL;
+    Tm_Rsp_Msg_Type     *lp_rsp = NULL;
+    int32                      lv_error = FEOK;
+    int32                      lv_index = 0;
+    int32                      lv_num_sent = 0;
+    pid_msgid_struct           lv_pid_msgid;
+    int32                      lv_reqLen = 0;
+    long                       lv_ret;
+    long                       lv_ret2;
+    int32                      lv_rspLen = 0;
+    int                        lv_rsp_rcvd = 0;
+    BMS_SRE_LDONE              lv_sre;
+
+    TMTrace (2, ("TM_Info::dummy_link_to_refresh_phandle: ENTRY\n"));
+
+    //initialize lv_pid_msgid
+    lv_pid_msgid.iv_tag = 0;
+    lv_pid_msgid.iv_msgid = 0;
+    lv_pid_msgid.iv_nid = 0;
+
+    TMTrace (3, ("TM_Info::dummy_link_to_refresh_phandle sending Leadtm request to TM%d.\n",pv_nid));
+
+     lp_req = new Tm_Req_Msg_Type;
+     lp_rsp = new Tm_Rsp_Msg_Type;  
+
+//Send messaget to tm
+    lv_pid_msgid.iv_tag = 1; // non zero
+    lp_req->iv_msg_hdr.dialect_type = DIALECT_TM_SQ;
+    lp_req->iv_msg_hdr.rr_type.request_type = TM_MSG_TYPE_LEADTM;
+    lp_req->iv_msg_hdr.version.request_version = TM_SQ_MSG_VERSION_CURRENT;
+    lv_pid_msgid.iv_nid = pv_nid;
+    
+    lv_reqLen = sizeof (Tm_Req_Msg_Type);
+    lv_rspLen = sizeof (Tm_Rsp_Msg_Type);
+    
+    lv_error = link(&(iv_open_tms[pv_nid].iv_phandle),     // phandle,
+                   &lv_pid_msgid.iv_msgid,        // msgid
+                   (char *) lp_req,    // reqdata
+                   lv_reqLen,                   // reqdatasize
+                   (char *) lp_rsp,    // replydata
+                   lv_rspLen,                   // replydatamax
+                   lv_pid_msgid.iv_tag, // linkertag
+                   TM_TM_LINK_PRIORITY,         // pri
+                   BMSG_LINK_LDONEQ,            // linkopts
+                   TM_LINKRETRY_RETRIES);       // retry count
+    
+    if (lv_error != 0)
+    {
+       TMTrace (1, ("TM_Info::dummy_link_to_refresh_phandle BMSG_LINK_ failed with error %d. failure ignored.\n",lv_error));
+    }
+    else
+       lv_num_sent++;
+// for one tm
+
+      // LDONE LOOP
+    while (lv_rsp_rcvd < lv_num_sent)
+    {
+
+      // wait for an LDONE wakeup 
+      XWAIT(LDONE, -1);
+
+      do {
+           lv_error = 0;
+
+           // we've reached our message reply count, break
+           if (lv_rsp_rcvd >= lv_num_sent)
+               break;
+
+           lv_ret = BMSG_LISTEN_((short *)&lv_sre, 
+                                  BLISTEN_ALLOW_LDONEM, 0);
+
+           if (lv_ret == BSRETYPE_LDONE)
+           {
+              lv_index = -1;
+              if (lv_pid_msgid.iv_tag == lv_sre.sre_linkTag)
+              {
+                 lv_index = pv_nid;
+              }
+            
+              if (lv_index == -1)
+              {
+                  TMTrace (1, ("TM_Info::dummy_link_to_refresh_phandle - Link Tag %d not found\n", (int)lv_sre.sre_linkTag));
+                  lv_error = FEDEVDOWN;
+              }
+
+              if (!lv_error)
+              {
+                  lv_ret2 = BMSG_BREAK_(lv_pid_msgid.iv_msgid, 
+                                       la_results,
+                                       &(iv_open_tms[pv_nid].iv_phandle)); 
+                  if (lv_ret2 != 0)
+                  {
+                      TMTrace (1, ("TM_Info::dummy_link_to_refresh_phandle ERROR BMSG_BREAK_ returned %ld, index %d, msgid %d.\n",
+                              lv_ret2, lv_index, lv_pid_msgid.iv_msgid));
+                      lv_error = FEDEVDOWN;
+                  }
+              }
+        
+              if (lv_error == FEDEVDOWN)
+              {
+                 TMTrace (1, ("TM_Info::dummy_link_to_refresh_phandle - TM respond error\n"));
+              }
+             lv_rsp_rcvd++;
+             }
+        } while (lv_ret == BSRETYPE_LDONE); 
+     }// while (lv_rsp_rcvd < lv_num_sent)
+
+    TMTrace (2, ("TM_Info::dummy_link_to_refresh_phandle: EXIT\n"));
+}
 
