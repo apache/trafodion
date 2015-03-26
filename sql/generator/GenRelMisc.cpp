@@ -4306,13 +4306,13 @@ short ExplainFunc::codeGen(Generator * generator)
 	getAttr();
     }
 
-  ExpTupleDesc *tupleDesc = 0;
-  ULng32 tupleLength = 0;
+  ExpTupleDesc *explTupleDesc = 0;
+  ULng32 explTupleLength = 0;
   expGen->processAttributes(numColumns,
 			    attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			    tupleLength,
+			    explTupleLength,
 			    0, returnedDesc->noTuples() - 1,
-			    &tupleDesc, ExpTupleDesc::SHORT_FORMAT);
+			    &explTupleDesc, ExpTupleDesc::SHORT_FORMAT);
 
   // delete [] attrs;
   // NADELETEBASIC is used because compiler does not support delete[]
@@ -4322,7 +4322,7 @@ short ExplainFunc::codeGen(Generator * generator)
 
   // add this descriptor to the work cri descriptor.
 #pragma nowarn(1506)   // warning elimination
-  returnedDesc->setTupleDescriptor(returnedDesc->noTuples()-1, tupleDesc);
+  returnedDesc->setTupleDescriptor(returnedDesc->noTuples()-1, explTupleDesc);
 #pragma warn(1506)  // warning elimination
 
   // generate explain selection expression, if present
@@ -4336,6 +4336,8 @@ short ExplainFunc::codeGen(Generator * generator)
   // generate move expression for the parameter list
   ex_expr *moveExpr = 0;
 
+  ExpTupleDesc *tupleDesc = 0;
+  ULng32 tupleLength = 0;
   if (! getProcInputParamsVids().isEmpty())
     {
 
@@ -4355,6 +4357,11 @@ short ExplainFunc::codeGen(Generator * generator)
 #pragma warn(1506)  // warning elimination
     }
 
+  // allocate buffer space to contain atleast 2 rows.
+  ULng32 bufferSize = (explTupleLength+100/*padding*/) * 2/*rows*/;
+  bufferSize = MAXOF(bufferSize, 30000); // min buf size 30000
+  Int32 numBuffers = 3; // allocate 3 buffers
+
 #pragma nowarn(1506)   // warning elimination
   ComTdbExplain *explainTdb
     = new(space)
@@ -4369,8 +4376,8 @@ short ExplainFunc::codeGen(Generator * generator)
 		    tupleLength,			 // Length of params Tuple
 		    moveExpr,			 // expression to calculate
 						 // the explain parameters
-		    3,				 // Number of buffers to allocate
-		   4096);			 // Size of each buffer
+		    numBuffers,			 // Number of buffers to allocate
+                    bufferSize);			 // Size of each buffer
 #pragma warn(1506)  // warning elimination
   generator->initTdbFields(explainTdb);
 
