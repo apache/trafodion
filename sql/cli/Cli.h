@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1997-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -531,6 +531,13 @@ Lng32 SQLCLI_GetDatabaseUserName( /*IN*/ CliGlobals *cliGlobals,
 Lng32 SQLCLI_GetDatabaseUserID( /*IN*/ CliGlobals *cliGlobals,
                                 /*IN*/     char   *string_value,
                                 /*OUT*/    Lng32  *numeric_value);
+
+Int32 SQLCLI_GetAuthState (
+    /*IN*/            CliGlobals *cliGlobals,
+    /*OUT*/           bool      &authenticationEnabled,
+    /*OUT*/           bool      &authorizationEnabled,
+    /*OUT*/           bool      &authorizationReady,
+    /*OUT*/           bool      &auditingEnabled);
 
 Lng32 SQLCLI_GetUniqueQueryIdAttrs( /*IN*/ CliGlobals *cliGlobals,
 				   /*IN*/    char * queryId,

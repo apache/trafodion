@@ -417,6 +417,109 @@ void CmpContext::setSecondaryMxcmp(){
 
 }
 
+// ----------------------------------------------------------------------------
+// method: setAuthorizationState
+//
+// This method is called during compiler context startup to determine if 
+// authorization has been enabled.  It sets two flags in the compiler context 
+// structure based on the passed in state:
+//
+//    IS_AUTHORIZATION_ENABLED
+//      set to TRUE if one or more privmgr metadata tables exists
+//
+//    IS_AUTHORIZATION_READY
+//      set to TRUE if all privmgr metadata tables exist
+//
+// input: state
+//   0: no metadata tables exist, authorization is not enabled
+//   1: all metadata tables exist, authorization is enabled
+//   2: some metadata tables exist, privmgr metadata is not ready
+//  -nnnn: an unexpected error occurred
+// ----------------------------------------------------------------------------
+void CmpContext::setAuthorizationState (Int32 state)
+{
+  switch (state)
+    {
+      // state = 0, not initialized
+      case 0:
+        setIsAuthorizationEnabled(FALSE);
+        setIsAuthorizationReady(FALSE);
+        break;
+
+      // state = 1, initialized
+      case 1:
+        setIsAuthorizationEnabled(TRUE);
+        setIsAuthorizationReady(TRUE);
+        break;
+
+      // state = 2, partially initialized
+      case 2:
+        setIsAuthorizationEnabled(TRUE);
+        setIsAuthorizationReady(FALSE);
+        break;
+
+      // else unexpected error 
+      default:
+
+        // Unable to determine authorization status, set 
+        // authorizationReady to FALSE.
+        setIsAuthorizationReady(FALSE);
+
+        // Get status from the TRAFODION_ENABLE_AUTHORIZATION envvar.
+        // The TRAFODION_ENABLE_AUTHENTICATION envvar defined in the 
+        // sqenvcom.sh file.  Since authorization can be initialized
+        // independently from setting the envvar, we cannot necessarily
+        // depend on its value. So we only use it if we can't get the 
+        // information from anywhere else.
+        char * env = getenv("TRAFODION_ENABLE_AUTHENTICATION");
+        if (env)
+          {
+            setIsAuthorizationEnabled
+              ((strcmp(env, "YES") == 0) ? TRUE : FALSE);
+          }
+        else
+          {
+            // Can't determine status, so be on the safe side and set 
+            // to TRUE
+            setIsAuthorizationEnabled(TRUE);
+          }
+        
+         // setup an internal error
+         *diags_
+           << DgSqlCode(-1001)
+           << DgString0(__FILE__)
+           << DgInt0(__LINE__)
+           << DgString1("Unable to determine authorization status");
+    }
+}
+
+// ----------------------------------------------------------------------------
+// method: isAuthorizationEnabled
+//
+// Return the value of IS_AUTHORIZATION_ENABLED
+//
+// input:
+//   errIfNotReady:
+//     TRUE - generate an error if authorization is enabled and privmgr
+//            metadata table(s) are  missing or inaccessible (incomplete)
+// ----------------------------------------------------------------------------     
+NABoolean CmpContext::isAuthorizationEnabled( NABoolean errIfNotReady)
+{
+  if (flags_ & IS_AUTHORIZATION_ENABLED)
+  {
+    if (errIfNotReady && !isAuthorizationReady())
+    {
+      if (!diags_->contains(-1234))
+      {
+        *diags_ << DgSqlCode(-1234);
+         CMPASSERT (FALSE);
+      }
+    }   
+    return TRUE;
+  }
+  return FALSE;
+}
+
 // -----------------------------------------------------------------------
 // The CmpStatement related methods
 // -----------------------------------------------------------------------

@@ -1494,14 +1494,22 @@ NABoolean CmpSeabaseDDL::isAuthorizationEnabled()
 //
 // Parameters:
 //    defs - pointer to the NADefaults class
+//    checkAllPrivTables
+//         (The call to verify HBase table existence is expensive so for a 
+//          performance enhancement, we can optionally check for only one
+//          table and assume everything is good)
+//       TRUE - make sure all privmgr metadata tables exist
+//       FALSE - check for existence of one privmgr metadata tables
 //
 // returns the result of the request:
 //  (return codes based as same values returned for isMetadataInitialized)
 //   0: no metadata tables exist, authorization is not enabled
 //   1: at least one metadata tables exists, authorization is enabled
+//   2: some metadata tables exist, privmgr metadata is corrupted
 //  -nnnn: an unexpected error occurred
 // ----------------------------------------------------------------------------               
-short CmpSeabaseDDL::isPrivMgrMetadataInitialized(NADefaults *defs)
+short CmpSeabaseDDL::isPrivMgrMetadataInitialized(NADefaults *defs,
+                                                  NABoolean checkAllPrivTables)
 {
   CMPASSERT(defs != NULL);
 
@@ -1527,7 +1535,7 @@ short CmpSeabaseDDL::isPrivMgrMetadataInitialized(NADefaults *defs)
       return -1398;
     }
 
-  // Call existsInHbase for one Privmgr metadata table
+  // Call existsInHbase to check for privmgr metadata tables existence
   NAString hbaseObjPrefix = getSystemCatalog();
   hbaseObjPrefix += ".";
   hbaseObjPrefix += SEABASE_PRIVMGR_SCHEMA;
@@ -1536,24 +1544,42 @@ short CmpSeabaseDDL::isPrivMgrMetadataInitialized(NADefaults *defs)
   HbaseStr hbaseObjStr;
   NAString hbaseObject;
 
-  // test code to verify the last privmgr metadata table exists
-  size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
-  const PrivMgrTableStruct &tableDef = privMgrTables[numTables -1];
-
-  hbaseObject = hbaseObjPrefix + tableDef.tableName;
-  hbaseObjStr.val = (char*)hbaseObject.data();
-  hbaseObjStr.len = hbaseObject.length();
-
-  // existsInHbase returns 1 - found, 0 not found, anything else error
-  short retcode = existsInHbase(hbaseObject, ehi);
-  deallocEHI(ehi);
-  if (retcode == 1) // found the table
-    return 1;
+  int numTablesFound = 0;
+  short retcode = 0;
   
-  // If an unexpected error occurs, just return the error
-  if (retcode < 0)
-   return retcode;
-  return 0;
+  size_t numTables = (checkAllPrivTables) ? 
+    sizeof(privMgrTables)/sizeof(PrivMgrTableStruct) : 1;
+
+  for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
+    {
+      const PrivMgrTableStruct &tableDef = privMgrTables[ndx_tl];
+
+      hbaseObject = hbaseObjPrefix + tableDef.tableName;
+      hbaseObjStr.val = (char*)hbaseObject.data();
+      hbaseObjStr.len = hbaseObject.length();
+
+      // existsInHbase returns 1 - found, 0 not found, anything else error
+      retcode = existsInHbase(hbaseObject, ehi);
+      if (retcode == 1) // found the table
+         numTablesFound ++;
+
+      // If an unexpected error occurs, just return the error
+      if (retcode < 0)
+        {
+           deallocEHI(ehi);
+           return retcode;
+        }
+    }
+  deallocEHI(ehi);
+
+  if (numTablesFound == 0)
+    retcode = 0;
+  else if (numTablesFound == numTables)
+    retcode = 1;
+  else
+    retcode = 2;
+
+  return retcode;
 }
 
 short CmpSeabaseDDL::existsInHbase(const NAString &objName,
@@ -6336,7 +6362,7 @@ void CmpSeabaseDDL::initSeabaseAuthorization()
       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
      SEABASEDDL_INTERNAL_ERROR("initialize authorization command");
   if (retcode != STATUS_ERROR)
-    CmpCommon::context()->setIsAuthorizationEnabled(TRUE);
+    GetCliGlobals()->currContext()->setAuthStateInCmpContexts(TRUE, TRUE);
 
   // define context changed, kill arkcmps, if they are running.
   for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
@@ -6361,7 +6387,7 @@ void CmpSeabaseDDL::dropSeabaseAuthorization (NAString schemaName)
       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
      SEABASEDDL_INTERNAL_ERROR("drop authorization command");
   if (retcode != STATUS_ERROR)
-    CmpCommon::context()->setIsAuthorizationEnabled(FALSE);
+    GetCliGlobals()->currContext()->setAuthStateInCmpContexts(FALSE, FALSE);
 
   // define context changed, kill arkcmps, if they are running.
   for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
@@ -6474,7 +6500,6 @@ std::string creatorGrantee;
                                                 schemaOwnerGrantee,objOwnerID,
                                                 ownerGrantee,creatorID,
                                                 creatorGrantee);
-
   if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
     return FALSE;
   return TRUE;
@@ -6511,7 +6536,7 @@ NABoolean CmpSeabaseDDL::deletePrivMgrInfo(const NAString &objectName,
   const std::string objName(objectName.data());
   PrivStatus retcode = 
     privInterface.revokeObjectPrivilege (objUID, objName, -2);
-  if (retcode != STATUS_GOOD && retcode != STATUS_WARNING && retcode != STATUS_NOTFOUND)
+  if (retcode == STATUS_ERROR)
     return FALSE;
   NegateAllErrors(CmpCommon::diags());
   return TRUE;

@@ -6541,6 +6541,19 @@ Lng32 SQLCLI_GetSessionAttr( /*IN*/ CliGlobals *cliGlobals,
     }
     break;
 
+    case SESSION_EXTERNAL_USER_NAME:
+    {
+      const char *externalUsername = currContext.getExternalUserName();
+      Int32 bytesNeeded = (externalUsername ? strlen(externalUsername) + 1 : 0);
+      if (externalUsername && string_value && max_string_len >= bytesNeeded)
+        strcpy(string_value, externalUsername);
+      else
+        bufferNullOrTooSmall = TRUE;
+      if (len_of_item)
+        *len_of_item = bytesNeeded;
+    }
+    break;
+
     default:
     {
       diags << DgSqlCode(-CLI_INVALID_ATTR_NAME);
@@ -6654,6 +6667,32 @@ Lng32 SQLCLI_GetDatabaseUserID (
 
   retcode = currContext.getDBUserIDFromName(string_value,
                                             numeric_value);
+
+  return CliEpilogue(cliGlobals, NULL, retcode);
+}
+
+Int32 SQLCLI_GetAuthState (
+    /*IN*/            CliGlobals *cliGlobals,
+    /*OUT*/           bool       &authenticationEnabled,
+    /*OUT*/           bool       &authorizationEnabled,
+    /*OUT*/           bool       &authorizationReady,
+    /*OUT*/           bool       &auditingEnabled)
+{
+  Int32 retcode = 0;
+
+
+  // create initial context, if first call, and add module, if any.
+  retcode = CliPrologue(cliGlobals, NULL);
+  if (isERROR(retcode))
+    return retcode;
+
+  ContextCli &currContext = *(cliGlobals->currContext());
+  ComDiagsArea &diags = currContext.diags();
+
+  currContext.getAuthState(authenticationEnabled,
+                           authorizationEnabled,
+                           authorizationReady,
+                           auditingEnabled);
 
   return CliEpilogue(cliGlobals, NULL, retcode);
 }

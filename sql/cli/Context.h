@@ -138,13 +138,21 @@ public:
   void setDatabaseUserInESP(const Int32 &uid, const char *uname,
                             bool closeAllOpens = false);
 
-  char * ldapUserName() { return externalUsername_; }
+  char * getExternalUserName() { return externalUsername_; }
 
   char * userSpecifiedSessionName() { return userSpecifiedSessionName_; }
   void setUserSpecifiedSessionName(const char * un) 
   { 
     strcpy(userSpecifiedSessionName_, un);
   }
+
+  void setAuthStateInCmpContexts(NABoolean authEnabled,
+                                 NABoolean authReady);
+
+  void getAuthState (bool &authenticationEnabled,
+                     bool &authorizationEnabled,
+                     bool &authorizationReady,
+                     bool &auditingEnabled);
 
   LOBglobals* &currLobGlobals() { return lobGlobals_; }
 
@@ -215,7 +223,7 @@ private:
   NABoolean validAuthID_;
   SQLAUTHID_TYPE authIDType_;
 
-  //LDAP name, max 128 characters
+  //External name, max 128 characters
   char* externalUsername_;
 
   // Database user name. On Linux the values come from the USER_NAME

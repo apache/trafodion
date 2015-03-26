@@ -1756,7 +1756,6 @@ int32_t diagsMark = pDiags_->mark();
   return true;
 }
 
-
 // ****************************************************************************
 // method:  updatePrivMgrMetadata
 //

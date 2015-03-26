@@ -1650,22 +1650,27 @@ StmtDDLCreateView::bindNode(BindWA * pBindWA)
         RelExpr *queryExpr = getChild(i)->castToRelExpr()->bindNode(pBindWA);
         if (!pBindWA->errStatus())
         {
-          // QSTUFF
-          // we need to check unique constraints on joins when 
-          // when binding a view containing an embedded update
-          CMPASSERT(queryExpr->getOperatorType() == REL_ROOT);
+          // If the operator type not REL_ROOT, reset VolatileSchemaInUse and
+          // assert
+          if (queryExpr->getOperatorType() != REL_ROOT)
+          {
+            CmpCommon::context()->sqlSession()->restoreVolatileSchemaInUse();
+            CMPASSERT(FALSE);
+          }
+
           ((RelRoot *)queryExpr)->setRootFlag(TRUE);
 
+          // we need to check unique constraints on joins when 
+          // when binding a view containing an embedded update
 	  if (pBindWA->isEmbeddedIUDStatement())
 	  {
+            CmpCommon::context()->sqlSession()->restoreVolatileSchemaInUse();
 	    *CmpCommon::diags() << DgSqlCode(-3218);
 	    pBindWA->setErrStatus();
 	    return this;
 	  }
 
           queryExpr = cmp.transform(normWA, queryExpr);
-          // QSTUFF
-
 
           ComASSERT(queryExpr->getOperatorType() == REL_ROOT);
           RelRoot *rootExpr = (RelRoot *)queryExpr;
@@ -1684,46 +1689,24 @@ StmtDDLCreateView::bindNode(BindWA * pBindWA)
             }
           }
           
-          // GMS??? Change to always flush information to VW_COL_TBL_COLS table
+          // Change to always flush information to the metadata
           if (getIsUpdatable())
           {
             //
             // For certain cases, the binder could guess that
-            // the view is not updatable.  Better checks to
+            // the view is not updatable.  Better check to
             // make sure that the binder guessed correctly.
             //
-            CMPASSERT(NOT getViewUsages().isViewSurelyNotUpdatable());
-          }
-          else
-          {
-            //
-            // The view-column-table-columns-usage information
-            // is not needed when the view is updatable (for
-            // now).  Clears the list so the information will
-            // not be flushed to the VW_COL_TBL_COLS metadata
-            // table.
-            //
-            //// GMS???
-            //ParViewColTableColsUsageList &vctcul =
-            //  getViewUsages().getViewColTableColsUsageList();
-
-	    //ksksks
-
-	    //  int num1 = vctcul.entries();
-            //  ParViewColTableColsUsage  *v0 = &vctcul[0];
-            //  ParViewColTableColsUsage  *v1 = &vctcul[1];
-           
-	    //ksksks
-
-            //// GMS???
-            //vctcul.clear();
+            if (getViewUsages().isViewSurelyNotUpdatable())
+            {
+              CmpCommon::context()->sqlSession()->restoreVolatileSchemaInUse();
+              CMPASSERT(FALSE);
+            }
           }
 
-          // QSTUFF
           QueryAnalysis* queryAnalysis = CmpCommon::statement()->initQueryAnalysis();
           queryExpr = cmp.normalize(normWA, queryExpr);
           queryExpr->synthLogProp();
-          // QSTUFF
 
         } // if (!pBindWA->errStatus())
       }
@@ -1733,6 +1716,7 @@ StmtDDLCreateView::bindNode(BindWA * pBindWA)
       }
     }
   }
+  CmpCommon::context()->sqlSession()->restoreVolatileSchemaInUse();
   markAsBound();
 
   pBindWA->setNameLocListPtr(NULL);

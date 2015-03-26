@@ -270,7 +270,7 @@ void CmpSeabaseDDL::createSeabaseLibrary(
     "." + objectNamePart;
   
   // Verify that the requester has MANAGE_LIBRARY privilege.
-  if (!ComUser::isRootUserID())
+  if (isAuthorizationEnabled() && !ComUser::isRootUserID())
     {
       NAString privMgrMDLoc;
       CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);

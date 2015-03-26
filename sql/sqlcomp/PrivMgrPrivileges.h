@@ -116,6 +116,13 @@ public:
       const int32_t userID, 
       std::vector <ComSecurityKey *> & secKeySet);
       
+   PrivStatus getGrantorDetailsForObject(
+      const bool isGrantedBySpecified,
+      const std::string grantedByName,
+      const int_32 objectOwner,
+      int_32 &effectiveGrantorID,
+      std::string &effectiveGrantorName);
+
    PrivStatus getPrivBitmaps(
       const std::string & whereClause,
       const std::string & orderByClause,

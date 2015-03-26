@@ -65,18 +65,21 @@ abc"bad
 ----------------------------------
 Current Environment
 ----------------------------------
+AUTHENTICATION     disabled
+AUTHORIZATION      enabled
 CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxci ...
-TERMINAL CHARSET   ISO88591
+MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxcierr ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2014-08-28 15:19} 
-SQL USER NAME      DB__ROOT
-SQL USER ID        99999
+MESSAGEFILE VRSN   {2015-03-19 10:15}
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
-TRANSACTION ID     
+SQL USER CONNECTED user not connected
+SQL USER DB NAME   DB__ROOT
+SQL USER ID        33333
+TERMINAL CHARSET   ISO88591
+TRANSACTION ID
 TRANSACTION STATE  not in progress
 WARNINGS           on
 >>
@@ -920,18 +923,21 @@ No CONTROL SESSION settings are in effect.
 ----------------------------------
 Current Environment
 ----------------------------------
+AUTHENTICATION     disabled
+AUTHORIZATION      enabled
 CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxci ...
-TERMINAL CHARSET   ISO88591
+MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxcierr ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2014-08-28 15:19} 
-SQL USER NAME      DB__ROOT
-SQL USER ID        99999
+MESSAGEFILE VRSN   {2015-03-19 10:15}
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
-TRANSACTION ID     
+SQL USER CONNECTED user not connected
+SQL USER DB NAME   DB__ROOT
+SQL USER ID        33333
+TERMINAL CHARSET   ISO88591
+TRANSACTION ID
 TRANSACTION STATE  not in progress
 WARNINGS           on
 >>							-- *not* $$TEST_SCHEMA$$
@@ -980,18 +986,21 @@ Current DEFAULTS
 ----------------------------------
 Current Environment
 ----------------------------------
+AUTHENTICATION     disabled
+AUTHORIZATION      enabled
 CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxci ...
-TERMINAL CHARSET   ISO88591
+MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxcierr ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2014-08-28 15:19} 
-SQL USER NAME      DB__ROOT
-SQL USER ID        99999
+MESSAGEFILE VRSN   {2015-03-19 10:15}
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
-TRANSACTION ID     
+SQL USER CONNECTED user not connected
+SQL USER DB NAME   DB__ROOT
+SQL USER ID        33333
+TERMINAL CHARSET   ISO88591
+TRANSACTION ID
 TRANSACTION STATE  not in progress
 WARNINGS           on
 >>						-- still not $$TEST_SCHEMA$$
@@ -1036,18 +1045,21 @@ Current DEFAULTS
 ----------------------------------
 Current Environment
 ----------------------------------
+AUTHENTICATION     disabled
+AUTHORIZATION      enabled
 CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxci ...
-TERMINAL CHARSET   ISO88591
+MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxcierr ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2014-08-28 15:19} 
-SQL USER NAME      DB__ROOT
-SQL USER ID        99999
+MESSAGEFILE VRSN   {2015-03-19 10:15}
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
-TRANSACTION ID     
+SQL USER CONNECTED user not connected
+SQL USER DB NAME   DB__ROOT
+SQL USER ID        33333
+TERMINAL CHARSET   ISO88591
+TRANSACTION ID
 TRANSACTION STATE  not in progress
 WARNINGS           on
 >>                                                    -- back to $$TEST_SCHEMA$$

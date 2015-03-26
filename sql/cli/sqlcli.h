@@ -781,7 +781,8 @@ enum SESSIONATTR_TYPE {
   SESSION_DATABASE_USER_NAME = 3,
   SESSION_DATABASE_USER_ID = 4,
   SESSION_SESSION_USER_ID = 5,
-  SESSION_DATABASE_USER = 6
+  SESSION_DATABASE_USER = 6,
+  SESSION_EXTERNAL_USER_NAME = 7
 };
 
 /* this list and their values must be the same as the
@@ -1939,7 +1940,6 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_SETAUTHID(
 		/* OUT OPTIONAL primaryRole*/ char *primaryRole,
 		/* OUT OPTIONAL  role len*/ short *primaryRoleLen,
                 /* OUT OPTIONAL userRedefTime*/ Int64 *redefTime); // NA_64BIT
-
 
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_DecodeAndFormatKey(
                /*IN*/void    * RCB_Pointer_Addr,    

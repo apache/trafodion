@@ -3,7 +3,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -772,7 +772,8 @@ enum SESSIONATTR_TYPE {
   SESSION_DATABASE_USER_NAME = 3,
   SESSION_DATABASE_USER_ID = 4,
   SESSION_SESSION_USER_ID = 5,
-  SESSION_DATABASE_USER = 6
+  SESSION_DATABASE_USER = 6,
+  SESSION_EXTERNAL_USER_NAME = 7
 };
 
 /* this list and their values must be the same as the

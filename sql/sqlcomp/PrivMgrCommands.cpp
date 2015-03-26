@@ -342,6 +342,32 @@ PrivStatus privStatus = STATUS_GOOD;
 //************** End of PrivMgrCommands::dropComponentOperation ****************
 
 // ----------------------------------------------------------------------------
+// method: getGrantorDetailsForObject
+//
+// Calls PrivMgrPrivileges::getGrantorDetailsForObject to return the effective 
+// grantor ID and grantor name for object level grant and revoke statements.
+//
+// Input: see PrivMgrPrivileges.cpp for description
+// Output: see PrivMgrPrivileges.cpp for description
+//
+// returns PrivStatus with the results of the operation.  The diags area 
+// contains error details.
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrCommands::getGrantorDetailsForObject(
+   const bool isGrantedBySpecified,
+   const std::string grantedByName,
+   const int_32 objectOwner,
+   int_32 &effectiveGrantorID,
+   std::string &effectiveGrantorName)
+{
+  PrivMgrPrivileges grantorDetails (metadataLocation_, pDiags_);
+  grantorDetails.setTrafMetadataLocation(trafMetadataLocation_);
+  return grantorDetails.getGrantorDetailsForObject
+   (isGrantedBySpecified, grantedByName, objectOwner, 
+    effectiveGrantorID, effectiveGrantorName);
+}
+
+// ----------------------------------------------------------------------------
 // method: getPrivileges
 //
 // returns GRANT statements for privileges associated with the 
@@ -1031,11 +1057,6 @@ PrivStatus PrivMgrCommands::revokeObjectPrivilege(
      return STATUS_ERROR;
   }
 
-  // If we are revoking privileges on the authorization tables,
-  // just return STATUS_GOOD.  Object_privileges will go away.
-  if (isPrivMgrTable(objectName))
-    return STATUS_GOOD;
-
   // set up privileges class
   PrivMgrPrivileges revokeCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
   revokeCmd.setTrafMetadataLocation(trafMetadataLocation_);
@@ -1046,6 +1067,18 @@ PrivStatus PrivMgrCommands::revokeObjectPrivilege(
                                     isGOFSpecified); 
 }
 
+// ----------------------------------------------------------------------------
+// method: revokeObjectPrivilege
+//
+// Revokes all privileges for an object - called as part of dropping the object
+//
+// Input:
+//    objectUID, objectName - identifies the object
+//    grantorUID - identifies the grantor
+//
+// Returns the status of the request
+// The Trafodion diags area contains any errors that were encountered
+// ----------------------------------------------------------------------------
 PrivStatus PrivMgrCommands::revokeObjectPrivilege(
     const int64_t objectUID,
     const std::string &objectName,

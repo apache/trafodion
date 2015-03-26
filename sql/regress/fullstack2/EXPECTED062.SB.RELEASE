@@ -65,17 +65,20 @@ abc"bad
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
+AUTHENTICATION     enabled
+AUTHORIZATION      enabled
+CURRENT DIRECTORY  /opt/home/rmarton/git_ws/core/sql/regress/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
 MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64/mxci ...
-TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
 MESSAGEFILE VRSN   {2014-08-28 15:32} 
-SQL USER NAME      DB__ROOT
-SQL USER ID        99999
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
+SQL USER CONNECTED user not connected
+SQL USER DB NAME   DB__ROOT
+SQL USER ID        33333
+TERMINAL CHARSET   ISO88591
 TRANSACTION ID     
 TRANSACTION STATE  not in progress
 WARNINGS           on
@@ -920,17 +923,20 @@ No CONTROL SESSION settings are in effect.
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
+AUTHENTICATION     enabled
+AUTHORIZATION      enabled
+CURRENT DIRECTORY  /opt/home/rmarton/git_ws/core/sql/regress/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
 MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64/mxci ...
-TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
 MESSAGEFILE VRSN   {2014-08-28 15:32} 
-SQL USER NAME      DB__ROOT
-SQL USER ID        99999
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
+SQL USER CONNECTED user not connected
+SQL USER DB NAME   DB__ROOT
+SQL USER ID        33333
+TERMINAL CHARSET   ISO88591
 TRANSACTION ID     
 TRANSACTION STATE  not in progress
 WARNINGS           on
@@ -982,17 +988,20 @@ select TESTABORT;
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
+AUTHENTICATION     enabled
+AUTHORIZATION      enabled
+CURRENT DIRECTORY  /opt/home/rmarton/git_ws/core/sql/regress/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
 MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64/mxci ...
-TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
 MESSAGEFILE VRSN   {2014-08-28 15:32} 
-SQL USER NAME      DB__ROOT
-SQL USER ID        99999
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
+SQL USER CONNECTED user not connected
+SQL USER DB NAME   DB__ROOT
+SQL USER ID        33333
+TERMINAL CHARSET   ISO88591
 TRANSACTION ID     
 TRANSACTION STATE  not in progress
 WARNINGS           on
@@ -1038,17 +1047,20 @@ Current DEFAULTS
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
+AUTHENTICATION     enabled
+AUTHORIZATION      enabled
+CURRENT DIRECTORY  /opt/home/rmarton/git_ws/core/sql/regress/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
 MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64/mxci ...
-TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
 MESSAGEFILE VRSN   {2014-08-28 15:32} 
-SQL USER NAME      DB__ROOT
-SQL USER ID        99999
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
+SQL USER CONNECTED user not connected
+SQL USER DB NAME   DB__ROOT
+SQL USER ID        33333
+TERMINAL CHARSET   ISO88591
 TRANSACTION ID     
 TRANSACTION STATE  not in progress
 WARNINGS           on

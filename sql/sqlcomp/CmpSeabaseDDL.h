@@ -176,7 +176,8 @@ class CmpSeabaseDDL
 
   void processSystemCatalog(NADefaults * defs);
 
-  short isPrivMgrMetadataInitialized(NADefaults *defs = NULL);
+  short isPrivMgrMetadataInitialized(NADefaults *defs = NULL,
+                                     NABoolean checkAllPrivTables = FALSE);
 
   short readAndInitDefaultsFromSeabaseDefaultsTable
     (NADefaults::Provenance overwriteIfNotYet, Int32 errOrWarn,

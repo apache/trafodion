@@ -931,6 +931,13 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SetSessionAttr_Internal (
     /*IN OPTIONAL*/            Lng32 numeric_value,
     /*IN OPTIONAL*/            char  *string_value);
 
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetAuthState_Internal(
+   /*OUT*/  bool & authenticationEnabled,
+   /*OUT*/  bool & authorizationEnabled,
+   /*OUT*/  bool & authorizationReady,
+   /*OUT*/  bool & auditingEnabled);
+
+
 SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SetErrorCodeInRTS(
                 /*IN*/ SQLSTMT_ID * statement_id,
 	        /*IN*/ Lng32     sqlErrorCode);  
