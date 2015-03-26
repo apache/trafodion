@@ -491,7 +491,7 @@ export SQ_PHANDLE_VERIFIER=1
 
 # set to 0 to disable or 1 to enable configuration of DTM as a persistent process
 # must re-execute 'sqgen' to effect change
-#export SQ_DTM_PERSISTENT_PROCESS=0
+export SQ_DTM_PERSISTENT_PROCESS=1
 
 # Check the state of the node with the cluster manager during regroup
 export SQ_WDT_CHECK_CLUSTER_STATE=0
