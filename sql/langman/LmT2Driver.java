@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -279,6 +279,13 @@ public class LmT2Driver implements java.sql.Driver
     {
       if (mapDefaultConnToType2_)
       {
+        String maxPoolSize = "0";
+        String minPoolSize = "1";
+        String initialPoolSize = "1";
+        props.setProperty("maxPoolSize", maxPoolSize);
+        props.setProperty("minPoolSize", minPoolSize);
+        props.setProperty("initialPoolSize", initialPoolSize);
+
         conn = jdbcMxDrvr_.connect(type2URL_, props);
       }
       else
