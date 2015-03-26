@@ -1,0 +1,79 @@
+////
+/**
+  *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+////
+[[architecture]]
+= Architecture
+:doctype: book
+:numbered:
+:toc: left
+:icons: font
+:experimental:
+
+[[arch-overview]]
+== Overview   
+[[arch-overview-rest]]
+=== REST  
+The Trafodion REST server, see figure <<img-rest,Figure 1>>, is a process that give access to cluster, nodes,
+applications, transactions and ODBC/JDBC Type4 connection information.
+
+The REST server provides the following:  
+
+* A lightweight standalone server. 
+* Simple configuration and startup.
+* Well known REST API.  
+* Embedded Jetty server. 
+* Embedded JDBC Type 2/Type 4 driver.
+* Embedded ZooKeeper client.
+* Automatic script change detection and recompile.
+* HTTPS encryption.
+* 100% Java implementation. 
+ 
+[[img-rest]]
+image::architecture.png[caption="Figure 1: ", title="Trafodion REST Sever Architecture"]
+
+[[arch-client]]
+== Client   
+Http clients connect to the server using the default port 4200 for HTTP and 4201 if HTTPS is setup in the embedded
+Jetty server.
+	
+[[arch-trafodionrest]]
+== TrafodionRest 
+TrafodionRest is the implementation of the server. Using its embedded Jetty server it services Http client 
+HTTP and HTTPS requests. It's a 100% java implementation.
+
+[[server-startup]]
+=== Startup Behavior 
+The server is started/stopped via the scripts found in the _/bin_ directory. During startup it opens a connection to ZooKeeper.
+
+[[server-threads]]
+=== Threads
+The server runs several background threads:
+         
+==== Embedded Jetty 
+An link:http://docs.codehaus.org/display/JETTY/Jetty+Documentation[embedded Jetty] multi-threaded server services all client requests. A default port
+is configured but this may be changed in the configuration by modifying the _rest.port_ and _rest.https.port_ properties.
+         
+[[server-processes-script-manager]]
+==== ScriptManager
+The script manager thread is responsible for reading and compiling the Python scripts found in _/bin/scripts_ directory. It  
+can detect a change in any script found there. If any script changes it will recompile it.
+ 
+==== JDBC Type 4
+An embedded driver is available to execute Trafodion SQL queries by connecting to the DCS service.
+
+==== JDBC Type 2
+An embedded driver is available to execute Trafodion SQL queries.

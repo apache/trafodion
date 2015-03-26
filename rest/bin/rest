@@ -62,7 +62,6 @@ if [ $# = 0 ]; then
   echo "  zkcli            run the ZooKeeper shell"
   echo ""
   echo "PROCESS MANAGEMENT"
-  echo "  zookeeper        run a Zookeeper server"
   echo "  rest             run a rest REST server" 
   echo ""
   echo "PACKAGE MANAGEMENT"
@@ -201,22 +200,26 @@ fi
 unset IFS
 
 #Set the right GC options based on the what we are running
-declare -a client_cmds=("shell" "zkcli")
-for cmd in $client_cmds; do
+declare -a server_cmds=("rest")
+for cmd in ${server_cmds[@]}; do
     if [[ $cmd == $COMMAND ]]; then
-        client=true
+        server=true
         break
     fi
 done
 
-if [[ $client ]]; then
-    REST_OPTS="$REST_OPTS $CLIENT_GC_OPTS"
+if [[ $server ]]; then
+    DCS_OPTS="$REST_OPTS $SERVER_GC_OPTS"
 else
-    REST_OPTS="$REST_OPTS $SERVER_GC_OPTS"
+    DCS_OPTS="$REST_OPTS $CLIENT_GC_OPTS"
 fi
 
 # figure out which class to run
-if [ "$COMMAND" = "rest" ] ; then
+if [ "$COMMAND" = "zkcli" ] ; then
+  # ZooKeeperMainServerArg returns '-server HOST:PORT' or empty string.
+  SERVER_ARG=`"$bin"/rest --config "$REST_CONF_DIR" org.trafodion.rest.zookeeper.ZooKeeperMainServerArg`
+  CLASS="org.apache.zookeeper.ZooKeeperMain ${SERVER_ARG}"
+elif [ "$COMMAND" = "rest" ] ; then
   CLASS='org.trafodion.rest.TrafodionRest'
   if [ "$1" != "stop" ] ; then
     REST_OPTS="$REST_OPTS $REST_REST_OPTS"

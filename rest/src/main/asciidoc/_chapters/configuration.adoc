@@ -1,0 +1,177 @@
+////
+<!-- 
+/**
+  *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-->
+////
+[[configuration]]
+= Configuration
+:doctype: book
+:numbered:
+:toc: left
+:icons: font
+:experimental:
+
+This chapter describes the server configuration. Even though the Trafodion installer prepares the configuration files for you
+a thorough read of this chapter will help with non-standard configurations. Please read this chapter carefully and ensure that all 
+requirements have been satisfied. Failure to do so will cause you grief debugging strange errors.
+
+Trafodion REST uses the same configuration mechanism as Apache Hadoop.
+All configuration files are located in the _conf/_ directory.
+
+[TIP]
+====
+Be careful editing XML.  Make sure you close all elements. Run your file through +xmllint+ or similar to 
+ensure well-formedness of your document after an edit session.
+====
+ 
+.Keep Configuration In Sync Across the Cluster
+[WARNING]
+====
+After you make an edit to any configuration file, make sure you copy the content of the _conf_ directory to all nodes of the cluster.
+The server will not do this for you. Use +rsync+, +scp+, or another secure mechanism for copying the configuration files to your nodes.
+A restart is needed for servers to pick up changes.
+====
+
+[[zookeeper]]
+== ZooKeeper 
+
+The server depends on a running ZooKeeper cluster to retrieve DCS server, client connection status and metrics.
+
+Set the ensemble servers and client port in _rest-site.xml_ using the `rest.zookeeper.quorum` and `rest.zookeeper.property.clientPort` properties. 
+This `rest.zookeeper.quorum` property defaults to a single ensemble member at `localhost`. 
+
+[source,xml]
+----
+<configuration>
+  ...
+  <property>
+    <name>rest.zookeeper.property.clientPort</name>
+    <value>2181</value>
+    <description>The port at which ZooKeeper server is listening for clients.
+    </description>
+  </property>
+  <property>
+    <name>rest.zookeeper.quorum</name>
+    <value>
+    host1.example.com,host2.example.com,host3.example.com,host4.example.com,host5.example.com
+    </value>
+    <description>Comma separated list of servers in the ZooKeeper Quorum.
+    For example, "host1.mydomain.com,host2.mydomain.com,host3.mydomain.com".
+    By default this is set to localhost. For a multi-node setup, this should be set to a full
+    list of ZooKeeper quorum servers. 
+    </description>
+  </property>
+...
+</configuration>
+----
+
+== Configuration Files
+         
+=== _rest-site.xml_ and _rest-default.xml_
+You add site-specific configuration to the file _conf/rest-site.xml_. For the list of configurable properties, 
+see <<rest_default_configurations,REST Default Configuration>> below or view the raw _rest-default.xml_ source 
+file in the source code at _src/main/resources_.
+
+Not all configuration options make it out to _rest-default.xml_. Configuration
+that it is thought rare anyone would change can exist only in code; the only way 
+to discover such configurations is via a reading of the source code itself.
+      
+Currently, changes here will require a restart for the server to notice the change.
+      
+//The file rest-default.xml is generated as part of the build of the rest site.  See the rest pom.xml.
+//The generated file is an asciidoc file.
+// rest/src/main/asciidoc
+// 
+include::../../../../target/asciidoc/rest-default.adoc[]
+
+=== _rest-env.sh_
+Set server environment variables in this file. Examples include options to pass the JVM on start of
+the server such as heap size and garbarge collector configs. You can also set configurations for server configuration, log directories,
+niceness, ssh options, where to locate process pid files, etc. Open the file at _conf/rest-env.sh_ and peruse its content.
+Each option is fairly well documented.  Add your own environment variables here if you want them read by the server on startup.
+  
+Changes here will require a restart for the server to notice the change.
+ 
+=== _log4j.properties_
+
+Edit this file to change rate at which the server log files are rolled and to change the level at which the server logs messages. 
+
+Changes here will require a restart for the server to notice the change.
+
+[[rest.keystore]]
+=== _rest-keystore_  
+This file will only be present if the property _rest.https.password_ has been set in _conf/rest-site.xml_. 
+Please see <<important.configurations,Important Configurations>> for more detail.
+      
+[[important.configurations]]
+== The Important Configurations 
+Below we list the *important* Configurations.
+
+=== `rest.port`
+The default value is 4200. This is the port the embedded Jetty server binds to
+waiting for client HTTP connections. The value may need to be changed
+if this port number conflicts with other ports in use on your cluster.
+           
+To change this configuration, edit _conf/rest-site.xml_, copy the changed file around the cluster and restart.
+
+=== `rest.https.port`
+The default value is 4201. This is the port the embedded Jetty server binds to
+waiting for client HTTPS connections. The value may need to be changed
+if this port number conflicts with other ports in use on your cluster.
+
+=== `rest.ssl.password`
+This property is not present by default in _conf/rest-site.xml_. Typically the Trafodion
+installer sets this property to an obfuscated password string. If this property is present then the server
+will setup HTTPS in the embedded Jetty server. To create an obfuscated password for this property use
+the following command:
+
+----
+java -classpath $REST_HOME/lib/jetty-6.1.26.jar:$REST_HOME/lib/jetty-util-6.1.26.jar org.mortbay.jetty.security.Password {password}
+----
+
+The output of this command is similar to:
+----
+OBF:{obfuscated password string}
+MD5:{obfuscated password string}
+----
+
+Copy/paste the entire string beginning including "OBF:" into this property.
+The server will use this property when creating the _/conf/rest-keystore_ directory.
+           
+To change this configuration, edit _conf/rest-site.xml_, copy the changed file around the cluster and restart.
+
+[TIP]
+====
+To decrypt the obfuscated string in `rest.ssl.password` do the following:
+
+----
+java -classpath $REST_HOME/lib/jetty-6.1.26.jar:$REST_HOME/lib/jetty-util-6.1.26.jar org.mortbay.jetty.security.Password {obfuscated password string}
+----
+
+The output of this command is similar to:
+----
+{your unobfuscated password}
+OBF:{obfuscated password string}
+MD5:{obfuscated password string}
+----
+====
+
+=== `dcs.master.port`
+The default value is 37800. This is the port the embedded JDBC Type 4 driver
+uses to connect to Trafodion DCS. 
+
+To change this configuration, edit _conf/rest-site.xml_, copy the changed file around the cluster and restart.

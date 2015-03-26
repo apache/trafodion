@@ -86,6 +86,3 @@ export REST_OPTS="-XX:+UseConcMarkSweepGC"
 
 # The directory where pid files are stored. $REST_HOME/tmp by default.
 # export REST_PID_DIR=/var/rest/pids
-
-# Tell REST whether it should manage it's own instance of Zookeeper or not.
-# export REST_MANAGES_ZK=true

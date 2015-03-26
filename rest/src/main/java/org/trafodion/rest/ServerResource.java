@@ -68,7 +68,25 @@ public class ServerResource extends ResourceBase {
 		super();
 	}
 	
-	private String sqcheck(String operation) throws IOException {
+	private String buildRemoteException(String className,String exception,String message) throws IOException {
+  
+	    try {
+	        JSONObject jsonRemoteExceptionDetail = new JSONObject();
+	        jsonRemoteExceptionDetail.put("javaClassName", className);
+	        jsonRemoteExceptionDetail.put("exception",exception);
+	        jsonRemoteExceptionDetail.put("message",message);
+	        JSONObject jsonRemoteException  = new JSONObject();	        
+	        jsonRemoteException.put("RemoteException",jsonRemoteExceptionDetail);
+	        if (LOG.isDebugEnabled()) 
+	            LOG.debug(jsonRemoteException.toString());
+	        return jsonRemoteException.toString();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        throw new IOException(e);
+	    }
+	}
+	
+	private JSONObject sqcheck(String operation) throws IOException {
 	    ScriptContext scriptContext = new ScriptContext();
 	    scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
 	    scriptContext.setCommand("sqcheck -j -c " + operation);
@@ -131,10 +149,10 @@ public class ServerResource extends ResourceBase {
 	        throw new IOException(e);
 	    }
 
-	    return jsonObject.toString();
+	    return jsonObject;
 	}
 
-	private String pstack(String program) throws IOException {
+	private JSONArray pstack(String program) throws IOException {
 	    ScriptContext scriptContext = new ScriptContext();
 	    scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
 	    scriptContext.setCommand("sqpstack " + program);
@@ -165,7 +183,7 @@ public class ServerResource extends ResourceBase {
 	        Scanner scanner = new Scanner(scriptContext.getStdOut().toString()); 
 	        while(scanner.hasNextLine()) {
 	            String line = scanner.nextLine();
-	            if(line.contains("pstack-ing monitor")) {
+	            if(line.contains("pstack-ing")) {
 	                continue;
 	            } else if (line.contains("pstack")) {
 	                if(pstack == true) {
@@ -186,10 +204,10 @@ public class ServerResource extends ResourceBase {
 	        throw new IOException(e);
 	    }
 	    
-	    return json.toString();
+	    return json;
 	}
 	
-    private String dcs() throws IOException {
+    private JSONArray dcs() throws IOException {
 
         JSONArray json = new JSONArray();
         try {
@@ -222,8 +240,11 @@ public class ServerResource extends ResourceBase {
             e.printStackTrace();
             throw new IOException(e);
         }
+        
+        if(LOG.isDebugEnabled())
+            LOG.debug("json.length() = " + json.length());
 
-        return json.toString();
+        return json;
     }
     
     private String nodes() throws IOException {
@@ -252,6 +273,50 @@ public class ServerResource extends ResourceBase {
     }
     
     @GET
+    @Path("/test")
+    @Produces({MIMETYPE_JSON})
+    public Response test(
+            final @Context UriInfo uriInfo,
+            final @Context Request request) {
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("GET " + uriInfo.getAbsolutePath());
+
+                MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+                String output = " Query Parameters :\n";
+                for (String key : queryParams.keySet()) {
+                    output += key + " : " + queryParams.getFirst(key) +"\n";
+                }
+                LOG.debug(output);
+
+                MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
+                output = " Path Parameters :\n";
+                for (String key : pathParams.keySet()) {
+                    output += key + " : " + pathParams.getFirst(key) +"\n";
+                }
+                LOG.debug(output);
+            }
+ 
+            String result = buildRemoteException(
+                    "org.trafodion.rest.NotFoundException",
+                    "NotFoundException",
+                    "This is my exception text");
+            return Response.status(Response.Status.NOT_FOUND)
+                    .type(MIMETYPE_JSON).entity(result)
+                    .build();
+            
+            //ResponseBuilder response = Response.ok(result);
+            //response.cacheControl(cacheControl);
+            //return response.build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
+                    .build();
+        }
+    }    
+    
+    @GET
     @Produces({MIMETYPE_JSON})
     public Response getAll(
             final @Context UriInfo uriInfo,
@@ -275,9 +340,19 @@ public class ServerResource extends ResourceBase {
                 LOG.debug(output);
             }
 
-            String result = sqcheck("all");
+            JSONObject jsonObject = sqcheck("all");
+            
+            if(jsonObject.length() == 0) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No server resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
  
-            ResponseBuilder response = Response.ok(result);
+            ResponseBuilder response = Response.ok(jsonObject.toString());
             response.cacheControl(cacheControl);
             return response.build();
         } catch (IOException e) {
@@ -313,9 +388,19 @@ public class ServerResource extends ResourceBase {
                 LOG.debug(output);
             }
 
-            String result = sqcheck("dtm");
+            JSONObject jsonObject = sqcheck("dtm");
+            
+            if(jsonObject.length() == 0) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No dtm resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
  
-            ResponseBuilder response = Response.ok(result);
+            ResponseBuilder response = Response.ok(jsonObject.toString());
             response.cacheControl(cacheControl);
             return response.build();
         } catch (IOException e) {
@@ -351,9 +436,19 @@ public class ServerResource extends ResourceBase {
                 LOG.debug(output);
             }
 
-            String result = sqcheck("rms");
+            JSONObject jsonObject = sqcheck("rms");
+            
+            if(jsonObject.length() == 0) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No rms resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
  
-            ResponseBuilder response = Response.ok(result);
+            ResponseBuilder response = Response.ok(jsonObject.toString());
             response.cacheControl(cacheControl);
             return response.build();
         } catch (IOException e) {
@@ -389,9 +484,19 @@ public class ServerResource extends ResourceBase {
                 LOG.debug(output);
             }
 
-            String result = sqcheck("dcs");
+            JSONObject jsonObject = sqcheck("dcs");
+            
+            if(jsonObject.length() == 0) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No dcs resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
  
-            ResponseBuilder response = Response.ok(result);
+            ResponseBuilder response = Response.ok(jsonObject.toString());
             response.cacheControl(cacheControl);
             return response.build();
         } catch (IOException e) {
@@ -427,9 +532,18 @@ public class ServerResource extends ResourceBase {
                 LOG.debug(output);
             }
 
-            String result = dcs();
+            JSONArray jsonArray = dcs();
+            if(jsonArray.length() == 0) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No dcs connection resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
  
-            ResponseBuilder response = Response.ok(result);
+            ResponseBuilder response = Response.ok(jsonArray.toString());
             response.cacheControl(cacheControl);
             return response.build();
         } catch (IOException e) {
@@ -465,9 +579,18 @@ public class ServerResource extends ResourceBase {
                 LOG.debug(output);
             }
 
-            String result = nodes();
+            String json = nodes();
+            if(json.equals("[]")) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No node resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
  
-            ResponseBuilder response = Response.ok(result);
+            ResponseBuilder response = Response.ok(json);
             response.cacheControl(cacheControl);
             return response.build();
         } catch (IOException e) {
@@ -503,9 +626,19 @@ public class ServerResource extends ResourceBase {
                 LOG.debug(output);
             }
 
-            String result = pstack("");
+            JSONArray jsonArray = pstack("");
+            
+            if(jsonArray.length() == 0) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No pstack resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
 
-            ResponseBuilder response = Response.ok(result);
+            ResponseBuilder response = Response.ok(jsonArray.toString());
             response.cacheControl(cacheControl);
             return response.build();
         } catch (IOException e) {
@@ -541,9 +674,20 @@ public class ServerResource extends ResourceBase {
                 }
                 LOG.debug(output);
             }
-            String result = pstack(program);
+            
+            JSONArray jsonArray = pstack(program);
+            
+            if(jsonArray.length() == 0) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No pstack resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
  
-            ResponseBuilder response = Response.ok(result);
+            ResponseBuilder response = Response.ok(jsonArray.toString());
             response.cacheControl(cacheControl);
             return response.build();
         } catch (IOException e) {
@@ -552,5 +696,5 @@ public class ServerResource extends ResourceBase {
                     .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
                     .build();
         }
-    }    
+    } 
 }
