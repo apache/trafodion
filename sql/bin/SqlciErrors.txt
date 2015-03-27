@@ -431,7 +431,7 @@
 1530 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Failed to add the LDAP default configuration.
 1540 ZZZZZ 99999 BEGINNER MINOR DBADMIN The NO POPULATE clause is not allowed for index $0~String0 on volatile table $1~TableName.
 1541 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of BLOB datatype as a key of the base table or an index is not allowed.
-1550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN ---- Reserved for UDF ----
+1550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Failed to create UDF $0~string0 with $0~int0 parameters. A scalar UDF can have a maximum of 32 parameters.
 1551 ZZZZZ 99999 ADVANCED MAJOR DBADMIN ---- Reserved for UDF ----
 1552 ZZZZZ 99999 ADVANCED MAJOR DBADMIN ---- Reserved for UDF ----
 1553 ZZZZZ 99999 ADVANCED MAJOR DBADMIN ---- Reserved for UDF ----

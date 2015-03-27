@@ -807,6 +807,16 @@ void CmpSeabaseDDL::createSeabaseRoutine(
         createRoutineNode->getParamArray();
   Lng32 numParams = routineParamArray.entries();
 
+  if ((createRoutineNode->getRoutineType() == COM_SCALAR_UDF_TYPE) &&
+      (numParams > 32))
+    {
+      *CmpCommon::diags() << DgSqlCode( -1550 )
+                          << DgString0( extRoutineName )
+                          << DgInt0( numParams );
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
 #define MAX_SIGNATURE_LENGTH 8193
   // Allocate buffer for generated signature
   char sigBuf[MAX_SIGNATURE_LENGTH];

@@ -484,6 +484,30 @@ SCH.VALIDATE_SESSION_USER_NAME
 
 --- SQL operation complete.
 >>
+>>showddl function errorwarn ;
+
+CREATE FUNCTION TRAFODION.SCH.ERRORWARN
+  (
+    IN INTEGER SIGNED
+  )
+  RETURNS
+  (
+    OUT ERRORWARN INTEGER SIGNED
+  )
+  EXTERNAL NAME 'errOrWarn'
+  LIBRARY TRAFODION.SCH.ERRORWARN
+  LANGUAGE C
+  PARAMETER STYLE SQL
+  NO SQL
+  NO FINAL CALL
+  STATE AREA SIZE 1024
+  ALLOW ANY PARALLELISM
+  DETERMINISTIC
+  SAFE EXECUTION MODE
+  ;
+
+--- SQL operation complete.
+>>
 >>obey TEST107(tests);
 >>--------------------------------------------------------------------------
 >>prepare S from values(add2(1,2));
@@ -874,7 +898,7 @@ abcx
 NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
 -----------  --------------  -----------  --------------
 
-         69              11           29        20971520
+         70              11           30        20971520
 
 --- 1 row(s) selected.
 >>

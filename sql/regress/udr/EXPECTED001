@@ -191,6 +191,31 @@ SCH.SESSIONIZE_STATIC
 
 --- SQL operation complete.
 >>
+>>showddl table_mapping function sessionize_static;
+
+CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_STATIC
+  (
+    IN TS_COLNAME CHAR(10) CHARACTER SET ISO88591
+  , IN USER_COLNAME CHAR(10) CHARACTER SET ISO88591
+  , IN TIMEINTVAL INTEGER SIGNED
+  )
+  RETURNS
+  (
+    OUT SESSION_ID LARGEINT
+  , OUT USERID CHAR(32) CHARACTER SET ISO88591
+  , OUT TS LARGEINT
+  )
+  EXTERNAL NAME 'SESSIONIZE_STATIC'
+  LIBRARY TRAFODION.SCH.SESSIONIZE_STATIC
+  LANGUAGE C
+  NO SQL
+  NO FINAL CALL
+  NO STATE AREA
+  SAFE EXECUTION MODE
+  ;
+
+--- SQL operation complete.
+>>
 >>SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id
 +>FROM UDF(sessionize_static(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
 +>                                 FROM clicks
@@ -244,10 +269,10 @@ SCH.SESSIONIZE_STATIC
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1                     1  super-user                          212292179999500000  12.345.567.345 
-                   2                     1  super-user                          212292187199500000  12.345.567.345 
-                   2                     2  super-services                      212292187199500000  12.345.567.345 
-                   2                     3  super-services                      212292187199550000  12.345.567.345 
+                   1                     1  super-user                          212294167199500000  12.345.567.345 
+                   2                     1  super-user                          212294174399500000  12.345.567.345 
+                   2                     2  super-services                      212294174399500000  12.345.567.345 
+                   2                     3  super-services                      212294174399550000  12.345.567.345 
 
 --- 4 row(s) selected.
 >>
@@ -305,7 +330,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1                     1  super-user                          212292352799500000  12.345.567.345 
+                   1                     1  super-user                          212294167199500000  12.345.567.345 
 
 --- 1 row(s) selected.
 >>
@@ -365,11 +390,13 @@ SESSION_ID            SEQUENCE_NO           C_CHAR           C_CHAR_UPSHIFT   C_
 >>-- negative tests
 >>select * from udf(sessionize_err('abc')) XOX(a);
 
-*** ERROR[11246] An error occurred locating function 'SESSIONIZE_NON_EXISTENT' in library 'TEST001.dll'.
+*** ERROR[11246] An error occurred locating function 'SESSIONIZE_NON_EXISTENT' in library '/opt/home/ssubbiah/trafodion/core/sqf/rundir/udr/TEST001.dll'.
 
-*** ERROR[8822] The statement was not prepared.
+*** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
+/opt/home/ssubbiah/trafodion/core/sqf/rundir/udr/TEST001.dll: undefined symbol: SESSIONIZE_NON_EXISTENT.
 
->>-- expect error 11246
+--- 0 row(s) selected.
+>>-- expect errors 11246 and 11248
 >>
 >>-- these should be caught by the compiler interface
 >>select * from udf(sessionize_dynamic(table (select * from clicks), 'TS')) XOX;

@@ -204,6 +204,8 @@ library TEST001;
 
 get table_mapping functions for library TEST001 ;
 
+showddl table_mapping function sessionize_static;
+
 SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id
 FROM UDF(sessionize_static(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
                                  FROM clicks

@@ -279,6 +279,28 @@
 
 --- SQL operation complete.
 >>
+>>showddl procedure rs3p;
+
+CREATE PROCEDURE TRAFODION.SPJRS.RS3P
+  (
+    IN QUERY1 CHAR(1000) CHARACTER SET ISO88591
+  , IN QUERY2 CHAR(1000) CHARACTER SET ISO88591
+  , IN QUERY3 CHAR(1000) CHARACTER SET ISO88591
+  , OUT STATUS CHAR(70) CHARACTER SET ISO88591
+  )
+  EXTERNAL NAME 'TEST101.rs3p (java.lang.String,java.lang.String,java.lang.String,java.lang.String[],java.sql.ResultSet[],java.sql.ResultSet[],java.sql.ResultSet[])'
+  LIBRARY TRAFODION.SPJRS.RS3P
+  EXTERNAL SECURITY INVOKER
+  LANGUAGE JAVA
+  PARAMETER STYLE JAVA
+  READS SQL DATA
+  DYNAMIC RESULT SETS 3
+  TRANSACTION REQUIRED
+  ISOLATE
+  ;
+
+--- SQL operation complete.
+>>
 >>obey TEST101(basic_test);
 >>--------------------------------------------------------------------------
 >>call order_summary('04/01/2003', ?);

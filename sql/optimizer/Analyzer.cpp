@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2350,8 +2350,8 @@ void Join::predAnalysis(QueryAnalysis* qa)
 // returns TRUE if join is a spoiler
 NABoolean Join::isASpoilerJoin()
 {
-  if(isRoutineJoin() && (CmpCommon::getDefault(ROUTINE_JOINS_SPOIL_JBB) == DF_OFF))
-    return FALSE;
+  if(isRoutineJoin() && (CmpCommon::getDefault(ROUTINE_JOINS_SPOIL_JBB) == DF_ON))
+    return TRUE;
     
   // TSJ and right outer join are not allowed in the MultiJoin framework
   // Note isRightJoin returns TRUE for full outer joins also, hence
@@ -3597,6 +3597,23 @@ const NAString TableAnalysis::getText() const
   for (ValueId x = usedCols_.init(); usedCols_.next(x); usedCols_.advance(x))
   {
     result += ">>>> " + x.colAnalysis()->getText();
+  }
+  const CANodeIdSet &predecessors = caNodeAnalysis_->getJBBC()->getPredecessorJBBCs();
+
+  if (predecessors.entries() > 0)
+  {
+    char buf[12];
+    NABoolean first = TRUE;
+    result += "predecessor JBBCs: {";
+    for (CANodeId x=predecessors.init(); predecessors.next(x); predecessors.advance(x))
+    {
+      if (!first)
+        result += ", ";
+      first = FALSE;
+      snprintf(buf, sizeof(buf), "%d", x.toUInt32());
+      result += buf;
+    }
+    result += "}";
   }
 
   result += "\nIndexOnly Access Paths: \n";

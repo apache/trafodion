@@ -21631,10 +21631,12 @@ show_statement:
           | TOK_SHOWDDL table_mapping_function_tokens actual_routine_name 
             optional_showddl_object_options_list
 	     {
+               $3 
+                 ->getQualifiedNameObj().setObjectNameSpace(COM_UDF_NAME);
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
 			 Describe(SQLTEXT(), *$3/*actual_routine_name*/, Describe::LONG_, 
-			          COM_UDR_NAME, $4/*optional_showddl_options_lsit*/),
+			          COM_UDF_NAME, $4/*optional_showddl_options_lsit*/),
 			 REL_ROOT,
 			 new (PARSERHEAP())
 			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
@@ -21681,8 +21683,8 @@ show_statement:
           | TOK_SHOWDDL_LIBRARY table_name 
                optional_showddl_object_options_list
   	       {
-  	         $2 // was qualified_name in prototype, now table_name
-         	  	 ->getQualifiedNameObj().setObjectNameSpace(COM_LIBRARY_NAME); 
+  	         $2 
+                   ->getQualifiedNameObj().setObjectNameSpace(COM_LIBRARY_NAME); 
   	         $$ = new (PARSERHEAP())
         		 RelRoot(new (PARSERHEAP()) 
     	  		 Describe(SQLTEXT(), *$2, Describe::LONG_, COM_LIBRARY_NAME, $3),
@@ -21709,10 +21711,10 @@ show_statement:
 	     // handles procedures in the same manner as tables since procedures
 	     // are now in the TA namespace.
 	       $3 // actual_routine_name
-		 ->getQualifiedNameObj().setObjectNameSpace(COM_TABLE_NAME); // SPJ
+		 ->getQualifiedNameObj().setObjectNameSpace(COM_UDF_NAME); // SPJ
 	       $$ = new (PARSERHEAP())
 		 RelRoot(new (PARSERHEAP())
-			 Describe(SQLTEXT(), *$3, Describe::LONG_, COM_TABLE_NAME, $4),
+			 Describe(SQLTEXT(), *$3, Describe::LONG_, COM_UDF_NAME, $4),
 			 REL_ROOT,	
 			 new (PARSERHEAP())
 			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));

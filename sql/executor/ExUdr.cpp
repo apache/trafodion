@@ -1492,8 +1492,6 @@ void ExUdrTcb::reportLoadReply(NABoolean loadWasSuccessful)
     {
       setUdrTcbState(LOAD_FAILED);
     }
-
-    insertUpQueueEntry(ex_queue::Q_SQLERROR, d);
   }
 
   tickleSchedulerWork();

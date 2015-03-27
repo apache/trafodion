@@ -5490,6 +5490,34 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) 
     return this;
 
+   Int32 childDegree = 0;
+   Subquery * subq = NULL;
+   UDFunction * udf = NULL;
+   Int32 origArity = getArity();
+      
+   for (Int32 chld=0; chld < origArity; chld++)
+   {
+     if (child(chld)->getOperatorType() == ITM_USER_DEF_FUNCTION)
+     {       
+       udf = (UDFunction *) child(chld)->castToItemExpr();
+       childDegree += udf->getRoutineDesc()->getOutputColumnList().entries();
+     }
+     else
+       childDegree += 1;
+   }
+      
+   if (childDegree > origArity) 
+   {
+     NAString upperFunc(getText(), bindWA->wHeap());
+     
+     upperFunc.toUpper();
+     *CmpCommon::diags() << DgSqlCode(-4479) << DgString0(upperFunc) 
+                           << DgInt1(origArity) << DgInt2(childDegree);
+     
+     bindWA->setErrStatus();
+     return NULL;
+   }
+
   // If special1 mode is on, then <datetime> +|- <number> and
   // <interval> +|- are allowed.
   //
