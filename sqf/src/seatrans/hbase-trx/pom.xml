@@ -327,6 +327,7 @@ if we can combine these profiles somehow -->
                     <directory>${basedir}/src/main/protobuf</directory>
                     <includes>
                       <include>TrxRegion.proto</include>
+                      <include>SsccRegion.proto</include>
                     </includes>
                   </source>
                   <output>${basedir}/src/main/java/</output>
