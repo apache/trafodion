@@ -54,7 +54,7 @@ export MY_NODES=XXXXX
 # directory where needed libraries can be found
 export TOOLSDIR=XXXXX
 
-export JAVA_HOME="$JAVA_HOME"
+export JAVA_HOME=XXXXX
 
 #-------------------------------------------
 # Execute the sqenv.sh script if it exists.

@@ -224,7 +224,7 @@ else
          exit -1
       fi
       
-      NODE_LIST="$newNode $NODE_LIST"  
+      NODE_LIST="$NODE_LIST $newNode"  
    done
 fi
 
@@ -301,7 +301,7 @@ for node in $NODE_LIST
 do
    THIS_JVM_VER="$(ssh -n $node $JAVA_HOME/bin/java -version 2>&1 > /dev/null)"
    if [[ "$THIS_JVM_VER" == *"No such file"* ]]; then
-      echo "***ERROR: Unable to find Java version"
+      echo "***ERROR: Unable to find Java version on node $node"
       echo "***ERROR: Must enter a specific Java version (example: /usr/java/jdk1.7.0_67)"
       echo "***ERROR: Please check for typos and that directory exists"
       exit -1
@@ -400,15 +400,37 @@ if [ $package -eq 0 ]; then
 
    #TODO: do a quick sanity check on the file to make sure its a dcs build tar file
    
+   # since its not a package tar file, we'll need to prompt for the rest build file
+   echo -n "Enter location of REST tar file ($REST_BUILD): "
+   read answer
+   if [ -z $answer ]; then
+      if [ -z $REST_BUILD ]; then
+         echo "***ERROR: Must specify REST tar file location."
+         exit -1
+      fi
+   else
+      REST_BUILD=$answer
+   fi
+   
+   # make sure file exists
+   if [ ! -f $REST_BUILD ]; then
+      echo "***ERROR: $REST_BUILD does not exist"
+      exit -1
+   fi
+
+   #TODO: do a quick sanity check on the file to make sure its a rest build tar file
+   
 else
    # user specifed a package file
    TRAF_BUILD=""
    DCS_BUILD=""
+   REST_BUILD=""
 fi
 
 echo "export TRAF_PACKAGE=\"$TRAF_PACKAGE\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $LOCAL_TRAF_CONFIG
 echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $LOCAL_TRAF_CONFIG
+echo "export REST_BUILD=\"$REST_BUILD\"" >> $LOCAL_TRAF_CONFIG
 
 #Check if install_features file exists
 if [[ -z $TRAF_BUILD ]]; then

@@ -65,7 +65,7 @@ if [ $node_count -ne 1 ]; then
     pdsh $MY_NODES sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
     pdsh $MY_NODES sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
     pdsh $MY_NODES sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
-    pdsh $MY_NODES mkdir -p $PWD 2>/dev/null
+    pdsh $MY_NODES mkdir -p $LOCAL_WORKDIR 2>/dev/null
     cp $UNTAR_DIR/export/lib/$hbase_trx_jar $LOCAL_WORKDIR
     pdcp $MY_NODES $LOCAL_WORKDIR/$hbase_trx_jar $LOCAL_WORKDIR
     pdsh $MY_NODES sudo cp $LOCAL_WORKDIR/$hbase_trx_jar /usr/lib/hbase/lib

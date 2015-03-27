@@ -153,6 +153,7 @@ sudo su $TRAF_USER --command="echo $QPIDPORT > $TRAF_USER_DIR/.qpidports"
 echo "***INFO: creating .bashrc file"
 sed -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" <$TRAF_WORKDIR/installer/bashrc_default >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
 sed -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" <$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1 >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2
+sed -e "s@export JAVA_HOME=.*@export JAVA_HOME=\"$JAVA_HOME\"@" <$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2 >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp3
 
 if [ "$userid_already_exists" == "Y" ]; then
     if [ -f $TRAF_USER_DIR/bashrc_backup ]; then
@@ -162,10 +163,11 @@ if [ "$userid_already_exists" == "Y" ]; then
         sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/bashrc_backup
     fi
 fi
-sudo cp $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2 $TRAF_USER_DIR/.bashrc
+sudo cp $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp3 $TRAF_USER_DIR/.bashrc
 sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/.bashrc
 rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
 rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2
+rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp3
 
 #=================================================
 # copy TRAF_USER_DIR to all other nodes if more than one

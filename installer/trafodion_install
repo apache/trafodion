@@ -116,6 +116,7 @@ export TRAF_WORKDIR="/usr/lib/trafodion"
 export LOCAL_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
 export TRAF_CONFIG="/etc/trafodion/trafodion_config"
 export TRAF_CONFIG_DIR=$(dirname $TRAF_CONFIG)
+export TRAF_CONFIG_FILE=$(basename $TRAF_CONFIG)
 
 #==============================================
 # Setup log & working directories
@@ -143,6 +144,13 @@ sudo cp -r $(cd "$( dirname "$0" )" && pwd)/ $TRAF_WORKDIR
 # or prompt to generate a new one.
 if [ -z "$USER_CONFIG" ]; then
    if [ -f $TRAF_CONFIG ]; then
+      # strip out LOCAL_WORKDIR from config file, if there.
+      # LOCAL_WORKDIR was erroneously saved to the config file in
+      # previous versions of the installer scripts and since the config
+      # file hangs around between installer runs it needs to be stripped
+      # out here before we source in the config file
+      cp $TRAF_CONFIG config_temp
+      sudo grep -vE "LOCAL_WORKDIR" config_temp > $TRAF_CONFIG 2> /dev/null
       source $TRAF_CONFIG
    fi
 
@@ -205,14 +213,8 @@ else
     TRAF_PDSH="pdsh -S $MY_NODES"
 fi
 
-
 sed -i '/ACCEPT_LICENSE\=/d' $TRAF_CONFIG
 echo "export ACCEPT_LICENSE=\"$ACCEPT_LICENSE\"" >> $TRAF_CONFIG
-
-# create a working directory on all nodes
-$TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR
-$TRAF_PDSH sudo chmod 777 $TRAF_WORKDIR
-$TRAF_PDSH sudo mkdir -p $LOCAL_WORKDIR
 
 #==============================================
 #Check that Hadoop nodes match Trafodion nodes
@@ -297,7 +299,7 @@ done
 # This will be a global location that all tar files are untarred into
 
 # if we have the package tar file we need to extract
-# trafodion core and dcs builds from it
+# trafodion core and dcs  and rest-server builds from it
 if [ ! -z $TRAF_PACKAGE ]; then
 
    # create directory to contain build tar files using the 
@@ -320,6 +322,9 @@ if [ ! -z $TRAF_PACKAGE ]; then
    build_file=$(ls $UNTAR_DIR | grep "dcs")
    DCS_BUILD=$UNTAR_DIR/$build_file
    
+   build_file=$(ls $UNTAR_DIR | grep "rest")
+   REST_BUILD=$UNTAR_DIR/$build_file
+   
 else
    # we don't have a package and only have the trafodion and dcs build tar files
    # we can't use the package filename timestamp since we don't have a package tar
@@ -340,6 +345,14 @@ else
       exit -1
    fi
 
+   if [ ! -z $REST_BUILD ]; then
+      sudo cp $REST_BUILD $UNTAR_DIR
+      if [ $? -ne 0 ]; then
+         echo "***ERROR: unable to copy REST build ($REST_BUILD) to $UNTAR_DIR"
+         exit -1
+      fi
+   fi
+
    build_file=$(basename $TRAF_BUILD)
    TRAF_BUILD=$UNTAR_DIR/$build_file
 
@@ -348,12 +361,17 @@ else
    build_file=$(basename $DCS_BUILD)
    DCS_BUILD=$UNTAR_DIR/$build_file
 
+   build_file=$(basename $REST_BUILD)
+   REST_BUILD=$UNTAR_DIR/$build_file
+   
 fi
 
 sed -i '/TRAF_BUILD\=/d' $TRAF_CONFIG
 echo "export TRAF_BUILD=\"$TRAF_BUILD\"" >> $TRAF_CONFIG
 sed -i '/DCS_BUILD\=/d' $TRAF_CONFIG
 echo "export DCS_BUILD=\"$DCS_BUILD\"" >> $TRAF_CONFIG
+sed -i '/REST_BUILD\=/d' $TRAF_CONFIG
+echo "export REST_BUILD=\"$REST_BUILD\"" >> $TRAF_CONFIG
 
 # add the untar directory to the config file
 sed -i '/UNTAR_DIR\=/d' $TRAF_CONFIG
@@ -563,6 +581,21 @@ else
       echo "***INFO: Trafodion environment setup completed" | tee -a $INSTALL_LOG
    fi
 fi
+
+# create working directories on all nodes
+$TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR
+$TRAF_PDSH sudo chmod 777 $TRAF_WORKDIR
+$TRAF_PDSH sudo mkdir -p $LOCAL_WORKDIR
+
+# copy config file to all nodes
+if [ $node_count -ne 1 ]; then
+   cp $TRAF_CONFIG $LOCAL_WORKDIR
+   pdcp $MY_NODES $LOCAL_WORKDIR/$TRAF_CONFIG_FILE $LOCAL_WORKDIR
+   $TRAF_PDSH sudo mkdir -p $TRAF_CONFIG_DIR
+   $TRAF_PDSH sudo cp $LOCAL_WORKDIR/$TRAF_CONFIG_FILE $TRAF_CONFIG_DIR
+   $TRAF_PDSH sudo chmod 777 $TRAF_CONFIG
+fi
+
 
 #Create sqconfig file if it does not exist
 

@@ -207,6 +207,17 @@ if [ "$?" != "0" ]; then
 fi
 
 #==========================================
+# install REST Server
+
+if [ ! -z $REST_BUILD ]; then
+   $TRAF_WORKDIR/installer/rest_installer --rest_build $REST_BUILD
+   if [ "$?" != "0" ]; then
+       echo "***ERROR: REST Server install failed.  Check install log files for details." | tee -a $INSTALL_LOG
+       exit -1;
+   fi
+fi
+
+#==========================================
 
 if [ "$node_count" -ne "1" ]; then
    echo "***INFO: copying install to all nodes" | tee -a $INSTALL_LOG
