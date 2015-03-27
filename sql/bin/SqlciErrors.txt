@@ -1472,6 +1472,8 @@ $1~String1 --------------------------------
 8029 HY018 99999 BEGINNER INFRM LOGONLY Server declined cancel request. The user is not authorized to make this request.
 8030 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- reserved, but unused as of 12/06/12 ---
 8031 HY018 99999 BEGINNER INFRM LOGONLY Server declined cancel request for query ID $0~String0. $1~String1.
+8032 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information for the provided query id is not available in repository.
+8033 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information is too large to be stored in repository.
 8100 ZZZZZ 99999 BEGINNER MINOR LOGONLY Define $1~string0 does not exist
 8101 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by check constraint $0~ConstraintName on table $1~TableName.
 8102 23000 99999 BEGINNER MAJOR DBADMIN The operation is prevented by a unique constraint.

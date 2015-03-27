@@ -73,6 +73,7 @@
 #include "nawstring.h"
 #include "SqlciList_templ.h"
 #include "ComCextMisc.h"
+#include "ComCextdecs.h"
 
 #include "ComQueue.h"
 #include "ExExeUtilCli.h"
@@ -729,6 +730,8 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
     {
       delete explainData;
 
+      HandleCLIError(retcode, sqlci_env);
+
       return retcode;
     }
 
@@ -740,14 +743,19 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(0x20000);
 
   char * queryBuf = new char[4000];
-  str_sprintf(queryBuf, "insert into %s.\"%s\".%s (instance_id, tenant_id, host_id, exec_start_utc_ts, query_id, explain_plan) values (0,0,0, current_timestamp, '%s', cast(? as char(%d) not null))",
+
+  Int64 ts = NA_JulianTimestamp();
+  str_sprintf(queryBuf, "insert into %s.\"%s\".%s (instance_id, tenant_id, host_id, exec_start_utc_ts, query_id, explain_plan) values (0,0,0, CONVERTTIMESTAMP(%Ld), '%s', '' ) ",
               TRAFODION_SYSCAT_LIT, SEABASE_REPOS_SCHEMA, REPOS_METRIC_QUERY_TABLE,
-              queryId, explainDataLen+10);
+              ts, queryId);
 
   retcode = cliInterface.executeImmediatePrepare(queryBuf);
   if (retcode < 0)
     {
       cliInterface.retrieveSQLDiagnostics(&sqlci_env->diagsArea());
+
+      HandleCLIError(retcode, sqlci_env);
+
       goto label_return;
     }
 
@@ -755,9 +763,24 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
   if (retcode < 0)
     {
       cliInterface.retrieveSQLDiagnostics(&sqlci_env->diagsArea());
+
+      HandleCLIError(retcode, sqlci_env);
+
       goto label_return;
     }
 
+  retcode = SQL_EXEC_StoreExplainData(
+                                      &ts, queryId,
+                                      explainData, explainDataLen);
+  if (retcode < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(&sqlci_env->diagsArea());
+
+      HandleCLIError(retcode, sqlci_env);
+
+      goto label_return;
+    }
+ 
  label_return:
   SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(0x20000);
 
@@ -765,6 +788,44 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
   delete queryBuf;
 
   return retcode;
+}
+
+short SqlCmd::cleanupAfterError(Lng32 retcode,
+                                SqlciEnv * sqlci_env,
+                                SQLSTMT_ID * stmt,
+                                SQLDESC_ID *sql_src,
+                                SQLDESC_ID *output_desc,
+                                SQLDESC_ID *input_desc,
+                                NABoolean resetLastExecStmt)
+{
+  // if retcode < 0, it is an error.
+  // Clean up and return.
+  if (retcode < 0)
+    {
+      SQL_EXEC_DeallocDesc(input_desc);
+      SQL_EXEC_DeallocDesc(output_desc);
+      SQL_EXEC_DeallocDesc(sql_src);
+      SQL_EXEC_DeallocStmt(stmt);
+      if (global_sqlci_env->getDeallocateStmt())
+        global_sqlci_env->resetDeallocateStmt();
+      delete (SQLMODULE_ID*)output_desc->module;
+      delete (SQLMODULE_ID*)input_desc->module;
+      delete (SQLMODULE_ID*)sql_src->module;
+      delete (SQLMODULE_ID*)stmt->module;
+      delete input_desc;
+      delete output_desc;
+      delete sql_src;
+      delete [] stmt->identifier;
+      delete stmt;
+      if (resetLastExecStmt)
+        sqlci_env->lastExecutedStmt() = NULL;
+
+      SqlCmd::clearCLIDiagnostics();
+
+      return (short)SQL_Error; 
+    }
+  
+  return 0;
 }
 
 short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
@@ -874,33 +935,8 @@ short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
   // return.
   if (retcode < 0)
   {
-    // There are rare cases where the CLI allocation fails at a late
-    // stage and the statement entity is not correctly cleaned up
-    // inside the CLI. To be safe we force the cleanup here and ignore
-    // any errors that may be reported. We bypass this step if the CLI
-    // reported that the statement we're trying to create already
-    // exists.
-    if (retcode != -8802) // Statement already exists
-    {
-      SQL_EXEC_DeallocStmt(stmt);
-      SqlCmd::clearCLIDiagnostics();
-    }
-
-    // Now clean up resources acquired earlier in this function
-    delete (SQLMODULE_ID *) input_desc->module;
-    delete (SQLMODULE_ID *) output_desc->module;
-    delete (SQLMODULE_ID *) sql_src->module;
-    delete (SQLMODULE_ID *) stmt->module;
-    delete input_desc;
-    delete output_desc;
-    delete sql_src;
-    delete [] stmt->identifier;
-    delete stmt;
-
-    if (resetLastExecStmt)
-      sqlci_env->lastExecutedStmt() = NULL;
-    
-    return (short) SQL_Error;
+    return cleanupAfterError(retcode, sqlci_env, stmt, sql_src, 
+                             output_desc, input_desc, resetLastExecStmt);
   }
 
   if (!isResultSet)
@@ -986,22 +1022,8 @@ short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
     // Clean up and return.
     if (retcode < 0)
     {
-      SQL_EXEC_DeallocDesc(sql_src);
-      SQL_EXEC_DeallocStmt(stmt);
-      if (global_sqlci_env->getDeallocateStmt())
-        global_sqlci_env->resetDeallocateStmt();
-      delete (SQLMODULE_ID*)output_desc->module;
-      delete (SQLMODULE_ID*)input_desc->module;
-      delete (SQLMODULE_ID*)sql_src->module;
-      delete (SQLMODULE_ID*)stmt->module;
-      delete input_desc;
-      delete output_desc;
-      delete sql_src;
-      delete [] stmt->identifier;
-      delete stmt;
-      if (resetLastExecStmt)
-        sqlci_env->lastExecutedStmt() = NULL;
-      return (short)SQL_Error; // NT_PORT ( bd 12/9/96 )
+      return cleanupAfterError(retcode, sqlci_env, stmt, sql_src, 
+                               output_desc, input_desc, resetLastExecStmt);
     }
   } // if (!skipPrepare)
 
@@ -1036,9 +1058,10 @@ short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
         retcode = updateRepos(sqlci_env, stmt, prep_stmt->uniqueQueryId());
         if (retcode < 0)
           {
-            return (short)SQL_Error; 
+            return cleanupAfterError(retcode, sqlci_env, stmt, sql_src, 
+                                     output_desc, input_desc, resetLastExecStmt);
           }
-      }
+      } // updateRepos
   }
   else if (isResultSet)
     prep_stmt->queryType() = SQL_SP_RESULT_SET;
@@ -1084,27 +1107,10 @@ short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
     else
       HandleCLIError(retcode, sqlci_env);
 
-    SQL_EXEC_DeallocDesc(input_desc);
-    SQL_EXEC_DeallocDesc(output_desc);
-    SQL_EXEC_DeallocDesc(sql_src);
-    SQL_EXEC_DeallocStmt(stmt);
-
     SqlCmd::clearCLIDiagnostics();
 
-    delete (SQLMODULE_ID *) input_desc->module;
-    delete (SQLMODULE_ID *) output_desc->module;
-    delete (SQLMODULE_ID *) sql_src->module;
-    delete (SQLMODULE_ID *) stmt->module;
-    delete input_desc;
-    delete output_desc;
-    delete sql_src;
-    delete [] stmt->identifier;
-    delete stmt;
-
-    if (resetLastExecStmt)
-      sqlci_env->lastExecutedStmt() = NULL;
-    
-    return (short) SQL_Error;
+    return cleanupAfterError(retcode, sqlci_env, stmt, sql_src, 
+                             output_desc, input_desc, resetLastExecStmt);
   }
   else if (retcode != 8818)
   {

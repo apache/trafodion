@@ -122,6 +122,35 @@ private:
 // Notable contents:
 //
 
+class ReposTextChunksInfo
+{
+ public:
+  void init()
+  {
+    numChunks_ = 0;
+    totalLen_ = 0;
+  }
+
+  Int32 numChunks_;
+  Int32 totalLen_; // total length of all chunks
+};
+
+// this structure is stored in repository and preceeds the actual explain data.
+// It contains details about explain storage and chunks info, if explain plan
+// was chunked into multiple rows and stored in metric_text_table.
+class ExplainReposInfo
+{
+ public:
+  void init()
+    {
+      filler_ = 0;
+      rtci_.init();
+    }
+
+  Int64 filler_;
+  ReposTextChunksInfo rtci_;
+};
+
 class ExExplainTcb : public ex_tcb
 {
 public:
@@ -185,6 +214,20 @@ public:
 
   RtsExplainFrag *sendToSsmp();
 
+  static short getExplainData(
+                              ex_root_tdb * rootTdb,
+                              char * explain_ptr,
+                              Int32 explain_buf_len,
+                              Int32 * ret_explain_len,
+                              ComDiagsArea *diagsArea,
+                              CollHeap * heap);
+
+  static short storeExplainInRepos(
+                                   CliGlobals * cliGlobals,
+                                   Int64 * execStartUtcTs,
+                                   char * qid, Lng32 qidLen,
+                                   char * explainData, Lng32 explainDataLen);
+  
 private:
 
   // A reference to the cooresponding TDB (ExExplainTdb)

@@ -1513,6 +1513,62 @@ RtsExplainFrag *ExExplainTcb::sendToSsmp()
   return explainFrag;
 }
 
+short ExExplainTcb::getExplainData(
+                                        ex_root_tdb * rootTdb,
+                                        char * explain_ptr,
+                                        Int32 explain_buf_len,
+                                        Int32 * ret_explain_len,
+                                        ComDiagsArea *diagsArea,
+                                        CollHeap * heap)
+{
+  Lng32 cliRC = 0;
+
+  *ret_explain_len = 0;
+ 
+  Lng32 fragOffset;
+  Lng32 fragLen;
+  Lng32 topNodeOffset;
+
+  diagsArea->clear();
+
+  if (rootTdb->getFragDir()->getExplainFragDirEntry
+                 (fragOffset, fragLen, topNodeOffset) != 0)
+    {
+      cliRC = -EXE_NO_EXPLAIN_INFO;
+      ExRaiseSqlError(heap, &diagsArea, EXE_NO_EXPLAIN_INFO);
+
+      return cliRC;
+    }
+
+  // data stored is explain repos header followed by actual explain tdb data.
+  Int32 storedExplLen = sizeof(ExplainReposInfo) + fragLen;
+  Lng32 encodedFragLen = str_encoded_len(storedExplLen);
+  *ret_explain_len = encodedFragLen;
+  
+  if ((! explain_ptr) || (explain_buf_len < encodedFragLen))
+    {
+      cliRC = -CLI_GENCODE_BUFFER_TOO_SMALL;
+
+      ExRaiseSqlError(heap, &diagsArea, CLI_GENCODE_BUFFER_TOO_SMALL);
+
+      return cliRC;
+    }
+
+  // allocate space for explain tdb and header repos info
+  char * fragExplPtr = ((char *)rootTdb)+fragOffset;
+  char * storedExplData = new(heap) char[storedExplLen];
+  ExplainReposInfo * eri = (ExplainReposInfo*)storedExplData;
+  eri->init(); // initialize explain repos header
+  memcpy(&storedExplData[sizeof(ExplainReposInfo)], fragExplPtr, fragLen);
+
+  // encode it before returning
+  str_encode(explain_ptr, encodedFragLen, storedExplData, storedExplLen);
+
+  NADELETEBASIC(storedExplData, heap);
+
+  return 0;
+}
+
 short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
 {
   Lng32 cliRC = 0;
@@ -1533,10 +1589,12 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
   explainFrag_ = NULL;
   explainFragLen_ = 0;
 
+  ExplainReposInfo * eri = NULL;
   Queue *infoList = NULL;
 
+  // query text and explain info is stored as the first entry for this query id. Retrieve it.
   char * queryBuf = new(getHeap()) char[4000];
-  str_sprintf(queryBuf, "select explain_plan from %s.\"%s\".%s where query_id = '%s'",
+  str_sprintf(queryBuf, "select [first 1] explain_plan from %s.\"%s\".%s where query_id = '%s' and explain_plan is not null and char_length(explain_plan) > 0 order by exec_start_utc_ts ",
               TRAFODION_SYSCAT_LIT, SEABASE_REPOS_SCHEMA, REPOS_METRIC_QUERY_TABLE, qid);
   OutputInfo * vi = NULL;
   char * ptr = NULL;
@@ -1558,7 +1616,7 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
     {
       diagsArea = pEntryDown->getAtp()->getDiagsArea();
       ExRaiseSqlError(getGlobals()->getDefaultHeap(), 
-                      &diagsArea, EXE_NO_EXPLAIN_INFO);
+                      &diagsArea, EXE_NO_QID_EXPLAIN_INFO);
       if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
         pEntryDown->getAtp()->setDiagsArea(diagsArea);
 
@@ -1571,8 +1629,13 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
   if (vi->get(0, ptr, len))
     goto label_error2;
   
-  if ((len >= strlen("MULTI_CHUNK_EXPLAIN")) &&
-      (memcmp(ptr, "MULTI_CHUNK_EXPLAIN", strlen("MULTI_CHUNK_EXPLAIN")) == 0))
+  explainFragLen_ = str_decoded_len(len);
+  explainFrag_ = new(getHeap()) char[explainFragLen_];
+  str_decode(explainFrag_, explainFragLen_, ptr, len);
+
+  // explain repos info header is at the beginning of stored data.
+  eri = (ExplainReposInfo*)explainFrag_;
+  if (eri->rtci_.numChunks_ > 0)
     {
       // explain data is stored in multiple chunks/rows in METRIC_TEXT table.
       // Get data from there and glue it.
@@ -1580,12 +1643,9 @@ short ExExplainTcb::getExplainFromRepos(char * qid, Lng32 qidLen)
       // Return error.
       goto label_error;
     }
-
-  explainFragLen_ = len;
-  explainFrag_ = new(getHeap()) char[len];
-  memcpy(explainFrag_, ptr, len);
-
-  setExplainAddr((Int64)explainFrag_);  
+    
+  // skip ExplainReposInfo and point explainAddr to actual explain structures.
+  setExplainAddr((Int64)&explainFrag_[sizeof(ExplainReposInfo)]);  
   setReposQid(NULL, 0);
 
   NADELETEBASIC(queryBuf, getHeap());
@@ -1609,3 +1669,73 @@ label_error2:
   return -1;
 }
 
+short ExExplainTcb::storeExplainInRepos(
+                                        CliGlobals * cliGlobals,
+                                        Int64* execStartUtcTs,
+                                        char * qid, Lng32 qidLen,
+                                        char * explainData, Lng32 explainDataLen)
+{
+  Lng32 cliRC = 0;
+
+  ContextCli * currContext = cliGlobals->currContext();
+  CollHeap * heap = currContext->exCollHeap();
+  ExeCliInterface cliInterface(heap, 0, currContext);
+  ComDiagsArea *diagsArea = &currContext->diags();
+
+  if (! qid || (qidLen == 0) || (!execStartUtcTs))
+    return -1;
+
+  diagsArea->clear();
+
+  char * queryBuf = NULL;
+  Int64 rowsAffected = 0;
+  char * explainVarcharBuf = NULL;
+  if (explainDataLen > REPOS_MAX_EXPLAIN_PLAN_LEN)
+    {
+      cliRC = -EXE_EXPLAIN_PLAN_TOO_LARGE;
+      ExRaiseSqlError(heap, &diagsArea, EXE_EXPLAIN_PLAN_TOO_LARGE);
+      goto label_error;
+    }
+
+  queryBuf = new(heap) char[4000];
+  str_sprintf(queryBuf, "update %s.\"%s\".%s set explain_plan = cast(? as varchar(%d) not null) where exec_start_utc_ts = CONVERTTIMESTAMP(%Ld)  and query_id = '%s' ",
+              TRAFODION_SYSCAT_LIT, SEABASE_REPOS_SCHEMA, REPOS_METRIC_QUERY_TABLE, 
+              REPOS_MAX_EXPLAIN_PLAN_LEN,
+              *execStartUtcTs, qid);
+
+  explainVarcharBuf = new(heap) char[sizeof(Lng32) + explainDataLen];
+  *(Lng32 *)explainVarcharBuf = explainDataLen;
+  memcpy(&explainVarcharBuf[sizeof(Lng32)], explainData, explainDataLen);
+  cliRC = cliInterface.executeImmediateCEFC(queryBuf, 
+                                            explainVarcharBuf, sizeof(Lng32) + explainDataLen,
+                                            NULL, NULL, &rowsAffected);
+  if (cliRC < 0)
+    {
+      goto label_error;
+    }
+
+  if (rowsAffected == 0)
+    {
+      ExRaiseSqlError(heap, &diagsArea, EXE_NO_QID_EXPLAIN_INFO);
+      cliRC = -EXE_NO_QID_EXPLAIN_INFO;
+
+      goto label_error;
+    }
+
+  if (queryBuf)
+    NADELETEBASIC(queryBuf, heap);
+
+  if (explainVarcharBuf)
+    NADELETEBASIC(explainVarcharBuf, heap);
+
+  return 0;
+
+ label_error:
+  if (queryBuf)
+    NADELETEBASIC(queryBuf, heap);
+
+  if (explainVarcharBuf)
+    NADELETEBASIC(explainVarcharBuf, heap);
+
+  return cliRC;
+}

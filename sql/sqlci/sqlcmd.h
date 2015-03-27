@@ -148,6 +148,15 @@ public:
   static char * replacePattern(SqlciEnv * sqlci_env, char * inStr);
 
   static void clearCLIDiagnostics();
+
+  static short cleanupAfterError(Lng32 retcode,
+                                 SqlciEnv * sqlci_env,
+                                 SQLSTMT_ID * stmt,
+                                 SQLDESC_ID *sql_src,
+                                 SQLDESC_ID *output_desc,
+                                 SQLDESC_ID *input_desc,
+                                 NABoolean resetLastExecStmt);
+
   NABoolean isAllowedInSIP() { return FALSE; };
   NABoolean isAllowedInRWMode() { return TRUE; };
   NABoolean isAllowedInCSMode() { return FALSE;};  

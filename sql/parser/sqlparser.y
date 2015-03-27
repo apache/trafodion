@@ -16092,7 +16092,7 @@ exe_util_display_explain: explain_starting_tokens TOK_QID qid_identifier TOK_FRO
 		 
                  $$ = eue;
               }
-exe_util_display_explain: explain_starting_tokens TOK_QID qid_identifier 
+exe_util_display_explain: explain_starting_tokens TOK_QID qid_identifier TOK_FROM TOK_REPOSITORY
               {
                 Int32 prefixLen = strlen("EXPLAIN_QID=");
                 char * tmpString = 

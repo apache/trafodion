@@ -1,7 +1,7 @@
 //******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -71,6 +71,9 @@ enum ExeErrorCode
   EXE_CANCEL_PROCESS_NOT_FOUND          = 8028,
   EXE_CANCEL_NOT_AUTHORIZED             = 8029,
   EXE_CANCEL_NOT_POSSIBLE               = 8031,
+
+  EXE_NO_QID_EXPLAIN_INFO                   = 8032,
+  EXE_EXPLAIN_PLAN_TOO_LARGE            = 8033,
 
   // ---------------------------------------------------------------------
   // Data integrity errors

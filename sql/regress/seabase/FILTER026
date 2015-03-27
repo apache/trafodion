@@ -25,4 +25,5 @@ fi
 
 sed "
 s/(UID)[ ]*: [0-9 ]*/@UID@/
+s/(OBJECT)[ ]*: [a-zA-Z0-9._ ]*/@OBJECT@/
 " $fil

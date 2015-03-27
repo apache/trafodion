@@ -292,7 +292,7 @@ Metadata Cleanup: started, check only
   End:   Cleanup Orphan Hbase Entries (0 entries found)
 
   Start: Cleanup Inconsistent Objects Entries
-  End:   Cleanup Inconsistent Objects Entries (0 entries found)
+  End:   Cleanup Inconsistent Objects Entries (4 entries found)
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries found)
@@ -327,7 +327,7 @@ Metadata Cleanup: started, check only
   End:   Cleanup Orphan Hbase Entries (1 entry found)
 
   Start: Cleanup Inconsistent Objects Entries
-  End:   Cleanup Inconsistent Objects Entries (2 entries found)
+  End:   Cleanup Inconsistent Objects Entries (6 entries found)
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries found)
@@ -349,8 +349,12 @@ Metadata Cleanup: started, check only
 
   Start: Cleanup Inconsistent Objects Entries
     Entry #1(OBJECT): TRAFODION.SCH026.T026T12
-    Entry #2(UID):    42282662492813585
-  End:   Cleanup Inconsistent Objects Entries (2 entries found)
+    Entry #2(OBJECT): TRAFODION.SCH026.T026T20_438438241_2142
+    Entry #3(OBJECT): TRAFODION.SCH026.T026T2_651538241_2142
+    Entry #4(OBJECT): TRAFODION.SCH026.LOBMD_00043972113939_998563911_1731
+    Entry #5(OBJECT): TRAFODION.SCH026.LOBDescChunks_000439_186663911_1731
+    Entry #6(UID):    43972113939719235
+  End:   Cleanup Inconsistent Objects Entries (6 entries found)
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries found)
@@ -372,8 +376,12 @@ Metadata Cleanup: started
 
   Start: Cleanup Inconsistent Objects Entries
     Entry #1(OBJECT): TRAFODION.SCH026.T026T12
-    Entry #2(UID):    42282662492813585
-  End:   Cleanup Inconsistent Objects Entries (2 entries cleaned up)
+    Entry #2(OBJECT): TRAFODION.SCH026.T026T20_438438241_2142
+    Entry #3(OBJECT): TRAFODION.SCH026.T026T2_651538241_2142
+    Entry #4(OBJECT): TRAFODION.SCH026.LOBMD_00043972113939_998563911_1731
+    Entry #5(OBJECT): TRAFODION.SCH026.LOBDescChunks_000439_186663911_1731
+    Entry #6(UID):    43972113939719235
+  End:   Cleanup Inconsistent Objects Entries (6 entries cleaned up)
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries cleaned up)

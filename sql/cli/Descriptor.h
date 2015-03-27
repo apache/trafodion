@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -430,6 +430,7 @@ public:
   char * getVarData(Lng32 entry);
   char * getVarData(Lng32 entry, Lng32 idxrow);
   Int32 getVarDataLength(Lng32 entry);
+  Int32 getVarIndicatorLength(Lng32 entry);
   const char * getVarDataCharSet(Lng32 entry);
   char * getIndData(Lng32 entry);
   char * getIndData(Lng32 entry, Lng32 idxrow);

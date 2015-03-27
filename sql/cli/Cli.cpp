@@ -6088,50 +6088,66 @@ Lng32 SQLCLI_GetExplainData(
       return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
     }
 
-  *ret_explain_len = 0;
- 
-  ex_root_tdb *rootTdb = stmt->getRootTdb();
-
-  Lng32 fragOffset;
-  Lng32 fragLen;
-  Lng32 topNodeOffset;
-
-  if (rootTdb->getFragDir()->getExplainFragDirEntry
-                 (fragOffset, fragLen, topNodeOffset) != 0)
-    {
-      return 0; // no explain info.
-    }
-
-  *ret_explain_len = fragLen;
+  retcode = ExExplainTcb::getExplainData(stmt->getRootTdb(),
+                                         explain_ptr, explain_buf_len, ret_explain_len,
+                                         &diags, currContext.exCollHeap());
   
-  if ((! explain_ptr) || (explain_buf_len < fragLen))
+  if (diags.getNumber())
     {
-      diags << DgSqlCode(-CLI_GENCODE_BUFFER_TOO_SMALL);
-      return SQLCLI_ReturnCode(&currContext,-CLI_GENCODE_BUFFER_TOO_SMALL);
+      return diags.mainSQLCODE();
     }
-
-  char * fragExplPtr = ((char *)rootTdb)+fragOffset;
-
-  /*
-  Space space;
-  ExplainDescPtr((ExplainDesc *)fragExplPtr).pack(&space);
-  if (space.makeContiguous(explain_ptr, fragLen) == 0)
-   {
-      diags << DgSqlCode(-CLI_GENCODE_BUFFER_TOO_SMALL);
-      return SQLCLI_ReturnCode(&currContext,-CLI_GENCODE_BUFFER_TOO_SMALL);
-    }
-  */
-
-  memcpy(explain_ptr, fragExplPtr, fragLen);
-
-  if (cliGlobals->currContext()->diags().getNumber())
+  else if (retcode < 0)
     {
-      return cliGlobals->currContext()->diags().mainSQLCODE();
+      diags << DgSqlCode(retcode);
+      return retcode;
     }
-  else
+  
+  return retcode;
+}
+
+Lng32 SQLCLI_StoreExplainData(
+                              /*IN*/ CliGlobals * cliGlobals,
+                              /*IN*/ Int64 * exec_start_utc_ts,
+                              /*IN*/    char * query_id,
+                              /*INOUT*/ char * explain_ptr,
+                              /*IN*/    Int32 explain_buf_len)
+{
+  Lng32 retcode = 0;
+
+  // create initial context, if first call, and add module, if any.
+  retcode = CliPrologue(cliGlobals, NULL);
+  if (isERROR(retcode))
     {
       return retcode;
     }
+
+  ContextCli   & currContext = *(cliGlobals->currContext());
+  ComDiagsArea & diags       = currContext.diags();
+
+  if ((! explain_ptr) || (explain_buf_len <= 0))
+    {
+      diags << DgSqlCode(-CLI_GENCODE_BUFFER_TOO_SMALL);
+      return SQLCLI_ReturnCode(&currContext,-CLI_GENCODE_BUFFER_TOO_SMALL);
+    }
+
+  retcode = 
+    ExExplainTcb::storeExplainInRepos(cliGlobals, exec_start_utc_ts,
+                                      query_id, strlen(query_id), explain_ptr, explain_buf_len);
+  if (retcode < 0)
+    {
+      if (diags.getNumber())
+        {
+          return diags.mainSQLCODE();
+        }
+      else
+        {
+          diags << DgSqlCode(retcode);
+        }
+
+      return retcode;
+    }
+
+  return retcode;
 }
 
 //LCOV_EXCL_START
@@ -10883,7 +10899,8 @@ Lng32 SQLCLI_SEcliInterface
 
     case SE_CLI_EXEC_IMMED_CEFC:
       {
-	rc = cliInterface->executeImmediateCEFC((char*)inStrParam1, (char*)inStrParam2);
+	rc = cliInterface->executeImmediateCEFC((char*)inStrParam1, NULL, 0, 
+                                                (char*)inStrParam2, NULL);
       }
       break;
 

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -423,6 +423,12 @@ Int32 Descriptor::getVarDataLength(Lng32 entry)
 {
   register Lng32 entryZB = entry - 1;
   return desc[entryZB].length;
+}
+
+Int32 Descriptor::getVarIndicatorLength(Lng32 entry)
+{
+  register Lng32 entryZB = entry - 1;
+  return desc[entryZB].vc_ind_length;
 }
 
 Int32 Descriptor::getIndLength(Lng32 entry)

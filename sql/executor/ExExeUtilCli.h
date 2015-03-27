@@ -135,8 +135,10 @@ private:
                                Int64 * rowsAffected = NULL);
   
   Lng32 executeImmediateCEFC(const char * stmtStr,
-			     char * outputBuf = NULL,
-			     Lng32 * outputBufLen = 0,
+                             char * inputBuf,
+                             Lng32 inputBufLen,
+			     char * outputBuf,
+			     Lng32 * outputBufLen,
 			     Int64 * rowsAffected = NULL
 			     );
 
