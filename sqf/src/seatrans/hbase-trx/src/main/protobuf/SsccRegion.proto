@@ -129,7 +129,6 @@ message SsccDeleteMultipleTransactionalRequest {
   required int64 transactionId = 1;
   required bytes regionName = 2;
   repeated MutationProto delete = 3;
-  optional bool isStateless = 4;
 }
 
 message SsccDeleteMultipleTransactionalResponse {
@@ -143,7 +142,6 @@ message SsccDeleteTransactionalRequest {
   required int64 transactionId = 1;
   required bytes regionName = 2;
   required MutationProto delete = 3;
-  optional bool isStateless = 4;
 }
 
 message SsccDeleteTransactionalResponse {

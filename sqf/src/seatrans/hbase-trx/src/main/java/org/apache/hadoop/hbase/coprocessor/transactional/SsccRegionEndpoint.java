@@ -1944,10 +1944,6 @@ CoprocessorService, Coprocessor {
     RpcCallback<SsccDeleteTransactionalResponse> done) {
     SsccDeleteTransactionalResponse response = SsccDeleteTransactionalResponse.getDefaultInstance();
 
-    boolean stateless = false;
-    if (request.hasIsStateless()) {
-       stateless = request.getIsStateless();
-    }
     byte [] row = null;
     MutationProto proto = request.getDelete();
     MutationType type = proto.getMutateType();
@@ -1968,7 +1964,7 @@ CoprocessorService, Coprocessor {
     // Process in local memory
     int status = 0;
     try {
-      status = delete(request.getTransactionId(), delete, stateless);
+      status = delete(request.getTransactionId(), delete);
     } catch (Throwable e) {
       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:delete threw exception after internal delete");
       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
@@ -2006,7 +2002,7 @@ CoprocessorService, Coprocessor {
    * @return int
    * @throws IOException
    */
-  public int delete(final long transactionId, final Delete delete, boolean stateless)
+  public int delete(final long transactionId, final Delete delete)
     throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: delete -- ENTRY txId: " + transactionId);
     checkClosing(transactionId);
@@ -2048,39 +2044,33 @@ CoprocessorService, Coprocessor {
             state.addToColList(rowkey,mergedColsV);
         }
     }
-     Get statusGet = new Get(rowkey);
-     statusGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.STATUS_COL);
-     statusGet.setMaxVersions();
-     Result statusResult = m_Region.get(statusGet);
-     Get verGet = new Get(rowkey);
-     verGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.VERSION_COL);
-     verGet.setMaxVersions(DtmConst.MAX_VERSION);
-     Result verResult = m_Region.get(verGet);
-     List<Cell> sl = null;
-     List<Cell> vl = null;
-     if(statusResult != null ) sl = statusResult.listCells();
-     if(verResult != null )  vl = verResult.listCells();
+    Get statusGet = new Get(rowkey);
+    statusGet.addColumn(DtmConst.TRANSACTION_META_FAMILY,SsccConst.STATUS_COL);
+    statusGet.setMaxVersions();
+    Result statusResult = m_Region.get(statusGet);
+    List<Cell> sl = null;
+    if(statusResult != null ) sl = statusResult.listCells();
 
-     if(state.hasConflict(sl,vl,false,startId,transactionId) == false)
-     {
-        state.addToDelList(newDelete);
-        /*update the status metadata*/
-        Put statusPut = new Put(rowkey,startId );
-        byte[] statusValue = SsccConst.generateStatusValue(SsccConst.S_DELETE_BYTE,transactionId); //statefull update
-        statusPut.add(DtmConst.TRANSACTION_META_FAMILY ,SsccConst.STATUS_COL, startId , statusValue);
-        statusPut.add(DtmConst.TRANSACTION_META_FAMILY ,SsccConst.COLUMNS_COL,startId , mergedColsV);
-        m_Region.put(statusPut);
-        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: delete: STATEFUL_UPDATE_OK");
-        return STATEFUL_UPDATE_OK;
-
-     }
-     else
-     {
-        // Return conflict, but don't trigger and abort.  That needs to be triggered from the client, if desired.
-        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: delete: STATEFUL_UPDATE_CONFLICT");
-        return STATEFUL_UPDATE_CONFLICT;
-     }
-  }
+    // All deletes are treated as stateless, so no need to retrieve the versions
+    if(state.hasConflict(sl,null,true,startId,transactionId) == false){
+       state.addToDelList(newDelete);
+       /*update the status metadata*/
+       Put statusPut = new Put(rowkey,startId );
+       byte[] statusValue;
+       statusValue = SsccConst.generateStatusValue(SsccConst.S_DELETE_BYTE,transactionId); //stateless delete
+       statusPut.add(DtmConst.TRANSACTION_META_FAMILY ,SsccConst.STATUS_COL, startId , statusValue);
+       statusPut.add(DtmConst.TRANSACTION_META_FAMILY ,SsccConst.COLUMNS_COL,startId , mergedColsV);
+       m_Region.put(statusPut);
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: delete: STATELESS_UPDATE_OK");
+       return STATELESS_UPDATE_OK;
+    }
+    else
+    {
+       // Return conflict, but don't trigger and abort.  That needs to be triggered from the client, if desired.
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: delete: STATELESS_UPDATE_CONFLICT");
+       return STATELESS_UPDATE_CONFLICT;
+    }
+ }
 
 
 /***********************************************************************************
@@ -2429,16 +2419,16 @@ CoprocessorService, Coprocessor {
     int lv_return = 0;
 
     if (rs.isEmpty() && valueIsNull) {
-      lv_return = this.delete(transactionId, delete, false /* stateful */ );
-      result = (lv_return == STATEFUL_UPDATE_OK || lv_return == STATELESS_UPDATE_OK) ? true: false;
+      lv_return = this.delete(transactionId, delete);
+      result = (lv_return == STATELESS_UPDATE_OK) ? true: false;
       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndDelete, txid: "
                + transactionId + " rsValue.length == 0, lv_return: " + lv_return + ", result is " + result);
 
     } else if (!rs.isEmpty() && valueIsNull) {
       rsValue = rs.getValue(family, qualifier);
       if (rsValue != null && rsValue.length == 0) {
-        lv_return = this.delete(transactionId, delete, false /* stateful */);
-        result = (lv_return == STATEFUL_UPDATE_OK || lv_return == STATELESS_UPDATE_OK) ? true: false;
+        lv_return = this.delete(transactionId, delete);
+        result = (lv_return == STATELESS_UPDATE_OK) ? true: false;
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndDelete, txid: "
                + transactionId + " rsValue.length == 0, lv_return: " + lv_return + ", result is: " + result);
       }
@@ -2450,8 +2440,8 @@ CoprocessorService, Coprocessor {
     } else if ((!rs.isEmpty())
               && !valueIsNull
               && (Bytes.equals(rs.getValue(family, qualifier), value))) {
-       lv_return = this.delete(transactionId, delete, false /* stateful */);
-       result = (lv_return == STATEFUL_UPDATE_OK || lv_return == STATELESS_UPDATE_OK) ? true : false;
+       lv_return = this.delete(transactionId, delete);
+       result = (lv_return == STATELESS_UPDATE_OK) ? true : false;
        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndDelete, txid: "
                + transactionId + " rsValue matches the row, lv_return is: " + lv_return + ", result is: " + result);
     } else {
@@ -2540,10 +2530,6 @@ CoprocessorService, Coprocessor {
 
    java.util.List<org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto> results;
    results = request.getDeleteList();
-   boolean stateless = false;
-   if (request.hasIsStateless()) {
-      stateless = request.getIsStateless();
-   }
    int resultCount = request.getDeleteCount();
    byte [] row = null;
    Delete delete = null;
@@ -2579,7 +2565,7 @@ CoprocessorService, Coprocessor {
            if (delete != null)
            {
              try {
-               status = delete(request.getTransactionId(), delete, stateless);
+               status = delete(request.getTransactionId(), delete);
              } catch (Throwable e) {
                if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor deleteMultiple:delete Caught exception " +
                             "after internal delete " + e.getMessage() + "" + stackTraceToString(e));
@@ -2588,7 +2574,7 @@ CoprocessorService, Coprocessor {
 
              if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: deleteMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
 
-             if (status != STATEFUL_UPDATE_OK) {
+             if (status != STATELESS_UPDATE_OK) {
                 String returnString;
 
                 switch (status){
