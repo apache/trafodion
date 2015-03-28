@@ -1583,7 +1583,7 @@ int32 TM_Info::restart_tm_process(int32 pv_nid)
     unlock();
     
     dummy_link_to_refresh_phandle(pv_nid);
-    SB_Thread::Sthr::sleep(100); // in msec
+//    SB_Thread::Sthr::sleep(100); // in msec
     dummy_link_to_refresh_phandle(pv_nid); // The second one actually updates the phandle
     
      TMTrace(2, ("TM_Info::restart_tm_process : EXIT.\n"));
@@ -3587,7 +3587,7 @@ void TM_Info::open_other_tms()
    unlock();
 
     dummy_link_to_refresh_phandle(pv_nid);
-    SB_Thread::Sthr::sleep(100); // in msec
+//    SB_Thread::Sthr::sleep(100); // in msec
     dummy_link_to_refresh_phandle(pv_nid); // The second one actually updates the phandle
     
    TMTrace (2, ("TM_Info::open_restarted_tm : EXIT"));
