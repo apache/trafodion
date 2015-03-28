@@ -48,6 +48,12 @@ http://maven.apache.org/plugins/maven-assembly-plugin/faq.html#required-classifi
       <fileMode>0644</fileMode>
       <directoryMode>0755</directoryMode>
     </fileSet>
+    <fileSet>
+      <directory>target/site</directory>
+      <outputDirectory>docs</outputDirectory>
+      <fileMode>0755</fileMode>
+      <directoryMode>0755</directoryMode>
+    </fileSet>    
   </fileSets>
   <dependencySets>
     <dependencySet>

@@ -29,7 +29,7 @@ all: build_all
 
 build_all:	 
 	$(MAKE) build_chk
-	echo "$(MAVEN) package -DskipTests"
+	echo "$(MAVEN) site package -DskipTests"
 	echo "### For full Maven output, see file build_rest.log"
 	set -o pipefail && $(MAVEN) package -DskipTests | tee build_rest.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	$(RM) $(VFILE)

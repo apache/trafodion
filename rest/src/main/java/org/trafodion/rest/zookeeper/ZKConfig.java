@@ -45,7 +45,7 @@ public class ZKConfig {
   /**
    * Make a Properties object holding ZooKeeper config equivalent to zoo.cfg.
    * If there is a zoo.cfg in the classpath, simply read it in. Otherwise parse
-   * the corresponding config options from the Dcs XML configs and generate
+   * the corresponding config options from the Rest XML configs and generate
    * the appropriate ZooKeeper properties.
    * @param conf Configuration to read from.
    * @return Properties holding mappings representing ZooKeeper zoo.cfg file.
@@ -65,10 +65,10 @@ public class ZKConfig {
       }
     }
 
-    // Otherwise, use the configuration options from Dcs's XML files.
+    // Otherwise, use the configuration options from Rest's XML files.
     Properties zkProperties = new Properties();
 
-    // Directly map all of the Dcs.zookeeper.property.KEY properties.
+    // Directly map all of the Rest.zookeeper.property.KEY properties.
     for (Entry<String, String> entry : conf) {
       String key = entry.getKey();
       if (key.startsWith(Constants.ZK_CFG_PROPERTY_PREFIX)) {
@@ -105,9 +105,9 @@ public class ZKConfig {
   }
 
   /**
-   * Parse ZooKeeper's zoo.cfg, injecting Dcs Configuration variables in.
+   * Parse ZooKeeper's zoo.cfg, injecting configuration variables in.
    * This method is used for testing so we can pass our own InputStream.
-   * @param conf DcsConfiguration to use for injecting variables.
+   * @param conf RestConfiguration to use for injecting variables.
    * @param inputStream InputStream to read from.
    * @return Properties parsed from config stream with variables substituted.
    * @throws IOException if anything goes wrong parsing config
@@ -144,7 +144,7 @@ public class ZKConfig {
         }
         if (substituteValue == null) {
           String msg = "variable " + variable + " not set in system property "
-                     + "or Dcs configs";
+                     + "or Rest configs";
           LOG.fatal(msg);
           throw new IOException(msg);
         }
@@ -204,7 +204,7 @@ public class ZKConfig {
     }
 
     if (servers.isEmpty()) {
-      LOG.fatal("No server.X lines found in conf/zoo.cfg. Dcs must have a " +
+      LOG.fatal("No server.X lines found in conf/zoo.cfg. Rest must have a " +
                 "ZooKeeper cluster configured for its operation.");
       return null;
     }

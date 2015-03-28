@@ -1,0 +1,649 @@
+////
+/**
+  *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+////
+
+[[apis]]
+= APIs
+:doctype: book
+:numbered:
+:toc: left
+:icons: font
+:experimental:
+
+The terms "representational state transfer" and "REST" were introduced in 2000 in the doctoral dissertation of 
+Roy Fielding, one of the principal authors of the Hypertext Transfer Protocol (HTTP) specification. In a nutshell
+
+A GET to an resource requests a copy of the information. 
+
+A PUT to an resource replaces the resource.  
+
+POST adds resources. 
+
+DELETE eliminates resources. 
+  
+[[rest]]
+== Resource Identifiers
+The URIs for the REST-based web services have the following syntax:
+
+  http://{hostname:port}/{version}/{resourcepath}
+
+The elements in this syntax are as follows:
+
+  {hostname} - The http address of the service to get information about. 
+                                 Currently supported are the Trafodion DTM, RMS and DCS components. 
+  {version} - The version of the APIs. In this release, the version is v1.
+  {resourcepath} - A path that defines a singleton resource or a collection of resources. 
+  
+== HTTP Requests
+To invoke a REST API, your application calls an HTTP operation on the URI associated with a resource. 
+
+.Headers 
+This release ignores Accept and Accept-Encoding headers.
+
+== HTTP Responses
+The following sections describe the syntax of HTTP Responses.
+
+.Compression
+This release does not support compression.
+
+.Response Formats
+This release of the REST APIs supports responses in JSON format only.
+
+.Response Examples
+
+.JSON response with single resource
+
+HTTP Request: 
+----
+GET http://{hostname:4200}/v1/servers
+----
+
+Response Status Line: 
+----
+HTTP/1.1 200 OK
+----
+
+Response Header:
+----
+ HTTP/1.1 200 OK
+ Cache-Control: no-cache
+ Content-Type: application/json
+ Transfer-Encoding: chunked
+----
+
+Response Body:
+----
+{
+  "STATE":"UP",
+  "SUBSTATE":"OPERATIONAL",
+  "PROCESSES":
+  [
+    {
+      "PROCESS":"DTM",
+      "CONFIGURED":2,
+      "ACTUAL":2,
+      "DOWN":""},
+    {
+      "PROCESS":"RMS",
+      "CONFIGURED":4,
+      "ACTUAL":4,
+      "DOWN":""
+    },
+    {
+      "PROCESS":"MXOSRVR",
+      "CONFIGURED":4,
+      "ACTUAL":4,
+      "DOWN":""
+    }
+  ]
+}
+----
+
+.JSON response with Error response
+
+Here we request information about DCS client connections when DCS is stopped.
+
+HTTP Request: 
+----
+GET http://{hostname:4200}/v1/servers/dcs/connections
+----
+
+Response Status Line: 
+----
+HTTP/1.1 404 Not Found
+----
+
+Response Header:
+----
+  HTTP/1.1 404 Not Found
+  Content-Type: application/json
+  Transfer-Encoding: chunked
+----
+
+Response Body:
+----
+{
+   "RemoteException" : {
+      "javaClassName" : "org.trafodion.rest.NotFoundException",
+      "exception" : "NotFoundException",
+      "message" : "DCS connection resources not found"
+   }
+}
+----
+
+== Example Usage
+There are many ways/languages to use the REST API's. The following examples use the curl command line interface to do the REST GET calls.
+
+In this example the user wishes to know the status of all Trafodion resources.
+This a jsonized version of the _sqcheck -c all_ command.
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/
+----
+
+.Response
+----
+{
+  "STATE":"UP",
+  "SUBSTATE":"OPERATIONAL",
+  "PROCESSES":
+  [
+    {
+      "PROCESS":"DTM",
+      "CONFIGURED":2,
+      "ACTUAL":2,"DOWN":""
+    },
+    {
+      "PROCESS":"RMS",
+      "CONFIGURED":4,
+      "ACTUAL":4,"DOWN":""
+    },
+    {
+      "PROCESS":"MXOSRVR",
+      "CONFIGURED":4,
+      "ACTUAL":0,
+      "DOWN":"4"
+    }
+  ]
+}
+----
+
+In this example the user wishes to know the status of Trafodion DTM.
+This a jsonized version of the _sqcheck -c dtm_ command.
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/dtm
+----
+
+.Response
+----
+{
+  "STATE":"UP",
+  "SUBSTATE":"OPERATIONAL",
+  "PROCESSES":
+  [
+    {
+      "PROCESS":"DTM",
+      "CONFIGURED":2,
+      "ACTUAL":2,
+      "DOWN":""
+    },
+  ]
+}
+----
+
+In this example the user wishes to know the status of Trafodion RMS. 
+This a jsonized version of the _sqcheck -c rms_ command.
+
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/rms
+----
+
+.Response
+----
+{
+  "STATE":"UP",
+  "SUBSTATE":"OPERATIONAL",
+  "PROCESSES":
+  [
+    {
+      "PROCESS":"RMS",
+      "CONFIGURED":4,
+      "ACTUAL":4,
+      "DOWN":""
+    },
+  ]
+}
+----
+
+In this example the user wishes to know the status of Trafodion DCS. 
+This a jsonized version of the _sqcheck -c dcs_ command.
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/dcs
+----
+
+.Response
+----
+{
+  "STATE":"UP",
+  "SUBSTATE":"OPERATIONAL",
+  "PROCESSES":
+  [
+    {
+      "PROCESS":"MXOSRVR",
+      "CONFIGURED":4,
+      "ACTUAL":4,
+      "DOWN":""
+    },
+  ]
+}
+----
+
+In this example the user wishes to see the Trafodion DCS server/client connection information.
+The server retrieves this information from ZooKeeper.
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/dcs/connections
+----
+
+.Response
+----
+[
+  {
+    "HOSTNAME":"hostname",
+    "INSTANCE":"1",
+    "START_TIME":"Wed Mar 25 18:58:20 UTC 2015",
+    "REGISTERED":"YES",
+    "STATE":"AVAILABLE",
+    "NID":"0",
+    "PID":"21132",
+    "PROCESS_NAME":"$Z000H8S",
+    "IP_ADDRESS":"16.235.163.124",
+    "PORT":"36176",
+    "LAST_UPDATED":"Fri Apr 08 13:03:38 UTC 6729301",
+    "CLIENT_NAME":"",
+    "CLIENT_APPL":"",
+    "CLIENT_IP_ADDRESS":"",
+    "CLIENT_PORT":""
+  },
+  {
+    "HOSTNAME":"hostname",
+    "INSTANCE":"1",
+    "START_TIME":"Wed Mar 25 18:58:20 UTC 2015",
+    "REGISTERED":"YES",
+    "STATE":"AVAILABLE",
+    "NID":"0",
+    "PID":"20642",
+    "PROCESS_NAME":"$Z000GUS",
+    "IP_ADDRESS":"16.235.163.124",
+    "PORT":"36174",
+    "LAST_UPDATED":"Fri Apr 08 12:42:45 UTC 6729301",
+    "CLIENT_NAME":"",
+    "CLIENT_APPL":"",
+    "CLIENT_IP_ADDRESS":"",
+    "CLIENT_PORT":""
+  }
+]
+----
+
+In this example the user wishes to know the status of Trafodion nodes. 
+This is a jsonized version of the _sqnodestatus_ command.
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/nodes
+----
+
+.Response
+----
+[
+  {
+    "NODE":"n013",
+    "STATUS":"UP"
+  },
+  {
+    "NODE":"n014",
+    "STATUS":"UP"
+  },
+  {
+    "NODE":"n015",
+    "STATUS":"UP"
+  },
+  {
+    "NODE":"n016",
+    "STATUS":"UP"
+  }
+]
+----
+
+In this example the user wishes to see the call stack for a collection of Trafodion processes. 
+This is a jsonized version of the _sqpstack_ command. Newlines are added to all lines
+in the response so clients can recognize each end of line.
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/pstack
+----
+
+.Response
+----
+[
+  {
+  "PROGRAM":"pstack 6332\n
+  #0  0x00000034c10df218 in poll () from \/lib64\/libc.so.6\n
+  #1  0x00000034c243c655 in ?? () from \/lib64\/libglib-2.0.so.0\n
+  #2  0x00000034c243cd55 in g_main_loop_run () from \/lib64\/libglib-2.0.so.0\n
+  #3  0x00000000004105f1 in ?? ()\n
+  #4  0x00000034c101ecdd in __libc_start_main () from \/lib64\/libc.so.6\n
+  #5  0x0000000000407359 in ?? ()\n
+  #6  0x00007fffffffe0b8 in ?? ()\n
+  #7  0x000000000000001c in ?? ()\n
+  #8  0x0000000000000001 in ?? ()\n
+  #9  0x00007fffffffe3f8 in ?? ()\n
+  #10 0x0000000000000000 in ?? ()\n"
+  },
+  {
+  "PROGRAM":"pstack 6334\n
+  #0  0x00000034c10df218 in poll () from \/lib64\/libc.so.6\n
+  #1  0x00000034c243c655 in ?? () from \/lib64\/libglib-2.0.so.0\n
+  #2  0x00000034c243cd55 in g_main_loop_run () from \/lib64\/libglib-2.0.so.0\n
+  #3  0x0000000000406611 in ?? ()\n
+  #4  0x00000034c101ecdd in __libc_start_main () from \/lib64\/libc.so.6\n
+  #5  0x00000000004044a9 in ?? ()\n
+  #6  0x00007fffffffe0b8 in ?? ()\n
+  #7  0x000000000000001c in ?? ()\n
+  #8  0x0000000000000001 in ?? ()\n
+  #9  0x00007fffffffe3f0 in ?? ()\n
+  #10 0x0000000000000000 in ?? ()\n"
+  },
+  {
+  "PROGRAM":"pstack 6336\n
+  Thread 2 (Thread 0x7ffff213a700 (LWP 6337)):\n
+  #0  0x00000034c10acb8d in nanosleep () from \/lib64\/libc.so.6\n
+  #1  0x00000034c10aca00 in sleep () from \/lib64\/libc.so.6\n
+  #2  0x00000034c3c02600 in ?? () from \/usr\/lib64\/libusbmuxd.so.1\n
+  #3  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #4  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 1 (Thread 0x7ffff7fcc7a0 (LWP 6336)):\n
+  #0  0x00000034c10df253 in poll () from \/lib64\/libc.so.6\n
+  #1  0x00000034c243c655 in ?? () from \/lib64\/libglib-2.0.so.0\n
+  #2  0x00000034c243cd55 in g_main_loop_run () from \/lib64\/libglib-2.0.so.0\n
+  #3  0x0000000000405101 in ?? ()\n
+  #4  0x00000034c101ecdd in __libc_start_main () from \/lib64\/libc.so.6\n
+  #5  0x0000000000403ee9 in ?? ()\n
+  #6  0x00007fffffffe0b8 in ?? ()\n
+  #7  0x000000000000001c in ?? ()\n
+  #8  0x0000000000000001 in ?? ()\n
+  #9  0x00007fffffffe3f8 in ?? ()\n
+  #10 0x0000000000000000 in ?? ()\n"
+  },
+  {
+  "PROGRAM":"pstack 11059\n
+  #0  0x00000034c10df218 in poll () from \/lib64\/libc.so.6\n
+  #1  0x00000034c243c655 in ?? () from \/lib64\/libglib-2.0.so.0\n
+  #2  0x00000034c243cd55 in g_main_loop_run () from \/lib64\/libglib-2.0.so.0\n
+  #3  0x00000000004105f1 in ?? ()\n
+  #4  0x00000034c101ecdd in __libc_start_main () from \/lib64\/libc.so.6\n
+  #5  0x0000000000407359 in ?? ()\n
+  #6  0x00007fffffff1fb8 in ?? ()\n
+  #7  0x000000000000001c in ?? ()\n
+  #8  0x0000000000000001 in ?? ()\n
+  #9  0x00007fffffff2868 in ?? ()\n
+  #10 0x0000000000000000 in ?? ()\n"
+  },
+  {
+  "PROGRAM":"pstack 11066\n
+  #0  0x00000034c10df218 in poll () from \/lib64\/libc.so.6\n
+  #1  0x00000034c243c655 in ?? () from \/lib64\/libglib-2.0.so.0\n
+  #2  0x00000034c243cd55 in g_main_loop_run () from \/lib64\/libglib-2.0.so.0\n
+  #3  0x0000000000406611 in ?? ()\n
+  #4  0x00000034c101ecdd in __libc_start_main () from \/lib64\/libc.so.6\n
+  #5  0x00000000004044a9 in ?? ()\n
+  #6  0x00007fffffff1fb8 in ?? ()\n
+  #7  0x000000000000001c in ?? ()\n
+  #8  0x0000000000000001 in ?? ()\n
+  #9  0x00007fffffff2860 in ?? ()\n
+  #10 0x0000000000000000 in ?? ()\n"
+  },
+  {
+  "PROGRAM":"pstack 11068\n
+  Thread 2 (Thread 0x7ffff2139700 (LWP 11070)):\n
+  #0  0x00000034c10acb8d in nanosleep () from \/lib64\/libc.so.6\n
+  #1  0x00000034c10aca00 in sleep () from \/lib64\/libc.so.6\n
+  #2  0x00000034c3c02600 in ?? () from \/usr\/lib64\/libusbmuxd.so.1\n
+  #3  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #4  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 1 (Thread 0x7ffff7fcb7a0 (LWP 11068)):\n
+  #0  0x00000034c10df253 in poll () from \/lib64\/libc.so.6\n
+  #1  0x00000034c243c655 in ?? () from \/lib64\/libglib-2.0.so.0\n
+  #2  0x00000034c243cd55 in g_main_loop_run () from \/lib64\/libglib-2.0.so.0\n
+  #3  0x0000000000405101 in ?? ()\n
+  #4  0x00000034c101ecdd in __libc_start_main () from \/lib64\/libc.so.6\n
+  #5  0x0000000000403ee9 in ?? ()\n
+  #6  0x00007fffffff1fb8 in ?? ()\n
+  #7  0x000000000000001c in ?? ()\n
+  #8  0x0000000000000001 in ?? ()\n
+  #9  0x00007fffffff2868 in ?? ()\n
+  #10 0x0000000000000000 in ?? ()\n"
+  },
+  {
+  "PROGRAM":"pstack 19573\n
+  Thread 8 (Thread 0x7ffff7726700 (LWP 19578)):\n
+  #0  0x00000034c10e8f03 in epoll_wait () from \/lib64\/libc.so.6\n
+  #1  0x000000000045fe8e in CRedirector::redirectThread() ()\n
+  #2  0x00000000004605b5 in redirect(void*) ()\n
+  #3  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #4  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 7 (Thread 0x7ffff6d04700 (LWP 19581)):\n
+  #0  0x00000034c140b7bb in pthread_cond_timedwait@@GLIBC_2.3.2 () from \/lib64\/libpthread.so.0\n
+  #1  0x00000000004635b0 in CLock::timedWait(timespec*) ()\n
+  #2  0x0000000000479f86 in CHealthCheck::healthCheckThread() ()\n
+  #3  0x000000000047a57b in healthCheck(void*) ()\n
+  #4  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #5  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 6 (Thread 0x7ffff6303700 (LWP 19583)):\n
+  #0  0x00000034c140e84d in accept () from \/lib64\/libpthread.so.0\n
+  #1  0x000000000041df72 in CCluster::AcceptSock(int) ()\n
+  #2  0x000000000041dcf5 in CCluster::AcceptCommSock() ()\n
+  #3  0x000000000047da7f in CCommAccept::commAcceptorSock() ()\n
+  #4  0x000000000047d716 in CCommAccept::commAcceptor() ()\n
+  #5  0x000000000047dd6d in commAccept(void*) ()\n
+  #6  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #7  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 5 (Thread 0x7ffff39df700 (LWP 19584)):\n
+  #0  0x00000034c1033ad7 in sigwaitinfo () from \/lib64\/libc.so.6\n
+  #1  0x000000000044d7c3 in serialRequestThread(void*) ()\n
+  #2  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #3  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 4 (Thread 0x7ffff2fde700 (LWP 19586)):\n
+  #0  0x00000034c140b43c in pthread_cond_wait@@GLIBC_2.3.2 () from \/lib64\/libpthread.so.0\n
+  #1  0x0000000000463735 in CLock::wait() ()\n
+  #2  0x0000000000450e05 in SQ_LocalIOToClient::waitForNoticeWork() ()\n
+  #3  0x000000000044dafc in pendingNoticeThread(void*) ()\n
+  #4  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #5  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 3 (Thread 0x7ffff25dd700 (LWP 19587)):\n
+  #0  0x00000034c1033ad7 in sigwaitinfo () from \/lib64\/libc.so.6\n
+  #1  0x000000000044dc8c in lioBufCleanupThread(void*) ()\n
+  #2  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #3  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 2 (Thread 0x7ffff1bcb700 (LWP 19591)):\n
+  #0  0x00000034c140b43c in pthread_cond_wait@@GLIBC_2.3.2 () from \/lib64\/libpthread.so.0\n
+  #1  0x0000000000463735 in CLock::wait() ()\n#2  0x0000000000489d2a in CReqQueue::getRequest() ()\n
+  #3  0x000000000047e3ca in CReqWorker::reqWorkerThread() ()\n
+  #4  0x000000000047e6d8 in reqWorker(void*) ()\n
+  #5  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #6  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 1 (Thread 0x7ffff7b38b40 (LWP 19573)):\n
+  #0  0x00000034c10e8f03 in epoll_wait () from \/lib64\/libc.so.6\n
+  #1  0x0000000000417ee9 in CCluster::AllgatherSock(int, void*, char*, int, MPI_Status*) ()\n
+  #2  0x0000000000417103 in CCluster::Allgather(int, void*, char**, int, MPI_Status*) ()\n
+  #3  0x000000000041c48a in CCluster::exchangeNodeData() ()\n
+  #4  0x0000000000409c9c in main ()\n"}]
+----
+
+In this example the user wishes to see the call stack for Trafodion process id 20642. 
+This is a jsonized version of the _sqpstack [<program>]_ command. Newlines are added to all lines
+in the response so clients can recognize each end of line.
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/pstack/program/20642
+----
+
+.Response
+----
+[
+  {
+  "PROGRAM":"pstack 20642\n
+  Thread 8 (Thread 0x7fffecb17700 (LWP 20660)):\n
+  #0  0x00000034c10e94cd in accept () from \/lib64\/libc.so.6\n
+  #1  0x00007ffff77859a5 in SB_Trans::Sock_Listener::accept() () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #2  0x00007ffff778c4f6 in SB_Trans::Sock_Stream_Accept_Thread::run() () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #3  0x00007ffff778c223 in sock_stream_accept_thread_fun(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #4  0x00007ffff53b7b0f in SB_Thread::Thread::disp(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #5  0x00007ffff53b7f67 in thread_fun(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #6  0x00007ffff53bb1dc in sb_thread_sthr_disp(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #7  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #8  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 7 (Thread 0x7fffec116700 (LWP 20664)):\n
+  #0  0x00000034c140b43c in pthread_cond_wait@@GLIBC_2.3.2 () from \/lib64\/libpthread.so.0\n
+  #1  0x00007ffff53ba5a2 in SB_Thread::CV::wait() () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #2  0x00007ffff53ba67e in SB_Thread::CV::wait(bool) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #3  0x00007ffff777ec57 in SB_Sig_Queue::remove() () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #4  0x00007ffff778c987 in SB_Trans::Sock_Stream_Helper_Thread::run() () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #5  0x00007ffff778c24a in sock_helper_thread_fun(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #6  0x00007ffff53b7b0f in SB_Thread::Thread::disp(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #7  0x00007ffff53b7f67 in thread_fun(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #8  0x00007ffff53bb1dc in sb_thread_sthr_disp(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #9  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #10 0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 6 (Thread 0x7fffe97f2700 (LWP 20671)):\n
+  #0  0x00000034c103399d in sigtimedwait () from \/lib64\/libc.so.6\n
+  #1  0x00007ffff774a5d4 in local_monitor_reader(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #2  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #3  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 5 (Thread 0x7fffe8df1700 (LWP 20677)):\n
+  #0  0x00000034c10df253 in poll () from \/lib64\/libc.so.6\n
+  #1  0x00007ffff6691482 in do_io () from trafodion\/git\/core\/sqf\/export\/lib64d\/libzookeeper_mt.so.2\n
+  #2  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #3  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 4 (Thread 0x7fffe83f0700 (LWP 20679)):\n
+  #0  0x00000034c140b43c in pthread_cond_wait@@GLIBC_2.3.2 () from \/lib64\/libpthread.so.0\n
+  #1  0x00007ffff669126b in do_completion () from trafodion\/git\/core\/sqf\/export\/lib64d\/libzookeeper_mt.so.2\n
+  #2  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #3  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 3 (Thread 0x7fffe79ef700 (LWP 20680)):\n
+  #0  0x00000034c1032d85 in sigwait () from \/lib64\/libc.so.6\n
+  #1  0x00007ffff7793aaf in SB_Timer_Thread::run() () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #2  0x00007ffff77938b7 in sb_timer_thread_fun(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #3  0x00007ffff53b7b0f in SB_Thread::Thread::disp(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #4  0x00007ffff53b7f67 in thread_fun(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #5  0x00007ffff53bb1dc in sb_thread_sthr_disp(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #6  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #7  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 2 (Thread 0x7fffe6f90700 (LWP 20685)):\n
+  #0  0x00000034c10e14f3 in select () from \/lib64\/libc.so.6\n
+  #1  0x00000000004c47a7 in CNSKListenerSrvr::tcpip_listener(void*) ()\n
+  #2  0x00007ffff53bb1dc in sb_thread_sthr_disp(void*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #3  0x00000034c1407851 in start_thread () from \/lib64\/libpthread.so.0\n
+  #4  0x00000034c10e890d in clone () from \/lib64\/libc.so.6\n
+  Thread 1 (Thread 0x7fffecdab2e0 (LWP 20642)):\n
+  #0  0x00000034c140b43c in pthread_cond_wait@@GLIBC_2.3.2 () from \/lib64\/libpthread.so.0\n
+  #1  0x00007ffff53ba5a2 in SB_Thread::CV::wait() () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #2  0x00007ffff53ba623 in SB_Thread::CV::wait(bool) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbutil.so\n
+  #3  0x00007ffff775c7d6 in SB_Ms_Event_Mgr::wait(long) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #4  0x00007ffff777d17e in XWAIT_com(short, int, bool) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #5  0x00007ffff777cf2f in XWAIT(short, int) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbms.so\n
+  #6  0x00007ffff79e932a in fs_int_fs_file_awaitiox(short*, void**, int*, long*, int, short*, bool, bool) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbfs.so\n
+  #7  0x00007ffff79e2a09 in BAWAITIOX(short*, void**, int*, long*, int, short*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbfs.so\n
+  #8  0x00007ffff79e5a9d in XAWAITIOX(short*, void**, unsigned short*, long*, int, short*) () from trafodion\/git\/core\/sqf\/export\/lib64d\/libsbfs.so\n
+  #9  0x00000000004c4d85 in CNSKListenerSrvr::runProgram(char*, long, int) ()\n
+  #10 0x00000000005a12bb in runCEE(char*, long, int) ()\n
+  #11 0x00000000005a35f3 in main ()\n"
+  }
+]
+----
+
+In this example the user wishes to know the status of Trafodion DTM service. 
+This is a jsonized version of the _dtmci status tm_ command.
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/transactions
+----
+
+.Response
+----
+[
+  {
+    "node":0,
+    "isLeadTM":true,
+    "state":"UP",
+    "sys_recovery_state":"END",
+    "tmshutdown_level":"RUNNING",
+    "number_active_txns":0
+  },
+  {
+    "node":1,
+    "isLeadTM":false,
+    "state":"UP",
+    "sys_recovery_state":"END",
+    "tmshutdown_level":"RUNNING",
+    "number_active_txns":0
+  }
+]
+----
+
+In this example the user wishes to know the Trafodion DTM service statistics. 
+This is a jsonized version of the _dtmci stats_ command.
+
+.Http command
+----
+curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/transactions/stats
+----
+
+.Response
+----
+[
+  {
+    "node": 0,
+    "txnStats":
+    {
+      "txnBegins": 17,
+      "txnAborts": 0,
+      "txnCommits": 13
+    }
+  },
+  {
+    "node": 1,
+    "txnStats":
+    {
+      "txnBegins": 0,
+      "txnAborts": 0,
+      "txnCommits": 0
+    }
+  }
+]
+----

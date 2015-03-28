@@ -1,0 +1,66 @@
+////
+<!-- 
+/**
+  *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-->         
+////
+
+= Getting Started
+:doctype: book
+:numbered:
+:toc: left
+:icons: font
+:experimental:
+
+
+== Introduction
+<<quickstart,Quick Start>> will get your REST server up and running quickly. 
+<<configuration,Configuration>> describes setup of REST in more detail.
+
+[[quickstart]]
+== Quick Start
+
+This chapter describes setup of a Trafodion REST server. It leads you through the starting up and shutting down of your REST server.
+The Trafodion installer modifies the configuration files for you and starts/stops the server as part of the Trafodion
+_sqstart_ and _sqstop_ scripts so the following sections are for those times when you need a non-standard configuration
+or wish to start/stop the server independently.  
+
+Is Trafodion installed and running?
+
+The server presumes a Trafodion instance is installed and running on your machine and available on your path; i.e. the
+`MY_SQROOT` environment variable is set and when you type _sqcheck_, you see output that confirms Trafodion is running. If this is not
+the case, the server may start but you'll see many errors. 
+      
+At this point, you are ready to start the server.
+
+=== Starting  
+
+Now start your server:
+----     
+ $ bin/start-rest.sh 
+ starting rest, logging to /logs/rest-user-1-rest-hostname.out
+----
+
+You should now have a running server. Logs can be found in the
+_logs_ subdirectory. Peruse them especially if the server had trouble starting.
+
+=== Stopping 
+
+Stop your server by running the stop script.
+----
+ $ ./bin/stop-rest.sh
+ stopping rest..
+----
