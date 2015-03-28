@@ -137,7 +137,7 @@ static const QString createMetricQueryTable[] =
  {" sql_error_code                         integer                           default null serialized, "},
  {" error_text                             varchar(2000) character set utf8 casespecific default null serialized, "},
  {" query_text                             varchar(50000) character set utf8 casespecific default null serialized, "},
- {" explain_plan                           varchar(REPOS_MAX_EXPLAIN_PLAN_LEN) character set iso88591 casespecific default null serialized, "},
+ {" explain_plan                           varchar("REPOS_MAX_EXPLAIN_PLAN_LEN_STR") character set iso88591 casespecific default null serialized, "},
  {" last_error_before_aqr                  integer                           default null serialized, "},
  {" delay_time_before_aqr_sec              largeint                          default null serialized, "},
  {" total_num_aqr_retries                  largeint                          default null serialized, "},
