@@ -26,6 +26,7 @@
 #include "PrivMgrDefs.h"
 #include "PrivMgrDesc.h"
 #include "ComSmallDefs.h"
+#include "CmpSeabaseDDLauth.h"
 
 // following includes needed for cli and diags interface
 class Queue;
@@ -179,6 +180,8 @@ class PrivMgr
     static bool isSQLDropOperation(SQLOperation operation);
     static const char * ObjectEnumToLit(ComObjectType objectType);
     static ComObjectType ObjectLitToEnum(const char *objectLiteral);    
+    static bool isRoleID(int_32 authID){ return CmpSeabaseDDLauth::isRoleID(authID); }
+    static bool isUserID(int_32 authID){ return CmpSeabaseDDLauth::isUserID(authID); }
     
     // -------------------------------------------------------------------
     // Constructors and destructors:

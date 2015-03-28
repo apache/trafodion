@@ -190,7 +190,13 @@ public :
 		  IS_UNINITIALIZED_SEABASE = 0x100,
 
 		  IS_CATALOG_SEABASE = 0x200,
-		  IS_AUTHORIZATION_ENABLED = 0x400
+
+		  // IS_AUTHORIZATION_ENABLED is TRUE if one or more privmgr
+		  //   metadata tables exist.
+		  // IS_AUTHORIZATION_READY is TRUE if all privmgr metadata
+		  //   tables exist 
+		  IS_AUTHORIZATION_ENABLED = 0x400,
+		  IS_AUTHORIZATION_READY = 0x800
 		};
 
   CmpContext (UInt32 flags,
@@ -221,7 +227,8 @@ public :
   NABoolean isEmbeddedArkcmp() const { return flags_ & IS_EMBEDDED_ARKCMP;}
   NABoolean isUninitializedSeabase() const { return flags_ & IS_UNINITIALIZED_SEABASE;}
   NABoolean isCatalogSeabase() const { return flags_ & IS_CATALOG_SEABASE;}
-  NABoolean isAuthorizationEnabled() const { return flags_ & IS_AUTHORIZATION_ENABLED; }
+  NABoolean isAuthorizationEnabled(NABoolean errIfNotReady = TRUE); 
+  NABoolean isAuthorizationReady() const { return flags_ & IS_AUTHORIZATION_READY; }
   NABoolean isRuntimeCompile() const { return isRuntimeCompile_; }
   const NABoolean isDoNotAbort() const { return flags_ & IS_DO_NOT_ABORT; }
   Int16 getRecursionLevel() { return recursionLevel_;}
@@ -231,6 +238,8 @@ public :
   //A secondary mxcmp is one that has been spawned by another mxcmp process.
   //a call to this method is made in ExCmpMessage::actOnReceive
   void setSecondaryMxcmp();
+
+  void setAuthorizationState (Int32 state);
 
   void setDoNotAbort(NABoolean v)
   {
@@ -255,6 +264,11 @@ public :
   void setIsAuthorizationEnabled(NABoolean v)
   {
     (v ? flags_ |= IS_AUTHORIZATION_ENABLED : flags_ &= ~IS_AUTHORIZATION_ENABLED);
+  }
+  
+  void setIsAuthorizationReady(NABoolean v)
+  {
+    (v ? flags_ |= IS_AUTHORIZATION_READY : flags_ &= ~IS_AUTHORIZATION_READY);
   }
   
   // access the NAHeap* for context

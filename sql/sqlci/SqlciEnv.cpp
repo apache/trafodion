@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1119,11 +1119,37 @@ short Env::process(SqlciEnv *sqlci_env)
   // ## Should any of this text come from the message file,
   // ## i.e. from a translatable file for I18N?
 
+
+  // When adding new variables, please keep the information in 
+  // alphabetic order
   Logfile *log = sqlci_env->get_logfile();
 
   log->WriteAll("----------------------------------");
   log->WriteAll("Current Environment");
   log->WriteAll("----------------------------------");
+ 
+
+  bool authenticationEnabled = false;
+  bool authorizationEnabled = false;
+  bool authorizationReady = false;
+  bool auditingEnabled = false;
+  Int32 rc = sqlci_env->getAuthState(authenticationEnabled,
+                                     authorizationEnabled,
+                                     authorizationReady,
+                                     auditingEnabled);
+
+  // TDB: add auditing state
+  log->WriteAllWithoutEOL("AUTHENTICATION     ");
+  if (authenticationEnabled)
+    log->WriteAll("enabled");
+  else
+    log->WriteAll("disabled");
+
+  log->WriteAllWithoutEOL("AUTHORIZATION      ");
+  if (authorizationEnabled)
+    log->WriteAll("enabled");
+  else
+    log->WriteAll("disabled");
 
   log->WriteAllWithoutEOL("CURRENT DIRECTORY  ");
 
@@ -1153,9 +1179,6 @@ short Env::process(SqlciEnv *sqlci_env)
   const char *mf = GetErrorMessageFileName();
   log->WriteAll(mf ? mf : "");
 
-  log->WriteAllWithoutEOL("TERMINAL CHARSET   ");
-  log->WriteAll(CharInfo::getCharSetName(sqlci_env->getTerminalCharset()));
-
 #if 0
   log->WriteAllWithoutEOL("ISO88591 MAPPING   ");
   log->WriteAll(CharInfo::getCharSetName(sqlci_env->getIsoMappingCharset()));
@@ -1181,25 +1204,6 @@ short Env::process(SqlciEnv *sqlci_env)
 #pragma warn(1506)  // warning elimination 
   vmsg.process(sqlci_env);
 
-  // On Linux we include the database user name and user ID in the
-  // command output
-  NAString username;
-  Int32 rc = sqlci_env->getDatabaseUserName(username);
-  log->WriteAllWithoutEOL("SQL USER NAME      ");
-  if (rc >= 0)
-    log->WriteAll(username.data());
-  else
-    log->WriteAll("?");
-  
-  Int32 uid = 0;
-  rc = sqlci_env->getDatabaseUserID(uid);
-  log->WriteAllWithoutEOL("SQL USER ID        ");
-  if (rc >= 0)
-    sprintf(buf, "%d", (int) uid);
-  else
-    strcpy(buf, "?");
-  log->WriteAll(buf);
-  
   ComAnsiNamePart defaultCat;
   ComAnsiNamePart defaultSch;
 
@@ -1251,6 +1255,35 @@ short Env::process(SqlciEnv *sqlci_env)
   log->WriteAll(defaultSch.getExternalName());
   }
 
+  // On Linux we include the database user name and user ID in the
+  // command output
+  NAString username;
+  rc = sqlci_env->getExternalUserName(username);
+  log->WriteAllWithoutEOL("SQL USER CONNECTED "); 
+  if (rc >= 0)
+    log->WriteAll(username.data());
+  else
+    log->WriteAll("?");
+
+  rc = sqlci_env->getDatabaseUserName(username);
+  log->WriteAllWithoutEOL("SQL USER DB NAME   ");
+  if (rc >= 0)
+    log->WriteAll(username.data());
+  else
+    log->WriteAll("?");
+  
+  Int32 uid = 0;
+  rc = sqlci_env->getDatabaseUserID(uid);
+  log->WriteAllWithoutEOL("SQL USER ID        ");
+  if (rc >= 0)
+    sprintf(buf, "%d", (int) uid);
+  else
+    strcpy(buf, "?");
+  log->WriteAll(buf);
+  
+  log->WriteAllWithoutEOL("TERMINAL CHARSET   ");
+  log->WriteAll(CharInfo::getCharSetName(sqlci_env->getTerminalCharset()));
+
   Int64 transid;
   if (sqlci_env->statusTransaction(&transid))
     {
@@ -1290,6 +1323,25 @@ void SqlciEnv::getDefaultCatAndSch (ComAnsiNamePart & defaultCat, ComAnsiNamePar
   defaultCatAndSch_ = NULL;
 }
 
+// Retrieve the external database user ID from CLI
+Int32 SqlciEnv::getExternalUserName(NAString &username)
+{
+  HandleCLIErrorInit();
+
+  char buf[1024] = "";
+  Int32 rc = SQL_EXEC_GetSessionAttr(SESSION_EXTERNAL_USER_NAME,
+                                     NULL,
+                                     buf, 1024, NULL);
+  HandleCLIError(rc, this);
+
+  if (rc >= 0)
+    username = buf;
+
+  if (username.length() == 0)
+   username = "user not connected";
+  return rc;
+}
+
 // Retrieve the database user ID from CLI
 Int32 SqlciEnv::getDatabaseUserID(Int32 &uid)
 {
@@ -1303,6 +1355,24 @@ Int32 SqlciEnv::getDatabaseUserID(Int32 &uid)
 
   if (rc >= 0)
     uid = localUID;
+
+  return rc;
+}
+
+// Retrieve the database user ID from CLI
+Int32 SqlciEnv::getAuthState(bool &authenticationEnabled,
+                             bool &authorizationEnabled,
+                             bool &authorizationReady,
+                             bool &auditingEnabled)
+{
+  HandleCLIErrorInit();
+
+  Int32 localUID = 0;
+  Int32 rc = SQL_EXEC_GetAuthState_Internal(authenticationEnabled,
+                                            authorizationEnabled,
+                                            authorizationReady,
+                                            auditingEnabled);
+  HandleCLIError(rc, this);
 
   return rc;
 }

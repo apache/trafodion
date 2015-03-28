@@ -34,6 +34,7 @@
 
 
 #include "CmpSeabaseDDLincludes.h"
+#include "CmpSeabaseDDLauth.h"
 #include "ElemDDLColDefault.h"
 #include "NumericType.h"
 #include "ComUser.h"
@@ -46,6 +47,8 @@
 #include "CmpMain.h"
 #include "Context.h"
 #include "PrivMgrCommands.h"
+#include "PrivMgrRoles.h"
+#include "PrivMgrComponentPrivileges.h"
 
 // defined in CmpDescribe.cpp
 extern short CmpDescribeSeabaseTable ( 
@@ -3436,6 +3439,16 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
      return;
   }
 
+  // return an error if trying to add a column to a volatile table
+  if (naTable->isVolatileTable())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_REGULAR_OPERATION_ON_VOLATILE_OBJECT);
+
+      processReturn ();
+
+      return;
+    }
+
   const NAColumnArray &nacolArr = naTable->getNAColumnArray();
 
   ElemDDLColDefArray ColDefArray = alterAddColNode->getColDefArray();
@@ -3696,6 +3709,16 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
 
      return;
   }
+
+  // return an error if trying to drop a column from a volatile table
+  if (naTable->isVolatileTable())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_REGULAR_OPERATION_ON_VOLATILE_OBJECT);
+     
+      processReturn ();
+
+      return;
+    }
 
   if (naTable->isSQLMXAlignedTable())
     {
@@ -5777,6 +5800,12 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
 {
   Lng32 retcode = 0;
 
+  if (!isAuthorizationEnabled())
+  {
+    *CmpCommon::diags() << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
+    return;
+  }
+
   StmtDDLGrant * grantNode = NULL;
   StmtDDLRevoke * revokeNode = NULL;
   NAString tabName;
@@ -5795,23 +5824,17 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       nameSpace = revokeNode->getRevokeNameAsQualifiedName().getObjectNameSpace();
     }
 
-  ComObjectName tableName(tabName, COM_TABLE_NAME);
-  ComAnsiNamePart currCatAnsiName(currCatName);
-  ComAnsiNamePart currSchAnsiName(currSchName);
-  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
-
   // If using HBase to perform authorization, call it now.
+  ComObjectName tableName(tabName, COM_TABLE_NAME);
   if (useHBase || isHbase(tableName))
   {
     seabaseGrantRevokeHBase(stmtDDLNode, isGrant, currCatName, currSchName);
     return;
   }
 
-  if (!isAuthorizationEnabled())
-  {
-    *CmpCommon::diags() << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
-    return;
-  }
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
 
   const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
   const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
@@ -5859,14 +5882,6 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
     (isGrant ? grantNode->isByGrantorOptionSpecified() : 
      revokeNode->isByGrantorOptionSpecified());
      
-  if (isGrantedBySpecified)
-  {
-    *CmpCommon::diags() << DgSqlCode(-CAT_OPTION_NOT_SUPPORTED)
-                        << DgString0("GRANTED BY");
-    processReturn();
-    return;
-  }
-
   vector<std::string> userPermissions;
   if (allPrivs)
     {
@@ -5943,12 +5958,13 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
         } // for
     }
 
-  // Prepare to call privilege manager
+
+ // Prepare to call privilege manager
   NAString MDLoc;
   CONCAT_CATSCH(MDLoc, getSystemCatalog(), SEABASE_MD_SCHEMA);
   NAString privMgrMDLoc;
   CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
-  
+
   PrivMgrCommands command(std::string(MDLoc.data()), 
                           std::string(privMgrMDLoc.data()), 
                           CmpCommon::diags());
@@ -5987,9 +6003,6 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
     }
 
   // set up common information for all grantees
-  Int32 grantor = ComUser::getCurrentUser();
-  const char *grantorNameChar  = GetCliGlobals()->currContext()->getDatabaseUserName(); 
-  std::string grantorName (grantorNameChar);
   ComObjectType objectType = COM_BASE_TABLE_OBJECT;
   switch (nameSpace)
   {
@@ -6046,6 +6059,28 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
             processReturn();
             return;
           }
+    }
+
+
+  // Determine effective grantor ID and grantor name based on GRANTED BY clause
+  // current user, and object owner
+  NAString grantedByName = 
+     isGrantedBySpecified ? grantNode->getByGrantor()->getAuthorizationIdentifier(): "";
+  Int32 effectiveGrantorID;
+  std::string effectiveGrantorName;
+  PrivStatus result = command.getGrantorDetailsForObject( 
+     isGrantedBySpecified,
+     std::string(grantedByName.data()),
+     objectOwnerID,
+     effectiveGrantorID,
+     effectiveGrantorName);
+
+  if (result != STATUS_GOOD)
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        SEABASEDDL_INTERNAL_ERROR("getting grantor ID and grantor name");
+      processReturn();
+      return;
     }
 
   // TBD:  allow WGO once grant/restrict processing is completed
@@ -6106,8 +6141,8 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
                                                          objectType, 
                                                          grantee, 
                                                          granteeName, 
-                                                         grantor, 
-                                                         grantorName, 
+                                                         effectiveGrantorID, 
+                                                         effectiveGrantorName, 
                                                          userPermissions,
                                                          allPrivs,
                                                          isWGOSpecified); 
@@ -6118,7 +6153,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
                                                           objectName, 
                                                           objectType, 
                                                           grantee, 
-                                                          grantor, 
+                                                          effectiveGrantorID, 
                                                           userPermissions, 
                                                           allPrivs, 
                                                           isWGOSpecified);

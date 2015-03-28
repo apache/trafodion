@@ -25,6 +25,7 @@
 #include "PrivMgrDesc.h"
 #include "PrivMgrDefs.h"
 #include "PrivMgrRoles.h"
+#include "PrivMgrComponentPrivileges.h"
 
 #include <string>
 #include <cstdio>
@@ -359,7 +360,6 @@ PrivStatus PrivMgrPrivileges::buildSecurityKeys(
    return STATUS_GOOD;
 
 }
-
 
 // *****************************************************************************
 // * Method: getPrivRowsForObject                                
@@ -764,6 +764,13 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
                                privsToGrant); 
   if (retcode != STATUS_GOOD)
     return retcode;
+
+  // If the granting to self or DB__ROOT, return an error
+  if (grantorID_ == granteeID || granteeID == ComUser::getRootUserID())
+  {
+    *pDiags_ << DgSqlCode(-CAT_CANT_GRANT_TO_SELF_OR_ROOT);
+    return STATUS_ERROR;
+  }
 
   // get privileges for the grantor and make sure the grantor can grant
   // at least one of the requested privileges
@@ -1546,6 +1553,159 @@ PrivStatus PrivMgrPrivileges::getGrantedPrivs(
   return objectPrivsTable.selectWhereUnique (whereClause, row);
 }
  
+// ----------------------------------------------------------------------------
+// method: getGrantorDetailsForObject
+//
+// returns the effective grantor ID and grantor name for grant and revoke
+// object statements
+//
+// Input:
+//   isGrantedBySpecified - true if grant request included a GRANTED BY clause
+//   grantedByName - name specified in GRANTED BY clause
+//   objectOwner - owner of object that is the subject for the grant or revoke
+// 
+// Output:
+//   effectiveGrantorID - the ID to use for grant and revoke
+//   effectiveGrantorName - the name to use for grant and revoke
+//
+// returns PrivStatus with the results of the operation.  The diags area 
+// contains error details.
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrPrivileges::getGrantorDetailsForObject(
+   const bool isGrantedBySpecified,
+   const std::string grantedByName,
+   const int_32 objectOwner,
+   int_32 &effectiveGrantorID,
+   std::string &effectiveGrantorName)
+{
+  int_32 currentUser = ComUser::isRootUserID() ? objectOwner : ComUser::getCurrentUser();
+  std::string grantorName;
+  int_32 grantorID = 0;
+  short retcode = 0;
+
+  if (isGrantedBySpecified)
+  {
+    // set grantorName to name specified in the GRANTED BY clause
+    grantorName = grantedByName;
+
+    // Get the grantor ID from the grantorName
+    retcode = ComUser::getAuthIDFromAuthName(grantorName.c_str(), grantorID);
+
+    if (retcode == FENOTFOUND)
+    {
+      *pDiags_ << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
+                << DgString0(grantedByName.c_str());
+      return STATUS_ERROR;
+    }
+
+    if (retcode != FEOK)
+    {
+      *pDiags_ << DgSqlCode(-20235)
+              << DgInt0(retcode)
+              << DgInt1(objectOwner);
+      return STATUS_ERROR;
+    }
+
+    // user specified in the BY clause must be the same as the current user
+    if (isUserID(grantorID))
+    {
+      if (grantorID != currentUser)
+      {
+        *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
+         return STATUS_ERROR;
+      }
+
+      // Until the WITH GRANT OPTION is supported, only the object owner
+      // has WITH GRANT option.  Verify that the currentUser is the same
+      // as the objectOwner
+      if (currentUser != objectOwner)
+      {
+        *pDiags_ << DgSqlCode(-CAT_PRIVILEGE_NOT_GRANTED);
+         return STATUS_ERROR;
+      }
+    }
+
+    // role specified in BY clause must be granted to the current user
+    if (isRoleID(grantorID))
+    {
+      if (!ComUser::isRootUserID())
+      {
+        PrivMgrRoles roles(trafMetadataLocation_,
+                           metadataLocation_,
+                           pDiags_);
+
+        if (!roles.hasRole(currentUser,grantorID))
+        {
+          *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
+           return STATUS_ERROR;
+        }
+
+        // Until WITH GRANT OPTION is fully supported, the current user
+        // must also have the MANAGE_ROLES privilege when granting with
+        // the GRANTED BY clause
+        PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
+        if (!componentPrivileges.hasSQLPriv(currentUser,
+                                            SQLOperation::MANAGE_ROLES,
+                                            true))
+        {
+          *pDiags_ << DgSqlCode(-CAT_PRIVILEGE_NOT_GRANTED);
+          return STATUS_ERROR;
+        }
+      }
+    }
+  }
+
+  // GRANTED BY clause not specified, get grantor info
+  else
+  {
+    // If the object owner is a role, check to see if the current user has the
+    // MANAGE_ROLE privilege.  Currently there is no support for the WITH
+    // GRANT OPTION so if privileges need to be propagated on objects owned
+    // by roles, the requesting user must have the MANAGE_ROLE privilege.
+    if (isRoleID(objectOwner))
+    {
+      if (!ComUser::isRootUserID())
+      {
+        PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
+        if (!componentPrivileges.hasSQLPriv(currentUser,
+                                            SQLOperation::MANAGE_ROLES,
+                                            true))
+        {
+          *pDiags_ << DgSqlCode(-CAT_PRIVILEGE_NOT_GRANTED);
+          return STATUS_ERROR;
+        }
+      }
+      grantorID = objectOwner;
+    }
+
+    // grantor is the currentUser
+    else
+      grantorID = currentUser;
+
+    // Get the effective grantor name
+    char authName[MAX_USERNAME_LEN+1];
+    Int32 actualLen = 0;
+    retcode = ComUser::getAuthNameFromAuthID( grantorID
+                                            , (char *)&authName
+                                            , MAX_USERNAME_LEN
+                                            , actualLen );
+    if (retcode != FEOK)
+    {
+      *pDiags_ << DgSqlCode(-20235)
+              << DgInt0(retcode)
+              << DgInt1(grantorID);
+      return STATUS_ERROR;
+    }
+    grantorName = authName;
+  }
+
+  effectiveGrantorID = grantorID;
+  effectiveGrantorName = grantorName;
+
+  return STATUS_GOOD;
+}
+
+
 // *****************************************************************************
 // * Method: revokeObjectPriv                                
 // *                                                       

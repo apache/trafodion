@@ -240,6 +240,13 @@ public:
       const std::string & operationName,
       PrivDropBehavior dropBehavior);
    
+   PrivStatus getGrantorDetailsForObject(
+      const bool isGrantedBySpecified,
+      const std::string grantedByName,
+      const int_32 objectOwner,
+      int_32 &effectiveGrantorID,
+      std::string &effectiveGrantorName);
+
    PrivStatus getPrivileges(
       const int64_t objectUID,
       const int32_t granteeUID,

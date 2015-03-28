@@ -6681,16 +6681,6 @@ NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
 
 void NATable::setupPrivInfo()
 {
-  privInfo_ = new(heap_) PrivMgrUserPrivs;
-  if (!isSeabaseTable() || 
-      !CmpCommon::context()->isAuthorizationEnabled() ||
-      isVolatileTable() ||
-      ComUser::isRootUserID())
-    {
-      privInfo_->setOwnerDefaultPrivs();
-      return;
-    }
-
   Int32 thisUserID = ComUser::getCurrentUser();
   NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
   privMDLoc += ".\"";
@@ -6703,6 +6693,16 @@ void NATable::setupPrivInfo()
     qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString().data()))
     {
       isSeabasePrivSchemaTable_ = TRUE;
+      return;
+    }
+
+  privInfo_ = new(heap_) PrivMgrUserPrivs;
+  if (!isSeabaseTable() || 
+      !CmpCommon::context()->isAuthorizationEnabled() ||
+      isVolatileTable() ||
+      ComUser::isRootUserID())
+    {
+      privInfo_->setOwnerDefaultPrivs();
       return;
     }
 

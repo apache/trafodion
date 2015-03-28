@@ -4610,6 +4610,52 @@ Lng32 SQL_EXEC_GetDatabaseUserID_Internal (/*IN*/   char   *string_value,
 }
 
 SQLCLI_LIB_FUNC
+Int32 SQL_EXEC_GetAuthState_Internal(
+   /*OUT*/  bool & authenticationEnabled,
+   /*OUT*/  bool & authorizationEnabled,
+   /*OUT*/  bool & authorizationReady,
+   /*OUT*/  bool & auditingEnabled)
+
+{
+
+   Int32 retcode;
+   CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
+
+   CLI_NONPRIV_PROLOGUE(retcode);
+   try
+   {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode =
+      SQLCLI_GetAuthState(GetCliGlobals(),
+                          authenticationEnabled,
+                          authorizationEnabled,
+                          authorizationReady,
+                          auditingEnabled);
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
+         throw;
+       }
+#endif
+   }
+
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
+   return retcode;
+
+}
+
+
+SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_SetSessionAttr_Internal(
     /*IN (SESSIONATTR_TYPE)*/  Lng32  attrName,
     /*IN OPTIONAL*/            Lng32  numeric_value,
