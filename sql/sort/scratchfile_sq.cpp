@@ -22,11 +22,11 @@
 ******************************************************************************
 *
 * File:         scratchfile_sq.cpp
-*                               
-* Description:  This file contains the member function implementation for 
-*               class ScratchFile_sq. This class is used to encapsulate all 
-*               data and methods about a scratch file.  
-*                                                                 
+*
+* Description:  This file contains the member function implementation for
+*               class ScratchFile_sq. This class is used to encapsulate all
+*               data and methods about a scratch file.
+*
 * Created:      01/02/2006
 * Language:     C++
 * Status:       $State: Exp $
@@ -65,28 +65,28 @@ static Int64 juliantimestamp_()
 }
 
 SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
-            SortError* sorterror, 
+            SortError* sorterror,
             CollHeap* heap, NABoolean breakEnabled,
             Int32 scratchMaxOpens,
-            NABoolean asynchReadQueue) :  
+            NABoolean asynchReadQueue) :
   ScratchFile(scratchSpace,
               SCRATCH_FILE_SIZE,
               sorterror,
               heap,
               scratchMaxOpens,
-              breakEnabled), 
+              breakEnabled),
   vectorSize_(scratchSpace->getScratchIOVectorSize()),
   vector_(NULL)
 {
   Int32 error = 0;
-  resultFileSize_ = SCRATCH_FILE_SIZE; 
+  resultFileSize_ = SCRATCH_FILE_SIZE;
   asynchReadQueue_ = asynchReadQueue;
 //------------------------------------------------------------------------
 // if the path is a directory and fileSize is bigger than zero, then
 // get the name of the temp file and add the FILE_DELETE_ONCLOSE flag.
 // Else just copy it in.
 //------------------------------------------------------------------------
-  if (checkDirectory(path) != SORT_SUCCESS)  
+  if (checkDirectory(path) != SORT_SUCCESS)
   {
 
     if (mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
@@ -95,7 +95,7 @@ SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
         {
    // some other process probably created the TdmTmp directory
    // in the meantime so the directory exists.. proceed
-   
+
         }
         else
         {
@@ -116,10 +116,10 @@ SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
   //error 2 is specified overflow type not configured.
   switch(scratchSpace_->getScratchOverflowMode())
   {
-    case SCRATCH_SSD: 
+    case SCRATCH_SSD:
 	  error = STFS_set_overflow(STFS_SSD);
       break;
-    
+
     default:
 	case SCRATCH_MMAP:
     case SCRATCH_DISK:
@@ -180,8 +180,8 @@ SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
 	  flags |= O_NONBLOCK;
 	  flags |= O_NOATIME;
 
-	  //O_DIRECT is ON by default. User has to explicitly define 
-	  //SCRATCH_NO_ODIRECT to disable O_DIRECT. Note that this 
+	  //O_DIRECT is ON by default. User has to explicitly define
+	  //SCRATCH_NO_ODIRECT to disable O_DIRECT. Note that this
 	  //flag has significant performance implications.
 	  if (!getenv("SCRATCH_NO_ODIRECT"))
 		flags |= O_DIRECT;
@@ -193,32 +193,40 @@ SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
 		  STFS_close(fileHandle_[0].fileNum);
 		  fileHandle_[0].fileNum = STFS_NULL_FHNDL;
 		  sortError_->setErrorInfo( EUnexpectErr        //sort error
-							,(short)error     //syserr: the actual FS error                        
+							,(short)error     //syserr: the actual FS error
 							,0              //syserrdetail
 							,"SQScratchFile::SQScratchFile 4" //methodname
 						   );
 						return;
-	  }    
+	  }
 
-  } 
- 
+  }
+
   if(scratchSpace_->getScratchOverflowMode() == SCRATCH_MMAP)
   {
-    off_t ret = STFS_lseek(fileHandle_[0].fileNum, resultFileSize_ -1 , SEEK_SET);
-    if (ret < 0)
+	//Ensure all blocks are allocated for this file on disk. Any disk
+	//space issues can be caught here.
+	//Note errno is not set by this call. It returns error.
+	error = posix_fallocate(fileHandle_[0].fileNum, 0,  SCRATCH_FILE_SIZE);
+    if (error != 0)
     {
       STFS_close(fileHandle_[0].fileNum);
       fileHandle_[0].fileNum = STFS_NULL_FHNDL;
       sortError_->setErrorInfo( EUnexpectErr        //sort error
-                      ,(short)errno     //syserr: the actual FS error
+                      ,(short)error     //syserr: the actual FS error, not errno!
 
                       ,0              //syserrdetail
                       ,"SQScratchFile::SQScratchFile(5)" //methodname
                      );
                   return;
     }
-    error = write(fileHandle_[0].fileNum, "1", 1);
-    if (error < 0)
+
+    //Now map the file.
+    fileHandle_[0].mmap = (char*)
+           mmap(0, resultFileSize_, PROT_READ | PROT_WRITE, MAP_SHARED,
+           fileHandle_[0].fileNum, 0);
+
+    if(fileHandle_[0].mmap == MAP_FAILED)
     {
       STFS_close(fileHandle_[0].fileNum);
       fileHandle_[0].fileNum = STFS_NULL_FHNDL;
@@ -230,31 +238,15 @@ SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
                  );
               return;
     }
-    fileHandle_[0].mmap = (char*) 
-           mmap(0, resultFileSize_, PROT_READ | PROT_WRITE, MAP_SHARED,
-           fileHandle_[0].fileNum, 0);
 
-    if(fileHandle_[0].mmap == MAP_FAILED) 
-    {
-      STFS_close(fileHandle_[0].fileNum);
-      fileHandle_[0].fileNum = STFS_NULL_FHNDL;
-      sortError_->setErrorInfo( EUnexpectErr        //sort error
-                  ,(short)errno     //syserr: the actual FS error
-
-                  ,0              //syserrdetail
-                  ,"SQScratchFile::SQScratchFile(7)" //methodname
-                 );
-              return;
-    }
-    
-  } 
+  }
  //Memory allocation failure will result in long jump.
   reset();
   if(vectorSize_ > 0)
   {
     vector_ = (struct iovec *)((NAHeap *)heap_)->allocateAlignedHeapMemory(sizeof(struct iovec) * vectorSize_, 512);
   }
-  
+
   vectorWriteMax_ = 0;
   vectorReadMax_ = 0;
   writemmapCursor_ = 0;
@@ -282,10 +274,10 @@ SQScratchFile::SQScratchFile(char* path, ScratchSpace *scratchSpace,
 //--------------------------------------------------------------------------
 // The class destructor.
 //--------------------------------------------------------------------------
-SQScratchFile::~SQScratchFile() 
+SQScratchFile::~SQScratchFile()
 {
   short error;
-    
+
   // Close the file
   if (fileHandle_[0].fileNum != STFS_NULL_FHNDL)
   {
@@ -295,15 +287,15 @@ SQScratchFile::~SQScratchFile()
     }
     STFS_close(fileHandle_[0].fileNum);
     STFS_unlink(fileName_);
-    
+
   }
   if(vector_ != NULL)
     ((NAHeap *)heap_)->deallocateMemory(vector_);
 }
 
-NABoolean SQScratchFile::checkDirectory(char *path) 
+NABoolean SQScratchFile::checkDirectory(char *path)
 {
-   
+
    char cwd[1024+1];
    char *currentDir = getcwd(cwd, 1024); // get current working directory
    if (currentDir == NULL)
@@ -319,15 +311,15 @@ NABoolean SQScratchFile::checkDirectory(char *path)
 //--------------------------------------------------------------------------
 // seekOffset
 //--------------------------------------------------------------------------
-RESULT SQScratchFile::seekOffset(Int32 index, Lng32 offset, 
+RESULT SQScratchFile::seekOffset(Int32 index, Lng32 offset,
       Int64 &iowaittime,
-      Lng32 *transfered, DWORD seekDirection) 
+      Lng32 *transfered, DWORD seekDirection)
 {
   //Assert that there is no pending IO on this file num.
   ex_assert(fileHandle_[index].IOPending == FALSE,
                "SQScratchFile::seekOffset, Pending IO on file handle");
-    
-  // when performing vector IO, there is no need to perform seek 
+
+  // when performing vector IO, there is no need to perform seek
   // for every vector element. We note down the beginning position
   // of the first vector element here and ignore rest of the seek
   // calls that build the vector.
@@ -341,19 +333,19 @@ RESULT SQScratchFile::seekOffset(Int32 index, Lng32 offset,
    //actual vector IO is pending.
    ex_assert(type_ == PEND_NONE,
               "SQScratchFile::seekOffset1, Write or read vector pending");
-              
+
    vectorSeekOffset_ = offset;
   }
 
   return SCRATCH_SUCCESS;
-   
+
 }
 
-//checkScratchIO will attempt Io completion if IO is pending. 
+//checkScratchIO will attempt Io completion if IO is pending.
 //The return codes are restricted to SCRATCH_SUCCESS, IO_NOT_COMPLETE,
 //IO_COMPLETE, SCRATCH_FAILURE and DISK_FULL only. Rest of the errors
-//is returned as part of sortError structure. Layers above will handle 
-//the errors as appropriate. 
+//is returned as part of sortError structure. Layers above will handle
+//the errors as appropriate.
 RESULT SQScratchFile::checkScratchIO(Int32 index, DWORD timeout, NABoolean initiateIO)
 {
   Int32 error =0;
@@ -391,7 +383,7 @@ RESULT SQScratchFile::checkScratchIO(Int32 index, DWORD timeout, NABoolean initi
         }
 	return IO_COMPLETE;
       }//success scenario
-      
+
       //error already contains errno. Interpret errno.
       switch(error)
       {
@@ -422,7 +414,7 @@ RESULT SQScratchFile::checkScratchIO(Int32 index, DWORD timeout, NABoolean initi
       }//switch
     }// while retry
   }//if
-  return SCRATCH_SUCCESS; 
+  return SCRATCH_SUCCESS;
 }
 
 Int32 SQScratchFile::redriveIO(Int32 index, Lng32& count, Lng32 timeout)
@@ -443,18 +435,18 @@ Int32 SQScratchFile::redriveIO(Int32 index, Lng32& count, Lng32 timeout)
         err = obtainError();
     }
     break;
-  
+
   case PEND_NONE:
   default:
     err = 0;     //Nothing to do.
   }
-  
+
   if (err == 0)  //IO_COMPLETED
   {
    count = bytesCompleted_;
    reset();
   }
-  
+
   // return errno or 0 to indicate success.
   return err;
 }
@@ -466,18 +458,18 @@ RESULT SQScratchFile::doSelect(Int32 index, DWORD timeout, EPendingIOType type, 
   {
     return SCRATCH_SUCCESS;
   }
-  
+
   fd_set fds;
   struct timeval tv;
   Int32 retval;
-  
+
   Int64 tLeft = LONG_MAX;
   if (timeout >= 0)   tLeft = timeout * 10000;
 
   STFS_FH_ZERO(&fds);
   STFS_FH_SET(fileHandle_[index].fileNum, &fds);
   /* Wait up to five seconds. */
-  
+
   Int64 tBegin = 0;
   if (timeout == -1)
   {// infinit wait
@@ -523,16 +515,16 @@ RESULT SQScratchFile::doSelect(Int32 index, DWORD timeout, EPendingIOType type, 
   return SCRATCH_SUCCESS;
 }
 
-RESULT SQScratchFile::writeBlock(Int32 index, char *data, Lng32 length, 
-      Int64 &iowaittime, Int32 blockNum, 
+RESULT SQScratchFile::writeBlock(Int32 index, char *data, Lng32 length,
+      Int64 &iowaittime, Int32 blockNum,
       Lng32 *transfered, NABoolean waited)
 {
-   
+
    ex_assert(vectorIndex_ < vectorSize_,
         "SQScratchFile::writeBlock, vectorIndex is out of bounds");
 
    //This assert is necessary to catch mixing of write and read operations before
-   //Io is actually initiated/completed. The protocol is to do either read or write 
+   //Io is actually initiated/completed. The protocol is to do either read or write
    //operation at a time and not build vectors to write and read simulataneously.
    ex_assert(type_ != PEND_READ,
                   "SQScratchFile::writeBlock, Write or read vector is getting mixed");
@@ -545,11 +537,11 @@ RESULT SQScratchFile::writeBlock(Int32 index, char *data, Lng32 length,
       blockNumFirstVectorElement_ = blockNum;
 
    vectorIndex_++;
-   
+
 
    if(vectorIndex_ < vectorSize_)
    {
-     //Note that we return SUCCESS by setting type_ to 
+     //Note that we return SUCCESS by setting type_ to
      //TRUE. However fileHandle_[index].IOPending is not set to TRUE yet.
      //This helps in the following ways:
      //1. Because fileHandle_[index].IOPending is FALSE, additional writeBlock
@@ -566,8 +558,8 @@ RESULT SQScratchFile::writeBlock(Int32 index, char *data, Lng32 length,
    {
      sortError_->setErrorInfo( EScrWrite          //sort error
                               ,0                  //syserr: the actual FS error
-                              ,0  
-      
+                              ,0
+
                               ,"SQScratchFile::writeBlock" //methodname
                               );
       return SCRATCH_FAILURE;
@@ -576,7 +568,7 @@ RESULT SQScratchFile::writeBlock(Int32 index, char *data, Lng32 length,
    return executeVectorIO();
 }
 
-RESULT SQScratchFile::readBlock(Int32 index, char *data, Lng32 length, 
+RESULT SQScratchFile::readBlock(Int32 index, char *data, Lng32 length,
                                   Int64 &iowaittime, Lng32 *transfered,
                                   Int32 synchronous)
 {
@@ -584,7 +576,7 @@ RESULT SQScratchFile::readBlock(Int32 index, char *data, Lng32 length,
         "SQScratchFile::readBlockV, vectorIndex is out of bounds");
 
    //This assert is necessary to catch mixing of write and read operations before
-   //Io is actually initiated/completed. The protocol is to do either read or write 
+   //Io is actually initiated/completed. The protocol is to do either read or write
    //operation at a time and not build vectors to write and read simulataneously.
    ex_assert(type_ != PEND_WRITE,
                     "SQScratchFile::readBlock, Write or read vector is getting mixed");
@@ -597,7 +589,7 @@ RESULT SQScratchFile::readBlock(Int32 index, char *data, Lng32 length,
 
    if(vectorIndex_ < vectorSize_)
    {
-     //Note that we return SUCCESS by setting type_ to 
+     //Note that we return SUCCESS by setting type_ to
      //TRUE. However fileHandle_[index].IOPending is not set to TRUE yet.
      //This helps in the following ways:
      //1. Because fileHandle_[index].IOPending is FALSE, additional writeBlock
@@ -613,8 +605,8 @@ RESULT SQScratchFile::readBlock(Int32 index, char *data, Lng32 length,
    {
      sortError_->setErrorInfo( EScrRead          //sort error
                               ,0                  //syserr: the actual FS error
-                              ,0  
-      
+                              ,0
+
                               ,"SQScratchFile::readBlock" //methodname
                               );
       return SCRATCH_FAILURE;
@@ -625,11 +617,11 @@ RESULT SQScratchFile::readBlock(Int32 index, char *data, Lng32 length,
 
 //Execute Vector is used both by readv and writev operations. This method
 //is involved when ever a vector is full or when a vector is partially full.
-//In the case of partially full, it is either driven by 
+//In the case of partially full, it is either driven by
 //HashScratchSpace::checkIO(CheckAll) or when vector elements for read operation
 //align only partially on the scratch file
 //(see SQScratchFile::isNewVecElemPossible).
-//The error codes returned by this method must be consistent with 
+//The error codes returned by this method must be consistent with
 //similar methods supported by NSK versions. Note that executeVectorIO is
 //called from 4 clients , which are:
 //1. WriteBlockV
@@ -658,9 +650,9 @@ RESULT SQScratchFile::executeVectorIO()
 	{
 		// seek to position.
 		off_t ret = STFS_lseek(fileHandle_[0].fileNum, vectorSeekOffset_, SEEK_SET);
-		  
+
 		// ret == -1 means error, otherwise new offset.
-		if (ret < 0) 
+		if (ret < 0)
 		{
 		  lastError_ = obtainError();
 		  sortError_->setErrorInfo( EPosition          //sort error
@@ -668,7 +660,7 @@ RESULT SQScratchFile::executeVectorIO()
 									,0                 //syserrdetail
 									,"SQScratchFile::executeVectorIO" //methodname
 								  );
-			  
+
 		  return SCRATCH_FAILURE;
 		}
 	}
@@ -676,8 +668,8 @@ RESULT SQScratchFile::executeVectorIO()
   }
 
   lastError_ = redriveVectorIO(0);
-      
-  //error is either negative or positive. If negative, it could be that partial buffers 
+
+  //error is either negative or positive. If negative, it could be that partial buffers
   //are written and may require a redrive. If positive, IO is complete.
   if (lastError_ < 0)
   {
@@ -741,25 +733,33 @@ Int32 SQScratchFile::redriveVectorIO(Int32 index)
   if(scratchSpace_->getScratchOverflowMode() == SCRATCH_MMAP)
   {
 	struct iovec *temp = (struct iovec *)remainingAddr_;
-	while(remainingVectorSize_ > 0)
+	try
 	{
-		if(type_ == PEND_READ)
+		while(remainingVectorSize_ > 0)
 		{
-		  memcpy(temp->iov_base, (fileHandle_[index].mmap + readmmapCursor_), temp->iov_len);
-		  readmmapCursor_ += temp->iov_len;
-		  if(bmoStats) bmoStats->incScratchReadCount();
-		}
-		else
-		{
-		  memcpy((fileHandle_[index].mmap + writemmapCursor_), temp->iov_base , temp->iov_len);
-		  writemmapCursor_ += temp->iov_len;
-		  if(bmoStats) bmoStats->incScratchWriteCount();
-		}
-		bytesCompleted_ =+ temp->iov_len;
-		remainingVectorSize_ --;
-		temp++;
-	}//while
-	remainingAddr_ = 0; //Typically this address is invalid after reaching here.
+			if(type_ == PEND_READ)
+			{
+			  memcpy(temp->iov_base, (fileHandle_[index].mmap + readmmapCursor_), temp->iov_len);
+			  readmmapCursor_ += temp->iov_len;
+			  if(bmoStats) bmoStats->incScratchReadCount();
+			}
+			else
+			{
+			  memcpy((fileHandle_[index].mmap + writemmapCursor_), temp->iov_base , temp->iov_len);
+			  writemmapCursor_ += temp->iov_len;
+			  if(bmoStats) bmoStats->incScratchWriteCount();
+			}
+			bytesCompleted_ =+ temp->iov_len;
+			remainingVectorSize_ --;
+			temp++;
+		}//while
+		remainingAddr_ = 0; //Typically this address is invalid after reaching here.
+	}
+	catch(...)
+	{
+		//caught an unknown fatal exception.
+		return -1;
+	}
   }
   else
   {
@@ -781,7 +781,7 @@ Int32 SQScratchFile::redriveVectorIO(Int32 index)
 		if(bytesCompleted == -1)
 		{
 		  //This can happen at the very first call or subsequent interations.
-		  //note that remaningAddr and remainingVectorSize is already adjusted 
+		  //note that remaningAddr and remainingVectorSize is already adjusted
 		  //in previous iterations if they were successful.
 		  return -1;
 		}
@@ -792,7 +792,7 @@ Int32 SQScratchFile::redriveVectorIO(Int32 index)
 		while(bytesCompleted > 0)
 		{
 		  struct iovec *temp = (struct iovec *)remainingAddr_;
-		  
+
 		  if(bytesCompleted >= temp->iov_len)
 		  {
 			//advance to next vector element
@@ -812,7 +812,7 @@ Int32 SQScratchFile::redriveVectorIO(Int32 index)
 	  }//while
   } //not MMAP
 
-  //If we reach here, then remainingVectorSize_ is zero. write/read operation is 
+  //If we reach here, then remainingVectorSize_ is zero. write/read operation is
   //fully complete.
   fileHandle_[index].IOPending = FALSE;
   return 0;
@@ -840,7 +840,7 @@ void SQScratchFile::truncate(void)
 //--------------------------------------------------------------------------
 short SQScratchFile::obtainError() {
    return errno;
-}            
+}
 
 //--------------------------------------------------------------------------
 // getError
@@ -849,7 +849,7 @@ short SQScratchFile::obtainError() {
 // assert(0) because the error is very bad.
 //--------------------------------------------------------------------------
 RESULT SQScratchFile::getError(Int32 index) {
-    
+
     //------------------------------------------------------------------------
     // call obtain error and then determine the right value to return.
     //------------------------------------------------------------------------
@@ -897,5 +897,5 @@ void SQScratchFile::copyVectorElements(ScratchFile* newFile)
     nFile->vector_[count-1].iov_len = vector_[count-1].iov_len;
     count--;
   }
-  
+
 }
