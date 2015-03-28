@@ -98,8 +98,8 @@ c_timestamp6 timestamp(6),
 c_interval interval year to month,
 c_intervals86 interval second(8,6),
 c_intervald6s interval day(6) to second(6),
-c_blob blob,
-c_clob clob
+c_blob blob (length 100),
+c_clob clob (length 100)
 );
 
 insert into t001_Datatypes values (

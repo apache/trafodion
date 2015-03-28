@@ -1210,7 +1210,7 @@ short CmpSeabaseMDcleanup::cleanupInconsistentObjectsEntries(ExeCliInterface *cl
     }      
 
   // find out all entries that exist in OBJECTS but not in OBJECTS_UNIQ_IDX
-  str_sprintf(query, "select object_uid, trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from %s.\"%s\".%s  where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', 'PRIVMGR_MD') and (object_type = 'BT' or object_type = 'IX') and object_uid not in (select \"OBJECT_UID@\"  from table(index_table %s.\"%s\".%s))",
+  str_sprintf(query, "select object_uid, trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from %s.\"%s\".%s  where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', 'PRIVMGR_MD') and (object_type = 'BT' or object_type = 'IX' or object_type = 'PK') and object_uid not in (select \"OBJECT_UID@\"  from table(index_table %s.\"%s\".%s))",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(),
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS_UNIQ_IDX);
@@ -1241,7 +1241,7 @@ short CmpSeabaseMDcleanup::cleanupInconsistentObjectsEntries(ExeCliInterface *cl
         return -1;
     }      
 
-  str_sprintf(query, "select \"OBJECT_UID@\", trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from table(index_table %s.\"%s\".%s)  where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', 'PRIVMGR_MD') and (object_type = 'BT' or object_type = 'IX') and \"OBJECT_UID@\" not in (select object_uid from %s.\"%s\".%s)",
+  str_sprintf(query, "select \"OBJECT_UID@\", trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from table(index_table %s.\"%s\".%s)  where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', 'PRIVMGR_MD') and (object_type = 'BT' or object_type = 'IX' or object_type = 'PK') and \"OBJECT_UID@\" not in (select object_uid from %s.\"%s\".%s)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS_UNIQ_IDX,
               getSystemCatalog(),
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS);

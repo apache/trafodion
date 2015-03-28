@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1774,6 +1774,12 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetExplainData(
                                               /*INOUT*/ char * explain_ptr,
                                               /*IN*/    Int32 explain_len,
                                               /*INOUT*/ Int32 * ret_explain_len);
+
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_StoreExplainData(
+                                                /*IN*/ Int64 * exec_start_utc_ts,
+                                                /*IN*/    char * query_id,
+                                                /*INOUT*/ char * explain_ptr,
+                                                /*IN*/    Int32 explain_len);
 
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_CleanUpPfsResources();
 

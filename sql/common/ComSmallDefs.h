@@ -166,6 +166,12 @@ typedef NABoolean               ComBoolean;
 #define REPOS_METRIC_QUERY_AGGR_TABLE "METRIC_QUERY_AGGR_TABLE"
 #define REPOS_METRIC_QUERY_TABLE "METRIC_QUERY_TABLE"
 #define REPOS_METRIC_SESSION_TABLE "METRIC_SESSION_TABLE"
+#define REPOS_METRIC_TEXT_TABLE  "METRIC_TEXT_TABLE"
+
+// length of explain_plan column in metric_query_table.
+// explain_plan greater than this length are chunked and store in multiple
+// rows in metric_text_table
+#define REPOS_MAX_EXPLAIN_PLAN_LEN 200000
 
 /******    *****/
 enum ComActivationTime { COM_UNKNOWN_TIME, COM_BEFORE , COM_AFTER };

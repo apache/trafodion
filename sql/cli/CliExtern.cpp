@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1997-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -5061,6 +5061,50 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetExplainData(
    tmpSemaphore->release();
 
    retcode = RecordError(statement_id, retcode);
+   return retcode;
+}
+
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_StoreExplainData(
+                                                /*IN*/ Int64 * exec_start_utc_ts,
+                                                /*IN*/    char * query_id,
+                                                /*INOUT*/ char * explain_ptr,
+                                                /*IN*/    Int32 explain_len)
+{
+   Lng32 retcode;
+   CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
+
+   CLI_NONPRIV_PROLOGUE(retcode);
+
+   try
+   {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode =
+        SQLCLI_StoreExplainData(GetCliGlobals(),
+                                exec_start_utc_ts,
+                                query_id,
+                                explain_ptr,
+                                explain_len);
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
+         throw;
+       }
+#endif
+   }
+
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
+
+   retcode = RecordError(NULL, retcode);
    return retcode;
 }
 

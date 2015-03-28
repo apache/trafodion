@@ -28,11 +28,6 @@
 #ifndef _CMP_SEABASE_REPOS_H_
 #define _CMP_SEABASE_REPOS_H_
 
-#define TRAF_METRIC_QUERY_TABLE  "METRIC_QUERY_TABLE"
-#define TRAF_METRIC_SESSION_TABLE  "METRIC_SESSION_TABLE"
-#define TRAF_METRIC_QUERY_AGGR_TABLE  "METRIC_QUERY_AGGR_TABLE"
-#define TRAF_METRIC_TEXT_TABLE  "METRIC_TEXT_TABLE"
-
 #define TRAF_METRIC_QUERY_VIEW "METRIC_QUERY_VIEW"
 
 //----------------------------------------------------------------
@@ -40,7 +35,7 @@
 //----------------------------------------------------------------
 static const QString createMetricQueryTable[] =
 {
-{" create table %s.\"%s\"."TRAF_METRIC_QUERY_TABLE" "},
+{" create table %s.\"%s\"."REPOS_METRIC_QUERY_TABLE" "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
@@ -142,7 +137,7 @@ static const QString createMetricQueryTable[] =
  {" sql_error_code                         integer                           default null serialized, "},
  {" error_text                             varchar(2000) character set utf8 casespecific default null serialized, "},
  {" query_text                             varchar(50000) character set utf8 casespecific default null serialized, "},
- {" explain_plan                           varchar(200000) character set iso88591 casespecific default null serialized, "},
+ {" explain_plan                           varchar(REPOS_MAX_EXPLAIN_PLAN_LEN) character set iso88591 casespecific default null serialized, "},
  {" last_error_before_aqr                  integer                           default null serialized, "},
  {" delay_time_before_aqr_sec              largeint                          default null serialized, "},
  {" total_num_aqr_retries                  largeint                          default null serialized, "},
@@ -179,7 +174,7 @@ static const QString createMetricQueryTable[] =
 // ----------------------------------------------------------------
 static const QString createMetricSessionTable[] =
 {
- {" create table %s.\"%s\"."TRAF_METRIC_SESSION_TABLE"  "},
+ {" create table %s.\"%s\"."REPOS_METRIC_SESSION_TABLE"  "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
@@ -234,7 +229,7 @@ static const QString createMetricSessionTable[] =
  //----------------------------------------------------------------
 static const QString createMetricQueryAggrTable[] =
 {
- {" create table %s.\"%s\"."TRAF_METRIC_QUERY_AGGR_TABLE"  "},
+ {" create table %s.\"%s\"."REPOS_METRIC_QUERY_AGGR_TABLE"  "},
  {" ( "},
  {" instance_id                            integer unsigned no default not null not droppable serialized, "},
  {" tenant_id                              integer unsigned no default not null not droppable serialized, "},
@@ -318,7 +313,7 @@ static const QString createMetricQueryAggrTable[] =
 //----------------------------------------------------------------
 static const QString createMetricTextTable[] =
   {
-    {" create table %s.\"%s\"."TRAF_METRIC_TEXT_TABLE" "},
+    {" create table %s.\"%s\"."REPOS_METRIC_TEXT_TABLE" "},
     {" ( "},
     {"  query_id                               char(160) character set iso88591 casespecific no default not null not droppable serialized, "},
     {"   text_type int not null serialized, "},
@@ -331,9 +326,9 @@ static const QString createMetricTextTable[] =
     {" ; "}
   };
 
-#define TRAF_METRIC_QUERY_TABLE_OLD_REPOS TRAF_METRIC_QUERY_TABLE"_OLD_REPOS"
-#define TRAF_METRIC_SESSION_TABLE_OLD_REPOS TRAF_METRIC_SESSION_TABLE"_OLD_REPOS"
-#define TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS TRAF_METRIC_QUERY_AGGR_TABLE"_OLD_REPOS"
+#define TRAF_METRIC_QUERY_TABLE_OLD_REPOS REPOS_METRIC_QUERY_TABLE"_OLD_REPOS"
+#define TRAF_METRIC_SESSION_TABLE_OLD_REPOS REPOS_METRIC_SESSION_TABLE"_OLD_REPOS"
+#define TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS REPOS_METRIC_QUERY_AGGR_TABLE"_OLD_REPOS"
 
 static const QString createOldReposMetricQueryTable[] =
 {
@@ -571,7 +566,7 @@ static const QString createOldReposMetricQueryAggrTable[] =
 static const MDUpgradeInfo allReposUpgradeInfo[] = {
 
   // TRAF_METRIC_QUERY_TABLE
-  { TRAF_METRIC_QUERY_TABLE,  TRAF_METRIC_QUERY_TABLE_OLD_REPOS,
+  { REPOS_METRIC_QUERY_TABLE,  TRAF_METRIC_QUERY_TABLE_OLD_REPOS,
     createMetricQueryTable,  sizeof(createMetricQueryTable),
     createOldReposMetricQueryTable,  sizeof(createOldReposMetricQueryTable),
     NULL, 0,
@@ -831,15 +826,15 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
 
     NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
  
-  // TRAF_METRIC_SESSION_TABLE
-  { TRAF_METRIC_SESSION_TABLE,  TRAF_METRIC_SESSION_TABLE_OLD_REPOS,
+  // REPOS_METRIC_SESSION_TABLE
+  { REPOS_METRIC_SESSION_TABLE,  TRAF_METRIC_SESSION_TABLE_OLD_REPOS,
     createMetricSessionTable,  sizeof(createMetricSessionTable),
     createOldReposMetricSessionTable,  sizeof(createOldReposMetricSessionTable),
     NULL, 0,
     TRUE, NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
-  // TRAF_METRIC_QUERY_AGGR_TABLE
-  { TRAF_METRIC_QUERY_AGGR_TABLE,  TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS,
+  // REPOS_METRIC_QUERY_AGGR_TABLE
+  { REPOS_METRIC_QUERY_AGGR_TABLE,  TRAF_METRIC_QUERY_AGGR_TABLE_OLD_REPOS,
     createMetricQueryAggrTable,  sizeof(createMetricQueryAggrTable),
     createOldReposMetricQueryAggrTable,  sizeof(createOldReposMetricQueryAggrTable),
     NULL, 0,
@@ -888,8 +883,8 @@ static const MDUpgradeInfo allReposUpgradeInfo[] = {
 
     NULL, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE},
 
-  // TRAF_METRIC_TEXT_TABLE  
-  { TRAF_METRIC_TEXT_TABLE,  NULL,
+  // REPOS_METRIC_TEXT_TABLE  
+  { REPOS_METRIC_TEXT_TABLE,  NULL,
     createMetricTextTable,  sizeof(createMetricTextTable),
     NULL, 0,
     NULL, 0,
