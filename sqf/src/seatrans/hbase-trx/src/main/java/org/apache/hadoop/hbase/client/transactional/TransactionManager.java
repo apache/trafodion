@@ -31,7 +31,10 @@ import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 
+import org.apache.hadoop.hbase.ServerName;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -105,12 +108,18 @@ public class TransactionManager {
   private JtaXAResource xAResource;
   private HBaseAdmin hbadmin;
   private TmDDL tmDDL;
+  private boolean batchRSMetricsFlag = false;
   Configuration     config;
 
   public static final int TM_COMMIT_FALSE = 0;     
   public static final int TM_COMMIT_READ_ONLY = 1; 
   public static final int TM_COMMIT_TRUE = 2;
   public static final int TM_COMMIT_FALSE_CONFLICT = 3;    
+
+  private Map<String,Long> batchRSMetrics = new ConcurrentHashMap<String, Long>();
+  private long regions = 0;
+  private long regionServers = 0;
+  private int metricsCount = 0;
   
   static ExecutorService    cp_tpe;
 
@@ -886,6 +895,10 @@ public class TransactionManager {
         String numThreads = System.getenv("TM_JAVA_THREAD_POOL_SIZE");
         String numCpThreads = System.getenv("TM_JAVA_CP_THREAD_POOL_SIZE");
         String useSSCC = System.getenv("TM_USE_SSCC");
+        String batchRSMetrics = System.getenv("TM_BATCH_RS_METRICS");
+
+        if (batchRSMetrics != null)
+                batchRSMetricsFlag = (Integer.parseInt(batchRSMetrics) == 1) ? true : false;
 
         if (retryAttempts != null) 
         	RETRY_ATTEMPTS = Integer.parseInt(retryAttempts);
@@ -964,6 +977,10 @@ public class TransactionManager {
        if (LOG.isTraceEnabled()) LOG.trace("Enter prepareCommit, txid: " + transactionState.getTransactionId());
        boolean allReadOnly = true;
        int loopCount = 0;
+       ServerName servername;
+       List<TransactionRegionLocation> regionList;
+       Map<ServerName, List<TransactionRegionLocation>> locations = null;
+
        if (transactionState.islocalTransaction()){
          //System.out.println("prepare islocal");
          if(LOG.isTraceEnabled()) LOG.trace("TransactionManager.prepareCommit local transaction " + transactionState.getTransactionId());
@@ -974,7 +991,22 @@ public class TransactionManager {
        // (need one CompletionService per request for thread safety, can share pool of threads
        CompletionService<Integer> compPool = new ExecutorCompletionService<Integer>(threadPool);
        try {
+          if(batchRSMetricsFlag)
+             locations = new HashMap<ServerName, List<TransactionRegionLocation>>();
+
           for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
+             if(batchRSMetricsFlag)  {
+                 servername = location.getServerName();
+                 if(!locations.containsKey(servername)) {
+                     regionList = new ArrayList<TransactionRegionLocation>();
+                     locations.put(servername, regionList);
+                 }
+                 else {
+                     regionList = locations.get(servername);
+                 }
+                 regionList.add(location);
+             }
+
 
              loopCount++;
              final TransactionRegionLocation myLocation = location;
@@ -986,6 +1018,31 @@ public class TransactionManager {
                }
              });
            }
+
+           if(batchRSMetricsFlag)  {
+               this.regions += transactionState.getParticipatingRegions().size();
+               this.regionServers += locations.size();
+               String rsToRegion = locations.size() + " RS / " + transactionState.getParticipatingRegions().size() + " Regions";
+               if(batchRSMetrics.get(rsToRegion) == null) {
+                   batchRSMetrics.put(rsToRegion, 1L);
+               }
+               else {
+                   batchRSMetrics.put(rsToRegion, batchRSMetrics.get(rsToRegion) + 1);
+               }
+               if (metricsCount >= 10000) {
+                  metricsCount = 0;
+                  if(LOG.isInfoEnabled()) LOG.info("---------------------- BatchRS metrics ----------------------");
+                  if(LOG.isInfoEnabled()) LOG.info("Number of total Region calls: " + this.regions);
+                  if(LOG.isInfoEnabled()) LOG.info("Number of total RegionServer calls: " + this.regionServers);
+                  if(LOG.isInfoEnabled()) LOG.info("---------------- Total number of calls by ratio: ------------");
+                  for(Map.Entry<String, Long> entry : batchRSMetrics.entrySet()) {
+                      if(LOG.isInfoEnabled()) LOG.info(entry.getKey() + ": " + entry.getValue());
+                  }
+                  if(LOG.isInfoEnabled()) LOG.info("-------------------------------------------------------------");
+               }
+               metricsCount++;
+           }
+
         } catch (Exception e) {        	
            LOG.error("exception in prepareCommit (during submit to pool): " + e);
            throw new CommitUnsuccessfulException(e);
