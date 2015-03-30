@@ -205,7 +205,7 @@ if [[ -z "$answer" ]]; then
    fi 
 else
    NODES="$answer"
-
+   NODE_LIST=""
    for node in $NODES
    do
       newNode=$(ssh -n $node hostname)

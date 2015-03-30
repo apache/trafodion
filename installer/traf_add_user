@@ -38,7 +38,6 @@ fi
 typeset TRAF_USER_DIR="$default_home/$TRAF_USER"
 
 echo "***INFO: Trafodion userid's ($TRAF_USER) home directory: $TRAF_USER_DIR"
-echo "$TRAF_USER" > $TRAF_WORKDIR/trafodion_userid
 
 #============================
 # check that we are running from a userid with sudo access

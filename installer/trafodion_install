@@ -131,7 +131,7 @@ echo "***INFO: Config directory: $TRAF_CONFIG_DIR"
 
 # create a working directory
 sudo mkdir -p $TRAF_WORKDIR
-sudo chmod 777 $TRAF_WORKDIR
+sudo chmod -R 777 $TRAF_WORKDIR
 echo "***INFO: Working directory: $TRAF_WORKDIR"
 
 # copy install scripts into working directory

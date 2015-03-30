@@ -259,36 +259,46 @@ fi
 
 #=======================================
 # Set some limits needed by Trafodion
-traf_limits_conf="$TRAF_WORKDIR/trafodion_limits.conf"
-echo "***INFO: modifying limits in /etc/security/limits.conf on all nodes"
 
-# save a copy for uninstaller to restore
-sudo cp /etc/security/limits.conf $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL
+TRAF_LIMITS_CONF="$TRAF_WORKDIR/trafodion.conf"
+sudo rm $TRAF_WORKDIR/trafodion.conf
 
-# strip out any current settings
-grep --invert-match -E " *memlock | *nofile | *core | *nproc | Trafodion" /etc/security/limits.conf > $traf_limits_conf
+echo "***INFO: modifying limits in $TRAF_LIMITS_CONF on all nodes"
 
 # append Trafodion settings to end of file
-echo "# Trafodion settings" >> $traf_limits_conf
-echo "*   soft   core unlimited" >> $traf_limits_conf
-echo "*   hard   core unlimited" >> $traf_limits_conf
-echo "*   soft   memlock unlimited" >> $traf_limits_conf
-echo "*   hard   memlock unlimited" >> $traf_limits_conf
-echo "*   soft   nofile 32768" >> $traf_limits_conf
-echo "*   hard   nofile 65536" >> $traf_limits_conf
-echo "*   soft   nproc 100000" >> $traf_limits_conf
-echo "*   hard   nproc 100000" >> $traf_limits_conf
-echo "hbase soft nofile 8192" >> $traf_limits_conf
-echo "*   soft nofile 8192" >> $traf_limits_conf
-echo "*   hard nofile 65535" >> $traf_limits_conf
+echo "# Trafodion settings" >> $TRAF_LIMITS_CONF
+echo "$TRAF_USER   soft   core unlimited" >> $TRAF_LIMITS_CONF
+echo "$TRAF_USER   hard   core unlimited" >> $TRAF_LIMITS_CONF
+echo "$TRAF_USER   soft   memlock unlimited" >> $TRAF_LIMITS_CONF
+echo "$TRAF_USER   hard   memlock unlimited" >> $TRAF_LIMITS_CONF
+echo "$TRAF_USER   soft   nofile 32768" >> $TRAF_LIMITS_CONF
+echo "$TRAF_USER   hard   nofile 65536" >> $TRAF_LIMITS_CONF
+echo "$TRAF_USER   soft   nproc 100000" >> $TRAF_LIMITS_CONF
+echo "$TRAF_USER   hard   nproc 100000" >> $TRAF_LIMITS_CONF
+echo "hbase soft nofile 8192" >> $TRAF_LIMITS_CONF
+echo "$TRAF_USER   soft nofile 8192" >> $TRAF_LIMITS_CONF
+echo "$TRAF_USER   hard nofile 65535" >> $TRAF_LIMITS_CONF
 
 # copy to all nodes
 if [ $node_count -eq 1 ]; then
-    sudo cp $traf_limits_conf /etc/security/limits.conf
+    sudo cp $TRAF_LIMITS_CONF /etc/security/limits.d/trafodion.conf
+    if [ $? != 0 ]; then
+       echo "***ERROR: unable to copy $TRAF_LIMITS_CONF to /etc/security/limits.d/trafodion.conf"
+       exit -1
+    fi
 else
-    pdcp $MY_NODES -x $HOSTNAME $traf_limits_conf $TRAF_WORKDIR
-    pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL $TRAF_WORKDIR
-    pdsh $MY_NODES sudo cp $traf_limits_conf /etc/security/limits.conf
+    pdcp $MY_NODES -x $HOSTNAME $TRAF_LIMITS_CONF $TRAF_WORKDIR
+    if [ $? != 0 ]; then
+       echo "***ERROR: unable to copy $TRAF_LIMITS_CONF to all nodes"
+       exit -1
+    fi
+    
+    pdsh $MY_NODES -S sudo cp $TRAF_LIMITS_CONF /etc/security/limits.d/trafodion.conf
+    if [ $? != 0 ]; then
+       echo "***ERROR: unable to copy $TRAF_LIMITS_CONF to /etc/security/limits.d/trafodion.conf on all nodes"
+       exit -1
+    fi
+    
 fi
 
 #=======================================
