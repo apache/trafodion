@@ -9419,7 +9419,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       else
         arrayWA->setTolerateNonFatalError(FALSE);  // Insert::tolerateNonfatalError == ATOMIC_
     }
-    else if (NOT arrayWA->rowwiseRowset()) {
+    else if (NOT arrayWA->getRowwiseRowset()) {
       // NOT ATOMIC only for rowset inserts
       *CmpCommon::diags() << DgSqlCode(-30025) ;
       bindWA->setErrStatus();
@@ -10043,7 +10043,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   // necessary warnings have been generated in handleInlining method.
   if (CmpCommon::getDefault(ODBC_PROCESS) == DF_ON) {
     if (bindWA->getHostArraysArea() &&
-	(NOT bindWA->getHostArraysArea()->rowwiseRowset()) &&
+	(NOT bindWA->getHostArraysArea()->getRowwiseRowset()) &&
 	!(bindWA->getHostArraysArea()->getTolerateNonFatalError()))
       setTolerateNonFatalError(RelExpr::UNSPECIFIED_);
   }

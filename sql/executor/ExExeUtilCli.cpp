@@ -1648,8 +1648,6 @@ Lng32 ExeCliInterface::cwrsExec(
 
   retcode = close();
 
-  clearGlobalDiags();
-  
   currRSrow_ = 0;
 
   // current input row has not been moved to the rowset buffer.
@@ -1666,12 +1664,10 @@ Lng32 ExeCliInterface::cwrsClose(Int64 * rowsAffected)
 
   retcode = cwrsExec(NULL, 0, rowsAffected);
 
-  retcode = cwrsDeallocStuff(module_, stmt_, sql_src_, 
-			       input_desc_, output_desc_,
-			       rs_input_maxsize_desc_);
-  clearGlobalDiags();
-
-  return 0;
+  Lng32 retcode2 = cwrsDeallocStuff(module_, stmt_, sql_src_, 
+                                    input_desc_, output_desc_,
+                                    rs_input_maxsize_desc_);
+  return retcode;
 }
 
 Lng32 ExeCliInterface::rwrsPrepare(const char * stmtStr, Lng32 rs_maxsize,NABoolean monitorThis)
@@ -1684,12 +1680,14 @@ Lng32 ExeCliInterface::rwrsPrepare(const char * stmtStr, Lng32 rs_maxsize,NABool
   if (retcode != SUCCESS)
     return retcode;
 
+  /*
   retcode = SQL_EXEC_SetStmtAttr(stmt_,
                                  SQL_ATTR_INPUT_ARRAY_MAXSIZE,
                                  rsMaxsize_,
 				 NULL);
   if (retcode != SUCCESS)
     return retcode;
+  */
 
   retcode = prepare(stmtStr, module_, stmt_, sql_src_, 
 		    input_desc_, output_desc_, NULL,NULL,NULL,NULL,NULL,
@@ -1722,6 +1720,8 @@ Lng32 ExeCliInterface::rwrsExec(
   Int64 * rowsAffected)
 {
   Lng32 retcode = 0;
+
+  clearGlobalDiags();
 
   if (rowsAffected)
     *rowsAffected = 0;
@@ -1770,8 +1770,6 @@ Lng32 ExeCliInterface::rwrsExec(
     }
   }
 
-  clearGlobalDiags();
-  
   currRSrow_ = 0;
 
   return retcode;
@@ -1787,8 +1785,6 @@ Lng32 ExeCliInterface::rwrsClose()
 
   deallocStuff(module_, stmt_, sql_src_, 
 	       input_desc_, output_desc_);
-
-  clearGlobalDiags();
 
   return retcode;
 }

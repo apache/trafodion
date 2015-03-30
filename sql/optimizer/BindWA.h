@@ -935,7 +935,8 @@ public:
   ItemExpr *& rwrsMaxInputRowlen() { return rwrsMaxInputRowlen_;}
   ItemExpr *& rwrsBuffer()         { return rwrsBuffer_;}
   ItemExpr *& partnNum()           { return partnNum_;}
-  NABoolean &rowwiseRowset()       { return rowwiseRowset_; }
+  NABoolean getRowwiseRowset()       { return rowwiseRowset_; }
+  void setRowwiseRowset(NABoolean v) { rowwiseRowset_ = v; }
 
   void setBufferAttributes(NABoolean packedFormat, 
 			   NABoolean compressed,

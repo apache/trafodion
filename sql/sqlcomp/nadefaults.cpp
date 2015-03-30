@@ -3329,6 +3329,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
 
+  DDkwd__(TRAF_USE_RWRS_FOR_MD_INSERT,                   "ON"),
+
   DDkwd__(TRY_DP2_REPARTITION_ALWAYS,		"OFF"),
 
  SDDkwd__(TRY_PASS_ONE_IF_PASS_TWO_FAILS,       "OFF"),
