@@ -34,11 +34,8 @@ sh sqlci -i"TEST106(setup)";
 log LOG106;
 obey TEST106(dml);
 
-#ifdef SEABASE_CANCEL_TBD
-obey TEST106(privs);
-select 'FUNKY_OPT_UNIQUE', 
-  ts, msg from T106_interleaved_log order by ts;
-#endif
+select msg, 'FUNKY_OPT_UNIQUE', ts
+  from T106_interleaved_log order by ts;
 
 obey TEST106(clnup);
 
@@ -630,6 +627,8 @@ insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'escalation1, launch canceler, finished');
 
+obey TEST106(synch_cancel);
+
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'escalation1, execute s1, start');
@@ -743,17 +742,19 @@ obey TEST106(make_cancel_stmt);
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6),
-'escalation1, launch canceler, start');
+'ustats_test, launch canceler, start');
 
 sh sqlci -i"TEST106(do_cancel)" & ;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6),
-'escalation1, launch canceler, finished');
+'ustats_test, launch canceler, finished');
+
+obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6),
-'escalation1, execute s1, start');
+'ustats_test, execute s1, start');
 
 execute s1;
 
@@ -761,7 +762,7 @@ select 'subject - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6),
-'escalation1, execute s1, finished');
+'ustats_test, execute s1, finished');
 
 obey TEST106(synch_cancel);
 
@@ -930,6 +931,8 @@ sh sqlci -i"TEST106(do_cancel_nid_pid)" & ;
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'escalation1_nid_pid, launch canceler, finished');
+
+obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -1110,6 +1113,8 @@ sh sqlci -i"TEST106(do_cancel_pname)" & ;
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
 'escalation1_pname, launch canceler, finished');
+
+obey TEST106(synch_cancel);
 
 insert into T106_interleaved_log values
 (CURRENT_TIME (6), 
@@ -1368,13 +1373,6 @@ insert into T106_interleaved_log values
 select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
 log;
 sh cat CANCEL_LOG106 >> cancel_log106_all;
-log CANCEL_FINAL_SYN106;
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
-'do_cancel is exiting');
-
-log;
 
 sh touch ${REGRRUNDIR}/test106_synch;
 
@@ -1419,13 +1417,6 @@ insert into T106_interleaved_log values
 select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
 log;
 sh cat CANCEL_LOG106 >> cancel_log106_all;
-log CANCEL_FINAL_SYN106;
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
-'do_cancel is exiting');
-
-log;
 
 sh touch ${REGRRUNDIR}/test106_synch;
 
@@ -1470,13 +1461,6 @@ insert into T106_interleaved_log values
 select 'canceler - FUNKY_OPT_UNIQUE', CURRENT_TIME (6) from (values (1)) as t1;
 log;
 sh cat CANCEL_LOG106 >> cancel_log106_all;
-log CANCEL_FINAL_SYN106;
-
-insert into T106_interleaved_log values
-(CURRENT_TIME (6), 
-'do_cancel_nid_pid is exiting');
-
-log;
 
 sh touch ${REGRRUNDIR}/test106_synch;
 
