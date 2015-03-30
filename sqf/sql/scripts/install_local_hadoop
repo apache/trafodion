@@ -1503,7 +1503,8 @@ else
     mv -f ~/.trafodion ~/.trafodion.orig
     grep -v 'DCS_INSTALL_DIR=' ~/.trafodion.orig > ~/.trafodion
   fi
-  echo "export DCS_INSTALL_DIR=$DCS_HOME" >> ~/.trafodion
+  DCSDIR=${DCS_HOME##*/}
+  echo "export DCS_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$DCSDIR" >> ~/.trafodion
 
   cd $DCS_HOME/conf/
   mv dcs-env.sh dcs-env.sh.orig
@@ -1628,7 +1629,7 @@ else
     else
       echo "No REST tar file found, building REST: $REST_SRC" | tee -a ${MY_LOG_FILE}
       cd $REST_SRC
-      ${MAVEN:-mvn} package >>${MY_LOG_FILE} 2>&1
+      ${MAVEN:-mvn} site package >>${MY_LOG_FILE} 2>&1
       cd $MY_SW_ROOT
     fi
     REST_TAR=$(ls $REST_SRC/target/rest*tar.gz)
@@ -1636,7 +1637,7 @@ else
   then
     cd $MY_SQROOT/../rest 
     echo "Building REST Source in $MY_SQROOT/../rest" | tee -a ${MY_LOG_FILE}
-    ${MAVEN:-mvn} package     >>${MY_LOG_FILE} 2>&1
+    ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
     cd $MY_SW_ROOT
     REST_TAR=$(ls $MY_SQROOT/../rest/target/rest*tar.gz)
   else
@@ -1645,7 +1646,7 @@ else
     cd $MY_SW_ROOT/src
     git clone $REST_GIT core >>${MY_LOG_FILE} 2>&1
     cd $MY_SW_ROOT/src/core/rest
-    ${MAVEN:-mvn} package     >>${MY_LOG_FILE} 2>&1
+    ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
     cd $MY_SW_ROOT
     REST_TAR=$(ls $MY_SW_ROOT/src/core/rest/target/rest*tar.gz)
   fi
@@ -1670,7 +1671,8 @@ else
     mv -f ~/.trafodion ~/.trafodion.orig
     grep -v 'REST_INSTALL_DIR=' ~/.trafodion.orig >> ~/.trafodion
   fi
-  echo "export REST_INSTALL_DIR=$REST_HOME" >> ~/.trafodion
+  RESTDIR=${REST_HOME##*/}
+  echo "export REST_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$RESTDIR" >> ~/.trafodion
   cd $REST_HOME/conf/
   mv rest-env.sh rest-env.sh.orig
    # SQROOT env var does not propagate thru ssh command
