@@ -8055,20 +8055,11 @@ table_mapping_function_invocation :
      if (functionName == NULL)
 		YYABORT;
 
-     OperatorTypeEnum opType =
-       PredefinedTableMappingFunction::nameIsAPredefinedTMF(*functionName);
-     TableMappingUDF *tmudf;
-     
-     if (opType == REL_TABLE_MAPPING_UDF)
-       tmudf = new (PARSERHEAP()) TableMappingUDF(*functionName, $4 );
-     else
-       tmudf = new (PARSERHEAP()) PredefinedTableMappingFunction(
-            *functionName,
-            $4,
-            opType);
+     TableMappingUDF *tmudf =
+       new (PARSERHEAP()) TableMappingUDF(*functionName, $4 );
 
      tmudf->child(0) = $3;
-	 tmudf->setArity(1) ;
+     tmudf->setArity(1);
      $$ = tmudf;
    }
    |  qualified_name '(' optional_tmudf_param_list ')' 
@@ -8078,19 +8069,7 @@ table_mapping_function_invocation :
      if (functionName == NULL)
 		YYABORT;
 
-     OperatorTypeEnum opType =
-       PredefinedTableMappingFunction::nameIsAPredefinedTMF(*functionName);
-     TableMappingUDF *tmudf;
-     
-     if (opType == REL_TABLE_MAPPING_UDF)
-       tmudf = new (PARSERHEAP()) TableMappingUDF(*functionName, $3 );
-     else
-       tmudf = new (PARSERHEAP()) PredefinedTableMappingFunction(
-            *functionName,
-            $3,
-            opType);
-     
-     $$ = tmudf;
+     $$ = new (PARSERHEAP()) TableMappingUDF(*functionName, $3 );
    } 
 
 

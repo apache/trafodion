@@ -4367,6 +4367,8 @@ ItemExpr *ItemExpr::bindUserInput(BindWA *bindWA,
       // dynamic parameters must preserve their valueids.
       // otherwise, the result can be uninitialized variables at runtime.
       // dynamic parameters are initialized in the root fragment.
+      if (orig->getValueId() == NULL_VALUE_ID)
+        orig->setValueId(createValueDesc(bindWA, this, type));
       setValueId(orig->getValueId());
     }
   }

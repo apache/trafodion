@@ -437,7 +437,7 @@ public:
 
   //! TableValuedFunction Constructor
   //  wants at least a name for the routine.
-  TableValuedFunction(CorrName name, ItemExpr *params = NULL,
+  TableValuedFunction(const CorrName &name, ItemExpr *params = NULL,
                       OperatorTypeEnum otype = REL_TABLE_VALUED_FUNCTION,
                       CollHeap *oHeap = CmpCommon::statementHeap())
   : RelRoutine(name.getQualifiedNameObj(), params, otype, oHeap),
@@ -520,7 +520,7 @@ public:
     // get and set the table name
   const CorrName & getUserTableName() const   { return userTableName_; }
   CorrName & getUserTableName()               { return userTableName_; }
-  void setUserTableName(CorrName &userTableName)
+  void setUserTableName(const CorrName &userTableName)
   {
     userTableName_ = userTableName;
   }
@@ -571,7 +571,7 @@ public:
 
   //! BuiltinTableValuedFunction Constructor 
   //  expects at least a name
-  BuiltinTableValuedFunction(CorrName name, ItemExpr *params = NULL,
+  BuiltinTableValuedFunction(const CorrName &name, ItemExpr *params = NULL,
               OperatorTypeEnum otype = REL_BUILTIN_TABLE_VALUED_FUNCTION,
               CollHeap *oHeap = CmpCommon::statementHeap())
   : TableValuedFunction(name, params, otype, oHeap)
@@ -709,7 +709,7 @@ public :
   { };
   //! TableMappingUDF Constructor
   //  expects at least a name
-  TableMappingUDF(CorrName name, ItemExpr *params = NULL,
+  TableMappingUDF(const CorrName &name, ItemExpr *params = NULL,
                  OperatorTypeEnum otype = REL_TABLE_MAPPING_UDF,
                  CollHeap *oHeap = CmpCommon::statementHeap())
   : TableValuedFunction(name, params, otype, oHeap),
@@ -968,7 +968,7 @@ class PredefinedTableMappingFunction : public TableMappingUDF
   // is a PhysicalTableMappingUDF, like for regular TMUDFs.
 public:
   PredefinedTableMappingFunction(
-       CorrName name,
+       const CorrName &name,
        ItemExpr *params,
        OperatorTypeEnum otype,
        CollHeap *oHeap = CmpCommon::statementHeap());
@@ -1115,7 +1115,7 @@ class TableValuedUDF: public TableValuedFunction
 
   //! TableValuedUDF Constructor
   //  expects at least a name
-  TableValuedUDF(CorrName name, ItemExpr *params = NULL,
+  TableValuedUDF(const CorrName &name, ItemExpr *params = NULL,
                  OperatorTypeEnum otype = REL_TABLE_VALUED_UDF,
                  CollHeap *oHeap = CmpCommon::statementHeap())
   : TableValuedFunction(name, params, otype, oHeap)

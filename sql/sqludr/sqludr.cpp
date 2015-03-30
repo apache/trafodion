@@ -592,14 +592,20 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
     {
     case SMALLINT:
       d_.length_ = 2;
+      d_.precision_ = 0;
+      d_.scale_ = 0;
       break;
 
     case INT:
       d_.length_ = 4;
+      d_.precision_ = 0;
+      d_.scale_ = 0;
       break;
 
     case LARGEINT:
       d_.length_ = 8;
+      d_.precision_ = 0;
+      d_.scale_ = 0;
       break;
 
     case NUMERIC:
@@ -625,10 +631,14 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
 
     case SMALLINT_UNSIGNED:
       d_.length_ = 2;
+      d_.precision_ = 0;
+      d_.scale_ = 0;
       break;
 
     case INT_UNSIGNED:
       d_.length_ = 4;
+      d_.precision_ = 0;
+      d_.scale_ = 0;
       break;
 
     case NUMERIC_UNSIGNED:
@@ -663,13 +673,18 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
     case CHAR:
       if (d_.charset_ == UNDEFINED_CHARSET)
         throw UDRException(38900,"Charset must be specified for CHAR type in TypeInfo::TypeInfo");
+      // length is the length in characters, but d_.length_ is
+      // the byte length, multiply by min bytes per char
+      d_.length_ = length * minBytesPerChar();
+      if (d_.collation_ == UNDEFINED_COLLATION)
+        throw UDRException(38900,"Collation must be specified for CHAR type in TypeInfo::TypeInfo");
       break;
 
     case VARCHAR:
       if (d_.charset_ == UNDEFINED_CHARSET)
-        throw UDRException(38900,"Charset must be specified for CHAR type in TypeInfo::TypeInfo");
+        throw UDRException(38900,"Charset must be specified for VARCHAR type in TypeInfo::TypeInfo");
       if (d_.collation_ == UNDEFINED_COLLATION)
-        throw UDRException(38900,"Collation must be specified for CHAR type in TypeInfo::TypeInfo");
+        throw UDRException(38900,"Collation must be specified for VARCHAR type in TypeInfo::TypeInfo");
       // length is the length in characters, but d_.length_ is
       // the byte length, multiply by min bytes per char
       d_.length_ = length * minBytesPerChar();
@@ -697,7 +712,6 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
     case TIME:
       // string hh:mm:ss
       d_.length_ = 8;
-      d_.scale_ = 0;
       if (scale > 0)
         d_.length_ += scale+1;
       if (scale < 0 || scale > 6)
@@ -1076,7 +1090,7 @@ int TypeInfo::getMaxCharLength() const
   switch (getSQLTypeClass())
     {
     case CHARACTER_TYPE:
-      return d_.length_ * minBytesPerChar();
+      return d_.length_ / minBytesPerChar();
     case NUMERIC_TYPE:
       return 0;
     case DATETIME_TYPE:
@@ -1091,6 +1105,20 @@ int TypeInfo::getMaxCharLength() const
            "Called TypeInfo::getMaxCharLength() on an unsupported type: %d",
            d_.sqlType_);
     }
+}
+
+/**
+ *  @brief Set the nullable attribute of a type
+ *
+ *  Use this method to set types created locally in the UDF
+ *  to be nullable or not nullable.
+ *
+ *  @param nullable true to set the type to nullable, false
+ *                  to give the type the NOT NULL attibute.
+ */
+void TypeInfo::setNullable(bool nullable)
+{
+  d_.nullable_ = nullable;
 }
 
 int TypeInfo::getInt(const char *row, bool &wasNull) const
@@ -1301,7 +1329,13 @@ double TypeInfo::getDouble(const char *row, bool &wasNull) const
     case NUMERIC_UNSIGNED:
     case DECIMAL_UNSIGNED:
     case INTERVAL:
-      result = static_cast<double>(getLong(row, wasNull));
+      {
+        result = static_cast<double>(getLong(row, wasNull));
+        // for numbers with a scale, ensure that the decimal
+        // point is at the right place for floating point results
+        for (int s=0; s<d_.scale_; s++)
+          result /= 10;
+      }
       break;
 
     default:
@@ -1398,15 +1432,20 @@ time_t TypeInfo::getTime(const char *row, bool &wasNull) const
         case DATE:
           // yyyy-mm-dd
           ok = (sscanf(buf,"%4d-%2d-%2d", &t.tm_year, &t.tm_mon, &t.tm_mday) == 3);
+          result = mktime(&t);
           break;
 
         case TIME:
+          // hh:mm:ss
           ok = (sscanf(buf,"%2d:%2d:%2d", &t.tm_hour, &t.tm_min, &t.tm_sec) == 3);
+          result = 3600 * t.tm_hour + 60 * t.tm_min + t.tm_sec;
           break;
 
         case TIMESTAMP:
+          // yy-mm-dd hh:mm:ss
           ok = (sscanf(buf,"%4d-%2d-%2d %2d:%2d:%2d", &t.tm_year, &t.tm_mon, &t.tm_mday,
                                                       &t.tm_hour, &t.tm_min, &t.tm_sec) == 6);
+          result = mktime(&t);
           break;
 
         default:
@@ -1421,8 +1460,7 @@ time_t TypeInfo::getTime(const char *row, bool &wasNull) const
              "Unable to parse datetime string %s for conversion to time_t",
              buf);
 
-      result = mktime(&t);
-
+      // catch errors returned by mktime
       if (result < 0)
         throw UDRException(
              38900,
@@ -1501,8 +1539,7 @@ const char * TypeInfo::getRaw(const char *row,
             // trim trailing little-endian UCS2 blanks
             // from the value
             while (byteLen > 1 &&
-                   result[byteLen-1] == 0 &&
-                   result[byteLen-2] == ' ')
+                   reinterpret_cast<const unsigned short *>(result)[byteLen/2-1] == (unsigned short) ' ')
               byteLen -= 2;
             break;
           default:
@@ -1575,10 +1612,18 @@ void TypeInfo::setLong(long val, char *row) const
       break;
 
     case SMALLINT_UNSIGNED:
+      if (val < 0)
+        throw UDRException(
+             38900,
+             "Trying to assign a negative value to a SMALLINT UNSIGNED type");
       *((unsigned short *) data) = val;
       break;
 
     case INT_UNSIGNED:
+      if (val < 0)
+        throw UDRException(
+             38900,
+             "Trying to assign a negative value to an INT UNSIGNED type");
       *((int *) data) = val;
       break;
 
@@ -1628,7 +1673,7 @@ void TypeInfo::setLong(long val, char *row) const
         if (val > maxvals[d_.precision_-1])
           throw UDRException(
                38900,
-               "Overflow occurred whild converting value %ld to a DECIMAL(%d, %d)",
+               "Overflow occurred while converting value %ld to a DECIMAL(%d, %d)",
                val, d_.precision_, d_.scale_);
 
         if (d_.scale_ == 0)
@@ -1759,17 +1804,17 @@ void TypeInfo::setTime(time_t val, char *row) const
         {
         case DATE:
           // yyyy-mm-dd
-          snprintf(buf, strLimit, "%4d-%2d-%2d", t.tm_year, t.tm_mon, t.tm_mday);
+          snprintf(buf, strLimit, "%04d-%02d-%02d", t.tm_year, t.tm_mon, t.tm_mday);
           break;
 
         case TIME:
           // hh:mm:ss
-          snprintf(buf, strLimit, "%2d:%2d:%2d", t.tm_hour, t.tm_min, t.tm_sec);
+          snprintf(buf, strLimit, "%02d:%02d:%02d", t.tm_hour, t.tm_min, t.tm_sec);
           break;
 
         case TIMESTAMP:
           // yyyy-mm-d hh:mm:ss
-          snprintf(buf, strLimit, "%4d-%2d-%2d %2d:%2d:%2d",
+          snprintf(buf, strLimit, "%04d-%02d-%02d %02d:%02d:%02d",
                    t.tm_year, t.tm_mon, t.tm_mday,
                    t.tm_hour, t.tm_min, t.tm_sec);
           break;
@@ -1864,8 +1909,7 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
               // pad with little-endian UCS-2 blanks
               while (paddedLen+1 < d_.length_)
                 {
-                  data[paddedLen] = ' ';
-                  data[paddedLen+1] = 0;
+                  reinterpret_cast<unsigned short *>(data)[paddedLen/2] = (unsigned short) ' ';
                   paddedLen += 2;
                 }
             }
@@ -2245,10 +2289,14 @@ void TypeInfo::toString(std::string &s, bool longForm) const
       break;
     case TIME:
       s += "TIME";
+      if (d_.scale_ > 0)
+        {
+          snprintf(buf, sizeof(buf), "(%d)", d_.scale_);
+          s += buf;
+        }
       break;
     case TIMESTAMP:
-      snprintf(buf, sizeof(buf), "TIMESTAMP(%d)",
-               getPrecision());
+      snprintf(buf, sizeof(buf), "TIMESTAMP(%d)", d_.scale_);
       s += buf;
       break;
     case INTERVAL:

@@ -936,7 +936,7 @@ NARoutine * TableMappingUDF::getRoutineMetadata(
 // -----------------------------------------------------------------------
 
 PredefinedTableMappingFunction::PredefinedTableMappingFunction(
-       CorrName name,
+       const CorrName &name,
        ItemExpr *params,
        OperatorTypeEnum otype,
        CollHeap *oHeap) :
@@ -960,6 +960,8 @@ OperatorTypeEnum PredefinedTableMappingFunction::nameIsAPredefinedTMF(const Corr
 
   if (funcName == "EVENT_LOG_READER")
     return REL_TABLE_MAPPING_BUILTIN_LOG_READER;
+  else if (funcName == "TIMESERIES")
+    return REL_TABLE_MAPPING_BUILTIN_TIMESERIES;
   else
     // none of the built-in names matched, so it must be a UDF
     return REL_TABLE_MAPPING_UDF;
@@ -971,6 +973,8 @@ const NAString PredefinedTableMappingFunction::getText() const
     {
     case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
       return "event_log_reader";
+    case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
+      return "timeseries";
 
     default:
       CMPASSERT(0);
@@ -1018,6 +1022,7 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
   switch (getOperatorType())
     {
     case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
+    case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
       {
         // produce a very simple NARoutine, most of the
         // error checking and determination of output
@@ -1025,7 +1030,10 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
         // this predefined table mapping function
         result = new(bindWA->wHeap()) NARoutine(routineName,
                                                 bindWA->wHeap());
-        result->setExternalName("TRAF_CPP_EVENT_LOG_READER");
+        if (getOperatorType() == REL_TABLE_MAPPING_BUILTIN_LOG_READER)
+          result->setExternalName("TRAF_CPP_EVENT_LOG_READER");
+        else
+          result->setExternalName("TRAF_CPP_TIMESERIES");
         result->setLanguage(COM_LANGUAGE_CPP);
         result->setRoutineType(COM_TABLE_UDF_TYPE);
         result->setParamStyle(COM_STYLE_CPP_OBJ);

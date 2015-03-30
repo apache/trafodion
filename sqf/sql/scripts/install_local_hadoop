@@ -379,10 +379,12 @@ if [ $USE_DEFAULT_PORTS == 'yes' ]; then
   MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM=2181
   # hbase.rest.port
   MY_HBASE_REST_PORT_NUM=8080
-  # dcs.master.port
+  # dcs.master.port (range of port numbers, one per server)
   MY_DCS_MASTER_PORT=37800
   # dcs.master.info.port
   MY_DCS_MASTER_INFO_PORT=40010
+  # dcs.server.info.port
+  MY_DCS_SERVER_INFO_PORT=40030
   # trafodion.rest.port
   MY_REST_SERVER_PORT=4200
   # trafodion.rest.https.port
@@ -408,8 +410,11 @@ else
   MY_HBASE_REST_PORT_NUM=`expr $MY_START_PORT + 171`
   # unique port # for MySQL (default is 3306)
   MY_SQL_PORT_NUM=`expr $MY_START_PORT + 46`
+  # MY_DCS_MASTER_PORT is a range of ports, one per server
+  # (see "server" file written below for how many are configured)
   MY_DCS_MASTER_PORT=`expr $MY_START_PORT + 172`
-  MY_DCS_MASTER_INFO_PORT=`expr $MY_START_PORT + 182`
+  MY_DCS_MASTER_INFO_PORT=`expr $MY_START_PORT + 181`
+  MY_DCS_SERVER_INFO_PORT=`expr $MY_START_PORT + 182`
   MY_REST_SERVER_PORT=`expr $MY_START_PORT + 183`
   MY_REST_SERVER_SECURE_PORT=`expr $MY_START_PORT + 184`
 fi
@@ -795,6 +800,7 @@ EOF
 <a href="http://${MY_HOST_1}:${MY_HADOOP_NN_HTTP_PORT_NUM}">HDFS Admin</a>
 <a href="http://${MY_HOST_1}:${MY_YARN_HTTP_PORT_NUM}">Yarn</a>
 <a href="http://${MY_HOST_1}:${MY_HBASE_MASTER_INFO_PORT_NUM}">HBase Master</a>
+<a href="http://${MY_HOST_1}:${MY_DCS_MASTER_INFO_PORT}">DCS Master</a>
 </pre>
 </BODY>
 </HTML>
@@ -1520,7 +1526,7 @@ else
      <name>dcs.master.info.port</name> <value>$MY_DCS_MASTER_INFO_PORT</value>
     </property>
     <property>
-     <name>dcs.server.info.port</name> <value>-1</value>
+     <name>dcs.server.info.port</name> <value>$MY_DCS_SERVER_INFO_PORT</value>
     </property>
     <property>
      <name>dcs.zookeeper.peerport</name> <value>$MY_HBASE_ZOOKEEPER_PEERPORT_NUM</value>

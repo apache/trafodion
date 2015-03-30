@@ -88,6 +88,7 @@ enum OperatorTypeEnum {
                         REL_TABLE_VALUED_UDF,
                         REL_TABLE_MAPPING_UDF,
                         REL_TABLE_MAPPING_BUILTIN_LOG_READER,
+                        REL_TABLE_MAPPING_BUILTIN_TIMESERIES,
                         REL_ANY_TABLE_MAPPING_UDF,
                         REL_ISOLATED_NON_TABLE_UDR,
                         REL_ISOLATED_SCALAR_UDF,

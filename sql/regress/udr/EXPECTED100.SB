@@ -265,7 +265,7 @@
 +>external name 't100.divide' language c no sql
 +>library T100;
 
-*** ERROR[3286] The specified routine type, routine language and possibly the name of the library are not supported together.
+*** ERROR[3286] The routine language that was either specified or implied from the library file name is not supported for this type of routine.
 
 --- SQL operation failed with errors.
 >>
