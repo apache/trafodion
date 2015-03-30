@@ -6,7 +6,7 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ INCLUDEPATH += ../eh \
                ../ddl \
                ../dml \
                ../arkcmp \
-               ../../log4cpp/log4cpp-1.0/include \
+	       ../../log4cpp/$$(LOG4CPP_VER)/include \
                ../../sqf/export/include \
                ../../sqf/commonLogger
 
