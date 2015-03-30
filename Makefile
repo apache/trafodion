@@ -24,7 +24,7 @@
 include macros.gmk
 
 # Make Targets
-.PHONY: all log4cpp dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr rest
+.PHONY: all log4cpp dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr rest odb
 .PHONY: package package-all pkg-product pkg-sql-regress
 
 ################
@@ -32,7 +32,7 @@ include macros.gmk
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest
+all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb
 
 package: pkg-product pkg-client
 
@@ -84,6 +84,9 @@ jdbc_type2_jar: ndcs
 	
 rest: verhdr 
 	cd rest && $(MAKE) 2>&1 | sed -e "s/$$/  ##(REST)/" ; exit $${PIPESTATUS[0]}
+
+odb: ndcs 
+	cd conn/odb && $(MAKE) 2>&1 | sed -e "s/$$/	##(ODB)/" ; exit $${PIPESTATUS[0]}
     
 clean: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
@@ -97,6 +100,7 @@ clean: sqroot
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
+	cd conn/odb && 			$(MAKE) clean
 
 cleanall: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
@@ -109,6 +113,7 @@ cleanall: sqroot
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
+	cd conn/odb &&			$(MAKE) clean
 
 package-all: package pkg-sql-regress
 

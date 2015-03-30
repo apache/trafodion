@@ -1,0 +1,56 @@
+//------------------------------------------------------------------
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+README for ODB tool. 
+
+Here are some quickstart guidelines to get started with ODB, detailed instructions can be found on the Trafodion wiki. 
+
+1. Install the Trafodion ODBC driver if you are using a remote client. 
+2. Install and configure unixODBC. Add a Trafodion datasource. 
+3. unixODBC and Trafodion odbc libraries should be in the LD_LIBRARY_PATH. 
+4. isql should be able to connect to the TRafodion datasource added. 
+3. odb64luo -h will display all the commands supported. 
+
+Example table definition:
+
+CREATE TABLE regions
+    ( region_id      INT NOT NULL 
+    , region_name    VARCHAR2(25) 
+    );
+
+Example map file:
+
+REGION_ID:IRAND:1:10000
+REGION_NAME:CRAND:25
+
+Example commands:
+
+1. For loading a table called REGIONS in schema QA with 10000 rows using 8 parallel threads and rowset size of 500:
+
+odb64luo -u xx -p xx -d traf -l src=nofile:tgt=TRAFODION.QA.REGIONS:map=regions.map:max=10000:rows=500:parallel=8
+
+2. To extract data from the same table:
+
+odb64luo -u xx -p xx -d traf -e src=TRAFODION.QA.REGIONS:tgt=regions.dat
+
+3. To copy data from one table to similar table (table should exist):
+
+odb64luo -u xx:xx -p xx:xx -d traf:traf -cp src=TRAFODION.QA.REGIONS:tgt=TRAFODION.QA.REGIONS_COPY
+
