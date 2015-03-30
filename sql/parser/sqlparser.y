@@ -2129,6 +2129,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>      		Rest_Of_insert_wo_INTO_statement
 %type <insertType>     		front_of_insert
 %type <insertType>     		Front_Of_Insert
+%type <insertType>                  front_of_insert_with_rwrs
 //%type <corrName>  		optional_exception_table_name
 %type <atomicityType>           atomic_clause
 %type <atomicityType>           opt_atomic_clause
@@ -2733,6 +2734,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>			rowset_for
 %type <relx>			rowset_for_input
 %type <relx>			rowset_for_output
+%type <relx>			rowwise_rowset_info
 %type <na_type>   		proc_arg_rowset_type
 %type <item>      		rowset_input_host_variable
 %type <item>      		rowset_input_host_variable_list
@@ -13715,6 +13717,53 @@ rowset_for_input : TOK_ROWSET TOK_FOR rowset_input_size ',' rowset_index
 rowset_for : rowset_for_input 
 	   |  rowset_for_output
 
+rowwise_rowset_info : '(' TOK_MAX TOK_ROWSET TOK_SIZE literal ','
+                          TOK_INPUT TOK_ROWSET TOK_SIZE dynamic_parameter ','
+                          TOK_INPUT TOK_ROW TOK_MAX TOK_LENGTH dynamic_parameter ','
+                          TOK_ROWSET TOK_BUFFER dynamic_parameter
+                      ')' 
+                      {
+			ItemExpr * mrs  = $5;
+			ItemExpr * irs  = $10;
+			ItemExpr * irml = $16;
+			ItemExpr * rrb  = $20;
+
+			// if input values are params, 
+			// type them as 'long'.
+			if (irs->getOperatorType() == ITM_DYN_PARAM)
+			  {
+			    ((DynamicParam*)irs)->setDPRowsetForInputSize();
+			    irs = new (PARSERHEAP()) 
+			      Cast(irs, new (PARSERHEAP()) SQLInt(TRUE, FALSE));
+			  }
+			else
+			  YYERROR;
+
+			if (irml->getOperatorType() == ITM_DYN_PARAM)
+			  {
+			    ((DynamicParam*)irml)->setRowwiseRowsetInputMaxRowlen();
+			    irml = new (PARSERHEAP()) 
+			      Cast(irml, new (PARSERHEAP()) SQLInt(TRUE, FALSE));
+			  }
+			else
+			  YYERROR;
+
+			if (rrb->getOperatorType() == ITM_DYN_PARAM)
+			  {
+			    ((DynamicParam *)rrb)->setRowwiseRowsetInputBuffer();
+			    rrb = new (PARSERHEAP()) 
+			      Cast(rrb, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+			  }
+			else
+			  YYERROR;
+
+			RowsetFor *rowsetfor = new (PARSERHEAP()) 
+			  RowsetFor(NULL, irs, NULL, NULL, mrs, irml, rrb, NULL);
+			rowsetfor->rowwiseRowset() = TRUE;
+
+			$$ = rowsetfor;
+		      }
+
 /* type stmt_ptr */
 sql_statement : interactive_query_expression
 		   {
@@ -14517,6 +14566,22 @@ optional_limit_spec : TOK_LIMIT NUMERIC_LITERAL_EXACT_NO_SCALE
 		   }
 
 dml_statement : dml_query { $$ = $1; }
+
+	       | front_of_insert_with_rwrs   rowwise_rowset_info Rest_Of_insert_statement 
+		    {
+                      if ($1 != Insert::UPSERT_INSERT)
+                        YYERROR;
+                      
+                      Insert * ie = (Insert *)$3;
+                      if ((ie->child(0) == NULL) ||
+                          (ie->child(0)->getOperatorType() != REL_TUPLE))
+                        YYERROR;
+                      
+                      ie->setInsertType($1);
+                      
+                      $2->child(0) = ie;
+                      $$ = finalize($2);
+                    }
 
 	      |	front_of_insert Rest_Of_insert_statement 
 				{
@@ -18772,6 +18837,11 @@ Front_Of_Insert : TOK_INSERT
               | TOK_UPSERT TOK_USING TOK_LOAD 
                       {
                          $$ = Insert::UPSERT_LOAD;
+                      }
+
+front_of_insert_with_rwrs :  TOK_UPSERT TOK_USING TOK_ROWSET
+                      {
+                        $$ = Insert::UPSERT_INSERT;
                       }
 
 front_of_insert: TOK_INS

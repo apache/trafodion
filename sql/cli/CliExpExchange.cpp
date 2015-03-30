@@ -3161,32 +3161,47 @@ InputOutputExpr::inputRowwiseRowsetValues(atp_struct *atp,
 
 	      // find the number of rows in the input rowset
 	      source = inputDesc->getVarData(entry);
-	      if (!source) 
-		{
-		  errorCode = EXE_ROWSET_INDEX_OUTOF_RANGE;
-		  goto error_return;
-		}
-	      
 	      if (entry == rwrsInfo->rwrsInputSizeIndex())
 		{
-	          // do the conversion
-	          str_cpy_all(target, source, sizeof(Lng32));
+                  if (source)
+                    {
+                      // do the conversion
+                      str_cpy_all(target, source, sizeof(Lng32));
+                    }
+                  else
+                    {
+                      *(Lng32*)target = inputDesc->getRowwiseRowsetSize();
+                    }
 
-		  inputRowsetSize = *((Lng32 *) target);
+                  inputRowsetSize = *((Lng32 *) target);
 		}
 	      else if (entry == rwrsInfo->rwrsMaxInputRowlenIndex())
 		{
-	          // do the conversion
-	          str_cpy_all(target, source, sizeof(Lng32));
-
-		  maxInputRowlen = *((Lng32 *) target);
-
-		  rwrsMaxInputRowlenLoc = target;
-		}
+                  if (source)
+                    {
+                      // do the conversion
+                      str_cpy_all(target, source, sizeof(Lng32));
+                    }
+                  else
+                    {
+                      *(Lng32*)target = inputDesc->getRowwiseRowsetRowLen();
+                    }
+                  
+                  maxInputRowlen = *((Lng32 *) target);
+                  
+                  rwrsMaxInputRowlenLoc = target;
+                }
 	      else if (entry == rwrsInfo->rwrsBufferAddrIndex())
 		{
-                  // do the conversion
-                  str_cpy_all(target, source, sizeof(Long));
+                  if (source)
+                    {
+                      // do the conversion
+                      str_cpy_all(target, source, sizeof(Long));
+                    }
+                  else
+                    {
+                      *(Long*)target = inputDesc->getRowwiseRowsetPtr();
+                    }
 
 		  bufferAddr = *((char **) target);
 
@@ -3208,6 +3223,7 @@ InputOutputExpr::inputRowwiseRowsetValues(atp_struct *atp,
 	      ((ex_inout_clause*)clause)->setExcludeFromBulkMove(TRUE);
  	    } // rwrs info
 	} // if inout clause
+
       clause = clause->getNextClause();
     } // while clause
   

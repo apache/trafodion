@@ -344,9 +344,7 @@ char *Descriptor::getVarItem(desc_struct &descItem, Lng32 idxrow)
   else
   {
     ptr = (char *)descItem.var_ptr;
-#if defined( NA_SHADOWCALLS )
-    ptr = (char *)SqlCliSp_GetDescVarPtr((Lng32)ptr, (void *)this);
-#endif
+
     // The size for rowset SQLVarChars is the sum of  
     // (length of the val part) and (length of the len part) 
     if (descItem.rowsetVarLayoutSize > 0) {

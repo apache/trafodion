@@ -3666,6 +3666,55 @@ short CmpSeabaseDDL::updateSeabaseMDObjectsTable(
     
 }
 
+static short AssignColEntry(ExeCliInterface *cliInterface, Lng32 entry,
+                            char * currRWRSptr, const char * srcPtr, 
+                            Lng32 firstColOffset)
+{
+  Lng32 cliRC = 0;
+
+  Lng32 fsDatatype;
+  Lng32 length;
+  Lng32 indOffset = -1;
+  Lng32 varOffset = -1;
+  
+  cliRC = cliInterface->getAttributes(1, TRUE, fsDatatype, length, 
+                                      &indOffset, &varOffset);
+
+  cliRC = cliInterface->getAttributes(entry, TRUE, fsDatatype, length, 
+                                      &indOffset, &varOffset);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      return -1;
+    }
+  
+  if (indOffset != -1)
+    *(short*)&currRWRSptr[indOffset] = 0;
+  
+  if (DFS2REC::isAnyCharacter(fsDatatype))
+    {
+      if (DFS2REC::isAnyVarChar(fsDatatype))
+        {
+          if (SQL_VARCHAR_HDR_SIZE == sizeof(short))
+            *(short*)&currRWRSptr[firstColOffset + varOffset] = strlen(srcPtr);
+          else
+            *(Lng32*)&currRWRSptr[firstColOffset + varOffset] = strlen(srcPtr);     
+          str_cpy_all(&currRWRSptr[firstColOffset + varOffset + SQL_VARCHAR_HDR_SIZE],
+                      srcPtr, strlen(srcPtr));
+        }
+      else
+        {
+          str_cpy(&currRWRSptr[firstColOffset + varOffset], srcPtr, length, ' ');
+        }
+    }
+  else
+    {
+      str_cpy_all(&currRWRSptr[firstColOffset + varOffset], srcPtr, length);
+    }
+
+  return 0;
+}
 
 short CmpSeabaseDDL::updateSeabaseMDTable(
                                          ExeCliInterface *cliInterface,
@@ -3685,6 +3734,11 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                                          Int32 schemaOwnerID,
                                          Int64 &inUID)
 {
+  NABoolean useRWRS = FALSE;
+  if (CmpCommon::getDefault(TRAF_USE_RWRS_FOR_MD_INSERT) == DF_ON)
+    {
+      useRWRS = TRUE;
+    }
 
   if (updateSeabaseMDObjectsTable(cliInterface,catName,schName,objName,objectType,
                                   validDef,objOwnerID,schemaOwnerID,inUID))
@@ -3701,7 +3755,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
   Lng32 rowTotalLength = 0;
   for (Lng32 i = 0; i < numKeys; i++)
     {
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, %d, %d, 0)",
+      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, %d, %d, 0)",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
                   objUID,
                   keyInfo->colName, 
@@ -3721,6 +3775,60 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
       const ComTdbVirtTableColumnInfo * ci = &colInfo[keyInfo->tableColNum];
       keyLength += ci->length + (colInfo->nullable ? 2 : 0);
       keyInfo += 1;
+    }
+
+  Lng32 rsParamsLen = 0;
+  Lng32 inputRowLen = 0;
+  Lng32 inputRWRSlen = 0;
+  char * inputRWRSptr = NULL;
+  char * currRWRSptr = NULL;
+  char * inputRow = NULL;
+  Lng32 indOffset = 0;
+  Lng32 varOffset = 0;
+  Lng32 fsDatatype;
+  Lng32 length;
+  Lng32 entry = 0;
+  Int64 rowsAffected = 0;
+
+  ExeCliInterface rwrsCliInterface(STMTHEAP, NULL, NULL, 
+                                   CmpCommon::context()->sqlSession()->getParentQid());
+  if (useRWRS)
+    {
+      ExeCliInterface cqdCliInterface;
+      cliRC = cqdCliInterface.holdAndSetCQD("ODBC_PROCESS", "ON");
+
+      str_sprintf(buf, "upsert using rowset (max rowset size %d, input rowset size ?, input row max length ?, rowset buffer ?) into %s.\"%s\".%s values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  numCols,
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS);
+      cliRC = rwrsCliInterface.rwrsPrepare(buf, numCols);
+      if (cliRC < 0)
+        {
+          rwrsCliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          cliRC = cqdCliInterface.restoreCQD("ODBC_PROCESS");
+
+          return -1;
+        }
+      
+      cliRC = cqdCliInterface.restoreCQD("ODBC_PROCESS");
+
+      // input rowset size
+      rsParamsLen = 0;
+      rwrsCliInterface.getAttributes(1, TRUE, fsDatatype, length, &indOffset, &varOffset);
+      rsParamsLen += length;
+
+      // input row max length
+      rwrsCliInterface.getAttributes(2, TRUE, fsDatatype, length, &indOffset, &varOffset);
+      rsParamsLen += length;
+
+      // rowwise rowset buffer addr
+      rwrsCliInterface.getAttributes(3, TRUE, fsDatatype, length, &indOffset, &varOffset);
+      rsParamsLen += length;
+
+      inputRowLen = rwrsCliInterface.inputDatalen();
+      inputRWRSlen = inputRowLen * numCols;
+
+      inputRow = new(heap_) char[inputRowLen];
     }
 
   for (Lng32 i = 0; i < numCols; i++)
@@ -3764,7 +3872,11 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                quotedDefVal = "";
                isComputedColumn = TRUE;
              }
-        }
+           else if (useRWRS)
+             {
+               quotedDefVal = defVal; // outer quotes not needed when inserting using rowsets
+             }
+        } // colInfo->defVal
 
       const char *colClassLit = NULL;
 
@@ -3787,38 +3899,80 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           break;
         }
 
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', %Ld)",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-                  objUID,
-                  colInfo->colName, 
-                  colInfo->colNumber,
-                  colClassLit,
-                  colInfo->datatype, 
-                  getAnsiTypeStrFromFSType(colInfo->datatype),
-                  colInfo->length,
-                  colInfo->precision, 
-                  colInfo->scale, 
-                  colInfo->dtStart, 
-                  colInfo->dtEnd,
-                  (colInfo->upshifted ? "Y" : "N"),
-                  colInfo->hbaseColFlags,
-                  colInfo->nullable,
-                  CharInfo::getCharSetName((CharInfo::CharSet)colInfo->charset),
-                  (Lng32)colInfo->defaultClass,
-                  (colInfo->defVal ? quotedDefVal.data() : ""),
-                  (colInfo->colHeading ? quotedColHeading.data() : ""),
-                  colInfo->hbaseColFam ? colInfo->hbaseColFam : "" , 
-                  colInfo->hbaseColQual ? colInfo->hbaseColQual : "",
-                  colInfo->paramDirection,
-                  colInfo->isOptional ? "Y" : "N",
-                  colInfo->colFlags);
-
-      cliRC = cliInterface->executeImmediate(buf);
-      if (cliRC < 0)
+      if (useRWRS)
         {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          Lng32 firstColOffset = 0;
+          cliRC = rwrsCliInterface.getAttributes(4, TRUE, fsDatatype, length, 
+                                              &indOffset, &firstColOffset);
 
-          return -1;
+          entry = 4;
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&objUID, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, colInfo->colName, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->colNumber, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, colClassLit, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->datatype, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, getAnsiTypeStrFromFSType(colInfo->datatype), firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->length, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->precision, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->scale, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->dtStart, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->dtEnd, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (colInfo->upshifted ? COM_YES_LIT : COM_NO_LIT), firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->hbaseColFlags, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->nullable, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, CharInfo::getCharSetName((CharInfo::CharSet)colInfo->charset), firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->defaultClass, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (colInfo->defVal ? quotedDefVal.data() : ""), firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow,  (colInfo->colHeading ? quotedColHeading.data() : ""), firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (colInfo->hbaseColFam ? colInfo->hbaseColFam : ""), firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (colInfo->hbaseColQual ? colInfo->hbaseColQual : ""), firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, colInfo->paramDirection, firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (colInfo->isOptional ? COM_YES_LIT : COM_NO_LIT), firstColOffset);
+          AssignColEntry(&rwrsCliInterface, entry++, inputRow, (char*)&colInfo->colFlags, firstColOffset);
+
+          cliRC = rwrsCliInterface.rwrsExec(inputRow, inputRowLen, &rowsAffected);
+          if (cliRC < 0)
+            {
+              rwrsCliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+              
+              return -1;
+            }         
+        }
+      else
+        {
+          str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', %Ld)",
+                      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                      objUID,
+                      colInfo->colName, 
+                      colInfo->colNumber,
+                      colClassLit,
+                      colInfo->datatype, 
+                      getAnsiTypeStrFromFSType(colInfo->datatype),
+                      colInfo->length,
+                      colInfo->precision, 
+                      colInfo->scale, 
+                      colInfo->dtStart, 
+                      colInfo->dtEnd,
+                      (colInfo->upshifted ? "Y" : "N"),
+                      colInfo->hbaseColFlags,
+                      colInfo->nullable,
+                      CharInfo::getCharSetName((CharInfo::CharSet)colInfo->charset),
+                      (Lng32)colInfo->defaultClass,
+                      (colInfo->defVal ? quotedDefVal.data() : ""),
+                      (colInfo->colHeading ? quotedColHeading.data() : ""),
+                      colInfo->hbaseColFam ? colInfo->hbaseColFam : "" , 
+                      colInfo->hbaseColQual ? colInfo->hbaseColQual : "",
+                      colInfo->paramDirection,
+                      colInfo->isOptional ? "Y" : "N",
+                      colInfo->colFlags);
+          
+          cliRC = cliInterface->executeImmediate(buf);
+          if (cliRC < 0)
+            {
+              cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+              
+              return -1;
+            }
         }
 
       if (isComputedColumn)
@@ -3845,7 +3999,18 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
          (colInfo->hbaseColQual ? strlen(colInfo->hbaseColQual) : 2);
 
       colInfo += 1;
-    }
+    } // for
+
+  if (useRWRS)
+    {
+      cliRC = rwrsCliInterface.rwrsClose();
+      if (cliRC < 0)
+        {
+          rwrsCliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          return -1;
+        }
+     }
 
   if (objectType == COM_BASE_TABLE_OBJECT || objectType == COM_INDEX_OBJECT)
     {
@@ -3863,7 +4028,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           hbaseCreateOptions = tableInfo->hbaseCreateOptions;
         }
 
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', '%s', %d, %d, %d, %d, 0) ",
+      str_sprintf(buf, "upsert into %s.\"%s\".%s values (%Ld, '%s', '%s', %d, %d, %d, %d, 0) ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
                   objUID, 
                   rowFormat,

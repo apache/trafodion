@@ -486,6 +486,10 @@ public:
     return rowsetSize;
   }
 
+  Lng32 getRowwiseRowsetSize() { return rowwiseRowsetSize; }
+  Lng32 getRowwiseRowsetRowLen() { return rowwiseRowsetRowLen; }
+  Int64 getRowwiseRowsetPtr() { return rowwiseRowsetPtr; }
+
   Lng32 getRowsetNumProcessed()
   {
     return rowsetNumProcessed;

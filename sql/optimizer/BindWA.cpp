@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -888,7 +888,7 @@ RelExpr * HostArraysWA::modifyTupleNode(RelExpr *node)
   // listofHostArrays for insert has been collected prior to bind phase, by xformRowsetsinTree()
   if (hasHostArrays()) {
 
-    if (rowwiseRowset()) {
+    if (getRowwiseRowset()) {
       // arrays cannot be specified with rowwise rowset.
       *CmpCommon::diags() << DgSqlCode(-30008);
       bindWA_->setErrStatus();
@@ -913,7 +913,7 @@ RelExpr * HostArraysWA::modifyTupleNode(RelExpr *node)
     return newRoot->bindNode(bindWA_);
     
   }
-  else if (rowwiseRowset()) {
+  else if (getRowwiseRowset()) {
     if (node->getOperatorType() != REL_TUPLE)
       {
 	bindWA_->setErrStatus();
@@ -1419,7 +1419,7 @@ RelExpr *HostArraysWA::modifyTree(RelExpr *queryExpr, RelExpr::AtomicityType ato
     rwrsMaxInputRowlen_  = tempVar->getMaxInputRowlen();
     rwrsBuffer_      = tempVar->getRwrsBuffer();
     partnNum_        = tempVar->partnNum();
-    rowwiseRowset_   = tempVar->rowwiseRowset();
+    setRowwiseRowset(tempVar->rowwiseRowset());
     tempVar->getBufferAttributes(packedFormat_,
 				 compressed_, dcompressInMaster_,
 				 compressInMaster_, partnNumInBuffer_);
@@ -1514,7 +1514,7 @@ RelExpr *HostArraysWA::modifyTree(RelExpr *queryExpr, RelExpr::AtomicityType ato
       bindWA_->setErrStatus();
    }
 
-  if ((rowwiseRowset_) &&
+  if ((getRowwiseRowset()) &&
       (atomicity == RelExpr::NOT_ATOMIC_))
     {
       // NAR not yet supported for RWRS inserts

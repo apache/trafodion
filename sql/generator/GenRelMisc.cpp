@@ -837,7 +837,7 @@ short RelRoot::codeGen(Generator * generator)
 
   RWRSInfo *rwrsInfo = NULL;
   char *rwrsInfoBuf = NULL;
-  if (getHostArraysArea() && getHostArraysArea()->rowwiseRowset())
+  if (getHostArraysArea() && getHostArraysArea()->getRowwiseRowset())
     {
       rwrsInfo = (RWRSInfo *) new (space) char[sizeof(RWRSInfo)];
 
@@ -2390,7 +2390,7 @@ short RelRoot::codeGen(Generator * generator)
   if (qCacheInfoIsClass)
     root_tdb->setQCacheInfoIsClass(TRUE);
 
-  if (getHostArraysArea() && getHostArraysArea()->rowwiseRowset())
+  if (getHostArraysArea() && getHostArraysArea()->getRowwiseRowset())
     {
       root_tdb->setRowwiseRowsetInput(TRUE);
     }

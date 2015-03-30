@@ -298,7 +298,7 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
 	}
 
       char query[1000];
-      str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
+      str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
 		  viewUID,
 		  usedObjUID,
@@ -322,7 +322,7 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
     {
 
       char query[1000];
-      str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
+      str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
 		  viewUID,
 		  uul[u]->getUDFUID(),
@@ -872,7 +872,7 @@ void CmpSeabaseDDL::createSeabaseView(
 
 
   query = new(STMTHEAP) char[newViewText.length() + 1000];
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, 0)",
+  str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS,
 	      objUID,
 	      computeCheckOption(createViewNode),
