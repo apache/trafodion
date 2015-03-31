@@ -86,17 +86,18 @@ public final class ServerHandler implements Callable {
     private SelectionKey serverkey;
     private ServerWorker worker=null;
     private ServerUtils utils = null;
-    
+
     public String parentZnode;
     public int fport;
     public String hostName;
     public int instance;
     public int serverThread;
     public String serverName;
-    
+    public int serverState= ServerConstants.SERVER_STATE_INIT;
+
     public byte[] cert;
     private RetryCounterFactory retryCounterFactory;
-    
+
     private List<PendingRequest> pendingChanges = new LinkedList<PendingRequest>();    //list of PendingRequests instances
     private ConcurrentHashMap<SelectionKey, Long> timeouts = new ConcurrentHashMap<SelectionKey, Long>(); // hash map of timeouts
 
@@ -107,7 +108,7 @@ public final class ServerHandler implements Callable {
         this.netConf = netConf;
         this.hostName = netConf.getHostName();
         this.requestTimeout = conf.getInt(Constants.DCS_SERVER_LISTENER_REQUEST_TIMEOUT,Constants.DEFAULT_SERVER_LISTENER_REQUEST_TIMEOUT);
-        this.connectingTimeout = conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT);           
+        this.connectingTimeout = conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT) * 1000;
         this.selectorTimeout = conf.getInt(Constants.DCS_SERVER_LISTENER_SELECTOR_TIMEOUT,Constants.DEFAULT_SERVER_LISTENER_SELECTOR_TIMEOUT);
         this.instance = instance;
         this.infoPort = infoPort;
@@ -117,7 +118,7 @@ public final class ServerHandler implements Callable {
         this.cert = cert;
         this.serverThread = serverThread;
         this.parentZnode = this.conf.get(Constants.ZOOKEEPER_ZNODE_PARENT,Constants.DEFAULT_ZOOKEEPER_ZNODE_PARENT);           
-        this.zkSessionTimeout = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT);           
+        this.zkSessionTimeout = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT);
         this.userProgExitAfterDisconnect = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT);
 
         init();
@@ -127,7 +128,6 @@ public final class ServerHandler implements Callable {
         utils = new ServerUtils(this, zkc);
         
         try {
-            utils.updateServerState(ServerConstants.SERVER_STATE_INIT);
             worker = new ServerWorker(zkc, instance, serverThread, serverName, cert);
             worker.start();
         } catch (Exception e) {
@@ -142,7 +142,7 @@ public final class ServerHandler implements Callable {
         this.selector.wakeup();
     }
     public void setConnectingTimeout(){
-        timeouts.put(serverkey, System.currentTimeMillis() + connectingTimeout * 1000);
+        timeouts.put(serverkey, System.currentTimeMillis());
         this.selector.wakeup();
     }
     public int getConnectingTimeout(){
@@ -174,7 +174,7 @@ public final class ServerHandler implements Callable {
     @Override
     public Integer call() throws Exception {
         Integer result = new Integer(serverThread);
-        
+
         try {
             selector = SelectorProvider.provider().openSelector();
             server = ServerSocketChannel.open();
@@ -210,12 +210,13 @@ public final class ServerHandler implements Callable {
             }
 //================= LISTENER ========================================================
 //            
-            utils.updateServerState(ServerConstants.SERVER_STATE_INIT);
             serverkey = server.register(selector, SelectionKey.OP_ACCEPT );
             int keysAdded = 0;
             PendingRequest preq = null;
             int request = ServerConstants.REQUST_INIT;
-            
+
+            utils.updateServerState(ServerConstants.SERVER_STATE_INIT);
+
             while(true){
                 synchronized (this.pendingChanges) {
                     Iterator<PendingRequest> changes = this.pendingChanges.iterator();
@@ -234,7 +235,7 @@ public final class ServerHandler implements Callable {
                             break;
                         case ServerConstants.REQUST_CLOSE:
                             closeClientConnection(key);
-                            utils.setNextServerStateAvailable();
+                            utils.updateServerState(ServerConstants.SERVER_STATE_DISCONNECTED);
                             break;
                         }
                         preq.key = null;
@@ -242,16 +243,15 @@ public final class ServerHandler implements Callable {
                     this.pendingChanges.clear();
                 }
                 while(true){
-                    utils.updateServerState(ServerConstants.SERVER_STATE_AVAILABLE);
                     if ((keysAdded = selector.select(setSelectorTimeout())) > 0) {
                         Set<SelectionKey> keys = selector.selectedKeys();
                         Iterator<SelectionKey> i = keys.iterator();
-    
+
                         while (i.hasNext()) {
                             SelectionKey key = i.next();
                             i.remove();
                             if (!key.isValid()) continue;
-    
+
                             if ((key.readyOps() & SelectionKey.OP_ACCEPT) == SelectionKey.OP_ACCEPT) {
                                 if(LOG.isDebugEnabled())
                                     LOG.debug(serverName + ". Ready to process ACCEPT");
@@ -271,18 +271,26 @@ public final class ServerHandler implements Callable {
                         break;
                 }
                 if (false == timeouts.isEmpty()){
+                    if(LOG.isDebugEnabled())
+                        LOG.debug(serverName + ". Timeouts ");
                     long currentTime = System.currentTimeMillis();
                     Iterator<SelectionKey> i = timeouts.keySet().iterator();
                     while(i.hasNext()){
                       SelectionKey key = i.next();
                       if (serverkey == key){
-                          if (currentTime - timeouts.get(key) > connectingTimeout){
+                          if(LOG.isDebugEnabled())
+                              LOG.debug(serverName + ". Checking CONNECTING");
+                          if (true != utils.checkServerState(ServerConstants.SERVER_STATE_CONNECTING)){
+                              if(LOG.isDebugEnabled())
+                                  LOG.debug(serverName + ". Removing CONNECTING timeout - serverState :" + utils.convertStateToString(serverState));
+                              i.remove();
+                          }
+                          else if (currentTime - timeouts.get(key) > connectingTimeout){
                               long timeout = (currentTime - timeouts.get(key))/1000;
                               if(LOG.isDebugEnabled())
                                   LOG.debug(serverName + ". CONNECTING timeouted[" + timeout + " seconds]");
-                                utils.updateServerState(ServerConstants.SERVER_STATE_CONNECTING_TIMEOUTED);
-                                utils.setNextServerStateAvailable();
-                                i.remove();
+                              utils.updateServerState(ServerConstants.SERVER_STATE_CONNECTING_TIMEOUTED);
+                              i.remove();
                           }
                       }
                       else if (currentTime - timeouts.get(key) > requestTimeout){
@@ -292,26 +300,26 @@ public final class ServerHandler implements Callable {
                           if ((key.interestOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ){
                               if(LOG.isDebugEnabled())
                                   LOG.debug(serverName + ". Read from client timeouted[" + timeout + " seconds] from: " + s.getRemoteSocketAddress());
-                              utils.updateServerState(ServerConstants.SERVER_STATE_READ_TIMEOUTED);
+                              serverState = ServerConstants.SERVER_STATE_READ_TIMEOUTED;
                           }
                           else if ((key.interestOps() & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE) {
                               if(LOG.isDebugEnabled())
                                   LOG.debug(serverName + ". Write to client timeouted[" + timeout + " seconds] from: " + s.getRemoteSocketAddress());
-                              utils.updateServerState(ServerConstants.SERVER_STATE_WRITE_TIMEOUTED);
+                              serverState = ServerConstants.SERVER_STATE_WRITE_TIMEOUTED;
                           }
                           else {
                               if(LOG.isDebugEnabled())
                                   LOG.debug(serverName + ". Client timeouted[" + timeout + " seconds] from: " + s.getRemoteSocketAddress());
-                              utils.updateServerState(ServerConstants.SERVER_STATE_CLIENT_TIMEOUTED);
+                              serverState = ServerConstants.SERVER_STATE_CLIENT_TIMEOUTED;
                           }
-                          closeClientConnection(key);
-                          utils.setNextServerStateAvailable();
                           i.remove();
+                          closeClientConnection(key);
+                          utils.updateServerState(serverState);
                         }
                     }
                 }
             }
-    
+
         } catch (IOException e) {
             LOG.error(serverName + ". IOException :" + e);
             System.exit(1);
@@ -339,11 +347,16 @@ public final class ServerHandler implements Callable {
                 LOG.debug(serverName + ". Received an incoming connection from: " + s.getRemoteSocketAddress());
             client.configureBlocking( false );
             SelectionKey clientkey = client.register( selector, SelectionKey.OP_READ );
-            clientkey.attach(new ClientData(s.getRemoteSocketAddress(), utils));
+            ClientData clientData = new ClientData(s.getRemoteSocketAddress(), utils);
+            utils.updateServerState(ServerConstants.SERVER_STATE_CONNECTED);
+            clientData.setThreadRegisteredPath();
+            clientData.setThreadRegisteredData();
+            clientkey.attach(clientData);
             if(LOG.isDebugEnabled())
                 LOG.debug(serverName + ". Accept processed");
         } catch (IOException ie) {
             LOG.error(serverName + ". Cannot Accept connection: " + ie.getMessage());
+            utils.updateServerState(ServerConstants.SERVER_STATE_CONNECT_REJECTED);
         }
     }
     private void processRead(SelectionKey key) {
@@ -355,8 +368,11 @@ public final class ServerHandler implements Callable {
         long readLength=0;
 
         ClientData clientData = (ClientData) key.attachment();
-        if (false == timeouts.isEmpty() && true == timeouts.containsKey(key)){
-            timeouts.remove(key);
+        if (false == timeouts.isEmpty() ){
+            if (true == timeouts.containsKey(key))
+                timeouts.remove(key);
+            if (true == timeouts.containsKey(serverkey))
+                timeouts.remove(serverkey);
         }
         try {
             while ((readLength = client.read(clientData.bbBuf)) > 0) {
@@ -406,10 +422,7 @@ public final class ServerHandler implements Callable {
             if (clientData.total_read > (clientData.hdr.getTotalLength() + ServerConstants.HEADER_SIZE)){
                 throw new IOException(serverName + ". Total read length greater than in HEADER. [" + clientData.total_read + "]/[" + (clientData.hdr.getTotalLength() + ServerConstants.HEADER_SIZE) + "]");
             }
-            clientData.setThreadRegisteredPath();
-            clientData.setThreadRegisteredData();
-            utils.updateServerState(ServerConstants.SERVER_STATE_CONNECTED);
-
+             
             key.attach(clientData);
             this.worker.processData(this, key);
             
@@ -420,7 +433,7 @@ public final class ServerHandler implements Callable {
         } catch (Exception e){
             LOG.error(serverName + ". Exception: " + e.getMessage());
             closeClientConnection(key);
-            utils.updateServerState(ServerConstants.SERVER_STATE_CONNECT_REJECTED);
+            utils.updateServerState(ServerConstants.SERVER_STATE_DISCONNECTED);
         }
     }
     private void processWrite(SelectionKey key) {
@@ -432,8 +445,11 @@ public final class ServerHandler implements Callable {
         long writeLength=0;
         ClientData clientData = (ClientData) key.attachment();
         
-        if (false == timeouts.isEmpty() && true == timeouts.containsKey(key)){
-            timeouts.remove(key);
+        if (false == timeouts.isEmpty() ){
+            if (true == timeouts.containsKey(key))
+                timeouts.remove(key);
+            if (true == timeouts.containsKey(serverkey))
+                timeouts.remove(serverkey);
         }
         try {
             while ((writeLength = client.write(clientData.bbBuf)) > 0) {
@@ -459,14 +475,14 @@ public final class ServerHandler implements Callable {
                 }
                 else if (clientData.request == ServerConstants.REQUST_WRITE_CLOSE){
                     closeClientConnection(key);
-                    utils.setNextServerStateAvailable();
+                    utils.updateServerState(ServerConstants.SERVER_STATE_DISCONNECTED);
                 }
             }
             return;
         } catch (IOException ie){
             LOG.error(serverName + ". IOException: " + ie.getMessage());
             closeClientConnection(key);
-            utils.updateServerState(ServerConstants.SERVER_STATE_CONNECT_REJECTED);
+            utils.updateServerState(ServerConstants.SERVER_STATE_DISCONNECTED);
         }
     }
 }
