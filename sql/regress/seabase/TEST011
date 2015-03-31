@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -37,6 +37,12 @@ drop table T011T1;
 drop table t011tT3;
 drop table T011T2;
 drop table t011t4;
+
+-- delete explain for statement explstmt from repository
+set parserflags 131072;
+delete from trafodion."_REPOS_".metric_query_table
+  where query_id like 'MXID%EXPLSTMT%';
+reset parserflags 131072;
 
 ?section tests
 
@@ -291,4 +297,47 @@ select left (a, 20), left(b, 10), left(c, 10), left (d, 11) from t011t4;
 -- negative test
 create table t011t5 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(200001 bytes) character set utf8);
 
+-- tests for repository explain
+-- check for repository tables
+get tables in schema trafodion."_REPOS_";
+invoke trafodion."_REPOS_".metric_query_table;
 
+-- delete explain for statement explstmt from repository
+set parserflags 131072;
+delete from trafodion."_REPOS_".metric_query_table
+  where query_id like 'MXID%EXPLSTMT%';
+reset parserflags 131072;
+
+-- prepare stmt and store explain in repository
+prepare explstmt from select * from t011t1;
+store explain for explstmt in repository;
+
+-- get qid for the prepared stmt
+get qid for statement explstmt;
+
+-- retrieve explain plan from repository based on the qid and return it.
+select seq_num, operator from table(explain(null, 
+    'EXPLAIN_QID=' || (get qid for statement explstmt))) 
+  order by seq_num desc;
+
+-- return explain info from the input explain plan
+select seq_num, operator from table(explain(null,
+   'EXPLAIN_PLAN=' || (select explain_plan from trafodion."_REPOS_".metric_query_table
+                                   where query_id = (get qid for statement explstmt))))
+  order by seq_num desc;
+
+-- compile and explain a statement.
+select seq_num, operator from table(explain(null, 
+       'EXPLAIN_STMT=select * from t011t1'))
+  order by seq_num desc;
+
+
+-- prepare stmt and store it with a user specified query id.
+-- this is to test formatted explain display based on a query id.
+prepare explstmt2 from select * from t011t1;
+get qid for statement explstmt2;
+set qid MXID123456 for explstmt2;
+get qid for statement explstmt2;
+
+store explain for explstmt2 in repository;
+explain options 'f' qid MXID123456 from repository;

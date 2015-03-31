@@ -1277,6 +1277,78 @@ short ExeUtilGetUID::codeGen(Generator * generator)
 
 /////////////////////////////////////////////////////////
 //
+// ExeUtilGetQID::codeGen()
+//
+/////////////////////////////////////////////////////////
+const char * ExeUtilGetQID::getVirtualTableName()
+{ return "EXE_UTIL_GET_QID__"; }
+
+desc_struct *ExeUtilGetQID::createVirtualTableDesc()
+{
+  desc_struct * table_desc =
+    Generator::createVirtualTableDesc(getVirtualTableName(),
+				      ComTdbExeUtilGetQID::getVirtTableNumCols(),
+				      ComTdbExeUtilGetQID::getVirtTableColumnInfo(),
+				      ComTdbExeUtilGetQID::getVirtTableNumKeys(),
+				      ComTdbExeUtilGetQID::getVirtTableKeyInfo());
+  return table_desc;
+}
+
+short ExeUtilGetQID::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const Int32 work_atp = 1;
+  const Int32 exe_util_row_atp_index = 2;
+
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
+
+  char * stmt_name =
+    space->AllocateAndCopyToAlignedSpace(statement_, 0);
+
+  ComTdbExeUtilGetQID * exe_util_tdb = new(space) 
+    ComTdbExeUtilGetQID(
+                        stmt_name,
+                        0, 0, // no work cri desc
+                        givenDesc,
+                        returnedDesc,
+                        (queue_index)8,
+                        (queue_index)512,
+                        2, //getDefault(GEN_DDL_NUM_BUFFERS),
+                        32000); //getDefault(GEN_DDL_BUFFER_SIZE));
+  
+  generator->initTdbFields(exe_util_tdb);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+
+  return 0;
+}
+
+/////////////////////////////////////////////////////////
+//
 // ExeUtilPopulateInMemStats::codeGen()
 //
 /////////////////////////////////////////////////////////

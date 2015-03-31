@@ -1006,8 +1006,8 @@ Lng32 SQLCLI_AllocDesc(/*IN*/ CliGlobals * cliGlobals,
       /* descriptor must exist */
       if (!input_desc)
         {
-          diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-          return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+          diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+          return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
         }
 
       retcode = InputValueFromNumericHostvar(input_desc,
@@ -1217,8 +1217,8 @@ Lng32 SQLCLI_AllocStmtForRS(/*IN*/ CliGlobals *cliGlobals,
   //LCOV_EXCL_START
   if (!callStmt)
   {
-    diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-    return SQLCLI_ReturnCode(&currContext, -CLI_STMT_NOT_EXSISTS);
+    diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+    return SQLCLI_ReturnCode(&currContext, -CLI_STMT_NOT_EXISTS);
   }
   //LCOV_EXCL_STOP
 
@@ -1280,8 +1280,8 @@ Lng32 SQLCLI_AllocStmtForRS(/*IN*/ CliGlobals *cliGlobals,
   rs = currContext.getStatement(resultSetStmtId);
   if (!rs)
   {
-    diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-    return SQLCLI_ReturnCode(&currContext, -CLI_STMT_NOT_EXSISTS);
+    diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+    return SQLCLI_ReturnCode(&currContext, -CLI_STMT_NOT_EXISTS);
   }
   
   // Bind the new statement to its parent CALL statement
@@ -1673,8 +1673,8 @@ Lng32 SQLCLI_DefineDesc(/*IN*/ CliGlobals * cliGlobals,
   /* stmt must exist */
   if (!stmt)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
 
   Descriptor * desc = currContext.getDescriptor(desc_id);
@@ -1682,8 +1682,8 @@ Lng32 SQLCLI_DefineDesc(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   stmt->addDefaultDesc(desc, what_descriptor);
@@ -1716,8 +1716,8 @@ Lng32 SQLCLI_DescribeStmt(/*IN*/ CliGlobals * cliGlobals,
   //LCOV_EXCL_START
   if (!stmt)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
   //LCOV_EXCL_STOP
 
@@ -1752,8 +1752,8 @@ Lng32 SQLCLI_DescribeStmt(/*IN*/ CliGlobals * cliGlobals,
       //LCOV_EXCL_START
       if (!input_desc)
         {
-          diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-          return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+          diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+          return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
         }
       //LCOV_EXCL_STOP
 
@@ -1770,8 +1770,8 @@ Lng32 SQLCLI_DescribeStmt(/*IN*/ CliGlobals * cliGlobals,
 
       if (!output_desc)
         {
-          diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-          return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+          diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+          return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
         }
 
       retcode = stmt->describe(output_desc,
@@ -1855,8 +1855,8 @@ Lng32 SQLCLI_SetRowsetDescPointers(CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   desc->setDescItem(0, SQLDESC_ROWSET_SIZE, rowset_size, 0);
@@ -1927,8 +1927,8 @@ Lng32 SQLCLI_GetRowsetNumprocessed(CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   retcode = desc->getDescItem(1,
@@ -2127,8 +2127,8 @@ static Lng32 SQLCLI_RetryValidateDescs
   //LCOV_EXCL_START
   if (!currInputDesc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return -CLI_DESC_NOT_EXSISTS;
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return -CLI_DESC_NOT_EXISTS;
     }
   //LCOV_EXCL_STOP
 
@@ -2136,8 +2136,8 @@ static Lng32 SQLCLI_RetryValidateDescs
   //LCOV_EXCL_START
   if (!currOutputDesc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return -CLI_DESC_NOT_EXSISTS;
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return -CLI_DESC_NOT_EXISTS;
     }
   //LCOV_EXCL_STOP
   
@@ -2145,16 +2145,16 @@ static Lng32 SQLCLI_RetryValidateDescs
   //LCOV_EXCL_START
   if (!newInputDesc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return -CLI_DESC_NOT_EXSISTS;
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return -CLI_DESC_NOT_EXISTS;
     }
   //LCOV_EXCL_STOP
   Descriptor * newOutputDesc = currContext.getDescriptor(&new_output_desc_id);
  //LCOV_EXCL_START
   if (!newOutputDesc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return -CLI_DESC_NOT_EXSISTS;
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return -CLI_DESC_NOT_EXISTS;
     }
   //LCOV_EXCL_STOP
   // Before describing , save the flags from the old descriptors that the user
@@ -2173,16 +2173,16 @@ static Lng32 SQLCLI_RetryValidateDescs
   //LCOV_EXCL_START
   if (!newInputDesc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return -CLI_DESC_NOT_EXSISTS;
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return -CLI_DESC_NOT_EXISTS;
     }
   //LCOV_EXCL_STOP
   newOutputDesc = currContext.getDescriptor(&new_output_desc_id);
 //LCOV_EXCL_START
   if (!newOutputDesc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return -CLI_DESC_NOT_EXSISTS;
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return -CLI_DESC_NOT_EXISTS;
     }
 //LCOV_EXCL_STOP
   if (NOT (*currInputDesc == *newInputDesc))
@@ -2906,7 +2906,7 @@ Lng32 SQLCLI_PerformTasks(
   Lng32 retcode = SUCCESS;
 
   if (!statement_id)
-    return -CLI_STMT_NOT_EXSISTS;
+    return -CLI_STMT_NOT_EXISTS;
 
   ContextCli   & currContext = *(cliGlobals->currContext());
   ComDiagsArea & diags       = currContext.diags();
@@ -2969,8 +2969,8 @@ Lng32 SQLCLI_PerformTasks(
       stmt = currContext.getStatement(statement_id);
       if (!stmt)
 	{
-	  diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-	  return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+	  diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+	  return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
 	}
      if (stmtInfo)
        {
@@ -3083,8 +3083,8 @@ Lng32 SQLCLI_PerformTasks(
 	  //LCOV_EXCL_START
 	  if (!input_desc)
 	    {
-	      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-	      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+	      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+	      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
 	    }
 	  //LCOV_EXCL_STOP
 /*	  
@@ -3144,8 +3144,8 @@ Lng32 SQLCLI_PerformTasks(
 	  //LCOV_EXCL_START
 	  if (!output_desc)
 	    {
-	      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-	      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+	      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+	      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
 	    }
 	  //LCOV_EXCL_STOP
 	 /* 
@@ -3582,8 +3582,8 @@ Lng32 SQLCLI_ExecDirect(/*IN*/           CliGlobals * cliGlobals,
   /* stmt must exist */
   if (!stmt)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
   //LCOV_EXCL_STOP
   stmt->getGlobals()->clearCancelState();
@@ -3666,8 +3666,8 @@ Lng32 SQLCLI_ExecDirect2(/*IN*/           CliGlobals * cliGlobals,
   /* stmt must exist */
   if (!stmt)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
   //LCOV_EXCL_STOP
   stmt->getGlobals()->clearCancelState();
@@ -3904,7 +3904,7 @@ Lng32 SQLCLI_Cancel(/*IN*/ CliGlobals * cliGlobals,
       if (!stmt)
 	{
 	  currContext.semaphoreRelease();
-	  return -CLI_STMT_NOT_EXSISTS;
+	  return -CLI_STMT_NOT_EXISTS;
 	}
       retcode = stmt->cancel();
     }
@@ -3964,8 +3964,8 @@ Lng32 SQLCLI_GetDescEntryCount(/*IN*/ CliGlobals * cliGlobals,
   //LCOV_EXCL_START
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
   //LCOV_EXCL_STOP
   Descriptor * output_desc = currContext.getDescriptor(output_descriptor);
@@ -3974,8 +3974,8 @@ Lng32 SQLCLI_GetDescEntryCount(/*IN*/ CliGlobals * cliGlobals,
   //LCOV_EXCL_START
   if (!output_desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
   //LCOV_EXCL_STOP
 
@@ -4026,8 +4026,8 @@ Lng32 SQLCLI_GetDescItems(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   Descriptor * value_num_desc = currContext.getDescriptor(value_num_descriptor);
@@ -4035,8 +4035,8 @@ Lng32 SQLCLI_GetDescItems(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!value_num_desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   Descriptor *output_desc = currContext.getDescriptor(output_descriptor);
@@ -4044,8 +4044,8 @@ Lng32 SQLCLI_GetDescItems(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!output_desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   Lng32 outputUsedEntryCount = output_desc->getUsedEntryCount();
@@ -4500,8 +4500,8 @@ Lng32 SQLCLI_GetDescItems2(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   for (Lng32 i = 0; i < no_of_desc_items; i++) 
@@ -4777,7 +4777,7 @@ Lng32 SQLCLI_GetDiagnosticsStmtInfo(/*IN*/ CliGlobals * cliGlobals,
 
   if (!output_descriptor)
     {
-      return -CLI_DESC_NOT_EXSISTS;
+      return -CLI_DESC_NOT_EXISTS;
     }
 
 
@@ -4795,7 +4795,7 @@ Lng32 SQLCLI_GetDiagnosticsStmtInfo(/*IN*/ CliGlobals * cliGlobals,
 
   if (!output_desc)
     {
-      return -CLI_DESC_NOT_EXSISTS;
+      return -CLI_DESC_NOT_EXISTS;
     }
 
   Lng32 outputUsedEntryCount = output_desc->getUsedEntryCount();
@@ -5043,7 +5043,7 @@ Lng32 SQLCLI_GetDiagnosticsStmtInfo2(
       if ((!stmt) || 
 	  (what_to_get != SQLDIAG_ROW_COUNT))
 	{
-	  return -CLI_STMT_NOT_EXSISTS;
+	  return -CLI_STMT_NOT_EXISTS;
 	}
     }
   
@@ -5096,7 +5096,7 @@ Lng32 SQLCLI_GetDiagnosticsCondInfo(/*IN*/ CliGlobals * cliGlobals,
 
   if (!cond_num_descriptor || !output_descriptor)
     {
-      return -CLI_DESC_NOT_EXSISTS;
+      return -CLI_DESC_NOT_EXISTS;
     }
 
 
@@ -5129,14 +5129,14 @@ Lng32 SQLCLI_GetDiagnosticsCondInfo(/*IN*/ CliGlobals * cliGlobals,
 
   if (!condnum_desc)
     {
-      return -CLI_DESC_NOT_EXSISTS;
+      return -CLI_DESC_NOT_EXISTS;
     }
 
   Descriptor * output_desc = currContext.getDescriptor(output_descriptor);
 
   if (!output_desc)
     {
-      return -CLI_DESC_NOT_EXSISTS;
+      return -CLI_DESC_NOT_EXISTS;
     }
 
   Lng32 outputUsedEntryCount = output_desc->getUsedEntryCount();
@@ -5758,8 +5758,8 @@ Lng32 SQLCLI_Prepare(/*IN*/ CliGlobals * cliGlobals,
   /* stmt must exist */
   if (!stmt)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
 
   StrTarget strTarget;
@@ -5833,8 +5833,8 @@ Lng32 SQLCLI_Prepare2(/*IN*/ CliGlobals * cliGlobals,
   /* stmt must exist */
   if (!stmt)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
 
   NABoolean retrieveGenCode = FALSE;
@@ -5865,8 +5865,8 @@ Lng32 SQLCLI_Prepare2(/*IN*/ CliGlobals * cliGlobals,
 	      (*uniqueStmtIdLen <= 0))
 	    {
 	      // Error
-	      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-	      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+	      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+	      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
 	    }
 	  
 	  stmt->setUniqueStmtId(uniqueStmtId);
@@ -6084,8 +6084,8 @@ Lng32 SQLCLI_GetExplainData(
   /* stmt must exist */
   if ((!stmt) || (!stmt->getRootTdb()) || (! ret_explain_len))
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
 
   retcode = ExExplainTcb::getExplainData(stmt->getRootTdb(),
@@ -6176,8 +6176,8 @@ Lng32 SQLCLI_ResDescName(/*IN*/           CliGlobals * cliGlobals,
       /* stmt must exist */
       if (!stmt)
         {
-          diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-          return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+          diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+          return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
         }
 
       desc = stmt->getDefaultDesc(what_desc);
@@ -6190,8 +6190,8 @@ Lng32 SQLCLI_ResDescName(/*IN*/           CliGlobals * cliGlobals,
   /* desc must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   if (descriptor_id->name_mode == desc_handle)
@@ -6229,9 +6229,6 @@ Lng32 SQLCLI_ResStmtName(/*IN*/ CliGlobals * cliGlobals,
 			/*INOUT*/ SQLSTMT_ID * statement_id)
 {
   Lng32 retcode;
-  
-
-
 
   // create initial context, if first call, and add module, if any.
   retcode = CliPrologue(cliGlobals,statement_id->module);
@@ -6247,8 +6244,8 @@ Lng32 SQLCLI_ResStmtName(/*IN*/ CliGlobals * cliGlobals,
   /* stmt must exist */
   if (!stmt)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
 
   statement_id->name_mode = stmt_handle;
@@ -6288,8 +6285,8 @@ Lng32 SQLCLI_SetCursorName(/*IN*/ CliGlobals * cliGlobals,
   /* stmt must exist */
   if (!stmt)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
   else if (!stmt->allocated())
     {
@@ -6309,8 +6306,8 @@ Lng32 SQLCLI_SetCursorName(/*IN*/ CliGlobals * cliGlobals,
       /* descriptor must exist */
       if (!desc)
 	{
-    	  diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-          return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+    	  diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+          return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     	}
       //LCOV_EXCL_STOP
       stmt->setCursorName(desc->getVarData(1));
@@ -6364,8 +6361,8 @@ Lng32 SQLCLI_SetStmtAttr( /*IN*/ CliGlobals *cliGlobals,
   /* stmt must exist */
   if (!stmt)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
   
   if (attrName == SQL_ATTR_CURSOR_HOLDABLE) 
@@ -6792,8 +6789,8 @@ Lng32 SQLCLI_GetUniqueQueryIdAttrs( /*IN*/ CliGlobals *cliGlobals,
   /* stmt must exist */
   if (!queryId)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
 
   for (Int32 i = 0; i < no_of_attrs && !retcode; i++)
@@ -6848,8 +6845,8 @@ Lng32 CopyOneStmtAttr (/*IN*/   Statement &stmt,
     }
     if (!stmt.getRootTdb())
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXISTS);
     }
     *numeric_value = stmt.getRootTdb()->getQueryType();
   }
@@ -6863,8 +6860,8 @@ Lng32 CopyOneStmtAttr (/*IN*/   Statement &stmt,
     } 
     if (!stmt.getRootTdb())
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXISTS);
     }
     *numeric_value = stmt.getRootTdb()->getSubqueryType();
   }
@@ -6872,8 +6869,8 @@ Lng32 CopyOneStmtAttr (/*IN*/   Statement &stmt,
   {
     if (!stmt.getRootTdb())
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXISTS);
     }
     *numeric_value = stmt.getRootTdb()->getMaxResultSets();
   }
@@ -6894,19 +6891,19 @@ Lng32 CopyOneStmtAttr (/*IN*/   Statement &stmt,
           if ((max_string_len) && (actual_len > max_string_len))
           {
 	    diags << DgSqlCode(-CLI_BUFFER_TOO_SMALL);
-        return SQLCLI_ReturnCode(&context,-CLI_BUFFER_TOO_SMALL);
+            return SQLCLI_ReturnCode(&context,-CLI_BUFFER_TOO_SMALL);
           }
 
-      strncpy(string_value, stmt.getUniqueStmtId(), 
-              stmt.getUniqueStmtIdLen());
+          strncpy(string_value, stmt.getUniqueStmtId(), 
+                  stmt.getUniqueStmtIdLen());
         }
     }
   else if (attrName == SQL_ATTR_RS_PROXY_SYNTAX)
   {
     if (!stmt.getRootTdb())
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXISTS);
     }
     
     stmt.getRSProxySyntax(string_value, max_string_len, len_of_item);
@@ -6970,8 +6967,8 @@ Lng32 CopyOneStmtAttr (/*IN*/   Statement &stmt,
     }
     else
     {
-       diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-       return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXSISTS);
+       diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+       return SQLCLI_ReturnCode(&context, -CLI_STMT_NOT_EXISTS);
     }
    
   }
@@ -7009,8 +7006,8 @@ Lng32 SQLCLI_GetStmtAttr( /*IN*/ CliGlobals *cliGlobals,
   /* stmt must exist */
   if (!stmt)
   {
-    diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-    return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+    diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+    return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
   }
 
   retcode = CopyOneStmtAttr(*stmt, currContext, diags,
@@ -7042,8 +7039,8 @@ Lng32 SQLCLI_GetStmtAttrs( /*IN*/ CliGlobals *cliGlobals,
   /* stmt must exist */
   if (!stmt)
   {
-    diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-    return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+    diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+    return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
   }
 
   for (Int32 i = 0; i < number_of_attrs && retcode >= 0; i++)
@@ -7083,8 +7080,8 @@ Lng32 SQLCLI_SetDescEntryCount(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   Descriptor * input_desc = currContext.getDescriptor(input_descriptor);
@@ -7092,8 +7089,8 @@ Lng32 SQLCLI_SetDescEntryCount(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!input_desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   // JORGE: Why are we doing it this way. It may be better if we call
@@ -7139,8 +7136,8 @@ Lng32 SQLCLI_SetDescItems(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   Descriptor * value_num_desc = currContext.getDescriptor(value_num_descriptor);
@@ -7148,8 +7145,8 @@ Lng32 SQLCLI_SetDescItems(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!value_num_desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   Descriptor * input_desc = currContext.getDescriptor(input_descriptor);
@@ -7157,8 +7154,8 @@ Lng32 SQLCLI_SetDescItems(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!input_desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
 
@@ -7292,8 +7289,8 @@ Lng32 SQLCLI_SetDescItems2(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   for (Lng32 i = 0; i < no_of_desc_items; i++) 
@@ -7369,8 +7366,8 @@ Lng32 SQLCLI_SetDescPointers(/*IN*/         CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
   //LCOV_EXCL_STOP
 
@@ -7600,8 +7597,8 @@ Lng32 SQLCLI_Xact(/*IN*/ CliGlobals * cliGlobals,
       // descriptor must exist 
       if (!transid_desc)
         {
-          diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-          return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+          diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+          return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
         }
 
       // return the transaction identifier in the
@@ -7753,8 +7750,8 @@ Lng32 SQLCLI_GetDescEntryCountInt(/*IN*/  CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   if (currContext.boundsCheckMemory(num_entries,sizeof(num_entries)))
@@ -7792,8 +7789,8 @@ Lng32 SQLCLI_GetDescItem(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   if(numeric_value){
@@ -7835,8 +7832,8 @@ Lng32 SQLCLI_SetDescEntryCountInt(/*IN*/ CliGlobals * cliGlobals,
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   desc->setUsedEntryCount(num_entries);
@@ -7868,8 +7865,8 @@ Lng32 SQLCLI_SetDescItem(
   /* descriptor must exist */
   if (!desc)
     {
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   if (entry > desc->getMaxEntryCount())
@@ -7938,8 +7935,8 @@ Lng32 SQLCLI_GetRowsAffected(/*IN*/ CliGlobals * cliGlobals,
  
   if (!stmt)
     {
-      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
     }
 
   if(currContext.boundsCheckMemory(&rowsAffected,sizeof(rowsAffected)))
@@ -8106,8 +8103,8 @@ Lng32 GetDescItemsEntryCount(
   if (!desc)
     {
       error_occurred = 1;
-      diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXSISTS);
+      diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+      return SQLCLI_ReturnCode(&currContext,-CLI_DESC_NOT_EXISTS);
     }
 
   Lng32 UsedEntryCount = desc->getUsedEntryCount();
@@ -8362,8 +8359,8 @@ Lng32 SQLCLI_GetVersion_Internal
 	  if ((!stmt) ||
 	      (! stmt->getRootTdb()))
 	    {
-	      diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-	      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+	      diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+	      return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
 	    }
 	  
 	  if (versionValue)
@@ -8844,7 +8841,7 @@ Lng32 SQLCLI_OutputValueIntoNumericHostvar(
 
   if (!output_desc)
     {
-      return -CLI_DESC_NOT_EXSISTS;
+      return -CLI_DESC_NOT_EXISTS;
     }
 
   retcode = OutputValueIntoNumericHostvar(output_desc, desc_entry, value);
@@ -8904,7 +8901,7 @@ Lng32 SQLCLI_SetErrorCodeInRTS(
     }
   }
   else
-    retcode = -CLI_STMT_NOT_EXSISTS;
+    retcode = -CLI_STMT_NOT_EXISTS;
   return retcode;
 }
 
@@ -9346,8 +9343,8 @@ Lng32 SQLCLI_GetChildQueryInfo(CliGlobals *cliGlobals,
   Statement * stmt = currContext.getStatement(statement_id);
   if (!stmt)
   {
-    diags << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
-    return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXSISTS);
+    diags << DgSqlCode(-CLI_STMT_NOT_EXISTS);
+    return SQLCLI_ReturnCode(&currContext,-CLI_STMT_NOT_EXISTS);
   }
   retcode = stmt->getChildQueryInfo(diags, uniqueQueryId,
                     uniqueQueryIdMaxLen, uniqueQueryIdLen,

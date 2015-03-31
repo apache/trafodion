@@ -1477,6 +1477,75 @@ void ComTdbExeUtilGetUID::displayContents(Space * space,ULng32 flag)
 
 ///////////////////////////////////////////////////////////////////////////
 //
+// Methods for class ComTdbExeUtilGetQID
+//
+///////////////////////////////////////////////////////////////////////////
+ComTdbExeUtilGetQID::ComTdbExeUtilGetQID
+(
+ char * stmtName,
+ ex_cri_desc * work_cri_desc,
+ const unsigned short work_atp_index,
+ ex_cri_desc * given_cri_desc,
+ ex_cri_desc * returned_cri_desc,
+ queue_index down,
+ queue_index up,
+ Lng32 num_buffers,
+ ULng32 buffer_size)
+  : ComTdbExeUtil(ComTdbExeUtil::GET_QID_,
+                  NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
+                  NULL, 0,
+                  NULL, 0,
+                  NULL, 0,
+                  NULL,
+                  work_cri_desc, work_atp_index,
+                  given_cri_desc, returned_cri_desc,
+                  down, up, 
+                  num_buffers, buffer_size),
+    flags_(0),
+    stmtName_(stmtName)
+{
+  setNodeType(ComTdb::ex_GET_QID);
+}
+
+Long ComTdbExeUtilGetQID::pack(void * space)
+{
+  if (stmtName_)
+    stmtName_.pack(space);
+
+  return ComTdbExeUtil::pack(space);
+}
+
+Lng32 ComTdbExeUtilGetQID::unpack(void * base, void * reallocator)
+{
+  if (stmtName_.unpack(base))
+    return -1;
+
+  return ComTdbExeUtil::unpack(base, reallocator);
+}
+
+void ComTdbExeUtilGetQID::displayContents(Space * space,ULng32 flag)
+{
+  ComTdb::displayContents(space,flag & 0xFFFFFFFE);
+  
+  if(flag & 0x00000008)
+    {
+      char buf[100];
+      str_sprintf(buf, "\nFor ComTdbExeUtilGetQID :");
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+      
+      str_sprintf(buf,"stmtName_ = %s ", getStmtName());
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+    }
+  
+  if (flag & 0x00000001)
+    {
+      displayExpression(space,flag);
+      displayChildren(space,flag);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////
+//
 // Methods for class ComTdbExeUtilPopulateInMemStats
 //
 ///////////////////////////////////////////////////////////////////////////

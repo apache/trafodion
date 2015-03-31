@@ -200,17 +200,18 @@ public:
   // The paramsTuple will contain the values of the parameters
   // to the explain function (module name and statement pattern)
   // The paramsTuple will be populated by evaluating the paramsExpr
-  void initParamsTuple(unsigned short tupleLength,
+  void initParamsTuple(Int32 tupleLength,
 		       ex_cri_desc *criDescParams,
 		       Lng32 lengthModName,
 		       Lng32 lengthStmtPattern);
-
+  
   void setQid(char *qid, Lng32 len);
   void setReposQid(char *reposQid, Lng32 len);
 
   void setExplainAddr(char *addr, Lng32 len);
   void setExplainAddr(Int64 addr);
   void setExplainStmt(char *stmt, Lng32 len);
+  void setExplainPlan(char *plan, Lng32 len);
 
   RtsExplainFrag *sendToSsmp();
 
@@ -295,6 +296,7 @@ private:
   Int32 loadModule();
   
   short processExplainStmt();
+  short processExplainPlan();
 
   short getExplainFromRepos(char * qid, Lng32 qidLen);
 
@@ -392,6 +394,8 @@ private:
   NABoolean explainFromAddrProcessed_;
 
   char * explainStmt_;
+  char * explainPlan_;
+  Lng32 explainPlanLen_;
   char * explainFrag_;
   Lng32 explainFragLen_;
   

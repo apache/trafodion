@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -131,6 +131,11 @@ public:
   // For the GUI, Does nothing right now
   void display() const;
 
+  // ---------------------------------------------------------------------
+  // Used by the internal SHOWPLAN command to get attributes of a TDB.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+
   // The index of the ATP being returned to the parent, that has the
   // new row (explain Info)
   inline unsigned short getTuppIndex() const;
@@ -156,6 +161,8 @@ public:
   inline Lng32 getOffsetModName();
   inline Lng32 getLengthModName();
   inline Lng32 getOffsetStmtPattern();
+  inline Lng32 getVCIndOffsetStmtPattern();
+  inline Lng32 getVCIndicatorLength();
   inline Lng32 getLengthStmtPattern();
   inline Lng32 getTupleLength() const;
 
@@ -279,6 +286,28 @@ ComTdbExplain::getOffsetStmtPattern()
 	getAttr(1)->
 	  getOffset();
 #pragma warn(1506)  // warning elimination 
+};
+
+inline Lng32
+ComTdbExplain::getVCIndOffsetStmtPattern()
+{
+  // The statement Pattern is the second attribute in the tuple.
+  return
+    criDescParams_->
+      getTupleDescriptor(criDescParams_->noTuples() - 1)->
+	getAttr(1)->
+	  getVCLenIndOffset();
+};
+
+inline Lng32
+ComTdbExplain::getVCIndicatorLength()
+{
+  // The statement Pattern is the second attribute in the tuple.
+  return
+    criDescParams_->
+      getTupleDescriptor(criDescParams_->noTuples() - 1)->
+	getAttr(1)->
+          getVCIndicatorLength();
 };
 
 inline Lng32

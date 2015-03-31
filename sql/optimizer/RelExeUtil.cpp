@@ -398,6 +398,10 @@ const NAString ExeUtilExpr::getText() const
       result = "METADATA_UPGRADE";
       break;
 
+    case GET_QID_:
+      result = "GET_QID";
+      break;
+
    default:
 
       result = "ADD_TO_EXEUTILEXPR::GETTEXT()";
@@ -3363,6 +3367,30 @@ RelExpr * ExeUtilGetUID::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   
   result->uid_ = uid_;
 
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+// -----------------------------------------------------------------------
+// Member functions for class ExeUtilGetQID
+// -----------------------------------------------------------------------
+ExeUtilGetQID::ExeUtilGetQID(
+                             NAString &statement,
+                             CollHeap *oHeap)
+  : ExeUtilExpr(GET_QID_, CorrName("dummy"), 
+                NULL, NULL, NULL, CharInfo::UnknownCharSet, oHeap),
+    statement_(statement)
+{
+}
+
+RelExpr * ExeUtilGetQID::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilGetQID *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) ExeUtilGetQID(statement_);
+  else
+    result = (ExeUtilGetQID *) derivedNode;
+  
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 

@@ -2773,6 +2773,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    exe_util_get_error_info
 %type <relx>                    exe_util_get_statistics
 %type <relx>                    exe_util_get_uid
+%type <relx>                    exe_util_get_qid
 %type <relx>                    exe_util_populate_in_memory_statistics
 %type <relx>                    exe_util_lob_extract
 %type <relx>                    unload_statement
@@ -13283,6 +13284,12 @@ query_specification : exe_util_aqr
 				    RelRoot($1, REL_ROOT);
                                 }
 
+query_specification : exe_util_get_qid
+                                {
+				  RelRoot *root = new (PARSERHEAP())
+				    RelRoot($1, REL_ROOT);
+                                }
+
 
 /* type relx */
 query_specification : select_token '[' firstn_sorted NUMERIC_LITERAL_EXACT_NO_SCALE ']' set_quantifier query_spec_body
@@ -15489,7 +15496,16 @@ exe_util_get_version_info :   TOK_GET TOK_VERSION TOK_OF TOK_METADATA
 /* type relx */
 exe_util_get_uid : TOK_GET TOK_UID TOK_OF maintain_object_token table_name
                {
-		 YYERROR;
+                 YYERROR;
+	       }
+
+/* type relx */
+exe_util_get_qid : TOK_GET TOK_QID TOK_FOR TOK_STATEMENT IDENTIFIER
+               {
+                 if ( ($5==NULL) || transformIdentifier(*$5)) 
+                   YYERROR;
+
+                 $$ = new(PARSERHEAP()) ExeUtilGetQID(*$5, PARSERHEAP());
 	       }
 
 /* type relx */

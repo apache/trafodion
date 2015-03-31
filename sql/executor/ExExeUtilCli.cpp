@@ -623,7 +623,7 @@ Lng32 ExeCliInterface::setupExplainData(SQLMODULE_ID * module,
   // get explain fragment.
   explainDataLen_ = 50000; // start with 50K bytes
   Int32 retExplainLen = 0;
-  explainData_ = new(getHeap()) char[explainDataLen_ + 1];
+  explainData_ = new(getHeap()) char[explainDataLen_];
   retcode = SQL_EXEC_GetExplainData(stmt,
                                     explainData_, explainDataLen_, &retExplainLen
                                     );
@@ -647,6 +647,8 @@ Lng32 ExeCliInterface::setupExplainData(SQLMODULE_ID * module,
 
       return retcode;
     }
+
+  explainDataLen_ = retExplainLen;
   
   return retcode;
 }
@@ -663,7 +665,7 @@ Lng32 ExeCliInterface::exec(char * inputBuf, Lng32 inputBufLen)
 
   if (! stmt_)
     {
-      return -CLI_STMT_NOT_EXSISTS;
+      return -CLI_STMT_NOT_EXISTS;
     }
 
   // set parserflags to indicate that this is an internal query from exeutil

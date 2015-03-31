@@ -504,13 +504,18 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
-  
-
     case ex_GET_UID:
     {
 #pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ExExeUtilGetUIDTdb);
 #pragma warn(1506)  // warning elimination 
+
+      break;
+    }
+
+   case ex_GET_QID:
+    {
+      GetVTblPtr(vtblptr,ExExeUtilGetQIDTdb);
 
       break;
     }

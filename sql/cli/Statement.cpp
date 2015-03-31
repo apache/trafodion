@@ -3308,7 +3308,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		  context_->getStatement(&tmpStmtId);
 		if (!bindToStmt)
 		  {
-		    diagsArea << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
+		    diagsArea << DgSqlCode(-CLI_STMT_NOT_EXISTS);
 		    state_ = ERROR_;
 		    break;
 		  }
@@ -5286,7 +5286,7 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
 
   if (!root_tdb)
     {
-      diagsArea << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
+      diagsArea << DgSqlCode(-CLI_STMT_NOT_EXISTS);
       return error(diagsArea);
     }
 
@@ -8840,8 +8840,8 @@ Lng32 Statement::initStrTarget(SQLDESC_ID * sql_source,
       /* descriptor must exist */
       if (!desc)
 	{
-	  diags << DgSqlCode(-CLI_DESC_NOT_EXSISTS);
-	  return -CLI_DESC_NOT_EXSISTS;
+	  diags << DgSqlCode(-CLI_DESC_NOT_EXISTS);
+	  return -CLI_DESC_NOT_EXISTS;
 	}
       
       strTarget.init(desc, 1);

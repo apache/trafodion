@@ -513,8 +513,8 @@ public:
     AUTHORIZATION_            = 34,
     HBASE_UNLOAD_             = 35,
     HBASE_UNLOAD_TASK_        = 36,
-    ORC_FAST_AGGR_            = 37
-
+    ORC_FAST_AGGR_            = 37,
+    GET_QID_                         = 38
   };
 
   ExeUtilExpr(ExeUtilType type,
@@ -1767,6 +1767,31 @@ private:
   ExeUtilMaintainObject::MaintainObjectType type_;
 
   Int64 uid_;
+};
+
+////////////////////////////////////////////////////////////////////
+// This class is used to return query id of specified statement.
+////////////////////////////////////////////////////////////////////
+class ExeUtilGetQID : public ExeUtilExpr
+{
+public:
+  ExeUtilGetQID(NAString &statement,
+		CollHeap *oHeap = CmpCommon::statementHeap());
+  
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  virtual NABoolean producesOutput() { return TRUE; }
+
+  //  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  virtual short codeGen(Generator*);
+
+  virtual const char 	*getVirtualTableName();
+  virtual desc_struct 	*createVirtualTableDesc();
+
+private:
+  NAString statement_;
 };
 
 //////////////////////////////////////////////////////////////////////////
