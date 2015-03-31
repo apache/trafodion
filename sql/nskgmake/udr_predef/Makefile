@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@
 
 SRCPATH := sqludr
 
-CPPSRC := PredefUdrReadfile.cpp \
+CPPSRC := SqlUdrPredefLogReader.cpp \
+	  SqlUdrPredefTimeSeries.cpp \
 	  vers_libudr_predef.cpp
 
 DEFS += -DTRAF_SOFTWARE_VERS_MAJOR=$(TRAFODION_VER_MAJOR)  -DTRAF_SOFTWARE_VERS_MINOR=$(TRAFODION_VER_MINOR) -DTRAF_SOFTWARE_VERS_UPDATE=$(TRAFODION_VER_UPDATE)

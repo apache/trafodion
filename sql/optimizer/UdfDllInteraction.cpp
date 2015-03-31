@@ -956,7 +956,7 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
 
   tmudr::TypeInfo::SQLTypeCode sqlType = tmudr::TypeInfo::UNDEFINED_SQL_TYPE;
   int length    = src->getNominalSize();
-  bool nullable = false;
+  bool nullable = src->supportsSQLnull();
   int scale     = 0;
   tmudr::TypeInfo::SQLCharsetCode charset = tmudr::TypeInfo::CHARSET_UTF8;
   tmudr::TypeInfo::SQLIntervalCode intervalCode =
@@ -981,21 +981,23 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
 
         if (isDecimalPrecision)
           {
-            // only decimal precision is stored for SQL type NUMERIC
-            sqlType = tmudr::TypeInfo::NUMERIC;
-            // C type will be set below, same as non-decimal exact numeric
+            if (isUnsigned)
+              sqlType = tmudr::TypeInfo::NUMERIC_UNSIGNED;
+            else
+              sqlType = tmudr::TypeInfo::NUMERIC;
+            // decimal precision is used for SQL type NUMERIC
             precision = src->getPrecision();
           }
 
         if (isDecimal)
           {
-            // decimals are represented as strings in the UDF (Todo: ???)
-            // NOTE: For signed LSE decimals, the most significant
-            //       bit in the first digit is the sign
+            // decimals are represented as strings in the UDF
             if (isUnsigned)
               sqlType = tmudr::TypeInfo::DECIMAL_UNSIGNED;
             else
               sqlType = tmudr::TypeInfo::DECIMAL_LSE;
+            // decimal precision is used for range checks
+            precision = src->getPrecision();
           }
         else if (isExact)
           switch (length)

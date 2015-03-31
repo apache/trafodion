@@ -765,6 +765,9 @@ namespace tmudr
     int getByteLength() const;
     int getMaxCharLength() const;
 
+    // non-const methods for use at compile time
+    void setNullable(bool nullable);
+
     // UDR writers can ignore these methods
 
     int getInt(const char *row, bool &wasNull) const;

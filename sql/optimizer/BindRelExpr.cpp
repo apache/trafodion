@@ -15954,6 +15954,78 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
       return this;
     }
 
+  // Create NARoutine object (no caching for TMUDF)
+  NARoutine *tmudfRoutine =NULL;
+  CorrName& tmfuncName = getUserTableName();
+  tmfuncName.setSpecialType(ExtendedQualName::VIRTUAL_TABLE);
+
+  
+  QualifiedName name = getRoutineName();
+  const SchemaName &defaultSchema =
+    bindWA->getSchemaDB ()->getDefaultSchema();
+  name.applyDefaults(defaultSchema);
+  setRoutineName(name);
+
+  // Return an error if an unsupported catalog is being used.
+  if ((NOT name.isSeabase()) && (NOT name.isHive()))
+      {
+	*CmpCommon::diags()
+	  << DgSqlCode(-1002)
+	  << DgCatalogName(name.getCatalogName())
+	  << DgString0("");
+	
+	bindWA->setErrStatus();
+	return NULL;
+      }
+
+  Lng32 diagsMark = CmpCommon::diags()->mark();
+  NABoolean errStatus = bindWA->errStatus();
+
+  tmudfRoutine = getRoutineMetadata(name, tmfuncName, bindWA);
+  if (tmudfRoutine == NULL)
+    {
+      // this could be a predefined TMUDF, which is not
+      // recorded in the metadata at this time
+      OperatorTypeEnum opType =
+        PredefinedTableMappingFunction::nameIsAPredefinedTMF(tmfuncName);
+
+      if (opType != REL_TABLE_MAPPING_UDF)
+        {
+          // yes, this is a predefined TMUDF
+          PredefinedTableMappingFunction *result;
+
+          // discard the errors from the failed name lookup
+          CmpCommon::diags()->rewind(diagsMark);
+          if (!errStatus)
+            bindWA->resetErrStatus();
+
+          // create a new RelExpr
+          result = new(bindWA->wHeap())
+            PredefinedTableMappingFunction(
+                 tmfuncName,
+                 const_cast<ItemExpr *>(getProcAllParamsTree()),
+                 opType);
+
+          // copy data members of the base classes
+          TableMappingUDF::copyTopNode(result);
+
+          // set children
+          result->setArity(getArity());
+          for (int i=0; i<getArity(); i++)
+            result->child(i) = child(i);
+
+          // Abandon the current node and return the bound new node.
+          // Next time it will reach this method it will call an
+          // overloaded getRoutineMetadata() that will succeed.
+          return result->bindNode(bindWA);
+        }
+
+      // getRoutineMetadata has already set the diagnostics area
+      // and set the error status
+      CMPASSERT(bindWA->errStatus());
+      return NULL;
+    }
+
   // Bind the child nodes.
   bindChildren(bindWA);
   if (bindWA->errStatus())
@@ -16098,39 +16170,6 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
     childInfo_.insert(cInfo);
   }
 
-  // Create NARoutine object (no caching for TMUDF)
-  NARoutine *tmudfRoutine =NULL;
-  CorrName& tmfuncName = getUserTableName();
-  tmfuncName.setSpecialType(ExtendedQualName::VIRTUAL_TABLE);
-
-  
-  QualifiedName name = getRoutineName();
-  const SchemaName &defaultSchema =
-    bindWA->getSchemaDB ()->getDefaultSchema();
-  name.applyDefaults(defaultSchema);
-  setRoutineName(name);
-
-  // Return an error if an unsupported catalog is being used.
-  if ((NOT name.isSeabase()) && (NOT name.isHive()))
-      {
-	*CmpCommon::diags()
-	  << DgSqlCode(-1002)
-	  << DgCatalogName(name.getCatalogName())
-	  << DgString0("");
-	
-	bindWA->setErrStatus();
-	return NULL;
-      }
-
-  tmudfRoutine = getRoutineMetadata(name, tmfuncName, bindWA);
-  if (tmudfRoutine == NULL)
-    {
-      // getRoutineMetadata has already set the diagnostics area
-      // and set the error status
-      CMPASSERT(bindWA->errStatus());
-      return NULL;
-    }
-
   RoutineDesc *tmudfRoutineDesc = new (bindWA->wHeap()) RoutineDesc(bindWA, tmudfRoutine); 
   if (tmudfRoutineDesc == NULL ||  bindWA->errStatus ())
   {
@@ -16148,7 +16187,6 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
 
   ComUInt32 size = 0;
   LmHandle dllPtr = NULL;
-  Lng32 diagsMark = CmpCommon::diags()->mark();
 
   if (tmudfRoutine->getLanguage() == COM_LANGUAGE_CPP)
     {

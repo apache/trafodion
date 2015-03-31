@@ -39,6 +39,8 @@ exit;
 ?section clean_up
 --------------------------------------------------------------------------
 drop table doc_table;
+drop table t002_Timeseries;
+drop table_mapping function timeseries;
 drop table_mapping function tokenizer;
 drop table_mapping function tokenizer1;
 drop library TEST002;
@@ -57,6 +59,24 @@ log LOG002;
 create table doc_table (a int not null, text_data varchar(4000), primary key (a));
 insert into doc_table values
  (1,'Hello world! Hello world! This is a sample ');
+
+create table t002_Timeseries(p int,
+                     ts timestamp,
+                     val1 int,
+                     val2 numeric(9,2));
+insert into t002_Timeseries values
+ (1, timestamp '2015-01-01 00:00:00',  1,  1.00),
+ (1, timestamp '2015-01-01 00:01:00', 60, 60.00),
+ (2, timestamp '2015-01-01 00:00:03',  1,  1.00),
+ (2, timestamp '2015-01-01 00:01:00', 60, 60.00),
+ (3, timestamp '2015-01-01 00:00:00',  1,  1.00),
+ (3, timestamp '2015-01-01 00:00:00',  2,  2.00),
+ (3, timestamp '2015-01-01 00:00:06',  6,  6.00),
+ (3, timestamp '2015-01-01 00:00:07',  7,  6.00),
+ (3, timestamp '2015-01-01 00:00:30', 30,  null),
+ (3, timestamp '2015-01-01 00:00:35',null,   35),
+ (3, timestamp '2015-01-01 00:00:40',null, null),
+ (3, timestamp '2015-01-01 00:01:00', 60, 60.00);
 
 ?section register_functions
 --------------------------------------------------------------------------
@@ -175,3 +195,105 @@ prepare s from select * from udf(event_log_reader(table(select * from (values (1
 prepare s from select query_id, log_file_name, parse_status
 from udf(event_log_reader());
 -- log_file_name and parse_status columns not available without 'f' option
+
+-- some simple tests for the timeseries builtin UDF
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          partition by p
+                          order by ts),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL1', 'FC',
+                    'VAL1', 'LC',
+                    'VAL2', 'FC',
+                    'VAL2', 'LC'));
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          partition by p
+                          order by ts),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL1', 'FCI',
+                    'VAL1', 'LCI',
+                    'VAL2', 'FCI',
+                    'VAL2', 'LCI',
+                    'VAL1', 'FL',
+                    'VAL1', 'LL',
+                    'VAL2', 'FL',
+                    'VAL2', 'LL',
+                    'VAL1', 'FLi',
+                    'VAL1', 'LLi',
+                    'VAL2', 'FLi',
+                    'VAL2', 'LLi'));
+
+-- negative tests
+
+select * from udf(timeseries());
+-- must have one table-valued input
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          order by p),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL1', 'FC',
+                    'VAL1', 'LC',
+                    'VAL2', 'FC',
+                    'VAL2', 'LC'));
+-- order by must be for a timestamp value
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          order by ts),
+                    'SLICE_TIME',
+                    5,
+                    'VAL1', 'FC',
+                    'VAL1', 'LC',
+                    'VAL2', 'FC',
+                    'VAL2', 'LC'));
+-- time slice width must be an interval
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          partition by p
+                          order by ts),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL1', 'AB',
+                    'VAL1', 'LC'));
+-- 'AB' is not a valid instruction
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          partition by p
+                          order by ts),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL9', 'FC'));
+-- There is no column VAL9
+
+select *
+from udf(timeseries(table(select * from t002_Timeseries
+                          partition by p
+                          order by ts),
+                    'SLICE_TIME',
+                    interval '5' second,
+                    'VAL9', 'FC',
+                    'VAL1'));
+-- Arguments not in pairs of column names and instructions
+
+-- eclipse timeseries builtin function with a true UDF
+create table_mapping function timeseries(pattern char(1))
+returns (outval char(40))
+external name 'TOKENIZER'
+language c
+library TEST002;
+
+select token, count(*) from
+UDF(timeseries(TABLE(select text_data from doc_table), ' ')) XO(token)
+group by token order by 2,1;
+-- should do tokenizing, not timeseries
+
+drop table_mapping function timeseries;

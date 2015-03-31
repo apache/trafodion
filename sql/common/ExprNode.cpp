@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -681,6 +681,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    {
 	    case REL_TABLE_MAPPING_UDF:
 	    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
+            case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
 	      return TRUE;
 	    default:
 	      return FALSE;

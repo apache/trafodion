@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -206,6 +206,8 @@ UInt32 IntervalType::getPrecision(rec_datetime_field startField,
 				    rec_datetime_field endField,
 				    UInt32 fractionPrecision)
 {
+  // See also file ../sqludr/sqludr.cpp, method TypeInfo::TypeInfo,
+  // which implements this algorithm as well.
   if (! IntervalType::validate(startField, leadingPrecision,
 			       endField,   fractionPrecision))
     return 0;

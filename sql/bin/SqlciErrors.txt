@@ -1011,7 +1011,7 @@ $1~String1 --------------------------------
 3283 ZZZZZ 99999 BEGINNER MINOR DBADMIN Duplicate COMPRESSION clauses were specified.
 3284 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unable to determine the routine language from the library name $0~string0. A LANGUAGE option clause is required when creating this routine.
 3285 ZZZZZ 99999 BEGINNER MINOR DBADMIN The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
-3286 ZZZZZ 99999 BEGINNER MINOR DBADMIN The specified routine type, routine language and possibly the name of the library are not supported together.
+3286 ZZZZZ 99999 BEGINNER MINOR DBADMIN The routine language that was either specified or implied from the library file name is not supported for this type of routine.
 3300 42000 99999 BEGINNER MAJOR DBADMIN --- available ---
 3301 42000 99999 BEGINNER MAJOR DBADMIN $0~string0 is too long (longer than $1~int0 $2~string1).
 

@@ -3651,8 +3651,34 @@ ExWorkProcRetcode ExUdrTcb::tmudfCheckReceive()
               break;
 
 	    case PRODUCE_EOD_AFTER_ERROR:
-              // finish up error with an EOD
-	      insertUpQueueEntry(ex_queue::Q_NO_DATA);
+              {
+                // consume any remaining rows from the children, before
+                // producing the EOD
+                for (Int32 i=0; i<numChildren(); i++)
+                  if (tmudfStates_[i] == READING_FROM_CHILD)
+                    {
+                      // remove child up queue entries until we see an EOD
+                      while (!qChild_[i].up->isEmpty() &&
+                             tmudfStates_[i] == READING_FROM_CHILD)
+                        {
+                          ex_queue_entry * centry = qChild_[i].up->getHeadEntry();
+                          ex_queue::up_status child_status = centry->upState.status;
+
+                          qChild_[i].up->removeHead();
+                          if (child_status == ex_queue::Q_NO_DATA)
+                            {
+                              tmudfStates_[i] = INITIAL;
+                              down_pstate.numEodsFromChildTcbs_++;
+                            }
+                        }
+                    }
+
+                if (down_pstate.numEodsFromChildTcbs_ == numChildren())
+                  // finish up error with an EOD
+                  insertUpQueueEntry(ex_queue::Q_NO_DATA);
+                else
+                  return WORK_OK;
+              }
 	      break;
           
 	    case STARTED:
