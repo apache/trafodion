@@ -89,6 +89,11 @@ typedef struct _SESSION_END
 
 typedef struct _STATEMENT_QUERYEXECUTION
 {
+	~_STATEMENT_QUERYEXECUTION() 
+	{ if (m_explain_plan != 0) delete [] m_explain_plan;
+	  m_explain_plan = 0;
+	};
+
 	unsigned int m_instance_id;
 	unsigned int m_tenant_id;
 	unsigned int m_component_id;
@@ -189,7 +194,8 @@ typedef struct _STATEMENT_QUERYEXECUTION
 	int m_sql_error_code;
 	string m_error_text;
 	string m_query_text;
-	string m_explain_plan;
+	char *m_explain_plan;
+	int m_explain_plan_len;
 	int m_last_error_before_aqr;
 	long m_delay_time_before_aqr_sec;
 	long m_total_num_aqr_retries;

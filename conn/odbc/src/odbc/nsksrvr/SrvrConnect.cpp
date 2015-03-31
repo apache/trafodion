@@ -684,7 +684,7 @@ static void* SessionWatchDog(void* arg)
 				ss << pQueryAdd->m_sql_error_code << ",'";
 				ss << pQueryAdd->m_error_text.c_str() << "','";
 				ss << pQueryAdd->m_query_text.c_str() << "','";
-				ss << pQueryAdd->m_explain_plan.c_str() << "',";
+				ss << "',";	// Explain plan. Updated later below using a CLI call
 				ss << pQueryAdd->m_last_error_before_aqr << ",";
 				ss << pQueryAdd->m_delay_time_before_aqr_sec << ",";
 				ss << pQueryAdd->m_total_num_aqr_retries << ",";
@@ -753,8 +753,6 @@ static void* SessionWatchDog(void* arg)
 				ss << "ERROR_CODE= " << pQueryUpdate->m_error_code << ",";
 				ss << "SQL_ERROR_CODE= " << pQueryUpdate->m_sql_error_code << ",";
 				ss << "ERROR_TEXT= '" << pQueryUpdate->m_error_text.c_str()<< "',";
-				ss << "QUERY_TEXT= '" << pQueryUpdate->m_query_text.c_str() << "',";
-				ss << "EXPLAIN_PLAN= '" << pQueryUpdate->m_explain_plan.c_str() << "',";
 				ss << "LAST_ERROR_BEFORE_AQR= " << pQueryUpdate->m_last_error_before_aqr << ",";
 				ss << "DELAY_TIME_BEFORE_AQR_SEC= " << pQueryUpdate->m_delay_time_before_aqr_sec << ",";
 				ss << "TOTAL_NUM_AQR_RETRIES= " << pQueryUpdate->m_total_num_aqr_retries << ",";
@@ -939,7 +937,33 @@ static void* SessionWatchDog(void* arg)
 										0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
 										1, errStr.c_str());
 			}
+			else {
+				// Update QUERY_TABLE with explain plan if needed
+				if (repos_stats.m_pub_type == PUB_TYPE_STATEMENT_NEW_QUERYEXECUTION && TRUE == srvrGlobal->sqlPlan)
+				{
+					std::tr1::shared_ptr<STATEMENT_QUERYEXECUTION> pQueryAdd = repos_stats.m_pQuery_stats;
+					if(NULL == pQueryAdd)
+					{
+						SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+															0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+															1, "Invalid data pointer found in SessionWatchDog(). Cannot write explain plan.");
+						break;
+					}
+					retcode = SQL_EXEC_StoreExplainData( &(pQueryAdd->m_exec_start_utc_ts),
+                                               				(char *)(pQueryAdd->m_query_id.c_str()),
+                                               				pQueryAdd->m_explain_plan,
+                                               				pQueryAdd->m_explain_plan_len );
 
+					if (retcode < 0)
+					{
+						char errStr[256];
+						sprintf( errStr, "Error updating explain data. SQL_EXEC_StoreExplainData() returned: %d", retcode );
+						SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+										0, ODBCMX_SERVER,
+										srvrGlobal->srvrObjRef, 1, errStr);
+					}
+				}
+			}
 		}//End while
 
 	}
@@ -6497,6 +6521,9 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 	unsigned long	TotalSQLDataValueLen=0;
 	bool			returnVal = false, freeMem = true;
 	char			*QueryOutput = NULL;
+	int 			explainDataLen = 50000; // start with 50K bytes
+	int 			retExplainLen = 0;
+	char 			*explainData = NULL;
 
 	if ((QrySrvrStmt = getSrvrStmt("STMT_QRYSTS_ON_1", TRUE)) == NULL)
 		return false;
@@ -6581,6 +6608,8 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 		switch( option )
 		{
 			case EXPLAIN_PLAN: // Explain
+				if (FALSE == srvrGlobal->sqlPlan)
+					return true;
 
 				if (stmtHandle != NULL)
 					pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
@@ -6592,15 +6621,76 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 					pSrvrStmt->sqlUniqueQueryID[0] == '\0' )
 					return false;
 
-				// If the current WMS service context does not need plan then
-				// don't collect it.
-				if (FALSE == srvrGlobal->sqlPlan)
-					return true;
-
 				if (pSrvrStmt->exPlan == SRVR_STMT_HDL::COLLECTED)
 					return true;
-				sprintf(sqlQuery,"EXPLAIN OPTIONS 'f' %s", pSrvrStmt->stmtName);
-				sqlStrLen = pSrvrStmt->sqlStringLen;
+
+				// allocate explainDataLen bytes of explainData space
+				explainData = new char[explainDataLen];
+				if (explainData == NULL)
+				{
+					char errStr[128];
+					sprintf( errStr, "Packed explain for %d bytes", explainDataLen );
+					SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
+							srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
+							srvrGlobal->srvrObjRef, 1, errStr);
+					return false;
+				}
+				iqqcode = SQL_EXEC_GetExplainData(&(pSrvrStmt->stmt),
+													explainData,
+													explainDataLen,
+													&retExplainLen);
+				if (iqqcode == -CLI_GENCODE_BUFFER_TOO_SMALL)
+				{
+					if (retExplainLen >= 200000) // greater than length of explain column
+					{
+						char errStr[128];
+						sprintf( errStr, "Packed explain greater than table column size: %d", explainDataLen );
+						SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+								srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
+								srvrGlobal->srvrObjRef, 1, errStr);
+
+						delete explainData;
+						return false;
+					}
+					explainDataLen = retExplainLen;
+
+					// allocate explainDataLen bytes of explainData space
+					if (explainData)
+						delete explainData;
+					explainData = new char[explainDataLen];
+					if (explainData == NULL)
+					{
+						char errStr[128];
+						sprintf( errStr, "Packed explain for %d bytes", explainDataLen );
+						SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
+								srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
+								srvrGlobal->srvrObjRef, 1, errStr);
+						return false;
+					}
+					iqqcode = SQL_EXEC_GetExplainData(&(pSrvrStmt->stmt),
+												explainData,
+												explainDataLen,
+												&retExplainLen);
+				}
+				if (iqqcode < 0)
+				{
+					char errStr[256];
+					sprintf( errStr, "Error retrieving packed explain. SQL_EXEC_GetExplainData() returned: %d", iqqcode );
+					SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+							srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
+							srvrGlobal->srvrObjRef, 1, errStr);
+					delete explainData;
+					return false;
+				}
+				if (pSrvrStmt->sqlPlan != NULL)
+				{
+					delete pSrvrStmt->sqlPlan;
+					pSrvrStmt->sqlPlan = NULL;
+				}
+				pSrvrStmt->sqlPlan = explainData;
+				pSrvrStmt->sqlPlanLen = retExplainLen;
+				pSrvrStmt->exPlan = SRVR_STMT_HDL::COLLECTED;
+				return true;				
 			break;
 
 			case MODE_SPECIAL_1:
@@ -6694,19 +6784,6 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 						&& strnicmp( QueryOutput, "ON", 2 ) == 0 )
 					{
 						returnVal = true;
-					}
-					else if( option == EXPLAIN_PLAN )
-					{
-						if (pSrvrStmt->sqlPlan != NULL)
-						{
-							delete pSrvrStmt->sqlPlan;
-							pSrvrStmt->sqlPlan = NULL;
-						}
-						pSrvrStmt->sqlPlan = QueryOutput;
-						pSrvrStmt->sqlPlanLen = TotalSQLDataValueLen;
-						returnVal = true;
-						freeMem = false;
-						pSrvrStmt->exPlan = SRVR_STMT_HDL::COLLECTED;
 					}
 					else if ( option == USER_ROLE ) {
 //LCOV_EXCL_START

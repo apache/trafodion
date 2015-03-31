@@ -2492,10 +2492,19 @@ void ResStatisticsStatement::SendQueryStats(bool bStart, SRVR_STMT_HDL *pSrvrStm
 		pQuery_info->m_query_text =pSrvrStmt->sqlString;
 		UpdateStringText(pQuery_info->m_query_text);
 	}
-	if (pSrvrStmt->sqlPlan != NULL)
+	if (pSrvrStmt->exPlan != SRVR_STMT_HDL::STORED && pSrvrStmt->sqlPlan != NULL && pSrvrStmt->sqlPlanLen > 0)
 	{
-		pQuery_info->m_explain_plan = pSrvrStmt->sqlPlan;
-		UpdateStringText(pQuery_info->m_explain_plan);
+		pQuery_info->m_explain_plan = new char[pSrvrStmt->sqlPlanLen];
+		if (pQuery_info->m_explain_plan != NULL)
+		{
+			memcpy( pQuery_info->m_explain_plan, pSrvrStmt->sqlPlan, pSrvrStmt->sqlPlanLen );
+			pQuery_info->m_explain_plan_len = pSrvrStmt->sqlPlanLen;
+			pSrvrStmt->exPlan = SRVR_STMT_HDL::STORED;	// Ignores for updates since plan does not change
+		}
+		else
+			SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR, EVENTLOG_ERROR_TYPE,
+							0, ODBCMX_SERVER, srvrGlobal->srvrObjRef, 
+							1, "SQL explain plan");				
 	}
 	pQuery_info->m_last_error_before_aqr = AQRlastError;
 	pQuery_info->m_delay_time_before_aqr_sec = AQRdelayBeforeRetry;
