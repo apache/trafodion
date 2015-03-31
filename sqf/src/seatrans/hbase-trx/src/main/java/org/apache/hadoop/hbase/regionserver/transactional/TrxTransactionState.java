@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -172,7 +173,9 @@ public class TrxTransactionState  extends TransactionState{
         updateLatestTimestamp(write.getFamilyCellMap().values(), EnvironmentEdgeManager.currentTimeMillis());
         // Adding read scan on a write action
 	addRead(new WriteAction(write).getRow());
-        writeOrdering.add(waction = new WriteAction(write));
+
+        ListIterator<WriteAction> writeOrderIter = writeOrdering.listIterator();
+        writeOrderIter.add(waction = new WriteAction(write));
 
         if (this.earlyLogging) { // immeditaely write edit out to HLOG during DML (actve transaction state)
            for (Cell value : waction.getCells()) {
@@ -216,7 +219,9 @@ public class TrxTransactionState  extends TransactionState{
             delete.setTimestamp(now);
         }
         deletes.add(delete);
-        writeOrdering.add(waction = new WriteAction(delete));
+
+        ListIterator<WriteAction> writeOrderIter = writeOrdering.listIterator();
+        writeOrderIter.add(waction = new WriteAction(delete));
 
         if (this.earlyLogging) {
            for (Cell value : waction.getCells()) {
@@ -249,7 +254,7 @@ public class TrxTransactionState  extends TransactionState{
         if (deletes.isEmpty()) {
             return;
         }
-        for (Iterator<Cell> itr = input.iterator(); itr.hasNext();) {
+        for (ListIterator<Cell> itr = input.listIterator(); itr.hasNext();) {
             Cell included = applyDeletes(itr.next(), minTime, maxTime);
             if (null == included) {
                 itr.remove();
@@ -262,12 +267,17 @@ public class TrxTransactionState  extends TransactionState{
             return kv;
         }
 
-        for (Delete delete : deletes) {
+        ListIterator<Delete> deletesIter = null;
+
+        for (deletesIter = deletes.listIterator();
+             deletesIter.hasNext();) {
+            Delete delete = deletesIter.next();
+
             // Skip if delete should not apply
             if (!Bytes.equals(kv.getRow(), delete.getRow()) || kv.getTimestamp() > delete.getTimeStamp()
                     || delete.getTimeStamp() > maxTime || delete.getTimeStamp() < minTime) {
                 continue;
-            }
+           }
 
             // Whole-row delete
             if (delete.isEmpty()) {
@@ -376,7 +386,12 @@ public class TrxTransactionState  extends TransactionState{
             return false; // Cannot conflict with aborted transactions
         }
 
-        for (WriteAction otherUpdate : checkAgainst.writeOrdering) {
+        ListIterator<WriteAction> writeOrderIter = null;
+
+        for (writeOrderIter = checkAgainst.writeOrdering.listIterator();
+             writeOrderIter.hasNext();) {
+          WriteAction otherUpdate = writeOrderIter.next();
+
           try {
             byte[] row = otherUpdate.getRow();
             if (row == null) {
@@ -388,9 +403,12 @@ public class TrxTransactionState  extends TransactionState{
               continue;
             }
             if (this.scans != null && !this.scans.isEmpty()) {
-              int size = this.scans.size();
-              for (int i = 0; i < size; i++) {
-                ScanRange scanRange = this.scans.get(i);
+              ListIterator<ScanRange> scansIter = null;
+
+              for (scansIter = this.scans.listIterator();
+                   scansIter.hasNext();) {
+                ScanRange scanRange = scansIter.next();
+
                 if (scanRange == null)
                     if (LOG.isTraceEnabled()) LOG.trace("Transaction [" + this.toString() + "] scansRange is null");
                 if (scanRange != null && scanRange.contains(row)) {
@@ -480,7 +498,11 @@ public class TrxTransactionState  extends TransactionState{
         //if (LOG.isTraceEnabled()) LOG.trace("getAllCells -- ENTRY");
         List<Cell> kvList = new ArrayList<Cell>();
 
-        for (WriteAction action : writeOrdering) {
+        ListIterator<WriteAction> writeOrderIter = null;
+
+        for (writeOrderIter = writeOrdering.listIterator();
+             writeOrderIter.hasNext();) {
+            WriteAction action = writeOrderIter.next();
             byte[] row = action.getRow();
             List<Cell> kvs = action.getCells();
 
@@ -516,11 +538,15 @@ public class TrxTransactionState  extends TransactionState{
         return kvList.toArray(new Cell[kvList.size()]);
     }
     
-	  private KeyValue[] getAllKVs(final Scan scan) {
+     private synchronized KeyValue[] getAllKVs(final Scan scan) {
         //if (LOG.isTraceEnabled()) LOG.trace("getAllKVs -- ENTRY");
         List<KeyValue> kvList = new ArrayList<KeyValue>();
 
-        for (WriteAction action : writeOrdering) {
+        ListIterator<WriteAction> writeOrderIter = null;
+
+        for (writeOrderIter = writeOrdering.listIterator();
+             writeOrderIter.hasNext();) {
+            WriteAction action = writeOrderIter.next();
             byte[] row = action.getRow();
             List<KeyValue> kvs = action.getKeyValues();
 
@@ -559,8 +585,13 @@ public class TrxTransactionState  extends TransactionState{
 
 
     private synchronized int getTransactionSequenceIndex(final Cell kv) {
-        for (int i = 0; i < writeOrdering.size(); i++) {
-            WriteAction action = writeOrdering.get(i);
+        ListIterator<WriteAction> writeOrderIter = null;
+        int i = 0;
+
+        for (writeOrderIter = writeOrdering.listIterator();
+             writeOrderIter.hasNext();) {
+            i++;
+            WriteAction action = writeOrderIter.next();
             if (isKvInPut(kv, action.getPut())) {
                 return i;
             }
@@ -789,6 +820,15 @@ public class TrxTransactionState  extends TransactionState{
     public List<WriteAction> getWriteOrdering() {
         return writeOrdering;
     }    
+
+    /*
+     * Get the puts and deletes in transaction order.
+     * 
+     * @return Return the writeOrdering as an iterator.
+     */
+    public ListIterator<WriteAction> getWriteOrderingIter() {
+        return writeOrdering.listIterator();
+    }
  
     /**
      * Simple wrapper for Put and Delete since they don't have a common enough interface.

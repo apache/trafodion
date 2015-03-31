@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -241,6 +242,7 @@ CoprocessorService, Coprocessor {
   private Object commitCheckLock = new Object();
   private Object recoveryCheckLock = new Object();
   private Object editReplay = new Object();
+  private static Object stoppableLock = new Object();
   private int reconstructIndoubts = 0; 
   //temporary THLog getSequenceNumber() replacement
   private AtomicLong nextLogSequenceId = new AtomicLong(0);
@@ -253,7 +255,7 @@ CoprocessorService, Coprocessor {
   //static Leases scannerLeases = null;
   CleanOldTransactionsChore cleanOldTransactionsThread;
   static MemoryUsageChore memoryUsageThread = null;
-  static Stoppable stoppable = new StoppableImplementation();
+  Stoppable stoppable = new StoppableImplementation();
   static Stoppable stoppable2 = new StoppableImplementation();
   private int cleanTimer = 5000; // Five minutes
   private int memoryUsageTimer = 60000; // One minute   
@@ -2514,7 +2516,7 @@ CoprocessorService, Coprocessor {
 
     org.apache.hadoop.conf.Configuration conf = tmp_env.getConfiguration(); 
     
-    synchronized (stoppable) {
+    synchronized (stoppableLock) {
       try {
         this.transactionLeaseTimeout = conf.getInt(LEASE_CONF, MINIMUM_LEASE_TIME);
         if (this.transactionLeaseTimeout < MINIMUM_LEASE_TIME) {
@@ -3026,8 +3028,10 @@ CoprocessorService, Coprocessor {
       // Perform write operations timestamped to right now
       // maybe we can turn off WAL here for HLOG since THLOG has contained required edits in phase 1
         
-      List<WriteAction> writeOrdering = state.getWriteOrdering();
-      for (WriteAction action : writeOrdering) {
+      ListIterator<WriteAction> writeOrderIter = null;
+      for (writeOrderIter = state.getWriteOrderingIter();
+             writeOrderIter.hasNext();) {
+         WriteAction action =(WriteAction) writeOrderIter.next();
          // Process Put
          Put put = action.getPut();
 
@@ -3468,7 +3472,7 @@ CoprocessorService, Coprocessor {
       if (scanner != null)
         scanner.next(results);       
     } catch(Exception e) {
-      if (LOG.isWarnEnabled()) LOG.warn("TrxRegionEndpoint coprocessor: get - txId " + transactionId + ", Caught internal exception " + e.getMessage() + " " + stackTraceToString(e));
+      LOG.warn("TrxRegionEndpoint coprocessor: get - txId " + transactionId + ", Caught internal exception " + e.getMessage() + " " + stackTraceToString(e));
     }
     finally {
       if (scanner != null) {
@@ -4676,8 +4680,10 @@ CoprocessorService, Coprocessor {
               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeUnNeededStaleScanners - txId " + transactionId + ", scannerId " + scannerId + ", Removing stale scanner ");
 
               try {
-                if (rsh.s != null)
+                if (rsh.s != null) {
+                  if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: removeUnNeededStaleScanners - txId " + transactionId + ", scannerId " + scannerId + ", Scanner was not previously closed ");
                   rsh.s.close();
+                }
                 rsh.s = null;
                 rsh.r = null;
                 scannerIter.remove();
@@ -4693,6 +4699,7 @@ CoprocessorService, Coprocessor {
       cleanScannersForTransactions.clear();
 
     }  // End of synchronization
+
   }
 
   /**
