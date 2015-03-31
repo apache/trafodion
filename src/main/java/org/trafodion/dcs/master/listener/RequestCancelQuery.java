@@ -110,7 +110,13 @@ public class RequestCancelQuery {
                 LOG.debug(clientSocketAddress + ". srvrObjRef :" + srvrObjRef);
                 LOG.debug(clientSocketAddress + ". stopType :" + stopType);
             }
-            port = Integer.parseInt(srvrObjRef);
+            String sPort = srvrObjRef;          //JDBC --- port #
+            if (srvrObjRef.startsWith("TCP:")){ //ODBC --- TCP:<IpAddress>/<portNumber>:ODBC
+                String[] st = srvrObjRef.split(":");
+                String ip[] = st[1].split("/");
+                sPort = ip[1];
+            } 
+            port = Integer.parseInt(sPort);
 // process request
             String registeredPath = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED;
             String nodeRegisteredPath = "";
