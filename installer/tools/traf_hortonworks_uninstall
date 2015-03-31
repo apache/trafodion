@@ -98,6 +98,7 @@ sudo rm -rf /usr/lib/hcatalog
 sudo rm -rf /usr/lib64/nagios
 sudo rm -rf /usr/share/hdp/nagios
 sudo rm -rf /usr/include/hadoop
+sudo rm -rf /usr/hdp*
 sudo rm -rf /hadoop
 sudo rm -rf /mnt/hadoop*
 sudo rm -rf /etc/yum.repos.d/ambari* /etc/yum.repos.d/HDP*
@@ -115,8 +116,8 @@ sudo rm -rf /etc/hcatalog
 sudo rm -rf /etc/ganglia
 sudo rm -rf /etc/nagios
 sudo rm -rf /etc/webhcat
-sudo rm -rf /etc/hadoop/conf
-sudo rm -rf /etc/hive/conf
+sudo rm -rf /etc/hadoop
+sudo rm -rf /etc/hive
 
 sudo rm -rf /var/log/ambari*
 sudo rm -rf /var/log/flume*
@@ -155,9 +156,11 @@ sudo rm -rf /var/lib/zookeeper
 sudo rm -rf /var/lib/hadoop-hdfs
 sudo rm -rf /var/lib/mysql/hive*
 
+sudo rm -rf /var/hadoop
 sudo rm -rf /var/nagios
 sudo rm -rf /var/tmp/oozie
 sudo rm -rf /tmp/hive
+sudo rm -rf /tmp/hadoop
 sudo rm -rf /var/cache/yum/x86_64/6/Updates-ambari*
 sudo rm -rf /var/cache/yum/x86_64/6/ambari*
 sudo rm -rf /var/spool/mail/zookeeper
@@ -168,10 +171,12 @@ sudo rm -rf /var/spool/mail/hcat
 sudo rm -rf /var/spool/mail/nagios
 sudo rm -rf /var/spool/mail/mapred
 
+sudo rm -rf /kdump/hadoop
+sudo rm -rf /hadoop
+
 #==============================================
 #Deleting all userids
 echo "***INFO: Deleting userids"
-sudo /usr/sbin/userdel -fr puppet
 sudo /usr/sbin/userdel -fr ambari-qa
 sudo /usr/sbin/userdel -fr mapred
 sudo /usr/sbin/userdel -fr hdfs
@@ -216,6 +221,8 @@ fi
 sudo pkill -f ambari
 sudo pkill -f hadoop
 sudo pkill -f zookeeper
-
+sudo pkill -f hbase
+sudo pkill -f hive
+sudo pkill -f yarn
 #==============================================
 
