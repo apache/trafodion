@@ -721,6 +721,16 @@ ComBoolean CmpSeabaseDDL::isHbase(const ComObjectName &name)
   return isHbase(name.getCatalogNamePartAsAnsiString());
 }
 
+bool CmpSeabaseDDL::isHistogramTable(const NAString &name) 
+{
+
+  if (name == HBASE_HIST_NAME || name == HBASE_HISTINT_NAME)
+    return true;
+    
+  return false;
+
+}
+
 NABoolean CmpSeabaseDDL::isSeabase(const NAString &catName)
 {
   if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&

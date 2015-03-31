@@ -1094,6 +1094,11 @@ short CmpSeabaseDDL::createSeabaseTable2(
       return -1;
     }
 
+// For shared schemas, histogram tables should be owned by the schema owner, 
+// not the first user to run UPDATE STATISTICS in the schema.  
+  if (schemaClass == COM_SCHEMA_CLASS_SHARED && isHistogramTable(objectNamePart))
+    objectOwnerID = schemaOwnerID;
+
   // check if SYSKEY is specified as a column name.
   NABoolean explicitSyskeySpecified = FALSE;
   for (Lng32 i = 0; i < colArray.entries(); i++)
@@ -6023,6 +6028,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   // get the objectUID and objectOwner
   Int64 objectUID = 0;
   Int32 objectOwnerID = 0;
+  Int32 schemaOwnerID = 0;
   if (objectType == COM_BASE_TABLE_OBJECT)
     {
       NATable *naTable = bindWA.getNATable(cn);
@@ -6037,6 +6043,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
         }
       objectUID = (int64_t)naTable->objectUid().get_value();
       objectOwnerID = (int32_t)naTable->getOwner();
+      schemaOwnerID = naTable->getSchemaOwner();
     }
 
   // for metadata tables, the objectUID is not initialized in the NATable
@@ -6045,8 +6052,6 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
     {
       ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
-      Int32 objectOwnerID = 0;
-      Int32 schemaOwnerID = 0;
       objectUID = getObjectUIDandOwners(&cliInterface,
                                        catalogNamePart.data(), schemaNamePart.data(),
                                        objectNamePart.data(), objectType,
