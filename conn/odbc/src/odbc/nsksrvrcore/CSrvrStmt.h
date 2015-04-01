@@ -206,7 +206,7 @@ public:
     SRVR_STMT_HDL                   *callStmtHandle; // If this is an SPJ result set, then its CALL statement handle
     Int32                            resultSetIndex;
 
-	enum EX_PLAN_STATUS { UNAVAILABLE, COLLECT, COLLECTED };
+	enum EX_PLAN_STATUS { UNAVAILABLE, COLLECT, COLLECTED, STORED };
 	EX_PLAN_STATUS exPlan;
 	char *sqlPlan;
 	UInt32 sqlPlanLen;
