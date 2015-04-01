@@ -188,10 +188,23 @@ Statistics::~Statistics()
     delete [] statsOptions_;
 };
 
-QueryId::QueryId(char * argument_, Lng32 arglen_)
-: SqlciCmd(SqlciCmd::QUERYID_TYPE, argument_, arglen_)
+QueryId::QueryId(char * argument_, Lng32 arglen_, 
+                 NABoolean isSet, char * qidVal)
+  : SqlciCmd(SqlciCmd::QUERYID_TYPE, argument_, arglen_),
+    isSet_(isSet), qidVal_(NULL)
 {
+  if ((isSet_) && (qidVal))
+    {
+      qidVal_ = new char[strlen(qidVal) + 1];
+      strcpy(qidVal_, qidVal);
+    }
 };
+
+QueryId::~QueryId()
+{
+  if (qidVal_)
+    delete qidVal_;
+}
 
 History::History(char * argument_, Lng32 arglen_)
                  : SqlciCmd(SqlciCmd::HISTORY_TYPE, argument_, arglen_)
@@ -1151,8 +1164,9 @@ short QueryId::process(SqlciEnv * sqlci_env)
   
   char * stmtName = get_argument();
 
+  PrepStmt * prep_stmt = NULL;
   if ((stmtName) &&
-      (! sqlci_env->get_prep_stmts()->get(stmtName)))
+      (! (prep_stmt = sqlci_env->get_prep_stmts()->get(stmtName))))
     {
        sqlci_env->diagsArea() << DgSqlCode(-SQLCI_STMT_NOT_FOUND)
 				 << DgString0(stmtName);
@@ -1194,8 +1208,31 @@ short QueryId::process(SqlciEnv * sqlci_env)
 	 stmt.identifier_len);
   id[stmt.identifier_len] = 0;
   stmt.identifier = id;
+
   char queryId[200];
   Lng32 queryIdLen;
+  
+  if (isSet_)
+    {
+      // change query id in prep_stmt
+      if (prep_stmt->uniqueQueryId())
+        {
+          delete prep_stmt->uniqueQueryId();
+          prep_stmt->uniqueQueryIdLen() = 0;
+        }
+      
+      prep_stmt->uniqueQueryIdLen() = strlen(qidVal_);
+      prep_stmt->uniqueQueryId() = new char[prep_stmt->uniqueQueryIdLen() + 1];
+      strcpy(prep_stmt->uniqueQueryId(), qidVal_);
+
+      retcode = SQL_EXEC_SetStmtAttr(&stmt, SQL_ATTR_UNIQUE_STMT_ID,
+                                     0, qidVal_);
+      delete [] id;
+
+      log->WriteAll("");
+
+      return 0;
+    }
 
   retcode = SQL_EXEC_GetStmtAttr(&stmt, SQL_ATTR_UNIQUE_STMT_ID,
                       NULL, queryId, 200, &queryIdLen); 

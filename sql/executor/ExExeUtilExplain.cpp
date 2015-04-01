@@ -394,7 +394,7 @@ short ExExeUtilDisplayExplainTcb::work()
 		ExRaiseSqlError(getMyHeap(), &da,
 				(((exeUtilTdb().getModuleName()) ||
 				  (exeUtilTdb().getStmtName())) ?
-				 (ExeErrorCode)CLI_STMT_NOT_EXSISTS :
+				 (ExeErrorCode)CLI_STMT_NOT_EXISTS :
 				 (ExeErrorCode)EXE_NO_EXPLAIN_INFO));
 				
 		pstate.step_ = HANDLE_ERROR_;
@@ -468,7 +468,7 @@ short ExExeUtilDisplayExplainTcb::work()
 		ExRaiseSqlError(getMyHeap(), &da,
 				(((exeUtilTdb().getModuleName()) ||
 				  (exeUtilTdb().getStmtName())) ?
-				 (ExeErrorCode)CLI_STMT_NOT_EXSISTS :
+				 (ExeErrorCode)CLI_STMT_NOT_EXISTS :
 				 (ExeErrorCode)EXE_NO_EXPLAIN_INFO));
 
 		pstate.step_ = HANDLE_ERROR_;

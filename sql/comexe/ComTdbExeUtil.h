@@ -83,7 +83,8 @@ public:
     AQR_WNR_INSERT_          = 31,
     HBASE_LOAD_              = 32,
     HBASE_UNLOAD_            = 33,
-    HBASE_UNLOAD_TASK_       = 34
+    HBASE_UNLOAD_TASK_       = 34,
+    GET_QID_                            = 35
   };
 
   ComTdbExeUtil()
@@ -1869,6 +1870,82 @@ private:
   UInt32 flags_;                                     // 08-15
 
   char fillersComTdbExeUtilGetUID_[108];             // 16-133
+};
+
+///////////////////////////////////////////////////////////////////////////
+static const ComTdbVirtTableColumnInfo exeUtilGetQIDVirtTableColumnInfo[] =
+{
+  { "GET_QID_OUTPUT",   0,    COM_USER_COLUMN, REC_BYTE_V_ASCII,     160, FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}
+};
+
+class ComTdbExeUtilGetQID : public ComTdbExeUtil
+{
+  friend class ExExeUtilGetQIDTcb;
+  friend class ExExeUtilGetQIDPrivateState;
+
+public:
+  ComTdbExeUtilGetQID()
+  : ComTdbExeUtil()
+  {}
+
+  ComTdbExeUtilGetQID(
+                      char * stmtName,
+                      ex_cri_desc * work_cri_desc,
+                      const unsigned short work_atp_index,
+                      ex_cri_desc * given_cri_desc,
+                      ex_cri_desc * returned_cri_desc,
+                      queue_index down,
+                      queue_index up,
+                      Lng32 num_buffers,
+                      ULng32 buffer_size
+                      );
+  
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilGetQID);}
+
+  virtual const char *getNodeName() const
+  {
+    return "GET_QID";
+  };
+
+  static Int32 getVirtTableNumCols()
+  {
+    return sizeof(exeUtilGetQIDVirtTableColumnInfo)/sizeof(ComTdbVirtTableColumnInfo);
+  }
+
+  static ComTdbVirtTableColumnInfo * getVirtTableColumnInfo()
+  {
+    return (ComTdbVirtTableColumnInfo*)exeUtilGetQIDVirtTableColumnInfo;
+  }
+
+  static Int32 getVirtTableNumKeys()
+  {
+    return 0;
+  }
+
+  static ComTdbVirtTableKeyInfo * getVirtTableKeyInfo()
+  {
+    return NULL;
+  }
+
+  char * getStmtName() { return stmtName_; }
+
+  // ---------------------------------------------------------------------
+  // Used by the internal SHOWPLAN command to get attributes of a TDB.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+
+private:
+  NABasicPtr stmtName_;
+
+  UInt32 flags_;                               
+
+  char fillersComTdbExeUtilGetQID_[108];             
 };
 
 class ComTdbExeUtilPopulateInMemStats : public ComTdbExeUtil

@@ -1047,22 +1047,7 @@ short SqlCmd::do_prepare(SqlciEnv * sqlci_env,
       &subqueryType, NULL, 0, NULL);
     HandleCLIError(retcode, sqlci_env);
     prep_stmt->setSubqueryType(subqueryType);
-
-    if ((retcode == 0) &&
-        ((prep_stmt->queryType() == SQL_SELECT_UNIQUE) || 
-         (prep_stmt->queryType() == SQL_SELECT_NON_UNIQUE) ||
-         (prep_stmt->queryType() == SQL_INSERT_UNIQUE) ||
-         (prep_stmt->queryType() == SQL_INSERT_NON_UNIQUE)) &&
-        (getenv("SQLCI_UPDATE_REPOS")))
-      {
-        retcode = updateRepos(sqlci_env, stmt, prep_stmt->uniqueQueryId());
-        if (retcode < 0)
-          {
-            return cleanupAfterError(retcode, sqlci_env, stmt, sql_src, 
-                                     output_desc, input_desc, resetLastExecStmt);
-          }
-      } // updateRepos
-  }
+   }
   else if (isResultSet)
     prep_stmt->queryType() = SQL_SP_RESULT_SET;
 				 
@@ -3285,6 +3270,48 @@ short DescribeStmt::process(SqlciEnv * sqlci_env)
   return 0;
 }
 
+short StoreExplain::process(SqlciEnv * sqlci_env)
+{
+  Lng32 retcode;
+  HandleCLIErrorInit();
+  PrepStmt * prep_stmt;
+
+  if (!(prep_stmt = sqlci_env->get_prep_stmts()->get(get_sql_stmt())))
+    {
+      sqlci_env->diagsArea() << DgSqlCode(-SQLCI_STMT_NOT_FOUND)
+			     << DgString0(get_sql_stmt());
+      return 0;
+    }
+
+  retcode = updateRepos(sqlci_env, prep_stmt->getStmt(), prep_stmt->uniqueQueryId());
+  if (retcode < 0)
+    {
+      return cleanupAfterError(retcode, sqlci_env, 
+                               prep_stmt->getStmt(), prep_stmt->getSqlSrc(),
+                               prep_stmt->getOutputDesc(), prep_stmt->getInputDesc(),
+                               TRUE);
+    }
+
+  char donemsg[100];
+  donemsg[0] = '\0';
+
+  sprintf(donemsg, OP_COMPLETE_MESSAGE);
+
+  Logfile *log = sqlci_env->get_logfile();
+  if (!lastLineWasABlank)
+    {
+      log->WriteAll("");
+      lastLineWasABlank = TRUE;
+    }
+
+  if (donemsg[0] != '\0')
+    {
+      log->WriteAll(donemsg);
+      lastLineWasABlank = FALSE;
+    }
+
+  return 0;
+}
 
 ///////////////////////////////////////////
 /// Begin Execute

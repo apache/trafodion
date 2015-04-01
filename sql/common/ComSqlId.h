@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -163,6 +163,7 @@ public:
        };
   
   enum {MAX_QUERY_ID_LEN = 160};
+#define MAX_QUERY_ID_LEN_STR "160"
 
   enum {MAX_DP2_QUERY_ID_LEN = 16};
 

@@ -244,6 +244,7 @@ B			[ \t\n]+
 [Gg][Ee][Tt]                           return_IDENT_or_TOKEN(GETtoken, 0);
 [Gg][Ee][Tt]{B}[Ss][Tt][Aa][Tt][Ii][Ss][Tt][Ii][Cc][Ss]    return_IDENT_or_TOKEN(GETSTATISTICStoken, 0);
 [Hh][Ii][Vv][Ee]                       return_IDENT_or_TOKEN (HIVEtoken, 0); 
+[Ii][Nn]                       return_IDENT_or_TOKEN (INtoken, 0); 
 [Ii][Nn][Ff][Oo]                       return_IDENT_or_TOKEN (INFOtoken, 0); 
 [Ii][Nn][Ff][Ii][Ll][Ee]               {
                      BEGIN FNAME; 
@@ -340,6 +341,7 @@ B			[ \t\n]+
 [Vv][Aa][Ll][Ii][Dd][Aa][Tt][Ee]       return_IDENT_or_TOKEN(VALIDATEtoken, 0);
 [Rr][Ee][Cc][Oo][Vv][Ee][Rr]           return_IDENT_or_TOKEN(RECOVER, 0);
 [Rr][Ee][Ff][Rr][Ee][Ss][Hh]		   return_IDENT_or_TOKEN(REFRESH, 0);	/* MV - REFRESH utility */
+[Rr][Ee][Pp][Oo][Ss][Ii][Tt][Oo][Rr][Yy]    return_IDENT_or_TOKEN(REPOSITORYtoken, 0);
 [Rr][Oo][Ww][Ss][Ee][Tt]               return_IDENT_or_TOKEN(ROWSETtoken, 0);
 [Tt][Rr][Aa][Nn][Ss][Ff][Oo][Rr][Mm]   return_IDENT_or_TOKEN(TRANSFORM, 0);
 [Cc][Ll][Ee][Aa][Rr]                   return_IDENT_or_TOKEN(CLEAR, 0);
@@ -354,6 +356,7 @@ B			[ \t\n]+
 [Ss][Hh][Oo][Ww][Ss][Hh][Aa][Pp][Ee]   return_IDENT_or_TOKEN(SHOWSHAPE, 0);
 [Ss][Hh][Oo][Ww][Ss][Ee][Tt]           return_IDENT_or_TOKEN(SHOWSET, 0);
 [Ss][Ee][Ss][Ss][Ii][Oo][Nn]           return_IDENT_or_TOKEN(SESSIONtoken, 0);
+[Ss][Tt][Oo][Rr][Ee]                   return_IDENT_or_TOKEN(STOREtoken, 0);
 [Ss][Yy][Nn][Tt][Aa][Xx]               return_IDENT_or_TOKEN(SYNTAX, 0);
 [Ss][Yy][Ss][Tt][Ee][Mm]               return_IDENT_or_TOKEN(SYSTEMtoken, 0);
 [Ww][Aa][Ii][Tt]                       return_IDENT_or_TOKEN(WAITtoken, 0);

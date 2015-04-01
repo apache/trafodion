@@ -68,7 +68,7 @@ public:
   enum sql_cmd_type {
     DML_TYPE, PREPARE_TYPE,  EXECUTE_TYPE, CURSOR_TYPE,
     GOAWAY_TYPE, DESCRIBE_TYPE, QUERYCACHE_TYPE,
-    USAGE_TYPE, QUIESCE_TYPE
+    USAGE_TYPE, QUIESCE_TYPE, STORE_EXPLAIN_TYPE
 
   };
 private:
@@ -287,6 +287,16 @@ public:
 private:
 
      short option_;
+};
+
+class StoreExplain : public SqlCmd {
+public:
+  StoreExplain(char *argument)
+    : SqlCmd(STORE_EXPLAIN_TYPE, argument)
+    {}
+  ~StoreExplain()
+    {}
+  short process(SqlciEnv * sqlciEnv);
 };
 
 class Usage : public SqlCmd {

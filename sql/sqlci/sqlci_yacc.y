@@ -423,6 +423,7 @@ static char * FCString (const char *idString, int isFC)
 %token HYPHEN
 %token INFER_CHARSET
 %token INFOtoken
+%token INtoken
 %token INFILE
 %token SHOWSTATS
 %token SHOWTRANSACTION
@@ -494,6 +495,7 @@ static char * FCString (const char *idString, int isFC)
 %token SQLINFO
 %token SQLNAMES
 %token STATEMENTtoken
+%token STOREtoken
 %token SYNTAX
 %token SYSTEMtoken
 %token EXAMPLE
@@ -516,7 +518,7 @@ static char * FCString (const char *idString, int isFC)
 %token DEFINEtoken ENVVARtoken PREPARED SESSIONtoken
 %token LOG LS CD SH SHELL
 %token SELECTtoken UPDATEtoken INSERTtoken DELETEtoken UPSERTtoken
-%token ROWSETtoken
+%token ROWSETtoken REPOSITORYtoken
 %token CREATE ALTER DROP PREPAREtoken EXECUTEtoken FROM
 %token DECLAREtoken OPENtoken CLOSEtoken FETCHtoken DEALLOCtoken 
 %token CURSORtoken FORtoken CPU PID QID ACTIVEtoken ACCUMULATEDtoken
@@ -1206,6 +1208,33 @@ sqlci_cmd :	MODE REPORT
 		    $$ = new SetInferCharset((char *)"FALSE");
 		}
 
+        |      SETtoken QID IDENTIFIER
+                {
+                  // save qid val.
+                   identifier_name_internal = new char[strlen($3)+1]; 
+                   str_cpy_convert(identifier_name_internal, $3, strlen($3), TRUE); 
+                   identifier_name_internal[strlen($3)] = 0;
+                }
+              FORtoken 
+                {
+                  pos_internal = SqlciParse_InputPos;
+                }
+              IDENTIFIER
+                {
+                  // remove trailing ";"
+                  char * id = &SqlciParse_OriginalStr[pos_internal];
+                  Lng32 i = strlen(&SqlciParse_OriginalStr[pos_internal]) -1;
+                  while ((i > 0) && (id[i] != ';'))
+                    i--;
+                  id[i] = 0;
+
+                  char * id2 = new char[strlen(id)+1];
+                  str_cpy_convert(id2, id, strlen(id), TRUE);
+                  id2[strlen(id)] = 0;
+                  $$ = new QueryId (id2, strlen(id2),
+                                    TRUE, identifier_name_internal);
+                }
+
 	|	RESET PARAM PARAM_NAME
 		  {
 		    $$ = new Reset(Reset::PARAM_, $3, strlen($3));
@@ -1238,11 +1267,12 @@ sqlci_cmd :	MODE REPORT
                     str_cpy_convert(identifier_name_internal, $3, strlen($3), TRUE); 
 #pragma warn(1506)  // warning elimination
                     identifier_name_internal[strlen($3)] = 0;
-                    $$ = new QueryId (identifier_name_internal,strlen(identifier_name_internal));
+                    $$ = new QueryId (identifier_name_internal,strlen(identifier_name_internal),
+                                      FALSE, NULL);
                   }
     |       DISPLAY_QUERYID
                   {
-                    $$ = new QueryId (0,0);
+                    $$ = new QueryId (0,0, FALSE, NULL);
                   }
 
 
@@ -2087,7 +2117,15 @@ sql_cmd :
 		    $$ = new DML(newStr, DML_DESCRIBE_TYPE, NULL);
 		  }
 
-;
+        |      STOREtoken EXPLAIN FORtoken IDENTIFIER INtoken REPOSITORYtoken
+                {
+                  identifier_name_internal = new char[strlen($4)+1]; 
+                  str_cpy_convert(identifier_name_internal, $4, strlen($4), TRUE); 
+                  identifier_name_internal[strlen($4)] = 0;
+ 
+                  $$ = new StoreExplain(identifier_name_internal);
+                }
+
 
 optional_rs_index : empty
                     {

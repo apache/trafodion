@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Wed Nov 12 01:06:16 2014
+-- Definition current  Mon Mar 30 14:32:03 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1164,5 +1164,277 @@ a                     bbbbbbbbbb  c                                         dddd
 
 --- SQL operation failed with errors.
 >>
+>>-- tests for repository explain
+>>-- check for repository tables
+>>get tables in schema trafodion."_REPOS_";
+
+Tables in Schema TRAFODION._REPOS_
+==================================
+
+METRIC_QUERY_AGGR_TABLE
+METRIC_QUERY_TABLE
+METRIC_SESSION_TABLE
+METRIC_TEXT_TABLE
+
+--- SQL operation complete.
+>>invoke trafodion."_REPOS_".metric_query_table;
+
+-- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
+-- Definition current  Mon Mar 30 14:33:12 2015
+
+  (
+    INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , TENANT_ID                        INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , COMPONENT_ID                     INT UNSIGNED DEFAULT NULL
+  , PROCESS_ID                       INT DEFAULT NULL
+  , THREAD_ID                        INT UNSIGNED DEFAULT NULL
+  , NODE_ID                          INT UNSIGNED DEFAULT NULL
+  , PNID_ID                          INT UNSIGNED DEFAULT NULL
+  , HOST_ID                          INT UNSIGNED NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , IP_ADDRESS_ID                    CHAR(32) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , SEQUENCE_NUMBER                  INT UNSIGNED DEFAULT NULL
+  , PROCESS_NAME                     CHAR(32) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , EXEC_START_UTC_TS                TIMESTAMP(6) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , QUERY_ID                         CHAR(160) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , USER_NAME                        CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL
+  , ROLE_NAME                        CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL
+  , START_PRIORITY                   INT UNSIGNED DEFAULT NULL
+  , MASTER_PROCESS_ID                CHAR(64) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , SESSION_ID                       CHAR(108) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , CLIENT_NAME                      VARCHAR(1024) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL
+  , APPLICATION_NAME                 CHAR(130) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , STATEMENT_ID                     CHAR(160) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , STATEMENT_TYPE                   CHAR(36) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , STATEMENT_SUBTYPE                CHAR(36) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , SUBMIT_UTC_TS                    TIMESTAMP(6) DEFAULT NULL
+  , COMPILE_START_UTC_TS             TIMESTAMP(6) DEFAULT NULL
+  , COMPILE_END_UTC_TS               TIMESTAMP(6) DEFAULT NULL
+  , COMPILE_ELAPSED_TIME             LARGEINT DEFAULT NULL
+  , CMP_AFFINITY_NUM                 LARGEINT DEFAULT NULL
+  , CMP_DOP                          LARGEINT DEFAULT NULL
+  , CMP_TXN_NEEDED                   LARGEINT DEFAULT NULL
+  , CMP_MANDATORY_X_PROD             LARGEINT DEFAULT NULL
+  , CMP_MISSING_STATS                LARGEINT DEFAULT NULL
+  , CMP_NUM_JOINS                    LARGEINT DEFAULT NULL
+  , CMP_FULL_SCAN_ON_TABLE           LARGEINT DEFAULT NULL
+  , CMP_ROWS_ACCESSED_FULL_SCAN      DOUBLE PRECISION DEFAULT NULL
+  , EST_ACCESSED_ROWS                DOUBLE PRECISION DEFAULT NULL
+  , EST_USED_ROWS                    DOUBLE PRECISION DEFAULT NULL
+  , CMP_COMPILER_ID                  CHAR(28) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , CMP_CPU_PATH_LENGTH              LARGEINT DEFAULT NULL
+  , CMP_CPU_BINDER                   LARGEINT DEFAULT NULL
+  , CMP_CPU_NORMALIZER               LARGEINT DEFAULT NULL
+  , CMP_CPU_ANALYZER                 LARGEINT DEFAULT NULL
+  , CMP_CPU_OPTIMIZER                LARGEINT DEFAULT NULL
+  , CMP_CPU_GENERATOR                LARGEINT DEFAULT NULL
+  , CMP_METADATA_CACHE_HITS          LARGEINT DEFAULT NULL
+  , CMP_METADATA_CACHE_LOOKUPS       LARGEINT DEFAULT NULL
+  , CMP_QUERY_CACHE_STATUS           LARGEINT DEFAULT NULL
+  , CMP_HISTOGRAM_CACHE_HITS         LARGEINT DEFAULT NULL
+  , CMP_HISTOGRAM_CACHE_LOOKUPS      LARGEINT DEFAULT NULL
+  , CMP_STMT_HEAP_SIZE               LARGEINT DEFAULT NULL
+  , CMP_CONTEXT_HEAP_SIZE            LARGEINT DEFAULT NULL
+  , CMP_OPTIMIZATION_TASKS           LARGEINT DEFAULT NULL
+  , CMP_OPTIMIZATION_CONTEXTS        LARGEINT DEFAULT NULL
+  , CMP_IS_RECOMPILE                 SMALLINT DEFAULT NULL
+  , EST_NUM_SEQ_IOS                  DOUBLE PRECISION DEFAULT NULL
+  , EST_NUM_RAND_IOS                 DOUBLE PRECISION DEFAULT NULL
+  , EST_COST                         DOUBLE PRECISION DEFAULT NULL
+  , EST_CARDINALITY                  DOUBLE PRECISION DEFAULT NULL
+  , EST_IO_TIME                      DOUBLE PRECISION DEFAULT NULL
+  , EST_MSG_TIME                     DOUBLE PRECISION DEFAULT NULL
+  , EST_IDLE_TIME                    DOUBLE PRECISION DEFAULT NULL
+  , EST_CPU_TIME                     DOUBLE PRECISION DEFAULT NULL
+  , EST_TOTAL_TIME                   DOUBLE PRECISION DEFAULT NULL
+  , EST_TOTAL_MEM                    DOUBLE PRECISION DEFAULT NULL
+  , EST_RESOURCE_USAGE               LARGEINT DEFAULT NULL
+  , AGGREGATE_OPTION                 CHAR(3) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , CMP_NUMBER_OF_BMOS               INT DEFAULT NULL
+  , CMP_OVERFLOW_MODE                CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , CMP_OVERFLOW_SIZE                LARGEINT DEFAULT NULL
+  , AGGREGATE_TOTAL                  LARGEINT DEFAULT NULL
+  , STATS_ERROR_CODE                 INT DEFAULT NULL
+  , QUERY_ELAPSED_TIME               LARGEINT DEFAULT NULL
+  , SQL_PROCESS_BUSY_TIME            LARGEINT DEFAULT NULL
+  , DISK_PROCESS_BUSY_TIME           LARGEINT DEFAULT NULL
+  , DISK_IOS                         LARGEINT DEFAULT NULL
+  , NUM_SQL_PROCESSES                LARGEINT DEFAULT NULL
+  , SQL_SPACE_ALLOCATED              LARGEINT DEFAULT NULL
+  , SQL_SPACE_USED                   LARGEINT DEFAULT NULL
+  , SQL_HEAP_ALLOCATED               LARGEINT DEFAULT NULL
+  , SQL_HEAP_USED                    LARGEINT DEFAULT NULL
+  , TOTAL_MEM_ALLOC                  LARGEINT DEFAULT NULL
+  , MAX_MEM_USED                     LARGEINT DEFAULT NULL
+  , TRANSACTION_ID                   CHAR(25) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , NUM_REQUEST_MSGS                 LARGEINT DEFAULT NULL
+  , NUM_REQUEST_MSG_BYTES            LARGEINT DEFAULT NULL
+  , NUM_REPLY_MSGS                   LARGEINT DEFAULT NULL
+  , NUM_REPLY_MSG_BYTES              LARGEINT DEFAULT NULL
+  , FIRST_RESULT_RETURN_UTC_TS       TIMESTAMP(6) DEFAULT NULL
+  , ROWS_RETURNED_TO_MASTER          LARGEINT DEFAULT NULL
+  , PARENT_QUERY_ID                  CHAR(160) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , PARENT_SYSTEM_NAME               CHAR(128) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , EXEC_END_UTC_TS                  TIMESTAMP(6) DEFAULT NULL
+  , MASTER_EXECUTION_TIME            LARGEINT DEFAULT NULL
+  , MASTER_ELAPSED_TIME              LARGEINT DEFAULT NULL
+  , QUERY_STATUS                     CHAR(21 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL
+  , QUERY_SUB_STATUS                 CHAR(30 CHARS) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL
+  , ERROR_CODE                       INT DEFAULT NULL
+  , SQL_ERROR_CODE                   INT DEFAULT NULL
+  , ERROR_TEXT                       VARCHAR(2000 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , QUERY_TEXT                       VARCHAR(50000 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , EXPLAIN_PLAN                     VARCHAR(200000) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL
+  , LAST_ERROR_BEFORE_AQR            INT DEFAULT NULL
+  , DELAY_TIME_BEFORE_AQR_SEC        LARGEINT DEFAULT NULL
+  , TOTAL_NUM_AQR_RETRIES            LARGEINT DEFAULT NULL
+  , MSG_BYTES_TO_DISK                LARGEINT DEFAULT NULL
+  , MSGS_TO_DISK                     LARGEINT DEFAULT NULL
+  , ROWS_ACCESSED                    LARGEINT DEFAULT NULL
+  , ROWS_RETRIEVED                   LARGEINT DEFAULT NULL
+  , NUM_ROWS_IUD                     LARGEINT DEFAULT NULL
+  , PROCESSES_CREATED                LARGEINT DEFAULT NULL
+  , PROCESS_CREATE_BUSY_TIME         LARGEINT DEFAULT NULL
+  , OVF_FILE_COUNT                   LARGEINT DEFAULT NULL
+  , OVF_SPACE_ALLOCATED              LARGEINT DEFAULT NULL
+  , OVF_SPACE_USED                   LARGEINT DEFAULT NULL
+  , OVF_BLOCK_SIZE                   LARGEINT DEFAULT NULL
+  , OVF_WRITE_READ_COUNT             LARGEINT DEFAULT NULL
+  , OVF_WRITE_COUNT                  LARGEINT DEFAULT NULL
+  , OVF_BUFFER_BLOCKS_WRITTEN        LARGEINT DEFAULT NULL
+  , OVF_BUFFER_BYTES_WRITTEN         LARGEINT DEFAULT NULL
+  , OVF_READ_COUNT                   LARGEINT DEFAULT NULL
+  , OVF_BUFFER_BLOCKS_READ           LARGEINT DEFAULT NULL
+  , OVF_BUFFER_BYTES_READ            LARGEINT DEFAULT NULL
+  , NUM_NODES                        LARGEINT DEFAULT NULL
+  , UDR_PROCESS_BUSY_TIME            LARGEINT DEFAULT NULL
+  , PERTABLE_STATS                   INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
 >>
+>>-- delete explain for statement explstmt from repository
+>>set parserflags 131072;
+
+--- SQL operation complete.
+>>delete from trafodion."_REPOS_".metric_query_table
++>  where query_id like 'MXID%EXPLSTMT%';
+
+--- 0 row(s) deleted.
+>>reset parserflags 131072;
+
+--- SQL operation complete.
+>>
+>>-- prepare stmt and store explain in repository
+>>prepare explstmt from select * from t011t1;
+
+--- SQL command prepared.
+>>store explain for explstmt in repository;
+
+--- SQL operation complete.
+>>
+>>-- get qid for the prepared stmt
+>>get qid for statement explstmt;
+
+MXID11000023640212294511071485546000000000206U3333300_3011_EXPLSTMT
+
+--- SQL operation complete.
+>>
+>>-- retrieve explain plan from repository based on the qid and return it.
+>>select seq_num, operator from table(explain(null, 
++>    'EXPLAIN_QID=' || (get qid for statement explstmt))) 
++>  order by seq_num desc;
+
+SEQ_NUM      OPERATOR                      
+-----------  ------------------------------
+
+          2  ROOT                          
+          1  TRAFODION_SCAN                
+
+--- 2 row(s) selected.
+>>
+>>-- return explain info from the input explain plan
+>>select seq_num, operator from table(explain(null,
++>   'EXPLAIN_PLAN=' || (select explain_plan from trafodion."_REPOS_".metric_query_table
++>                                   where query_id = (get qid for statement explstmt))))
++>  order by seq_num desc;
+
+SEQ_NUM      OPERATOR                      
+-----------  ------------------------------
+
+          2  ROOT                          
+          1  TRAFODION_SCAN                
+
+--- 2 row(s) selected.
+>>
+>>-- compile and explain a statement.
+>>select seq_num, operator from table(explain(null, 
++>       'EXPLAIN_STMT=select * from t011t1'))
++>  order by seq_num desc;
+
+SEQ_NUM      OPERATOR                      
+-----------  ------------------------------
+
+          2  ROOT                          
+          1  TRAFODION_SCAN                
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- prepare stmt and store it with a user specified query id.
+>>-- this is to test formatted explain display based on a query id.
+>>prepare explstmt2 from select * from t011t1;
+
+--- SQL command prepared.
+>>get qid for statement explstmt2;
+
+MXID11000023640212294511071485546000000000206U3333300_3022_EXPLSTMT2
+
+--- SQL operation complete.
+>>set qid MXID123456 for explstmt2;
+
+>>get qid for statement explstmt2;
+
+MXID123456
+
+--- SQL operation complete.
+>>
+>>store explain for explstmt2 in repository;
+
+--- SQL operation complete.
+>>explain options 'f' qid MXID123456 from repository;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+002
+.    .    1    trafodion_scan                  T011T1                1.00E+002
+
+--- SQL operation complete.
 >>log;

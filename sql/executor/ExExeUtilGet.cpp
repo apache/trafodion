@@ -4059,6 +4059,171 @@ ExExeUtilGetUIDPrivateState::~ExExeUtilGetUIDPrivateState()
 };
 
 ///////////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilGetQIDTdb::build(ex_globals * glob)
+{
+  ex_tcb * exe_util_tcb;
+
+  exe_util_tcb = new(glob->getSpace()) ExExeUtilGetQIDTcb(*this, glob);
+
+  exe_util_tcb->registerSubtasks();
+
+  return (exe_util_tcb);
+}
+
+////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilGetQIDTcb
+///////////////////////////////////////////////////////////////
+ExExeUtilGetQIDTcb::ExExeUtilGetQIDTcb(
+     const ComTdbExeUtilGetQID & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilTcb( exe_util_tdb, NULL, glob)
+{
+  // Allocate the private state in each entry of the down queue
+  qparent_.down->allocatePstate(this);
+
+  step_ = INITIAL_;
+
+}
+
+ExExeUtilGetQIDTcb::~ExExeUtilGetQIDTcb()
+{
+}
+
+//////////////////////////////////////////////////////
+// work() for ExExeUtilGetQIDTcb
+//////////////////////////////////////////////////////
+short ExExeUtilGetQIDTcb::work()
+{
+  short retcode = 0;
+  Lng32 cliRC = 0;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  // Get the globals stucture of the master executor.
+  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+  ContextCli * currContext = masterGlob->getStatement()->getContext();
+
+  while (1)
+    {
+      switch (step_)
+	{
+	case INITIAL_:
+	  {
+	    step_ = RETURN_QID_;
+	  }
+	break;
+
+	case RETURN_QID_:
+	  {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+            /* get statement from context */
+            SQLMODULE_ID module;
+            init_SQLMODULE_ID(&module);
+
+            SQLSTMT_ID stmtId;
+            memset (&stmtId, 0, sizeof(SQLSTMT_ID));
+
+            // Allocate a SQL statement
+            init_SQLSTMT_ID(&stmtId, SQLCLI_CURRENT_VERSION, stmt_name, 
+                            &module, getQIDTdb().getStmtName(), NULL, NULL, 
+                            strlen(getQIDTdb().getStmtName()));
+
+            Statement * stmt = currContext->getStatement(&stmtId);
+            
+            /* stmt must exist */
+            if (!stmt)
+              {
+                ExHandleErrors(qparent_,
+                               pentry_down,
+                               0,
+                               getGlobals(),
+                               NULL,
+                               (ExeErrorCode)-CLI_STMT_NOT_EXISTS,
+                               NULL,
+                               NULL
+                               );
+                step_ = ERROR_;
+                break;
+              }
+            
+	    moveRowToUpQueue(stmt->getUniqueStmtId());
+
+	    step_ = DONE_;
+	  }
+	break;
+
+	case ERROR_:
+	  {
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = DONE_;
+	  }
+	break;
+
+	case DONE_:
+	  {
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = INITIAL_;
+	    return WORK_OK;
+	  }
+
+	break;
+
+	default:
+	  break;
+
+	}
+
+    }
+
+  return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Redefine virtual method allocatePstates, to be used by dynamic queue
+// resizing, as well as the initial queue construction.
+////////////////////////////////////////////////////////////////////////
+ex_tcb_private_state * ExExeUtilGetQIDTcb::allocatePstates(
+     Lng32 &numElems,      // inout, desired/actual elements
+     Lng32 &pstateLength)  // out, length of one element
+{
+  PstateAllocator<ExExeUtilGetQIDPrivateState> pa;
+
+  return pa.allocatePstates(this, numElems, pstateLength);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Constructor and destructor for ExeUtil_private_state
+/////////////////////////////////////////////////////////////////////////////
+ExExeUtilGetQIDPrivateState::ExExeUtilGetQIDPrivateState()
+{
+}
+
+ExExeUtilGetQIDPrivateState::~ExExeUtilGetQIDPrivateState()
+{
+};
+
+///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilGetErrorInfoTdb::build(ex_globals * glob)
 {
   ExExeUtilGetErrorInfoTcb * exe_util_tcb;

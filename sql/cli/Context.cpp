@@ -1634,7 +1634,7 @@ RETCODE ContextCli::deallocDesc(SQLDESC_ID * desc_id,
   /* desc must exist and must have been allocated by call to AllocDesc*/
   if (!desc)
     {
-      diagsArea_ << DgSqlCode(- CLI_DESC_NOT_EXSISTS);
+      diagsArea_ << DgSqlCode(- CLI_DESC_NOT_EXISTS);
       return ERROR;
     }
   else if ((!desc->dynAllocated()) &&
@@ -2091,7 +2091,7 @@ RETCODE ContextCli::allocateStmt(SQLSTMT_ID * statement_id,
       /* statement we're cloning from must exists. Return error, if not */
       if (!cloned_from_stmt)
         {
-          diagsArea_ << DgSqlCode(-CLI_STMT_NOT_EXSISTS);
+          diagsArea_ << DgSqlCode(-CLI_STMT_NOT_EXISTS);
           return ERROR;
         }
     }
@@ -2190,7 +2190,7 @@ RETCODE ContextCli::deallocStmt(SQLSTMT_ID * statement_id,
   /* stmt must exist and must have been allocated by call to AllocStmt*/
   if (!stmt)
     {
-      diagsArea_ << DgSqlCode(- CLI_STMT_NOT_EXSISTS);
+      diagsArea_ << DgSqlCode(- CLI_STMT_NOT_EXISTS);
       return ERROR;
     }
   else if ((!stmt->allocated()) &&
@@ -2206,7 +2206,7 @@ RETCODE ContextCli::deallocStmt(SQLSTMT_ID * statement_id,
        // This is really a cloned statment entry
        // Don't deallocate this since there is a cursor entry
        // in the cursor list
-       diagsArea_ << DgSqlCode(- CLI_STMT_NOT_EXSISTS);
+       diagsArea_ << DgSqlCode(- CLI_STMT_NOT_EXISTS);
        return ERROR;
      }    
 
@@ -3601,7 +3601,7 @@ RETCODE ContextCli::cleanupChildStmt(Statement *child)
   {
     StmtListDebug0(child, "  *** lookupResult is NULL, returning ERROR");
     StmtListDebug1(child, "[END cleanupChildStmt] child %p", child);
-    diagsArea_ << DgSqlCode(- CLI_STMT_NOT_EXSISTS);
+    diagsArea_ << DgSqlCode(- CLI_STMT_NOT_EXISTS);
     return ERROR;
   }
 

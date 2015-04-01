@@ -1840,7 +1840,7 @@ Lng32 SQL_EXEC_DeallocStmt(/*IN*/ SQLSTMT_ID * statement_id)
 
    // Filter out -8804 since preprocessor always issue DeallocStmt and then 
    // allocate statement in case of embedded dynamic sql statements
-   if (retcode == -CLI_STMT_NOT_EXSISTS) 
+   if (retcode == -CLI_STMT_NOT_EXISTS) 
    {
      if (statement_id->module == NULL ||
 	  (statement_id->module != NULL && statement_id->module->module_name == NULL)) 

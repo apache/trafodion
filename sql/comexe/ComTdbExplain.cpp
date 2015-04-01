@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -183,5 +183,31 @@ Lng32 ComTdbExplain::unpack(void * base, void * reallocator)
   if(criDescParams_.unpack(base, reallocator)) return -1;
   if(paramsExpr_.unpack(base, reallocator)) return -1;
   return ComTdb::unpack(base, reallocator);
+}
+
+void ComTdbExplain::displayContents(Space * space,ULng32 flag)
+{
+  ComTdb::displayContents(space,flag & 0xFFFFFFFE);
+
+  if(flag & 0x00000008)
+    {
+      char buf[1000];
+
+      str_sprintf(buf, "\nFor ComTdbExplan :");
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+      str_sprintf(buf, "tupleLength_ = %d, tuppIndex_ = %d", tupleLength_, tuppIndex_);
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+      str_sprintf(buf, "offsetStmtPattern = %d, vcLenOffsetStmtPattern = %d, lengthStmtPattern = %d", 
+                  getOffsetStmtPattern(), getVCIndOffsetStmtPattern(), getLengthStmtPattern());
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+    }
+
+  if(flag & 0x00000001)
+    {
+      displayExpression(space,flag);
+      displayChildren(space,flag);
+    }
 }
 

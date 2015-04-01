@@ -314,6 +314,7 @@ public:
     ex_HBASE_UNLOAD = 149,
     ex_ORC_AGGR    = 150,
     ex_DDL_WITH_STATUS = 151,
+    ex_GET_QID = 152,
     ex_LAST = 9999              // not used
   };
 
