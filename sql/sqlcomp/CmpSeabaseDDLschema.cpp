@@ -532,6 +532,7 @@ bool someObjectsCouldNotBeDropped = false;
          case COM_USER_DEFINED_ROUTINE_OBJECT:
          {
             objectTypeString = "FUNCTION";
+            cascade = "CASCADE";
             break;
          }
          case COM_VIEW_OBJECT:
