@@ -56,13 +56,13 @@
 #include "seabed/fserr.h"
 class ComDiagsArea;
 class Queue;
-#include "sqlcli.h"
+#include "SQLCLIdev.h"
 #ifndef Lng32
 typedef int             Lng32;
 #endif
 #include "ComSmallDefs.h"
 #include "ExExeUtilCli.h"
-
+enum {INTERNAL_QUERY_FROM_EXEUTIL   = 0x20000};
 // LCOV_EXCL_STOP
 
 #define ZFIL_ERR_BADPARMVALUE 590
@@ -1497,8 +1497,23 @@ char stmt[2000];
 //                ",AUTH_CONFIGURATION"
                 " FROM %s.\"%s\".%s WHERE AUTH_EXT_NAME = '%s' ",
                 "TRAFODION",SEABASE_MD_SCHEMA,SEABASE_AUTHS,externalUsername);
+                
+uint32_t savedParserFlags;
+int32_t cliRC = 0;
 
-int32_t cliRC = cliInterface.fetchRowsPrologue(stmt,true/*no exec*/);
+   SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedParserFlags);
+   
+   try
+   {
+      SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
+      cliRC = cliInterface.fetchRowsPrologue(stmt,true/*no exec*/);
+      SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedParserFlags);
+   }
+   catch (...)
+   {
+      SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedParserFlags);
+      throw;
+   }
    
    if (cliRC < 0)
       return cliRC;
@@ -1619,7 +1634,22 @@ char stmt[2000];
                 " FROM %s.\"%s\".%s WHERE AUTH_ID = %ld ",
                 "TRAFODION",SEABASE_MD_SCHEMA,SEABASE_AUTHS,userID);
 
-int32_t cliRC = cliInterface.fetchRowsPrologue(stmt,true/*no exec*/);
+uint32_t savedParserFlags;
+int32_t cliRC = 0;
+
+   SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedParserFlags);
+
+   try
+   {
+      SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
+      int32_t cliRC = cliInterface.fetchRowsPrologue(stmt,true/*no exec*/);
+      SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedParserFlags);
+   }
+   catch (...)
+   {
+      SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedParserFlags);
+      throw;
+   }
 
    if (cliRC < 0)
       return cliRC;
