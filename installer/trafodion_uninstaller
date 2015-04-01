@@ -41,8 +41,13 @@ EOF
 #source trafodion_config file 
 
 TRAF_CONFIG=/etc/trafodion/trafodion_config
-source $TRAF_CONFIG
-
+if [[ ! -f $TRAF_CONFIG ]]; then
+   echo "***ERROR: $TRAF_CONFIG file does not exist" 
+   echo "***ERROR: Uninstall by deleting Trafodion user id OR all Trafodion files and processes."
+   exit -1 
+else
+   source $TRAF_CONFIG
+fi
 #=========================================
 # define defaults
 TRAF_GROUP="trafodion"

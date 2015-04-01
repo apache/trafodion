@@ -143,40 +143,58 @@ fi
 
 #================================
 #Checking to see if epel package is installed. 
-EPEL_INSTALLED=$( rpm -qa | grep epel | wc -l)
+
+for node in $NODE_LIST;
+do
+  EPEL_INSTALLED=$(ssh -n $node rpm -qa | grep epel | wc -l)
+  if [[ $EPEL_INSTALLED == 0 ]]; then
+     break;
+  fi
+done
 
 if [[ $EPEL_INSTALLED == 0 ]]; then
    echo "***INFO: ... EPEL rpm"
    if [[ "$EPEL_RPM" != "" ]]; then
-      sudo cp -rf $EPEL_RPM $TRAF_WORKDIR
+      if [ $node_count -ne 1 ]; then
+         pdcp $MY_NODES $EPEL_RPM $TRAF_WORKDIR
+      else
+         cp -rf $EPEL_RPM $TRAF_WORKDIR
+      fi
    else
       if [[ $internetAccess == "true" ]]; then
          epel_rpm="epel-release-6-8.noarch.rpm"
-         sudo wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
+         wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
+         if [ $node_count -ne 1 ]; then
+            pdcp $MY_NODES $epel_rpm $TRAF_WORKDIR
+         else
+            cp -rf $epel_rpm $TRAF_WORKDIR
+         fi
+
          if [ $? != 0 ]; then
             echo "***ERROR: Can't download EPEL rpm $epel_rpm"
             echo "***ERROR: Please check http_proxy settings in .bashrc file"
             echo
             exit -1
-         fi
+         fi 
       else
          echo "***ERROR: No EPEL RPM installed"
          echo "***ERROR: No internet access to do automatic install."
          exit -1         
       fi
    fi
-
-   if [ $node_count -ne 1 ]; then
-      pdcp $MY_NODES $epel_rpm $TRAF_WORKDIR
-   else
-      cp $epel_rpm $TRAF_WORKDIR
-   fi 
-   $TRAF_PDSH sudo rpm -Uvh $TRAF_WORKDIR/$epel_rpm 2>> $YUM_LOG >> $YUM_LOG
-   if [ $? != 0 ]; then
-      echo "***ERROR: Can't install EPEL rpm $epel_rpm"
-      exit -1
-   fi
 fi
+
+for node in $NODE_LIST;
+do
+  EPEL_INSTALLED=$( ssh -n $node rpm -qa | grep epel | wc -l)
+  if [[ $EPEL_INSTALLED == 0 ]]; then
+     ssh $node -n sudo rpm -Uvh $TRAF_WORKDIR/epel* 2>> $YUM_LOG >> $YUM_LOG
+     if [ $? != 0 ]; then
+        echo "***ERROR: Can't install EPEL rpm $EPEL_RPM"
+        exit -1
+     fi
+  fi
+done
 
 # to handle the case where the EPEL rpm was already
 # installed but disabled, we enable it here
