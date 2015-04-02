@@ -136,7 +136,8 @@ if [ $node_count -ne 1 ]; then
         fi
     done
     # create working directory on all nodes
-    $TRAF_PDSH mkdir -p $TRAF_WORKDIR &> /dev/null
+    $TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR &> /dev/null
+    $TRAF_PDSH sudo chmod -R 777 $TRAF_WORKDIR
     $TRAF_PDSH mkdir -p /var/log/trafodion &> /dev/null
  
 fi
@@ -305,7 +306,7 @@ if [ $node_count -eq 1 ]; then
        exit -1
     fi
 else
-    pdcp $MY_NODES -x $HOSTNAME $TRAF_LIMITS_CONF $TRAF_WORKDIR
+    pdcp $MY_NODES $TRAF_LIMITS_CONF $TRAF_LIMITS_CONF
     if [ $? != 0 ]; then
        echo "***ERROR: unable to copy $TRAF_LIMITS_CONF to all nodes"
        exit -1

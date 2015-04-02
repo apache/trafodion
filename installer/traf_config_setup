@@ -264,10 +264,12 @@ if [[ "$userForTrafodion" == "0" ]]; then
       echo "***ERROR: Please choose a different directory to install on."
       exit -1
   fi
-
-  echo "export HOME_DIR=\"$HOME_DIR\"" >> $LOCAL_TRAF_CONFIG
+else
+  $HOME_DIR=$(grep -r "trafodion" /etc/passwd | sed 's/.*:://' | sed 's/\:.*$//' | sed 's/\/trafodion.*$//')
+  
 fi
 
+echo "export HOME_DIR=\"$HOME_DIR\"" >> $LOCAL_TRAF_CONFIG
 #==============================================
 #Check location given for EPEL RPM
 if [[ "$userForTrafodion" == "0" ]]; then

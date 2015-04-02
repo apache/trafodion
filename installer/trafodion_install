@@ -196,13 +196,24 @@ if [[ "$RUN_SCANNER" == "Y" ]]; then
 
    $LOCAL_WORKDIR/tools/trafodion_scanner -l $timestamp.log -n "$NODE_LIST" \
    -c $LOCAL_WORKDIR/tools/trafodion_scanner.cfg | tee -a $INSTALL_LOG
+   
+   returnCode=${PIPESTATUS[0]}
+ 
+   case $returnCode in
 
-   if [[ ${PIPESTATUS[0]} -eq "2" ]] || [[ ${PIPESTATUS[0]} -eq "1" ]]; then
-      echo "***ERROR: Error while running trafodion_scanner." 
+      2|1)
+      echo "***ERROR: Error while running trafodion_scanner."
       echo "***ERROR: Please review logs and fix listed issue(s)."
       exit -1
-   fi
-   echo "***INFO: Trafodion scanner ran without error. Install will continue..."
+      ;;
+      3)
+      echo "***INFO: Trafodion scanner ran without error. Install will continue..."
+      ;;
+      *)
+      echo "***ERROR: Error while running trafodion_scanner."
+      exit -1
+      ;;
+   esac
 fi
 
 #=============================================
@@ -403,7 +414,7 @@ fi
 
 for node in $NODE_LIST;
 do
-   ssh $node -n 'echo "exit" | hbase shell &> hbaseVersion.txt'
+   ssh $node -n 'echo "exit" | hbase shell &> $HOME/hbaseVersion.txt'
    hbaseInstalled=$(ssh -n $node grep "Version" $HOME/hbaseVersion.txt | wc -l)
    if [[ $hbaseInstalled -eq "0" ]]; then
       echo "***ERROR: Hbase version could not be determined on $node"
@@ -586,6 +597,7 @@ fi
 $TRAF_PDSH sudo mkdir -p $TRAF_WORKDIR
 $TRAF_PDSH sudo chmod 777 $TRAF_WORKDIR
 $TRAF_PDSH sudo mkdir -p $LOCAL_WORKDIR
+$TRAF_PDSH sudo chmod 777 $LOCAL_WORKDIR
 
 # copy config file to all nodes
 if [ $node_count -ne 1 ]; then
