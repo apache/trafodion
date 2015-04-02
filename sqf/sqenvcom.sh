@@ -144,6 +144,8 @@ if [[ -e ${MY_SQROOT}/etc/ms.env ]] ; then
   fi
 fi
 
+export SQ_IDTMSRV=1
+
 export MY_MPI_ROOT="$MY_SQROOT"
 export MPI_ROOT="$MY_SQROOT/opt/hpmpi"
 

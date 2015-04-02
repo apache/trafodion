@@ -46,6 +46,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableSet;
@@ -130,9 +131,12 @@ import org.apache.hadoop.hbase.regionserver.wal.HLogKey;
 import org.apache.hadoop.hbase.regionserver.wal.HLogUtil;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.regionserver.transactional.CleanOldTransactionsChore;
+import org.apache.hadoop.hbase.regionserver.transactional.SsccTransactionState;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionScannerHolder;
-import org.apache.hadoop.hbase.regionserver.transactional.SsccTransactionState;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionState.Status;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -235,6 +239,7 @@ CoprocessorService, Coprocessor {
   private Object commitCheckLock = new Object();
   private Object recoveryCheckLock = new Object();
   private Object editReplay = new Object();
+  private Object stoppableLock = new Object();
   private int reconstructIndoubts = 0; 
   //temporary THLog getSequenceNumber() replacement
   private AtomicLong nextLogSequenceId = new AtomicLong(0);
@@ -321,10 +326,11 @@ CoprocessorService, Coprocessor {
   private static final int COMMIT = 2;
   private static final int ABORT = 3;
   private static final int CONTROL_POINT_COMMIT = 4;
-  
+
   private Map<Long, Long> updateTsToStartId = new TreeMap<Long, Long>();
-  private AtomicLong nextSsccSequenceId; 
-    
+
+  private IdTm idServer;
+  private static final int ID_TM_SERVER_TIMEOUT = 1000;
   // SsccRegionService methods
   @Override
   public void beginTransaction(RpcController controller,
@@ -380,7 +386,12 @@ CoprocessorService, Coprocessor {
     // TBD until integration with recovery
     if (reconstructIndoubts == 0) {
        if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor:  RECOV beginTransaction -- ENTRY txId: " + transactionId);
-       constructIndoubtTransactions();
+       try {
+          constructIndoubtTransactions();
+       }
+       catch (IdTmException e){
+          throw new IOException("SsccRegionEndpoint coprocessor:  RECOV beginTransaction " + e);
+       }
     }
     if (regionState != 2) {
        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: Trafodion Recovery: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState);
@@ -391,12 +402,20 @@ CoprocessorService, Coprocessor {
     synchronized (transactionsById) {
       if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor:  beginTransaction -- creating new SsccTransactionState without coprocessorHost txId: " + transactionId);
 
+      IdTmId seqId;
+      try {
+         seqId = new IdTmId();
+         idServer.id(ID_TM_SERVER_TIMEOUT, seqId);
+      } catch (IdTmException exc) {
+         LOG.error("SsccRegionEndpoint coprocessor:  beginTransaction: IdTm threw exception 1 " + exc);
+         throw new IOException("SsccRegionEndpoint coprocessor:  beginTransaction: IdTm threw exception 1 " + exc);
+      }
       state = new SsccTransactionState(transactionId,
                                 nextLogSequenceId.getAndIncrement(),
                                 nextLogSequenceId,
                                 m_Region.getRegionInfo(),
                                 m_Region.getTableDesc(), tHLog, configuredEarlyLogging,
-                                nextSsccSequenceId.getAndIncrement());
+                                seqId.val);
 
 
       state.setStartSequenceNumber(state.getStartId());
@@ -671,7 +690,15 @@ CoprocessorService, Coprocessor {
        //get a commid ID  
        //  This commitId must be comparable with the startId
        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commit : try to update the status and version ");
-       long commitId = nextSsccSequenceId.getAndIncrement();
+
+       IdTmId commitId;
+       try {
+          commitId = new IdTmId();
+          idServer.id(ID_TM_SERVER_TIMEOUT, commitId);
+       } catch (IdTmException exc) {
+          LOG.error("SsccRegionEndpoint coprocessor:  commit: IdTm threw exception 1 " + exc);
+          throw new IOException("SsccRegionEndpoint coprocessor:  commit: IdTm threw exception 1 " + exc);
+       }
 
        //update the putlist
        List<byte[]> putToDoList = state.getPutRows();
@@ -688,13 +715,15 @@ CoprocessorService, Coprocessor {
            //mutList.add(statusDelete);
 
            // insert a new item into version column
-           Put verPut = new Put(rowkey, commitId);
+           Put verPut = new Put(rowkey, commitId.val);
            verPut.add(DtmConst.TRANSACTION_META_FAMILY , SsccConst.VERSION_COL,SsccConst.generateVersionValue(startId,false));
            m_Region.put(verPut);
            //mutList.add(verPut);
          }
-         for (Delete d: delToDoList)
-         {
+         ListIterator<Delete> deletesIter = null;
+         for (deletesIter = delToDoList.listIterator(); deletesIter.hasNext();) {
+           Delete d = deletesIter.next();
+
            //mutList.add(d);
            // insert a new item into version column
            // delete the status item from status column for this transactin
@@ -704,7 +733,7 @@ CoprocessorService, Coprocessor {
            //statusDelete.deleteColumn(DtmConst.TRANSACTION_META_FAMILY , SsccConst.COLUMNS_COL );
            m_Region.delete(statusDelete);
 
-           Put verPut = new Put(dKey, commitId);
+           Put verPut = new Put(dKey, commitId.val);
            verPut.add(DtmConst.TRANSACTION_META_FAMILY , SsccConst.VERSION_COL,SsccConst.generateVersionValue(startId,true));
            m_Region.put(verPut);
            m_Region.delete(d);
@@ -714,7 +743,7 @@ CoprocessorService, Coprocessor {
          //m_Region.batchMutate(m);
 
          //set the commitId of the transaction
-         state.setCommitId(commitId);
+         state.setCommitId(commitId.val);
        }
        catch (Exception e) //something wrong
        {
@@ -982,8 +1011,10 @@ CoprocessorService, Coprocessor {
 
        //clear status
        List<Delete> deleteList = state.getDelRows();
-       for (Delete di : deleteList)
-       {
+       ListIterator<Delete> deletesIter = null;
+       for (deletesIter = deleteList.listIterator(); deletesIter.hasNext();) {
+         Delete di = deletesIter.next();
+
          long localTransId = state.getStartId();
          Delete d = new Delete(di.getRow(), localTransId);
          d.deleteColumn(DtmConst.TRANSACTION_META_FAMILY , SsccConst.STATUS_COL );
@@ -1193,9 +1224,11 @@ CoprocessorService, Coprocessor {
             Result statusResult = null;
             Result colResult = null;
             tempBuf.clear();
-            for(Cell c: cellResults)
-            {
-                if(firstCell == true){
+
+            ListIterator<Cell> cellIter = null;
+            for (cellIter = cellResults.listIterator(); cellIter.hasNext();) {
+               Cell c = cellIter.next();
+               if(firstCell == true){
                     if(CellUtil.cloneFamily(c) != DtmConst.TRANSACTION_META_FAMILY){
                     //get the statusList
                     Get statusGet = new Get(c.getRow()); //TODO: deprecated API
@@ -1306,7 +1339,9 @@ CoprocessorService, Coprocessor {
     if (results != null)
     {
       if (!results.isEmpty()) {
-        for (Result r: results) {
+        ListIterator<Result> resultIter = null;
+        for (resultIter = results.listIterator(); resultIter.hasNext();) {
+          Result r = resultIter.next();
           performResponseBuilder.addResult(ProtobufUtil.toResult(r));
 //          LOG.info("UNIQUE: performScan return row " + Arrays.toString(r.getRow()) );
 //          for( Cell c : r.listCells() ) {
@@ -2762,7 +2797,12 @@ CoprocessorService, Coprocessor {
 
       if (reconstructIndoubts == 0) {
          LOG.debug("SsccRegionEndpoint coprocessor:  RECOV recovery Request");
-         constructIndoubtTransactions();
+         try {
+            constructIndoubtTransactions();
+         }
+         catch (IdTmException e){
+            t = new IOException("SsccRegionEndpoint coprocessor:  RECOV recovery Request " + e);
+         }
       }
 
       // Placeholder for real work when recovery is added
@@ -3370,7 +3410,7 @@ CoprocessorService, Coprocessor {
 
     org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration(); 
 
-    synchronized (stoppable) {
+    synchronized (stoppableLock) {
       try {
         this.transactionLeaseTimeout = HBaseConfiguration.getInt(conf,
           HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD,
@@ -3453,11 +3493,10 @@ CoprocessorService, Coprocessor {
     if (indoubtTransactionsCountByTmid != null) {
        if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor:OOO successfully get the reference from Region CoprocessorEnvrionment ");
     }
+    idServer = new IdTm(false);
     long logSeqId = nextLogSequenceId.get();
     long currentTime = System.currentTimeMillis();
     long ssccSeqId = currentTime > logSeqId ? currentTime : logSeqId;
-    nextSsccSequenceId = new AtomicLong(ssccSeqId);
-    LOG.info("Genreate SequenceID start from " + nextSsccSequenceId);
     LOG.info("SsccRegionEndpoint coprocessor: start");
   }
 
@@ -3628,7 +3667,7 @@ CoprocessorService, Coprocessor {
   }
 
 
-  public void constructIndoubtTransactions() {
+  public void constructIndoubtTransactions() throws IdTmException {
 
       synchronized (recoveryCheckLock) {
             if ((indoubtTransactionsById == null) || (indoubtTransactionsById.size() == 0)) {
@@ -3653,11 +3692,20 @@ CoprocessorService, Coprocessor {
 		      String key = String.valueOf(transactionId);
                       if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Endpoint Coprocessor:E11 Region " + regionInfo.getRegionNameAsString() + " process in-doubt transaction " + transactionId);
 
+                      IdTmId seqId;
+                      try {
+                         seqId = new IdTmId();
+                         idServer.id(ID_TM_SERVER_TIMEOUT, seqId);
+                      } catch (IdTmException exc) {
+                         LOG.error("Trafodion Recovery Endpoint Coprocessor: IdTm threw exception 1 " + exc);
+                         throw new IdTmException("Trafodion Recovery Endpoint Coprocessor: IdTm threw exception 1 " + exc);
+                      }
+
                       //TBD Need to get HLOG ???
 		      SsccTransactionState state = new SsccTransactionState(transactionId, /* 1L my_Region.getLog().getSequenceNumber()*/
                                                                                 nextLogSequenceId.getAndIncrement(), nextLogSequenceId, 
                                                                                 regionInfo, m_Region.getTableDesc(), tHLog, false,
-                                                                                nextSsccSequenceId.getAndIncrement());
+                                                                                seqId.val);
                       if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Endpoint Coprocessor:E22 Region " + regionInfo.getRegionNameAsString() + " create transaction state for " + transactionId);
 
 		      state.setStartSequenceNumber(state.getStartId());
@@ -3666,7 +3714,12 @@ CoprocessorService, Coprocessor {
                       state.setReinstated();
 		      state.setStatus(Status.COMMIT_PENDING);
 		      commitPendingTransactions.add(state);
-		      state.setSequenceNumber(nextSsccSequenceId.getAndIncrement());
+                      try {
+                         idServer.id(ID_TM_SERVER_TIMEOUT, seqId);
+                      } catch (IdTmException exc) {
+                         LOG.error("Trafodion Recovery Endpoint Coprocessor: IdTm threw exception 2 " + exc);
+                      }
+		      state.setSequenceNumber(seqId.val);
 		      commitedTransactionsBySequenceNumber.put(state.getSequenceNumber(), state);
                       int tmid = (int) (transactionId >> 32);
                       if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Endpoint Coprocessor:E33 Region " + regionInfo.getRegionNameAsString() + " add prepared " + transactionId + " to TM " + tmid);              
