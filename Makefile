@@ -120,7 +120,7 @@ package-all: package pkg-sql-regress
 pkg-product: all
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
 
-pkg-client: ci ndcs
+pkg-client: ci ndcs odb
 	cd conn &&  make all 2>&1 | sed -e "s/$$/	##(Package clients)/" ; exit $${PIPESTATUS[0]}
 
 # Package SQL regression tests (all target produces some regress/tool files so do that first)

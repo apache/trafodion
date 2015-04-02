@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,17 +20,19 @@
 
 README for ODB tool. 
 
-Here are some quickstart guidelines to get started with ODB, detailed instructions can be found on the Trafodion wiki. 
+This readme will help you get started on using ODB tool. Documentation for ODB tool
+can be found on Trafodion Wiki site
 
-1. Install the Trafodion ODBC driver if you are using a remote client. 
-2. Install and configure unixODBC. Add a Trafodion datasource. 
-3. unixODBC and Trafodion odbc libraries should be in the LD_LIBRARY_PATH. 
-4. isql should be able to connect to the TRafodion datasource added. 
-3. odb64luo -h will display all the commands supported. 
+1. Install and configure Trafodion Linux or Windows ODBC driver 
+2. Create a datasource for Trafodion
+3. LD_LIBRARY_PATH should contain both Trafodion ODB and  unix odbc libraries
+4. Using isql, connect to Trafodion datasource
+3. Execute odb tool by executing 'odb64luo -h' which will display the parameters that can be
+   used to load/extract data to/from Trafodion tables
 
 Example table definition:
 
-CREATE TABLE regions
+
     ( region_id      INT NOT NULL 
     , region_name    VARCHAR2(25) 
     );
