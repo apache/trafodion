@@ -376,7 +376,7 @@ public:
   void checkForDeadProcesses(pid_t myPid);
   SyncHashQueue *getStmtStatsList() { return stmtStatsList_; }
   ExStatisticsArea *getStatsArea(char *queryId, Lng32 queryIdLen);
-  StmtStats *getMasterStmtStats(char *queryId, Lng32 queryIdLen, short activeQueryNum);
+  StmtStats *getMasterStmtStats(const char *queryId, Lng32 queryIdLen, short activeQueryNum);
   StmtStats *getStmtStats(char *queryId, Lng32 queryIdLen);
   StmtStats *getStmtStats(pid_t pid, short activeQueryNum);
   StmtStats *getStmtStats(short activeQueryNum);

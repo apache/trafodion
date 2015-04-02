@@ -803,7 +803,7 @@ ExStatisticsArea *StatsGlobals::getStatsArea(char *queryId, Lng32 queryIdLen)
 }
 // LCOV_EXCL_STOP
 
-StmtStats *StatsGlobals::getMasterStmtStats(char *queryId, Lng32 queryIdLen, short activeQueryNum)
+StmtStats *StatsGlobals::getMasterStmtStats(const char *queryId, Lng32 queryIdLen, short activeQueryNum)
 {
   StmtStats *ss;
   ExMasterStats *masterStats;

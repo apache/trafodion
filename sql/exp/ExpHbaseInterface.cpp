@@ -28,11 +28,16 @@
 ****************************************************************************
 */
 
-#include "Platform.h"
+#include "ex_stdh.h"
 #include "ExpHbaseInterface.h"
 #include "str.h"
 #include "NAStringDef.h"
 #include "ex_ex.h"
+#include "ExStats.h"
+#include "Globals.h"
+#include "SqlStats.h"
+#include "CmpCommon.h"
+#include "CmpContext.h"
 
 extern Int64 getTransactionIDFromContext();
 
@@ -75,6 +80,32 @@ ExpHbaseInterface* ExpHbaseInterface::newInstance(CollHeap* heap,
                                           debugPort, debugTimeout); // This is the transactional interface
 }
 
+NABoolean isParentQueryCanceled()
+{
+  NABoolean isCanceled = FALSE;
+  CliGlobals *cliGlobals = GetCliGlobals();
+  StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
+  const char *parentQid = CmpCommon::context()->sqlSession()->getParentQid();
+  if (statsGlobals && parentQid)
+  {
+    short savedPriority, savedStopMode;
+    statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+      cliGlobals->myPin(), savedPriority, savedStopMode,
+      FALSE /*shouldTimeout*/);
+    StmtStats *ss = statsGlobals->getMasterStmtStats(parentQid, 
+      strlen(parentQid), RtsQueryId::ANY_QUERY_);
+    if (ss)
+    {
+      ExMasterStats *masterStats = ss->getMasterStats();
+      if (masterStats && masterStats->getCanceledTime() != -1)
+        isCanceled = TRUE;
+    }
+    statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
+       cliGlobals->myPin(), savedPriority, savedStopMode);
+  }
+  return isCanceled;
+}
+
 Int32 ExpHbaseInterface_JNI::deleteColumns(
 	     HbaseStr &tblName,
 	     HbaseStr& column)
@@ -99,8 +130,7 @@ Int32 ExpHbaseInterface_JNI::deleteColumns(
 
   NABoolean done = FALSE;
   HbaseStr rowID;
-  while (NOT done)
-  {
+  do {
      // Added the for loop to consider using deleteRows
      // to delete the column for all rows in the batch 
      for (int rowNo = 0; rowNo < numReqRows; rowNo++)
@@ -124,7 +154,7 @@ Int32 ExpHbaseInterface_JNI::deleteColumns(
             break;
 	 }
      }
-  } // while NOT done
+  } while (!(done || isParentQueryCanceled()));
   scanClose();
   if (retcode == HTC_DONE)
      return HBASE_ACCESS_SUCCESS;
