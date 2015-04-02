@@ -41,137 +41,114 @@ import org.apache.zookeeper.data.Stat;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.ExecutionException;
- 
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.trafodion.dcs.Constants;
+import org.trafodion.dcs.util.*;
 
 public class MasterLeaderElection {
-	private static  final Log LOG = LogFactory.getLog(MasterLeaderElection.class);
+    private static final Log LOG = LogFactory
+            .getLog(MasterLeaderElection.class);
     private DcsMaster master = null;
-    private String nodePath;
+    private String myZnode;
     private String parentZnode;
+    private String leaderZnode;
+    private FloatingIp floatingIp;
     private boolean isLeader = false;
-    private ExecutorService es = null;
-    private Future future = null;
+    private boolean isFollower = false;
 
-    public MasterLeaderElection(DcsMaster master) throws IOException, InterruptedException, KeeperException  {
-    	this.master = master;
-    	this.parentZnode = master.getZKParentZnode();
-        
-		setNodePath(master.getZkClient().create(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER + "/" + ":" + master.getServerName() + ":" + master.getInstance() + ":", new byte[0]/*no data yet*/,
-                ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL));
+    public MasterLeaderElection(DcsMaster master) throws IOException,
+            InterruptedException, KeeperException {
+        this.master = master;
+        this.parentZnode = master.getZKParentZnode();
+
+        try {
+            this.floatingIp = FloatingIp.getInstance(master);
+        } catch (Exception e) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Error creating class FloatingIp [" + e.getMessage() + "]");
+            }
+            floatingIp = null;
+        }
+
+        byte[] data = Bytes.toBytes(master.getServerName() + ":"
+                + master.getInstance() + ":");
+        setNodePath(master.getZkClient().create(
+                parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER
+                        + "/" + "leader-n_", data, ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                CreateMode.EPHEMERAL_SEQUENTIAL));
         elect();
     }
-    private void setNodePath(String nodePath) {
-        this.nodePath = nodePath;
+
+    private void setNodePath(String myZnode) {
+        this.myZnode = myZnode;
     }
-    
-    public boolean isLeader() {
-        return isLeader;
-    }
-    // If curent leader is deleted, the immediate follower becomes leader.
-    // If in between follower is deleted, link is broken, call this method again to re-establish that link.
-    private void elect() throws IOException, InterruptedException, KeeperException {
-        List<String> nodes =  master.getZkClient().getChildren(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER, new ElectionNodeWatcher());
-        Collections.sort(nodes);
-        
-        for(int i=0; i < nodes.size(); i++) {
-        	String nodePath = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER + "/" + nodes.get(i);
-        	if (nodePath.equals(this.nodePath)) {
-        		if (i == 0) {
-        			//I'm the first node and therefore the leader.
-         			LOG.info("I'm the Leader [" + nodePath + "]");
-        			if(nodes.size() > 1){
-        				String previousNodePath = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER + "/" + nodes.get(nodes.size() - 1);
-        				LOG.info("Watching [" + previousNodePath + "]");
-        				master.getZkClient().exists(previousNodePath, new IndividualNodeWatcher());
-        			}
-        			isLeader = true;
-        			master.setIsLeader();
-        		} else {
-           			//I'm a follower so avoid herd effect by setting watch on previous node.
-        			LOG.info("I'm a follower [" + nodePath + "]");
-        			String previousNodePath = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER + "/" + nodes.get(i - 1);
-        			LOG.info("Watching [" + previousNodePath + "]");
-        			master.getZkClient().exists(previousNodePath, new IndividualNodeWatcher());
-        			isLeader = false;
-        		}
-        		break;
-        	}
+
+    private synchronized void elect() throws IOException, InterruptedException,
+            KeeperException {
+
+        // If I'm the leader ignore further znode events
+        if (isLeader)
+            return;
+
+        List<String> znodeList = master.getZkClient().getChildren(
+                parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER,
+                new ElectionNodeWatcher());
+
+        Collections.sort(znodeList);
+        leaderZnode = parentZnode
+                + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER_LEADER + "/"
+                + znodeList.get(0);
+
+        if (myZnode.equals(leaderZnode))
+            isLeader = true;
+        else
+            isLeader = false;
+
+        if(LOG.isDebugEnabled())
+            LOG.debug("leaderZnode=" + leaderZnode + ", myZnode=" + myZnode + ",isLeader=" + isLeader);
+
+        if (isLeader) {
+            LOG.info("I'm the Leader [" + myZnode + "]");
+            if (floatingIp != null) {
+                try {
+                    floatingIp.runScript();
+                } catch (Exception e) {
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Error invoking FloatingIp [" + e.getMessage() + "]");
+                    }
+                }
+            }
+            master.setIsLeader();
+        } else {
+            LOG.info("I'm a follower [" + myZnode + "]");
+            isFollower = true;// See ServerManager.getZkRunning()
         }
-    }		
+    }
+
     private class ElectionNodeWatcher implements Watcher {
-    	//watches /LEADER node's children changes.
-    	public void process(WatchedEvent event) {
-    		if(event.getType() == Event.EventType.NodeChildrenChanged) {
-    			LOG.info("Node changed [" + event.getPath() + "], re-electing new leader.");
-    			try {
-    				elect();
-    			} catch (IOException e) {
+        // watches /LEADER node's children changes.
+        public void process(WatchedEvent event) {
+            if (event.getType() == Event.EventType.NodeChildrenChanged) {
+                LOG.info("Node changed [" + event.getPath()
+                        + "], electing a leader.");
+                try {
+                    elect();
+                } catch (IOException e) {
                     LOG.error(e);
-    			} catch (InterruptedException e) {
+                } catch (InterruptedException e) {
                     LOG.error(e);
-    			} catch (KeeperException e) {
+                } catch (KeeperException e) {
                     LOG.error(e);
-    			}
-    		}
-    	}
+                }
+            }
+        }
     }
-    private class IndividualNodeWatcher implements Watcher {
-    	//watches /LEADER/ node's deleted changes.
-    	public void process(WatchedEvent event) {
-    		if(event.getType() == Event.EventType.NodeDeleted) {
-    			LOG.info("Node deleted [" + event.getPath() + "], re-electing new leader.");
- 
-    			try {
- /*
-    				if(isLeader){
-    					if(es == null)
-    						es = Executors.newSingleThreadExecutor();
 
-    					if(future == null){
-    						//first cycle of restart service
-   							LOG.info("Starting first server restart service cycle");
-    						future = es.submit(new ServerRestart(master.getZkClient()));
-     					} else {
-     						//check to see if last cycle finished ok
-     						//If so, start a new one
-       						if(future.get() == null){
-       							LOG.info("Starting new server restart service cycle");
-    							future = es.submit(new ServerRestart(master.getZkClient()));
-       						} else {
-       							LOG.info("Previous restart service cycle is running");
-       						}
-    					}
-   					
-    				}
- */
-    				elect();
- /*   				
-    				Scanner s = new Scanner(event.getPath());
-    				s.useDelimiter(":");
-    				s.next();//skip path
-    				String hostName=s.next();
-    				s.close();
-     				
-    				Stat stat = zkc.exists(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RESTART + "/" + ":" + hostName + ":",false);
-    				if(stat == null) {
-    					master.getZkClient().create(Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RESTART + "/" + ":" + hostName + ":", new byte[0],
-    							ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-    				}
-*/
-    			} catch (Exception e) {
-    				LOG.error(e);
-    			}
-    		}
-    	}
+    public boolean isFollower() {
+        return isFollower;
     }
+
 }
-

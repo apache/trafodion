@@ -120,6 +120,12 @@ In addition, a multi-node deploy requires that you
 modify _conf/servers_. The  _servers_ file  lists all hosts that you would have running
 DcsServers, one host per line or the host name followed by the number of master executor servers. 
 All servers listed in this file will be started and stopped when DCS start or stop is run.
+
+==== _backup-masters_ 
+
+The  _backup-masters_ file lists all hosts that you would have running
+backup DcsMaster processes, one host per line. All servers listed in this file will be started 
+and stopped when DCS start or stop is run.
  
 ==== ZooKeeper and DCS 
 See section <<zookeeper,Zookeeper>> for ZooKeeper setup for DCS.
@@ -161,7 +167,7 @@ Shutdown can take a moment to  complete. It can take longer if your cluster is c
 DCS depends on a running ZooKeeper cluster.All participating nodes and clients need to be able to access the
 running ZooKeeper ensemble. DCS by default manages a ZooKeeper "cluster" for you. It will start and stop the ZooKeeper ensemble
 as part of the DCS start/stop process. You can also manage the ZooKeeper ensemble independent of DCS and just point DCS at
-the cluster it should use. To toggle DCS management of ZooKeeper, use the `DCS_MANAGES_ZK` variable in
+the cluster it should use. To toggle DCS management of ZooKeeper, use the `DCS_MANAGES_ZK` variable in 
 _conf/dcs-env.sh_. This variable, which defaults to `true`, tells DCS whether to start/stop the ZooKeeper ensemble servers as part of DCS
 start/stop.
 
@@ -289,7 +295,7 @@ Currently, changes here will require a cluster restart for DCS to notice the cha
 include::../../../../target/asciidoc/dcs-default.adoc[]
 
 === _dcs-env.sh_
-Set DCS environment variables in this file.Examples include options to pass the JVM on start of
+Set DCS environment variables in this file. Examples include options to pass the JVM on start of
 an DCS daemon such as heap size and garbarge collector configs. You can also set configurations for DCS configuration, log directories,
 niceness, ssh options, where to locate process pid files, etc. Open the file at _conf/dcs-env.sh_ and peruse its content.
 Each option is fairly well documented.  Add your own environment variables here if you want them read by DCS daemons on startup.
@@ -304,7 +310,6 @@ Changes here will require a cluster restart for DCS to notice the change though 
 particular daemons via the DCS UI.
 
 === _backup-masters_ 
-Not present by default.
 A plain-text file which lists hosts on which the backup Master process, one host per line, should be started.
  
 == Example Configurations 
@@ -366,6 +371,15 @@ Alternatively, you can list the nodes followed by the number of mxosrvrs:
   example4 2
 ----
 
+==== _backup-masters_
+
+In this file, you list the nodes that will run backup DcsMasters. In this case, 
+there is a backup master running on the second node:
+[source,console] 
+----
+  example2
+----
+
 ==== _dcs-env.sh_
 
 Below we use a _diff_ to show the differences from default in the _dcs-env.sh_ file. Here we
@@ -412,5 +426,16 @@ To change this configuration, edit _conf/dcs-site.xml_, copy the changed file ar
 The default value is 100. This is the total number of ports that MXOSRVRs will scan trying
 to find an available port to use. You must ensure the value is large enough to support the
 number of MXOSRVRs configured in _conf/servers_. 
+
+==== `dcs.master.floating.ip`
+The default value is false. When set to true the floating IP feature in the DcsMaster is enabled via the _bin/dcsbind.sh_ script. 
+This allows backup DcsMaster to takeover and set the floating IP address.
+
+==== `dcs.master.floating.ip.external.interface`
+There is no default value. You must ensure the value is contains the correct interface
+for your networking configuration. 
+
+==== `dcs.master.floating.ip.external.ip.address`
+There is no default value. It is importatnt that you set this to the dotted IP address appropriate for your network.
           
 To change this configuration, edit _dcs-site.xml_, copy the changed file around the cluster and restart.

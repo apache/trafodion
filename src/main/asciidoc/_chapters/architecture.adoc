@@ -39,7 +39,7 @@ DCS provides the following:
 * A lightweight process management framework. 
 * High performance client listener using Java NIO.  
 * Simple configuration and startup 
-* A highly scaleable Trafodion connectivity service.  
+* A highly available and scaleable Trafodion connectivity service.
 * Uses ZooKeeper as backbone for coordination and process management. 
 * Embedded user interface to examine state, logs, process status.            
 * Standalone REST server. 
@@ -61,6 +61,9 @@ and restarting any DcsServers that fail after initial startup.
 [[master-startup]]
 === Startup Behavior 
 The DcsMaster is started via the scripts found in the _/bin_ directory. During startup it registers itself in Zookeeper.
+If the DcsMaster is started as a backup then after registering in Zookeeper it waits to become the next DcsMaster leader.
+If ever the backup becomes the leader it executes the _bin/dcsbind.sh_ script to enable floating IP on a given interface and
+IP address.
 
 [[master-runtime]]
 === Runtime Impact 
@@ -89,11 +92,11 @@ runs a server handler for each DcsServer found in _conf/servers_.
 [[server-arch]]
 == DcsServer 
 _DcsServer_ is the server implementation. It is responsible for starting and keeping
-its Trafodion MXOSRVR running.
+its Trafodion user program (MXOSRVR) running.
        
 [[server-startup]]
 === Startup Behavior 
-The DcsServer is started via the scripts found in the /bin directory. During startup it registers itself in Zookeeper. 
+The DcsServer is started via the scripts found in the _/bin_ directory. During startup it registers itself in Zookeeper. 
          
 [[server-runtime]]
 === Runtime Impact 
