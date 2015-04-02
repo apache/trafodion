@@ -66,7 +66,7 @@ odb64luo: odb64luo.o mreadline.o memcpy_wrapper.o versodb.o
 	gcc -m64 -O2 -mtune=generic  -DODBC64 -DHDFS -DXML $(LDFLAGS_LNX) \
 		-o $(EXEC_64luo) bin/memcpy_wrapper.o bin/odb64luo.o bin/mreadline.o bin/versodb.o \
 		-D ODBBLD=$(ODBBLD_64luo) $(LIBPATH_64luo) $(INCPATH_64luo) $(LIBS_64luo) -o bin/odb64luo
-	cp -p bin/odb64luo $(MY_SQROOT)/../conn/clients/odb64luo
+	tar -czf ../clients/odb64_linux.tar.gz bin/odb64luo README
 	ln -sf $(MY_SQROOT)/../conn/odb/bin/odb64luo $(MY_SQROOT)/export/bin$(SQ_MBTYPE)/odb64luo
 
 odb64luo.o: odb.c
@@ -91,4 +91,5 @@ versodb.o: versodb.c
 
 clean: 
 	rm bin/*.o bin/odb64luo
+	rm -f ../clients/odb64_linux.tar.gz
 
