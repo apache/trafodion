@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -995,6 +995,31 @@ ScanKey::isAKeyPredicateForColumn(
 
 } // ScanKey::isAKeyPredicateForColumn(...)
 
+// helper method used in ScanKey::createComputedColumnPredicates below
+static ItemExpr *convertCastToNarrow(ItemExpr *expr,
+                                     CollHeap *outHeap,
+                                     void *)
+{
+  if (expr->getOperatorType() == ITM_CAST)
+    {
+      // avoid potential errors of this cast by converting it to a Narrow
+      Cast *src = static_cast<Cast *>(expr);
+
+      // Tried to use NAType::errorsCanOccur to do this only in cases
+      // where errors are possible, but ran into multiple issues with
+      // the types assigned to constants and VEGRefs, so we convert
+      // this unconditionally to a Narrow.
+
+      return new(outHeap)
+        Narrow(expr->child(0),
+               new(outHeap) HostVar("_sys_ignored_CC_convErrorFlag",
+                                    new (outHeap) SQLInt(TRUE,FALSE),
+                                    TRUE),
+               src->getType()->newCopy(outHeap));
+    }
+  else
+    return expr;
+}
 
 void ScanKey::createComputedColumnPredicates(ValueIdSet &predicates,           /* in/out */
                                              const ValueIdSet &keyColumns,     /* in */
@@ -1093,6 +1118,15 @@ void ScanKey::createComputedColumnPredicates(ValueIdSet &predicates,           /
                       // use the basecolumn Veg, using the basecolumn byitself can cause issues
                       // during codegen downstream
                       ValueId egVid = bcol->getTableDesc()->getColumnVEGList()[bcol->getColNumber()];
+
+                      // The computed column expression may contain CAST operators
+                      // that could cause conversion errors, which we don't want
+                      // to handle here, they should be handled in the underlying
+                      // key columns. Change those CASTs to NARROWs and ignore the
+                      // error indicators of those Narrow operators.
+                      compExpr = compExpr->treeWalk(convertCastToNarrow,
+                                                    CmpCommon::statementHeap());
+                      compExpr->synthTypeAndValueId();
 
                       // create a new predicate bcol = compExpr
                       ItemExpr *mirrorPred = 

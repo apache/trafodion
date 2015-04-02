@@ -1553,6 +1553,53 @@ void ItemExpr::findEqualityCols(ValueIdSet& result)
 }
 // LCOV_EXCL_STOP
 
+ItemExpr * ItemExpr::treeWalk(ItemTreeWalkFunc f,
+                              CollHeap *outHeap,
+                              enum ItemTreeWalkSeq sequence,
+                              void *context)
+{
+  ItemExpr *transformedChildrenArr[4];
+  ItemExpr **transformedChildren = transformedChildrenArr;
+  Int32 arity = -1;
+  NABoolean needToCopy = FALSE;
+  ItemExpr *result = this;
+
+  if (sequence == ITM_PREFIX_WALK)
+    result = f(result, outHeap, context);
+
+  arity = result->getArity();
+  if (arity > 4)
+    // allocated from stmt heap since it is used locally only
+    // and is not deallocated below
+    transformedChildren = new(CmpCommon::statementHeap()) ItemExpr *[getArity()];
+
+  for (int i=0; i<arity; i++)
+    {
+      transformedChildren[i] =
+        result->child(i)->treeWalk(f,
+                                   outHeap,
+                                   sequence,
+                                   context);
+      if (transformedChildren[i] != child(i))
+        needToCopy = TRUE;
+    }
+
+  if (needToCopy)
+    {
+      // one of the children changed, since we can't
+      // change an ItemExpr once we assigned a ValueId to
+      // it, make a copy with new children
+      result = result->copyTopNode(NULL, outHeap);
+      for (int j=0; j<arity; j++)
+        result->setChild(j, transformedChildren[j]);
+    }
+
+  if (sequence == ITM_POSTFIX_WALK)
+    result = f(result, outHeap, context);
+  
+  return result;
+}
+
 ValueId ItemExpr::mapAndRewrite(ValueIdMap &map,
 				NABoolean mapDownwards)
 {
