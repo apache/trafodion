@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@
 #include "ComTdbHashj.h"
 #include "ComTdbMj.h"
 #include "ComTdbTupleFlow.h"
+#include "HashBufferHeader.h"
 #if 0
 // unused feature, done as part of SQ SQL code cleanup effort
 #include "ComTdbSimpleSample.h"
@@ -1509,8 +1510,10 @@ short HashJoin::codeGen(Generator * generator) {
   // the incoming (inner or outer) rows, and may be written to disk (overflow)
 
   // first determine the minimum size for the hash table buffers.
-  // a buffer has to store at least one inner or outer row
-  ULng32 minHBufferSize = MAXOF(extLeftRowLength, extRightRowLength);
+  // a buffer has to store at least one extended inner or outer row
+  // plus overhead such as hash buffer header etc
+  ULng32 minHBufferSize = MAXOF(extLeftRowLength, extRightRowLength) +
+			  ROUND8(sizeof(HashBufferHeader)) + 8;
 
   // determine the minimum result sql buffer size (may need to store result
   // rows comprising of both inner and outer incoming rows)
