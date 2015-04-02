@@ -143,7 +143,7 @@ short GenericUtilExpr::processOutputRow(Generator * generator,
   ExpTupleDesc *tupleDesc = 0;
   ULng32 tupleLength = 0;
   expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
-			    attrs, ExpTupleDesc::SQLMP_FORMAT,
+			    attrs, ExpTupleDesc::PACKED_FORMAT,
 			    tupleLength,
 			    work_atp, output_row_atp_index,
 			    &tupleDesc, ExpTupleDesc::LONG_FORMAT);

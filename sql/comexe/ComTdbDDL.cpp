@@ -125,8 +125,7 @@ ComTdbDDL::ComTdbDDL(char * ddl_query,
 		     queue_index down,
 		     queue_index up,
 		     Lng32 num_buffers,
-		     ULng32 buffer_size,
-		     NABoolean mpRequest)
+		     ULng32 buffer_size)
      : ComTdbGenericUtil(ddl_query, ddl_querylen, ddl_querycharset, schemaName, schemaNameLen,
 			 input_expr, input_rowlen,
 			 output_expr, output_rowlen,
@@ -139,9 +138,6 @@ ComTdbDDL::ComTdbDDL(char * ddl_query,
   setNodeType(ComTdb::ex_DDL);
 
   memset(fillersComTdbDDL_, sizeof(fillersComTdbDDL_), 0);
-
-  if (mpRequest)
-    flags_ |= SQLMP_RQST;
 }
 
 
@@ -174,8 +170,7 @@ ComTdbDDLwithStatus::ComTdbDDLwithStatus(char * ddl_query,
               work_cri_desc, work_atp_index,
               given_cri_desc, returned_cri_desc,
               down, up, 
-              num_buffers, buffer_size,
-              FALSE),
+              num_buffers, buffer_size),
     flags2_(0)
 {
   setNodeType(ComTdb::ex_DDL_WITH_STATUS);

@@ -241,7 +241,6 @@ void HistogramCache::getHistograms(NATable& table)
   const QualifiedName& qualifiedName = table.getFullyQualifiedGuardianName();
   ExtendedQualName::SpecialTableType type = table.getTableType();
   const NAColumnArray& colArray = table.getNAColumnArray();
-  NABoolean isSQLMPTable = table.isSQLMPTable();
   StatsList& colStatsList = *(table.getColStats());
   const Int64& redefTime = table.getRedefTime();
   Int64& statsTime = const_cast<Int64&>(table.getStatsTime());
@@ -373,7 +372,7 @@ void HistogramCache::getHistograms(NATable& table)
           // FetchStatsTime() will update the READ_TIME field of the histogram.
           Int64 modifTime;
           Int64 currentJulianTime = NA_JulianTimestamp();
-          GetHSModifyTime(qualifiedName, type, modifTime, isSQLMPTable);
+          GetHSModifyTime(qualifiedName, type, modifTime, FALSE);
           Int64 readCntInterval = (Int64)CmpCommon::getDefaultLong(USTAT_AUTO_READTIME_UPDATE_INTERVAL);
           if (modifTime != 0)
             // If the HISTOGRAMS table was modified since the last time FetchStatsTime()
@@ -384,7 +383,7 @@ void HistogramCache::getHistograms(NATable& table)
                 (currentJulianTime - modifTime > readCntInterval*1000000 &&
                  CmpCommon::getDefaultLong(USTAT_AUTOMATION_INTERVAL) > 0))
           { //10//
-            FetchStatsTime(qualifiedName,type,colArray,statsTime,isSQLMPTable);
+            FetchStatsTime(qualifiedName,type,colArray,statsTime,FALSE);
             cachedHistograms->updateRefreshTime();
             // If ustat automation is on, FetchStatsTime will modify the HISTOGRAMS table.
             // So, the new modification time of the HISTOGRAMS table must be saved to the
@@ -392,7 +391,7 @@ void HistogramCache::getHistograms(NATable& table)
             // by update stats cause the above 'if' to be TRUE.
             if (CmpCommon::getDefaultLong(USTAT_AUTOMATION_INTERVAL) > 0)
             {
-              GetHSModifyTime(qualifiedName, type, modifTime, isSQLMPTable);
+              GetHSModifyTime(qualifiedName, type, modifTime, FALSE);
               cachedHistograms->setModifTime(modifTime);
             }
 
@@ -471,7 +470,6 @@ void HistogramCache::createColStatsList
 
   NAColumnArray& colArray = const_cast<NAColumnArray&>
     (table.getNAColumnArray());
-  NABoolean isSQLMPTable = table.isSQLMPTable();
   const QualifiedName& qualifiedName = table.getFullyQualifiedGuardianName();
   ExtendedQualName::SpecialTableType type = table.getTableType();
   const Int64& redefTime = table.getRedefTime();
@@ -578,7 +576,7 @@ void HistogramCache::createColStatsList
                      type,
                     (colArray),
                     (*statsListForFetch),
-                    isSQLMPTable,
+                     FALSE,
                     CmpCommon::statementHeap(),
                     modifTime,
                     statsTime,
@@ -1829,7 +1827,6 @@ NABoolean checkColumnTypeForSupportability(const NAColumnArray & partColArray, c
 static RangePartitionBoundaries * createRangePartitionBoundaries
                                      (desc_struct * part_desc_list,
 				      Lng32 numberOfPartitions,
-                                      Int32 SQLMPKeytag,
 			              const NAColumnArray & partColArray,
 				      NAMemory* heap)
 {
@@ -1898,12 +1895,6 @@ static RangePartitionBoundaries * createRangePartitionBoundaries
         str_cpy_all(encodedKey, partns_desc->body.partns_desc.encodedkey,
                     encodedKeyLen);
       }
-
-      // If we are setting up partition boundaries for a SQL/MP index,
-      // then the first two bytes of the encoded key will be the keytag.
-      // We need to skip over the keytag.
-      if (SQLMPKeytag != 0)
-        encodedKey = &encodedKey[2];
 
       ItemExpr *rangePartBoundValues = NULL;
 
@@ -1981,7 +1972,6 @@ static RangePartitionBoundaries * createRangePartitionBoundaries
 static PartitioningFunction * createRangePartitioningFunction
                                 (desc_struct * part_desc_list,
 			         const NAColumnArray & partKeyColArray,
-                                 unsigned short SQLMPKeytag,
                                  NodeMap* nodeMap,
 				 NAMemory* heap)
 {
@@ -2010,7 +2000,6 @@ static PartitioningFunction * createRangePartitioningFunction
   RangePartitionBoundaries *boundaries =
     createRangePartitionBoundaries(part_desc_list,
 				   numberOfPartitions,
-                                   SQLMPKeytag,
 				   partKeyColArray,
 				   heap);
 
@@ -2362,8 +2351,7 @@ RangePartitionBoundaries * createRangePartitionBoundariesFromStats
   // -----------------------------------------------------------------
    partBounds->completePartitionBoundaries(
           partitioningKeyColumnsOrder,
-          totalEncodedKeyLength,
-          FALSE /* not an SQLMP table  */);
+          totalEncodedKeyLength);
 
   return partBounds;
 
@@ -2473,7 +2461,6 @@ createRangePartitioningFunctionForSingleRegionHBase(
    return createRangePartitioningFunction
                                 (head,
                                  partKeyColArray,
-                                 0, /// non MP table
                                  nodeMap,
                                  heap);
 }
@@ -2542,7 +2529,6 @@ createRangePartitioningFunctionForMultiRegionHBase(Int32 partns,
    return createRangePartitioningFunction
                                 (head,
                                  partKeyColArray,
-                                 0,
                                  nodeMap,
                                  heap);
 }
@@ -3386,7 +3372,6 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
 			       column_desc->colnumber,
 			       type,
                                heap,
-			       0,
 			       table,
 			       colClass,
 			       column_desc->defaultClass,
@@ -3516,7 +3501,6 @@ NABoolean createNAColumns(struct hive_column_desc* hcolumn /*IN*/,
                              hcolumn->intIndex_,
                              natype,
                              heap,
-                             (unsigned short)0 /* not a SQLMP KEYTAG column */,
                              table,
                              USER_COLUMN, // colClass,
                              COM_NULL_DEFAULT  ,//defaultClass,
@@ -3727,7 +3711,6 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
   NABoolean isVerticalPartition;
   NABoolean hasRemotePartition = FALSE;
   CollIndex numClusteringKeyColumns = 0;
-  NAType *SQLMPKeytagType = NULL;
 
   // Set up global cluster information.  This global information always
   // gets put on the context heap.
@@ -3778,7 +3761,6 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       // ---------------------------------------------------------------------
       // loop over the clustering key columns of the index
       // ---------------------------------------------------------------------
-      unsigned short SQLMPKeytag = 0;
       const desc_struct *keys_desc = indexes_desc->body.indexes_desc.keys_desc;
       while (keys_desc)
 	{
@@ -3802,136 +3784,84 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 	  // The last "numClusteringKeyColumns" key columns
 	  // of a unique alternate index (which ARE described in the
 	  // keys_desc) get deleted later.
-
+          
 	  Int32 tablecolnumber = keys_desc->body.keys_desc.tablecolnumber;
-          if (tablecolnumber < 0) {	// this is < 0 only for MP indexes!
-	    CMPASSERT(table->isSQLMPTable());
-	    // Assert this keytag is the first column in the index
-	    CMPASSERT(keys_desc->body.keys_desc.keyseqnumber == 0);
-	    // Assert this is an alternate index (the primary index = the table)
-      	    CMPASSERT(indexes_desc->body.indexes_desc.keytag);
-            // Assert this is not a VP
-            CMPASSERT(!isVerticalPartition);
-
-	    if (!SQLMPKeytagType)
-	      SQLMPKeytagType = new (heap)
-		SQLSmall(FALSE/*allowNegVal*/, FALSE/*allowSQLnull*/);
-
-	    CMPASSERT(!SQLMPKeytag);
-	    SQLMPKeytag = indexes_desc->body.indexes_desc.keytag;
-	    NAWchar* keytagStr = new (heap) NAWchar[20];
-	    NAWsprintf(keytagStr, WIDE_("%u"), (UInt32)SQLMPKeytag);
-
-	    // ? Instead of passing table, pass NULL since this is not a column
-	    //   on the NATable but rather on an index(NAFileSet) on the table ?
-	    indexColumn = new (heap)
-	      NAColumn(FUNNY_INTERNAL_IDENT("KEYTAG"),
-		       keys_desc->body.keys_desc.tablecolnumber,
-		       SQLMPKeytagType,
-                       heap,
-		       SQLMPKeytag,
-		       table,
-		       SYSTEM_COLUMN,
-		       COM_USER_DEFINED_DEFAULT,
-		       (char*)keytagStr
-		       );
-             newColumns.insert(indexColumn);
-	  }
-	  else
-          {
-	    indexColumn = colArray.getColumn(tablecolnumber);
-
-	    if ((table->isHbaseTable()) &&
-		(indexes_desc->body.indexes_desc.keytag != 0))
-	      {
-		newIndexColumn = new(heap) NAColumn(*indexColumn);
-		newIndexColumn->setIndexColName(keys_desc->body.keys_desc.keyname);
-		newIndexColumn->setHbaseColFam(keys_desc->body.keys_desc.hbaseColFam);
-		newIndexColumn->setHbaseColQual(keys_desc->body.keys_desc.hbaseColQual);
-
-                saveNAColumns.insert(indexColumn);
-                newColumns.insert(newIndexColumn);
-		indexColumn = newIndexColumn;
-                 
-	      }
-
-            // Check if this is a SQLMP keytag column for index maintenance --
-	    // i.e., the index treated as if it were a basetable.
-            if (indexColumn->getSQLMPKeytag())
+          indexColumn = colArray.getColumn(tablecolnumber);
+          
+          if ((table->isHbaseTable()) &&
+              (indexes_desc->body.indexes_desc.keytag != 0))
             {
-	      CMPASSERT(!SQLMPKeytag);
-              SQLMPKeytag = indexColumn->getSQLMPKeytag();
+              newIndexColumn = new(heap) NAColumn(*indexColumn);
+              newIndexColumn->setIndexColName(keys_desc->body.keys_desc.keyname);
+              newIndexColumn->setHbaseColFam(keys_desc->body.keys_desc.hbaseColFam);
+              newIndexColumn->setHbaseColQual(keys_desc->body.keys_desc.hbaseColQual);
+              
+              saveNAColumns.insert(indexColumn);
+              newColumns.insert(newIndexColumn);
+              indexColumn = newIndexColumn;
+              
             }
-          }
-
+          
           SortOrdering order = NOT_ORDERED;
 
-          // Only add a key column to the index key if it is not the keytag.
-          if (NOT indexColumn->getSQLMPKeytag())
-          {
-	    // as mentioned above, for all alternate indexes we
-	    // assume at first that all columns are key columns
-	    // and we make adjustments later
-	    indexKeyColumns.insert(indexColumn);
-	    order = keys_desc->body.keys_desc.ordering ?
-                                 DESCENDING : ASCENDING;
-	    indexKeyColumns.setAscending(indexKeyColumns.entries() - 1,
-	  			   order == ASCENDING);
-
-            if ( table->isHbaseTable() && 
-                 indexColumn->isComputedColumnAlways() ) 
+          // as mentioned above, for all alternate indexes we
+          // assume at first that all columns are key columns
+          // and we make adjustments later
+          indexKeyColumns.insert(indexColumn);
+          order = keys_desc->body.keys_desc.ordering ?
+            DESCENDING : ASCENDING;
+          indexKeyColumns.setAscending(indexKeyColumns.entries() - 1,
+                                       order == ASCENDING);
+          
+          if ( table->isHbaseTable() && 
+               indexColumn->isComputedColumnAlways() ) 
             {
-
-               // examples of the saltClause string:
-               // 1. HASH2PARTFUNC(CAST(L_ORDERKEY AS INT NOT NULL) FOR 4)
-               // 2. HASH2PARTFUNC(CAST(A AS INT NOT NULL),CAST(B AS INT NOT NULL) FOR 4) 
-               const char* saltClause = indexColumn->getComputedColumnExprString();
-
-               Parser parser(CmpCommon::context());
-               ItemExpr* saltExpr = parser.getItemExprTree(saltClause, 
-                                                           strlen(saltClause), 
-                                                           CharInfo::ISO88591);
-
-               if ( saltExpr &&
-                    saltExpr->getOperatorType() == ITM_HASH2_DISTRIB) {
-
-                   // get the # of salted partitions from saltClause
-                   ItemExprList csList(CmpCommon::statementHeap());
-                   saltExpr->findAll(ITM_CONSTANT, csList, FALSE, FALSE);
-
-                   // get #salted partitions from last ConstValue in the list
-                   if ( csList.entries() > 0 ) {
-                       ConstValue* ct = (ConstValue*)csList[csList.entries()-1];
-
-                       if ( ct->canGetExactNumericValue() )  {
-                          numOfSaltedPartitions = ct->getExactNumericValue();
-                       }
-                   }
-               }
-
-               // collect all ColReference objects into hbaseSaltColumnList.
-               CMPASSERT(saltExpr != NULL);
-               saltExpr->findAll(ITM_REFERENCE, hbaseSaltColumnList, FALSE, FALSE);
-
+              
+              // examples of the saltClause string:
+              // 1. HASH2PARTFUNC(CAST(L_ORDERKEY AS INT NOT NULL) FOR 4)
+              // 2. HASH2PARTFUNC(CAST(A AS INT NOT NULL),CAST(B AS INT NOT NULL) FOR 4) 
+              const char* saltClause = indexColumn->getComputedColumnExprString();
+              
+              Parser parser(CmpCommon::context());
+              ItemExpr* saltExpr = parser.getItemExprTree(saltClause, 
+                                                          strlen(saltClause), 
+                                                          CharInfo::ISO88591);
+              
+              if ( saltExpr &&
+                   saltExpr->getOperatorType() == ITM_HASH2_DISTRIB) {
+                
+                // get the # of salted partitions from saltClause
+                ItemExprList csList(CmpCommon::statementHeap());
+                saltExpr->findAll(ITM_CONSTANT, csList, FALSE, FALSE);
+                
+                // get #salted partitions from last ConstValue in the list
+                if ( csList.entries() > 0 ) {
+                  ConstValue* ct = (ConstValue*)csList[csList.entries()-1];
+                  
+                  if ( ct->canGetExactNumericValue() )  {
+                    numOfSaltedPartitions = ct->getExactNumericValue();
+                  }
+                }
+              }
+              
+              // collect all ColReference objects into hbaseSaltColumnList.
+              CMPASSERT(saltExpr != NULL);
+              saltExpr->findAll(ITM_REFERENCE, hbaseSaltColumnList, FALSE, FALSE);
+              
             }
-          }
-
+          
 	  if (isTheClusteringKey)
-          {
-            // Since many columns of the base table may not be in the
-            // clustering key, we'll delay setting up the list of all
-            // columns in the index until later, so we can then just
-            // add them all at once.
-
-            // Remember that this columns is part of the clustering
-            // key and remember its key ordering (asc or desc), but
-            // NOT if it is the keytag column.
-            if (NOT indexColumn->getSQLMPKeytag())
             {
+              // Since many columns of the base table may not be in the
+              // clustering key, we'll delay setting up the list of all
+              // columns in the index until later, so we can then just
+              // add them all at once.
+              
+              // Remember that this columns is part of the clustering
+              // key and remember its key ordering (asc or desc)
 	      indexColumn->setClusteringKey(order);
 	      numClusteringKeyColumns++;
             }
-	  }
 	  else
 	  {
             // Since all columns in the index are guaranteed to be in
@@ -4186,7 +4116,6 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 	        partFunc = createRangePartitioningFunction(
 	    	   files_desc->body.files_desc.partns_desc,
 	    	   partitioningKeyColumns,
-	    	   SQLMPKeytag,
 		   nodeMap,
 		   heap);
               }
@@ -4313,7 +4242,6 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 		  partitioningKeyColumns,
 		  partFunc,
 		  indexes_desc->body.indexes_desc.keytag,
-		  SQLMPKeytag,
 		  uint32ArrayToInt64(
 		       indexes_desc->body.indexes_desc.redeftime),
 		  files_desc ? files_desc->body.files_desc.audit : 0,
@@ -4361,24 +4289,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
         vertParts.insert(newIndex); // >>>> RETURN VALUE
       else
       {
-        if ( NOT table->isSQLMPTable())
-          indexes.insert(newIndex);
-        else
-          {
-           char *pos = (char *) strrchr(extIndexName.data(), '.');
-
-           if (pos == NULL)
-             pos = (char *)extIndexName.data();
-           else
-             pos++;
-
-           NAString *indexName = new (CmpCommon::statementHeap())
-                      NAString((const char*)pos, CmpCommon::statementHeap());
-           stringList.insert(indexName);
-
-           indexFilesetMap->insert(indexName, (Int32 *)newIndex);
-
-          }
+        indexes.insert(newIndex);
       }
 
       //
@@ -4424,7 +4335,6 @@ NABoolean createNAFileSets(hive_tbl_desc* hvt_desc        /*IN*/,
   NABoolean isVerticalPartition;
   NABoolean hasRemotePartition = FALSE;
   CollIndex numClusteringKeyColumns = 0;
-  NAType *SQLMPKeytagType = NULL;
 
   // Set up global cluster information.  This global information always
   // gets put on the context heap.
@@ -4463,7 +4373,6 @@ NABoolean createNAFileSets(hive_tbl_desc* hvt_desc        /*IN*/,
       // ---------------------------------------------------------------------
       // loop over the clustering key columns of the index
       // ---------------------------------------------------------------------
-      unsigned short SQLMPKeytag = 0;
       const hive_bkey_desc *hbk_desc = hvt_desc->getBucketingKeys();
 
       Int32 numBucketingColumns = 0;
@@ -4669,7 +4578,6 @@ NABoolean createNAFileSets(hive_tbl_desc* hvt_desc        /*IN*/,
 		  partitioningKeyColumns,
 		  partFunc,
 		  0, // indexes_desc->body.indexes_desc.keytag,
-		  SQLMPKeytag,
 
 		  hvt_desc->redeftime(), 
                  
@@ -5019,9 +4927,7 @@ NATable::NATable(BindWA *bindWA,
 
   isTrigTempTable_ = (qualifiedName_.getSpecialType() == ExtendedQualName::TRIGTEMP_TABLE);
 
-  if (! isSQLMPTable() )
-  {
-    switch(table_desc->body.table_desc.rowFormat)
+  switch(table_desc->body.table_desc.rowFormat)
     {
     case COM_PACKED_FORMAT_TYPE:
       setSQLMXTable(TRUE);
@@ -5030,7 +4936,6 @@ NATable::NATable(BindWA *bindWA,
       setSQLMXAlignedTable(TRUE);
       break;
     }
-  }
 
   if (table_desc->body.table_desc.isVolatile)
   {
@@ -5205,11 +5110,6 @@ NATable::NATable(BindWA *bindWA,
       // protection view. Therefore updatable == FALSE iff it is a
       // shorthand view. See ReadTableDef.cpp, l. 3379.
       //
-
-      if (isSQLMPTable() && !isUpdatable())
-       {
-         setSQLMPShorthandView(TRUE);
-       }
 
       viewFileName_ = NULL;
       CMPASSERT(view_desc->body.view_desc.viewfilename);
@@ -5516,29 +5416,6 @@ NATable::NATable(BindWA *bindWA,
 
   if(postCreateNATableWarnings != preCreateNATableWarnings)
     tableConstructionHadWarnings_=TRUE;
-
-  if(isSQLMPTable())
-  {
-// LCOV_EXCL_START :mp
-    //if the catalog name starts with "\" and is not delimited
-    //then table name is guardian name and not ansi name
-    //guardian names are in the format \<system>.$<volume>.<subvol>
-    //if an ansi catalog name start with "\" then it is delimited.
-
-    //the code below checks if this MP table has an ansi name or not
-    const QualifiedName & qualNameObj = qualifiedName_.getQualifiedNameObj();
-    const CatalogName & catNameObj = qualNameObj.getCatalogName();
-
-    if(catNameObj.isDelimited())
-      isAnMPTableWithAnsiName_=TRUE;
-
-    const NAString & catName = catNameObj.getCatalogName();
-
-    if((catName.length() > 1) &&
-       (catName(0) != '\\'))
-      isAnMPTableWithAnsiName_=TRUE;
-
-  }
 
   if (hasLobColumn())
     {
@@ -7078,7 +6955,7 @@ NABoolean NATable::filterUnusedPartitions(const PartitionClause& pClause)
   if (pClause.isEmpty())
     return TRUE;
 
-  if (isSQLMPTable() || getViewText())
+  if (getViewText())
     {
       *CmpCommon::diags()
 	<< DgSqlCode(-1276)
@@ -7417,77 +7294,6 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
       //mark this entry to be removed
       removeEntry = TRUE;
     }
-    else if ((!cachedNATable->isHiveTable()) &&
-	     (!cachedNATable->isHbaseTable()))
-    {
-      if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
-      {
-        Int32 errorValue = -1;
-        Int64 cacheTime = cachedNATable->getCacheTime();
-
-        // Read the OBJECTS table get the cache_time.  If changed
-        // refresh NATable cache.
-
-        // get catalog name, must be in external format
-        QualifiedName objName = cachedNATable->getTableName();
-        const NAString cName = objName.getCatalogNameAsAnsiString();
-
-        // Generate the fully qualified name for the OBJECTS table
-        NAString oTbl = (cName);
-        oTbl.append(".HP_DEFINITION_SCHEMA");
-        oTbl.append(".OBJECTS");
-
-        NAWString * pObjectsMDTblExtNameInUCS2 = 
-          charToUnicode ( (Lng32) CharInfo::UTF8
-                        , (const char *) oTbl.data()
-                        , (Int32) oTbl.length()
-                        , STMTHEAP // in - NAMemory * h = NULL
-                        );
-        NAWString oTblExtNameInUCS2(*pObjectsMDTblExtNameInUCS2); // deep copy
-        delete pObjectsMDTblExtNameInUCS2;
-        pObjectsMDTblExtNameInUCS2 = NULL;
-
-        // set up remaining input variables:
-        //   in: UID of schema
-        //   in: object name, must be in internal format
-        //   in: object type - assume TA
-        Int64 sUID = ((ComUID &)cachedNATable->getSchemaUid()).get_value();
-        NAString oName = objName.getObjectName(); // in UTF8 for SeaQuest
-        NAString nameSpace ("TA ");
-
-        // Execute metadata query that does a keyed access on the OBJECTS
-        // table for READ UNCOMMITTED ACCESS to retrieve the current
-        // cacheTime.  See w:/sqlcat/readdef.mdf statement S4.
-        static THREAD_P struct SQLCLI_OBJ_ID __SQL_id4;
-        init_SQLCLI_OBJ_ID(&__SQL_id4, SQLCLI_CURRENT_VERSION, cursor_name,
-            &__SQL_mod_natable, "S4", 0,
-            SQLCHARSETSTRING_ISO88591, 2);
-
-        // The internal-format object name in oName must be in UTF8.
-        // because we TRANSLATE it from UTF8TOUCS2 in statement S4
-        // in w:/sqlcat/readdef.mdf.
-        errorValue = SQL_EXEC_ClearExecFetchClose(&__SQL_id4, // statement id
-                                               NULL, // input descriptor
-                                               NULL, // output descriptor
-                                               4, // num inputs
-                                               1, // num outputs
-                                               5, // total
-                                               oTblExtNameInUCS2.data(),
-                                               NULL,
-                                               &sUID,NULL,
-                                               oName.data(),NULL,
-                                               nameSpace.data(),NULL,
-                                               &cacheTime,NULL);
-
-        // If the record was found and the cache times differ,
-        // refresh the entry
-        if ((errorValue == 0) && (cacheTime != cachedNATable->getCacheTime()))
-        {
-          removeEntry = TRUE;
-          cachedNATable->setCacheTime(cacheTime);
-        }
-      } // mode_special_1, check objects table
-    } // label timestamps match
   } // !cachedNATable->accessedInCurrentStatement()
 
   if(removeEntry)
@@ -8431,9 +8237,7 @@ void NATableDB::resetAfterStatement(){
            (statementCachedTableList_[i]->isAnMVMetaData())||
            (statementCachedTableList_[i]->isAnMPTableWithAnsiName())||
            (statementCachedTableList_[i]->constructionHadWarnings()) ||
-           (statementCachedTableList_[i]->getClearHDFSStatsAfterStmt()) ||
-	   (statementCachedTableList_[i]->isSQLMPTable()
-	      AND statementCachedTableList_[i]->getViewText())){
+           (statementCachedTableList_[i]->getClearHDFSStatsAfterStmt())){
           //remove from list of cached Tables
           cachedTableList_.remove(statementCachedTableList_[i]);
           //remove from the cache itself

@@ -10060,7 +10060,6 @@ ConstValue::ConstValue(const NAType * type, void * value, Lng32 value_len,
 ConstValue::ConstValue(const NAType * type,
 		       const NABoolean wantMinValue,
 		       const NABoolean includeNull,
-                       const NABoolean isSQLMPTable,
                        NAMemory * outHeap)
 : ItemExpr(ITM_CONSTANT)
 , wtext_(0)
@@ -10116,8 +10115,7 @@ ConstValue::ConstValue(const NAType * type,
     type->minRepresentableValue(&storage[startOfData],
                                 &templen,
                                 NULL,
-                                outHeap,
-                                isSQLMPTable);
+                                outHeap);
     text_ = new (outHeap) NAString("<min>", outHeap);
   }
   else
@@ -10125,8 +10123,7 @@ ConstValue::ConstValue(const NAType * type,
     type->maxRepresentableValue(&storage[startOfData],
                                 &templen,
                                 NULL,
-                                outHeap,
-                                isSQLMPTable);
+                                outHeap);
    text_ = new (outHeap) NAString("<max>", outHeap);
   }
   textIsValidatedSQLLiteralInUTF8_ = FALSE;

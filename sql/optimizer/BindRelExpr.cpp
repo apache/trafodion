@@ -1631,18 +1631,6 @@ static TableDesc *createTableDesc2(BindWA *bindWA,
   {
       NAFileSet *nfs=naTable->getIndexList()[i];
       
-      if (
-          // For Read-only queries, the remote indexes are not considered
-          // if the index elimination level is set to aggressive
-          (CmpCommon::getDefault(INDEX_ELIMINATION_LEVEL) == DF_AGGRESSIVE) &&
-          naTable->isSQLMPTable() &&
-          bindWA->inReadOnlyQuery()
-         )
-      {
-        if (nfs->isRemoteIndexGone())
-          continue;
-      }
-
       IndexDesc *idesc = new (bindWA->wHeap())
         IndexDesc(tdesc, nfs, bindWA->currentCmpContext());
 
@@ -1970,16 +1958,14 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   CMPASSERT(queryTree->getOperatorType() == REL_ROOT);
   ((RelRoot *)queryTree)->setRootFlag(FALSE);
 
-  if (!naTable->isSQLMPTable())
-  {
-    CMPASSERT(queryTree->getChild(0)->getOperatorType() == REL_DDL);
-    StmtDDLCreateView *createViewTree = ((DDLExpr *)(queryTree->getChild(0)))->
-      getDDLNode()->castToStmtDDLNode()->castToStmtDDLCreateView();
-    CMPASSERT(createViewTree);
-    queryTree = createViewTree->getQueryExpression();
-    CMPASSERT(queryTree->getOperatorType() == REL_ROOT);
-    ((RelRoot *)queryTree)->setRootFlag(FALSE);
-  }
+  CMPASSERT(queryTree->getChild(0)->getOperatorType() == REL_DDL);
+  StmtDDLCreateView *createViewTree = ((DDLExpr *)(queryTree->getChild(0)))->
+    getDDLNode()->castToStmtDDLNode()->castToStmtDDLCreateView();
+  CMPASSERT(createViewTree);
+  queryTree = createViewTree->getQueryExpression();
+  CMPASSERT(queryTree->getOperatorType() == REL_ROOT);
+  ((RelRoot *)queryTree)->setRootFlag(FALSE);
+
   RelRoot *viewRoot = (RelRoot *)queryTree;  // save for add'l binding below
   ParNameLocList *saveNameLocList = bindWA->getNameLocListPtr();
 
@@ -2026,10 +2012,8 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   // Cascade the WCO-ness down to RelExpr::bindSelf which captures predicates.
   // On this bind, unconditionally we never collect usages.
   //
-  if (!naTable->isSQLMPShorthandView())
-  {
-   bindWA->viewCount()++;
-  }
+  bindWA->viewCount()++;
+
   bindWA->setNameLocListPtr(NULL);      // do not collect usages for catman
 
   queryTree = queryTree->bindNode(bindWA);
@@ -2037,10 +2021,9 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   if (bindWA->errStatus())
     return NULL;
   bindWA->setNameLocListPtr(saveNameLocList);
-  if (!naTable->isSQLMPShorthandView())
-  {
-   bindWA->viewCount()--;
-  }
+
+  bindWA->viewCount()--;
+
   if (bindWA->errStatus())
     return NULL;
 
@@ -2155,17 +2138,7 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
     CheckConstraint *constraint = NULL;
     ItemExpr *viewCheckPred = NULL;
 
-    if (naTable->isSQLMPTable()) {   // This is an MP view, not an MX one.
-      constraint = new (bindWA->wHeap())
-      CheckConstraint(viewName.getQualifiedNameObj(),       // this view name
-                      naTable->getViewCheck(),       // view text
-                      bindWA->wHeap());
-      if (naTable->getViewCheck())
-        // For MP protection view (WCO), we need to treat it as a
-        // ordinary constraint not a table constraint
-        constraint->setViewWithCheckOption(TRUE);
-    }
-    else if (bindWA->predsOfViewWithCheckOption().entries()) {
+    if (bindWA->predsOfViewWithCheckOption().entries()) {
       constraint = new (bindWA->wHeap())
       CheckConstraint(viewName.getQualifiedNameObj(),       // this view name
                       naTable->getTableName(),       // no parsing needed
@@ -7186,16 +7159,6 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
     if (stoi_->getUpdateAccess()) stoiInList->getStoi()->setUpdateAccess();
     if (stoi_->getDeleteAccess()) stoiInList->getStoi()->setDeleteAccess();
     if (stoi_->getSelectAccess()) stoiInList->getStoi()->setSelectAccess();
-    if (stoi_->isSQLMPTable())
-      {
-	if ((stoi_->getSelectAccess()) &&
-	    (!stoi_->getUpdateAccess()) &&
-	    (!stoi_->getDeleteAccess()) &&
-	    (!stoi_->getInsertAccess()))
-	  stoiInList->getStoi()->setAccessMode(SqlTableOpenInfo::READ_);
-	else
-	  stoiInList->getStoi()->setAccessMode(SqlTableOpenInfo::READWRITE_);
-      }
   }
   
   return stoiInList;
@@ -12461,8 +12424,7 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
     // code generation time.
     //
 
-    if ((!getTableDesc()->getNATable()->isSQLMPTable()) &&
-       (this->getOperatorType() == REL_UNARY_UPDATE) && isScanOnDifferentTable)
+    if ((this->getOperatorType() == REL_UNARY_UPDATE) && isScanOnDifferentTable)
     {
       setScanIndexDesc(NULL);  // for triggers
     }
@@ -12602,20 +12564,8 @@ RelExpr *LeafInsert::bindNode(BindWA *bindWA)
   CMPASSERT(tgtcols.entries() == baseColRefs().entries());
   for (CollIndex i = 0; i < tgtcols.entries(); i++) {
     Assign *assign;
-    unsigned short k = tgtcols[i].getNAColumn()->getSQLMPKeytag();
-    if (k)
-    {
-      ConstValue *keytag = new (bindWA->wHeap()) SystemLiteral(k);
-      ItemExpr *keyTagExpr = keytag->bindNode(bindWA);
-      if (bindWA->errStatus()) { delete keyTagExpr; return NULL; }
-      assign = new (bindWA->wHeap())
-        Assign(tgtcols[i].getItemExpr(), keyTagExpr, FALSE);
-    }
-    else
-    {
-      assign = new (bindWA->wHeap())
-                 Assign(tgtcols[i].getItemExpr(), baseColRefs()[i], FALSE);
-    }
+    assign = new (bindWA->wHeap())
+      Assign(tgtcols[i].getItemExpr(), baseColRefs()[i], FALSE);
 
     assign->bindNode(bindWA);
     if (bindWA->errStatus()) return NULL;
@@ -12721,36 +12671,22 @@ RelExpr *LeafDelete::bindNode(BindWA *bindWA)
   for (CollIndex i = 0; i < keycols.entries() ; i++) 
     {
     ItemExpr *keyPred = 0;
-      Int32 k = keycols[i].getNAColumn()->getSQLMPKeytag();
-    if (k)
-    {
-      ConstValue *keytag = new (bindWA->wHeap()) SystemLiteral(k);
-      ItemExpr *keyTagExpr = keytag->bindNode(bindWA);
-#pragma nowarn(769)   // warning elimination
-      if (bindWA->errStatus()) { return NULL; }
-#pragma warn(769)  // warning elimination
-      keyPred = new (bindWA->wHeap())
-        BiRelat(ITM_EQUAL, keycols[i].getItemExpr(), keyTagExpr);
-    }
-    else
-    {
-      
-      ItemExpr *keyItemExpr = keycols[i].getItemExpr();
-      Lng32 keyColPos = keycols[i].getNAColumn()->getPosition();
-      
-      ItemExpr *baseItemExpr = NULL;
-      // For a unique index (for undo) we are passing in all the index
-      // columns in baseColRefs. So we need to find the index key col 
-      // position in the index col list and compare the key columns with
-      // it's corresponding column in the index column list
-      if (isUndoUniqueIndex())
-        baseItemExpr = baseColRefs()[keyColPos];
-      else
-        baseItemExpr = baseColRefs()[i];
+    ItemExpr *keyItemExpr = keycols[i].getItemExpr();
+    Lng32 keyColPos = keycols[i].getNAColumn()->getPosition();
     
-      keyPred = new (bindWA->wHeap())
-        BiRelat(ITM_EQUAL, keyItemExpr, baseItemExpr);
-    }
+    ItemExpr *baseItemExpr = NULL;
+    // For a unique index (for undo) we are passing in all the index
+    // columns in baseColRefs. So we need to find the index key col 
+    // position in the index col list and compare the key columns with
+    // it's corresponding column in the index column list
+    if (isUndoUniqueIndex())
+      baseItemExpr = baseColRefs()[keyColPos];
+    else
+      baseItemExpr = baseColRefs()[i];
+    
+    keyPred = new (bindWA->wHeap())
+      BiRelat(ITM_EQUAL, keyItemExpr, baseItemExpr);
+
     keyPred->bindNode(bindWA);
     if (bindWA->errStatus()) return NULL;
     beginKeyPred().insert(keyPred->getValueId());

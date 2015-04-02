@@ -201,7 +201,6 @@ public:
 	  double numExplRows = 0,
 	  CollHeap *oHeap = CmpCommon::statementHeap())
     : GenericUtilExpr(ddlStmtText, ddlStmtTextCharSet, ddlNode, NULL, REL_DDL, oHeap),
-    mpRequest_ (FALSE),
     specialDDL_(FALSE),
     ddlObjNATable_(NULL),
     forShowddlExplain_(forShowddlExplain),
@@ -238,7 +237,6 @@ public:
 	 CharInfo::CharSet ddlStmtTextCharSet,
 	  CollHeap *oHeap = CmpCommon::statementHeap())
    : GenericUtilExpr(ddlStmtText, ddlStmtTextCharSet, NULL, NULL, REL_DDL, oHeap),
-    mpRequest_ (FALSE),
     specialDDL_(FALSE),
     ddlObjNATable_(NULL),
     forShowddlExplain_(FALSE),
@@ -276,7 +274,6 @@ public:
 	 CharInfo::CharSet ddlStmtTextCharSet,
 	 CollHeap *oHeap = CmpCommon::statementHeap())
    : GenericUtilExpr(ddlStmtText, ddlStmtTextCharSet, NULL, NULL, REL_DDL, oHeap),
-    mpRequest_ (FALSE),
     specialDDL_(FALSE),
     ddlObjNATable_(NULL),
     forShowddlExplain_(FALSE),
@@ -331,8 +328,6 @@ public:
   virtual desc_struct 	*createVirtualTableDesc();
 
   ExprNode * getDDLNode(){return getExprNode();};
-
-  NABoolean &mpRequest() { return mpRequest_;}
 
   char * getDDLStmtText()
   {
@@ -406,9 +401,6 @@ public:
     DROP_REPOS                = 0x0010,
     UPGRADE_REPOS            = 0x0020
   };
-
-  // is this a DDL operation to work on SQL/MP tables?
-  NABoolean mpRequest_;
 
   // see method processSpecialDDL in sqlcomp/parser.cpp
   NABoolean specialDDL_;

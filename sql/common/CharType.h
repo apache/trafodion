@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -448,12 +448,10 @@ short getFSDatatype() const;
 // ---------------------------------------------------------------------
 virtual void minRepresentableValue(void*, Lng32*, 
 				     NAString** stringLiteral = NULL,
-				     CollHeap* h=0,
-                                     NABoolean sqlmpKeyGen=FALSE) const;
+				     CollHeap* h=0) const;
 virtual void maxRepresentableValue(void*, Lng32*, 
 				     NAString** stringLiteral = NULL,
-				     CollHeap* h=0,
-                                     NABoolean sqlmpKeyGen=FALSE) const;
+				     CollHeap* h=0) const;
 // get the encoding of the max char value
 double getMaxValue() const;
 
@@ -512,12 +510,10 @@ public:
 				{}
 virtual void minRepresentableValue(void*, Lng32*,
 				     NAString** stringLiteral = NULL,
-				     CollHeap* h=0,
-                                     NABoolean sqlmpKeyGen=FALSE) const;
+				     CollHeap* h=0) const;
 virtual void maxRepresentableValue(void*, Lng32*,
 				     NAString** stringLiteral = NULL,
-				     CollHeap* h=0,
-                                     NABoolean sqlmpKeyGen=FALSE) const;
+				     CollHeap* h=0) const;
 
 // True FS data type is the type that the object gets in the sqlparser.
 // That type usually the same through out the life span of the object: from 
@@ -602,14 +598,12 @@ virtual NAType *equivalentCharType
 // ---------------------------------------------------------------------
 virtual void minRepresentableValue(void*, Lng32*, 
 				     NAString** /*stringLiteral*/ = NULL,
-				     CollHeap* = 0,
-                                     NABoolean sqlmpKeyGen=FALSE ) const
+                                   CollHeap* = 0) const
 {};
 
 virtual void maxRepresentableValue(void*, Lng32*, 
 				     NAString** /*stringLiteral*/ = NULL,
-				     CollHeap* = 0,
-                                     NABoolean sqlmpKeyGen=FALSE ) const
+                                   CollHeap* = 0) const
 {};
 
 virtual double encode (void*) const 	{return 0E0;}

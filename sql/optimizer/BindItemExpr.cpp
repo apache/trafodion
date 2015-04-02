@@ -12428,14 +12428,6 @@ ItemExpr *AuditImage::bindNode(BindWA *bindWA)
   NATable *table = bindWA->getNATable(getObjectName());
   if (bindWA->errStatus()) return NULL; 
 
-  if (table->isSQLMPTable())
-  {
-     *CmpCommon::diags() << DgSqlCode(-4082) <<
-         DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-     bindWA->setErrStatus();
-     return this;
-  }
-
   setNATable(table);
 
   // The number of columns in the object must match the number of columns

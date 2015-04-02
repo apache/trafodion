@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -781,14 +781,12 @@ ValueId SearchKey::computeMissingKeyValue(ValueId keyColumn,
 {
   const NAType & type = keyColumn.getItemExpr()->getValueId().getType();
   NAColumn *column = keyColumn.getItemExpr()->getValueId().getNAColumn();
-  NABoolean sqlmp = column->getNATable()->isSQLMPTable();
 
   ItemExpr * minMaxConstant =
     new (CmpCommon::statementHeap())
       SystemLiteral(type.newCopy(CmpCommon::statementHeap()),
-		 wantMinValue,
-		 type.supportsSQLnull(),
-                 sqlmp);
+                    wantMinValue,
+                    type.supportsSQLnull());
 
   minMaxConstant->synthTypeAndValueId();
 
@@ -1382,14 +1380,13 @@ ValueId SearchKeyBounds::computeMissingKeyValue(NABoolean wantMinValue)
   const_cast<SearchKey&>(searchKey_)._countTimesBoundaryValReq += 1;
   const NAType & type = getKeyColumnId().getItemExpr()->getValueId().getType();
   NAColumn *column = getKeyColumnId().getItemExpr()->getValueId().getNAColumn();
-  NABoolean sqlmp = column->getNATable()->isSQLMPTable();
   ItemExpr *minMaxConstant;
 
   minMaxConstant =
     new (CmpCommon::statementHeap())
       SystemLiteral(type.newCopy(CmpCommon::statementHeap()),
-		 wantMinValue,
-		 type.supportsSQLnull(), sqlmp);
+                    wantMinValue,
+                    type.supportsSQLnull());
 
   minMaxConstant->synthTypeAndValueId();
 

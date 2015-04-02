@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -299,14 +299,14 @@ public:
   ExpTupleDesc::TupleDataFormat getTupleFormat()
   {  return (ExpTupleDesc::TupleDataFormat)tdf_;}
 
-  NABoolean isSQLMXPackedFormat()
+  NABoolean isSQLMXFormat()
   {  return( tdf_ == ExpTupleDesc::SQLMX_FORMAT ); }
 
   NABoolean isSQLMXAlignedFormat()
   {  return( tdf_ == ExpTupleDesc::SQLMX_ALIGNED_FORMAT ); }
 
-  NABoolean isSQLMPFormat()
-  {  return( tdf_ == ExpTupleDesc::SQLMP_FORMAT ); }
+  NABoolean isSQLPackedFormat()
+  {  return( tdf_ == ExpTupleDesc::PACKED_FORMAT ); }
 
   NABoolean isSQLMXDiskFormat()
   {

@@ -4993,7 +4993,8 @@ special_index_table_name : TOK_TABLE '(' TOK_INDEX_TABLE actual_table_name
                            optional_special_utility_open_clause 
                            optional_with_shared_access_clause ')'
                 {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
+                  if ((Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE)) ||
+                      (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
                     {
                       // We don't allow a user to do their own index maint,
                       // nor even SELECT from an index (because that

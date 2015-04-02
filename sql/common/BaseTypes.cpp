@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -181,33 +181,10 @@ getDatetimeQualifierAsString(char *text,                       // OUTPUT
                              rec_datetime_field startField,    // INPUT
                              rec_datetime_field endField,      // INPUT
                              UInt32 fractionPrecision,       // INPUT
-                             NABoolean includeFractionalPrec,  // INPUT
-                             NABoolean isSqlMpDatetime)        // INPUT
+                             NABoolean includeFractionalPrec)  // INPUT
 {
-#ifdef IS_MP
-  if (isSqlMpDatetime)
-  {
-    str_sprintf(text, " %s", dtFieldToText(startField));
-    text += str_len(text);
-
-    if (startField != endField ||
-        (fractionPrecision > 0 && endField >= REC_DATE_SECOND))
-    {
-      if (fractionPrecision > 0 && endField >= REC_DATE_SECOND)
-      {
-        str_sprintf(text, " TO %s", dtFieldToText(REC_DATE_FRACTION_MP));
-      }
-      else
-      {
-        str_sprintf(text, " TO %s", dtFieldToText(endField));
-        includeFractionalPrec = FALSE;
-      }
-    }
-  }
-#endif
-
-  if (endField >= REC_DATE_SECOND && includeFractionalPrec &&
-      (fractionPrecision > 0 || !isSqlMpDatetime))
+  if (endField >= REC_DATE_SECOND && includeFractionalPrec) // &&
+    //      (fractionPrecision > 0 || !isSqlMpDatetime))
   {
     text += str_len(text);
     str_sprintf(text, "(%u)", fractionPrecision);
@@ -235,8 +212,7 @@ getDateTimeTypeText(char *text,                    // OUTPUT
                                        startField,
                                        endField,
                                        fractionPrecision,
-                                       TRUE,      // includeFranctionalPrec
-                                       FALSE);    // isSqlMpDatetime
+                                       TRUE);      // includeFranctionalPrec
           return 0;
 
         case REC_DATE_SECOND:          // YEAR TO SECOND == TIMESTAMP
@@ -247,24 +223,13 @@ getDateTimeTypeText(char *text,                    // OUTPUT
                                        startField,
                                        endField,
                                        fractionPrecision,
-                                       TRUE,      // includeFranctionalPrec
-                                       FALSE);    // isSqlMpDatetime
+                                       TRUE);      // includeFranctionalPrec
           return 0;
 
         case REC_DATE_YEAR:
         case REC_DATE_MONTH:
         case REC_DATE_HOUR:
         case REC_DATE_MINUTE:
-#ifdef IS_MP
-          str_sprintf(text, "DATETIME");  // SQL_MP Datetime
-          text += str_len("DATETIME");
-          getDatetimeQualifierAsString(text,
-                                       startField,
-                                       endField,
-                                       fractionPrecision,
-                                       TRUE,      // includeFranctionalPrec
-                                       TRUE);     // isSqlMpDatetime
-#endif
           return 0;
 
         default:
@@ -283,22 +248,11 @@ getDateTimeTypeText(char *text,                    // OUTPUT
                                        startField,
                                        endField,
                                        fractionPrecision,
-                                       TRUE,      // includeFranctionalPrec
-                                       FALSE);    // isSqlMpDatetime
+                                       TRUE);      // includeFranctionalPrec
           return 0;
 
         case REC_DATE_HOUR:
         case REC_DATE_MINUTE:
-#ifdef IS_MP
-          str_sprintf(text, "DATETIME");  // SQL_MP Datetime
-          text += str_len("DATETIME");
-          getDatetimeQualifierAsString(text,
-                                       startField,
-                                       endField,
-                                       fractionPrecision,
-                                       TRUE,      // includeFranctionalPrec
-                                       TRUE);     // isSqlMpDatetime
-#endif
           return 0;
 
         default:
@@ -313,16 +267,6 @@ getDateTimeTypeText(char *text,                    // OUTPUT
     case REC_DATE_FRACTION_MP:
       if (startField <= endField)
       {
-#ifdef IS_MP
-        str_sprintf(text, "DATETIME");  // SQL_MP Datetime
-        text += str_len("DATETIME");
-        getDatetimeQualifierAsString(text,
-                                     startField,
-                                     endField,
-                                     fractionPrecision,
-                                     TRUE,      // includeFranctionalPrec
-                                     TRUE);     // isSqlMpDatetime
-#endif
         return 0;
       }
       else

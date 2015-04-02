@@ -564,22 +564,6 @@ public:
   NABoolean isInsertable() const
   {  return (flags_ & IS_INSERTABLE) != 0; }
 
-// LCOV_EXCL_START :mp
-  void setSQLMPShorthandView( NABoolean value )
-  {  value ? flags_ |= SQLMP_SHORTHAND_VIEW : flags_ &= ~SQLMP_SHORTHAND_VIEW; }
-// LCOV_EXCL_STOP
-
-  NABoolean isSQLMPShorthandView() const
-  {  return (flags_ & SQLMP_SHORTHAND_VIEW) != 0; }
-
-// LCOV_EXCL_START :mp
-  void setSQLMPTable( NABoolean value )
-  {  value ? flags_ |= SQLMP_ROW_FORMAT : flags_ &= ~SQLMP_ROW_FORMAT; }
-// LCOV_EXCL_STOP
-
-  NABoolean isSQLMPTable() const
-  {  return (flags_ & SQLMP_ROW_FORMAT) != 0; }
-
   void setSQLMXTable( NABoolean value )
   {  value ? flags_ |= SQLMX_ROW_FORMAT : flags_ &= ~SQLMX_ROW_FORMAT; }
 
@@ -875,8 +859,6 @@ private:
   // Bitfield flags to be used instead of numerous NABoolean fields
   enum Flags {
     UNUSED                    = 0x00000000,
-    SQLMP_SHORTHAND_VIEW      = 0x00000001,
-    SQLMP_ROW_FORMAT          = 0x00000002,
     SQLMX_ROW_FORMAT          = 0x00000004,
     SQLMX_ALIGNED_ROW_FORMAT  = 0x00000008,
     IS_INSERTABLE             = 0x00000010,

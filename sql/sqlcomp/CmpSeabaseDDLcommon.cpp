@@ -1399,8 +1399,6 @@ short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext,
   
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
 
-  SQL_EXEC_SetParserFlagsForExSqlComp_Internal(ALLOW_SPECIALTABLETYPE);
-
   return 0;
 }
 
@@ -6527,6 +6525,15 @@ void CmpSeabaseDDL::dropSeabaseMD()
 
   CmpCommon::context()->setIsUninitializedSeabase(TRUE);
   CmpCommon::context()->uninitializedSeabaseErrNum() = -1393;
+  CmpCommon::context()->setIsAuthorizationEnabled(FALSE);
+
+  // kill child arkcmp process. It would ensure that a subsequent
+  // query, if sent to arkcmp, doesnt get stale information. After restart,
+  // the new arkcmp will cause its context to have uninitialized state.
+  // Note: TESTEXIT command only works if issued internally.
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL);
+  cliInterface.executeImmediate("SELECT TESTEXIT;");
+  cliInterface.clearGlobalDiags();
 
   return;
 }

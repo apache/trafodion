@@ -483,8 +483,7 @@ short DDLExpr::codeGen(Generator * generator)
                 (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
                 (queue_index)getDefault(GEN_DDL_SIZE_UP),
                 getDefault(GEN_DDL_NUM_BUFFERS),
-                getDefault(GEN_DDL_BUFFER_SIZE),
-                mpRequest());
+                getDefault(GEN_DDL_BUFFER_SIZE));
   
   if (isHbase_)
     {
@@ -1629,8 +1628,6 @@ short RelRoot::codeGen(Generator * generator)
 	    stoi->setValidateViewsAtOpenTime(TRUE);
           else
             stoi->setValidateViewsAtOpenTime(FALSE);
-	  //else if (NOT stoi->isSQLMPTable())
-	   // stoi->setValidateViewsAtOpenTime(TRUE);
 
 	  viewStoiList->insert(stoi);
 

@@ -93,7 +93,6 @@ public:
   ReturnStatus process(const CmpMessageUpdateHist&);
   ReturnStatus process(const CmpMessageSetTrans&);
   ReturnStatus process(const CmpMessageDatabaseUser&);
-  ReturnStatus process(const CmpMessageReadTableDef&);
   ReturnStatus process(const CmpMessageEndSession&);
   ReturnStatus process(const CmpMessageDDLwithStatus&);
 

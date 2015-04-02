@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -315,12 +315,10 @@ public:
   // ---------------------------------------------------------------------
   virtual void minRepresentableValue(void*, Lng32*,
 				     NAString ** stringLiteral = NULL,
-				     NAMemory * h=0,
-                                     NABoolean sqlmpKeyGen=FALSE) const;
+				     CollHeap* h=0) const;
   virtual void maxRepresentableValue(void*, Lng32*,
 				     NAString ** stringLiteral = NULL,
-				     NAMemory * h=0,
-                                     NABoolean sqlmpKeyGen=FALSE) const;
+				     CollHeap * h=0) const;
 
   virtual double getMinValue() const { return 0; };
   virtual double getMaxValue() const { return 0; };

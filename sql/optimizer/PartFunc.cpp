@@ -3797,8 +3797,7 @@ const char * RangePartitionBoundaries::getBinaryBoundaryValue(
 // -----------------------------------------------------------------------
 void RangePartitionBoundaries::completePartitionBoundaries(
      const ValueIdList& partitioningKeyOrder,
-     Lng32 encodedBoundaryKeyLength,
-     NABoolean isSQLMPTable)
+     Lng32 encodedBoundaryKeyLength)
 {
   // recognize from the fact that the encoded key length is
   // not set yet that this method hasn't been called before
@@ -3828,13 +3827,11 @@ void RangePartitionBoundaries::completePartitionBoundaries(
       ItemExpr *minVal = new(CmpCommon::statementHeap())
 	                      SystemLiteral(&prototypeType,
 					    TRUE /*want min*/,
-					    TRUE /*allow NULL*/,
-					    isSQLMPTable);
+					    TRUE /*allow NULL*/);
       ItemExpr *maxVal = new(CmpCommon::statementHeap())
 	                      SystemLiteral(&prototypeType,
 					    FALSE,
-					    TRUE,
-					    isSQLMPTable);
+					    TRUE);
 
       ItemExpr * orderExpr = partitioningKeyOrder[i].getItemExpr();
 
@@ -4539,8 +4536,7 @@ RangePartitioningFunction::createPartitioningFunctionForIndexDesc
   // -----------------------------------------------------------------
   partBounds->completePartitionBoundaries(
        orderOfPartKeyValues,
-       encodedBoundaryKeyLength,
-       idesc->getPrimaryTableDesc()->getNATable()->isSQLMPTable());
+       encodedBoundaryKeyLength);
 
   // -----------------------------------------------------------------
   // Allocate a new RangePartitioningFunction.

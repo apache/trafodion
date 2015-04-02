@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public:
   //
   // Format of data in tuple:
   //
-  // SQLMP_FORMAT:     records stored in tables created on SQL/MP.
+  // PACKED_FORMAT:     records stored in tables created on SQL/MP.
   //                   Fields stored without any alignment.
   //                   If nullable field, null indicator bytes are
   //                   stored just before the actual data.
@@ -91,7 +91,7 @@ public:
   //                   Varchars are NOT stored in exploded format.
   //
   // SQLMX_KEY_FORMAT: 
-  //                Fields aligned like SQLMP_FORMAT plus (no VOA)
+  //                Fields aligned like PACKED_FORMAT plus (no VOA)
   //                varchars are blank padded to max len. Used to
   //                build key buffers for SQL/MX and SQL/MP tables.
   //
@@ -131,7 +131,7 @@ public:
   enum TupleDataFormat 
   { UNINITIALIZED_FORMAT,
     OBSOLETE_SIMULATOR_FORMAT,
-    SQLMP_FORMAT, SQLMX_KEY_FORMAT, 
+    PACKED_FORMAT, SQLMX_KEY_FORMAT, 
     SQLARK_EXPLODED_FORMAT,
     SQLMX_FORMAT,
     SQLMX_ALIGNED_FORMAT
@@ -329,8 +329,8 @@ public:
       return "Uninitialized";
     case OBSOLETE_SIMULATOR_FORMAT:
       return "Simulator";
-    case SQLMP_FORMAT:
-      return "SqlMP";
+    case PACKED_FORMAT:
+      return "Packed";
     case SQLMX_KEY_FORMAT:
       return "Key";
     case SQLARK_EXPLODED_FORMAT:
@@ -350,8 +350,8 @@ public:
   NABoolean isSQLMXAlignedTable()
   {  return tupleDataFormat_ == (Int16)ExpTupleDesc::SQLMX_ALIGNED_FORMAT; }
 
-  NABoolean isSQLMPTable()
-  {  return tupleDataFormat_ == (Int16) ExpTupleDesc::SQLMP_FORMAT; }
+  NABoolean isSQLPackedTable()
+  {  return tupleDataFormat_ == (Int16) ExpTupleDesc::PACKED_FORMAT; }
 
   // computeFirstFixedOffset
   //   Called at compile time to compute the offset to the first fixed

@@ -236,7 +236,6 @@ NARoutine::NARoutine (  const QualifiedName &name
 				   , currentCol +1
 				   , newColType
 				   , heap
-				   , 0 // SQLMP Keytag
 				   , NULL   // NATable *
 				   , USER_COLUMN
 				   , COM_NO_DEFAULT
@@ -499,7 +498,6 @@ NARoutine::NARoutine(const QualifiedName   &name,
          , param_desc->colnumber
          , newColType
          , heap
-         , 0 // SQLMP Keytag
          , NULL   // NATable *
          , USER_COLUMN
          , COM_NO_DEFAULT

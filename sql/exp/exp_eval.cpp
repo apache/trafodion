@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -407,7 +407,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 		switch( (*op)->getTupleFormat() )
 		  {
 		  case ExpTupleDesc::SQLMX_KEY_FORMAT:
-		  case ExpTupleDesc::SQLMP_FORMAT:
+		  case ExpTupleDesc::PACKED_FORMAT:
 		    {
 		      // if this is a special field (either a field following
 		      // a varchar field, or a missing field), then compute
@@ -522,7 +522,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 			{
                           if ((mode == exp_WRITE)    &&
                               (rowLen)               &&
-                              (*op)->isSQLMPFormat())
+                              (*op)->isSQLPackedFormat())
                           {	
                              varOffset = (*op)->getOffset();
                              currAttr = *op;
@@ -542,7 +542,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 			      *nulldata = 0;
 			    }
 			}
-		    }  // SQLMX_KEY_FORMAT, SQLMP_FORMAT
+		    }  // SQLMX_KEY_FORMAT, PACKED_FORMAT
 		  break;
 
 		  case ExpTupleDesc::SQLARK_EXPLODED_FORMAT:
@@ -839,12 +839,12 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
       else
       // Check if we have an operand that we need to keep track of the length
       // as we go.  This is a varchar attribute for SQLMX_FORMAT and
-      // SQLMP_FORMAT formats, and all attributes for SQLMX_ALIGNED_FORMAT
+      // PACKED_FORMAT formats, and all attributes for SQLMX_ALIGNED_FORMAT
       // since fixed fields are rearranged.
       if ((currAttr && retcode == ex_expr::EXPR_OK) ||
           (currAttr                        &&
            (retcode == ex_expr::EXPR_NULL) &&
-           ((currAttr->getTupleFormat() == ExpTupleDesc::SQLMP_FORMAT) ||
+           ((currAttr->getTupleFormat() == ExpTupleDesc::PACKED_FORMAT) ||
             (currAttr->getTupleFormat() == ExpTupleDesc::SQLMX_ALIGNED_FORMAT))))
       {
         varOffset += currAttr->getLength(op_data[ex_clause::MAX_OPERANDS]);

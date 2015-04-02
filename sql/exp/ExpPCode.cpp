@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2978,7 +2978,7 @@ PCIID PCode::nullBranch(ex_clause *clause,
       PCI pci(PCIT::Op_NULL_BITMAP, aml, ol);
       code.append(pci);
     }
-    else if ( tgt->isSQLMXPackedFormat() ) 
+    else if ( tgt->isSQLMXFormat() ) 
     {
       AML aml( PCIT::MPTR32,          // ptr to target null bitmap to clear
                PCIT::IBIN32S          // value to set to (on/off)

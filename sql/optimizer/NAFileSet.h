@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -98,7 +98,6 @@ public:
 	    const NAColumnArray & horizontalPartKeyColumns,
 	    PartitioningFunction * forHorizontalPartitioning,
 	    short keytag,
-	    unsigned short SQLMPKeytag,
 	    Int64 redefTime,
 	    NABoolean audited,
 	    NABoolean auditCompressed,
@@ -213,7 +212,6 @@ public:
   void      setRemoteIndexGone()              { thisRemoteIndexGone_=TRUE;}
 
   short getKeytag() const 		       { return keytag_; }
-  unsigned short getSQLMPKeytag() const 	  { return SQLMPkeytag_; }
 
   const Int64 &getRedefTime() const		    { return redefTime_; }
 
@@ -391,15 +389,6 @@ private:
   // to the result of this expression.
   // ---------------------------------------------------------------------
   // RelExpr *fileSetQuery_; // unbound fileSet definition (no value ids)
-
-  // ---------------------------------------------------------------------
-  // SQL/MP indices have an implicit first column (KEYTAG) which contains
-  // a unique value for each index on a SQL/MP table.
-  // The SQLMPkeytag_ field contains that value --
-  // for the primary index it is zero, and
-  // for all SQL/MX indexes it is zero.
-  // ---------------------------------------------------------------------
-  unsigned short SQLMPkeytag_;
 
   // ---------------------------------------------------------------------
   // This member is poorly named.  For all base tables (MP or MX),

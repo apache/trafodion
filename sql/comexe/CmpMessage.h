@@ -329,9 +329,6 @@ public:
 			 char* &schemaName,
 			 char* &recompControlInfo);
 
-  void setMP(void)      {flags_ |= SQLMP_RQST;}
-  NABoolean isMP(void)  {return flags_ & SQLMP_RQST;}
-
   const ULng32 getInputArrayMaxsize() {return inputArrayMaxsize_ ;}
 
   const short getRowsetAtomicity();
@@ -392,7 +389,6 @@ protected:
     // if odbc_process was ON as NSK at static compilation time.
     // Used to send this info to mxcmp at auto recompilation time.
     ODBC_PROCESS        = 0x0002,
-    SQLMP_RQST          = 0x0004,
     SYSTEM_MODULE_STMT  = 0x0008,
     // the next two flags go together. 
     // The first flag denotes whether rowset atomicity has been specified.
@@ -1030,89 +1026,6 @@ private:
   CmpMessageDatabaseUser& operator=(const CmpMessageDatabaseUser&);
   CmpMessageDatabaseUser(const CmpMessageDatabaseUser&);
 }; // end of CmpMessageDatabaseUser
-
-// -----------------------------------------------------------------------
-// The READTABLEDEF command
-// -----------------------------------------------------------------------
-class CmpReadTableDefInfo 
-{
-public:
-  enum ObjNameTypeEnum 
-    {
-      SQLMP, ANSI
-    };
-
-  enum RTDRequestTypeEnum
-    {
-      NONE, CATALOG, METADATA
-    };
-
-  CmpReadTableDefInfo(char * objName, ObjNameTypeEnum nameType = ANSI,
-                      RTDRequestTypeEnum requestType = METADATA);
-  Lng32 getLength();
-  void pack(char * buffer);
-  void unpack(char * base);
- 
-  RTDRequestTypeEnum getRequestType() { return requestType_; }
-  ObjNameTypeEnum getNameType() { return nameType_; }
-  char * getObjName() { return objName_; }
- 
-private:
-  ObjNameTypeEnum nameType_;
-  char *objName_;
-  RTDRequestTypeEnum requestType_;
-};
-
-class CmpMessageReadTableDef : public CmpMessageRequest
-{
-public:
-  CmpMessageReadTableDef(char* rtdtext=NULL,CmpMsgBufLenType size=0,
-                         CollHeap* h=0):
-    CmpMessageRequest(READTABLEDEF_REQUEST,rtdtext,size,h) {};
-
-  virtual ~CmpMessageReadTableDef() {};
-
-private:
-  CmpMessageReadTableDef& operator=(const CmpMessageReadTableDef&);
-  CmpMessageReadTableDef(const CmpMessageReadTableDef&);
-}; // end of CmpMessageReadTableDef
-
-class CmpMessageReadTableDefReply
-{
-public:
-  CmpMessageReadTableDefReply(char* ansiName = 0, Lng32 ansiNameLen = 0,
-                              char *mpName = 0, Lng32 mpNameLen = 0,
-                              char *catalogName = 0,
-                              Lng32 catalogNameLen = 0,
-                              char *tableDesc = 0,
-                              Lng32 descLen= 0,
-                              CollHeap* h = 0); 
-
-  virtual ~CmpMessageReadTableDefReply() {}; 
-  Lng32 getLength();
-  void pack(char * buffer);
-  void unpack(char * base);
- 
-  char * getAnsiName() { return ansiName_; }
-  Lng32   getAnsiNameLength() { return ansiNameLen_; }
-  char * getMPName() { return mpName_; }
-  Lng32   getMPNameLength() { return mpNameLen_; }
-  char * getCatalogName() { return catalogName_; }
-  Lng32   getCatalogNameLength() { return catalogNameLen_; }
-  char * getTableDesc() { return objDesc_; }
-  Lng32   getDescSize() { return descLen_; }
- 
-private:
-  char *ansiName_;
-  Lng32 ansiNameLen_;
-  char *mpName_;
-  Lng32 mpNameLen_;
-  char *catalogName_;
-  Lng32 catalogNameLen_;
-  char* objDesc_;
-  Lng32 descLen_; 
-  CollHeap *h_;
-};
 
 // -----------------------------------------------------------------------
 // The reply code message from arkcmp to executor, 

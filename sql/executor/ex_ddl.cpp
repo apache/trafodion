@@ -210,9 +210,6 @@ short ExDDLTcb::work()
       size_t dataLen = c.getLength();
       char * data = new(getHeap()) char[dataLen];
 
-      if (ddlTdb().mpRequest())
-        c.setMP();
-      
       if (ddlTdb().hbaseDDL())
 	{
 	  if (ddlTdb().hbaseDDLNoUserXn())
@@ -1476,9 +1473,6 @@ short ExProcessVolatileTableTcb::work()
 			     masterGlob->getStatement()->recompControlInfo(), 
 			     masterGlob->getStatement()->recompControlInfoLen(),
 			     0, 0);
-	    
-	    if (pvtTdb().mpRequest())
-	      c.setMP();
 	    
 	    if (pvtTdb().hbaseDDL())
 	      {

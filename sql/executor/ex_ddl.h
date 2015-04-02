@@ -217,8 +217,6 @@ protected:
     { return getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getCliGlobals()->currContext(); };
 
   inline ExDDLTdb & ddlTdb() const{return (ExDDLTdb &) tdb;};
-  inline NABoolean mpRequest() const {return ddlTdb().mpRequest();}; 
-
 };
 
 //

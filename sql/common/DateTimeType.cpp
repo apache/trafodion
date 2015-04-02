@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -766,29 +766,17 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
 
 void DatetimeType::minRepresentableValue(void* bufPtr, Lng32* bufLen,
 					 NAString** stringLiteral,
-					 NAMemory* h,
-					 NABoolean sqlmpKeyGen) const
+					 NAMemory* h) const
 {
   getRepresentableValue(minValueString,
 			bufPtr, bufLen, stringLiteral, h);
-  if (sqlmpKeyGen)
-  {
-    str_pad( (char *)bufPtr, *bufLen, '\0' );
-  }
 }
 
 void DatetimeType::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
 					 NAString** stringLiteral,
-					 NAMemory* h,
-					 NABoolean sqlmpKeyGen) const
+					 NAMemory* h) const
 {
   getRepresentableValue(maxValueString, bufPtr, bufLen, stringLiteral, h);
-  if (sqlmpKeyGen)
-  {
-#pragma warning (disable : 4305 4309)   //warning elimination
-    str_pad( (char *)bufPtr, *bufLen, 0xff );
-#pragma warning (default : 4305 4309)   //warning elimination
-  }
 }
 
 NABoolean DatetimeType::createSQLLiteral(const char * buf,

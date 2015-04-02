@@ -1848,7 +1848,6 @@ NAColumnArray * TMUDFInternalSetup::createColumnArrayFromTableInfo(
                i,
                ic->getType()->newCopy(heap),
                heap,
-               0,
                NULL,
                USER_COLUMN,
                COM_NO_DEFAULT,
