@@ -63,7 +63,7 @@ public class IdTm implements IdTmCb {
         System.out.println("IdTm done");
     }
 
-    private IdTm(boolean cb) {
+    public IdTm(boolean cb) {
         if (cb) {
             try {
                 reg_hash_cb(this);
@@ -137,6 +137,7 @@ public class IdTm implements IdTmCb {
      * @return file error
      */
     private native int native_id(int timeout, IdTmId id);
+
     /**
      * ping server
      *
