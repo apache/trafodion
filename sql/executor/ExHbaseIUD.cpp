@@ -26,6 +26,7 @@
 #include "ExHbaseAccess.h"
 #include "ex_exe_stmt_globals.h"
 #include "ExpHbaseInterface.h"
+#include "hs_util.h"
 
 ExHbaseAccessInsertTcb::ExHbaseAccessInsertTcb(
           const ExHbaseAccessTdb &hbaseAccessTdb, 
@@ -1003,6 +1004,154 @@ ExHbaseAccessBulkLoadPrepSQTcb::~ExHbaseAccessBulkLoadPrepSQTcb()
 
 }
 
+// Given the type information available via the argument, return the name of
+// the Hive type we use to represent it in the Hive sample table created by
+// the bulk load utility.
+static const char* TrafToHiveType(Attributes* attrs)
+{
+  Int64 maxValue = 0;
+  Int16 precision = 0;
+  Int16 scale = 0;
+  Int16 datatype = attrs->getDatatype();
+
+  if (DFS2REC::isInterval(datatype))
+  {
+    precision = dynamic_cast<SimpleType*>(attrs)->getPrecision();
+    scale = dynamic_cast<SimpleType*>(attrs)->getScale();
+  }
+
+  switch (datatype)
+  {
+    case REC_BIN16_SIGNED:
+    case REC_BIN16_UNSIGNED:
+    case REC_BPINT_UNSIGNED:
+      return "smallint";
+
+    case REC_BIN32_SIGNED:
+    case REC_BIN32_UNSIGNED:
+      return "int";
+
+    case REC_BIN64_SIGNED:
+      return "bigint";
+
+    case REC_TDM_FLOAT32:
+    case REC_IEEE_FLOAT32:
+      return "float";
+
+    case REC_TDM_FLOAT64:
+    case REC_IEEE_FLOAT64:
+      return "double";
+
+    case REC_DECIMAL_UNSIGNED:
+    case REC_DECIMAL_LS:
+    case REC_DECIMAL_LSE:
+      maxValue = (Int64)pow(10, dynamic_cast<SimpleType*>(attrs)->getPrecision());
+      break;
+
+    //case REC_NUM_BIG_UNSIGNED: return extFormat? (char *)"NUMERIC":(char *)"REC_NUM_BIG_UNSIGNED";
+    //case REC_NUM_BIG_SIGNED: return extFormat? (char *)"NUMERIC":(char *)"REC_NUM_BIG_SIGNED";
+
+    case REC_BYTE_F_ASCII:
+    case REC_NCHAR_F_UNICODE:
+    case REC_BYTE_V_ASCII:
+    case REC_NCHAR_V_UNICODE:
+    case REC_BYTE_V_ASCII_LONG:
+    case REC_BYTE_V_ANSI:
+    case REC_BYTE_V_ANSI_DOUBLE:
+    case REC_SBYTE_LOCALE_F:
+    case REC_MBYTE_LOCALE_F:
+    case REC_MBYTE_F_SJIS:
+    case REC_MBYTE_V_SJIS:
+      return "string";
+
+    case REC_DATETIME:
+      return "timestamp";
+
+    case REC_INT_YEAR:
+    case REC_INT_MONTH:
+    case REC_INT_DAY:
+    case REC_INT_HOUR:
+    case REC_INT_MINUTE:
+      maxValue = (Int64)pow(10, precision);
+      break;
+
+    case REC_INT_SECOND:
+      maxValue = (Int64)pow(10, precision + scale);
+      break;
+
+    case REC_INT_YEAR_MONTH:
+      maxValue = 12 * (Int64)pow(10, precision);
+      break;
+
+    case REC_INT_DAY_HOUR:
+      maxValue = 24 * (Int64)pow(10, precision);
+      break;
+
+    case REC_INT_HOUR_MINUTE:
+      maxValue = 60 * (Int64)pow(10, precision);
+      break;
+
+    case REC_INT_DAY_MINUTE:
+      maxValue = 24 * 60 * (Int64)pow(10, precision);
+      break;
+
+    case REC_INT_MINUTE_SECOND:
+      maxValue = (Int64)pow(10, precision + 2 + scale);
+      break;
+
+    case REC_INT_HOUR_SECOND:
+      maxValue = (Int64)pow(10, precision + 4 + scale);
+      break;
+
+    case REC_INT_DAY_SECOND:
+      maxValue = (Int64)pow(10, precision + 5 + scale);
+      break;
+
+    default:
+
+      break;
+  }  // switch
+
+  //assert(maxValue > 0);
+  if (maxValue < SHRT_MAX)
+    return "smallint";
+  else if (maxValue <= INT_MAX)
+    return "int";
+  else
+    return "bigint";
+}
+
+// Return in ddlText the Hive statement to create the Hive external table that
+// that will hold a sample for the Trafodion table being loaded. The files
+// containing the sample data are written independently to HDFS and linked to
+// the Hive table by the location clause in the generated Hive DDL.
+void ExHbaseAccessBulkLoadPrepSQTcb::getHiveCreateTableDDL(NAString& hiveSampleTblNm, NAString& ddlText)
+{
+  ExHbaseAccessTdb& hbaTdb = ((ExHbaseAccessTdb&)hbaseAccessTdb());
+  ddlText = "create external table ";
+  ddlText.append(hiveSampleTblNm).append("(");
+
+  ExpTupleDesc* td = hbaTdb.workCriDesc_->getTupleDescriptor(hbaTdb.convertTuppIndex_);
+  hbaTdb.listOfUpdatedColNames()->position();
+  Attributes* attrs;
+  char colNumBuf[12];
+  for (UInt32 i = 0; i < td->numAttrs(); i++)
+    {
+      attrs = td->getAttr(i);
+      sprintf(colNumBuf, "%d", *(UInt32*) hbaTdb.listOfUpdatedColNames()->getCurr());
+      ddlText.append("col").append(colNumBuf).append(" ");
+      ddlText.append(TrafToHiveType(attrs));
+      if (i < td->numAttrs() - 1)
+        ddlText.append(", ");
+      else
+        ddlText.append(") row format delimited fields terminated by '|' location '")
+               .append(hbaTdb.getSampleLocation())
+               .append((const char*)hbaTdb.getTableName())
+               .append("/'");
+      hbaTdb.listOfUpdatedColNames()->advance();
+    }
+}
+
 ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 {
   Lng32 retcode = 0;
@@ -1012,6 +1161,11 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
     castToExExeStmtGlobals()->castToExMasterStmtGlobals();
 
   NABoolean eodSeen = false;
+
+  // Get the percentage of rows to include in the ustat sample table. A value of
+  // 0 indicates that no sample table is to be created.
+  static NABoolean displayed = FALSE;
+  double samplingRate = ((ExHbaseAccessTdb&)hbaseAccessTdb()).getSamplingRate();
 
   while (!qparent_.down->isEmpty())
   {
@@ -1077,20 +1231,37 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           snprintf(hFileName, 50, "hfile%d", fileNum);
           hFileName_ = hFileName;
 
-          retcode = ehi_->initHFileParams(table_, familyLocation_, hFileName_,hbaseAccessTdb().getMaxHFileSize() );
+          NAString hiveDDL;
+          NAString hiveSampleTblNm;
+          if (samplingRate > 0 && fileNum == 0) // master exec creates hive sample table
+          {
+            hiveSampleTblNm = ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName();
+            TrafToHiveSampleTableName(hiveSampleTblNm);
+            getHiveCreateTableDDL(hiveSampleTblNm, hiveDDL);
+          }
+          retcode = ehi_->initHFileParams(table_, familyLocation_, hFileName_,
+                                          hbaseAccessTdb().getMaxHFileSize(),
+                                          hiveSampleTblNm.data(), hiveDDL.data());
           hFileParamsInitialized_ = true;
 
-//          // Seed random number generator (used to select rows to write to sample table).
-//          srand(time(0));
-//
-//          // Set up HDFS file for sample table.
-//          hdfs_ = hdfsConnect("default", 0);
-//          Text samplePath = std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getSampleLocation()) +
-//                                        ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
-//          char filePart[10];
-//          sprintf(filePart, "/%d", fileNum);
-//          samplePath.append(filePart);
-//          hdfsSampleFile_ = hdfsOpenFile(hdfs_, samplePath.data(), O_WRONLY|O_CREAT, 0, 0, 0);
+          if (samplingRate > 0)
+          {
+            // Seed random number generator (used to select rows to write to sample table).
+            srand(time(0));
+
+            // Set up HDFS file for sample table.
+            hdfs_ = hdfsConnect("default", 0);
+            Text samplePath = std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getSampleLocation()) +
+                                          ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
+            char filePart[10];
+            sprintf(filePart, "/%d", fileNum);
+            samplePath.append(filePart);
+            hdfsSampleFile_ = hdfsOpenFile(hdfs_, samplePath.data(), O_WRONLY|O_CREAT, 0, 0, 0);
+            //if (!hdfsSampleFile_)
+            //  printf("*** Failed to open %s for writing.\n", samplePath.data());
+            //else
+            //  printf("*** File %s was opened successfully.\n", samplePath.data());
+          }
 
 //              sortedListOfColNames_ = new  Queue(); //delete wehn done
           posVec_.clear();
@@ -1198,7 +1369,8 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
                                       convertRow_,
                                       hbaseAccessTdb().listOfUpdatedColNames(),
                                       FALSE, //TRUE,
-                                      &posVec_);
+                                      &posVec_,
+                                      samplingRate);
         if (retcode == -1)
         {
           //need to re-verify error handling

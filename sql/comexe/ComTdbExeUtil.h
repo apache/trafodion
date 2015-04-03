@@ -3226,6 +3226,11 @@ public:
     {(v ? flags_ |= FORCE_CIF : flags_ &= ~FORCE_CIF); };
   NABoolean getForceCIF() { return (flags_ & FORCE_CIF) != 0; };
 
+  void setUpdateStats(NABoolean v)
+    {
+    (v ? flags_ |= UPDATE_STATS : flags_ &= ~UPDATE_STATS); };
+  NABoolean getUpdateStats() { return (flags_ & UPDATE_STATS) != 0; };
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
@@ -3247,7 +3252,8 @@ private:
     NO_OUTPUT        = 0x0400,
     INDEX_TABLE_ONLY = 0x0800,
     UPSERT_USING_LOAD= 0x1000,
-    FORCE_CIF        = 0x2000
+    FORCE_CIF        = 0x2000,
+    UPDATE_STATS     = 0x4000
   };
 
   // load stmt

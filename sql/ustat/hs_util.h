@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -56,6 +56,8 @@ NABoolean isSpecialObject(const ComObjectName& objectName);
 NABoolean isSpecialObject(const QualifiedName& qualifiedName);
 
 NAString getTableName(const NAString name, const ComAnsiNameSpace nameSpace);
+
+void TrafToHiveSampleTableName(NAString& name);
 
 // -----------------------------------------------------------------------
 // Return the root of fx = 0.

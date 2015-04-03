@@ -730,7 +730,8 @@ public:
   // Must be called.
   HBLC_RetCode init();
 
-  HBLC_RetCode initHFileParams(const HbaseStr &tblName, const Text& hFileLoc, const Text& hfileName, Int64 maxHFileSize);
+  HBLC_RetCode initHFileParams(const HbaseStr &tblName, const Text& hFileLoc, const Text& hfileName, Int64 maxHFileSize,
+                              const char* sampleTblName, const char* hiveDDL);
 
   HBLC_RetCode addToHFile( short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, ExHbaseAccessStats *hbs);
 

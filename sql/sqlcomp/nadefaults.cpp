@@ -3497,7 +3497,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_SHOW_MFV_INFO,                  "OFF"),
   DDflte_(USTAT_UEC_HI_RATIO,                   "0.5"),
   DDflte_(USTAT_UEC_LOW_RATIO,                  "0.1"),
-  DDkwd__(USTAT_USE_BACKING_SAMPLE,             "OFF"),  //@ZXtemp
+  DDkwd__(USTAT_USE_BACKING_SAMPLE,             "OFF"),
   DDkwd__(USTAT_USE_BULK_LOAD,                  "OFF"),
   DDkwd__(USTAT_USE_GROUPING_FOR_SAMPLING,      "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "OFF"),

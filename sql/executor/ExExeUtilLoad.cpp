@@ -1109,6 +1109,8 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   ExTransaction *ta = getGlobals()->castToExExeStmtGlobals()->
     castToExMasterStmtGlobals()->getStatement()->getContext()->getTransaction();
 
+  NABoolean ustatNonEmptyTable = FALSE;
+
   while (1)
   {
     switch (step_)
@@ -1139,6 +1141,25 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = TRUNCATE_TABLE_;
           break;
         }
+
+        // Table will not be truncated, so make sure it is empty if Update
+        // Stats has been requested. We obviously have to do this check before
+        // the load, but if the table is determined to be non-empty, the
+        // message is deferred until the UPDATE_STATS_ step.
+        if (hblTdb().getUpdateStats())
+        {
+          NAString selectFirstQuery = "select [first 1] 0 from ";
+          selectFirstQuery.append(hblTdb().getTableName()).append(";");
+          cliRC = cliInterface()->executeImmediate(selectFirstQuery.data());
+          if (cliRC < 0)
+          {
+            step_ = LOAD_END_ERROR_;
+            break;
+          }
+          else if (cliRC != 100)
+            ustatNonEmptyTable = TRUE;  // So we can display msg later
+        }
+
         step_ = LOAD_START_;
       }
         break;
@@ -1310,11 +1331,41 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
           rowsAffected_ = 0;
           char * transQuery =hblTdb().ldQuery_;
+          if (ustatNonEmptyTable)
+            {
+              // If the ustat option was specified, but the table to be loaded
+              // is not empty, we have to retract the WITH SAMPLE option that
+              // was added to the LOAD TRANSFORM statement when the original
+              // bulk load statement was parsed.
+              const char* sampleOpt = " WITH SAMPLE ";
+              char* sampleOptPtr = strstr(transQuery, sampleOpt);
+              if (sampleOptPtr)
+                memset(sampleOptPtr, ' ', strlen(sampleOpt));
+            }
+          //printf("*** Load stmt is %s\n", transQuery);
+
+          // If the WITH SAMPLE clause is included, set the internal exe util
+          // parser flag to allow it.
+          ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+          ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+          NABoolean parserFlagSet = FALSE;
+          if (hblTdb().getUpdateStats() && !ustatNonEmptyTable)
+          {
+            if ((masterGlob->getStatement()->getContext()->getSqlParserFlags() & 0x20000) == 0)
+            {
+              parserFlagSet = TRUE;
+              masterGlob->getStatement()->getContext()->setSqlParserFlags(0x20000);
+            }
+          }
+
           cliRC = cliInterface()->executeImmediate(transQuery,
                                                    NULL,
                                                    NULL,
                                                    TRUE,
                                                    &rowsAffected_);
+          if (parserFlagSet)
+            masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
+
           transQuery = NULL;
           if (cliRC < 0)
           {
@@ -1349,7 +1400,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
             break;
           }
 
-          step_ = DONE_;
+          step_ = LOAD_END_;
 
            if (hblTdb().getIndexes())
              step_ = POPULATE_INDEXES_;
@@ -1418,10 +1469,13 @@ short ExExeUtilHBaseBulkLoadTcb::work()
            step_ = LOAD_END_ERROR_;
            break;
          }
-        step_ = LOAD_END_;
 
         if (hblTdb().getIndexes())
           step_ = POPULATE_INDEXES_;
+        else if (hblTdb().getUpdateStats())
+          step_ = UPDATE_STATS_;
+        else
+          step_ = LOAD_END_;
 
         setEndStatusMsg(" COMPLETION", 0, TRUE);
       }
@@ -1452,11 +1506,67 @@ short ExExeUtilHBaseBulkLoadTcb::work()
            break;
          }
 
-        step_ = LOAD_END_;
+         if (hblTdb().getUpdateStats())
+           step_ = UPDATE_STATS_;
+         else
+           step_ = LOAD_END_;
 
-        setEndStatusMsg(" POPULATE INDEXES", 0, TRUE);
+         setEndStatusMsg(" POPULATE INDEXES", 0, TRUE);
       }
         break;
+
+      case UPDATE_STATS_:
+      {
+        if (setStartStatusMsgAndMoveToUpQueue(" UPDATE STATISTICS", &rc))
+          return rc;
+
+        if (ustatNonEmptyTable)
+        {
+          // Table was not empty prior to the load.
+          step_ = LOAD_END_;
+          sprintf(statusMsgBuf_,
+                  "       UPDATE STATISTICS not executed: table %s not empty before load. %c",
+                  hblTdb().getTableName(), '\n' );
+          int len = strlen(statusMsgBuf_);
+          setEndStatusMsg(" UPDATE STATS", len, TRUE);
+          break;
+        }
+
+        char * ustatStmt =
+          new(getMyHeap()) char[strlen("UPDATE STATS FOR TABLE  ON EVERY COLUMN; ") +
+                               strlen(hblTdb().getTableName()) +
+                               100];
+        strcpy(ustatStmt, "UPDATE STATISTICS FOR TABLE ");
+        strcat(ustatStmt, hblTdb().getTableName());
+        strcat(ustatStmt, " ON EVERY COLUMN;");
+
+        cliRC = holdAndSetCQD("USTAT_USE_BACKING_SAMPLE", "ON");
+        if (cliRC < 0)
+        {
+          step_ = LOAD_END_ERROR_;
+          break;
+        }
+
+        cliRC = cliInterface()->executeImmediate(ustatStmt, NULL, NULL, TRUE, NULL, TRUE);
+
+        NADELETEBASIC(ustatStmt, getMyHeap());
+        ustatStmt = NULL;
+
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_END_ERROR_;
+        }
+        else
+          step_ = LOAD_END_;
+
+        cliRC = restoreCQD("USTAT_USE_BACKING_SAMPLE");
+        if (cliRC < 0)
+          step_ = LOAD_END_ERROR_;
+
+        setEndStatusMsg(" UPDATE STATS", 0, TRUE);
+      }
+      break;
 
       case RETURN_STATUS_MSG_:
       {

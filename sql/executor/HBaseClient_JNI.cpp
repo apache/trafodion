@@ -1588,7 +1588,7 @@ HBLC_RetCode HBulkLoadClient_JNI::init()
     JavaMethods_[JM_GET_ERROR  ].jm_name      = "getLastError";
     JavaMethods_[JM_GET_ERROR  ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_INIT_HFILE_PARAMS     ].jm_name      = "initHFileParams";
-    JavaMethods_[JM_INIT_HFILE_PARAMS     ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)Z";
+    JavaMethods_[JM_INIT_HFILE_PARAMS     ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_CLOSE_HFILE      ].jm_name      = "closeHFile";
     JavaMethods_[JM_CLOSE_HFILE      ].jm_signature = "()Z";
     JavaMethods_[JM_DO_BULK_LOAD     ].jm_name      = "doBulkLoad";
@@ -1617,9 +1617,12 @@ HBLC_RetCode HBulkLoadClient_JNI::initHFileParams(
                         const HbaseStr &tblName,
                         const Text& hFileLoc,
                         const Text& hfileName,
-                        Int64 maxHFileSize)
+                        Int64 maxHFileSize,
+                        const char* sampleTblName,
+                        const char* hiveDDL)
 {
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::initHFileParams(%s, %s, %s, %ld) called.", hFileLoc.data(), hfileName.data(), tblName.val,maxHFileSize);
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::initHFileParams(%s, %s, %s, %ld, %s, %s) called.",
+                hFileLoc.data(), hfileName.data(), tblName.val, maxHFileSize, sampleTblName, hiveDDL);
 
   jstring js_hFileLoc = jenv_->NewStringUTF(hFileLoc.c_str());
    if (js_hFileLoc == NULL)
@@ -1639,6 +1642,18 @@ HBLC_RetCode HBulkLoadClient_JNI::initHFileParams(
       GetCliGlobals()->setJniErrorStr(getErrorText(HBLC_ERROR_CREATE_HFILE_PARAM));
       return HBLC_ERROR_CREATE_HFILE_PARAM;
     }
+  jstring js_sampleTblName = jenv_->NewStringUTF(sampleTblName);
+  if (js_sampleTblName == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBLC_ERROR_CREATE_HFILE_PARAM));
+    return HBLC_ERROR_CREATE_HFILE_PARAM;
+  }
+  jstring js_hiveDDL = jenv_->NewStringUTF(hiveDDL);
+  if (js_hiveDDL == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBLC_ERROR_CREATE_HFILE_PARAM));
+    return HBLC_ERROR_CREATE_HFILE_PARAM;
+  }
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -1650,10 +1665,13 @@ HBLC_RetCode HBulkLoadClient_JNI::initHFileParams(
   jlong j_maxSize = maxHFileSize;
 
   tsRecentJMFromJNI = JavaMethods_[JM_INIT_HFILE_PARAMS].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_INIT_HFILE_PARAMS].methodID, js_hFileLoc, js_hfileName,j_maxSize,js_tabName);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_INIT_HFILE_PARAMS].methodID, js_hFileLoc,
+                                              js_hfileName, j_maxSize, js_tabName, js_sampleTblName, js_hiveDDL);
 
   jenv_->DeleteLocalRef(js_hFileLoc);
   jenv_->DeleteLocalRef(js_hfileName);
+  jenv_->DeleteLocalRef(js_sampleTblName);
+  jenv_->DeleteLocalRef(js_hiveDDL);
 
   if (jenv_->ExceptionCheck())
   {

@@ -4679,6 +4679,7 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   exe_util_tdb->setIndexTableOnly(indexTableOnly_);
   exe_util_tdb->setUpsertUsingLoad(upsertUsingLoad_);
   exe_util_tdb->setForceCIF(CmpCommon::getDefault(TRAF_LOAD_FORCE_CIF) == DF_ON);
+  exe_util_tdb->setUpdateStats(updateStats_);
   exe_util_tdb->setSecure(FALSE);
 
 
@@ -4748,12 +4749,6 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
   char * tlpTmpLocation = space->allocateAlignedSpace(tlpTmpLocationNAS.length() + 1);
   strcpy(tlpTmpLocation, tlpTmpLocationNAS.data());
   load_tdb->setLoadPrepLocation(tlpTmpLocation);
-
-  // For sample file. Move later, when sampling not limited to bulk loads.
-//  NAString sampleLocationNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_SAMPLE_TABLE_LOCATION);
-//  char * sampleLocation = space->allocateAlignedSpace(sampleLocationNAS.length() + 1);
-//  strcpy(sampleLocation, sampleLocationNAS.data());
-//  load_tdb->setSampleLocation(sampleLocation);
 
   load_tdb->setQuasiSecure(FALSE);
   load_tdb->setTakeSnapshot((CmpCommon::getDefault(TRAF_LOAD_TAKE_SNAPSHOT) == DF_ON));

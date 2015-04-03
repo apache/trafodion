@@ -671,6 +671,16 @@ public:
     LoadPrepLocation_ = loadPrepLocation;
   }
 
+  const Float32 getSamplingRate() const
+  {
+    return samplingRate_;
+  }
+
+  void setSamplingRate(Float32 samplingRate)
+  {
+    samplingRate_ = samplingRate;
+  }
+
   const char * getSampleLocation() const
   {
     return sampleLocation_;

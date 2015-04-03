@@ -260,7 +260,9 @@ class ExpHbaseInterface : public NABasicObject
  virtual Lng32 initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
                            Text& hfileName,
-                           Int64 maxHFileSize) = 0;
+                           Int64 maxHFileSize,
+                           const char* sampleTblName,
+                           const char* hiveDDL) = 0;
 
  virtual Lng32 addToHFile(short rowIDLen,
                           HbaseStr &rowIDs,
@@ -516,7 +518,9 @@ virtual  Lng32 initHBLC(ExHbaseAccessStats* hbs = NULL);
 virtual Lng32 initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
                            Text& hfileName,
-                           Int64 maxHFileSize);
+                           Int64 maxHFileSize,
+                           const char* sampleTblName,
+                           const char* hiveDDL);
  virtual Lng32 addToHFile(short rowIDLen,
                           HbaseStr &rowIDs,
                           HbaseStr &rows);

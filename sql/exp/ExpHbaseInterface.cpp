@@ -953,14 +953,16 @@ Lng32 ExpHbaseInterface_JNI::initHBLC(ExHbaseAccessStats* hbs)
 Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
                            Text& hfileName,
-                           Int64 maxHFileSize)
+                           Int64 maxHFileSize,
+                           const char* sampleTblName,
+                           const char* hiveDDL)
 {
   if (hblc_ == NULL)
   {
     return -HBASE_ACCESS_ERROR;
   }
 
-  retCode_ = hblc_->initHFileParams(tblName, hFileLoc, hfileName, maxHFileSize);
+  retCode_ = hblc_->initHFileParams(tblName, hFileLoc, hfileName, maxHFileSize, sampleTblName, hiveDDL);
   //close();
   if (retCode_ == HBLC_OK)
     return HBASE_ACCESS_SUCCESS;

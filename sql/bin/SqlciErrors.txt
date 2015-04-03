@@ -1414,6 +1414,7 @@ $1~String1 --------------------------------
 4489 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK UNLOAD option $0~String0 cannot be specified more than once. 
 4490 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD into a salted table is not supported if ESP parallelism is turned off. 
 4491 42000 99999 BEGINNER MINOR LOGONLY The user does not have $0~string0 privilege on sequence $1~string1$2~string2.
+4492 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option UPDATE STATISTICS cannot be used with UPSERT USING LOAD option.
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.
 6001 0A000 99999 BEGINNER MAJOR DBADMIN DISTINCT aggregates can be computed for only one column per table expression.

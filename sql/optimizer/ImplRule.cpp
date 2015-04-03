@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -2665,6 +2665,7 @@ RelExpr * HbaseInsertRule::nextSubstitute(RelExpr * before,
   result->enableTransformToSTI() = bef->enableTransformToSTI();
   result->setIsUpsert(bef->isUpsert());
   result->setIsTrafLoadPrep(bef->getIsTrafLoadPrep());
+  result->setCreateUstatSample(bef->getCreateUstatSample());
 
   if (result->getGroupAttr()->isEmbeddedInsert())
     result->executorPred() += bef->selectionPred();
