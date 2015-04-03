@@ -41,7 +41,7 @@
 #include "StmtNode.h"
 #include "charinfo.h"
 #include "RelFastTransport.h"
-//#include "LateBindInfo.h"
+#include "PrivMgrMD.h"
 
 
 // -----------------------------------------------------------------------
@@ -519,7 +519,8 @@ public:
     : GenericUtilExpr(stmtText, stmtTextCharSet, exprNode, child, REL_EXE_UTIL, oHeap),
 	 type_(type),
 	 tableName_(name, oHeap),
-	 tableId_(NULL)
+	 tableId_(NULL),
+         stoi_(NULL)
   {
   };
 
@@ -559,6 +560,20 @@ public:
   void          setUtilTableDesc(TableDesc *newId)  
   { tableId_ = newId; }
 
+  NABoolean checkForComponentPriv(SQLOperation operation, BindWA *bindQA);
+
+  void setupStoiForPrivs(SqlTableOpenInfo::AccessFlags privs, BindWA *bindWA);
+
+  OptSqlTableOpenInfo *getOptStoi() const
+  {
+    return stoi_;
+  }
+
+  void setOptStoi(OptSqlTableOpenInfo *stoi)
+  {
+    stoi_ = stoi;
+  }
+
   virtual NABoolean explainSupported() { return FALSE; }
 
   virtual NABoolean dontUseCache() { return FALSE; }
@@ -572,6 +587,8 @@ protected:
   // a unique identifer for the table specified by tableName_
   TableDesc *tableId_;  
 
+  // for special privilege checks - add a stoi
+  OptSqlTableOpenInfo *stoi_;
 };
 
 class ExeUtilDisplayExplain : public ExeUtilExpr
@@ -2167,6 +2184,7 @@ public:
                    ExprNode * exprNode,
                    char * stmtText,
                    CharInfo::CharSet stmtTextCharSet,
+                   RelExpr *queryExpression,
                    CollHeap *oHeap = CmpCommon::statementHeap())
    : ExeUtilExpr(HBASE_LOAD_, hBaseTableName, exprNode, NULL,
                  stmtText, stmtTextCharSet, oHeap),
@@ -2180,7 +2198,8 @@ public:
     constraints_(FALSE),
     noOutput_(FALSE),
     indexTableOnly_(FALSE),
-    upsertUsingLoad_(FALSE)
+    upsertUsingLoad_(FALSE),
+    pQueryExpression_(queryExpression)
   {
   };
 
@@ -2189,9 +2208,9 @@ public:
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
                                 CollHeap* outHeap = 0);
 
-  virtual short codeGen(Generator*);
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
 
-  NABoolean isAuthorized(Generator* generator);
+  virtual short codeGen(Generator*);
 
   NABoolean getKeepHFiles() const
   {
@@ -2292,6 +2311,8 @@ public:
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
   virtual NABoolean producesOutput() { return (noOutput_ ? FALSE : TRUE); }
 
+  RelExpr *getQueryExpression() { return pQueryExpression_; }
+
   short setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> *
       hBaseBulkLoadOptionList,
       ComDiagsArea * da);
@@ -2309,6 +2330,7 @@ private:
   //target table is index table
   NABoolean indexTableOnly_;
   NABoolean upsertUsingLoad_;
+  RelExpr *pQueryExpression_;
 
 };
 
@@ -2403,6 +2425,7 @@ public:
                    char * stmtText,
                    NAString * extractLocation,
                    CharInfo::CharSet stmtTextCharSet,
+                   RelExpr *queryExpression,
                    CollHeap *oHeap = CmpCommon::statementHeap())
    : ExeUtilExpr(HBASE_UNLOAD_, hBaseTableName, exprNode, NULL,
                  stmtText, stmtTextCharSet, oHeap),
@@ -2414,7 +2437,8 @@ public:
     extractLocation_(*extractLocation, oHeap),
     overwriteMergeFile_(FALSE),
     scanType_(REGULAR_SCAN_),
-    snapSuffix_(oHeap)
+    snapSuffix_(oHeap),
+    pQueryExpression_(queryExpression)
   {
   };
 
@@ -2422,11 +2446,11 @@ public:
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
                                 CollHeap* outHeap = 0);
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
   virtual short codeGen(Generator*);
 
   ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple, ComTdb * tdb, Generator *generator);
-
-  NABoolean isAuthorized(Generator* generator);
 
   NABoolean getLogErrors() const
   {
@@ -2474,6 +2498,8 @@ public:
     return overwriteMergeFile_;
   }
 
+  RelExpr *getQueryExpression() { return pQueryExpression_; }
+
   void setOverwriteMergeFile(NABoolean overwriteMergeFile)
   {
     overwriteMergeFile_ = overwriteMergeFile;
@@ -2491,6 +2517,7 @@ private:
   NABoolean overwriteMergeFile_;
   NAString snapSuffix_;
   ScanType scanType_;
+  RelExpr *pQueryExpression_;
 };
 
 

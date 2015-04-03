@@ -17266,7 +17266,7 @@ load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
                     //disabled by default in 0.8.0 release 
                     if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
                       YYERROR; 
-                      
+
                     $$ = new (PARSERHEAP())
                           HBaseBulkLoadPrep(CorrName(*$4, PARSERHEAP()),
                                             NULL,
@@ -17291,6 +17291,8 @@ load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
                       UInt32 pos = 
                           stmt->index(" into ", 0, NAString::ignoreCase);
                        
+                      RelRoot *top = finalize($5);
+
                       NAString stmt1 = "LOAD TRANSFORM ";
                       stmt1.append((char*)&(stmt->data()[pos]));
                       
@@ -17299,6 +17301,7 @@ load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
                                         NULL,
                                         (char*)stmt1.data(),
                                         stmtCharSet,
+                                        top,
                                         PARSERHEAP());
                         if (eubl->setOptions($2, SqlParser_Diags))
                                YYERROR; 
@@ -17505,12 +17508,15 @@ hbb_upsert_using_load : TOK_UPSERT TOK_USING TOK_LOAD
                     YYERROR;
                   }
                
+                  RelRoot *top = finalize($5);
+
                   ExeUtilHBaseBulkUnLoad * eubl = new (PARSERHEAP()) 
                                     ExeUtilHBaseBulkUnLoad(CorrName("DUMMY", PARSERHEAP()),
                                     NULL,
                                     (char*)stmt->data(),
                                     $4,
                                     stmtCharSet,
+                                    top,
                                     PARSERHEAP());
                   if (eubl->setOptions($2, SqlParser_Diags))
                     YYERROR; 

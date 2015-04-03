@@ -93,6 +93,10 @@
 #include "SqlParserGlobals.h"		// must be last #include
 #include "ItmFlowControlFunction.h"
 #include "HDFSHook.h"
+#include "PrivMgrComponentPrivileges.h"
+#include "ComUser.h"
+#include "CmpSeabaseDDL.h"
+#include "SqlTableOpenInfo.h"
 
 
 NAWchar *SQLTEXTW();
@@ -303,6 +307,7 @@ RelExpr * ExeUtilExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   result->tableId_ = tableId_;
   result->virtualTabId_ = virtualTabId_;
+  result->setOptStoi(stoi_);
 
   return GenericUtilExpr::copyTopNode(result, outHeap);
 }
@@ -434,6 +439,92 @@ ExeUtilExpr::unparse(NAString &result,
     default:
       break;
     }
+}
+
+// Returns TRUE if current user has requested component privilege
+NABoolean ExeUtilExpr::checkForComponentPriv(
+  SQLOperation operation,
+  BindWA *bindWA)
+{
+  // If authorization is not enabled, implicitly have priv
+  if (!bindWA->currentCmpContext()->isAuthorizationEnabled())
+    return TRUE;
+
+  // if DB__ROOT, implicitly have priv
+  if (ComUser::getCurrentUser() == ComUser::getRootUserID())
+    return TRUE;
+
+  // If have requested component privilege, return TRUE
+  NAString privMgrMDLoc = CmpSeabaseDDL::getSystemCatalogStatic() + \
+                          NAString(".\"") + \
+                          SEABASE_PRIVMGR_SCHEMA + \
+                          NAString ("\"");
+  PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
+                                                 CmpCommon::diags());
+  if (componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),operation,true))
+    return TRUE;
+ return FALSE;
+}
+
+// Sets up a stoi table entry.  This entry is used later when privileges
+// are checked to make sure the current user has required privileges 
+void ExeUtilExpr::setupStoiForPrivs (
+  SqlTableOpenInfo::AccessFlags privs,
+  BindWA *bindWA)
+{
+
+  // The stoi requires information from NATable
+  NATable *naTable = bindWA->getNATable(getTableName());
+  if (naTable == NULL)
+  {
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      *CmpCommon::diags() << DgSqlCode(-1034);
+    bindWA->setErrStatus();
+    return;
+  }
+
+  NAString fileName( naTable->getClusteringIndex()->
+                          getFileSetName().getQualifiedNameAsString(),
+                     bindWA->wHeap());
+
+  SqlTableOpenInfo * stoi_ = new (bindWA->wHeap()) SqlTableOpenInfo;
+
+  stoi_->setFileName(convertNAString(fileName, bindWA->wHeap()));
+
+  // set privileges as requested
+  stoi_->setSelectAccess(privs.select_);
+  stoi_->setInsertAccess(privs.insert_);
+  stoi_->setUpdateAccess(privs.update_);
+  stoi_->setDeleteAccess(privs.delete_);
+
+  // Add to stoiList associated with plan
+  OptSqlTableOpenInfo *stoiInList = NULL;
+
+  // First see if entry has already been added
+  for (CollIndex i=0; i < bindWA->getStoiList().entries(); i++)
+    if (strcmp(bindWA->getStoiList()[i]->getStoi()->fileName(), fileName) == 0) {
+      stoiInList = bindWA->getStoiList()[i];
+      break;
+    }
+
+  // If entry has not been added, add it to bindWA's list
+  if (!stoiInList)
+  {
+    OptSqlTableOpenInfo *optStoi = new (bindWA->wHeap())
+      OptSqlTableOpenInfo( stoi_,getTableName(), bindWA->wHeap());
+    optStoi->setTable ((NATable *)naTable);
+    bindWA->getStoiList().insert(optStoi);
+  }
+
+  // Adjust list of privileges to include utility requirements
+  else
+  {
+    if (stoi_->getSelectAccess()) stoiInList->getStoi()->setSelectAccess();
+    if (stoi_->getInsertAccess()) stoiInList->getStoi()->setInsertAccess();
+    if (stoi_->getUpdateAccess()) stoiInList->getStoi()->setUpdateAccess();
+    if (stoi_->getDeleteAccess()) stoiInList->getStoi()->setDeleteAccess();
+  }
+  return;
 }
 
 ExeUtilGetStatistics::ExeUtilGetStatistics(NAString statementName,
@@ -5339,7 +5430,7 @@ RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outH
     result = new (outHeap)
       ExeUtilHBaseBulkLoad(getTableName(),
                       getExprNode(),
-                      NULL, CharInfo::UnknownCharSet, outHeap);
+                      NULL, CharInfo::UnknownCharSet, pQueryExpression_, outHeap);
   else
     result = (ExeUtilHBaseBulkLoad *) derivedNode;
 
@@ -5353,8 +5444,47 @@ RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outH
   result->noOutput_= noOutput_;
   result->indexTableOnly_= indexTableOnly_;
   result->upsertUsingLoad_= upsertUsingLoad_;
+  result->pQueryExpression_ = pQueryExpression_;
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilHBaseBulkLoad::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  RelExpr * boundExpr = NULL;
+
+  // If user does not have the MANAGE_LOAD component privilege, setup stoi for
+  // privileges needed to perform load operation
+  if (!checkForComponentPriv(SQLOperation::MANAGE_LOAD, bindWA))
+  {
+    // Load requires select and insert privileges
+    // Load requires delete if TRUNCATE is specified
+    SqlTableOpenInfo::AccessFlags privs;
+    privs.select_ = 1;
+    privs.insert_ = 1;
+    privs.update_ = 0;
+    privs.delete_ = truncateTable_;
+
+    setupStoiForPrivs(privs, bindWA);
+    if (bindWA->errStatus())
+      return NULL;
+
+    getQueryExpression()->bindNode(bindWA);
+  }
+
+  if (bindWA->errStatus())
+    return NULL;
+
+  boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  return boundExpr;
 }
 
 const NAString ExeUtilHBaseBulkLoad::getText() const
@@ -5524,6 +5654,7 @@ RelExpr * ExeUtilHBaseBulkLoadTask::copyTopNode(RelExpr *derivedNode, CollHeap* 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
+
 const NAString ExeUtilHBaseBulkLoadTask::getText() const
 {
   NAString result(CmpCommon::statementHeap());
@@ -5562,7 +5693,34 @@ RelExpr * ExeUtilHBaseBulkUnLoad::copyTopNode(RelExpr *derivedNode, CollHeap* ou
   result->overwriteMergeFile_ = overwriteMergeFile_;
   result->snapSuffix_= snapSuffix_;
   result->scanType_ = scanType_;
+  result->pQueryExpression_ = pQueryExpression_;
   return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilHBaseBulkUnLoad::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  RelExpr * boundExpr = NULL;
+
+  // If user does not have the MANAGE_LOAD component privilege, call the
+  // binder to bind the associated query expression.  The binder returns
+  // any privilege errors
+  if (!checkForComponentPriv(SQLOperation::MANAGE_LOAD, bindWA))
+  {
+    // Verify that current user has privileges by binding the
+    // query expression attached to request
+    getQueryExpression()->bindNode(bindWA);
+  }
+
+  boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  return boundExpr;
 }
 
 const NAString ExeUtilHBaseBulkUnLoad::getText() const
