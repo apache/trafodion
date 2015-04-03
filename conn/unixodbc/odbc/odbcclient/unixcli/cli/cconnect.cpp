@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@
 #include "assert.h"
 #include "csconvert.h"
 #include <locale.h>
-#include <unistd.h> //10-080313-1379
+#include <unistd.h>
 #include <errno.h>
 #include <pwd.h>
 
@@ -128,7 +128,6 @@ CConnect::CConnect(SQLHANDLE InputHandle) : CHandle(SQL_HANDLE_DBC, InputHandle)
 	m_IgnoreCancel = false;
 	m_RetryEncryption = false;
 
-	m_QSServiceName[0]='\0';
 	// Initialize the converter class
 	m_ICUConv = new ICUConverter();
 	if(gDrvrGlobal.gDisablePreFetch == false)
@@ -294,8 +293,6 @@ void CConnect::reset(bool clError)
 	m_StartNode = -1;
 	m_EndNode   = -1;
 
-	strcpy(m_QSQueueName,HP_DEFAULT_SERVICE);
-
 	//wms_mapping
 	memset(m_QueryID_SessionName, 0, sizeof(m_QueryID_SessionName));
 	memset(m_applName, 0, sizeof(m_applName));
@@ -318,7 +315,6 @@ void CConnect::reset(bool clError)
 	}
 #endif
 	m_RetryEncryption = false;
-	m_QSServiceName[0]='\0';
 
 } /* CConnect::reset() */
 
@@ -772,9 +768,6 @@ SQLRETURN CConnect::Connect(SQLCHAR *ServerName,
 		m_asTCPIPSystem->m_IOCompression = m_IOCompression;
 	if (m_srvrTCPIPSystem != NULL)
 		m_srvrTCPIPSystem->m_IOCompression = m_IOCompression;
-
-	if (m_DSValue.m_DSServiceName[0] != 0)
-		strcpy(m_QSQueueName, m_DSValue.m_DSServiceName);
 
 	// Set the Assocation Service Object Reference
 	strcpy(m_ASSvc_ObjRef, m_DSValue.m_DSServer);
@@ -2886,7 +2879,7 @@ SQLRETURN CConnect::GetInfo(SQLUSMALLINT InfoType,
 		retValue.dataType = SQL_IS_UINTEGER;
 		break;
 	case SQL_DBMS_NAME:
-		retValue.u.strPtr = "HP Database";		// Update from "HP Database" to "HP Database" for Seaquest
+		retValue.u.strPtr = "Trafodion";
 		break;
 	case SQL_DBMS_VER:
 		sprintf(tmpStr, "%02d.%02d.%04d", m_SqlVersion.majorVersion,
