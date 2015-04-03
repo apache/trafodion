@@ -489,6 +489,7 @@ short CmpSeabaseDDL::getListOfReferencedTables(
       // views should only be referencing tables, other views, or functions
       CMPASSERT(objectRefd.objectType == COM_BASE_TABLE_OBJECT_LIT ||
                 objectRefd.objectType == COM_USER_DEFINED_ROUTINE_OBJECT_LIT ||
+                objectRefd.objectType == COM_SEQUENCE_GENERATOR_OBJECT_LIT ||
                 objectRefd.objectType == COM_VIEW_OBJECT_LIT);
 
       // found a table, add to list
