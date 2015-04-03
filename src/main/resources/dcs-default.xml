@@ -107,7 +107,7 @@
     <description>
         Listener Selector timeout. Default 10 seconds.
     </description>
-  </property>  
+  </property>
   <property>
     <name>dcs.server.user.program.max.heap.pct.exit</name>
     <value>0</value>
@@ -154,7 +154,7 @@
     <value>true</value>
     <description>Whether or not the DcsServer
     UI should search for a port to bind to. Enables automatic port
-    search if dcs.server.info.port.auto is already in use.
+    search if dcs.server.info.port is already in use.
     </description>
   </property>
   <property>

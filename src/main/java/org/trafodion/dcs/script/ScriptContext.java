@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,53 +24,89 @@ import org.apache.commons.logging.LogFactory;
 import org.trafodion.dcs.Constants;
 
 public final class ScriptContext {
-	private static final Log LOG = LogFactory.getLog(ScriptContext.class);
-	private String scriptName;
-	private String hostName;
-	private String command;
-	private boolean debug=false;
-	private int exitCode=0;
-	private StringBuilder stdOut = new StringBuilder();
-	private StringBuilder stdErr = new StringBuilder();
+    private static final Log LOG = LogFactory.getLog(ScriptContext.class);
+    private String scriptName;
+    private String hostName;
+    private String command;
+    private boolean debug = false;
+    private boolean stripStdOut = true;
+    private boolean stripStdErr = true;
+    private int exitCode = 0;
+    private StringBuilder stdOut = new StringBuilder();
+    private StringBuilder stdErr = new StringBuilder();
 
-	public void setScriptName(String value){
-		this.scriptName=value;
-	}
-	public String getScriptName(){
-		return scriptName;
-	}
-	public void setHostName(String value){
-		this.hostName=value;
-	}
-	public String getHostName(){
-		return hostName;
-	}
-	public void setCommand(String value){
-		this.command=value;
-	}
-	public String getCommand(){
-		return command;
-	}
-	public void setExitCode(int value){
-		this.exitCode=value;
-	}
-	public int getExitCode(){
-		return exitCode;
-	}
-	public StringBuilder getStdOut(){
-		return stdOut;
-	}
-	public StringBuilder getStdErr(){
-		return stdErr;
-	}
-	public String toString(){
-		StringBuilder sb = new StringBuilder();
-		sb.append("\nScript name[" + getScriptName() + "]");
-		sb.append("\nCommand[" + getCommand() + "]");
-		sb.append("\nHost name[" + getHostName() + "]");
-		sb.append("\nExit code[" + getExitCode() + "]");
-		sb.append("\nStdOut[" + getStdOut().toString() + "]");
-		sb.append("\nStdErr[" + getStdErr().toString() + "]");
-		return sb.toString();
-	}
+    public void setScriptName(String value) {
+        this.scriptName = value;
+    }
+
+    public String getScriptName() {
+        return scriptName;
+    }
+
+    public void setHostName(String value) {
+        this.hostName = value;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setCommand(String value) {
+        this.command = value;
+    }
+
+    public String getCommand() {
+        return command;
+    }
+
+    public void setDebug(boolean value) {
+        this.debug = value;
+    }
+
+    public boolean getDebug() {
+        return debug;
+    }
+
+    public void setStripStdOut(boolean value) {
+        this.stripStdOut = value;
+    }
+
+    public boolean getStripStdOut() {
+        return stripStdOut;
+    }
+
+    public void setStripStdErr(boolean value) {
+        this.stripStdErr = value;
+    }
+
+    public boolean getStripStdErr() {
+        return stripStdErr;
+    }
+
+    public void setExitCode(int value) {
+        this.exitCode = value;
+    }
+
+    public int getExitCode() {
+        return exitCode;
+    }
+
+    public StringBuilder getStdOut() {
+        return stdOut;
+    }
+
+    public StringBuilder getStdErr() {
+        return stdErr;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\nScript name[" + getScriptName() + "]");
+        sb.append("\nCommand[" + getCommand() + "]");
+        sb.append("\nHost name[" + getHostName() + "]");
+        sb.append("\nExit code[" + getExitCode() + "]");
+        sb.append("\nStdOut[" + getStdOut().toString() + "]");
+        sb.append("\nStdErr[" + getStdErr().toString() + "]");
+        return sb.toString();
+    }
 }

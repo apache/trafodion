@@ -1,5 +1,5 @@
 /**
- *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+ *(C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,12 +55,14 @@ import org.trafodion.dcs.server.ServerManager;
 
 public class DcsNetworkConfiguration {
 
-    private static final Log LOG = LogFactory.getLog(DcsNetworkConfiguration.class);
+    private static final Log LOG = LogFactory
+            .getLog(DcsNetworkConfiguration.class);
     private static Configuration conf;
     private InetAddress ia;
     private String intHostAddress;
     private String extHostAddress;
     private String canonicalHostName;
+    private String extInterfaceName;
     private boolean matchedInterface = false;
 
     public DcsNetworkConfiguration(Configuration conf) throws Exception {
@@ -68,31 +70,42 @@ public class DcsNetworkConfiguration {
         this.conf = conf;
         ia = InetAddress.getLocalHost();
 
-        String dcsDnsInterface = conf.get(Constants.DCS_DNS_INTERFACE, Constants.DEFAULT_DCS_DNS_INTERFACE);
-        if(dcsDnsInterface.equalsIgnoreCase("default")) {
+        String dcsDnsInterface = conf.get(Constants.DCS_DNS_INTERFACE,
+                Constants.DEFAULT_DCS_DNS_INTERFACE);
+        if (dcsDnsInterface.equalsIgnoreCase("default")) {
             intHostAddress = extHostAddress = ia.getHostAddress();
             canonicalHostName = ia.getCanonicalHostName();
-            LOG.info("Using local host [" + canonicalHostName + "," + extHostAddress + "]");
-        } else {            
-            // For all nics get all hostnames and addresses    
-            // and try to match against dcs.dns.interface property 
-            Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
-            while(nics.hasMoreElements() && !matchedInterface) {
+            extInterfaceName = NetworkInterface.getByInetAddress(ia)
+                    .getDisplayName();
+            LOG.info("Using local host [" + extInterfaceName + ","
+                    + canonicalHostName + "," + extHostAddress + "]");
+        } else {
+            // For all nics get all hostnames and addresses
+            // and try to match against dcs.dns.interface property
+            Enumeration<NetworkInterface> nics = NetworkInterface
+                    .getNetworkInterfaces();
+            while (nics.hasMoreElements() && !matchedInterface) {
                 InetAddress inet = null;
-                        NetworkInterface ni = nics.nextElement();
-                    LOG.info("Found interface [" + ni.getDisplayName() + "]");
+                NetworkInterface ni = nics.nextElement();
+                LOG.info("Found interface [" + ni.getDisplayName() + "]");
                 if (dcsDnsInterface.equalsIgnoreCase(ni.getDisplayName())) {
-                               LOG.info("Matched specified interface ["+ ni.getName() + "]");
+                    LOG.info("Matched specified interface [" + ni.getName()
+                            + "]");
                     inet = getInetAddress(ni);
-                    getCanonicalHostName(ni,inet);
+                    getCanonicalHostName(ni, inet);
+                    extInterfaceName = ni.getDisplayName();
                 } else {
-                    Enumeration<NetworkInterface> subIfs = ni.getSubInterfaces();
+                    Enumeration<NetworkInterface> subIfs = ni
+                            .getSubInterfaces();
                     for (NetworkInterface subIf : Collections.list(subIfs)) {
-                        LOG.debug("Sub Interface Display name [" + subIf.getDisplayName() + "]");
-                        if (dcsDnsInterface.equalsIgnoreCase(subIf.getDisplayName())) {
+                        LOG.debug("Sub Interface Display name ["
+                                + subIf.getDisplayName() + "]");
+                        if (dcsDnsInterface.equalsIgnoreCase(subIf
+                                .getDisplayName())) {
                             LOG.info("Matched subIf [" + subIf.getName() + "]");
                             inet = getInetAddress(subIf);
-                            getCanonicalHostName(subIf,inet);
+                            getCanonicalHostName(subIf, inet);
+                            extInterfaceName = ni.getDisplayName();
                             break;
                         }
                     }
@@ -100,55 +113,65 @@ public class DcsNetworkConfiguration {
             }
         }
 
-        if (!matchedInterface) 
+        if (!matchedInterface)
             checkCloud();
     }
 
-    public void getCanonicalHostName (NetworkInterface ni, InetAddress inet) throws Exception {
-        if(inet.getCanonicalHostName().contains(".") ) {
+    public void getCanonicalHostName(NetworkInterface ni, InetAddress inet)
+            throws Exception {
+        if (inet.getCanonicalHostName().contains(".")) {
             intHostAddress = extHostAddress = inet.getHostAddress();
             canonicalHostName = inet.getCanonicalHostName();
-            LOG.info("Using interface [" + ni.getDisplayName() + "," + canonicalHostName + "," + extHostAddress + "]");
+            LOG.info("Using interface [" + ni.getDisplayName() + ","
+                    + canonicalHostName + "," + extHostAddress + "]");
             ia = inet;
         }
 
     }
 
-    public InetAddress getInetAddress (NetworkInterface ni) throws Exception {
-        InetAddress inet=null;
+    public InetAddress getInetAddress(NetworkInterface ni) throws Exception {
+        InetAddress inet = null;
         Enumeration<InetAddress> rawAdrs = ni.getInetAddresses();
-        while(rawAdrs.hasMoreElements()) {
+        while (rawAdrs.hasMoreElements()) {
             inet = rawAdrs.nextElement();
-            LOG.info("Match Found interface [" + ni.toString() +"," + ni.getDisplayName() + "," + inet.getCanonicalHostName() + "," + inet.getHostAddress() + "]");
+            LOG.info("Match Found interface [" + ni.toString() + ","
+                    + ni.getDisplayName() + "," + inet.getCanonicalHostName()
+                    + "," + inet.getHostAddress() + "]");
         }
         matchedInterface = true;
         return inet;
     }
 
     public void checkCloud() {
-        //Ideally we want to use http://jclouds.apache.org/ so we can support all cloud providers.
-        //For now, use OpenStack Nova to retrieve int/ext network address map.
+        // Ideally we want to use http://jclouds.apache.org/ so we can support
+        // all cloud providers.
+        // For now, use OpenStack Nova to retrieve int/ext network address map.
         LOG.info("Checking Cloud environment");
-        String cloudCommand = conf.get(Constants.DCS_CLOUD_COMMAND, Constants.DEFAULT_DCS_CLOUD_COMMAND);
+        String cloudCommand = conf.get(Constants.DCS_CLOUD_COMMAND,
+                Constants.DEFAULT_DCS_CLOUD_COMMAND);
         ScriptContext scriptContext = new ScriptContext();
         scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
         scriptContext.setCommand(cloudCommand);
-        LOG.info(scriptContext.getScriptName() + " exec [" + scriptContext.getCommand() + "]");
-        ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
+        LOG.info(scriptContext.getScriptName() + " exec ["
+                + scriptContext.getCommand() + "]");
+        ScriptManager.getInstance().runScript(scriptContext);// This will block
+                                                             // while script is
+                                                             // running
 
         StringBuilder sb = new StringBuilder();
-        sb.append(scriptContext.getScriptName() + " exit code [" + scriptContext.getExitCode() + "]");
-        if(! scriptContext.getStdOut().toString().isEmpty()) 
+        sb.append(scriptContext.getScriptName() + " exit code ["
+                + scriptContext.getExitCode() + "]");
+        if (!scriptContext.getStdOut().toString().isEmpty())
             sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
-        if(! scriptContext.getStdErr().toString().isEmpty())
+        if (!scriptContext.getStdErr().toString().isEmpty())
             sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
         LOG.info(sb.toString());
 
-        if(! scriptContext.getStdOut().toString().isEmpty()){
+        if (!scriptContext.getStdOut().toString().isEmpty()) {
             Scanner scn = new Scanner(scriptContext.getStdOut().toString());
             scn.useDelimiter(",");
-            intHostAddress = scn.next();//internal ip
-            extHostAddress = scn.next();//external ip        
+            intHostAddress = scn.next();// internal ip
+            extHostAddress = scn.next();// external ip
             scn.close();
             LOG.info("Cloud environment found");
         } else
@@ -165,5 +188,9 @@ public class DcsNetworkConfiguration {
 
     public String getExtHostAddress() {
         return extHostAddress;
+    }
+
+    public String getExtInterfaceName() {
+        return extInterfaceName;
     }
 }
