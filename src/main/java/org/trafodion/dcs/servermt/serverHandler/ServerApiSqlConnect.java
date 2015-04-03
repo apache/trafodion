@@ -32,6 +32,11 @@ import org.trafodion.dcs.servermt.serverSql.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.ZooKeeper;
+import org.trafodion.dcs.zookeeper.ZkClient;
 
 public class ServerApiSqlConnect {
     static final int odbc_SQLSvc_InitializeDialogue_ParamError_exn_ = 1;
@@ -47,15 +52,19 @@ public class ServerApiSqlConnect {
     private String serverWorkerName;
     private ClientData clientData;
 //
+    private String threadRegisteredPath = "";
+    private String threadRegisteredData = "";
+    private byte[] data = null;
+//
     private ConnectionContext connectionContext;
     private UserDesc userDesc;
     private byte[] cert;
-// 
+//
     private ServerException serverException;
     private OutConnectionContext outConnectionContext;
     private TrafConnection trafConnection;
     
-    ServerApiSqlConnect(int instance, int serverThread, byte[] cert) {  
+    ServerApiSqlConnect(int instance, int serverThread, byte[] cert) { 
         this.instance = instance;
         this.serverThread = serverThread;
         serverWorkerName = ServerConstants.SERVER_WORKER_NAME + "_" + instance + "_" + serverThread;
@@ -77,7 +86,7 @@ public class ServerApiSqlConnect {
     ClientData processApi(ClientData clientData) {  
         this.clientData = clientData;
         init();
-//        
+//
 // ==============process input ByteBuffer===========================
 // hdr + userDesc + connectionContext
 //
@@ -99,48 +108,41 @@ public class ServerApiSqlConnect {
             if(LOG.isDebugEnabled())
                 LOG.debug(serverWorkerName + ". threadRegisteredData :" + clientData.getThreadRegisteredData());
             
-            boolean isConnectingTimeout = true;
             String[] st = clientData.getThreadRegisteredData().split(":");
-            if (st[0].equals("CONNECTING")){
-                isConnectingTimeout = false;
-                clientData.setDialogueId(Integer.parseInt(st[2]));
-                clientData.setNodeNumber(Integer.parseInt(st[3]));
-                clientData.setProcessId(Integer.parseInt(st[4]));
-                clientData.setProcessName(st[5]);
-                clientData.setHostName(st[6]);
-                clientData.setPortNumber(Integer.parseInt(st[7]));
-                clientData.setClientHostName(st[8]);
-                clientData.setClientIpAddress(st[9]);
-                clientData.setClientPortNumber(Integer.parseInt(st[10]));
-                clientData.setClientApplication(st[11]);
-             
-                if(LOG.isDebugEnabled()){
-                    LOG.debug(serverWorkerName + ". dialogueId :" + clientData.getDialogueId());
-                    LOG.debug(serverWorkerName + ". nodeNumber :" + clientData.getNodeNumber());
-                    LOG.debug(serverWorkerName + ". processId :" + clientData.getProcessId());
-                    LOG.debug(serverWorkerName + ". processName :" + clientData.getProcessName());
-                    LOG.debug(serverWorkerName + ". hostName :" + clientData.getHostName());
-                    LOG.debug(serverWorkerName + ". portNumber :" + clientData.getPortNumber());
-                    LOG.debug(serverWorkerName + ". clientHostName :" + clientData.getClientHostName());
-                    LOG.debug(serverWorkerName + ". clientIpAddress :" + clientData.getClientIpAddress());
-                    LOG.debug(serverWorkerName + ". clientPortNumber :" + clientData.getClientPortNumber());
-                    LOG.debug(serverWorkerName + ". clientApplication :" + clientData.getClientApplication());
-                }
-                if (connectionContext.getDialogueId() < 1 ) {
-                    throw new SQLException(serverWorkerName + ". Wrong dialogueId :" + connectionContext.getDialogueId());
-                }
-                if (connectionContext.getDialogueId() != clientData.getDialogueId() ) {
-                    throw new SQLException(serverWorkerName + ". Wrong dialogueId sent by the Client [sent/expected] : [" + connectionContext.getDialogueId() + "/" + clientData.getDialogueId() + "]");
-                }
+            clientData.setDialogueId(Integer.parseInt(st[2]));
+            clientData.setNodeNumber(Integer.parseInt(st[3]));
+            clientData.setProcessId(Integer.parseInt(st[4]));
+            clientData.setProcessName(st[5]);
+            clientData.setHostName(st[6]);
+            clientData.setPortNumber(Integer.parseInt(st[7]));
+            clientData.setClientHostName(st[8]);
+            clientData.setClientIpAddress(st[9]);
+            clientData.setClientPortNumber(Integer.parseInt(st[10]));
+            clientData.setClientApplication(st[11]);
+
+            if(LOG.isDebugEnabled()){
+                LOG.debug(serverWorkerName + ". dialogueId :" + clientData.getDialogueId());
+                LOG.debug(serverWorkerName + ". nodeNumber :" + clientData.getNodeNumber());
+                LOG.debug(serverWorkerName + ". processId :" + clientData.getProcessId());
+                LOG.debug(serverWorkerName + ". processName :" + clientData.getProcessName());
+                LOG.debug(serverWorkerName + ". hostName :" + clientData.getHostName());
+                LOG.debug(serverWorkerName + ". portNumber :" + clientData.getPortNumber());
+                LOG.debug(serverWorkerName + ". clientHostName :" + clientData.getClientHostName());
+                LOG.debug(serverWorkerName + ". clientIpAddress :" + clientData.getClientIpAddress());
+                LOG.debug(serverWorkerName + ". clientPortNumber :" + clientData.getClientPortNumber());
+                LOG.debug(serverWorkerName + ". clientApplication :" + clientData.getClientApplication());
+            }
+            if (connectionContext.getDialogueId() < 1 ) {
+                throw new SQLException(serverWorkerName + ". Wrong dialogueId :" + connectionContext.getDialogueId());
+            }
+            if (connectionContext.getDialogueId() != clientData.getDialogueId() ) {
+                throw new SQLException(serverWorkerName + ". Wrong dialogueId sent by the Client [sent/expected] : [" + connectionContext.getDialogueId() + "/" + clientData.getDialogueId() + "]");
             }
 //=====================Process SqlConnect===========================
-            
+
             try {
-                if (isConnectingTimeout == true)
-                    throw new SQLException("Connecting timeout occured.");
-                
                 trafConnection = new TrafConnection(serverWorkerName, clientData, connectionContext);
- 
+
                 outConnectionContext.getVersionList().getList()[0].setComponentId((short)4);       //ODBC_SRVR_COMPONENT
                 outConnectionContext.getVersionList().getList()[0].setMajorVersion((short)3);
                 outConnectionContext.getVersionList().getList()[0].setMinorVersion((short)5);
@@ -156,12 +158,12 @@ public class ServerApiSqlConnect {
                 outConnectionContext.setComputerName(clientData.getHostName());
                 outConnectionContext.setCatalog("");
                 outConnectionContext.setSchema("");
-    
-                outConnectionContext.setOptionFlags1(0);
+
+                outConnectionContext.setOptionFlags1(ServerConstants.OUTCONTEXT_OPT1_ENFORCE_ISO88591 | ServerConstants.OUTCONTEXT_OPT1_DOWNLOAD_CERTIFICATE);
                 outConnectionContext.setOptionFlags2(0);
-    
+
                 outConnectionContext.setRoleName("");
-                
+               
             } catch (SQLException ex){
                 LOG.error(serverWorkerName + ". ServerApiSqlConnect.SQLException :" + ex);
                 serverException.setServerException (odbc_SQLSvc_InitializeDialogue_SQLError_exn_, 0, ex);                
@@ -199,7 +201,7 @@ public class ServerApiSqlConnect {
             clientData.setHdr(hdr);
             clientData.setRequest(ServerConstants.REQUST_WRITE_READ);
             clientData.setTrafConnection(trafConnection);
-            
+ 
         } catch (SQLException se){
             LOG.error(serverWorkerName + ". Connect.SQLException :" + se);
             clientData.setRequestAndDisconnect();

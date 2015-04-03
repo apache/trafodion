@@ -58,14 +58,14 @@ public class ServerWorker extends Thread {
     private ServerApiSqlClose serverApiSqlClose;
     private ServerApiSqlEndTransact serverApiSqlEndTransact;
 
-    ServerWorker(ZkClient zkc, int instance, int serverThread, String serverName, byte[] cert){    
+    ServerWorker(ZkClient zkc, int instance, int serverThread, String serverName, byte[] cert){
         this.zkc=zkc;
         this.instance = instance;
         this.serverThread = serverThread;
         this.serverName = serverName;
         serverWorkerName = ServerConstants.SERVER_WORKER_NAME + "_" + instance + "_" + serverThread;
         this.cert = cert;
-        
+
         serverApiSqlConnect = new ServerApiSqlConnect(instance, serverThread, cert);
         serverApiSqlSetConnectAttr = new ServerApiSqlSetConnectAttr(instance, serverThread);
         serverApiSqlPrepare = new ServerApiSqlPrepare(instance, serverThread);
@@ -108,7 +108,6 @@ public class ServerWorker extends Thread {
                 }
                 dataEvent = queue.remove(0);
             }
-            boolean cancelConnection = false;
             SelectionKey key = dataEvent.key;
             ClientData clientData = (ClientData) key.attachment();
             if (dataEvent.server == null){
