@@ -207,6 +207,48 @@ public class ServerResource extends ResourceBase {
 	    return json;
 	}
 	
+	   private JSONArray jstack(String program) throws IOException {
+	        ScriptContext scriptContext = new ScriptContext();
+	        scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+	        scriptContext.setCommand("jstack " + program);
+	        scriptContext.setStripStdOut(false);
+
+	        try {
+	            ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            throw new IOException(e);
+	        }
+
+	        if(LOG.isDebugEnabled()) {
+	            StringBuilder sb = new StringBuilder();
+	            sb.append("exit code [" + scriptContext.getExitCode() + "]");
+	            if(! scriptContext.getStdOut().toString().isEmpty()) 
+	                sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
+	            if(! scriptContext.getStdErr().toString().isEmpty())
+	                sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
+	            LOG.debug(sb.toString());
+	        }
+
+	        JSONArray json = null;
+	        try {
+	            json = new JSONArray();
+	            StringBuilder sb = new StringBuilder();
+	            Scanner scanner = new Scanner(scriptContext.getStdOut().toString()); 
+	            while(scanner.hasNextLine()) {
+	                String line = scanner.nextLine();
+                    sb.append(line + "\n");
+	            }
+	            scanner.close();
+                json.put(new JSONObject().put("PROGRAM", sb.toString()));
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            throw new IOException(e);
+	        }
+	        
+	        return json;
+	    }
+	
     private JSONArray dcs() throws IOException {
 
         JSONArray json = new JSONArray();
@@ -228,7 +270,6 @@ public class ServerResource extends ResourceBase {
                     obj.put("PROCESS_NAME",aRegisteredServer.getProcessName());
                     obj.put("IP_ADDRESS",aRegisteredServer.getIpAddress());
                     obj.put("PORT",aRegisteredServer.getPort());
-                    obj.put("LAST_UPDATED",aRegisteredServer.getTimestampAsDate());
                     obj.put("CLIENT_NAME",aRegisteredServer.getClientName());
                     obj.put("CLIENT_APPL",aRegisteredServer.getClientAppl());
                     obj.put("CLIENT_IP_ADDRESS",aRegisteredServer.getClientIpAddress());
@@ -676,6 +717,55 @@ public class ServerResource extends ResourceBase {
             }
             
             JSONArray jsonArray = pstack(program);
+            
+            if(jsonArray.length() == 0) {
+                String result = buildRemoteException(
+                        "org.trafodion.rest.NotFoundException",
+                        "NotFoundException",
+                        "No pstack resources found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MIMETYPE_JSON).entity(result)
+                        .build();
+            }
+ 
+            ResponseBuilder response = Response.ok(jsonArray.toString());
+            response.cacheControl(cacheControl);
+            return response.build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
+                    .build();
+        }
+    }
+    
+    @GET
+    @Path("/jstack/program/{program}")
+    @Produces({MIMETYPE_JSON})
+    public Response getJstackProgram(
+            final @Context UriInfo uriInfo,
+            final @Context Request request,
+            @PathParam("program") String program) {
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("GET " + uriInfo.getAbsolutePath());
+
+                MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+                String output = " Query Parameters :\n";
+                for (String key : queryParams.keySet()) {
+                    output += key + " : " + queryParams.getFirst(key) +"\n";
+                }
+                LOG.debug(output);
+
+                MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
+                output = " Path Parameters :\n";
+                for (String key : pathParams.keySet()) {
+                    output += key + " : " + pathParams.getFirst(key) +"\n";
+                }
+                LOG.debug(output);
+            }
+            
+            JSONArray jsonArray = jstack(program);
             
             if(jsonArray.length() == 0) {
                 String result = buildRemoteException(
