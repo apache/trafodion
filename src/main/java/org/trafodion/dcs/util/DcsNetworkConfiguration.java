@@ -98,8 +98,9 @@ public class DcsNetworkConfiguration {
                     Enumeration<NetworkInterface> subIfs = ni
                             .getSubInterfaces();
                     for (NetworkInterface subIf : Collections.list(subIfs)) {
-                        LOG.debug("Sub Interface Display name ["
-                                + subIf.getDisplayName() + "]");
+                        if (LOG.isDebugEnabled())
+                            LOG.debug("Sub Interface Display name ["
+                                    + subIf.getDisplayName() + "]");
                         if (dcsDnsInterface.equalsIgnoreCase(subIf
                                 .getDisplayName())) {
                             LOG.info("Matched subIf [" + subIf.getName() + "]");

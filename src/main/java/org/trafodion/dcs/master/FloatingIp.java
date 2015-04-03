@@ -51,7 +51,7 @@ public class FloatingIp {
     }
 
     public boolean isEnabled() {
-        return isEnabled();
+        return isEnabled;
     }
 
     public synchronized int runScript() throws Exception {

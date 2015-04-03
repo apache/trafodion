@@ -432,7 +432,7 @@ The default value is false. When set to true the floating IP feature in the DcsM
 This allows backup DcsMaster to takeover and set the floating IP address.
 
 ==== `dcs.master.floating.ip.external.interface`
-There is no default value. You must ensure the value is contains the correct interface
+There is no default value. You must ensure the value contains the correct interface
 for your networking configuration. 
 
 ==== `dcs.master.floating.ip.external.ip.address`
