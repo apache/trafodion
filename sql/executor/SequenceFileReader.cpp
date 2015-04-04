@@ -178,6 +178,7 @@ SFR_RetCode SequenceFileReader::open(const char* path)
     return SFR_ERROR_OPEN_PARAM;
 
   // String open(java.lang.String);
+  tsRecentJMFromJNI = JavaMethods_[JM_OPEN].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_OPEN].methodID, js_path);
 
   jenv_->DeleteLocalRef(js_path);  
@@ -199,6 +200,7 @@ SFR_RetCode SequenceFileReader::getPosition(Int64& pos)
   QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::getPosition(%ld) called.", pos);
 
   // long getPosition();
+  tsRecentJMFromJNI = JavaMethods_[JM_GETPOS].jm_full_name;
   Int64 result = jenv_->CallLongMethod(javaObj_, JavaMethods_[JM_GETPOS].methodID);
 
   if (result == -1) 
@@ -219,6 +221,7 @@ SFR_RetCode SequenceFileReader::seeknSync(Int64 pos)
   QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::seeknSync(%ld) called.", pos);
 
   // String seeknSync(long);
+  tsRecentJMFromJNI = JavaMethods_[JM_SYNC].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_SYNC].methodID, pos);
 
   if (jresult != NULL)
@@ -238,6 +241,7 @@ SFR_RetCode SequenceFileReader::isEOF(bool& isEOF)
   QRLogger::log(CAT_SQL_HDFS_SEQ_FILE_READER, LL_DEBUG, "SequenceFileReader::isEOF() called.");
 
   // boolean isEOF();
+  tsRecentJMFromJNI = JavaMethods_[JM_ISEOF].jm_full_name;
   bool result = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_ISEOF].methodID);
 
   isEOF = result;
@@ -273,6 +277,7 @@ SFR_RetCode SequenceFileReader::isEOF(bool& isEOF)
 SFR_RetCode SequenceFileReader::fetchNextRow(Int64 stopOffset, char* buffer)
 {
   // java.lang.String fetchNextRow(long stopOffset);
+  tsRecentJMFromJNI = JavaMethods_[JM_FETCHROW2].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCHROW2].methodID, stopOffset);
   if (jresult==NULL && getLastError()) 
   {
@@ -305,6 +310,7 @@ SFR_RetCode SequenceFileReader::close()
   }
     
   // String close();
+  tsRecentJMFromJNI = JavaMethods_[JM_CLOSE].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_CLOSE].methodID);
 
   if (jresult!=NULL) 
@@ -547,6 +553,7 @@ SFW_RetCode SequenceFileWriter::open(const char* path, SFW_CompType compression)
     return SFW_ERROR_OPEN_PARAM;
 
   // String open(java.lang.String);
+  tsRecentJMFromJNI = JavaMethods_[JM_OPEN].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_OPEN].methodID, js_path, compression);
 
   jenv_->DeleteLocalRef(js_path);  
@@ -571,6 +578,7 @@ SFW_RetCode SequenceFileWriter::write(const char* data)
     return SFW_ERROR_WRITE_PARAM;
 
   // String write(java.lang.String);
+  tsRecentJMFromJNI = JavaMethods_[JM_WRITE].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_WRITE].methodID, js_data);
 
   jenv_->DeleteLocalRef(js_data);  
@@ -628,6 +636,7 @@ SFW_RetCode SequenceFileWriter::close()
   }
     
   // String close();
+  tsRecentJMFromJNI = JavaMethods_[JM_CLOSE].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_CLOSE].methodID);
 
   if (jresult != NULL)
@@ -654,6 +663,7 @@ SFW_RetCode SequenceFileWriter::hdfsCreate(const char* path, NABoolean compress)
 
   jboolean j_compress = compress;
 
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_CREATE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CREATE].methodID, js_path, j_compress);
 
   jenv_->DeleteLocalRef(js_path);
@@ -692,6 +702,7 @@ SFW_RetCode SequenceFileWriter::hdfsWrite(const char* data, Int64 len)
 
   jlong j_len = len;
   // String write(java.lang.String);
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_WRITE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID,jbArray , j_len);
 
   jenv_->DeleteLocalRef(jbArray);
@@ -726,6 +737,7 @@ SFW_RetCode SequenceFileWriter::hdfsClose()
   }
 
   // String close();
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_CLOSE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CLOSE].methodID);
 
   if (jenv_->ExceptionCheck())
@@ -766,6 +778,7 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const NAString& uldPath)
     return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
 
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_CLEAN_UNLOAD_PATH].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CLEAN_UNLOAD_PATH].methodID, js_UldPath);
 
   jenv_->DeleteLocalRef(js_UldPath);
@@ -814,6 +827,7 @@ SFW_RetCode    SequenceFileWriter::createSnapshot( const NAString&  tableName, c
   }
 
 
+  tsRecentJMFromJNI = JavaMethods_[JM_CREATE_SNAPSHOT].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CREATE_SNAPSHOT].methodID, js_tableName, js_snapshotName);
 
   jenv_->DeleteLocalRef(js_tableName);
@@ -864,6 +878,7 @@ SFW_RetCode SequenceFileWriter::verifySnapshot( const NAString&  tableName, cons
   }
 
 
+  tsRecentJMFromJNI = JavaMethods_[JM_VERIFY_SNAPSHOT].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_VERIFY_SNAPSHOT].methodID, js_tableName, js_snapshotName);
 
   jenv_->DeleteLocalRef(js_tableName);
@@ -902,6 +917,7 @@ SFW_RetCode    SequenceFileWriter::deleteSnapshot( const NAString&  snapshotName
   }
 
 
+  tsRecentJMFromJNI = JavaMethods_[JM_DELETE_SNAPSHOT].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DELETE_SNAPSHOT].methodID, js_snapshotName);
 
 
@@ -929,6 +945,7 @@ SFW_RetCode    SequenceFileWriter::release( )
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::release() called.");
 
+  tsRecentJMFromJNI = JavaMethods_[JM_RELEASE].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_RELEASE].methodID);
 
   if (jenv_->ExceptionCheck())
@@ -979,6 +996,7 @@ SFW_RetCode SequenceFileWriter::hdfsMergeFiles( const NAString& srcPath,
   }
 
 
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_MERGE_FILES].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_MERGE_FILES].methodID, js_SrcPath, js_DstPath);
 
   jenv_->DeleteLocalRef(js_SrcPath);
@@ -1021,6 +1039,7 @@ SFW_RetCode SequenceFileWriter::hdfsDeletePath( const NAString& delPath)
   }
 
 
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_DELETE_PATH].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_DELETE_PATH].methodID, js_delPath);
 
   jenv_->DeleteLocalRef(js_delPath);
@@ -1062,6 +1081,7 @@ SFW_RetCode SequenceFileWriter::hdfsExists( const NAString& uldPath, NABoolean &
     return SFW_ERROR_HDFS_EXISTS_EXCEPTION;
   }
 
+  tsRecentJMFromJNI = JavaMethods_[JM_HDFS_EXISTS].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_EXISTS].methodID, js_UldPath);
 
   jenv_->DeleteLocalRef(js_UldPath);
