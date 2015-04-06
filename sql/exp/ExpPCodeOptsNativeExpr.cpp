@@ -2584,9 +2584,15 @@ jit_value_t PCodeOperand::getJitValue( PCodeCfg        * cfg
       // MFLT64 can sometimes be the original type of the operand being sought
       // after (e.g. PCIT::MFLT64_MFLT64 --> PCIT::MBIN64S_MBIN64S).  Use the
       // original operand to get the constant value.
+      // Likewise, we should use the original type in the case of MBIGS or MBIGU
+      // because PCODE optimization may change MBIG[SU]-type PCODE instructions
+      // to simpler instructions such as 64-bit move instructions.
 
       PCodeOperand* op = ((getType() == PCIT::MFLT64) ||
-                          (getType() == PCIT::MFLT32))
+                          (getType() == PCIT::MFLT32) ||
+                          (getType() == PCIT::MBIGS ) ||
+                          (getType() == PCIT::MBIGU )
+                         )
                             ? orig : this;
 
       Int64 val = cfg->getIntConstValue(op);
