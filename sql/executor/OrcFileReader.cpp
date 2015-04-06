@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -125,6 +125,7 @@ OFR_RetCode OrcFileReader::open(const char* path)
     return OFR_ERROR_OPEN_PARAM;
 
   // String open(java.lang.String);
+  tsRecentJMFromJNI = JavaMethods_[JM_OPEN].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_OPEN].methodID, js_path);
 
   jenv_->DeleteLocalRef(js_path);  
@@ -148,6 +149,7 @@ OFR_RetCode OrcFileReader::getPosition(Int64& pos)
   QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::getPosition(%ld) called.", pos);
 
   // long getPosition();
+  tsRecentJMFromJNI = JavaMethods_[JM_GETPOS].jm_full_name;
   Int64 result = jenv_->CallLongMethod(javaObj_, JavaMethods_[JM_GETPOS].methodID);
 
   if (result == -1) 
@@ -171,6 +173,7 @@ OFR_RetCode OrcFileReader::seeknSync(Int64 pos)
   QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::seeknSync(%ld) called.", pos);
 
   // String seeknSync(long);
+  tsRecentJMFromJNI = JavaMethods_[JM_SYNC].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_SYNC].methodID, orcPos);
 
   if (jresult != NULL)
@@ -192,6 +195,7 @@ OFR_RetCode OrcFileReader::isEOF(bool& isEOF)
   QRLogger::log(CAT_SQL_HDFS_ORC_FILE_READER, LL_DEBUG, "OrcFileReader::isEOF() called.");
 
   // boolean isEOF();
+  tsRecentJMFromJNI = JavaMethods_[JM_ISEOF].jm_full_name;
   bool result = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_ISEOF].methodID);
 
   isEOF = result;
@@ -228,6 +232,7 @@ OFR_RetCode OrcFileReader::fetchNextRow(char * buffer, long& array_length, long&
 
 	jfieldID fid;
 
+        tsRecentJMFromJNI = JavaMethods_[JM_FETCHROW2].jm_full_name;
 	jobject jresult = (jobject)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCHROW2].methodID);
 	if (jresult==NULL && getLastError()) 
   	{
@@ -297,6 +302,7 @@ OFR_RetCode OrcFileReader::close()
   }
     
   // String close();
+  tsRecentJMFromJNI = JavaMethods_[JM_CLOSE].jm_full_name;
   jstring jresult = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_CLOSE].methodID);
 
   if (jresult!=NULL) 
@@ -320,7 +326,7 @@ OFR_RetCode OrcFileReader::getRowCount(Int64& count)
     return OFR_OK;
   }
     
-  // String close();
+  tsRecentJMFromJNI = JavaMethods_[JM_GETNUMROWS].jm_full_name;
   jlong jresult = (jlong)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GETNUMROWS].methodID);
   count = jresult;
   
