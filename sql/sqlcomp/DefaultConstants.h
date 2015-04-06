@@ -1776,7 +1776,10 @@ enum DefaultConstants
   // Specifies locations for CREATE statements that don't have a
   // LOCATION clause
   DDL_DEFAULT_LOCATIONS,
-
+  
+  //Support transactions for DDL operations.
+  DDL_TRANSACTIONS,
+  
   // controls various optimizations, see enum QueryOptimizationOptions.
   QUERY_OPTIMIZATION_OPTIONS,
 

@@ -2,7 +2,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -218,7 +218,7 @@ fi
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST001 TEST002 TEST004 TEST005 TEST008 TEST010 TEST018 TEST019 TEST020 TEST027 TEST029 TEST032 TEST037 TEST038 TEST041 TEST056 TEST061 "
+  sbtestfiles="TEST001 TEST002 TEST004 TEST005 TEST008 TEST010 TEST018 TEST019 TEST020 TEST027 TEST029 TEST032 TEST037 TEST038 TEST041 TEST056 TEST061 TEST116"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do
@@ -299,7 +299,7 @@ skipTheseTests="TEST007 TEST030 TEST035 TEST040 TEST043 TEST050 TEST066 TEST113 
 # TEST051 TEST070
 skipTheseTests="$skipTheseTests TEST051 TEST070"
 
-skipTheseTests="$skipTheseTests TEST082 TEST088"
+skipTheseTests="$skipTheseTests TEST082 TEST088 TEST116"
 
 if [ "$SQ_COVERAGE" = "" -a "$SQ_COVERAGE_OPTIMIZER" = "" ]; then
   skipTheseTests="$skipTheseTests TESTNAHEAP"

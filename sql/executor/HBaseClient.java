@@ -90,7 +90,6 @@ public class HBaseClient {
     public static Configuration config = HBaseConfiguration.create();
     String lastError;
     RMInterface table = null;
-    boolean useDDLTrans;
 
     private PoolMap<String, HTableClient> hTableClientsFree;
     private PoolMap<String, HTableClient> hTableClientsInUse;
@@ -165,16 +164,6 @@ public class HBaseClient {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.init: Error in RMInterface instace creation.");
         }
         
-        this.useDDLTrans = false;
-        try {
-            String useDDLTransactions = System.getenv("TM_ENABLE_DDL_TRANS");
-            if (useDDLTransactions != null) {
-                useDDLTrans = (Integer.parseInt(useDDLTransactions) !=0);
-            }
-        } catch (Exception e) {
-            if (logger.isDebugEnabled()) logger.debug("HBaseClient.init TM_ENABLE_DDL_TRANS is not in ms.env.");
-        }
-
         return true;
     }
  
@@ -419,14 +408,14 @@ public class HBaseClient {
                   byte[][] keys = new byte[beginEndKeys.length][];
                   for (int i = 0; i < beginEndKeys.length; i++) 
                      keys[i] = (byte[])beginEndKeys[i]; 
-                  if (transID != 0 && useDDLTrans == true) {
+                  if (transID != 0) {
                      table.createTable(desc, keys, transID);
                   } else {
                      admin.createTable(desc, keys);
                   }
                }
                else {
-                  if (transID != 0 && useDDLTrans == true) {
+                  if (transID != 0) {
                      table.createTable(desc, null, transID);
                   } else {
                      admin.createTable(desc);
