@@ -1,7 +1,7 @@
 /*
 # @@@ START COPYRIGHT @@@   
 #   
-# (C) Copyright 2013 Hewlett-Packard Development Company, L.P.   
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.   
 #   
 #  Licensed under the Apache License, Version 2.0 (the "License");   
 #  you may not use this file except in compliance with the License.   
@@ -948,7 +948,7 @@ public class TestBasic
         	conn = Utils.getUserConnection();
 			String	prodVer = conn.getMetaData().getDatabaseProductVersion();
 			System.out.println("DB product version : " + prodVer);
-			assertEquals("DB Product Version", "1.0", prodVer);
+			assertEquals("DB Product Version", "1.1", prodVer);
   	       	conn.close();
 			System.out.println("JDBC Get DB product version : Passed");
        } catch (Exception ex)
@@ -988,7 +988,7 @@ public class TestBasic
         	conn = Utils.getUserConnection();
 			int	minorVer = conn.getMetaData().getDatabaseMinorVersion();
 			//System.out.println("DB minor version : " + minorVer);
-			assertEquals("DB Minor Version", 0, minorVer);
+			assertEquals("DB Minor Version", 1, minorVer);
   	       	conn.close();
 			System.out.println("JDBC Get DB minor version : Passed");
        } catch (Exception ex)

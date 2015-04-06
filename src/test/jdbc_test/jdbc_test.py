@@ -2,7 +2,7 @@
 
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -153,7 +153,7 @@ def generate_t4_propfile(propfile, target, user, pw, role, dsn, schema, appname,
     fd.write('url=jdbc:t4jdbc://' + target + '/\n')
     fd.write('user=' + user + '\n')
     fd.write('role=' + role + '\n')
-    fd.write('pwd=' + pw + '\n')
+    fd.write('password=' + pw + '\n')
     fd.write('catalog=TRAFODION\n')
     fd.write('schema=' + schema + '\n')
     fd.write('serverDataSource=' + dsn + '\n')
@@ -169,7 +169,7 @@ def generate_t2_propfile(propfile, user, pw, role, dsn, schema, appname, jdbc_ve
     fd.write('url=jdbc:sql:\n')
     fd.write('user=' + user + '\n')
     fd.write('role=' + role + '\n')
-    fd.write('pwd=' + pw + '\n')
+    fd.write('password=' + pw + '\n')
     fd.write('catalog=TRAFODION\n')
     fd.write('schema=' + schema + '\n')
     fd.write('serverDataSource=' + dsn + '\n')
