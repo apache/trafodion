@@ -506,11 +506,6 @@ fi
 
 if [[ $ambari_installed -gt 0 ]]; then
    echo "***INFO: Hortonworks detected"
-   #Check that not trying to install on Hortonworks Sandbox
-   if [[ $(hostname -f) == "sandbox.hortonworks.com" ]]; then
-      echo "***ERROR: Install on Hortonworks Sandbox not supported."
-      exit -1
-   fi
    if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
       #Check that Hortonworks 2.2 is not installed
       versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | grep 2.1.* | wc -l)
