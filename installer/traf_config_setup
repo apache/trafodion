@@ -295,12 +295,12 @@ fi
 #==============================================
 #Check location given for Java 65 or greater
 
-echo -n "Specify location of Java 1.7.0_65 or higher, default is $JAVA_HOME: "
+echo -n "Specify location of Java 1.7.0_65 or higher (JDK), default is $JAVA_HOME: "
 read answer
 
 if [ -z $answer ]; then
       if [ -z $JAVA_HOME ]; then
-         echo "***ERROR: Must specify location of Java 1.7.0_65 or higher."
+         echo "***ERROR: Must specify location of Java 1.7.0_65 or higher (JDK)."
          exit -1
       fi
 else
@@ -320,6 +320,14 @@ do
       echo "***ERROR: Please check for typos and that directory exists"
       exit -1
    fi
+
+   javaType="$(ssh -n $node $JAVA_HOME/bin/javac -version 2>&1 > /dev/null | grep "No such file" | wc -l)"
+   if [[ $javaType -eq "1" ]]; then
+      echo "***ERROR: Java version on node $node is of type JRE"
+      echo "***ERROR: Java version needed on all nodes must be a JDK"
+      exit -1
+   fi
+
    temp_JAVA=`echo "${THIS_JVM_VER:15:2}" | sed 's/.*\.//'`
    
    #Check if using something less than Java 7

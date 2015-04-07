@@ -136,6 +136,8 @@ echo "***INFO: Working directory: $TRAF_WORKDIR"
 
 # copy install scripts into working directory
 sudo cp -r $(cd "$( dirname "$0" )" && pwd)/ $TRAF_WORKDIR
+sudo cp -rf $LOCAL_WORKDIR $TRAF_WORKDIR
+sudo chmod -R 777 $TRAF_WORKDIR
 
 #==============================================
 # config file
