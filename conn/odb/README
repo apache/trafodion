@@ -30,6 +30,13 @@ can be found on Trafodion Wiki site
 3. Execute odb tool by executing 'odb64luo -h' which will display the parameters that can be
    used to load/extract data to/from Trafodion tables
 
+The following env vars will have to be set:
+export ODBCHOME=<path to ini files>
+export ODBCSYSINI=${ODBCHOME}
+export ODBCINI=${ODBCSYSINI}/odbc.ini
+export AppUnicodeType=utf16
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<path to Trafodion odbc linux driver>:/usr/lib64:<path to unixodbc>
+
 Example table definition:
 
 

@@ -501,7 +501,7 @@ struct execute {
 	char *sql;					/* extract custom SQL */
 	char *sb;					/* extract split by column name, load=bad file */
 	char *key[MAX_PK_COLS];		/* diff key column names */
-	char loadcmd[3];				/* load=command to use INSERT/UPSERT/UPSERT USING LOAD, IN/UP/UL */ 
+	char loadcmd[3];				/* load/copy=command to use INSERT/UPSERT/UPSERT USING LOAD, IN/UP/UL */ 
 #ifdef XML
 	char *xrt;					/* load: xml row tag */
 #endif
@@ -1588,6 +1588,7 @@ int main(int ac, char *av[])
 				fprintf(stderr, "\tSplit By (.sb): %s\n", etab[i].sb);
 				fprintf(stderr, "\tStart/End (.sp/.ep): %u/%u\n", etab[i].sp, etab[i].ep);
 				fprintf(stderr, "\tSplitby min/max (.sbmin/.sbmax): %ld/%ld\n", etab[i].sbmin, etab[i].sbmax);
+				fprintf(stderr, "\tLoad Command (.loadcmd): %s\n", etab[i].loadcmd);
 				break;
 			case 'p':
 			case 'P':
@@ -1598,6 +1599,7 @@ int main(int ac, char *av[])
 				fprintf(stderr, "\tSplit By (.sb): %s\n", etab[i].sb);
 				fprintf(stderr, "\tStart/End (.sp/.ep): %u/%u\n", etab[i].sp, etab[i].ep);
 				fprintf(stderr, "\tSplitby min/max (.sbmin/.sbmax): %ld/%ld\n", etab[i].sbmin, etab[i].sbmax);
+				fprintf(stderr, "\tLoad Command (.loadcmd): %s\n", etab[i].loadcmd);
 				break;
 			}
 		}
@@ -10513,9 +10515,24 @@ static int Ocopy(int eid)
 			}
 			Ocmd = O ;
 		}
-		snprintf((char *)Ocmd, cl, "INSERT %s%sINTO %s VALUES (?",
-			etab[eid].flg & 040000000 ? "/*+ DIRECT */ " : "",
-			etab[eid].flg2 & 0002 ? "WITH NO ROLLBACK " : "", etab[eid].run);
+		if (!strcasecmp(etab[eid].loadcmd, "IN"))
+		{
+			snprintf((char *)Ocmd, cl, "INSERT %s%sINTO %s VALUES (?",
+				etab[eid].flg & 040000000 ? "/*+ DIRECT */ " : "",
+				etab[eid].flg2 & 0002 ? "WITH NO ROLLBACK " : "", etab[eid].run);
+		}
+		else if (!strcasecmp(etab[eid].loadcmd, "UP"))
+		{
+			snprintf((char *)Ocmd, cl, "UPSERT %s%sINTO %s VALUES (?",
+				etab[eid].flg & 040000000 ? "/*+ DIRECT */ " : "",
+				etab[eid].flg2 & 0002 ? "WITH NO ROLLBACK " : "", etab[eid].run);
+		}
+		else if (!strcasecmp(etab[eid].loadcmd, "UL"))
+		{
+			snprintf((char *)Ocmd, cl, "UPSERT USING LOAD %s%sINTO %s VALUES (?",
+				etab[eid].flg & 040000000 ? "/*+ DIRECT */ " : "",
+				etab[eid].flg2 & 0002 ? "WITH NO ROLLBACK " : "", etab[eid].run);
+		}
 		for (j = 1; j < Oncol; j++)
 			(void) strmcat ( (char *) Ocmd, ",?", cl, 0);
 		if ( etab[eid].seqp )
@@ -13555,7 +13572,7 @@ static int Otcol(int eid, SQLHDBC *Ocn)
 						etab[no].seq = (unsigned long)strtol(++p, (char **)NULL, 10);
 				} else if ( type == 'c' && !strcmp(&str[n], "seqstart") ) {
 					etab[no].seq = (unsigned long long int)strtol(&str[l], (char **)NULL, 10);
-				} else if ( type == 'l' && !strcmp(&str[n], "loadcmd") ) {
+				} else if ( (type == 'l' || type == 'c') && !strcmp(&str[n], "loadcmd") ) {
 					//etab[no].loadcmd = &str[l];
 					strncpy(etab[no].loadcmd, &str[l], 2);
 					etab[no].loadcmd[2] = '\0';
