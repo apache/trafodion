@@ -81,8 +81,9 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.ScannerTimeoutException;
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.transactional.MemoryUsageException;
+import org.apache.hadoop.hbase.client.transactional.OutOfOrderProtocolException;
+import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
@@ -311,19 +312,25 @@ CoprocessorService, Coprocessor {
   private static final int DEFAULT_MEMORY_THRESHOLD = 100; // 100% memory used
   private static final int DEFAULT_MEMORY_SLEEP = 15 * 1000;
   private static final boolean DEFAULT_MEMORY_WARN_ONLY = true;        
+  private static final boolean DEFAULT_MEMORY_PERFORM_GC = false;
+  private static final boolean DEFAULT_SUPPRESS_OOP = false;
   private static final String SLEEP_CONF = "hbase.transaction.clean.sleep";
   private static final String LEASE_CONF  = "hbase.transaction.lease.timeout";
   private static final String MEMORY_THRESHOLD = "hbase.transaction.memory.threshold";
   private static final String MEMORY_WARN_ONLY = "hbase.transaction.memory.warn.only";
   private static final String MEMORY_CONF = "hbase.transaction.memory.sleep";
+  private static final String MEMORY_PERFORM_GC = "hbase.transaction.memory.perform.GC";
+  private static final String SUPPRESS_OOP = "hbase.transaction.suppress.OOP.exception";
   protected static int transactionLeaseTimeout = 0;
   private static int scannerLeaseTimeoutPeriod = 0;
   private static int scannerThreadWakeFrequency = 0;
   private static int memoryUsageThreshold = DEFAULT_MEMORY_THRESHOLD;
+  private static boolean memoryUsagePerformGC = DEFAULT_MEMORY_PERFORM_GC;
   private static boolean memoryUsageWarnOnly = DEFAULT_MEMORY_WARN_ONLY;
   private static MemoryMXBean memoryBean = null;
   private static float memoryPercentage = 0;
   private static boolean memoryThrottle = false;
+  private static boolean suppressOutOfOrderProtocolException = DEFAULT_SUPPRESS_OOP;
 
   // Transaction state defines
   private static final int COMMIT_OK = 1;
@@ -951,6 +958,7 @@ CoprocessorService, Coprocessor {
 
     RegionScanner scanner = null;
     Throwable t = null;
+    OutOfOrderProtocolException oop = null;
     WrongRegionException wre = null;
     Exception ce = null;
     long transId = request.getTransactionId();
@@ -972,6 +980,26 @@ CoprocessorService, Coprocessor {
         regionInfo.getRegionNameAsString());
     } else {
     */
+
+    // There should be a matching key in the transactionsById map
+    // associated with this transaction id.  If there is not
+    // one, then the initial openScanner call for the transaction
+    // id was not called.  This is a protocol error requiring
+    // openScanner, performScan followed by a closeScanner.
+
+    String key = getTransactionalUniqueId(transId);
+    boolean keyFound = transactionsById.containsKey(key);
+
+    if (keyFound != true)
+    {
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: closeScanner - Unknown transaction [" + transId
+             + "] in region ["
+             + m_Region.getRegionInfo().getRegionNameAsString()
+             + "], will create an OutOfOrderProtocol exception ");
+      oop = new OutOfOrderProtocolException("closeScanner does not have an active transaction with an open scanner, txId: " + transId);
+    }
+
+    if (oop == null) {
       try {
          scanner = removeScanner(scannerId);
 
@@ -997,9 +1025,7 @@ CoprocessorService, Coprocessor {
          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: closeScanner - txId " + transId + ", Caught exception " + e.getMessage() + " " + stackTraceToString(e));
          t = e;
       }
-
-    //Commenting out for now
-    //}
+    }
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CloseScannerResponse.Builder closeResponseBuilder = CloseScannerResponse.newBuilder();
 
@@ -1021,6 +1047,18 @@ CoprocessorService, Coprocessor {
     {
       closeResponseBuilder.setHasException(true);
       closeResponseBuilder.setException(ce.toString());
+    }
+
+    if (oop != null)
+    {
+      if (this.suppressOutOfOrderProtocolException == false)
+      {
+        closeResponseBuilder.setHasException(true);
+        closeResponseBuilder.setException(oop.toString());
+        LOG.warn("TrxRegionEndpoint coprocessor: closeScanner - OutOfOrderProtocolException, transaction was not found, txId: " + transId + ",returned exception" + ", regionName " + regionInfo.getRegionNameAsString());
+      }
+      else
+        LOG.warn("TrxRegionEndpoint coprocessor: closeScanner - suppressing OutOfOrderProtocolException, transaction was not found, txId: " + transId + ", regionName " + regionInfo.getRegionNameAsString());
     }
 
     CloseScannerResponse cresponse = closeResponseBuilder.build();
@@ -1533,6 +1571,7 @@ CoprocessorService, Coprocessor {
     RegionScanner scanner = null;
     Throwable t = null;
     ScannerTimeoutException ste = null;
+    OutOfOrderProtocolException oop = null;
     OutOfOrderScannerNextException ooo = null;
     UnknownScannerException use = null;
     MemoryUsageException mue = null;
@@ -1582,96 +1621,116 @@ CoprocessorService, Coprocessor {
       }
       else
       {
-        try {
+        // There should be a matching key in the transactionsById map
+        // associated with this transaction id.  If there is not
+        // one, then the initial openScanner call for the transaction
+        // id was not called.  This is a protocol error requiring
+        // openScanner, performScan followed by a closeScanner.
 
-          scanner = getScanner(scannerId, nextCallSeq);
+        String key = getTransactionalUniqueId(transId);
+        boolean keyFound = transactionsById.containsKey(key);
 
-          if (scanner != null)
-          {
-            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", scanner is not null"); 
-            while (shouldContinue) {
-              hasMore = scanner.next(cellResults);
-              result = Result.create(cellResults);
-              cellResults.clear();
+        if (keyFound != true)
+        {
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - Unknown transaction [" + transId
+                 + "] in region ["
+                 + m_Region.getRegionInfo().getRegionNameAsString()
+                 + "], will create an OutOfOrderProtocol exception ");
+          oop = new OutOfOrderProtocolException("performScan does not have an active transaction with an open scanner, txId: " + transId);
+         }
 
-              if (!result.isEmpty()) {
-                results.add(result);
-                count++;
+        if (oop == null) {
+          try {
+
+            scanner = getScanner(scannerId, nextCallSeq);
+
+            if (scanner != null)
+            {
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", scanner is not null");
+              while (shouldContinue) {
+                hasMore = scanner.next(cellResults);
+                result = Result.create(cellResults);
+                cellResults.clear();
+
+                if (!result.isEmpty()) {
+                  results.add(result);
+                  count++;
+                }
+
+                if (count == numberOfRows || !hasMore)
+                  shouldContinue = false;
               }
-
-              if (count == numberOfRows || !hasMore)
-                shouldContinue = false;
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", count is " + count + ", hasMore is " + hasMore + ", result " + result.isEmpty());
             }
-            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", count is " + count + ", hasMore is " + hasMore + ", result " + result.isEmpty());
-          }
-          else
-          {
-            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + transId + ", scanner is null"); 
-          }
-       } catch(OutOfOrderScannerNextException ooone) {
-         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + " Caught OutOfOrderScannerNextException  " + ooone.getMessage() + " " + stackTraceToString(ooone));
-         ooo = ooone;
-       } catch(ScannerTimeoutException cste) {
-         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + " Caught ScannerTimeoutException  " + cste.getMessage() + " " + stackTraceToString(cste));
-         ste = cste;
-       } catch(Throwable e) {
-         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + " Caught throwable exception " + e.getMessage() + " " + stackTraceToString(e));
-         t = e;
-       }
-       finally {
-         if (scanner != null) {
-           try {
-             if (closeScanner) {
-               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", close scanner was true, closing the scanner" + ", closeScanner is " + closeScanner + ", region is " + regionInfo.getRegionNameAsString());
-               removeScanner(scannerId);
-               scanner.close();
+            else
+            {
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + transId + ", scanner is null");
+            }
+         } catch(OutOfOrderScannerNextException ooone) {
+           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + " Caught OutOfOrderScannerNextException  " + ooone.getMessage() + " " + stackTraceToString(ooone));
+           ooo = ooone;
+           } catch(ScannerTimeoutException cste) {
+           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + " Caught ScannerTimeoutException  " + cste.getMessage() + " " + stackTraceToString(cste));
+           ste = cste;
+         } catch(Throwable e) {
+           if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + " Caught throwable exception " + e.getMessage() + " " + stackTraceToString(e));
+           t = e;
+         }
+         finally {
+           if (scanner != null) {
+             try {
+               if (closeScanner) {
+                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", close scanner was true, closing the scanner" + ", closeScanner is " + closeScanner + ", region is " + regionInfo.getRegionNameAsString());
+                 removeScanner(scannerId);
+                 scanner.close();
 /*
-               try {
-                 scannerLeases.cancelLease(getScannerLeaseId(scannerId));
-               } catch (LeaseException le) {
-                 // ignore
-                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan failed to get a lease " + scannerId);
-               }
+                 try {
+                   scannerLeases.cancelLease(getScannerLeaseId(scannerId));
+                 } catch (LeaseException le) {
+                   // ignore
+                   if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan failed to get a lease " + scannerId);
+                 }
 */
+               }
+             } catch(Exception e) {
+               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan -  transaction id " + transId + ", Caught general exception " + e.getMessage() + " " + stackTraceToString(e));
+               ne = e;
              }
-           } catch(Exception e) {
-             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan -  transaction id " + transId + ", Caught general exception " + e.getMessage() + " " + stackTraceToString(e));
-             ne = e;
            }
          }
-       }
 
-       rsh = scanners.get(scannerId);
+         rsh = scanners.get(scannerId);
 
-       nextCallSeq++;
- 
-       if (rsh == null)
-       {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan rsh is null");
-          use =  new UnknownScannerException(
-            "ScannerId: " + scannerId + ", already closed?");
-       }
-       else
-       {
-         rsh.nextCallSeq = nextCallSeq;
+         nextCallSeq++;
 
-       if (rsh == null)
-       {
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", performScan rsh is null, UnknownScannerException for scannerId: " + scannerId + ", nextCallSeq was " + nextCallSeq + ", for region " + regionInfo.getRegionNameAsString());
-          use =  new UnknownScannerException(
-             "ScannerId: " + scannerId + ", was scanner already closed?, transaction id " + transId + ", nextCallSeq was " + nextCallSeq + ", for region " + regionInfo.getRegionNameAsString());
-       }
-       else
-       {
-         rsh.nextCallSeq = nextCallSeq;
+         if (rsh == null)
+         {
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan rsh is null");
+            use =  new UnknownScannerException(
+              "ScannerId: " + scannerId + ", already closed?");
+         }
+         else
+         {
+           rsh.nextCallSeq = nextCallSeq;
 
-         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", regionName " + regionInfo.getRegionNameAsString() +
+           if (rsh == null)
+           {
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", performScan rsh is null, UnknownScannerException for scannerId: " + scannerId + ", nextCallSeq was " + nextCallSeq + ", for region " + regionInfo.getRegionNameAsString());
+              use =  new UnknownScannerException(
+                 "ScannerId: " + scannerId + ", was scanner already closed?, transaction id " + transId + ", nextCallSeq was " + nextCallSeq + ", for region " + regionInfo.getRegionNameAsString());
+           }
+           else
+           {
+             rsh.nextCallSeq = nextCallSeq;
+
+             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - txId " + transId + ", scanner id " + scannerId + ", regionName " + regionInfo.getRegionNameAsString() +
 ", nextCallSeq " + nextCallSeq + ", rsh.nextCallSeq " + rsh.nextCallSeq + ", close scanner is " + closeScanner);
 
-      }
+          }
+         }
+        }
+       }
      }
-    }
-   }
 
    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PerformScanResponse.Builder performResponseBuilder = PerformScanResponse.newBuilder();
    performResponseBuilder.setHasMore(hasMore);
@@ -1690,43 +1749,63 @@ CoprocessorService, Coprocessor {
 
     if (t != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(t.toString());
     }
 
     if (ste != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(ste.toString());
     }
 
     if (wre != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(wre.toString());
     }
 
     if (ne != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(ne.toString());
     }
 
     if (ooo != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(ooo.toString());
     }
 
     if (use != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(use.toString());
+    }
+
+    if (oop != null)
+    {
+      performResponseBuilder.setHasMore(false);
+      if (this.suppressOutOfOrderProtocolException == false)
+      {
+        performResponseBuilder.setHasException(true);
+        performResponseBuilder.setException(oop.toString());
+        LOG.warn("TrxRegionEndpoint coprocessor: performScan - OutOfOrderProtocolException, transaction was not found, txId: " + transId + ", return exception" + ", regionName " + regionInfo.getRegionNameAsString());
+      }
+      else
+        LOG.warn("TrxRegionEndpoint coprocessor: performScan - suppressing OutOfOrderProtocolException, transaction was not found, txId: " + transId + ", regionName " + regionInfo.getRegionNameAsString());
     }
 
     if (mue != null)
     {
       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - performing memoryPercentage " + memoryPercentage + ", posting memory usage exceeds indicated percentage");
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(mue.toString());
     }
@@ -2532,9 +2611,12 @@ CoprocessorService, Coprocessor {
 
         this.cleanTimer = conf.getInt(SLEEP_CONF, DEFAULT_SLEEP);
         this.memoryUsageThreshold = conf.getInt(MEMORY_THRESHOLD, DEFAULT_MEMORY_THRESHOLD);
+        this.memoryUsagePerformGC = conf.getBoolean(MEMORY_PERFORM_GC, DEFAULT_MEMORY_PERFORM_GC);
         this.memoryUsageWarnOnly = conf.getBoolean(MEMORY_WARN_ONLY, DEFAULT_MEMORY_WARN_ONLY);
         this.memoryUsageTimer = conf.getInt(MEMORY_CONF, DEFAULT_MEMORY_SLEEP);
+        this.memoryUsageTimer = conf.getInt(MEMORY_CONF, DEFAULT_MEMORY_SLEEP);
 
+        this.suppressOutOfOrderProtocolException = conf.getBoolean(SUPPRESS_OOP, DEFAULT_SUPPRESS_OOP);
 	if (this.transactionLeases == null)  
 	    this.transactionLeases = new Leases(LEASE_CHECK_FREQUENCY);
 
@@ -2553,8 +2635,12 @@ CoprocessorService, Coprocessor {
             + this.memoryUsageTimer
             + ", MemoryUsageThreshold: "
             + this.memoryUsageThreshold
+            + ", MemoryUsagePerformGC: "
+            + this.memoryUsagePerformGC
             + ", MemoryUsageWarnOnly: "
-            + this.memoryUsageWarnOnly);
+            + this.memoryUsageWarnOnly
+            + ", Suppress OutOfOrderProtocolException: "
+            + this.suppressOutOfOrderProtocolException);
 
         // Start the clean core thread
           
@@ -4773,13 +4859,36 @@ CoprocessorService, Coprocessor {
       }
 
       memoryThrottle = false;
-
       if (memoryPercentage > memoryUsageThreshold) {
-        if(memoryUsageWarnOnly == false)  
-          memoryThrottle = true;
-        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkMemoryUsage - memoryPercentage is " + memoryPercentage + ", memoryThrottle is "+ memoryThrottle);
-      }   
-    }   
+        // If configured to perform a garbage collection,
+        // try to release memory before throttling the queries.
+        if (memoryUsagePerformGC == true) {
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkMemoryUsage - before GC, memoryPercentage is " + memoryPercentage);
+          System.gc();
+          // Calculate the memory usage again before
+          // setting the throttle value or post a warning.
+          memUsed = memoryBean.getHeapMemoryUsage().getUsed();
+          memMax = memoryBean.getHeapMemoryUsage().getMax();
+          memoryPercentage = 0L;
+
+          if (memMax != 0) {
+            memoryPercentage = (memUsed * 100) / memMax;
+          }
+
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkMemoryUsage - after GC, memoryPercentage is " + memoryPercentage);
+
+          if (memoryPercentage > memoryUsageThreshold) {
+            if(memoryUsageWarnOnly == false)
+              memoryThrottle = true;
+            if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkMemoryUsage - memoryPercentage is " + memoryPercentage + ", memoryThrottle is "+ memoryThrottle);
+          }
+        } else {
+          if(memoryUsageWarnOnly == false)
+            memoryThrottle = true;
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkMemoryUsage - memoryPercentage is " + memoryPercentage + ", memoryThrottle is "+ memoryThrottle);
+        }
+      }
+    }
   }
 }
 
