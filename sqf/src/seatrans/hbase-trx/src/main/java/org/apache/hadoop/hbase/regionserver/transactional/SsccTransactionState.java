@@ -274,7 +274,7 @@ public class SsccTransactionState extends TransactionState{
                             {
                                 statusValList.add(CellUtil.cloneValue(c));
                                 LOG.info("handleResult check status item if transactionId is self update");
-                                updateByMe = true;                           
+                                updateByMe = true;
                             }
                             else
                                 LOG.info("this cell is not updated by me , matcher " + Bytes.toString(matcher) +  " lv_colList is " + Bytes.toString(lv_colList) );

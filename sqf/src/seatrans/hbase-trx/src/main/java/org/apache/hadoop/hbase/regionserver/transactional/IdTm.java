@@ -10,6 +10,9 @@
  */
 package org.apache.hadoop.hbase.regionserver.transactional;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * IdTm
  *
@@ -17,6 +20,7 @@ package org.apache.hadoop.hbase.regionserver.transactional;
  */
 public class IdTm implements IdTmCb {
     private static final int TO = 1000;
+    private static final Log LOG = LogFactory.getLog(IdTm.class);
 
     /**
      * main
@@ -44,23 +48,23 @@ public class IdTm implements IdTmCb {
         }
 
         IdTm cli = new IdTm(cb);
-        System.out.println("IdTm begin, loop=" + loop);
+        if (LOG.isDebugEnabled()) LOG.debug("IdTm begin, loop=" + loop);
 
         for (int inx = 0; inx < loop; inx++) {
             try {
                 cli.ping(TO);
             } catch (IdTmException exc) {
-                System.out.println("ping threw exc=" + exc);
+                LOG.error("ping threw exc=" + exc);
             }
             try {
                 IdTmId id = new IdTmId();
                 cli.id(TO, id);
-                System.out.println("id ret=0x" + Long.toHexString(id.val));
+                if (LOG.isDebugEnabled()) LOG.debug("id ret=0x" + Long.toHexString(id.val));
             } catch (IdTmException exc) {
-                System.out.println("id threw exc=" + exc);
+                LOG.error("id threw exc=" + exc);
             }
         }
-        System.out.println("IdTm done");
+        if (LOG.isDebugEnabled()) LOG.debug("IdTm done");
     }
 
     public IdTm(boolean cb) {
@@ -68,7 +72,7 @@ public class IdTm implements IdTmCb {
             try {
                 reg_hash_cb(this);
             } catch (IdTmException exc) {
-                System.out.println("reg_hash_cb threw exc=" + exc);
+                LOG.error("reg_hash_cb threw exc=" + exc);
             }
         }
     }
@@ -82,9 +86,9 @@ public class IdTm implements IdTmCb {
      * @return error
      */
     public int cb(int nid, int pid, String[] servers) {
-        System.out.println("cb called nid=" + nid + ",pid=" + pid + ",servers=" + servers);
+        if (LOG.isDebugEnabled()) LOG.debug("cb called nid=" + nid + ",pid=" + pid + ",servers=" + servers);
         for (int inx = 0; inx < servers.length; inx++) {
-            System.out.println("cb server[" + inx + "]=" + servers[inx]);
+            if (LOG.isDebugEnabled()) LOG.debug("cb server[" + inx + "]=" + servers[inx]);
         }
         return 0;
     }
@@ -97,9 +101,17 @@ public class IdTm implements IdTmCb {
      * @exception IdTmException exception
      */
     public void id(int timeout, IdTmId id) throws IdTmException {
-        int err = native_id(timeout, id);
-        if (err != 0) {
-            throw new IdTmException("ferr=" + err);
+        if (LOG.isDebugEnabled()) LOG.debug("id begin");
+        try {
+           int err = native_id(timeout, id);
+           if (LOG.isDebugEnabled()) LOG.debug("id returned: " + id.val + ", error: " + err);
+           if (err != 0) {
+              LOG.error("native_id returned: " + err + " Throwing IdTmException");
+              throw new IdTmException("ferr=" + err);
+           }
+        } catch (Throwable t) {
+           LOG.error("id threw:" + t);
+           throw new IdTmException("id threw:" + t);
         }
     }
 
@@ -112,6 +124,7 @@ public class IdTm implements IdTmCb {
     public void ping(int timeout) throws IdTmException {
         int err = native_ping(timeout);
         if (err != 0) {
+            LOG.error("ping returned: " + err + " Throwing IdTmException");
             throw new IdTmException("ferr=" + err);
         }
     }
@@ -125,6 +138,7 @@ public class IdTm implements IdTmCb {
     public void reg_hash_cb(IdTmCb cb) throws IdTmException {
         int err = native_reg_hash_cb(cb);
         if (err != 0) {
+            LOG.error("reg_hash_cb returned: " + err + " Throwing IdTmException");
             throw new IdTmException("ferr=" + err);
         }
     }
