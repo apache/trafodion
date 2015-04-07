@@ -265,7 +265,7 @@ if [[ "$userForTrafodion" == "0" ]]; then
       exit -1
   fi
 else
-  $HOME_DIR=$(grep -r "trafodion" /etc/passwd | sed 's/.*:://' | sed 's/\:.*$//' | sed 's/\/trafodion.*$//')
+  HOME_DIR=$(grep -r "trafodion" /etc/passwd | sed 's/.*:://' | sed 's/\:.*$//' | sed 's/\/trafodion.*$//')
   
 fi
 
