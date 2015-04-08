@@ -486,22 +486,14 @@ fi
 # Hadoop Distro
 
 echo "***INFO: Detecting Hadoop distro"
-
-ambari_installed=$(rpm -qa | grep ambari | wc -l )
-cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
+ambari_installed=$(hadoop version 2>&1 | grep hortonworks | wc -l)
+cloudera_installed=$(hadoop version 2>&1 | grep cloudera | wc -l)
 
 if [[ "$ambari_installed" -eq "0" ]] && [[ "$cloudera_installed" -eq "0" ]]; then
    echo "***ERROR: Hadoop distribution could not be determined."
    echo "***ERROR: Only Hortonworks or Cloudera supported."
    exit -1
 fi 
-
-if [[ "$ambari_installed" -ge "1" ]] && [[ "$cloudera_installed" -ge "1" ]]; then
-   echo "***ERROR: Hadoop distribution could not be determined."
-   echo "***ERROR: Both Hortonworks and Cloudera detected, ambiguous."
-   echo "***ERROR: Please do an uninstall of one of them."
-   exit -1 
-fi
 
 echo "exit" | hbase shell &> hbaseVersion.txt
 
