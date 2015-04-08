@@ -129,10 +129,10 @@ public class HBulkLoadClient
     HTable myHTable = new HTable(config, tblName);
     HTableDescriptor hTbaledesc = myHTable.getTableDescriptor();
     HColumnDescriptor[] hColDescs = hTbaledesc.getColumnFamilies();
-    if (hColDescs.length != 1 )
+    if (hColDescs.length > 2 )  //2 column family , 1 for user data, 1 for transaction metadata
     {
       myHTable.close();
-      throw new UnsupportedOperationException ("only one family is supported.");
+      throw new UnsupportedOperationException ("only two families are supported.");
     }
     
     compression= hColDescs[0].getCompression().getName();
