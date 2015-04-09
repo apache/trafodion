@@ -304,6 +304,9 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
             builder.setTransactionId(transactionState.getTransactionId());
             builder.setRegionName(ByteString.copyFromUtf8(regionName));
 
+            // For Statefull puts SQL uses checkAndPut, so we assume stateless
+            builder.setIsStateless(true);
+
             MutationProto m1 = ProtobufUtil.toMutation(MutationType.PUT, put);
             builder.setPut(m1);
 
