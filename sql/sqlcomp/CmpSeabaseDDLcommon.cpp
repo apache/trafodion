@@ -2134,9 +2134,13 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
       if (hbaseCreateOptionsArray[HBASE_NAME].empty())
         hbaseCreateOptionsArray[HBASE_NAME] = SEABASE_DEFAULT_COL_FAMILY;
 
+      NABoolean noXn =
+                (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
+                
       retcode = ehi->create(*table, hbaseCreateOptionsArray,
                             numSplits, keyLength,
-                            (const char **)encodedKeysBuffer);
+                            (const char **)encodedKeysBuffer,
+                            noXn);
     }
   else
     {
@@ -4664,6 +4668,13 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
                                             const NAString &objName,
                                             const ComObjectType objectType)
 {
+
+  //if DDL_TRANSACTIONS is ON, no need of additional cleanup.
+  //This check is temporary and will be removed once full functionality 
+  //is in.
+  if(CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_ON)
+    return;
+    
   Lng32 cliRC = 0;
   char buf[1000];
 

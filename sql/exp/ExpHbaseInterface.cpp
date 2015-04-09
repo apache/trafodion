@@ -499,7 +499,8 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 				    NAText * hbaseCreateOptionsArray,
                                     int numSplits, int keyLength,
-                                    const char ** splitValues)
+                                    const char ** splitValues,
+                                    NABoolean noXn)
 {
   if (client_ == NULL)
   {
@@ -507,7 +508,11 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
       return -HBASE_ACCESS_ERROR;
   }
   
-  Int64 transID = getTransactionIDFromContext();
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
  
   retCode_ = client_->create(tblName.val, hbaseCreateOptionsArray,
                              numSplits, keyLength, splitValues, transID);

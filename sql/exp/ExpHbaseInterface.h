@@ -103,7 +103,8 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 create(HbaseStr &tblName,
 		       NAText * hbaseCreateOptionsArray,
                        int numSplits, int keyLength,
-                       const char ** splitValues) =0;
+                       const char ** splitValues,
+                       NABoolean noXn) =0;
 
   // During a drop of seabase table or index, the object is first removed from 
   // seabase metadata. If that succeeds, the corresponding hbase object is dropped.
@@ -380,7 +381,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 create(HbaseStr &tblName,
 	               NAText* hbaseCreateOptionsArray,
                        int numSplits, int keyLength,
-                       const char ** splitValues);
+                       const char ** splitValues,
+                       NABoolean noXn);
 
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async);
   virtual Lng32 dropAll(const char * pattern, NABoolean async);

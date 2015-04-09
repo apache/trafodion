@@ -1,0 +1,77 @@
+>>set parserflags 131072;
+
+--- SQL operation complete.
+>>control query default DDL_TRANSACTIONS 'ON';
+
+--- SQL operation complete.
+>>
+>>begin work;
+
+--- SQL operation complete.
+>>create table t116t1(a1 int, c1 int, b1 char(6));
+
+--- SQL operation complete.
+>>create table t116t2(a2 int, c2 int, b2 char(6));
+
+--- SQL operation complete.
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T1
+TRAFODION.SCH.T116T2
+
+--- SQL operation complete.
+>>rollback work;
+
+--- SQL operation complete.
+>>get user hbase objects;
+
+--- SQL operation complete.
+>>
+>>--repeat the same tables again
+>>begin work;
+
+--- SQL operation complete.
+>>create table t116t1(a1 int, c1 int, b1 char(6));
+
+--- SQL operation complete.
+>>create table t116t2(a2 int, c2 int, b2 char(6));
+
+--- SQL operation complete.
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T1
+TRAFODION.SCH.T116T2
+
+--- SQL operation complete.
+>>rollback work;
+
+--- SQL operation complete.
+>>get user hbase objects;
+
+--- SQL operation complete.
+>>
+>>-- unique constraint
+>>begin work;
+
+--- SQL operation complete.
+>>create table t116t1(a1 int, c1 int, b1 char(6));
+
+--- SQL operation complete.
+>>alter table t116t1 add constraint tc1 unique (c1);
+
+--- SQL operation complete.
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T1
+TRAFODION.SCH.TC1
+
+--- SQL operation complete.
+>>rollback work;
+
+--- SQL operation complete.
+>>get user hbase objects;
+
+--- SQL operation complete.
+>>
+>>
+>>log;
