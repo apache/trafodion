@@ -111,6 +111,11 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
     static Configuration       config = HBaseConfiguration.create();
     static ExecutorService     threadPool;
 
+    private static final int STATEFUL_UPDATE_OK = 1;
+    private static final int STATEFUL_UPDATE_CONFLICT = 2;
+    private static final int STATELESS_UPDATE_OK = 3;
+    private static final int STATELESS_UPDATE_CONFLICT = 5;
+
     static {
         config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
         try {
@@ -327,8 +332,8 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
         if(resultArray.length == 0) 
           throw new IOException("Problem with calling coprocessor put, no regions returned result");
 
-        if(resultArray[0].getStatus() != 1) //TODO: replace the hardcode 1 to a MACRO or something
-          throw new IOException("conflict writing");
+        if(resultArray[0].getStatus() != STATELESS_UPDATE_OK)
+          throw new IOException("conflict writing:  Array.getStatus returned: " + resultArray[0].getStatus());
         if(resultArray[0].hasException())
           throw new IOException(resultArray[0].getException());     
     // put is void, may not need to check result
