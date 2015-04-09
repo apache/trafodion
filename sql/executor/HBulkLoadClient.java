@@ -78,6 +78,13 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 
+import org.apache.hive.jdbc.HiveDriver;
+import java.sql.Connection;
+import java.sql.Statement;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.lang.ClassNotFoundException;
+
 public class HBulkLoadClient
 {
   
@@ -118,8 +125,9 @@ public class HBulkLoadClient
   void setLastError(String err) {
       lastError = err;
   }
-  public boolean initHFileParams(String hFileLoc, String hFileNm, long userMaxSize /*in MBs*/, String tblName) 
-  throws UnsupportedOperationException, IOException
+  public boolean initHFileParams(String hFileLoc, String hFileNm, long userMaxSize /*in MBs*/, String tblName,
+                                 String sampleTblName, String sampleTblDDL) 
+  throws UnsupportedOperationException, IOException, SQLException, ClassNotFoundException
   {
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.initHFileParams() called.");
     
@@ -154,7 +162,17 @@ public class HBulkLoadClient
       maxHFileSize = userMaxSize * 1024 *1024;  //maxSize is in MBs
 
     myHTable.close();
-    
+
+    if (sampleTblDDL.length() > 0)
+    {
+      Class.forName("org.apache.hive.jdbc.HiveDriver");
+      Connection conn = DriverManager.getConnection("jdbc:hive2://", "hive", "");
+      Statement stmt = conn.createStatement();
+      stmt.execute("drop table if exists " + sampleTblName);
+      //System.out.println("*** DDL for Hive sample table is: " + sampleTblDDL);
+      stmt.execute(sampleTblDDL);
+    }
+
     return true;
   }
   public boolean doCreateHFile() throws IOException, URISyntaxException

@@ -10054,6 +10054,7 @@ RelExpr *HBaseBulkLoadPrep::bindNode(BindWA *bindWA)
 
   newInsert->setInsertType(UPSERT_LOAD);
   newInsert->setIsTrafLoadPrep(true);
+  newInsert->setCreateUstatSample(getCreateUstatSample());
 
   // Pass the flag to bindWA to guarantee that a range partitioning is 
   // always used for all source and target tables.

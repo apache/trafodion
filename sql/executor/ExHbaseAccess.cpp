@@ -2176,9 +2176,6 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
                                           *(colVal+1), *(colVal+2));
                   break;
                 default:
-                  printf("Length of column %d is %d, data type is %d\n", i, attr->getLength(), datatype);
-                  //strncpy((char*)&numUnion, colVal, 4);
-                  //printf("Value of column %d is %d\n", i, numUnion.i);
                   hiveBuffInx += sprintf(hiveBuff+hiveBuffInx, "???|");
                   break;
               }
@@ -2225,8 +2222,6 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
 
   if (includeInSample)
     {
-      //hiveBuff[hiveBuffInx-1] = '\0';
-      //printf("%s\n", hiveBuff);
       // Overwrite trailing delimiter with newline.
       hiveBuff[hiveBuffInx-1] = '\n';
       hdfsWrite(getHdfs(), getHdfsSampleFile(), hiveBuff, hiveBuffInx);

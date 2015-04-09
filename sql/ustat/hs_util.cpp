@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -129,6 +129,27 @@ NABoolean isSpecialObject(const QualifiedName& qualifiedName)
       return TRUE;
 
     return isHBaseMeta(qualifiedName);
+}
+
+// Convert a fully-qualified Trafodion table name to the name used for its
+// backing sample table, which is a Hive table. Hive table names only allow
+// letters, digits, and underscores, and are case-insensitive.
+// @ZXbl -- need to do some kind of conversion for other chars besides periods,
+//          to handle delimited ids.
+void TrafToHiveSampleTableName(NAString& name)
+{
+  size_t len = name.length();
+  const char* oldName = name.data();
+  char* newName = new(STMTHEAP) char[len];
+  for (size_t i=0; i<len; i++)
+    {
+      if (oldName[i] == '.')
+        newName[i] = '_';
+      else
+        newName[i] = oldName[i];
+    }
+  strcpy((char*)newName+len, "_SAMPLE");
+  name = newName;
 }
 
 // -----------------------------------------------------------------------
@@ -888,7 +909,11 @@ Int64 getDefaultSlidingSampleSize(Int64 tblRowCount)
    // Minimum table size for which to use lowest sampling rate.
    Int64 minTblRowsLowSamp = HSGlobalsClass::getMinRowCountForLowSample();
 
-   HS_ASSERT(tblRowCount >= minTblRows);  // should not be doing sampling if so
+   // We won't ordinarily be sampling if the following condition is true, but
+   // this function is called when the bulk load utility is creating a persistent
+   // Hive sample table, and in that case the sample will be done anyway.
+   if (tblRowCount < minTblRows)
+     return tblRowCount;
 
    Int64 sampleRows;
    if (tblRowCount < minTblRowsLowSamp)

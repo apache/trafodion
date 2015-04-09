@@ -12564,7 +12564,8 @@ Insert::Insert(const CorrName &name,
         ItemExpr *insertCols ,
         ItemExpr *orderBy ,
         CollHeap *oHeap ,
-        InsertType insertType)
+        InsertType insertType,
+        NABoolean createUstatSample)
  : GenericUpdate(name,tabId,otype,child,NULL,NULL,oHeap),
    insertColTree_(insertCols),
    orderByTree_(orderBy),
@@ -12581,7 +12582,8 @@ Insert::Insert(const CorrName &name,
    overwriteHiveTable_(FALSE),
    isSequenceFile_(FALSE),
    isUpsert_(FALSE),
-   isTrafLoadPrep_(FALSE)
+   isTrafLoadPrep_(FALSE),
+   createUstatSample_(createUstatSample)
 {
   insert_a_tuple_ = FALSE;
   if ( child ) {
@@ -12672,6 +12674,7 @@ RelExpr * Insert::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->setSequenceFile(isSequenceFile());
   result->isUpsert_ = isUpsert_;
   result->isTrafLoadPrep_ = isTrafLoadPrep_;
+  result->createUstatSample_ = createUstatSample_;
   
   return GenericUpdate::copyTopNode(result, outHeap);
 }

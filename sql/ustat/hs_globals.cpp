@@ -4361,7 +4361,14 @@ NAString* getNumericTypeForInterval(HSColGroupStruct *group,
 // ISlength, ISprecision, ISscale) are the same as the column's original type
 // information.
 //
-void mapInternalSortTypes(HSColGroupStruct *groupList)
+// The forHive parameter indicates whether this is called when using a Hive
+// sample table that was created by the bulk loader. If so, we generate column
+// names as "col" with an integer appended that is the ordinal position of the
+// column in the table. This avoids all problems we would otherwise have with
+// delimited ids due to the restricted set of characters currently allowed in
+// Hive names and lack of case-sensitivity.
+//
+static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive = FALSE)
 {
   HSColGroupStruct *group = groupList;
   NAString* typeName;
@@ -4372,9 +4379,20 @@ void mapInternalSortTypes(HSColGroupStruct *groupList)
      HSColumnStruct &col = group->colSet[0];
      NAString columnName, dblQuote="\"";
 
+     // If retrieving from the Hive backing sample for a table, positional names
+     // are used. This avoids any issues with Trafodion delimited ids that do
+     // not map to valid Hive column names.
+     if (forHive)
+       {
+         columnName = "col";
+         sprintf(sbuf, "%d", col.colnum+1);
+         columnName.append(sbuf);
+       }
      // Surround column name with double quotes, if not already delimited.
-     if (group->colNames->data()[0] == '"') columnName=group->colNames->data();
-     else                                   columnName=dblQuote+group->colNames->data()+dblQuote;
+     else if (group->colNames->data()[0] == '"')
+       columnName=group->colNames->data();
+     else
+       columnName=dblQuote+group->colNames->data()+dblQuote;
 
      switch (col.datatype)
      {
@@ -4981,9 +4999,13 @@ Lng32 HSGlobalsClass::CollectStatistics()
         externalSampleTable = TRUE;
         sampleTableUsed     = TRUE;
         samplingUsed        = TRUE;
-        *hssample_table = "HIVE.HIVE";
-        hssample_table->append(user_table->data() + catSch->length()).append("_SAMPLE");
-        printf("Using external sample table %s\n", hssample_table->data());
+        *hssample_table = "HIVE.HIVE.";
+        NAString hiveSampleTableName = user_table->data();
+        TrafToHiveSampleTableName(hiveSampleTableName);
+        hssample_table->append(hiveSampleTableName);
+        snprintf(LM->msg, sizeof(LM->msg), "Using external sample table %s.",
+                 hssample_table->data());
+        LM->Log(LM->msg);
       }
     else if (! IsNAStringSpaceOrEmpty(sampleTableFromCQD))
       {
@@ -15363,7 +15385,7 @@ Lng32 HSGlobalsClass::CollectStatisticsWithFastStats()
 {
   Lng32 retcode = 0;
 
-  mapInternalSortTypes(singleGroup);
+  mapInternalSortTypes(singleGroup, TRUE);
   getMemoryRequirements(singleGroup, MAX_ROWSET);
 
   //NAArray<HSColGroupStruct*> colGroups(20); //singleGroupCount);

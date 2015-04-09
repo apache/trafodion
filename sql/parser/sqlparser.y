@@ -2778,12 +2778,14 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    exe_util_lob_extract
 %type <relx>                    unload_statement
 %type <relx>                    load_statement
+%type <boolean>                 load_sample_option
 %type <relx>                    exe_util_init_hbase
 %type <hBaseBulkLoadOptionsList> optional_hbbload_options
 %type <hBaseBulkLoadOptionsList> hbbload_option_list
 %type <hBaseBulkLoadOption>      hbbload_option
 %type <hBaseBulkLoadOption>      hbb_no_recovery_option
 %type <hBaseBulkLoadOption>      hbb_truncate_option
+%type <hBaseBulkLoadOption>      hbb_update_stats_option
 %type <hBaseBulkLoadOption>      hbb_no_duplicate_check
 %type <hBaseBulkLoadOption>      hbb_no_populate_indexes
 %type <hBaseBulkLoadOption>      hbb_constraints
@@ -17261,17 +17263,18 @@ aqr_option : TOK_SQLCODE '=' NUMERIC_LITERAL_EXACT_NO_SCALE
 
 /* type relx */
 //HBASE LOAD 
-load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
+load_statement : TOK_LOAD TOK_TRANSFORM load_sample_option TOK_INTO table_name query_expression
                   {
                     //disabled by default in 0.8.0 release 
                     if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
                       YYERROR; 
 
                     $$ = new (PARSERHEAP())
-                          HBaseBulkLoadPrep(CorrName(*$4, PARSERHEAP()),
+                          HBaseBulkLoadPrep(CorrName(*$5, PARSERHEAP()),
                                             NULL,
                                             REL_HBASE_BULK_LOAD,
-                                            $5//,
+                                            $6,
+                                            $3//,
                                             //NULL
                                             );  
                     }
@@ -17293,26 +17296,32 @@ load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
                        
                       RelRoot *top = finalize($5);
 
-                      NAString stmt1 = "LOAD TRANSFORM ";
-                      stmt1.append((char*)&(stmt->data()[pos]));
-                      
-                        ExeUtilHBaseBulkLoad * eubl = new (PARSERHEAP()) 
+                      ExeUtilHBaseBulkLoad * eubl = new (PARSERHEAP()) 
                                         ExeUtilHBaseBulkLoad(CorrName(*$4, PARSERHEAP()),
                                         NULL,
-                                        (char*)stmt1.data(),
+                                        NULL,
                                         stmtCharSet,
                                         top,
                                         PARSERHEAP());
-                        if (eubl->setOptions($2, SqlParser_Diags))
-                               YYERROR; 
-                        if (eubl->getUpsertUsingLoad())
-                        {
-                          NAString stmt2 = "UPSERT USING LOAD ";
-                          stmt2.append((char*)&(stmt->data()[pos])); 
-                          eubl->setStmtText((char*)stmt2.data(), stmtCharSet);
-                        
-                        }
-                        $$ = finalize(eubl);    
+                      if (eubl->setOptions($2, SqlParser_Diags))
+                             YYERROR; 
+
+                      NAString stmt1;
+                      if (eubl->getUpsertUsingLoad())
+                      {
+                        stmt1 = "UPSERT USING LOAD ";
+                        stmt1.append((char*)&(stmt->data()[pos])); 
+                        eubl->setStmtText((char*)stmt1.data(), stmtCharSet);
+                      }
+                      else
+                      {
+                        stmt1 = "LOAD TRANSFORM ";
+                        if (eubl->getUpdateStats())
+                          stmt1.append("WITH SAMPLE ");
+                        stmt1.append((char*)&(stmt->data()[pos])); 
+                        eubl->setStmtText((char*)stmt1.data(), stmtCharSet);
+                      }
+                      $$ = finalize(eubl);
                     
                     }
                                             
@@ -17358,7 +17367,21 @@ load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
                           $$ = finalize(hblt);         
                           
                       }   
-                      
+
+load_sample_option : TOK_WITH TOK_SAMPLE
+                            {
+                              if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+                              {
+                                yyerror("");
+                                YYERROR;     /*internal syntax only!*/
+                              }
+                              $$ = TRUE;
+                            }
+                            | empty
+                            {
+                              $$ = FALSE;
+                            }
+
 optional_hbbload_options : TOK_WITH hbbload_option_list
                             {
                                $$ = $2;
@@ -17388,6 +17411,7 @@ hbbload_option_list : hbbload_option
 
 hbbload_option :   hbb_no_recovery_option
                 | hbb_truncate_option
+                | hbb_update_stats_option
                 | hbb_log_errors_option
                 | hbb_stop_after_n_errors
                 | hbb_no_duplicate_check
@@ -17414,6 +17438,16 @@ hbb_truncate_option : TOK_TRUNCATE TOK_TABLE
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
                               new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
                                           (ExeUtilHBaseBulkLoad::TRUNCATE_TABLE_,
+                                          0,
+                                          NULL);
+                      $$ = op;
+                    }
+hbb_update_stats_option : TOK_UPDATE TOK_STATISTICS
+                    {
+                      //UPDATE STATISTICS
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::UPDATE_STATS_,
                                           0,
                                           NULL);
                       $$ = op;

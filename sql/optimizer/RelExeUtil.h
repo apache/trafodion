@@ -2155,6 +2155,7 @@ public:
   enum HBaseBulkLoadOptionType {
     NO_ROLLBACK_,
     TRUNCATE_TABLE_,
+    UPDATE_STATS_,
     LOG_ERRORS_,
     STOP_AFTER_N_ERRORS_,
     NO_DUPLICATE_CHECK_,
@@ -2191,6 +2192,7 @@ public:
     //preLoadCleanup_(FALSE),
     keepHFiles_(FALSE),
     truncateTable_(FALSE),
+    updateStats_(FALSE),
     noRollback_(FALSE),
     logErrors_(FALSE),
     noDuplicates_(TRUE),
@@ -2308,6 +2310,16 @@ public:
    upsertUsingLoad_ = upsertUsingLoad;
  }
 
+ NABoolean getUpdateStats() const
+ {
+   return updateStats_;
+ }
+
+ void setUpdateStats(NABoolean updateStats)
+ {
+   updateStats_ = updateStats;
+ }
+
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
   virtual NABoolean producesOutput() { return (noOutput_ ? FALSE : TRUE); }
 
@@ -2321,6 +2333,7 @@ private:
   //NABoolean preLoadCleanup_;
   NABoolean keepHFiles_;
   NABoolean truncateTable_;
+  NABoolean updateStats_;
   NABoolean noRollback_;
   NABoolean logErrors_;
   NABoolean noDuplicates_;

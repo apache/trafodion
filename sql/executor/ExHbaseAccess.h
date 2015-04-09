@@ -859,6 +859,8 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     }
 
    private:
+    void getHiveCreateTableDDL(NAString& hiveSampleTblNm, NAString& ddlText);
+
     NABoolean hFileParamsInitialized_;  ////temporary-- need better mechanism later
     Text   familyLocation_;
     Text   importLocation_;

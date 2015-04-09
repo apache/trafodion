@@ -2168,6 +2168,9 @@ bool compHBaseQualif ( NAString a  , NAString b)
   return (strcmp (&(a_str[sizeof(short) + sizeof(UInt32)]), &(b_str[sizeof(short)+ sizeof(UInt32)]))<0);
 };
 
+extern Int64 getDefaultSlidingSampleSize(Int64 tblRowCount);
+extern Int64 getDefaultSampleSize(Int64 tblRowCount);
+
 short HbaseInsert::codeGen(Generator *generator)
 {
   Space * space          = generator->getSpace();
@@ -2712,11 +2715,26 @@ short HbaseInsert::codeGen(Generator *generator)
         hbasescan_tdb->setNoDuplicates(CmpCommon::getDefault(TRAF_LOAD_PREP_SKIP_DUPLICATES) == DF_OFF);
         hbasescan_tdb->setMaxHFileSize(CmpCommon::getDefaultLong(TRAF_LOAD_MAX_HFILE_SIZE));
 
-        // For sample file. Move later, when sampling not limited to bulk loads.
-//        NAString sampleLocationNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_SAMPLE_TABLE_LOCATION);
-//        char * sampleLocation = space->allocateAlignedSpace(sampleLocationNAS.length() + 1);
-//        strcpy(sampleLocation, sampleLocationNAS.data());
-//        hbasescan_tdb->setSampleLocation(sampleLocation);
+        // For sample file, set the sample location in HDFS and the sampling rate.
+        // Move later, when sampling not limited to bulk loads.
+        if (getCreateUstatSample())
+          {
+            NAString sampleLocationNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_SAMPLE_TABLE_LOCATION);
+            char * sampleLocation = space->allocateAlignedSpace(sampleLocationNAS.length() + 1);
+            strcpy(sampleLocation, sampleLocationNAS.data());
+            hbasescan_tdb->setSampleLocation(sampleLocation);
+
+            Int64 totalRows = (Int64)(getInputCardinality().getValue());
+            //printf("*** Incoming cardinality is " PF64 ".\n", totalRows);
+            Int64 sampleRows;
+            if (CmpCommon::getDefault(USTAT_USE_SLIDING_SAMPLE_RATIO) == DF_ON)
+              sampleRows = getDefaultSlidingSampleSize(totalRows);
+            else
+              sampleRows = getDefaultSampleSize(totalRows);
+            Float32 sampleRate = (Float32)sampleRows / (Float32)totalRows;
+            //printf("*** In HbaseInsert::codeGen(): Sample percentage is %.2f.\n", sampleRate);
+            hbasescan_tdb->setSamplingRate(sampleRate);
+          }
       }
 
       // setting parameters for upsert statement// not related to the hbase bulk load intergration
