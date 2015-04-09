@@ -215,6 +215,7 @@ static SB_Thread::Usem        gv_ms_open_sem;
 static SB_Ts_Slot_Mgr         gv_ms_recv_tag_mgr("slotmgr-msmon-outstanding", SB_Slot_Mgr::ALLOC_FAST, MS_MAX_MON_OUT);
 int                           gv_ms_streams = 0;
 int                           gv_ms_streams_max = 0;
+bool                          gv_ms_su_altsig           = false;
 bool                          gv_ms_su_called           = false;
 bool                          gv_ms_su_eventmsgs        = true;
 int                           gv_ms_su_pnid             = -1;
@@ -332,9 +333,10 @@ static int            msg_mon_open_self(char            *pp_name,
 static int            msg_mon_process_startup_com(bool pv_sysmsgs,
                                                   bool pv_attach,
                                                   bool pv_eventmsgs,
-                                                  bool pv_pipeio)
+                                                  bool pv_pipeio,
+                                                  bool pv_altsig)
 SB_THROWS_FATAL;
-static int            msg_mon_process_startup_ph1(bool pv_attach)
+static int            msg_mon_process_startup_ph1(bool pv_attach, bool pv_altsig)
 SB_THROWS_FATAL;
 static void           msg_mon_recv_msg_cbt(MS_Md_Type *pp_md);
 static void           msg_mon_recv_msg_cbt_discard(const char *pp_where,
@@ -4366,7 +4368,7 @@ SB_Export int msg_mon_open_process(char            *pp_name,
 SB_Export int msg_mon_open_process_fs(char            *pp_name,
                                       SB_Phandle_Type *pp_phandle,
                                       int             *pp_oid) {
-    SB_API_CTR (lv_zctr, MSG_MON_OPEN_PROCESS_FS_FS);
+    SB_API_CTR (lv_zctr, MSG_MON_OPEN_PROCESS_FS);
 
     SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_OPEN_PROCESS, 0);
     return msg_mon_open_process_com(pp_name,
@@ -5635,8 +5637,9 @@ SB_THROWS_FATAL {
     SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP, 0);
     return msg_mon_process_startup_com(pv_sysmsgs,
                                        gv_ms_attach,
-                                       true,  // eventmsgs
-                                       true); // pipeio
+                                       true,   // eventmsgs
+                                       true,   // pipeio
+                                       false); // altsig
 }
 
 //
@@ -5650,7 +5653,8 @@ SB_THROWS_FATAL {
     return msg_mon_process_startup_com(pv_sysmsgs,
                                        gv_ms_attach,
                                        pv_eventmsgs,
-                                       true);
+                                       true,   // pipeio
+                                       false); // altsig
 }
 
 //
@@ -5664,7 +5668,23 @@ SB_THROWS_FATAL {
     return msg_mon_process_startup_com(pv_sysmsgs,
                                        gv_ms_attach,
                                        true,       // eventmsgs
-                                       pv_pipeio);
+                                       pv_pipeio,
+                                       false);     // altsig
+}
+
+//
+// Purpose: handle process startup
+//
+SB_Export int msg_mon_process_startup4(int pv_sysmsgs, int pv_pipeio, int pv_altsig)
+SB_THROWS_FATAL {
+    SB_API_CTR (lv_zctr, MSG_MON_PROCESS_STARTUP4);
+
+    SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP4, 0);
+    return msg_mon_process_startup_com(pv_sysmsgs,
+                                       gv_ms_attach,
+                                       true,       // eventmsgs
+                                       pv_pipeio,
+                                       pv_altsig);
 }
 
 //
@@ -5673,7 +5693,8 @@ SB_THROWS_FATAL {
 int msg_mon_process_startup_com(bool pv_sysmsgs,
                                 bool pv_attach,
                                 bool pv_eventmsgs,
-                                bool pv_pipeio)
+                                bool pv_pipeio,
+                                bool pv_altsig)
 SB_THROWS_FATAL {
     const char   *WHERE = "msg_mon_process_startup";
     char         *lp_s;
@@ -5688,8 +5709,8 @@ SB_THROWS_FATAL {
                                    lv_cmdline.size());
         if (lp_s == NULL)
             lp_s = const_cast<char *>("<unknown>");
-        trace_where_printf(WHERE, "ENTER sysmsgs=%d, attach=%d, eventmsgs=%d, pipeio=%d, ppid=%d, pcmdline=%s\n",
-                           pv_sysmsgs, pv_attach, pv_eventmsgs, pv_pipeio, lv_ppid, lp_s);
+        trace_where_printf(WHERE, "ENTER sysmsgs=%d, attach=%d, eventmsgs=%d, pipeio=%d, altsig=%d, ppid=%d, pcmdline=%s\n",
+                           pv_sysmsgs, pv_attach, pv_eventmsgs, pv_pipeio, pv_altsig, lv_ppid, lp_s);
     }
     if (!gv_ms_calls_ok) // msg_mon_process_startup
         return ms_err_rtn_msg(WHERE, "msg_init() not called or shutdown",
@@ -5702,8 +5723,9 @@ SB_THROWS_FATAL {
     gv_ms_su_sysmsgs = pv_sysmsgs;
     gv_ms_su_eventmsgs = pv_eventmsgs;
     gv_ms_su_pipeio = pv_pipeio;
+    gv_ms_su_altsig = pv_altsig;
 
-    int lv_fserr = msg_mon_process_startup_ph1(pv_attach);
+    int lv_fserr = msg_mon_process_startup_ph1(pv_attach, pv_altsig);
     if (gp_local_mon_io != NULL)
         gv_ms_mon_calls_ok = true;
     if (gv_ms_trace_mon)
@@ -5714,7 +5736,7 @@ SB_THROWS_FATAL {
 //
 // Purpose: handle process startup
 //
-int msg_mon_process_startup_ph1(bool pv_attach)
+int msg_mon_process_startup_ph1(bool pv_attach, bool pv_altsig)
 SB_THROWS_FATAL {
     const char           *WHERE = "msg_mon_process_startup_ph1";
     Mon_Shared_Msg_Type  *lp_msg;
@@ -5802,7 +5824,7 @@ SB_THROWS_FATAL {
     }
     gp_local_mon_io = new Local_IO_To_Monitor(gv_ms_su_pid);
 
-    if ((gp_local_mon_io != NULL) && !gp_local_mon_io->init_comm()) {
+    if ((gp_local_mon_io != NULL) && !gp_local_mon_io->init_comm(pv_altsig)) {
         delete gp_local_mon_io;
         gp_local_mon_io = NULL;
     }

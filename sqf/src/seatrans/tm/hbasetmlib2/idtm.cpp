@@ -122,7 +122,7 @@ static int do_init(JNIEnv *pp_j_env) {
         }
         if (lv_ferr == XZFIL_ERR_OK) {
             try {
-                lv_ferr = msg_mon_process_startup(false);
+                lv_ferr = msg_mon_process_startup4(false, true, true);
             } catch (SB_Fatal_Excep &fatal_exc) {
                 if (gv_verbose)
                     printf("cli: msg_mon_process_startup threw exc=%s, setting PATHDOWN\n",

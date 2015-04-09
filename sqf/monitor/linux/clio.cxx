@@ -69,6 +69,21 @@ bool Shutdown = false;
 bool Local_IO_To_Monitor::cv_trace = false;
 void (*Local_IO_To_Monitor::cp_trace_cb)(const char *, const char *, va_list) = NULL;
 
+enum {              ALTSIG_NODES = 1000 };
+typedef struct altsig_node {
+    struct altsig_node *ip_next;
+    int                 iv_sig;
+    siginfo_t           iv_siginfo;
+} Altsig_Node;
+Altsig_Node         *gp_altsig_free_head  = NULL;
+Altsig_Node         *gp_altsig_free_tail  = NULL;
+Altsig_Node         *gp_altsig_queue_head = NULL;
+Altsig_Node         *gp_altsig_queue_tail = NULL;
+Altsig_Node        **gpp_altsig_nodes     = NULL;
+pthread_cond_t       gv_altsig_cond       = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t      gv_altsig_mutex      = PTHREAD_MUTEX_INITIALIZER;
+pthread_spinlock_t   gv_altsig_spinlock;
+
 // the global local io object.  When this is set, the code in msmon.cpp
 // and the shell.cxx follow the localio code path.
 Local_IO_To_Monitor *gp_local_mon_io = NULL;
@@ -99,10 +114,149 @@ void LIOTM_assert_fun(const char *pp_exp,
     abort();
 }
 
+//
+// alt signal handler
+//
+// get a free node, copy siginfo, queue node, signal
+//
+void altsig_sig(int pv_sig, siginfo_t *pp_siginfo, void *) {
+    Altsig_Node *lp_node;
+    int          lv_err;
+    int          lv_lerr;
+
+    // get lock to queue
+    lv_lerr = pthread_spin_lock(&gv_altsig_spinlock);
+    LIOTM_assert(lv_lerr == 0);
+
+    // get free node
+    lp_node = gp_altsig_free_head;
+    LIOTM_assert(lp_node != NULL);
+    gp_altsig_free_head = gp_altsig_free_head->ip_next;
+
+    // set node data 
+    lp_node->ip_next = NULL; 
+    lp_node->iv_sig = pv_sig;
+    memcpy(&lp_node->iv_siginfo, pp_siginfo, sizeof(lp_node->iv_siginfo));
+
+    // queue it up
+    if (gp_altsig_queue_tail == NULL)
+        gp_altsig_queue_head = lp_node;
+    else
+        gp_altsig_queue_tail->ip_next = lp_node;
+    gp_altsig_queue_tail = lp_node;
+
+    // unlock
+    lv_lerr = pthread_spin_unlock(&gv_altsig_spinlock);
+    LIOTM_assert(lv_lerr == 0);
+
+    // tell reader there's a node
+    lv_err = pthread_cond_signal(&gv_altsig_cond);
+    LIOTM_assert(lv_err == 0);
+}
+
+//
+// alt signal init
+//
+void altsig_init() {
+    struct sigaction lv_act;
+    int              lv_err;
+    int              lv_inx;
+
+    // create free list
+    gpp_altsig_nodes = new Altsig_Node *[ALTSIG_NODES];
+    for (lv_inx = 0; lv_inx < ALTSIG_NODES; lv_inx++)
+        gpp_altsig_nodes[lv_inx] = new Altsig_Node;
+    for (lv_inx = 0; lv_inx < ALTSIG_NODES - 1; lv_inx++)
+        gpp_altsig_nodes[lv_inx]->ip_next = gpp_altsig_nodes[lv_inx + 1];
+    gp_altsig_free_head = gpp_altsig_nodes[0];
+    gp_altsig_free_tail = gpp_altsig_nodes[ALTSIG_NODES - 1];
+
+    // init spinlock
+    lv_err = pthread_spin_init(&gv_altsig_spinlock, 0);
+    if (lv_err)
+        abort();
+
+    // setup signal handler
+    memset(&lv_act, 0, sizeof(struct sigaction));
+    lv_act.sa_sigaction = altsig_sig;
+    lv_act.sa_flags = SA_SIGINFO;
+    lv_err = sigaction(SQ_LIO_SIGNAL_REQUEST_REPLY, &lv_act, NULL);
+    if (lv_err)
+        abort();
+}
+
+//
+// alt sigtimedwait - act like regular sigtimedwait, but use private queue/cv
+//
+int altsig_sigtimedwait(const sigset_t *, siginfo_t *pp_info, const struct timespec *pp_timeout) {
+    Altsig_Node *lp_node;
+    int          lv_lerr;
+    int          lv_err;
+    int          lv_ret;
+
+    // get lock to check for node
+    lv_lerr = pthread_spin_lock(&gv_altsig_spinlock);
+    LIOTM_assert(lv_lerr == 0);
+
+    lp_node = gp_altsig_queue_head;
+    if (lp_node == NULL) {
+        // no node, give up lock
+        lv_lerr = pthread_spin_unlock(&gv_altsig_spinlock);
+        LIOTM_assert(lv_lerr == 0);
+
+        // wait
+        lv_err = pthread_cond_timedwait(&gv_altsig_cond, &gv_altsig_mutex, pp_timeout);
+
+        // get lock
+        lv_lerr = pthread_spin_lock(&gv_altsig_spinlock);
+        LIOTM_assert(lv_lerr == 0);
+
+        // check pthread_cond_timedwait outcome
+        switch (lv_err) {
+        case 0:
+            lp_node = gp_altsig_queue_head;
+            break;
+        case ETIMEDOUT:
+            lp_node = gp_altsig_queue_head; // check it even if it timedout
+            break;
+        default:
+            LIOTM_assert(lv_err == 0); // pthread_cond_timedwait returns 0/ETIMEDOUT/EINVAL/EPERM
+            break;
+       }
+    }
+
+    if (lp_node == NULL) {
+        lv_ret = -1;
+        errno = EAGAIN;
+    } else {
+        lv_ret = 0;
+        // fix queue-head/tail
+        gp_altsig_queue_head = lp_node->ip_next;
+        if (gp_altsig_queue_head == NULL)
+            gp_altsig_queue_tail = NULL;
+        // copy info
+        memcpy(pp_info, &lp_node->iv_siginfo, sizeof(lp_node->iv_siginfo));
+        // put node on free list
+        lp_node->ip_next = NULL;
+        if (gp_altsig_free_tail == NULL)
+            gp_altsig_free_head = lp_node;
+        else
+            gp_altsig_free_tail->ip_next = lp_node;
+        gp_altsig_free_tail = lp_node;
+    }
+
+    // unlock
+    lv_lerr = pthread_spin_unlock(&gv_altsig_spinlock);
+    LIOTM_assert(lv_lerr == 0);
+
+    return lv_ret;
+}
+
 // this is the real time signal processing thread for seabed and the shell
 // that receives control messages from the monitor.
 void *local_monitor_reader(void *pp_arg) {
     const char       *WHERE = "local_monitor_reader";
+    bool              lv_altsig;
     bool              lv_not_done;
     int               lv_ret = SUCCESS;
     sigset_t          lv_sig_set;
@@ -116,6 +270,7 @@ void *local_monitor_reader(void *pp_arg) {
                                             "ENTER, monitor pid = %ld\n",
                                             (long) pp_arg);
 
+    lv_altsig = gp_local_mon_io->iv_altsig;
     // Setup signal handling
     sigemptyset(&lv_sig_set);
     sigaddset(&lv_sig_set, SQ_LIO_SIGNAL_REQUEST_REPLY);
@@ -127,7 +282,11 @@ void *local_monitor_reader(void *pp_arg) {
     while (lv_not_done) {
         lv_tp.tv_sec = 0;
         lv_tp.tv_nsec = SQ_LIO_SIGNAL_TIMEOUT;
-        if ((lv_sig = sigtimedwait( &lv_sig_set, &lv_siginfo, &lv_tp)) == -1) {
+        if (lv_altsig)
+            lv_sig = altsig_sigtimedwait( &lv_sig_set, &lv_siginfo, &lv_tp );
+        else
+            lv_sig = sigtimedwait( &lv_sig_set, &lv_siginfo, &lv_tp );
+        if (lv_sig == -1) {
             if (gp_local_mon_io->cv_trace && errno != EAGAIN)
                 gp_local_mon_io->trace_where_printf(WHERE,
                    "monitor pid = %ld, sigtimedwait errno: %d(%s)\n", 
@@ -188,6 +347,7 @@ Local_IO_To_Monitor::Local_IO_To_Monitor(int pv_pid)
     
     iv_worker_thread_id=0;
     iv_initted=false;
+    iv_altsig=false;
     iv_pid=pv_pid;
     iv_verifier = gv_ms_su_verif;
     ip_notice_cb=NULL;
@@ -735,7 +895,7 @@ const char *Local_IO_To_Monitor::get_type_str(int pv_type) {
 }
 
 // this initialization routine will start the reader thread 
-bool Local_IO_To_Monitor::init_comm() {
+bool Local_IO_To_Monitor::init_comm(bool altsig) {
     const char *WHERE = "Local_IO_To_Monitor::init_comm";
     int         retries = 4;
     bool        lv_lio_init = false;
@@ -746,6 +906,7 @@ bool Local_IO_To_Monitor::init_comm() {
                            iv_initted, iv_monitor_down);
 
     errno = 0;
+    iv_altsig = altsig;
     if (iv_initted)
     {
         if (cv_trace)
@@ -785,6 +946,8 @@ bool Local_IO_To_Monitor::init_comm() {
             {
                 if (cv_trace)
                     trace_where_printf(WHERE, "monitor is up\n");
+                if (altsig)
+                    altsig_init();
                 // create client worker thread    
                 int lv_rc = pthread_create(&iv_recv_tid,
                                             NULL,
