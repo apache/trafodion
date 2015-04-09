@@ -120,14 +120,11 @@ public class DcsNetworkConfiguration {
 
     public void getCanonicalHostName(NetworkInterface ni, InetAddress inet)
             throws Exception {
-        if (inet.getCanonicalHostName().contains(".")) {
-            intHostAddress = extHostAddress = inet.getHostAddress();
-            canonicalHostName = inet.getCanonicalHostName();
-            LOG.info("Using interface [" + ni.getDisplayName() + ","
-                    + canonicalHostName + "," + extHostAddress + "]");
-            ia = inet;
-        }
-
+        intHostAddress = extHostAddress = inet.getHostAddress();
+        canonicalHostName = inet.getCanonicalHostName();
+        LOG.info("Using interface [" + ni.getDisplayName() + ","
+                + canonicalHostName + "," + extHostAddress + "]");
+        ia = inet;
     }
 
     public InetAddress getInetAddress(NetworkInterface ni) throws Exception {
