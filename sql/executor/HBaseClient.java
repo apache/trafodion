@@ -431,14 +431,22 @@ public class HBaseClient {
         return true;
     }
 
-    public boolean drop(String tblName) 
+    public boolean drop(String tblName, long transID)
              throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.drop(" + tblName + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
             //			admin.disableTableAsync(tblName);
-           admin.disableTable(tblName);
-           admin.deleteTable(tblName);
-           admin.close();
+
+           // Temporary flag. It will be removed in the next commit once CQD changes are merged.
+           boolean useDDLTrans = false;
+           if(transID != 0 && useDDLTrans == true) {
+               table.dropTable(tblName, transID);
+           }
+           else {
+               admin.disableTable(tblName);
+               admin.deleteTable(tblName);
+               admin.close();
+           }
            return cleanupCache(tblName);
     }
 

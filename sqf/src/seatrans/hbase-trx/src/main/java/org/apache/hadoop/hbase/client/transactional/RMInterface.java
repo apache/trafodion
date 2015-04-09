@@ -77,6 +77,7 @@ public class RMInterface {
 
     private native void registerRegion(int port, byte[] hostname, long startcode, byte[] regionInfo);
     private native void createTableReq(byte[] lv_byte_htabledesc, byte[][] keys, long transID, byte[] tblName);
+    private native void dropTableReq(byte[] lv_byte_tblname, long transID);
 
     public static void main(String[] args) {
       System.out.println("MAIN ENTRY");      
@@ -175,6 +176,22 @@ public class RMInterface {
             LOG.error("desc.ByteArray error " + sw.toString());
         }
     }
+
+    public void dropTable(String tblName, long transID) throws IOException {
+        if (LOG.isTraceEnabled()) LOG.trace("dropTable ENTER: ");
+
+        try {
+            byte[] lv_byte_tblname = tblName.getBytes();
+            dropTableReq(lv_byte_tblname, transID);
+        } catch (Exception e) {
+            if (LOG.isTraceEnabled()) LOG.trace("Unable to dropTable " + e);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            LOG.error("dropTable error " + sw.toString());
+        }
+    }
+
 
     static public void clearTransactionStates(final long transactionID) {
       if (LOG.isTraceEnabled()) LOG.trace("cts1 Enter txid: " + transactionID);

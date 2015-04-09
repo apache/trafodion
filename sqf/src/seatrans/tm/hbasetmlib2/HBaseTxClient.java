@@ -604,7 +604,34 @@ public class HBaseTxClient {
       }
       return TransReturnCode.RET_OK.getShort();
    }
-   
+
+   public short callDropTable(long transactionId, byte[] pv_tblname) throws Exception
+   {
+      TransactionState ts;
+      String strTblName = new String(pv_tblname, "UTF-8");
+
+      if (LOG.isTraceEnabled()) LOG.trace("Enter callDropTable, txid: [" + transactionId + "],  tablename: " + strTblName);
+
+      ts = mapTransactionStates.get(transactionId);
+      if(ts == null) {
+         LOG.error("Returning from HBaseTxClient:callDropTable, (null tx) retval: " + TransReturnCode.RET_NOTX.getShort()  + " txid: " + transactionId);
+         return TransReturnCode.RET_NOTX.getShort();
+      }
+
+      try {
+         trxManager.dropTable(ts, strTblName);
+      }
+      catch (Exception cte) {
+         if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callDropTable exception trxManager.dropTable, retval: " +
+            TransReturnCode.RET_EXCEPTION.toString() +" txid: " + transactionId +" Exception: " + cte);
+         StringWriter sw = new StringWriter();
+         PrintWriter pw = new PrintWriter(sw);
+         cte.printStackTrace(pw);
+         LOG.error("HBaseTxClient dropTable call error: " + sw.toString());
+      }
+      return TransReturnCode.RET_OK.getShort();
+   }
+
     public short callRegisterRegion(long transactionId,
 				    int  pv_port,
 				    byte[] pv_hostname,

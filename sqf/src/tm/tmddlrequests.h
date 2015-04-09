@@ -7,6 +7,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/*
+ * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
+ * Method:    registerRegion
+ * Signature: (I[BJ[B)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_registerRegion
+  (JNIEnv *, jobject, jint, jbyteArray, jlong, jbyteArray);
 
 /*
  * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
@@ -15,6 +22,14 @@ extern "C" {
  */
 JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_createTableReq
   (JNIEnv *, jobject, jbyteArray, jobjectArray, jlong, jbyteArray);
+
+/*
+ * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
+ * Method:    dropTableReq
+ * Signature: ([BJ)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_dropTableReq
+  (JNIEnv *, jobject, jbyteArray, jlong);
 
 #ifdef __cplusplus
 }

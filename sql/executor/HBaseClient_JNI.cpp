@@ -412,7 +412,7 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_CREATEK    ].jm_name      = "createk";
     JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/Object;J)Z";
     JavaMethods_[JM_DROP       ].jm_name      = "drop";
-    JavaMethods_[JM_DROP       ].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_DROP       ].jm_signature = "(Ljava/lang/String;J)Z";
     JavaMethods_[JM_DROP_ALL       ].jm_name      = "dropAll";
     JavaMethods_[JM_DROP_ALL       ].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_LIST_ALL       ].jm_name      = "listAll";
@@ -926,7 +926,7 @@ HBC_RetCode HBaseClient_JNI::performRequest(HBaseClientRequest *request, JNIEnv*
   switch (request->reqType_)
   {
     case HBC_Req_Drop :
-	  drop(request->fileName_, jenv);
+	  drop(request->fileName_, jenv, 0);
 	  break;
 	default :
 	  break;
@@ -1028,7 +1028,7 @@ HBC_RetCode HBaseClient_JNI::startWorkerThreads()
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HBC_RetCode HBaseClient_JNI::drop(const char* fileName, bool async)
+HBC_RetCode HBaseClient_JNI::drop(const char* fileName, bool async, long transID)
 {
   if (async) {
     if (!threadID_[0]) {
@@ -1036,7 +1036,7 @@ HBC_RetCode HBaseClient_JNI::drop(const char* fileName, bool async)
 	}
     enqueueDropRequest(fileName);
   } else {
-    return drop(fileName, jenv_); // not in worker thread
+    return drop(fileName, jenv_, transID); // not in worker thread
   }
 
   return HBC_OK;
@@ -1080,7 +1080,7 @@ HBC_RetCode HBaseClient_JNI::flushAllTables()
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HBC_RetCode HBaseClient_JNI::drop(const char* fileName, JNIEnv* jenv)
+HBC_RetCode HBaseClient_JNI::drop(const char* fileName, JNIEnv* jenv, Int64 transID)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::drop(%s) called.", fileName);
   jstring js_fileName = jenv->NewStringUTF(fileName);
@@ -1090,9 +1090,10 @@ HBC_RetCode HBaseClient_JNI::drop(const char* fileName, JNIEnv* jenv)
     return HBC_ERROR_DROP_PARAM;
   }
 
+  jlong j_tid = transID;  
   // boolean drop(java.lang.String);
   tsRecentJMFromJNI = JavaMethods_[JM_DROP].jm_full_name;
-  jboolean jresult = jenv->CallBooleanMethod(javaObj_, JavaMethods_[JM_DROP].methodID, js_fileName);
+  jboolean jresult = jenv->CallBooleanMethod(javaObj_, JavaMethods_[JM_DROP].methodID, js_fileName, j_tid);
 
   jenv->DeleteLocalRef(js_fileName);  
 

@@ -399,7 +399,11 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
          lv_err = gv_HbaseTM.createTable(lv_transid,
                          pp_msg->request()->u.iv_ddl_request.ddlreq,
                          pp_msg->request()->u.iv_ddl_request.ddlreq_len);
+         break;
       case TM_DDL_DROP:
+         lv_err = gv_HbaseTM.dropTable(lv_transid,
+                         pp_msg->request()->u.iv_ddl_request.ddlreq,
+                         pp_msg->request()->u.iv_ddl_request.ddlreq_len);
          break;
       case TM_DDL_TRUNCATE:
          break;

@@ -272,6 +272,7 @@ typedef struct TM_HBASEREGIONINFO {
 #define TM_MAX_DDLREQUEST_STRING 2048 
 extern "C" short REGISTERREGION(long transid, int port, char *hostname, int hostname_length, long startcode, char *regionInfo, int regionInfo_Length);
 extern "C" short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, long transid);
+extern "C" short DROPTABLE(char *pv_tblname, int pv_tblname_len, long transid);
 extern "C" short HBASETM_REQUESTREGIONINFO(TM_HBASEREGIONINFO pa_trans[], short *pp_count);
 extern "C" short DTM_GETNEXTSEQNUMBLOCK(unsigned int &pp_seqNum_start, unsigned int &pp_seqNum_count);
 extern "C" bool DTM_LOCALTRANSACTION(int32 *pp_node, int32 *pp_seqnum);

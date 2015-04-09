@@ -1404,6 +1404,7 @@ public class TransactionManager {
 
         try {
             hbadmin.createTable(desc);
+            hbadmin.close();
 
             // Set transaction state object as participating in ddl transaction
             transactionState.setDDLTx(true);
@@ -1424,15 +1425,18 @@ public class TransactionManager {
     public void dropTable(final TransactionState transactionState, String tblName)
             throws MasterNotRunningException, IOException {
 
+        if (LOG.isTraceEnabled()) LOG.trace("dropTable ENTRY, tableName: " + tblName);
+
         //Record this drop table request in TmDDL.
-		//Note that physical disable of this table happens in prepare phase.
-		//Followed by physical drop of this table in commit phase.
-		try {
-			tmDDL.putRow( transactionState.getTransactionId(), "DROP", tblName);
-			
-			// Set transaction state object as participating in ddl transaction.
-			transactionState.setDDLTx(true);
-		}
+        //Note that physical disable of this table happens in prepare phase.
+        //Followed by physical drop of this table in commit phase.
+        try {
+            // add drop record to TmDDL.
+            //tmDDL.putRow( transactionState.getTransactionId(), "DROP", tblName);
+
+            // Set transaction state object as participating in ddl transaction.
+            transactionState.setDDLTx(true);
+        }
         catch (Exception e) {
             if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: dropTable exception " + e);
             StringWriter sw = new StringWriter();
