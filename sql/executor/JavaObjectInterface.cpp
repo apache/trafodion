@@ -22,9 +22,8 @@
 #include "QRLogger.h"
 #include "Globals.h"
 
-// Changed the default to 1024 to accomodate the increased java object
-// memory requirement with the scan performance improvements
-#define DEFAULT_JVM_MAX_HEAP_SIZE 1024
+// Changed the default to 512 to limit java heap size used by SQL processes.
+#define DEFAULT_JVM_MAX_HEAP_SIZE 512
 #define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
 
 // ===========================================================================
