@@ -424,7 +424,7 @@ void QRLogger::logQVP(ULng32 eventId,
 {
   // Don't do anything if this message will be ignored anyway.
   log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  if (myCat.getPriority() < level)
+  if (myCat.getPriority() == log4cpp::Priority::NOTSET || myCat.getPriority() < level)
     return;
 
   va_list args;
@@ -432,7 +432,6 @@ void QRLogger::logQVP(ULng32 eventId,
 
   char* buffer = buildMsgBuffer(cat, level, logMsgTemplate, args);
   log1(cat, level, buffer, eventId);
-  delete [] buffer;
 
   va_end(args);
 }
@@ -446,7 +445,7 @@ void QRLogger::logDiags(ComDiagsArea* diagsArea, std::string &cat)
   ComCondition* condition;
   log4cpp::Category& myCat = log4cpp::Category::getInstance(cat);
 
-  if (myCat.getPriority() >= LL_ERROR)
+  if (myCat.getPriority() != log4cpp::Priority::NOTSET && myCat.getPriority() >= LL_ERROR)
     for (i=1; i<=diagsArea->getNumber(DgSqlCode::ERROR_); i++)
       {
         condition = diagsArea->getErrorEntry(i);
@@ -458,7 +457,7 @@ void QRLogger::logDiags(ComDiagsArea* diagsArea, std::string &cat)
         delete diagStr;
       }
 
-  if (myCat.getPriority() >= LL_WARN)
+  if (myCat.getPriority() != log4cpp::Priority::NOTSET && myCat.getPriority() >= LL_WARN)
     for (i=1; i<=diagsArea->getNumber(DgSqlCode::WARNING_); i++)
       {
         condition = diagsArea->getWarningEntry(i);
@@ -534,7 +533,7 @@ void QRLogger::log(std::string &cat,
                    const char  *logMsgTemplate...)
 {
   log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  if (myCat.getPriority() < level)
+  if (myCat.getPriority() == log4cpp::Priority::NOTSET || myCat.getPriority() < level)
     return;
 
   va_list args ;
@@ -559,8 +558,6 @@ void QRLogger::log(std::string &cat,
   logData += ", ";
   logData += buffer;
   log1(cat, level, logData.data());
-  delete [] buffer;
-
   va_end(args);
 }
 
@@ -569,7 +566,7 @@ void QRLogger::log(std::string &cat,
                    const char  *logMsgTemplate...)
 {
   log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  if (myCat.getPriority() < level)
+  if (myCat.getPriority() == log4cpp::Priority::NOTSET || myCat.getPriority() < level)
     return;
 
   va_list args ;
@@ -581,7 +578,6 @@ void QRLogger::log(std::string &cat,
   logData += ",,,";
   logData += buffer;
   log1(cat, level, logData.data());
-  delete [] buffer;
 
   va_end(args);
 }

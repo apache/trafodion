@@ -25,12 +25,13 @@
 // Changed the default to 512 to limit java heap size used by SQL processes.
 #define DEFAULT_JVM_MAX_HEAP_SIZE 512
 #define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
-
+#define TRAF_DEFAULT_JNIHANDLE_CAPACITY 32
 // ===========================================================================
 // ===== Class JavaObjectInterface
 // ===========================================================================
 
 JavaVM* JavaObjectInterface::jvm_  = NULL;
+jint JavaObjectInterface::jniHandleCapacity_ = 0;
 __thread JNIEnv* jenv_ = NULL;
 __thread NAString *tsRecentJMFromJNI = NULL;
 jclass JavaObjectInterface::gThrowableClass = NULL;
@@ -65,8 +66,6 @@ char* JavaObjectInterface::getErrorText(JOI_RetCode errEnum)
 //////////////////////////////////////////////////////////////////////////////
 JavaObjectInterface::~JavaObjectInterface()
 {
-  // commenting out for now - this may cause mxorsvr core during mxsorvr shutdown
-  //QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "JavaObjectInterface destructor called.");
   if ((long)javaObj_ != -1)
       jenv_->DeleteGlobalRef(javaObj_);
   javaObj_ = NULL;
@@ -207,7 +206,6 @@ int JavaObjectInterface::createJVM()
 //////////////////////////////////////////////////////////////////////////////
 JOI_RetCode JavaObjectInterface::initJVM()
 {
-  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Entering initJVM().");
   jint result;
   if (jvm_ == NULL)
   {
@@ -232,6 +230,11 @@ JOI_RetCode JavaObjectInterface::initJVM()
       needToDetach_ = false;
       QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Created a new JVM.");
     }
+    char *jniHandleCapacityStr =  getenv("TRAF_JNIHANDLE_CAPACITY");
+    if (jniHandleCapacityStr != NULL)
+       jniHandleCapacity_ = atoi(jniHandleCapacityStr);
+    if (jniHandleCapacity_ == 0)
+        jniHandleCapacity_ = TRAF_DEFAULT_JNIHANDLE_CAPACITY;
   }
   if (jenv_  == NULL)
   {
@@ -310,12 +313,7 @@ JOI_RetCode JavaObjectInterface::init(char *className,
     return JOI_OK;
     
   JOI_RetCode retCode = JOI_OK;
-  //  HdfsLogger::instance().initLog4cpp("log4cpp.hdfs.config");
     
-  char first[] = "for the first time";
-  char again[] = "again";
-  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "JavaObjectInterface::init() called for class %s %s.", className, (methodsInitialized == TRUE ? again : first));
-
   // Make sure the JVM environment is set up correctly.
   jclass lJavaClass;
   retCode = initJVM();
@@ -358,8 +356,6 @@ JOI_RetCode JavaObjectInterface::init(char *className,
           QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_ERROR, "Error in GetMethod(%s).", JavaMethods[i].jm_name);
           return JOI_ERROR_GETMETHOD;
         }      
-        //else
-        //  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "GetMethod(%s) OK.", JavaMethods[i].jm_name.data());
       }
     }
     
