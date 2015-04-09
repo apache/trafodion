@@ -313,8 +313,10 @@ public class TransactionManager {
 //             }
              if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- setting retry, count: " + retryCount);
              refresh = false;
-             retryCount++;
            }
+
+           retryCount++;
+
         } while (retryCount < RETRY_ATTEMPTS && retry == true); 
         }
 
@@ -417,8 +419,10 @@ public class TransactionManager {
 //             }
              if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- setting retry, count: " + retryCount);
              refresh = false;
-             retryCount++;
            }
+
+           retryCount++;
+
         } while (retryCount < RETRY_ATTEMPTS && retry == true);
         }
         // We have received our reply so decrement outstanding count
@@ -549,8 +553,10 @@ public class TransactionManager {
 //             }
              if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- setting retry, count: " + retryCount);
              refresh = false;
-             retryCount++;
           }
+
+          retryCount++;
+
        } while (retryCount < RETRY_ATTEMPTS && retry == true); 
        }
        if( TRANSACTION_ALGORITHM == AlgorithmType.SSCC){
@@ -636,8 +642,10 @@ public class TransactionManager {
 //             }
              if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- setting retry, count: " + retryCount);
              refresh = false;
-             retryCount++;
           }
+
+          retryCount++;
+
        } while (retryCount < RETRY_ATTEMPTS && retry == true);
        }
        if (LOG.isTraceEnabled()) LOG.trace("commitStatus: " + commitStatus);
@@ -773,9 +781,10 @@ public class TransactionManager {
 //                 }
                  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- setting retry, count: " + retryCount);
                  refresh = false;
-                 retryCount++;
-
               }
+
+              retryCount++;
+
 	  } while (retryCount < RETRY_ATTEMPTS && retry == true);	     
         }
         if( TRANSACTION_ALGORITHM == AlgorithmType.SSCC){
@@ -857,9 +866,10 @@ public class TransactionManager {
 //                 }
                  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- setting retry, count: " + retryCount);
                  refresh = false;
-                 retryCount++;
-
               }
+
+              retryCount++;
+
 	  } while (retryCount < RETRY_ATTEMPTS && retry == true);
         }
       // We have received our reply so decrement outstanding count
