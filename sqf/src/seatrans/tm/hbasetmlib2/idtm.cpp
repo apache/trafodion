@@ -97,6 +97,8 @@ static int do_init(JNIEnv *pp_j_env) {
     int   lv_ferr;
     int   lv_perr;
 
+    if (gv_verbose)
+       printf("cli: do_init start\n");
     lv_perr = pthread_mutex_lock(&gv_mutex);
     assert(lv_perr == 0);
     if (gv_inited)

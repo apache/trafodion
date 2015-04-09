@@ -29,6 +29,7 @@ echo "TM_TLOG_DISABLE_BLOCK_CACHE=0"
 echo "#TM_TLOG_MAX_VERSIONS less than 3 will be ignored"
 echo "TM_TLOG_MAX_VERSIONS=5"
 echo "TM_ENABLE_DDL_TRANS=0"
+echo "TM_USE_SSCC=0"
 
 echo "TSE_CONVERT_NOUNDO_TRANS=1"
 
