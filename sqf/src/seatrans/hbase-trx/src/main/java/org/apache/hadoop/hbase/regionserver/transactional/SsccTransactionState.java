@@ -99,7 +99,7 @@ public class SsccTransactionState extends TransactionState{
             }
         }
     }
-    
+
     public byte[] getColList(byte[] rowkey)
     {
         String keystr= new String(rowkey);
@@ -130,7 +130,7 @@ public class SsccTransactionState extends TransactionState{
     public List<Delete> getDelRows() {
         return delRows;
     }
-    
+
     /**
      * add a rowkey into putRows
      */
@@ -172,12 +172,12 @@ public class SsccTransactionState extends TransactionState{
 
     /**
      * return true if the transaction perform write operations: put or delete.
-     * 
-     */    
+     *
+     */
     public boolean hasWrite() {
         return ( putRows.size() > 0  || delRows.size() > 0 );
     }
-    
+
     /**
     */
     public static boolean isSelfDelete(Cell status, long startId)
@@ -185,12 +185,12 @@ public class SsccTransactionState extends TransactionState{
         return status.getTimestamp() == startId
             && SsccConst.isDeleteStatus(CellUtil.cloneValue(status));        
     }
-    
+
     public void setStartId(long startId)
     {
         startId_ = startId;
     }
-    
+
     public long getStartId()
     {
         return startId_;
@@ -200,12 +200,12 @@ public class SsccTransactionState extends TransactionState{
       each row contains two metadata column in _mt CF: status and versions
       A row can be visible must meet following rules (SSCC algorithm):
       1. the current startID is in status list as key (timestamp of Cell), and its value in status indicate it is not deleted
-         This is because the row is updated by this own transaction, so must be visible. A delete flag will be 
+         This is because the row is updated by this own transaction, so must be visible. A delete flag will be
          set in status value if the operation is DELETE.
       2. the current startID is not in status list as key, but it is in the version list
          This is the case the row is a commited row, updated by other transactions
          we need to find the last transaction do commit.
-         If its startId is smaller than current transaction's startId, then this row is also visible. Otherwise, still 
+         If its startId is smaller than current transaction's startId, then this row is also visible. Otherwise, still
          not visible.
 
     */
@@ -233,12 +233,12 @@ public class SsccTransactionState extends TransactionState{
                  //maybe we can set a CQD for this?
                  //Now, I make this one visible.
                 return true;
-            }   
-            */        
+            }
+            */
             if(thisTs > startId)  //only for debug checking, like an assert
             {
-                LOG.error("SHOULD NOT HAPPEN handleResult thisTs " + thisTs+ " > startId " + startId);
-                return false;  
+                LOG.info("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
+                return true;
             }
 
             if (statusList != null)  
@@ -296,10 +296,17 @@ public class SsccTransactionState extends TransactionState{
                             return false;
                         }
                     }
+                    else {
+                       LOG.debug("handleResult updateByMe is false");
+                    }
+                }
+                else{
+                   LOG.debug("StatusList is not > 0");
+
                 }
             }
             if(versionList == null){
-                LOG.info("handleResult versionList is null, so return false, invisible row");
+                LOG.debug("handleResult versionList is null, so return false, invisible row");
                 return false;
             }
 
@@ -354,7 +361,7 @@ public class SsccTransactionState extends TransactionState{
                if (commitId > getStartId()) {
                   LOG.info("handleResult : this cell committed after our startId");
                }
-               LOG.info("handleResult : this cell is out of MAX_VERSION window check");
+               LOG.info("handleResult : this cell is out of MAX_VERSION window check, returning true");
                return true;
             }
             finalret = (maxStartId == thisTs);
@@ -522,10 +529,10 @@ public class SsccTransactionState extends TransactionState{
             if (byte_2 == null)
                 return byte_1;
         }
-        
-		byte[] byte_3 = new byte[byte_1.length+byte_2.length];
-		System.arraycopy(byte_1, 0, byte_3, 0, byte_1.length);
-		System.arraycopy(byte_2, 0, byte_3, byte_1.length, byte_2.length);
-		return byte_3;
-	}
+
+        byte[] byte_3 = new byte[byte_1.length+byte_2.length];
+        System.arraycopy(byte_1, 0, byte_3, 0, byte_1.length);
+        System.arraycopy(byte_2, 0, byte_3, byte_1.length, byte_2.length);
+        return byte_3;
+    }
 }
