@@ -1888,8 +1888,6 @@ enum DefaultConstants
 
   SKIP_UNAVAILABLE_PARTITION,
 
-  SQLMX_ALIGNED_ROW_FORMAT,
-
   ISOLATION_LEVEL_FOR_UPDATES,
 
   //HISTOGRAMS: If the UEC for a column is <= HIST_LOW_UEC_THRESHOLD, then
@@ -2245,7 +2243,6 @@ enum DefaultConstants
   CAT_LARGE_BLOCKS_MAX_KEYSIZE,
   CAT_LARGE_BLOCKS_MAX_ROWSIZE,
 
-  ALIGNED_ROW_FORMAT,
   SQLMX_SHOWDDL_SUPPRESS_ROW_FORMAT,
 
   FORCE_PARALLEL_INSERT_SELECT,
@@ -3594,7 +3591,7 @@ enum DefaultConstants
 
   // if set to on, table will be created in aligned row format.
   // SQ row will be created in aligned format and stored as a single col in hbase.
-  TRAF_DEFAULT_ALIGNED_FORMAT,
+  TRAF_ALIGNED_ROW_FORMAT,
 
   // this is used to change cache size of sequence numbers for a session.
   // It overwrites the cache size that was specified during sequence creation.
@@ -3684,6 +3681,8 @@ enum DefaultConstants
   TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD,
 
   TRAF_USE_RWRS_FOR_MD_INSERT,
+
+  TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,
 
   PCODE_DEBUG_LOGDIR,
   PCODE_EXPR_CACHE_CMP_ONLY,

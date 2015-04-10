@@ -538,6 +538,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       if (createIndexColAndKeyInfoArrays(indexColRefArray,
                                          createIndexNode->isUniqueSpecified(),
                                          FALSE, // no syskey
+                                         FALSE, // not alignedFormat
                                          btNAColArray, btNAKeyArr,
                                          numIndexKeys, numIndexNonKeys, numIndexCols,
                                          indexColInfoArray, indexKeyInfoArray,
@@ -2316,15 +2317,6 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
   length = naType->getNominalSize();
   nullable = naType->supportsSQLnull();
 
-  if ((serializedOption == 1) && (alignedFormat))
-    {
-      *CmpCommon::diags()
-        << DgSqlCode(-4222)
-        << DgString0("\"SERIALIZED option on ALIGNED format tables\"");
-      
-      return -1;
-    }
-
   switch (naType->getTypeQualifier())
     {
     case NA_CHARACTER_TYPE:
@@ -2433,8 +2425,22 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
         
         return -1; 
       }
-      
+
     } // switch
+
+  if ((serializedOption == 1) && (alignedFormat))
+    {
+      // ignore serialized option on aligned format tables
+      resetFlags(hbaseColFlags, SEABASE_SERIALIZED);
+      
+      /*
+       *CmpCommon::diags()
+       << DgSqlCode(-4222)
+       << DgString0("\"SERIALIZED option on ALIGNED format tables\"");
+       
+       return -1;
+      */
+    }
 
   return 0;
 }
@@ -7201,6 +7207,8 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
         (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
         (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
         (ddlNode->getOperatorType() == DDL_CREATE_TABLE) ||
+        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_COLUMN) ||
+        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
         (ddlNode->getOperatorType() == DDL_DROP_TABLE))))
     {
       // transaction will be started and commited in called methods.

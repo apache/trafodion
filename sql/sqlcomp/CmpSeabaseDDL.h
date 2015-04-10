@@ -859,16 +859,28 @@ class CmpSeabaseDDL
 		      StmtDDLAddConstraintCheckArray &checkConstrArr);
   
   void alterSeabaseTableAddColumn(
-				  StmtDDLAlterTableAddColumn * alterAddColNode,
-				  NAString &currCatName, NAString &currSchName);
+                                  StmtDDLAlterTableAddColumn * alterAddColNode,
+                                  NAString &currCatName, NAString &currSchName);
   
   void alterSeabaseTableDropColumn(
 				   StmtDDLAlterTableDropColumn * alterDropColNode,
 				   NAString &currCatName, NAString &currSchName);
   
+  short alignedFormatTableAddDropColumn(
+                                        Int64 objUID,
+                                        NABoolean isAdd,
+                                        const NAString &catalogNamePart,
+                                        const NAString &schemaNamePart,
+                                        const NAString &objectNamePart,
+                                        char * colName, const NAColumn * nacol);
+  
+  short recreateViews(ExeCliInterface &cliInterface,
+                      NAList<NAString> &viewNameList,
+                      NAList<NAString> &viewDefnList);
+
   void alterSeabaseTableAlterIdentityColumn(
-				   StmtDDLAlterTableAlterColumnSetSGOption * alterIdentityColNode,
-				   NAString &currCatName, NAString &currSchName);
+                                            StmtDDLAlterTableAlterColumnSetSGOption * alterIdentityColNode,
+                                            NAString &currCatName, NAString &currSchName);
   
   void alterSeabaseTableAddPKeyConstraint(
 					  StmtDDLAddConstraint * alterAddConstraint,
@@ -1134,6 +1146,7 @@ class CmpSeabaseDDL
 				       ElemDDLColRefArray & indexColRefArray,
 				       NABoolean isUnique,
 				       NABoolean hasSyskey,
+                                       NABoolean alignedFormat,
 				       const NAColumnArray &baseTableNAColArray,
 				       const NAColumnArray &baseTableKeyArr,
 				       Lng32 &keyColCount,

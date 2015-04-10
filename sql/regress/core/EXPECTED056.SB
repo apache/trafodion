@@ -2151,9 +2151,6 @@ A1
 --- 1 row(s) selected.
 >>
 >>obey TEST056(tests4);
->>CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'OFF';
-
---- SQL operation complete.
 >>obey test056(test4OLTops);
 >>obey test056(test4ddl);
 >>------------------------------------------------
@@ -2436,9 +2433,6 @@ I1                    I2                     I3                    S0INTEGER
 --- SQL operation complete.
 >>
 >>
->>CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
-
---- SQL operation complete.
 >>obey test056(test4OLTops);
 >>obey test056(test4ddl);
 >>------------------------------------------------
@@ -2727,9 +2721,6 @@ I1                    I2                     I3                    S0INTEGER
 >>-- Test cases for add column with no
 >>-- expandShortRow() called on them. 
 >>------------------------------------------------
->>CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'OFF';
-
---- SQL operation complete.
 >>obey test056(test5NoExpandShortRow);
 >>obey test056(test5SyskeyOneVarchar);
 >>-- test for syskey + only varchar fields + pad bytes before syskey
@@ -2791,9 +2782,6 @@ B1
 --- SQL operation complete.
 >>
 >>
->>CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
-
---- SQL operation complete.
 >>obey test056(test5NoExpandShortRow);
 >>obey test056(test5SyskeyOneVarchar);
 >>-- test for syskey + only varchar fields + pad bytes before syskey
@@ -2858,9 +2846,6 @@ B1
 >>
 >>obey TEST056(testbugfix);
 >>
->>CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
-
---- SQL operation complete.
 >>obey test056(testExpandShortRowSyskey);
 >>-- case 10-090423-0104 
 >>
@@ -2930,9 +2915,6 @@ I                     VCH1  VCH2  VCH3
 >>obey TEST056(tests6);
 >>-- insert tests with nullable indirect varchars
 >>-- for aligned and packed format.
->>CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
-
---- SQL operation complete.
 >>obey test056(test6NullVarchar);
 >>drop table t056t64;
 
@@ -3039,9 +3021,6 @@ A            B           C                     D                               E
 
 --- 7 row(s) selected.
 >>
->>CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'OFF';
-
---- SQL operation complete.
 >>obey test056(test6NullVarchar);
 >>drop table t056t64;
 

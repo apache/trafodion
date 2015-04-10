@@ -61,7 +61,13 @@ extern short CmpDescribeSeabaseTable (
                              NABoolean withPartns = FALSE,
                              NABoolean withoutSalt = FALSE,
                              NABoolean withoutDivisioning = FALSE,
-                             NABoolean noTrailingSemi = FALSE);
+                             NABoolean noTrailingSemi = FALSE,
+
+                             // used to add or remove column definition from col list.
+                             // valid for 'createLike' mode. Used for 'alter add/drop col'.
+                             char * colName = NULL,
+                             NABoolean isAdd = FALSE,
+                             const NAColumn * nacol = NULL);
 
 void CmpSeabaseDDL::convertVirtTableColumnInfoToDescStruct( 
      const ComTdbVirtTableColumnInfo * colInfo,
@@ -1281,9 +1287,10 @@ short CmpSeabaseDDL::createSeabaseTable2(
           alignedFormat = TRUE;
         }
     }
-  else if(CmpCommon::getDefault(TRAF_DEFAULT_ALIGNED_FORMAT) == DF_ON)
+  else if(CmpCommon::getDefault(TRAF_ALIGNED_ROW_FORMAT) == DF_ON)
     {
-      alignedFormat = TRUE;
+      if ( NOT isSeabaseReservedSchema(tableName))
+        alignedFormat = TRUE;
     }
 
   // allow nullable clustering key or unique constraints based on the
@@ -3360,6 +3367,344 @@ void CmpSeabaseDDL::renameSeabaseTable(
   return;
 }
 
+/////////////////////////////////////////////////////////////////////
+// currTab:          table on which column is being added to or dropped from
+// newTempTab:  temporary table with new definition
+// currTempTab:  name of table that currTab that will be renamed to 
+//
+// Steps:
+//   create newTempTab based on currTab and added/dropped column
+//   insert data into newTempTab from currTab
+//   rename currTab to currTempTab
+//   rename newTempTab to currTab
+//   drop currTempTab
+//
+/////////////////////////////////////////////////////////////////////
+short CmpSeabaseDDL::alignedFormatTableAddDropColumn
+(
+ Int64 objUID,
+ NABoolean isAdd,
+ const NAString &catalogNamePart,
+ const NAString &schemaNamePart,
+ const NAString &objectNamePart,
+ char * colName, const NAColumn * nacol)
+{
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+                               CmpCommon::context()->sqlSession()->getParentQid());
+
+  NABoolean xnWasStartedHere = FALSE;
+  Queue * usingViewsQueue = NULL;
+  cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
+  if (cliRC < 0)
+    {
+      processReturn();
+      
+      return -1;
+    }
+
+  if (usingViewsQueue->numEntries() > 0)
+    {
+      if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+        return -1;
+    }
+
+  NAList<NAString> viewNameList(STMTHEAP, usingViewsQueue->numEntries());
+  NAList<NAString> viewDefnList(STMTHEAP, usingViewsQueue->numEntries());
+
+  // create temp table based on the current table DDL and added/dropped column.
+  // add/drop col name is colName.
+  // Added col defn is contained in nacol.
+  NAString newTempTab; 
+  ComDeriveRandomInternalName ( ComGetNameInterfaceCharSet(),
+                                objectNamePart, newTempTab, STMTHEAP);
+
+  char newTempTabStr[1000];
+  str_sprintf(newTempTabStr, "%s.\"%s\".%s", 
+              catalogNamePart.data(), schemaNamePart.data(), newTempTab.data());
+
+  CorrName newTempTabCN(newTempTab,
+                        STMTHEAP, schemaNamePart, catalogNamePart);
+
+  // current table and curr temp table
+  char currTabStr[1000];
+  str_sprintf(currTabStr, "%s.\"%s\".%s", 
+              catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
+
+  CorrName currTabCN(objectNamePart, STMTHEAP, 
+                     schemaNamePart, catalogNamePart);
+
+  NAString currTempTab; 
+  ComDeriveRandomInternalName ( ComGetNameInterfaceCharSet(),
+                                objectNamePart, currTempTab, STMTHEAP);
+  
+  char currTempTabStr[1000];
+  str_sprintf(currTempTabStr, "%s.\"%s\".%s", 
+              catalogNamePart.data(), schemaNamePart.data(), currTempTab.data());
+
+
+  // create DDL for newTempTab  
+  char * buf = NULL;
+  ULng32 buflen = 0;
+  retcode = CmpDescribeSeabaseTable(currTabCN, 3/*createlike*/, buf, buflen, 
+                                    STMTHEAP,
+                                    NULL,
+                                    FALSE, FALSE, FALSE,
+                                    TRUE,
+                                    colName, isAdd, nacol);
+  if (retcode)
+    return -1;
+
+  // find out any views on this table.
+  // save their definition and drop them.
+  // they will be recreated before return.
+  usingViewsQueue->position();
+  for (int idx = 0; idx < usingViewsQueue->numEntries(); idx++)
+    {
+      OutputInfo * vi = (OutputInfo*)usingViewsQueue->getNext(); 
+      char * viewName = vi->get(0);
+      
+      viewNameList.insert(viewName);
+
+      ComObjectName viewCO(viewName, COM_TABLE_NAME);
+
+      const NAString catName = viewCO.getCatalogNamePartAsAnsiString();
+      const NAString schName = viewCO.getSchemaNamePartAsAnsiString(TRUE);
+      const NAString objName = viewCO.getObjectNamePartAsAnsiString(TRUE);
+
+      Int64 viewUID = getObjectUID(&cliInterface,
+                                   catName.data(), schName.data(), objName.data(), 
+                                   COM_VIEW_OBJECT_LIT);
+      if (viewUID < 0 )
+        {
+          endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+          
+          return -1;
+        }
+
+      NAString viewText;
+      if (getTextFromMD(&cliInterface, viewUID, COM_VIEW_TEXT, 0, viewText))
+        {
+          endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+          
+          return -1;
+        }
+
+      viewDefnList.insert(viewText);
+
+      if (dropOneTableorView(cliInterface,viewName,COM_VIEW_OBJECT,false))
+        {
+          endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+  
+          processReturn();
+          
+          return -1;
+        }
+    }
+
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
+  
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE);
+  NATable * naTable = NULL;
+
+  NAString colNames;
+
+  char queryBuf[1000];
+
+  NAString query = "create table ";
+  query += newTempTabStr;
+  query += " ";
+
+  NABoolean done = FALSE;
+  Lng32 curPos = 0;
+  while (NOT done)
+    {
+      short len = *(short*)&buf[curPos];
+      NAString frag(&buf[curPos+sizeof(short)],
+                    len - ((buf[curPos+len-1]== '\n') ? 1 : 0));
+
+      query += frag;
+      curPos += ((((len+sizeof(short))-1)/8)+1)*8;
+
+      if (curPos >= buflen)
+        done = TRUE;
+    }
+
+  cliRC = cliInterface.executeImmediate((char*)query.data());
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      goto label_error;
+    }
+
+  //  naTable = bindWA.getNATable((isAdd ? currTabCN : newTempTabCN));
+  naTable = bindWA.getNATable(newTempTabCN);
+  if (! naTable)
+    {
+      goto label_error;
+    }
+
+  // update metadata to change column type to 'A'(added)
+  if (isAdd)
+    {
+      str_sprintf(queryBuf, "update %s.\"%s\".%s set column_class = 'A' where object_uid = %Ld and column_name = '%s' ",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                  naTable->objectUid().castToInt64(), colName);
+      
+      cliRC = cliInterface.executeImmediate(queryBuf);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          goto label_error;
+        }
+      
+    }
+
+  // insert data from current table into new temp table.
+  //  query = "upsert using load into ";
+  query = "insert into ";
+  query += newTempTabStr;
+  query += " ";
+
+  for (Lng32 i = 0; i < naTable->getNAColumnArray().entries(); i++)
+    {
+      const NAColumn *nac = naTable->getNAColumnArray()[i];
+
+      if (nac->isSystemColumn())
+        continue;
+ 
+      if ((isAdd) && (colName == nac->getColName()))
+        continue;
+
+      colNames += nac->getColName();
+
+      colNames += ",";
+    }
+
+  // remove last comma
+  colNames = colNames.strip(NAString::trailing, ',');
+
+  query += "(" + colNames + ")";
+
+  query += " select ";
+  query += colNames;
+
+  query += " from ";
+  query += currTabStr;
+
+  query += ";";
+
+  cliRC = cliInterface.executeImmediate(query.data());
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      processReturn();
+
+      goto label_error;
+    }
+  
+  // rename current table to temp
+  str_sprintf(queryBuf, "alter table \"%s\".\"%s\".\"%s\" rename to \"%s\" ",
+              catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
+              currTempTab.data());
+  
+  cliRC = cliInterface.executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      processReturn();
+
+      goto label_error;
+    }
+
+  // rename new temp table to current table
+  str_sprintf(queryBuf, "alter table \"%s\".\"%s\".\"%s\" rename to \"%s\" ",
+              catalogNamePart.data(), schemaNamePart.data(), newTempTab.data(),
+              objectNamePart.data());
+  
+  cliRC = cliInterface.executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      processReturn();
+
+      goto label_error1;
+    }
+
+  // drop curr temp table
+  str_sprintf(queryBuf, "drop table \"%s\".\"%s\".\"%s\" ",
+              catalogNamePart.data(), schemaNamePart.data(), currTempTab.data(),
+              objectNamePart.data());
+  
+  cliRC = cliInterface.executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      processReturn();
+
+      goto label_error0;
+    }
+
+   if (recreateViews(cliInterface, viewNameList, viewDefnList))
+    {
+      return -1;
+    }
+
+  return 0;
+
+ label_error1:
+  // rename current temp table to current
+  str_sprintf(queryBuf, "alter table \"%s\".\"%s\".\"%s\" rename to \"%s\" ",
+              catalogNamePart.data(), schemaNamePart.data(), currTempTab.data(),
+              objectNamePart.data());
+  
+  cliRC = cliInterface.executeImmediate(queryBuf);
+
+ label_error:
+  cleanupObjectAfterError(cliInterface,
+                          catalogNamePart, schemaNamePart, newTempTab,
+                          COM_BASE_TABLE_OBJECT);
+
+  recreateViews(cliInterface, viewNameList, viewDefnList);
+
+  return -1;
+
+ label_error0:
+  cleanupObjectAfterError(cliInterface,
+                          catalogNamePart, schemaNamePart, currTempTab,
+                          COM_BASE_TABLE_OBJECT);
+
+  recreateViews(cliInterface, viewNameList, viewDefnList);
+
+  return -1;
+}
+
+short CmpSeabaseDDL::recreateViews(ExeCliInterface &cliInterface,
+                                   NAList<NAString> &viewNameList,
+                                   NAList<NAString> &viewDefnList)
+{
+  Lng32 cliRC = 0;
+
+  for (Lng32 i = 0; i < viewDefnList.entries(); i++)
+    {
+      cliRC = cliInterface.executeImmediate(viewDefnList[i]);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          return -1;
+        }
+    }
+
+  return 0;
+}
+
 void CmpSeabaseDDL::alterSeabaseTableAddColumn(
                                                StmtDDLAlterTableAddColumn * alterAddColNode,
                                                NAString &currCatName, NAString &currSchName)
@@ -3380,7 +3725,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   const NAString extTableName = tableName.getExternalName(TRUE);
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
+                               CmpCommon::context()->sqlSession()->getParentQid());
 
   if ((isSeabaseReservedSchema(tableName)) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
@@ -3550,6 +3895,30 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       ToQuotedString(quotedDefVal, defVal, FALSE);
     }
 
+  /*
+  if ((naTable->isSQLMXAlignedTable()) &&
+      (CmpCommon::getDefaultNumeric(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD) == 0))
+    {
+      NAType * naType = pColDef->getColumnDataType();
+      NAColumn * newNACol 
+        = new(STMTHEAP) NAColumn(col_name, nacolArr.entries(), naType, STMTHEAP,
+                                 NULL, USER_COLUMN, defaultClass,
+                                 (char*)defVal.data(), (char*)quotedHeading.data(),
+                                 upshifted, TRUE);
+                                                   
+      if (alignedFormatTableAddDropColumn(naTable->objectUid().castToInt64(),
+                                          TRUE, // add col
+                                          catalogNamePart, schemaNamePart, objectNamePart,
+                                          col_name, newNACol))
+        {
+          processReturn();
+          return;
+        }
+     }
+  else
+    {
+  */
+
   str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%d', '%s', '%s', %Ld )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               naTable->objectUid().castToInt64(), 
@@ -3580,11 +3949,37 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
+      
       processReturn();
-
+      
       return;
     }
+
+  /*
+  if ((naTable->isSQLMXAlignedTable()) &&
+      (CmpCommon::getDefaultNumeric(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD) == 1))
+    {
+      ExeCliInterface cqdCliInterface;
+      cliRC = cqdCliInterface.holdAndSetCQD("HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT", "ON");
+
+      str_sprintf(query, "update %s.\"%s\".\"%s\" set \"%s\" = \"%s\" ",
+                  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
+                  col_name, col_name);
+      cliRC = cliInterface.executeImmediate(query);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          cliRC = cqdCliInterface.restoreCQD("HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT");
+
+          processReturn();
+          
+          return;
+        }  
+
+      cliRC = cqdCliInterface.restoreCQD("HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT");
+    }
+  */
 
   //  CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
@@ -3725,17 +4120,6 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
       return;
     }
 
-  if (naTable->isSQLMXAlignedTable())
-    {
-     *CmpCommon::diags()
-	<< DgSqlCode(-4222)
-	<< DgString0("\"DROP COLUMN on ALIGNED format tables\"");
-    
-      processReturn();
-
-      return;
-     }
-
   const NAColumnArray &nacolArr = naTable->getNAColumnArray();
   const NAString &colName = alterDropColNode->getColName();
 
@@ -3813,139 +4197,137 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
                      COM_BASE_TABLE_OBJECT_LIT);
     }
 
+  NABoolean xnWasStartedHere = FALSE;
+
   Lng32 colNumber = nacol->getPosition();
-
-  char buf[4000];
-  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld and column_number = %d",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-              objUID,
-              colNumber);
-
-  cliRC = cliInterface.executeImmediate(buf);
-  if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-      processReturn();
-
-      return;
-    }
-
-  str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %Ld and column_number >= %d",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-              objUID,
-              colNumber);
-
-  cliRC = cliInterface.executeImmediate(buf);
-  if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-      processReturn();
-
-      return;
-    }
-
-  str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %Ld and column_number >= %d",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
-              objUID,
-              colNumber);
-
-  cliRC = cliInterface.executeImmediate(buf);
-  if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-      processReturn();
-
-      return;
-    }
-
-  // remove column from all rows of the base table
-  HbaseStr hbaseTable;
-  hbaseTable.val = (char*)extNameForHbase.data();
-  hbaseTable.len = extNameForHbase.length();
-
-  //  Text column("cf1:");
-
-  //  Text column(SEABASE_DEFAULT_COL_FAMILY);
-  //  column.append(":");
-  //  column.append(colName);
-
-  NAString column(nacol->getHbaseColFam(), heap_);
-  column.append(":");
-  //  column.append(nacol->getHbaseColQual());
-
-  char * colQualPtr = (char*)nacol->getHbaseColQual().data();
-  Lng32 colQualLen = nacol->getHbaseColQual().length();
-  Int64 colQval = str_atoi(colQualPtr, colQualLen);
-  if (colQval <= UCHAR_MAX)
-    {
-      unsigned char c = (unsigned char)colQval;
-      column.append((char*)&c, 1);
-    }
-  else if (colQval <= USHRT_MAX)
-    {
-      unsigned short s = (unsigned short)colQval;
-      column.append((char*)&s, 2);
-    }
-  else if (colQval <= ULONG_MAX)
-    {
-      Lng32 l = (Lng32)colQval;
-      column.append((char*)&l, 4);
-    }
-  else
-    column.append((char*)&colQval, 8);
-  
-  HbaseStr colNameStr;
   char *col = NULL;
-  col = (char *) heap_->allocateMemory(column.length() + 1, FALSE);
-  if (col)
+  if (naTable->isSQLMXAlignedTable())
     {
-      memcpy(col, column.data(), column.length());
-      col[column.length()] = 0;
-      colNameStr.val = col;
-      colNameStr.len = column.length();
-    }
+      if (alignedFormatTableAddDropColumn(naTable->objectUid().castToInt64(),
+                                          FALSE, // drop col
+                                          catalogNamePart, schemaNamePart, objectNamePart,
+                                          (char*)colName.data(), NULL))
+        {
+          processReturn();
+          return;
+        }
+     }
   else
     {
-      deallocEHI(ehi);
-
-      *CmpCommon::diags() << DgSqlCode(-EXE_NO_MEM_TO_EXEC);  // error -8571
-
-      processReturn();
-
-      return;
-    }
-  retcode = ehi->deleteColumns(hbaseTable, colNameStr);
-  if (retcode < 0)
-    {
-      *CmpCommon::diags() << DgSqlCode(-8448)
-                          << DgString0((char*)"ExpHbaseInterface::deleteColumns()")
-                          << DgString1(getHbaseErrStr(-retcode))
-                          << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+      if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+        return;
       
-      deallocEHI(ehi); 
-      heap_->deallocateMemory(col);
+      char buf[4000];
+      str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld and column_number = %d",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                  objUID,
+                  colNumber);
+      
+      cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          goto label_return;
+        }
+      
+      str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %Ld and column_number >= %d",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                  objUID,
+                  colNumber);
+      
+      cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          goto label_return;
+        }
+      
+      str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %Ld and column_number >= %d",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
+                  objUID,
+                  colNumber);
+      
+      cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          goto label_return;
+        }
+      
+      // remove column from all rows of the base table
+      HbaseStr hbaseTable;
+      hbaseTable.val = (char*)extNameForHbase.data();
+      hbaseTable.len = extNameForHbase.length();
+      
+      {
+        NAString column(nacol->getHbaseColFam(), heap_);
+        column.append(":");
+        
+        char * colQualPtr = (char*)nacol->getHbaseColQual().data();
+        Lng32 colQualLen = nacol->getHbaseColQual().length();
+        Int64 colQval = str_atoi(colQualPtr, colQualLen);
+        if (colQval <= UCHAR_MAX)
+          {
+            unsigned char c = (unsigned char)colQval;
+            column.append((char*)&c, 1);
+          }
+        else if (colQval <= USHRT_MAX)
+          {
+            unsigned short s = (unsigned short)colQval;
+            column.append((char*)&s, 2);
+          }
+        else if (colQval <= ULONG_MAX)
+          {
+            Lng32 l = (Lng32)colQval;
+            column.append((char*)&l, 4);
+          }
+        else
+          column.append((char*)&colQval, 8);
+        
+        HbaseStr colNameStr;
+        col = (char *) heap_->allocateMemory(column.length() + 1, FALSE);
+        if (col)
+          {
+            memcpy(col, column.data(), column.length());
+            col[column.length()] = 0;
+            colNameStr.val = col;
+            colNameStr.len = column.length();
+          }
+        else
+          {
+            cliRC = -EXE_NO_MEM_TO_EXEC;
+            *CmpCommon::diags() << DgSqlCode(-EXE_NO_MEM_TO_EXEC);  // error -8571
+            
+            goto label_return;
+          }
 
-      processReturn();
+        cliRC = ehi->deleteColumns(hbaseTable, colNameStr);
+        if (cliRC < 0)
+          {
+            *CmpCommon::diags() << DgSqlCode(-8448)
+                                << DgString0((char*)"ExpHbaseInterface::deleteColumns()")
+                                << DgString1(getHbaseErrStr(-retcode))
+                                << DgInt0(-retcode)
+                                << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+            
+            goto label_return;
+          }
+      }
+    } // hbase format table
 
-      return;
-    }
-
-  if (updateObjectRedefTime(&cliInterface,
-                            catalogNamePart, schemaNamePart, objectNamePart,
-                            COM_BASE_TABLE_OBJECT_LIT))
+  cliRC = updateObjectRedefTime(&cliInterface,
+                                catalogNamePart, schemaNamePart, objectNamePart,
+                                COM_BASE_TABLE_OBJECT_LIT);
+  if (cliRC < 0)
     {
-      processReturn();
-      heap_->deallocateMemory(col);
-
-      deallocEHI(ehi);
-
-      return;
+      goto label_return;
     }
 
+ label_return:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC);
+  
   deallocEHI(ehi); 
   heap_->deallocateMemory(col);
 
@@ -6496,11 +6878,11 @@ short CmpSeabaseDDL::getSpecialTableInfo
       createTableInfo = TRUE;
     }
 
-  if ((NOT isUninit) && 
+  if ((NOT isUninit) &&
       (CmpCommon::getDefault(TRAF_BOOTSTRAP_MD_MODE) == DF_OFF))
     {
       ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
+                                   CmpCommon::context()->sqlSession()->getParentQid());
 
       if (switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
         return -1;
@@ -6521,7 +6903,6 @@ short CmpSeabaseDDL::getSpecialTableInfo
       switchBackCompiler();
 
       createTableInfo = TRUE;
-
     }
 
   if (createTableInfo)

@@ -68,6 +68,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
      ElemDDLColRefArray &indexColRefArray,
      NABoolean isUnique,
      NABoolean hasSyskey,
+     NABoolean alignedFormat,
      const NAColumnArray &baseTableNAColArray,
      const NAColumnArray &baseTableKeyArr,
      Lng32 &keyColCount,
@@ -297,7 +298,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
       CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
       ULng32 colFlags = 0;
       
-      retcode = getTypeInfo(naType, FALSE, FALSE,
+      retcode = getTypeInfo(naType, alignedFormat, FALSE,
 			    colInfoArray[i].datatype, colInfoArray[i].length, 
 			    precision, scale, dtStart, dtEnd, upshifted, 
 			    colInfoArray[i].nullable,
@@ -595,6 +596,10 @@ void CmpSeabaseDDL::createSeabaseIndex(
       return;
     }
 
+  NABoolean alignedFormat = FALSE;
+  if (naTable->isSQLMXAlignedTable())
+    alignedFormat = TRUE;
+
   if ((naTable->hasSecondaryIndexes()) &&
       (NOT createIndexNode->isVolatile()))
     {
@@ -766,6 +771,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   if (createIndexColAndKeyInfoArrays(indexColRefArray,
 				     createIndexNode->isUniqueSpecified(),
 				     naTable->getClusteringIndex()->hasSyskey(),
+                                     alignedFormat,
 				     naColArray,
 				     baseTableKeyArr,
 				     keyColCount,
@@ -823,6 +829,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   tableInfo->validDef = 0;
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
+  tableInfo->rowFormat = (alignedFormat ? 1 : 0);
 
   ComTdbVirtTableIndexInfo * ii = new(STMTHEAP) ComTdbVirtTableIndexInfo();
   ii->baseTableName = (char*)extTableName.data();
@@ -837,7 +844,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   NAList<HbaseCreateOption*> hbaseCreateOptions;
   NAString hco;
 
-  if (naTable->isSQLMXAlignedTable())
+  if (alignedFormat)
     {
       hco += "ROW_FORMAT=>ALIGNED ";
     }

@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -117,27 +117,6 @@ select * from t010t1;
 delete from t010t1 where a = 2;
 
 select * from t010t1;
-
-select converttohex(cast(row_id as char(4))) rowid,
-          converttohex(cast(col_family as char(2))) colfamily,
-          converttohex(cast(col_name as char(1))) colname,
-          converttohex(cast(col_value as char(4))) colvalue
-                from hbase."_CELL_"."TRAFODION.SCH.T010T1";
-
-select converttohex(cast(row_id as char(4))) rowid,
-          converttohex(cast(col_family as char(2))) colfamily,
-          converttohex(cast(col_name as char(1))) colname,
-          converttohex(cast(col_value as char(4))) colvalue
-                from hbase."_CELL_"."TRAFODION.SCH.T010T1"
-          where converttohex(cast(row_id as char(4))) = '80000001';
-
-select converttohex(cast(row_id as char(4))) rowid,
-          converttohex(cast(column_details as char(40))) coldetails
-                 from hbase."_ROW_"."TRAFODION.SCH.T010T1";
-select converttohex(cast(row_id as char(4))) rowid,
-          converttohex(cast(column_details as char(40))) coldetails
-                 from hbase."_ROW_"."TRAFODION.SCH.T010T1"
-          where converttohex(cast(row_id as char(4))) = '80000001';
 
 -------------------
 -- check query plan
