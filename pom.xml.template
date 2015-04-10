@@ -52,6 +52,19 @@
          commons-configuration:commons-configuration.jar -->
     <!-- START_DISTRO_DEP -->
     <dependency>
+      <!-- Need both versions of htrace-core -->
+      <groupId>org.htrace</groupId>
+      <artifactId>htrace-core</artifactId>
+      <version>3.0.4</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.cloudera.htrace</groupId>
       <artifactId>htrace-core</artifactId>
       <version>2.04</version>
@@ -197,7 +210,7 @@
     <dependency>
       <groupId>commons-lang</groupId>
       <artifactId>commons-lang</artifactId>
-      <version>2.3</version>
+      <version>2.6</version>
       <scope>test</scope>
     </dependency>
 
@@ -218,21 +231,22 @@
           </systemPropertyVariables>
           <!-- START_FOR_T2_ONLY -->
           <!-- <argLine>-Xcheck:jni -Dsurefire.useFile=false -Duser.timezone=GMT</argLine> -->
+          <!-- <argLine>-Xcheck:jni -Xmx1024m -XX:MaxPermSize=512m -XX:+PrintGCDetails -XX:+PrintGCTimeStamps XX:+HeapDumpOnOutOfMemoryError</argLine> -->
           <additionalClasspathElements>
             <additionalClasspathElement>${env.HADOOP_CNF_DIR}</additionalClasspathElement>
             <additionalClasspathElement>${env.HBASE_CNF_DIR}</additionalClasspathElement>
             <additionalClasspathElement>${env.HIVE_CNF_DIR}</additionalClasspathElement>
+            <additionalClasspathElement>${env.HBASE_TRXDIR}</additionalClasspathElement>
           </additionalClasspathElements>
-          <argLine>-Xcheck:jni</argLine>
-          <!-- <useManifestOnlyJar>false</useManifestOnlyJar> -->
-          <!-- For T2 tests Maven should never fork the Java VM otherwise the environment variables
-               set below in the environmentVariables section are lost -->
-          <forkCount>0</forkCount>
+          <!-- For T2 tests Maven should fork only ONCE since T2 cannot handle parallel DDL operations -->
+          <forkCount>1</forkCount>
+          <reuseForks>false</reuseForks>
           <environmentVariables>
             <LANG>${env.LANG}</LANG>
             <HADOOP_CNF_DIR>${env.HADOOP_CNF_DIR}</HADOOP_CNF_DIR>
             <HBASE_CNF_DIR>${env.HBASE_CNF_DIR}</HBASE_CNF_DIR>
             <HIVE_CNF_DIR>${env.HIVE_CNF_DIR}</HIVE_CNF_DIR>
+            <HBASE_TRXDIR>${env.HBASE_TRXDIR}</HBASE_TRXDIR>
             <SQ_MBTYPE>${env.SQ_MBTYPE}</SQ_MBTYPE>
             <MY_SQROOT>${env.MY_SQROOT}</MY_SQROOT>
             <MPI_TMPDIR>${env.MPI_TMPDIR}</MPI_TMPDIR>

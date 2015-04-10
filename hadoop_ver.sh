@@ -16,6 +16,6 @@ then
    # zookeeper does not report full version number
    #echo status | nc localhost 2181 | sed -n 's/^.*Zookeeper version: \(.*\)$/\1/p'
    # so go back to rpm package
-   rpm -qa | grep zookeeper | sed -n 's/^[^-]*-\(.*\).el6.*$/\1/p'
+   rpm -qa | grep -E '^zookeeper' | sed -n 's/^[^-]*-\(.*\).el6.*$/\1/p'
 fi
 exit 0

@@ -32,6 +32,8 @@ import subprocess
 import sys
 import urllib2
 
+from distutils import spawn
+
 
 #----------------------------------------------------------------------------
 # Dictionary for the following pre-defined test groups :
@@ -85,6 +87,7 @@ def ArgList():
     _dsn = None
     _javahome = None
     _jdbc_classpath = None
+    _result_dir = None
     _prop_file = None
     _target_type = None
     _export_str1 = None
@@ -95,6 +98,8 @@ def ArgList():
     _jdbc_type = None
     _tests = None
     _hadoop_distro = None
+    _maven_local_repo = None
+    _no_maven = None
 
 
 #----------------------------------------------------------------------------
@@ -102,7 +107,14 @@ def ArgList():
 #----------------------------------------------------------------------------
 def gvars():
     my_ROOT = None
+    my_RUN_CMD = None
     my_EXPORT_CMD = None
+    my_TOTAL_TESTS_RUN = None
+    my_TOTAL_TESTS_FAILED = None
+    my_TOTAL_TESTS_ERRORS = None
+    my_TOTAL_TESTS_SKIPPED = None
+    my_TOTAL_EXEC_TIME = None
+    my_MVN_ERROR_FILE = None
 
 
 #----------------------------------------------------------------------------
@@ -180,10 +192,33 @@ def get_substr_after_string(s1, s2):
 
 
 #----------------------------------------------------------------------------
+# Create the result directory if it does not exist
+#----------------------------------------------------------------------------
+def result_dir_create(result_dir):
+    my_result_dir = os.path.abspath(result_dir)
+    d = my_result_dir
+    folders = []
+    while True:
+        d, f = os.path.split(d)
+        if f:
+            folders.insert(0, f)
+        else:  # f is empty
+            if d:
+                folders.insert(0, d)
+            break
+    path = ''
+    for f in folders:
+        path = os.path.join(path, f)
+        if not os.path.isdir(path):
+            os.mkdir(path)
+    return my_result_dir
+
+
+#----------------------------------------------------------------------------
 # Get Hadoop component version (hadoop, hbase, hive, zookeeper) based
 # on distribution
 #----------------------------------------------------------------------------
-def get_hadoop_component_version(distro, component):
+def get_hadoop_component_ver(distro, component):
     rpm_ver = ''
     if 'HBASE_CNF_DIR' in os.environ:
         local_file_dict = {
@@ -226,47 +261,61 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
     if hadoop_distro == 'CDH':
         hadoop_dict = {
             'CDH': {'MY_HADOOP_DISTRO': 'cloudera',
-                  'MY_HADOOP_VERSION': get_hadoop_component_version(hadoop_distro, "hadoop"),
-                  'MY_MVN_URL': 'http://repository.cloudera.com/artifactory/cloudera-repos',
-                  'MY_HBASE_VERSION': get_hadoop_component_version(hadoop_distro, "hbase"),
-                  'MY_HIVE_VERSION': get_hadoop_component_version(hadoop_distro, "hive"),
-                  'MY_ZOOKEEPER_VERSION': get_hadoop_component_version(hadoop_distro, "zookeeper"),
-                                                                 # cdh sub-string added at 1.1
-                  'TRAF_HBASE_TRX_REGEX': re.compile("^hbase-trx-(cdh[\d_]*-)?[\d\.]{3,}jar"),
-                  'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
-                  'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
-                               ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
-                               ('org.apache.hbase', 'hbase-server', '${hbase_version}', 'EDEP'),
-                               ('org.apache.hbase', 'hbase-protocol', '${hbase_version}', 'EDEP'),
-                               ('org.apache.hadoop', 'hadoop-hdfs', '${hadoop_version}', 'EDEP'),
-                               ('org.apache.hadoop', 'hadoop-auth', '${hadoop_version}', 'IDEP'),
-                               ('org.apache.hadoop', 'hadoop-common', '${hadoop_version}', 'EDEP'),
-                               ('org.apache.hive', 'hive-exec', '${hive_version}', 'EDEP'),
-                               ('org.apache.zookeeper', 'zookeeper', '${zookeeper_version}', 'EDEP')
-                               ]
-                  },
+                    'MY_HADOOP_VERSION': get_hadoop_component_ver(hadoop_distro, "hadoop"),
+                    'MY_MVN_URL': 'http://repository.cloudera.com/artifactory/cloudera-repos',
+                    'MY_HBASE_VERSION': get_hadoop_component_ver(hadoop_distro, "hbase"),
+                    'MY_HIVE_VERSION': get_hadoop_component_ver(hadoop_distro, "hive"),
+                    'MY_ZOOKEEPER_VERSION': get_hadoop_component_ver(hadoop_distro, "zookeeper"),
+                    # cdh sub-string added at 1.1
+                    'TRAF_HBASE_TRX_REGEX': re.compile("^hbase-trx-(cdh[\d_]*-)?[\d\.]{3,}jar"),
+                    'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
+                    'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
+                                 ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
+                                 ('org.apache.hbase', 'hbase-server', '${hbase_version}', 'EDEP'),
+                                 ('org.apache.hbase', 'hbase-protocol', '${hbase_version}', 'EDEP'),
+                                 ('org.apache.hadoop', 'hadoop-auth', '${hadoop_version}', 'IDEP'),
+                                 ('org.apache.hadoop', 'hadoop-common', '${hadoop_version}',
+                                  'IDEP'),
+                                 ('org.apache.hadoop', 'hadoop-hdfs', '${hadoop_version}', 'IDEP'),
+                                 ('org.apache.hadoop', 'hadoop-mapreduce-client-core',
+                                  '${hadoop_version}', 'IDEP'),
+                                 ('org.apache.hive', 'hive-common', '${hive_version}', 'IDEP'),
+                                 ('org.apache.hive', 'hive-exec', '${hive_version}', 'IDEP'),
+                                 ('org.apache.hive', 'hive-jdbc', '${hive_version}', 'EDEP'),
+                                 ('org.apache.zookeeper', 'zookeeper', '${zookeeper_version}',
+                                  'EDEP')
+                                 ]
+                    },
         }
     elif hadoop_distro == 'HDP':
         hadoop_dict = {
             'HDP': {'MY_HADOOP_DISTRO': 'HDPReleases',
-                  'MY_HADOOP_VERSION': get_hadoop_component_version(hadoop_distro, "hadoop"),
-                  'MY_MVN_URL': 'http://repo.hortonworks.com/content/repositories/releases/',
-                  'MY_HBASE_VERSION': get_hadoop_component_version(hadoop_distro, "hbase"),
-                  'MY_HIVE_VERSION': get_hadoop_component_version(hadoop_distro, "hive"),
-                  'MY_ZOOKEEPER_VERSION': get_hadoop_component_version(hadoop_distro, "zookeeper"),
-                  'TRAF_HBASE_TRX_REGEX': re.compile("^hbase-trx-hdp[\d_]*-[\d\.]{3,}jar"),
-                  'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
-                  'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
-                               ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
-                               ('org.apache.hbase', 'hbase-server', '${hbase_version}', 'EDEP'),
-                               ('org.apache.hbase', 'hbase-protocol', '${hbase_version}', 'EDEP'),
-                               ('org.apache.hadoop', 'hadoop-hdfs', '${hadoop_version}', 'EDEP'),
-                               ('org.apache.hadoop', 'hadoop-auth', '${hadoop_version}', 'IDEP'),
-                               ('org.apache.hadoop', 'hadoop-common', '${hadoop_version}', 'EDEP'),
-                               ('org.apache.hive', 'hive-exec', '${hive_version}', 'EDEP'),
-                               ('org.apache.zookeeper', 'zookeeper', '${zookeeper_version}', 'EDEP')
-                               ]
-                  }
+                    'MY_HADOOP_VERSION': get_hadoop_component_ver(hadoop_distro, "hadoop"),
+                    'MY_MVN_URL': 'http://repo.hortonworks.com/content/repositories/releases/',
+                    'MY_HBASE_VERSION': get_hadoop_component_ver(hadoop_distro, "hbase"),
+                    'MY_HIVE_VERSION': get_hadoop_component_ver(hadoop_distro, "hive"),
+                    'MY_ZOOKEEPER_VERSION': get_hadoop_component_ver(hadoop_distro, "zookeeper"),
+                    'TRAF_HBASE_TRX_REGEX': re.compile("^hbase-trx-hdp[\d_]*-[\d\.]{3,}jar"),
+                    'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
+                    'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
+                                 ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
+                                 ('org.apache.hbase', 'hbase-server', '${hbase_version}', 'EDEP'),
+                                 ('org.apache.hbase', 'hbase-protocol', '${hbase_version}', 'EDEP'),
+                                 ('org.apache.hadoop', 'hadoop-auth', '${hadoop_version}', 'IDEP'),
+                                 ('org.apache.hadoop', 'hadoop-common', '${hadoop_version}',
+                                  'EDEP'),
+                                 ('org.apache.hadoop', 'hadoop-hdfs', '${hadoop_version}', 'EDEP'),
+                                 ('org.apache.hadoop', 'hadoop-mapreduce-client-core',
+                                  '${hadoop_version}', 'EDEP'),
+                                 ('org.apache.hadoop', 'hadoop-yarn-common', '${hadoop_version}',
+                                  'EDEP'),
+                                 ('org.apache.hive', 'hive-common', '${hive_version}', 'IDEP'),
+                                 ('org.apache.hive', 'hive-exec', '${hive_version}', 'IDEP'),
+                                 ('org.apache.hive', 'hive-jdbc', '${hive_version}', 'EDEP'),
+                                 ('org.apache.zookeeper', 'zookeeper', '${zookeeper_version}',
+                                  'EDEP')
+                                 ]
+                    }
         }
 
     # read template file into multiline string
@@ -369,6 +418,16 @@ def generate_t2_propfile(propfile, targettype):
 
 
 #----------------------------------------------------------------------------
+# Write to the stdout and/or the log files
+#----------------------------------------------------------------------------
+def logfile_write(file, output):
+    if ArgList._result_dir is not None:
+        fd = open(os.path.join(ArgList._result_dir, file), 'w')
+        fd.write(output)
+        fd.close()
+
+
+#----------------------------------------------------------------------------
 # Parse the argument list for main
 #----------------------------------------------------------------------------
 def prog_parse_args():
@@ -380,6 +439,7 @@ def prog_parse_args():
     info = inspect.getframeinfo(frame)
     gvars.my_ROOT = os.path.dirname(os.path.abspath(info.filename))
 
+    DEFAULT_RESULTS_DIR = os.path.join(gvars.my_ROOT, 'results')
     DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/hp/tr/jdbcT4.jar'
     DEFAULT_PROP_FILE = os.path.join(gvars.my_ROOT, 'jdbcprop')
 
@@ -419,14 +479,19 @@ def prog_parse_args():
                              dest='jdbccp', default=DEFAULT_JDBC_CLASSPATH,
                              help="jdbc classpath, defaulted to " +
                                   "'${project.basedir}/lib/hp/tr/jdbcT4.jar', \t\t "
-                                  "<test_root> is where this program is."),
+                                  "<test_root> is where this program is"),
+        optparse.make_option('', '--resultdir', action='store', type='string',
+                             dest='resultdir', default=DEFAULT_RESULTS_DIR,
+                             help='results directory, ONLY used with option --nomvntest, ' +
+                                  'defaults to \'<test root>/results\', <test root> is where ' +
+                                  'this program is located'),
         optparse.make_option('', '--propfile', action='store', type='string',
                              dest='propfile', default=DEFAULT_PROP_FILE,
                              help="property file, defaulted to automatically generated " +
-                                  "'<test root>/jdbcprop', <test root> is where this program is."),
+                                  "'<test root>/jdbcprop', <test root> is where this program is"),
         optparse.make_option('', '--targettype', action='store', type='string',
                              dest='targettype', default='TR',
-                             help='target type, SQ for Seaquest, TR for TRAFODION, ' +
+                             help='target type, TR for TRAFODION, ' +
                                   'defaulted to TR'),
         optparse.make_option('', '--jdbctype', action='store', type='string',
                              dest='jdbctype', default='T4',
@@ -435,6 +500,14 @@ def prog_parse_args():
                              dest='hadoop', default='CDH',
                              help='Hadoop Distro, possible values are CDH (Cloudera), ' +
                                   'HDP (Hortonworks). Defaulted to CDH.'),
+        optparse.make_option('', '--mvnlocalrepo', action='store', type='string',
+                             dest='mvnlocalrepo', default='$HOME/.m2/repository',
+                             help='Location of Maven local repository, defaulted to ' +
+                                  '$HOME/.m2/repository'),
+        optparse.make_option('', '--nomvntest', action='store_true', dest='nomaven', default=False,
+                             help='turn off usage of Maven in test phase. Maven will still be ' +
+                                  'used in the compile phase. This will change the tests to '
+                                  'run via the system Java environment. Default is False '),
         optparse.make_option('', '--export1', action='store', type='string',
                              dest='exportstr1', default='NONE',
                              help='any export string, defaulted to NONE'),
@@ -477,7 +550,8 @@ def prog_parse_args():
         parser.error('Invalid --targettype.  Only SQ aor TR is supported: ' +
                      options.targettype)
 
-    distro = options.hadoop[0:3]  # take first three characters to be back-compatible with CDH51, etc
+    # take first three characters to be backwards compatible with CDH51, etc
+    distro = options.hadoop[0:3]
     if distro != 'CDH' and distro != 'HDP':
         parser.error('Invalid --hadoop.  Only CDH (Cloudera) or HDP ' +
                      '(Hortonworks) + is supported: ' + options.hadoop)
@@ -502,7 +576,8 @@ def prog_parse_args():
         # check for Trafodion ENV variables to be set
         req_envs_error_string = ""
         for req_env in ['SQ_MBTYPE', 'MY_SQROOT', 'MPI_TMPDIR', 'LD_PRELOAD', 'LD_LIBRARY_PATH',
-                        'PATH', 'LANG', 'HADOOP_CNF_DIR', 'HBASE_CNF_DIR', 'HIVE_CNF_DIR']:
+                        'PATH', 'LANG', 'HADOOP_CNF_DIR', 'HBASE_CNF_DIR', 'HIVE_CNF_DIR',
+                        'HBASE_TRXDIR']:
             if req_env not in os.environ:
                 req_envs_error_string = (req_envs_error_string + 'Required environment variable ' +
                                          req_env + ' for T2 test has NOT been set!\n')
@@ -530,10 +605,13 @@ def prog_parse_args():
     if options.jdbccp != DEFAULT_JDBC_CLASSPATH:
         options.jdbccp = os.path.abspath(options.jdbccp)
     ArgList._jdbc_classpath = options.jdbccp
+    ArgList._result_dir = os.path.abspath(options.resultdir)
     ArgList._prop_file = os.path.abspath(options.propfile)
     ArgList._target_type = options.targettype
     ArgList._jdbc_type = options.jdbctype
     ArgList._hadoop_distro = distro
+    ArgList._maven_local_repo = options.mvnlocalrepo
+    ArgList._no_maven = options.nomaven
     ArgList._export_str1 = options.exportstr1
     ArgList._export_str2 = options.exportstr2
     ArgList._export_str3 = options.exportstr3
@@ -563,11 +641,17 @@ def prog_parse_args():
     print 'target type:           ', ArgList._target_type
     print 'jdbc type:             ', ArgList._jdbc_type
     print 'hadoop distro:         ', ArgList._hadoop_distro
+    print 'maven local repo:      ', ArgList._maven_local_repo
     print 'export string 1:       ', ArgList._export_str1
     print 'export string 2:       ', ArgList._export_str2
     print 'export string 3:       ', ArgList._export_str3
     print 'export string 4:       ', ArgList._export_str4
     print 'export string 5:       ', ArgList._export_str5
+    if ArgList._no_maven:
+        print 'test tool:              System Java'
+        print 'results directory:     ', ArgList._result_dir
+    else:
+        print 'test tool:              Maven (mvn)'
     if options.tests != '.*':
         print 'tests to be run:       ', ArgList._tests
     else:
@@ -601,38 +685,186 @@ def prog_parse_args():
 
 
 #----------------------------------------------------------------------------
+# Generate summary from log file
+#----------------------------------------------------------------------------
+def generate_summary(output):
+    parse_maven = False
+    parse_junit = False
+    parse_mvnerror = False
+
+    lines = output.split('\n')
+
+    for ln in lines:
+        # for Maven results
+        if ln.startswith('Results :'):
+            parse_maven = True
+            parse_junit = False
+            continue
+
+        if ln.startswith('# An error report file with more information is saved as:'):
+            parse_mvnerror = True
+            continue
+
+        # for non-Maven JUnit results
+        if ln.startswith('Running test without Maven :'):
+            parse_maven = False
+            parse_junit = True
+
+        # for Maven results
+        if parse_maven:
+            if ln.startswith('Tests run: '):
+                gvars.my_TOTAL_TESTS_RUN = int(get_token_after_string(ln, 'Tests run:', ','))
+                gvars.my_TOTAL_TESTS_FAILED = int(get_token_after_string(ln, 'Failures:', ','))
+                gvars.my_TOTAL_TESTS_ERRORS = int(get_token_after_string(ln, 'Errors:', ','))
+                gvars.my_TOTAL_TESTS_SKIPPED = int(get_token_after_string(ln, 'Skipped:', ','))
+
+            if ln.startswith('[INFO] Total time: '):
+                gvars.my_TOTAL_EXEC_TIME = get_token_after_string(ln, '[INFO] Total time: ')
+
+        if parse_mvnerror:
+            gvars.my_MVN_ERROR_FILE = str(get_token_after_string(ln, '# ')).strip()
+            parse_mvnerror = False
+
+        # for non-Maven JUnit results
+        if parse_junit:
+            if ln.startswith('OK ('):
+                gvars.my_TOTAL_TESTS_RUN += int(get_token_after_string(ln, 'OK (', ')'))
+            elif 'Tests run:' in ln and 'Failures:' in ln:
+                gvars.my_TOTAL_TESTS_RUN += int(get_token_after_string(ln, 'Tests run:', ','))
+                gvars.my_TOTAL_TESTS_FAILED += int(get_token_after_string(ln, 'Failures:'))
+            elif ln.startswith('Time:'):
+                gvars.my_TOTAL_EXEC_TIME += float(get_token_after_string(ln,
+                                                  'Time:').replace(',', ''))
+
+
+#----------------------------------------------------------------------------
 # main
 #----------------------------------------------------------------------------
+sumfile_output = ''
+gvars.my_TOTAL_TESTS_RUN = 0
+gvars.my_TOTAL_TESTS_FAILED = 0
+gvars.my_TOTAL_TESTS_ERRORS = 0
+gvars.my_TOTAL_TESTS_SKIPPED = 0
+gvars.my_MVN_ERROR_FILE = None
+
 prog_parse_args()
+
+# check to make sure executables mvn and javac are in the PATH
+if spawn.find_executable("mvn") is None:
+    print "ERROR: Could not find the Maven executable \'mvn\' in the PATH! \n"
+    sys.exit(2)
+
+if spawn.find_executable("javac") is None:
+    print "ERROR: Could not find the Java Compiler executable \'javac\' in the PATH! \n"
+    sys.exit(2)
 
 # clean the target
 output = shell_call(gvars.my_EXPORT_CMD + ';mvn clean')
 stdout_write(output + '\n')
 
-# do the whole build, including running tests
-output = shell_call(gvars.my_EXPORT_CMD + ';mvn test -Dtest=' + ArgList._tests)
+# find out location of Maven Downloads
+maven_repo = shell_call(gvars.my_EXPORT_CMD + '; mvn help:evaluate ' +
+                        '-Dexpression=settings.localRepository | grep -B 2 "BUILD SUCCESS" ' +
+                        '| head -1').strip(' \t\n\t')
+print "\nMaven Repo Location is : " + maven_repo + ".\n"
 
-lines = output.split('\n')
-to_parse = False
-num_tests_run = 0
-num_tests_failed = 0
-num_tests_errors = 0
-num_tests_skipped = 0
-for ln in lines:
-    if ln.startswith('Results '):
-        to_parse = True
-        continue
+# run tests with or without Maven depending on program arguments
+if not ArgList._no_maven:
+    # use Maven for testing
+    gvars.my_TOTAL_EXEC_TIME = ''
 
-    if to_parse:
-        if ln.startswith('Tests run: '):
-            num_tests_run = int(get_token_after_string(ln, 'Tests run:', ','))
-            num_tests_failed = int(get_token_after_string(ln, 'Failures:', ','))
-            num_tests_errors = int(get_token_after_string(ln, 'Errors:', ','))
-            num_tests_skipped = int(get_token_after_string(ln, 'Skipped:', ','))
+    # have Maven generate CLASSPATH it will use for testing
+    # additionally the following env variables need to be appended to the CLASSPATH since they
+    # are added to the CLASSPATH by the Surefire Plugin after Maven generates the CLASSPATH
+    #  HADOOP_CNF_DIR, HBASE_CNF_DIR, HIVE_CNF_DIR, HBASE_TRXDIR
+    subs_string = ':${HADOOP_CNF_DIR}:${HBASE_CNF_DIR}:${HIVE_CNF_DIR}:${HBASE_TRXDIR}\\n'
+    output = shell_call(gvars.my_EXPORT_CMD + '; rm phoenix_classpath.log 2>/dev/null; ' +
+                        'mvn dependency:build-classpath -Dmdep.outputFile=phoenix_classpath.log; ' +
+                        'sed -i -e "s|$|' + subs_string + '|g" phoenix_classpath.log; ' +
+                        'echo "Phoenix Test Classpath :"; cat phoenix_classpath.log')
 
+    # download dependencies, compile test, and run test with Maven
+    output = shell_call(gvars.my_EXPORT_CMD + '; free -m; mvn test -Dmaven.repo.local=' +
+                        ArgList._maven_local_repo + ' -Dtest=' + ArgList._tests)
+
+    # generate summary
+    generate_summary(output)
+
+else:
+    # do NOT use Maven for testing
+    gvars.my_TOTAL_EXEC_TIME = 0
+
+    # check to make sure CLASSPATH is set
+    if 'CLASSPATH' not in os.environ:
+        print ("Required environment variable, CLASSPATH, for running Phoenix Test without Maven" +
+               "has not been set!")
+        sys.exit(2)
+
+    # create results directory if needed
+    result_dir_create(ArgList._result_dir)
+
+    # set up CLASSPATH by adding the following :
+    #   Maven generated class directory target/test-classes
+    #   JUnit 4.11 jar, Hamcrest Core 1.3 jar, Google Collections 1.0 RC2 jar
+    if ArgList._jdbc_type == 'T2':
+        #myclasspath = '.:$CLASSPATH'
+        myclasspath = ('.:' + gvars.my_ROOT + '/target/test-classes:$CLASSPATH:' +
+                       ArgList._jdbc_classpath + ':' + maven_repo +
+                       '/junit/junit/4.11/junit-4.11.jar:' + maven_repo +
+                       '/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar:' + maven_repo +
+                       '/com/google/collections/google-collections/1.0-rc2/' +
+                       'google-collections-1.0-rc2.jar')
+        myoptions = ''
+    else:
+        myclasspath = '.:'
+        myoptions = ''
+
+    print "Phoenix Test Classpath : " + myclasspath + ".\n"
+    shell_call(gvars.my_EXPORT_CMD + '; echo "' + myclasspath + '" > phoenix_classpath.log')
+
+    # use Maven to compile the tests and download dependencies but do NOT use Maven for testing
+    output = shell_call(gvars.my_EXPORT_CMD + '; mvn test-compile')
+
+    # generate command to run tests without Maven
+    gvars.my_RUN_CMD = (os.path.join(ArgList._javahome, 'bin/java') + ' -cp ' + myclasspath +
+                        ' ' + myoptions + ' -Duser.timezone=GMT -Dhpjdbc.properties=' +
+                        ArgList._prop_file + ' org.junit.runner.JUnitCore ' +
+                        'test.java.com.hp.phoenix.end2end.')
+
+    # Generate list of tests if needed
+    if ArgList._tests is None:
+        testlist = TEST_SUBSET['PART1'] + TEST_SUBSET['PART2']
+    else:
+        testlist = ArgList._tests.split(",")
+
+    for my_test in testlist:
+        echo_start = 'echo "Running test without Maven : ' + my_test + ' ...";'
+        if gvars.my_EXPORT_CMD != '':
+            cmd = echo_start + gvars.my_EXPORT_CMD + '; ' + gvars.my_RUN_CMD + my_test
+        else:
+            cmd = echo_start + gvars.my_RUN_CMD + my_test
+
+        print "\nCommand to run : " + cmd + "\n"
+
+        output = shell_call(cmd)
+        logfile_write(my_test + '.log', output)
+
+        # generate summary
+        generate_summary(output)
+
+    # format gvars.my_TOTAL_EXEC_TIME
+    m, s = divmod(gvars.my_TOTAL_EXEC_TIME, 60)
+    h, m = divmod(m, 60)
+    gvars.my_TOTAL_EXEC_TIME = "%d:%02d:%02ds" % (h, m, s)
+
+# print summary
 sumfile_output = '\n---------- SUMARY ----------\n'
-sumfile_output += ('Total number of tests run:    ' + str(num_tests_run) + '\n')
-sumfile_output += ('Total number of failures: ' + str(num_tests_failed) + '\n')
-sumfile_output += ('Total number of errors: ' + str(num_tests_errors) + '\n')
-sumfile_output += ('Total number of tests skipped: ' + str(num_tests_skipped) + '\n')
+sumfile_output += ('Total number of tests run     : ' + str(gvars.my_TOTAL_TESTS_RUN) + '\n')
+sumfile_output += ('Total number of failures      : ' + str(gvars.my_TOTAL_TESTS_FAILED) + '\n')
+sumfile_output += ('Total number of errors        : ' + str(gvars.my_TOTAL_TESTS_ERRORS) + '\n')
+sumfile_output += ('Total number of tests skipped : ' + str(gvars.my_TOTAL_TESTS_SKIPPED) + '\n')
+sumfile_output += ('Total execution time          : ' + str(gvars.my_TOTAL_EXEC_TIME) + '\n\n')
+if gvars.my_MVN_ERROR_FILE is not None and os.path.isfile(gvars.my_MVN_ERROR_FILE):
+    sumfile_output += ('Maven error file              : ' + str(gvars.my_MVN_ERROR_FILE) + '\n\n')
+    shell_call('cp ' + gvars.my_MVN_ERROR_FILE + ' ' + gvars.my_ROOT)
 stdout_write(sumfile_output)
