@@ -1,7 +1,7 @@
 -- TEST056      6/2/98
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -917,9 +917,7 @@ obey test056(test4OLTdelete);
 obey test056(test4cleanup);
 
 ?section tests4
-CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'OFF';
 obey test056(test4OLTops);
-CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
 obey test056(test4OLTops);
 
 ?section test5SyskeyOneVarchar
@@ -954,9 +952,7 @@ obey test056(test5SyskeyAllFixed);
 -- Test cases for add column with no
 -- expandShortRow() called on them. 
 ------------------------------------------------
-CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'OFF';
 obey test056(test5NoExpandShortRow);
-CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
 obey test056(test5NoExpandShortRow);
 
 ?section testExpandShortRowSyskey
@@ -1000,7 +996,6 @@ select * from t056pc4to2;
 
 ?section testbugfix
 
-CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
 obey test056(testExpandShortRowSyskey);
 obey test056(testPaddingChar4to2);
 
@@ -1034,9 +1029,7 @@ select * from t056t64;
 ?section tests6
 -- insert tests with nullable indirect varchars
 -- for aligned and packed format.
-CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
 obey test056(test6NullVarchar);
-CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'OFF';
 obey test056(test6NullVarchar);
 
 ?section end_TEST056

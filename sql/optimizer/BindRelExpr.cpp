@@ -9815,7 +9815,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
               defaultValueExpr = defaultValueExpr->bindNode(bindWA);
             }
 
-	  if ((isUpsertLoad()) &&
+	  if (((isUpsertLoad()) ||
+               ((isUpsert()) && (getTableDesc()->getNATable()-> isSQLMXAlignedTable()))) &&
               (NOT defaultValueExpr->getOperatorType() == ITM_IDENTITY) &&
 	      (NOT isASystemColumn))
 	    {

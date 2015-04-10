@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -139,15 +139,15 @@ class ExpAlignedFormat
 {
 private:
 
-  UInt16  firstFixed_;
-  UInt16  bitmapOffset_;
+  UInt32  firstFixed_;
+  UInt32  bitmapOffset_;
 
 public:
 
   enum ExpAlignedFormatConstants {
     NULL_IND_SIZE       = 0x00000000,
-    VARIABLE_LEN_SIZE   = 0x00000002,     // variable length size
-    OFFSET_SIZE         = 0x00000002,     // all offsets within a record
+    VARIABLE_LEN_SIZE   = 0x00000004,     // variable length size
+    OFFSET_SIZE         = 0x00000004,     // all offsets within a record
     ALIGNMENT           = 0x00000004,     // record alignment size
     BITS_PER_BYTE       = 0x00000008,
     PAD_SHIFT_BITS      = 0x0000000E,     // shift pad bytes by 14 bits

@@ -1,7 +1,7 @@
 #! /bin/sh
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -34,4 +34,6 @@ sed "
 s/\(PLAN_ID ..................\).*/PLAN_ID .................. <SOMEID>/g
 s/\(EST_OPER_COST ............\).*/EST_OPER_COST ............ <SOMECOST>/g
 s/\(EST_TOTAL_COST .........\).*/EST_TOTAL_COST ......... <SOMECOST>/g
+s/^\([ ]*TRAF_ALIGNED_ROW_FORMAT[ ]*[\.]*\) .*/\1 removed/g
+
 " $fil

@@ -4764,7 +4764,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
                   br->setSpecialNulls(TRUE);
                 }
             }
-        }
+        } // index_table
 
       if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
 	  (getTableDesc()->getNATable()->isHbaseCellTable()) ||
@@ -4774,22 +4774,25 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	    {
 	      retColRefSet_.insert(getIndexDesc()->getIndexColumns()[i]);
 	    }
-	}
-      else
-	{
-	  for (ValueId valId = colRefSet.init();
-	       colRefSet.next(valId);
-	       colRefSet.advance(valId))
-	    {
-	      ValueId dummyValId;
-	      if (NOT getGroupAttr()->getCharacteristicInputs().referencesTheGivenValue(valId, dummyValId))
-		retColRefSet_.insert(valId);
-	    }
-	  
-	  // add all the key columns. If values are missing in hbase, then atleast the key
-	  // value is needed to retrieve a row. 
-	  HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
-	}
+        }
+
+      for (ValueId valId = colRefSet.init();
+           colRefSet.next(valId);
+           colRefSet.advance(valId))
+        {
+          ValueId dummyValId;
+          if (NOT getGroupAttr()->getCharacteristicInputs().referencesTheGivenValue(valId, dummyValId))
+            retColRefSet_.insert(valId);
+        }
+
+      if (NOT ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
+               (getTableDesc()->getNATable()->isHbaseCellTable()) ||
+               (getTableDesc()->getNATable()->isSQLMXAlignedTable())))
+        {
+          // add all the key columns. If values are missing in hbase, then atleast the key
+          // value is needed to retrieve a row. 
+          HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
+        }
     }
 
   NABoolean inlinedActions = FALSE;
@@ -4908,6 +4911,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 
   CollIndex totalColCount = getTableDesc()->getColumnList().entries();
   if ((getTableDesc()->getNATable()->isSQLMXAlignedTable()) &&
+      (newRecExprArray().entries() > 0) &&
       (newRecExprArray().entries() <  totalColCount))
     {
       ValueIdArray holeyArray(totalColCount);

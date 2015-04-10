@@ -26023,6 +26023,11 @@ file_attribute_row_format_clause : TOK_ALIGNED TOK_FORMAT
                                   $$ = new (PARSERHEAP()) ElemDDLFileAttrRowFormat
 				    (ElemDDLFileAttrRowFormat::ePACKED);
 				}
+				| TOK_HBASE TOK_FORMAT
+				{
+                                  $$ = new (PARSERHEAP()) ElemDDLFileAttrRowFormat
+				    (ElemDDLFileAttrRowFormat::eHBASE);
+				}
 
 /* type pElemDDL */
 attribute_inmemory_options_clause : 

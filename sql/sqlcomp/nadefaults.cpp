@@ -347,8 +347,6 @@ THREAD_P DefaultDefault defaultDefaults[] = {
 
 SDDint__(AFFINITY_VALUE,                        "-2"),
 
- DDkwd__(ALIGNED_ROW_FORMAT,			"ON"),
-
 SDDkwd__(ALLOW_AUDIT_ATTRIBUTE_CHANGE,	       "FALSE"), // Used to control if row sampling will use the sample operator in SQL/MX or the
 
  // this should be used for testing only. DML should not be executed on
@@ -3177,7 +3175,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
 
   DDflte_(SORT_TREE_NODE_SIZE,			".012"),
 
-  DDkwd__(SQLMX_ALIGNED_ROW_FORMAT,		"OFF"),
   DDkwd__(SQLMX_REGRESS,                                    "OFF"),
   DDkwd__(SQLMX_SHOWDDL_SUPPRESS_ROW_FORMAT,	"OFF"),
   DDansi_(SQLMX_UTIL_EXPLAIN_PLAN,              "OFF"),
@@ -3255,6 +3252,10 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
 
+  DDint__(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,	"2"),
+
+ DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
+
  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
@@ -3262,8 +3263,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
-
- DDkwd__(TRAF_DEFAULT_ALIGNED_FORMAT,                 "OFF"),   
 
  DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  

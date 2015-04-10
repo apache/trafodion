@@ -837,6 +837,15 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
           }
         }
         
+        nullBitIdx  = 0;
+	for ( i = 0; i < num_attrs; i++ )
+        {
+         if (attrs[i]->getNullFlag())
+          {
+           attrs[i]->setNullBitIndex(nullBitIdx++ );
+          }          
+        }
+
         if(fixedFields->entries() &&
           ((*rtnFlags & ADDED_COLUMN) > 0))
           *rtnFlags |= ExpTupleDesc::ADDED_FIXED_PRESENT;
