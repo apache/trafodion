@@ -166,6 +166,7 @@ protected:
   static jmethodID gGetStackTraceMethodID;
   static jmethodID gThrowableToStringMethodID;
   static jmethodID gStackFrameToStringMethodID;
+  static jint jniHandleCapacity_;
 
   jobject   javaObj_;
   bool      needToDetach_;

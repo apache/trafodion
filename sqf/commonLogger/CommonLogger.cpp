@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -108,8 +108,10 @@ CommonLogger& CommonLogger::instance()
 bool CommonLogger::isCategoryInDebug(std::string &cat)
 {
   log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  return (myCat.getPriority() >= log4cpp::Priority::DEBUG);
+  return (myCat.getPriority() != log4cpp::Priority::NOTSET &&
+           myCat.getPriority() >= log4cpp::Priority::DEBUG);
 }
+
 // **************************************************************************
 // The generic message logging method for any message type and length.
 // **************************************************************************
@@ -167,10 +169,12 @@ char* CommonLogger::buildMsgBuffer(std::string &cat,
   // calculate needed bytes to allocate memory from system heap.
   int bufferSize = 20049;
   int msgSize = 0;
-  char *buffer = new char[bufferSize];
+  static __thread char *buffer = NULL;
   va_list args2;
   va_copy(args2, args);
   bool secondTry = false;
+  if (buffer == NULL)
+      buffer = new char[bufferSize];
 
   // For messages shorter than the initial 20K limit, a single pass through
   // the loop will suffice.
@@ -233,7 +237,7 @@ void CommonLogger::log(std::string &cat,
 {
   // Don't do anything if this message will be ignored anyway.
   log4cpp::Category &myCat = log4cpp::Category::getInstance(cat);
-  if (myCat.getPriority() < level)
+  if (myCat.getPriority() == log4cpp::Priority::NOTSET || myCat.getPriority() < level)
     return;
 
   va_list args ;
@@ -241,7 +245,6 @@ void CommonLogger::log(std::string &cat,
 
   char* buffer = buildMsgBuffer(cat, level, logMsgTemplate, args);
   log1(cat, level, buffer);
-  delete [] buffer;
 
   va_end(args);
 }

@@ -189,16 +189,16 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
 	pConnect = (SRVR_CONNECT_HDL *)dialogueId;
 				
 	cleanupSQLMessage();
-	cleanupSQLValueList();
-	if (batchRowsetSize)
+	if (rowCount._buffer == NULL || batchRowsetSize > inputRowCnt)
 	{
-		// Limit the rows read to the minimum of either request
-		if (totalRowCount>batchRowsetSize) inputRowCnt = batchRowsetSize;
-		else inputRowCnt = totalRowCount;
-	} else inputRowCnt = 1;
-
-	MEMORY_ALLOC_ARRAY(rowCount._buffer,int,inputRowCnt);
-	rowCount._length = 0;
+	   inputRowCnt = batchRowsetSize;
+           if (inputRowCnt == 0)
+              inputRowCnt = 1;
+           if (rowCount._buffer != NULL)
+              MEMORY_DELETE(rowCount._buffer);
+	   MEMORY_ALLOC_ARRAY(rowCount._buffer,int,inputRowCnt);
+	   rowCount._length = 0;
+        }
 	memset(rowCount._buffer,0,inputRowCnt*sizeof(int));
 
 	sqlStmtType = inSqlStmtType;
@@ -320,7 +320,6 @@ SQLRETURN SRVR_STMT_HDL::Close(unsigned short inFreeResourceOpt)
 
 	if (stmtType == INTERNAL_STMT) CLI_DEBUG_RETURN_SQL(SQL_SUCCESS);
 	cleanupSQLMessage();
-	cleanupSQLValueList();
 	freeResourceOpt = inFreeResourceOpt;
 	rc = FREESTATEMENT(this);
 	if (inFreeResourceOpt == SQL_DROP)
@@ -335,7 +334,6 @@ SQLRETURN SRVR_STMT_HDL::InternalStmtClose(unsigned short inFreeResourceOpt)
 
 	SQLRETURN rc;
 	cleanupSQLMessage();
-	cleanupSQLValueList();
 	freeResourceOpt = inFreeResourceOpt;
 	CLI_DEBUG_RETURN_SQL(FREESTATEMENT(this));
 }
@@ -467,7 +465,7 @@ void  SRVR_STMT_HDL::cleanupSQLValueList(void)
 	MEMORY_DELETE(outputValueVarBuffer);
 	outputValueList._length = 0;
 	maxRowCnt = 0;
-	if (rowCount._length > 0) {
+	if (rowCount._buffer != NULL) {
 	  MEMORY_DELETE(rowCount._buffer);
 	}
 	rowCount._buffer = NULL;
@@ -505,6 +503,7 @@ void  SRVR_STMT_HDL::cleanupAll(void)
 	inputValueList._length = 0;
 	inputValueVarBuffer = NULL;
 	MEMORY_DELETE(rowCount._buffer);
+        rowCount._buffer = NULL;
 	rowCount._length = 0;
 	MEMORY_DELETE(IPD);
 	MEMORY_DELETE(IRD);
@@ -731,7 +730,6 @@ SQLRETURN SRVR_STMT_HDL::ExecuteCall(const SQLValueList_def *inValueList,short i
 
 	SQLRETURN rc;
 	cleanupSQLMessage();
-	cleanupSQLValueList();
 	inputValueList._buffer = inValueList->_buffer;
 	inputValueList._length = inValueList->_length;
 #ifndef _FASTPATH
