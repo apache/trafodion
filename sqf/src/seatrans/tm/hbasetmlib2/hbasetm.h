@@ -130,6 +130,7 @@ private:
 	  JM_NODEDOWN,
       JM_NODEUP,
       JM_CREATETABLE,
+      JM_DROPTABLE,
       JM_RQREGINFO,
       JM_LAST
    };
@@ -174,6 +175,7 @@ public:
    short completeRequest(int64 pv_transid);
    short abortTransaction(int64 pv_transid);
    int createTable(int64 pv_transid, const char pa_ddlrequest[], int pv_ddlrequest_len);
+   int dropTable(int64 pv_transid, const char* pa_tblname, int pv_tblname_len);
    int registerRegion(int64 pv_transid, const char pa_region[], const char pa_regionInfo[], int pv_regionInfo_Length);
    int registerRegion(int64 pv_transid,
             int pv_port,

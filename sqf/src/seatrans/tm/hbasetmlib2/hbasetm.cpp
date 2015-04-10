@@ -244,6 +244,8 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_NODEUP     ].jm_signature = "(I)V";
   JavaMethods_[JM_CREATETABLE ].jm_name      = "callCreateTable";
   JavaMethods_[JM_CREATETABLE ].jm_signature = "(J[B)S";
+  JavaMethods_[JM_DROPTABLE ].jm_name      = "callDropTable";
+  JavaMethods_[JM_DROPTABLE ].jm_signature = "(J[B)S";
   JavaMethods_[JM_RQREGINFO  ].jm_name      = "callRequestRegionInfo";
   JavaMethods_[JM_RQREGINFO  ].jm_signature = "()Lorg/trafodion/dtm/HashMapArray;";
 
@@ -886,6 +888,53 @@ int CHbaseTM::createTable(int64 pv_transid,
    return lv_error;
 }
 
+//----------------------------------------------------------------------------
+// CHbaseTM: dropTable
+// Purpose: To handle drop table transactional requests
+// ---------------------------------------------------------------------------
+int CHbaseTM::dropTable(int64 pv_transid,
+                           const char* pa_tblname,
+                           int pv_tblname_len)
+{
+   int lv_error = FEOK;
+   jlong jlv_transid = pv_transid;
+   CTmTxKey lv_tid(pv_transid);
+
+   HBASETrace(HBASETM_TraceExitError,
+              (HDR "CHbaseTM::dropTable returning %d.\n", lv_error));
+
+   jthrowable exc;
+   JOI_RetCode lv_joi_retcode = JOI_OK;
+   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   if (lv_joi_retcode != JOI_OK) {
+      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
+      fflush(stdout);
+      abort();
+   }
+
+   jbyteArray jba_tblname = _tlp_jenv->NewByteArray(pv_tblname_len);
+   if (jba_tblname == NULL)
+      return RET_ADD_PARAM;
+   _tlp_jenv->SetByteArrayRegion(jba_tblname, 0, pv_tblname_len, (const jbyte*) pa_tblname);
+
+   lv_error = _tlp_jenv->CallShortMethod(javaObj_,
+                    JavaMethods_[JM_DROPTABLE].methodID,
+                    jlv_transid,
+                    jba_tblname);
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      lv_error = RET_EXCEPTION;
+   }
+
+   _tlp_jenv->DeleteLocalRef(jba_tblname);
+
+   HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::dropTable : Error %d, Txn ID (%d,%d), hostname %s.\n",
+                lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tblname));
+
+   return lv_error;
+}
 
 //----------------------------------------------------------------------------
 // CHbaseTM::shutdown

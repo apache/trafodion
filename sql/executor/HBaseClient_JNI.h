@@ -509,8 +509,8 @@ public:
   HBC_RetCode create(const char* fileName, HBASE_NAMELIST& colFamilies);
   HBC_RetCode create(const char* fileName, NAText*  hbaseOptions, 
                      int numSplits, int keyLength, const char** splitValues, Int64 transID);
-  HBC_RetCode drop(const char* fileName, bool async);
-  HBC_RetCode drop(const char* fileName, JNIEnv* jenv); // thread specific
+  HBC_RetCode drop(const char* fileName, bool async, Int64 transID);
+  HBC_RetCode drop(const char* fileName, JNIEnv* jenv, Int64 transID); // thread specific
   HBC_RetCode dropAll(const char* pattern, bool async);
   HBC_RetCode copy(const char* currTblName, const char* oldTblName);
   ByteArrayList* listAll(const char* pattern);

@@ -154,6 +154,32 @@ short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* p
     return lv_error;
 }
 
+short TM_Transaction::drop_table(char* pa_tblname, int pv_tblname_len)
+{
+    short lv_error = FEOK;
+    Tm_Req_Msg_Type lv_req;
+    Tm_Rsp_Msg_Type lv_rsp;
+
+    TMlibTrace(("TMLIB_TRACE : TM_Transaction::drop_table ENTRY tablename: %s\n", pa_tblname), 1);
+
+    if (!gv_tmlib.is_initialized())
+         gv_tmlib.initialize();
+
+    tmlib_init_req_hdr(TM_MSG_TYPE_DDLREQUEST, &lv_req);
+    iv_transid.set_external_data_type(&lv_req.u.iv_ddl_request.iv_transid);
+    memcpy(lv_req.u.iv_ddl_request.ddlreq, pa_tblname, pv_tblname_len);
+    lv_req.u.iv_ddl_request.ddlreq_len = pv_tblname_len;
+    lv_req.u.iv_ddl_request.ddlreq_type = TM_DDL_DROP;
+
+    iv_last_error = gv_tmlib.send_tm(&lv_req, &lv_rsp, iv_transid.get_node());
+    if(iv_last_error)
+    {
+        TMlibTrace(("TMLIB_TRACE : TM_Transaction::drop_table returning error %d\n", iv_last_error), 1);
+        return iv_last_error;
+    }
+    return lv_error;
+}
+
 // --------------------------------------------------------------------------
 // TM_Transaction::begin
 // -- begin transaction, private method

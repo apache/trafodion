@@ -514,7 +514,7 @@ short REGISTERREGION(long transid, int pv_port, char *pa_hostname, int pv_hostna
 // CREATETABLE
 //
 // Purpose: send CREATETABLE message to the TM
-// Params: pa_tabledesc, pv_tabledesc_length
+// Params: pa_tabledesc, pv_tabledesc_length, pv_tblname, transid
 // -------------------------------------------------------------------
 short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, long transid)
 {
@@ -531,6 +531,27 @@ short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, lon
     TMlibTrace(("TMLIB_TRACE : ENTER CREATETABLE DDLREQUEST: %s", pa_tbldesc), 2);
 
     lv_error =  lp_trans->create_table(pa_tbldesc, pv_tbldesc_length, pv_tblname);
+
+    return lv_error;
+}
+
+// -------------------------------------------------------------------
+// DROPTABLE
+//
+// Purpose: send DROPTABLE message to TM
+// Params: pv_tablename, transid
+// -------------------------------------------------------------------
+short DROPTABLE(char *pv_tblname, int pv_tblname_len, long transid)
+{
+    short lv_error = FEOK;
+    if (gp_trans_thr == NULL)
+       gp_trans_thr = new TMLIB_ThreadTxn_Object();
+
+    TM_Transaction *lp_trans = gp_trans_thr->get_current();
+
+    TMlibTrace(("TMLIB_TRACE : DROPTABLE ENTRY: tablename: %s, transid: %ld\n", pv_tblname, transid), 1);
+
+    lv_error = lp_trans->drop_table(pv_tblname, pv_tblname_len);
 
     return lv_error;
 }

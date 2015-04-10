@@ -532,8 +532,10 @@ Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async)
     if (init(hbs_) != HBASE_ACCESS_SUCCESS)
       return -HBASE_ACCESS_ERROR;
   }
-    
-  retCode_ = client_->drop(tblName.val, async);
+   
+  Int64 transID = getTransactionIDFromContext();
+
+  retCode_ = client_->drop(tblName.val, async, transID);
 
   //close();
   if (retCode_ == HBC_OK)
