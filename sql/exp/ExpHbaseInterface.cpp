@@ -525,7 +525,7 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 
 
 //----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async)
+Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async, NABoolean noXn)
 {
   if (client_ == NULL)
   {
@@ -533,7 +533,11 @@ Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async)
       return -HBASE_ACCESS_ERROR;
   }
    
-  Int64 transID = getTransactionIDFromContext();
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
 
   retCode_ = client_->drop(tblName.val, async, transID);
 

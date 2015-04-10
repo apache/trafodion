@@ -437,9 +437,7 @@ public class HBaseClient {
             HBaseAdmin admin = new HBaseAdmin(config);
             //			admin.disableTableAsync(tblName);
 
-           // Temporary flag. It will be removed in the next commit once CQD changes are merged.
-           boolean useDDLTrans = false;
-           if(transID != 0 && useDDLTrans == true) {
+            if(transID != 0) {
                table.dropTable(tblName, transID);
            }
            else {

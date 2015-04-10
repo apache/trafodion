@@ -2169,12 +2169,16 @@ short CmpSeabaseDDL::dropHbaseTable(ExpHbaseInterface *ehi,
 
   retcode = ehi->exists(*table);
   if (retcode == -1) // exists
-    {       
+    {    
+      
+      NABoolean noXn =
+           (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
+                
       if ((CmpCommon::getDefault(HBASE_ASYNC_DROP_TABLE) == DF_ON) ||
           (asyncDrop))
-        retcode = ehi->drop(*table, TRUE);
+        retcode = ehi->drop(*table, TRUE, noXn);
       else
-        retcode = ehi->drop(*table, FALSE);
+        retcode = ehi->drop(*table, FALSE, noXn);
       if (retcode < 0)
         {
           *CmpCommon::diags() << DgSqlCode(-8448)
