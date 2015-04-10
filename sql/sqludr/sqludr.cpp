@@ -1632,6 +1632,11 @@ void TypeInfo::setLong(long val, char *row) const
       {
         bool overflow = false;
         bool isNegative = false;
+        int remainingLength = d_.length_;
+        int neededLengthWithoutSign = d_.precision_ + (d_.scale_ > 0 ? 1 : 0);
+        char buf[20];
+        int remainingBufLength = sizeof(buf);
+        char *bufPtr = buf;
 
         const long maxvals[] = {9L,
                                 99L,
@@ -1658,6 +1663,13 @@ void TypeInfo::setLong(long val, char *row) const
                38900, "Invalid precision (%d) or scale (%d) for a decimal data type",
                d_.precision_, d_.scale_);
 
+        // right now precision is limited to 18, but may need to use this code for BigNum
+        // so we add a check for this future case
+        if (d_.length_ >=  sizeof(buf))
+          throw UDRException(
+               38900, "Decimal precision %d is not supported by setLong(), limit is %d",
+               d_.precision_, sizeof(buf));
+
         if (val < 0)
           {
             if (tempSQLType == DECIMAL_UNSIGNED)
@@ -1666,10 +1678,30 @@ void TypeInfo::setLong(long val, char *row) const
                    "Trying to assign a negative value to a DECIMAL UNSIGNED type");
             val = -val;
             isNegative = true;
-            *data = '-';
-            data++;
+            *bufPtr = '-';
+            bufPtr++;
+            remainingLength--;
+            remainingBufLength--;
           }
 
+        // add enough blanks to print the number right-adjusted
+        while (neededLengthWithoutSign < remainingLength)
+          {
+            *bufPtr = ' ';
+            bufPtr++;
+            remainingLength--;
+            remainingBufLength--;
+          }
+
+        // sanity check, d_.length_ should have enough space for sign,
+        // precision and decimal point
+        if (remainingLength < neededLengthWithoutSign)
+          throw UDRException(
+               38900,
+               "Internal error, field length too short in setLong() (%d, %d)",
+               remainingLength, neededLengthWithoutSign);
+
+        // validate limits for decimal precision
         if (val > maxvals[d_.precision_-1])
           throw UDRException(
                38900,
@@ -1678,23 +1710,30 @@ void TypeInfo::setLong(long val, char *row) const
 
         if (d_.scale_ == 0)
           {
-            sprintf(data,"%0*ld", d_.precision_, val);
+            snprintf(bufPtr, remainingBufLength, "%0*ld", d_.precision_, val);
           }
         else
           {
             long fractionalValue = 0;
+            long multiplier = 1;
 
             for (int s=0; s<d_.scale_; s++)
               {
-                fractionalValue = fractionalValue * 10 + val % 10;
+                fractionalValue += multiplier * (val % 10);
                 val /= 10;
+                multiplier *= 10;
               }
-            sprintf(data, "%0*ld.%0*ld",
-                    d_.precision_-d_.scale_,
-                    val,
-                    d_.scale_,
-                    fractionalValue);
+            snprintf(bufPtr, remainingBufLength,
+                     "%0*ld.%0*ld",
+                     d_.precision_-d_.scale_,
+                     val,
+                     d_.scale_,
+                     fractionalValue);
           }
+        // snprintf put a terminating NUL byte into the string,
+        // which is not allowed in the actual record, copy the
+        // part without this extra byte into the record
+        memcpy(data, buf, d_.length_);
       }
       break;
 
