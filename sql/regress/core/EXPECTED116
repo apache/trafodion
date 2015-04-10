@@ -73,5 +73,195 @@ TRAFODION.SCH.TC1
 
 --- SQL operation complete.
 >>
+>>--setup two tables
+>>begin work;
+
+--- SQL operation complete.
+>>create table t116t1(a1 int, c1 int, b1 char(6));
+
+--- SQL operation complete.
+>>insert into t116t1 values(1,1,'a');
+
+--- 1 row(s) inserted.
+>>create table t116t2(a1 int, c1 int, b1 char(6));
+
+--- SQL operation complete.
+>>insert into t116t2 values(1,1,'a');
+
+--- 1 row(s) inserted.
+>>commit work;
+
+--- SQL operation complete.
+>>
+>>--drop table simple case
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T1
+TRAFODION.SCH.T116T2
+
+--- SQL operation complete.
+>>begin work;
+
+--- SQL operation complete.
+>>drop table t116t1;
+
+--- SQL operation complete.
+>>commit work;
+
+--- SQL operation complete.
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T2
+
+--- SQL operation complete.
+>>
+>>--drop table with rollback
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T2
+
+--- SQL operation complete.
+>>begin work;
+
+--- SQL operation complete.
+>>insert into t116t2 values(3,3,'c');
+
+--- 1 row(s) inserted.
+>>select * from t116t2;
+
+A1           C1           B1    
+-----------  -----------  ------
+
+          1            1  a     
+          3            3  c     
+
+--- 2 row(s) selected.
+>>drop table t116t2;
+
+--- SQL operation complete.
+>>insert into t116t2 values(1,1,'a');
+
+*** ERROR[4082] Object TRAFODION.SCH.T116T2 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t116t2;
+
+*** ERROR[4082] Object TRAFODION.SCH.T116T2 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>rollback work;
+
+--- SQL operation complete.
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T2
+
+--- SQL operation complete.
+>>select * from t116t2;
+
+A1           C1           B1    
+-----------  -----------  ------
+
+          1            1  a     
+
+--- 1 row(s) selected.
+>>insert into t116t2 values(1,1,'a');
+
+--- 1 row(s) inserted.
+>>select * from t116t2;
+
+A1           C1           B1    
+-----------  -----------  ------
+
+          1            1  a     
+          1            1  a     
+
+--- 2 row(s) selected.
+>>
+>>
+>>
+>>--create table1 with dml, drop table2
+>>begin work;
+
+--- SQL operation complete.
+>>create table t116t3(a1 int, c1 int, b1 char(6));
+
+--- SQL operation complete.
+>>insert into t116t3 values(2,2,'b');
+
+--- 1 row(s) inserted.
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T2
+TRAFODION.SCH.T116T3
+
+--- SQL operation complete.
+>>drop table t116t2;
+
+--- SQL operation complete.
+>>commit work;
+
+--- SQL operation complete.
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T3
+
+--- SQL operation complete.
+>>
+>>--create table1 with dml , drop table2 and rollback
+>>begin work;
+
+--- SQL operation complete.
+>>create table t116t4(a1 int, c1 int, b1 char(6));
+
+--- SQL operation complete.
+>>insert into t116t4 values(2,2,'b');
+
+--- 1 row(s) inserted.
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T3
+TRAFODION.SCH.T116T4
+
+--- SQL operation complete.
+>>select * from t116t3;
+
+A1           C1           B1    
+-----------  -----------  ------
+
+          2            2  b     
+
+--- 1 row(s) selected.
+>>drop table t116t3;
+
+--- SQL operation complete.
+>>insert into t116t3 values(2,2,'b');
+
+*** ERROR[4082] Object TRAFODION.SCH.T116T3 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>rollback work;
+
+--- SQL operation complete.
+>>get user hbase objects;
+
+TRAFODION.SCH.T116T3
+
+--- SQL operation complete.
+>>select * from t116t3;
+
+A1           C1           B1    
+-----------  -----------  ------
+
+          2            2  b     
+
+--- 1 row(s) selected.
+>>insert into t116t3 values(2,2,'b');
+
+--- 1 row(s) inserted.
+>>
 >>
 >>log;

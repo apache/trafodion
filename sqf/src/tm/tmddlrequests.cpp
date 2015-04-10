@@ -69,7 +69,7 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
 
    long lv_transid = (long) pv_transid;
 
-   cout << "JAVATOCPP DROPTABLEREQ for transid: " << lv_transid << "table name len: " << lv_tblname_len << " tlbname " << pv_tblname << endl;
+   //cout << "JAVATOCPP DROPTABLEREQ for transid: " << lv_transid << "table name len: " << lv_tblname_len << " tlbname " << pv_tblname << endl;
 
    lv_ret = DROPTABLE(la_tblname, lv_tblname_len, lv_transid);
    pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);

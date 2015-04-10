@@ -113,7 +113,7 @@ class ExpHbaseInterface : public NABasicObject
   // If a create of the same table comes in later and an error is returned
   // during create, we delay and retry for a fixed number of times since that table
   // may still be dropped by the worked thread.
-  virtual Lng32 drop(HbaseStr &tblName, NABoolean async) = 0;
+  virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn) = 0;
 
   // drops all objects from hbase that match the pattern
   virtual Lng32 dropAll(const char * pattern, NABoolean async) = 0;
@@ -386,7 +386,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                        const char ** splitValues,
                        NABoolean noXn);
 
-  virtual Lng32 drop(HbaseStr &tblName, NABoolean async);
+  virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn);
   virtual Lng32 dropAll(const char * pattern, NABoolean async);
 
   virtual ByteArrayList* listAll(const char * pattern);
