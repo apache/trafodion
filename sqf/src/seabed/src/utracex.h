@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -130,6 +130,7 @@ typedef enum {
     SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP,
     SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP2,
     SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP3,
+    SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP4,
     SB_UTRACE_API_OP_MSG_MON_PROCESS_SHUTDOWN,
     SB_UTRACE_API_OP_MSG_MON_PROCESS_SHUTDOWN_FAST,
     SB_UTRACE_API_OP_MSG_MON_PROCESS_SHUTDOWN_NOW,
