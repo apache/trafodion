@@ -209,7 +209,7 @@ else
    NODE_LIST=""
    for node in $NODES
    do
-      newNode=$(ssh -n $node hostname 2>&1 >/dev/null)
+      newNode=$(ssh -n $node hostname)
       
       if [[ $? -ne "0" ]]; then
          echo "***ERROR: $newNode"
