@@ -7211,7 +7211,6 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
         (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
         (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
         (ddlNode->getOperatorType() == DDL_CREATE_TABLE) ||
-        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_COLUMN) ||
         (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
         (ddlNode->getOperatorType() == DDL_DROP_TABLE))))
     {

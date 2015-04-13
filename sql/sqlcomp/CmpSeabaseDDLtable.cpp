@@ -3895,30 +3895,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       ToQuotedString(quotedDefVal, defVal, FALSE);
     }
 
-  /*
-  if ((naTable->isSQLMXAlignedTable()) &&
-      (CmpCommon::getDefaultNumeric(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD) == 0))
-    {
-      NAType * naType = pColDef->getColumnDataType();
-      NAColumn * newNACol 
-        = new(STMTHEAP) NAColumn(col_name, nacolArr.entries(), naType, STMTHEAP,
-                                 NULL, USER_COLUMN, defaultClass,
-                                 (char*)defVal.data(), (char*)quotedHeading.data(),
-                                 upshifted, TRUE);
-                                                   
-      if (alignedFormatTableAddDropColumn(naTable->objectUid().castToInt64(),
-                                          TRUE, // add col
-                                          catalogNamePart, schemaNamePart, objectNamePart,
-                                          col_name, newNACol))
-        {
-          processReturn();
-          return;
-        }
-     }
-  else
-    {
-  */
-
   str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%d', '%s', '%s', %Ld )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
               naTable->objectUid().castToInt64(), 
@@ -3955,33 +3931,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
       return;
     }
 
-  /*
-  if ((naTable->isSQLMXAlignedTable()) &&
-      (CmpCommon::getDefaultNumeric(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD) == 1))
-    {
-      ExeCliInterface cqdCliInterface;
-      cliRC = cqdCliInterface.holdAndSetCQD("HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT", "ON");
-
-      str_sprintf(query, "update %s.\"%s\".\"%s\" set \"%s\" = \"%s\" ",
-                  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
-                  col_name, col_name);
-      cliRC = cliInterface.executeImmediate(query);
-      if (cliRC < 0)
-        {
-          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-          
-          cliRC = cqdCliInterface.restoreCQD("HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT");
-
-          processReturn();
-          
-          return;
-        }  
-
-      cliRC = cqdCliInterface.restoreCQD("HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT");
-    }
-  */
-
-  //  CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
     NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
 

@@ -1069,6 +1069,17 @@ short CmpSeabaseDDL::populateSeabaseIndexFromTable(
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+
+      if ((isUnique) && (CmpCommon::diags()->mainSQLCODE() == -EXE_DUPLICATE_ENTIRE_RECORD))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNIQUE_INDEX_LOAD_FAILED_WITH_DUPLICATE_ROWS)
+                              << DgTableName(indexName);
+         }
+      else
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_CLI_LOAD_INDEX)
+                              << DgTableName(indexName);
+        }
     }
 
   //  SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(ALLOW_SPECIALTABLETYPE);
