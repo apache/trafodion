@@ -26,94 +26,30 @@ use DBI;
 # Process types.  Must match values defined by the monitor in msgdef.h.
 my $ProcessType_Undefined = 0;
 my $ProcessType_Generic   = 4;
-my $ProcessType_SPX       = 10;
 my $ProcessType_SSMP      = 11;
-my $ProcessType_SMS       = 13;
 
 my $gDebug = 0;
 
-my $gv_mount_entry_count=0;
-
 my $bVirtualNodes=0;
-my $g_storage_engine_dir="";
-my $g_mirror_storage_engine_dir="";
 
 $gRoleEnumStorage     = "storage";
 $gRoleEnumEdge        = "connection";
 $gRoleEnumAggregation = "aggregation";
 
-my $g_nextStorageNodeIndex = 0;
-my $g_nextStorageNode = 0;
-my $g_currentTSEIndex = 0;
-
-my @g_storageNodes = ();
-my @g_edgeNodes = ();
-my @g_AggregationNodes = ();
-my @g_ssdOverflow = ();
-my @g_hddOverflow = ();
-
-
-my $g_dbsize = "dbsize";
-
 my $gdNumNodes=0;
-my $gdNumPNodes=0;
 my $gdZoneId=0;
 
-my @g_nodelist = ();
-my @gNodeIdToNameIndex = ();
-my %gNodeNameToIdIndex;
 my @gNodeIdToZoneIdIndex = ();
 
 my @g_zonelist = ();
-my %gZoneNameToIdIndex;
-
-# This to help with getting the next AT name
-my @ase_list = ();
-my @g_alphabets = (A..Z);
-my $g_char1 = 0;
-my $g_char2 = 0;
-
-my $g_ASE_TSE_Index = 1;
-my $gNumASEProcess  = 0;
-
-my $g_TMASE_TM_Index = 0;
-my $gNumTMASEProcess = 0;
-
-my $gNumATExtents    = 0;
-my $gMinATExtents    = 0;
-if ((! -e "/etc/hptc-release") && (! -e "/etc/cm-release")){
-   $gMinATExtents    = 1550;  #NOT a CLUSTER
-}
-else{
-   $gMinATExtents    = 15500; #CLUSTER
-}
-my $gNumATFiles      = 0;
-my $gMinATFiles      = 10;
-my $gTX_Capacity     = 0;
-my $gBO_PER_TSE      = 1;
-my $gMAX_TX_Capacity = 40;
-# Must enable this code if _DISABLE_BEGINTRANS defined in the TSE
-#my $gMAX_BeginTX_Disable = 80;
-my $gMAX_BO_PER_TSE  = 3;
-
-my $BOOL_BO_PER_TSE_SET = 0;
-
-my $g_dRMID  = 1;
 
 my $gdNumCpuCores = 1;
 
 my $g_CCFormat = 2;
 
 my $gbInitialLinesPrinted = 0;
-my $gbOverflowLinesPrinted = 0;
-
-my $gbLunmgrOn; # cleandb scripts must be generated differently if true
 
 my $gShellStarted=0;
-
-my $gEncSectionProcessed = 0;
-
-my $gProxyNodePort = 0;
 
 my $gFloatingExternalIp = "";
 my $gFloatingNodeId = -1;
@@ -129,18 +65,11 @@ my $SQ_DTM_PERSISTENT_PROCESS = $ENV{'SQ_DTM_PERSISTENT_PROCESS'};
 my $SQ_IDTMSRV = $ENV{'SQ_IDTMSRV'};
 
 # define the error values that are being returned
-my $CONFIG_ERROR = 5;
-my $STORAGE_ERROR = 40;
-my $BACKUP_STORAGE_ERROR = 50;
-my $BACKUP_NODEID_ERROR = 60;
 my $BDR_ERROR = 70;
 
 
 # Database handle
 my $DBH = 0;
-
-# instance type
-my $instanceType = "";
 
 sub printScript {
     ($dWhich, @rest) = @_;
@@ -199,9 +128,6 @@ sub printTime {
     printScript(1, "# Trafodion Startup script generated @ ",&ctime(time),"\n");
 }
 
-sub validate_config_script {
-}
-
 sub printInitialLines {
 
     # So we don't re-print the initial lines
@@ -234,23 +160,6 @@ sub printInitialLines {
     }
 
     $msenv = "$ENV{'SQETC_DIR'}/ms.env";
-    $mirroringoff_string = "TSE_MIRRORING_OFF=1\n";
-    $acttenable_string = "TSE_ACTT_ENABLE_THRESHOLDS=0\n";
-    $acttdiskio_string = "TSE_ACTT_DISKIO_THRESHOLD=20000000\n";
-    $acttcachec_string = "TSE_ACTT_CACHEC_THRESHOLD=20000000\n";
-    $acttaccessed_string = "TSE_ACTT_ACCESSED_THRESHOLD=20000000\n";
-    $acttinterval_string = "TSE_ACTT_THRESHOLD_INTERVAL=1\n";
-    $acttpublishevent_string = "TSE_ACTT_PUBLISH_EVENT=0\n";
-    $acttpublishlog_string = "TSE_ACTT_PUBLISH_LOG=0\n";
-    $acttpublishstd_string = "TSE_ACTT_PUBLISH_STDOUT=0\n";
-    $fcbenable_string = "TSE_FCB_ENABLE_THRESHOLDS=0\n";
-    $fcbdiskio_string = "TSE_FCB_DISKIO_THRESHOLD=20000000\n";
-    $fcbcachec_string = "TSE_FCB_CACHEC_THRESHOLD=20000000\n";
-    $fcbaccessed_string = "TSE_FCB_ACCESSED_THRESHOLD=20000000\n";
-    $fcbinterval_string = "TSE_FCB_THRESHOLD_INTERVAL=1\n";
-    $fcbpublishevent_string = "TSE_FCB_PUBLISH_EVENT=0\n";
-    $fcbpublishlog_string = "TSE_FCB_PUBLISH_LOG=0\n";
-    $fcbpublishstd_string = "TSE_FCB_PUBLISH_STDOUT=0\n";
 
     open (ETC,">>$msenv")
 	or die("unable to open $msenv");
@@ -271,67 +180,14 @@ sub printInitialLines {
         print ETC "$virtualnode_string";
         print ETC "$virtualnid_string";
            # Allow specific mirroring ON override for virtual node
-        print ETC "$mirroringoff_string" if (!$ENV{'TSE_MIRRORING'});
         print ETC "MS_STREAMS_MIN=20000\n";
         print ETC "MS_STREAMS_MAX=20000\n";
-        print ETC "$acttenable_string";
-        print ETC "$acttdiskio_string";
-        print ETC "$acttcachec_string";
-        print ETC "$acttaccessed_string";
-        print ETC "$acttinterval_string";
-        print ETC "$acttpublishevent_string";
-        print ETC "$acttpublishlog_string";
-        print ETC "$acttpublishstd_string";
-        print ETC "$fcbenable_string";
-        print ETC "$fcbdiskio_string";
-        print ETC "$fcbcachec_string";
-        print ETC "$fcbaccessed_string";
-        print ETC "$fcbinterval_string";
-        print ETC "$fcbpublishevent_string";
-        print ETC "$fcbpublishlog_string";
-        print ETC "$fcbpublishstd_string";
 
-        # As of v1.12, sqgen doesn't recreate ms.env if it already exists,
-        # so users will see issues switching between mirroring ON and mirroring
-        # OFF, because the TSE treats mirroring on as default.  The variable in
-        # ms.env is an override to turn mirroring OFF, we will remove that if
-        # the user intends to turn mirroring on now
-        if (length($ENV{'TSE_MIRRORING'}) && $ENV{'TSE_MIRRORING'} == 1)
-        {
-            @msenv_contents = <ETC>;
-
-            # This holds contents of ms.env, excluding all TSE_MIRRORING_OFF=1
-            @grep_res = grep(!/$mirroringoff_string/, @msenv_contents);
-            $grep_res_num = grep(/$mirroringoff_string/, @msenv_contents);
-
-            # Only rewrite it out if we found occurrences
-            if ($grep_res_num > 0) {
-                print ETC join("", @grep_res);
-            }
-        }
     }
     # Cluster
     else {
-        print ETC "$mirroringoff_string"
-            if (length($ENV{'TSE_MIRRORING'}) && $ENV{'TSE_MIRRORING'} == 0);
         print ETC "MS_STREAMS_MIN=20000\n";
         print ETC "MS_STREAMS_MAX=20000\n";
-        print ETC "$acttenable_string";
-        print ETC "$acttdiskio_string";
-        print ETC "$acttcachec_string";
-        print ETC "$acttaccessed_string";
-        print ETC "$acttinterval_string";
-        print ETC "$acttpublishevent_string";
-        print ETC "$acttpublishlog_string";
-        print ETC "$acttpublishstd_string";
-        print ETC "$fcbenable_string";
-        print ETC "$fcbdiskio_string";
-        print ETC "$fcbcachec_string";
-        print ETC "$fcbaccessed_string";
-        print ETC "$fcbinterval_string";
-        print ETC "$fcbpublishevent_string";
-        print ETC "$fcbpublishlog_string";
-        print ETC "$fcbpublishstd_string";
         $hugePages=`cat /proc/sys/vm/nr_hugepages`;
         if ($hugePages != 0) {
            if ($ENV{SHARED_HARDWARE} eq 'YES') {
@@ -347,10 +203,6 @@ sub printInitialLines {
 
     print ETC "CLASSPATH=$ENV{'CLASSPATH'}:\n";
     close (ETC);
-
-    if ($gbLunmgrOn == 1) {
-        printScript(1, "\n\$SQ_PDSH \$MY_NODES \"rm -rf \$MY_SQROOT/logs/lunmgr.log.LOCKDIR\"\n");
-    }
 
     printScript(1, "\nshell <<eof \n");
     $gShellStarted=1;
@@ -388,30 +240,6 @@ sub printInitialLines {
     addDbClusterData( "MY_SQROOT", "$SQ_ROOT"); # comes out null
 
     $gbInitialLinesPrinted = 1;
-}
-
-sub printOverflowLines {
-    if($gbOverflowLinesPrinted) {
-	return;
-    }
-
-    $msenv = "$ENV{'SQETC_DIR'}/ms.env";
-
-    open (ETC,">>$msenv")
-        or die("unable to open $msenv");
-
-    if(@g_ssdOverflow) {
-	$ssdDir = join(':',@g_ssdOverflow);
-	print ETC "STFS_SSD_LOCATION=$ssdDir\n";
-    }
-
-    if(@g_hddOverflow) {
-	$hddDir = join(':',@g_hddOverflow);
-	print ETC "STFS_HDD_LOCATION=$hddDir\n";
-    }
-    close(ETC);
-
-    $gbOverflowLinesPrinted = 1;
 }
 
 sub printScriptEndLines {
@@ -731,16 +559,6 @@ sub processNodes {
 
 		push(@g_EdgeNodes, $l_dNodeIndex);
 	    }
-#           open (SHELLENV, ">shell.env")
-#               or die ("unable to open shell.env");
-#
-#           print SHELLENV "MON_TRACE_ENABLE=1 \n";
-#           print SHELLENV "MON_TRACE_EVLOG_MSG=1 \n";
-#           print SHELLENV "MON_TRACE_INIT=1 \n";
-#           print SHELLENV "MON_TRACE_REQUEST=1 \n";
-#           print SHELLENV "MON_TRACE_PROCESS=1 \n";
-#           close (SHELLENV);
-#
 	}
 	elsif (/^end node/) {
 
@@ -789,38 +607,6 @@ sub processNodes {
     }
 }
 
-## Process the enclosures section, which lumps node hostnames together based
-## on whether or not they are in the same physical C7000 chassis.
-sub processEnclosures
-{
-    while (<SRC>)
-    {
-        next if (/^#/);
-        next if ($bVirtualNodes); # Just read through this section and return
-        return if (/^end enclosure/);
-
-        chomp($_);
-
-        sqnodes::parseStmt;
-    }
-}
-
-sub printNodeIdToName {
-
-    if (!$gDebug) {
-	return;
-    }
-
-    my $i = 0;
-
-    print "Number of nodes: ", $#gNodeIdToNameIndex + 1, "\n";
-    print "gdNumNodes = $gdNumNodes\n";
-
-    for ($i = 0; $i <= $#gNodeIdToNameIndex; $i++) {
-	print "gNodeIdToNameIndex[$i]=", $gNodeIdToNameIndex[$i], "\n";
-    }
-}
-
 sub printZoneList {
 
     if (!$gDebug) {
@@ -834,46 +620,6 @@ sub printZoneList {
 
     for ($i = 0; $i <= $#g_zonelist; $i++) {
 	print "g_zonelist[$i]=", $g_zonelist[$i], "\n";
-    }
-}
-
-sub processRoleNodeMap {
-    my $bNodeSpecified = 0;
-
-    while (<SRC>) {
-	if (/^storage/) {
-	    if ($bVirtualNodes == 1) {
-		@g_storageNodes=split(' ',$_);
-	    }
-#	    print "Edge Node IDs       : @g_EdgeNodes .. Total: ", $#g_EdgeNodes + 1, "\n";
-#	    print "Storage Node IDs    : @g_storageNodes .. Total: ", $#g_storageNodes + 1, "\n";
-#	    print "Aggregation Node IDs: @g_AggregationNodes .. Total: ", $#g_AggregationNodes + 1, "\n";
-	}
-	elsif (/^edge/) {
-	}
-	elsif (/^end role_node_map/) {
-	    return;
-	}
-    }
-}
-
-sub processOverflow {
-    while (<SRC>) {
-	if(/^ssd/) {
-	    @ssdLine = split(' ',$_);
-	    if(@ssdLine[1]) {
-	        push(@g_ssdOverflow, @ssdLine[1]);
-	    }
-	}
-	elsif(/^hdd/) {
-	    @hddLine = split(' ',$_);
-	    if(@hddLine[1]) {
-		push(@g_hddOverflow, @hddLine[1]);
-	    }
-	}
-	elsif(/^end overflow/) {
-	    return;
-	}
     }
 }
 
@@ -957,49 +703,6 @@ sub processFloatingIp {
            return;
 	}
     }
-}
-
-sub processInstanceType {
-    while( <SRC> ) {
-        if(/^type/) {
-            chomp($_);
-            @this_line = split(' ', $_);
-            if($this_line[1]) {
-            $instanceType = $this_line[1];
-            }
-        }
-        elsif(/^end instance/) {
-            if($instanceType ne 'user' && $instanceType ne 'management') {
-            $instanceType = "";
-            }
-            return;
-        }
-    }
-}
-
-sub getEdgeNode1 {
-   if ($bVirtualNodes == 1) {
-      return 0;
-   }
-   else
-   {
-       sqnodes::getConnNode(1);
-   }
-}
-
-sub getEdgeNode2 {
-   if ($bVirtualNodes == 1) {
-      if ($gdNumNodes > 1) {
-         return 1;
-      }
-      else {
-         return 0;
-      }
-   }
-   else
-   {
-       sqnodes::getConnNode(2);
-   }
 }
 
 sub printInitLinesAuxFiles {
@@ -1215,71 +918,6 @@ sub addDbPersistProc {
     $insDbPersistStmt->execute;
 }
 
-# Physical node table
-sub addDbPNode {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $insDbPNodeStmt = $DBH->prepare("insert into pnode values (?, ?)");
-
-    my $nodeId  = @_[0];
-    my $nodeName    = @_[1];
-
-    $insDbPNodeStmt->bind_param(1, $nodeId);
-    $insDbPNodeStmt->bind_param(2, $nodeName);
-
-    $insDbPNodeStmt->execute;
-}
-
-# Logical node table
-sub addDbLNode {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $insDbLNodeStmt = $DBH->prepare("insert into lnode values (?, ?, ?, ?, ? , ?)");
-
-    my $lNodeId       = @_[0];
-    my $pNodeId       = @_[1];
-    my $numProcessors = @_[2];
-    my $roleSet       = @_[3];
-    my $firstCore     = @_[4];
-    my $lastCore      = @_[5];
-
-    $insDbLNodeStmt->bind_param(1, $lNodeId);
-    $insDbLNodeStmt->bind_param(2, $pNodeId);
-    $insDbLNodeStmt->bind_param(3, $numProcessors);
-    $insDbLNodeStmt->bind_param(4, $roleSet);
-    $insDbLNodeStmt->bind_param(5, $firstCore);
-    $insDbLNodeStmt->bind_param(6, $lastCore);
-
-    $insDbLNodeStmt->execute;
-}
-
-# Logical node table
-sub addDbSpare {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $insDbSpareStmt = $DBH->prepare("insert into spare values (?, ?)");
-
-    my $pNodeId       = @_[0];
-    my $spareId       = @_[1];
-
-    $insDbSpareStmt->bind_param(1, $pNodeId);
-    $insDbSpareStmt->bind_param(2, $spareId);
-
-    $insDbSpareStmt->execute;
-}
-
 sub endGame {
 
     open (SQSH,">$sqshell")
@@ -1329,7 +967,6 @@ sub endGame {
     chmod 0700, $warmscriptFileName;
 
     chmod 0700, $sqshell;
-    chmod 0700, $g_dbsize;
 
     chmod 0700, $startRMS;
     chmod 0700, $stopRMS;
@@ -1388,21 +1025,6 @@ while (<SRC>) {
     if (/^begin node/) {
 	processNodes;
 	printInitialLines;
-    }
-    elsif (/^begin enclosure/) {
-        processEnclosures;
-        $gEncSectionProcessed = 1;
-    }
-    elsif (/^begin tmase/) {
-        validate_config_script();
-
-    }
-    elsif (/^begin role_node_map/) {
-	processRoleNodeMap;
-    }
-    elsif (/^begin overflow/) {
-	processOverflow;
-	printOverflowLines;
     }
     elsif (/^begin floating_ip/) {
         processFloatingIp;
