@@ -442,7 +442,8 @@ static void* SessionWatchDog(void* arg)
 				okToGo = false;
 			}
 		}
-		if (okToGo)
+
+        if (okToGo)
 		{
 			retcode = pSrvrStmt->ExecDirect(NULL, "CONTROL QUERY DEFAULT traf_no_dtm_xn 'ON'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
 			if (retcode < 0)
@@ -493,6 +494,28 @@ static void* SessionWatchDog(void* arg)
 				okToGo = false;
 			}
 		}
+        if (okToGo)
+        {
+            retcode = pSrvrStmt->ExecDirect(NULL, "CQD DETAILED_STATISTICS 'OFF'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+            if (retcode < 0)
+            {
+                errMsg.str("");
+                if(pSrvrStmt->sqlError.errorList._length > 0)
+                    p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+                else if(pSrvrStmt->sqlWarning._length > 0)
+                    p_buffer = pSrvrStmt->sqlWarning._buffer;
+                if(p_buffer != NULL && p_buffer->errorText)
+                    errMsg << "Failed to turn off statistics - " << p_buffer->errorText;
+                else
+                    errMsg << "Failed to turn off statistics - " << " no additional information";
+
+                errStr = errMsg.str();
+                SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                        0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                        1, errStr.c_str());
+                okToGo = false;
+            }
+        }
 
 		while(!record_session_done && okToGo)
 		{
@@ -6690,7 +6713,7 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 				pSrvrStmt->sqlPlan = explainData;
 				pSrvrStmt->sqlPlanLen = retExplainLen;
 				pSrvrStmt->exPlan = SRVR_STMT_HDL::COLLECTED;
-				return true;				
+				return true;
 			break;
 
 			case MODE_SPECIAL_1:
