@@ -4004,7 +4004,8 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCleanupObjects())
     {
       isCleanup_ = TRUE;
-      hbaseDDLNoUserXn_ = TRUE;
+      if (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+        hbaseDDLNoUserXn_ = TRUE;
 
       returnStatus_ = 
         getExprNode()->castToElemDDLNode()->castToStmtDDLCleanupObjects()->getStatus();

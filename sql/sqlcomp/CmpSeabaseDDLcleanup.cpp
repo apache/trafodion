@@ -1680,8 +1680,9 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
   Lng32 cliRC = 0;
   ExeCliInterface cliInterface(STMTHEAP);
 
-  if (xnInProgress(&cliInterface))
-    {
+  if ((xnInProgress(&cliInterface)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+     {
       *CmpCommon::diags() << DgSqlCode(-20123);
       return;
     }
