@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -235,8 +235,8 @@ if [ -e $SQ_PDCP ]; then
     echo
     echo "Copying rest of the generated files to $PWD"
 
-    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm shell.env mon.env $PWD "
-    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm shell.env mon.env $PWD
+    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold shell.env mon.env $PWD "
+    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold shell.env mon.env $PWD
 
 
     echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD "

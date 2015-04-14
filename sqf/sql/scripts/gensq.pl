@@ -83,6 +83,11 @@ sub printScript {
     }
 }
 
+sub printIDTMScript {
+    ($dWhich, @rest) = @_;
+    print IDTM @rest;
+}
+
 sub printRMSScript {
     ($dWhich, @rest) = @_;
     if ($dWhich == 1) {
@@ -122,6 +127,11 @@ sub printRMSCheckScript{
     if ($dWhich == 1) {
        print RMSC @rest;
     }
+}
+
+sub printTMScript {
+    ($dWhich, @rest) = @_;
+    print TM @rest;
 }
 
 sub printTime {
@@ -211,8 +221,7 @@ sub printInitialLines {
 
     printScript(1, "! Start the monitor processes across the cluster\n");
 
-    printScript(0, "startup\n");
-    printScript(2, "warmstart\n");
+    printScript(1, "startup\n");
 
     genSQShellExit();
 
@@ -234,10 +243,12 @@ sub printInitialLines {
 	printScript(1, "\nset CLUSTERNAME=\$CLUSTERNAME\n");
     }
     printScript(1, "\nset SQ_MBTYPE=$ENV{'SQ_MBTYPE'}\n");
-    printScript(0, "\nset MY_NODES=\$MY_NODES\n");
+    printScript(1, "set MY_NODES=\$MY_NODES\n");
 
     addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
     addDbClusterData( "MY_SQROOT", "$SQ_ROOT"); # comes out null
+
+    genSQShellExit();
 
     $gbInitialLinesPrinted = 1;
 }
@@ -287,25 +298,25 @@ sub genRegWait {
     printScript(1, "fi\n");
 }
 
-sub genComponentWait {
+sub genComponentTmWait {
 
     my $l_compname  = @_[0];
     my $l_duration  = @_[1];
     my $l_iteration = @_[2];
 
-    printScript(1, "\n");
-    printScript(1, "sqcheck -c $l_compname -d $l_duration -i $l_iteration -r\n");
-    printScript(1, "sq_stat_$l_compname=\$\?\n");
-    printScript(1, "if \(\[ \$sq_stat_$l_compname '!=' 0 \] && [ \$sq_stat_$l_compname '!=' 1 \]\); then\n");
-    printScript(1, "\techo \"The $l_compname process(es) are Not Ready yet. Stopping further startup (if any).\"\n");
-    printScript(1, "\texit 1\n");
-    printScript(1, "else\n");
-    printScript(1, "\techo \"The $l_compname process(es) are Ready.\"\n");
-    printScript(1, "fi\n");
+    printTMScript(1, "\n");
+    printTMScript(1, "sqcheck -c $l_compname -d $l_duration -i $l_iteration -r\n");
+    printTMScript(1, "sq_stat_$l_compname=\$\?\n");
+    printTMScript(1, "if \(\[ \$sq_stat_$l_compname '!=' 0 \] && [ \$sq_stat_$l_compname '!=' 1 \]\); then\n");
+    printTMScript(1, "\techo \"The $l_compname process(es) are Not Ready yet. Stopping further startup (if any).\"\n");
+    printTMScript(1, "\texit 1\n");
+    printTMScript(1, "else\n");
+    printTMScript(1, "\techo \"The $l_compname process(es) are Ready.\"\n");
+    printTMScript(1, "fi\n");
 }
 
 
-sub genIdTmSrv {
+sub genIDTMSrv {
     if ($SQ_IDTMSRV > 0) {
         my $l_pn = "";
         for ($i=0; $i < $gdNumNodes; $i++) {
@@ -314,73 +325,89 @@ sub genIdTmSrv {
                 $l_pn = $l_pn . ",";
             }
         }
-        printScript(1, "\n");
-        printScript(1, "\n! Start TSID\n");
+        printIDTMScript(1, "#!/bin/sh\n");
+        printIDTMScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+        printIDTMScript(1, "sqshell -a <<eof\n");
+        printIDTMScript(1, "\n! Start TSID\n");
         for ($i=0; $i < $SQ_IDTMSRV; $i++) {
-            printScript(1, "set {process \\\$TSID$i } PERSIST_RETRIES=2,30\n");
+            printIDTMScript(1, "set {process \\\$TSID$i } PERSIST_RETRIES=2,30\n");
             addDbProcData('$TSID'."$i", "PERSIST_RETRIES", "2,30");
-            printScript(1, "set {process \\\$TSID$i } PERSIST_ZONES=$l_pn\n");
+            printIDTMScript(1, "set {process \\\$TSID$i } PERSIST_ZONES=$l_pn\n");
             addDbProcData('$TSID'."$i", "PERSIST_ZONES", "$l_pn");
-            printScript(1, "exec {nowait, name \\\$TSID$i, nid 0, out stdout_idtmsrv_$i} idtmsrv\n");
+            printIDTMScript(1, "exec {nowait, name \\\$TSID$i, nid 0, out stdout_idtmsrv_$i} idtmsrv\n");
         }
-        printScript(1, "delay 1\n");
+        printIDTMScript(1, "delay 1\n");
+        printIDTMScript(1, "exit\n");
+        printIDTMScript(1, "eof\n");
+
+        printScript(1, "\nidtmstart\n");
     }
 }
 
 sub genDTM {
 
-    genSQShellStart();
-    printScript(1, "\n! Start DTM\n");
-    printScript(1, "set DTM_RUN_MODE=2\n");
-    printScript(1, "set SQ_AUDITSVC_READY=1\n");
-    printScript(1, "set DTM_TLOG_PER_TM=1\n");
+    printTMScript(1, "#!/bin/sh\n");
+    printTMScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printTMScript(1, "sqshell -a <<eof\n");
+    printTMScript(1, "\n! Start DTM\n");
+    printTMScript(1, "set DTM_RUN_MODE=2\n");
+    printTMScript(1, "set SQ_AUDITSVC_READY=1\n");
+    printTMScript(1, "set DTM_TLOG_PER_TM=1\n");
     addDbClusterData("DTM_RUN_MODE", "2");
     addDbClusterData("SQ_AUDITSVC_READY", "1");
     addDbClusterData("DTM_TLOG_PER_TM", "1");
-    genSQShellExit();
+    printTMScript(1, "exit\n");
+    printTMScript(1, "eof\n");
 
     for ($i=0; $i < $gdNumNodes; $i++) {
-        printScript(1, "\ntmp_node_status=`mktemp -t`\n");
-        printScript(1, "sqshell -c zone nid $i > \$tmp_node_status\n");
-        printScript(1, "let node_up_value=`grep 'Up' \$tmp_node_status | wc -l`\n");
-        printScript(1, "if [[ \$node_up_value == 1 ]]; then\n");
+        printTMScript(1, "\ntmp_node_status=`mktemp -t`\n");
+        printTMScript(1, "sqshell -c zone nid $i > \$tmp_node_status\n");
+        printTMScript(1, "let node_up_value=`grep 'Up' \$tmp_node_status | wc -l`\n");
+        printTMScript(1, "if [[ \$node_up_value == 1 ]]; then\n");
 
-        genSQShellStart();
-         if ($SQ_DTM_PERSISTENT_PROCESS == 1) {
-            printScript(1, "set {process \\\$TM$i } PERSIST_RETRIES=2,30\n");
+        printTMScript(1, "sqshell -a <<eof\n");
+        if ($SQ_DTM_PERSISTENT_PROCESS == 1) {
+            printTMScript(1, "set {process \\\$TM$i } PERSIST_RETRIES=2,30\n");
             addDbProcData('$TM'."$i", "PERSIST_RETRIES", "2,30");
-            printScript(1, "set {process \\\$TM$i } PERSIST_ZONES=$i\n");
+            printTMScript(1, "set {process \\\$TM$i } PERSIST_ZONES=$i\n");
             addDbProcData('$TM'."$i", "PERSIST_ZONES", "$i");
         }
-        printScript(1, "set {process \\\$TM$i} TMASE=TLOG$i\n");
+        printTMScript(1, "set {process \\\$TM$i} TMASE=TLOG$i\n");
         addDbProcData('$TM'."$i", "TMASE", "TLOG$i");
-        printScript(1, "exec {type dtm, nowait, name \\\$TM$i, nid $i, out stdout_dtm_$i} tm");
+        printTMScript(1, "exec {type dtm, nowait, name \\\$TM$i, nid $i, out stdout_dtm_$i} tm");
         if ($i == 0 || $i == ($gdNumNodes-1)) {
-            printScript(1, "\ndelay 5");
+            printTMScript(1, "\ndelay 5");
         }
-        genSQShellExit();
+        printTMScript(1, "exit\n");
+        printTMScript(1, "eof\n");
 
-        printScript(1, "\nfi\n");
-        printScript(1, "\nrm -f \$tmp_node_status\n");
+        printTMScript(1, "\nfi\n");
+        printTMScript(1, "\nrm -f \$tmp_node_status\n");
     }
 
-    genComponentWait("dtm", 10, 60);
-    genSQShellStart();
+    genComponentTmWait("dtm", 10, 60);
+    printTMScript(1, "sqshell -a <<eof\n");
 
-    printScript(1, "! Generate DTM Event 1\n");
-    printScript(1, "event {DTM} 1\n");
+    printTMScript(1, "! Generate DTM Event 1\n");
+    printTMScript(1, "event {DTM} 1\n");
 
-    genSQShellExit();
-#    genRegWait("SQ_TXNSVC_READY", "Transaction Service", 5, 40);
-    printScript(1, "\n");
-    printScript(1, "echo \"Checking whether the transaction service is ready.\"\n");
-    printScript(1, "sqr_stat=0\n");
-    printScript(1, "while \[\[ \$sqr_stat == 0 \]\];\n");
-    printScript(1, "do\n");
-    printScript(1, "sqregck -r SQ_TXNSVC_READY -d 5 -i -1\n");
-    printScript(1, "sqr_stat=\$\?\n");
-    printScript(1, "done\n");
-    printScript(1, "echo \"The Transaction Service is Ready.\"\n");
+    printTMScript(1, "exit\n");
+    printTMScript(1, "eof\n");
+    printTMScript(1, "\n");
+    printTMScript(1, "echo \"Checking whether the transaction service is ready.\"\n");
+    printTMScript(1, "sqr_stat=0\n");
+    printTMScript(1, "while \[\[ \$sqr_stat == 0 \]\];\n");
+    printTMScript(1, "do\n");
+    printTMScript(1, "sqregck -r SQ_TXNSVC_READY -d 5 -i -1\n");
+    printTMScript(1, "sqr_stat=\$\?\n");
+    printTMScript(1, "done\n");
+    printTMScript(1, "echo \"The Transaction Service is Ready.\"\n");
+
+    printScript(1, "\ntmstart\n");
+    printScript(1, "tm_ret=\$?\n");
+    printScript(1, "if [ \$tm_ret != 0 ]; then\n");
+    printScript(1, "exit \$tm_ret\n");
+    printScript(1, "fi\n");
 }
 
 sub genSSMPCommand {
@@ -721,11 +748,14 @@ sub openFiles {
     open (SQS,">$coldscriptFileName")
 	or die("unable to open $coldscriptFileName");
 
-    open (SQW,">$warmscriptFileName")
-	or die("unable to open $warmscriptFileName");
-
     open (SQC,">$clusterconfFileName")
 	or die("unable to open $clusterconfFileName");
+
+    open (IDTM,">$startIDTM")
+	or die("unable to open $startIDTM");
+
+    open (TM,">$startTM")
+	or die("unable to open $startTM");
 
     open (RMS,">$startRMS")
 	or die("unable to open $startRMS");
@@ -933,9 +963,10 @@ sub endGame {
 
     print "\n";
     print "Generated SQ startup script file: $coldscriptFileName\n";
-    print "Generated SQ startup script file: $warmscriptFileName\n";
     print "Generated SQ cluster config file: $clusterconfFileName\n";
     print "Generated SQ Shell          file: $sqshell\n";
+    print "Generated IDTM Startup      file: $startIDTM\n";
+    print "Generated TM Startup        file: $startTM\n";
     print "Generated RMS Startup       file: $startRMS\n";
     print "Generated RMS Stop          file: $stopRMS\n";
     print "Generated RMS Check         file: $checkRMS\n";
@@ -946,7 +977,6 @@ sub endGame {
 
     close(SRC);
     close(SQS);
-    close(SQW);
     close(SQC);
     close(SQSH);
 
@@ -964,9 +994,11 @@ sub endGame {
 
 
     chmod 0700, $coldscriptFileName;
-    chmod 0700, $warmscriptFileName;
 
     chmod 0700, $sqshell;
+
+    chmod 0700, $startIDTM;
+    chmod 0700, $startTM;
 
     chmod 0700, $startRMS;
     chmod 0700, $stopRMS;
@@ -989,6 +1021,9 @@ sub doInit {
     $g_PERFFlag=$ARGV[5];
 
 
+    $startIDTM="idtmstart";
+    $startTM="tmstart";
+
     $startRMS="rmsstart";
     $startSSMP="ssmpstart";
     $startSSCP="sscpstart";
@@ -999,7 +1034,6 @@ sub doInit {
 
 
     $coldscriptFileName=sprintf("%s.cold", $scriptFileName);
-    $warmscriptFileName=sprintf("%s.warm", $scriptFileName);
 
     $sqshell = "sqshell";
 
@@ -1037,7 +1071,7 @@ while (<SRC>) {
 #printZoneList;
 
 
-    genIdTmSrv();
+    genIDTMSrv();
 
     genDTM();
 

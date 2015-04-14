@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -165,6 +165,7 @@ if [[ -z $SQSCRIPTS_DIR ]]; then
     SQSCRIPTS_DIR=$MY_SQROOT/sql/scripts
 fi
 SQSCRIPT_FILE="$SQSCRIPTS_DIR/gomon.cold"
+STARTTM_FILE="$SQSCRIPTS_DIR/tmstart"
 STARTSSMP_FILE="$SQSCRIPTS_DIR/ssmpstart"
 STARTSSCP_FILE="$SQSCRIPTS_DIR/sscpstart"
 
@@ -207,10 +208,10 @@ rm -f $sq_tmp_pnode_dn
 rm -f $sq_tmp_node_info
 
 ### CONFIGURED DTMs
-let cfg_dtm_cnt=`grep -i 'type dtm,' $SQSCRIPT_FILE | wc -l`
+let cfg_dtm_cnt=`grep -i 'type dtm,' $STARTTM_FILE | wc -l`
 sq_tmp_dtms_names=`mktemp -t`
 let num_dtms=0
-grep -i 'type dtm,' $SQSCRIPT_FILE | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_dtms_names
+grep -i 'type dtm,' $STARTTM_FILE | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_dtms_names
 for dtms in `cat $sq_tmp_dtms_names`; do
     cfg_dtms[num_dtms]=$dtms
     let ++num_dtms
