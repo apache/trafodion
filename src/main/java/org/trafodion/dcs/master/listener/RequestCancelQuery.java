@@ -216,22 +216,27 @@ public class RequestCancelQuery {
         java.sql.ResultSet rs = null; 
         String query = "";
         String errorText = "";
-        String queryId = "";
         
         try {
             query = String.format(queryFormatQid, processId, nodeId);
             conn = DriverManager.getConnection(Constants.T2_DRIVER_URL);
             stmt1 = conn.createStatement();
             stmt2 = conn.createStatement();
-           rs = stmt1.executeQuery(query);
+            rs = stmt1.executeQuery(query);
             if (rs.next()){
-                queryId = rs.getString("QUERY_ID").trim();
+                String queryId = rs.getString("QUERY_ID").trim();
                 if(LOG.isDebugEnabled())
                     LOG.debug("cancelQuery.queryId :" + queryId);
-                query = String.format(queryFormatCancel, queryId);
-                if(LOG.isDebugEnabled())
-                    LOG.debug("cancelQuery.query :" + query);
-                stmt2.execute(query);
+                if(true == queryId.endsWith("_PUBLICATION")){
+                    if(LOG.isDebugEnabled())
+                        LOG.debug("cancelQuery: Publication Query - Cancel Query Request is ignored.");
+                }
+                else {
+                    query = String.format(queryFormatCancel, queryId);
+                    if(LOG.isDebugEnabled())
+                        LOG.debug("cancelQuery.query :" + query);
+                    stmt2.execute(query);
+                }
             }
             else {
                 errorText = "QueryId not found for [" + nodeId + "/" + processId + "]";
@@ -251,10 +256,10 @@ public class RequestCancelQuery {
             if(LOG.isDebugEnabled())
                 LOG.debug("cancelQuery.SQLException :" + errorText);
         }
-        try {
+        finally {
             if (conn != null)
-                conn.close();
-        } catch(SQLException e){}
+                try { conn.close(); } catch(SQLException e){ conn = null;}
+        }
         return errorText;
     }
 }
