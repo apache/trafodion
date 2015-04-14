@@ -17,6 +17,6 @@
 #
 # @@@ END COPYRIGHT @@@
 
-./percomstart lob zlobsrv mxlobsrvr
+$MY_SQROOT/sql/scripts/percomstart lob zlobsrv mxlobsrvr
 
 exit $?
