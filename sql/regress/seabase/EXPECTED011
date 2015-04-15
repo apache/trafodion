@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Mon Mar 30 14:32:03 2015
+-- Definition current  Tue Apr 14 13:49:25 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1180,7 +1180,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Mon Mar 30 14:33:12 2015
+-- Definition current  Tue Apr 14 13:50:29 2015
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1362,7 +1362,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000023640212294511071485546000000000206U3333300_3011_EXPLSTMT
+MXID11000007663212295804510911582000000000206U3333300_3075_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1414,7 +1414,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000023640212294511071485546000000000206U3333300_3022_EXPLSTMT2
+MXID11000007663212295804510911582000000000206U3333300_3086_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;
@@ -1435,6 +1435,39 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 1    .    2    root                                                  1.00E+002
 .    .    1    trafodion_scan                  T011T1                1.00E+002
+
+--- SQL operation complete.
+>>
+>>-- duplicate column reference, should return error
+>>create table t011t5(a int, a int);
+
+*** ERROR[1080] The DDL request has duplicate references to column A.
+
+--- SQL operation failed with errors.
+>>create table t011t5 (a int, b int, a int);
+
+*** ERROR[1080] The DDL request has duplicate references to column A.
+
+--- SQL operation failed with errors.
+>>create table t011t5 (a int, b int);
+
+--- SQL operation complete.
+>>create view v as select a,a from t011t5;
+
+*** ERROR[1080] The DDL request has duplicate references to column A.
+
+--- SQL operation failed with errors.
+>>create view v as select a,b,1 as z,b from t011t5;
+
+*** ERROR[1080] The DDL request has duplicate references to column B.
+
+--- SQL operation failed with errors.
+>>create view v as select 1 as b, 2 as a, 1 as b from t011t5;
+
+*** ERROR[1080] The DDL request has duplicate references to column B.
+
+--- SQL operation failed with errors.
+>>create view v as select a,b from t011t5;
 
 --- SQL operation complete.
 >>log;

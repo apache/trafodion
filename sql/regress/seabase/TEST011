@@ -38,6 +38,9 @@ drop table t011tT3;
 drop table T011T2;
 drop table t011t4;
 
+drop view v;
+drop table t011t5;
+
 -- delete explain for statement explstmt from repository
 set parserflags 131072;
 delete from trafodion."_REPOS_".metric_query_table
@@ -341,3 +344,12 @@ get qid for statement explstmt2;
 
 store explain for explstmt2 in repository;
 explain options 'f' qid MXID123456 from repository;
+
+-- duplicate column reference, should return error
+create table t011t5(a int, a int);
+create table t011t5 (a int, b int, a int);
+create table t011t5 (a int, b int);
+create view v as select a,a from t011t5;
+create view v as select a,b,1 as z,b from t011t5;
+create view v as select 1 as b, 2 as a, 1 as b from t011t5;
+create view v as select a,b from t011t5;
