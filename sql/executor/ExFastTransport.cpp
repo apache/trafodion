@@ -2,7 +2,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -97,27 +97,6 @@ ExFastExtractTcb::ExFastExtractTcb(
   //convert to non constant to access the members.
   ExFastExtractTdb *mytdb = (ExFastExtractTdb*)&fteTdb;
   numBuffers_ = mytdb->getNumIOBuffers();
-  /* 
-  // Allocate output buffer pool
-  if (myTdb().getOutputExpression() != NULL)
-  {
-    int bufferSize = (int) myTdb().getOutputSqlBufferSize();
-    
-//    outputPool_ = new (globSpace)
-//      sql_buffer_pool((Lng32) myTdb().getNumOutputBuffers(),
-//                      (Lng32) bufferSize,
-//                      globSpace,
-//                      SqlBufferBase::NORMAL_);
-  }
-  // Allocate input buffer pool
-  if (myTdb().getInputExpression() != NULL)
-  {
-    inputPool_ = new (globSpace)
-      sql_buffer_pool((Lng32) myTdb().getNumInputBuffers(),
-                      (Lng32) myTdb().getInputSqlBufferSize(),
-                      globSpace,
-                      SqlBufferBase::NORMAL_);
-                      } */
 
   // Allocate queues to communicate with parent
   allocateParentQueues(qParent_);
@@ -151,11 +130,12 @@ ExFastExtractTcb::ExFastExtractTcb(
 
    sourceFieldsConvIndex_ = (int *)((NAHeap *)heap_)->allocateAlignedHeapMemory((UInt32)(sizeof(int) * numAttrs), 512, FALSE);
 
-  maxExtractRowLength_ = ROUND8(myTdb().getChildTuple2()->tupleDataLength() + myTdb().getChildTuple2()->numAttrs());
+  maxExtractRowLength_ = ROUND8(myTdb().getChildDataRowLen()) ;
 
   const ULng32 sqlBufferSize = maxExtractRowLength_ +
                                ROUND8(sizeof(SqlBufferNormal)) +
-                               sizeof(tupp_descriptor);
+                               sizeof(tupp_descriptor) +
+                               16 ;//just in case
 
   inSqlBuffer_ = (SqlBuffer *) new (heap_) char[sqlBufferSize];
   inSqlBuffer_->driveInit(sqlBufferSize, TRUE, SqlBuffer::NORMAL_);
@@ -576,7 +556,7 @@ void ExHdfsFastExtractTcb::convertSQRowToString(ULng32 nullLen,
     //----------
     // field is varchar
     if (attr->getVCIndicatorLength() > 0) {
-      childColData = childRow + *((UInt16*) (childRow + attr->getVoaOffset()));
+      childColData = childRow + *((UInt32*) (childRow + attr->getVoaOffset()));
       childColLen = attr->getLength(childColData);
       childColData += attr->getVCIndicatorLength();
     } else {              //source is fixed length
