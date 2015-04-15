@@ -386,26 +386,35 @@
     <name>dcs.server.user.program.statistics.interval.time</name>
     <value>60</value>
     <description>
-        Time in seconds between update of aggregation statistics.The default is 60.
+        Time in seconds on how often the aggregation data should be published.
+        Setting this value to '0' will revert to default. 
+        Setting this value to '-1' will disable publishing aggregation data.
+        The default is 60.
     </description>
   </property>
   <property>
     <name>dcs.server.user.program.statistics.limit.time</name>
     <value>60</value>
     <description>
-        Time in seconds for long running query threshold. If query executes longer 
-        than the value, it will be regarded as rogue query. The default is 60.
+        Time in seconds for how long the query has been executing before publishing
+        statistics to metric_query_table. To publish all queries set this value to
+        '0'. Setting this value to '-1' will disable publishing any data to 
+        metric_query_table. 
+        The default is 60. 
+        Warning - Setting this value to 0 will cause query performance to degrade
     </description>
   </property>
   <property>
     <name>dcs.server.user.program.statistics.type</name>
     <value>aggregated</value>
     <description>
-        Type of statistics to be published. User can set it as 'query', 'session' 
-        or 'aggregated'. By 'aggregated', session stats and aggregation stats will 
-        be published. For query stats, only long running queries will be recorded. 
-        By 'session', only session stats will be published. By 'query', only 
-        session stats and query stats will be published. The default is 'aggregated'.
+        Type of statistics to be published. User can set it as 'session' 
+        or 'aggregated'. By 'aggregated', only session stats and aggregation
+        stats will be published and query stats will be published only
+        when query executes longer than specified time limit using the 
+        property 'dcs.server.user.program.statistics.limit.time'.
+        By 'session', only session stats will be published. 
+        The default is 'aggregated'.
     </description>
   </property>
   <property>
