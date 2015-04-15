@@ -196,7 +196,7 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
               inputRowCnt = 1;
            if (rowCount._buffer != NULL)
               MEMORY_DELETE(rowCount._buffer);
-	   MEMORY_ALLOC_ARRAY(rowCount._buffer,int,inputRowCnt);
+	   MEMORY_ALLOC_ARRAY(rowCount._buffer,int, inputRowCnt);
 	   rowCount._length = 0;
         }
 	memset(rowCount._buffer,0,inputRowCnt*sizeof(int));
@@ -465,12 +465,6 @@ void  SRVR_STMT_HDL::cleanupSQLValueList(void)
 	MEMORY_DELETE(outputValueVarBuffer);
 	outputValueList._length = 0;
 	maxRowCnt = 0;
-	if (rowCount._buffer != NULL) {
-	  MEMORY_DELETE(rowCount._buffer);
-	}
-	rowCount._buffer = NULL;
-	rowCount._length = 0;
-
 	FUNCTION_RETURN_VOID((NULL));
 }
 
