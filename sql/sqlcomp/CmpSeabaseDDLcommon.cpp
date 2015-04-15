@@ -4726,6 +4726,8 @@ short CmpSeabaseDDL::buildColInfoArray(
                                        Lng32 *identityColPos,
                                        NAMemory * heap)
 {
+  std::vector<NAString> myvector;
+
   size_t index = 0;
   for (index = 0; index < colArray->entries(); index++)
     {
@@ -4751,6 +4753,8 @@ short CmpSeabaseDDL::buildColInfoArray(
       
       char * col_name = new((heap ? heap : STMTHEAP)) char[colName.length() + 1];
       strcpy(col_name, (char*)colName.data());
+
+      myvector.push_back(col_name);
 
       colInfoArray[index].colName = col_name;
       colInfoArray[index].colNumber = index;
@@ -4804,6 +4808,16 @@ short CmpSeabaseDDL::buildColInfoArray(
       strcpy(colInfoArray[index].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
       colInfoArray[index].isOptional = FALSE;
       colInfoArray[index].colFlags = colFlags;
+    }
+
+  // find duplicate colname references. If found, return error and first dup colname.
+  std::sort (myvector.begin(), myvector.end()); 
+  std::vector<NAString>::iterator it = adjacent_find(myvector.begin(), myvector.end());
+  if (it != myvector.end())
+    {
+      *CmpCommon::diags() << DgSqlCode(-1080)
+                          << DgColumnName(*it);
+      return -1;
     }
 
   return 0;
