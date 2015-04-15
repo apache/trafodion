@@ -404,7 +404,7 @@ public:
   // if a variable length field. Otherwise, calls the
   // virtual function getLength().
   ///////////////////////////////////////////////////////
-  UInt32 getLength(char * data)
+  UInt32 getLength(const char * data)
   {
     if (getVCIndicatorLength() > 0)
       {

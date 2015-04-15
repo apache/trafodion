@@ -4029,22 +4029,8 @@ const NAType *PAGroup::synthesizeType()
 
 const NAType *CompEncode::synthesizeType()
 {
-  // set casesensitivity of encoding based on child's type.
-  // This may get overwritten by the caller (for example, to
-  // build a key for a predicate of the form:  where keycol = 'val',
-  // both sides of the predicate must be caseinsensitive.
   ValueId vid = child(0)->getValueId();
   const NAType &src = vid.getType();
-  if (src.getTypeQualifier() == NA_CHARACTER_TYPE)
-  {
-    const CharType &cSrc = (CharType&)src;
-    if (cSrc.isCaseinsensitive())
-    {
-      setCaseinsensitiveEncode(TRUE);
-    }
-
-    setEncodedCollation(cSrc.getCollation());
-  }
 
   // result of encode function is a non-nullable fixed char.
   // Result is not nullable
@@ -4057,12 +4043,18 @@ const NAType *CompEncode::synthesizeType()
   NABoolean supportsSQLnull = FALSE;
   if (regularNullability_)
     {
-      keyLength = child(0)->getValueId().getType().getNominalSize();
-      supportsSQLnull = child(0)->getValueId().getType().supportsSQLnull();
+      // should not be common for CompEncode, preserve nullability of child
+      keyLength = src.getNominalSize();
+      supportsSQLnull = src.supportsSQLnull();
     }
   else
     {
-      keyLength = (length_ >= 0) ? length_ : child(0)->getValueId().getType().getTotalSize();
+      if (length_ < 0)
+        // common case for encode, include prefix fields but leave
+        // out the var len header (if any), which is not order-preserving
+        keyLength = src.getTotalSize() - src.getVarLenHdrSize();
+      else
+        keyLength = length_;
     }
 
   if (src.getTypeQualifier() != NA_CHARACTER_TYPE)
@@ -4073,7 +4065,18 @@ const NAType *CompEncode::synthesizeType()
     {
       const CharType &cSrc = (CharType&)src;
       CharInfo::Collation collation = cSrc.getCollation();
-      
+
+      // set casesensitivity of encoding based on child's type.
+      // This may get overwritten by the caller (for example, to
+      // build a key for a predicate of the form:  where keycol = 'val',
+      // both sides of the predicate must be caseinsensitive.
+      if (cSrc.isCaseinsensitive())
+        {
+          setCaseinsensitiveEncode(TRUE);
+        }
+
+      setEncodedCollation(cSrc.getCollation());
+
       if (CollationInfo::isSystemCollation(collation))
 	{	
 	  keyLength = 

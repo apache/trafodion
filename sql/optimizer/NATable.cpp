@@ -1584,7 +1584,8 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
           encodedKeyP = &actEncodedKey[keyColOffset];
 
           // for varchar the decoding logic expects the length to be in the first
-          // pkType->getVarLenHdrSize() chars, so add it 
+          // pkType->getVarLenHdrSize() chars, so add it.
+          // Please see bug LP 1444134 on how to improve this in the long term.
 
           // Note that this is less than ideal:
           // - A VARCHAR is really encoded as a fixed char in the key, as
