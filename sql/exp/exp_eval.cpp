@@ -3211,8 +3211,14 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 
       DEF_ASSIGN(Int32,comboLen1, 6);
       DEF_ASSIGN(Int32,comboLen2, 11);
-      char* comboPtr1 = (char*)&comboLen1;
-      char* comboPtr2 = (char*)&comboLen2;
+
+      //
+      // NOTE: Use "unsigned char" in the next 2 lines so that we do not
+      //       get sign extension.  That way the 8-bit values pointed at
+      //       can be 0 - 255 rather than only 0 - 127.
+      //
+      unsigned char* comboPtr1 = (unsigned char*)&comboLen1;
+      unsigned char* comboPtr2 = (unsigned char*)&comboLen2;
       
       Int16 srcVCIndLen   = (Int16)comboPtr1[1];
       Int16 patVCIndLen   = (Int16)comboPtr2[1];
