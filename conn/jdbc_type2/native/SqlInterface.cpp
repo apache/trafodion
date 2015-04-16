@@ -422,6 +422,12 @@ SQLRETURN SET_DATA_PTR(SRVR_STMT_HDL *pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descTy
 				SQLItemDesc->maxLen,
 				NULL);
 			HANDLE_ERROR(retcode, sqlWarning);
+			retcode = CLI_SetDescItem(pDesc,
+				i+1,
+				SQLDESC_VC_IND_LENGTH,
+				(long)sizeof(short),
+				NULL);
+			HANDLE_ERROR(retcode, sqlWarning);
 		}
 
 		VarPtr = memPtr + memOffset + memAlignOffset;
