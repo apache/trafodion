@@ -1215,10 +1215,15 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 		// Not a SELECT stmt type
 		if ((pSrvrStmt->sqlStmtType & TYPE_SELECT) == 0)
 		{
+                        Int64 tmpRowCount;
 			// Get row count
 			retcode =  CLI_GetDiagnosticsStmtInfo2 (pStmt, SQLDIAG_ROW_COUNT,
-				(int *)pSrvrStmt->rowCount._buffer,
+					&tmpRowCount,
 				NULL, 0, NULL);
+                        if (retcode == SQL_SUCCESS)
+                           pSrvrStmt->rowCount._buffer[0] = (int)tmpRowCount;
+                        else
+                           pSrvrStmt->rowCount._buffer[0] = 0;
 			pSrvrStmt->totalRowCount += pSrvrStmt->rowCount._buffer[0];
 			// Batch Binding Size
 			if (pSrvrStmt->batchRowsetSize)
@@ -1290,14 +1295,18 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 		case SQL_UPDATE_NON_UNIQUE:
 		case SQL_DELETE_NON_UNIQUE:
 		default:
+                        Int64 tmpRowCount;
 			// For all other NON-UNIQUE statements get the row count from GetDiag2
 			retcode =  CLI_GetDiagnosticsStmtInfo2(	pStmt,
 				SQLDIAG_ROW_COUNT,
-				(int*)pSrvrStmt->rowCount._buffer,
+                                &tmpRowCount, 
 				NULL,
 				0,
 				NULL);
-
+                        if (retcode == 0)
+		           pSrvrStmt->rowCount._buffer[0] = (int)tmpRowCount;
+                        else
+		           pSrvrStmt->rowCount._buffer[0] = 0;
 			pSrvrStmt->totalRowCount += pSrvrStmt->rowCount._buffer[0];
 			if (pSrvrStmt->batchRowsetSize > 0){
 				// Currently we only get one value back from SQL for rowsets.
@@ -1966,13 +1975,16 @@ SQLRETURN EXECDIRECT(SRVR_STMT_HDL* pSrvrStmt)
 		// If NOT a select type
 		if ((pSrvrStmt->sqlStmtType & TYPE_SELECT)==0)
 		{
-			retcode =  CLI_GetDiagnosticsStmtInfo2(pStmt, SQLDIAG_ROW_COUNT,(int*) &pSrvrStmt->rowsAffected,
+                        Int64 tmpRowCount;
+			retcode =  CLI_GetDiagnosticsStmtInfo2(pStmt, SQLDIAG_ROW_COUNT, &tmpRowCount,
 				NULL, 0, NULL);
 			if (retcode < 0)
 			{
 				sqlWarning = TRUE;
 				pSrvrStmt->rowsAffected = -1;
 			}
+                        else
+                                pSrvrStmt->rowsAffected = (int)tmpRowCount;
 		}
 		else
 			pSrvrStmt->rowsAffected = -1;
