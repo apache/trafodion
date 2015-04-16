@@ -203,6 +203,9 @@ char *tmstatetoa(int32 pv_state)
     case TM_STATE_WAITING_RM_OPEN:
         strcpy(lp_text, "WAIT_RM");
         break;
+    case TM_STATE_NOTRUNNING:
+        strcpy(lp_text, "NOT_RUNNING");
+        break;
     default:
         sprintf(lp_text, "%d", pv_state);
         break;
@@ -732,13 +735,20 @@ bool process_statustm_node(int32 pv_node, bool pv_detail, bool pv_sortrmid, bool
     char *lp_string;
 
     int32 lv_error = DTM_STATUSTM(pv_node, lp_tmstatus);
-    if (lv_error != FEOK)
-    {
-       printf("%d\tTM process down. Returned error: %d\n", pv_node, lv_error);
-       return false; // fail
-    }
     if (json==true)
     {
+       if (lv_error != FEOK)
+       {
+          printf("{\"node\":%d", pv_node);
+          printf(", \"isLeadTM\":false");
+          printf(", \"state\":\"%s\"",tmstatetoa(TM_STATE_NOTRUNNING));
+          printf(", \"sys_recovery_state\":\"NOT AVAILABLE\"");
+          printf(", \"tmshutdown_level\":\"NOT AVAILABLE\"");
+          printf(", \"number_active_txns\":0}");
+          
+          return false; // fail
+       }
+
        printf("{\"node\":%d", lp_tmstatus->iv_node);
        printf(", \"isLeadTM\":%s", booltoa(lp_tmstatus->iv_isLeadTM));
        printf(", \"state\":\"%s\"",tmstatetoa(lp_tmstatus->iv_state));
@@ -751,6 +761,11 @@ bool process_statustm_node(int32 pv_node, bool pv_detail, bool pv_sortrmid, bool
     }
     else
     {
+       if (lv_error != FEOK)
+       {
+          printf("%d\tTM process down. Returned error: %d\n", pv_node, lv_error);
+          return false; // fail
+       }
        printf("%d\t%s\t%s\t",
               lp_tmstatus->iv_node,
               booltoa(lp_tmstatus->iv_isLeadTM),
@@ -875,7 +890,7 @@ void process_statustm(int32 pv_node, bool pv_sortrmid, bool json)
          else
          {
             for (int lv_inx = 0; lv_inx < lv_max_dtm_count; lv_inx++) {
-               if (jdel==true)
+               if ((jdel==true) && (json==true))
                   printf(",");
                process_statustm_node(lv_inx, false, false, json);
                jdel = true;    
