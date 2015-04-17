@@ -25,14 +25,14 @@ include macros.gmk
 
 # Make Targets
 .PHONY: all log4cpp dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr rest odb
-.PHONY: package package-all pkg-product pkg-sql-regress
+.PHONY: package package-all pkg-product pkg-sql-regress check-copyrights
 
 ################
 ### Main targets
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb
+all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb check-copyrights
 
 package: pkg-product pkg-client
 
@@ -137,3 +137,6 @@ sqroot:
 # Check for absolute filenames used as dynamic linked libraries
 find-absolute-dlls:
 	sqf/build-scripts/find-abs-dlls
+
+check-copyrights:
+	python ./updateCopyrightCheck.py
