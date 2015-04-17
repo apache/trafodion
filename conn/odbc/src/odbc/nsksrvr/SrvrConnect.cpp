@@ -1422,7 +1422,10 @@ ImplInit (
 	srvrGlobal->m_bStatisticsEnabled = bStatisticsEnabled;
 	srvrGlobal->m_iAggrInterval = aggrInterval;
 	srvrGlobal->m_iQueryPubThreshold = queryPubThreshold;
+	if (!srvrGlobal->m_bStatisticsEnabled)
+		bPlanEnabled = false;
 	srvrGlobal->sqlPlan = bPlanEnabled;
+		
 
 	CEE_TIMER_CREATE2(DEFAULT_AS_POLLING,0,ASTimerExpired,(CEE_tag_def)NULL, &srvrGlobal->ASTimerHandle,srvrGlobal->receiveThrId);
 
@@ -6647,6 +6650,14 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 				if (pSrvrStmt->exPlan == SRVR_STMT_HDL::COLLECTED)
 					return true;
 
+				// Ignore plan collection of unique queries and ones with no stats for performance reasons
+				if (pSrvrStmt->sqlNewQueryType == SQL_SELECT_UNIQUE ||
+					pSrvrStmt->sqlNewQueryType == SQL_INSERT_UNIQUE ||
+					pSrvrStmt->sqlNewQueryType == SQL_UPDATE_UNIQUE ||
+					pSrvrStmt->sqlNewQueryType == SQL_DELETE_UNIQUE ||
+					(pSrvrStmt->comp_stats_info.statsCollectionType == SQLCLI_NO_STATS && pSrvrStmt->comp_stats_info.compilationStats.compilerId[0] != 0))
+					return true;
+					
 				// allocate explainDataLen bytes of explainData space
 				explainData = new char[explainDataLen];
 				if (explainData == NULL)
