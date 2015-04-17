@@ -29,6 +29,7 @@
 //
 #include <new>
 
+#include <limits.h>
 #include <platform_ndcs.h>
 #include <sql.h>
 #include <sqlext.h>
@@ -119,7 +120,12 @@ SQLRETURN SRVR::GetODBCValues(Int32 DataType, Int32 DateTimeCode, Int32 &Length,
 			}
 			SignType = FALSE;
 			totalMemLen = ((totalMemLen + 2 - 1) >> 1) << 1; 
-			totalMemLen += Length + 2;
+			// Varchar indicator length can 2 or 4 bytes depending on length of the column
+			if (Length > SHRT_MAX)	// 32767
+				totalMemLen += Length + 4;
+			else
+				totalMemLen += Length + 2;
+
 			if (!bRWRS)
 				totalMemLen += 1;
 			ODBCCharset = SQLCharset;
