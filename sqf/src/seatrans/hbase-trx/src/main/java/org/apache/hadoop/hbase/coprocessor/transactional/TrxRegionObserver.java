@@ -1,4 +1,6 @@
 /**
+ * (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -523,24 +525,24 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
                        delayed = true;
                        Thread.sleep(60000);
                        sleepCounter++;
-                       if(LOG.isDebugEnabled()) LOG.debug("Delaying split due to transactions present. Delayed : " + sleepCounter +
+                       if (LOG.isInfoEnabled()) LOG.info("Delaying split due to transactions present. Delayed : " + sleepCounter +
                                        " minute(s) on " + region.getRegionNameAsString());
                } catch(InterruptedException e) {
                        LOG.warn("Problem while calling sleep(), " + e);
                }
         }
-        if(LOG.isDebugEnabled()) LOG.debug("preSplit -- setting close var to true on: " + region.getRegionNameAsString());
+        if(LOG.isInfoEnabled()) LOG.info("preSplit -- setting close var to true on: " + region.getRegionNameAsString());
         closing.set(true);
-        if(delayed) if(LOG.isWarnEnabled()) LOG.warn("Continuing with split operation, no transactions on: " + region.getRegionNameAsString());
+        if(delayed) LOG.warn("Continuing with split operation, no transactions on: " + region.getRegionNameAsString());
 
         if(LOG.isTraceEnabled()) LOG.trace("preSplit -- EXIT region: " + region.getRegionNameAsString());
     }
 
     @Override
     public void    preClose(ObserverContext<RegionCoprocessorEnvironment> c, boolean abortRequested) {
-        if(LOG.isDebugEnabled()) {
+        if(LOG.isInfoEnabled()) {
             HRegion region = c.getEnvironment().getRegion();
-            LOG.debug("preClose -- setting close var to true on: " + region.getRegionNameAsString());
+            LOG.info("preClose -- setting close var to true on: " + region.getRegionNameAsString());
         }
         closing.set(true);
     }
