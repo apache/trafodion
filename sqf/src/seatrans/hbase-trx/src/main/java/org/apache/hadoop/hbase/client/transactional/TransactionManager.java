@@ -116,6 +116,10 @@ public class TransactionManager {
   public static final int TM_COMMIT_TRUE = 2;
   public static final int TM_COMMIT_FALSE_CONFLICT = 3;    
 
+  public static final int TM_SLEEP = 1000;      // One second
+  public static final int TM_SLEEP_INCR = 5000; // Five seconds
+  public static final int TM_RETRY_ATTEMPTS = 5;
+
   private Map<String,Long> batchRSMetrics = new ConcurrentHashMap<String, Long>();
   private long regions = 0;
   private long regionServers = 0;
@@ -214,6 +218,8 @@ public class TransactionManager {
         boolean refresh = false;
 
         int retryCount = 0;
+        int retrySleep = TM_SLEEP;
+
         if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC){
         do {
           try {
@@ -316,6 +322,16 @@ public class TransactionManager {
            }
 
            retryCount++;
+
+	   if (retryCount < RETRY_ATTEMPTS && retry == true) {
+             try {
+               Thread.sleep(retrySleep);
+             } catch(InterruptedException ex) {
+               Thread.currentThread().interrupt();
+             }
+
+             retrySleep += TM_SLEEP_INCR;
+           }
 
         } while (retryCount < RETRY_ATTEMPTS && retry == true); 
         }
@@ -423,6 +439,16 @@ public class TransactionManager {
 
            retryCount++;
 
+           if (retryCount < RETRY_ATTEMPTS && retry == true) {
+             try {
+               Thread.sleep(retrySleep);
+             } catch(InterruptedException ex) {
+               Thread.currentThread().interrupt();
+             }
+
+             retrySleep += TM_SLEEP_INCR;
+           }
+
         } while (retryCount < RETRY_ATTEMPTS && retry == true);
         }
         // We have received our reply so decrement outstanding count
@@ -452,6 +478,8 @@ public class TransactionManager {
        boolean refresh = false;
        boolean retry = false;
        int retryCount = 0;
+       int retrySleep = TM_SLEEP;
+
        if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC){
        do {
           try {
@@ -557,6 +585,16 @@ public class TransactionManager {
 
           retryCount++;
 
+          if (retryCount < RETRY_ATTEMPTS && retry == true) {
+            try {
+              Thread.sleep(retrySleep);
+            } catch(InterruptedException ex) {
+              Thread.currentThread().interrupt();
+            }
+
+             retrySleep += TM_SLEEP_INCR;
+          }
+
        } while (retryCount < RETRY_ATTEMPTS && retry == true); 
        }
        if( TRANSACTION_ALGORITHM == AlgorithmType.SSCC){
@@ -646,6 +684,16 @@ public class TransactionManager {
 
           retryCount++;
 
+          if (retryCount < RETRY_ATTEMPTS && retry == true) {
+            try {
+              Thread.sleep(retrySleep);
+            } catch(InterruptedException ex) {
+              Thread.currentThread().interrupt();
+            }
+
+            retrySleep += TM_SLEEP_INCR;
+          }
+
        } while (retryCount < RETRY_ATTEMPTS && retry == true);
        }
        if (LOG.isTraceEnabled()) LOG.trace("commitStatus: " + commitStatus);
@@ -702,6 +750,8 @@ public class TransactionManager {
 	    boolean retry = false;
             boolean refresh = false;
 	    int retryCount = 0;
+            int retrySleep = TM_SLEEP;
+
         if( TRANSACTION_ALGORITHM == AlgorithmType.MVCC){
 	    do {
 	    	try {
@@ -784,6 +834,16 @@ public class TransactionManager {
               }
 
               retryCount++;
+
+	      if (retryCount < RETRY_ATTEMPTS && retry == true) {     
+                try {
+                  Thread.sleep(retrySleep);
+                } catch(InterruptedException ex) {
+                  Thread.currentThread().interrupt();
+                }
+
+                retrySleep += TM_SLEEP_INCR;
+              }
 
 	  } while (retryCount < RETRY_ATTEMPTS && retry == true);	     
         }
@@ -870,6 +930,16 @@ public class TransactionManager {
 
               retryCount++;
 
+	      if (retryCount < RETRY_ATTEMPTS && retry == true) {
+                try {
+                  Thread.sleep(retrySleep);
+                } catch(InterruptedException ex) {
+                  Thread.currentThread().interrupt();
+                }
+
+                retrySleep += TM_SLEEP_INCR;
+              }
+
 	  } while (retryCount < RETRY_ATTEMPTS && retry == true);
         }
       // We have received our reply so decrement outstanding count
@@ -913,7 +983,7 @@ public class TransactionManager {
         if (retryAttempts != null) 
         	RETRY_ATTEMPTS = Integer.parseInt(retryAttempts);
         else 
-        	RETRY_ATTEMPTS = 3;
+        	RETRY_ATTEMPTS = TM_RETRY_ATTEMPTS;
         
         if (numThreads != null)
             intThreads = Integer.parseInt(numThreads);
