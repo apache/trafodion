@@ -2,3 +2,4 @@
 host=review.trafodion.org
 port=29418
 project=trafodion/core.git
+defaultbranch=stable/1.1
