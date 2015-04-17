@@ -868,12 +868,22 @@ WaitReturnStatus GuaConnectionToServer::wait(IpcTimeout timeout, UInt32 *eventCo
 
       _bcc_status stat;
       if (!ipcAwaitioxCompleted)
-        stat = BAWAITIOX(&openFile_,
+      {
+        if (tscoOpen_)
+           stat = BAWAITIOXTS(&openFile_,
                                (void **) &bufferAddr,
                                &countRead,
                                &ioTag,
                                timeout,
                                OMIT);
+        else
+           stat = BAWAITIOX(&openFile_,
+                               (void **) &bufferAddr,
+                               &countRead,
+                               &ioTag,
+                               timeout,
+                               OMIT);
+      }
       else
         stat = ipcAwaitiox->ActOnAwaitiox((void **)&bufferAddr,
                                    &countRead,
