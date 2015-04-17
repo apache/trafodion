@@ -336,7 +336,11 @@ if [ ! -z $TRAF_PACKAGE ]; then
    DCS_BUILD=$UNTAR_DIR/$build_file
    
    build_file=$(ls $UNTAR_DIR | grep "rest")
-   REST_BUILD=$UNTAR_DIR/$build_file
+   if [ -z $build_file ]; then
+      REST_BUILD=""
+   else
+      REST_BUILD=$UNTAR_DIR/$build_file
+   fi
    
 else
    # we don't have a package and only have the trafodion and dcs build tar files
