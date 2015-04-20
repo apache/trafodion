@@ -44,7 +44,7 @@ PROGS		= t2 t3 t4 t5 t6 t9 t14 t15 t16 t17 t18 t19 \
 		  t250           t253                               \
 		       t261 t262 t263           t266           \
 		                                     t277      t279 \
-		  t280 t281 t282 t284 \
+		  t280 t281 t282 t284 t285 \
 		  tcheck tsock ttee
 PROGSI		= t2fs t3ms t4ms \
 		  t5ms t6ms t9thread t14ms \
@@ -97,7 +97,7 @@ PROGSI		= t2fs t3ms t4ms \
 		  t261ms t262ms t263ms \
 		  t266ms \
 	          t277fs t279ms \
-	          t280fs t281ms t282ms t284cli t284srv
+	          t280fs t281ms t282ms t284cli t284srv t285fs
 
 ###########################################################################
 
@@ -980,6 +980,10 @@ $(OUTDIR)/t284lib.o: t284lib.cpp $(OUTDIR)/com_hp_traf_t284cli.h
 $(OUTDIR)/com_hp_traf_t284cli.h: $(OUTDIR)/com/hp/traf/t284cli.class
 	$(JAVAH) -d $(OUTDIR) -cp $(OUTDIR) com.hp.traf.t284cli
 	@touch $(OUTDIR)/com_hp_traf_t284cli.h
+
+t285: $(CHK) t285fs
+t285fs: $(OUTDIR)/t285fs.o $(TFS)
+	$(LINKITCXX) -o $@ $< $(RFS)
 
 
 tcheck: $(OUTDIR)/tcheck.o

@@ -238,6 +238,7 @@ static SB_Imap                gv_ms_tag_map("map-ms-tag");
 static SB_Ts_LLmap            gv_ms_tc_map("map-ms-tc");
 static int                    gv_ms_trace_callback_inx = 0;
 static MS_Mon_Tmlib_Cb_Type   gv_ms_tmlib_callback      = NULL;
+static MS_Mon_Tmlib2_Cb_Type  gv_ms_tmlib2_callback     = NULL;
 static MS_Mon_TmSync_Cb_Type  gv_ms_tmsync_callback     = NULL;
 SB_Ts_Lmap                    Ms_Open_Thread::cv_run_map("map-ms-open-thread-run");
 
@@ -9049,6 +9050,23 @@ SB_Export int msg_mon_trans_register_tmlib(MS_Mon_Tmlib_Cb_Type pv_callback) {
     return lv_fserr;
 }
 
+//
+// Purpose: register tmlib2
+//
+SB_Export int msg_mon_trans_register_tmlib2(MS_Mon_Tmlib2_Cb_Type pv_callback) {
+    const char *WHERE = "msg_mon_trans_register_tmlib2";
+    SB_API_CTR (lv_zctr, MSG_MON_TRANS_REGISTER_TMLIB2);
+
+    if (gv_ms_trace_trans)
+        trace_where_printf(WHERE, "ENTER\n");
+    // don't check gv_ms_inited [may be called after static initializer]
+    gv_ms_tmlib2_callback = pv_callback;
+    int lv_fserr = XZFIL_ERR_OK;
+    if (gv_ms_trace_trans)
+        trace_where_printf(WHERE, "EXIT OK, ret=%d\n", lv_fserr);
+    return lv_fserr;
+}
+
 SB_Export void  msg_test_openers_close() {
     SB_Trans::Trans_Stream::close_nidpid_streams(false);
 }
@@ -9548,7 +9566,8 @@ void ms_stats_print(bool pv_trace, char *pp_line) {
 //
 // Purpose: clear current transid
 //
-void ms_transid_clear(MS_Mon_Transid_Type pv_transid) {
+void ms_transid_clear(MS_Mon_Transid_Type  pv_transid,
+                      MS_Mon_Transseq_Type pv_startid) {
     const char *WHERE = "ms_transid_clear";
     int         lv_tmliberr;
 
@@ -9566,15 +9585,34 @@ void ms_transid_clear(MS_Mon_Transid_Type pv_transid) {
         if (gv_ms_trace_trans && lv_tmliberr)
             trace_where_printf(WHERE, "TRANSID-CLEAR_TX, tmliberr=%d\n",
                                lv_tmliberr);
+    } else if (gv_ms_tmlib2_callback != NULL) {
+        if (gv_ms_trace_trans) {
+            char la_startid[100];
+            char la_transid[100];
+            msg_util_format_transid(la_transid, pv_transid);
+            msg_util_format_transseq(la_startid, pv_startid);
+            trace_where_printf(WHERE, "TRANSID-CLEAR_TX, transid=%s, startid=%s\n",
+                               la_transid, la_startid);
+        }
+        // ignore any error outcome
+        lv_tmliberr = gv_ms_tmlib2_callback(TMLIB_FUN_CLEAR_TX,
+                                            pv_transid,
+                                            NULL,
+                                            pv_startid,
+                                            NULL);
+        if (gv_ms_trace_trans && lv_tmliberr)
+            trace_where_printf(WHERE, "TRANSID-CLEAR_TX, tmliberr=%d\n",
+                               lv_tmliberr);
     }
 }
 
 //
 // Purpose: return current transid
 //
-int ms_transid_get(bool                 pv_supp,
-                   bool                 pv_trace,
-                   MS_Mon_Transid_Type *pp_transid) {
+int ms_transid_get(bool                  pv_supp,
+                   bool                  pv_trace,
+                   MS_Mon_Transid_Type  *pp_transid,
+                   MS_Mon_Transseq_Type *pp_startid) {
     const char *WHERE = "ms_transid_get";
     int         lv_tmliberr;
 
@@ -9582,6 +9620,7 @@ int ms_transid_get(bool                 pv_supp,
         if (gv_ms_trace_trans || pv_trace)
             trace_where_printf(WHERE, "TRANSID-GET_TX, NOT called - suppressed\n");
         TRANSID_SET_NULL((*pp_transid));
+        TRANSSEQ_SET_NULL((*pp_startid));
         lv_tmliberr = XZFIL_ERR_OK;
     } else if (gv_ms_tmlib_callback != NULL) {
         TRANSID_SET_NULL((*pp_transid));
@@ -9594,10 +9633,27 @@ int ms_transid_get(bool                 pv_supp,
             trace_where_printf(WHERE, "TRANSID-GET_TX, transid=%s, tmliberr=%d\n",
                                la_transid, lv_tmliberr);
         }
+    } else if (gv_ms_tmlib2_callback != NULL) {
+        TRANSID_SET_NULL((*pp_transid));
+        TRANSSEQ_SET_NULL((*pp_startid));
+        lv_tmliberr = gv_ms_tmlib2_callback(TMLIB_FUN_GET_TX,
+                                            *pp_transid,
+                                            pp_transid,
+                                            *pp_startid,
+                                            pp_startid);
+        if (gv_ms_trace_trans || pv_trace) {
+            char la_startid[100];
+            char la_transid[100];
+            msg_util_format_transid(la_transid, *pp_transid);
+            msg_util_format_transseq(la_startid, *pp_startid);
+            trace_where_printf(WHERE, "TRANSID-GET_TX, transid=%s, startid=%s, tmliberr=%d\n",
+                               la_transid, la_startid, lv_tmliberr);
+        }
     } else {
         if (gv_ms_trace_trans || pv_trace)
             trace_where_printf(WHERE, "TRANSID-GET_TX, NOT called - no callback\n");
         TRANSID_SET_NULL((*pp_transid));
+        TRANSSEQ_SET_NULL((*pp_startid));
         lv_tmliberr = XZFIL_ERR_OK;
     }
     return lv_tmliberr;
@@ -9606,20 +9662,40 @@ int ms_transid_get(bool                 pv_supp,
 //
 // Purpose: register current transid
 //
-int ms_transid_reg(MS_Mon_Transid_Type pv_transid) {
+int ms_transid_reg(MS_Mon_Transid_Type   pv_transid,
+                   MS_Mon_Transseq_Type pv_startid) {
     const char *WHERE = "ms_transid_reg";
     int         lv_tmliberr;
 
-    if (gv_ms_trace_trans) {
-        char la_transid[100];
-        msg_util_format_transid(la_transid, pv_transid);
-        trace_where_printf(WHERE, "TRANSID-REG_TX, transid=%s\n",
-                           la_transid);
-    }
-    SB_util_assert(gv_ms_tmlib_callback != NULL);
-    lv_tmliberr = gv_ms_tmlib_callback(TMLIB_FUN_REG_TX, pv_transid, NULL);
-    if (gv_ms_trace_trans && lv_tmliberr) {
-        trace_where_printf(WHERE, "TRANSID-REG_TX, tmliberr=%d\n", lv_tmliberr);
+    SB_util_assert((gv_ms_tmlib_callback != NULL) || (gv_ms_tmlib2_callback != NULL));
+    if (gv_ms_tmlib_callback != NULL) {
+        if (gv_ms_trace_trans) {
+            char la_transid[100];
+            msg_util_format_transid(la_transid, pv_transid);
+            trace_where_printf(WHERE, "TRANSID-REG_TX, transid=%s\n",
+                               la_transid);
+        }
+        lv_tmliberr = gv_ms_tmlib_callback(TMLIB_FUN_REG_TX,
+                                           pv_transid,
+                                           NULL);
+        if (gv_ms_trace_trans && lv_tmliberr)
+            trace_where_printf(WHERE, "TRANSID-REG_TX, tmliberr=%d\n", lv_tmliberr);
+    } else if (gv_ms_tmlib2_callback != NULL) {
+        if (gv_ms_trace_trans) {
+            char la_startid[100];
+            char la_transid[100];
+            msg_util_format_transid(la_transid, pv_transid);
+            msg_util_format_transseq(la_startid, pv_startid);
+            trace_where_printf(WHERE, "TRANSID-REG_TX, transid=%s, startid=%s\n",
+                               la_transid, la_startid);
+        }
+        lv_tmliberr = gv_ms_tmlib2_callback(TMLIB_FUN_REG_TX,
+                                            pv_transid,
+                                            NULL,
+                                            pv_startid,
+                                            NULL);
+        if (gv_ms_trace_trans && lv_tmliberr)
+            trace_where_printf(WHERE, "TRANSID-REG_TX, tmliberr=%d\n", lv_tmliberr);
     }
     return lv_tmliberr;
 }
@@ -9627,7 +9703,8 @@ int ms_transid_reg(MS_Mon_Transid_Type pv_transid) {
 //
 // Purpose: reinstate transid
 //
-int ms_transid_reinstate(MS_Mon_Transid_Type pv_transid) {
+int ms_transid_reinstate(MS_Mon_Transid_Type  pv_transid,
+                         MS_Mon_Transseq_Type pv_startid) {
     const char *WHERE = "ms_transid_reinstate";
     int         lv_tmliberr;
 
@@ -9641,6 +9718,24 @@ int ms_transid_reinstate(MS_Mon_Transid_Type pv_transid) {
         lv_tmliberr = gv_ms_tmlib_callback(TMLIB_FUN_REINSTATE_TX,
                                            pv_transid,
                                            NULL);
+        if (gv_ms_trace_trans && lv_tmliberr) {
+            trace_where_printf(WHERE, "TRANSID-REINSTATE_TX, tmliberr=%d\n",
+                               lv_tmliberr);
+        }
+    } else if (gv_ms_tmlib2_callback != NULL) {
+        if (gv_ms_trace_trans) {
+            char la_startid[100];
+            char la_transid[100];
+            msg_util_format_transid(la_transid, pv_transid);
+            msg_util_format_transseq(la_startid, pv_startid);
+            trace_where_printf(WHERE, "TRANSID-REINSTATE_TX, transid=%s, startid=%s\n",
+                               la_transid, la_startid);
+        }
+        lv_tmliberr = gv_ms_tmlib2_callback(TMLIB_FUN_REINSTATE_TX,
+                                            pv_transid,
+                                            NULL,
+                                            pv_startid,
+                                            NULL);
         if (gv_ms_trace_trans && lv_tmliberr) {
             trace_where_printf(WHERE, "TRANSID-REINSTATE_TX, tmliberr=%d\n",
                                lv_tmliberr);

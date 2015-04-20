@@ -118,10 +118,16 @@ typedef enum {
     TMLIB_FUN_REINSTATE_TX  = 3,
     TMLIB_FUN_GET_TX        = 4
 } MS_Mon_Tmlib_Fun_Type;
-typedef SB_Transid_Type MS_Mon_Transid_Type;
+typedef SB_Transid_Type  MS_Mon_Transid_Type;
+typedef SB_Transseq_Type MS_Mon_Transseq_Type;
 typedef int (*MS_Mon_Tmlib_Cb_Type)(MS_Mon_Tmlib_Fun_Type  fun,
                                     MS_Mon_Transid_Type    transid_in,
                                     MS_Mon_Transid_Type   *transid_out);
+typedef int (*MS_Mon_Tmlib2_Cb_Type)(MS_Mon_Tmlib_Fun_Type  fun,
+                                     MS_Mon_Transid_Type    transid_in,
+                                     MS_Mon_Transid_Type   *transid_out,
+                                     MS_Mon_Transseq_Type   startid_in,
+                                     MS_Mon_Transseq_Type  *startid_out);
 typedef int (*MS_Mon_TmSync_Cb_Type)(void *data, int len, int handle);
 typedef void (*MS_Mon_Trace_Cb_Type)(const char *key, const char *value);
 
@@ -1708,6 +1714,16 @@ SB_DIAG_UNUSED;
 // The callback will be called at various times during tx processing.
 //
 SB_Export int msg_mon_trans_register_tmlib(MS_Mon_Tmlib_Cb_Type callback)
+SB_DIAG_UNUSED;
+
+//
+// Call this to register tmlib2.
+//
+// The callback will be called at various times during tx processing.
+// The user can only use either msg_mon_trans_register_tmlib OR
+// msg_mon_trans_register_tmlib2.
+//
+SB_Export int msg_mon_trans_register_tmlib2(MS_Mon_Tmlib2_Cb_Type callback)
 SB_DIAG_UNUSED;
 
 //

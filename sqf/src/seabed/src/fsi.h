@@ -59,6 +59,7 @@ typedef struct FS_Io_Type {
     int                iv_io_type;
     int                iv_msgid;
     int                iv_msgid_open;
+    SB_Transseq_Type   iv_startid;
     int                iv_tag_io;
     SB_Tag_Type        iv_tag_user;
     SB_Transid_Type    iv_transid;
@@ -91,6 +92,7 @@ typedef struct FS_Ru_Type {
     int                iv_io_type;
     bool               iv_read;
     int                iv_ru_tag;
+    SB_Transseq_Type   iv_startid;
     SB_Tag_Type        iv_tag;
     SB_Transid_Type    iv_transid;
 } FS_Ru_Type;
@@ -236,7 +238,8 @@ extern short         fs_int_fs_file_replyx(FS_Fd_Type      *pp_fd,
                                            int              pv_count_written,
                                            int              pv_io_type,
                                            short            pv_err_ret,
-                                           SB_Transid_Type  pv_transid);
+                                           SB_Transid_Type  pv_transid,
+                                           SB_Transseq_Type pv_startid);
 extern void          fs_int_fs_file_replyx_auto(FS_Fd_Type *pp_fd);
 extern short         fs_int_fs_file_setmode(FS_Fd_Type *pp_fd,
                                             short       pv_modenum,

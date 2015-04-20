@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -87,8 +87,8 @@
 #include "QRLogger.h"
 #include "ExpLOBexternal.h"
 
-extern int ms_transid_reg(MS_Mon_Transid_Type);
-extern void ms_transid_clear(MS_Mon_Transid_Type);
+extern int ms_transid_reg(MS_Mon_Transid_Type, MS_Mon_Transseq_Type);
+extern void ms_transid_clear(MS_Mon_Transid_Type, MS_Mon_Transseq_Type);
 extern "C" short GETTRANSID(short *transid);
 extern "C" short JOINTRANSACTION(Int64 transid);
 extern "C" short SUSPENDTRANSACTION(short *transid);
@@ -811,7 +811,7 @@ void receive_message(ExLobRequest *request)
    printf("transid before setting = %ld\n", transId);
 
    if (TRANSID_IS_VALID(request->getTransIdBig())) {
-      err = ms_transid_reg(request->getTransIdBig());
+      err = ms_transid_reg(request->getTransIdBig(), request->getTransStartId());
       printf("transid reg err = %d\n", err);
    } else if (request->getTransId()) {
      err = JOINTRANSACTION(request->getTransId());
@@ -824,7 +824,7 @@ void receive_message(ExLobRequest *request)
    processRequest(request);
 
    if (TRANSID_IS_VALID(request->getTransIdBig())) {
-     ms_transid_clear(request->getTransIdBig());
+     ms_transid_clear(request->getTransIdBig(), request->getTransStartId());
    } else if (request->getTransId()) {
      transId = request->getTransId();
      SUSPENDTRANSACTION((short*)&transId);

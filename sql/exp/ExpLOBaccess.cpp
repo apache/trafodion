@@ -65,8 +65,9 @@
 
 extern int ms_transid_get(bool pv_supp,
                           bool pv_trace,
-                          MS_Mon_Transid_Type *pp_transid);
-extern int ms_transid_reinstate(MS_Mon_Transid_Type);
+                          MS_Mon_Transid_Type *pp_transid,
+                          MS_Mon_Transseq_Type *pp_startid);
+extern int ms_transid_reinstate(MS_Mon_Transid_Type, MS_Mon_Transseq_Type);
 
 // short LobServerFNum;
 SB_Phandle_Type serverPhandle;
@@ -1833,6 +1834,7 @@ ExLobRequest::ExLobRequest() :
 void ExLobRequest::setValues(char *descFileName, Int64 descNumIn, Int64 handleInLen, 
                              char *handleIn, LobsStorage storage, Int64 transId,
                              SB_Transid_Type transIdBig,
+                             SB_Transseq_Type transStartId,
                              char *blackBox, Int64 blackBoxLen)
 {
   
@@ -1849,6 +1851,7 @@ void ExLobRequest::setValues(char *descFileName, Int64 descNumIn, Int64 handleIn
 
     transId_ = transId;
     transIdBig_ = transIdBig;
+    transStartId_ = transStartId;
     blackBoxLen_ = blackBoxLen;
     if (blackBox != NULL && blackBoxLen > 0) {
        memcpy(blackBox_, blackBox, blackBoxLen);
@@ -2296,17 +2299,18 @@ Ex_Lob_Error ExLobsOper (
     }
    
 	MS_Mon_Transid_Type transIdBig;
+        MS_Mon_Transseq_Type transStartId;
  if (!lobGlobals->isHive())
       {
 	// get current transaction
    
-	int transIdErr = ms_transid_get(false, false, &transIdBig);
+	int transIdErr = ms_transid_get(false, false, &transIdBig, &transStartId);
 
 	// set the pass thru request object values in the lob
     
 	lobPtr->getRequest()->setValues(lobPtr->getDescFileName(),
                                     descNumIn, handleInLen, handleIn, storage,
-                                    transId, transIdBig,
+                                    transId, transIdBig, transStartId,
                                     (char *)blackBox, blackBoxLen);
       }
     switch(operation)
@@ -2470,7 +2474,7 @@ Ex_Lob_Error ExLobsOper (
 					  requestStatus, cliError,
 					  (char *)blackBox, blackBoxLen);    // reinstate the transaction
 	if (TRANSID_IS_VALID(transIdBig)) {
-	  ms_transid_reinstate(transIdBig);
+	  ms_transid_reinstate(transIdBig, transStartId);
 	}
       }
 

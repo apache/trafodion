@@ -213,6 +213,7 @@ class ExLobRequest
     void setValues(char *descFileName, Int64 descNumIn, Int64 handleInLen, 
                    char *handleIn, LobsStorage storage, Int64 transId,
                    SB_Transid_Type transIdBig,
+                   SB_Transseq_Type transStartId,
                    char *blackBox, Int64 blackBoxLen);
     void getValues(Int64 &descNumOut, Int64 &handleOutLen, 
                    char *handleOut, Ex_Lob_Error &requestStatus,
@@ -245,6 +246,7 @@ class ExLobRequest
     int getCliError() { return (int)cliError_; }
     Int64 getTransId() { return transId_; }
     SB_Transid_Type getTransIdBig() { return transIdBig_; }
+    SB_Transseq_Type getTransStartId() { return transStartId_; }
     Int64 getBlackBoxLen() { return blackBoxLen_; };
     void setBlackBoxLen(Int64 len) { blackBoxLen_ = len; }
     char *getBlackBox() { return blackBox_; }
@@ -270,6 +272,7 @@ class ExLobRequest
     Ex_Lob_Error status_;
     Int64 transId_;
     SB_Transid_Type transIdBig_;
+    SB_Transseq_Type transStartId_;
     char descFileName_[MAX_LOB_FILE_NAME_LEN];
     char blackBox_[MAX_BLACK_BOX_LEN];
     Int64 blackBoxLen_;

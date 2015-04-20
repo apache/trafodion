@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -75,6 +75,7 @@ extern void util_cpu_timer_busy(struct rusage  *r_start,
 extern void util_cpu_timer_start(struct rusage *usage);
 extern void util_cpu_timer_stop(struct rusage *usage);
 extern long util_cpu_timer_wait(int ms);
+extern void util_format_startid(char *buf, SB_Transseq_Type startid);
 extern void util_format_transid(char *buf, SB_Transid_Type transid);
 extern void util_gethostname(char *name, int len);
 extern bool util_ic_program_skip(const char *program);

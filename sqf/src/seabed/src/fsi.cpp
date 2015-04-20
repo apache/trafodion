@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -292,6 +292,8 @@ static short       fs_int_fs_file_open_ph2(FS_Fd_Type *pp_fd,
                                            const char *pp_filename,
                                            bool        pv_self);
 
+static void        fs_int_fs_format_startid(char  *pp_formatted,
+                                            int64  pv_startid);
 static void        fs_int_fs_format_tcbref(char     *pp_formatted,
                                            Tcbref_t *pp_tcbref);
 static const char *fs_int_fs_get_dialect_type(uint16 pv_dialect_type);
@@ -1550,10 +1552,12 @@ short fs_int_fs_file_awaitiox_fs(FS_Fd_Type    *pp_fd,
     fs_int_fd_op_change_depth(pp_fd, -1);
     FS_Io_Type *lp_io = reinterpret_cast<FS_Io_Type *>(lp_md->iv_tag);
     SB_Transid_Type lv_transid;
+    SB_Transseq_Type lv_startid;
     TRANSID_COPY(lv_transid, lp_io->iv_transid);
+    TRANSSEQ_COPY(lv_startid, lp_io->iv_startid);
     if (TRANSID_IS_VALID(lv_transid)) {
         // check reinstate (switch error, if not already set)
-        lv_fserr_temp = static_cast<short>(ms_transid_reinstate(lv_transid));
+        lv_fserr_temp = static_cast<short>(ms_transid_reinstate(lv_transid, lv_startid));
         if ((lv_fserr == XZFIL_ERR_OK) && (lv_fserr_temp != XZFIL_ERR_OK))
             lv_fserr = lv_fserr_temp;
     }
@@ -2244,19 +2248,22 @@ short fs_int_fs_file_awaitiox_ms(FS_Fd_Type      *pp_fd,
             lp_req_type = "write";
             if (gv_fs_trace || gv_fs_trace_params) {
                 SB_Buf_Line la_sender;
+                char        la_startid[100];
                 char        la_transid[100];
                 fs_int_fs_format_sender(la_sender,
                                         reinterpret_cast<short *>(&lp_wr_ctrl_req->sender.phandle));
                 fs_int_fs_format_tcbref(la_transid, &lp_wr_ctrl_req->tcbref);
-                trace_where_printf(WHERE, "Received WRITE message, sender=%s, file=%d, tcbref=%s, uid=%d\n",
+                fs_int_fs_format_startid(la_startid, lp_wr_ctrl_req->startid);
+                trace_where_printf(WHERE, "Received WRITE message, sender=%s, file=%d, tcbref=%s, startid=%s, uid=%d\n",
                                    la_sender,
                                    lp_wr_ctrl_req->sender.first_word.filenum,
                                    la_transid,
+                                   la_startid,
                                    lp_wr_ctrl_req->userid);
             }
             if (TRANSID_IS_VALID(lp_wr_ctrl_req->tcbref)) {
                 TRANSID_COPY(lp_ru->iv_transid, lp_wr_ctrl_req->tcbref);
-                lv_fserr = static_cast<short>(ms_transid_reg(lp_ru->iv_transid));
+                lv_fserr = static_cast<short>(ms_transid_reg(lp_ru->iv_transid, lp_wr_ctrl_req->startid));
             } else
                 lv_fserr = XZFIL_ERR_OK;
             if (lv_fserr == XZFIL_ERR_OK) {
@@ -2271,19 +2278,22 @@ short fs_int_fs_file_awaitiox_ms(FS_Fd_Type      *pp_fd,
             lp_req_type = "writeread";
             if (gv_fs_trace || gv_fs_trace_params) {
                 SB_Buf_Line la_sender;
+                char        la_startid[100];
                 char        la_transid[100];
                 fs_int_fs_format_sender(la_sender,
                                         reinterpret_cast<short *>(&lp_wr_ctrl_req->sender.phandle));
                 fs_int_fs_format_tcbref(la_transid, &lp_wr_ctrl_req->tcbref);
-                trace_where_printf(WHERE, "Received WRITEREAD message, sender=%s, file=%d, tcbref=%s, uid=%d\n",
+                fs_int_fs_format_startid(la_startid, lp_wr_ctrl_req->startid);
+                trace_where_printf(WHERE, "Received WRITEREAD message, sender=%s, file=%d, tcbref=%s, startid=%s, uid=%d\n",
                                    la_sender,
                                    lp_wr_ctrl_req->sender.first_word.filenum,
                                    la_transid,
+                                   la_startid,
                                    lp_wr_ctrl_req->userid);
             }
             if (TRANSID_IS_VALID(lp_wr_ctrl_req->tcbref)) {
                 TRANSID_COPY(lp_ru->iv_transid, lp_wr_ctrl_req->tcbref);
-                lv_fserr = static_cast<short>(ms_transid_reg(lp_ru->iv_transid));
+                lv_fserr = static_cast<short>(ms_transid_reg(lp_ru->iv_transid, lp_wr_ctrl_req->startid));
             } else
                 lv_fserr = XZFIL_ERR_OK;
             if (lv_fserr == XZFIL_ERR_OK) {
@@ -2448,6 +2458,7 @@ short fs_int_fs_file_cancelreq(FS_Fd_Type  *pp_fd,
     short            lv_fserr;
     short            lv_fserr_temp;
     int              lv_msgid;
+    SB_Transseq_Type lv_startid;
     SB_Transid_Type  lv_transid;
 
     if (gv_fs_trace_params)
@@ -2477,9 +2488,10 @@ short fs_int_fs_file_cancelreq(FS_Fd_Type  *pp_fd,
             if ((lv_fserr == XZFIL_ERR_OK) ||
                 (lv_fserr == XZFIL_ERR_PATHDOWN)) {
                 TRANSID_COPY(lv_transid, lp_io->iv_transid);
+                TRANSSEQ_COPY(lv_startid, lp_io->iv_startid);
                 if (TRANSID_IS_VALID(lv_transid)) {
                     // check reinstate
-                    lv_fserr_temp = static_cast<short>(ms_transid_reinstate(lv_transid));
+                    lv_fserr_temp = static_cast<short>(ms_transid_reinstate(lv_transid, lv_startid));
                     if (lv_fserr_temp != XZFIL_ERR_OK)
                         lv_fserr = lv_fserr_temp;
                 }
@@ -2923,14 +2935,15 @@ short fs_int_fs_file_readupdatex(FS_Fd_Type  *pp_fd,
 //
 // Purpose: replyx over ms
 //
-short fs_int_fs_file_replyx(FS_Fd_Type      *pp_fd,
-                            int              pv_msgid,
-                            char            *pp_buffer,
-                            int              pv_write_count,
-                            int              pv_count_written,
-                            int              pv_io_type,
-                            short            pv_err_ret,
-                            SB_Transid_Type  pv_transid) {
+short fs_int_fs_file_replyx(FS_Fd_Type       *pp_fd,
+                            int               pv_msgid,
+                            char             *pp_buffer,
+                            int               pv_write_count,
+                            int               pv_count_written,
+                            int               pv_io_type,
+                            short             pv_err_ret,
+                            SB_Transid_Type   pv_transid,
+                            SB_Transseq_Type  pv_startid) {
     const char             *WHERE = "XREPLYX(internal)";
     char                    la_wr_ctrl_rep_buf[sizeof(fs_fs_writeread_reply)];
     fs_fs_writeread_reply  *lp_wr_ctrl_rep;
@@ -2968,7 +2981,7 @@ short fs_int_fs_file_replyx(FS_Fd_Type      *pp_fd,
                            pp_fd->iv_op_depth);
     }
     if (TRANSID_IS_VALID(pv_transid))
-        ms_transid_clear(pv_transid);
+        ms_transid_clear(pv_transid, pv_startid);
     BMSG_REPLY_(pv_msgid,                       // msgid
                 reinterpret_cast<short *>(lp_wr_ctrl_rep),       // replyctrl
                 sizeof(fs_fs_writeread_reply),  // replyctrlsize
@@ -2987,6 +3000,7 @@ void fs_int_fs_file_replyx_auto(FS_Fd_Type *pp_fd) {
     int              lv_io_type;
     int              lv_msgid;
     int              lv_reply_num;
+    SB_Transseq_Type lv_startid;
     SB_Transid_Type  lv_transid;
 
     lv_reply_num = gv_fs_ri_msg_tag;
@@ -2995,6 +3009,7 @@ void fs_int_fs_file_replyx_auto(FS_Fd_Type *pp_fd) {
     lv_count_written = lp_ru->iv_count_written;
     lv_io_type = lp_ru->iv_io_type;
     lv_transid = lp_ru->iv_transid;
+    lv_startid = lp_ru->iv_startid;
     if (gv_fs_trace)
         trace_where_printf(WHERE, "tag=%d, msgid=%d\n",
                            lv_reply_num, lv_msgid);
@@ -3006,7 +3021,8 @@ void fs_int_fs_file_replyx_auto(FS_Fd_Type *pp_fd) {
                                      lv_count_written,
                                      lv_io_type,
                                      XZFIL_ERR_OK,      // err ret
-                                     lv_transid);
+                                     lv_transid,
+                                     lv_startid);
     CHK_FEIGNORE(lv_fserr);
 }
 
@@ -3066,6 +3082,7 @@ short fs_int_fs_file_writex(FS_Fd_Type  *pp_fd,
     int                 lv_msgid;
     short               lv_opts;
     MS_Result_Type      lv_results;
+    SB_Transseq_Type    lv_startid;
     SB_Transid_Type     lv_transid;
 
     switch (pp_fd->iv_file_type) {
@@ -3079,7 +3096,8 @@ short fs_int_fs_file_writex(FS_Fd_Type  *pp_fd,
         return fs_int_err_fd_rtn(WHERE, pp_fd, lv_fserr);
     lv_fserr = static_cast<short>(ms_transid_get(pp_fd->iv_transid_supp,
                                                  false,
-                                                 &lv_transid));
+                                                 &lv_transid,
+                                                 &lv_startid));
     if (lv_fserr != XZFIL_ERR_OK)
         return fs_int_err_fd_rtn(WHERE, pp_fd, lv_fserr);
     lp_w_ctrl_req_buf =
@@ -3103,6 +3121,7 @@ short fs_int_fs_file_writex(FS_Fd_Type  *pp_fd,
     lp_w_ctrl_req->sender.id.openid = 1;
     lp_w_ctrl_req->flags.flags0d = 1;
     TRANSID_COPY(lp_w_ctrl_req->tcbref, lv_transid);
+    TRANSSEQ_COPY(lp_w_ctrl_req->startid, lv_startid);
     lp_w_ctrl_req->userid = pv_userid;
     lp_w_ctrl_req->lid.offset = 1;
     lp_w_ctrl_req->lid.length = 1;
@@ -3111,6 +3130,7 @@ short fs_int_fs_file_writex(FS_Fd_Type  *pp_fd,
                            FS_FS_WRITE,
                            pv_tag,
                            lv_transid,
+                           lv_startid,
                            pp_buffer);
     if (gv_fs_trace)
         trace_where_printf(WHERE,
@@ -3169,7 +3189,7 @@ short fs_int_fs_file_writex(FS_Fd_Type  *pp_fd,
         TRANSID_COPY(lv_transid, lp_io->iv_transid);
         if (TRANSID_IS_VALID(lv_transid)) {
             // check reinstate
-            lv_fserr_temp = static_cast<short>(ms_transid_reinstate(lv_transid));
+            lv_fserr_temp = static_cast<short>(ms_transid_reinstate(lv_transid, lv_startid));
             if (lv_fserr_temp != XZFIL_ERR_OK)
                 lv_fserr = lv_fserr_temp;
         }
@@ -3221,6 +3241,7 @@ short fs_int_fs_file_writereadx(FS_Fd_Type  *pp_fd,
     int                     lv_msgid;
     short                   lv_opts;
     MS_Result_Type          lv_results;
+    SB_Transseq_Type        lv_startid;
     SB_Transid_Type         lv_transid;
 
     switch (pp_fd->iv_file_type) {
@@ -3234,7 +3255,8 @@ short fs_int_fs_file_writereadx(FS_Fd_Type  *pp_fd,
         return fs_int_err_fd_rtn(WHERE, pp_fd, lv_fserr);
     lv_fserr = static_cast<short>(ms_transid_get(pp_fd->iv_transid_supp,
                                                  false,
-                                                 &lv_transid));
+                                                 &lv_transid,
+                                                 &lv_startid));
     if (lv_fserr != XZFIL_ERR_OK)
         return fs_int_err_fd_rtn(WHERE, pp_fd, lv_fserr);
     lp_wr_ctrl_req_buf =
@@ -3258,6 +3280,7 @@ short fs_int_fs_file_writereadx(FS_Fd_Type  *pp_fd,
     lp_wr_ctrl_req->sender.id.openid = 1;
     lp_wr_ctrl_req->flags.flags0d = 1;
     TRANSID_COPY(lp_wr_ctrl_req->tcbref, lv_transid);
+    TRANSSEQ_COPY(lp_wr_ctrl_req->startid, lv_startid);
     lp_wr_ctrl_req->userid = pv_userid;
     lp_wr_ctrl_req->lid.offset = 1;
     lp_wr_ctrl_req->lid.length = 1;
@@ -3266,6 +3289,7 @@ short fs_int_fs_file_writereadx(FS_Fd_Type  *pp_fd,
                            FS_FS_WRITEREAD,
                            pv_tag,
                            lv_transid,
+                           lv_startid,
                            pp_wbuffer);
     if (gv_fs_trace)
         trace_where_printf(WHERE,
@@ -3322,9 +3346,10 @@ short fs_int_fs_file_writereadx(FS_Fd_Type  *pp_fd,
         }
 
         TRANSID_COPY(lv_transid, lp_io->iv_transid);
+        TRANSSEQ_COPY(lv_startid, lp_io->iv_startid);
         if (TRANSID_IS_VALID(lv_transid)) {
             // check reinstate
-            lv_fserr_temp = static_cast<short>(ms_transid_reinstate(lv_transid));
+            lv_fserr_temp = static_cast<short>(ms_transid_reinstate(lv_transid, lv_startid));
             if (lv_fserr_temp != XZFIL_ERR_OK)
                 lv_fserr = lv_fserr_temp;
         }
@@ -3385,6 +3410,13 @@ void fs_int_fs_format_sender(char *pp_formatted, short *pp_sender) {
             lp_sender[6],
             lp_sender[7],
             la_sender);
+}
+
+//
+// Purpose: format startid
+//
+void fs_int_fs_format_startid(char *pp_formatted, int64 pv_startid) {
+    sprintf(pp_formatted, "%lld", pv_startid);
 }
 
 //

@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -123,12 +123,16 @@ extern void                  ms_recv_q_proc_death(int            pv_nid,
                                                   void          *pp_stream);
 extern "C" const char       *ms_seabed_vers();
 extern void                  ms_shutdown();
-extern void                  ms_transid_clear(MS_Mon_Transid_Type);
-extern int                   ms_transid_get(bool                 pv_supp,
-                                            bool                 pv_trace,
-                                            MS_Mon_Transid_Type *pp_transid);
-extern int                   ms_transid_reg(MS_Mon_Transid_Type);
-extern int                   ms_transid_reinstate(MS_Mon_Transid_Type);
+extern void                  ms_transid_clear(MS_Mon_Transid_Type  pv_transid,
+                                              MS_Mon_Transseq_Type pv_startid);
+extern int                   ms_transid_get(bool                  pv_supp,
+                                            bool                  pv_trace,
+                                            MS_Mon_Transid_Type  *pp_transid,
+                                            MS_Mon_Transseq_Type *pp_startid);
+extern int                   ms_transid_reg(MS_Mon_Transid_Type  pv_transid,
+                                            MS_Mon_Transseq_Type pv_startid);
+extern int                   ms_transid_reinstate(MS_Mon_Transid_Type  pv_transid,
+                                                  MS_Mon_Transseq_Type pv_startid);
 extern void                  ms_util_fill_phandle_name(SB_Phandle_Type *pp_phandle,
                                                        char            *pp_name,
                                                        int              pv_nid,

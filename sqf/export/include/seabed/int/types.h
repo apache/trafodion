@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@
   #define PFSZ  "%u"
   #define PFSZX "%x"
 #endif
+typedef long SB_Transseq_Type;
 typedef struct SB_Transid_Type {
     SB_Int64_Type id[4];
 } SB_Transid_Type;

@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -475,10 +475,12 @@ SB_Export _bcc_status BACTIVATERECEIVETRANSID(short pv_msg_num) {
     if (lv_fserr == XZFIL_ERR_OK) {
         if (gv_fs_trace_params)
             trace_where_printf(WHERE, "ENTER msg_num=%d\n", pv_msg_num);
-        SB_Transid_Type lv_transid;
+        SB_Transseq_Type lv_startid;
+        SB_Transid_Type  lv_transid;
         TRANSID_COPY(lv_transid, lp_fd->ip_ru[pv_msg_num].iv_transid);
+        TRANSSEQ_COPY(lv_startid, lp_fd->ip_ru[pv_msg_num].iv_startid);
         if (TRANSID_IS_VALID(lv_transid)) {
-            lv_fserr = static_cast<short>(ms_transid_reg(lv_transid));
+            lv_fserr = static_cast<short>(ms_transid_reg(lv_transid, lv_startid));
         }
     } else
         fs_int_err_lasterr(lv_fserr);
@@ -1319,6 +1321,7 @@ SB_Export _bcc_status BREPLYX(char  *pp_buffer,
     lv_count_written = lp_ru->iv_count_written;
     lv_io_type = lp_ru->iv_io_type;
     SB_Transid_Type lv_transid = lp_ru->iv_transid;
+    SB_Transseq_Type lv_startid = lp_ru->iv_startid;
     if (gv_fs_trace)
         trace_where_printf(WHERE, "tag=%d, msgid=%d\n",
                            pv_reply_num, lv_msgid);
@@ -1330,7 +1333,8 @@ SB_Export _bcc_status BREPLYX(char  *pp_buffer,
                                      lv_count_written,
                                      lv_io_type,
                                      pv_err_ret,
-                                     lv_transid);
+                                     lv_transid,
+                                     lv_startid);
     if (pp_count_written != NULL)
         *pp_count_written = pv_write_count;
     if (gv_fs_trace_params)

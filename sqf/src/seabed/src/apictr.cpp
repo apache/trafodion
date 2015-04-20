@@ -183,6 +183,7 @@ static const char *ga_sb_api_ctr_names[] = {
         "msg_mon_trans_end",
         "msg_mon_trans_enlist",
         "msg_mon_trans_register_tmlib",
+        "msg_mon_trans_register_tmlib2",
         "msg_set_phandle",
 //      "MSG_TEST_ASSERT_DISABLE",
 //      "MSG_TEST_ASSERT_ENABLE",
