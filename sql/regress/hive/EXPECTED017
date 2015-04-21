@@ -763,6 +763,8 @@ B@           B            C            (EXPR)
 
 *** ERROR[8110] Duplicate rows detected.
 
+*** ERROR[1053] Unique index TRAFODION.HBASE.T017TTBIDXC could not be created because the specified column(s) contain duplicate data.
+
 --- SQL operation failed with errors.
 >>
 >>--delimited table name
@@ -940,7 +942,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 2    3    4    tuple_flow                                            1.00E+002
 .    .    3    trafodion_load_prepa            T017TTCIDXB           1.00E+000
 1    .    2    esp_exchange                    2(range):1 (m)        1.00E+002
-.    .    1    trafodion_index_scan            T017TTCIDXB               1.00E+002
+.    .    1    trafodion_index_scan            T017TTCIDXB           1.00E+002
 
 --- SQL operation complete.
 >>
@@ -954,7 +956,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 2    3    4    tuple_flow                                            1.00E+002
 .    .    3    trafodion_load_prepa            T017TTCIDXB           1.00E+000
 1    .    2    esp_exchange                    2(range):1 (m)        1.00E+002
-.    .    1    trafodion_index_scan            T017TTCIDXB               1.00E+002
+.    .    1    trafodion_index_scan            T017TTCIDXB           1.00E+002
 
 --- SQL operation complete.
 >>
@@ -1083,7 +1085,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 3    .    4    root                                                  1.00E+002
 1    2    3    tuple_flow                                            1.00E+002
 .    .    2    trafodion_load_prepa            T017TTCIDXB           1.00E+000
-.    .    1    trafodion_index_scan            T017TTCIDXB               1.00E+002
+.    .    1    trafodion_index_scan            T017TTCIDXB           1.00E+002
 
 --- SQL operation complete.
 >>
@@ -1095,7 +1097,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 3    .    4    root                                                  1.00E+002
 1    2    3    tuple_flow                                            1.00E+002
 .    .    2    trafodion_load_prepa            T017TTCIDXB           1.00E+000
-.    .    1    trafodion_index_scan            T017TTCIDXB               1.00E+002
+.    .    1    trafodion_index_scan            T017TTCIDXB           1.00E+002
 
 --- SQL operation complete.
 >>
