@@ -24,6 +24,8 @@ import static org.junit.Assert.*;
 import java.sql.*;
 import java.io.*;
 import java.lang.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TestBasic 
 {
@@ -948,7 +950,10 @@ public class TestBasic
         	conn = Utils.getUserConnection();
 			String	prodVer = conn.getMetaData().getDatabaseProductVersion();
 			System.out.println("DB product version : " + prodVer);
-			assertEquals("DB Product Version", "1.1", prodVer);
+			//assertEquals("DB Product Version", "1.1", prodVer);
+			Pattern pattern = Pattern.compile("1.[12]");
+			Matcher matcher = pattern.matcher(prodVer);
+			assertTrue("DB Product Version", matcher.matches());
   	       	conn.close();
 			System.out.println("JDBC Get DB product version : Passed");
        } catch (Exception ex)
@@ -988,7 +993,7 @@ public class TestBasic
         	conn = Utils.getUserConnection();
 			int	minorVer = conn.getMetaData().getDatabaseMinorVersion();
 			//System.out.println("DB minor version : " + minorVer);
-			assertEquals("DB Minor Version", 1, minorVer);
+			assertTrue("DB Minor Version", (minorVer == 1 || minorVer == 2) );
   	       	conn.close();
 			System.out.println("JDBC Get DB minor version : Passed");
        } catch (Exception ex)
