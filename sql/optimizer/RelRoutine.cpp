@@ -1546,7 +1546,7 @@ void ProxyFunc::populateColumnDesc(char *tableNam,
    cmpSBD.buildColInfoArray(&colArray, 
                             colInfoArray, 
                             FALSE, FALSE, NULL,
-                            CmpCommon::statementHeap());
+                            CmpCommon::statementHeap(), TRUE);
 
    for (size_t colNum = 0; colNum < colArray.entries(); colNum++)
    {
