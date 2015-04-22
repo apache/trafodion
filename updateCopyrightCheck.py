@@ -34,7 +34,7 @@ import sys
 import re
 import datetime
 import subprocess
-import argparse
+# import argparse  requires Python 2.7 unfortunately
 
 
 class LineParser:
@@ -71,20 +71,84 @@ class LineParser:
 
 # process command line arguments
 
-parser = argparse.ArgumentParser(
-    description='This script checks for out-of-date copyrights.',
-    epilog='''If the environment variable UPDATE_COPYRIGHTS=YES is present,
-    the script behaves as if --update was specified.''')
+# Note: It's easiest to use the argparse module, but unfortunately
+# it is only installed as part of Python with 2.7, and many
+# workstations are on 2.6. I've left the original argparse code
+# here, commented out, so we can use it in the future as
+# Python 2.7 and later versions become more common.
 
+#parser = argparse.ArgumentParser(
+#    description='This script checks for out-of-date copyrights.',
+#    epilog='''If the environment variable UPDATE_COPYRIGHTS=YES is present,
+#    the script behaves as if --update was specified.''')
+#
 # --update takes no arguments
-line = 'If specified, out-of-date copyrights are automatically updated.'
-parser.add_argument('--update', action='store_true', help=line)
-
+#line = 'If specified, out-of-date copyrights are automatically updated.'
+#parser.add_argument('--update', action='store_true', help=line)
+#
 # --directory takes one argument, the directory name
-parser.add_argument('--directory',
-                    help='Defaults to the present working directory.')
+#parser.add_argument('--directory',
+#                    help='Defaults to the present working directory.')
+#
+#args = parser.parse_args()  # exits and prints help if args are incorrect
 
-args = parser.parse_args()  # exits and prints help if args are incorrect
+
+# the code below does the equivalent of the argparse code above
+
+doUsage = False
+expectingDirectory = False
+first = True
+
+
+class Args:
+    def __init__(self):
+        self.directory = ""
+        self.update = False
+
+args = Args()
+
+for arg in sys.argv:
+    if first:
+        first = False
+    elif expectingDirectory:
+        # make sure the argument doesn't begin with minus
+        # since we are expecting a directory name
+        if arg[0] == "-":
+            doUsage = True
+        else:
+            args.directory = arg
+        expectingDirectory = False
+    else:
+        if arg == "--update":
+            args.update = True
+        elif arg == "--directory":
+            expectingDirectory = True
+        else:  # -h, --help, or invalid argument
+            doUsage = True
+
+if expectingDirectory:  # if --directory at end lacks argument
+   doUsage = True
+
+if doUsage:
+    print "usage: updateCopyrightCheck.py [-h] [--update] " + \
+        "[--directory DIRECTORY]"
+    print
+    print "This script checks for out-of-date copyrights."
+    print
+    print "optional arguments:"
+    print "  -h, --help            show this help message and exit"
+    print "  --update              If specified, out-of-date " + \
+        "copyrights are automatically"
+    print "                        updated."
+    print "  --directory DIRECTORY Defaults to the present working directory."
+    print
+    print "If the environment variable UPDATE_COPYRIGHTS=YES " + \
+        "is present, the script"
+    print "behaves as if --update was specified."
+    print
+    exit(0)
+
+# end of argparse replacement code
 
 directory = args.directory
 if directory:  # if a directory was specified, switch to it
@@ -110,13 +174,10 @@ filesFailedUpdate = 0
 currentYear = str(datetime.datetime.now().year)
 matchString = r'\(C\) Copyright [0-9\-]*' + currentYear + \
     r' Hewlett-Packard Development Company'
-print 'matchString follows:'
-print matchString
+
 reCheckYear = re.compile(matchString)
 matchString2 = r'\(C\) Copyright (?P<startYear>([0-9]+\-)?)' + \
     r'(?P<oldYear>[0-9]+) Hewlett-Packard Development Company'
-print 'matchString2 follows:'
-print matchString2
 reCaptureOldYear = re.compile(matchString2)
 
 # get the set of files changed
@@ -166,14 +227,14 @@ for line in gitProcess.stdout:
                 ' lacks a copyright; please add one.'
         elif matchCount > 1:
             filesMultipleCopyright = filesMultipleCopyright + 1
-            print '*** File ' + parseResult
-            + ' appears to have multiple copyrights; please check manually.'
+            print '*** File ' + parseResult + \
+                ' appears to have multiple copyrights; please check manually.'
         elif needsEdit:
             # exactly one copyright line, as expected, but old copyright
             filesIncorrectCopyright = filesIncorrectCopyright + 1
             if update:   # try to update it if --update option was specified
-                print '*** Updating file '
-                + parseResult + ' to current copyright.'
+                print '*** Updating file ' \
+                    + parseResult + ' to current copyright.'
                 m2 = reCaptureOldYear.search(savedLine)
                 if m2:
                     filesUpdatedCopyright = filesUpdatedCopyright + 1
@@ -182,14 +243,14 @@ for line in gitProcess.stdout:
                     startYear = m2.group('startYear')
                     if len(startYear) > 0:
                         # it's yyyy-zzzz, just replace zzzz with 2015
-                        substituteCommand = '/(C) Copyright [0-9\-]* '
-                        + 'Hewlett-Packard Development Company/'
-                        + 's/' + oldYear + '/' + currentYear + '/g\n'
+                        substituteCommand = '/(C) Copyright [0-9\-]* ' \
+                            + 'Hewlett-Packard Development Company/' \
+                            + 's/' + oldYear + '/' + currentYear + '/g\n'
                     else:  # it's just zzzz, replace with zzzz-2015
-                        substituteCommand = '/(C) Copyright [0-9\-]* '
-                        + 'Hewlett-Packard Development Company/'
-                        + 's/' + oldYear + '/' + oldYear + '-'
-                        + currentYear + '/g\n'
+                        substituteCommand = '/(C) Copyright [0-9\-]* ' \
+                            + 'Hewlett-Packard Development Company/' \
+                            + 's/' + oldYear + '/' + oldYear + '-' \
+                            + currentYear + '/g\n'
                     writeCommand = 'w\n'
                     cmdEd = ['ed', '-s', parseResult]
                     edProcess = subprocess.Popen(cmdEd, stdin=subprocess.PIPE)
@@ -201,8 +262,8 @@ for line in gitProcess.stdout:
                     filesFailedUpdate = filesFailedUpdate + 1
                     print '*** Update failed; please check manually.'
             else:  # --update not specified
-                print '*** File ' + parseResult
-                + ' has an incorrect copyright; please update.'
+                print '*** File ' + parseResult + \
+                    ' has an incorrect copyright; please update.'
         else:
             print 'File ' + parseResult + ' has the correct copyright.'
             filesCorrectCopyright = filesCorrectCopyright + 1
@@ -218,16 +279,16 @@ print "Number of files lacking copyright: " + str(filesLackingCopyright)
 print "Number of files with correct copyright: " + str(filesCorrectCopyright)
 print "Number of files with updated copyright: " + str(filesUpdatedCopyright)
 if filesIncorrectCopyright > 0:
-    print "Number of files with incorrect copyrights: "
-    + str(filesIncorrectCopyright)
+    print "Number of files with incorrect copyrights: " + \
+        str(filesIncorrectCopyright)
     exitCode = 1
 if filesFailedUpdate > 0:
-    print "Number of files where copyright update failed: "
-    + str(filesFailedUpdate)
+    print "Number of files where copyright update failed: " + \
+        str(filesFailedUpdate)
     exitCode = 1
 if filesMultipleCopyright > 0:
-    print "Number of files with multiple copyrights: "
-    + str(filesMultipleCopyright)
+    print "Number of files with multiple copyrights: " + \
+        str(filesMultipleCopyright)
     exitCode = 1
 print
 
