@@ -57,6 +57,11 @@ import java.io.InterruptedIOException;
 import org.apache.hadoop.hbase.client.transactional.TransState;
 import org.apache.hadoop.hbase.client.transactional.TransReturnCode;
 import org.apache.hadoop.hbase.client.transactional.TransactionMap;
+
+import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -68,29 +73,35 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RMInterface {
     static final Log LOG = LogFactory.getLog(RMInterface.class);
     static Map<Long, TransactionState> mapTransactionStates = TransactionMap.getInstance();
+    static final Object mapLock = new Object();
 
+    public AlgorithmType TRANSACTION_ALGORITHM;
     static Map<Long, Set<RMInterface>> mapRMsPerTransaction = new HashMap<Long,  Set<RMInterface>>();
     private TransactionalTableClient ttable = null;
     static {
         System.loadLibrary("stmlib");
-   }
+    }
 
     private native void registerRegion(int port, byte[] hostname, long startcode, byte[] regionInfo);
     private native void createTableReq(byte[] lv_byte_htabledesc, byte[][] keys, long transID, byte[] tblName);
     private native void dropTableReq(byte[] lv_byte_tblname, long transID);
 
     public static void main(String[] args) {
-      System.out.println("MAIN ENTRY");      
+      System.out.println("MAIN ENTRY");
     }
 
+    private IdTm idServer;
+    private static final int ID_TM_SERVER_TIMEOUT = 1000;
+
     public enum AlgorithmType {
-	MVCC, SSCC
+       MVCC, SSCC
     }
+
+    private AlgorithmType transactionAlgorithm;
 
     public RMInterface(final String tableName) throws IOException {
         //super(conf, Bytes.toBytes(tableName));
-        AlgorithmType transactionAlgorithm = AlgorithmType.MVCC;
-
+        transactionAlgorithm = AlgorithmType.MVCC;
         String envset = System.getenv("TM_USE_SSCC");
         if( envset != null)
         {
@@ -105,11 +116,17 @@ public class RMInterface {
             ttable = new SsccTransactionalTable( Bytes.toBytes(tableName));
         }
 
-        if (LOG.isTraceEnabled()) LOG.trace("RMInterface ctor.");
+        try {
+           idServer = new IdTm(false);
+        }
+        catch (Exception e){
+           LOG.error("RMInterface: Exception creating new IdTm: " + e);
+        }
+        if (LOG.isTraceEnabled()) LOG.trace("RMInterface constructor exit");
     }
 
     public RMInterface() throws IOException {
-        mapTransactionStates = new ConcurrentHashMap<Long, TransactionState>();
+
     }
 
     public synchronized TransactionState registerTransaction(final long transactionID, final byte[] row) throws IOException {
@@ -120,21 +137,51 @@ public class RMInterface {
         TransactionState ts = mapTransactionStates.get(transactionID);
 
         if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
-        
+
         // if we don't have a TransactionState for this ID we need to register it with the TM
         if (ts == null) {
-            ts = new TransactionState(transactionID);
-            if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, created TransactionState " + ts);
-            mapTransactionStates.put(transactionID, ts);
-            register = true;
+           ts = new TransactionState(transactionID);
+
+           long startIdVal = -1;
+
+           // Set the startid
+           if (transactionAlgorithm == AlgorithmType.SSCC) {
+              IdTmId startId;
+              try {
+                 startId = new IdTmId();
+                 if (LOG.isTraceEnabled()) LOG.trace("registerTransaction getting new startId");
+                 idServer.id(ID_TM_SERVER_TIMEOUT, startId);
+                 if (LOG.isTraceEnabled()) LOG.trace("registerTransaction idServer.id returned: " + startId.val);
+              } catch (IdTmException exc) {
+                 LOG.error("registerTransaction: IdTm threw exception " + exc);
+                 throw new IOException("registerTransaction: IdTm threw exception " + exc);
+              }
+              startIdVal = startId.val;
+           }
+           ts.setStartId(startIdVal);
+
+           synchronized (mapTransactionStates) {
+              TransactionState ts2 = mapTransactionStates.get(transactionID);
+              if (ts2 != null) {
+                 // Some other thread added the transaction while we were creating one.  It's already in the
+                 // map, so we can use the existing one.
+                 if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, found TransactionState object while creating a new one " + ts2);
+                 ts = ts2;
+              }
+              else {
+                 if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, adding new TransactionState to map " + ts);
+                 mapTransactionStates.put(transactionID, ts);
+              }
+           }// end synchronized
+           register = true;
         }
         else {
-            if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction - Found TS in map for id " + transactionID);
+            if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction - Found TS in map for tx " + ts);
         }
         HRegionLocation location = ttable.getRegionLocation(row, false /*reload*/);
 
         TransactionRegionLocation trLocation = new TransactionRegionLocation(location.getRegionInfo(),
-                                                                             location.getServerName());                                                                             
+                                                                             location.getServerName());
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, created TransactionRegionLocation " + trLocation);
 
         // if this region hasn't been registered as participating in the transaction, we need to register it
@@ -146,6 +193,7 @@ public class RMInterface {
         // register region with TM.
         if (register) {
             ts.registerLocation(location);
+            if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction called registerLocation for ts " + ts);
         }
         else {
           if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction did not send registerRegion.");
@@ -162,7 +210,7 @@ public class RMInterface {
 
     public void createTable(HTableDescriptor desc, byte[][] keys, long transID) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("createTable ENTER: ");
-    
+
         try {
             byte[] lv_byte_desc = desc.toByteArray();
             byte[] lv_byte_tblname = desc.getNameAsString().getBytes();
@@ -192,7 +240,6 @@ public class RMInterface {
         }
     }
 
-
     static public void clearTransactionStates(final long transactionID) {
       if (LOG.isTraceEnabled()) LOG.trace("cts1 Enter txid: " + transactionID);
 
@@ -200,10 +247,10 @@ public class RMInterface {
 
       if (LOG.isTraceEnabled()) LOG.trace("cts2 txid: " + transactionID);
     }
-    
+
     static public synchronized void unregisterTransaction(final long transactionID) {
       TransactionState ts = null;
-      if (LOG.isTraceEnabled()) LOG.trace("Enter txid: " + transactionID);
+      if (LOG.isTraceEnabled()) LOG.trace("Enter unregisterTransaction txid: " + transactionID);
       try {
         ts = mapTransactionStates.remove(transactionID);
       } catch (Exception e) {

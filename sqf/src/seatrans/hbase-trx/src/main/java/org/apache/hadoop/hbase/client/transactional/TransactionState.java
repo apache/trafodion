@@ -39,7 +39,9 @@ public class TransactionState {
 
     private final long transactionId;
     private TransState status;
-    
+    private long startId;
+    private long commitId;
+
     /**
      * 
      * requestPendingCount - how many requests send
@@ -67,11 +69,10 @@ public class TransactionState {
 
     private native void registerRegion(long transid, int port, byte[] hostname, long startcode, byte[] regionInfo);
 
-    
     public boolean islocalTransaction() {
       return localTransaction;
     }
-    
+
     public TransactionState(final long transactionId) {
         this.transactionId = transactionId;
         setStatus(TransState.STATE_ACTIVE);
@@ -93,7 +94,7 @@ public class TransactionState {
           if (LOG.isTraceEnabled()) LOG.trace("TransactionState global transaction begun: " + transactionId);
         }
     }
-    
+
     public boolean addTableName(final String table) {
         boolean added =  tableNames.add(table);
         if (added) {
@@ -112,15 +113,14 @@ public class TransactionState {
      *           if we've received all the replies.  Non blocking version
      */
     public boolean requestAllComplete() {
- 
-        
+
         // Make sure that we've completed sending the requests
         synchronized (commitSendLock)
         {
             if (commitSendDone != true)
                 return false;
         }
-        
+
         synchronized (countLock)
         {
             if (requestPendingCount == requestReceivedCount)
@@ -128,7 +128,7 @@ public class TransactionState {
             return false;
         }
     }
-    
+
     /**
      * 
      * Method  : requestPendingcount
@@ -164,12 +164,12 @@ public class TransactionState {
                 //Signal waiters that an error occurred
                 if (wakeUp == true)
                     hasError = true;
-                
+
                 countLock.notify();
         }
     }
     }
-        
+
     /**
      * 
      * Method  : completeRequest
@@ -187,23 +187,23 @@ public class TransactionState {
                 commitSendLock.wait();
             }
         }
-        
+
         // if we haven't received all replies, then wait
         synchronized (countLock)
         {
             if (requestPendingCount > requestReceivedCount)
                 countLock.wait();
         }
-        
+
         if (hasError)
             throw new CommitUnsuccessfulException();
-        
+
         return;
-       
+
     }
-    
+
     /**
-     * 
+     *
      * Method  : completeSendInvoke
      * Params  : count : number of requests sent
      * Return  : void
@@ -211,10 +211,10 @@ public class TransactionState {
      */
     public void completeSendInvoke(int count)
     {
-        
+
         // record how many requests sent
         requestPendingCount(count);
-        
+
         // wake up waiters and record that we've sent all requests
         synchronized (commitSendLock)
         {
@@ -222,29 +222,29 @@ public class TransactionState {
             commitSendLock.notify();
         }
     }
-    
+
       public void registerLocation(final HRegionLocation location) throws IOException {
         byte [] lv_hostname = location.getHostname().getBytes();
         int lv_port = location.getPort();
-	    long lv_startcode = location.getServerName().getStartcode();
-  
-	    /*        ByteArrayOutputStream lv_bos = new ByteArrayOutputStream();
+        long lv_startcode = location.getServerName().getStartcode();
+
+        /*        ByteArrayOutputStream lv_bos = new ByteArrayOutputStream();
         DataOutputStream lv_dos = new DataOutputStream(lv_bos);
         location.getRegionInfo().write(lv_dos);
         lv_dos.flush(); */
         byte [] lv_byte_region_info = location.getRegionInfo().toByteArray();
         if(LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation: [" + location.getRegionInfo().getRegionNameAsString() + 
           "], transaction [" + transactionId + "]");
-        
+
         if (islocalTransaction()) {
-	    if(LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation local transaction not sending registerRegion.");
+          if(LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation local transaction not sending registerRegion.");
         }
         else {
-	    if(LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation global transaction registering region.");
+          if(LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation global transaction registering region.");
           registerRegion(transactionId, lv_port, lv_hostname, lv_startcode, lv_byte_region_info);
         }
       }
-    
+
     public boolean addRegion(final TransactionRegionLocation trRegion) {        
 
 // Save hregion for now
@@ -296,7 +296,7 @@ public class TransactionState {
 
     /**
      * Get the transactionId.
-     * 
+     *
      * @return Return the transactionId.
      */
     public long getTransactionId() {
@@ -304,11 +304,46 @@ public class TransactionState {
     }
 
     /**
+     * Set the startId.
+     *
+     */
+    public void setStartId(final long id) {
+        this.startId = id;
+    }
+
+    /**
+     * Get the startId.
+     *
+     * @return Return the startId.
+     */
+    public long getStartId() {
+        return startId;
+    }
+
+    /**
+     * Set the commitId.
+     *
+     */
+    public void setCommitId(final long id) {
+        this.commitId = id;
+    }
+
+    /**
+     * Get the commitId.
+     *
+     * @return Return the commitId.
+     */
+    public long getCommitId() {
+        return commitId;
+    }
+
+    /**
      * @see java.lang.Object#toString()
      */
     @Override
     public String toString() {
-        return "id: " + transactionId + ", participants: " + participatingRegions.size() + ", ignoring: " + regionsToIgnore.size();
+        return "transactionId: " + transactionId + ", startId: " + startId + ", commitId: " + commitId +
+               ", participants: " + participatingRegions.size() + ", ignoring: " + regionsToIgnore.size();
     }
 
     public int getParticipantCount() {
