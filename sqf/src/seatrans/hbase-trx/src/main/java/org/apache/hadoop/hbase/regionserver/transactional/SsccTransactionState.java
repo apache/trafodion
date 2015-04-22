@@ -81,7 +81,7 @@ public class SsccTransactionState extends TransactionState{
 
         super(transactionId,rLogStartSequenceId,hlogSeqId,regionInfo,htd,hLog,logging);
         setStartId(SsccSequenceId);
-        LOG.info("SsccTransactionState : new state object for transid: " + transactionId + " with sequence: " + SsccSequenceId + " complete");
+        if(LOG.isTraceEnabled()) LOG.trace("SsccTransactionState : new state object for transid: " + transactionId + " with sequence: " + SsccSequenceId + " complete");
     }
 
     public void addToColList(byte[] rowkey, byte[] collist)
@@ -226,7 +226,7 @@ public class SsccTransactionState extends TransactionState{
         matcher = byteMerger(matcher, cNm);
         matcher = byteMerger(matcher,"|".getBytes());        
         try{
-            LOG.info("handleResult : ENTER: matcher: " + matcher);//statusList size is " + statusList.size() + " versionList size is " + versionList.size() + "gid is " + gTransId);
+            if(LOG.isTraceEnabled()) LOG.trace("handleResult : ENTER: matcher: " + matcher);//statusList size is " + statusList.size() + " versionList size is " + versionList.size() + "gid is " + gTransId);
             /*
             if(statusList==null && versionList == null) //non-transactional data, user put it directly
             {
@@ -237,7 +237,7 @@ public class SsccTransactionState extends TransactionState{
             */
             if(thisTs > startId)  //only for debug checking, like an assert
             {
-                LOG.info("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
+                if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
                 return true;
             }
 
@@ -260,39 +260,39 @@ public class SsccTransactionState extends TransactionState{
                     for (Cell c : statusList)
                     {
                         // Check the transactionId responsible for this row
-                        LOG.info("handleResult check status item if transactionId is self ? gTransId is " + gTransId + " to compare to " + SsccConst.getTransactionId( CellUtil.cloneValue(c) ) );
+                        if(LOG.isTraceEnabled()) LOG.trace("handleResult check status item if transactionId is self ? gTransId is " + gTransId + " to compare to " + SsccConst.getTransactionId( CellUtil.cloneValue(c) ) );
                         if( gTransId == SsccConst.getTransactionId( CellUtil.cloneValue(c) ))
                         {
                             // This row is updated by the current transaction
                             if(SsccConst.isDeleteStatus(CellUtil.cloneValue(c)) == true ) //this row is delete
                             {
                                 //In Trafodion, we have to delete the whole row, instead of individual cell
-                                LOG.info("handleResult row is deleted by this transaction");
+                                if(LOG.isTraceEnabled()) LOG.trace("handleResult row is deleted by this transaction");
                                 return false;
                             }
                             if(indexOf(lv_colList,matcher) != -1) // This cell is updated by me
                             {
                                 statusValList.add(CellUtil.cloneValue(c));
-                                LOG.info("handleResult check status item if transactionId is self update");
+                                if(LOG.isTraceEnabled()) LOG.trace("handleResult check status item if transactionId is self update");
                                 updateByMe = true;
                             }
                             else
-                                LOG.info("this cell is not updated by me , matcher " + Bytes.toString(matcher) +  " lv_colList is " + Bytes.toString(lv_colList) );
+                                if(LOG.isTraceEnabled()) LOG.trace("this cell is not updated by me , matcher " + Bytes.toString(matcher) +  " lv_colList is " + Bytes.toString(lv_colList) );
                         }
                         else
-                            LOG.info("handleResult check status item if transactionId is NOT self gTransId is " + gTransId + " to compare to " + SsccConst.getTransactionId( CellUtil.cloneValue(c) ) );
+                            if(LOG.isTraceEnabled()) LOG.trace("handleResult check status item if transactionId is NOT self gTransId is " + gTransId + " to compare to " + SsccConst.getTransactionId( CellUtil.cloneValue(c) ) );
                     }
                     if (updateByMe == true)  // I am updating this cell, but is this the version update by me?
                     {
                         if(thisTs == startId)
                         {
                             boolean isit = SsccConst.isSelfUpdate(statusValList,startId);
-                            LOG.info("handleResult this is updated by me " + isit);
+                            if(LOG.isTraceEnabled()) LOG.trace("handleResult this is updated by me " + isit);
                             return isit;  
                         }
                         else
                         {
-                            LOG.info("handleResult is not update by me for this row");
+                            if(LOG.isTraceEnabled()) LOG.trace("handleResult is not update by me for this row");
                             return false;
                         }
                     }
@@ -318,7 +318,7 @@ public class SsccTransactionState extends TransactionState{
                     long itsStartId = SsccConst.getVersionStartID(version);
 
                     if (commitId > startId) {
-                       LOG.info("handleResult cell committed after our startId, ignoring");
+                       if(LOG.isTraceEnabled()) LOG.trace("handleResult cell committed after our startId, ignoring");
                        continue;
                     }
 
@@ -329,7 +329,7 @@ public class SsccTransactionState extends TransactionState{
                     {
                         for( Cell colc : colList)
                         {
-                            LOG.info("colc list, itstartid " + itsStartId + " colc.timestamp " + colc.getTimestamp() );
+                            if(LOG.isTraceEnabled()) LOG.trace("colc list, itstartid " + itsStartId + " colc.timestamp " + colc.getTimestamp() );
                             if(itsStartId == colc.getTimestamp() )
                             {
                                 byte[] colVBytes = CellUtil.cloneValue(colc);
@@ -340,7 +340,7 @@ public class SsccTransactionState extends TransactionState{
                         if(indexOf(allcollist,matcher) != -1) 
                         {
                             sameCommit = true;
-                            LOG.info("handleResult: check version item cid: " + commitId );
+                            if(LOG.isTraceEnabled()) LOG.trace("handleResult: check version item cid: " + commitId );
                             //find the last commited row, and its time must be before this transaction start
                             if(commitId > maxCommitId && commitId < getStartId()) 
                             {
@@ -349,23 +349,23 @@ public class SsccTransactionState extends TransactionState{
                             }
                         }
                         else {
-                            LOG.info("this cell is not updated by this commit version, matcher " + Arrays.toString(matcher) +  " collist is " + Arrays.toString(allcollist) );
+                            if(LOG.isTraceEnabled()) LOG.trace("this cell is not updated by this commit version, matcher " + Arrays.toString(matcher) +  " collist is " + Arrays.toString(allcollist) );
                         }
                     }
                     else {
-                      LOG.info("handleResult colList is null");
+                      if(LOG.isTraceEnabled()) LOG.trace("handleResult colList is null");
                     }
             }
             if(maxStartId == 0 && commitId < getStartId()) // out of MAX_VERSION window, this row must be visible
             {
                if (commitId > getStartId()) {
-                  LOG.info("handleResult : this cell committed after our startId");
+                  if(LOG.isTraceEnabled()) LOG.trace("handleResult : this cell committed after our startId");
                }
-               LOG.info("handleResult : this cell is out of MAX_VERSION window check, returning true");
+               if(LOG.isTraceEnabled()) LOG.trace("handleResult : this cell is out of MAX_VERSION window check, returning true");
                return true;
             }
             finalret = (maxStartId == thisTs);
-            LOG.info("handleResult: finally return " + finalret + " maxId is " + maxStartId + " thisTs is " + thisTs);
+            if(LOG.isTraceEnabled()) LOG.trace("handleResult: finally return " + finalret + " maxId is " + maxStartId + " thisTs is " + thisTs);
         }
         catch( Exception e) {
            LOG.error("handleResult:  get Caught exception " + e.getMessage() + ""  );
@@ -408,7 +408,7 @@ public class SsccTransactionState extends TransactionState{
     }
 
     public boolean hasConflict(List<Cell> statusList,List<Cell> versionList, boolean stateless,long startId,long gTransId) {
-        LOG.info("Entry hasConflict, stateless: " + stateless + ", startId: " + startId + ", transId: " + gTransId );
+        if(LOG.isTraceEnabled()) LOG.trace("Entry hasConflict, stateless: " + stateless + ", startId: " + startId + ", transId: " + gTransId );
 
         /*
         if(statusList==null && versionList == null) //non-transactional data, user put it directly
@@ -422,64 +422,62 @@ public class SsccTransactionState extends TransactionState{
         // no other update at this point
         if((statusList == null) && (stateless == true)){
             // Cannot have a conflict
-            LOG.info("hasConflict statusList is null for stateless update: no conflict");
+            if(LOG.isTraceEnabled()) LOG.trace("hasConflict statusList is null for stateless update: no conflict");
             return false;
         }
         if (statusList != null) {
            //status is not null
            if((statusList.size() == 0) && (stateless == true)){
               // Cannot have a conflict with an empty statusList
-              LOG.info("hasConflict statusList size 0 for stateless update: no conflict");
+              if(LOG.isTraceEnabled()) LOG.trace("hasConflict statusList size 0 for stateless update: no conflict");
               return false;
            }
            else {
               // StatusList > 0
-              LOG.info("hasConflict statusList size > 0");
+              if(LOG.isTraceEnabled()) LOG.trace("hasConflict statusList size > 0");
               if(checkStatusListForConflict( statusList,stateless,startId,gTransId) == true) {
-                 LOG.info("hasConflict checkStatusListForConflict returned true");
+                 if(LOG.isTraceEnabled()) LOG.trace("hasConflict checkStatusListForConflict returned true");
                  return true;
               }
               else {
                  // If we are a stateless update we don't need to check the version
                  if (stateless) {
-                    LOG.info("hasConflict checkStatusListForConflict returned false and this is a stateless update:  Skipping version checks");
+                    if(LOG.isTraceEnabled()) LOG.trace("hasConflict checkStatusListForConflict returned false and this is a stateless update:  Skipping version checks");
                     return false;
                  }
               }
            } //  statusList.size() > 0
         }  // statusList == null
-        LOG.info("hasConflict checking versionList for conflict");
+        if(LOG.isTraceEnabled()) LOG.trace("hasConflict checking versionList for conflict");
         return checkVersionListForConflict( versionList,startId);
     }
 
     private boolean checkVersionListForConflict(List<Cell> versionList,long startId)
     {
         boolean ret = false;
-        LOG.info("checkVersionListForConflict : ENTER startId is " + startId );
+        if(LOG.isTraceEnabled()) LOG.trace("checkVersionListForConflict : ENTER startId is " + startId );
         if(versionList == null)
         {
-            LOG.info("checkVersionListForConflict: versionList is null, return false");
+            if(LOG.isTraceEnabled()) LOG.trace("checkVersionListForConflict: versionList is null, return false");
             return false;
         }
         for(Cell v : versionList)
         {
-            LOG.info("checkVersionListForConflict : iterate the version list v.timestamp is " + v.getTimestamp() );
+            if(LOG.isTraceEnabled()) LOG.trace("checkVersionListForConflict : iterate the version list v.timestamp is " + v.getTimestamp() );
             if(startId < v.getTimestamp() ) //some transaction commit after I beginTransaction
             {
                 ret = true;
                 break;
             }
-        LOG.info("checkVersionListForConflict : 3");
         }
-        LOG.info("checkVersionListForConflict : 4");
         return ret;
     }
 
     private boolean checkStatusListForConflict(List<Cell> statusList, boolean stateless,long startId,long gTransId)
     {
-        LOG.info("checkStatusListForConflict: ENTER with startId " + startId );
+        if(LOG.isTraceEnabled()) LOG.trace("checkStatusListForConflict: ENTER with startId " + startId );
         if(statusList == null) return false;
-        LOG.info("checkStatusListForConflict: statusList is not null");
+        if(LOG.isTraceEnabled()) LOG.trace("checkStatusListForConflict: statusList is not null");
         int count = statusList.size();
 
         if(count == 0) {
@@ -490,24 +488,24 @@ public class SsccTransactionState extends TransactionState{
         {
             //get the status Cell
             Cell c = statusList.get(0);
-            LOG.info("startId is " + startId + " c.timestamp is " + c.getTimestamp() + " c.value is " + Arrays.toString(CellUtil.cloneValue(c)));
+            if(LOG.isTraceEnabled()) LOG.trace("startId is " + startId + " c.timestamp is " + c.getTimestamp() + " c.value is " + Arrays.toString(CellUtil.cloneValue(c)));
             if(c.getTypeByte() == KeyValue.Type.DeleteFamilyVersion.getCode() )
             {
-                LOG.info("the status cell is deleted");
+                if(LOG.isTraceEnabled()) LOG.trace("the status cell is deleted");
                 return false;
             }
-            LOG.info("checkStatusListForConflict : check gTransId " + gTransId + " with status's transactionId " + SsccConst.getTransactionId( CellUtil.cloneValue(c) ) );
+            if(LOG.isTraceEnabled()) LOG.trace("checkStatusListForConflict : check gTransId " + gTransId + " with status's transactionId " + SsccConst.getTransactionId( CellUtil.cloneValue(c) ) );
             return !(gTransId==SsccConst.getTransactionId( CellUtil.cloneValue(c) ));
         }
 
         if(count > 1){
-           LOG.info("checkStatusListForConflict: statusList counter > 1, stateless: " + stateless);
+           if(LOG.isTraceEnabled()) LOG.trace("checkStatusListForConflict: statusList counter > 1, stateless: " + stateless);
            if (stateless != true) {
              return true; //there are more than 1 update, and this is a stateful update
            }
            for (Cell c : statusList) {
               if (SsccConst.getStatusValue(CellUtil.cloneValue(c)) == SsccConst.S_STATEFUL_BYTE) {
-                 LOG.info("checkStatusListForConflict: stateful update already pending");
+                 if(LOG.isTraceEnabled()) LOG.trace("checkStatusListForConflict: stateful update already pending");
                  return true; //there is already a stateful update
               }
            }
