@@ -71,14 +71,22 @@ cat <<EOF
 
 Usage:
 
-$MY_CMD [ -p {<start port num> | rand | fromDisplay} ]  [ -y ]
+$MY_CMD [ -p {<start port num> | rand | fromDisplay} ]
+                     [ -y ]
+                     [ -n ]
+                     [ -v ]
 
   -p configures non-standard ports, and is one of:
-  -p  <start port num>    custom cases
-  -p rand                 for EC builds and similar environments (not yet supported)
-  -p fromDisplay          if you are running on a VNC session
+    -p <start port num>     custom cases
+    -p rand                 for shared systems, use a random start port number
+                            between 9000 and 49000 that is divisible by 200
+    -p fromDisplay          if you are running on a VNC session
 
   -y answers interactive questions implicitly with yes
+
+  -n takes no action, useful with -v
+
+  -v lists the port values used
 
   See script header for use of optional environment variables.
 
@@ -90,8 +98,8 @@ function check_ssh {
   echo
   echo "Check ssh ${MY_HOST_1} access without a password..."
   # disable any options that would query the user terminal, ask for strict host key checking
-  # to force it to fail if something is not quite right with he host key
-  ssh -o PasswordAuthentication=no -o KbdInteractiveDevices=none -o StrictHostKeyChecking=yes ${MY_HOST_1} echo "testing ssh ${MY_HOST_1}" 
+  # to force it to fail if something is not quite right with the host key
+  ssh -o PasswordAuthentication=no -o KbdInteractiveDevices=none -o StrictHostKeyChecking=yes ${MY_HOST_1} echo "testing ssh ${MY_HOST_1}"
   if [ $? -ne 0 ]; then
     # if we deal with multiple systems, don't wipe out .ssh directory
     # try some simpler measures and give up if those don't work
@@ -131,7 +139,7 @@ EOF
       fi
 
       # now try once more (with regular host key checking)
-      ssh -o PasswordAuthentication=no -o KbdInteractiveDevices=none ${MY_HOST_1} echo "testing ssh ${MY_HOST_1}" 
+      ssh -o PasswordAuthentication=no -o KbdInteractiveDevices=none ${MY_HOST_1} echo "testing ssh ${MY_HOST_1}"
       if [ $? -ne 0 ]; then
         SSH_FAILED=yes
       fi
@@ -139,7 +147,7 @@ EOF
       SSH_FAILED=yes
     fi
   fi
-  
+
   if [ $SSH_FAILED = yes ]; then
     # A few initial steps that are required:
     cat <<EOF
@@ -148,7 +156,7 @@ Please make sure you can do ssh ${MY_HOST_1} without having to enter a password
 
 cd
 rm -rf .ssh
-ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa 
+ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 chmod 644 ~/.ssh/authorized_keys
@@ -175,7 +183,7 @@ EOF
       rm -rf .ssh-renamed
       mv -f .ssh .ssh-renamed
       # generate an RSA public/private key pair without a passphrase
-      ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa 
+      ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
 
       # copy public key to authorized_keys and set permissions correctly
       chmod 600 ~/.ssh/id_rsa
@@ -199,7 +207,7 @@ EOF
       fi
 
       # now try once more (with regular host key checking)
-      ssh -o PasswordAuthentication=no -o KbdInteractiveDevices=none ${MY_HOST_1} echo "testing ssh ${MY_HOST_1}" 
+      ssh -o PasswordAuthentication=no -o KbdInteractiveDevices=none ${MY_HOST_1} echo "testing ssh ${MY_HOST_1}"
       if [ $? -ne 0 ]; then
         SSH_FAILED=yes
       fi
@@ -215,6 +223,47 @@ EOF
     echo "Check ssh ${MY_HOST_1} access without a password succeeded."
   fi
   # end of ssh checking
+}
+
+function listports {
+  # Report values selected for ports
+  VARS_FOR_PORTS="
+	MY_DCS_MASTER_INFO_PORT
+	MY_DCS_MASTER_PORT
+	MY_DCS_SERVER_INFO_PORT
+	MY_HADOOP_DN_HTTP_PORT_NUM
+	MY_HADOOP_DN_IPC_PORT_NUM
+	MY_HADOOP_DN_PORT_NUM
+	MY_HADOOP_HDFS_PORT_NUM
+	MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM
+	MY_HADOOP_NN_HTTP_PORT_NUM
+	MY_HADOOP_SECONDARY_NN_PORT_NUM
+	MY_HADOOP_SHUFFLE_PORT_NUM
+	MY_HADOOP_TASK_TRACKER_PORT_NUM
+	MY_HBASE_MASTER_INFO_PORT_NUM
+	MY_HBASE_MASTER_PORT_NUM
+	MY_HBASE_REGIONSERVER_INFO_PORT_NUM
+	MY_HBASE_REGIONSERVER_PORT_NUM
+	MY_HBASE_REST_PORT_NUM
+	MY_HBASE_ZOOKEEPER_LEADERPORT_NUM
+	MY_HBASE_ZOOKEEPER_PEERPORT_NUM
+	MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM
+	MY_REST_SERVER_PORT
+	MY_REST_SERVER_SECURE_PORT
+	MY_SQL_PORT_NUM
+	MY_YARN_ADMIN_PORT_NUM
+	MY_YARN_HTTP_PORT_NUM
+	MY_YARN_LOCALIZER_PORT_NUM
+	MY_YARN_NM_PORT_NUM
+	MY_YARN_RESMAN_PORT_NUM
+	MY_YARN_SCHED_PORT_NUM
+	MY_YARN_TRACKER_PORT_NUM"
+
+  for AVAR in $VARS_FOR_PORTS; do
+    AVALUE="$(eval "echo \$$AVAR")"
+    printf '%s=%s\n' $AVAR $AVALUE
+  done
+  echo
 }
 
 # global config
@@ -247,7 +296,7 @@ HBASE_HOME=${MY_SW_ROOT}/hbase
 
   # also set http_proxy and ftp_proxy if necessary, to download
   # files from repositories on the Internet
- 
+
 
 # hosts, only localhost or the actual DNS name of the local host are supported for now
 ############################################
@@ -281,14 +330,16 @@ MY_SQL_CONFIG_FILE=${MYSQL_HOME}/my.cnf
 
 MY_CMD=$0
 MY_IMPLICIT_Y=
+NOACTION=
+VERBOSE=
 
 # process command line arguments
 ################################
 
 while [ $# -gt 0 ];
 do
-  if [ $1 = "-p" ]; then
-    shift
+  case $1 in
+-p) shift
     MY_START_PORT=$1
     if [ $MY_START_PORT != "rand" -a $MY_START_PORT != "fromDisplay" ]; then
       test $MY_START_PORT -gt 0 >/dev/null 2>&1
@@ -297,22 +348,28 @@ do
         exit 1
       fi
     fi
-  elif [ $1 = "-y" ]; then
-    MY_IMPLICIT_Y="y"
-  elif [ $1 = "-d" ]; then
-    # use DNS name instead of "localhost" (option is not currently recommended)
+    ;;
+-y) MY_IMPLICIT_Y="y"
+    ;;
+-d) # use DNS name instead of "localhost" (option is not currently recommended)
     MY_HOST_1=`uname -a | cut -f 2 -d ' '`
-  elif [ $1 = "-h" -o $1 = "-help" ]; then
+    ;;
+-h|-help)
     usage
     exit 0
-  else
-    echo "Unexpected argument $1"
+    ;;
+-n) NOACTION="y"
+    ;;
+-v) VERBOSE="y"
+    ;;
+*)  echo "Unexpected argument $1"
     echo
     cat <<EOF
-Syntax: $0 [ -p [<starting port num> | rand | fromDisplay ] ]  [-y]
+Syntax: $0 [ -p [<starting port num> | rand | fromDisplay ] ]  [-y]  [-n] [-v]
 EOF
     exit 1
-  fi
+    ;;
+  esac
   shift
 done
 
@@ -338,7 +395,7 @@ else
     # pick a random number between 9000 and 49000 that is divisible by 200
     MY_START_PORT=`expr $RANDOM '%' 200 '*' 200 + 9000`
   fi
-  echo "Using port range from MY_START_PORT env var: $MY_START_PORT..."
+  echo "# Using non-standard port range from MY_START_PORT env var: $MY_START_PORT..."
 fi
 
 # assign ports with defaults outside the range of 50000-50199
@@ -451,6 +508,14 @@ MY_HADOOP_TASK_TRACKER_PORT_NUM=`expr $MY_START_PORT + 60`
 # dfs.backup.address (50100)
 # dfs.backup.http.address (50105)
 # mapred.job.tracker (???)
+
+if [[ -n "$VERBOSE" ]]; then
+  listports
+fi
+if [[ -n "$NOACTION" ]]; then
+  exit 0
+fi
+
 
 # Specify mirrors and versions of needed components
 #####################################################
@@ -918,28 +983,28 @@ EOF
      <property>
          <name>dfs.namenode.name.dir</name>
          <value>file://${MY_HADOOP_DATA_DIR}/dfs/name</value>
-     </property> 
+     </property>
 
      <property>
          <name>dfs.http.address</name>
          <value>${MY_HOST_1}:${MY_HADOOP_NN_HTTP_PORT_NUM}</value>
-     </property> 
+     </property>
      <property>
          <name>dfs.secondary.http.address</name>
          <value>${MY_HOST_1}:${MY_HADOOP_SECONDARY_NN_PORT_NUM}</value>
-     </property> 
+     </property>
      <property>
          <name>dfs.datanode.address</name>
          <value>${MY_HOST_1}:${MY_HADOOP_DN_PORT_NUM}</value>
-     </property> 
+     </property>
      <property>
          <name>dfs.datanode.http.address</name>
          <value>${MY_HOST_1}:${MY_HADOOP_DN_HTTP_PORT_NUM}</value>
-     </property> 
+     </property>
      <property>
          <name>dfs.datanode.ipc.address</name>
          <value>${MY_HOST_1}:${MY_HADOOP_DN_IPC_PORT_NUM}</value>
-     </property> 
+     </property>
 
      <property>
          <name>dfs.namenode.acls.enabled</name>
@@ -1062,8 +1127,8 @@ EOF
   bin/hdfs dfs -mkdir /hive                          >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -chmod g+w /tmp                       >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -chmod g+w /user/hive/warehouse       >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /bulkload                  >>${MY_LOG_FILE} 2>&1  
-  bin/hdfs dfs -chmod g+w /user/trafodion/bulkload   >>${MY_LOG_FILE} 2>&1  
+  bin/hdfs dfs -chmod g+w /bulkload                  >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /user/trafodion/bulkload   >>${MY_LOG_FILE} 2>&1
   bin/hadoop fs -ls -R /                 2>&1 | tee -a ${MY_LOG_FILE}
   echo "Done: Creating HDFS directories" 2>&1 | tee -a ${MY_LOG_FILE}
 
@@ -1140,7 +1205,7 @@ EOF
 
   # start mysql
   echo "Starting mysqld..." | tee -a ${MY_LOG_FILE}
-  $MY_SW_SCRIPTS_DIR/swstartmysql >>${MY_LOG_FILE} 2>&1 
+  $MY_SW_SCRIPTS_DIR/swstartmysql >>${MY_LOG_FILE} 2>&1
   if [ $? -ne 0 ]; then
     echo "Problem starting MySQL, see, file ${MY_LOG_FILE}" | tee -a ${MY_LOG_FILE}
   fi
@@ -1204,43 +1269,43 @@ else
 <!-- Put site-specific property overrides in this file. -->
 
 <configuration>
-  <property> 
-     <name>hive.exec.scratchdir</name> 
-     <value>${MY_HIVE_DATA_DIR}</value> 
-  </property> 
+  <property>
+     <name>hive.exec.scratchdir</name>
+     <value>${MY_HIVE_DATA_DIR}</value>
+  </property>
 
-  <property> 
-     <name>hive.metastore.local</name> 
-     <value>true</value> 
-  </property> 
+  <property>
+     <name>hive.metastore.local</name>
+     <value>true</value>
+  </property>
 
   <!-- Use MySQL as metastore -->
 
-  <property> 
-     <name>javax.jdo.option.ConnectionURL</name> 
-     <value>jdbc:mysql://${MY_HOST_1}:${MY_SQL_PORT_NUM}/${MY_SQL_METASTORE_DB}?createDatabaseIfNotExist=true</value> 
+  <property>
+     <name>javax.jdo.option.ConnectionURL</name>
+     <value>jdbc:mysql://${MY_HOST_1}:${MY_SQL_PORT_NUM}/${MY_SQL_METASTORE_DB}?createDatabaseIfNotExist=true</value>
      <description>JDBC connect string for a JDBC metastore (don't include white space)</description>
-  </property> 
+  </property>
 
-  <property> 
-     <name>javax.jdo.option.ConnectionDriverName</name> 
-     <value>com.mysql.jdbc.Driver</value> 
+  <property>
+     <name>javax.jdo.option.ConnectionDriverName</name>
+     <value>com.mysql.jdbc.Driver</value>
      <description>Driver class name for a JDBC metastore</description>
-  </property> 
+  </property>
 
-  <property> 
-     <name>javax.jdo.option.ConnectionUserName</name> 
+  <property>
+     <name>javax.jdo.option.ConnectionUserName</name>
      <value>${MY_SQL_USER}</value>
-  </property> 
+  </property>
 
-  <property> 
-     <name>javax.jdo.option.ConnectionPassword</name> 
+  <property>
+     <name>javax.jdo.option.ConnectionPassword</name>
      <value>${MY_SQL_USER_PASSWD}</value>
   </property>
 
   <!-- end of MySQL metastore parameters -->
 
-  <!-- Alternatively, use this to set up Apache Derby as metadata store 
+  <!-- Alternatively, use this to set up Apache Derby as metadata store
 
   <property>
     <name>javax.jdo.option.ConnectionURL</name>
@@ -1316,7 +1381,7 @@ else
 
   HBASE_CONFIG_FILE=hbase/conf/hbase-site.xml
   HBASE_ENV_FILE=hbase/conf/hbase-env.sh
-  
+
   # For HBase_Trx
 
   # Do not build if the TRX jar already exists
@@ -1397,7 +1462,7 @@ else
   <property>
      <name>hbase.bulkload.staging.dir</name>
      <value>hdfs://${MY_HOST_1}:${MY_HADOOP_HDFS_PORT_NUM}/hbase-staging</value>
-  </property>  
+  </property>
  <property>
     <name>hbase.snapshot.enabled</name>
     <value>true</value>
@@ -1416,7 +1481,7 @@ else
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
            org.apache.hadoop.hbase.coprocessor.AggregateImplementation
-      </value> 
+      </value>
    </property>
 </configuration>
 EOF
@@ -1457,7 +1522,7 @@ else
   #####################################################
   # four options, depend on user Env variables, as described above
   if [[ -f $DCS_TAR ]]
-  then 
+  then
     echo "Using DCS Tar: $DCS_TAR" | tee -a ${MY_LOG_FILE}
   elif [[ -n $DCS_URL ]]
   then
@@ -1505,7 +1570,7 @@ else
   echo "Adding DCS_INSTALL_DIR to sqenv via ~/.trafodion"  | tee -a ${MY_LOG_FILE}
   echo "  Update it if switching between multiple local_hadoop environments"  | tee -a ${MY_LOG_FILE}
   if [[ -f ~/.trafodion ]]
-  then 
+  then
     mv -f ~/.trafodion ~/.trafodion.orig
     grep -v 'DCS_INSTALL_DIR=' ~/.trafodion.orig > ~/.trafodion
   fi
@@ -1569,7 +1634,7 @@ then
   sed -e "s@localhost:37800@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
   chmod +x $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
   echo "Modified trafci port number to $MY_DCS_MASTER_PORT" | tee -a ${MY_LOG_FILE}
-else 
+else
   echo "$TRAFCI_BIN_DIR not found" | tee -a ${MY_LOG_FILE}
 fi
 
@@ -1584,7 +1649,7 @@ else
   #######################################################
   # scripts to run tests
   #######################################################
-  # adding this in this section to enable adding it to 
+  # adding this in this section to enable adding it to
   # existing local_hadoop installations
   echo "Adding swphoenix script...." | tee -a ${MY_LOG_FILE}
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swphoenix
@@ -1600,7 +1665,7 @@ elif [[ \$1 == "t2" ]]
 then
   export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
   ./phoenix_test.py --targettype=TR --javahome=\$JAVA_HOME \\
-     --jdbccp=\$MY_SQROOT/export/lib/jdbcT2.jar --jdbctype=T2 
+     --jdbccp=\$MY_SQROOT/export/lib/jdbcT2.jar --jdbctype=T2
 else
   echo "Usage: swphoenix (t2|t4)"
   exit 1
@@ -1641,7 +1706,7 @@ else
     REST_TAR=$(ls $REST_SRC/target/rest*tar.gz)
   elif [[ -d $MY_SQROOT/../rest ]]
   then
-    cd $MY_SQROOT/../rest 
+    cd $MY_SQROOT/../rest
     echo "Building REST Source in $MY_SQROOT/../rest" | tee -a ${MY_LOG_FILE}
     ${MAVEN:-mvn} site package     >>${MY_LOG_FILE} 2>&1
     cd $MY_SW_ROOT
