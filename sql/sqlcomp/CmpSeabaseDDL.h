@@ -290,7 +290,8 @@ class CmpSeabaseDDL
 			  NABoolean implicitPK,
                           NABoolean alignedFormat,
                           Lng32 *identityColPos = NULL,
-			  NAMemory * heap = NULL);
+			  NAMemory * heap = NULL,
+                          NABoolean skipCheck = FALSE);
 
   // The next three methods do use anything from the CmpSeabaseDDL class.
   // They are placed here as a packaging convinience, to avoid code 
