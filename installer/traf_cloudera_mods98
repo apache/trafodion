@@ -229,6 +229,38 @@ if [ $curl_error -ne 0 ]; then
 fi
 rm $LOCAL_WORKDIR/traf_hbase_config_temp 2> /dev/null
 
+# Change zookeeper config using Cloudera REST API
+
+curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
+'{ "roleTypeConfigs" :  [ {
+        "roleType" : "SERVER",
+        "items": [ {
+           "name" : "maxClientCnxns",
+           "value" : "0"
+           } ]
+        } ]
+}' \
+http://$URL/api/v1/clusters/$CLUSTER_NAME/services/zookeeper/config > $LOCAL_WORKDIR/traf_zookeeper_config_temp
+
+# in most cases curl does not return an error
+# so curl's actual output needs to be checked, too
+curl_error=$(grep TITLE $LOCAL_WORKDIR/traf_zookeeper_config_temp | grep Error | wc -l)
+if [ $curl_error -ne 0 ]; then
+    echo "***ERROR: Unable to modify Zookeeper configuration through Cloudera's REST API."
+    echo "***ERROR: Check that Zookeeper is running without error."
+    cat $LOCAL_WORKDIR/traf_zookeeper_config_temp
+    exit -1
+fi
+curl_error=$(grep message $LOCAL_WORKDIR/traf_zookeeper_config_temp | wc -l)
+if [ $curl_error -ne 0 ]; then
+    echo "***ERROR: Unable to modify Zookeeper configuration through Cloudera's REST API."
+    echo "***ERROR: Check that Zookeeper is running without error."
+    cat $LOCAL_WORKDIR/traf_zookeeper_config_temp
+    exit -1
+fi
+rm $LOCAL_WORKDIR/traf_zookeeper_config_temp 2> /dev/null
+
+
 #=====================================
 # restart Cloudera to pick up all the changes just made
 poll_time=30
