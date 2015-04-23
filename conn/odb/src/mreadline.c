@@ -138,7 +138,7 @@ int mrinit ( void )
     /* Set terminal modes. */
     tattr = _oattr;                     /* dup current settings */
     tattr.c_lflag &= ~ICANON;           /* No Buffering */
-    tattr.c_lflag &= ~ISIG;             /* Ignore Ctrl-C */
+    //tattr.c_lflag &= ~ISIG;             /* Ignore Ctrl-C */
     tattr.c_lflag &= ~ECHO;             /* No Echo */
     tattr.c_cc[VMIN] = 1;               /* min number of read chars */
     tattr.c_cc[VTIME] = 0;              /* no delay after key press */
@@ -621,12 +621,13 @@ char *mreadline ( char *prompt, unsigned int *length )
                             }
                         }
                         mrline = _mrhist[_mrhsize];
-                        strncat ( mrline, buff, (size_t) ( ret + 1 ) ) ;
+                        strncat ( mrline, buff, (size_t) ret ) ;
                         ll += ret;
                     }
                     (void)close ( fd );         /* close temporary file */
                     (void)unlink ( tfile );     /* remove temporary file */
-                    mrline[--ll] = '\0';        /* exclude last \n added by vi */
+		    if ( mrline[ll-1] == '\n' )
+                      mrline[--ll] = '\0';	/* exclude last \n added by vi */
                     ps = ll;                    /* set cursor position to the end */
                     _mrefresh( _mrprompt, pl, mrline, ps );
                 }

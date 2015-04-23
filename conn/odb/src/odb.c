@@ -1364,10 +1364,8 @@ int main(int ac, char *av[])
     if ( !no && !(f & 020030) )
         exit( exstat );
 
-    if ( f & 02000 )    /* [-I] Interpreter mode */
-        (void)signal(SIGINT, cancel);   /* Keyboard Ctrl-C (interactive) */
-    else 
-        (void)signal(SIGINT, SIG_IGN);  /* Ignore signal interrupts for now */
+    if ( ! ( f & 02000 ) )	/* Not Interpreter mode */
+      (void)signal(SIGINT, SIG_IGN);  /* Ignore signal interrupts for now */
 
 #ifdef _WIN32
     /* Initialize dlbmutex (Win32) */
@@ -1811,6 +1809,8 @@ int main(int ac, char *av[])
             var_set ( &thps[0].tva, VTYPE_I, "catalog", ccn[0] ? (char *)ccn : "unknown" );
             var_set ( &thps[0].tva, VTYPE_I, "schema", csn[0] ? (char *)csn : "unknown" );
         }
+        if ( etab[0].dbt != VERTICA )
+          (void)signal(SIGINT, cancel);	/* Keyboard Ctrl-C (interactive) */
 
         /* Opening ODB_INI file & reading initial section */
         if ( etab[0].run ) {
@@ -3421,8 +3421,10 @@ Please note the fixed length '6' in strmicmp: SELECT/UPDATET/DELETE/INSERT have 
     }
 
     /* Close Describe Result set */
-    if ( etab[eid].flg & 0400000 && t == 1 )    /* Describe result set */
+    if ( etab[eid].flg & 0400000 && t == 1 ) {   /* Describe result set */
         mfprintf(stderr, etab[eid].fso, ");\n");
+        mfprintf(stderr, etab[eid].fso, "Result Set Display Size: %zu bytes (%zu bytes including terminating NULLs)\n", rsds - j, rsds);
+    }
 
     /* reduce CHAR/VARCHAR field length to fit display size */
     if ( !(etab[eid].flg & 040000) && pad == 2 && mrcol < tfl ) {
@@ -4318,14 +4320,14 @@ static void gclean(void)
  */
 static void cancel(int sig)
 {
-    printf("odb canceling statement... ");
-    fflush(stdout);
-    if ( thps[0].Oc )
-        if (!SQL_SUCCEEDED(Oret=SQLCancel(thps[0].Os)))
-            Oerr(0, 0, __LINE__, thps[0].Os, SQL_HANDLE_STMT);
-    printf("%s", prompt);
-    fflush(stdout);
-    (void)signal(sig, cancel);  /* reset SIGINT handling to cancel() */
+  printf("odb canceling statement... ");
+  fflush(stdout);
+  if ( thps[0].Oc )
+    if (!SQL_SUCCEEDED(Oret=SQLCancel(thps[0].Os)))
+      Oerr(0, 0, __LINE__, thps[0].Os, SQL_HANDLE_STMT);
+  printf("%s", prompt);
+  fflush(stdout);
+  (void)signal(sig, cancel);  /* reset SIGINT handling to cancel() */
 }
 
 /* Otinfo:
@@ -13973,7 +13975,7 @@ static void usagexit()
         "      [:pc=padchar][:em=embedchar][:errmax=#max_err][:commit=auto|end|#rows|x#rs]\n"
         "      [:rows=#rowset][:norb][:full][:max=#max_rec][:truncate][:show][:bpc=#][:bpwc=#]\n"
         "      [:nomark][:parallel=number][:iobuff=#size][:buffsz=#size]][:fieldtrunc={0-4}]\n"
-        "      [:pre={@sqlfile}|{[sqlcmd]}][:post={@sqlfile}|{[sqlcmd]}][:ifempty]\n"
+        "      [:pre={@sqlfile|sqlcmd}][:post={@sqlfile|sqlcmd}][:ifempty]\n"
         "      [:direct][:bad=[+]badfile][:tpar=#tables][:maxlen=#bytes][:time][:loadcmd=IN|UP|UL]\n"
 #ifdef XML
         "      [:xmltag=[+]element][:xmlord][:xmldump]\n"
@@ -13990,11 +13992,11 @@ static void usagexit()
         "Data extraction options [connection required]:\n"
         "   -e {src={table|-file}|sql=<custom sql>}:tgt=[+]file[:pwhere=where_cond]\n"
         "      [:fs=fieldsep][:rs=recsep][:sq=stringqualifier][:ec=escape_char][:soe]\n"
-        "      [:ns=nullstring][es=emptystring][:rows=#rowset][:nomark][:binary][:bpc=#][:bpwc=#]\n"
-        "      [:max=#max_rec][:[r]trim[+]][:cast][:multi][parallel=number][:gzip[=lev]]\n"
-        "      [:splitby=column][:uncommitted][:iobuff=#size][hblock=#size][:ucs2toutf8]\n"
-        "      [:pre={@sqlfile}|{[sqlcmd]}[:mpre={@sqlfile}|{[sqlcmd]}[:post={@sqlfile}|{[sqlcmd]}]\n"
-        "      [tpar=#tables][:time][:cols=[-]columns]][:maxlen=#bytes][:xml]\n"
+       "      [:ns=nullstring][:es=emptystring][:rows=#rowset][:nomark][:binary][:bpc=#][:bpwc=#]\n"
+       "      [:max=#max_rec][:[r]trim[+]][:cast][:multi][:parallel=number][:gzip[=lev]]\n"
+       "      [:splitby=column][:uncommitted][:iobuff=#size][:hblock=#size][:ucs2toutf8]\n"
+       "      [:pre={@sqlfile|sqlcmd}[:mpre={@sqlfile|sqlcmd}[:post={@sqlfile|sqlcmd}]\n"
+       "      [:tpar=#tables][:time][:cols=[-]columns]][:maxlen=#bytes][:xml]\n"
         "      Defaults/notes:\n"
         "      * tgt file: local file or {hdfs,mapr}.[@host,port[,huser]].<HDFS_PATH>\n"  
         "      * fs: default ','. Also <ASCII_dec> 0<ASCII_OCT> X<ASCII_HEX>\n"
@@ -14006,12 +14008,12 @@ static void usagexit()
     fprintf(stderr, "Data copy options [connection required]:\n"
         "   -cp src={table|-file:tgt=schema[.table][pwhere=where_cond][:soe][:roe=#][:roedel=#ms]\n"
         "      [:truncate][:rows=#rowset][:nomark][:max=#max_rec][:bpc=#][:bpwc=#][:[r]trim[+]]\n"
-        "      [:parallel=number][errmax=#max_err][:commit=auto|end|#rows|x#rs][:time][:cast]\n"
-        "      [:direct][:uncommitted][:norb][:splitby=column][:pre={@sqlfile}|{[sqlcmd]}]\n"
-        "      [:post={@sqlfile}|{[sqlcmd]}][:mpre={@sqlfile}|{[sqlcmd]}][:ifempty]\n"
+        "      [:parallel=number][:errmax=#max_err][:commit=auto|end|#rows|x#rs][:time][:cast]\n"
+        "      [:direct][:uncommitted][:norb][:splitby=column][:pre={@sqlfile|sqlcmd}]\n"
+	"      [:post={@sqlfile|sqlcmd}][:mpre={@sqlfile|sqlcmd}][:ifempty]\n"
         "      [:loaders=#loaders][:tpar=#tables][:cols=[-]columns][:errdmp=file]\n"
-        "      [sql={[sqlcmd]|@sqlfile|-file}[:bind=auto|char|cdef][:seq=field#[,start]]\n"
-        "      [tmpre={@sqlfile}|{[sqlcmd]}][:ucs2toutf8=[skip,force,cpucs2,qmark]][:loadcmd=IN|UP|UL]\n"
+        "      [:sql={sqlcmd|@sqlfile|-file}[:bind=auto|char|cdef][:seq=field#[,start]]\n"
+        "      [:tmpre={@sqlfile|sqlcmd}][:ucs2toutf8=[skip,force,cpucs2,qmark]][:loadcmd=IN|UP|UL]\n"
         "      Defaults/notes:\n"
         "      * loaders: default 2 load threads for each 'extractor'\n"
         "      * direct: only work if target database is Vertica\n"
@@ -14019,21 +14021,21 @@ static void usagexit()
         "      * roe: default 3 if no arguments\n"
         "      * bpc: default 1,bpwc: default 4 \n"
         "Data pipe options [connection required]:\n"
-        "   -pipe sql={[sqlcmd]|@sqlscript|-file}:tgtsql={@sqlfile|[sqlcmd]}[:soe]\n"
+        "   -pipe sql={sqlcmd|@sqlscript|-file}:tgtsql={@sqlfile|sqlcmd}[:soe]\n"
         "      [:rows=#rowset][:nomark][:max=#max_rec][:bpc=#][:bpwc=#][:errdmp=file]\n"
-        "      [:parallel=number][errmax=#max_err][:commit=auto|end|#rows|x#rs][:time]\n"
-        "      [:pre={@sqlfile}|{[sqlcmd]}][:post={@sqlfile}|{[sqlcmd]}]\n"
-        "      [:mpre={@sqlfile}|{[sqlcmd]}][:tmpre={@sqlfile}|{[sqlcmd]}]\n"
+        "      [:parallel=number][:errmax=#max_err][:commit=auto|end|#rows|x#rs][:time]\n"
+        "      [:pre={@sqlfile|sqlcmd}][:post={@sqlfile|sqlcmd}]\n"
+        "      [:mpre={@sqlfile|sqlcmd}][:tmpre={@sqlfile|sqlcmd}]\n"
         "      [:loaders=#loaders][:tpar=#tables][:bind=auto|char|cdef]\n"
         "      Defaults/notes:\n"
         "      * loaders: default 1 load threads for each extraction thread\n"
         "      * bpc: default 1,bpwc: default 4 \n"
         "Table diff options [connection required]:\n"
-        "   -diff src={table|-file}:tgt=table:[key=columns][:output=[+]file][:pwhere=where_cond]\n"
-        "      [:pwhere=where_cond][:nomark][:rows=#rowset][:odad][:fs=fieldsep][:time][trim[+]]\n"
+        "   -diff src={table|-file}:tgt=table[:key=columns][:output=[+]file][:pwhere=where_cond]\n"
+        "      [:pwhere=where_cond][:nomark][:rows=#rowset][:odad][:fs=fieldsep][:time][:trim[+]]\n"
         "      [:rs=recsep][:quick][:splitby=column][:parallel=number][:max=#max_rec]\n"
         "      [:print=[I][D][C]][:ns=nullstring][:es=emptystring][:bpc=#][:bpwc=#][:uncommitted]\n"
-        "      [:pre={@sqlfile}|{[sqlcmd]}][:post={@sqlfile}|{[sqlcmd]}][tpar=#tables]\n"
+        "      [:pre={@sqlfile|sqlcmd}][:post={@sqlfile|sqlcmd}][:tpar=#tables]\n"
         "      Defaults/notes:\n"
         "      * bpc: default 1,bpwc: default 4 \n"
         "      * print: default is Inserted Deleted Changed\n");
