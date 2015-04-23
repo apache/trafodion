@@ -110,6 +110,8 @@ static int do_init(JNIEnv *pp_j_env) {
         gv_inited = true;
         try {
             lv_ferr = msg_init_attach(&lv_argc, (char ***) &la_argv, 0, NULL);
+            if (gv_verbose)
+                printf("cli: msg_init_attach ferr=%d\n", lv_ferr);
         } catch (SB_Fatal_Excep &fatal_exc) {
             if (gv_verbose)
                 printf("cli: msg_init_attach threw exc=%s, setting PATHDOWN\n",
@@ -133,6 +135,9 @@ static int do_init(JNIEnv *pp_j_env) {
                     printf("cli: msg_mon_process_startup threw unknown exc, setting PATHDOWN\n");
                 lv_ferr = XZFIL_ERR_PATHDOWN;
             }
+        } else if (lv_ferr == XZFIL_ERR_INVALIDSTATE) {
+            // attach failed, already initialized, clear error
+            lv_ferr = XZFIL_ERR_OK;
         }
     }
     if (lv_ferr == XZFIL_ERR_OK) {
@@ -144,6 +149,9 @@ static int do_init(JNIEnv *pp_j_env) {
     }
     lv_perr = pthread_mutex_unlock(&gv_mutex);
     assert(lv_perr == 0);
+
+    if (gv_verbose)
+       printf("cli: do_init end ferr=%d\n", lv_ferr);
 
     return lv_ferr;
 }
