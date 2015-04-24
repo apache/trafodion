@@ -121,6 +121,8 @@ class TMLIB : public JavaObjectInterfaceTM
         bool open_tm(int pv_node, bool pv_startup = false);
         short send_tm(Tm_Req_Msg_Type *pp_req, Tm_Rsp_Msg_Type *pp_rsp, 
                     int pv_node);  
+        short send_tm_link(char *pp_req, int buffer_size, Tm_Rsp_Msg_Type *pp_rsp,
+                    int pv_node);
 
         // table get methods
         bool phandle_get ( TPT_PTR (pv_phandle), int pv_node);

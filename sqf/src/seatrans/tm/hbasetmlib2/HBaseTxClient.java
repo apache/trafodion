@@ -562,7 +562,7 @@ public class HBaseTxClient {
     return TransReturnCode.RET_OK.getShort();
   }
 
-   public short callCreateTable(long transactionId, byte[] pv_htbldesc) throws Exception
+   public short callCreateTable(long transactionId, byte[] pv_htbldesc, Object[]  beginEndKeys) throws Exception
    {
       TransactionState ts;
       HTableDescriptor htdesc;
@@ -592,7 +592,7 @@ public class HBaseTxClient {
       }
 
       try {
-         trxManager.createTable(ts, htdesc);
+         trxManager.createTable(ts, htdesc, beginEndKeys);
       }
       catch (Exception cte) {
          if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callCreateTable exception trxManager.createTable, retval: " +
@@ -601,6 +601,8 @@ public class HBaseTxClient {
          PrintWriter pw = new PrintWriter(sw);
          cte.printStackTrace(pw);
          LOG.error("HBaseTxClient createTable call error: " + sw.toString());
+
+         throw new Exception("createTable call error");
       }
       return TransReturnCode.RET_OK.getShort();
    }

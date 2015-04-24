@@ -115,10 +115,6 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
        super(tableName, connection, threadPool);      
     }
 
-    public TransactionalTable(final Configuration conf) throws IOException {
-
-    }
-
     public void resetConnection() throws IOException {
         if (LOG.isDebugEnabled()) LOG.debug("Resetting connection for " + this.getTableDescriptor().getTableName());
         HConnection conn = this.getConnection();

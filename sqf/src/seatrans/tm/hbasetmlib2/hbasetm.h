@@ -174,8 +174,14 @@ public:
    short tryCommit(int64 pv_transid);
    short completeRequest(int64 pv_transid);
    short abortTransaction(int64 pv_transid);
-   int createTable(int64 pv_transid, const char pa_ddlrequest[], int pv_ddlrequest_len);
    int dropTable(int64 pv_transid, const char* pa_tblname, int pv_tblname_len);
+   int createTable(int64 pv_transid,
+                           const char* pa_tbldesc,
+                           int pv_tbldesc_len,
+                           char** pv_keys,
+                           int pv_numsplits,
+                           int pv_keylen);
+   jobjectArray convertToByteArrayObjectArray(char **array, int numElements, int elementLen);
    int registerRegion(int64 pv_transid, const char pa_region[], const char pa_regionInfo[], int pv_regionInfo_Length);
    int registerRegion(int64 pv_transid,
             int pv_port,

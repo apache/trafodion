@@ -38,7 +38,6 @@
 //extern int HbaseTM_initiate_stall(int where);  Shouldn't need these here.
 //extern HashMapArray* HbaseTM_process_request_regions_info();
 
-
 //==== For the JNI call to RMInterface.cleartransaction - begin
 #include <iostream>
 #include "jni.h"
@@ -516,7 +515,7 @@ short REGISTERREGION(long transid, int pv_port, char *pa_hostname, int pv_hostna
 // Purpose: send CREATETABLE message to the TM
 // Params: pa_tabledesc, pv_tabledesc_length, pv_tblname, transid
 // -------------------------------------------------------------------
-short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, long transid)
+short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, char** pv_keys, int pv_numsplits, int pv_keylen, long transid)
 {
     short lv_error = FEOK;
 
@@ -530,7 +529,7 @@ short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, lon
     TMlibTrace(("TMLIB_TRACE : CREATETABLE ENTRY: tm txid: %d\n", lp_trans->getTransid()->get_seq_num()), 1);
     TMlibTrace(("TMLIB_TRACE : ENTER CREATETABLE DDLREQUEST: %s", pa_tbldesc), 2);
 
-    lv_error =  lp_trans->create_table(pa_tbldesc, pv_tbldesc_length, pv_tblname);
+    lv_error =  lp_trans->create_table(pa_tbldesc, pv_tbldesc_length, pv_tblname, pv_keys, pv_numsplits, pv_keylen);
 
     return lv_error;
 }
@@ -2655,6 +2654,83 @@ short TMLIB::send_tm(Tm_Req_Msg_Type *pp_req, Tm_Rsp_Msg_Type *pp_rsp,
  
     TMlibTrace(("TMLIB_TRACE : send_tm EXIT returning error %d.\n", lv_ret), 2);
  
+    return lv_ret;
+}
+
+// ---------------------------------------------------------
+// send_tm_link
+// Purpose - send message to the given TM
+// ---------------------------------------------------------
+short TMLIB::send_tm_link(char *pp_req, int buffer_size, Tm_Rsp_Msg_Type *pp_rsp,
+                    int pv_node)
+{
+    //ushort    lv_req_len = sizeof (Tm_Req_Msg_Type);
+    int       lv_rsp_len = sizeof (Tm_Rsp_Msg_Type);
+    int       lv_msgid;
+    TPT_DECL( lv_phandle);
+    short     la_results[6];
+    short     lv_ret = FEOK;
+    int32     lv_linkRetries = 0;
+    const int32 lc_maxLinkRetries = 100;
+    const int32 lc_linkPause = 3000; // 3 second
+
+    TMlibTrace(("TMLIB_TRACE : send_tm (node %d) ENTRY\n", pv_node), 2);
+
+    if (!gv_tmlib.open_tm(pv_node))
+    {
+         TMlibTrace(("TMLIB_TRACE : returning FETMFNOTRUNNING\n"), 1);
+         return FETMFNOTRUNNING;
+    }
+
+    // get phandle and (FOR NOW) abort.  if we get into this
+    // method, we should have already opened and stored the tm
+    gv_tmlib.phandle_get(&lv_phandle, pv_node);
+    do {
+       lv_ret = BMSG_LINK_(&lv_phandle,                  // phandle
+                        &lv_msgid,                   // msgid
+                        NULL,                        // reqctrl
+                        0,                           // reqctrlsize
+                        NULL,                        // replyctrl
+                        0,                           // replyctrlmax
+                        pp_req,                      // reqdata
+                        buffer_size,                 // reqdatasize
+                        (char *) pp_rsp,             // replydata
+                        lv_rsp_len,                  // replydatamax
+                        0,                           // linkertag
+                        TMLIB_LINK_PRIORITY,         // pri
+                        0,                           // xmitclass
+                        0);                          // linkopts
+       lv_linkRetries++;
+       if ((lv_ret == FENOLCB) && (lv_linkRetries <= lc_maxLinkRetries) &&
+         (lv_linkRetries > 1))
+          SB_Thread::Sthr::sleep(lc_linkPause); // in msec
+    } while (lv_ret == FENOLCB && ++lv_linkRetries <= lc_maxLinkRetries);
+
+
+    if (lv_ret)
+    {
+       TMlibTrace(("TMLIB_TRACE : send_tm , BMSG_LINK error is %d\n", lv_ret), 3);
+    }
+    else
+    {
+       lv_ret = BMSG_BREAK_(lv_msgid, la_results, &lv_phandle);
+       if (lv_ret)
+       {
+          TMlibTrace(("TMLIB_TRACE : send_tm , BMSG_BREAK error is %d\n", lv_ret), 3);
+       }
+    }
+
+    switch (lv_ret)
+    {
+    case FEPATHDOWN:
+       lv_ret = FETMFNOTRUNNING;
+       break;
+    case FESERVICEDISABLED:
+        SB_Thread::Sthr::sleep(-1); // in msec - forever!
+    }
+
+    TMlibTrace(("TMLIB_TRACE : send_tm EXIT returning error %d.\n", lv_ret), 2);
+
     return lv_ret;
 }
 
