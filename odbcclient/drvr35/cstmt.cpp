@@ -3495,8 +3495,11 @@ BOOL CStmt::setFetchOutputPerf(SQL_DataValue_def*& outputDataValue, long rowsFet
 				break;
 			case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 				memOffSet = ((memOffSet + 2 - 1) >> 1) << 1; 
-				VarOffSet = memOffSet;					
-				memOffSet += SQLMaxLength + 2;
+				VarOffSet = memOffSet;	
+				if(SQLMaxLength>32767)
+					memOffSet += SQLMaxLength + 4;
+				else
+					memOffSet += SQLMaxLength + 2;
 				break;
 			case SQLTYPECODE_INTERVAL: 
 				VarOffSet = memOffSet;					
