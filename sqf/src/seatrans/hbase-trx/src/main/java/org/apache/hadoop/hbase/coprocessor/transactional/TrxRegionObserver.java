@@ -528,7 +528,8 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
                        if (LOG.isInfoEnabled()) LOG.info("Delaying split due to transactions present. Delayed : " + sleepCounter +
                                        " minute(s) on " + region.getRegionNameAsString());
                } catch(InterruptedException e) {
-                       LOG.warn("Problem while calling sleep(), " + e);
+                       if(LOG.isErrorEnabled()) LOG.error("Problem while calling sleep() on preSplit delay, returning. " + e);
+                       return;
                }
         }
         if(LOG.isInfoEnabled()) LOG.info("preSplit -- setting close var to true on: " + region.getRegionNameAsString());

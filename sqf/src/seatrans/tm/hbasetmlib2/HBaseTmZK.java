@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -110,33 +110,33 @@ public class HBaseTmZK implements Abortable{
 	private List<String> getChildren() throws KeeperException {
 		return ZKUtil.listChildrenNoWatch(zooKeeper, zkNode);
 	}
-	
+
 	/**
 	 * @return
 	 * @throws KeeperException
 	 */
-	public Map<String,byte []> checkForRecovery() throws InterruptedException, KeeperException {		
-        if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- ENTRY");
+	public Map<String,byte []> checkForRecovery() throws InterruptedException, KeeperException {
+                // if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- ENTRY");
 		if(ZKUtil.nodeHasChildren(zooKeeper, zkNode)) {
 			List<String> nodeChildren = new ArrayList<String>();
 			Map<String, byte []> nodeDataMap = new HashMap<String, byte []>();
 			nodeChildren = getChildren();
-		 	
-			for(String node : nodeChildren) {				
 
-                if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- found node: '" + node + "'");
-				byte [] nodeData = checkData(zkNode +"/" + node);	
-                if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- found node: " + node + " node data " + nodeData.toString());		
+			for(String node : nodeChildren) {
+
+                        if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- found node: '" + node + "'");
+                        byte [] nodeData = checkData(zkNode +"/" + node);
+                        if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- found node: " + node + " node data " + nodeData.toString());
 				nodeDataMap.put(node, nodeData);
 			}
-            if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- EXIT returning " + nodeDataMap.size() + " regions");
-			return nodeDataMap;
-		}
-		else {
-			if (LOG.isTraceEnabled()) LOG.trace(zkNode + " is currently not present.");
-            if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- EXIT -- node not present");
-			return null;
-		}		
+                        if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- EXIT returning " + nodeDataMap.size() + " regions");
+                                return nodeDataMap;
+                }
+                else {
+                        // if (LOG.isTraceEnabled()) LOG.trace(zkNode + " is currently not present.");
+                        // if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- EXIT -- node not present");
+                        return null;
+                }
 	}
 
 	/**
