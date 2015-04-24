@@ -4724,7 +4724,8 @@ short CmpSeabaseDDL::buildColInfoArray(
                                        NABoolean implicitPK,
                                        NABoolean alignedFormat,
                                        Lng32 *identityColPos,
-                                       NAMemory * heap)
+                                       NAMemory * heap,
+                                       NABoolean skipCheck)
 {
   std::vector<NAString> myvector;
 
@@ -4811,14 +4812,17 @@ short CmpSeabaseDDL::buildColInfoArray(
     }
 
   // find duplicate colname references. If found, return error and first dup colname.
-  std::sort (myvector.begin(), myvector.end()); 
-  std::vector<NAString>::iterator it = adjacent_find(myvector.begin(), myvector.end());
-  if (it != myvector.end())
+  if (!skipCheck)
+  {
+    std::sort (myvector.begin(), myvector.end()); 
+    std::vector<NAString>::iterator it = adjacent_find(myvector.begin(), myvector.end());
+    if (it != myvector.end())
     {
       *CmpCommon::diags() << DgSqlCode(-1080)
                           << DgColumnName(*it);
       return -1;
     }
+  }
 
   return 0;
 }
