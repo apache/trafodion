@@ -2424,6 +2424,8 @@ static const char* const htcErrorEnumStr[] =
  ,"Java exception in getColValue()."
  ,"Java exception in getRowID()."
  ,"Java exception in nextCell()."
+ ,"Preparing parameters for getRows()."
+ ,"Java exception in getRows()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2526,6 +2528,8 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_DIRECT_DELETE_ROWS ].jm_signature = "(JSLjava/lang/Object;J)Z";
     JavaMethods_[JM_FETCH_ROWS ].jm_name      = "fetchRows";
     JavaMethods_[JM_FETCH_ROWS ].jm_signature = "()I";
+    JavaMethods_[JM_DIRECT_GET_ROWS ].jm_name      = "getRows";
+    JavaMethods_[JM_DIRECT_GET_ROWS ].jm_signature = "(JSLjava/lang/Object;[Ljava/lang/Object;)I";
    
     rc = (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
@@ -2865,7 +2869,7 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const LIST(HbaseStr)& row
   numReqRows_ = rowIDs.entries();
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
-  
+
   if (hbs_)
     hbs_->getTimer().start();
   tsRecentJMFromJNI = JavaMethods_[JM_GETS_OPEN].jm_full_name;
@@ -3189,6 +3193,73 @@ HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID,
   if (hbs_)
     hbs_->incBytesRead(rowID.len + row.len);
 
+  jenv_->PopLocalFrame(NULL);
+  return HTC_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////
+HTC_RetCode HTableClient_JNI::getRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, 
+          const LIST(HbaseStr) & cols)
+{
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+    getExceptionDetails();
+    return HTC_ERROR_GETROWS_EXCEPTION;
+  }
+  jobject jRowIDs = jenv_->NewDirectByteBuffer(rowIDs.val, rowIDs.len);
+  if (jRowIDs == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_INSERTROWS_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return HTC_ERROR_GETROWS_PARAM;
+  }
+  
+  jobjectArray j_cols = NULL;
+  if (!cols.isEmpty())
+  {
+     j_cols = convertToByteArrayObjectArray(cols);
+     if (j_cols == NULL)
+     {
+        getExceptionDetails();
+        logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+        logError(CAT_SQL_HBASE, "HTableClient_JNI::deleteRow()", getLastError());
+        jenv_->DeleteLocalRef(jRowIDs);  
+        jenv_->PopLocalFrame(NULL);
+        return HTC_ERROR_GETROWS_PARAM;
+     }
+  }
+  jlong j_tid = transID;  
+  jshort j_rowIDLen = rowIDLen;
+ 
+  if (hbs_)
+    hbs_->getTimer().start();
+  setFetchMode(HTableClient_JNI::BATCH_GET);
+  tsRecentJMFromJNI = JavaMethods_[JM_DIRECT_GET_ROWS].jm_full_name;
+  jint jresult = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_DIRECT_GET_ROWS].methodID, 
+             j_tid, j_rowIDLen, jRowIDs, j_cols);
+  if (hbs_) {
+      hbs_->incMaxHbaseIOTime(hbs_->getTimer().stop());
+      hbs_->incHbaseCalls();
+  }
+
+  jenv_->DeleteLocalRef(jRowIDs);  
+  if (j_cols != NULL)
+     jenv_->DeleteLocalRef(j_cols);  
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HTableClient_JNI::insertRows()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HTC_ERROR_GETROWS_EXCEPTION;
+  }
+
+  if (jresult == 0) 
+     setNumRowsReturned(-1);
+  else
+     setNumRowsReturned(jresult);
   jenv_->PopLocalFrame(NULL);
   return HTC_OK;
 }
@@ -4232,8 +4303,7 @@ JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setResult
    if (htc->getFetchMode() == HTableClient_JNI::GET_ROW ||
           htc->getFetchMode() == HTableClient_JNI::BATCH_GET)
       htc->setJavaObject(jobj);
-   if (numCellsReturned > 0)
-      htc->setResultInfo(jKvValLen, jKvValOffset,
+   htc->setResultInfo(jKvValLen, jKvValOffset,
                 jKvQualLen, jKvQualOffset, jKvFamLen, jKvFamOffset,
                 jTimestamp, jKvBuffer, jRowIDs, jKvsPerRow, numCellsReturned);  
    return 0;
@@ -4268,65 +4338,59 @@ void HTableClient_JNI::setResultInfo( jintArray jKvValLen, jintArray jKvValOffse
    if (numRowsReturned_ > 0)
       cleanupResultInfo();
    NABoolean exceptionFound = FALSE;
-   jKvValLen_ = (jintArray)jenv_->NewGlobalRef(jKvValLen);
-   if (jenv_->ExceptionCheck())
-       exceptionFound = TRUE;
-   if (! exceptionFound)
-   {
-      jKvValOffset_ = (jintArray)jenv_->NewGlobalRef(jKvValOffset);
+   if (numCellsReturned != 0) {
+      jKvValLen_ = (jintArray)jenv_->NewGlobalRef(jKvValLen);
       if (jenv_->ExceptionCheck())
-         exceptionFound = TRUE;
+          exceptionFound = TRUE;
+      if (! exceptionFound) {
+         jKvValOffset_ = (jintArray)jenv_->NewGlobalRef(jKvValOffset);
+         if (jenv_->ExceptionCheck())
+             exceptionFound = TRUE;
+      }
+      if (! exceptionFound) {
+         jKvQualLen_ = (jintArray)jenv_->NewGlobalRef(jKvQualLen);
+         if (jenv_->ExceptionCheck())
+             exceptionFound = TRUE;
+      }
+      if (! exceptionFound) {
+         jKvQualOffset_ = (jintArray)jenv_->NewGlobalRef(jKvQualOffset);
+         if (jenv_->ExceptionCheck())
+             exceptionFound = TRUE;
+      }
+      if (! exceptionFound) {
+         jKvFamLen_ = (jintArray)jenv_->NewGlobalRef(jKvFamLen);
+         if (jenv_->ExceptionCheck())
+            exceptionFound = TRUE;
+      }
+      if (! exceptionFound) {
+         jKvFamOffset_ = (jintArray)jenv_->NewGlobalRef(jKvFamOffset);
+         if (jenv_->ExceptionCheck())
+            exceptionFound = TRUE;
+      }
+      if (! exceptionFound) {
+         jTimestamp_ = (jlongArray)jenv_->NewGlobalRef(jTimestamp);
+         if (jenv_->ExceptionCheck())
+            exceptionFound = TRUE;
+      }
+      if (! exceptionFound) {
+         jKvBuffer_ = (jobjectArray)jenv_->NewGlobalRef(jKvBuffer);
+         if (jenv_->ExceptionCheck())
+            exceptionFound = TRUE;
+      }
    }
-   if (! exceptionFound)
-   {
-      jKvQualLen_ = (jintArray)jenv_->NewGlobalRef(jKvQualLen);
-      if (jenv_->ExceptionCheck())
-         exceptionFound = TRUE;
-   }
-   if (! exceptionFound)
-   {
-      jKvQualOffset_ = (jintArray)jenv_->NewGlobalRef(jKvQualOffset);
-      if (jenv_->ExceptionCheck())
-         exceptionFound = TRUE;
-   }
-   if (! exceptionFound)
-   {
-      jKvFamLen_ = (jintArray)jenv_->NewGlobalRef(jKvFamLen);
-      if (jenv_->ExceptionCheck())
-         exceptionFound = TRUE;
-   }
-   if (! exceptionFound)
-   {
-      jKvFamOffset_ = (jintArray)jenv_->NewGlobalRef(jKvFamOffset);
-      if (jenv_->ExceptionCheck())
-         exceptionFound = TRUE;
-   }
-   if (! exceptionFound)
-   {
-      jTimestamp_ = (jlongArray)jenv_->NewGlobalRef(jTimestamp);
-      if (jenv_->ExceptionCheck())
-         exceptionFound = TRUE;
-   }
-   if (! exceptionFound)
-   {
-      jKvBuffer_ = (jobjectArray)jenv_->NewGlobalRef(jKvBuffer);
-      if (jenv_->ExceptionCheck())
-         exceptionFound = TRUE;
-   }
-   if (! exceptionFound)
-   {
+   if (! exceptionFound) {
       jRowIDs_ = (jobjectArray)jenv_->NewGlobalRef(jRowIDs);
       if (jenv_->ExceptionCheck())
          exceptionFound = TRUE;
    }
-   if (! exceptionFound)
-   {
+   if (! exceptionFound) {
       jKvsPerRow_ = (jintArray)jenv_->NewGlobalRef(jKvsPerRow);
       if (jenv_->ExceptionCheck())
          exceptionFound = TRUE;
    }
    numCellsReturned_ = numCellsReturned;
    prevRowCellNum_ = 0;
+   currentRowNum_ = -1;
    cleanupDone_ = FALSE;
    ex_assert(! exceptionFound, "Exception in HTableClient_JNI::setResultInfo");
    return;
@@ -4336,15 +4400,42 @@ void HTableClient_JNI::cleanupResultInfo()
 {
    if (cleanupDone_)
       return;
-   jenv_->DeleteGlobalRef(jKvValLen_);
-   jenv_->DeleteGlobalRef(jKvValOffset_);
-   jenv_->DeleteGlobalRef(jKvQualLen_);
-   jenv_->DeleteGlobalRef(jKvQualOffset_);
-   jenv_->DeleteGlobalRef(jKvFamLen_);
-   jenv_->DeleteGlobalRef(jKvFamOffset_);
-   jenv_->DeleteGlobalRef(jTimestamp_);
-   jenv_->DeleteGlobalRef(jKvBuffer_);
-   jenv_->DeleteGlobalRef(jRowIDs_);
+   if (jKvValLen_ != NULL) {
+      jenv_->DeleteGlobalRef(jKvValLen_);
+      jKvValLen_ = NULL;
+   }
+   if (jKvValOffset_ != NULL) {
+      jenv_->DeleteGlobalRef(jKvValOffset_);
+      jKvValOffset_ = NULL;
+   }
+   if (jKvQualLen_ != NULL) {
+      jenv_->DeleteGlobalRef(jKvQualLen_);
+      jKvQualLen_ = NULL;
+   }
+   if (jKvQualOffset_ != NULL) {
+      jenv_->DeleteGlobalRef(jKvQualOffset_);
+      jKvQualOffset_ = NULL;
+   }
+   if (jKvFamLen_ != NULL) {
+      jenv_->DeleteGlobalRef(jKvFamLen_);
+      jKvFamLen_ = NULL;
+   }
+   if (jKvFamOffset_ != NULL) {
+      jenv_->DeleteGlobalRef(jKvFamOffset_);
+      jKvFamOffset_ = NULL;
+   }
+   if (jTimestamp_ != NULL) {
+      jenv_->DeleteGlobalRef(jTimestamp_);
+      jTimestamp_ = NULL;
+   }
+   if (jKvBuffer_ != NULL) {
+      jenv_->DeleteGlobalRef(jKvBuffer_);
+      jKvBuffer_ = NULL;
+   }
+   if (jRowIDs_ != NULL) {
+      jenv_->DeleteGlobalRef(jRowIDs_);
+      jRowIDs_ = NULL;
+   }
    if (jba_kvBuffer_ != NULL)
    {
       jenv_->DeleteGlobalRef(jba_kvBuffer_);
@@ -4441,6 +4532,14 @@ void HTableClient_JNI::getResultInfo()
 {
    // Allocate Buffer and copy the cell info
    int numCellsNeeded;
+   if (numCellsReturned_ == 0)
+   {
+      p_kvsPerRow_ = jenv_->GetIntArrayElements(jKvsPerRow_, NULL);
+      currentRowNum_ = 0;
+      currentRowCellNum_ = 0;
+      prevRowCellNum_ = 0;
+      return;
+   }
    if (numCellsAllocated_ == 0 || 
 		numCellsAllocated_ < numCellsReturned_) {
       NAHeap *heap = getHeap();

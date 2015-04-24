@@ -35,8 +35,6 @@
 #include "ex_mdam.h"
 #include "hdfs.h"
 
-#define ROWSET_MAX_NO_ROWS     1000
-
 // -----------------------------------------------------------------------
 // Classes defined in this file
 // -----------------------------------------------------------------------
@@ -166,6 +164,8 @@ public:
   {
     return -1.0f;
   }
+
+  Lng32 numRowsInDirectBuffer() { return directBufferRowNum_; }
 
 protected:
 
@@ -445,7 +445,7 @@ protected:
 class ExHbaseTaskTcb : public ExGod
 {
  public:
-  ExHbaseTaskTcb(ExHbaseAccessTcb * tcb);
+  ExHbaseTaskTcb(ExHbaseAccessTcb * tcb,  NABoolean rowsetTcb = FALSE);
 
   virtual ExWorkProcRetcode work(short &retval);
 
@@ -458,6 +458,8 @@ class ExHbaseTaskTcb : public ExGod
   // To allow cancel, some tasks will need to return to the 
   // scheduler occasionally.
   Lng32 batchSize_;
+  NABoolean rowsetTcb_;
+  Lng32 remainingInBatch_;
 };
 
 class ExHbaseScanTaskTcb  : public ExHbaseTaskTcb
@@ -595,8 +597,7 @@ public:
 class ExHbaseGetSQTaskTcb  : public ExHbaseTaskTcb
 {
 public:
-  //  ExHbaseGetSQTaskTcb(ExHbaseAccessSelectTcb * tcb);
-  ExHbaseGetSQTaskTcb(ExHbaseAccessTcb * tcb);
+  ExHbaseGetSQTaskTcb(ExHbaseAccessTcb * tcb, NABoolean rowsetTcb);
   
   virtual ExWorkProcRetcode work(short &retval); 
 
@@ -616,8 +617,8 @@ public:
     , COLLECT_STATS
     , HANDLE_ERROR
     , DONE
+    , ALL_DONE
   } step_;
-
 };
 
 class ExHbaseAccessSelectTcb  : public ExHbaseAccessTcb
@@ -1072,18 +1073,23 @@ public:
     , PROCESS_UPDATE
     , PROCESS_UPDATE_AND_CLOSE
     , PROCESS_SELECT
-    , PROCESS_SELECT_AND_CLOSE
     , NEXT_ROW
     , RS_CLOSE
     , HANDLE_ERROR
     , DONE
     , ALL_DONE
+    , ROW_DONE
+    , CREATE_ROW
+    , APPLY_PRED
+    , RETURN_ROW
   } step_;
 
   ExHbaseAccessSQRowsetTcb( const ExHbaseAccessTdb &tdb,
 			    ex_globals *glob );
   
   virtual ExWorkProcRetcode work(); 
+  Lng32 setupRowIds();
+  Lng32 setupUniqueKey();
  private:
   Lng32 currRowNum_;
 

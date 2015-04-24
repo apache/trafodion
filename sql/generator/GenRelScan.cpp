@@ -2714,6 +2714,8 @@ short HbaseAccess::codeGen(Generator * generator)
   if (uniqueRowsetHbaseOper())
     {
       hbasescan_tdb->setRowsetOper(TRUE);
+      hbasescan_tdb->setHbaseRowsetVsbbSize(getDefault(HBASE_ROWSET_VSBB_SIZE));
+      
     }
 
   if ((accessOptions().userSpecified()) &&

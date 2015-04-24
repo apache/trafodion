@@ -1307,8 +1307,10 @@ short HbaseDelete::codeGen(Generator * generator)
   if (canDoCheckAndUpdel())
     hbasescan_tdb->setCanDoCheckAndUpdel(TRUE);
   
-  if (uniqueRowsetHbaseOper())
+  if (uniqueRowsetHbaseOper()) {
     hbasescan_tdb->setRowsetOper(TRUE);
+    hbasescan_tdb->setHbaseRowsetVsbbSize(getDefault(HBASE_ROWSET_VSBB_SIZE));
+  }
 
   if (csl())
     hbasescan_tdb->setUpdelColnameIsStr(TRUE);
@@ -2122,8 +2124,10 @@ short HbaseUpdate::codeGen(Generator * generator)
       hbasescan_tdb->setSubsetOper(TRUE);
     }
 
-  if (uniqueRowsetHbaseOper())
+  if (uniqueRowsetHbaseOper()) {
     hbasescan_tdb->setRowsetOper(TRUE);
+    hbasescan_tdb->setHbaseRowsetVsbbSize(getDefault(HBASE_ROWSET_VSBB_SIZE));
+  }
 
   if (canDoCheckAndUpdel())
     hbasescan_tdb->setCanDoCheckAndUpdel(TRUE);
@@ -2693,8 +2697,10 @@ short HbaseInsert::codeGen(Generator *generator)
 	hbasescan_tdb->setHbaseSqlIUD(FALSE);
 
       if ((getInsertType() == Insert::VSBB_INSERT_USER) ||
-	  (getInsertType() == Insert::UPSERT_LOAD))
+	  (getInsertType() == Insert::UPSERT_LOAD)) {
 	hbasescan_tdb->setVsbbInsert(TRUE);
+        hbasescan_tdb->setHbaseRowsetVsbbSize(getDefault(HBASE_ROWSET_VSBB_SIZE));
+      }
 
       if ((isUpsert()) &&
 	  (getInsertType() == Insert::UPSERT_LOAD))

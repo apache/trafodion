@@ -761,7 +761,10 @@ public:
    { return (HbaseSnapshotScanAttributes*)hbaseSnapshotScanAttributes_.getPointer();}
    HbaseSnapshotScanAttributesPtr getHbaseSnapshotScanAttributesPtr() { return hbaseSnapshotScanAttributes_; }
 
-
+   void setHbaseRowsetVsbbSize(UInt16 size)
+   {  hbaseRowsetVsbbSize_ = size; }
+   UInt16 getHbaseRowsetVsbbSize()
+   { return hbaseRowsetVsbbSize_; } 
  protected:
   enum
   {
@@ -884,8 +887,9 @@ public:
   UInt32 flags2_;
   UInt32 maxHFileSize_;
   HbaseSnapshotScanAttributesPtr hbaseSnapshotScanAttributes_;
+  UInt16 hbaseRowsetVsbbSize_; 
 
-  char fillers[16];
+  char fillers[14];
 
 };
 

@@ -151,6 +151,8 @@ class ExpHbaseInterface : public NABasicObject
 
   virtual Lng32 scanClose() = 0;
 
+  virtual Lng32 getHTable(HbaseStr &tblName) = 0;
+
   Lng32 fetchAllRows(
 		     HbaseStr &tblName,
 		     Lng32 numCols,
@@ -238,6 +240,11 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr& row,
 		  NABoolean noXn,
 		  const int64_t timestamp) = 0;
+
+ virtual Lng32 getRows(
+          short rowIDLen,
+          HbaseStr &rowIDs,
+          const LIST(HbaseStr) & columns) = 0;
 
  virtual Lng32 insertRows(
 		  HbaseStr &tblName,
@@ -422,6 +429,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 scanClose();
 
+  virtual Lng32 getHTable(HbaseStr &tblName);
+
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
 		const HbaseStr &row, 
@@ -497,6 +506,10 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   HbaseStr& row,
 		  NABoolean noXn,
 		  const int64_t timestamp);
+ virtual Lng32 getRows(
+          short rowIDLen,
+          HbaseStr &rowIDs,
+          const LIST(HbaseStr) & columns);
 
  virtual Lng32 insertRows(
 		  HbaseStr &tblName,
@@ -601,10 +614,6 @@ private:
   HTableClient_JNI* htc_;
   HBulkLoadClient_JNI* hblc_;
   Int32  retCode_;
-  char* lastKVBuffer_;
-  Int32 lastKVBufferSize_;
-  char* lastKVColName_;
-  Int32 lastKVColNameSize_;
 };
 
 #endif

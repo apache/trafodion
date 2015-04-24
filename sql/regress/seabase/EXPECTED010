@@ -1022,7 +1022,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -1033,7 +1033,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = %('a')) and (C = C)
   end_key ................ (A = A) and (B = %('a')) and (C = C)
 
@@ -1426,7 +1426,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -1437,7 +1437,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = %('a')) and (C = C)
   end_key ................ (A = A) and (B = %('a')) and (C = C)
 
@@ -2670,7 +2670,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -2681,7 +2681,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = 'a') and (C = C)
   end_key ................ (A = A) and (B = 'a') and (C = C)
 
@@ -3082,7 +3082,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -3093,7 +3093,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = 'a') and (C = C)
   end_key ................ (A = A) and (B = 'a') and (C = C)
 
@@ -4319,7 +4319,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -4330,7 +4330,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = %('a')) and (C = C)
   end_key ................ (A = A) and (B = %('a')) and (C = C)
 
@@ -4726,7 +4726,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -4737,7 +4737,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = %('a')) and (C = C)
   end_key ................ (A = A) and (B = %('a')) and (C = C)
 
@@ -5952,7 +5952,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -5963,7 +5963,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = 'a') and (C = C)
   end_key ................ (A = A) and (B = 'a') and (C = C)
 
@@ -6354,7 +6354,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -6365,7 +6365,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = 'a') and (C = C)
   end_key ................ (A = A) and (B = 'a') and (C = C)
 
@@ -7607,7 +7607,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -7618,7 +7618,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = %('a')) and (C = C)
   end_key ................ (A = A) and (B = %('a')) and (C = C)
 
@@ -8010,7 +8010,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -8021,7 +8021,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = %('a')) and (C = C)
   end_key ................ (A = A) and (B = %('a')) and (C = C)
 
@@ -9235,7 +9235,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -9246,7 +9246,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = 'a') and (C = C)
   end_key ................ (A = A) and (B = 'a') and (C = C)
 
@@ -9636,7 +9636,7 @@ DESCRIPTION
   join_method ............ in-order nested
 
 
-TRAFODION_DELETE ==========================  SEQ_NO 2        NO CHILDREN
+TRAFODION_VSBB_DELETE =====================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... TRAFODION.SCH.T010T2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
@@ -9647,7 +9647,7 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  iud_type ............... trafodion_delete TRAFODION.SCH.T010T2
+  iud_type ............... trafodion_vsbb_delete TRAFODION.SCH.T010T2
   begin_key .............. (A = A) and (B = 'a') and (C = C)
   end_key ................ (A = A) and (B = 'a') and (C = C)
 

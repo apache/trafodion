@@ -11189,6 +11189,9 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
 	isUnique = TRUE;
     }
 
+  if (!isUnique)
+      generator->oltOptInfo()->setMultipleRowsReturned(TRUE) ;
+
   if ((isUnique) &&
       (NOT generator->oltOptInfo()->multipleRowsReturned()))
     {
@@ -11204,8 +11207,7 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
 	{
 	  if ((CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
 	      (NOT generator->isRIinliningForTrafIUD()) &&
-	      (searchKey() && searchKey()->isUnique()) &&
-	      (executorPred().entries() == 0))
+	      (searchKey() && searchKey()->isUnique()))
 	    {
 	      uniqueRowsetHbaseOper() = TRUE;
 	    }

@@ -173,7 +173,8 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   hbaseSnapshotScanAttributes_(hbaseSnapshotScanAttributes),
   LoadPrepLocation_ (NULL),
   samplingRate_(samplingRate),
-  sampleLocation_(NULL)
+  sampleLocation_(NULL),
+  hbaseRowsetVsbbSize_(0)
 {};
 
 ComTdbHbaseAccess::ComTdbHbaseAccess(
@@ -272,7 +273,8 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   hbaseSnapshotScanAttributes_(NULL),
   LoadPrepLocation_(NULL),
   samplingRate_(-1),
-  sampleLocation_(NULL)
+  sampleLocation_(NULL),
+  hbaseRowsetVsbbSize_(0)
 {
 }
 
