@@ -65,7 +65,7 @@
     </fileSet>
     <fileSet>
       <directory>target</directory>
-      <outputDirectory>/</outputDirectory>
+      <outputDirectory></outputDirectory>
       <includes>
           <include>${project.build.finalName}.jar</include>
           <include>${project.build.finalName}-tests.jar</include>
