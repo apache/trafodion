@@ -70,6 +70,8 @@ public static final String trxkeycommitPendingTransactions = "commitPendingTrans
 public static final String trxkeypendingTransactionsById = "pendingTransactionsById";
 public static final String trxkeyindoubtTransactionsCountByTmid = "indoubtTransactionsCountByTmid";
 public static final String trxkeyClosingVar = "checkClosingVariable";
+public static final String SPLIT_DELAY_LIMIT = "hbase.transaction.split.delay.limit";
+public static final int SPLIT_DELAY_DEFAULT = 360;
 
 public static final int TS_ACTIVE = 0;
 public static final int TS_COMMIT_REQUEST = 1;
@@ -97,6 +99,7 @@ HLog tHLog;
 ServerName sn;
 String hostName;
 int port;
+int splitDelayLimit;
 long activeCount = 0;
 long abortCount = 0;
 long commitCount = 0;
@@ -118,6 +121,9 @@ private static Object zkRecoveryCheckLock = new Object();
 // Region Observer Coprocessor START
 @Override
 public void start(CoprocessorEnvironment e) throws IOException {
+    RegionCoprocessorEnvironment regionCoprEnv = (RegionCoprocessorEnvironment)e;
+    org.apache.hadoop.conf.Configuration conf = regionCoprEnv.getConfiguration();
+    this.splitDelayLimit = conf.getInt(SPLIT_DELAY_LIMIT, SPLIT_DELAY_DEFAULT);
 
     RegionCoprocessorEnvironment re = (RegionCoprocessorEnvironment) e;
     
@@ -527,6 +533,11 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
                        sleepCounter++;
                        if (LOG.isInfoEnabled()) LOG.info("Delaying split due to transactions present. Delayed : " + sleepCounter +
                                        " minute(s) on " + region.getRegionNameAsString());
+                       if(sleepCounter >= this.splitDelayLimit) {
+                           if(LOG.isWarnEnabled()) LOG.warn("Surpassed split delay limit of " + this.splitDelayLimit
+                                                           + " minutes. Continuing with split");
+                           break;
+                       }
                } catch(InterruptedException e) {
                        if(LOG.isErrorEnabled()) LOG.error("Problem while calling sleep() on preSplit delay, returning. " + e);
                        return;
