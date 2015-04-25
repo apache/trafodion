@@ -170,7 +170,7 @@ public final class Constants {
     /**
      * Default value for DCS server user program to enable sql plans for queries
      */
-    public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_SQLPLAN_ENABLE = "false";
+    public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_SQLPLAN_ENABLE = "true";
 
     /** Configuration key for DCS server user program port map timeout seconds */
     public static final String DCS_SERVER_USER_PROGRAM_PORT_MAP_TIMEOUT_SECONDS = "dcs.server.user.program.port.map.timeout.seconds";
