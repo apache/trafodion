@@ -26,6 +26,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.sql.*;
 import java.lang.management.ManagementFactory;
+import java.util.concurrent.CountDownLatch;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.zookeeper.ZooDefs;
@@ -46,7 +48,7 @@ public class ServerWorker extends Thread {
     private String serverName;
     private String serverWorkerName;
     private byte[] cert;
-    private String doClose = "doClose";
+    private CountDownLatch latch = null;
     
     private ServerApiSqlConnect serverApiSqlConnect;
     private ServerApiSqlSetConnectAttr serverApiSqlSetConnectAttr; 
@@ -77,17 +79,16 @@ public class ServerWorker extends Thread {
         serverApiSqlEndTransact = new ServerApiSqlEndTransact(instance, serverThread);
     }
     public void closeTrafConnection(SelectionKey key) {
+        latch = new CountDownLatch(1);
         synchronized(queue) {
             queue.add(new DataEvent(null, key));
             queue.notify();
         }
-        synchronized(doClose){
-            try{
-                doClose.wait();
-            }catch(InterruptedException e){
-                e.printStackTrace();
-            }
-        }    
+        try{
+            latch.await();
+        }catch(InterruptedException e){
+            e.printStackTrace();
+        }
     }
     public void processData(ServerHandler server, SelectionKey key) {
         synchronized(queue) {
@@ -112,13 +113,11 @@ public class ServerWorker extends Thread {
             ClientData clientData = (ClientData) key.attachment();
             if (dataEvent.server == null){
                 // ServerHandler sent request to close SQL Connection
-                synchronized(doClose){
-                    if (clientData.getTrafConnection() != null){
-                        clientData.getTrafConnection().closeTConnection();
-                        clientData.setTrafConnection(null);
-                    }
-                    doClose.notify();
+                if (clientData.getTrafConnection() != null){
+                    clientData.getTrafConnection().closeTConnection();
+                    clientData.setTrafConnection(null);
                 }
+                latch.countDown();
                 continue;
             }
             SocketChannel client = (SocketChannel) key.channel();
