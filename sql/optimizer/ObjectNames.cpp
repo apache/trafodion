@@ -661,6 +661,12 @@ NABoolean QualifiedName::isSeabaseMD() const
 				     getCatalogName(), getSchemaName(), getObjectName());
 }
 
+NABoolean QualifiedName::isSeabasePrivMgrMD() const
+{
+  return CmpSeabaseDDL::isSeabasePrivMgrMD
+    (getCatalogName(), getSchemaName());
+}
+
 // -----------------------------------------------------------------------
 // Methods for class CorrName
 // -----------------------------------------------------------------------
@@ -933,6 +939,11 @@ NABoolean CorrName::isSeabase() const
 NABoolean CorrName::isSeabaseMD() const
 {
   return getQualifiedNameObj().isSeabaseMD();
+}
+
+NABoolean CorrName::isSeabasePrivMgrMD() const
+{
+  return getQualifiedNameObj().isSeabasePrivMgrMD();
 }
 
 NABoolean CorrName::isHbase() const

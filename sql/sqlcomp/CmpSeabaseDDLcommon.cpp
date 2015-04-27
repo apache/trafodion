@@ -184,8 +184,32 @@ short CmpSeabaseDDL::switchBackCompiler()
   return 0;
 }
 
-// Return:  TRUE, table desc found. FALSE, not found or error.
-NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
+// ----------------------------------------------------------------------------
+// Method: getMDtableInfo
+//
+// When compiler context is instantiated, definitions of system and privmgr
+// metadata tables are stored as an array of MDDescsInfo structs.  
+//
+// This method searches the list of MDDescsInfo structs looking for the 
+// entry corresponding to the passed in name.
+//
+// Parameters:
+//  input:
+//    name - the fully qualified metadata table
+//    objType - the object type (base table, index, etc)
+//
+//  output:
+//    tableInfo, 
+//    colInfoSize, colInfo, 
+//    keyInfoSize, keyInfo, 
+//    indexInfoSize, indexInfo
+//
+// Return:  TRUE, object is cached, FALSE, object not found (or error)
+//
+// Possible enhancements, instead of returning columns for each value in
+// the MDDescsInfo entry, just return the MDDescsInfo entry
+// ----------------------------------------------------------------------------
+NABoolean CmpSeabaseDDL::getMDtableInfo(const ComObjectName &name,
                                         ComTdbVirtTableTableInfo* &tableInfo,
                                         Lng32 &colInfoSize,
                                         const ComTdbVirtTableColumnInfo* &colInfo,
@@ -196,28 +220,134 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
                                         const ComObjectType objType)
 {
   tableInfo = NULL;
-
   indexInfoSize = 0;
   indexInfo = NULL;
 
+  NAString objName = name.getObjectNamePartAsAnsiString();
   if (objName.isNull())
     return FALSE;
 
-  for (Int32 i = 0; i < sizeof(allMDtablesInfo)/sizeof(MDTableInfo); i++)
-    {
-      const MDTableInfo &mdti = allMDtablesInfo[i];
-      
-      if (! mdti.newName)
-        return FALSE;
+  // If metadata tables have not yet been added to the compiler context, 
+  // return FALSE
+  if (! CmpCommon::context()->getTrafMDDescsInfo())
+    return FALSE;
 
-      if (! CmpCommon::context()->getTrafMDDescsInfo())
-        return FALSE;
-
-      MDDescsInfo &mddi = CmpCommon::context()->getTrafMDDescsInfo()[i];
-
-      if (objName == mdti.newName)
+  // The first set of objects are system metadata.  Check the passed in
+  // objName and objType for a match
+  if (isSeabaseMD(name.getCatalogNamePartAsAnsiString(),
+                  name.getSchemaNamePartAsAnsiString(TRUE),
+                  name.getObjectNamePartAsAnsiString()))
+    { 
+      for (Int32 i = 0; i < sizeof(allMDtablesInfo)/sizeof(MDTableInfo); i++)
         {
-          if (objType == COM_BASE_TABLE_OBJECT)
+          const MDTableInfo &mdti = allMDtablesInfo[i];
+      
+          if (! mdti.newName)
+            return FALSE;
+
+          MDDescsInfo &mddi = CmpCommon::context()->getTrafMDDescsInfo()[i];
+
+          if (objName == mdti.newName)
+            {
+              if (objType == COM_BASE_TABLE_OBJECT)
+                {
+                  colInfoSize = mddi.numNewCols;
+                  colInfo = mddi.newColInfo;
+                  keyInfoSize = mddi.numNewKeys;
+                  keyInfo = mddi.newKeyInfo;
+
+                  indexInfoSize = mddi.numIndexes;
+                  indexInfo = mddi.indexInfo;
+
+                  // this is an index. It cannot selected as a base table objects.
+                  if (mdti.isIndex)
+                    return FALSE;
+                }
+              else if (objType == COM_INDEX_OBJECT)
+                {
+                  colInfoSize = mddi.numNewCols;
+                  colInfo = mddi.newColInfo;
+                  keyInfoSize = mddi.numNewKeys;
+                  keyInfo = mddi.newKeyInfo;
+
+                }
+              else
+                return FALSE;
+
+              if (mddi.tableInfo == NULL)
+                {
+                  const NAString catName(TRAFODION_SYSCAT_LIT);
+                  const NAString schName(SEABASE_MD_SCHEMA);
+                  NAString extTableName = catName + "." + "\"" + schName + "\"" + "." + objName;
+
+                  CmpSeabaseDDL cmpSBD(STMTHEAP);
+                  if (cmpSBD.getSpecialTableInfo(CTXTHEAP,
+                                                 catName, schName, objName, extTableName, 
+                                                 objType, tableInfo) == 0)
+                    mddi.tableInfo = (ComTdbVirtTableTableInfo*)tableInfo;
+                  else
+                    return FALSE; // error
+                }
+              else
+                tableInfo = mddi.tableInfo;
+
+              return TRUE;
+            }
+          else  //if (mdti.oldName && (objName == mdti.oldName))
+            {
+              const char * oldName = NULL;
+              const QString * oldDDL = NULL;
+              Lng32 sizeOfoldDDL = 0;
+              if (getOldMDInfo(mdti, oldName, oldDDL, sizeOfoldDDL) == FALSE)
+                return FALSE;
+
+              if ((oldName) && (objName == oldName))
+                {
+                  if ((mddi.numOldCols > 0) && (mddi.oldColInfo))
+                    {
+                      colInfoSize = mddi.numOldCols;
+                      colInfo = mddi.oldColInfo;
+                    }
+                  else
+                    {
+                      colInfoSize = mddi.numNewCols;
+                      colInfo = mddi.newColInfo;
+                    }
+              
+                  if ((mddi.numOldKeys > 0) && (mddi.oldKeyInfo))
+                    {
+                      keyInfoSize = mddi.numOldKeys;
+                      keyInfo = mddi.oldKeyInfo;
+                    }
+                  else
+                    {
+                      keyInfoSize = mddi.numNewKeys;
+                      keyInfo = mddi.newKeyInfo;
+                    }
+
+                  return TRUE;
+                } // oldName
+            }
+        } // for
+    }
+
+  // check privmgr tables
+  if (isSeabasePrivMgrMD(name.getCatalogNamePartAsAnsiString(),
+                         name.getSchemaNamePartAsAnsiString(TRUE)))
+    { 
+      // privmgr metadata tables start after system metadata tables
+      size_t startingPos = sizeof(allMDtablesInfo)/sizeof(MDTableInfo);
+      for (size_t i = 0; i < sizeof(privMgrTables)/sizeof(PrivMgrTableStruct); i++)
+        {
+          const PrivMgrTableStruct &tableDefinition = privMgrTables[i];
+
+          MDDescsInfo &mddi = CmpCommon::context()->getTrafMDDescsInfo()[startingPos + i];
+          NAString descTbl(tableDefinition.tableName);
+
+          // Privmgr metadata tables get their definition from the new values
+          // stored in the MDDescsInfo struct
+          // At this time there are no indexes or views 
+          if (objName == descTbl)
             {
               colInfoSize = mddi.numNewCols;
               colInfo = mddi.newColInfo;
@@ -227,78 +357,27 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
               indexInfoSize = mddi.numIndexes;
               indexInfo = mddi.indexInfo;
 
-              // this is an index. It cannot selected as a base table objects.
-              if (mdti.isIndex)
-                return FALSE;
-            }
-          else if (objType == COM_INDEX_OBJECT)
-            {
-              colInfoSize = mddi.numNewCols;
-              colInfo = mddi.newColInfo;
-              keyInfoSize = mddi.numNewKeys;
-              keyInfo = mddi.newKeyInfo;
-
-            }
-          else
-            return FALSE;
-
-          if (mddi.tableInfo == NULL)
-            {
-              const NAString catName(TRAFODION_SYSCAT_LIT);
-              const NAString schName(SEABASE_MD_SCHEMA);
-              NAString extTableName = catName + "." + "\"" + schName + "\"" + "." + objName;
-
-              CmpSeabaseDDL cmpSBD(STMTHEAP);
-              if (cmpSBD.getSpecialTableInfo(CTXTHEAP,
-                                             catName, schName, objName, extTableName, 
-                                             objType, tableInfo) == 0)
-                mddi.tableInfo = (ComTdbVirtTableTableInfo*)tableInfo;
-              else
-                return FALSE; // error
-            }
-          else
-            tableInfo = mddi.tableInfo;
-
-          return TRUE;
-        }
-      else  //if (mdti.oldName && (objName == mdti.oldName))
-        {
-          const char * oldName = NULL;
-          const QString * oldDDL = NULL;
-          Lng32 sizeOfoldDDL = 0;
-          if (getOldMDInfo(mdti, oldName, oldDDL, sizeOfoldDDL) == FALSE)
-            return FALSE;
-
-          if ((oldName) && (objName == oldName))
-            {
-              if ((mddi.numOldCols > 0) && (mddi.oldColInfo))
+              if (mddi.tableInfo == NULL)
                 {
-                  colInfoSize = mddi.numOldCols;
-                  colInfo = mddi.oldColInfo;
+                  const NAString catName(TRAFODION_SYSCAT_LIT);
+                  const NAString schName(SEABASE_PRIVMGR_SCHEMA);
+                  NAString extTableName = catName + "." + "\"" + schName + "\"" + "." + objName;
+
+                  CmpSeabaseDDL cmpSBD(STMTHEAP);
+                  if (cmpSBD.getSpecialTableInfo(CTXTHEAP,
+                                                 catName, schName, objName, extTableName,
+                                                 objType, tableInfo) == 0)
+                    mddi.tableInfo = (ComTdbVirtTableTableInfo*)tableInfo;
+                  else
+                    return FALSE; // error
                 }
               else
-                {
-                  colInfoSize = mddi.numNewCols;
-                  colInfo = mddi.newColInfo;
-                }
-              
-              if ((mddi.numOldKeys > 0) && (mddi.oldKeyInfo))
-                {
-                  keyInfoSize = mddi.numOldKeys;
-                  keyInfo = mddi.oldKeyInfo;
-                }
-              else
-                {
-                  keyInfoSize = mddi.numNewKeys;
-                  keyInfo = mddi.newKeyInfo;
-                }
+                tableInfo = mddi.tableInfo;
 
               return TRUE;
-            } // oldName
-        }
-        
-    } // for
-
+          }
+      }
+    }
   return FALSE;
 }
 
@@ -613,17 +692,49 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
   return resetCQDs(hbaseSerialization, hbVal, 0);
 }
 
+// ----------------------------------------------------------------------------
+// Method: createMDdescs
+// 
+// This method is called when the compiler context is instantiated to create
+// a cache of system and privmgr metadata. 
+// Metadata definitions are stored as an array of MDDescsInfo structs.  
+//
+// This method extracts hardcoded definitions of each metadata table, creates
+// an MDDescsInfo struct and appends it to the list of entries. 
+//
+// The list of MDDescsInfo structs is organized as follows:
+//    Tables in "_MD_" schema ordered by list defined in allMDtablesInfo
+//    Tables in "_PRIVMGR_MGR_" schema order by list defined in PrivMgrTables 
+//
+// Parameters:
+//  input/output:
+//    trafMDDescsInfo - returns the list of MDDescsInfo structs for metadata
+//      the list of structures will be allocated out of the CNTXHEAP
+//    
 // RETURN: -1, error.  0, all ok.
+// ----------------------------------------------------------------------------
 short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
 {
+  // if structure is already allocated, just return
+  // Question - will trafMDDescsInfo ever be NOT NULL?
   if (trafMDDescsInfo)
     return 0;
 
-  Lng32 numTables = sizeof(allMDtablesInfo) / sizeof(MDTableInfo);
+  size_t numMDTables = sizeof(allMDtablesInfo) / sizeof(MDTableInfo);
+  size_t numPrivTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
+
+  // Allocate an array of MDDescsInfo structs to handle all system and
+  // privmgr metadata tables.  Authorization may not be enabled but
+  // go ahead and load privmgr metadata definitions anyway - the current
+  // session may enable authorization so these entries will be available.
   trafMDDescsInfo = (MDDescsInfo*) 
-    new(CTXTHEAP) char[numTables * sizeof(MDDescsInfo)];
+    new(CTXTHEAP) char[(numMDTables + numPrivTables) * sizeof(MDDescsInfo)];
+
+  // Initialize the SQL parser - it is called to get table details
   Parser parser(CmpCommon::context());
-  for (Lng32 i = 0; i < numTables; i++)
+
+  // Load definitions of system metadata tables
+  for (size_t i = 0; i < numMDTables; i++)
     {
       const MDTableInfo &mdti = allMDtablesInfo[i];
 
@@ -707,6 +818,60 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
         }
     } // for
 
+  // Load descs for privilege metadata
+  for (size_t i = 0; i < numPrivTables; i++)
+    {
+      const PrivMgrTableStruct &tableDefinition = privMgrTables[i];
+      MDDescsInfo &mddi = trafMDDescsInfo[numMDTables + i];
+
+      Lng32 numCols = 0;
+      Lng32 numKeys = 0;
+
+      ComTdbVirtTableColumnInfo * colInfoArray = NULL;
+      ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
+      ComTdbVirtTableIndexInfo * indexInfo = NULL;
+
+      // Set up create table ddl
+      NAString tableDDL("CREATE TABLE ");
+      NAString privMgrMDLoc;
+      CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+
+      tableDDL += privMgrMDLoc.data() + NAString('.') + tableDefinition.tableName; 
+      tableDDL += tableDefinition.tableDDL->str;
+
+      QString ddlString; 
+      ddlString.str = tableDDL.data();
+
+      if (processDDLandCreateDescs(parser,
+                                   &ddlString, sizeof(QString),
+                                   FALSE,
+                                   0, NULL, 0, NULL,
+                                   numCols, colInfoArray,
+                                   numKeys, keyInfoArray,
+                                   indexInfo))
+        goto label_error;
+
+       // Privmgr metadata is not needed to upgrade trafodion metadata so
+       // it uses standard SQL to perform upgrade operations.  That means
+       // this code does not have to differenciate between old and new
+       // definitions.
+       mddi.numNewCols = numCols;
+       mddi.numOldCols = numCols;
+
+       mddi.newColInfo = colInfoArray;
+       mddi.oldColInfo = colInfoArray;
+
+       mddi.numNewKeys = numKeys;
+       mddi.numOldKeys = numKeys;
+
+       mddi.newKeyInfo = keyInfoArray;
+       mddi.oldKeyInfo = keyInfoArray;
+ 
+       mddi.numIndexes = 0;
+       mddi.indexInfo = NULL;
+       mddi.tableInfo = NULL;
+    }
+
   return 0;
 
  label_error:
@@ -782,7 +947,28 @@ NABoolean CmpSeabaseDDL::isSeabaseMD(
       seabaseDefCatName.toUpper();
       
       if ((catName == seabaseDefCatName) &&
-          (schName == SEABASE_MD_SCHEMA))
+          (schName == SEABASE_MD_SCHEMA ))
+        {
+          return TRUE;
+        }
+    }
+
+  return FALSE;
+}
+
+NABoolean CmpSeabaseDDL::isSeabasePrivMgrMD(
+                                            const NAString &catName,
+                                            const NAString &schName)
+{
+  if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
+      (NOT catName.isNull()))
+    {
+      NAString seabaseDefCatName = "";
+      CmpCommon::getDefault(SEABASE_CATALOG, seabaseDefCatName, FALSE);
+      seabaseDefCatName.toUpper();
+
+      if ((catName == seabaseDefCatName) &&
+          (schName == SEABASE_PRIVMGR_SCHEMA))
         {
           return TRUE;
         }
@@ -903,6 +1089,12 @@ ComBoolean CmpSeabaseDDL::isSeabaseMD(const ComObjectName &name)
   return isSeabaseMD(name.getCatalogNamePartAsAnsiString(),
                    name.getSchemaNamePartAsAnsiString(TRUE),
                    name.getObjectNamePartAsAnsiString());
+}
+
+ComBoolean CmpSeabaseDDL::isSeabasePrivMgrMD(const ComObjectName &name)
+{
+  return isSeabasePrivMgrMD(name.getCatalogNamePartAsAnsiString(),
+                            name.getSchemaNamePartAsAnsiString(TRUE));
 }
 
 void CmpSeabaseDDL::getColName(const char * colFam, const char * colQual,

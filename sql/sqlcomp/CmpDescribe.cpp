@@ -2582,8 +2582,35 @@ short CmpDescribeSeabaseTable (
   // since the create code performs authorization checks
   if (type != 3)
     {
+      PrivMgrUserPrivs privs; 
+      PrivMgrUserPrivs *pPrivInfo = NULL;
+    
+      // metadata tables do not cache privilege information, go get it now
+      if (CmpCommon::context()->isAuthorizationEnabled() &&
+          naTable->getPrivInfo() == NULL)
+        {
+          std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
+          privMDLoc += std::string(".\"") +
+             std::string(SEABASE_PRIVMGR_SCHEMA) +
+             std::string("\"");
+          PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+
+          PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
+                                                           ComUser::getCurrentUser(),
+                                                           privs);
+          if (retcode == STATUS_ERROR)
+            {
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+              return -1;
+            }
+          pPrivInfo = &privs;
+        }
+      else
+        pPrivInfo = naTable->getPrivInfo();
+
+
       if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
-                                   naTable->getPrivInfo(),
+                                   pPrivInfo,
                                    COM_BASE_TABLE_OBJECT))
         return -1;
     }

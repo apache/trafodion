@@ -2790,7 +2790,8 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
     // Special SQLParser flags to deal with namespaces and funny signs like '@'
     // and security
     SQL_EXEC_SetParserFlagsForExSqlComp_Internal(
-      dmALLOW_SPECIALTABLETYPE | dmALLOW_PHONYCHARACTERS | dmINTERNAL_QUERY_FROM_EXEUTIL);
+      //dmALLOW_SPECIALTABLETYPE | dmALLOW_PHONYCHARACTERS | dmINTERNAL_QUERY_FROM_EXEUTIL);
+      dmINTERNAL_QUERY_FROM_EXEUTIL);
 
     // On first ustat statement of session, allocate and fill the static hash
     // table of table-specific elapsed-time thresholds.
@@ -3261,86 +3262,125 @@ Lng32 HSGlobalsClass::Initialize()
 
 // *****************************************************************************
 // *                                                                           *
-// * Function: HSGlobalsClass::isAuthorized                                     *
+// * Function: HSGlobalsClass::isAuthorized                                    *
 // *                                                                           *
-// *   This member function determines if a user has authority to perform a    *
-// * specific UPDATE STATISTICS operation.                                     *
+// *   This member function determines if a user has authority to perform:     *
+// *     UPDATE STATISTICS or                                                  *
+// *     SHOWSTATS                                                             *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
-// *  <objOwner>                   const Int32                        In       *
-// *    is the userID of the target owner                                      *
+// *  <isShowStats>                NABoolean                          In       *
+// *    TRUE if request is coming from a showstat request                      *
+// *                                                                           *
+// * returns:                                                                  *
+// *   TRUE - current user has privilege                                       *
+// *   FALSE - current user has no privilege or unexpected error occurred      *
+// *                                                                           *
+// * ComDiags is loaded with any unexpected errors                             *
 // *                                                                           *
 // *****************************************************************************
 NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
 {
-   // Root user is authorized for all operations.  For installations with no
-   // security, all users are mapped to root database user, so all users have
-   // full DDL authority.
+  if (!CmpCommon::context()->isAuthorizationEnabled())
+    return TRUE;
 
-   Int32 currentUser = ComUser::getCurrentUser();
-   if (ComUser::isRootUserID(currentUser))
-      return TRUE;
-
-  // If authorization is not enabled, then authorization should not be enabled
-  // either, and the previous check should have already returned.  But just in 
-  // case, verify authorization is enabled before proceeding.
-
-   if (!CmpCommon::context()->isAuthorizationEnabled())
-      return TRUE;
-
-   // Authorization is enabled.  If the current user owns the target object or the 
-   // schema containing the object, they have full DDL authority on the object.
-   // TODO: add schema checks
+   // no privilege support available for hbase and hive tables
    assert (objDef->getNATable());
-   Int32 objOwner = objDef->getNATable()->getOwner();
-   if (currentUser == objOwner)
+   if (isHbaseCat(objDef->getCatName()) || isHiveCat(objDef->getCatName()))
      return TRUE;
 
-   // See if user has component priv
-   NAString privMgrMDLoc = 
-          NAString(CmpSeabaseDDL::getSystemCatalogStatic()) +
-          NAString(".\"") +
-          NAString(SEABASE_PRIVMGR_SCHEMA) +
-          NAString("\"");
+  // Let keep track of how long authorization takes
+  HSLogMan *LM = HSLogMan::Instance();
+  LM->LogTimeDiff("Entering: HSGlobalsClass::isAuthorized");
 
-   PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),&diagsArea);
+  // Root user is authorized for all operations.  
+  NABoolean authorized = ComUser::isRootUserID();
 
-   if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::MANAGE_STATISTICS,true))
-      return TRUE;
+  // If the current user owns the target object, they have full DDL authority 
+  // on the object.
+  if (!authorized)
+    {
+      if (LM->LogNeeded())
+        {
+          sprintf(LM->msg, "Authorization: check for object owner");
+          LM->Log(LM->msg);
+        }
 
-   // For SHOW STATS command, check for additional privileges
-   if (isShowStats)
-   {
+      Int32 objOwner = objDef->getNATable()->getOwner();
+      authorized = (ComUser::getCurrentUser() == objDef->getNATable()->getOwner());
+    }
+
+  // See if user has MANAGE_STATISTICS component priv
+  NAString privMgrMDLoc = 
+         NAString(CmpSeabaseDDL::getSystemCatalogStatic()) +
+         NAString(".\"") +
+         NAString(SEABASE_PRIVMGR_SCHEMA) +
+         NAString("\"");
+  PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),&diagsArea);
+
+  if (!authorized)
+    {
+
+      if (LM->LogNeeded())
+        {
+          sprintf(LM->msg, "Authorization: check for MANAGE_STATISTICS component privilege");
+          LM->Log(LM->msg);
+        }
+
+      authorized = (componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),
+                                                   SQLOperation::MANAGE_STATISTICS,
+                                                   true));
+    }
+
+  // for UPDATE STATISTICS, no more checking is performed
+  // For SHOW STATS command, check for additional privileges
+  if (!authorized && isShowStats)
+    {
       // check for SHOW component privilege
-      if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::SHOW,true))
-         return TRUE;
+      if (LM->LogNeeded())
+        {
+          sprintf(LM->msg, "Authorization: check for SHOW component privilege");
+          LM->Log(LM->msg);
+        }
 
-      // For show, check for SELECT privilege
-      PrivMgrUserPrivs *privs = objDef->getNATable()->getPrivInfo();
-      if (privs == NULL)
-      {
-        *CmpCommon::diags() << DgSqlCode(-1034);
-         return FALSE;
+      authorized = (componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),
+                                                    SQLOperation::SHOW,
+                                                    true));
+     if (!authorized)
+       {
+         if (LM->LogNeeded())
+           {
+             sprintf(LM->msg, "Authorization: check for SELECT object privilege");
+             LM->Log(LM->msg);
+           }
+
+         // check for SELECT privilege
+         PrivMgrUserPrivs *privs = objDef->getNATable()->getPrivInfo();
+         if (privs == NULL)
+           {
+             *CmpCommon::diags() << DgSqlCode(-1034);
+              authorized = FALSE;
+           }
+
+         // Requester must have at least select privilege
+         if ( privs->hasSelectPriv() )
+           authorized = TRUE;
+         else
+           {
+             *CmpCommon::diags()
+              << DgSqlCode( -4481 )
+              << DgString0( "SELECT" )
+              << DgString1( objDef->getNATable()->getTableName().getQualifiedNameAsAnsiString() );
+              authorized = FALSE;
+            }
+         }
       }
 
-      // Requester must have at least select privilege
-      if ( privs->hasSelectPriv() )
-          return TRUE;
-      else
-      {
-        *CmpCommon::diags()
-         << DgSqlCode( -4481 )
-         << DgString0( "SELECT" )
-         << DgString1( objDef->getNATable()->getTableName().getQualifiedNameAsAnsiString() );
-         return FALSE;
-      }
-   }
-
-   // Nope - no privilege
-   return FALSE;
+   LM->LogTimeDiff("Exiting: HSGlobalsClass::isAuthorized");
+   return authorized;
 }
 
 // Read the file, if present, containing table names and their execution

@@ -6578,7 +6578,8 @@ void NATable::setupPrivInfo()
   if (!isSeabaseTable() || 
       !CmpCommon::context()->isAuthorizationEnabled() ||
       isVolatileTable() ||
-      ComUser::isRootUserID())
+      ComUser::isRootUserID()||
+      ComUser::getCurrentUser() == owner_)
     {
       privInfo_->setOwnerDefaultPrivs();
       return;
@@ -6602,7 +6603,6 @@ void NATable::setupPrivInfo()
 
       return;
     }
-
   if (testError || (STATUS_GOOD !=
        privInterface.getPrivileges(objectUid().get_value(), thisUserID,
                                     *privInfo_, &secKeyVec)))

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -304,6 +304,13 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     // LCOV_EXCL_STOP
 
                                                 /*==============================*/
+                                                /* HANDLE OPTIONS WHICH DO NOT  */
+                                                /* MODIFY HISTOGRAMS.           */
+                                                /*==============================*/
+    if (hs_globals_obj.optFlags & LOG_OPT)            /* log option requested   */
+      return 0;
+
+                                                /*==============================*/
                                                 /* VERIFY THAT THE REQUESTOR    */
                                                 /* HAS NECESSARY PRIVILEGES.    */
                                                 /*==============================*/
@@ -316,13 +323,6 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
         HSExitIfError(retcode);
       }
 
-
-                                                /*==============================*/
-                                                /* HANDLE OPTIONS WHICH DO NOT  */
-                                                /* MODIFY HISTOGRAMS.           */
-                                                /*==============================*/
-    if (hs_globals_obj.optFlags & LOG_OPT)            /* log option requested   */
-      return 0;
 
      // for ustat - we selectively allow sending specific external CQDs to the
      // secondary compilers instead of allowing all external CQDS to be sent so
