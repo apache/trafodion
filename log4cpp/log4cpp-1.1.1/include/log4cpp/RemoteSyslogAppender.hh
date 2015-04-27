@@ -1,5 +1,5 @@
 /*
- * SyslogAppender.hh
+ * RemoteSyslogAppender.hh
  *
  * Copyright 2001, LifeLine Networks BV (www.lifeline.nl). All rights reserved.
  * Copyright 2001, Walter Stroebel. All rights reserved.

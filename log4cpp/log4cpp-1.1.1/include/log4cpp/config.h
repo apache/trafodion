@@ -1,3 +1,8 @@
+/*
+ * (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+ * License: LGPLv2.1 (see the COPYING file for details)
+ */
+
 #ifndef _INCLUDE_LOG4CPP_CONFIG_H
 #define _INCLUDE_LOG4CPP_CONFIG_H 1
  
