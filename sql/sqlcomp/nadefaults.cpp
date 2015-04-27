@@ -3508,8 +3508,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
   DDkwd__(VALIDATE_RFORK_REDEF_TS,	        "OFF"),
-  DDkwd__(VALIDATE_SCHEMA_REDEF_TS,             "ON"),
-
 
   DDkwd__(VALIDATE_VIEWS_AT_OPEN_TIME,		"OFF"),
 

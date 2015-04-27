@@ -2177,74 +2177,6 @@ short RelRoot::codeGen(Generator * generator)
 
   NABoolean validateSSTSFlag = TRUE;
 
-
-  SchemaLabelInfoPtrPtr tdbSchemaLabelInfoList=NULL;
-  short numOfUniqueSchemaNames = 0;
-
-  short cntOfSchLabelsAtBindTime = generator->getBindWA()->schemaCount();
-  
-  SchemaLabelInfo *bindSchemaLabeInfoPtr, *tdbSchemaLabelInfoPtr;
-  
-  LIST (SchemaLabelInfoPtr) tdbtmpList;
-  LIST (SchemaLabelInfoPtr) bindschemaLabelInfoList;
-
-  bindschemaLabelInfoList = generator->getBindWA()->getSLIList();
-  
-  for (short tmpc = 0; tmpc < cntOfSchLabelsAtBindTime; ++tmpc )
-  {
-    bindSchemaLabeInfoPtr = bindschemaLabelInfoList[tmpc];
-    NABoolean foundInSchemaLabelInfoList = 0;
-
-    if(numOfUniqueSchemaNames != 0)
-    {
-      for (Int32 tmps = 0; tmps < numOfUniqueSchemaNames; tmps++)
-      {
-        if(strcmp(tdbtmpList[tmps]->schemaLabelName(),
-            bindSchemaLabeInfoPtr->schemaLabelName()) == 0)
-        {
-          foundInSchemaLabelInfoList = 1;
-          break;
-        }
-      }
-    }
-
-    if(foundInSchemaLabelInfoList == 0)
-    { 
-      char *tmpLabelName, *tmpAnsiName;
-
-      tmpLabelName = new(space) char[strlen(
-             bindSchemaLabeInfoPtr ->schemaLabelName())+1];
-      strcpy(tmpLabelName, bindSchemaLabeInfoPtr->schemaLabelName());
-
-      tmpAnsiName = new(space) char[strlen(
-             bindSchemaLabeInfoPtr ->schemaAnsiName())+1];
-      strcpy(tmpAnsiName, bindSchemaLabeInfoPtr->schemaAnsiName());
-
-      tdbSchemaLabelInfoPtr = new(space) SchemaLabelInfo;
-
-      tdbSchemaLabelInfoPtr->setSchemaLabelName(tmpLabelName);
-      tdbSchemaLabelInfoPtr->setSchemaAnsiName(tmpAnsiName);
-
-      tdbSchemaLabelInfoPtr->setSchemaLabelRedefTS
-            (bindSchemaLabeInfoPtr->schemaLabelRedefTS());
-      tdbSchemaLabelInfoPtr->setValidateSSTSAtOpenTime(validateSSTSFlag);
-
-      tdbtmpList.insert(tdbSchemaLabelInfoPtr);
-      ++ numOfUniqueSchemaNames;
-    }
-  }
-
-  if(numOfUniqueSchemaNames > 0 )
-  {
-  
-    tdbSchemaLabelInfoList = new (space) SchemaLabelInfoPtr[numOfUniqueSchemaNames];
-
-    for (short schIdx = 0; schIdx < numOfUniqueSchemaNames; schIdx++)
-    {
-      tdbSchemaLabelInfoList[schIdx] = tdbtmpList[schIdx];
-    }
-  }
-
   CollIndex numObjectUIDs = generator->objectUids().entries();
   Int64 *objectUIDsPtr = NULL;
   if (numObjectUIDs > 0)
@@ -2365,8 +2297,6 @@ short RelRoot::codeGen(Generator * generator)
 		 newMvList,
 		 uninitializedMvCount,
 		 compilerStatsInfoBuf,
-		 numOfUniqueSchemaNames,
-		 tdbSchemaLabelInfoList,
 		 rwrsInfoBuf,
                  numObjectUIDs ,
                  objectUIDsPtr,
