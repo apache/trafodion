@@ -3270,8 +3270,12 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       }
       
       // Set up pointers to offsets and lengths of all pattern strings
-      PTR_TO_PCODE(char, pOffPtr, 12);
-      PTR_TO_PCODE(char, pLenPtr, 13);
+      //
+      // NOTE: Use "unsigned char" so that offsets and lengths can be
+      // up to 255.
+      //
+      PTR_TO_PCODE(unsigned char, pOffPtr, 12);
+      PTR_TO_PCODE(unsigned char, pLenPtr, 13);
 
       char* tempSrc = srcStr;
       Int32 tempSrcLen = srcLen;
