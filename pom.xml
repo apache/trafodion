@@ -265,8 +265,9 @@
     </plugin>                      
         <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven.assembly.plugin.version}</version>
         <configuration>
-          <tarLongFileMode>gnu</tarLongFileMode>
+          <tarLongFileMode>posix</tarLongFileMode>
           <appendAssemblyId>false</appendAssemblyId>
           <descriptors>
             <descriptor>src/assembly/all.xml</descriptor>
@@ -495,6 +496,7 @@
     <asciidoctor.maven.plugin.version>1.5.2</asciidoctor.maven.plugin.version>
     <maven.project.info.reports.plugin.version>2.1.2</maven.project.info.reports.plugin.version>
     <build.helper.maven.plugin.version>1.5</build.helper.maven.plugin.version>
+    <maven.assembly.plugin.version>2.5.3</maven.assembly.plugin.version>
 
     <!-- also must update this when we bump version -->
     <package.version>1.2.0</package.version>
