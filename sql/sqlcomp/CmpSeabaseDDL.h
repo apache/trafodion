@@ -163,6 +163,9 @@ class CmpSeabaseDDL
 			       const NAString &schName,
 			       const NAString &objName);
  
+  static NABoolean isSeabasePrivMgrMD(const NAString &catName,
+			              const NAString &schName);
+ 
   static NABoolean isUserUpdatableSeabaseMD(const NAString &catName,
 			       const NAString &schName,
 			       const NAString &objName);
@@ -371,6 +374,8 @@ class CmpSeabaseDDL
   const char * getSystemCatalog();
 
   ComBoolean isSeabaseMD(const ComObjectName &name);
+
+  ComBoolean isSeabasePrivMgrMD(const ComObjectName &name);
 
   ComBoolean isSeabaseReservedSchema(const ComObjectName &name);
 
@@ -760,6 +765,14 @@ class CmpSeabaseDDL
 		       const ComTdbVirtTableKeyInfo * keyInfoArray,
 		       ExeCliInterface *cliInterface);
 
+  short getPKeyInfoForTable (
+                            const char *catName,
+                            const char *schName,
+                            const char *objName,
+                            ExeCliInterface *cliInterface,
+                            NAString &constrName,
+                            Int64 &constrUID);
+
   short updateRIInfo(
 		       StmtDDLAddConstraintRIArray &riArray,
 		       const char * catName,
@@ -1092,7 +1105,7 @@ class CmpSeabaseDDL
 					NABoolean includeInvalidDefs,
 					Int32 ctlFlags);
  
-  static NABoolean getMDtableInfo(const NAString &objName,
+  static NABoolean getMDtableInfo(const ComObjectName &ansiName,
                                   ComTdbVirtTableTableInfo* &tableInfo,
 				  Lng32 &colInfoSize,
 				  const ComTdbVirtTableColumnInfo* &colInfo,

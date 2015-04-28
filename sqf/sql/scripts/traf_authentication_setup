@@ -409,11 +409,12 @@ fi
 # Adjust the TRAFODION_AUTHENTICATION_CONFIG environment variable
 if [ $authOn -eq 1 -o $authOff -eq 1 ]; then
   change_sqenvcom
-
-  echo
-  echo "INFO **** IMPORTANT ***"
-  echo "INFO: Please start a new shell and bounce the instance in order for the authentication change to take affect"
-  echo
+  if [[ "$LDAP_SECURITY" != "Y" ]]; then
+    echo
+    echo "INFO **** IMPORTANT ***"
+    echo "INFO: Please start a new shell and bounce DCS in order for the authentication change to take affect"
+    echo
+  fi
 else
   # report the status of authentication enablement
   if [ $doStatus -eq 1 ]; then

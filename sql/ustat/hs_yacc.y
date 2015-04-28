@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -147,23 +147,7 @@ table_kind :
                   }
 ;
 
-table_identifier : GUARDIAN_TABLE_NAME
-                   {
-                     if (AddTableName(GUARDIAN_TABLE, $1->data()))
-                       {
-                         hs_globals_y->parserError =
-                           HSGlobalsClass::ERROR_SEMANTICS;
-                         return -1;
-                       }
-                   }
-            |  DEFINE_NAME
-                   {
-                     HSFuncMergeDiags(-8100, $1->data());
-                     hs_globals_y->parserError = HSGlobalsClass::ERROR_SEMANTICS;
-                     return -1;
-
-                   }
-            |  identifier
+table_identifier : identifier
                    {
                      if (AddTableName(ANSI_TABLE, $1->data()))
                        {

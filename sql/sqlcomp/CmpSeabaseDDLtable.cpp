@@ -526,6 +526,68 @@ short CmpSeabaseDDL::updatePKeyInfo(
   return 0;
 }
 
+// ----------------------------------------------------------------------------
+// Method: getPKeyInfoForTable
+//
+// This method reads the metadata to get the primary key constraint name and UID
+// for a table.
+//
+// Params:
+//   In:  catName, schName, objName describing the table
+//   In:  cliInterface - pointer to the cli handle
+//   Out:  constrName and constrUID
+//
+// Returns 0 if found, -1 otherwise
+// ComDiags is set up with error
+// ---------------------------------------------------------------------------- 
+short CmpSeabaseDDL::getPKeyInfoForTable (
+                                          const char *catName,
+                                          const char *schName,
+                                          const char *objName,
+                                          ExeCliInterface *cliInterface,
+                                          NAString &constrName,
+                                          Int64 &constrUID)
+{
+  char query[4000];
+  constrUID = -1;
+
+  // get constraint info
+  str_sprintf(query, "select O.object_name, C.constraint_uid "
+                     "from %s.\"%s\".%s O, %s.\"%s\".%s C "
+                     "where O.object_uid = C.constraint_uid "
+                     "  and C.constraint_type = '%s' and C.table_uid = "
+                     "   (select object_uid from %s.\"%s\".%s "
+                     "    where catalog_name = '%s' "
+                     "      and schema_name = '%s' " 
+                     "      and object_name = '%s')",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
+              COM_PRIMARY_KEY_CONSTRAINT_LIT,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              catName, schName, objName);
+
+  Queue * constrInfoQueue = NULL;
+  Lng32 cliRC = cliInterface->fetchAllRows(constrInfoQueue, query, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+
+      processReturn();
+
+      return -1;
+    }
+
+  assert (constrInfoQueue->numEntries() == 1);
+  constrInfoQueue->position();
+  OutputInfo * vi = (OutputInfo*)constrInfoQueue->getNext();
+  char * pConstrName = (char*)vi->get(0);
+  constrName = pConstrName;
+  constrUID = *(Int64*)vi->get(1);
+
+  return 0;
+}
+
+
 short CmpSeabaseDDL::constraintErrorChecks(
                                            StmtDDLAddConstraint *addConstrNode,
                                            NATable * naTable,
@@ -2502,9 +2564,12 @@ short CmpSeabaseDDL::dropSeabaseTable2(
         }
     }
 
+  const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
+
+
+      
   // return error if cascade is not specified and a referential constraint exists on
   // any of the unique constraints.
-  const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
   
   if (dropTableNode->getDropBehavior() == COM_RESTRICT_DROP_BEHAVIOR)
     {
@@ -2615,7 +2680,6 @@ short CmpSeabaseDDL::dropSeabaseTable2(
         } // if
     } // for
 
-  // drop all unique constraints from metadata
   for (Int32 i = 0; i < uniqueList.entries(); i++)
     {
       AbstractRIConstraint *ariConstr = uniqueList[i];
@@ -2631,20 +2695,52 @@ short CmpSeabaseDDL::dropSeabaseTable2(
       const NAString& constrSchName = 
         uniqConstr->getConstraintName().getSchemaName();
       
-      const NAString& constrObjName = 
-        uniqConstr->getConstraintName().getObjectName();
+      NAString constrObjName = 
+        (NAString) uniqConstr->getConstraintName().getObjectName();
       
-      Int64 constrUID = getObjectUID(cliInterface,
+      // Get the constraint UID
+      Int64 constrUID = -1;
+
+      // If the table being dropped is from a metadata schema, setup 
+      // an UniqueConstraint entry for the table being dropped describing its 
+      // primary key.  This is temporary until metadata is changed to create 
+      // primary keys with a known name.
+      if (isSeabasePrivMgrMD(catalogNamePart, schemaNamePart) ||
+          isSeabaseMD(catalogNamePart, schemaNamePart, objectNamePart))
+        {
+          assert (uniqueList.entries() == 1);
+          assert (uniqueList[0]->getOperatorType() == ITM_UNIQUE_CONSTRAINT);
+          UniqueConstraint * uniqConstr = (UniqueConstraint*)uniqueList[0];
+          assert (uniqConstr->isPrimaryKeyConstraint());
+          NAString adjustedConstrName;
+          if (getPKeyInfoForTable (catalogNamePart.data(),
+                                   schemaNamePart.data(),
+                                   objectNamePart.data(),
+                                   cliInterface,
+                                   constrObjName,
+                                   constrUID) == -1)
+            {
+              deallocEHI(ehi); 
+              processReturn();
+              return -1;
+            }
+            
+        }
+
+      // Read the metadata to get the constraint UID
+      else
+        {
+            constrUID = getObjectUID(cliInterface,
                                      constrCatName.data(), constrSchName.data(), constrObjName.data(),
                                      (uniqConstr->isPrimaryKeyConstraint() ?
                                       COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT :
                                       COM_UNIQUE_CONSTRAINT_OBJECT_LIT));                
-      if (constrUID < 0)
-        {
-          deallocEHI(ehi); 
-          processReturn();
-          
-          return -1;
+          if (constrUID == -1)
+            {
+              deallocEHI(ehi); 
+              processReturn();
+              return -1;
+            }
         }
 
       if (deleteConstraintInfoFromSeabaseMDTables(cliInterface,
@@ -4134,17 +4230,6 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
     }
 
   Int64 objUID = naTable->objectUid().castToInt64();
-
-  if (isSeabaseMD(tableName))
-    {
-      // objectUID for a metadata table is not available in NATable struct
-      // since the definition for a MD table is hardcoded.
-      // get objectUID for metadata tables from the OBJECTS table.
-      objUID =
-        getObjectUID(&cliInterface,
-                     catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
-                     COM_BASE_TABLE_OBJECT_LIT);
-    }
 
   NABoolean xnWasStartedHere = FALSE;
 
@@ -6307,8 +6392,8 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
 
   // If the object is a metadata table or a privilege manager table, don't 
   // allow the privilege to be grantable.
-  bool isPrivMgrTable = command.isPrivMgrTable(std::string(extTableName.data()));
-  NABoolean isMDTable = (isSeabaseMD(tableName) || isPrivMgrTable) ? TRUE : FALSE;
+  NABoolean isMDTable = (isSeabaseMD(tableName) || 
+                         isSeabasePrivMgrMD(tableName));
 
   if (isMDTable && isWGOSpecified)
     {
@@ -6895,20 +6980,46 @@ desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(
   NAString extTableName = coName.getExternalName(TRUE);
 
   ComTdbVirtTableTableInfo * tableInfo = NULL;
-  Lng32 colInfoSize;
-  const ComTdbVirtTableColumnInfo * colInfo;
-  Lng32 keyInfoSize;
-  const ComTdbVirtTableKeyInfo * keyInfo;
+  Lng32 colInfoSize = 0;
+  const ComTdbVirtTableColumnInfo * colInfo = NULL;
+  Lng32 keyInfoSize = 0;
+  const ComTdbVirtTableKeyInfo * keyInfo = NULL;
+  Lng32 uniqueInfoSize = 0;
+  ComTdbVirtTableConstraintInfo * constrInfo = NULL;
 
   Lng32 indexInfoSize = 0;
   const ComTdbVirtTableIndexInfo * indexInfo = NULL;
-  if (NOT CmpSeabaseMDupgrade::getMDtableInfo(objName,
+  if (NOT CmpSeabaseMDupgrade::getMDtableInfo(coName,
                                               tableInfo,
                                               colInfoSize, colInfo,
                                               keyInfoSize, keyInfo,
                                               indexInfoSize, indexInfo,
                                               objType))
     return NULL;
+
+  // Setup the primary key information as a unique constraint
+  uniqueInfoSize = 1;
+  constrInfo = new(STMTHEAP) ComTdbVirtTableConstraintInfo[uniqueInfoSize];
+  constrInfo->baseTableName = (char*)extTableName.data();
+
+  // The primary key constraint name is the name of the object appended
+  // with "_PK";
+  NAString constrName = extTableName;
+  constrName += "_PK";
+  constrInfo->constrName = (char*)constrName.data();
+
+  constrInfo->constrType = 3; // pkey_constr
+
+  constrInfo->colCount = keyInfoSize;
+  constrInfo->keyInfoArray = (ComTdbVirtTableKeyInfo *)keyInfo;
+
+  constrInfo->numRingConstr = 0;
+  constrInfo->ringConstrArray = NULL;
+  constrInfo->numRefdConstr = 0;
+  constrInfo->refdConstrArray = NULL;
+
+  constrInfo->checkConstrLen = 0;
+  constrInfo->checkConstrText = NULL;
 
   tableDesc =
     Generator::createVirtualTableDesc
@@ -6917,7 +7028,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(
      (ComTdbVirtTableColumnInfo*)colInfo,
      keyInfoSize,
      (ComTdbVirtTableKeyInfo*)keyInfo,
-     0, NULL,
+     uniqueInfoSize, constrInfo,
      indexInfoSize, 
      (ComTdbVirtTableIndexInfo *)indexInfo,
      0, NULL,
@@ -8245,7 +8356,9 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
     }
 
   desc_struct *tDesc = NULL;
-  if (isSeabaseMD(catName, schName, objName))
+  NABoolean isMDTable = (isSeabaseMD(catName, schName, objName) || 
+                        isSeabasePrivMgrMD(catName, schName));
+  if (isMDTable)
     {
       if (! CmpCommon::context()->getTrafMDDescsInfo())
         {

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -313,6 +313,7 @@ public:
   NABoolean isSeabase() const;
   NABoolean isHbase() const;
   NABoolean isSeabaseMD() const;
+  NABoolean isSeabasePrivMgrMD() const;
 
   void setObjectName(const NAString &objName)   { objectName_ = objName; }
   void setObjectNameSpace(ComAnsiNameSpace objNameSpace)   { objectNameSpace_ = objNameSpace; }
@@ -868,6 +869,7 @@ public:
   NABoolean isSeabase() const;
   NABoolean isHbase() const;
   NABoolean isSeabaseMD() const;
+  NABoolean isSeabasePrivMgrMD() const;
   NABoolean isHbaseCell() const;
   NABoolean isHbaseRow() const;
 
