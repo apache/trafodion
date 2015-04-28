@@ -360,8 +360,8 @@ public class SsccTransactionState extends TransactionState{
             }
             if(maxStartId == 0 && commitId < getStartId()) // out of MAX_VERSION window, this row must be visible
             {
-               if (commitId > getStartId()) {
-                  if(LOG.isTraceEnabled()) LOG.trace("handleResult : this cell committed after our startId");
+               if (commitId < getStartId()) {
+                  if(LOG.isTraceEnabled()) LOG.trace("handleResult : this cell committed before our startId");
                }
                if(LOG.isTraceEnabled()) LOG.trace("handleResult : this cell is out of MAX_VERSION window check, returning true");
                return true;
