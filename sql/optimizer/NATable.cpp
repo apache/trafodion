@@ -4827,11 +4827,6 @@ NATable::NATable(BindWA *bindWA,
     rcb_(NULL),
     rcbLen_(0),
     keyLength_(0),
-    securityLabel_(NULL),
-    securityLabelLen_(0),
-    schemaLabelFileName_(NULL),
-    constraintLabelInfo_(NULL),
-    constraintLabelInfoLen_(0),
     parentTableName_(NULL),
     sgAttributes_(NULL),
     isHive_(FALSE),
@@ -4987,65 +4982,6 @@ NATable::NATable(BindWA *bindWA,
   rcb_ = table_desc->body.table_desc.rcb;
   rcbLen_ = table_desc->body.table_desc.rcbLen;
   keyLength_ = table_desc->body.table_desc.keyLen;
-
-  securityLabel_ = (void *)table_desc->body.table_desc.securityLabel;
-  securityLabelLen_ = table_desc->body.table_desc.securityLabelLen;
-
-  constraintLabelInfo_ = table_desc->body.table_desc.constraintInfo;
-  constraintLabelInfoLen_ = table_desc->body.table_desc.constraintInfoLen;
-
-
-  if (table_desc->body.table_desc.schemalabelfilename)
-  {
-    schemaLabelFileName_ = new(heap_) char[strlen(table_desc->body.table_desc.schemalabelfilename) + 1];
-    strcpy(schemaLabelFileName_,table_desc->body.table_desc.schemalabelfilename);
-    schemaRedefTime_ = table_desc->body.table_desc.schemaRedefTime;
-    
-    short error = 0;
-    NAString vol, subvol, table;
-    char localNodeName[MAX_NODE_NAME];
-    if((CmpCommon::getDefault(VALIDATE_SCHEMA_REDEF_TS) == DF_ON) &&
-       (*(schemaLabelFileName_) == '$'))
-    {
-      short nodeNameLength;
-
-      if( OSIM_NODENUMBER_TO_NODENAME_
-          (-1,                // local node
-           localNodeName,      // return node name here
-           8,                  // max length
-           &nodeNameLength     // actual length
-           )
-          )
-      {
-        error = 1;
-      }
-      localNodeName[nodeNameLength] = 0;
-      NAString nameStr(schemaLabelFileName_);
-      size_t x, y;
-
-      if ((x = nameStr.first('.')) == NA_NPOS)
-        error =1 ;
-      else
-      {
-        vol = (nameStr (0, x));
-        y = x + 1;
-        if ((x = nameStr.index('.', y)) == NA_NPOS)
-          error = 1;
-        else
-        {
-          subvol = (nameStr (y, x-y));
-          y = x + 1;
-          table = (nameStr (y, nameStr.length() - y));
-        }
-      }
-    }
-    else
-      error = 1;
-
-    if (!error)
-    {
-    }
-  }
 
   if (table_desc->body.table_desc.parentTableName)
     {
@@ -5564,11 +5500,6 @@ NATable::NATable(BindWA *bindWA,
     rcb_(NULL),
     rcbLen_(0),
     keyLength_(0),
-    securityLabel_(NULL),
-    securityLabelLen_(0),
-    schemaLabelFileName_(NULL),
-    constraintLabelInfo_(NULL),
-    constraintLabelInfoLen_(0),
     parentTableName_(NULL),
     sgAttributes_(NULL),
     isHive_(TRUE),
@@ -5669,13 +5600,6 @@ NATable::NATable(BindWA *bindWA,
   rcb_ = 0;
   rcbLen_ = 0;
   keyLength_ = 0;
-
-// to check
-  securityLabel_ = 0;
-  securityLabelLen_ = 0;
-
-  constraintLabelInfo_ = 0;
-  constraintLabelInfoLen_ = 0;
 
   partnsDesc_ = NULL;
 
@@ -6729,12 +6653,6 @@ NATable::~NATable()
      }
      colArray_.clear();
   }
-  if (schemaLabelFileName_ != NULL)
-  {
-     NADELETEBASIC(schemaLabelFileName_, heap_);
-     schemaLabelFileName_ = NULL;
-  } 
-
   if (parentTableName_ != NULL)
   {
      NADELETEBASIC(parentTableName_, heap_);

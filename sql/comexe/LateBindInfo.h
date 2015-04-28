@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1100,91 +1100,6 @@ private:
   bool  isValid_;  // The flag that denotes if the name is checked and extracted into parts
   bool  isError_;  
 };
-
-class SchemaLabelInfo : public NAVersionedObject
-{
-public:
-
-  void init()
-  {
-    schemaLabelName_ = (char *) NULL ;
-    schemaAnsiName_ = (char *) NULL;
-    schemaLabelRedefTS_ = 0;
-    schemaSecurityFlags_ = 0;
-  }
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
-  virtual unsigned char getClassVersionID()
-  {
-    return 1;
-  }
-
-  virtual void populateImageVersionIDArray()
-  {
-    setImageVersionID(0,getClassVersionID());
-  }
-
-  virtual short getClassSize()   { return (short)sizeof(SchemaLabelInfo); }
-
-  SchemaLabelInfo() : NAVersionedObject(-1)                     { init(); }
-
-  char * schemaLabelName()
-        { return schemaLabelName_.getPointer(); }
-  void   setSchemaLabelName (char *name)
-         { schemaLabelName_ = name; }
-
-  char * schemaAnsiName()
-        { return schemaAnsiName_.getPointer(); }
-  void   setSchemaAnsiName (char *name)
-         { schemaAnsiName_ = name; }
-
-  Int64  schemaLabelRedefTS()      { return schemaLabelRedefTS_; }
-  void   setSchemaLabelRedefTS(Int64 RedefTS)
-         { schemaLabelRedefTS_ = RedefTS; }
-
-  Long pack(void *space)
-  {
-    schemaLabelName_.pack(space);
-    schemaAnsiName_.pack(space);
-    return NAVersionedObject::pack(space);
-  }
-
-  Lng32 unpack(void *base, void * reallocator)
-  {
-    if(schemaLabelName_.unpack(base)) return -1;
-    if(schemaAnsiName_.unpack(base)) return -1;
-    return NAVersionedObject::unpack(base, reallocator);
-  }
-
-  NABoolean isValidateSSTSAtOpenTime()     
-  {
-    return ((schemaSecurityFlags_ & VALIDATE_SSTS_AT_OPEN_TIME) != 0);
-  }
-
-  void setValidateSSTSAtOpenTime(NABoolean v)
-  {
-    (v ? schemaSecurityFlags_ |= VALIDATE_SSTS_AT_OPEN_TIME
-       : schemaSecurityFlags_ &= ~VALIDATE_SSTS_AT_OPEN_TIME);
-  }
-
-private:
-
-  enum SchemaSecurityFlags
-  {
-    VALIDATE_SSTS_AT_OPEN_TIME = 0x0001
-  };
-
-  NABasicPtr    schemaLabelName_;             // 00 -- 07
-  NABasicPtr    schemaAnsiName_;              // 08 -- 15
-  Int64         schemaLabelRedefTS_;          // 16 -- 23
-  UInt32        schemaSecurityFlags_;         // 24 -- 27
-  char          fillersSchemaLabelInfo_[4];   // 28 -- 31
-};
-
-typedef NAVersionedObjectPtrTempl<SchemaLabelInfo> SchemaLabelInfoPtr;
-typedef NAVersionedObjectPtrArrayTempl<SchemaLabelInfoPtr> SchemaLabelInfoPtrPtr;
 
 
 #endif // EX_LATEBIND_H

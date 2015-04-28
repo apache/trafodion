@@ -577,8 +577,6 @@ public:
                                  NABoolean &simCheckFailed,
                                  ComDiagsArea &diagsArea);
 
-  RETCODE checkSchemaFileLabelTS(ComDiagsArea &diagsArea);
-
   RETCODE mvSimilarityCheck(char *table, 
 			    ULng32 siMvBitmap, 
 			    ULng32 rcbMvBitmap,

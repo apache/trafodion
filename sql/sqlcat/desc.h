@@ -80,7 +80,6 @@ struct table_desc_struct {
   char *catalogName;
   char *parentTableName;
   char *schemalabelfilename;    // the physical file, to be Opened for auth-cking.
-  ComTimestamp schemaRedefTime;
   UnderlyingFileType underlyingFileType;  // SQLMP or SQLMX 
   ULng32 createtime[2];
   ULng32 redeftime[2];
@@ -118,12 +117,8 @@ struct table_desc_struct {
   ULng32 rcbLen;
   ULng32 maxRecLen;
   ULng32 keyLen;
-  const void *securityLabel;
-  ULng32 securityLabelLen;
   void * privInfo;
   void * secKeySet;
-  void *constraintInfo;
-  ULng32 constraintInfoLen;
   ComBoolean isInsertOnly;
   char * snapshotName;
   desc_struct *columns_desc;

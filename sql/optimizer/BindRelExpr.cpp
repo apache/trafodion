@@ -6969,41 +6969,6 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
                          bindWA->wHeap()));
   }
 
-
-  if(!(naTable->getSchemaLabelFileName() == NULL
-    || strlen(naTable->getSchemaLabelFileName()) == 0
-    || noSecurityCheck
-    || bindWA->inViewExpansion()))
-  {
-    NABoolean found = FALSE;
-    for (CollIndex i=0; i < (CollIndex)bindWA->schemaCount(); i++)
-    {
-      if (strcmp(bindWA->getSLIList()[i]->schemaLabelName(), 
-                 naTable->getSchemaLabelFileName()) == 0) 
-      {
-        found = TRUE;
-        break;
-      }
-    }
-    if (!found)
-    {  
-      // Allocate space for schema file label name and lastModTimestamp of the
-      // table or view.
-      SchemaLabelInfo *schemaLabelInfoPtr = new(bindWA->wHeap()) SchemaLabelInfo;
-      schemaLabelInfoPtr->setSchemaLabelName
-        (convertNAString(naTable->getSchemaLabelFileName(),bindWA->wHeap()));
-      schemaLabelInfoPtr->setSchemaAnsiName
-        (convertNAString(naTable->getExtendedQualName().getQualifiedNameObj().
-                         getSchemaNameAsAnsiString(),
-                         bindWA->wHeap()));
-      schemaLabelInfoPtr->setSchemaLabelRedefTS
-        (naTable->getSchemaRedefTime());
- 
-      bindWA->getSLIList().insert(schemaLabelInfoPtr);
-      ++ bindWA->schemaCount();
-    }
-  }
-
   if(naTable->isUMDTable() || naTable->isSMDTable()
     || naTable->isMVUMDTable() || naTable->isTrigTempTable())
   {

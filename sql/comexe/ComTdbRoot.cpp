@@ -120,8 +120,6 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 		      UninitializedMvName *uninitializedMvList,
 		      short uninitializedMvCount,
 		      NABasicPtr compilerStatsInfo,
-		      Int16 schCount,
-		      SchemaLabelInfoPtrPtr schemaLabelInfoList,
 		      NABasicPtr rwrsInfo,
                       Int32 numObjectUIDs,
                       Int64 *objectUIDs,
@@ -260,8 +258,6 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 
   uninitializedMvList_ = uninitializedMvList;
   uninitializedMvCount_ = uninitializedMvCount;
-  schCount_ = schCount;
-  schemaLabelInfoList_ = schemaLabelInfoList;
   cursorType_ = SQL_READONLY_CURSOR;
   queryType_ = SQL_UNKNOWN;
   subqueryType_ = SQL_STMT_NA;
@@ -330,9 +326,6 @@ Long ComTdbRoot::pack(void * space)
 
   // Pack the UDR stoi list
   if (udrCount_ > 0) udrStoiList_.pack (space, udrCount_);
-  
-  if (schCount_ > 0)
-    schemaLabelInfoList_.pack(space, schCount_);
 
   sikPtr_.pack(space);
   snapshotscanTempLocation_.pack(space);
@@ -384,8 +377,6 @@ Lng32 ComTdbRoot::unpack(void * base, void * reallocator)
 
   // Unpack the UDR stoi list
   if(udrStoiList_.unpack (base,udrCount_, reallocator)) return -1;
-
-  if(schemaLabelInfoList_.unpack (base, schCount_, reallocator)) return -1;
 
   if (sikPtr_.unpack(base, reallocator)) return -1;
   if (snapshotscanTempLocation_.unpack(base)) return -1;
