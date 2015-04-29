@@ -1480,6 +1480,7 @@ else
       <value>
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,
            org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
+           org.apache.hadoop.hbase.coprocessor.transactional.SsccRegionEndpoint,
            org.apache.hadoop.hbase.coprocessor.AggregateImplementation
       </value>
    </property>
