@@ -629,10 +629,10 @@ CoprocessorService, Coprocessor {
       try {
         status = commitRequest(request.getTransactionId());
       } catch (UnknownTransactionException u) {
-        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commitRequest threw exception after internal commit" + u.toString());
+        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commitRequest threw exception after internal commit: " + u.toString());
         ute = u;
       } catch (IOException e) {
-        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commitRequest threw exception after internal commit" + e.toString());
+        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commitRequest threw exception after internal commit: " + e.toString());
         ioe = e;
       }
     }
@@ -3524,7 +3524,7 @@ CoprocessorService, Coprocessor {
     long currentTime = System.currentTimeMillis();
     long ssccSeqId = currentTime > logSeqId ? currentTime : logSeqId;
     nextSsccSequenceId = new AtomicLong(ssccSeqId);
-    LOG.info("Genreate SequenceID start from " + nextSsccSequenceId);
+    LOG.info("Generate SequenceID start from " + nextSsccSequenceId);
 
     LOG.info("SsccRegionEndpoint coprocessor: start");
   }
