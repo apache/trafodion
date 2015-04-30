@@ -59,6 +59,8 @@ verhdr:
 	cd sqf && $(MAKE) genverhdr
 
 log4cpp: $(MPI_TARGET)
+	cd log4cpp && tar -cf $(LOG4CPP_VER).tar $$(git ls-tree HEAD -r --name-only $(LOG4CPP_VER)) | sed -e "s/$$/	##(Log4cpp)/";exit $${PIPESTATUS[0]}
+	mkdir -p sqf/sources && ln log4cpp/$(LOG4CPP_VER).tar sqf/sources | sed -e "s/$$/	##(Log4cpp)/";exit $${PIPESTATUS[0]}
 	cd log4cpp/$(LOG4CPP_VER)/src && $(MAKE) liblog4cpp.so 2>&1 | sed -e "s/$$/	##(Log4cpp)/";exit $${PIPESTATUS[0]}
 
 dbsecurity: $(MPI_TARGET)
