@@ -239,6 +239,7 @@ curl -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
            "value" : "0"
            } ]
         } ]
+
 }' \
 http://$URL/api/v1/clusters/$CLUSTER_NAME/services/zookeeper/config > $LOCAL_WORKDIR/traf_zookeeper_config_temp
 

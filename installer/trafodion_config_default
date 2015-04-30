@@ -139,3 +139,10 @@ export CONFIG_COMPLETE="true"
 # configuration errors. Will give warnings and may stop installation 
 # if errors are found. 
 export RUN_SCANNER="N"
+
+#Turn on simple security. MUST have existing LDAP configured.
+export LDAP_SECURITY="N"
+
+#Name of LDAP Config file
+export LDAP_AUTH_FILE="traf_authentication_config_${HOSTNAME}"
+
