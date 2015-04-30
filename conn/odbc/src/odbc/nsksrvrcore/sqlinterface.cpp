@@ -6874,6 +6874,15 @@ SQLRETURN SRVR::SetIndandVarPtr(SQLDESC_ID *pDesc,
 				memOffSet += 1;
 			break;
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
+			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1; 
+			VarPtr = memPtr + memOffSet;
+			if( SqlDescInfo[i].Length > SHRT_MAX )
+				memOffSet += SqlDescInfo[i].Length + 4;
+			else
+				memOffSet += SqlDescInfo[i].Length + 2;
+			if (!bRWRS)
+				memOffSet += 1;
+			break;
 		case SQLTYPECODE_VARCHAR_LONG:
 			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1; 
 			VarPtr = memPtr + memOffSet;
