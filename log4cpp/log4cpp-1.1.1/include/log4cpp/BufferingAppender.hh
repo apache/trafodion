@@ -1,5 +1,10 @@
 /*
- * (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+ * BufferingAppender.hh
+ *
+ * (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
+ *
+ * Copyright 2002, LifeLine Networks BV (www.lifeline.nl). All rights reserved.
+ * Copyright 2002, Bastiaan Bakker. All rights reserved.
  *
  * See the COPYING file for the terms of usage and distribution.
  */

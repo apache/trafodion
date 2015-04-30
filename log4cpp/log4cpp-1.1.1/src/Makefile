@@ -1,5 +1,10 @@
 # Makefile for building log4cpp shared library on Linux
 #
+# (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
+# License: LGPLv2.1 (see the COPYING file for details)
+#
+
+
 include $(MY_SQROOT)/macros.gmk # top level
 include ./macros.gmk # current level
 

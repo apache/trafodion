@@ -1,10 +1,10 @@
 /*
  * FileAppender.cpp
  *
+ * (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
+ *
  * Copyright 2000, LifeLine Networks BV (www.lifeline.nl). All rights reserved.
  * Copyright 2000, Bastiaan Bakker. All rights reserved.
- *
- * (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
  *
  * See the COPYING file for the terms of usage and distribution.
  */
@@ -26,10 +26,10 @@
 
 namespace log4cpp {
 
-    FileAppender::FileAppender(const std::string& name,
+    FileAppender::FileAppender(const std::string& name, 
                                const std::string& fileName,
                                bool append,
-                               mode_t mode) :
+                               mode_t mode) : 
             LayoutAppender(name),
             _fileName(fileName),
             _flags(O_CREAT | O_APPEND | O_WRONLY),
@@ -38,7 +38,7 @@ namespace log4cpp {
             _flags |= O_TRUNC;
         _fd = ::open(_fileName.c_str(), _flags, _mode);
     }
-
+    
     FileAppender::FileAppender(const std::string& name, int fd) :
         LayoutAppender(name),
         _fileName(""),
@@ -46,7 +46,7 @@ namespace log4cpp {
         _flags(O_CREAT | O_APPEND | O_WRONLY),
         _mode(00644) {
     }
-
+    
     FileAppender::~FileAppender() {
         close();
     }
@@ -105,7 +105,7 @@ namespace log4cpp {
             }
         } else {
             return true;
-        }
+        }      
     }
 
    std::auto_ptr<Appender> create_file_appender(const FactoryParams& params)
