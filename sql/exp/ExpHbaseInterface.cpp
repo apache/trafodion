@@ -370,8 +370,6 @@ ExpHbaseInterface_JNI::ExpHbaseInterface_JNI(CollHeap* heap, const char* server,
    ,htc_(NULL)
    ,hblc_(NULL)
    ,retCode_(HBC_OK)
-   ,lastKVBuffer_(NULL)
-   ,lastKVColName_(NULL)
 {
 //  HBaseClient_JNI::logIt("ExpHbaseInterface_JNI::constructor() called.");
 }
@@ -467,13 +465,6 @@ Lng32 ExpHbaseInterface_JNI::close()
 //  HBaseClient_JNI::logIt("ExpHbaseInterface_JNI::close() called.");
   if (client_ == NULL)
     return HBASE_ACCESS_SUCCESS;
-    
-  NADELETEBASIC(lastKVBuffer_, heap_);
-  NADELETEBASIC(lastKVColName_, heap_);
-  
-  lastKVBuffer_ = NULL;
-  lastKVColName_ = NULL;
-
   return cleanup();
 }
 
@@ -688,6 +679,16 @@ Lng32 ExpHbaseInterface_JNI::scanClose()
   return HBASE_ACCESS_SUCCESS;
 }
 
+Lng32 ExpHbaseInterface_JNI::getHTable(HbaseStr &tblName)
+{
+  htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
+  if (htc_ == NULL) {
+    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
+    return HBASE_OPEN_ERROR;
+  }
+  return HBASE_ACCESS_SUCCESS;
+}
+
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::getRowOpen(
 	HbaseStr &tblName,
@@ -878,7 +879,6 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
     retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
     return HBASE_OPEN_ERROR;
   }
-  
 
   Int64 transID;
   if (noXn)
@@ -887,9 +887,25 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
     transID = getTransactionIDFromContext();
   retCode_ = htc->insertRows(transID, rowIDLen, rowIDs, rows, timestamp, autoFlush);
 
-
-
   client_->releaseHTableClient(htc);
+
+  if (retCode_ != HBC_OK)
+    return -HBASE_ACCESS_ERROR;
+  else
+    return HBASE_ACCESS_SUCCESS;
+}
+
+//----------------------------------------------------------------------------
+Lng32 ExpHbaseInterface_JNI::getRows(
+          short rowIDLen,
+          HbaseStr &rowIDs,
+	  const LIST(HbaseStr) & columns)
+{
+  ex_assert(htc_ != NULL, "htc_ is null");
+  Int64 transID;
+  transID = getTransactionIDFromContext();
+  retCode_ = htc_->getRows(transID, rowIDLen, rowIDs, columns);
+
 
   if (retCode_ != HBC_OK)
     return -HBASE_ACCESS_ERROR;

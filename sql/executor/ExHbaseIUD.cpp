@@ -748,8 +748,8 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
             ExpTupleDesc * rowTD =
     		hbaseAccessTdb().workCriDesc_->getTupleDescriptor
                 (hbaseAccessTdb().convertTuppIndex_);
-            allocateDirectRowBufferForJNI(rowTD->numAttrs(), ROWSET_MAX_NO_ROWS);
-            allocateDirectRowIDBufferForJNI(ROWSET_MAX_NO_ROWS);
+            allocateDirectRowBufferForJNI(rowTD->numAttrs(), hbaseAccessTdb().getHbaseRowsetVsbbSize());
+            allocateDirectRowIDBufferForJNI(hbaseAccessTdb().getHbaseRowsetVsbbSize());
             if (hbaseAccessTdb().getCanAdjustTrafParams())
             {
               if (hbaseAccessTdb().getWBSize() > 0)
@@ -847,7 +847,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	    currRowNum_++;
 	    matches_++;
 
-	    if (currRowNum_ < ROWSET_MAX_NO_ROWS)
+	    if (currRowNum_ < hbaseAccessTdb().getHbaseRowsetVsbbSize())
 	      {
 		step_ = DONE;
 		break;
@@ -1282,8 +1282,8 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
         }
         allocateDirectRowBufferForJNI(
                  numCols,
-                 ROWSET_MAX_NO_ROWS);
-        allocateDirectRowIDBufferForJNI(ROWSET_MAX_NO_ROWS);
+                 hbaseAccessTdb().getHbaseRowsetVsbbSize());
+        allocateDirectRowIDBufferForJNI(hbaseAccessTdb().getHbaseRowsetVsbbSize());
         step_ = SETUP_INSERT;
        }
        break;
@@ -1383,7 +1383,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
         copyRowIDToDirectBuffer( rowId_);
         currRowNum_++;
         matches_++;
-        if (currRowNum_ < ROWSET_MAX_NO_ROWS)
+        if (currRowNum_ < hbaseAccessTdb().getHbaseRowsetVsbbSize())
         {
           step_ = DONE;
           break;
@@ -3497,8 +3497,72 @@ ExHbaseAccessSQRowsetTcb::ExHbaseAccessSQRowsetTcb(
   numRetries_ = 0;
 
   getSQTaskTcb_ = 
-    new(getGlobals()->getDefaultHeap()) ExHbaseGetSQTaskTcb(this);
+    new(getGlobals()->getDefaultHeap()) ExHbaseGetSQTaskTcb(this, TRUE);
  
+}
+
+Lng32 ExHbaseAccessSQRowsetTcb::setupUniqueKey()
+{
+  ex_queue_entry *pentry_down = qparent_.down->getQueueEntry(nextRequest_);
+
+  if (pentry_down->downState.request == ex_queue::GET_NOMORE)
+     return 1;
+
+  ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
+  keyRangeEx::getNextKeyRangeReturnType keyRangeStatus;
+
+  initNextKeyRange(pool_, pentry_down->getAtp());
+
+  keyRangeStatus =
+    keySubsetExeExpr_->getNextKeyRange(pentry_down->getAtp(), FALSE, TRUE);
+
+  if (keyRangeStatus == keyRangeEx::EXPRESSION_ERROR)
+     return -1;
+
+  tupp &keyData = keySubsetExeExpr_->getBkData();
+  char * beginKeyRow = keyData.getDataPointer();
+  HbaseStr rowIdRowText;
+
+  if (hbaseAccessTdb().sqHbaseTable()) {
+      rowIdRowText.val = beginKeyRow;
+      rowIdRowText.len = hbaseAccessTdb().keyLen_;
+  } else {
+      // hbase table. Key is in varchar format.
+      short keyLen = *(short*)beginKeyRow;
+      rowIdRowText.val = beginKeyRow + sizeof(short);
+      rowIdRowText.len = keyLen;
+  }
+
+  if (keyRangeStatus == keyRangeEx::NO_MORE_RANGES)
+    {
+      // At the end of range, added an extra byte with "0" value to
+      // make the key exclusive which is required by hbase scan.
+      // Note that the key buffer should have 2 extra bytes allocated
+      rowIdRowText.val[rowIdRowText.len] = '\0';
+      rowIdRowText.len += 1;
+    }
+
+  copyRowIDToDirectBuffer(rowIdRowText);
+  return 0;
+}
+
+
+Lng32 ExHbaseAccessSQRowsetTcb::setupRowIds()
+{
+  Lng32 retcode;
+  UInt16 rowsetMaxRows = hbaseAccessTdb().getHbaseRowsetVsbbSize();
+  
+  queue_index tlindex = qparent_.down->getTailIndex();
+  while (nextRequest_ != tlindex) {
+     retcode = setupUniqueKey();
+     if (retcode != 0)
+        return retcode;
+     nextRequest_++;
+    // Don't buffer more than HBASE_ROWSET_VSBB_SIZE
+    if (numRowsInDirectBuffer()  >= rowsetMaxRows)
+        return 1;
+  }
+  return 0;
 }
 
 ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
@@ -3511,7 +3575,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 
   while (!qparent_.down->isEmpty())
     {
-      nextRequest_ = qparent_.down->getHeadIndex();
 
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
@@ -3528,7 +3591,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    prevTailIndex_ = 0;
 	    
 	    nextRequest_ = qparent_.down->getHeadIndex();
-
 	    step_ = RS_INIT;
 	  }
 	  break;
@@ -3551,37 +3613,61 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
     		hbaseAccessTdb().workCriDesc_->getTupleDescriptor
                 (hbaseAccessTdb().updateTuppIndex_);
                 allocateDirectRowBufferForJNI(rowTD->numAttrs(),
-                                   ROWSET_MAX_NO_ROWS);
+                                    hbaseAccessTdb().getHbaseRowsetVsbbSize());
             }
 	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::UPDATE_
+                 || hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_
                  || hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_)
-                allocateDirectRowIDBufferForJNI(ROWSET_MAX_NO_ROWS);
-
-            //	    rowIds_.clear();
+                allocateDirectRowIDBufferForJNI(hbaseAccessTdb().getHbaseRowsetVsbbSize());
 
 	    setupListOfColNames(hbaseAccessTdb().listOfFetchedColNames(),
 				columns_);
 
-	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_)
-	      step_ = SETUP_SELECT;
-	    else
+	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_) {
+	        retcode = ehi_->getHTable(table_);
+	        if (setupError(retcode, "ExpHbaseInterface::getHTable")) {
+	           step_ = HANDLE_ERROR;
+		   break;
+	        }
+	        step_ = SETUP_SELECT;
+            }
+            else
 	      step_ = SETUP_UMD;
 	  }
 	  break;
-
 	case SETUP_SELECT:
 	  {
-	    retcode = setupUniqueKeyAndCols(FALSE);
-	    if (retcode == -1)
-	      {
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	      step_ = NEXT_ROW;
+            retcode = setupRowIds();
+            switch (retcode) {
+               case 0:
+                  if (qparent_.down->getLength() == 1) {
+                     // only one row in the down queue.
+                     // Before we send input buffer to hbase, give parent
+                     // another chance in case there is more input data.
+                     // If parent doesn't input any more data on second (or
+                     // later) chances, then process the request.
+                     if (numRetries_ == 2)    {
+                         numRetries_ = 0;
+                         step_ = PROCESS_SELECT;
+                      } else {
+                          numRetries_++;
+                          return WORK_CALL_AGAIN;
+                      }
+                  }
+                  else
+                      step_ = PROCESS_SELECT;
+                  break;
+               case 1:
+                  // Reached the max. number of rowIds
+                  // Process the rowIds in the buffer 
+                  step_ = PROCESS_SELECT;
+                  break;
+               default:
+                  step_ = HANDLE_ERROR;
+                  break;
+            }
 	  }
 	  break;
-
 	case SETUP_UMD:
 	  {
 	    rowIds_.clear();
@@ -3608,25 +3694,86 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	case NEXT_ROW:
 	  {
 	    currRowNum_++;
-	    matches_++;
-
-	    if (currRowNum_ < ROWSET_MAX_NO_ROWS)
-	      {
+	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_) {
+              // matches_ is set to 1 when the row is projected  by moveRowToUpQueue
+              // to denote that there is a matching entry
+               matches_ = 0;
+               retcode = ehi_->nextRow();
+              // EOR is end of result set for the current Rowset
+              // EOD is no data for the current row
+              // But EOD is never returned, instead HBASE_ACCESS_NO_ROW is returned
+              // when no row is found in CREATE_ROW step
+              if (retcode == HBASE_ACCESS_EOR) {
+                 step_ = SETUP_SELECT;
+                 break;
+              }
+              if (retcode == HBASE_ACCESS_EOD) {
+                 step_ = ROW_DONE;
+                 break;
+              }
+              if (setupError(retcode, "ExpHbaseInterface::nextRow"))
+                 step_ = HANDLE_ERROR;
+              else
+                 step_ = CREATE_ROW;
+              break;
+            }
+	    if (currRowNum_ < hbaseAccessTdb().getHbaseRowsetVsbbSize()) {
+	        matches_++;
 		step_ = DONE;
 		break;
-	      }
-
+	    }
 	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_)
 	      step_ = PROCESS_DELETE;
-	    else if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_)
-	      step_ = PROCESS_SELECT;
 	    else if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::UPDATE_)
 	      step_ = PROCESS_UPDATE;
 	    else
 	      step_ = HANDLE_ERROR;
 	  }
 	  break;
-
+       case CREATE_ROW:
+          {
+            retcode = createSQRowDirect();
+            if (retcode == HBASE_ACCESS_NO_ROW) {
+               step_ = ROW_DONE;
+               break;
+            }
+            if (retcode < 0)
+            {
+                rc = (short)retcode;
+                setupError(rc, "createSQRowDirect");
+                step_ = HANDLE_ERROR;
+                break;
+            }
+            if (retcode != HBASE_ACCESS_SUCCESS)
+            {
+                step_ = HANDLE_ERROR;
+                break;
+            }
+            step_ = APPLY_PRED;
+          }
+          break;
+        case APPLY_PRED:
+          {
+            rc = applyPred(scanExpr());
+            if (rc == 1)
+              step_ = RETURN_ROW;
+            else if (rc == -1)
+              step_ = HANDLE_ERROR;
+            else
+              step_ = ROW_DONE;
+          }
+          break;
+        case RETURN_ROW:
+          {
+            rc = 0;
+            if (moveRowToUpQueue(convertRow_, hbaseAccessTdb().convertRowLen(),
+                                       &rc, FALSE))
+              return rc;
+            if (getHbaseAccessStats())
+               getHbaseAccessStats()->incUsedRows();
+            step_ = ROW_DONE;
+          }
+          break;
 	case PROCESS_DELETE:
 	case PROCESS_DELETE_AND_CLOSE:
 	  {
@@ -3637,8 +3784,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                                        hbaseAccessTdb().useHbaseXn(),
 				       -1 // ColTS_
 				       );
-
-
 
 	    if (setupError(retcode, "ExpHbaseInterface::deleteRows"))
 	      {
@@ -3661,27 +3806,26 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  break;
 
 	case PROCESS_SELECT:
-	case PROCESS_SELECT_AND_CLOSE:
 	  {
-	   rc = 0;
-	   retcode = getSQTaskTcb_->work(rc);
-	   if (retcode == 1)
-	     return rc;
-	   else if (retcode < 0)
-	     {
-	       step_ = HANDLE_ERROR;
-	       break;
-	     }
+           if (numRowsInDirectBuffer() > 0) {
+              short numRowsInBuffer = patchDirectRowIDBuffers();
+	      retcode = ehi_->getRows(hbaseAccessTdb().getRowIDLen(),
+                            rowIDs_, 
+                            columns_);
+	      if (setupError(retcode, "ExpHbaseInterface::getRows"))
+	      {
+		step_ = HANDLE_ERROR;
+		break;
+	      }
+              step_ = NEXT_ROW;
 
-	   if (getHbaseAccessStats())
-	     {
-	       getHbaseAccessStats()->lobStats()->numReadReqs++;
-	     }
-	   
-	   if (step_ == PROCESS_SELECT_AND_CLOSE)
-	     step_ = RS_CLOSE;
-	   else
-	     step_ = DONE;
+	      if (getHbaseAccessStats())
+	      {
+	          getHbaseAccessStats()->lobStats()->numReadReqs++;
+	      }
+           }
+           else
+               step_ = SETUP_SELECT;
 	  }
 	  break;
 
@@ -3757,8 +3901,10 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-
-	    step_ = ALL_DONE;
+ 	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_)
+               step_ = NOT_STARTED;
+            else
+	       step_ = ALL_DONE;
 	  }
 	  break;
 
@@ -3768,11 +3914,16 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      return rc;
 
 	    retcode = ehi_->close();
-
 	    step_ = ALL_DONE;
 	  }
 	  break;
-
+        case ROW_DONE:
+          {
+	    if (handleDone(rc, 0))
+	      return rc;
+            step_ = NEXT_ROW;
+          }
+          break;
 	case DONE:
 	case ALL_DONE:
 	  {
@@ -3780,15 +3931,14 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      matches_ = 0;
 
 	    if ((step_ == DONE) &&
-		(qparent_.down->getLength() == 1))
+                (qparent_.down->getLength() == 1))
 	      {
 		// only one row in the down queue.
-
 		// Before we send input buffer to hbase, give parent
 		// another chance in case there is more input data.
 		// If parent doesn't input any more data on second (or
 		// later) chances, then process the request.
-		if (numRetries_ == 3)
+		if (numRetries_ == 2 || numRowsInDirectBuffer() > 1)
 		  {
 		    numRetries_ = 0;
 
@@ -3797,15 +3947,12 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 		      step_ = PROCESS_DELETE_AND_CLOSE;
 		    else if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::UPDATE_)
 		      step_ = PROCESS_UPDATE_AND_CLOSE;
-		    else if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_)
-		      step_ = PROCESS_SELECT_AND_CLOSE;
 		    else
 		      {
-			// should never reach here
+                         ex_assert(false, "DONE state is invalid in Rowset SELECT");
 		      }
 		    break;
 		  }
-
 		numRetries_++;
 		return WORK_CALL_AGAIN;
 	      }
@@ -3814,19 +3961,15 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      return rc;
 
 	    if (step_ == DONE)
-	      {
+		step_ = SETUP_UMD;
+	    else {
 		if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_)
-		  step_ = SETUP_SELECT;
-		else
-		  step_ = SETUP_UMD;
-	      }
-	    else
-	      {
-		step_ = NOT_STARTED;
+		   step_ = RS_CLOSE; 
+                else
+		   step_ = NOT_STARTED;
 	      }
 	  }
 	  break;
-
 	} // switch
 
     } // while

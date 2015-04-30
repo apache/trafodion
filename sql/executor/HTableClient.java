@@ -518,12 +518,9 @@ public class HTableClient {
 		Result [] results = new Result[gets.size()];
 		int i=0;
 		for (Get g : gets) {
-		    //Result r = table.get(transactionID, g);
-			Result r = table.get(g);
-			if (r != null && r.isEmpty() == false)
-				results[i++] = r;
+			Result r = table.get(transactionID, g);
+			results[i++] = r;
 		}
-	
 		return results;
 	}
 
@@ -565,6 +562,44 @@ public class HTableClient {
 			setJavaObject(jniObject);
 			return 0;
 		}
+	}
+
+	public int getRows(long transID, short rowIDLen, Object rowIDs,
+			Object[] columns)
+                        throws IOException {
+            
+		if (logger.isTraceEnabled()) logger.trace("Enter getRows " + tableName);
+
+		ByteBuffer bbRowIDs = (ByteBuffer)rowIDs;
+		List<Get> listOfGets = new ArrayList<Get>();
+		short numRows = bbRowIDs.getShort();
+
+		for (int i = 0; i < numRows; i++) {
+                        byte[] rowID = new byte[rowIDLen];
+                        bbRowIDs.get(rowID, 0, rowIDLen);
+			Get get = new Get(rowID);
+			listOfGets.add(get);
+		}
+		if (columns != null)
+		{
+			for (int j = 0; j < columns.length; j++ ) {
+				byte[] col = (byte[])columns[j];
+				for (Get get : listOfGets)
+					get.addColumn(getFamily(col), getName(col));
+			}
+			numColsInScan = columns.length;
+		}
+		else
+			numColsInScan = 0;
+		if (useTRex && (transID != 0)) {
+			getResultSet = batchGet(transID, listOfGets);
+                        fetchType = GET_ROW; 
+		} else {
+			getResultSet = table.get(listOfGets);
+			fetchType = BATCH_GET;
+		}
+                 pushRowsToJni(getResultSet);
+		return getResultSet.length;
 	}
 
 	public int fetchRows() throws IOException, 
@@ -646,22 +681,12 @@ public class HTableClient {
 			kvsPerRow = new int[rowsReturned];
 		}
 		int cellNum = 0;
+		boolean colFound = false;
 		for (int rowNum = 0; rowNum < rowsReturned ; rowNum++)
 		{
-			if (result[rowNum] != null)
-			{
-				rowIDs[rowNum] = result[rowNum].getRow();
-				kvList = result[rowNum].rawCells();
-			}
-			else
-			{
-				rowIDs[rowNum] = null;
-				kvList = null;
-			}
- 			if (kvList == null)
-				numColsReturned = 0; 
-			else
-				numColsReturned = kvList.length;
+			rowIDs[rowNum] = result[rowNum].getRow();
+			kvList = result[rowNum].rawCells();
+			numColsReturned = kvList.length;
 			if ((cellNum + numColsReturned) > numTotalCells)
 				throw new IOException("Insufficient cell array pre-allocated");
 			kvsPerRow[rowNum] = numColsReturned;
@@ -676,12 +701,22 @@ public class HTableClient {
 				kvFamOffset[cellNum] = kv.getFamilyOffset();
 				kvTimestamp[cellNum] = kv.getTimestamp();
 				kvBuffer[cellNum] = kv.getValueArray();
+				colFound = true;
 			}
 		}
-		int cellsReturned = cellNum++;
-		setResultInfo(jniObject, kvValLen, kvValOffset,
-			kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
-			kvTimestamp, kvBuffer, rowIDs, kvsPerRow, cellsReturned);
+		int cellsReturned;
+		if (colFound)
+                	cellsReturned = cellNum++;
+		else
+			cellsReturned = 0;
+		if (cellsReturned == 0)
+			setResultInfo(jniObject, null, null,
+				null, null, null, null,
+				null, null, rowIDs, kvsPerRow, cellsReturned);
+		else 
+			setResultInfo(jniObject, kvValLen, kvValOffset,
+				kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
+				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, cellsReturned);
 		return rowsReturned;	
 	}		
 	
@@ -738,9 +773,14 @@ public class HTableClient {
 			kvTimestamp[colNum] = kv.getTimestamp();
 			kvBuffer[colNum] = kv.getValueArray();
 		}
-		setResultInfo(jniObject, kvValLen, kvValOffset,
-			kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
-			kvTimestamp, kvBuffer, rowIDs, kvsPerRow, numColsReturned);
+		if (numColsReturned == 0)
+			setResultInfo(jniObject, null, null,
+				null, null, null, null,
+				null, null, rowIDs, kvsPerRow, numColsReturned);
+		else
+			setResultInfo(jniObject, kvValLen, kvValOffset,
+				kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
+				kvTimestamp, kvBuffer, rowIDs, kvsPerRow, numColsReturned);
 		return rowsReturned;	
 	}		
 	

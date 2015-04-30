@@ -197,6 +197,8 @@ typedef enum {
  ,HTC_GET_COLVAL_EXCEPTION
  ,HTC_GET_ROWID_EXCEPTION
  ,HTC_NEXTCELL_EXCEPTION
+ ,HTC_ERROR_GETROWS_PARAM
+ ,HTC_ERROR_GETROWS_EXCEPTION
  ,HTC_LAST
 } HTC_RetCode;
 
@@ -273,6 +275,7 @@ public:
 		Int64 timestamp);
   HTC_RetCode startGets(Int64 transID, const LIST(HbaseStr)& rowIDs, const LIST(HbaseStr) & cols, 
 		Int64 timestamp);
+  HTC_RetCode getRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, const LIST(HbaseStr)& columns);
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr)& columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
   HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
@@ -386,6 +389,7 @@ private:
    ,JM_DIRECT_INSERT_ROWS
    ,JM_DIRECT_DELETE_ROWS
    ,JM_FETCH_ROWS
+   ,JM_DIRECT_GET_ROWS
    ,JM_LAST
   };
   char *tableName_; 

@@ -280,6 +280,8 @@ struct DefaultDefault
 #define XDDrlis_(name,value)		XDD(name,value,&validateRoleNameList)
 #define  DDrver_(name,value)             DD(name,value,&validateReplIoVersion)
 #define XDDMVA__(name,value)            XDD(name,value,&validateMVAge)
+#define	 DDusht_(name,value)		 DD(name,value,&validate_uint16)
+
 
 const DefaultValidator	validateUnknown;
 const DefaultValidator	validateAnsiName(CASE_SENSITIVE_ANSI); // e.g. 'c.s.tbl'
@@ -340,6 +342,7 @@ const ValidatePublicSchema    validatePublicSchema;
 // This high value should be same as default value of REPLICATE_IO_VERSION
 const ValidateReplIoVersion   validateReplIoVersion(11,17);
 const ValidateMVAge           validateMVAge;
+const Validate_uint16         validate_uint16;
 
 // See the NOTEs above for how to maintain this list!
 THREAD_P DefaultDefault defaultDefaults[] = {
@@ -1759,6 +1762,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDui___(HBASE_REGION_SERVER_MAX_HEAP_SIZE,     "1024"), // in units of MB
 
   DDkwd__(HBASE_ROWSET_VSBB_OPT,		"ON"),
+  DDusht_(HBASE_ROWSET_VSBB_SIZE,        	"1000"),
   DDflt0_(HBASE_SALTED_TABLE_MAX_FILE_SIZE,	"0"),
   DDkwd__(HBASE_SALTED_TABLE_SET_SPLIT_POLICY,	"ON"),
   DD_____(HBASE_SCHEMA,                         "HBASE"),

@@ -1728,10 +1728,12 @@ Lng32 ExHbaseAccessTcb::setupUniqueKeyAndCols(NABoolean doInit)
   return 0;
 }
 
+
 keyRangeEx::getNextKeyRangeReturnType ExHbaseAccessTcb::setupSubsetKeys
 (NABoolean fetchRangeHadRows)
 {
   ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+
   ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
   keyRangeEx::getNextKeyRangeReturnType keyRangeStatus;
   
@@ -2404,9 +2406,10 @@ static const Lng32 BatchSize = (BatchSizeEnvvar &&
                                atoi(BatchSizeEnvvar) > 0 )?
                                atoi(BatchSizeEnvvar) : 8192;
 
-ExHbaseTaskTcb::ExHbaseTaskTcb(ExHbaseAccessTcb * tcb)
+ExHbaseTaskTcb::ExHbaseTaskTcb(ExHbaseAccessTcb * tcb, NABoolean rowsetTcb)
   : tcb_(tcb)
   , batchSize_(BatchSize)
+  , rowsetTcb_(rowsetTcb)
 {}
 
 ExWorkProcRetcode ExHbaseTaskTcb::work(short &rc)
