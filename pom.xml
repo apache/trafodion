@@ -480,9 +480,8 @@
   	<jython-standalone.version>2.5.3</jython-standalone.version>
   	<jettison.version>1.3.5</jettison.version>
   	<displaytag.version>1.1.1</displaytag.version>
-        <jdbct4.version>1.0.0</jdbct4.version>
-    <!-- jdbct2.version>1.1.0</jdbct2.version -->
-    <jdbct2.version>20150329_0830</jdbct2.version>
+    <jdbct4.version>1.1.0</jdbct4.version>
+    <jdbct2.version>1.1.0</jdbct2.version>
     
     <!-- Plugin Dependencies -->
     <maven.antrun.plugin.version>1.6</maven.antrun.plugin.version>
@@ -760,8 +759,7 @@
     </dependency>
     <!-- JDBCT2 dependencies -->    
     <dependency>    
-      <groupId>org.trafodion-dev.jdbc.t2.T2Driver</groupId>
-      <!-- groupId>org.trafodion.jdbc.t2.T2Driver</groupId -->
+      <groupId>org.trafodion.jdbc.t2.T2Driver</groupId>
       <artifactId>t2driver</artifactId>
       <version>${jdbct2.version}</version>
     </dependency>
