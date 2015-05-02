@@ -190,6 +190,13 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
 import org.apache.hadoop.hbase.zookeeper.ZKUtil;
 import org.apache.zookeeper.KeeperException;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionMultipleRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionMultipleResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitMultipleRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitMultipleResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleResponse;
+
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -4889,6 +4896,26 @@ CoprocessorService, Coprocessor {
         }
       }
     }
+  }
+  @Override
+  public void abortTransactionMultiple(RpcController controller,
+      AbortTransactionMultipleRequest request, RpcCallback<AbortTransactionMultipleResponse> done) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void commitRequestMultiple(RpcController controller, CommitRequestMultipleRequest request,
+      RpcCallback<CommitRequestMultipleResponse> done) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void commitMultiple(RpcController controller, CommitMultipleRequest request,
+      RpcCallback<CommitMultipleResponse> done) {
+    // TODO Auto-generated method stub
+
   }
 }
 

@@ -66,6 +66,7 @@ public class TransactionState {
      * Regions to ignore in the twoPase commit protocol. They were read only, or already said to abort.
      */
     private Set<TransactionRegionLocation> regionsToIgnore = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
+    private Set<TransactionRegionLocation> retryRegions = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
 
     private native void registerRegion(long transid, int port, byte[] hostname, long startcode, byte[] regionInfo);
 
@@ -285,6 +286,10 @@ public class TransactionState {
         participatingRegions.clear();
     }
 
+    public void clearRetryRegions() {
+        retryRegions.clear();
+    }
+
     Set<TransactionRegionLocation> getRegionsToIgnore() {
         return regionsToIgnore;
     }
@@ -293,6 +298,16 @@ public class TransactionState {
         // Changing to an HRegionLocation for now
         regionsToIgnore.add(region);
     }
+
+    Set<TransactionRegionLocation> getRetryRegions() {
+        return retryRegions;
+    }
+
+    void addRegionToRetry(final TransactionRegionLocation region) {
+        // Changing to an HRegionLocation for now
+        retryRegions.add(region);
+    }
+
 
     /**
      * Get the transactionId.
@@ -352,6 +367,10 @@ public class TransactionState {
 
     public int getRegionsToIgnoreCount() {
         return regionsToIgnore.size();
+    }
+
+    public int getRegionsRetryCount() {
+        return retryRegions.size();
     }
 
     public String getStatus() {
