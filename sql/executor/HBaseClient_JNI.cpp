@@ -410,7 +410,7 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_CREATE     ].jm_name      = "create";
     JavaMethods_[JM_CREATE     ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;)Z";
     JavaMethods_[JM_CREATEK    ].jm_name      = "createk";
-    JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/Object;J)Z";
+    JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/Object;JII)Z";
     JavaMethods_[JM_DROP       ].jm_name      = "drop";
     JavaMethods_[JM_DROP       ].jm_signature = "(Ljava/lang/String;J)Z";
     JavaMethods_[JM_DROP_ALL       ].jm_name      = "dropAll";
@@ -859,9 +859,12 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
      }
   }
   jlong j_tid = transID;
+  jint j_numSplits = numSplits;
+  jint j_keyLength = keyLength;
+
   tsRecentJMFromJNI = JavaMethods_[JM_CREATEK].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
-          JavaMethods_[JM_CREATEK].methodID, js_fileName, j_opts, j_keys, transID);
+          JavaMethods_[JM_CREATEK].methodID, js_fileName, j_opts, j_keys, j_tid, j_numSplits, j_keyLength);
 
   jenv_->DeleteLocalRef(js_fileName); 
   jenv_->DeleteLocalRef(j_opts);

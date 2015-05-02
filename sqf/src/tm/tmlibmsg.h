@@ -552,7 +552,10 @@ typedef struct ddlmessage_req {
     TM_Transid_Type     iv_transid;
     char                ddlreq[TM_MAX_DDLREQUEST_STRING];
     int                 ddlreq_len;
+    int                 crt_numsplits;
+    int                 crt_keylen;
     TM_DDL_REQ          ddlreq_type;
+    char                key_eyecatch[10];
 } Ddl_Message_Req_Type;
 
 typedef struct hbaseregioninfo_req {

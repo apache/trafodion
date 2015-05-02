@@ -82,6 +82,7 @@ import org.apache.hadoop.hbase.io.hfile.HFileScanner;
 import org.apache.hadoop.hbase.regionserver.StoreFileInfo;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.DtmConst;
+import org.apache.commons.codec.binary.Hex;
 
 import com.google.protobuf.ServiceException;
 
@@ -240,9 +241,9 @@ public class HBaseClient {
             return true;
    } 
 
-    public boolean createk(String tblName, Object[] tableOptions, 
-        Object[]  beginEndKeys, long transID) 
-        throws IOException, MasterNotRunningException {
+   public boolean createk(String tblName, Object[] tableOptions,
+       Object[]  beginEndKeys, long transID, int numSplits, int keyLength)
+       throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
             cleanupCache(tblName);
@@ -415,17 +416,20 @@ public class HBaseClient {
                if (beginEndKeys != null && beginEndKeys.length > 0)
                {
                   byte[][] keys = new byte[beginEndKeys.length][];
-                  for (int i = 0; i < beginEndKeys.length; i++) 
+                  for (int i = 0; i < beginEndKeys.length; i++){
                      keys[i] = (byte[])beginEndKeys[i]; 
+                     if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk key #" + i + "value" + keys[i] + ") called.");
+                  }
                   if (transID != 0) {
-                     table.createTable(desc, keys, transID);
+                     table.createTable(desc, keys, numSplits, keyLength, transID);
+                     if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk beginEndKeys(" + beginEndKeys + ") called.");
                   } else {
                      admin.createTable(desc, keys);
                   }
                }
                else {
                   if (transID != 0) {
-                     table.createTable(desc, null, transID);
+                     table.createTable(desc, null, numSplits, keyLength, transID);
                   } else {
                      admin.createTable(desc);
                   }

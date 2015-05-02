@@ -386,19 +386,57 @@ int32 RM_Info_HBASE::registerRegion (CTmTxBase *pp_txn,  int64 pv_flags, CTmTxMe
 // hb_ddl_operation
 // Purpose: Call hb_ddl_operation for this transaction
 // ------------------------------------------------------------------------------
-int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg)
+int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg, char *ddlbuffer)
 {
    int32 lv_err = FEOK;
    int64 lv_transid = pp_txn->legacyTransid();
+
+   char *buffer_tbldesc = new char[pp_msg->request()->u.iv_ddl_request.ddlreq_len];
+   int pv_tbldesclen;
+   int pv_numsplits;
+   int pv_keylen;
+
+   int len;
+   int len_aligned;
+   int buffer_size;
+   int index;
+   char **buffer_keys;
 
    TMTrace (2, ("RM_Info_HBASE::hb_ddl_operation ENTRY\n"));
 
    switch(pp_msg->request()->u.iv_ddl_request.ddlreq_type)
    {
       case TM_DDL_CREATE:
+         len = sizeof(Tm_Req_Msg_Type);
+         len_aligned = 8*((len + 7)/8);
+
+         pv_numsplits = pp_msg->request()->u.iv_ddl_request.crt_numsplits;
+         pv_keylen = pp_msg->request()->u.iv_ddl_request.crt_keylen;
+
+         buffer_size = pv_numsplits*pv_keylen;
+         buffer_keys = new char *[pv_numsplits];
+
+         pv_tbldesclen = pp_msg->request()->u.iv_ddl_request.ddlreq_len;
+         memcpy(buffer_tbldesc, pp_msg->request()->u.iv_ddl_request.ddlreq, pv_tbldesclen);
+
+         index = len_aligned;
+         for(int i=0; i<pp_msg->request()->u.iv_ddl_request.crt_numsplits ; i++)
+	     {
+           buffer_keys[i] = new char[pp_msg->request()->u.iv_ddl_request.crt_keylen];
+           memcpy(buffer_keys[i],(char*)(ddlbuffer)+index , pv_keylen);
+           index = index + pv_keylen;
+         }
+
          lv_err = gv_HbaseTM.createTable(lv_transid,
-                         pp_msg->request()->u.iv_ddl_request.ddlreq,
-                         pp_msg->request()->u.iv_ddl_request.ddlreq_len);
+                         buffer_tbldesc,
+                         pv_tbldesclen,
+                         buffer_keys,
+                         pv_numsplits,
+                         pv_keylen);
+
+         for(int i=0; i<pp_msg->request()->u.iv_ddl_request.crt_numsplits ; i++)
+            delete buffer_keys[i];
+         delete[] buffer_keys;
          break;
       case TM_DDL_DROP:
          lv_err = gv_HbaseTM.dropTable(lv_transid,
