@@ -65,7 +65,7 @@ if [[ "$userId" != "$TRAF_USER" ]]; then
    echo "***ERROR: Logged in as user '$userId'" | tee -a $INSTALL_LOG
    echo "***ERROR: Must be logged in as user 'trafodion'" | tee -a $INSTALL_LOG
    echo "***ERROR: Exiting..." | tee -a $INSTALL_LOG
-   exit -1 
+   exit -1
 fi
 
 #============================================
@@ -139,10 +139,10 @@ sed -e "s@export TOOLSDIR=.*@export TOOLSDIR=$TRAF_TOOLSDIR@" <bashrc_temp >$HOM
 #grep -vE "MY_NODES|NODE_LIST" bashrc_temp > $HOME/.bashrc
 
 if [[ $node_count == "1" ]]; then
-   
+
    # since sqgen uses the existence of /usr/bin/pdsh to determine multi-node cluster
-   # and sqgen uses the existence of /usr/bin/pdcp to determine if it needs to copy 
-   # files we will check for these here and warn the user to remove/rename these to 
+   # and sqgen uses the existence of /usr/bin/pdcp to determine if it needs to copy
+   # files we will check for these here and warn the user to remove/rename these to
    # head-off the confusing errors when running sqgen
    if [ -f /usr/bin/pdsh ] || [ -f /usr/bin/pdcp ]; then
       echo "***ERROR: This is a single node cluster yet /usr/bin/pdsh or /usr/bin/pdcp is installed on it." | tee -a $INSTALL_LOG
@@ -258,8 +258,8 @@ if [[ "$LDAP_SECURITY" == "Y" ]]; then
    ldapconfigcheck -file $SQ_ROOT/sql/scripts/traf_authentication_config
    if [ "$?" != "0" ]; then
       echo "***ERROR: traf_authentication_config not configured correctly."
-      echo "***ERROR: Install will contiune WITHOUT simple security turned on."
-      echo "***ERROR: Please review wiki for manual steps to setup simple security." 
+      echo "***ERROR: Install will continue WITHOUT simple security turned on."
+      echo "***ERROR: Please review wiki for manual steps to setup simple security."
    else
       if [[ $LDAP_LEVEL == "1" ]]; then
          echo "TLS_CACERT $HOME/$LDAP_CERT_BASE" > $HOME_DIR/$TRAF_USER/.ldaprc
@@ -297,8 +297,8 @@ else
         if [ "$foundError" -ge "1" ]; then
            ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize Trafodion, upgrade;\" | sqlci"
         fi
-        
-        if [ "$?" != "0" ]; then 
+
+        if [ "$?" != "0" ]; then
            echo "***ERROR: initialize Trafodion failed.  Check install log files for details." | tee -a $INSTALL_LOG
            exit -1;
         fi
@@ -307,7 +307,7 @@ else
     if [ "$INIT_TRAFODION" == "Y" ] && [ "$UPGRADE_TRAF" == "true" ]; then
         ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize Trafodion, upgrade;\" | sqlci" | tee -a initializeErrors.txt
         foundError=$(grep "ERROR" initializeErrors.txt | wc -l)
-        if [ "$foundError" -ge "1" ];then 
+        if [ "$foundError" -ge "1" ];then
            ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci"
         fi
         if [ "$?" != "0" ]; then

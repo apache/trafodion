@@ -62,9 +62,9 @@ LDAP_LEVEL="0"
 function print_usage {
 cat << EOF
 
-This script takes in user input to add to the trafodion_config file or uses known 
-defaults. Script will return an error if user enters bad inputs. Type response or 
-select [Enter] to select default. 
+This script takes in user input to add to the trafodion_config file or uses known
+defaults. Script will return an error if user enters bad inputs. Type response or
+select [Enter] to select default.
 
 Inputs Requested:
 
@@ -73,7 +73,7 @@ Inputs Requested:
 *Home directory (default is [$HOME_DIR])
 *Is cluster on the cloud (default is [No])
 *Location of EPEL RPM (default is [None])
-*Full path to Trafodion Server tar file 
+*Full path to Trafodion Server tar file
 (default is [$TRAF_BUILD])
 *Hadoop distribution user name (default is [$ADMIN])
 *Hadoop distribution password (default is [$PASSWORD])
@@ -87,8 +87,8 @@ Inputs Requested:
 *Total number of DCS servers to start
 
 
-Options: 
-    --help             Print this message and exit. 
+Options:
+    --help             Print this message and exit.
 
 EOF
 }
@@ -101,7 +101,7 @@ while [[ $# -gt 0 ]]; do
         --scanner_mode)
             SCANNER_MODE="Y"
             ;;
-             
+
         --help)
             print_usage
             exit -1
@@ -386,12 +386,12 @@ if [ $package -eq 0 ]; then
    TRAF_BUILD=$TRAF_PACKAGE
    TRAF_PACKAGE=""
    
-   #TODO: do a quick sanity check on the file to make sure its a traf build tar file
+   #TODO: do a quick sanity check on the file to make sure it is a traf build tar file
 
    echo "***INFO: tar file is not a package tar file which includes Trafodion & DCS"
-   echo "***INFO: assuming its a Trafodion build only tar file"
+   echo "***INFO: assuming it is a Trafodion build only tar file"
    
-   # since its not a package tar file, we'll need to prompt for the dcs build file
+   # since it is not a package tar file, we'll need to prompt for the DCS build file
    echo -n "Enter location of DCS tar file [DCS_BUILD]: "
    read answer
    if [ -z $answer ]; then
@@ -409,9 +409,9 @@ if [ $package -eq 0 ]; then
       exit -1
    fi
 
-   #TODO: do a quick sanity check on the file to make sure its a dcs build tar file
+   #TODO: do a quick sanity check on the file to make sure it is a DCS build tar file
    
-   # since its not a package tar file, we'll need to prompt for the rest build file
+   # since it is not a package tar file, we'll need to prompt for the rest build file
    echo -n "Enter location of REST tar file [$REST_BUILD]: "
    read answer
    if [ -z $answer ]; then
@@ -429,7 +429,7 @@ if [ $package -eq 0 ]; then
       exit -1
    fi
 
-   #TODO: do a quick sanity check on the file to make sure its a rest build tar file
+   #TODO: do a quick sanity check on the file to make sure it is a rest build tar file
    
 else
    # user specifed a package file

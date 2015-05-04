@@ -20,20 +20,20 @@
 
 
 #==============================================
-#  Trafodion installation script. Setup Trafodion 
-#  environment, configuartion of HBase with 
-#  Hbase-trx and co-processors need for Trafodion, and 
+#  Trafodion installation script. Setup Trafodion
+#  environment, configuration of HBase with
+#  Hbase-trx and co-processors need for Trafodion, and
 #  install Trafodion build. All parameters from scripts
-#  use configuration file  
+#  use configuration file.
 #==============================================
 
 function print_usage {
 cat << EOF
 
 This script will install Trafodion. It will create a configuration
-file (if one has not been created), setup of the enviroment needed 
+file (if one has not been created), setup of the environment needed
 for Trafodion, configure HBase with Hbase-trx and co-processors needed,
-and install a specified Trafodion build. 
+and install a specified Trafodion build.
 
 Options:
     --help             Print this message and exit
@@ -44,7 +44,7 @@ Options:
     --config_file      If provided, all install prompts will be
                        taken from this file and not prompted for.
     --run_scanner      If provided, the Trafodion scanner will run
-                       to check system configuration. 
+                       to check system configuration.
     --no_scanner       If provided, the Trafodion scanner will not
                        run to check system configuration.
 EOF
@@ -96,11 +96,11 @@ done
 
 
 #==============================================
-echo 
+echo
 echo "******************************"
 echo " TRAFODION INSTALLATION START"
 echo "******************************"
-echo 
+echo
 
 #==============================================
 # check that we are running from a userid with sudo access
@@ -146,7 +146,7 @@ sudo cp -r $(cd "$( dirname "$0" )" && pwd)/ $TRAF_WORKDIR
 sudo cp -rf $LOCAL_WORKDIR $TRAF_WORKDIR
 sudo chmod -R 777 $TRAF_WORKDIR
 #=============================================
-# Shutdown Trafodion if its running
+# Shutdown Trafodion if it is running
 
 userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
 
@@ -209,7 +209,7 @@ else
       exit -1
    fi
    sudo chmod 777 $TRAF_CONFIG
-   
+
    #Check if install_features file exists
    install_features_path=$(tar -tf $TRAF_BUILD | grep "install_features")
 
@@ -238,9 +238,9 @@ if [[ "$RUN_SCANNER" == "Y" ]]; then
    echo "***INFO: Running Trafodion Scanner"
    $LOCAL_WORKDIR/tools/trafodion_scanner -l $SCANNER_LOG -n "$NODE_LIST" \
    -c $LOCAL_WORKDIR/tools/trafodion_scanner.cfg | tee -a $INSTALL_LOG
-   
+
    returnCode=${PIPESTATUS[0]}
- 
+
    case $returnCode in
 
       2|1)
@@ -289,11 +289,11 @@ if [[ $HADOOP_TYPE == "hortonworks" ]]; then
    grep -r "host_name" tempFile > tempFile2
 fi
 
-if [ $curlRC != 0 ]; then 
+if [ $curlRC != 0 ]; then
    echo "***ERROR: Unable to get list of hosts from $HADOOP_TYPE (RC=$curlRC)"
    echo "***ERROR: curl command failed."
    exit -1
-fi 
+fi
 
 # in most cases curl does not return an error
 # so curl's actual output needs to be checked, too
@@ -357,7 +357,7 @@ done
 # trafodion core and dcs  and rest-server builds from it
 if [ ! -z $TRAF_PACKAGE ]; then
 
-   # create directory to contain build tar files using the 
+   # create directory to contain build tar files using the
    # timestamp from the package filename
    traf_filename=$(basename "$TRAF_PACKAGE")
    UNTAR_DIR="$TRAF_WORKDIR/${traf_filename%.tar.gz}"
@@ -368,7 +368,7 @@ if [ ! -z $TRAF_PACKAGE ]; then
    sudo tar -xzf $TRAF_PACKAGE --directory=$UNTAR_DIR
 
    build_file=$(ls $UNTAR_DIR | grep "trafodion_server")
-   if [[ -z $build_file ]]; then  
+   if [[ -z $build_file ]]; then
       echo "***ERROR: trafodion_server-*.tgz could not be found in $UNTAR_DIR"
       exit -1
    fi
@@ -376,14 +376,14 @@ if [ ! -z $TRAF_PACKAGE ]; then
 
    build_file=$(ls $UNTAR_DIR | grep "dcs")
    DCS_BUILD=$UNTAR_DIR/$build_file
-   
+
    build_file=$(ls $UNTAR_DIR | grep "rest")
    if [ -z $build_file ]; then
       REST_BUILD=""
    else
       REST_BUILD=$UNTAR_DIR/$build_file
    fi
-   
+
 else
    # we don't have a package and only have the trafodion and dcs build tar files
    # we can't use the package filename timestamp since we don't have a package tar
@@ -415,14 +415,14 @@ else
    build_file=$(basename $TRAF_BUILD)
    TRAF_BUILD=$UNTAR_DIR/$build_file
 
-   sudo tar -xzf $TRAF_BUILD --directory=$UNTAR_DIR 
+   sudo tar -xzf $TRAF_BUILD --directory=$UNTAR_DIR
 
    build_file=$(basename $DCS_BUILD)
    DCS_BUILD=$UNTAR_DIR/$build_file
 
    build_file=$(basename $REST_BUILD)
    REST_BUILD=$UNTAR_DIR/$build_file
-   
+
 fi
 
 sed -i '/TRAF_BUILD\=/d' $TRAF_CONFIG
@@ -447,7 +447,7 @@ if [[ $CONFIG_COMPLETE ]]; then
    else
       UPGRADE_TRAF=true;
    fi
-   
+
    #Add upgrade variable to config file
    sudo chmod 777 $TRAF_CONFIG
    sed -i '/UPGRADE_TRAF\=/d' $TRAF_CONFIG
@@ -469,7 +469,7 @@ do
       echo "***ERROR: Please check that HBase is installed on all nodes."
       exit -1
    fi
- 
+
    version=$(ssh -n $node grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
 
    if [[ $HADOOP_TYPE == "hortonworks" ]]; then
@@ -499,13 +499,13 @@ do
          if [[ $supportedHBase -eq "0" ]]; then
             echo "***ERROR: HBase installed must be 0.98.6 on node $node"
             exit -1
-         fi       
+         fi
       fi
    fi
    hbaseVersion=$(echo "${version#*.}"| cut -f1 -d".")
    if [[ $hbaseVersion -lt "98" ]]; then
       echo "***ERROR: HBase installed must be 0.98"
-      exit -1 
+      exit -1
    fi
 done
 hbaseVersion=$(grep "Version" $HOME/hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'})
@@ -679,7 +679,7 @@ if [[ "$LDAP_SECURITY" == "Y" ]]; then
    if [[ "$node_count" -eq "1" ]]; then
       sudo cp -r $LOCAL_WORKDIR/$LDAP_AUTH_FILE $HOME_DIR/$TRAF_USER
       sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
-      sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE 
+      sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
       if [[ $LDAP_LEVEL == "2" ]] || [[ $LDAP_LEVEL == "1" ]]; then
          echo "***INFO: Copying $LDAP_CERT to Trafodion home dir"
          sudo cp -r $LDAP_CERT $HOME_DIR/$TRAF_USER
@@ -757,4 +757,3 @@ echo "*********************************"
 echo " TRAFODION INSTALLATION COMPLETE"
 echo "*********************************"
 echo
-
