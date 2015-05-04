@@ -40,7 +40,7 @@
 
   <properties>
     <hadoop.version>2.5.0</hadoop.version>
-    <hbase.version>0.98.4.2.2.0.0-2041-hadoop2</hbase.version>
+    <hbase.version>0.98.4.2.2.4.0-2633-hadoop2</hbase.version>
     <!--<hbase.version>0.98.3-hadoop2</hbase.version>-->
     <!--<hbase.version>0.98.3-hadoop1</hbase.version>-->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
