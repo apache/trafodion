@@ -135,11 +135,6 @@ export SQCONFIG=""
 
 export CONFIG_COMPLETE="true"
 
-# Run Trafodion scanner, a python script that will check for system 
-# configuration errors. Will give warnings and may stop installation 
-# if errors are found. 
-export RUN_SCANNER="N"
-
 #Turn on simple security. MUST have existing LDAP configured.
 export LDAP_SECURITY="N"
 

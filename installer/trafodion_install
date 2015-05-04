@@ -43,8 +43,10 @@ Options:
                        the Trafodion license.
     --config_file      If provided, all install prompts will be
                        taken from this file and not prompted for.
-    --run_scanner       If provided, the Trafodion scanner will not run
-                       to check system configuation. 
+    --run_scanner      If provided, the Trafodion scanner will run
+                       to check system configuration. 
+    --no_scanner       If provided, the Trafodion scanner will not
+                       run to check system configuration.
 EOF
 }
 
@@ -80,6 +82,9 @@ while [[ $# -gt 0 ]]; do
             ;;
         --run_scanner)
             RUN_SCANNER="Y"
+            ;;
+        --no_scanner)
+            RUN_SCANNER="N"
             ;;
         *)
             echo "***ERROR: unknown parameter '$1'"
@@ -149,7 +154,6 @@ if [[ "$userForTrafodion" != "0" ]]; then
    isTrafUp=$(sudo su $TRAF_USER --login --command "sqcheck" 2>/dev/null)
 
    trafodionRunning=$(echo $isTrafUp | grep "The SQ environment is up" | wc -l)
-   echo $trafodionRunning
    if [[ "$trafodionRunning" -eq "1" ]]; then
       echo "***ERROR: Trafodion is still running."
       echo -n "Stop Trafodion (Y/N), default is N: "
@@ -231,7 +235,7 @@ fi
 #Run Trafodion scanner
 
 if [[ "$RUN_SCANNER" == "Y" ]]; then
-
+   echo "***INFO: Running Trafodion Scanner"
    $LOCAL_WORKDIR/tools/trafodion_scanner -l $SCANNER_LOG -n "$NODE_LIST" \
    -c $LOCAL_WORKDIR/tools/trafodion_scanner.cfg | tee -a $INSTALL_LOG
    
@@ -252,6 +256,8 @@ if [[ "$RUN_SCANNER" == "Y" ]]; then
       exit -1
       ;;
    esac
+else
+   echo "***INFO: Trafodion scanner will not be run."
 fi
 
 #=============================================
@@ -668,17 +674,30 @@ pdsh -S $MY_NODES sudo mkdir -p /$HOME_DIR/$TRAF_USER/installer &> /dev/null
 
 #Copy over traf_authentication_config file to all nodes
 if [[ "$LDAP_SECURITY" == "Y" ]]; then
-   echo "***INFO: Copying traf_authentication_conf_${HOSTNAME} to Trafodion home dir"
-   pdcp $MY_NODES $LOCAL_WORKDIR/$LDAP_AUTH_FILE $HOME
-   pdsh $MY_NODES sudo cp -r $HOME/$LDAP_AUTH_FILE $HOME_DIR/$TRAF_USER
-   pdsh $MY_NODES sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
-   pdsh $MY_NODES sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
-   if [[ $LDAP_LEVEL == "2" ]] || [[ $LDAP_LEVEL == "1" ]]; then
-      echo "***INFO: Copying $LDAP_CERT to Trafodion home dir"
-      pdcp $MY_NODES $LDAP_CERT $HOME
-      pdsh $MY_NODES sudo cp -r $HOME/$LDAP_CERT_BASE $HOME_DIR/$TRAF_USER
-      pdsh $MY_NODES sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
-      pdsh $MY_NODES sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
+   echo "***INFO: Copying $LDAP_AUTH_FILE to Trafodion home dir"
+
+   if [[ "$node_count" -eq "1" ]]; then
+      sudo cp -r $LOCAL_WORKDIR/$LDAP_AUTH_FILE $HOME_DIR/$TRAF_USER
+      sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
+      sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE 
+      if [[ $LDAP_LEVEL == "2" ]] || [[ $LDAP_LEVEL == "1" ]]; then
+         echo "***INFO: Copying $LDAP_CERT to Trafodion home dir"
+         sudo cp -r $LDAP_CERT $HOME_DIR/$TRAF_USER
+         sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
+         sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
+      fi
+   else
+      pdcp $MY_NODES $LOCAL_WORKDIR/$LDAP_AUTH_FILE $HOME
+      pdsh $MY_NODES sudo cp -r $HOME/$LDAP_AUTH_FILE $HOME_DIR/$TRAF_USER
+      pdsh $MY_NODES sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
+      pdsh $MY_NODES sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
+      if [[ $LDAP_LEVEL == "2" ]] || [[ $LDAP_LEVEL == "1" ]]; then
+         echo "***INFO: Copying $LDAP_CERT to Trafodion home dir"
+         pdcp $MY_NODES $LDAP_CERT $HOME
+         pdsh $MY_NODES sudo cp -r $HOME/$LDAP_CERT_BASE $HOME_DIR/$TRAF_USER
+         pdsh $MY_NODES sudo chown trafodion.trafodion $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
+         pdsh $MY_NODES sudo chmod 750 $HOME_DIR/$TRAF_USER/$LDAP_CERT_BASE
+      fi
    fi
 fi
 #=============================================

@@ -250,7 +250,7 @@ if [[ "$LDAP_SECURITY" == "Y" ]]; then
       fi
    else
       echo "***INFO: Copying $LDAP_AUTH_FILE to scripts directory." | tee -a $INSTALL_LOG
-      cp -rf $HOME/$TRAF_USER/$LDAP_AUTH_FILE $SQ_ROOT/sql/scripts/traf_authentication_config
+      cp -rf $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE $SQ_ROOT/sql/scripts/traf_authentication_config
    fi
 
    #Check traf_authentication_config for errors
@@ -262,8 +262,8 @@ if [[ "$LDAP_SECURITY" == "Y" ]]; then
       echo "***ERROR: Please review wiki for manual steps to setup simple security." 
    else
       if [[ $LDAP_LEVEL == "1" ]]; then
-         echo "TLS_CACERT $HOME/$LDAP_CERT_BASE" > $HOME_DIR/trafodion/.ldaprc
-         echo "TLS_REQCERT demand" >> $HOME_DIR/trafodion/.ldaprc
+         echo "TLS_CACERT $HOME/$LDAP_CERT_BASE" > $HOME_DIR/$TRAF_USER/.ldaprc
+         echo "TLS_REQCERT demand" >> $HOME_DIR/$TRAF_USER/.ldaprc
       fi
       echo "***INFO: Enabling security. Running traf_authentication_setup"
       ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts; traf_authentication_setup --setup --file traf_authentication_config"
