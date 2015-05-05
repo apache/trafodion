@@ -54,7 +54,7 @@ EOF
 #Parse input
 USER_CONFIG=""
 ACCEPT_LICENSE="N"
-RUN_SCANNER="N"
+RUN_SCANNER="Y"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -82,9 +82,19 @@ while [[ $# -gt 0 ]]; do
             ;;
         --run_scanner)
             RUN_SCANNER="Y"
+            selectedRun="true"
+            if [[ $selectedNo == "true" ]]; then
+               echo "***ERROR: Selected --run_scanner and --no_scanner. Invalid combination."
+               exit -1
+            fi
             ;;
         --no_scanner)
             RUN_SCANNER="N"
+            selectedNo="true"
+            if [[ $selectedRun == "true" ]]; then
+               echo "***ERROR: Selected --run_scanner and --no_scanner. Invalid combination."
+               exit -1 
+            fi
             ;;
         *)
             echo "***ERROR: unknown parameter '$1'"

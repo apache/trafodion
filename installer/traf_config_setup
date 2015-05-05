@@ -517,7 +517,7 @@ if [[ $ambari_installed -gt 0 ]]; then
    
    #Check that HDP 2.[n>2].* is not installed.
    if [[ -z $nameOfVersion ]]; then
-       versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//'| grep [1-3].[0-9].* | wc -l)
+       versionInstalled=$(grep "Version" hbaseVersion.txt | sed 's/,.*//' | sed 's/-.*//' | sed 's/Version 0.[0-9]*.[0-9].//g' | grep [1-3].[0-9].* | wc -l)
        if [[ $versionInstalled -gt "0" ]]; then
           echo "***ERROR: Trafodion and Hortonworks versions may not be compatible"
           echo "***ERROR: Trafodion 1.1.0 is compatible with Hortonworks 2.2"
