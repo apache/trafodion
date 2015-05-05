@@ -22,6 +22,7 @@
 #define JDBCDRIVERGLOBAL_H
 
 #include "jni.h"
+#include "Debug.h"
 // Error Codes, May be we need to internationalize these error messages later
 typedef enum JNILAYER_ERROR_CODES
 {
@@ -131,6 +132,11 @@ typedef struct JNICache_def
 	Charset_def		*charsetInfo;
 	int				totalCharsets;
 	jint			defaultCharset;
+
+	~JNICache_def()
+	{
+	    MEMORY_DELETE_ARRAY(charsetInfo);
+	}
 } JNICache_def;
 
 extern char *gJNILayerErrorMsgs[];

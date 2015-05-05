@@ -1,7 +1,7 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -70,14 +70,14 @@ SRVR_CONNECT_HDL::~SRVR_CONNECT_HDL()
 	sqlClose();
 	cleanupSQLMessage();
 
-	//Soln. No.: 10-100202-7923
-	
-	// Actually all the contents of this List should be "deleted/freed"
-	// We are not responsible for mem leak!!!
-	mapOfSrvrStmt.clear();	// +++ map error
-	
-	//End of Soln. No.: 10-100202-7923
-	
+	for (MapOfSrvrStmt::iterator iter = mapOfSrvrStmt.begin(); iter != mapOfSrvrStmt.end(); )
+	{
+	    MapOfSrvrStmt::iterator current = iter;
+	    iter++;
+	    MEMORY_DELETE(current->second);
+	    mapOfSrvrStmt.erase(current);
+	}
+
 	FUNCTION_RETURN_VOID((NULL));
 }
 

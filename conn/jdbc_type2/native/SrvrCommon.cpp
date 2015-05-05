@@ -1462,7 +1462,7 @@ short do_ExecSMD(
 	}
 
 	//free RAM for sqlString
-	MEMORY_DELETE(sqlString->dataValue._buffer)
+	MEMORY_DELETE_ARRAY(sqlString->dataValue._buffer)
 	MEMORY_DELETE(sqlString)
 
 	pSrvrStmt->InternalStmtClose(SQL_CLOSE);
@@ -1656,7 +1656,7 @@ void appendOutputValueList(SQLValueList_def *targ, SQLValueList_def *src, bool f
 			}
 			// Cleanup the target buffer and set the target output value list
 			//   to use the new appended buffer
-			MEMORY_DELETE(targ->_buffer);
+			MEMORY_DELETE_ARRAY(targ->_buffer);
 			targ->_buffer = newBuffer;
 			targ->_length = totalSize;
 			// Free the source output value list if needed
