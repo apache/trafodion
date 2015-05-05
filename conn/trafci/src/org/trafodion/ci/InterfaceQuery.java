@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 	 * Final String Initialization.
 	 */
 	private final String infoNotAvailable = "Information not available.";
-	private final String ciServerErrMsg = "An internal server error has occured. Please contact support.";
+	private final String ciServerErrMsg = "An internal server error has occurred. Please contact support.";
 
 	InterfaceQuery() {
 	}
@@ -2755,7 +2755,7 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 						return;
 					} catch (IOException e) {
 						System.out
-								.println("IO Exception occured while processing conditional query :"
+								.println("IO Exception occurred while processing conditional query :"
 										+ e);
 					}
 
