@@ -63,19 +63,19 @@ Running Tests
         export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib${SQ_MBTYPE}/libseabasesig.so
 
     * Run ``phoenix_test.py`` with the following options
-        * For Cloudera 5.1.x ::
+        * For Cloudera ::
 
             ./phoenix_test.py --target=<Trafodion_Instance>:<Trafodion_Port> \
             --user=<Some_User> --pw=<Some_Password> --targettype=TR \
             --javahome=<PATH_to_JAVA_JDK_1.7_Home> --jdbccp=<PATH_to_Trafodion_JDBC_T2_Driver> \
-            --jdbctype=T2 --hadoop=CDH51
+            --jdbctype=T2 --hadoop=CDH
 
-        * For Hortonworks 2.1.x ::
+        * For Hortonworks ::
 
             ./phoenix_test.py --target=<Trafodion_Instance>:<Trafodion_Port> \
             --user=<Some_User> --pw=<Some_Password> --targettype=TR \
             --javahome=<PATH_to_JAVA_JDK_1.7_Home> --jdbccp=<PATH_to_Trafodion_JDBC_T2_Driver> \
-            --jdbctype=T2 --hadoop=HDP21
+            --jdbctype=T2 --hadoop=HDP
 
   **Example 4 - Running a specific Trafodion T2 Phoenix Tests**
 
@@ -85,19 +85,19 @@ Running Tests
         export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib${SQ_MBTYPE}/libseabasesig.so
 
     * Run ``phoenix_test.py`` with the following options
-        * For Cloudera 5.1.x ::
+        * For Cloudera ::
 
             ./phoenix_test.py --target=<Trafodion_Instance>:<Trafodion_Port> \
             --user=<Some_User> --pw=<Some_Password> --targettype=TR \
             --javahome=<PATH_to_JAVA_JDK_1.7_Home> --jdbccp=<PATH_to_Trafodion_JDBC_T2_Driver> \
-            --jdbctype=T2 --hadoop=CDH51 --tests=<List_of_Tests_seperated_by_comma_and_no_space>
+            --jdbctype=T2 --hadoop=CDH --tests=<List_of_Tests_seperated_by_comma_and_no_space>
 
-        * For Hortonworks 2.1.x ::
+        * For Hortonworks ::
 
             ./phoenix_test.py --target=<Trafodion_Instance>:<Trafodion_Port> \
             --user=<Some_User> --pw=<Some_Password> --targettype=TR \
             --javahome=<PATH_to_JAVA_JDK_1.7_Home> --jdbccp=<PATH_to_Trafodion_JDBC_T2_Driver> \
-            --jdbctype=T2 --hadoop=HDP21 --tests=<List_of_Tests_seperated_by_comma_and_no_space>
+            --jdbctype=T2 --hadoop=HDP --tests=<List_of_Tests_seperated_by_comma_and_no_space>
 
 
 About this README

@@ -763,8 +763,8 @@ output = shell_call(gvars.my_EXPORT_CMD + ';mvn clean')
 stdout_write(output + '\n')
 
 # find out location of Maven Downloads
-maven_repo = shell_call(gvars.my_EXPORT_CMD + '; mvn help:evaluate ' +
-                        '-Dexpression=settings.localRepository | grep -B 2 "BUILD SUCCESS" ' +
+maven_repo = shell_call('mvn help:evaluate -Dmaven.repo.local=' + ArgList._maven_local_repo +
+                        ' -Dexpression=settings.localRepository | grep -B 2 "BUILD SUCCESS" ' +
                         '| head -1').strip(' \t\n\t')
 print "\nMaven Repo Location is : " + maven_repo + ".\n"
 
@@ -778,8 +778,9 @@ if not ArgList._no_maven:
     # are added to the CLASSPATH by the Surefire Plugin after Maven generates the CLASSPATH
     #  HADOOP_CNF_DIR, HBASE_CNF_DIR, HIVE_CNF_DIR, HBASE_TRXDIR
     subs_string = ':${HADOOP_CNF_DIR}:${HBASE_CNF_DIR}:${HIVE_CNF_DIR}:${HBASE_TRXDIR}\\n'
-    output = shell_call(gvars.my_EXPORT_CMD + '; rm phoenix_classpath.log 2>/dev/null; ' +
-                        'mvn dependency:build-classpath -Dmdep.outputFile=phoenix_classpath.log; ' +
+    output = shell_call('rm phoenix_classpath.log 2>/dev/null; ' +
+                        'mvn dependency:build-classpath -Dmaven.repo.local=' +
+                        ArgList._maven_local_repo + ' -Dmdep.outputFile=phoenix_classpath.log; ' +
                         'sed -i -e "s|$|' + subs_string + '|g" phoenix_classpath.log; ' +
                         'echo "Phoenix Test Classpath :"; cat phoenix_classpath.log')
 
