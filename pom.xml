@@ -136,9 +136,29 @@
           <exclude>dcs-site.xml</exclude>
         </excludes>
       </testResource>
-  </testResources>      
-      
+  </testResources>  
+  
   <plugins>
+    <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>properties-maven-plugin</artifactId>
+      <version>1.0-alpha-2</version>
+      <executions>
+        <execution>
+          <goals>
+            <goal>set-system-properties</goal>
+          </goals>
+          <configuration>
+            <properties>
+              <property>
+                <name>log4j.configuration</name>
+                <value>file:${basedir}/conf/log4j.properties</value>
+              </property>
+            </properties>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
     <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
         <version>${maven.antrun.plugin.version}</version>
@@ -245,7 +265,7 @@
             </configuration>
           </execution>
         </executions>
-      </plugin> 
+    </plugin> 
     <plugin>
         <groupId>org.jamon</groupId>
         <artifactId>jamon-maven-plugin</artifactId>

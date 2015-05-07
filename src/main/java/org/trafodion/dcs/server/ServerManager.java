@@ -476,6 +476,8 @@ public final class ServerManager implements Callable {
         boolean found = false;
 
         while (!found) {
+            LOG.info("Checking DcsMaster znode [" + parentZnode
+                    + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER + "]");
             try {
                 Stat stat = zkc.exists(parentZnode
                         + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER, false);
@@ -492,7 +494,14 @@ public final class ServerManager implements Callable {
                             masterStartTime = Long.parseLong(st.nextToken());
                         }
                         found = true;
+                        LOG.info("DcsMaster znode [" + parentZnode
+                                + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER
+                                + "] found");
                     }
+                } else {
+                    LOG.info("DcsMaster znode [" + parentZnode
+                            + Constants.DEFAULT_ZOOKEEPER_ZNODE_MASTER
+                            + "] not found");
                 }
 
                 if (!found) {
