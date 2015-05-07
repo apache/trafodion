@@ -800,6 +800,7 @@ public:
   // which completes the row size calculation with HBase info.
   Int32 computeHBaseRowSizeFromMetaData() const ;
   Int64 estimateHBaseRowCount() const;
+  NABoolean getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const;
 
 private:
   // copy ctor

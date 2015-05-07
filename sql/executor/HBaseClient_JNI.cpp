@@ -289,6 +289,8 @@ static const char* const hbcErrorEnumStr[] =
  ,"Java exception in setArcPerms()."
  ,"Java exception in startGet()."
  ,"Java exception in startGets()."
+ ,"Preparing parameters for getHbaseTableInfo()."
+ ,"Java exception in getHbaseTableInfo()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -445,6 +447,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_START_GET].jm_signature = "(JLjava/lang/String;ZJ[B[Ljava/lang/Object;J)I";
     JavaMethods_[JM_START_GETS].jm_name      = "startGet";
     JavaMethods_[JM_START_GETS].jm_signature = "(JLjava/lang/String;ZJ[Ljava/lang/Object;[Ljava/lang/Object;J)I";
+    JavaMethods_[JM_GET_HBTI].jm_name      = "getHbaseTableInfo";
+    JavaMethods_[JM_GET_HBTI].jm_signature = "(Ljava/lang/String;[I)Z";
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
@@ -2363,6 +2367,57 @@ HTableClient_JNI *HBaseClient_JNI::startGets(NAHeap *heap, const char* tableName
   jenv_->PopLocalFrame(NULL);
   return htc;
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// Get Hbase Table information. Currently the following info is requested:
+// 1. index levels : This info is obtained from trailer block of Hfiles of randomly chosen region
+// 2. block size : This info is obtained for HColumnDescriptor
+////////////////////////////////////////////////////////////////////////////////
+HBC_RetCode HBaseClient_JNI::getHbaseTableInfo(const char* tblName,
+                                              Int32& indexLevels,
+                                              Int32& blockSize)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::getHbaseTableInfo(%s) called.", tblName);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
+  jstring js_tblName = jenv_->NewStringUTF(tblName);
+  if (js_tblName == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HBTI_PARAM));
+    return HBC_ERROR_GET_HBTI_PARAM;
+  }
+
+  jintArray jHtabInfo = jenv_->NewIntArray(2);
+  tsRecentJMFromJNI = JavaMethods_[JM_GET_HBTI].jm_full_name;
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_GET_HBTI].methodID,
+                                              js_tblName, jHtabInfo);
+  jboolean isCopy;
+  jint* arrayElems = jenv_->GetIntArrayElements(jHtabInfo, &isCopy);
+  indexLevels = arrayElems[0];
+  blockSize = arrayElems[1];
+  if (isCopy == JNI_TRUE)
+    jenv_->ReleaseIntArrayElements(jHtabInfo, arrayElems, JNI_ABORT);
+
+  jenv_->DeleteLocalRef(js_tblName);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHbaseTableInfo()", getLastError());
+    return HBC_ERROR_GET_HBTI_EXCEPTION;
+  }
+
+  if (jresult == false)
+  {
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::getHbaseTableInfo()", getLastError());
+    return HBC_ERROR_GET_HBTI_EXCEPTION;
+  }
+
+  return HBC_OK;  // Table exists.
+}
+
 
 // ===========================================================================
 // ===== Class HTableClient

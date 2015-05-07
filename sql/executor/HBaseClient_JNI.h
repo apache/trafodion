@@ -482,6 +482,8 @@ typedef enum {
  ,HBC_ERROR_SET_ARC_PERMS_EXCEPTION
  ,HBC_ERROR_STARTGET_EXCEPTION
  ,HBC_ERROR_STARTGETS_EXCEPTION
+ ,HBC_ERROR_GET_HBTI_PARAM
+ ,HBC_ERROR_GET_HBTI_EXCEPTION
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -529,6 +531,7 @@ public:
   HBC_RetCode cleanSnpTmpLocation(const char * path);
   HBC_RetCode setArchivePermissions(const char * path);
   HBC_RetCode getBlockCacheFraction(float& frac);
+  HBC_RetCode getHbaseTableInfo(const char* tblName, Int32& indexLevels, Int32& blockSize);
 
   // req processing in worker threads
   HBC_RetCode enqueueRequest(HBaseClientRequest *request);
@@ -584,6 +587,7 @@ private:
    ,JM_SET_ARC_PERMS
    ,JM_START_GET
    ,JM_START_GETS
+   ,JM_GET_HBTI
    ,JM_LAST
   };
   static jclass          javaClass_; 

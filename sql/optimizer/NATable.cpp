@@ -3713,6 +3713,25 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
   NABoolean hasRemotePartition = FALSE;
   CollIndex numClusteringKeyColumns = 0;
 
+  // get hbase table index level and blocksize. costing code uses index_level
+  // and block size to estimate cost. Here we make a JNI call to read index level
+  // and block size. If there is a need to avoid reading from Hbase layer,
+  // HBASE_INDEX_LEVEL cqd can be used to disable JNI call. User can
+  // set this CQD to reflect desired index_level for his query.
+  // Default value of HBASE_BLOCK_SIZE is 64KB, when not reading from Hbase layer. 
+  Int32 hbtIndexLevels = 0;
+  Int32 hbtBlockSize = 0;
+  NABoolean res = false;
+  if (table->isHbaseTable())
+  {
+    // get default values of index_level and block size
+    hbtIndexLevels = (ActiveSchemaDB()->getDefaults()).getAsLong(HBASE_INDEX_LEVEL);
+    hbtBlockSize = (ActiveSchemaDB()->getDefaults()).getAsLong(HBASE_BLOCK_SIZE);
+    // call getHbaseTableInfo if index level is set to 0
+    if (hbtIndexLevels == 0)
+      res = table->getHbaseTableInfo(hbtIndexLevels, hbtBlockSize);
+  }
+    
   // Set up global cluster information.  This global information always
   // gets put on the context heap.
   //
@@ -4017,6 +4036,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       // beginning of this function.
       desc_struct * partns_desc;
       Int32 indexLevels = 1;
+      Int32 blockSize = indexes_desc->body.indexes_desc.blocksize;
       if (files_desc)
       {
 	if( (table->getSpecialType() != ExtendedQualName::VIRTUAL_TABLE AND
@@ -4222,6 +4242,11 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
             heap)))
         return TRUE;
 
+      if (table->isHbaseTable())
+      {
+        indexLevels = hbtIndexLevels;
+        blockSize = hbtBlockSize;
+      }
       newIndex = new (heap)
 	NAFileSet(
 		  qualIndexName, // QN containing "\NSK.$VOL", FUNNYSV, FUNNYNM
@@ -4236,7 +4261,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 		  MAXOF(table_desc->body.table_desc.rowcount,0),
 		  indexes_desc->body.indexes_desc.record_length,
 		  files_desc ? files_desc->body.files_desc.lockLength : 0,
-		  indexes_desc->body.indexes_desc.blocksize,
+                  blockSize,
 		  indexLevels,
 		  allColumns,
 		  indexKeyColumns,
@@ -4892,6 +4917,7 @@ NATable::NATable(BindWA *bindWA,
       setIsSeabaseTable(corrName.isSeabase());
       setIsHbaseCellTable(corrName.isHbaseCell());
       setIsHbaseRowTable(corrName.isHbaseRow());
+      setIsSeabaseMDTable(corrName.isSeabaseMD());
     }
 
   // Check if the synonym name translation to reference object has been done.
@@ -7500,6 +7526,55 @@ Int64 NATable::estimateHBaseRowCount() const
     }
 
   return estRowCount;
+}
+
+// Method to get hbase table index levels and block size
+NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const
+{
+  if (!isHbaseTable() || isSeabaseMDTable() ||
+      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
+      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME ||
+      getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
+    return FALSE;
+
+  NADefaults* defs = &ActiveSchemaDB()->getDefaults();
+  const char* server = defs->getValue(HBASE_SERVER);
+  const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
+  ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
+                           (STMTHEAP, server, zkPort);
+
+  Lng32 retcode = ehi->init(NULL);
+  if (retcode < 0)
+  {
+    *CmpCommon::diags()
+              << DgSqlCode(-8448)
+              << DgString0((char*)"ExpHbaseInterface::init()")
+              << DgString1(getHbaseErrStr(-retcode))
+              << DgInt0(-retcode)
+              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+    delete ehi;
+    return FALSE;
+  }
+  else
+  {
+    HbaseStr fqTblName;
+    NAString tblName = getTableName().getQualifiedNameAsString();
+    fqTblName.len = tblName.length();
+    fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
+    strncpy(fqTblName.val, tblName.data(), fqTblName.len);
+    fqTblName.val[fqTblName.len] = '\0';
+
+    retcode = ehi->getHbaseTableInfo(fqTblName,
+                                     hbtIndexLevels,
+                                     hbtBlockSize);
+
+    NADELETEBASIC(fqTblName.val, STMTHEAP);
+    delete ehi;
+    if (retcode < 0)
+      return FALSE;
+  }
+  return TRUE;
+
 }
 
 // get details of this NATable cache entry

@@ -79,6 +79,7 @@ import org.apache.hadoop.fs.permission.AclEntry;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFileScanner;
+import org.apache.hadoop.hbase.io.hfile.FixedFileTrailer;
 import org.apache.hadoop.hbase.regionserver.StoreFileInfo;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.DtmConst;
@@ -901,6 +902,147 @@ public class HBaseClient {
 
       rc[0] += memStoreRows;  // Add memstore estimate to total
       if (logger.isDebugEnabled()) logger.debug("Total estimated row count for " + tblName + " = " + rc[0]);
+      return true;
+    }
+
+    /**
+    This method returns index levels and block size of Hbase Table.
+    Index level is read from  Hfiles trailer block. Randomly selects one region and iterates through all Hfiles
+    in the chosen region and gets the maximum index level.
+    Block size is read from HColumnDescriptor.
+    **/
+    public boolean getHbaseTableInfo(String tblName, int[] tblInfo)
+                   throws MasterNotRunningException, IOException, ClassNotFoundException, URISyntaxException {
+
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.getHbaseTableInfo(" + tblName + ") called.");
+      final String REGION_NAME_PATTERN = "[0-9a-f]*";
+      final String HFILE_NAME_PATTERN  = "[0-9a-f]*";
+
+      // initialize 
+      int indexLevel = 0;
+      int currIndLevel = 0;
+      int blockSize = 0;
+      tblInfo[0] = indexLevel;
+      tblInfo[1] = blockSize;
+
+      // get block size
+      HTable htbl = new HTable(config, tblName);
+      HTableDescriptor htblDesc = htbl.getTableDescriptor();
+      HColumnDescriptor[] families = htblDesc.getColumnFamilies();
+      blockSize = families[0].getBlocksize();
+      tblInfo[1] = blockSize;
+
+      // Access the file system to go directly to the table's HFiles.
+      long nano1 = 0, nano2 = 0;
+      if (logger.isDebugEnabled())
+        nano1 = System.nanoTime();
+      FileSystem fileSystem = FileSystem.get(config);
+
+      if (logger.isDebugEnabled()) {
+        nano2 = System.nanoTime();
+        logger.debug("FileSystem.get() took " + ((nano2 - nano1) + 500000) / 1000000 + " milliseconds.");
+      }
+      CacheConfig cacheConf = new CacheConfig(config);
+      String hbaseRootPath = config.get(HConstants.HBASE_DIR).trim();
+      if (hbaseRootPath.charAt(0) != '/')
+        hbaseRootPath = new URI(hbaseRootPath).getPath();
+      if (logger.isDebugEnabled()) logger.debug("hbaseRootPath = " + hbaseRootPath);
+
+      String regDir = hbaseRootPath + "/data/default/" + 
+                      tblName + "/" + REGION_NAME_PATTERN + "/#1";
+      if (logger.isDebugEnabled()) logger.debug("region dir = " + regDir);
+
+      //get random region from the list of regions and look at all Hfiles in that region
+      FileStatus[] regArr;
+      try {
+        regArr = fileSystem.globStatus(new Path(regDir));
+      } catch (IOException ioe) {
+        if (logger.isDebugEnabled()) logger.debug("fs.globStatus on region throws IOException");
+        return false; // return index level = 0; and  block size
+      }
+      
+      // logging
+      if (logger.isDebugEnabled()) {
+        for (int i =0; i < regArr.length; i++) 
+          logger.debug("Region Path is " + regArr[i].getPath());
+      }
+      // get random region from the region array
+      int regInd = 0;
+      regInd = tblName.hashCode() % regArr.length;
+
+      Path regName = regArr[regInd].getPath();
+      // extract MD5 hash name of random region from its path including colFam name. 
+      // we just need part2 and looks something like /c8fe2d575de62d5d5ffc530bda497bca/#1
+      String strRegPath = regName.toString();
+      String parts[] = strRegPath.split(tblName);
+      String part2 = parts[1];
+
+      // now remove regular expression from the region path.
+      // would look something like /hbase/data/default/<cat.sch.tab>/[0-9a-f]*/#1
+      int j = regDir.indexOf("/[");
+      String regPrefix = regDir.substring(0,j);
+      if (logger.isDebugEnabled()) logger.debug("Region Path prefix = " + regPrefix);
+      String hfilePath = regPrefix + part2 + "/" + HFILE_NAME_PATTERN;
+      
+      if (logger.isDebugEnabled()) logger.debug("Random = " + regInd + ", region is " + regName);
+      if (logger.isDebugEnabled()) logger.debug("Hfile path = " + hfilePath);
+
+      FileStatus[] fsArr;
+      try {
+        fsArr = fileSystem.globStatus(new Path(hfilePath));
+      } catch (IOException ioe) {
+        if (logger.isDebugEnabled()) logger.debug("fs.globStatus on Hfile throws IOException");
+        return false; // return index level = 0; and  block size
+      }
+
+      if (logger.isDebugEnabled()) {
+        for (int i =0; i < fsArr.length; i++)
+          logger.debug("Hfile Path is " + fsArr[i].getPath());
+      }
+     
+      // no Hfiles return from here
+      if (fsArr.length == 0)
+        return true; // return index level = 0; and  block size
+
+      // get maximum index level going through all Hfiles of randomly chosen region
+      if (logger.isDebugEnabled())
+        nano1 = System.nanoTime();
+      for (FileStatus fs : fsArr) {
+        // Make sure the file name conforms to HFile name pattern.
+        if (!StoreFileInfo.isHFile(fs.getPath())) {
+          if (logger.isDebugEnabled()) logger.debug("Skipped file " + fs.getPath() + " -- not a valid HFile name.");
+          continue;
+        }
+
+        // Create a reader for the file to access the index levels stored
+        // in the trailer block
+        HFile.Reader reader = HFile.createReader(fileSystem, fs.getPath(), cacheConf, config);
+        try {
+          FixedFileTrailer trailer = reader.getTrailer();
+          currIndLevel = trailer.getNumDataIndexLevels();
+          // index levels also include data block, should be excluded.
+          if (currIndLevel > 0)
+            currIndLevel = currIndLevel - 1;
+          if (logger.isDebugEnabled()) 
+            logger.debug("currIndLevel = " + currIndLevel+ ", indexLevel = " + indexLevel);
+          if (currIndLevel > indexLevel)
+            indexLevel = currIndLevel;
+       } finally {
+         reader.close(false);
+       }
+      } // for
+
+      if (logger.isDebugEnabled()) {
+        nano2 = System.nanoTime();
+        logger.debug("get index level took " + ((nano2 - nano1) + 500000) / 1000000 + " milliseconds.");
+      }
+
+      tblInfo[0] = indexLevel;
+      if (logger.isDebugEnabled()) {
+        logger.debug("Index Levels for " + tblName + " = " + tblInfo[0]);
+        logger.debug("Block Size for " + tblName + " = " + tblInfo[1]);
+      }
+      
       return true;
     }
 

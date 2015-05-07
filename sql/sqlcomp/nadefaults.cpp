@@ -1732,6 +1732,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HBASE_ASYNC_DROP_TABLE,		"OFF"),
  // HBASE_CACHE_BLOCKS, ON => cache every scan, OFF => cache no scan
  // SYSTEM => cache scans which take less than 1 RS block cache mem.
+ DDui___(HBASE_BLOCK_SIZE,                      "65536"),
  DDkwd__(HBASE_CACHE_BLOCKS,		"SYSTEM"),
   DD_____(HBASE_CATALOG,                        "HBASE"),
   DDkwd__(HBASE_CHECK_AND_UPDEL_OPT,		"ON"),
@@ -1746,6 +1747,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  DDkwd__(HBASE_FILTER_PREDS,		             "OFF"),
  DDkwd__(HBASE_HASH2_PARTITIONING,                   "ON"),
+ DDui___(HBASE_INDEX_LEVEL,                          "0"),
  DDui___(HBASE_MAX_COLUMN_INFO_LENGTH,                "10000"),
  DDui___(HBASE_MAX_COLUMN_NAME_LENGTH,               "100"),
  DDui___(HBASE_MAX_COLUMN_VAL_LENGTH,                  "1000"),

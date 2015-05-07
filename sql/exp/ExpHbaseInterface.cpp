@@ -1388,6 +1388,23 @@ Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
   return retCode_;
 }
 
+// Get Hbase Table information. This will be generic function to get needed information
+// from Hbase layer. Currently index level and blocksize is being requested for use in
+// costing code, but can be extended in the future so that we only make one JNI call.
+Lng32 ExpHbaseInterface_JNI::getHbaseTableInfo(const HbaseStr& tblName,
+                                               Int32& indexLevels,
+                                               Int32& blockSize)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+
+  retCode_ = client_->getHbaseTableInfo(tblName.val, indexLevels, blockSize);
+  return retCode_;
+}
+
 Lng32 ExpHbaseInterface_JNI::getLatestSnapshot( const char * tabname, char *& snapshotName, NAHeap * heap)
 {
   if (client_ == NULL)
