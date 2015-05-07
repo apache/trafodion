@@ -24,16 +24,12 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.hadoop.conf.Configuration;
-
 import org.trafodion.rest.util.RestConfiguration;
 import org.trafodion.rest.Constants;
 
@@ -59,6 +55,15 @@ public final class JdbcT2Util
 		this.conf = conf;
 		mapInitialSize = conf.getInt("rest.info.threads.max", 100);
 		m = new HashMap<String, ConnectionContext>(mapInitialSize);
+        System.out.println("rest.conf.dir=" + System.getProperty("rest.conf.dir"));
+        System.out.println("rest.root.logger=" + System.getProperty("rest.root.logger"));
+        System.out.println("rest.log.dir=" + System.getProperty("rest.log.dir"));
+        System.out.println("rest.log.file=" + System.getProperty("rest.log.file"));
+        
+        System.setProperty("hbaseclient.log4j.properties",System.getProperty("rest.conf.dir") + "/log4j.properties");
+        System.setProperty("rest.root.logger",System.getProperty("rest.root.logger"));
+        System.setProperty("rest.log.dir",System.getProperty("rest.log.dir"));
+        System.setProperty("rest.log.file",System.getProperty("rest.log.file"));		
 	}
 	
 	public JdbcT2Util() {
@@ -89,9 +94,9 @@ public final class JdbcT2Util
 					if(LOG.isDebugEnabled())
 						LOG.debug("conn.createStatement()");
 					stmt = conn.createStatement();
-					if(LOG.isDebugEnabled())
-						LOG.debug("stmt.execute(" + Constants.CQD_ESTIMATE_HBASE_ROW_COUNT_OFF + ")");
-					stmt.execute(Constants.CQD_ESTIMATE_HBASE_ROW_COUNT_OFF);
+					//if(LOG.isDebugEnabled())
+					//	LOG.debug("stmt.execute(" + Constants.CQD_ESTIMATE_HBASE_ROW_COUNT_OFF + ")");
+					//stmt.execute(Constants.CQD_ESTIMATE_HBASE_ROW_COUNT_OFF);
 					open = true;
 				} catch (SQLException e) {
 					SQLException nextException;
@@ -335,7 +340,9 @@ public final class JdbcT2Util
 			if(LOG.isDebugEnabled())
 				LOG.debug("Exception [" + sb.toString() + "]");
 			System.exit(1);
-		}
+		} 
+		
+		System.exit(0);
 	}
 	
 }
