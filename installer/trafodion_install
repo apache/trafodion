@@ -246,7 +246,7 @@ fi
 
 if [[ "$RUN_SCANNER" == "Y" ]]; then
    echo "***INFO: Running Trafodion Scanner"
-   $LOCAL_WORKDIR/tools/trafodion_scanner -l $SCANNER_LOG -n "$NODE_LIST" \
+   $LOCAL_WORKDIR/tools/trafodion_scanner -l $SCANNER_LOG -t $TRAF_CONFIG \
    -c $LOCAL_WORKDIR/tools/trafodion_scanner.cfg | tee -a $INSTALL_LOG
 
    returnCode=${PIPESTATUS[0]}
