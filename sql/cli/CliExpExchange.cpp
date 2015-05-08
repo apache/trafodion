@@ -1009,7 +1009,7 @@ ex_expr::exp_return_type InputOutputExpr::doBulkMove(atp_struct * atp,
           else 
             srcPtr = bmi->getDescDataPtr(i);
 
-	  str_cpy_all(dataPtr, srcPtr, bmi->getLength(i));
+          str_cpy_all(dataPtr, srcPtr, bmi->getLength(i));
 	}
       else
 	{
@@ -1019,15 +1019,8 @@ ex_expr::exp_return_type InputOutputExpr::doBulkMove(atp_struct * atp,
           else
             destPtr = bmi->getDescDataPtr(i);
 
-	  str_cpy_all(destPtr, dataPtr, (Lng32)bmi->getLength(i));
-
-          // clear unused varchar bytes
-          if (bmi->isVarchar(i)) 
-            {
-              ExpTupleDesc::clearUnusedVarchar(destPtr, (Lng32)bmi->getLength(i), 
-                                               bmi->isNullable(i));
-            }
-	}        
+          str_cpy_all(destPtr, dataPtr, (Lng32)bmi->getLength(i));
+	}
     }
 
   return ex_expr::EXPR_OK;
