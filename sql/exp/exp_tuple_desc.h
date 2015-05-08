@@ -904,32 +904,6 @@ public:
     return ( tdf == SQLMX_ALIGNED_FORMAT );
   }
 
-  // clear unused varchar bytes.
-  // dataPtr points to the beginning of the column.
-  // valid only for Exploded format. 
-  static
-  void clearUnusedVarchar(char *dataPtr, Int32 len, NABoolean isNullable) 
-  {
-    NABoolean isNull = FALSE; 
-    if (isNullable) 
-    {
-      isNull = isNullValue( dataPtr, -1, 
-                            ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
-      dataPtr += sizeof(short); 
-      len -= sizeof(short);
-    }
-    if (!isNull)
-    {
-      Int32 actualLen = getVarLength(dataPtr, ExpTupleDesc::SQLARK_EXPLODED_FORMAT);
-      dataPtr += (sizeof(short) + actualLen);
-      len -= (sizeof(short) + actualLen);
-    }
-    if (len) 
-    {
-      memset(dataPtr, 0, len);
-    }
-  }
-
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------

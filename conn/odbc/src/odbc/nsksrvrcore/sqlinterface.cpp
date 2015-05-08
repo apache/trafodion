@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -119,12 +119,17 @@ SQLRETURN SRVR::GetODBCValues(Int32 DataType, Int32 DateTimeCode, Int32 &Length,
 				ODBCDataType = SQL_LONGVARCHAR;
 			}
 			SignType = FALSE;
-			totalMemLen = ((totalMemLen + 2 - 1) >> 1) << 1; 
 			// Varchar indicator length can 2 or 4 bytes depending on length of the column
 			if (Length > SHRT_MAX)	// 32767
+			{
+				totalMemLen = ((totalMemLen + 4 - 1) >> 2) << 2; 
 				totalMemLen += Length + 4;
+			}
 			else
+			{
+				totalMemLen = ((totalMemLen + 2 - 1) >> 1) << 1; 
 				totalMemLen += Length + 2;
+			}
 
 			if (!bRWRS)
 				totalMemLen += 1;
@@ -6874,12 +6879,18 @@ SQLRETURN SRVR::SetIndandVarPtr(SQLDESC_ID *pDesc,
 				memOffSet += 1;
 			break;
 		case SQLTYPECODE_VARCHAR_WITH_LENGTH:
-			memOffSet = ((memOffSet + 2 - 1) >> 1) << 1; 
-			VarPtr = memPtr + memOffSet;
 			if( SqlDescInfo[i].Length > SHRT_MAX )
+			{
+				memOffSet = ((memOffSet + 4 - 1) >> 2) << 2; 
+				VarPtr = memPtr + memOffSet;
 				memOffSet += SqlDescInfo[i].Length + 4;
+			}
 			else
+			{
+				memOffSet = ((memOffSet + 2 - 1) >> 1) << 1; 
+				VarPtr = memPtr + memOffSet;
 				memOffSet += SqlDescInfo[i].Length + 2;
+			}
 			if (!bRWRS)
 				memOffSet += 1;
 			break;
