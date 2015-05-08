@@ -31,6 +31,7 @@
 #include "ComSmallDefs.h"
 
 class ComSecurityKey;
+class NATable;
 
 // *****************************************************************************
 // *
@@ -111,11 +112,6 @@ public:
       const PrivMgrCoreDesc &privs,
       std::vector <ComSecurityKey *> & secKeySet);
       
-   PrivStatus buildSecurityKeys(
-      const std::vector<int32_t> & roleIDs,
-      const int32_t userID, 
-      std::vector <ComSecurityKey *> & secKeySet);
-      
    PrivStatus getGrantorDetailsForObject(
       const bool isGrantedBySpecified,
       const std::string grantedByName,
@@ -132,7 +128,9 @@ public:
       const int64_t objectUID,
       std::vector<ObjectPrivsRow> & objectPrivsRows);
 
-   PrivStatus getPrivTextForObject(std::string &privilegeText);
+   PrivStatus getPrivTextForObject(
+      const NATable *naTable,
+      std::string &privilegeText);
 
    PrivStatus getPrivsOnObjectForUser(
       const int64_t objectUID,
@@ -147,17 +145,26 @@ public:
       std::vector<UIDAndPrivs> & UIDandPrivs);
        
    PrivStatus givePrivForObjects(
-         const int32_t currentOwnerID,
-         const int32_t newOwnerID,
-         const std::string &newOwnerName,
-         const std::vector<int64_t> &objectUIDs);
+      const int32_t currentOwnerID,
+      const int32_t newOwnerID,
+      const std::string &newOwnerName,
+      const std::vector<int64_t> &objectUIDs);
          
+   PrivStatus grantColumnPrivileges(
+      const ComObjectType objectType,
+      const int32_t granteeID,
+      const std::string &granteeName,
+      const std::string &grantorName,
+      const std::vector<ColPrivSpec> & colPrivsArray,
+      const bool isWGOSpecified);
+  
    PrivStatus grantObjectPriv(
       const ComObjectType objectType,
       const int32_t granteeID,
       const std::string &granteeName,
       const std::string &grantorName,
-      const std::vector<std::string> &privList,
+      const std::vector<PrivType> &privList,
+      const std::vector<ColPrivSpec> & colPrivsArray,
       const bool isAllSpecified,
       const bool isWGOSpecified);
        
@@ -168,10 +175,6 @@ public:
       const PrivMgrBitmap privsBitmap,
       const PrivMgrBitmap grantableBitmap);
 
-   PrivStatus grantSelectOnAuthsToPublic(
-      const std::string & objectsLocation,
-      const std::string & authsLocation);
-      
    PrivStatus grantToOwners(
       const ComObjectType objectType,
       const Int32 granteeID,
@@ -188,11 +191,22 @@ public:
    PrivStatus populateObjectPriv(
       const std::string &objectsLocation,
       const std::string &authsLocation);
- 
+      
+   PrivStatus revokeColumnPrivileges(
+         const ComObjectType objectType,
+         const int32_t granteeID,
+         const std::string & granteeName,
+         const std::string & grantorName,
+         const std::vector<ColPrivSpec> & colPrivsArrayIn,
+         const bool isWGOSpecified);
+         
    PrivStatus revokeObjectPriv(
       const ComObjectType objectType,
       const int32_t granteeID,
-      const std::vector<std::string> &privList,
+      const std::string & granteeName,
+      const std::string & grantorName,
+      const std::vector<PrivType> &privList,
+      const std::vector<ColPrivSpec> & colPrivsArray,
       const bool isAllSpecified,
       const bool isGOFSpecified);
        
@@ -218,21 +232,21 @@ protected:
      const bool isAllSpecified,
      const bool isWGOSpecified,
      const bool isGOFSpecified,
-     const std::vector<std::string> privs,
+     const std::vector<PrivType> privs,
      PrivMgrDesc &privsToGrant);
 
    PrivStatus getPrivsFromAllGrantors(
      const int64_t objectUID,
      const int32_t grantee,
+     const std::vector<int32_t> & roleIDs,
      PrivMgrDesc &privs,
-     const bool withRoles = false,
      std::vector <ComSecurityKey *>* secKeySet = NULL
      );
           
    PrivStatus getUserPrivs(
      const int32_t grantee,
+     const std::vector<int32_t> & roleIDs,
      PrivMgrDesc &privs,
-     const bool withRoles = false,
      std::vector <ComSecurityKey *>* secKeySet = NULL
      );
      
@@ -266,12 +280,6 @@ private:
        delete listOfAffectedObjects.back(), listOfAffectedObjects.pop_back();
   }
 
-  void deleteRowsForGrantee(std::vector<PrivMgrMDRow *> rowList)
-  {
-    while(!rowList.empty())
-       delete rowList.back(), rowList.pop_back();
-  }
-
   PrivStatus gatherConstraintPrivileges(
     ObjectUsage &constraintUsage,
     const std::vector<ObjectUsage *> listOfAffectedObjects);
@@ -289,10 +297,14 @@ private:
     const int32_t granteeID,
     PrivMgrMDRow &row);
 
+  PrivStatus getRoleIDsForUserID(
+     int32_t userID,
+     std::vector<int32_t> & roleIDs);
+     
   PrivStatus getRowsForGrantee(
     const int64_t objectUID,
     const int32_t granteeID,
-    const bool withroles,
+    const std::vector<int32_t> & roleIDs,
     std::vector<PrivMgrMDRow *> &rowList,
     std::vector <ComSecurityKey *>* secKeySet); 
     
@@ -314,7 +326,7 @@ private:
   PrivStatus summarizeCurrentAndOriginalPrivs(
     const int64_t objectUID,
     const int32_t granteeID,
-    const bool withRoles,
+    const std::vector<int32_t> & roleIDs,
     const std::vector<ObjectUsage *> listOfChangedPrivs,
     PrivMgrDesc &summarizedOriginalPrivs,
     PrivMgrDesc &summarizedCurrentPrivs);
@@ -328,6 +340,7 @@ std::string    objectName_;
 int32_t        grantorID_;   // is this needed as a member
 
 std::string    fullTableName_;
+std::string    columnTableName_;
 std::string    trafMetadataLocation_;
 
 };

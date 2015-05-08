@@ -444,7 +444,74 @@ std::string updateStmt ("UPDATE ");
 }
 //************************ End of PrivMgrMDTable::update ***********************
 
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrMDTable::updateWhere                                     *
+// *                                                                           *
+// *    This method updates rows in table based on a SET an d WHERE clause.    *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <setClause>                    const std::string &              In       *
+// *    is the SET clause (including the keyword SET).                         *
+// *                                                                           *
+// *  <whereClause>                  const std::string &              In       *
+// *    is the WHERE clause (including the keyword WHERE).                     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_ERROR: Execution failed. A CLI error is put into the diags area.   *
+// * STATUS_GOOD: Statement executed successfully.                             *
+// * STATUS_NOTFOUND: No row found that match WHERE clause.                    *
+// * STATUS_WARNING: Statement executed to completion but with a warning.  See *
+// *                 the CLI diags area.                                       *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrMDTable::updateWhere(
+   const std::string & setClause,
+   const std::string & whereClause)
+   
+{
 
+std::string updateStmt("UPDATE ");
+
+   updateStmt += tableName_;
+   updateStmt += " ";
+   updateStmt += setClause;
+   updateStmt += " ";
+   updateStmt += whereClause;
+
+// set pointer in diags area
+int32_t diagsMark = pDiags_->mark();
+
+ExeCliInterface cliInterface(STMTHEAP,NULL,NULL, 
+                             CmpCommon::context()->sqlSession()->getParentQid());
+                             
+int32_t cliRC = cliInterface.executeImmediate(updateStmt.c_str());
+
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(pDiags_);
+      return STATUS_ERROR;
+   }
+
+   if (cliRC == 100) // did not find any rows
+   {
+      pDiags_->rewind(diagsMark);
+      return STATUS_NOTFOUND;
+   }
+
+   if (cliRC > 0)
+      return STATUS_WARNING;
+
+   return STATUS_GOOD;
+   
+}
+//********************* End of PrivMgrMDTable::updateWhere *********************
 
 
 

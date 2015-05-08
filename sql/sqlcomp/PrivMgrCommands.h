@@ -44,6 +44,7 @@ class ComSecurityKey;
 class PrivMgrUserPrivs;
 class PrivMgrPrivileges;
 
+class NATable;
 // *****************************************************************************
 // *
 // * Class:        PrivMgrUserPrivs
@@ -83,8 +84,24 @@ class PrivMgrUserPrivs
       case EXECUTE_PRIV:
         privilege = "EXECUTE";
         break;
-
-      // other privileges defined in PrivMgrDefs.h are not yet supported
+      case CREATE_PRIV:
+        privilege = "CREATE";
+        break;
+      case ALTER_PRIV:
+        privilege = "ALTER";
+        break;
+      case DROP_PRIV:
+        privilege = "DROP";
+        break;
+      case ALL_DML:
+        privilege = "ALL_DML";
+        break;
+      case ALL_DDL:
+        privilege = "ALL_DDL";
+        break;
+      case ALL_PRIVS:
+        privilege = "ALL";
+        break;
       default:
         privilege = "UNKNOWN";
     }
@@ -162,11 +179,44 @@ class PrivMgrUserPrivs
    {return grantableBitmap_.test(privType);}
 
   // TBD - Column level
-  bool hasColSelectPriv(const int32_t ordinal) const;
-  bool hasColInsertPriv(const int32_t ordinal) const;
-  bool hasColDeletePriv(const int32_t ordinal) const;
-  bool hasColUpdatePriv(const int32_t ordinal) const;
-  bool hasColReferencePriv(const int32_t ordinal) const;
+  bool hasColSelectPriv(const int32_t ordinal) const {return hasColPriv(SELECT_PRIV,ordinal);}
+  bool hasColInsertPriv(const int32_t ordinal) const {return hasColPriv(INSERT_PRIV,ordinal);}
+  bool hasColUpdatePriv(const int32_t ordinal) const {return hasColPriv(UPDATE_PRIV,ordinal);}
+  bool hasColReferencePriv(const int32_t ordinal) const {return hasColPriv(REFERENCES_PRIV,ordinal);}
+  bool hasAnyColPriv() const       
+  {
+     for (size_t i = 0; i < columnBitmaps_.size(); i++)
+       if (columnBitmaps_[i].any())
+          return true;
+          
+     return false;     
+  }
+//TODO: column ordinal not index into vector.
+  bool hasColPriv(PrivType privType,const int32_t ordinal) const
+  {
+  
+    switch (privType)
+    {
+      case SELECT_PRIV:
+      case INSERT_PRIV:
+      case REFERENCES_PRIV:
+      case UPDATE_PRIV:
+        return columnBitmaps_[ordinal].test(privType);
+        break;
+      // other privileges not column privs
+      default:
+        return false;
+    }
+    return false;
+  }
+
+//  std::vector<PrivColumnBitmap> getColumnBitmap() {return columnBitmaps_;}
+//  void setColumnBitmap (PrivColumnBitmap columnBitmaps)
+//     {columnBitmaps_ = columnBitmaps;}
+
+//  std::vector<PrivColumnBitmap> getColumnGrantableBitmap() {return columnGrantableBitmaps_;}
+//  void setColumnGrantableBitmap (PrivColumnBitmap columnGrantableBitmap)
+//     {columnGrantableBitmaps_ = columnGrantableBitmap;}
 
   PrivMgrBitmap getObjectBitmap() {return objectBitmap_;}
   void setObjectBitmap (PrivMgrBitmap objectBitmap)
@@ -181,9 +231,9 @@ class PrivMgrUserPrivs
 
  private:
    std::bitset<NBR_OF_PRIVS> objectBitmap_;
-   std::vector <std::bitset<NBR_OF_PRIVS>> columnBitmaps_;
+   std::vector<PrivColumnBitmap> columnBitmaps_;
    std::bitset<NBR_OF_PRIVS> grantableBitmap_;
-   std::vector <std::bitset<NBR_OF_PRIVS>>columnGrantableBitmaps_;
+   std::vector<PrivColumnBitmap> columnGrantableBitmaps_;
 };
 
 // *****************************************************************************
@@ -231,6 +281,7 @@ public:
    bool describePrivileges(
       const int64_t objectUID,
       const std::string &objectName,
+      const NATable * naTable,
       std::string &privilegeText);
 
    PrivStatus dropAuthorizationMetadata();
@@ -280,7 +331,8 @@ public:
       const std::string &granteeName,
       const int32_t grantorUID,
       const std::string &grantorName,
-      const std::vector<std::string> &privs,
+      const std::vector<PrivType> &privs,
+      const std::vector<ColPrivSpec> & colPrivsArray,
       const bool isAllSpecified,
       const bool isWGOSpecified);
       
@@ -332,8 +384,11 @@ public:
       const std::string &objectName,
       const  ComObjectType objectType,
       const int32_t granteeUID,
+      const std::string &granteeName,
       const int32_t grantorUID,
-      const std::vector<std::string> &privs,
+      const std::string &grantorName,
+      const std::vector<PrivType> &privs,
+      const std::vector<ColPrivSpec> & colPrivsArray,
       const bool isAllSpecified,
       const bool isGOFSpecified);
       
