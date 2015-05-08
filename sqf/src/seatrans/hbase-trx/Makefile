@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ jdk_1_7_apache:
 	$(MAKE) build_chk_apache
 	echo "$(MAVEN) package -DskipTests"
 	echo "### For full Maven output, see file build_trx.log"
-	set -o pipefail && $(MAVEN) -f pom.xml.apache package -DskipTests | tee build_trx.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
+	set -o pipefail && $(MAVEN) -f pom.xml.apache package -DskipTests | tee build_trx.log
 	cp -pf target/$(BLD_HBASE_APACHE_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
