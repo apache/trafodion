@@ -105,6 +105,11 @@ public:
    virtual PrivStatus deleteWhere(const std::string & whereClause);
    
    virtual PrivStatus update(const std::string & setClause);
+   
+   virtual PrivStatus updateWhere(
+      const std::string & setClause,
+      const std::string & whereClause);
+   
 
 protected: 
 // -------------------------------------------------------------------

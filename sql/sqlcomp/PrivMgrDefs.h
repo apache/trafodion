@@ -73,6 +73,57 @@ enum PrivType { SELECT_PRIV = 0, //DML PRIVS START HERE
                 ALL_DDL,
                 ALL_PRIVS };
                 
+class ColPrivSpec
+{
+public:
+   PrivType       privType;
+   int32_t        columnOrdinal;
+   bool           grantorHasWGO;
+};
+
+inline bool isColumnPrivType(PrivType privType)
+{
+
+   return (privType == PrivType::SELECT_PRIV || 
+           privType == PrivType::INSERT_PRIV ||
+           privType == PrivType::REFERENCES_PRIV ||
+           privType == PrivType::UPDATE_PRIV);
+   
+}
+     
+inline bool isLibraryPrivType(PrivType privType)
+{
+
+   return (privType == PrivType::USAGE_PRIV || 
+           privType == PrivType::UPDATE_PRIV);
+   
+}
+     
+inline bool isTablePrivType(PrivType privType)
+{
+
+   return (privType == PrivType::SELECT_PRIV || 
+           privType == PrivType::INSERT_PRIV ||
+           privType == PrivType::DELETE_PRIV ||
+           privType == PrivType::REFERENCES_PRIV ||
+           privType == PrivType::UPDATE_PRIV);
+   
+}
+     
+inline bool isUDRPrivType(PrivType privType)
+{
+
+   return (privType == PrivType::EXECUTE_PRIV);
+   
+}
+
+inline bool isSequenceGeneratorPrivType(PrivType privType)
+{
+
+   return (privType == PrivType::USAGE_PRIV);
+   
+}
+     
 enum class PrivDropBehavior {
    CASCADE = 2,
    RESTRICT = 3
@@ -82,6 +133,15 @@ enum class PrivCommand {
    GRANT_OBJECT = 2,
    REVOKE_OBJECT_RESTRICT = 3,
    REVOKE_OBJECT_CASCADE = 4
+};
+
+enum class PrivLevel {
+   UNKNOWN = 0,
+   GLOBAL = 2,
+   CATALOG = 3,
+   SCHEMA = 4,
+   OBJECT = 5,
+   COLUMN = 6
 };
   
 // NOTE: These values need to match the corresponding values in 
@@ -93,18 +153,41 @@ enum class PrivAuthClass {
 };                
 
 const static int32_t FIRST_DML_PRIV = SELECT_PRIV;
+const static int32_t FIRST_DML_COL_PRIV = SELECT_PRIV;
+const static int32_t FIRST_PRIV = SELECT_PRIV;
 const static int32_t LAST_PRIMARY_DML_PRIV = UPDATE_PRIV;
 const static int32_t LAST_DML_PRIV = EXECUTE_PRIV;
+const static int32_t LAST_DML_COL_PRIV = REFERENCES_PRIV;
 const static int32_t FIRST_DDL_PRIV = CREATE_PRIV;
 const static int32_t LAST_DDL_PRIV = DROP_PRIV;
+const static int32_t LAST_PRIV = DROP_PRIV;
 
 const static int32_t NBR_DML_PRIVS = LAST_DML_PRIV-FIRST_DML_PRIV + 1;
+// This calculation includes non-column-level privileges.  There are only four
+// column-level privileges, but DELETE and USAGE are include so bit indexing works.
+const static int32_t NBR_DML_COL_PRIVS = LAST_DML_COL_PRIV - FIRST_DML_COL_PRIV + 1;   
 const static int32_t NBR_DDL_PRIVS = LAST_DDL_PRIV-FIRST_DDL_PRIV + 1;
 const static int32_t NBR_OF_PRIVS = NBR_DML_PRIVS+NBR_DDL_PRIVS;
 
 // Defines the privileges and grantable bitmaps as PrivMgrBitmap
 //using PrivMgrBitmap = std::bitset<NBR_OF_PRIVS>;
 #define PrivMgrBitmap std::bitset<NBR_OF_PRIVS>
+typedef std::bitset<NBR_OF_PRIVS> PrivObjectBitmap;
+typedef std::bitset<NBR_DML_COL_PRIVS> PrivColumnBitmap;
+typedef std::bitset<NBR_OF_PRIVS> PrivSchemaBitmap;
+
+inline bool isDMLPrivType(PrivType privType)
+{
+
+   if ((privType >= FIRST_DML_PRIV && privType <= LAST_DML_PRIV) ||
+       privType == ALL_DML)
+      return true;
+   
+   return false;
+   
+}
+     
+
 
 // object types for grantable objects
 #define BASE_TABLE_OBJECT_LIT               "BT"

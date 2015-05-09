@@ -2635,7 +2635,7 @@ short CmpDescribeSeabaseTable (
         std::string objectName(tableName);
         std::string privilegeText;
         int64_t objectUID = (int64_t)naTable->objectUid().get_value();
-        if (privInterface.describePrivileges(objectUID, objectName, privilegeText))
+        if (privInterface.describePrivileges(objectUID, objectName, naTable, privilegeText))
         {
           outputShortLine(space, " ");
           outputLine(space, privilegeText.c_str(), 0);
@@ -3184,7 +3184,7 @@ short CmpDescribeSeabaseTable (
       PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
       std::string objectName(tableName);
       std::string privilegeText;
-      if (privInterface.describePrivileges(objectUID, objectName, privilegeText))
+      if (privInterface.describePrivileges(objectUID, objectName, naTable, privilegeText))
       {
         outputShortLine(space, " ");
         outputLine(space, privilegeText.c_str(), 0);
@@ -3289,7 +3289,7 @@ short CmpDescribeSequence(
 
     std::string objectName(seqName);
     std::string privilegeText;
-    if (privInterface.describePrivileges(objectUID, objectName, privilegeText))
+    if (privInterface.describePrivileges(objectUID, objectName, naTable, privilegeText))
     {
       outputShortLine(*space, " ");
       outputLine(*space, privilegeText.c_str(), 0);
@@ -3536,7 +3536,7 @@ char buf[1000];
 
       std::string objectName(libraryName);
       std::string privilegeText;
-      if (privInterface.describePrivileges(libraryUID,objectName,privilegeText))
+      if (privInterface.describePrivileges(libraryUID,objectName,NULL,privilegeText))
       {
          outputShortLine(*space," ");
          outputLine(*space,privilegeText.c_str(),0);
@@ -4033,7 +4033,7 @@ short CmpDescribeRoutine (const CorrName   & cn,
 
     std::string objectName(rName);
     std::string privilegeText;
-    if (privInterface.describePrivileges(objectUID, objectName, privilegeText))
+    if (privInterface.describePrivileges(objectUID, objectName, NULL, privilegeText))
     {
       outputShortLine(*space, " ");
       outputLine(*space, privilegeText.c_str(), 0);

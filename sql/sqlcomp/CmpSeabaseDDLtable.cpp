@@ -68,6 +68,36 @@ extern short CmpDescribeSeabaseTable (
                              char * colName = NULL,
                              NABoolean isAdd = FALSE,
                              const NAColumn * nacol = NULL);
+                             
+static bool checkSpecifiedPrivs(
+   ElemDDLPrivActArray & privActsArray,  
+   const char * externalObjectName,
+   ComObjectType objectType,
+   NATable * naTable,
+   std::vector<PrivType> & objectPrivs,
+   std::vector<ColPrivSpec> & colPrivs); 
+   
+static bool ElmPrivToPrivType(
+   OperatorTypeEnum    elmPriv,
+   PrivType          & privType,
+   bool                forRevoke = false);  
+   
+static bool hasValue(
+   const std::vector<ColPrivSpec> & container,
+   PrivType value);                              
+                             
+static bool hasValue(
+   const std::vector<PrivType> & container,
+   PrivType value); 
+   
+static bool isMDGrantRevokeOK(
+   const std::vector<PrivType> & objectPrivs,
+   const std::vector<ColPrivSpec> & colPrivs,
+   bool isGrant);   
+   
+static bool isValidPrivTypeForObject(
+   ComObjectType objectType,
+   PrivType privType);                               
 
 void CmpSeabaseDDL::convertVirtTableColumnInfoToDescStruct( 
      const ComTdbVirtTableColumnInfo * colInfo,
@@ -6230,7 +6260,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   StmtDDLGrant * grantNode = NULL;
   StmtDDLRevoke * revokeNode = NULL;
   NAString tabName;
-  ComAnsiNameSpace nameSpace;  
+  ComAnsiNameSpace nameSpace; 
   
   if (isGrant)
     {
@@ -6283,11 +6313,51 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
               STMTHEAP,
               tableName.getSchemaNamePart().getInternalName(),
               tableName.getCatalogNamePart().getInternalName());
+              
+  // set up common information for all grantees
+  ComObjectType objectType = COM_BASE_TABLE_OBJECT;
+  switch (nameSpace)
+  {
+    case COM_LIBRARY_NAME:
+      objectType = COM_LIBRARY_OBJECT;
+      break;
+    case COM_UDF_NAME:
+    case COM_UDR_NAME:
+      objectType = COM_USER_DEFINED_ROUTINE_OBJECT;
+      break;
+    case COM_SEQUENCE_GENERATOR_NAME:
+      objectType = COM_SEQUENCE_GENERATOR_OBJECT;
+      break;
+    default:
+      objectType = COM_BASE_TABLE_OBJECT;
+  }      
+
+  // get the objectUID and objectOwner
+  Int64 objectUID = 0;
+  Int32 objectOwnerID = 0;
+  Int32 schemaOwnerID = 0;
+  NATable *naTable = NULL;
+  if (objectType == COM_BASE_TABLE_OBJECT)
+    {
+      naTable = bindWA.getNATable(cn);
+      if (naTable == NULL || bindWA.errStatus())
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-4082)
+            << DgTableName(cn.getExposedNameAsAnsiString());
+
+          processReturn();
+          return;
+        }
+      objectUID = (int64_t)naTable->objectUid().get_value();
+      objectOwnerID = (int32_t)naTable->getOwner();
+      schemaOwnerID = naTable->getSchemaOwner();
+    }
 
   ElemDDLGranteeArray & pGranteeArray = 
     (isGrant ? grantNode->getGranteeArray() : revokeNode->getGranteeArray());
 
-  ElemDDLPrivActArray & pPrivActsArray =
+  ElemDDLPrivActArray & privActsArray =
     (isGrant ? grantNode->getPrivilegeActionArray() :
      revokeNode->getPrivilegeActionArray());
 
@@ -6302,83 +6372,21 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   NABoolean   isGrantedBySpecified =
     (isGrant ? grantNode->isByGrantorOptionSpecified() : 
      revokeNode->isByGrantorOptionSpecified());
-     
+
   vector<std::string> userPermissions;
+  std::vector<PrivType> objectPrivs;
+  std::vector<ColPrivSpec> colPrivs;
+  
+
   if (allPrivs)
-    {
-     userPermissions.push_back("ALL");
-    }
+    objectPrivs.push_back(ALL_PRIVS);
   else
-    {
-      for (Lng32 i = 0; i < pPrivActsArray.entries(); i++)
-        {
-          switch (pPrivActsArray[i]->getOperatorType() )
-            {
-            case ELM_PRIV_ACT_SELECT_ELEM:
-              {
-                userPermissions.push_back("SELECT");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_INSERT_ELEM:
-              {
-                userPermissions.push_back("INSERT");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_DELETE_ELEM:
-              {
-                userPermissions.push_back("DELETE");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_UPDATE_ELEM:   
-              {
-                userPermissions.push_back("UPDATE");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_USAGE_ELEM:
-              {
-                userPermissions.push_back("USAGE");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_REFERENCES_ELEM:
-              {
-                userPermissions.push_back("REFERENCES");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_EXECUTE_ELEM:
-              {
-                userPermissions.push_back("EXECUTE");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_ALL_DML_ELEM:
-              {
-                userPermissions.push_back("ALL_DML");
-                break;
-              }
-              
-            default:
-              {
-                NAString privType = "UNKNOWN";
-                
-                *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_PRIV_FOR_OBJECT)
-                                    <<  DgString0(privType)
-                                    << DgString1(extTableName);
-                
-                
-                processReturn();
-
-                return;
-              }
-            }  // end switch
-        } // for
-    }
-
+    if (!checkSpecifiedPrivs(privActsArray,extTableName.data(),objectType,
+                             naTable,objectPrivs,colPrivs))
+      {
+        processReturn();
+        return;
+      }
 
  // Prepare to call privilege manager
   NAString MDLoc;
@@ -6407,59 +6415,13 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   // Grants/revokes of other relevant privileges are allowed if parser flag
   //   INTERNAL_QUERY_FROM_EXEUTIL is set
   // Revoke:  allow ALL and ALL_DML to be specified
-  if (isMDTable && (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+  if (isMDTable && !Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) &&
+      !isMDGrantRevokeOK(objectPrivs,colPrivs,isGrant))
     {
-      if (userPermissions.size() == 1 &&
-          (userPermissions[0] == "SELECT" ||
-           (!isGrant && userPermissions[0] == "ALL") ||
-           (!isGrant && userPermissions[0] == "ALL_DML")))
-        {} // operation allowed
-      else
-        {
-          *CmpCommon::diags() << DgSqlCode(-CAT_SMD_PRIVS_CANNOT_BE_CHANGED);
+      *CmpCommon::diags() << DgSqlCode(-CAT_SMD_PRIVS_CANNOT_BE_CHANGED);
 
-          processReturn();
-          return;
-        }
-    }
-
-  // set up common information for all grantees
-  ComObjectType objectType = COM_BASE_TABLE_OBJECT;
-  switch (nameSpace)
-  {
-    case COM_LIBRARY_NAME:
-      objectType = COM_LIBRARY_OBJECT;
-      break;
-    case COM_UDF_NAME:
-    case COM_UDR_NAME:
-      objectType = COM_USER_DEFINED_ROUTINE_OBJECT;
-      break;
-    case COM_SEQUENCE_GENERATOR_NAME:
-      objectType = COM_SEQUENCE_GENERATOR_OBJECT;
-      break;
-    default:
-      objectType = COM_BASE_TABLE_OBJECT;
-  }      
-
-  // get the objectUID and objectOwner
-  Int64 objectUID = 0;
-  Int32 objectOwnerID = 0;
-  Int32 schemaOwnerID = 0;
-  if (objectType == COM_BASE_TABLE_OBJECT)
-    {
-      NATable *naTable = bindWA.getNATable(cn);
-      if (naTable == NULL || bindWA.errStatus())
-        {
-          *CmpCommon::diags()
-            << DgSqlCode(-4082)
-            << DgTableName(cn.getExposedNameAsAnsiString());
-
-          processReturn();
-          return;
-        }
-      objectUID = (int64_t)naTable->objectUid().get_value();
-      objectOwnerID = (int32_t)naTable->getOwner();
-      schemaOwnerID = naTable->getSchemaOwner();
+      processReturn();
+      return;
     }
 
   // for metadata tables, the objectUID is not initialized in the NATable
@@ -6564,7 +6526,8 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
                                                          granteeName, 
                                                          effectiveGrantorID, 
                                                          effectiveGrantorName, 
-                                                         userPermissions,
+                                                         objectPrivs,
+                                                         colPrivs,
                                                          allPrivs,
                                                          isWGOSpecified); 
       }
@@ -6574,8 +6537,11 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
                                                           objectName, 
                                                           objectType, 
                                                           grantee, 
+                                                          granteeName, 
                                                           effectiveGrantorID, 
-                                                          userPermissions, 
+                                                          effectiveGrantorName, 
+                                                          objectPrivs, 
+                                                          colPrivs,
                                                           allPrivs, 
                                                           isWGOSpecified);
  
@@ -8664,4 +8630,463 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   return routine_desc;
 }
 
+
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: checkSpecifiedPrivs                                             *
+// *                                                                           *
+// *    Processes the privilege specification and returns the lists of object  *
+// * and column privileges.                                                    *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <privActsArray>                 ElemDDLPrivActArray &           In       *
+// *    is a reference to the parsed list of privileges to be granted or       *
+// *  revoked.                                                                 *
+// *                                                                           *
+// *  <externalObjectName>            const char *                    In       *
+// *    is the fully qualified name of the object that privileges are being    *
+// *  granted or revoked on.                                                   *
+// *                                                                           *
+// *  <objectType>                    ComObjectType                   In       *
+// *    is the type of the object that privileges are being granted or         *
+// *  revoked on.                                                              *
+// *                                                                           *
+// *  <naTable>                       NATable *                       In       *
+// *    if the object type is a table or view, the cache for the metadata      *
+// *  related to the object, otherwise NULL.                                   *
+// *                                                                           *
+// *  <objectPrivs>                   std::vector<PrivType> &         Out      *
+// *    passes back a list of the object privileges to be granted or revoked.  *
+// *                                                                           *
+// *  <colPrivs>                      std::vector<ColPrivSpec> &      Out      *
+// *    passes back a list of the column privileges and the specific columns   *
+// *  on which the privileges are to be granted or revoked.                    *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Privileges processed successfully.  Lists of object and column     *
+// *        privileges were returned.                                          *
+// * false: Error processing privileges. The error is in the diags area.       *
+// *                                                                           *
+// *****************************************************************************
+static bool checkSpecifiedPrivs(
+   ElemDDLPrivActArray & privActsArray,  
+   const char * externalObjectName,
+   ComObjectType objectType,
+   NATable * naTable,
+   std::vector<PrivType> & objectPrivs,
+   std::vector<ColPrivSpec> & colPrivs) 
+
+{
+
+   for (Lng32 i = 0; i < privActsArray.entries(); i++)
+   {
+      // Currently only DML privileges are supported.
+      PrivType privType;
+      if (!ElmPrivToPrivType(privActsArray[i]->getOperatorType(),privType) ||
+          !isDMLPrivType(privType))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_PRIV_FOR_OBJECT)
+                             << DgString0(PrivMgrUserPrivs::convertPrivTypeToLiteral(privType).c_str()) 
+                             << DgString1(externalObjectName);
+         return false;
+      }
+      
+      //
+      // The same privilege cannot be specified twice in one grant or revoke
+      // statement.  This includes granting or revoking the same privilege at 
+      // the object-level and the column-level.
+      if (hasValue(objectPrivs,privType) || hasValue(colPrivs,privType))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_DUPLICATE_PRIVILEGES);
+         return false;
+      }
+   
+      if (!isValidPrivTypeForObject(objectType,privType) && privType != PrivType::ALL_DML)
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_PRIVILEGE_NOT_ALLOWED_FOR_THIS_OBJECT_TYPE)
+                             << DgString0(PrivMgrUserPrivs::convertPrivTypeToLiteral(privType).c_str());
+         return false;
+      }
+      
+      // For some DML privileges the user may be granting either column  
+      // or object privileges.  If it is not a privilege that can be granted
+      // at the column level, it is an object-level privilege.
+      if (!isColumnPrivType(privType))
+      {
+         objectPrivs.push_back(privType);
+         continue;
+      }
+      
+      ElemDDLPrivActWithColumns * privActWithColumns = dynamic_cast<ElemDDLPrivActWithColumns *>(privActsArray[i]);
+      ElemDDLColNameArray colNameArray = privActWithColumns->getColumnNameArray();
+      // If no columns were specified, this is an object-level privilege.
+      if (colNameArray.entries() == 0)  
+      {
+         objectPrivs.push_back(privType);
+         continue;
+      }
+      
+      // Column-level privileges can only be specified for tables and views.
+      // Currently caller maps both tables and views to the object type base table.
+      if (objectType != COM_BASE_TABLE_OBJECT)
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_INCORRECT_OBJECT_TYPE)
+                             << DgTableName(externalObjectName);
+         return false;
+      }
+      
+      // It's a table or view, validate the column.  Get the list of 
+      // columns and verify the list contains the specified column(s).
+      const NAColumnArray &nacolArr = naTable->getNAColumnArray();
+      for (size_t c = 0; c < colNameArray.entries(); c++)
+      {
+         const NAColumn * naCol = nacolArr.getColumn(colNameArray[c]->getColumnName());
+         if (naCol == NULL)
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_COLUMN_DOES_NOT_EXIST_ERROR)
+                                << DgColumnName(colNameArray[c]->getColumnName());
+            return false;
+         }
+         // Specified column was found.
+         ColPrivSpec colPrivEntry;
+         
+         colPrivEntry.privType = privType;
+         colPrivEntry.columnOrdinal = naCol->getPosition();
+         colPrivs.push_back(colPrivEntry);
+      }
+   } 
+   
+   return true;
+
+}
+//************************ End of checkSpecifiedPrivs **************************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: ElmPrivToPrivType                                               *
+// *                                                                           *
+// *  This function maps a parser privilege enum (ELM_PRIV_ACT) to a Privilege *
+// *  Manager PrivType.                                                        *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <elmPriv>                       OperatorTypeEnum                In       *
+// *    is a parser privilege enum.                                            *
+// *                                                                           *
+// *  <privType>                      PrivType &                      Out      *
+// *    passes back the CatPrivBitmap privilege enum.                          *
+// *                                                                           *
+// *  <forRevoke>                     bool                            [In]     *
+// *    is true if this is part of a revoke command, otherwise false.  Default *
+// *  to true.  Currently unused, placeholder for schema and DDL privileges.   *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Privilege converted                                                *
+// * false: Privilege not recognized.                                          *
+// *                                                                           *
+// *****************************************************************************
+static bool ElmPrivToPrivType(
+   OperatorTypeEnum    elmPriv,
+   PrivType          & privType,
+   bool                forRevoke)
+   
+{
+
+   switch (elmPriv)
+   {
+      case ELM_PRIV_ACT_DELETE_ELEM:
+         privType = PrivType::DELETE_PRIV;
+         break;
+ 
+      case ELM_PRIV_ACT_EXECUTE_ELEM:
+         privType = PrivType::EXECUTE_PRIV;
+         break;
+ 
+      case ELM_PRIV_ACT_INSERT_ELEM:
+         privType = PrivType::INSERT_PRIV;
+         break;
+ 
+      case ELM_PRIV_ACT_REFERENCES_ELEM:
+         privType = PrivType::REFERENCES_PRIV;
+         break;
+         
+      case ELM_PRIV_ACT_SELECT_ELEM:
+         privType = PrivType::SELECT_PRIV;
+         break;
+
+      case ELM_PRIV_ACT_UPDATE_ELEM:   
+         privType = PrivType::UPDATE_PRIV;
+         break;
+
+      case ELM_PRIV_ACT_USAGE_ELEM:   
+         privType = PrivType::USAGE_PRIV;
+         break;
+
+      case ELM_PRIV_ACT_ALTER_ELEM:
+        // if (forRevoke)
+        //    privType = PrivType::ALL_ALTER;
+       //  else
+            privType = PrivType::ALTER_PRIV;
+         break;
+
+      case ELM_PRIV_ACT_CREATE_ELEM:
+       //  if (forRevoke)
+       //     privType = PrivType::ALL_CREATE;
+       //  else
+            privType = PrivType::CREATE_PRIV;
+         break;
+      
+      case ELM_PRIV_ACT_DROP_ELEM:
+       //  if (forRevoke)
+       //     privType = PrivType::ALL_DROP;
+       //  else
+            privType = PrivType::DROP_PRIV;
+         break;
+
+      case ELM_PRIV_ACT_ALL_DDL_ELEM:
+        privType = PrivType::ALL_DDL;
+        break;
+ 
+      case ELM_PRIV_ACT_ALL_DML_ELEM:
+         privType = PrivType::ALL_DML;
+         break;
+
+      case ELM_PRIV_ACT_ALL_OTHER_ELEM:
+         privType = PrivType::ALL_PRIVS;
+         break;
+
+      default:
+         return false;
+   }
+   
+   return true;
+
+}
+//************************* End of ElmPrivToPrivType ***************************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: hasValue                                                        *
+// *                                                                           *
+// *   This function determines if a ColPrivSpec vector contains a PrivType    *
+// *   value.                                                                  *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <container>                  std::vector<ColPrivSpec>           In       *
+// *    is the vector of ColPrivSpec values.                                   *
+// *                                                                           *
+// *  <value>                      PrivType                           In       *
+// *    is the value to be compared against existing values in the vector.     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Vector contains the value.                                         *
+// * false: Vector does not contain the value.                                 *
+// *                                                                           *
+// *****************************************************************************
+static bool hasValue(
+   const std::vector<ColPrivSpec> & container,
+   PrivType value)
+   
+{
+
+   for (size_t index = 0; index < container.size(); index++)
+      if (container[index].privType == value)
+         return true;
+         
+   return false;
+   
+}
+//***************************** End of hasValue ********************************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: hasValue                                                        *
+// *                                                                           *
+// *   This function determines if a PrivType vector contains a PrivType value.*
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <container>                  std::vector<PrivType>              In       *
+// *    is the vector of 32-bit values.                                        *
+// *                                                                           *
+// *  <value>                      PrivType                           In       *
+// *    is the value to be compared against existing values in the vector.     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Vector contains the value.                                         *
+// * false: Vector does not contain the value.                                 *
+// *                                                                           *
+// *****************************************************************************
+static bool hasValue(
+   const std::vector<PrivType> & container,
+   PrivType value)
+   
+{
+
+   for (size_t index = 0; index < container.size(); index++)
+      if (container[index] == value)
+         return true;
+         
+   return false;
+   
+}
+//***************************** End of hasValue ********************************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: isMDGrantRevokeOK                                               *
+// *                                                                           *
+// *   This function determines if a grant or revoke a privilege to/from a     *
+// * metadata table should be allowed.                                         *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectPrivs>                const std::vector<PrivType> &      In       *
+// *    is a vector of object-level privileges.                                *
+// *                                                                           *
+// *  <colPrivs>                   const std::vector<ColPrivSpec> &   In       *
+// *    is a vector of column-level privileges.                                *
+// *                                                                           *
+// *  <isGrant>                    bool                               In       *
+// *    is a true if this is a grant operation, false if revoke.               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Grant/revoke is OK.                                                *
+// * false: Grant/revoke should be rejected.                                   *
+// *                                                                           *
+// *****************************************************************************
+static bool isMDGrantRevokeOK(
+   const std::vector<PrivType> & objectPrivs,
+   const std::vector<ColPrivSpec> & colPrivs,
+   bool isGrant)
+
+{
+
+// Can only grant or revoke privileges on MD tables if only granting select,
+// or only revoking all privileges.  Only valid combination is no object
+// privileges and 1 or more column privileges (all SELECT), or no column
+// privilege and exactly one object privilege.  In the latter case, the 
+// privilege must either be SELECT, or if a REVOKE operation, either 
+// ALL_PRIVS or ALL_DML.
+
+// First check if no column privileges.
+
+   if (colPrivs.size() == 0)
+   {
+      // Should never get this far with both vectors being empty, but check 
+      // just in case.
+      if (objectPrivs.size() == 0) 
+         return false;
+         
+      if (objectPrivs.size() > 1)
+         return false;
+         
+      if (objectPrivs[0] == SELECT_PRIV)
+         return true;
+         
+      if (isGrant)
+         return false;
+       
+      if (objectPrivs[0] == ALL_PRIVS || objectPrivs[0] == ALL_DML)
+         return true;
+      
+      return false;
+   }
+   
+// Have column privs
+   if (objectPrivs.size() > 0)
+      return false;
+      
+   for (size_t i = 0; i < colPrivs.size(); i++)
+      if (colPrivs[i].privType != SELECT_PRIV)
+         return false;
+         
+   return true;     
+
+}
+//************************* End of isMDGrantRevokeOK ***************************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: isValidPrivTypeForObject                                        *
+// *                                                                           *
+// *   This function determines if a priv type is valid for an object.         *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectType>                 ComObjectType                      In       *
+// *    is the type of the object.                                             *
+// *                                                                           *
+// *  <privType>                   PrivType                           In       *
+// *    is the type of the privilege.                                          *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Priv type is valid for object.                                     *
+// * false: Priv type is not valid for object.                                 *
+// *                                                                           *
+// *****************************************************************************
+static bool isValidPrivTypeForObject(
+   ComObjectType objectType,
+   PrivType privType)
+   
+{
+
+   switch (objectType)
+   {
+      case COM_LIBRARY_OBJECT:
+         return isLibraryPrivType(privType); 
+      case COM_STORED_PROCEDURE_OBJECT:
+      case COM_USER_DEFINED_ROUTINE_OBJECT:
+         return isUDRPrivType(privType); 
+      case COM_SEQUENCE_GENERATOR_OBJECT:
+         return isSequenceGeneratorPrivType(privType); 
+      case COM_BASE_TABLE_OBJECT:
+      case COM_VIEW_OBJECT:
+         return isTablePrivType(privType); 
+      default:
+         return false;
+   }
+
+   return false;
+
+}
+//********************* End of isValidPrivTypeForObject ************************
 

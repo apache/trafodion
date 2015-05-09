@@ -242,11 +242,13 @@ Tom                                                 White Socks
 Tables in Schema TRAFODION._PRIVMGR_MD_
 =======================================
 
+COLUMN_PRIVILEGES
 COMPONENTS
 COMPONENT_OPERATIONS
 COMPONENT_PRIVILEGES
 OBJECT_PRIVILEGES
 ROLE_USAGE
+SCHEMA_PRIVILEGES
 
 --- SQL operation complete.
 >>execute get_owner_privs;
@@ -262,13 +264,15 @@ TRAFODION."T133SCH"."PLAYERS_ON_TEAM"                                           
 TRAFODION."T133SCH"."STANDINGS"                                                                                                                                   BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COLUMN_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENTS"                                                                                                                             BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENT_OPER                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENT_PRIV                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."OBJECT_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."ROLE_USAGE"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."SCHEMA_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
 
---- 13 row(s) selected.
+--- 15 row(s) selected.
 >>
 >>initialize authorization, drop;
 
@@ -285,11 +289,13 @@ TRAFODION."_PRIVMGR_MD_"."ROLE_USAGE"                                           
 Tables in Schema TRAFODION._PRIVMGR_MD_
 =======================================
 
+COLUMN_PRIVILEGES
 COMPONENTS
 COMPONENT_OPERATIONS
 COMPONENT_PRIVILEGES
 OBJECT_PRIVILEGES
 ROLE_USAGE
+SCHEMA_PRIVILEGES
 
 --- SQL operation complete.
 >>select count (*) from components;
@@ -329,13 +335,15 @@ TRAFODION."T133SCH"."PLAYERS_ON_TEAM"                                           
 TRAFODION."T133SCH"."STANDINGS"                                                                                                                                   BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COLUMN_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENTS"                                                                                                                             BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENT_OPER                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENT_PRIV                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."OBJECT_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."ROLE_USAGE"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."SCHEMA_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
 
---- 13 row(s) selected.
+--- 15 row(s) selected.
 >>set parserflags 131072;
 
 --- SQL operation complete.
@@ -347,10 +355,12 @@ TRAFODION."_PRIVMGR_MD_"."ROLE_USAGE"                                           
 Tables in Schema TRAFODION._PRIVMGR_MD_
 =======================================
 
+COLUMN_PRIVILEGES
 COMPONENTS
 COMPONENT_OPERATIONS
 COMPONENT_PRIVILEGES
 OBJECT_PRIVILEGES
+SCHEMA_PRIVILEGES
 
 --- SQL operation complete.
 >>
@@ -360,11 +370,15 @@ OBJECT_PRIVILEGES
 
 *** WARNING[1390] Object TRAFODION."_PRIVMGR_MD_".OBJECT_PRIVILEGES already exists in Trafodion.
 
+*** WARNING[1390] Object TRAFODION."_PRIVMGR_MD_".COLUMN_PRIVILEGES already exists in Trafodion.
+
 *** WARNING[1390] Object TRAFODION."_PRIVMGR_MD_".COMPONENTS already exists in Trafodion.
 
 *** WARNING[1390] Object TRAFODION."_PRIVMGR_MD_".COMPONENT_OPERATIONS already exists in Trafodion.
 
 *** WARNING[1390] Object TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES already exists in Trafodion.
+
+*** WARNING[1390] Object TRAFODION."_PRIVMGR_MD_".SCHEMA_PRIVILEGES already exists in Trafodion.
 
 --- SQL operation complete.
 >>get tables;
@@ -372,11 +386,13 @@ OBJECT_PRIVILEGES
 Tables in Schema TRAFODION._PRIVMGR_MD_
 =======================================
 
+COLUMN_PRIVILEGES
 COMPONENTS
 COMPONENT_OPERATIONS
 COMPONENT_PRIVILEGES
 OBJECT_PRIVILEGES
 ROLE_USAGE
+SCHEMA_PRIVILEGES
 
 --- SQL operation complete.
 >>execute get_owner_privs;
@@ -392,13 +408,15 @@ TRAFODION."T133SCH"."PLAYERS_ON_TEAM"                                           
 TRAFODION."T133SCH"."STANDINGS"                                                                                                                                   BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."COLUMN_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENTS"                                                                                                                             BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENT_OPER                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENT_PRIV                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."OBJECT_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."_PRIVMGR_MD_"."SCHEMA_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION._PRIVMGR_MD_.ROLE_USAGE                                                                                                                                 BT    DB__ROOT                      47                    47
 
---- 13 row(s) selected.
+--- 15 row(s) selected.
 >>
 >>drop table components;
 
@@ -408,10 +426,12 @@ TRAFODION._PRIVMGR_MD_.ROLE_USAGE                                               
 Tables in Schema TRAFODION._PRIVMGR_MD_
 =======================================
 
+COLUMN_PRIVILEGES
 COMPONENT_OPERATIONS
 COMPONENT_PRIVILEGES
 OBJECT_PRIVILEGES
 ROLE_USAGE
+SCHEMA_PRIVILEGES
 
 --- SQL operation complete.
 >>initialize authorization, drop;

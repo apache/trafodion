@@ -155,7 +155,7 @@
 1153 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Column $0~String0 whose size is not set cannot be part of the primary key.
 1154 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot create object $0~TableName because the table size $1~Int0 is too big to fit on the system($2~Int1 partitions).
 1155 ZZZZZ 99999 BEGINNER MINOR DBADMIN Operation cannot be performed because $0~String0 is not a synonym.
-1156 ZZZZZ 99999 BEGINNER MINOR DBADMIN Synonym $0~TableName does not exist or object type is invalid for the current operation.
+1156 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not have columns.
 1157 ZZZZZ 99999 BEGINNER MINOR DBADMIN Synonym object $0~String0 is the same as previous mapping.
 1158 ZZZZZ 99999 BEGINNER MINOR LOGONLY Object $0~TableName already exists.
 1159 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~TableName does not exist.
