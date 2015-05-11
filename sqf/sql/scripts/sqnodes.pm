@@ -1,7 +1,7 @@
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -74,8 +74,8 @@ stmt_type1: attr_node_id
           | attr_roles
 
 stmt_type2: attr_node_name
-          | attr_spares
           | attr_cores
+          | attr_spares
 
 stmt_type3: attr_node_name
           | attr_excl_cores
@@ -332,7 +332,7 @@ sub verifyParse
     {
         if ($debugFlag)
         {
-            print "verifyParse: stmtType=$stmtType, nodeName=$nodeName, spares=@spareList;\n";
+            print "verifyParse: stmtType=$stmtType, nodeName=$nodeName, cores=@cores, spares=@spareList\n";
         }
         if ($nodeName eq "")
         {
@@ -361,6 +361,10 @@ sub verifyParse
 
     elsif ($stmtType == 3)
     {
+        if ($debugFlag)
+        {
+            print "verifyParse: stmtType=$stmtType, nodeName=$nodeName, excluded-cores=@exclCoreList\n";
+        }
         if ($nodeName eq "")
         {
             displayStmt($stmtOk);
@@ -380,6 +384,10 @@ sub verifyParse
 
     elsif ($stmtType = 4)
     {
+        if ($debugFlag)
+        {
+            print "verifyParse: stmtType=$stmtType, rack-name=$encname, node-list=@nodeList\n";
+        }
         if ($encname eq "")
         {
             displayStmt($stmtOk);
@@ -619,7 +627,7 @@ sub validateConfig
             $row = $spares{$key};
             $slRef = $row->[0];
             $clRef = $row->[1];
-            print "   $key => spares=@$slRef, cores=@$clRef\n";
+            print "   $key => cores=@$clRef, spares=@$slRef\n";
         }
 
         print "Excluded cores:\n";
@@ -949,18 +957,17 @@ sub buildRoleSet
 }
 
 # Rules that cannot be validated:
-# 
-# The number of cores must be less than or equal to (<=) the number of cores in the physical node <node-name>
-# The total number of cores <core-list> in a physical node <node-name> must be specified in a node section <config>. All cores must be accounted for in the node section
+#
+# The number of cores must be less than or equal to (<=) the number of cores
+#  in the physical node <node-name>.
+# The total number of cores <core-list> in a physical node <node-name> must be
+#  specified in a node section <config>. All cores must be accounted for in the node section
 
 #
-# Generate cluster configuration
+# Generate cluster configuration database
 #
-sub genConfig
+sub genConfigDb
 {
-    # File handle argument for output file
-    local *SQC = shift;
-
     my $physicalNid = -1;
     my $prevNodeName = "";
     my $row;
@@ -968,9 +975,11 @@ sub genConfig
     my $clRef;
     my $firstCore;
     my $lastCore;
+    my $firstExcl = -1;
+    my $lastExcl = -1;
     my $numProcessors;
 
-    # Generate cluster.conf entries for each logical node
+    # Generate entries for each logical node
     for my $nodeId ( 0 .. $#nodeData )
     {
         $row = $nodeData[$nodeId];
@@ -978,28 +987,31 @@ sub genConfig
         $nodeName = $row->[0];
         if ($nodeName ne $prevNodeName)
         {
-            if (exists $excluded{$prevNodeName})
+            if (exists $excluded{$nodeName})
             {
-                my $xcRef = $excluded{$prevNodeName};
-                my $firstExcl = $xcRef->[0];
-                my $lastExcl = $firstExcl;
+                my $xcRef = $excluded{$nodeName};
+                $firstExcl = $xcRef->[0];
+                $lastExcl = $firstExcl;
                 if (@$xcRef > 1)
                 {
                     $lastExcl = $xcRef->[1];
                 }
-
-                for my $core ($firstExcl .. $lastExcl)
-                {
-                    # Generate one line of cluster.conf
-                    print SQC "$physicalNid:-1:$prevNodeName:-1:$core:excluded\n";
-                }
+            }
+            else
+            {
+                $firstExcl = -1;
+                $lastExcl = -1;
             }
 
             $physicalNid++;
             $prevNodeName = $nodeName;
 
             # Add a row for this physical node in configuration database
-            ::addDbPNode( $physicalNid, $nodeName );
+            if ($debugFlag)
+            {
+                print "Add to pnode table: physicalNid=$physicalNid, node-name=$nodeName, excluded cores=$firstExcl $lastExcl\n";
+            }
+            ::addDbPNode( $physicalNid, $nodeName, $firstExcl, $lastExcl );
 
         }
         
@@ -1022,7 +1034,7 @@ sub genConfig
         my $coreRatio = $numCores / $numProcessors;
         if ($debugFlag)
         {
-            print "node=$nodeName,nodeId=$nodeId,firstCore=$firstCore, lastCore=$lastCore,coreRatio=$coreRatio\n";
+            print "    node=$nodeName,nodeId=$nodeId,firstCore=$firstCore, lastCore=$lastCore,coreRatio=$coreRatio\n";
         }
 
         # List of roles
@@ -1034,9 +1046,6 @@ sub genConfig
         my $procNum = 0;
         for my $core ($firstCore .. $lastCore)
         {
-            # Generate one line of cluster.conf
-            print SQC "$physicalNid:$nodeId:$nodeName:$procNum:$core:@$raRef\n";
-
             if ((($core+1) % $coreRatio) == 0)
             {
                 $procNum++;
@@ -1045,6 +1054,10 @@ sub genConfig
 
         # Add a row for this logical node in configuration database
         my $roleSet = buildRoleSet( $raRef );
+        if ($debugFlag)
+        {
+            print "      Add to lnode table: physicalNid=$physicalNid, nodeId=$nodeId, processors=$numProcessors, cores=$firstCore $lastCore, roles=$roleSet\n";
+        }
         ::addDbLNode( $nodeId, $physicalNid, $numProcessors, $roleSet, $firstCore, $lastCore );
     }
 
@@ -1052,8 +1065,8 @@ sub genConfig
     my $sparesData;
     my $numSpareIds;
 
-    # Generate cluster.conf entries for each spare node
-    foreach my $spareNodeName (keys %spares)
+    # Generate entries for each spare node
+    foreach my $spareNodeName (sort keys %spares)
     {
         $sparesData = $spares{$spareNodeName};
         $slRef = $sparesData->[0];
@@ -1085,8 +1098,31 @@ sub genConfig
             }
         }
 
+        if (exists $excluded{$spareNodeName})
+        {
+            my $xcRef = $excluded{$spareNodeName};
+            $firstExcl = $xcRef->[0];
+            $lastExcl = $firstExcl;
+            if (@$xcRef > 1)
+            {
+                $lastExcl = $xcRef->[1];
+            }
+        }
+        else
+        {
+            $firstExcl = -1;
+            $lastExcl = -1;
+        }
+
         # Spare node gets the next physical node id
         $physicalNid++;
+
+        # Add a row for this physical node in configuration database
+        if ($debugFlag)
+        {
+            print "Add spare to pnode table: physicalNid=$physicalNid, spare-node-name=$spareNodeName, excluded cores=$firstExcl $lastExcl\n";
+        }
+        ::addDbPNode( $physicalNid, $spareNodeName, $firstExcl, $lastExcl );
 
         # Get upper and lower bound for cores in this node.
         $clRef = $sparesData->[1];
@@ -1100,18 +1136,56 @@ sub genConfig
             $lastCore = $clRef->[1];
         }
 
-        # Generate one line of cluster.conf for each core on the spare
-        for my $core ($firstCore .. $lastCore)
-        {
-            print SQC "$physicalNid:-1:$spareNodeName:-1:$core:@spareSet\n";
-        }
-
-        # Add a row for this physical node in configuration database
-        ::addDbPNode( $physicalNid, $spareNodeName );
-
         for (my $i=0; $i<@spareSet; $i++)
         {
-            ::addDbSpare( $physicalNid, $spareSet[$i] );
+            if ($debugFlag)
+            {
+                print "   Add to snode table: spare physicalNid=$physicalNid, spare node-name=$spareNodeName, cores=$firstCore $lastCore, physicalNid=$spareSet[$i]\n";
+            }
+            ::addDbSpare( $physicalNid
+                        , $spareNodeName
+                        , $firstCore
+                        , $lastCore
+                        , $spareSet[$i] );
         }
+    }
+}
+
+#
+# Generate virtual cluster configuration database
+#
+sub genVirtualConfigDb
+{
+    my $node_name = @_[0];
+    my $node_count = @_[1];
+
+    my $nodeIndex = 0;
+    my $firstCore = 0;
+    my $lastCore = 0;
+    my $firstExcl = -1;
+    my $lastExcl = -1;
+    my $numProcessors = 0;
+    my $roleSet = 0;
+
+    $roleSet = $roleSet | 0x0002; # aggregation
+    $roleSet = $roleSet | 0x0004; # storage
+    $roleSet = $roleSet | 0x0001; # connection
+
+
+    # Generate entries for each logical node
+    for ($nodeIndex = 0; $nodeIndex < $node_count; $nodeIndex++) {
+        # Add a row for this physical node in configuration database
+        if ($debugFlag)
+        {
+            print "Add to pnode table: physicalNid=$nodeIndex, node-name=$node_name, excluded cores=$firstExcl $lastExcl\n";
+        }
+        ::addDbPNode( $nodeIndex, $node_name, $firstExcl, $lastExcl );
+
+        # Add a row for this logical node in configuration database
+        if ($debugFlag)
+        {
+            print "      Add to lnode table: physicalNid=$nodeIndex, nodeId=$nodeIndex, processors=$numProcessors, cores=$firstCore $lastCore, roles=$roleSet\n";
+        }
+        ::addDbLNode( $nodeIndex, $nodeIndex, $numProcessors, $roleSet, $firstCore, $lastCore );
     }
 }

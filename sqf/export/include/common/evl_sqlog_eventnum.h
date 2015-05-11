@@ -397,13 +397,17 @@
 /* Module: clusterconf.cxx = 09 */
 
 #define MON_CLUSTERCONF_INIT_1              101090101
+#define MON_CLUSTERCONF_INIT_2              101090102
+#define MON_CLUSTERCONF_INIT_3              101090103
 #define MON_CLUSTERCONF_LOAD_1              101090201
 #define MON_CLUSTERCONF_LOAD_2              101090202
 #define MON_CLUSTERCONF_LOAD_3              101090203
 #define MON_CLUSTERCONF_LOAD_4              101090204
 #define MON_CLUSTERCONF_LOAD_5              101090205
 #define MON_CLUSTERCONF_LOAD_6              101090206
-#define MON_CLUSTERCONF_LOAD_7              101090207
+#define MON_CLUSTERCONF_PROCESS_SNODE_1     101090301
+#define MON_CLUSTERCONF_PROCESS_SNODE_2     101090302
+#define MON_CLUSTERCONF_PROCESS_SNODE_3     101090303
 
 /* Module: lock.cxx = 10 */
 

@@ -308,7 +308,7 @@ $(BINEXPDIR)/%:%.cxx $(INCLUDE) $(CLIENTOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -316,7 +316,7 @@ $(OUTDIR)/%:%.cxx $(INCLUDE) $(CLIENTOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -398,7 +398,7 @@ $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $^
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -406,7 +406,7 @@ $(BINEXPDIR)/shell : $(SHELLOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $^
-	@$(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $^
+	@$(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $(LIBS) $^
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -25,38 +25,16 @@
 
 #include <stdlib.h>
 
+#ifdef USE_CONFIG_DB
+#include <sqlite3.h>
+#endif
+
 #include "lnodeconfig.h"
 #include "pnodeconfig.h"
 
 #define MAX_TOKEN   132
 
-class CTokenizer
-{
-public:
-
-    CTokenizer( void );
-    ~CTokenizer( void );
-
-protected:
-    FILE *confFile_;
-    char *cmdTail_;
-    char buffer_[MPI_MAX_PROCESSOR_NAME+MAX_ROLEBUF_SIZE];
-    char token_[MAX_TOKEN];
-    int  line_;
-
-    char *GetToken ( char *str, char *token, char *delimiter, int maxlen = MAX_TOKEN );
-    virtual bool Initialize( void ){ abort(); } // virtual function must be defined
-    bool  ReadLine( void );
-
-private:
-    char *FindDelimiter( char *str );
-    char *FindEndOfToken( char *str, int  maxlen );
-    char *NormalizeCase( char *token );
-    char *RemoveWhiteSpace( char *str );
-};
-
-class CClusterConfig  : public CTokenizer
-                      , public CPNodeConfigContainer
+class CClusterConfig  : public CPNodeConfigContainer
                       , public CLNodeConfigContainer
 {
 public:
@@ -70,40 +48,49 @@ public:
 
 protected:
 private:
-    bool configReady_; // true when configuration loaded
-    char delimiter_;
-    char nodename_[MPI_MAX_PROCESSOR_NAME];
-    bool excludedNid_;
-    bool excludedProcessor_;
-    bool excludedCores_;
-    bool gatherSpares_;
-    bool newPNodeConfig_;
-    bool newLNodeConfig_;
-    bool spareNode_;
-    int  currProcessor_;
-    int  prevProcessor_;
-    int  currNid_;
-    int  currPNid_;
-    int  prevNid_;
-    int  prevPNid_;
-    int  sparePNid_[MAX_NODES];
-    int  spareIndex_;
-    cpu_set_t currCoreMask_;
-    cpu_set_t prevCoreMask_;
-    cpu_set_t excludedCoreMask_;
-    cpu_set_t prevExcludedCoreMask_;
-    ZoneType  currZoneType_;
-    ZoneType  prevZoneType_;
+
+    bool       configReady_; // true when configuration loaded
+    bool       excludedCores_;
+    bool       newPNodeConfig_;
+    bool       newLNodeConfig_;
+    int        currNid_;
+    int        currPNid_;
+    int        currSPNid_;
+    char       currNodename_[MPI_MAX_PROCESSOR_NAME];
+    cpu_set_t  currExcludedCoreMask_;
+    cpu_set_t  currCoreMask_;
+    int        currProcessor_;
+    ZoneType   currZoneType_;
     CPNodeConfig *currPNodeConfig_;
+    int        prevNid_;
+    int        prevPNid_;
+    int        prevSPNid_;
+    char       prevNodename_[MPI_MAX_PROCESSOR_NAME];
+    cpu_set_t  prevExcludedCoreMask_;
+    cpu_set_t  prevCoreMask_;
+    int        prevProcessor_;
+    ZoneType   prevZoneType_;
     CPNodeConfig *prevPNodeConfig_;
+    int        sparePNid_[MAX_NODES];
+    int        spareIndex_;
     CLNodeConfig *lnodeConfig_;
-    
-    bool  ParsePNid( void );
-    bool  ParseNid( void );
-    bool  ParseNodename( void );
-    bool  ParseProcessor( void );
-    bool  ParseCore( void );
-    bool  ParseRoles( void );
+    sqlite3   *db_;
+
+    void  AddNodeConfiguration( bool spareNode );
+    bool  ProcessLNode( int nid
+                      , int pnid
+                      , const char *nodename
+                      , int excfirstcore
+                      , int exclastcore
+                      , int firstcore
+                      , int lastcore
+                      , int processors
+                      , int roles );
+    bool  ProcessSNode( int pnid
+                      , const char *nodename
+                      , int excfirstcore
+                      , int exclastcore
+                      , int spnid );
 };
 
 #endif /* CLUSTERCONF_H_ */

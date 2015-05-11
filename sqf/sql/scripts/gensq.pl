@@ -75,11 +75,11 @@ sub printScript {
     ($dWhich, @rest) = @_;
 
     if ($dWhich <= 1) {
-	print SQS @rest;
+        print SQS @rest;
     }
 
     if ($dWhich >= 1) {
-	print SQW @rest;
+        print SQW @rest;
     }
 }
 
@@ -142,7 +142,7 @@ sub printInitialLines {
 
     # So we don't re-print the initial lines
     if ($gbInitialLinesPrinted) {
-	return;
+        return;
     }
 
     printScript(1, "#!/bin/sh \n");
@@ -172,13 +172,13 @@ sub printInitialLines {
     $msenv = "$ENV{'SQETC_DIR'}/ms.env";
 
     open (ETC,">>$msenv")
-	or die("unable to open $msenv");
+        or die("unable to open $msenv");
 
     if ($SQ_TRANS_SOCK == 1) {
-	print ETC "SQ_TRANS_SOCK=1\n";
+        print ETC "SQ_TRANS_SOCK=1\n";
     }
     else {
-	print ETC "SQ_TRANS_SOCK=0\n";
+        print ETC "SQ_TRANS_SOCK=0\n";
     }
 
     if ($bVirtualNodes == 1) {
@@ -240,7 +240,7 @@ sub printInitialLines {
     genSQShellStart();
 
     if ($bVirtualNodes == 0) {
-	printScript(1, "\nset CLUSTERNAME=\$CLUSTERNAME\n");
+        printScript(1, "\nset CLUSTERNAME=\$CLUSTERNAME\n");
     }
     printScript(1, "\nset SQ_MBTYPE=$ENV{'SQ_MBTYPE'}\n");
     printScript(1, "set MY_NODES=\$MY_NODES\n");
@@ -262,21 +262,21 @@ sub printScriptEndLines {
 sub genSQShellExit {
 
     if ($gShellStarted == 1) {
-	printScript(1, "\n");
-	printScript(1, "exit\n");
-	printScript(1, "eof\n");
+        printScript(1, "\n");
+        printScript(1, "exit\n");
+        printScript(1, "eof\n");
 
-	$gShellStarted = 0;
+        $gShellStarted = 0;
     }
 }
 
 sub genSQShellStart {
 
     if ($gShellStarted == 0) {
-	printScript(1, "\n");
-	printScript(1, "sqshell -a <<eof\n");
+        printScript(1, "\n");
+        printScript(1, "sqshell -a <<eof\n");
 
-	$gShellStarted = 1;
+        $gShellStarted = 1;
     }
 }
 
@@ -418,25 +418,25 @@ sub genSSMPCommand {
     my $l_retries              = @_[3];
 
     my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_RETRIES=$l_retries,60\n",
-			    $l_process_name_prefix,
-			    $l_nid);
+                            $l_process_name_prefix,
+                            $l_nid);
     printRMSScript(2, $l_string);
 
     my $l_stopString = sprintf("kill {abort} \\\$%s%03d\n", $l_process_name_prefix, $l_nid);
     printRMSStopScript(2, $l_stopString);
 
     my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_ZONES=$l_nid,$l_nid \n",
-			    $l_process_name_prefix,
-			    $l_nid);
+                            $l_process_name_prefix,
+                            $l_nid);
     printRMSScript(2, $l_string);
 
     my $l_string =  sprintf("\texec {type ssmp, nowait, nid $l_nid, name \\\$%s%03d, out stdout_%s%03d } %s\n",
-			    $l_process_name_prefix,
-			    $l_nid,
-			    $l_process_name_prefix,
-			    $l_nid,
-			    $l_program_name
-			    );
+                            $l_process_name_prefix,
+                            $l_nid,
+                            $l_process_name_prefix,
+                            $l_nid,
+                            $l_program_name
+                            );
     printRMSScript(2, $l_string);
 
     my $l_procname = sprintf('$%s%03d', $l_process_name_prefix, $l_nid);
@@ -454,25 +454,25 @@ sub genSSCPCommand {
     my $l_retries              = @_[3];
 
     my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_RETRIES=$l_retries,60\n",
-			    $l_process_name_prefix,
-			    $l_nid);
+                            $l_process_name_prefix,
+                            $l_nid);
     printRMSScript(3, $l_string);
 
     my $l_stopString = sprintf("kill {abort} \\\$%s%03d\n", $l_process_name_prefix, $l_nid);
     printRMSStopScript(3, $l_stopString);
 
     my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_ZONES=$l_nid,$l_nid \n",
-			    $l_process_name_prefix,
-			    $l_nid);
+                            $l_process_name_prefix,
+                            $l_nid);
     printRMSScript(3, $l_string);
 
     my $l_string =  sprintf("\texec {nowait, nid $l_nid, name \\\$%s%03d, out stdout_%s%03d } %s\n",
-			    $l_process_name_prefix,
-			    $l_nid,
-			    $l_process_name_prefix,
-			    $l_nid,
-			    $l_program_name
-			    );
+                            $l_process_name_prefix,
+                            $l_nid,
+                            $l_process_name_prefix,
+                            $l_nid,
+                            $l_program_name
+                            );
     printRMSScript(3, $l_string);
 
     my $l_procname = sprintf('$%s%03d', $l_process_name_prefix, $l_nid);
@@ -557,7 +557,7 @@ sub generateRMS {
     printScript(1, "rmsstart\n");
 
     #printScript(1, "\n! delay 5\n");
-	
+
     printScript(1, "\necho \"Started RMS\"\n");
     printScript(1, "fi\n");
 }
@@ -572,72 +572,71 @@ sub processNodes {
 
     while (<SRC>) {
         next if (/^#/);
-	if (/^_virtualnodes/) {
-	    @words=split(' ',$_);
-	    $gdNumNodes=@words[1];
-	    $bVirtualNodes=1;
-	    my $l_dNodeIndex = 0;
-	    for ($l_dNodeIndex = 0; $l_dNodeIndex < $gdNumNodes; $l_dNodeIndex++) {
-		print SQC "$l_dNodeIndex:$l_dNodeIndex:";
-                print SQC "$g_HostName:";
-		print SQC "0:0:";
-		print SQC "$gRoleEnumEdge,$gRoleEnumAggregation,$gRoleEnumStorage\n";
-		$gNodeIdToZoneIdIndex[$l_dNodeIndex] = $l_dNodeIndex;
+        if (/^_virtualnodes/) {
+            @words=split(' ',$_);
+            $gdNumNodes=@words[1];
+            $bVirtualNodes=1;
+            my $l_dNodeIndex = 0;
 
-		push(@g_EdgeNodes, $l_dNodeIndex);
-	    }
-	}
-	elsif (/^end node/) {
+            print "Generating virtual configuration database, node-name=$g_HostName, virtual nodes count=$gdNumNodes\n";
 
-	    # Just for the time being - this should be an error
-	    if (($bNodeSpecified == 0) &&
-		($bVirtualNodes == 0)) {
-		$gdNumNodes = 1;
-	    }
+            sqnodes::genVirtualConfigDb( $g_HostName, $gdNumNodes );
+            for ($l_dNodeIndex = 0; $l_dNodeIndex < $gdNumNodes; $l_dNodeIndex++) {
+
+                $gNodeIdToZoneIdIndex[$l_dNodeIndex] = $l_dNodeIndex;
+
+                push(@g_EdgeNodes, $l_dNodeIndex);
+            }
+        }
+        elsif (/^end node/) {
+
+            # Just for the time being - this should be an error
+            if (($bNodeSpecified == 0) &&
+                ($bVirtualNodes == 0)) {
+                $gdNumNodes = 1;
+            }
 
             if ($bVirtualNodes == 0)
             {
                 if (sqnodes::validateConfig() == 0)
-                {	  # Valid configuration, generate cluster.conf
+                {   # Valid configuration, generate cluster.conf
                     $gdNumNodes = sqnodes::numNodes();
 
-                    sqnodes::genConfig( *SQC );
+                    sqnodes::genConfigDb( );
                 }
 
-		my $lv_numEdgeNodes = sqnodes::getNumberOfConnNodes();
-		my $lv_node_index = 0;
-		for ($i=1; $i <= $lv_numEdgeNodes; $i++) {
-		    $lv_node_index = sqnodes::getConnNode($i);
-		    push(@g_EdgeNodes, $lv_node_index);
-		}
+                my $lv_numEdgeNodes = sqnodes::getNumberOfConnNodes();
+                my $lv_node_index = 0;
+                for ($i=1; $i <= $lv_numEdgeNodes; $i++) {
+                    $lv_node_index = sqnodes::getConnNode($i);
+                    push(@g_EdgeNodes, $lv_node_index);
+                }
 
-		for ($i=0; $i < $gdNumNodes; $i++) {
-		    push(@g_BackupTSENode, $i);
-		}
-
+                for ($i=0; $i < $gdNumNodes; $i++) {
+                    push(@g_BackupTSENode, $i);
+                }
             }
 
-	    return;
-	}
-	else {
-		if (sqnodes::parseStmt() == 0) {
-		    $bNodeSpecified = 1;
-		    $gdZoneId++;
-		}
-		else {
-		    print "   Error: not a valid node configuration statement.\n";
-		    print "Exiting without generating cluster.conf due to errors.\n";
-		    exit 1;
-		}
-
-	}
+            return;
+        }
+        else {
+            if (sqnodes::parseStmt() == 0) {
+                $bNodeSpecified = 1;
+                $gdZoneId++;
+            }
+            else {
+                print "   Error: not a valid node configuration statement.\n";
+                print "Exiting without generating cluster.conf due to errors.\n";
+                exit 1;
+            }
+        }
     }
 }
 
 sub printZoneList {
 
     if (!$gDebug) {
-	return;
+        return;
     }
 
     my $i = 0;
@@ -646,72 +645,72 @@ sub printZoneList {
     print "Current Zone ID = $gdZoneId\n";
 
     for ($i = 0; $i <= $#g_zonelist; $i++) {
-	print "g_zonelist[$i]=", $g_zonelist[$i], "\n";
+        print "g_zonelist[$i]=", $g_zonelist[$i], "\n";
     }
 }
 
 sub processFloatingIp {
     while (<SRC>) {
         if (/^process/) {
-           @this_line = split(/;/, $_);
-	   if($#this_line >= 2) {
-             @external_ip = split(/=/,@this_line[2]);
+            @this_line = split(/;/, $_);
+        if($#this_line >= 2) {
+            @external_ip = split(/=/,@this_line[2]);
 #            print "external_ip @external_ip\n";
-             if (($#external_ip >= 1) && (@external_ip[0] eq "external-ip")) {
+            if (($#external_ip >= 1) && (@external_ip[0] eq "external-ip")) {
                 $gFloatingExternalIp = @external_ip[1];
                 $gFloatingExternalIp =~ s/\s+$//; # remove trailing spaces, including new-line characters
 #                print "Floating External IP  $gFloatingExternalIp\n";
-             }
-           }
+                }
+            }
         }
-	elsif(/^floating_ip_node_id/) {
-	    @this_line = split(' ',$_);
-	    if($#this_line > 0) {
-		$gFloatingNodeId=@this_line[1];
-		# Validate the node id
-		if (($gFloatingNodeId < 0) || ($gFloatingNodeId >= $gdNumNodes)) {
-		    print "Error: Invalid Floating IP Node Id provided. Please check your config file.\n";
-		    print "Exiting..\n";
-		    exit $BDR_ERROR;
-		}
+        elsif(/^floating_ip_node_id/) {
+            @this_line = split(' ',$_);
+            if($#this_line > 0) {
+                $gFloatingNodeId=@this_line[1];
+                # Validate the node id
+                if (($gFloatingNodeId < 0) || ($gFloatingNodeId >= $gdNumNodes)) {
+                    print "Error: Invalid Floating IP Node Id provided. Please check your config file.\n";
+                    print "Exiting..\n";
+                    exit $BDR_ERROR;
+                }
                 $lv_bEdgeNodeFound = 0;
-		for ($lv_i = 0; $lv_i < $#g_EdgeNodes + 1 ; $lv_i++) {
-		    if (@g_EdgeNodes[$lv_i] == $gFloatingNodeId) {
-			$lv_bEdgeNodeFound = 1;
-#			print "$lv_i : @g_EdgeNodes[$lv_i] \n";
-			break;
-		    }
-		}
-		if ($lv_bEdgeNodeFound == 0) {
-		    print "Error: Floating IP Node Id : $gFloatingNodeId is NOT an edge node. Please check your config file.\n";
-		    print "Exiting..\n";
-		    exit $BDR_ERROR;
-		}
-	    }
-	}
-	elsif(/^floating_ip_failover_node_id/) {
-	    @this_line = split(' ',$_);
-	    if($#this_line > 0) {
-		$gFloatingFailoverNodeId=@this_line[1];
-		# print "Floating IP Failover Node Id = $gFloatingFailoverNodeId \n";
-		# Validate the node id
-		if (($gFloatingFailoverNodeId < 0) || ($gFloatingFailoverNodeId >= $gdNumNodes)) {
-		    print "Error: Invalid Floating IP Failover Node Id provided. Please check your config file.\n";
-		    print "Exiting..\n";
-		    exit $BDR_ERROR;
-		}
+                for ($lv_i = 0; $lv_i < $#g_EdgeNodes + 1 ; $lv_i++) {
+                    if (@g_EdgeNodes[$lv_i] == $gFloatingNodeId) {
+                        $lv_bEdgeNodeFound = 1;
+#                        print "$lv_i : @g_EdgeNodes[$lv_i] \n";
+                        break;
+                    }
+                }
+                if ($lv_bEdgeNodeFound == 0) {
+                    print "Error: Floating IP Node Id : $gFloatingNodeId is NOT an edge node. Please check your config file.\n";
+                    print "Exiting..\n";
+                    exit $BDR_ERROR;
+                }
+            }
+        }
+        elsif(/^floating_ip_failover_node_id/) {
+            @this_line = split(' ',$_);
+            if($#this_line > 0) {
+                $gFloatingFailoverNodeId=@this_line[1];
+                # print "Floating IP Failover Node Id = $gFloatingFailoverNodeId \n";
+                # Validate the node id
+                if (($gFloatingFailoverNodeId < 0) || ($gFloatingFailoverNodeId >= $gdNumNodes)) {
+                    print "Error: Invalid Floating IP Failover Node Id provided. Please check your config file.\n";
+                    print "Exiting..\n";
+                    exit $BDR_ERROR;
+                }
                 $lv_bEdgeNodeFound = 0;
-		for ($lv_i = 0; $lv_i < $#g_EdgeNodes + 1 ; $lv_i++) {
-		    if (@g_EdgeNodes[$lv_i] == $gFloatingFailoverNodeId) {
-			$lv_bEdgeNodeFound = 1;
-#			print "$lv_i : @g_EdgeNodes[$lv_i] \n";
-			break;
-	            }
-		}
-		if ($lv_bEdgeNodeFound == 0) {
-		    print "Error: Floating IP  Failover Node Id : $gFloatingFailoverNodeId is NOT an edge node. Please check your config file.\n";
-		    print "Exiting..\n";
-		    exit $BDR_ERROR;
+                for ($lv_i = 0; $lv_i < $#g_EdgeNodes + 1 ; $lv_i++) {
+                    if (@g_EdgeNodes[$lv_i] == $gFloatingFailoverNodeId) {
+                        $lv_bEdgeNodeFound = 1;
+#                        print "$lv_i : @g_EdgeNodes[$lv_i] \n";
+                        break;
+                    }
+                }
+                if ($lv_bEdgeNodeFound == 0) {
+                    print "Error: Floating IP  Failover Node Id : $gFloatingFailoverNodeId is NOT an edge node. Please check your config file.\n";
+                    print "Exiting..\n";
+                    exit $BDR_ERROR;
                 }
             }
         }
@@ -723,12 +722,12 @@ sub processFloatingIp {
                exit $BDR_ERROR;
            }
            if ($gFloatingExternalIp eq "") {
-	       print "Error: bdr_ip_address is not provided, Please check your config file.\n";
-	       print "Exiting..\n";
+               print "Error: bdr_ip_address is not provided, Please check your config file.\n";
+               print "Exiting..\n";
                exit $BDR_ERROR;
            }
            return;
-	}
+        }
     }
 }
 
@@ -743,40 +742,37 @@ sub printInitLinesAuxFiles {
 sub openFiles {
 
     open (SRC,"<$infile")
-	or die("unable to open $infile");
+        or die("unable to open $infile");
 
     open (SQS,">$coldscriptFileName")
-	or die("unable to open $coldscriptFileName");
-
-    open (SQC,">$clusterconfFileName")
-	or die("unable to open $clusterconfFileName");
+        or die("unable to open $coldscriptFileName");
 
     open (IDTM,">$startIDTM")
-	or die("unable to open $startIDTM");
+        or die("unable to open $startIDTM");
 
     open (TM,">$startTM")
-	or die("unable to open $startTM");
+        or die("unable to open $startTM");
 
     open (RMS,">$startRMS")
-	or die("unable to open $startRMS");
+        or die("unable to open $startRMS");
 
     open (RMSS,">$stopRMS")
-	or die("unable to open $stopRMS");
+        or die("unable to open $stopRMS");
 
     open (RMSC,">$checkRMS")
-	or die("unable to open $checkRMS");
+        or die("unable to open $checkRMS");
 
     open (SSMP,">$startSSMP")
-	or die("unable to open $startSSMP");
+        or die("unable to open $startSSMP");
 
     open (SSMPS,">$stopSSMP")
-	or die("unable to open $stopSSMP");
+        or die("unable to open $stopSSMP");
 
     open (SSCP,">$startSSCP")
-	or die("unable to open $startSSCP");
+        or die("unable to open $startSSCP");
 
     open (SSCPS,">$stopSSCP")
-	or die("unable to open $stopSSCP");
+        or die("unable to open $stopSSCP");
 
 #    my $dbargs = {AutoCommit => 1,
 #                  PrintError => 1};
@@ -948,15 +944,90 @@ sub addDbPersistProc {
     $insDbPersistStmt->execute;
 }
 
+# Physical node table
+sub addDbPNode {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $insDbPNodeStmt = $DBH->prepare("insert into pnode values (?, ?, ?, ?)");
+
+    my $nodeId          = @_[0];
+    my $nodeName        = @_[1];
+    my $firstExcCore    = @_[2];
+    my $lastExcCore     = @_[3];
+
+    $insDbPNodeStmt->bind_param(1, $nodeId);
+    $insDbPNodeStmt->bind_param(2, $nodeName);
+    $insDbPNodeStmt->bind_param(3, $firstExcCore);
+    $insDbPNodeStmt->bind_param(4, $lastExcCore);
+
+    $insDbPNodeStmt->execute;
+}
+
+# Logical node table
+sub addDbLNode {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $insDbLNodeStmt = $DBH->prepare("insert into lnode values (?, ?, ?, ?, ? , ?)");
+
+    my $lNodeId       = @_[0];
+    my $pNodeId       = @_[1];
+    my $numProcessors = @_[2];
+    my $roleSet       = @_[3];
+    my $firstCore     = @_[4];
+    my $lastCore      = @_[5];
+
+    $insDbLNodeStmt->bind_param(1, $lNodeId);
+    $insDbLNodeStmt->bind_param(2, $pNodeId);
+    $insDbLNodeStmt->bind_param(3, $numProcessors);
+    $insDbLNodeStmt->bind_param(4, $roleSet);
+    $insDbLNodeStmt->bind_param(5, $firstCore);
+    $insDbLNodeStmt->bind_param(6, $lastCore);
+
+    $insDbLNodeStmt->execute;
+}
+
+# Logical node table
+sub addDbSpare {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $insDbSpareStmt = $DBH->prepare("insert into snode values (?, ?, ?, ?, ?)");
+
+    my $pNodeId       = @_[0];
+    my $nodeName      = @_[1];
+    my $firstCore     = @_[2];
+    my $lastCore      = @_[3];
+    my $sparedpNid    = @_[4];
+
+    $insDbSpareStmt->bind_param(1, $pNodeId);
+    $insDbSpareStmt->bind_param(2, $nodeName);
+    $insDbSpareStmt->bind_param(3, $firstCore);
+    $insDbSpareStmt->bind_param(4, $lastCore);
+    $insDbSpareStmt->bind_param(5, $sparedpNid);
+
+    $insDbSpareStmt->execute;
+}
+
 sub endGame {
 
     open (SQSH,">$sqshell")
-	or die("unable to open $sqshell");
+        or die("unable to open $sqshell");
     printInitLinesAuxFiles (SQSH);
 
     if ($bVirtualNodes == 1) {
-	print SQSH "export SQ_VIRTUAL_NODES=$gdNumNodes\n";
-	print SQSH "export SQ_VIRTUAL_NID=0\n";
+        print SQSH "export SQ_VIRTUAL_NODES=$gdNumNodes\n";
+        print SQSH "export SQ_VIRTUAL_NID=0\n";
     }
     print SQSH "\nshell \$1 \$2 \$3 \$4 \$5 \$6 \$7 \$8 \$9\n";
 
@@ -977,7 +1048,6 @@ sub endGame {
 
     close(SRC);
     close(SQS);
-    close(SQC);
     close(SQSH);
 
     close(DBZ);
@@ -1057,25 +1127,25 @@ openFiles;
 
 while (<SRC>) {
     if (/^begin node/) {
-	processNodes;
-	printInitialLines;
+        processNodes;
+        printInitialLines;
     }
     elsif (/^begin floating_ip/) {
         processFloatingIp;
     }
     elsif (/^%/) {
-	printSQShellCommand;
+        printSQShellCommand;
     }
 }
 
 #printZoneList;
 
 
-    genIDTMSrv();
+genIDTMSrv();
 
-    genDTM();
+genDTM();
 
-    generateRMS();
+generateRMS();
 
 
 printScriptEndLines;

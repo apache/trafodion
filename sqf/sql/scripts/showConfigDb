@@ -2,7 +2,7 @@
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -23,15 +23,27 @@
 
 function Usage
 {
-    echo "Usage: ${0##/*/} -c | --cluster | -p | --process | -q | --persistent | -r | --procdef | -u | --uniqstr"
+    echo "Usage: ${0##/*/} -c | --cluster | -n | --node  | -p | --process | -q | --persistent | -r | --procdef | -u | --uniqstr | -l | --lnode | -s | --snode | -x | --xnode | -h"
     echo
     echo "-c, --cluster     Displays cluster wide registry values"
+    echo "-n, --node        Displays all node configuration values"
+    echo "-n<name>          Displays node specific configuration values"
+    echo "--node=<name>     Displays node specific configuration values"
     echo "-p, --process     Displays all process specific registry values"
     echo "-p<proc>          Displays specific process registry values"
     echo "--process=<proc>  Displays specific process registry values"
     echo "-q, --persistent  Displays persistent processes"
     echo "-r, --procdef     Displays process defintions"
     echo "-u, --uniqstr     Displays unique strings"
+    echo "-l, --lnode       Displays all logical node configuration values"
+    echo "-l<nid>           Displays logical node specific configuration values"
+    echo "--lnode=<nid>     Displays logical node specific configuration values"
+    echo "-s, --snode       Displays all spare node configuration values"
+    echo "-s<name>          Displays spare node specific configuration values"
+    echo "--snode=<name>    Displays spare node specific configuration values"
+    echo "-x, --xnode       Displays all physical node configuration values"
+    echo "-x<name>          Displays physical node specific configuration values"
+    echo "--xnode=<name>    Displays physical node specific configuration values"
     echo "-h, --help        Displays this help message"
 }
 
@@ -44,6 +56,211 @@ sqlite3 sqconfig.db <<EOF
 .headers off
 .mode list
 select k.keyName, "=", d.dataValue from monRegKeyName k, monRegClusterData d where k.keyId = d.keyId;
+.quit
+EOF
+
+}
+
+function monNodeSpecificConfig
+{
+
+# Node configuration: for specific node
+
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select "nid=", l.lNid \
+   , ", pnid=", p.pNid \
+   , ", node-name=", p.nodeName \
+   , ", cores=", l.firstCore, "-", l.lastCore \
+   , ", processors=", l.processors \
+   , ", roles=", l.roles \
+  from pnode p, lnode l \
+    where p.pNid = l.pNid and p.nodeName = "$1";
+select "pnid=", s.pNid \
+   , ", node-name=", s.nodeName \
+   , ", cores=", s.firstCore, "-", s.lastCore \
+   , ", spares=", s.spNid \
+  from snode s, pnode p \
+    where s.pNid = p.pNid \
+      and s.nodeName = "$1";
+select "pnid=", p.pNid \
+   , ", node-name=", p.nodeName \
+   , ", excluded-cores=", p.excFirstCore, "-", p.excLastCore \
+  from pnode p \
+    where (p.excFirstCore != -1 or p.excLastCore != -1) \
+      and p.nodeName = "$1";
+.quit
+EOF
+
+}
+
+function monNodeConfig
+{
+
+# Node configuration: for all nodes
+
+echo "Logical nodes:"
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select "nid=", l.lNid \
+   , ", pnid=", p.pNid \
+   , ", node-name=", p.nodeName \
+   , ", cores=", l.firstCore, "-", l.lastCore \
+   , ", processors=", l.processors \
+   , ", roles=", l.roles \
+  from pnode p, lnode l \
+    where p.pNid = l.pNid;
+.quit
+EOF
+
+echo "Spare nodes:"
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select "pnid=", s.pNid \
+   , ", node-name=", s.nodeName \
+   , ", cores=", s.firstCore, "-", s.lastCore \
+   , ", spares=", s.spNid \
+  from pnode p, snode s \
+    where p.pNid = s.pNid;
+.quit
+EOF
+
+echo "Excluded cores nodes:"
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select "pnid=", p.pNid \
+   , ", node-name=", p.nodeName \
+   , ", excluded-cores=", p.excFirstCore, " ", p.excLastCore \
+  from pnode p \
+    where p.excFirstCore != -1 or p.excLastCore != -1;
+.quit
+EOF
+
+}
+
+function monLNodeSpecificConfig
+{
+
+# Logical Node configuration: for specific node
+
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select "nid=", l.lNid \
+   , ", pnid=", l.pNid \
+   , ", cores=", l.firstCore, "-", l.lastCore \
+   , ", processors=", l.processors \
+   , ", roles=", l.roles \
+  from lnode l \
+    where l.lNid = "$1";
+.quit
+EOF
+
+}
+
+function monLNodeConfig
+{
+
+# Node configuration: for all nodes
+
+echo "Logical nodes:"
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select "nid=", l.lNid \
+   , ", pnid=", l.pNid \
+   , ", cores=", l.firstCore, "-", l.lastCore \
+   , ", processors=", l.processors \
+   , ", roles=", l.roles \
+  from lnode l;
+.quit
+EOF
+
+}
+
+function monSNodeSpecificConfig
+{
+
+# Spare Node configuration: for specific node
+
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select "pnid=", s.pNid \
+   , ", node-name=", s.nodeName \
+   , ", cores=", s.firstCore, "-", s.lastCore \
+   , ", spares=", s.spNid \
+  from snode s \
+    where s.nodeName = "$1";
+.quit
+EOF
+
+}
+
+function monSNodeConfig
+{
+
+# Spare Node configuration: for all nodes
+
+echo "Spare nodes:"
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select "pnid=", s.pNid \
+   , ", node-name=", s.nodeName \
+   , ", cores=", s.firstCore, "-", s.lastCore \
+   , ", spares=", s.spNid \
+  from snode s;
+.quit
+EOF
+
+}
+
+function monPNodeSpecificConfig
+{
+
+# Physical Node configuration: for specific node
+
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select "pnid=", p.pNid \
+   , ", node-name=", p.nodeName \
+   , ", excluded-cores=", p.excFirstCore, " ", p.excLastCore \
+  from pnode p \
+    where p.nodeName = "$1";
+.quit
+EOF
+
+}
+
+function monPNodeConfig
+{
+
+# Physical Node configuration: for all nodes
+
+echo "Physical nodes:"
+sqlite3 sqconfig.db <<EOF
+.separator ""
+.headers off
+.mode list
+select "pnid=", p.pNid \
+   , ", node-name=", p.nodeName \
+   , ", excluded-cores=", p.excFirstCore, " ", p.excLastCore \
+  from pnode p;
 .quit
 EOF
 
@@ -110,7 +327,7 @@ EOF
 }
 
 # options may be followed by one colon to indicate they have a required argument
-if ! options=$(getopt -o chp::qru -l cluster,process::,persistent,procdef,uniqstr,help -- "$@")
+if ! options=$(getopt -o cl::n::hp::qrus::x:: -l cluster,lnode::,node::,snode::,xnode::,process::,persistent,procdef,uniqstr,help -- "$@")
 then
     # something went wrong, getopt will put out an error message for us
     Usage
@@ -130,6 +347,15 @@ do
             monRegClusterData
             ;;
 
+        -n|--node)
+            if [[ -n "$2" ]];
+            then
+                monNodeSpecificConfig $2
+            else
+                monNodeConfig
+            fi
+            ;;
+
         -p|--process)
             if [[ -n "$2" ]];
             then
@@ -137,7 +363,6 @@ do
             else
                 monRegProcData
             fi
-
             ;;
 
         -q|--persistent)
@@ -152,6 +377,33 @@ do
             uniqueStrings
             ;;
 
+        -l|--lnode)
+            if [[ -n "$2" ]];
+            then
+                monLNodeSpecificConfig $2
+            else
+                monLNodeConfig
+            fi
+            ;;
+
+        -s|--snode)
+            if [[ -n "$2" ]];
+            then
+                monSNodeSpecificConfig $2
+            else
+                monSNodeConfig
+            fi
+            ;;
+
+        -x|--xnode)
+            if [[ -n "$2" ]];
+            then
+                monPNodeSpecificConfig $2
+            else
+                monPNodeConfig
+            fi
+            ;;
+
         -h|--help)
             Usage
             ;;
@@ -159,4 +411,3 @@ do
     esac
     shift
 done
-

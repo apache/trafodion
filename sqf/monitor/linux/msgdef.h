@@ -32,6 +32,7 @@
 #define USE_ONE_SYNC_RECV_BUFFER
 #define NO_OPEN_CLOSE_NOTICES
 //#define USE_MEMORY_LOADBALANCING
+#define USE_CONFIG_DB
 
 #define VERSION "Monitor v0.12 2-17-2009" 
 
