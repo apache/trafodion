@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -986,6 +986,7 @@ ssize_t SB_Trans::Sock_User_Common::read(void   *pp_buf,
     if (gv_ms_trace_sock)
         trace_printf("%s%s read started on sock=%d, count=%d\n",
                      ip_where, WHERE, iv_sock, static_cast<int>(pv_count));
+if ((int) pv_count < 0) abort();
     lv_rcnt = ::read(iv_sock, pp_buf, pv_count);
     lv_errno = errno;
     if (pp_errno != NULL)
