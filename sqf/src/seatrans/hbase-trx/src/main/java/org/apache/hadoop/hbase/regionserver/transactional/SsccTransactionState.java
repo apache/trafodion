@@ -540,4 +540,26 @@ public class SsccTransactionState extends TransactionState{
         System.arraycopy(byte_2, 0, byte_3, byte_1.length, byte_2.length);
         return byte_3;
     }
+    
+    /**
+     * before put ,check whether there has delete previous. if true remove the del
+     */
+    public void removeDelBeforePut(Put put, boolean stateless) {
+        if (LOG.isTraceEnabled())
+	    LOG.trace("removeDelBeforePut, del list size : "+delRows.size());
+	byte[] putRow = put.getRow();
+	long putTimeStamp = startId_;
+			
+	for(int i=delRows.size()-1;i>=0;i--){
+	    byte[] delRow = delRows.get(i).getRow();
+	    long delTimeStamp = delRows.get(i).getTimeStamp();
+	    if (LOG.isTraceEnabled()){
+	        LOG.trace("putRow : "+Bytes.toString(putRow)+" , timeStamp : "+putTimeStamp);
+	        LOG.trace("delRow : "+Bytes.toString(delRow)+" , timeStamp : "+delTimeStamp);
+	    }
+	    if (Arrays.equals(putRow, delRow) ) {
+	        delRows.remove(i);
+	    }
+	}
+    }
 }
