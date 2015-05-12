@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -406,12 +406,39 @@ void srv_process_sm_process_death_chk() {
 }
 
 void srv_process_sm_shutdown() {
-    srv_process_sm(MS_MsgType_Shutdown);
+    const char *str_act;
+    const char *str_sm_pd;
+    const char *str_sm_s;
+    bool        xchk;
+
+    // there might be a process death before shutdown
+    xchk = chk;
+    chk = false;
+    srv_process_sm(-1);
+    switch (sys_msg->type) {
+    case MS_MsgType_ProcessDeath:
+        srv_process_sm(MS_MsgType_Shutdown);
+        break;
+    case MS_MsgType_Shutdown:
+        break;
+    default:
+        str_sm_pd = srv_sm_lookup(MS_MsgType_ProcessDeath);
+        str_sm_s = srv_sm_lookup(MS_MsgType_Shutdown);
+        str_act = srv_sm_lookup(sys_msg->type);
+        printf("expecting msg-type=%d(%s)/%d(%s), actual msg-type=%d(%s)\n",
+               MS_MsgType_ProcessDeath, str_sm_pd,
+               MS_MsgType_Shutdown, str_sm_s,
+               sys_msg->type, str_act);
+        assert((sys_msg->type == MS_MsgType_ProcessDeath) ||
+               (sys_msg->type == MS_MsgType_Shutdown));
+        break;
+    }
     if (chk) {
         assert(sys_msg->u.shutdown.nid == snid);
         assert(sys_msg->u.shutdown.pid == -1);
         assert(sys_msg->u.shutdown.level == MS_Mon_ShutdownLevel_Normal);
     }
+    chk = xchk;
 }
 
 const char *srv_sm_lookup(int mt) {

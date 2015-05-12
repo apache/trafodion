@@ -1,7 +1,7 @@
 #!/bin/sh
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,4 +17,20 @@
 #
 # @@@ END COPYRIGHT @@@
 
+delay=0
+for x in $*; do
+	if [ $x = "-shutdown" ]; then
+		# shutdown takes monitor about another second
+		# without this delay, the next test will
+		# find that the port file is missing
+		# i.e. a shutdown run will rename the port file
+		# during the next run.
+		# This delay will cause the rename to happen before
+		# the next test is run
+		delay=1
+	fi
+done
 goshell31d t164fs $*
+if [ $delay = 1 ]; then
+	sleep 1
+fi

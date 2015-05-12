@@ -42,7 +42,7 @@ PROGS		= t2 t3 t4 t5 t6 t9 t14 t15 t16 t17 t18 t19 \
 		       t231      t233 t234 t235           t238      \
 		  t240 t241 t242           t245 t246           t249 \
 		  t250           t253                               \
-		       t261 t262 t263           t266           \
+		       t261 t262                t266           \
 		                                     t277      t279 \
 		  t280 t281 t282 t284 t285 \
 		  tcheck tsock ttee
@@ -94,7 +94,7 @@ PROGSI		= t2fs t3ms t4ms \
 		  t240ms t241ms t242fs \
 		  t245ms t246ms t249ms \
 		  t250ms t253ms \
-		  t261ms t262ms t263ms \
+		  t261ms t262ms \
 		  t266ms \
 	          t277fs t279ms \
 	          t280fs t281ms t282ms t284cli t284srv t285fs
@@ -927,10 +927,6 @@ t261ms: $(OUTDIR)/t261ms.o $(TMS)
 
 t262: $(CHK) t262ms
 t262ms: $(OUTDIR)/t262ms.o $(TMS)
-	$(LINKITCXX) -o $@ $< $(RMS)
-
-t263: $(CHK) t263ms
-t263ms: $(OUTDIR)/t263ms.o $(TMS)
 	$(LINKITCXX) -o $@ $< $(RMS)
 
 t266: $(CHK) t266ms
