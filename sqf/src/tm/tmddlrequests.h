@@ -24,6 +24,17 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
 JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_dropTableReq
   (JNIEnv *, jobject, jbyteArray, jlong);
 
+
+
+/*
+ * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
+ * Method:    dropTableReq
+ * Signature: ([BJ)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_truncateOnAbortReq
+  (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblname, jlong pv_transid);
+
+
 #ifdef __cplusplus
 }
 #endif

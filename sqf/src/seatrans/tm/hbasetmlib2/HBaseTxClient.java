@@ -607,6 +607,35 @@ public class HBaseTxClient {
       return TransReturnCode.RET_OK.getShort();
    }
 
+   public short callRegisterTruncateOnAbort(long transactionId, byte[] pv_tblname) throws Exception
+   {
+      TransactionState ts;
+      String strTblName = new String(pv_tblname, "UTF-8");
+
+      if (LOG.isTraceEnabled()) LOG.trace("Enter callRegisterTruncateOnAbort, txid: [" + transactionId + "],  tablename: " + strTblName);
+
+      ts = mapTransactionStates.get(transactionId);
+      if(ts == null) {
+         LOG.error("Returning from HBaseTxClient:callRegisterTruncateOnAbort, (null tx) retval: " + TransReturnCode.RET_NOTX.getShort()  + " txid: " + transactionId);
+         return TransReturnCode.RET_NOTX.getShort();
+      }
+
+      try {
+         trxManager.registerTruncateOnAbort(ts, strTblName);
+      }
+      catch (Exception e) {
+         if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callRegisterTruncateOnAbort exception trxManager.registerTruncateOnAbort, retval: " +
+            TransReturnCode.RET_EXCEPTION.toString() +" txid: " + transactionId +" Exception: " + e);
+         StringWriter sw = new StringWriter();
+         PrintWriter pw = new PrintWriter(sw);
+         e.printStackTrace(pw);
+         String msg = "HBaseTxClient registerTruncateOnAbort call error ";
+         LOG.error(msg + " : " + sw.toString());
+         throw new Exception(msg);
+      }
+      return TransReturnCode.RET_OK.getShort();
+   }
+
    public short callDropTable(long transactionId, byte[] pv_tblname) throws Exception
    {
       TransactionState ts;

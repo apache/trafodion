@@ -38,6 +38,7 @@ import org.apache.hadoop.hbase.ServerName;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
@@ -1613,9 +1614,10 @@ public class TransactionManager {
             //Disabled tables will ultimately be deleted in commit phase.
             ArrayList<String> createList = new ArrayList<String>(); //This list is ignored.
             ArrayList<String> dropList = new ArrayList<String>();
+            ArrayList<String> truncateList = new ArrayList<String>();
             StringBuilder state = new StringBuilder ();
             try {
-                tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList);
+                tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList, truncateList);
             }
             catch(Exception e){
                 LOG.error("exception in doPrepare getRow: " + e);
@@ -1868,11 +1870,13 @@ public class TransactionManager {
         	//if tables were created, then nothing else needs to be done.
         	//if tables were recorded dropped, then they need to be physically dropped.
         	//Tables recorded dropped would already be disabled as part of prepare commit.
+            //If tables were recorded truncate, nothing to be done during doCommit phase.
         	ArrayList<String> createList = new ArrayList<String>(); //This list is ignored.
         	ArrayList<String> dropList = new ArrayList<String>();
+            ArrayList<String> truncateList = new ArrayList<String>();
         	StringBuilder state = new StringBuilder ();
         	try {
-        		tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList);
+        		tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList, truncateList);
         	}
         	catch(Exception e){
         		LOG.error("exception in doCommit getRow: " + e);
@@ -2033,15 +2037,38 @@ public class TransactionManager {
 			//if tables were created, then they need to be dropped.
 			ArrayList<String> createList = new ArrayList<String>();
 			ArrayList<String> dropList = new ArrayList<String>();
+            ArrayList<String> truncateList = new ArrayList<String>();
 			StringBuilder state = new StringBuilder ();
 			try {
-				tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList);
+				tmDDL.getRow(transactionState.getTransactionId(), state, createList, dropList, truncateList);
 			}
 			catch(Exception e){
 				LOG.error("exception in abort getRow: " + e);
 				if(LOG.isTraceEnabled()) LOG.trace("exception in abort getRow: txID: " + transactionState.getTransactionId());
 				state.append("INVALID"); //to avoid processing further down this path.
 			}
+
+
+            // if tables were recorded to be truncated on an upsert using load,
+            // then they will be truncated on an abort transaction
+            if(state.toString().equals("VALID") && truncateList.size() > 0)
+            {
+                if(LOG.isTraceEnabled()) LOG.trace("truncateList -- ENTRY txID: " + transactionState.getTransactionId());
+
+                Iterator<String> ci = truncateList.iterator();
+                while (ci.hasNext())
+                {
+                    try {
+                        truncateTable(transactionState, ci.next());
+                    }
+                    catch(Exception e){
+                        String msg = "ERROR in abort, phase: truncateTable";
+                        LOG.error(msg + " : " + e);
+                        if(LOG.isTraceEnabled()) LOG.trace("exception in abort, phase:truncateTable: txID: " + transactionState.getTransactionId());
+                        throw new IOException(msg);
+                    }
+                }
+            }
 			
 			if(state.toString().equals("VALID") && createList.size() > 0)
 			{
@@ -2084,7 +2111,7 @@ public class TransactionManager {
 					}
 				}
 			}
-			
+
 			//update TDDL post operation
 			try{
 				tmDDL.putRow(transactionState.getTransactionId(), "INVALID");
@@ -2148,8 +2175,31 @@ public class TransactionManager {
 
     }
 
+    public void registerTruncateOnAbort(final TransactionState transactionState, String tblName)
+            throws MasterNotRunningException, Exception {
+        if (LOG.isTraceEnabled()) LOG.trace("registerTruncateOnAbort ENTRY, tableName: " + tblName);
+
+        // register the truncate on abort to TmDDL
+        try {
+            // Set transaction state object as participating in ddl transaction.
+            transactionState.setDDLTx(true);
+
+            // add truncate record to TmDDL
+            tmDDL.putRow(transactionState.getTransactionId(), "TRUNCATE", tblName);
+        }
+        catch (Exception e) {
+            if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: registerTruncateOnAbort exception " + e);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String msg = "registerTruncateOnAbort error for table: " + tblName;
+            LOG.error(msg + sw.toString());
+            throw new Exception(msg);
+        }
+    }
+
     public void dropTable(final TransactionState transactionState, String tblName)
-            throws MasterNotRunningException, IOException {
+            throws MasterNotRunningException, Exception {
 
         if (LOG.isTraceEnabled()) LOG.trace("dropTable ENTRY, tableName: " + tblName);
 
@@ -2168,14 +2218,17 @@ public class TransactionManager {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
-            LOG.error("dropTable error: " + sw.toString());
+            String msg = "dropTable error for table: " + tblName;
+            LOG.error(msg + ":" + sw.toString());
+            throw new Exception(msg);
         }
     }
 	
 	//Called only by Abort or Commit processing.
 	public void deleteTable(final TransactionState transactionState, final String tblName, final boolean alsoDisable )
             throws MasterNotRunningException, IOException, Exception{
-        if (LOG.isTraceEnabled()) LOG.trace("deleteTable ENTRY, transactionState: " + transactionState);
+        if (LOG.isTraceEnabled()) LOG.trace("deleteTable ENTRY, transactionState: " + transactionState + 
+            "table: " + tblName);
 
         try {
 			if(alsoDisable)
@@ -2186,7 +2239,7 @@ public class TransactionManager {
         }
         catch (Exception e) {
             if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: deleteTable exception " + e);
-            String msg = "ERROR deleteTable exception: while calling hadmin deleteTable method";
+            String msg = "ERROR deleteTable exception: while calling hadmin deleteTable method for table: " + tblName;
             LOG.error(msg + ":" + e);
             throw new Exception(msg);
         }
@@ -2195,30 +2248,57 @@ public class TransactionManager {
 	//Called only by Abort processing.
 	public void enableTable(final TransactionState transactionState, String tblName)
             throws MasterNotRunningException, IOException, Exception{
-        if (LOG.isTraceEnabled()) LOG.trace("enableTable ENTRY, transactionState: " + transactionState);
+        if (LOG.isTraceEnabled()) LOG.trace("enableTable ENTRY, transactionState: " + transactionState +
+            "table: " + tblName);
 
         try {
             hbadmin.enableTable(tblName);
         }
         catch (Exception e) {
             if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: enableTable exception " + e);
-            String msg = "ERROR enableTable exception: while calling hadmin enableTable method";
+            String msg = "ERROR enableTable exception: while calling hadmin enableTable method for table: " + tblName;
             LOG.error(msg + ":" + e);
             throw new Exception(msg);
         }
 	}
-    
+
+    // Called only by Abort processing to delete data from a table
+    public void truncateTable(final TransactionState transactionState, String tblName)
+            throws MasterNotRunningException, IOException, Exception{
+        if (LOG.isTraceEnabled()) LOG.trace("truncateTable ENTRY, transactionState: " + transactionState +
+            "table: " + tblName);
+
+        try {
+            TableName tablename = TableName.valueOf(tblName);
+            HTableDescriptor hdesc = hbadmin.getTableDescriptor(tablename);
+
+            // To be changed in 2.0 for truncate table
+            //hbadmin.truncateTable(tablename, true);
+            hbadmin.disableTable(tblName);
+            hbadmin.deleteTable(tblName);
+            hbadmin.createTable(hdesc);
+            hbadmin.close();
+        }
+        catch (Exception e) {
+            if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: truncateTable exception " + e);
+            String msg = "ERROR truncateTable exception: while calling hadmin truncateTable method for table: " + tblName;
+            LOG.error(msg + ":" + e);
+            throw new Exception(msg);
+        }
+    }
+
     //Called only by DoPrepare.
 	public void disableTable(final TransactionState transactionState, String tblName)
             throws MasterNotRunningException, IOException, Exception{
-        if (LOG.isTraceEnabled()) LOG.trace("disableTable ENTRY, transactionState: " + transactionState);
+        if (LOG.isTraceEnabled()) LOG.trace("disableTable ENTRY, transactionState: " + transactionState +
+            "table: " + tblName);
 
         try {
             hbadmin.disableTable(tblName);
         }
         catch (Exception e) {
             if (LOG.isTraceEnabled()) LOG.trace("TransactionManager: disableTable exception " + e);
-            String msg = "ERROR disableTable exception: while calling hadmin disableTable method";
+            String msg = "ERROR disableTable exception: while calling hadmin disableTable method for table: " + tblName;
             LOG.error(msg + ":" + e);
             throw new Exception(msg);
         }

@@ -38,38 +38,43 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
    char** la_keys;
    la_keys = new char *[TM_MAX_DDLREQUEST_STRING];
 
-   int lv_tbldesc_length = pp_env->GetArrayLength(pv_tableDescriptor);
-   memset(la_tbldesc, 0, lv_tbldesc_length);
-   jbyte *lp_tbldesc = pp_env->GetByteArrayElements(pv_tableDescriptor, 0);
-   memcpy(la_tbldesc, lp_tbldesc, lv_tbldesc_length);
-
    int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
-   memset(la_tblname, 0, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING);
-   jbyte *lp_tblname = pp_env->GetByteArrayElements(pv_tblname, 0);
-   memcpy(la_tblname, lp_tblname, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING -1 );
-
-   long lv_transid = (long) pv_transid;
-
-   // Keys for Salted Tables
-   int lv_numSplits = (int) pv_numSplits;
-   int lv_keyLength = (int) pv_keyLength;
-
-   for(int i=0; i<lv_numSplits; i++)
-   {
-      jbyteArray jba_keyarray = (jbyteArray)(pp_env->GetObjectArrayElement((jobjectArray)pv_keys, i));
-      int lv_key_len = pp_env->GetArrayLength(jba_keyarray);
-      pp_env->GetByteArrayRegion(jba_keyarray, 0, lv_key_len, (jbyte*)str_key);
-
-      la_keys[i] = new char[lv_key_len];
-      memcpy(la_keys[i], str_key, lv_key_len);
-
-      pp_env->DeleteLocalRef(jba_keyarray);
+   if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING) {
+      cout << "Table name length is larger than max allowed" << endl;
    }
+   else {
+      int lv_tbldesc_length = pp_env->GetArrayLength(pv_tableDescriptor);
+      memset(la_tbldesc, 0, lv_tbldesc_length);
+      jbyte *lp_tbldesc = pp_env->GetByteArrayElements(pv_tableDescriptor, 0);
+      memcpy(la_tbldesc, lp_tbldesc, lv_tbldesc_length);
 
-   lv_ret = CREATETABLE(la_tbldesc, lv_tbldesc_length, la_tblname, la_keys, lv_numSplits, lv_keyLength, lv_transid);
-   pp_env->ReleaseByteArrayElements(pv_tableDescriptor, lp_tbldesc, 0);
-   pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
+      memset(la_tblname, 0, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING);
+      jbyte *lp_tblname = pp_env->GetByteArrayElements(pv_tblname, 0);
+      memcpy(la_tblname, lp_tblname, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING -1 );
 
+      long lv_transid = (long) pv_transid;
+
+      // Keys for Salted Tables
+      int lv_numSplits = (int) pv_numSplits;
+      int lv_keyLength = (int) pv_keyLength;
+
+      for(int i=0; i<lv_numSplits; i++)
+      {
+         jbyteArray jba_keyarray = (jbyteArray)(pp_env->GetObjectArrayElement((jobjectArray)pv_keys, i));
+         int lv_key_len = pp_env->GetArrayLength(jba_keyarray);
+         pp_env->GetByteArrayRegion(jba_keyarray, 0, lv_key_len, (jbyte*)str_key);
+
+         la_keys[i] = new char[lv_key_len];
+         memcpy(la_keys[i], str_key, lv_key_len);
+
+         pp_env->DeleteLocalRef(jba_keyarray);
+      }
+
+      lv_ret = CREATETABLE(la_tbldesc, lv_tbldesc_length, la_tblname, la_keys, lv_numSplits, lv_keyLength, lv_transid);
+
+      pp_env->ReleaseByteArrayElements(pv_tableDescriptor, lp_tbldesc, 0);
+      pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
+   }   
 }
 
 
@@ -85,14 +90,44 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
    char la_tblname[TM_MAX_DDLREQUEST_STRING];
 
    int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
-   memset(la_tblname, 0, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING);
-   jbyte *lp_tblname = pp_env->GetByteArrayElements(pv_tblname, 0);
-   memcpy(la_tblname, lp_tblname, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING -1 );
+   if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING) {
+      cout << "Table name length is larger than max allowed" << endl;
+   }
+   else {
+      memset(la_tblname, 0, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING);
+      jbyte *lp_tblname = pp_env->GetByteArrayElements(pv_tblname, 0);
+      memcpy(la_tblname, lp_tblname, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING -1 );
 
-   long lv_transid = (long) pv_transid;
+      long lv_transid = (long) pv_transid;
 
-   lv_ret = DROPTABLE(la_tblname, lv_tblname_len, lv_transid);
-   pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
-
+      lv_ret = DROPTABLE(la_tblname, lv_tblname_len, lv_transid);
+      pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
+   }
 }
 
+/*
+ * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
+ * Method:    truncateOnAbortReq
+ * Signature: ([BJ)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_truncateOnAbortReq
+  (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblname, jlong pv_transid) {
+
+   short lv_ret;
+   char la_tblname[TM_MAX_DDLREQUEST_STRING];
+
+   int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
+   if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING) {
+      cout << "Table name length is larger than max allowed" << endl;
+   }
+   else {
+      memset(la_tblname, 0, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING);
+      jbyte *lp_tblname = pp_env->GetByteArrayElements(pv_tblname, 0);
+      memcpy(la_tblname, lp_tblname, lv_tblname_len < TM_MAX_DDLREQUEST_STRING ? lv_tblname_len : TM_MAX_DDLREQUEST_STRING -1 );
+
+      long lv_transid = (long) pv_transid;
+
+      lv_ret = REGTRUNCATEONABORT(la_tblname, lv_tblname_len, lv_transid);
+      pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
+   }
+}

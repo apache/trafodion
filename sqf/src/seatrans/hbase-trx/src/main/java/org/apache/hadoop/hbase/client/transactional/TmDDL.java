@@ -56,6 +56,7 @@ public class TmDDL {
    private static final byte[] TDDL_FAMILY = Bytes.toBytes("tddlcf");
    private static final byte[] TDDL_CREATE = Bytes.toBytes("createList");
    private static final byte[] TDDL_DROP = Bytes.toBytes("dropList");
+   private static final byte[] TDDL_TRUNCATE = Bytes.toBytes("truncateList");
    private static final byte[] TDDL_STATE = Bytes.toBytes("state");
    private static Object tablePutLock;            // Lock for synchronizing table.put operations
    private static HTable table;
@@ -215,8 +216,33 @@ public class TmDDL {
 			}
 			
 		}
-		
-		//Check and append table name
+	
+        // Check and append table name
+        if(Operation.equals("TRUNCATE"))
+        {
+            if(! r.isEmpty())
+            {
+                value = r.getValue(TDDL_FAMILY, TDDL_TRUNCATE);
+            }
+            if((value != null) && (value.length > 0) && Bytes.toString(value).equals("INVALID"))
+            {
+                LOG.error("putRow on invalid Transaction :" + transid);
+                throw new RuntimeException("putRow on invalid Transaction State :" + transid);
+            }
+            else
+            {
+                tableString = new StringBuilder();
+                if(value != null && value.length > 0)
+                {
+                    tableString.append(Bytes.toString(value));
+                    tableString.append(",");
+                }
+                tableString.append(tableName);
+                p.add(TDDL_FAMILY, TDDL_TRUNCATE, Bytes.toBytes(tableString.toString()));
+            }
+        }
+
+        //Check and append table name
 		if(Operation.equals("DROP"))
 		{
 			if(! r.isEmpty())
@@ -290,8 +316,7 @@ public class TmDDL {
       if (LOG.isTraceEnabled()) LOG.trace("putRow State exit");
    }
    
-   
-    public void getRow(final long lvTransid, StringBuilder state, ArrayList<String> createList, ArrayList<String> dropList) throws IOException {
+   public void getRow(final long lvTransid, StringBuilder state, ArrayList<String> createList, ArrayList<String> dropList, ArrayList<String> truncateList) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("getRow start");
 	  String recordString = null;
 	  StringTokenizer st = null;
@@ -325,7 +350,18 @@ public class TmDDL {
                         dropList.add(st.nextToken());
                     }
                 }
-			
+		
+                value = r.getValue(TDDL_FAMILY, TDDL_TRUNCATE);
+                if(value != null && value.length > 0)
+                {
+                    recordString =  new String (Bytes.toString(value));
+                    st = new StringTokenizer(recordString, ",");
+                    while (st.hasMoreElements())
+                    {
+                        truncateList.add(st.nextToken());
+                    }
+                }
+
                 value = r.getValue(TDDL_FAMILY, TDDL_STATE);
                 if(value != null && value.length > 0)
                 {

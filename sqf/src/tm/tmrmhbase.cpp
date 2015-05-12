@@ -444,6 +444,9 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
                          pp_msg->request()->u.iv_ddl_request.ddlreq_len);
          break;
       case TM_DDL_TRUNCATE:
+         lv_err = gv_HbaseTM.regTruncateOnAbort(lv_transid,
+                         pp_msg->request()->u.iv_ddl_request.ddlreq,
+                         pp_msg->request()->u.iv_ddl_request.ddlreq_len);
          break;
       default:
          TMTrace (1, ("RM_Info_HBASE::hb_ddl_operation : Invalid ddl operation\n"));

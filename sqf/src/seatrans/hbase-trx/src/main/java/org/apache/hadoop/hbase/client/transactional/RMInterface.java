@@ -85,6 +85,7 @@ public class RMInterface {
     private native void registerRegion(int port, byte[] hostname, long startcode, byte[] regionInfo);
     private native void createTableReq(byte[] lv_byte_htabledesc, byte[][] keys, int numSplits, int keyLength, long transID, byte[] tblName);
     private native void dropTableReq(byte[] lv_byte_tblname, long transID);
+    private native void truncateOnAbortReq(byte[] lv_byte_tblName, long transID); 
 
     public static void main(String[] args) {
       System.out.println("MAIN ENTRY");
@@ -223,6 +224,22 @@ public class RMInterface {
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
             LOG.error("desc.ByteArray error " + sw.toString());
+            throw new IOException("createTable exception. Unable to create table.");
+        }
+    }
+
+    public void truncateTableOnAbort(String tblName, long transID) throws IOException {
+        if (LOG.isTraceEnabled()) LOG.trace("truncateTableOnAbort ENTER: ");
+
+        try {
+            byte[] lv_byte_tblName = tblName.getBytes();
+            truncateOnAbortReq(lv_byte_tblName, transID);
+        } catch (Exception e) {
+            if (LOG.isTraceEnabled()) LOG.trace("Unable to truncateTableOnAbort" + e);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            LOG.error("truncateTableOnAbort error: " + sw.toString());
             throw new IOException("createTable exception. Unable to create table.");
         }
     }

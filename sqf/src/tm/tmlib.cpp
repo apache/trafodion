@@ -517,22 +517,47 @@ short REGISTERREGION(long transid, int pv_port, char *pa_hostname, int pv_hostna
 // -------------------------------------------------------------------
 short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, char** pv_keys, int pv_numsplits, int pv_keylen, long transid)
 {
+    TM_Transid lv_transid((TM_Native_Type) transid);
     short lv_error = FEOK;
+
+    TMlibTrace(("TMLIB_TRACE : CREATETABLE ENTRY: txid: (%d,%d), tablename: %s, numsplits: %d, keylen %d\n",
+       lv_transid.get_node(), lv_transid.get_seq_num(), pv_tblname,  pv_numsplits, pv_keylen), 2);
 
     if (gp_trans_thr == NULL)
        gp_trans_thr = new TMLIB_ThreadTxn_Object();
-
     TM_Transaction *lp_trans = gp_trans_thr->get_current();
-
-    TMlibTrace(("TMLIB_TRACE : CREATETABLE ENTRY: tablename: %s\n", pv_tblname), 1);
-    TMlibTrace(("TMLIB_TRACE : CREATETABLE ENTRY: sql txid: %ld\n", transid), 1);
-    TMlibTrace(("TMLIB_TRACE : CREATETABLE ENTRY: tm txid: %d\n", lp_trans->getTransid()->get_seq_num()), 1);
-    TMlibTrace(("TMLIB_TRACE : ENTER CREATETABLE DDLREQUEST: %s", pa_tbldesc), 2);
-
     lv_error =  lp_trans->create_table(pa_tbldesc, pv_tbldesc_length, pv_tblname, pv_keys, pv_numsplits, pv_keylen);
+
+    TMlibTrace(("TMLIB_TRACE : CREATETABLE EXIT: txid: (%d,%d), returning %d\n",
+       lv_transid.get_node(), lv_transid.get_seq_num(), lv_error), 2);
 
     return lv_error;
 }
+
+// -------------------------------------------------------------------
+// REGTRUNCATEONABORT
+//
+// Purpose: send REGTRUNCATEONABORT message to the TM
+// Params: pa_tabledesc, pv_tabledesc_length, pv_tblname, transid
+// -------------------------------------------------------------------
+short REGTRUNCATEONABORT(char *pv_tblname, int pv_tblname_len, long pv_transid)
+{
+    short lv_error = FEOK;
+    TM_Transid lv_transid((TM_Native_Type) pv_transid);
+    TMlibTrace(("TMLIB_TRACE : REGTRUNCATEONABORT ENTRY: txid: (%d,%d), tablename: %s\n",
+       lv_transid.get_node(), lv_transid.get_seq_num(), pv_tblname), 2);
+
+    if (gp_trans_thr == NULL)
+       gp_trans_thr = new TMLIB_ThreadTxn_Object();
+    TM_Transaction *lp_trans = gp_trans_thr->get_current();
+    lv_error = lp_trans->reg_truncateonabort(pv_tblname, pv_tblname_len);
+
+    TMlibTrace(("TMLIB_TRACE : REGTRUNCATEONABORT EXIT: txid: (%d,%d), tablename: %s, returning %d\n",
+       lv_transid.get_node(), lv_transid.get_seq_num(), pv_tblname, lv_error), 2);
+
+    return lv_error;
+}
+
 
 // -------------------------------------------------------------------
 // DROPTABLE
@@ -543,14 +568,17 @@ short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, cha
 short DROPTABLE(char *pv_tblname, int pv_tblname_len, long transid)
 {
     short lv_error = FEOK;
+    TM_Transid lv_transid((TM_Native_Type) transid);
+    TMlibTrace(("TMLIB_TRACE : DROPTABLE ENTRY: txid: (%d,%d), tablename: %s\n",
+       lv_transid.get_node(), lv_transid.get_seq_num(), pv_tblname), 2);
+
     if (gp_trans_thr == NULL)
        gp_trans_thr = new TMLIB_ThreadTxn_Object();
-
     TM_Transaction *lp_trans = gp_trans_thr->get_current();
-
-    TMlibTrace(("TMLIB_TRACE : DROPTABLE ENTRY: tablename: %s, transid: %ld\n", pv_tblname, transid), 1);
-
     lv_error = lp_trans->drop_table(pv_tblname, pv_tblname_len);
+
+    TMlibTrace(("TMLIB_TRACE : DROPTABLE EXIT: txid: (%d,%d), tablename: %s, returning %d\n",
+       lv_transid.get_node(), lv_transid.get_seq_num(), pv_tblname, lv_error), 2);
 
     return lv_error;
 }

@@ -413,6 +413,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_CREATE     ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;)Z";
     JavaMethods_[JM_CREATEK    ].jm_name      = "createk";
     JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/Object;JII)Z";
+    JavaMethods_[JM_TRUNCABORT ].jm_name      = "registerTruncateOnAbort";
+    JavaMethods_[JM_TRUNCABORT ].jm_signature = "(Ljava/lang/String;J)Z";
     JavaMethods_[JM_DROP       ].jm_name      = "drop";
     JavaMethods_[JM_DROP       ].jm_signature = "(Ljava/lang/String;J)Z";
     JavaMethods_[JM_DROP_ALL       ].jm_name      = "dropAll";
@@ -1144,6 +1146,50 @@ HBC_RetCode HBaseClient_JNI::flushAllTables()
     logError(CAT_SQL_HBASE, "HBaseClient_JNI::flushAllTables()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_FLUSHALL_EXCEPTION;
+  }
+  jenv_->PopLocalFrame(NULL);
+  return HBC_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//////////////////////////////////////////////////////////////////////////////
+HBC_RetCode HBaseClient_JNI::registerTruncateOnAbort(const char* fileName, Int64 transID)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::drop(%s) called.", fileName);
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return HBC_ERROR_DROP_EXCEPTION;
+  }
+  jstring js_fileName = jenv_->NewStringUTF(fileName);
+  if (js_fileName == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DROP_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_DROP_PARAM;
+  }
+
+  jlong j_tid = transID;
+
+  tsRecentJMFromJNI = JavaMethods_[JM_TRUNCABORT].jm_full_name;
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_TRUNCABORT].methodID, js_fileName, j_tid);
+
+  jenv_->DeleteLocalRef(js_fileName);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(jenv_);
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::drop()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_DROP_EXCEPTION;
+  }
+
+  if (jresult == false)
+  {
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::drop()", getLastJavaError());
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_DROP_EXCEPTION;
   }
   jenv_->PopLocalFrame(NULL);
   return HBC_OK;

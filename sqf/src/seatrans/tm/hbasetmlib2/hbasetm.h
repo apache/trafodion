@@ -130,6 +130,7 @@ private:
 	  JM_NODEDOWN,
       JM_NODEUP,
       JM_CREATETABLE,
+      JM_REGTRUNCABORT,
       JM_DROPTABLE,
       JM_RQREGINFO,
       JM_LAST
@@ -175,6 +176,9 @@ public:
    short completeRequest(int64 pv_transid);
    short abortTransaction(int64 pv_transid);
    int dropTable(int64 pv_transid, const char* pa_tblname, int pv_tblname_len);
+   int regTruncateOnAbort(int64 pv_transid,
+                           const char* pa_tblname,
+                           int pv_tblname_len);
    int createTable(int64 pv_transid,
                            const char* pa_tbldesc,
                            int pv_tbldesc_len,

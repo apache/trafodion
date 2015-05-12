@@ -515,6 +515,7 @@ public:
   HBC_RetCode create(const char* fileName, HBASE_NAMELIST& colFamilies);
   HBC_RetCode create(const char* fileName, NAText*  hbaseOptions, 
                      int numSplits, int keyLength, const char** splitValues, Int64 transID);
+  HBC_RetCode registerTruncateOnAbort(const char* fileName, Int64 transID);
   HBC_RetCode drop(const char* fileName, bool async, Int64 transID);
   HBC_RetCode drop(const char* fileName, JNIEnv* jenv, Int64 transID); // thread specific
   HBC_RetCode dropAll(const char* pattern, bool async);
@@ -570,6 +571,7 @@ private:
    ,JM_REL_HTC
    ,JM_CREATE
    ,JM_CREATEK
+   ,JM_TRUNCABORT
    ,JM_DROP
    ,JM_DROP_ALL
    ,JM_LIST_ALL

@@ -445,21 +445,43 @@ public class HBaseClient {
         return true;
     }
 
+    public boolean registerTruncateOnAbort(String tblName, long transID)
+        throws MasterNotRunningException, IOException {
+
+        try {
+           if(transID != 0) {
+              table.truncateTableOnAbort(tblName, transID);
+           }
+        }
+        catch (IOException e) {
+           if (logger.isDebugEnabled()) logger.debug("HbaseClient.registerTruncateOnAbort error" + e);
+           throw e;
+        }
+        return true;
+    }
+
     public boolean drop(String tblName, long transID)
              throws MasterNotRunningException, IOException {
-            if (logger.isDebugEnabled()) logger.debug("HBaseClient.drop(" + tblName + ") called.");
-            HBaseAdmin admin = new HBaseAdmin(config);
-            //			admin.disableTableAsync(tblName);
+        if (logger.isDebugEnabled()) logger.debug("HBaseClient.drop(" + tblName + ") called.");
+        HBaseAdmin admin = new HBaseAdmin(config);
+        //			admin.disableTableAsync(tblName);
 
-            if(transID != 0) {
-               table.dropTable(tblName, transID);
+        try {
+           if(transID != 0) {
+              table.dropTable(tblName, transID);
            }
            else {
-               admin.disableTable(tblName);
-               admin.deleteTable(tblName);
-               admin.close();
+              admin.disableTable(tblName);
+              admin.deleteTable(tblName);
+              admin.close();
            }
-           return cleanupCache(tblName);
+        }
+        catch (IOException e) {
+           if (logger.isDebugEnabled()) logger.debug("HbaseClient.drop  error" + e);
+           throw e;
+        }
+
+        return cleanupCache(tblName);
     }
 
     public boolean dropAll(String pattern) 

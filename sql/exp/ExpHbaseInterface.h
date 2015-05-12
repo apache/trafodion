@@ -106,6 +106,9 @@ class ExpHbaseInterface : public NABasicObject
                        const char ** splitValues,
                        NABoolean noXn) =0;
 
+  // During upsert using load, register truncate on abort will be used
+  virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn) = 0;
+
   // During a drop of seabase table or index, the object is first removed from 
   // seabase metadata. If that succeeds, the corresponding hbase object is dropped.
   // if sync is TRUE, this drop of hbase table is done in another worker thread. 
@@ -395,6 +398,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                        int numSplits, int keyLength,
                        const char ** splitValues,
                        NABoolean noXn);
+
+  virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn);
 
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn);
   virtual Lng32 dropAll(const char * pattern, NABoolean async);
