@@ -1478,6 +1478,8 @@ desc_struct *Generator::createVirtualRoutineDesc(
    strcpy(routine_desc->body.routine_desc.libraryFileName, routineInfo->library_filename);
    routine_desc->body.routine_desc.signature = new HEAP char[strlen(routineInfo->signature)+1];
    strcpy(routine_desc->body.routine_desc.signature, routineInfo->signature);
+   routine_desc->body.routine_desc.librarySqlName = new HEAP char[strlen(routineInfo->library_sqlname)+1];
+   strcpy(routine_desc->body.routine_desc.librarySqlName, routineInfo->library_sqlname);
    routine_desc->body.routine_desc.language  = 
            CmGetComRoutineLanguageAsRoutineLanguage(routineInfo->language_type);
    routine_desc->body.routine_desc.UDRType  = 

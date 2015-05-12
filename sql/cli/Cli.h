@@ -982,6 +982,59 @@ Lng32 SQLCLI_SEcliInterface
    void * seqGenAttrs
    );
   
+  Int32 SQLCLI_GetRoutine
+  (
+       /* IN */     CliGlobals  *cliGlobals,
+       /* IN */     const char  *serializedInvocationInfo,
+       /* IN */     Int32        invocationInfoLen,
+       /* IN */     const char  *serializedPlanInfo,
+       /* IN */     Int32        planInfoLen,
+       /* IN */     Int32        language,
+       /* IN */     Int32        paramStyle,
+       /* IN */     const char  *externalName,
+       /* IN */     const char  *containerName,
+       /* IN */     const char  *externalPath,
+       /* IN */     const char  *librarySqlName,
+       /* OUT */    Int32       *handle
+   );
+
+  Int32 SQLCLI_InvokeRoutine
+  (
+       /* IN */     CliGlobals  *cliGlobals,
+       /* IN */     Int32        handle,
+       /* IN */     Int32        phaseEnumAsInt,
+       /* IN */     const char  *serializedInvocationInfo,
+       /* IN */     Int32        invocationInfoLen,
+       /* OUT */    Int32       *invocationInfoLenOut,
+       /* IN */     const char  *serializedPlanInfo,
+       /* IN */     Int32        planInfoLen,
+       /* IN */     Int32        planNum,
+       /* OUT */    Int32       *planInfoLenOut,
+       /* IN */     char        *inputRow,
+       /* IN */     Int32        inputRowLen,
+       /* OUT */    char        *outputRow,
+       /* IN */     Int32        outputRowLen
+   );
+
+  Int32 SQLCLI_GetRoutineInvocationInfo
+  (
+       /* IN */     CliGlobals  *cliGlobals,
+       /* IN */     Int32        handle,
+       /* IN/OUT */ char        *serializedInvocationInfo,
+       /* IN */     Int32        invocationInfoMaxLen,
+       /* OUT */    Int32       *invocationInfoLenOut,
+       /* IN/OUT */ char        *serializedPlanInfo,
+       /* IN */     Int32        planInfoMaxLen,
+       /* IN */     Int32        planNum,
+       /* OUT */    Int32       *planInfoLenOut
+   );
+
+  Int32 SQLCLI_PutRoutine
+  (
+       /* IN */     CliGlobals*  cliGlobals,
+       /* IN */     Int32        handle
+   );
+
 } // end extern "C"
 
 class StrTarget {

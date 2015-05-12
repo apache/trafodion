@@ -1,6 +1,6 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -68,17 +68,13 @@ create library TEST108 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL2$$ $$QUOTE$$;
 
 create table_mapping function tokenizer1(inval char(1))
 returns (outval varchar(40))
-external name 'TOKENIZER1'
-language c
+external name 'TOKENIZER'
 library TEST108;
 
--- Note that there is no SESSIONIZE entry point in library TEST108,
--- but since this UDF has no compiler interface and since we are
--- not executing it, we don't get an error message.
+-- Negative test: There is no SESSIONIZE entry point in library TEST108.
 create table_mapping function sessionize108(gap int)
 returns (ts timestamp(6), userid varchar(40), sessionid int)
 external name 'SESSIONIZE'
-language c
 library TEST108;
 
 cqd DEF_NUM_SMP_CPUS '1' ;

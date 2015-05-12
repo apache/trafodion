@@ -991,15 +991,15 @@ $1~String1 --------------------------------
 3263 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The PASS THROUGH INPUT[S] clause may not appear in the defintion of procedure.
 3264 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. Both ACTION and SAS_FORMAT appear in the formal parameter list in the universal function definition.
 3265 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The EXTERNAL PATH clause may not appear in for routine action.
-3266 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The [NO] ISOLATE clause may not appear in for user defined function or routine action.
-3267 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The [NO] TRANSACTION REQUIRED clause may not appear in user defined function or routine action.
-3268 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The DYNAMIC RESULT SETS clause may not appear in user defined function or routine action.
-3269 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The LANGUAGE JAVA clause may not appear in user defined function or routine action.
-3270 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The PARAMETER STYLE JAVA clause may not appear in user defined function or routine action.
-3271 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. No other SQL Access clauses besides the NO SQL clause can appear in the definition of  a user-defined function or routine action.
+3266 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The [NO] ISOLATE clause may not appear in a user defined function.
+3267 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The [NO] TRANSACTION REQUIRED clause may not appear in user defined function.
+3268 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The DYNAMIC RESULT SETS clause may not appear in user defined function.
+3269 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The LANGUAGE JAVA clause may not appear in a scalar user defined function.
+3270 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The PARAMETER STYLE JAVA clause may not appear in a user defined function.
+3271 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. No other SQL Access clauses besides the NO SQL clause can appear in the definition of  a user-defined function.
 3272 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The specified size in the STATE AREA SIZE clause can only be between 0 and 16000, inclusive.
 3273 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The [NO] FINAL CALL clause may not appear in routine action.
-3274 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The NO FINAL CALL clause imay not appear in user defined function or routine action.
+3274 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The NO FINAL CALL clause may not appear in user defined function.
 3275 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The RETURNS clause is missing. The NUMBER OF UNIQUE OUTPUT VALUES clause can only appear together with the RETURNS clause.
 3276 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The number of items in the NUMBER OF UNIQUE OUTPUT VALUES clause exceeds the number of outputs declared in the RETURNS clause.
 3277 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The LANGUAGE clause may not appear in the ALTER statement for a routine.
@@ -1012,6 +1012,7 @@ $1~String1 --------------------------------
 3284 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unable to determine the routine language from the library name $0~string0. A LANGUAGE option clause is required when creating this routine.
 3285 ZZZZZ 99999 BEGINNER MINOR DBADMIN The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
 3286 ZZZZZ 99999 BEGINNER MINOR DBADMIN The routine language that was either specified or implied from the library file name is not supported for this type of routine.
+3287 42000 99999 BEGINNER MINOR DBADMIN The $0~string0 option is not supported for this type of routine.
 3300 42000 99999 BEGINNER MAJOR DBADMIN --- available ---
 3301 42000 99999 BEGINNER MAJOR DBADMIN $0~string0 is too long (longer than $1~int0 $2~string1).
 
@@ -1657,6 +1658,10 @@ $1~String1 --------------------------------
 8740 ZZZZZ 99999 ADVANCED MAJOR DIALOUT CLI Authorization failure: Password expired and is in grace period
 8741 ZZZZZ 99999 BEGINNER MINOR LOGONLY This query contains a reference to an object that was created only in compiler memory. It cannot be executed.
 8742 ZZZZZ 99999 BEGINNER MINOR LOGONLY GetMetaDataInfo operation could not be completed. Reason: $0~String0
+8743 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: Invalid routine handle specified in CLI call.
+8744 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: Error deallocating a routine in the CLI.
+8745 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: Error during routine invocation in the CLI.
+8746 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: Error retrieving updated invocation info in the CLI.
 8800 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8801 33000 99999 BEGINNER MINOR LOGONLY Descriptor allocation failed because the descriptor already exists in the current context.
 8802 26000 99999 BEGINNER MINOR LOGONLY Statement allocation failed because the statement already exists in the current context.
@@ -2061,7 +2066,7 @@ drop the default context
 11243 ZZZZZ 99999 ADVANCED MAJOR DIALOUT The Language Manager encountered a java.sql.SQLException while retrieving the value of column $0~Int0 from a java.sql.ResultSet row.
 11244 ZZZZZ 99999 ADVANCED MAJOR DIALOUT The Language Manager encountered invalid character data in column $0~int0 of a java.sql.ResultSet row.
 11245 ZZZZZ 99999 ADVANCED MAJOR DBADMIN An error occurred loading library '$0~String0' from path '$1~String1'.
-11246 ZZZZZ 99999 ADVANCED MAJOR DBADMIN An error occurred locating function '$0~String0' in library '$1~String1'.
+11246 ZZZZZ 99999 ADVANCED MAJOR DBADMIN An error occurred locating function or class '$0~String0' in library '$1~String1'.
 11247 ZZZZZ 99999 ADVANCED MAJOR DBADMIN An error occurred unloading library '$0~String0'.
 11248 ZZZZZ 99999 ADVANCED MAJOR DBADMIN A call to $0~String0 returned errors $1~Int0 and $2~Int1. Details: \
 $3~String1.
@@ -2072,6 +2077,9 @@ $3~String1.
 11253 ZZZZZ 99999 ADVANCED MAJOR DBADMIN $0~String0 (SQLSTATE $1~String1)
 11254 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UDR $0~String0 overwrote its $1~String1 buffer at the $2~String2.
 11255 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error in $0~String0 method in library $1~String1. Details: $2~String2.
+11256 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Internal error in communicating with UDR $0~String0 through the compiler interface in the $1~String1 phase ($2~String2). Details: $3~String3.
+11257 ZZZZZ 99999 BEGINNER MINOR DBADMIN Routine entry point was validated, no routine was created.
+11258 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Error in constructor of UDR class $1~String1.
 11299 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU -----Last Language Manager Error -----
 12000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ----------  First Materialized Views error  ------------
 12001 ZZZZZ 99999 BEGINNER MINOR DBADMIN Creation failed. The materialized view cannot be maintained incrementally.

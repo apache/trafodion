@@ -33,6 +33,7 @@
 #include "LmCommon.h"
 #include "sqludr.h"
 #include "BindWA.h"
+#include "ExExeUtilCli.h"
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -78,12 +79,11 @@ class TMUDFDllInteraction : public NABasicObject
   NABoolean finalizePlan(TableMappingUDF * tmudfNode,
                          tmudr::UDRPlanInfo *planInfo);
 
-  // helper methods for setup and return status
-
-  void setDllPtr(LmHandle val) {dllPtr_ = val;}
-  LmHandle getDllPtr() {return dllPtr_;}
-  NABoolean setFunctionPtrs(const NAString &entryName,
-                            const NAString &libraryFileName);
+  // helper methods for routine invocation and error handling
+  NABoolean invokeRoutine(tmudr::UDRInvocationInfo::CallPhase cp,
+                          TableMappingUDF * tmudfNode,
+                          tmudr::UDRPlanInfo *planInfo = NULL,
+                          ComDiagsArea *diags = NULL);
   static void processReturnStatus(const tmudr::UDRException &e, 
                                   TableMappingUDF *tmudfNode);
   static void processReturnStatus(const tmudr::UDRException &e, 
@@ -91,10 +91,9 @@ class TMUDFDllInteraction : public NABasicObject
                                   ComDiagsArea *diags = NULL);
 
 private:
-
-  LmHandle dllPtr_ ;
-  LmHandle createInterfaceObjectPtr_;
-
+  // do not use this for things other than routine invocations,
+  // since that could lead to resource leaks
+  ExeCliInterface cliInterface_;
 };
 
 // Class used to convert Trafodion classes to and from the C++
@@ -118,6 +117,8 @@ public:
 
   static tmudr::UDRInvocationInfo *createInvocationInfoFromRelExpr(
        TableMappingUDF * tmudfNode,
+       char *&constBuffer,
+       int &constBufferLength,
        ComDiagsArea *diags);
   static NABoolean setTypeInfoFromNAType(
        tmudr::TypeInfo &tgt,
@@ -164,12 +165,8 @@ public:
 
   // invoke private constructors/destructors of the interface structs
   static tmudr::UDRPlanInfo *createUDRPlanInfo(
-       tmudr::UDRInvocationInfo *invocationInfo);
-  static void setCallPhase(
        tmudr::UDRInvocationInfo *invocationInfo,
-       tmudr::UDRInvocationInfo::CallPhase cp);
-  static void resetCallPhase(
-     tmudr::UDRInvocationInfo *invocationInfo);
+       int planNum);
   static void setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
                          ExpTupleDesc *inParamTupleDesc,
                          ExpTupleDesc *outputTupleDesc,

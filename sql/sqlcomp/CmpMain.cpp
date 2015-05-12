@@ -2200,6 +2200,12 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
 
   queryExpr = queryExpr->normalizeNode(normWA);
 
+  if (!queryExpr)
+    {
+      sqlcompCleanup(input_str, queryExpr, TRUE);
+      return NORMALIZERERROR;
+    }
+
   // QSTUFF: check whether a table is both read and updated
   if ( queryExpr->checkReadWriteConflicts(normWA) != RelExpr::RWOKAY )
     {

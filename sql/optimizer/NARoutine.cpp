@@ -355,7 +355,7 @@ NARoutine::NARoutine(const QualifiedName   &name,
     , externalFile_           ("", heap)
     , externalPath_           (routine_desc->body.routine_desc.libraryFileName, heap)
     , externalName_           ("", heap)
-    , librarySqlName_         (name.getQualifiedNameAsAnsiString(), COM_UNKNOWN_NAME, FALSE, heap) //TODO
+    , librarySqlName_         (routine_desc->body.routine_desc.librarySqlName, COM_UNKNOWN_NAME, FALSE, heap) //TODO
     , signature_              (routine_desc->body.routine_desc.signature, heap)
     , paramStyle_             (routine_desc->body.routine_desc.paramStyle)
     , paramStyleVersion_      (COM_ROUTINE_PARAM_STYLE_VERSION_1)
@@ -393,7 +393,7 @@ NARoutine::NARoutine(const QualifiedName   &name,
   CmGetComRoutineParallelismAsLit(routine_desc->body.routine_desc.parallelism, parallelism);
   comRoutineParallelism_ = ((char *)parallelism);
 
-  if (routine_desc->body.routine_desc.language == COM_LANGUAGE_JAVA)
+  if (paramStyle_ == COM_STYLE_JAVA_CALL)
   {
     NAString extName(routine_desc->body.routine_desc.externalName);
     size_t pos=extName.last('.');
@@ -402,30 +402,31 @@ NARoutine::NARoutine(const QualifiedName   &name,
   }
   else
   {
-    //externalFile_ = ;
     externalName_ = routine_desc->body.routine_desc.externalName;
-     // Split the fully-qualified DLL name into a directory name and
-    // simple file name
-    ComUInt32 len = dllName_.length();
-    if (len > 0)
+    if (language_ == COM_LANGUAGE_C ||
+        language_ == COM_LANGUAGE_CPP)
       {
-        size_t lastSlash = dllName_.last('/');
-        if (lastSlash == NA_NPOS)
+        // Split the fully-qualified DLL name into a directory name and
+        // simple file name
+        ComUInt32 len = dllName_.length();
+        if (len > 0)
           {
-            // No slash was found
-            externalPath_ = "";
-            externalFile_ = dllName_;
-          }
-        else
-          {
-            // A slash was found. EXTERNAL PATH is everything before the
-            // slash. EXTERNAL FILE is everything after.
-            externalPath_ = dllName_;
-            externalPath_.remove(lastSlash, len - lastSlash);
-            externalFile_ = dllName_;
-            externalFile_.remove(0, lastSlash + 1);
-
-
+            size_t lastSlash = dllName_.last('/');
+            if (lastSlash == NA_NPOS)
+              {
+                // No slash was found
+                externalPath_ = ".";
+                externalFile_ = dllName_;
+              }
+            else
+              {
+                // A slash was found. EXTERNAL PATH is everything before the
+                // slash. EXTERNAL FILE is everything after.
+                externalPath_ = dllName_;
+                externalPath_.remove(lastSlash, len - lastSlash);
+                externalFile_ = dllName_;
+                externalFile_.remove(0, lastSlash + 1);
+              }
           }
       } // if (len > 0)
   }

@@ -7142,8 +7142,12 @@ RelExpr * RelRoot::normalizeNode(NormWA & normWARef)
   // ---------------------------------------------------------------------
   synthLogProp(&normWARef);
   normWARef.setMergeUpdDelCount(0);
-  
-  return this;
+
+  // check for any errors occured during normalization
+  if (CmpCommon::diags()->mainSQLCODE() < 0)
+    return NULL;
+  else
+    return this;
 
 } // RelRoot::normalizeNode()
 

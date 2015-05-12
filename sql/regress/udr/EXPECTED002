@@ -45,21 +45,16 @@
 >>create table_mapping function tokenizer(pattern char(1))
 +>returns (outval char(40))
 +>external name 'TOKENIZER'
-+>language c
++>language cpp
 +>library TEST002;
-
-*** WARNING[3285] The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
 
 --- SQL operation complete.
 >>
 >>-- Register tokenizer1 without column information
 >>create table_mapping function tokenizer1(pattern char(1))
 +>returns (outval char(40))
-+>external name 'TOKENIZER1'
-+>language c
++>external name 'TOKENIZER'
 +>library TEST002;
-
-*** WARNING[3285] The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
 
 --- SQL operation complete.
 >>
@@ -6835,10 +6830,7 @@ P            SLICE_TIME                  VAL1_FCI     VAL1_LCI     VAL2_FCI     
 >>create table_mapping function timeseries(pattern char(1))
 +>returns (outval char(40))
 +>external name 'TOKENIZER'
-+>language c
 +>library TEST002;
-
-*** WARNING[3285] The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
 
 --- SQL operation complete.
 >>

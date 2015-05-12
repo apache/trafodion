@@ -90,6 +90,6 @@ versodb.o: versodb.c
 	gcc -m64 -O2 -mtune=generic -g -c src/versodb.c $(INCPATH_64luo) -o bin/versodb.o
 
 clean: 
-	rm bin/*.o bin/odb64luo
+	rm -f bin/*.o bin/odb64luo
 	rm -f ../clients/odb64_linux.tar.gz
 

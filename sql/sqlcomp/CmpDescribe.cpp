@@ -3944,24 +3944,27 @@ short CmpDescribeRoutine (const CorrName   & cn,
   }
   else
   {
-    // final call
-    if (routine->isFinalCall()) // same as isExtraCall()
-      strcpy ( buf, "  FINAL CALL" );
-    else
-      strcpy ( buf, "  NO FINAL CALL" );
-    outputShortLine (*space, buf);
+    if (routine->getLanguage() == COM_LANGUAGE_C)
+      {
+        // final call
+        if (routine->isFinalCall()) // same as isExtraCall()
+          strcpy ( buf, "  FINAL CALL" );
+        else
+          strcpy ( buf, "  NO FINAL CALL" );
+        outputShortLine (*space, buf);
 
-    // state area size
-    if ( routine->getStateAreaSize () > 0 )
-    {
-      strcpy ( buf, "  STATE AREA SIZE " );
-      sprintf ( &buf[strlen (buf)], "%d", routine->getStateAreaSize ());
-    }
-    else
-    {
-      strcpy ( buf, "  NO STATE AREA" );
-    }
-    outputShortLine (*space, buf);
+        // state area size
+        if ( routine->getStateAreaSize () > 0 )
+          {
+            strcpy ( buf, "  STATE AREA SIZE " );
+            sprintf ( &buf[strlen (buf)], "%d", routine->getStateAreaSize ());
+          }
+        else
+          {
+            strcpy ( buf, "  NO STATE AREA" );
+          }
+        outputShortLine (*space, buf);
+      }
   }
 
   if (routine->isScalarUDF())

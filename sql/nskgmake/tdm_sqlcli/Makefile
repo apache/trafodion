@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,69 +20,14 @@
 
 CPPSRC := CliDll.cpp \
 	StoredProcInterface.cpp \
-	rtdu.cpp
-
-ifeq ($(TARGTYPE),linux)
-CPPSRC += vers_libcli.cpp
-endif
-
-
-
-ifneq (,$(findstring $(TARGTYPE), oss yos))
-CPPSRC += cmnamemapsqlnsk.cpp \
-	GlobalsDef.cpp \
-	CliStubsStaticBuild.cpp
-
-
-INSTALL_OBJ := sqlcli.o
-
-SQLCLIOPT=	-Wsystype=guardian -Wenv=common -Wextern_data=no_gp \
-		-Wnooverflow_traps -Wnomap -Wextensions -Wnoinnerlist \
-		-Wtarget=tns/e
-
-endif
-
-ifeq ($(TARGTYPE),linux)
-
-
-CPPSRC += CliStubsStaticBuild.cpp
-endif
-
-ifeq ($(TARGTYPE),nt)
-CPPSRC += CmNameMapSqlNT.cpp
-RESSRC := $(TOPDIR)/bin/sqlcli.rc
-DEFS := -DWIN32 -D_WINDOWS -DCLI_DLL -DSQLCLI_LIB
-
-DEP_LIBS := cli comexe common eh executor sort smdio  sqlmsg  \
-        tdm_arkfsddl tdm_arkfsdml tdm_sqlcli_globals \
-        tdm_sqlerrormsg tdm_sqlexp tdm_sqlexport \
-        tdm_sqlmxevents tdm_sqlshare tdm_arkfsinopen
-
-SYS_LIBS := /libpath:"$(RWLIBDIR)" $(RWLIBS) $(IMAGEHELP) \
-	pdh.lib wsock32.lib kernel32.lib user32.lib advapi32.lib
-
-EXTERN_OBJS := \
-	$(YLIBDIR)/tdm_nsklib.lib\
-	$(YLIBDIR)/tdm_fs2.lib \
-	$(YLIBDIR)/tdm_fs.lib \
-	$(YLIBDIR)/tdm_security.lib \
-	$(YLIBDIR)/tdm_tmfuser.lib \
-	$(YLIBDIR)/tdm_diskwatch_c.lib
-endif
+	rtdu.cpp \
+	vers_libcli.cpp
 
 SRCPATH := cli catman smdio
 
-ifneq (,$(findstring $(TARGTYPE), oss yos))
-DEP_LIBS := cli comexe executor common sort sqlmsg tdm_arkfsddl \
-	tdm_arkfsdml tdm_sqlmxevents tdm_sqlexp tdm_sqlexport \
-	tdm_sqlerrormsg tdm_sqlshare smdio
-endif
-
-ifeq ($(TARGTYPE),linux)
 DEP_LIBS := cli comexe executor common sort sqlmsg \
 	tdm_sqlmxevents tdm_sqlexp tdm_sqlexport \
-	tdm_sqlerrormsg tdm_sqlshare
-
+	tdm_sqlerrormsg tdm_sqlshare tdm_sqllangman
 
 EXTERN_LIBS := \
         $(NSKLIB)/libsm.so \
@@ -99,15 +44,4 @@ EXTERN_LIBS := \
         $(XMPIROOT)/libstfs.so \
         $(XMPIROOT)/libsqauth.so
 
-
-
 SYS_LIBS := -lrt -lpthread
-endif
-
-ifeq ($(TARGTYPE),yos)
-#tbc: Added these
-DLL_LINKOPTS += -l zusrdll
-
-DEP_DLLS := ZUSRDLL
-INCLUDE_DIRS := client
-endif

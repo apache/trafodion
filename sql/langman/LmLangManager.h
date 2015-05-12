@@ -143,8 +143,6 @@ public:
     ComRoutineParamStyle paramStyle,
     ComRoutineTransactionAttributes transactionAttrs,
     ComRoutineSQLAccess sqlAccessMode,
-    tmudr::UDRInvocationInfo *invocationInfo,
-    tmudr::UDRPlanInfo       *planInfo,
     const char  *parentQid,
     ComUInt32   inputRowLen,
     ComUInt32   outputRowLen,
@@ -163,6 +161,30 @@ public:
     LmHandle    emitRowPtr,
     ComUInt32   maxResultSets = 0,
     ComDiagsArea *diagsArea = NULL) = 0;
+
+  //////////////////////////////////////////////////////////////////////
+  // getRoutine service: Called by the SQL runtime (e.g., Exe), likely
+  // during "fixup", to allocate a handle to an external routine. The 
+  // returned handle is then used to invoke the external routine (see 
+  // invokeRoutine).
+  //
+  // This flavor is used for the object-oriented parameter styles that
+  // use an object derived from class UDR, call phases and method
+  // calls.
+  //////////////////////////////////////////////////////////////////////
+  virtual LmResult getObjRoutine(
+    const char            *serializedInvocationInfo,
+    int                    invocationInfoLen,
+    const char            *serializedPlanInfo,
+    int                    planInfoLen,
+    ComRoutineLanguage     language,
+    ComRoutineParamStyle   paramStyle,
+    const char            *externalName,
+    const char            *containerName,
+    const char            *externalPath,
+    const char            *librarySqlName,
+    LmRoutine            **handle,
+    ComDiagsArea          *diagsArea) = 0;
 
   //////////////////////////////////////////////////////////////////////
   // putRoutine service: Called by the SQL runtime to de-allocate a 

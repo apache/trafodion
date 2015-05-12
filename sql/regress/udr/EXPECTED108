@@ -35,26 +35,23 @@
 >>
 >>create table_mapping function tokenizer1(inval char(1))
 +>returns (outval varchar(40))
-+>external name 'TOKENIZER1'
-+>language c
++>external name 'TOKENIZER'
 +>library TEST108;
-
-*** WARNING[3285] The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
 
 --- SQL operation complete.
 >>
->>-- Note that there is no SESSIONIZE entry point in library TEST108,
->>-- but since this UDF has no compiler interface and since we are
->>-- not executing it, we don't get an error message.
+>>-- Negative test: There is no SESSIONIZE entry point in library TEST108.
 >>create table_mapping function sessionize108(gap int)
 +>returns (ts timestamp(6), userid varchar(40), sessionid int)
 +>external name 'SESSIONIZE'
-+>language c
 +>library TEST108;
 
-*** WARNING[3285] The C interface for this type of routine is deprecated, please consider migrating to a TMUDF with a C++ or Java interface.
+*** ERROR[11246] An error occurred locating function or class 'SESSIONIZE' in library 'TEST002.dll'.
 
---- SQL operation complete.
+*** ERROR[11248] A call to dlsym returned errors 0 and 0. Details: 
+/opt/home/zellerh/trafodion/core/sqf/rundir/udr/TEST002.dll: undefined symbol: SESSIONIZE.
+
+--- SQL operation failed with errors.
 >>
 >>cqd DEF_NUM_SMP_CPUS '1' ;
 
@@ -190,7 +187,12 @@
 +>FROM UDF(sessionize108 
 +>(TABLE(SELECT userid, ts FROM clicks <<+ cardinality 10e8 >> PARTITION BY userid ORDER BY ts),60)) XO;
 
---- SQL command prepared.
+*** ERROR[1389] Object SESSIONIZE108 does not exist in Trafodion.
+
+*** ERROR[4450] Function SESSIONIZE108 is not a built-in function or registered user-defined function.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>prepare s1 from
 +>SELECT ts, userid, sessionid 
@@ -198,7 +200,12 @@
 +>(TABLE(SELECT userid, ts FROM clicks PARTITION BY userid),60)) XO
 +>;
 
---- SQL command prepared.
+*** ERROR[1389] Object SESSIONIZE108 does not exist in Trafodion.
+
+*** ERROR[4450] Function SESSIONIZE108 is not a built-in function or registered user-defined function.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>prepare s1 from
 +>select token, count(*) from

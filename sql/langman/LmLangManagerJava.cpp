@@ -39,7 +39,7 @@
 #include "LmCommon.h"
 #include "LmJavaHooks.h"
 #include "LmJavaType.h"
-#include "LmRoutineJava.h"
+#include "LmRoutineJavaObj.h"
 #include "LmContManager.h"
 #include "LmJavaExceptionReporter.h"
 #include "UdrFFDC.h"
@@ -75,10 +75,10 @@ NABoolean getDefineSetting(const char *defineName,
 // Global declarations
 //
 //////////////////////////////////////////////////////////////////////
-JavaVM *sqlJVM = NULL; // The per process JVM. The JVM is allocated as
-                       // a global so that (1) it remains after all
-		       // LMJ instances are gone, (2) "utilites" can
-		       // potentially access the JVM (future).
+JavaVM *LmSqlJVM = NULL; // The per process JVM. The JVM is allocated as
+                         // a global so that (1) it remains after all
+                         // LMJ instances are gone, (2) "utilites" can
+                         // potentially access the JVM (future).
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -217,12 +217,15 @@ void LmLanguageManagerJava::initialize(LmResult &result,
   bytesToUnicodeId_ =  unicodeToBytesId_ =
   utilityGetRSInfoId_ = utilityInitRSId_ =
   utilityGetT4RSInfoId_ = utilityInitT4RSId_ = utilityGetConnTypeId_ =
+  lmObjMethodInvokeClass_ = makeNewObjId_ = routineMethodInvokeId_ = routineReturnInfoClass_ =
+  returnInfoStatusField_ = returnInfoRIIField_ = returnInfoRPIField_ =
   rsCloseId_ = rsBeforeFirstId_ = rsNextId_ = rsWasNullId_ = rsGetWarningsId_ =
   rsGetShortId_ = rsGetIntId_ = rsGetLongId_ = rsGetFloatId_ =
   rsGetDoubleId_ = rsGetStringId_ = rsGetObjectId_ = rsGetBigDecimalId_ =
   rsGetDateId_ = rsGetTimeId_ = rsGetTimestampId_ =
   driverInitId_ = connCloseId_ = connIsClosedId_ =
   hpT4ConnSuspUdrXnId_ = NULL;
+  result = LM_OK;
   
   sysCatalog_ = sysSchema_ = NULL;
 
@@ -243,8 +246,20 @@ void LmLanguageManagerJava::initialize(LmResult &result,
     return;
   }
 
+  jsize nVMs = 0;
+  jint jrc = JNI_GetCreatedJavaVMs (&LmSqlJVM, 1, &nVMs);
+  if (jrc != JNI_OK)
+    {
+      *diagsArea_ << DgSqlCode(-LME_INTERNAL_ERROR)
+                  << DgString0(": Unable to determine whether JVMs exist.");
+      result = LM_ERR;
+      return;
+    }
+  if (nVMs == 0)
+    LmSqlJVM = NULL; // JVM has not yet been started
+
   // Allocate the JVM or attach to it.
-  if (sqlJVM == NULL)
+  if (LmSqlJVM == NULL)
   {
     // First we make a copy of the JVM startup options being passed
     // in, and do some massaging of those options before starting the
@@ -352,18 +367,11 @@ void LmLanguageManagerJava::initialize(LmResult &result,
     args.options = vmOptions;
     args.ignoreUnrecognized = JNI_FALSE;
 
-
-    if (keepTxIdInPthreadTCB(diagsArea) != LM_OK)
-    {
-      result = LM_ERR;
-      return;
-    }	
-
     // Create JVM
     TIMER_ON(jvmTimer)
 
     LM_DEBUG0("About to call JNI_CreateJavaVM()...");
-    Int32 jniResult = JNI_CreateJavaVM(&sqlJVM, &jniEnv_, &args);
+    Int32 jniResult = JNI_CreateJavaVM(&LmSqlJVM, &jniEnv_, &args);
     LM_DEBUG1("JNI_CreateJavaVM() returned %d", jniResult);
 
     result = (LmResult) jniResult;
@@ -383,7 +391,7 @@ void LmLanguageManagerJava::initialize(LmResult &result,
     }
 
 
-  } // if (sqlJVM == NULL)
+  } // if (LmSqlJVM == NULL)
 
   else
   {
@@ -392,7 +400,7 @@ void LmLanguageManagerJava::initialize(LmResult &result,
     args.name = NULL;
     args.group = NULL;
 
-    result = (LmResult)sqlJVM->AttachCurrentThread(&jniEnv_, &args);
+    result = (LmResult)LmSqlJVM->AttachCurrentThread(&jniEnv_, &args);
   }
 
   if (result != LM_OK)
@@ -403,7 +411,7 @@ void LmLanguageManagerJava::initialize(LmResult &result,
   }
 
   // Asserts, just to check we don't have NULL pointers
-  LM_ASSERT(sqlJVM != NULL);
+  LM_ASSERT(LmSqlJVM != NULL);
   LM_ASSERT(jniEnv_ != NULL);
   LM_ASSERT(sysClassPath_ != NULL);
 
@@ -603,6 +611,88 @@ void LmLanguageManagerJava::initialize(LmResult &result,
     exceptionReporter_->insertDiags(diagsArea_,
                                     -LME_JVM_SYS_CLASS_ERROR,
                                     "org.trafodion.sql.udr.LmCharsetCoder");
+    result = LM_ERR;
+    return;
+  }
+
+  jc = (jclass) jni->FindClass("org/trafodion/sql/udr/LmUDRObjMethodInvoke");
+  if (jc)
+  {
+    lmObjMethodInvokeClass_ = (jclass) jni->NewGlobalRef(jc);
+    jni->DeleteLocalRef(jc);
+
+    if (lmObjMethodInvokeClass_ != NULL)
+    {
+      /* temporarily commented out
+      makeNewObjId_ = jni->GetStaticMethodID((jclass) lmObjMethodInvokeClass_,
+        "makeNewObj",
+        "(Lorg/trafodion/sql/udr/UDR;[B[B)Lorg/trafodion/sql/udr/LmUDRObjMethodInvoke;");
+      */
+
+      routineMethodInvokeId_ = jni->GetMethodID((jclass) lmObjMethodInvokeClass_,
+        "invokeRoutineMethod",
+        "(I[B[BI)Lorg/trafodion/sql/udr/LmUDRObjMethodInvoke$ReturnInfo;");
+
+      if (jni->ExceptionOccurred() ||
+          // temporarily commented out makeNewObjId_ == NULL ||
+          routineMethodInvokeId_ == NULL)
+      {
+        exceptionReporter_->insertDiags(diagsArea_,
+                                        -LME_JVM_SYS_CLASS_ERROR,
+                                        "org.trafodion.sql.udr.LmUDRObjMethodInvoke");
+        result = LM_ERR;
+        return;
+      }
+    }
+  }
+  else
+  {
+    exceptionReporter_->insertDiags(diagsArea_,
+                                    -LME_JVM_SYS_CLASS_ERROR,
+                                    "org.trafodion.sql.udr.LmUDRObjMethodInvoke");
+    result = LM_ERR;
+    return;
+  }
+
+  jc = (jclass) jni->FindClass("org/trafodion/sql/udr/LmUDRObjMethodInvoke$ReturnInfo");
+  if (jc)
+  {
+    routineReturnInfoClass_ = (jclass) jni->NewGlobalRef(jc);
+    jni->DeleteLocalRef(jc);
+
+    if (routineReturnInfoClass_ != NULL)
+    {
+      returnInfoStatusField_ = jni->GetFieldID(
+           (jclass) routineReturnInfoClass_,
+           "returnStatus_",
+           "I");
+      returnInfoRIIField_ = jni->GetFieldID(
+           (jclass) routineReturnInfoClass_,
+           "returnedInvocationInfo_",
+           "[B");
+      returnInfoRPIField_ = jni->GetFieldID(
+           (jclass) routineReturnInfoClass_,
+           "returnedPlanInfo_",
+           "[B");
+
+      if (jni->ExceptionOccurred() ||
+          returnInfoStatusField_ == NULL ||
+          returnInfoRIIField_ == NULL ||
+          returnInfoRPIField_ == NULL)
+      {
+        exceptionReporter_->insertDiags(diagsArea_,
+                                        -LME_JVM_SYS_CLASS_ERROR,
+                                        "org.trafodion.sql.udr.LmUDRObjMethodInvoke$ReturnInfo");
+        result = LM_ERR;
+        return;
+      }
+    }
+  }
+  else
+  {
+    exceptionReporter_->insertDiags(diagsArea_,
+                                    -LME_JVM_SYS_CLASS_ERROR,
+                                    "org.trafodion.sql.udr.LmUDRObjMethodInvoke$ReturnInfo");
     result = LM_ERR;
     return;
   }
@@ -1312,9 +1402,6 @@ LmResult LmLanguageManagerJava::initJavaClasses()
 
 LmLanguageManagerJava::~LmLanguageManagerJava()
 {
-  // Ignore the return error to continue clean up
-  short ret = keepTxIdInPthreadTCB(diagsArea_);
-
   JNIEnv* jni = (JNIEnv*)jniEnv_;
 
   // Adjust the LMJ counter.
@@ -1364,24 +1451,26 @@ LmLanguageManagerJava::~LmLanguageManagerJava()
   unloadSysClass(doubleClass_);
   unloadSysClass(resultSetClass_);
   unloadSysClass(connClass_);
+  unloadSysClass(lmObjMethodInvokeClass_);
+  unloadSysClass(routineReturnInfoClass_);
 
   unloadSysClass(jdbcMxT2Driver_);
   unloadSysClass(jdbcMxT4Driver_);
 
   // Detach from JVM.
-  sqlJVM->DetachCurrentThread();
+  LmSqlJVM->DetachCurrentThread();
 }
 
 void LmLanguageManagerJava::destroyVM()
 {
   LM_ASSERT(numLMJava_ == 0);
 
-  if (sqlJVM)
+  if (LmSqlJVM)
   {
     lmRestoreJavaSignalHandlers();
     // Bring down the JVM
-    sqlJVM->DestroyJavaVM();
-    sqlJVM = NULL;
+    LmSqlJVM->DestroyJavaVM();
+    LmSqlJVM = NULL;
     lmRestoreUdrTrapSignalHandlers(TRUE);
   }
 
@@ -1407,9 +1496,6 @@ LmResult LmLanguageManagerJava::validateRoutine(
   const char    *optionalSig,
   ComDiagsArea  *diagsArea)
 {
-  if (keepTxIdInPthreadTCB(diagsArea) != LM_OK)
-     return LM_ERR;
-
   LmContainer *container;
   JNIEnv *jni = (JNIEnv*)jniEnv_;
   LmResult result = LM_OK;
@@ -1519,8 +1605,6 @@ LmResult LmLanguageManagerJava::getRoutine(
   ComRoutineParamStyle paramStyle,
   ComRoutineTransactionAttributes transactionAttrs,
   ComRoutineSQLAccess sqlAccessMode,
-  tmudr::UDRInvocationInfo *invocationInfo,
-  tmudr::UDRPlanInfo       *planInfo,
   const char   *parentQid,
   ComUInt32    inputRowLen,
   ComUInt32    outputRowLen,
@@ -1540,9 +1624,6 @@ LmResult LmLanguageManagerJava::getRoutine(
   ComUInt32    maxResultSets,
   ComDiagsArea *diagsArea)
 {
-  if (keepTxIdInPthreadTCB(diagsArea) != LM_OK)
-     return LM_ERR;
-
   NABoolean status = lmRestoreJavaSignalHandlers();
   if (status != TRUE) {
     if (diagsArea)
@@ -1580,7 +1661,10 @@ LmResult LmLanguageManagerJava::getRoutine(
       // allocate an LM handle for the Java method.
       LmRoutineJava *h = new (collHeap()) 
         LmRoutineJava(sqlName, externalName, librarySqlName, numSqlParam, returnValue,
-                      maxResultSets, (char *)routineSig, transactionAttrs, sqlAccessMode,
+                      maxResultSets, (char *)routineSig,
+                      COM_STYLE_JAVA_CALL,
+                      transactionAttrs,
+                      sqlAccessMode,
                       externalSecurity, 
 		      routineOwnerId,
                       parentQid, inputRowLen, outputRowLen,
@@ -1644,6 +1728,176 @@ LmResult LmLanguageManagerJava::getRoutine(
   return result;
 }
 
+LmResult LmLanguageManagerJava::getObjRoutine(
+     const char            *serializedInvocationInfo,
+     int                    invocationInfoLen,
+     const char            *serializedPlanInfo,
+     int                    planInfoLen,
+     ComRoutineLanguage     language,
+     ComRoutineParamStyle   paramStyle,
+     const char            *externalName,
+     const char            *containerName,
+     const char            *externalPath,
+     const char            *librarySqlName,
+     LmRoutine            **handle,
+     ComDiagsArea          *diagsArea)
+{
+  NABoolean status = lmRestoreJavaSignalHandlers();
+  if (status != TRUE) {
+    if (diagsArea)
+      *diagsArea_ << DgSqlCode(-LME_INTERNAL_ERROR)
+   	          << DgString0(": Could not restore Java signal handlers before entering Java in getObjRoutine");
+    return LM_ERR;
+  }
+  LM_DEBUG_SIGNAL_HANDLERS("[SIGNAL] Restored Java signal handlers before entering Java in getObjRoutine");
+
+  JNIEnv *jni = (JNIEnv*)jniEnv_;
+  *handle = NULL;
+  LmContainer *container = NULL;
+  LmResult result = LM_OK;
+
+  ComDiagsArea *da = NULL;
+  da = ((diagsArea != NULL) ? diagsArea : diagsArea_);
+  
+  if (startService(da) == LM_ERR)
+    result = LM_ERR;
+
+  if (result != LM_ERR) 
+    // Get the requested container from the CM.
+    result = contManager_->getContainer(containerName, externalPath,
+                                        &container, da);
+  
+  if (result != LM_ERR)
+  {
+    // Get the method ID from the container for the requested routine.
+    jmethodID jm = jni->GetMethodID((jclass)container->getHandle(), 
+                                    externalName,
+                                    "()V");
+  
+    // Handle the result of the method ID look-up.
+    if (jm != NULL)
+    {
+      tmudr::UDRInvocationInfo *invocationInfo = NULL;
+      ComRoutineTransactionAttributes transactionAttrs = COM_NO_TRANSACTION_REQUIRED;
+      ComRoutineSQLAccess sqlAccessMode = COM_NO_SQL;
+      ComRoutineExternalSecurity externalSecurity = COM_ROUTINE_EXTERNAL_SECURITY_DEFINER;
+
+      // call the default constructor for the specified class, this
+      // creates a user-defined object derived from class
+      // org.trafodion.sql.udr.UDR. We pass this object to the
+      // Routine constructor, which will allocate a global reference
+      // for it and dispose of it when it is destroyed. We make this
+      // call outside the LmRoutineJavaObj constructor so that it
+      // can also be done for validation.
+
+      jobject newUDRObj = jni->NewObject((jclass)container->getHandle(), jm);
+
+      if (newUDRObj == NULL || jni->ExceptionOccurred())
+        {
+          if (diagsArea)
+            *diagsArea_ << DgSqlCode(-LME_CONSTRUCTOR_ERROR)
+                        << DgString0(containerName);
+          result = LM_ERR;
+        }
+
+      if (invocationInfoLen > 0 && result == LM_OK)
+        {
+          // unpack invocation info to get to some info for the routine
+          invocationInfo = new tmudr::UDRInvocationInfo();
+
+          try
+            {
+              invocationInfo->deserializeObj(serializedInvocationInfo,
+                                             invocationInfoLen);
+            }
+          catch (...)
+            {
+              *da << DgSqlCode(-LME_INTERNAL_ERROR)
+                  << DgString0(": Error unpacking info in LmLanguageManagerJava::getObjRoutine()");
+              result = LM_ERR;
+            }
+
+          if (result == LM_OK)
+            {
+              // for now we don't allow a choice, once we do we need to translate enums
+              LM_ASSERT(invocationInfo->sqlTransactionType_ ==
+                        tmudr::UDRInvocationInfo::REQUIRES_NO_TRANSACTION);
+              LM_ASSERT(invocationInfo->sqlAccessType_ ==
+                        tmudr::UDRInvocationInfo::CONTAINS_NO_SQL);
+              LM_ASSERT(invocationInfo->sqlRights_ ==
+                        tmudr::UDRInvocationInfo::INVOKERS_RIGHTS);
+
+              // allocate an LM handle for the Java method.
+              LmRoutineJavaObj *h = new (collHeap()) 
+                LmRoutineJavaObj(invocationInfo->getUDRName().c_str(),
+                                 externalName,
+                                 librarySqlName,
+                                 transactionAttrs,
+                                 sqlAccessMode,
+                                 externalSecurity, 
+                                 0, // routine owner id is 0 for now
+                                 serializedInvocationInfo,
+                                 invocationInfoLen,
+                                 serializedPlanInfo,
+                                 planInfoLen,
+                                 this,
+                                 newUDRObj,
+                                 container,
+                                 da);
+
+              // Verify the handle.
+              if (h == NULL || !h->isValid())
+                {
+                  // DiagsArea is already filled by LmRoutineJava.
+                  if (h)
+                    delete h;
+
+                  // no need to deallocate newUDRObj, since it is
+                  // just a local reference
+
+                  result = LM_ERR;
+                }
+              else
+                {
+                  *handle = h;
+                }
+            }
+
+          if (invocationInfo)
+            delete invocationInfo;
+        } // invocation info was specified
+      else if (result == LM_OK)
+        {
+          // Invocation info length is 0, this happens during
+          // validation of a routine at DDL time. Return success
+          // but don't create a routine object.
+        }
+    }
+    else // Look-up failed. Set Diags area and return error.
+    {
+      result = exceptionReporter_->checkGetMethodExceptions(externalName,
+                                                            containerName,
+                                                            da);
+      result = LM_ERR;
+    }
+  }
+
+  status = lmRestoreUdrTrapSignalHandlers(TRUE);
+  if (status != TRUE) {
+    if (diagsArea)
+      *diagsArea_ << DgSqlCode(-LME_INTERNAL_ERROR)
+   	          << DgString0(": Could not restore UDR trap signal handlers after returning from Java in getObjRoutine");
+    result = LM_ERR; 
+  }
+  LM_DEBUG_SIGNAL_HANDLERS("[SIGNAL] Restored UDR trap signal handlers after returning from Java in getObjRoutine");
+
+  // avoid leaking a container in the error case
+  if (result != LM_OK && container)
+    contManager_->putContainer(container);
+
+  return result;
+}
+
 //////////////////////////////////////////////////////////////////////
 // LM serivce: putRoutine.
 //////////////////////////////////////////////////////////////////////
@@ -1651,9 +1905,6 @@ LmResult LmLanguageManagerJava::putRoutine(
   LmRoutine    *handle,
   ComDiagsArea *diagsArea)
 {
-  if (keepTxIdInPthreadTCB(diagsArea) != LM_OK)
-     return LM_ERR;
-
   ComDiagsArea *da = NULL;
   da = ((diagsArea != NULL) ? diagsArea : diagsArea_);
 
@@ -1707,9 +1958,6 @@ LmResult LmLanguageManagerJava::invokeRoutine(
   void *outputRow,
   ComDiagsArea *diagsArea)
 {
-  if (keepTxIdInPthreadTCB(diagsArea) != LM_OK)
-     return LM_ERR;
-
   JNIEnv *jni = (JNIEnv*)jniEnv_;
   ComDiagsArea *da = NULL;
   da = ((diagsArea != NULL) ? diagsArea : diagsArea_);
@@ -3319,7 +3567,7 @@ LmResult LmLanguageManagerJava::convertFromDouble(
  */
 LmResult LmLanguageManagerJava::startService(ComDiagsArea *da)
 {
-  if (sqlJVM != NULL && jniEnv_ != NULL && threadId_ == threadId())
+  if (LmSqlJVM != NULL && jniEnv_ != NULL && threadId_ == threadId())
     return LM_OK;
   else
   {
@@ -3578,43 +3826,3 @@ LmLanguageManagerJava::processJavaOptions(const LmJavaOptions &userOptions,
 
 
 } // processJavaOptions()
-
-//
-// NSJ has a problem with transactions. A transaction started or
-// inherited by our C++ code may be lost while we are in the JVM. The
-// reasons are as follows:
-// 
-// a. Our C++ code executes in the MAIN thread from a pthreads
-//    perspective.
-// 
-// b. Our transactions are started outside the pthreads world.
-//
-// c. When the JVM is in control it can switch pthreads threads. In
-//    doing so it also switches transactions.
-//
-// d. Before the JVM returns to us it will switch back to the MAIN
-//    thread.
-//
-// e. Because pthreads does not know about our transaction, the MAIN
-//    thread is not associated with a transaction. Switching to the MAIN
-//    thread puts the process in a state where no transaction is active.
-//
-// One scenario where the JVM will switch threads is Java garbage
-// collection. Garbage collection is done by a special thread internal
-// to the JVM called the NULL thread.
-//
-// The following is a work around until NSJ resolves this problem.
-// Here we let PThreads know about the externally started TX by
-// putting a handle for that TX into its transaction control block
-// (TCB). This needs to be done at the beginning of every LM "service"
-// method. See comments in LmLangManager.java for information on which
-// methods make up the LM "service" interface.
-//
-// SPT_TMF_GetTxHandle() name is misleading. It gets the TransID from
-// TMF, not from SPT threads structure.
-//
-LmResult LmLanguageManagerJava::keepTxIdInPthreadTCB(ComDiagsArea *da)
-{
-  return LM_OK;
-}
-

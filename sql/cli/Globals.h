@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -70,6 +70,7 @@
 #include "logmxevent.h"
 #include "ComExeTrace.h"
 #include "ComRtUtils.h"
+#include "ComSmallDefs.h"
 class ContextCli;
 class CliStatement;  // $$$ possibly a stub for QuasiFileberManager
 class ComDiagsArea; // $$$ possibly a stub for QuasiFileberManager
@@ -91,6 +92,9 @@ class HBaseClient_JNI;
 class HiveClient_JNI;
 class TransMode;
 class ContextTidMap;
+class LmLanguageManager;
+class LmLanguageManagerC;
+class LmLanguageManagerJava;
 extern CliGlobals *cli_globals;
 static __thread ContextTidMap *tsCurrentContextMap = NULL;
 static  pthread_key_t thread_key;
@@ -412,6 +416,13 @@ inline
   CLISemaphore *getSemaphore() { return cliSemaphore_; }
 
   IpcServerClass * getCbServerClass();
+
+  // for trusted UDR invocations from executor and compiler
+  LmLanguageManager * getLanguageManager(ComRoutineLanguage language);
+  LmLanguageManagerC * getLanguageManagerC();
+  LmLanguageManagerJava * getLanguageManagerJava();
+
+
 #ifdef _DEBUG
   void deleteContexts();
 #endif  // _DEBUG
@@ -600,6 +611,9 @@ private:
   HashQueue *tidList_;
   CLISemaphore *cliSemaphore_;
   ExProcessStats *processStats_;
+  // for trusted UDR invocations from executor and compiler
+  LmLanguageManagerC *langManC_;
+  LmLanguageManagerJava *langManJava_;
 };
 #pragma warn(1506)   // warning elimination
 

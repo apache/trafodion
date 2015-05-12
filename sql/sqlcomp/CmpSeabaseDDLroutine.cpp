@@ -727,9 +727,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
           (language == COM_LANGUAGE_CPP ||
            !createRoutineNode->isLanguageTypeSpecified()))
         {
-          // Table UDFs (TMUDFs) default to the new
-          // C++ interface, unless language is specified
-          // as C
+          // Table UDFs (TMUDFs) default to the C++ interface
           language = COM_LANGUAGE_CPP;
           style    = COM_STYLE_CPP_OBJ;
         }
@@ -740,17 +738,6 @@ void CmpSeabaseDDL::createSeabaseRoutine(
           // scalar UDFs default to C and SQL parameter style
           language = COM_LANGUAGE_C;
           style    = COM_STYLE_SQL;
-        }
-      else if (rType == COM_UNIVERSAL_UDF_TYPE ||
-               rType == COM_ACTION_UDF_TYPE ||
-               (rType == COM_TABLE_UDF_TYPE &&
-                language == COM_LANGUAGE_C))
-        {
-          // these deprecated routine types use the older C row style
-          language = COM_LANGUAGE_C;
-          style    = COM_STYLE_SQLROW_TM;
-          // issue a warning
-          *CmpCommon::diags() << DgSqlCode(3285);
         }
       else
         {
@@ -764,12 +751,26 @@ void CmpSeabaseDDL::createSeabaseRoutine(
 
   if (createRoutineNode->isParamStyleSpecified() &&
       ddlStyle != style)
-        {
-          // An unsupported PARAMETER STYLE was specified
-          *CmpCommon::diags() << DgSqlCode(-3280);
-          processReturn();
-          return;
-        }
+    {
+      // An unsupported PARAMETER STYLE was specified
+      *CmpCommon::diags() << DgSqlCode(-3280);
+      processReturn();
+      return;
+    }
+
+  NAString externalName;
+  if (language == COM_LANGUAGE_JAVA &&
+      style == COM_STYLE_JAVA_CALL)
+    {
+      // the external name is a Java method signature
+      externalName = createRoutineNode->getJavaClassName();
+      externalName += "." ;
+      externalName += createRoutineNode->getJavaMethodName();
+    }
+  else
+    // the external name is a C/C++ entry point or a
+    // Java class name
+    externalName = createRoutineNode->getExternalName();
 
   // Verify that current user has authority to create the routine
   // User must be DB__ROOT or have privileges
@@ -821,9 +822,10 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   // Allocate buffer for generated signature
   char sigBuf[MAX_SIGNATURE_LENGTH];
   sigBuf[0] = '\0';
-  // validate routine
-  if (language == COM_LANGUAGE_JAVA) 
+
+  if (style == COM_STYLE_JAVA_CALL) 
   {
+     // validate routine for Java call based on signature
      Lng32 numJavaParam = 0;
      ComFSDataType *paramType = new ComFSDataType[numParams];
      ComUInt32     *subType   = new ComUInt32    [numParams];
@@ -924,6 +926,76 @@ void CmpSeabaseDDL::createSeabaseRoutine(
        return;
      }
   }
+  else if (style == COM_STYLE_JAVA_OBJ ||
+           style == COM_STYLE_CPP_OBJ)
+  {
+    // validate existence of the C++ or Java class in the library
+    Int32 routineHandle = NullCliRoutineHandle;
+    NAString externalPrefix(externalPath);
+    NAString externalNameForValidation(externalName);
+    NAString containerName;
+
+    if (language == COM_LANGUAGE_C || language == COM_LANGUAGE_CPP)
+      {
+        // separate the actual DLL name from the prefix
+        char separator = '/';
+        size_t separatorPos = externalPrefix.last(separator);
+
+        if (separatorPos != NA_NPOS)
+          {
+            containerName = externalPrefix(separatorPos+1,
+                                           externalPrefix.length()-separatorPos-1);
+            externalPrefix.remove(separatorPos,
+                                  externalPrefix.length()-separatorPos);
+          }
+        else
+          {
+            // assume the entire string is a local name
+            containerName = externalPrefix;
+            externalPrefix = ".";
+          }
+      }
+    else
+      {
+        // For Java, the way the language manager works is that the
+        // external path is the fully qualified name of the jar and
+        // the container is the class name (external name).  We load
+        // the container (the class) by searching in the path (the
+        // jar). The external name is the method name, which in this
+        // case is the constructor of the class, <init>.
+
+        // leave externalPrevix unchanged, fully qualified jar file
+        containerName = externalName;
+        externalNameForValidation = "<init>";
+      }
+
+    // use a CLI call to validate that the library contains the routine
+    if (cliInterface.getRoutine(
+             NULL, // No InvocationInfo specified in this step
+             0,
+             NULL,
+             0,
+             (Int32) language,
+             (Int32) style,
+             externalNameForValidation.data(),
+             containerName.data(),
+             externalPrefix.data(),
+             extLibraryName.data(),
+             &routineHandle,
+             CmpCommon::diags()) != LME_ROUTINE_VALIDATED)
+      {
+        if (routineHandle != NullCliRoutineHandle)
+          cliInterface.putRoutine(routineHandle,
+                                  CmpCommon::diags());
+
+        CMPASSERT(CmpCommon::diags()->mainSQLCODE() < 0);
+        processReturn();
+        return;
+      }
+
+    cliInterface.putRoutine(routineHandle,
+                            CmpCommon::diags());
+  }
 
   ComTdbVirtTableColumnInfo * colInfoArray = (ComTdbVirtTableColumnInfo*)
     new(STMTHEAP) ComTdbVirtTableColumnInfo[numParams];
@@ -976,15 +1048,6 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   getExternalSecurityLit(createRoutineNode->getExternalSecurity(), externalSecurity);
   NAString executionMode;
   getExecutionModeLit(createRoutineNode->getExecutionMode(), executionMode);
-  NAString externalName;
-  if (language == COM_LANGUAGE_JAVA)
-    {
-      externalName = createRoutineNode->getJavaClassName();
-      externalName += "." ;
-      externalName += createRoutineNode->getJavaMethodName();
-    }
-  else
-    externalName = createRoutineNode->getExternalName() ;
   
 
   char * query = new(STMTHEAP) char[2000+MAX_SIGNATURE_LENGTH];

@@ -104,7 +104,7 @@ Int32 sendReqBufferWaitedReply(UdrGlobals *udrGlobals,
   return result;
 }
 
-Int32 SpInfoGetNextRow(char            *rowData,           
+void SpInfoGetNextRow(char            *rowData,           
                       Int32             tableIndex,           
                       SQLUDR_Q_STATE  *queue_state        
                       )
@@ -127,7 +127,7 @@ Int32 SpInfoGetNextRow(char            *rowData,
   {
 // LCOV_EXCL_START
     *queue_state = SQLUDR_Q_CANCEL;
-    return SQLUDR_ERROR;
+    return;
 // LCOV_EXCL_STOP
   }
 
@@ -140,7 +140,7 @@ Int32 SpInfoGetNextRow(char            *rowData,
     if(status == SQLUDR_ERROR)
     {
       *queue_state = SQLUDR_Q_CANCEL;
-      return SQLUDR_ERROR;
+      return;
     }
 
     //expect sql buffer to be populated in spinfo now. So get it.
@@ -150,7 +150,7 @@ Int32 SpInfoGetNextRow(char            *rowData,
     {
       //Something is wrong this time.
       *queue_state = SQLUDR_Q_CANCEL;
-      return SQLUDR_ERROR;
+      return;
     }
   }
 
@@ -171,7 +171,7 @@ Int32 SpInfoGetNextRow(char            *rowData,
     if(sp->isLastReqSqlBuffer(tableIndex))
     {
       *queue_state = SQLUDR_Q_EOD;
-      return SQLUDR_SUCCESS;
+      return;
     }
 
     //As a safety measure, memset the sql buffer since we expect new
@@ -183,7 +183,7 @@ Int32 SpInfoGetNextRow(char            *rowData,
     if(status == SQLUDR_ERROR)
     {
       *queue_state = SQLUDR_Q_CANCEL;
-      return SQLUDR_ERROR;
+      return;
     }
 
     // Now get the new buffer.
@@ -191,7 +191,7 @@ Int32 SpInfoGetNextRow(char            *rowData,
     if (getSqlBuf == NULL)
     {
       *queue_state = SQLUDR_Q_CANCEL;
-      return SQLUDR_ERROR;
+      return;
     }
 
     //Extract the row again.
@@ -212,13 +212,13 @@ Int32 SpInfoGetNextRow(char            *rowData,
       if(sp->isLastReqSqlBuffer(tableIndex))
       {
         *queue_state = SQLUDR_Q_EOD;
-        return SQLUDR_SUCCESS;
+        return;
       }
 
       //we just got the buffer, it cannot be empty unless 
       //it is last buffer indication.
       *queue_state = SQLUDR_Q_CANCEL;
-      return SQLUDR_ERROR;
+      return;
     }
   }
 
@@ -226,7 +226,7 @@ Int32 SpInfoGetNextRow(char            *rowData,
   memcpy(rowData, requestRow.getDataPointer(), sp->getInputRowLength(tableIndex));  
   
   *queue_state = SQLUDR_Q_MORE;
-  return SQLUDR_SUCCESS;
+  return;
 
 }
 
@@ -391,10 +391,6 @@ Int32 SpInfoEmitRow  (char            *rowData,
     sp->setEmitSqlBuffer(emitSqlBuffer, tableIndex);
   }
 
-  if (sp->getInvocationInfo() &&
-      (sp->getInvocationInfo()->getDebugFlags() & tmudr::UDRInvocationInfo::VALIDATE_WALLS))
-    static_cast<LmRoutineCppObj *>(sp->getLMHandle())->validateWalls();
-
   //Allocate a row inside replyBuffer.
   char *replyData = NULL;
   ControlInfo *replyControlInfo = NULL;
@@ -464,10 +460,10 @@ Int32 SpInfoEmitRow  (char            *rowData,
 // to send an EOD row, which is included in the last reply buffer of
 // regular results. The EOD call is done by the caller of the UDF code,
 // not the UDF code itself.
-Int32 SpInfoEmitRowCpp(char            *rowData,           
-                       Int32             tableIndex,         
-                       SQLUDR_Q_STATE  *queue_state        
-                       )
+void SpInfoEmitRowCpp(char            *rowData,           
+                      Int32             tableIndex,         
+                      SQLUDR_Q_STATE  *queue_state        
+                      )
 {
   UdrGlobals *udrGlobals = UDR_GLOBALS;
   
@@ -483,6 +479,8 @@ Int32 SpInfoEmitRowCpp(char            *rowData,
   SPInfo *sp = udrGlobals->getCurrSP();
   if(!sp)
     throw tmudr::UDRException(38900, "Missing SPInfo for this UDF");
+
+  LmRoutineCppObj *routine = static_cast<LmRoutineCppObj *>(sp->getLMHandle());
 
   // Access emit SQL buffer that corresponds to table index 
   SqlBuffer *emitSqlBuffer = sp->getEmitSqlBuffer(tableIndex);
@@ -549,8 +547,8 @@ Int32 SpInfoEmitRowCpp(char            *rowData,
                (int) sp->getReplyBufferSize());
     }
 
-  if (sp->getInvocationInfo()->getDebugFlags() & tmudr::UDRInvocationInfo::VALIDATE_WALLS)
-    static_cast<LmRoutineCppObj *>(sp->getLMHandle())->validateWalls();
+  if (routine->getInvocationInfo()->getDebugFlags() & tmudr::UDRInvocationInfo::VALIDATE_WALLS)
+    routine->validateWalls();
 
   if (replyData)
     memcpy(replyData, rowData, sp->getReplyRowSize());
@@ -562,7 +560,4 @@ Int32 SpInfoEmitRowCpp(char            *rowData,
       if(status == SQLUDR_ERROR)
         throw tmudr::UDRException(38900, "Error in sending buffer with EOD from TMUDF");
     }
-
-  return SQLUDR_SUCCESS;
-
 }

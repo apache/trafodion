@@ -3062,7 +3062,7 @@ StmtDDLCreateRoutine::synthesize()
         *SqlParser_Diags << DgSqlCode(-3277);
         isErrorFound = TRUE;
       }
-      else if (languageType_ EQU COM_LANGUAGE_JAVA)
+      else if (getRoutineType() NEQ COM_TABLE_UDF_TYPE AND languageType_ EQU COM_LANGUAGE_JAVA)
       {
         *SqlParser_Diags << DgSqlCode(-3269);
         isErrorFound = TRUE;
@@ -3108,6 +3108,17 @@ StmtDDLCreateRoutine::synthesize()
     if ( sqlAccessSpecified_ AND sqlAccess_ NEQ COM_NO_SQL)
     {
       *SqlParser_Diags << DgSqlCode(-3271);
+      isErrorFound = TRUE;
+    }
+
+    if (getRoutineType() EQU COM_TABLE_UDF_TYPE &&
+        (finalCallSpecified_ OR stateAreaSizeSpecified_))
+    {
+      *SqlParser_Diags << DgSqlCode(-3287);
+      if (finalCallSpecified_)
+        *SqlParser_Diags << DgString0("FINAL CALL");
+      else
+        *SqlParser_Diags << DgString0("STATE AREA SIZE");
       isErrorFound = TRUE;
     }
 

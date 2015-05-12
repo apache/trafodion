@@ -1,7 +1,7 @@
 # ****************************************************************************
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ GLOBAL_TARGETS = clobber distclean
 # isn't too important that we are able to do that.
 ifneq (1,$(words $(MAKECMDGOALS)))
   ifneq (0,$(words $(MAKECMDGOALS)))
-    $(error We don't currently support more than one target... Sorry)
+    $(error We dont currently support more than one target... Sorry)
   endif
 endif
 

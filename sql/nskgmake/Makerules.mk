@@ -1,7 +1,7 @@
 # ****************************************************************************
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -94,8 +94,8 @@ JAR       := $(JAVA_HOME)/bin/jar
 BASE_INCLUDE_DIRS := sqlci arkcmp comexe sqlfe eh export sqlmsg sqlcomp \
 	sqlcat executor parser generator exp filesystem optimizer cli \
 	nskcre common dml arkfsindp2 arkfsinopen ddl sort catman \
-	smdio ustat sqlshare sqlmxevents bin langman udrserv security \
-	runtimestats qmscommon porting_layer
+	smdio ustat sqlshare sqlmxevents bin langman sqludr udrserv \
+	security runtimestats qmscommon porting_layer
 
 # SQLUTILS_INCLUDE_DIRS defines the directories that are included
 # during the compilation of all files that are under the sqlutils
@@ -361,8 +361,13 @@ endif
 # DLL's should be build before executables, so we are adding this dependency here.
 # $(FINAL_EXES): $(FINAL_DLLS)
 
+# Some (soon maybe all) Java files get built through Maven
+mavenbuild:
+	set -o pipefail && cd ..; $(MAVEN) -f pom.xml package -DskipTests | tee maven_build.log | grep -v WARNING
+	cp -pf ../target/*.jar $(MY_SQROOT)/export/lib
+
 # This is where the top-level is declared to build everything.
-buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_JARS) $(FINAL_EXES)
+buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_JARS) $(FINAL_EXES) mavenbuild
 
 clean:
 	@echo "Removing intermediate objects for $(TARGTYPE)/$(ARCHBITS)/$(FLAVOR)"
@@ -378,4 +383,5 @@ clean:
 	@rm -rf $(LOGFILE) $(LOGFILE).old
 	@echo "Removing coverage files"
 	@-find $(TOPDIR) -maxdepth 1 -name '*.gcov' -print | xargs rm -f
+	@cd ..; mvn clean
 

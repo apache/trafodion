@@ -8504,11 +8504,15 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   " sql_access, call_on_null, isolate_bool, param_style,"
   " transaction_attributes, max_results, state_area_size, external_name,"
   " parallelism, user_version, external_security, execution_mode,"
-  " library_filename, version, signature from %s.\"%s\".%s a, %s.\"%s\".%s b"
-  " where a.udr_uid = %Ld and a.library_uid = b.library_uid "
-  " for read committed access",
+  " library_filename, version, signature,  catalog_name, schema_name,"
+  " object_name"
+  " from %s.\"%s\".%s r, %s.\"%s\".%s l, %s.\"%s\".%s o "
+  " where r.udr_uid = %Ld and r.library_uid = l.library_uid "
+  " and l.library_uid = o.object_uid for read committed access",
        getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
-       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, objectUID);
+       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
+       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+       objectUID);
 
 
   cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
@@ -8598,6 +8602,27 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   cliInterface.getPtrAndLen(18, ptr, len);
   routineInfo->signature = new (STMTHEAP) char[len+1];    
   str_cpy_and_null((char *)routineInfo->signature, ptr, len, '\0', ' ', TRUE);
+  // library SQL name, in three parts
+  cliInterface.getPtrAndLen(19, ptr, len);
+  char *libCat = new (STMTHEAP) char[len+1];    
+  str_cpy_and_null(libCat, ptr, len, '\0', ' ', TRUE);
+  cliInterface.getPtrAndLen(20, ptr, len);
+  char *libSch = new (STMTHEAP) char[len+1];    
+  str_cpy_and_null(libSch, ptr, len, '\0', ' ', TRUE);
+  cliInterface.getPtrAndLen(21, ptr, len);
+  char *libObj = new (STMTHEAP) char[len+1];    
+  str_cpy_and_null(libObj, ptr, len, '\0', ' ', TRUE);
+  ComObjectName libSQLName(libCat, libSch, libObj,
+                           COM_UNKNOWN_NAME,
+                           ComAnsiNamePart::INTERNAL_FORMAT,
+                           STMTHEAP);
+  NAString libSQLExtName = libSQLName.getExternalName();
+  routineInfo->library_sqlname = new (STMTHEAP) char[libSQLExtName.length()+1];    
+  str_cpy_and_null((char *)routineInfo->library_sqlname,
+                   libSQLExtName.data(),
+                   libSQLExtName.length(),
+                   '\0', ' ', TRUE);
+  
   ComTdbVirtTableColumnInfo *paramsArray;
   Lng32 numParams;
   char direction[50];

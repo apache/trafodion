@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2000-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2000-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,376 +17,110 @@
 // @@@ END COPYRIGHT @@@
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <wchar.h>
-#include <math.h>
-#include "sqlcli.h"
 #include "sqludr.h"
-//#include "hdfs.h"
+
+
+using namespace tmudr;
 
 /*
-tokenizer (TABLE doc_table, char pattern)
+tokenizer[1] (TABLE doc_table, char pattern)
 */
 
-extern "C" {
-
-SQLUDR_LIBFUNC SQLUDR_INT32 TOKENIZER(
-  SQLUDR_CHAR           *in_data,
-  SQLUDR_TMUDF_TRAIL_ARGS)
+class Tokenizer : public UDR
 {
-  
-  char            *inData = NULL;
-  SQLUDR_PARAM    *inParam = NULL;
-  unsigned long    inDataLen = 0;
+public:
 
-  char            *outData = NULL;
-  SQLUDR_PARAM    *outParam = NULL;
-  unsigned long   outDataLen = 0;
+  // override the runtime method
+  void processData(UDRInvocationInfo &info,
+                   UDRPlanInfo &plan);
+};
 
-  char            pattern[5] ;
-  unsigned int    i;
-
-  char            inText[4096];
-  char            *token;
-  int             len = 0;
-
-  SQLUDR_Q_STATE  qstate;
-  SQLUDR_GetNextRow      getR = NULL;
-  SQLUDR_EmitRow         emitR= NULL;
-  SQLUDR_INT32 retcode = SQLUDR_SUCCESS;
-
-  if (calltype == SQLUDR_CALLTYPE_FINAL)
-    return SQLUDR_SUCCESS;
-
-  /* For this test program, SQLUDR_CALLTYPE_INITIAL and */
-  /* SQLUDR_CALLTYPE_NORMAL are the same. */
-
-  /* store getRow and emitRow function pointers */
-  /* passed as arguments */
-  if((getRow == NULL) || (emitRow == NULL))
-    return SQLUDR_ERROR;
-  getR = getRow;
-  emitR =emitRow; 
-
-  /* extract all the scalar values */
-  for(i= 0; i < udrinfo->num_inputs; i++)
-  {
-    inParam = &(udrinfo->inputs[i]);
-    inData = in_data + inParam->data_offset;
-    inDataLen = inParam->data_len; 
-    
-    /* expect scalar values to be input in desired order */
-    switch(i)
-    {
-      case 0: /* scalar argument 1, pattern */
-	{
-	  if (inDataLen > 4)
-	    return SQLUDR_ERROR;
-	  memcpy(pattern, inData, inDataLen);
-	  pattern[inDataLen] = 0;
-	  break;
-	}
-
-      default:
-	strncpy(msgtext,"The Table Mapping UDF TOKENIZER expects only "
-                "one scalar input parameter", 72);
-        return SQLUDR_ERROR;
-    }
-  }
-
-  /* Determine length, type and address of single column in table input */
-  for(i = 0; i < udrinfo->table_inputs[0].num_params; i++)
-  {
-    inParam = &udrinfo->table_inputs[0].params[i];
-    inData = rowDataSpace1 + inParam->data_offset;
-    inDataLen = inParam->data_len; 
-
-    if (i != 0)
-    {
-      strncpy(msgtext,"The Table Mapping UDF TOKENIZER expects only "
-              "one column in its table input", 75);
-      /* expect only one column inputs? */
-      return SQLUDR_ERROR;
-    }
-  }
-
-  /* determine length and address of single column in table output */
-  for(i = 0; i < udrinfo->num_return_values; i++)
-  {
-    outParam = &udrinfo->return_values[i];
-    outData = rowDataSpace2 + outParam->data_offset;
-    outDataLen = outParam->data_len; 
-    if (i != 0)
-    {
-      strncpy(msgtext,"The Table Mapping UDF TOKENIZER will produce only "
-              "one column in its output", 75);
-      /* I informed MXCMP that I will produce only 1 value. */
-      return SQLUDR_ERROR;
-    }
-  }
-  
-  do
-  {
-    /* Get one row from table input */
-    getR(rowDataSpace1,0, &qstate);
-    
-    /* A row is expected only when qstate is SQLUDR_Q_MORE */
-    if(qstate != SQLUDR_Q_MORE)
-      break;
-    /* row length is part of input row and has to be read in for each
-       input row */
-    if (inParam->datatype == SQLTYPECODE_VARCHAR_WITH_LENGTH)
-    {
-      char *vcInd = ((char *) rowDataSpace1) + inParam->vc_ind_offset;
-      unsigned long vcIndLen = inParam->vc_ind_len;
-      if (vcIndLen == 2)
-        inDataLen = *((unsigned short *) vcInd);
-      else
-        inDataLen = *((unsigned long *) vcInd);
-    }
-    memset(inText, ' ', 4096);
-    memcpy(inText, inData, inDataLen); 
-    inText[inDataLen] = 0;
-    
-    /* Now process the data */
-    token = strtok(inText, pattern);
-    while (token != NULL)
-    {
-      memset(rowDataSpace2, 0, udrinfo->out_row_length);
-
-      len = (int) strlen(token);
-      memset(outData, ' ', outDataLen);
-      memcpy(outData, token, len < outDataLen? len: outDataLen);
-      /* Emit each token in table input row as a separate output row */
-      emitR(rowDataSpace2,0,&qstate);
-      if(qstate != SQLUDR_Q_MORE)
-        break;
-      token = strtok(NULL, pattern);
-    }/* while end of row */
-  }while(qstate == SQLUDR_Q_MORE);
-
-  switch(qstate)
-  {
-    case SQLUDR_Q_EOD:
-      /* emit row to indicate EOD. */
-      emitR(rowDataSpace2,0,&qstate);
-      if(qstate == SQLUDR_Q_CANCEL) 
-      {
-        strncpy(msgtext,"The Table Mapping UDF TOKENIZER received "
-                "an unexpected CANCEL while emitting the last row", 90);
-        return SQLUDR_ERROR;
-      }
-      retcode = SQLUDR_SUCCESS;
-      break;
-      
-    case SQLUDR_Q_CANCEL:
-      strncpy(msgtext,"The Table Mapping UDF TOKENIZER received "
-              "an unexpected CANCEL",62);
-      retcode = SQLUDR_ERROR;
-      break;
-
-    case SQLUDR_Q_MORE:
-    default:
-      /* we should not reach here. Means something is wrong. */
-      strncpy(msgtext,"The Table Mapping UDF TOKENIZER encountered "
-              "an internal error in MXUDR",71);
-      retcode = SQLUDR_ERROR;
-      break;
-  };
-
-  return retcode;
-
-}/* main */
-
-
-SQLUDR_LIBFUNC SQLUDR_INT32 TOKENIZER1(
-  SQLUDR_CHAR           *in_data,
-  SQLUDR_TMUDF_TRAIL_ARGS)
+extern "C" UDR * TOKENIZER()
 {
-  
-  char            *inData = NULL;
-  SQLUDR_PARAM    *inParam = NULL;
-  int             inDataLen = 0;
+  return new Tokenizer();
+}
 
-  char            *outData = NULL;
-  SQLUDR_PARAM    *outParam = NULL;
-  int             outDataLen = 0;
+void Tokenizer::processData(UDRInvocationInfo &info,
+                            UDRPlanInfo &plan)
+{
+  std::string pattern = info.par().getString(0);
+  std::string inRow;
+  char textBuf[10000];
+  char *token;
+  std::string fileUDR(".TOKENIZER1");
+  const std::string &udrName = info.getUDRName();
+  // The behavior of this UDR depends on its SQL name:
+  // Generally we read the text to tokenize from the
+  // input table. If the name of the UDR is TOKENIZER1,
+  // however, the input table is a list of file names
+  // to read an tokenize.
+  bool readFromFile = (udrName.substr(udrName.size() - fileUDR.size()) == fileUDR);
+  FILE *fp = NULL;
 
-  char            pattern[5];
-  unsigned int    i;
-  char            inText[4096];
+  // check UDR info to make sure it matches our expectations
+  if (info.getNumTableInputs() != 1)
+    throw UDRException(38001, "Expecting a single table-valued input");
+  if (info.in().getNumColumns() != 1)
+    throw UDRException(38002,
+                       "Table Mapping UDF %s expects only one column in the table input",
+                       info.getUDRName().c_str());
 
-  FILE            *fp;
-  char            *eof = NULL;
+  // getString eliminates trailing blanks, check
+  // for that and put the blank back
+  if (pattern.size() == 0)
+    pattern = " ";
 
-  char            *token;
-  int             len = 0;
-
-  SQLUDR_Q_STATE  qstate;
-  SQLUDR_GetNextRow      getR = NULL;
-  SQLUDR_EmitRow         emitR= NULL;
-  SQLUDR_INT32 retcode = SQLUDR_SUCCESS;
-
-  if (calltype == SQLUDR_CALLTYPE_FINAL)
-    return SQLUDR_SUCCESS;
-
-  /* For this test program, SQLUDR_CALLTYPE_INITIAL and */
-  /* SQLUDR_CALLTYPE_NORMAL are the same. */
-
-  /* store getRow and emitRow function pointers */
-  /* passed as arguments */
-  if((getRow == NULL) || (emitRow == NULL))
-    return SQLUDR_ERROR;
-  getR = getRow;
-  emitR =emitRow; 
-
-  /* extract all the scalar values */
-  for(i= 0; i < udrinfo->num_inputs; i++)
-  {
-    inParam = &(udrinfo->inputs[i]);
-    inData = in_data + inParam->data_offset;
-    inDataLen = (int) inParam->data_len; 
-    
-    /* expect scalar values to be input in desired order */
-    switch(i)
+  while (getNextRow(info))
     {
-      case 0: /* scalar argument 1, pattern */
-	{
-	  if (inDataLen > 4)
-	    return SQLUDR_ERROR;
-	  memcpy(pattern, inData, inDataLen);
-	  pattern[inDataLen] = 0;
-	  break;
-	}
-      default:
-	strncpy(msgtext,"The Table Mapping UDF TOKENIZER1 expects only "
-                "one scalar input parameter", 73);
-        return SQLUDR_ERROR;
-    }
-  }
+      inRow = info.in().getString(0);
+      bool done = false;
 
-  /* Determine length, type and address of single column in table input */
-  for(i = 0; i < udrinfo->table_inputs[0].num_params; i++)
-  {
-    inParam = &udrinfo->table_inputs[0].params[i];
-    inData = rowDataSpace1 + inParam->data_offset;
-    inDataLen = (int) inParam->data_len; 
+      if (readFromFile)
+        {
+          // open the file with the name given in the input row
+          fp = fopen(inRow.c_str(), "r");
+          if (fp == NULL)
+            throw UDRException(
+                 38003,
+                 "The Table Mapping UDF %s encountered an error"
+                 "while opening file %s",
+                 info.getUDRName().c_str(),
+                 inRow.c_str());
 
-    if (i != 0)
-    {
-      strncpy(msgtext,"The Table Mapping UDF TOKENIZER1 expects only "
-              "one column in its table input", 76);
-      /* expect only one column inputs? */
-      return SQLUDR_ERROR;
-    }
-  }
-
-  /* determine length and address of single column in table output */
-  for(i = 0; i < udrinfo->num_return_values; i++)
-  {
-    outParam = &udrinfo->return_values[i];
-    outData = rowDataSpace2 + outParam->data_offset;
-    outDataLen = (int) outParam->data_len; 
-    if (i != 0)
-    {
-      strncpy(msgtext,"The Table Mapping UDF TOKENIZER will produce only "
-              "one column in its output", 75);
-      /* I informed MXCMP that I will produce only 1 value. */
-      return SQLUDR_ERROR;
-    }
-  }
-  
-  do
-  {
-    /* Get one row from table input */
-    getR(rowDataSpace1,0, &qstate);
-    
-    /* A row is expected only when qstate is SQLUDR_Q_MORE. */
-    if(qstate != SQLUDR_Q_MORE)
-      break;
-    /* row length is part of input row and has to be read in for each
-       input row */
-    if (inParam->datatype == SQLTYPECODE_VARCHAR_WITH_LENGTH)
-    {
-      char *vcInd = ((char *) rowDataSpace1) + inParam->vc_ind_offset;
-      unsigned long vcIndLen = inParam->vc_ind_len;
-      if (vcIndLen == 2)
-        inDataLen = (int) *((unsigned short *) vcInd);
+          done = (fgets(textBuf, sizeof(textBuf), fp) == NULL);
+        }
       else
-        inDataLen = (int) *((unsigned long *) vcInd);
-    }
-    memset(inText, ' ', 4096);
-    memcpy(inText, inData, inDataLen); 
-    inText[inDataLen] = 0;
+        {
+          // process a single line of text, given in inRow
+          strncpy(textBuf, inRow.c_str(), sizeof(textBuf));
+        }
 
-    /* open the file */
-    fp=fopen(inText, "r");
-    if (fp == 0)
-    {
-      strncpy(msgtext,"The Table Mapping UDF TOKENIZER1 encountered "
-              "an error while opening a file", 75);
-      return SQLUDR_ERROR;
-    }
+      // loop over one or more lines of text
+      while (!done)
+        {
+          int len = strlen(textBuf);
 
-    do
-    {
+          // get rid of a trailing newline
+          if (len > 0 && textBuf[len-1] == '\n')
+            textBuf[len-1] = 0;
 
-      memset(inText, ' ', 4096);
-      /* read a line from file */
-      eof = fgets(inText, 4050, fp);
-      if (eof == 0) break;
-      len = (int) strlen(inText);
-      inText[len-1] = 0; /* remove new line character also */
+          // tokenize one line of text and emit rows
+          token = strtok(textBuf, pattern.c_str());
 
-      /* Now process the data */
-      token = strtok(inText, pattern);
-      while (token != NULL)
-      {
-        memset(rowDataSpace2, 0, udrinfo->out_row_length);
-      
-	len = (int) strlen(token);
-	memset(outData, ' ', outDataLen);
-	memcpy(outData, token, len < outDataLen? len: outDataLen);
-	/* Emit each token in table input row as a separate output row */
-	emitR(rowDataSpace2,0,&qstate);
-	if(qstate != SQLUDR_Q_MORE)
-	  break;
-	token = strtok(NULL, pattern);
-      }/* while end of row */
-    } while(eof != NULL); /* end of file */
-    fclose(fp);
-  }while(qstate == SQLUDR_Q_MORE); /* end of table input */
+          while (token != NULL)
+            {
+              info.out().setString(0, token);
+              emitRow(info);
+              token = strtok(NULL, pattern.c_str());
+            } // while token
 
-  switch(qstate)
-  {
-    case SQLUDR_Q_EOD:
-      /* emit row to indicate EOD. */
-      emitR(rowDataSpace2,0,&qstate);
-      if(qstate == SQLUDR_Q_CANCEL) 
-      {
-        strncpy(msgtext,"The Table Mapping UDF TOKENIZER1 received "
-                "an unexpected CANCEL while emitting the last row", 91);
-        return SQLUDR_ERROR;
-      }
-      retcode = SQLUDR_SUCCESS;
-      break;
-      
-    case SQLUDR_Q_CANCEL:
-      strncpy(msgtext,"The Table Mapping UDF TOKENIZER1 received "
-              "an unexpected CANCEL",63);
-      retcode = SQLUDR_ERROR;
-      break;
-      
-    case SQLUDR_Q_MORE:
-    default:
-      /* we should not reach here. Means something is wrong. */
-      strncpy(msgtext,"The Table Mapping UDF TOKENIZER1 encountered "
-              "an internal error in MXUDR",72);
-      retcode = SQLUDR_ERROR;
-  }
-  
-  return retcode;
-}/* main */
+          // get next line from file, if needed
+          if (readFromFile)
+            done = (fgets(textBuf, sizeof(textBuf), fp) == NULL);
+          else
+            done = true;
 
-} /* extern C */
+        } // while done
+    } // while getNextRow
+}

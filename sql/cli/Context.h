@@ -70,6 +70,7 @@ class ExUdrServer;
 class UdrContextMsg;
 class LOBglobals;
 class SequenceValueGenerator;
+class LmRoutine;
 
 #pragma warning( disable : 4244 )  // warning elimination
 #pragma nowarn(1506)   // warning elimination 
@@ -200,6 +201,10 @@ public:
   { hiveClientJNI_ = hiveClientJNI; }
   //expose cmpContextInfo_ to get HQC info of different contexts
   const NAArray<CmpContextInfo *> & getCmpContextInfo() const { return cmpContextInfo_; }
+
+  CollIndex addTrustedRoutine(LmRoutine *r);
+  LmRoutine *getTrustedRoutine(CollIndex ix);
+  void putTrustedRoutine(CollIndex ix);
 
 private:
 
@@ -454,6 +459,9 @@ private:
   ExeTraceInfo *exeTraceInfo_;
   // UDR server manager for this process
   ExUdrServerManager *udrServerManager_;
+  // trusted routines in use locally in this context,
+  // without going through udrserv
+  ARRAY(LmRoutine *) trustedRoutines_;
   // SSMP manager for this context.
   ExSsmpManager *ssmpManager_;
   IpcServerClass *cbServerClass_;
@@ -931,8 +939,8 @@ Lng32 setAuthID(
 
   void beginSession(char * userSpecifiedSessionName);
   Lng32 reduceEsps();
-  void endSession(NABoolean cleanupEsps = FALSE,
-		  NABoolean cleanupEspsOnly = FALSE,
+  void endSession(NABoolean cleanupEsps = FALSE,	
+                  NABoolean cleanupEspsOnly = FALSE,
 		  NABoolean cleanupOpens = FALSE);
   void dropSession();
   void endMxcmpSession(NABoolean cleanupEsps);

@@ -86,14 +86,13 @@ create library TEST002 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$;
 create table_mapping function tokenizer(pattern char(1))
 returns (outval char(40))
 external name 'TOKENIZER'
-language c
+language cpp
 library TEST002;
 
 -- Register tokenizer1 without column information
 create table_mapping function tokenizer1(pattern char(1))
 returns (outval char(40))
-external name 'TOKENIZER1'
-language c
+external name 'TOKENIZER'
 library TEST002;
 
 ?section tests
@@ -288,7 +287,6 @@ from udf(timeseries(table(select * from t002_Timeseries
 create table_mapping function timeseries(pattern char(1))
 returns (outval char(40))
 external name 'TOKENIZER'
-language c
 library TEST002;
 
 select token, count(*) from
