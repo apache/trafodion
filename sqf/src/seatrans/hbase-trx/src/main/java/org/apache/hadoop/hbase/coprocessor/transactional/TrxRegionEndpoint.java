@@ -3346,9 +3346,7 @@ CoprocessorService, Coprocessor {
                 m_Region.put(put);
               }
               catch (Exception e) {
-                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Trafodion Recovery: Executing put caught an exception " + e.toString());
-                 state.setStatus(Status.ABORTED);
-                 retireTransaction(state, true);
+                 LOG.warn("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Trafodion Recovery: Executing put caught an exception " + e.toString());
                  throw new IOException(e.toString());
               }
      	     } else if (CellUtil.isDelete(kv))  {
@@ -3363,9 +3361,7 @@ CoprocessorService, Coprocessor {
                  m_Region.delete(del);
                   }
                catch (Exception e) {
-                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Trafodion Recovery: Executing delete caught an exception " + e.toString());
-                 state.setStatus(Status.ABORTED);
-                 retireTransaction(state, true);
+                 LOG.warn("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Trafodion Recovery: Executing delete caught an exception " + e.toString());
                  throw new IOException(e.toString());
                 }
    	     }
@@ -3391,9 +3387,7 @@ CoprocessorService, Coprocessor {
              m_Region.put(put);
            }
            catch (Exception e) {
-              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Executing put caught an exception " + e.toString());
-              state.setStatus(Status.ABORTED);
-              retireTransaction(state, true);
+              LOG.warn("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Executing put caught an exception " + e.toString());
               throw new IOException(e.toString());
            }
          }
@@ -3408,9 +3402,7 @@ CoprocessorService, Coprocessor {
              m_Region.delete(delete);
            }
            catch (Exception e) {
-              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit  - txId " + transactionId + ", Executing delete caught an exception " + e.toString());
-              state.setStatus(Status.ABORTED);
-              retireTransaction(state, true);
+              LOG.warn("TrxRegionEndpoint coprocessor: commit  - txId " + transactionId + ", Executing delete caught an exception " + e.toString());
               throw new IOException(e.toString());
            }
          }
