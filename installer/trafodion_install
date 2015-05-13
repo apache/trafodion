@@ -566,7 +566,7 @@ java_exec=$(ps -C java --noheader -o pid,user,cmd \
    | awk '{print $3}' )
 echo "***DEBUG: HBase's java_exec=$java_exec"
 if [ -z $java_exec ]; then
-   echo "***ERROR: Unable to determin HBase's Java version"
+   echo "***ERROR: Unable to determine HBase's Java version"
    echo "***ERROR: Check that HBase is up on node $HOSTNAME"
    exit -1
 fi
@@ -677,6 +677,33 @@ if [[ ! -f $HOME_DIR/$TRAF_USER/sqconfig ]]; then
       exit -1
    fi
 fi
+
+#Reserve DCS Ports
+
+echo "***INFO: Reserving DCS ports"
+trafodion_ports=${DCS_MASTER_PORT:-37800},${DCS_MASTER_INFO_PORT:-40010}
+reservedTrafodionPorts="net.ipv4.ip_local_reserved_ports = ${trafodion_ports}"
+
+for node in $NODE_LIST
+do
+   redhatSystem=$(ssh $node -n '/sbin/sysctl net.ipv4.ip_local_reserved_ports | wc -l')
+   if [[ "$redhatSystem" -ge "1" ]]; then
+      reserved_ports=$(ssh $node -n '/sbin/sysctl net.ipv4.ip_local_reserved_ports' | awk -F'=' '{print $2;}' | sed 's/^ //')
+      ssh $node -n 'sudo chmod 777 /etc/sysctl.conf'
+      ssh $node -n 'sudo sed -i '/net.ipv4.ip_local_reserved_ports""\=*/d' /etc/sysctl.conf'
+      if [[ -z "${reserved_ports}" ]]; then
+         ssh $node -n "sudo echo "$reservedTrafodionPorts" >> /etc/sysctl.conf"
+      else
+         ssh $node -n "sudo echo "$reservedTrafodionPorts","$reserved_ports" >> /etc/sysctl.conf"
+      fi
+      ssh $node -n 'sudo chmod 644 /etc/sysctl.conf'
+      ssh $node -n 'sudo /sbin/sysctl -p'
+   else
+      echo "***ERROR: Unable to reserve DCS ports (37800 and 40010)."
+      exit -1
+   fi
+done
+
 
 #>>> we don't really need to copy all this to the trafodion userid's home dir
 #Create install directory

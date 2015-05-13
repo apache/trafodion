@@ -816,7 +816,7 @@ if [[ $SCANNER_MODE == "N" ]]; then
       read answer3
       if [[ -z "$answer3" ]]; then
          if [ -z "$LDAP_ID" ]; then
-            echo "***ERROR: Much enter LDAP unique identifiers."
+            echo "***ERROR: Must enter LDAP unique identifiers."
             exit -1
          fi
       else
@@ -840,7 +840,7 @@ if [[ $SCANNER_MODE == "N" ]]; then
       sed -i -e "s/UniqueIdentifier:/$list/g" $LDAP_AUTH_FILE
 
       #Encryption level
-      echo -n "Enter LDAP Encryption Level (0: Ecryption not used, 1: SSL, 2: TLS), default [$LDAP_LEVEL]: "
+      echo -n "Enter LDAP Encryption Level (0: Encryption not used, 1: SSL, 2: TLS), default [$LDAP_LEVEL]: "
       read answer4
       if [[ -z "$answer4" ]]; then
          if [ -z "$LDAP_LEVEL" ]; then

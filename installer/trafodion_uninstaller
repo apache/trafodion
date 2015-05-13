@@ -134,7 +134,7 @@ echo "***INFO: removing all files from /usr/lib/trafodion and /var/log/trafodion
 $TRAF_PDSH sudo rm -rf /usr/lib/trafodion*
 $TRAF_PDSH sudo rm -rf /var/log/trafodion*
 
-echo "***INFO: remvoing all files from /etc/trafodion"
+echo "***INFO: removing all files from /etc/trafodion"
 $TRAF_PDSH sudo rm -rf /etc/trafodion*
 $TRAF_PDSH sudo rm -rf $LOCAL_WORKDIR/trafodion_config
 
