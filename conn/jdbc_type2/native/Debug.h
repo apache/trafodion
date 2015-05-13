@@ -1,7 +1,7 @@
 /**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -261,6 +261,7 @@ const char *WrapperDataTypeStr(jbyte dataType);
 #define MEMORY_ALLOC_PERM_ARRAY(alloc_var,allocation,count) MEMORY_ALLOC_SELECT_ARRAY(alloc_var,allocation,count,true)
 #define MEMORY_ALLOC_PERM_OBJ(alloc_var,allocation) MEMORY_ALLOC_SELECT_OBJ(alloc_var,allocation,true)
 #define MEMORY_DELETE(alloc_var) if (alloc_var) { DebugMemoryDelete((void *) (alloc_var),MEMORY_ALLOC_MEMORY,__FILE__,__LINE__); delete (alloc_var); (alloc_var) = NULL; }
+#define MEMORY_DELETE_ARRAY(alloc_var) if (alloc_var) { DebugMemoryDelete((void *) (alloc_var),MEMORY_ALLOC_MEMORY,__FILE__,__LINE__); delete [] (alloc_var); (alloc_var) = NULL; }
 #define MEMORY_DELETE_OBJ(alloc_var) if (alloc_var) { DebugMemoryDelete((void *) (alloc_var),MEMORY_ALLOC_OBJECT,__FILE__,__LINE__); delete (alloc_var); (alloc_var) = NULL; }
 #define MEMORY_PRINT_ALLOC() DebugPrintMemoryAlloc(__FILE__,__LINE__)
 #define MEMORY_DUMP(level,addr,len) DebugPrintMemoryDump(level, (const char *)(addr),len,__FILE__,__LINE__)
@@ -317,6 +318,7 @@ extern unsigned long debugLevel;
 #define MEMORY_ALLOC_PERM_ARRAY(alloc_var,allocation,count) MEMORY_ALLOC_ARRAY(alloc_var,allocation,count)
 #define MEMORY_ALLOC_PERM_OBJ(alloc_var,allocation) MEMORY_ALLOC(alloc_var,allocation)
 #define MEMORY_DELETE(alloc_var) if (alloc_var) { delete alloc_var; alloc_var = NULL; }
+#define MEMORY_DELETE_ARRAY(alloc_var) if (alloc_var) { delete [] alloc_var; alloc_var = NULL; }
 #define MEMORY_DELETE_OBJ(alloc_var) MEMORY_DELETE(alloc_var)
 #define MEMORY_PRINT_ALLOC()
 #define MEMORY_DUMP(level,addr,len)
