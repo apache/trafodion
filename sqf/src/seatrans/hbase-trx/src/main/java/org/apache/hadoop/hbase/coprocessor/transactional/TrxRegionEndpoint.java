@@ -908,7 +908,8 @@ CoprocessorService, Coprocessor {
                  commitRequestMultipleResponseBuilder.setException(i, BatchException.EXCEPTION_REGIONNOTFOUND_ERR.toString());
               }
               else {
-                 status = regionEPCP.commitRequest(transactionId);
+                 if (i == (numOfRegion - 1)) {status = regionEPCP.commitRequest(transactionId, true);} // only the last region flush
+                 else {status = regionEPCP.commitRequest(transactionId, false);}
               }
               if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint commitRequestMultiple ends");
              //status = commitRequest(transactionId);
@@ -4236,8 +4237,11 @@ CoprocessorService, Coprocessor {
    * @return TransactionRegionInterface commit code
    * @throws IOException
    */
-//public int commitRequest(final long transactionId, boolean flushHLOG) throws IOException {
   public int commitRequest(final long transactionId) throws IOException {
+     return commitRequest(transactionId, true);
+  }
+
+  public int commitRequest(final long transactionId, boolean flushHLOG) throws IOException {
     long txid = 0;
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest -- ENTRY txId: " + transactionId);
     TrxTransactionState state;
@@ -4340,11 +4344,11 @@ CoprocessorService, Coprocessor {
                   state.getEdit(), new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
                   nextLogSequenceId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
                   if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest COMMIT_OK -- EXIT txId: " + transactionId + " HLog seq " + txid);
-                  this.tHLog.sync(txid);
+                  if (flushHLOG) this.tHLog.sync(txid);
             }
             else {
-                 //if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: YYY0 commitRequest just SYNC -- EXIT txId: " + transactionId + " MAX HLog seq " + state.getFlushTxId());
-                 this.tHLog.sync(state.getFlushTxId());
+                  //if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: YYY0 commitRequest just SYNC -- EXIT txId: " + transactionId + " MAX HLog seq " + state.getFlushTxId());
+                  if (flushHLOG) this.tHLog.sync(state.getFlushTxId());
             }
             if (LOG.isInfoEnabled()) {
                      writeToLogEndTime = System.nanoTime();
