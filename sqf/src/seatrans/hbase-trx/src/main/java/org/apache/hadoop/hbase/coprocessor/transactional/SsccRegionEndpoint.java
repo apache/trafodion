@@ -1772,7 +1772,7 @@ CoprocessorService, Coprocessor {
       List<Cell> eachVersion = new ArrayList<Cell>();
       Set<byte[]>visitCols = new HashSet<byte[]>();
 
-      List<Cell>  sl = statusResult.listCells();
+      List<Cell> sl = statusResult.listCells();
       List<Cell> vl = verResult.listCells();
       List<Cell> cl = colResult.listCells();
 
@@ -1897,10 +1897,10 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("Enter SsccRegionEndpoint coprocessor: put, txid " + transactionId + "stateless: " + stateless);
     SsccTransactionState state = this.beginTransIfNotExist(transactionId);
     long startId =  state.getStartId(); //use local transaction ID as timestamp for this new cell
-		
+
     // check whether has del before
     state.removeDelBeforePut(put, stateless);
-    
+
     /*need to change the timestamp, but HBase API does not support
       At this point, the solution is to create a new Put object
     */
