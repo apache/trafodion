@@ -237,8 +237,14 @@ public class SsccTransactionState extends TransactionState{
             */
             if(thisTs > startId)  //only for debug checking, like an assert
             {
-                if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
-                return true;
+            	//check whether has mt_ family , if has ,doesn't display, if not, displays
+                if(versionList==null && statusList==null){
+                    if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
+                    return true;
+                }else {
+              	    if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Cell is inserted by another transaction");
+              	    return false;
+                }
             }
 
             if (statusList != null)  
@@ -546,20 +552,19 @@ public class SsccTransactionState extends TransactionState{
      */
     public void removeDelBeforePut(Put put, boolean stateless) {
         if (LOG.isTraceEnabled())
-	    LOG.trace("removeDelBeforePut, del list size : "+delRows.size());
-	byte[] putRow = put.getRow();
-	long putTimeStamp = startId_;
-			
-	for(int i=delRows.size()-1;i>=0;i--){
-	    byte[] delRow = delRows.get(i).getRow();
-	    long delTimeStamp = delRows.get(i).getTimeStamp();
-	    if (LOG.isTraceEnabled()){
-	        LOG.trace("putRow : "+Bytes.toString(putRow)+" , timeStamp : "+putTimeStamp);
-	        LOG.trace("delRow : "+Bytes.toString(delRow)+" , timeStamp : "+delTimeStamp);
-	    }
-	    if (Arrays.equals(putRow, delRow) ) {
-	        delRows.remove(i);
-	    }
-	}
+            LOG.trace("removeDelBeforePut, del list size : "+delRows.size());
+        byte[] putRow = put.getRow();
+        long putTimeStamp = startId_;
+
+        for(int i=delRows.size()-1;i>=0;i--){
+            byte[] delRow = delRows.get(i).getRow();
+            if (LOG.isTraceEnabled()){
+                long delTimeStamp = delRows.get(i).getTimeStamp();
+                LOG.trace("putRow : "+Bytes.toString(putRow)+" , timeStamp : "+putTimeStamp+".  delRow : "+Bytes.toString(delRow)+" , timeStamp : "+delTimeStamp);
+            }
+            if (Arrays.equals(putRow, delRow) ) {
+                delRows.remove(i);
+            }
+        }
     }
 }
