@@ -1,7 +1,8 @@
 #!/bin/sh
+
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,7 +18,5 @@
 #
 # @@@ END COPYRIGHT @@@
 
-hostlist=`showConfigDb -x | grep -v Physical | cut -d, -f2|cut -d= -f2`
-for host in $hostlist; do
-	ssh $host rm -f \$MPI_TMPDIR/monitor.port.*
-done
+rm -f sqconfig.db
+sqlite3 sqconfig.db < $MY_SQROOT/sql/scripts/createConfigDb

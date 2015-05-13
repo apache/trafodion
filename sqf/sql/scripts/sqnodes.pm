@@ -23,6 +23,8 @@ use Exporter ();
 
 use Parse::RecDescent;
 
+use sqconfigdb;
+
 package sqnodes;
 
 # set debugFlag to 1 to print detailed debugging info
@@ -1011,7 +1013,7 @@ sub genConfigDb
             {
                 print "Add to pnode table: physicalNid=$physicalNid, node-name=$nodeName, excluded cores=$firstExcl $lastExcl\n";
             }
-            ::addDbPNode( $physicalNid, $nodeName, $firstExcl, $lastExcl );
+            sqconfigdb::addDbPNode( $physicalNid, $nodeName, $firstExcl, $lastExcl );
 
         }
         
@@ -1058,7 +1060,7 @@ sub genConfigDb
         {
             print "      Add to lnode table: physicalNid=$physicalNid, nodeId=$nodeId, processors=$numProcessors, cores=$firstCore $lastCore, roles=$roleSet\n";
         }
-        ::addDbLNode( $nodeId, $physicalNid, $numProcessors, $roleSet, $firstCore, $lastCore );
+        sqconfigdb::addDbLNode( $nodeId, $physicalNid, $numProcessors, $roleSet, $firstCore, $lastCore );
     }
 
     my $slRef;
@@ -1122,7 +1124,7 @@ sub genConfigDb
         {
             print "Add spare to pnode table: physicalNid=$physicalNid, spare-node-name=$spareNodeName, excluded cores=$firstExcl $lastExcl\n";
         }
-        ::addDbPNode( $physicalNid, $spareNodeName, $firstExcl, $lastExcl );
+        sqconfigdb::addDbPNode( $physicalNid, $spareNodeName, $firstExcl, $lastExcl );
 
         # Get upper and lower bound for cores in this node.
         $clRef = $sparesData->[1];
@@ -1142,7 +1144,7 @@ sub genConfigDb
             {
                 print "   Add to snode table: spare physicalNid=$physicalNid, spare node-name=$spareNodeName, cores=$firstCore $lastCore, physicalNid=$spareSet[$i]\n";
             }
-            ::addDbSpare( $physicalNid
+            sqconfigdb::addDbSpare( $physicalNid
                         , $spareNodeName
                         , $firstCore
                         , $lastCore
@@ -1179,13 +1181,13 @@ sub genVirtualConfigDb
         {
             print "Add to pnode table: physicalNid=$nodeIndex, node-name=$node_name, excluded cores=$firstExcl $lastExcl\n";
         }
-        ::addDbPNode( $nodeIndex, $node_name, $firstExcl, $lastExcl );
+        sqconfigdb::addDbPNode( $nodeIndex, $node_name, $firstExcl, $lastExcl );
 
         # Add a row for this logical node in configuration database
         if ($debugFlag)
         {
             print "      Add to lnode table: physicalNid=$nodeIndex, nodeId=$nodeIndex, processors=$numProcessors, cores=$firstCore $lastCore, roles=$roleSet\n";
         }
-        ::addDbLNode( $nodeIndex, $nodeIndex, $numProcessors, $roleSet, $firstCore, $lastCore );
+        sqconfigdb::addDbLNode( $nodeIndex, $nodeIndex, $numProcessors, $roleSet, $firstCore, $lastCore );
     }
 }

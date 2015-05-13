@@ -1,7 +1,8 @@
-#!/bin/sh
+#!/usr/bin/perl
+#
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,8 +17,29 @@
 #  limitations under the License.
 #
 # @@@ END COPYRIGHT @@@
+#
+use strict;
 
-hostlist=`showConfigDb -x | grep -v Physical | cut -d, -f2|cut -d= -f2`
-for host in $hostlist; do
-	ssh $host rm -f \$MPI_TMPDIR/monitor.port.*
-done
+use sqconfigdb;
+
+my $count = @ARGV[0];
+
+sqconfigdb::openDb();
+
+my $first_core = 0;
+my $first_excl = -1;
+my $last_core = 0;
+my $last_excl = -1;
+my $name_inx;
+my $num_proc = 0;
+my $node_name;
+my $nid;
+my $pnid;
+my $role_set = 7;
+for $nid (0..$count-1) {
+	$pnid = $nid;
+	$name_inx = $pnid + 1;
+	$node_name = "n${name_inx}";
+	sqconfigdb::addDbPNode($pnid, $node_name, $first_excl, $last_excl);
+	sqconfigdb::addDbLNode($nid, $pnid, $num_proc, $role_set, $first_core, $last_core);
+}

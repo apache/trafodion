@@ -21,7 +21,6 @@
 require "ctime.pl";
 use sqnodes;
 use POSIX;
-use DBI;
 
 # Process types.  Must match values defined by the monitor in msgdef.h.
 my $ProcessType_Undefined = 0;
@@ -67,9 +66,6 @@ my $SQ_IDTMSRV = $ENV{'SQ_IDTMSRV'};
 # define the error values that are being returned
 my $BDR_ERROR = 70;
 
-
-# Database handle
-my $DBH = 0;
 
 sub printScript {
     ($dWhich, @rest) = @_;
@@ -245,8 +241,8 @@ sub printInitialLines {
     printScript(1, "\nset SQ_MBTYPE=$ENV{'SQ_MBTYPE'}\n");
     printScript(1, "set MY_NODES=\$MY_NODES\n");
 
-    addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
-    addDbClusterData( "MY_SQROOT", "$SQ_ROOT"); # comes out null
+    sqconfigdb::addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
+    sqconfigdb::addDbClusterData( "MY_SQROOT", "$SQ_ROOT"); # comes out null
 
     genSQShellExit();
 
@@ -331,9 +327,9 @@ sub genIDTMSrv {
         printIDTMScript(1, "\n! Start TSID\n");
         for ($i=0; $i < $SQ_IDTMSRV; $i++) {
             printIDTMScript(1, "set {process \\\$TSID$i } PERSIST_RETRIES=2,30\n");
-            addDbProcData('$TSID'."$i", "PERSIST_RETRIES", "2,30");
+            sqconfigdb::addDbProcData('$TSID'."$i", "PERSIST_RETRIES", "2,30");
             printIDTMScript(1, "set {process \\\$TSID$i } PERSIST_ZONES=$l_pn\n");
-            addDbProcData('$TSID'."$i", "PERSIST_ZONES", "$l_pn");
+            sqconfigdb::addDbProcData('$TSID'."$i", "PERSIST_ZONES", "$l_pn");
             printIDTMScript(1, "exec {nowait, name \\\$TSID$i, nid 0, out stdout_idtmsrv_$i} idtmsrv\n");
         }
         printIDTMScript(1, "delay 1\n");
@@ -353,9 +349,9 @@ sub genDTM {
     printTMScript(1, "set DTM_RUN_MODE=2\n");
     printTMScript(1, "set SQ_AUDITSVC_READY=1\n");
     printTMScript(1, "set DTM_TLOG_PER_TM=1\n");
-    addDbClusterData("DTM_RUN_MODE", "2");
-    addDbClusterData("SQ_AUDITSVC_READY", "1");
-    addDbClusterData("DTM_TLOG_PER_TM", "1");
+    sqconfigdb::addDbClusterData("DTM_RUN_MODE", "2");
+    sqconfigdb::addDbClusterData("SQ_AUDITSVC_READY", "1");
+    sqconfigdb::addDbClusterData("DTM_TLOG_PER_TM", "1");
     printTMScript(1, "exit\n");
     printTMScript(1, "eof\n");
 
@@ -368,12 +364,12 @@ sub genDTM {
         printTMScript(1, "sqshell -a <<eof\n");
         if ($SQ_DTM_PERSISTENT_PROCESS == 1) {
             printTMScript(1, "set {process \\\$TM$i } PERSIST_RETRIES=2,30\n");
-            addDbProcData('$TM'."$i", "PERSIST_RETRIES", "2,30");
+            sqconfigdb::addDbProcData('$TM'."$i", "PERSIST_RETRIES", "2,30");
             printTMScript(1, "set {process \\\$TM$i } PERSIST_ZONES=$i\n");
-            addDbProcData('$TM'."$i", "PERSIST_ZONES", "$i");
+            sqconfigdb::addDbProcData('$TM'."$i", "PERSIST_ZONES", "$i");
         }
         printTMScript(1, "set {process \\\$TM$i} TMASE=TLOG$i\n");
-        addDbProcData('$TM'."$i", "TMASE", "TLOG$i");
+        sqconfigdb::addDbProcData('$TM'."$i", "TMASE", "TLOG$i");
         printTMScript(1, "exec {type dtm, nowait, name \\\$TM$i, nid $i, out stdout_dtm_$i} tm");
         if ($i == 0 || $i == ($gdNumNodes-1)) {
             printTMScript(1, "\ndelay 5");
@@ -441,9 +437,9 @@ sub genSSMPCommand {
 
     my $l_procname = sprintf('$%s%03d', $l_process_name_prefix, $l_nid);
     my $l_stdout = sprintf('stdout_%s%03d', $l_process_name_prefix, $l_nid);
-    addDbPersistProc("$l_procname", $l_nid, 1);
-    addDbProcDef( $ProcessType_SSMP, $l_procname, $l_nid, $l_program_name,
-                  $l_stdout, "" );
+    sqconfigdb::addDbPersistProc("$l_procname", $l_nid, 1);
+    sqconfigdb::addDbProcDef( $ProcessType_SSMP, $l_procname, $l_nid, $l_program_name,
+                              $l_stdout, "" );
 }
 
 sub genSSCPCommand {
@@ -477,9 +473,9 @@ sub genSSCPCommand {
 
     my $l_procname = sprintf('$%s%03d', $l_process_name_prefix, $l_nid);
     my $l_stdout = sprintf('stdout_%s%03d', $l_process_name_prefix, $l_nid);
-    addDbPersistProc("$l_procname", $l_nid, 1);
-    addDbProcDef( $ProcessType_Generic, $l_procname, $l_nid, $l_program_name,
-                  $l_stdout, "" );
+    sqconfigdb::addDbPersistProc("$l_procname", $l_nid, 1);
+    sqconfigdb::addDbProcDef( $ProcessType_Generic, $l_procname, $l_nid, $l_program_name,
+                              $l_stdout, "" );
 }
 
 sub generateRMS {
@@ -774,249 +770,7 @@ sub openFiles {
     open (SSCPS,">$stopSSCP")
         or die("unable to open $stopSSCP");
 
-#    my $dbargs = {AutoCommit => 1,
-#                  PrintError => 1};
-    my $dbargs = {AutoCommit => 1,
-                  RaiseError => 1,
-                  PrintError => 0,
-                  ShowErrorStatement => 1};
-    $DBH = DBI->connect("dbi:SQLite:dbname=sqconfig.db","","",$dbargs);
-#   Disable database synchronization (fsync) because it slows down writes
-#   too much.
-    $DBH->do("PRAGMA synchronous = OFF");
-}
-
-sub addDbKeyName {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $key = @_[0];
-
-    my $insDbKeyStmt
-        = $DBH->prepare("insert into monRegKeyName (keyName) values ( ? );");
-
-    $insDbKeyStmt->bind_param(1, $key);
-
-#    local $insDbKeyStmt->{PrintError} = 0;
-
-#    unless ($insDbKeyStmt->execute) {
-        # Ignore error 19 "constraint violated" on monRegKeyName table
-#        if ( $insDbKeyStmt->err != 19) {
-#            print "addDbKeyName got error code: ",
-#            $insDbKeyStmt->err, ", msg: ",
-#            $insDbKeyStmt->errstr, "\n";
-#        }
-
-    eval {
-        ($insDbKeyStmt->execute)
-    };
-    if ($@) {
-#        print "In eval error handling code for addDbKeyName\n";
-        # Ignore error 19 "constraint violated" on monRegKeyName table
-        if ( $insDbKeyStmt->err != 19) {
-            print "addDbKeyName got error code: ",
-            $insDbKeyStmt->err, ", msg: ",
-            $insDbKeyStmt->errstr, "\n";
-        }
-    }
-
-}
-
-sub addDbProcName {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $name = @_[0];
-
-    my $insDbProcNameStmt
-        = $DBH->prepare("insert into monRegProcName (procName) values ( ? );");
-
-    $insDbProcNameStmt->bind_param(1, $name);
-
-    eval {
-        $insDbProcNameStmt->execute;
-    };
-    if ($@) {
-#        print "In eval error handling code for addDbProcName\n";
-        # Ignore error 19 "constraint violated" on monRegKeyName table
-        if ( $insDbProcNameStmt->err != 19) {
-            print "addDbProcName got error code: ",
-            $insDbProcNameStmt->err, ", msg: ",
-            $insDbProcNameStmt->errstr, "\n";
-        }
-    }
-}
-
-sub addDbClusterData {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $key = @_[0];
-    my $dataValue = @_[1];
-
-    addDbKeyName($key);
-
-    my $insDbClusterDataStmt
-        = $DBH->prepare("insert or replace into monRegClusterData (dataValue, keyId) select ?, k.keyId FROM monRegKeyName k where k.keyName = ?");
-
-    $insDbClusterDataStmt->bind_param(1, $dataValue);
-    $insDbClusterDataStmt->bind_param(2, $key);
-
-    $insDbClusterDataStmt->execute;
-}
-
-sub addDbProcData {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $procName = @_[0];
-    my $key = @_[1];
-    my $dataValue = @_[2];
-
-    addDbKeyName($key);
-    addDbProcName($procName);
-
-    my $insDbProcDataStmt
-        = $DBH->prepare("insert or replace into monRegProcData (dataValue, procId, keyId ) select ?, p.procId, (SELECT k.keyId FROM monRegKeyName k WHERE k.keyName = ?) FROM monRegProcName p WHERE p.procName = ?");
-
-    $insDbProcDataStmt->bind_param(1, $dataValue);
-    $insDbProcDataStmt->bind_param(2, $key);
-    $insDbProcDataStmt->bind_param(3, $procName);
-
-    $insDbProcDataStmt->execute;
-}
-
-sub addDbProcDef {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $procType    = @_[0];
-    my $procName    = @_[1];
-    my $procNid     = @_[2];
-    my $procProg    = @_[3];
-    my $procStdout  = @_[4];
-    my $procArgs    = @_[5];
-
-    my $insDbProcDefStmt
-        = $DBH->prepare("insert or replace into procs values ( ?, ?, ?, ?, ?, ? )");
-    $insDbProcDefStmt->bind_param(1, $procType);
-    $insDbProcDefStmt->bind_param(2, $procName);
-    $insDbProcDefStmt->bind_param(3, $procNid);
-    $insDbProcDefStmt->bind_param(4, $procProg);
-    $insDbProcDefStmt->bind_param(5, $procStdout);
-    $insDbProcDefStmt->bind_param(6, $procArgs);
-
-    $insDbProcDefStmt->execute;
-}
-
-sub addDbPersistProc {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $procName    = @_[0];
-    my $zone        = @_[1];
-    my $reqTm       = @_[2];
-
-    my $insDbPersistStmt = $DBH->prepare("insert into persist values (?, ?, ?)");
-
-    $insDbPersistStmt->bind_param(1, $procName);
-    $insDbPersistStmt->bind_param(2, $zone);
-    $insDbPersistStmt->bind_param(3, $reqTm);
-
-    $insDbPersistStmt->execute;
-}
-
-# Physical node table
-sub addDbPNode {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $insDbPNodeStmt = $DBH->prepare("insert into pnode values (?, ?, ?, ?)");
-
-    my $nodeId          = @_[0];
-    my $nodeName        = @_[1];
-    my $firstExcCore    = @_[2];
-    my $lastExcCore     = @_[3];
-
-    $insDbPNodeStmt->bind_param(1, $nodeId);
-    $insDbPNodeStmt->bind_param(2, $nodeName);
-    $insDbPNodeStmt->bind_param(3, $firstExcCore);
-    $insDbPNodeStmt->bind_param(4, $lastExcCore);
-
-    $insDbPNodeStmt->execute;
-}
-
-# Logical node table
-sub addDbLNode {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $insDbLNodeStmt = $DBH->prepare("insert into lnode values (?, ?, ?, ?, ? , ?)");
-
-    my $lNodeId       = @_[0];
-    my $pNodeId       = @_[1];
-    my $numProcessors = @_[2];
-    my $roleSet       = @_[3];
-    my $firstCore     = @_[4];
-    my $lastCore      = @_[5];
-
-    $insDbLNodeStmt->bind_param(1, $lNodeId);
-    $insDbLNodeStmt->bind_param(2, $pNodeId);
-    $insDbLNodeStmt->bind_param(3, $numProcessors);
-    $insDbLNodeStmt->bind_param(4, $roleSet);
-    $insDbLNodeStmt->bind_param(5, $firstCore);
-    $insDbLNodeStmt->bind_param(6, $lastCore);
-
-    $insDbLNodeStmt->execute;
-}
-
-# Logical node table
-sub addDbSpare {
-
-    if (not defined $DBH) {
-        # Database not available
-        return;
-    }
-
-    my $insDbSpareStmt = $DBH->prepare("insert into snode values (?, ?, ?, ?, ?)");
-
-    my $pNodeId       = @_[0];
-    my $nodeName      = @_[1];
-    my $firstCore     = @_[2];
-    my $lastCore      = @_[3];
-    my $sparedpNid    = @_[4];
-
-    $insDbSpareStmt->bind_param(1, $pNodeId);
-    $insDbSpareStmt->bind_param(2, $nodeName);
-    $insDbSpareStmt->bind_param(3, $firstCore);
-    $insDbSpareStmt->bind_param(4, $lastCore);
-    $insDbSpareStmt->bind_param(5, $sparedpNid);
-
-    $insDbSpareStmt->execute;
+    sqconfigdb::openDb();
 }
 
 sub endGame {
@@ -1109,9 +863,6 @@ sub doInit {
 
     $gdNumCpuCores = `cat /proc/cpuinfo | grep "processor" | wc -l`;
 #print "The number of cores is $gdNumCpuCores\n";
-
-    print "Note: Using cluster.conf format type $g_CCFormat.\n";
-
 
 }
 

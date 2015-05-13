@@ -23,28 +23,18 @@
 
 function Usage
 {
-    echo "Usage: ${0##/*/} -c | --cluster | -n | --node  | -p | --process | -q | --persistent | -r | --procdef | -u | --uniqstr | -l | --lnode | -s | --snode | -x | --xnode | -h"
+    echo "Usage: ${0##/*/} -c | -h | -l[<nid>] | -n[<name>] | -p[<proc>] | -q | -r | -s[<name>] | -u | -x[<name>]"
     echo
-    echo "-c, --cluster     Displays cluster wide registry values"
-    echo "-n, --node        Displays all node configuration values"
-    echo "-n<name>          Displays node specific configuration values"
-    echo "--node=<name>     Displays node specific configuration values"
-    echo "-p, --process     Displays all process specific registry values"
-    echo "-p<proc>          Displays specific process registry values"
-    echo "--process=<proc>  Displays specific process registry values"
-    echo "-q, --persistent  Displays persistent processes"
-    echo "-r, --procdef     Displays process defintions"
-    echo "-u, --uniqstr     Displays unique strings"
-    echo "-l, --lnode       Displays all logical node configuration values"
-    echo "-l<nid>           Displays logical node specific configuration values"
-    echo "--lnode=<nid>     Displays logical node specific configuration values"
-    echo "-s, --snode       Displays all spare node configuration values"
-    echo "-s<name>          Displays spare node specific configuration values"
-    echo "--snode=<name>    Displays spare node specific configuration values"
-    echo "-x, --xnode       Displays all physical node configuration values"
-    echo "-x<name>          Displays physical node specific configuration values"
-    echo "--xnode=<name>    Displays physical node specific configuration values"
-    echo "-h, --help        Displays this help message"
+    echo "-c                Displays cluster wide registry values"
+    echo "-h                Displays this help message"
+    echo "-l[<nid>]         Displays all [or specific] logical node configuration values"
+    echo "-n[<name>]        Displays all [or specific] node configuration values"
+    echo "-p[<proc>]        Displays specific process registry values"
+    echo "-q                Displays persistent processes"
+    echo "-r                Displays process defintions"
+    echo "-s[<name>]        Displays all [or specific] spare node specific configuration values"
+    echo "-u                Displays unique strings"
+    echo "-x[<name>]        Displays all [or specific] physical node configuration values"
 }
 
 function monRegClusterData
@@ -327,7 +317,7 @@ EOF
 }
 
 # options may be followed by one colon to indicate they have a required argument
-if ! options=$(getopt -o cl::n::hp::qrus::x:: -l cluster,lnode::,node::,snode::,xnode::,process::,persistent,procdef,uniqstr,help -- "$@")
+if ! options=$(getopt -o chl::n::p::qrs::ux:: -- "$@")
 then
     # something went wrong, getopt will put out an error message for us
     Usage
@@ -343,41 +333,15 @@ fi
 while [ $# -gt 0 ]
 do
     case $1 in
-        -c|--cluster)
+        -c)
             monRegClusterData
             ;;
 
-        -n|--node)
-            if [[ -n "$2" ]];
-            then
-                monNodeSpecificConfig $2
-            else
-                monNodeConfig
-            fi
+        -h)
+            Usage
             ;;
 
-        -p|--process)
-            if [[ -n "$2" ]];
-            then
-                monRegSpecificProcData $2
-            else
-                monRegProcData
-            fi
-            ;;
-
-        -q|--persistent)
-            persistentProcs
-            ;;
-
-        -r|--procdef)
-            procs
-            ;;
-
-        -u|--uniqstr)
-            uniqueStrings
-            ;;
-
-        -l|--lnode)
+        -l)
             if [[ -n "$2" ]];
             then
                 monLNodeSpecificConfig $2
@@ -386,7 +350,33 @@ do
             fi
             ;;
 
-        -s|--snode)
+        -n)
+            if [[ -n "$2" ]];
+            then
+                monNodeSpecificConfig $2
+            else
+                monNodeConfig
+            fi
+            ;;
+
+        -p)
+            if [[ -n "$2" ]];
+            then
+                monRegSpecificProcData $2
+            else
+                monRegProcData
+            fi
+            ;;
+
+        -q)
+            persistentProcs
+            ;;
+
+        -r)
+            procs
+            ;;
+
+        -s)
             if [[ -n "$2" ]];
             then
                 monSNodeSpecificConfig $2
@@ -395,17 +385,17 @@ do
             fi
             ;;
 
-        -x|--xnode)
+        -u)
+            uniqueStrings
+            ;;
+
+        -x)
             if [[ -n "$2" ]];
             then
                 monPNodeSpecificConfig $2
             else
                 monPNodeConfig
             fi
-            ;;
-
-        -h|--help)
-            Usage
             ;;
 
     esac

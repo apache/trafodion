@@ -1,6 +1,6 @@
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ NOTE: your PATH must include ".".
 NOTE: Make sure that there is no seaquest environment running.
       e.g. sqps - should show 'Environment has not been started!
 If the environment is setup correctly, you should be able to 'goall'.
-
-cluster.conf must be setup correctly.
 
 To use goall:
   goall [-cluster] [-verbose]
