@@ -17,17 +17,15 @@
 // @@@ END COPYRIGHT @@@
 package org.apache.hadoop.hbase.client.transactional;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.HRegionLocation;
-import org.apache.hadoop.hbase.client.transactional.TransState;
 
 /**
  * Holds client-side transaction information. Client's use them as opaque objects passed around to transaction
@@ -59,9 +57,11 @@ public class TransactionState {
     private boolean hasError;
     private boolean localTransaction;
     private boolean ddlTrans;
+    private static boolean useConcurrentHM = false;
+    private static boolean getCHMVariable = true;
     
     public Set<String> tableNames = Collections.synchronizedSet(new HashSet<String>());
-    public Set<TransactionRegionLocation> participatingRegions = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
+    public Set<TransactionRegionLocation> participatingRegions;
     /**
      * Regions to ignore in the twoPase commit protocol. They were read only, or already said to abort.
      */
@@ -84,6 +84,29 @@ public class TransactionState {
         commitSendDone = false;
         hasError = false;
         ddlTrans = false;
+
+        if(getCHMVariable) {
+          String concurrentHM = System.getenv("DTM_USE_CONCURRENTHM");
+          if (concurrentHM != null) {
+            useConcurrentHM = (Integer.parseInt(concurrentHM)==0)?false:true;
+          }
+          if(LOG.isTraceEnabled()) {
+            if(useConcurrentHM) {
+              LOG.trace("Using ConcurrentHashMap synchronization to synchronize participatingRegions");
+            }
+            else {
+              LOG.trace("Using synchronizedSet to synchronize participatingRegions");
+            }
+          }
+          getCHMVariable = false;
+        }
+        if(useConcurrentHM) {
+          participatingRegions = Collections.newSetFromMap((new ConcurrentHashMap<TransactionRegionLocation, Boolean>()));
+        }
+        else {
+          participatingRegions = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
+        }
+
         String localTxns = System.getenv("DTM_LOCAL_TRANSACTIONS");
         if (localTxns != null) {
           localTransaction = (Integer.parseInt(localTxns)==0)?false:true;
