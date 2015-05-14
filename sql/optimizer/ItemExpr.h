@@ -1174,6 +1174,10 @@ public:
   void setRangespecItemExpr(NABoolean v = TRUE)
   { (v ? flags_ |= IS_RANGESPEC_ITEM_EXPR : flags_ &= ~IS_RANGESPEC_ITEM_EXPR); }
 
+  NABoolean wasDefaultClause()   const { return (flags_ & WAS_DEFAULT_CLAUSE) != 0; }
+  void setWasDefaultClause(NABoolean v)
+  { (v ? flags_ |= WAS_DEFAULT_CLAUSE : flags_ &= ~WAS_DEFAULT_CLAUSE); }
+
   virtual QR::ExprElement getQRExprElem() const;
 
   virtual ItemExpr* removeRangeSpecItems(NormWA* normWA = NULL);
@@ -1235,7 +1239,11 @@ private:
 
     // if set, then subtree rooted below this ItemExpr has been referenced
     // as an order by ordinal.
-    IN_ORDERBY_ORDINAL = 0x0020
+    IN_ORDERBY_ORDINAL = 0x0020,
+
+    // If set, this subtree was created while processing the DEFAULT
+    // clause in DefaultSpecification::bindNode. 
+    WAS_DEFAULT_CLAUSE = 0x0040
   };
 
   // ---------------------------------------------------------------------

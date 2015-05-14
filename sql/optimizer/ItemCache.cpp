@@ -1218,6 +1218,18 @@ void SelParameter::generateCacheKey(CacheWA& cwa) const
   cwa += "#"; 
 }
 
+// append an ascii-version of SequenceValue into cachewa.qryText_
+void SequenceValue::generateCacheKey(CacheWA& cwa) const
+{
+  BuiltinFunction::generateCacheKey(cwa); 
+  cwa += seqCorrName_.getQualifiedNameAsString();
+
+  if (currVal_)
+    cwa += "currVal";
+  else if (nextVal_)
+    cwa += "nextVal";
+}
+
 // append an ascii-version of Subquery into cachewa.qryText_
 void Subquery::generateCacheKey(CacheWA& cwa) const
 {

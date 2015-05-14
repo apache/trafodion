@@ -934,8 +934,8 @@ Lng32 setAuthID(
   void endSession(NABoolean cleanupEsps = FALSE,
 		  NABoolean cleanupEspsOnly = FALSE,
 		  NABoolean cleanupOpens = FALSE);
-  void dropSession();
-  void endMxcmpSession(NABoolean cleanupEsps);
+  void dropSession(NABoolean clearCmpCache = FALSE);
+  void endMxcmpSession(NABoolean cleanupEsps, NABoolean clearCmpCache = FALSE);
   void resetAttributes();
 
   void createMxcmpSession();

@@ -5,7 +5,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@
 -- @@@ END COPYRIGHT @@@
 
 log LOG012 clear;
-set schema trafodion.seabase;
 
 cqd hbase_serialization 'ON';
 cqd hbase_coprocessors 'ON';

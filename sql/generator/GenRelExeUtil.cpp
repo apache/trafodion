@@ -4328,7 +4328,6 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
       if (a->getOperatorType() == ITM_COUNT)
 	{
 	  aggrType = (short)ComTdbHbaseCoProcAggr::COUNT;
-
 	  HbaseAccess::genColName(generator, NULL, aggrColName);
 	}
       else

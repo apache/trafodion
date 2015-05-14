@@ -1305,6 +1305,11 @@ CmpStatement::process (const CmpMessageEndSession& es)
       context_->schemaDB_->getDefaults().resetSessionOnlyDefaults();
     }
 
+  if (((CmpMessageEndSession&)es).clearCache())
+    {
+      CURRENTQCACHE->makeEmpty();
+    }
+
   SQL_EXEC_DeleteHbaseJNI();
 
   return CmpStatement_SUCCESS;

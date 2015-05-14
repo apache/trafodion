@@ -2247,6 +2247,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // enable special  features in R2.93
   DDkwd__(MODE_SPECIAL_3,                       "OFF"),
   DDkwd__(MODE_SPECIAL_4,                       "OFF"),
+  DDkwd__(MODE_SPECIAL_5,                       "OFF"),
 
   DDnsklo(MP_CATALOG,				"$SYSTEM.SQL"),
   DDnsksv(MP_SUBVOLUME,				"SUBVOL"),
@@ -3261,6 +3262,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,	"2"),
 
  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
+
+ DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
 
  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
@@ -5545,6 +5548,25 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
             Set_SqlParser_Flags(IN_MODE_SPECIAL_4);
           else
             Reset_SqlParser_Flags(IN_MODE_SPECIAL_4);
+	}
+      break;
+
+      case MODE_SPECIAL_5:
+	{
+	  NAString val;
+          
+          if (value == "ON")
+            val = "ON";
+          else
+            val = "OFF";
+          
+          insert(ALLOW_INCOMPATIBLE_COMPARISON, val, errOrWarn);
+          
+          insert(ALLOW_INCOMPATIBLE_ASSIGNMENT, val, errOrWarn);
+          
+          insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
+
+          insert(TRAF_ALLOW_SELF_REF_CONSTR, val, errOrWarn);
 	}
       break;
 

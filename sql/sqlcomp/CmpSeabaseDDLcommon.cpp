@@ -539,7 +539,8 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
 
       keyInfoArray = new(CTXTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
-      if (buildColInfoArray(&colArray, colInfoArray, FALSE, FALSE, NULL, CTXTHEAP))
+      if (buildColInfoArray(COM_BASE_TABLE_OBJECT,
+                            &colArray, colInfoArray, FALSE, FALSE, NULL, CTXTHEAP))
         {
           return resetCQDs(hbaseSerialization, hbVal, -1);
         }
@@ -2925,7 +2926,7 @@ static short isValidHbaseName(const char * str)
   return -1; // valid name
 }
 
-
+// RETURN: 1, exists. 0, does not exists. -1, error.
 short CmpSeabaseDDL::existsInSeabaseMDTable(
                                           ExeCliInterface *cliInterface,
                                           const char * catName,
@@ -4911,15 +4912,18 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
 }
 
 short CmpSeabaseDDL::buildColInfoArray(
+                                       ComObjectType objType,
                                        ElemDDLColDefArray *colArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        NABoolean implicitPK,
                                        NABoolean alignedFormat,
                                        Lng32 *identityColPos,
-                                       NAMemory * heap,
-                                       NABoolean skipCheck)
+                                       NAMemory * heap)
 {
   std::vector<NAString> myvector;
+
+  if (identityColPos)
+    *identityColPos = -1;
 
   size_t index = 0;
   for (index = 0; index < colArray->entries(); index++)
@@ -4976,7 +4980,17 @@ short CmpSeabaseDDL::buildColInfoArray(
       if ((identityColPos) &&
           ((defaultClass == COM_IDENTITY_GENERATED_BY_DEFAULT) ||
            (defaultClass == COM_IDENTITY_GENERATED_ALWAYS)))
-        *identityColPos = index;
+        {
+          if ((objType == COM_BASE_TABLE_OBJECT) &&
+              (*identityColPos >= 0)) // previously found
+            {
+              // cannot have more than one identity cols
+              *CmpCommon::diags() << DgSqlCode(-1511);
+              return -1;
+            }
+
+          *identityColPos = index;
+        }
 
       colInfoArray[index].colHeading = NULL;
       if (heading.length() > 0)
@@ -5002,19 +5016,20 @@ short CmpSeabaseDDL::buildColInfoArray(
       colInfoArray[index].isOptional = FALSE;
       colInfoArray[index].colFlags = colFlags;
     }
-
-  // find duplicate colname references. If found, return error and first dup colname.
-  if (!skipCheck)
-  {
-    std::sort (myvector.begin(), myvector.end()); 
-    std::vector<NAString>::iterator it = adjacent_find(myvector.begin(), myvector.end());
-    if (it != myvector.end())
+  
+  if ((objType == COM_BASE_TABLE_OBJECT) ||
+      (objType == COM_VIEW_OBJECT))
     {
-      *CmpCommon::diags() << DgSqlCode(-1080)
-                          << DgColumnName(*it);
-      return -1;
+      // find duplicate colname references. If found, return error and first dup colname.
+      std::sort (myvector.begin(), myvector.end()); 
+      std::vector<NAString>::iterator it = adjacent_find(myvector.begin(), myvector.end());
+      if (it != myvector.end())
+        {
+          *CmpCommon::diags() << DgSqlCode(-1080)
+                              << DgColumnName(*it);
+          return -1;
+        }
     }
-  }
 
   return 0;
 }
@@ -7497,7 +7512,33 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
               (createTableParseNode->getAddConstraintCheckArray().entries() > 0))
             createSeabaseTableCompound(createTableParseNode, currCatName, currSchName);
           else
-            createSeabaseTable(createTableParseNode, currCatName, currSchName);
+            {
+              createSeabaseTable(createTableParseNode, currCatName, currSchName);
+              
+              if ((getenv("SQLMX_REGRESS")) &&
+                  (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_)) &&
+                  (CmpCommon::diags()->mainSQLCODE() == -CAT_SCHEMA_DOES_NOT_EXIST_ERROR))
+                {
+                  ComObjectName tableName(createTableParseNode->getTableName());
+                  ComAnsiNamePart currCatAnsiName(currCatName);
+                  ComAnsiNamePart currSchAnsiName(currSchName);
+                  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
+                  
+                  const NAString schemaNamePart = 
+                    tableName.getSchemaNamePartAsAnsiString(TRUE);
+
+                  if (schemaNamePart == SEABASE_REGRESS_DEFAULT_SCHEMA)
+                    {
+                      // create this schema
+                      CmpCommon::diags()->clear();
+                      cliRC = cliInterface.executeImmediate("create shared schema trafodion.sch");
+                      if (cliRC >= 0)
+                        {
+                          createSeabaseTable(createTableParseNode, currCatName, currSchName);
+                        }
+                    }
+                }
+            }
         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_HBASE_TABLE)
         {

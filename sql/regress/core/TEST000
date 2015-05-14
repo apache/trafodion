@@ -1,8 +1,7 @@
--- Used to perform initialization of the SQL database during seabase regr run
---
+-- Test: TEST001 (Core)
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -17,18 +16,16 @@
 --  limitations under the License.
 --
 -- @@@ END COPYRIGHT @@@
+--
 
-#ifdef SEABASE_REGRESS
+log LOG000 clear;
 
-delete from TRAFODION."_MD_".DEFAULTS
-     where ATTRIBUTE  = 'SCHEMA';
-
-insert into TRAFODION."_MD_".DEFAULTS
+upsert into TRAFODION."_MD_".DEFAULTS
      values
      ('SCHEMA ', 'TRAFODION.SCH ', 'inserted during seabase regressions run');
 
---create shared schema trafodion.sch;
+log;
 
---initialize authorization;
-#endif
+-- not logging it since it may or may not exist
+create shared schema trafodion.sch;
 

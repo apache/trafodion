@@ -6140,12 +6140,32 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
       addPredExprTree(ie);
     }
 
+  if (getFirstNRowsParam())
+    {
+      firstNRowsParam_ = firstNRowsParam_->bindNode(bindWA);
+      if (bindWA->errStatus())
+        return this;
+
+      const SQLInt si(FALSE, FALSE);
+      ValueId vid = firstNRowsParam_->castToItemExpr()->getValueId();
+      vid.coerceType(si, NA_NUMERIC_TYPE);
+
+      if (vid.getType().getTypeQualifier() != NA_NUMERIC_TYPE)
+        {
+          // 4045 must be numeric.
+          *CmpCommon::diags() << DgSqlCode(-4045) << DgString0(getTextUpper());
+          bindWA->setErrStatus();
+          return this;
+        }
+    }
+
   if ((NOT hasOrderBy()) &&
-      (getFirstNRows() != -1))
+      ((getFirstNRows() != -1) ||
+       (getFirstNRowsParam())))
     {
       // create a firstN node to retrieve firstN rows.
       FirstN * firstn = new(bindWA->wHeap())
-        FirstN(child(0), getFirstNRows());
+        FirstN(child(0), getFirstNRows(), getFirstNRowsParam());
       firstn->bindNode(bindWA);
       if (bindWA->errStatus())
         return NULL;
@@ -6154,6 +6174,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
       // reset firstN indication in the root node.
       setFirstNRows(-1);
+      setFirstNRowsParam(NULL);
     }
 
   // if we have no user-specified access options then
@@ -7906,7 +7927,9 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
         Assign *tmpAssign = new(bindWA->wHeap())
           Assign(castToList()[j].getItemExpr(), src.getItemExpr());
         tmpAssign = (Assign *)tmpAssign->bindNode(bindWA);
-        if (bindWA->errStatus()) return this;
+        if (bindWA->errStatus()) 
+          return this;
+
       }
  
       if(i == 0) {
@@ -7921,6 +7944,8 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
         vidUnion = new(bindWA->wHeap()) 
           ValueIdUnion(vids, NULL_VALUE_ID);
 
+        vidUnion->setWasDefaultClause(TRUE);
+
         vidUnions.insertAt(j, vidUnion);
       }
 
@@ -7931,6 +7956,8 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
       vidUnion = (ValueIdUnion *)vidUnions[j];
       vidUnion->setSource((Lng32)i, vidList[j]);
         
+      if (NOT vidList[j].getItemExpr()->wasDefaultClause())
+        vidUnion->setWasDefaultClause(FALSE);
     } // for loop over entries in tuple
 
   } // for loop over tupleList
@@ -7997,7 +8024,11 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
 
     Cast * cnode;
     if (castTo)
-      cnode = new(bindWA->wHeap()) Cast(placeHolder, phType, ITM_CAST, TRUE);
+      {
+        cnode = new(bindWA->wHeap()) Cast(placeHolder, phType, ITM_CAST, TRUE);
+        if (vidUnion->getValueId().getItemExpr()->wasDefaultClause())
+          cnode->setWasDefaultClause(TRUE);
+      }
     else
       cnode = new(bindWA->wHeap()) Cast(placeHolder, phType);
     cnode->setConstFoldingDisabled(TRUE);
@@ -9125,7 +9156,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   NAString identityColumnName;
   NABoolean identityColumnGeneratedAlways = FALSE;
   
-  identityColumnGeneratedAlways =getTableDesc()->isIdentityColumnGeneratedAlways(&identityColumnName);
+  identityColumnGeneratedAlways =
+    getTableDesc()->isIdentityColumnGeneratedAlways(&identityColumnName);
     
   if ((getTableName().isVolatile()) &&
       (CmpCommon::context()->sqlSession()->volatileSchemaInUse()) &&
@@ -9649,8 +9681,10 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   else                  // "DEFAULT VALUES" specified
     defaultColCount = totalColCount;
 
-  if (defaultColCount) {
+  if (identityColumnGeneratedAlways)
+    defaultColCount = totalColCount;
 
+  if (defaultColCount) {
     NAWchar zero_w_Str[2]; zero_w_Str[0] = L'0'; zero_w_Str[1] = L'\0';  // wide version
     CollIndex sysColIx = 0, usrColIx = 0;
 
@@ -9741,6 +9775,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           // save the current parserflags setting
           ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
           Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+          Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
 
           defaultValueExpr = parser.getItemExprTree(defaultValueStr);
           CMPASSERT(defaultValueExpr);
@@ -9826,17 +9861,22 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           break;  // tiny performance hack
 
       }   // NOT newRecExprArray().used(i)
-      else {
-        // user specified value.
+      else 
+      {
         if (nacol->getDefaultClass() == COM_IDENTITY_GENERATED_ALWAYS)
           {
-            *CmpCommon::diags() << DgSqlCode(-3428)
-                                << DgString0(nacol->getColName());
-            bindWA->setErrStatus();
-            return boundExpr;
+            Assign * assign = (Assign*)newRecExprArray()[i].getItemExpr();
+            ItemExpr * ie = assign->getSource().getItemExpr();
+            if (NOT ie->wasDefaultClause())
+              {
+                *CmpCommon::diags() << DgSqlCode(-3428)
+                                    << DgString0(nacol->getColName());
+                bindWA->setErrStatus();
+                return boundExpr;
+              }
           }
       }
-        
+      
       if (isASystemColumn)
         sysColIx++;
       else
@@ -9871,15 +9911,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   // must be specified in the values list as (DEFAULT) or
   // must be excluded from the values list forcing the default.
 
-  // This is only applicable to the base table. 
-  // For an index table, the IDENTITY property of the column
-  // is not valid. The values are always gotten from the
-  // base value.
-
-  if (NOT getUpdateCKorUniqueIndexKey() &&  // must not be here as part of update primary key transformation.
-      identityColumnGeneratedAlways &&
-      NOT systemGeneratesIdentityValue()  &&
-      CmpCommon::getDefault(COMP_BOOL_210) == DF_ON)
+  if (identityColumnGeneratedAlways &&
+      NOT systemGeneratesIdentityValue())
     {
       // The IDENTITY column type of GENERATED ALWAYS AS IDENTITY
       // can not be used with user specified values.
@@ -10231,7 +10264,7 @@ RelExpr *Update::bindNode(BindWA *bindWA)
       if (scanNode->getFirstNRows() >= 0)
         {
           FirstN * firstn = new(bindWA->wHeap())
-            FirstN(scanNode, scanNode->getFirstNRows());
+            FirstN(scanNode, scanNode->getFirstNRows(), NULL);
           firstn->bindNode(bindWA);
           if (bindWA->errStatus())
             return NULL;
@@ -10595,7 +10628,7 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
 
       RelExpr * childNode = child(0)->castToRelExpr();
       FirstN * firstn = new(bindWA->wHeap())
-        FirstN(childNode, getFirstNRows());
+        FirstN(childNode, getFirstNRows(), NULL);
       firstn->bindNode(bindWA);
       if (bindWA->errStatus())
         return NULL;
@@ -12434,22 +12467,6 @@ NABoolean GenericUpdate::checkForMergeRestrictions(BindWA *bindWA)
   {
     ValueId valId = tempVIDlist[0];
     identityCol = valId.getNAColumn();
-  }
-  if (identityCol && identityCol->isClusteringKey())
-  {
-    *CmpCommon::diags() << DgSqlCode(-3241) 
-                        << DgString0(" IDENTITY column not allowed as part of clustering key.");
-    bindWA->setErrStatus();
-    return TRUE;
-  }
-  // MERGE with an identityCol is not supported
-  if (identityCol)
-  {
-    *CmpCommon::diags() << DgSqlCode(-3241) 
-                        << DgString0(" IDENTITY column not allowed.");
-    bindWA->setErrStatus();
-    return TRUE;
-
   }
 
   // MERGE on a table with BLOB columns is not supported

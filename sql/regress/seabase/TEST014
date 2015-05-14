@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -27,9 +27,6 @@
 --3.PARTITION BY clause is not allowed for trafodion table.
 --[Already catched by 1195]Salt columns must be subset of clustering key, in any order.
 --[Already catched by 1195]There must be STORE BY or PRIMARY KEY columns.
-
-
-set schema trafodion.seabase;
 
 obey TEST014(clean_up);
 

@@ -98,6 +98,8 @@ sbdefsfile="$REGRTOOLSDIR/sbdefs"
 export BUILD_FLAVOR=`echo $BUILD_FLAVOR | tr a-z A-Z`
 echo "build flavor: $BUILD_FLAVOR"
 
+seabase="$SEABASE_REGRESS"
+
 # set up default catalog and schema
 export TEST_CATALOG='TRAFODION'
 export TEST_SCHEMA_NAME='sch'
@@ -283,7 +285,8 @@ for ix in $testfiles; do
          cp -f $REGRTSTDIR/$ix $REGRRUNDIR/$ix 2>$NULL
       fi
 
-      echo "obey $scriptsdir/tools/reg_users.sql;" > $ix.tmp
+      echo "obey $scriptsdir/tools/init_sb_regr.sql;" > $ix.tmp
+      echo "obey $scriptsdir/tools/reg_users.sql;" >> $ix.tmp
       cat $tfile >> $ix.tmp
 
       echo "Executing: $sqlci -i$ix.tmp"

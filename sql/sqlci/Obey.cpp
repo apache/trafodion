@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -253,31 +253,31 @@ short Obey::process(SqlciEnv * sqlci_env)
 		else
 		  {
 		    if (!read_error || read_error == -4)
-		    {
+                      {
 #pragma nowarn(1506)   // warning elimination 
-				retcode = sqlci_parser(input_stmt->getPackedString(),
-				     input_stmt->getPackedString(),
-				     &sqlci_node,sqlci_env);
+                        retcode = sqlci_parser(input_stmt->getPackedString(),
+                                               input_stmt->getPackedString(),
+                                               &sqlci_node,sqlci_env);
 #pragma warn(1506)  // warning elimination 
-	  			if (sqlci_node)
-			   {
-			    	retcode = sqlci_node->process(sqlci_env);
-			    	if (retcode == SQL_Canceled)
-			    	{
+                        if (sqlci_node)
+                          {
+                            retcode = sqlci_node->process(sqlci_env);
+                            if (retcode == SQL_Canceled)
+                              {
 			      	state = DONE;
 			        retcode = 0;
 			      }
 			    delete sqlci_node;
-			   }
-          if (retcode > 0)
-          {
-         	sqlci_env->setPrevErrFlushInput();
-            retcode = 0;
-          }
-        }
-      }
-
-		    sqlci_env->displayDiagnostics() ;
+                          }
+                        if (retcode > 0)
+                          {
+                            sqlci_env->setPrevErrFlushInput();
+                            retcode = 0;
+                          }
+                      }
+                  }
+                
+                sqlci_env->displayDiagnostics() ;
 
 		    // Clear the DiagnosticsArea for the next command...
 		    sqlci_DA.clear();

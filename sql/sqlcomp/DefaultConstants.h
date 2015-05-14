@@ -3698,6 +3698,12 @@ enum DefaultConstants
   // hbase table index level, when zero, index level will be read from Hfile 
   HBASE_INDEX_LEVEL,
 
+  // enable special features for certain vendors.
+  MODE_SPECIAL_5,
+
+  // enable self referencing foreign key constraints
+  TRAF_ALLOW_SELF_REF_CONSTR,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

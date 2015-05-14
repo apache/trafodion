@@ -603,7 +603,6 @@ public:
  //warning elimination (removed "inline")
   const QualifiedName &getOtherTableName() const
   {
-    CMPASSERT(!selfRef());			// disallowed for first release
     return *otherTableName_;
   } 
 

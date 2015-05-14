@@ -8216,6 +8216,8 @@ ItemExpr *DefaultSpecification::bindNode(BindWA *bindWA)
       if (boundExpr->getOperatorType() == ITM_CONSTANT)
         ((ConstValue *)boundExpr)->setWasDefaultSpec();
 
+      boundExpr->setWasDefaultClause(TRUE);
+
       setValueId(boundExpr->getValueId());
       return getValueId().getItemExpr();
     }

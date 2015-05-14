@@ -196,7 +196,10 @@ public :
 		  // IS_AUTHORIZATION_READY is TRUE if all privmgr metadata
 		  //   tables exist 
 		  IS_AUTHORIZATION_ENABLED = 0x400,
-		  IS_AUTHORIZATION_READY = 0x800
+		  IS_AUTHORIZATION_READY = 0x800,
+
+                  // if this context was created in an mxcmp process
+                  IS_MXCMP = 0x1000
 		};
 
   CmpContext (UInt32 flags,
@@ -223,6 +226,7 @@ public :
   NABoolean isInstalling() const { return flags_ & IS_INSTALLING; }
   NABoolean ignoreErrors() const { return flags_ & IS_IGNORE_ERR; }
   NABoolean isStandalone() const { return flags_ & IS_STANDALONE; }
+  NABoolean isMxcmp() const { return flags_ & IS_MXCMP; }
   NABoolean isSecondaryMxcmp() const { return flags_ & IS_SECONDARY_MXCMP; }
   NABoolean isEmbeddedArkcmp() const { return flags_ & IS_EMBEDDED_ARKCMP;}
   NABoolean isUninitializedSeabase() const { return flags_ & IS_UNINITIALIZED_SEABASE;}

@@ -288,13 +288,13 @@ class CmpSeabaseDDL
   }
 
   short buildColInfoArray(
+                          ComObjectType objType,
 			  ElemDDLColDefArray * colArray,
 			  ComTdbVirtTableColumnInfo * colInfoArray,
 			  NABoolean implicitPK,
                           NABoolean alignedFormat,
                           Lng32 *identityColPos = NULL,
-			  NAMemory * heap = NULL,
-                          NABoolean skipCheck = FALSE);
+			  NAMemory * heap = NULL);
 
   // The next three methods do use anything from the CmpSeabaseDDL class.
   // They are placed here as a packaging convinience, to avoid code 
@@ -731,6 +731,7 @@ class CmpSeabaseDDL
 		    NAString &pkeyName);
 
   short constraintErrorChecks(
+                              ExeCliInterface * cliInterface,
 			      StmtDDLAddConstraint *addConstrNode,
 			      NATable * naTable,
 			      ComConstraintType ct,

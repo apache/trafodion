@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Tue Apr 14 13:49:25 2015
+-- Definition current  Sat Apr 25 15:34:33 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1180,7 +1180,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Tue Apr 14 13:50:29 2015
+-- Definition current  Sat Apr 25 15:35:27 2015
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1362,7 +1362,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000007663212295804510911582000000000206U3333300_3075_EXPLSTMT
+MXID11000023263212296761231962470000000000206U3333300_3123_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1414,7 +1414,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000007663212295804510911582000000000206U3333300_3086_EXPLSTMT2
+MXID11000023263212296761231962470000000000206U3333300_3134_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;
@@ -1434,6 +1434,348 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 1    .    2    root                                                  1.00E+002
+.    .    1    trafodion_scan                  T011T1                1.00E+002
+
+--- SQL operation complete.
+>>
+>>-- error: no explain available
+>>cqd generate_explain 'OFF';
+
+--- SQL operation complete.
+>>prepare explstmt3 from select * from t011t1;
+
+--- SQL command prepared.
+>>store explain for explstmt3 in repository;
+
+*** ERROR[8017] Explain information is not available for this query.
+
+--- SQL operation failed with errors.
+>>explain options 'f' select * from t011t1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+002
+.    .    1    trafodion_scan                  T011T1                1.00E+002
+
+--- SQL operation complete.
+>>cqd generate_explain 'ON';
+
+--- SQL operation complete.
+>>
+>>-- error: explain too large to be stored in repository
+>>prepare explstmt4 from select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>union all select a from t011t1
++>;
+
+--- SQL command prepared.
+>>store explain for explstmt4 in repository;
+
+*** ERROR[8033] Explain information is too large to be stored in repository.
+
+--- SQL operation failed with errors.
+>>explain options 'f' explstmt4;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+199  .    200  root                                                  1.00E+004
+197  198  199  merge_union                                           1.00E+004
+.    .    198  trafodion_scan                  T011T1                1.00E+002
+195  196  197  merge_union                                           9.89E+003
+.    .    196  trafodion_scan                  T011T1                1.00E+002
+193  194  195  merge_union                                           9.80E+003
+.    .    194  trafodion_scan                  T011T1                1.00E+002
+191  192  193  merge_union                                           9.69E+003
+.    .    192  trafodion_scan                  T011T1                1.00E+002
+189  190  191  merge_union                                           9.60E+003
+.    .    190  trafodion_scan                  T011T1                1.00E+002
+187  188  189  merge_union                                           9.50E+003
+.    .    188  trafodion_scan                  T011T1                1.00E+002
+185  186  187  merge_union                                           9.39E+003
+.    .    186  trafodion_scan                  T011T1                1.00E+002
+183  184  185  merge_union                                           9.30E+003
+.    .    184  trafodion_scan                  T011T1                1.00E+002
+181  182  183  merge_union                                           9.19E+003
+.    .    182  trafodion_scan                  T011T1                1.00E+002
+179  180  181  merge_union                                           9.10E+003
+.    .    180  trafodion_scan                  T011T1                1.00E+002
+177  178  179  merge_union                                           9.00E+003
+.    .    178  trafodion_scan                  T011T1                1.00E+002
+175  176  177  merge_union                                           8.89E+003
+.    .    176  trafodion_scan                  T011T1                1.00E+002
+173  174  175  merge_union                                           8.80E+003
+.    .    174  trafodion_scan                  T011T1                1.00E+002
+171  172  173  merge_union                                           8.69E+003
+.    .    172  trafodion_scan                  T011T1                1.00E+002
+169  170  171  merge_union                                           8.60E+003
+.    .    170  trafodion_scan                  T011T1                1.00E+002
+167  168  169  merge_union                                           8.50E+003
+.    .    168  trafodion_scan                  T011T1                1.00E+002
+165  166  167  merge_union                                           8.39E+003
+.    .    166  trafodion_scan                  T011T1                1.00E+002
+163  164  165  merge_union                                           8.30E+003
+.    .    164  trafodion_scan                  T011T1                1.00E+002
+161  162  163  merge_union                                           8.19E+003
+.    .    162  trafodion_scan                  T011T1                1.00E+002
+159  160  161  merge_union                                           8.10E+003
+.    .    160  trafodion_scan                  T011T1                1.00E+002
+157  158  159  merge_union                                           8.00E+003
+.    .    158  trafodion_scan                  T011T1                1.00E+002
+155  156  157  merge_union                                           7.90E+003
+.    .    156  trafodion_scan                  T011T1                1.00E+002
+153  154  155  merge_union                                           7.80E+003
+.    .    154  trafodion_scan                  T011T1                1.00E+002
+151  152  153  merge_union                                           7.69E+003
+.    .    152  trafodion_scan                  T011T1                1.00E+002
+149  150  151  merge_union                                           7.59E+003
+.    .    150  trafodion_scan                  T011T1                1.00E+002
+147  148  149  merge_union                                           7.50E+003
+.    .    148  trafodion_scan                  T011T1                1.00E+002
+145  146  147  merge_union                                           7.40E+003
+.    .    146  trafodion_scan                  T011T1                1.00E+002
+143  144  145  merge_union                                           7.30E+003
+.    .    144  trafodion_scan                  T011T1                1.00E+002
+141  142  143  merge_union                                           7.19E+003
+.    .    142  trafodion_scan                  T011T1                1.00E+002
+139  140  141  merge_union                                           7.09E+003
+.    .    140  trafodion_scan                  T011T1                1.00E+002
+137  138  139  merge_union                                           7.00E+003
+.    .    138  trafodion_scan                  T011T1                1.00E+002
+135  136  137  merge_union                                           6.90E+003
+.    .    136  trafodion_scan                  T011T1                1.00E+002
+133  134  135  merge_union                                           6.80E+003
+.    .    134  trafodion_scan                  T011T1                1.00E+002
+131  132  133  merge_union                                           6.69E+003
+.    .    132  trafodion_scan                  T011T1                1.00E+002
+129  130  131  merge_union                                           6.59E+003
+.    .    130  trafodion_scan                  T011T1                1.00E+002
+127  128  129  merge_union                                           6.50E+003
+.    .    128  trafodion_scan                  T011T1                1.00E+002
+125  126  127  merge_union                                           6.40E+003
+.    .    126  trafodion_scan                  T011T1                1.00E+002
+123  124  125  merge_union                                           6.30E+003
+.    .    124  trafodion_scan                  T011T1                1.00E+002
+121  122  123  merge_union                                           6.19E+003
+.    .    122  trafodion_scan                  T011T1                1.00E+002
+119  120  121  merge_union                                           6.09E+003
+.    .    120  trafodion_scan                  T011T1                1.00E+002
+117  118  119  merge_union                                           6.00E+003
+.    .    118  trafodion_scan                  T011T1                1.00E+002
+115  116  117  merge_union                                           5.90E+003
+.    .    116  trafodion_scan                  T011T1                1.00E+002
+113  114  115  merge_union                                           5.80E+003
+.    .    114  trafodion_scan                  T011T1                1.00E+002
+111  112  113  merge_union                                           5.69E+003
+.    .    112  trafodion_scan                  T011T1                1.00E+002
+109  110  111  merge_union                                           5.59E+003
+.    .    110  trafodion_scan                  T011T1                1.00E+002
+107  108  109  merge_union                                           5.50E+003
+.    .    108  trafodion_scan                  T011T1                1.00E+002
+105  106  107  merge_union                                           5.40E+003
+.    .    106  trafodion_scan                  T011T1                1.00E+002
+103  104  105  merge_union                                           5.30E+003
+.    .    104  trafodion_scan                  T011T1                1.00E+002
+101  102  103  merge_union                                           5.19E+003
+.    .    102  trafodion_scan                  T011T1                1.00E+002
+99   100  101  merge_union                                           5.09E+003
+.    .    100  trafodion_scan                  T011T1                1.00E+002
+97   98   99   merge_union                                           5.00E+003
+.    .    98   trafodion_scan                  T011T1                1.00E+002
+95   96   97   merge_union                                           4.90E+003
+.    .    96   trafodion_scan                  T011T1                1.00E+002
+93   94   95   merge_union                                           4.80E+003
+.    .    94   trafodion_scan                  T011T1                1.00E+002
+91   92   93   merge_union                                           4.69E+003
+.    .    92   trafodion_scan                  T011T1                1.00E+002
+89   90   91   merge_union                                           4.59E+003
+.    .    90   trafodion_scan                  T011T1                1.00E+002
+87   88   89   merge_union                                           4.50E+003
+.    .    88   trafodion_scan                  T011T1                1.00E+002
+85   86   87   merge_union                                           4.40E+003
+.    .    86   trafodion_scan                  T011T1                1.00E+002
+83   84   85   merge_union                                           4.30E+003
+.    .    84   trafodion_scan                  T011T1                1.00E+002
+81   82   83   merge_union                                           4.19E+003
+.    .    82   trafodion_scan                  T011T1                1.00E+002
+79   80   81   merge_union                                           4.09E+003
+.    .    80   trafodion_scan                  T011T1                1.00E+002
+77   78   79   merge_union                                           4.00E+003
+.    .    78   trafodion_scan                  T011T1                1.00E+002
+75   76   77   merge_union                                           3.90E+003
+.    .    76   trafodion_scan                  T011T1                1.00E+002
+73   74   75   merge_union                                           3.79E+003
+.    .    74   trafodion_scan                  T011T1                1.00E+002
+71   72   73   merge_union                                           3.70E+003
+.    .    72   trafodion_scan                  T011T1                1.00E+002
+69   70   71   merge_union                                           3.59E+003
+.    .    70   trafodion_scan                  T011T1                1.00E+002
+67   68   69   merge_union                                           3.50E+003
+.    .    68   trafodion_scan                  T011T1                1.00E+002
+65   66   67   merge_union                                           3.40E+003
+.    .    66   trafodion_scan                  T011T1                1.00E+002
+63   64   65   merge_union                                           3.29E+003
+.    .    64   trafodion_scan                  T011T1                1.00E+002
+61   62   63   merge_union                                           3.20E+003
+.    .    62   trafodion_scan                  T011T1                1.00E+002
+59   60   61   merge_union                                           3.09E+003
+.    .    60   trafodion_scan                  T011T1                1.00E+002
+57   58   59   merge_union                                           3.00E+003
+.    .    58   trafodion_scan                  T011T1                1.00E+002
+55   56   57   merge_union                                           2.90E+003
+.    .    56   trafodion_scan                  T011T1                1.00E+002
+53   54   55   merge_union                                           2.79E+003
+.    .    54   trafodion_scan                  T011T1                1.00E+002
+51   52   53   merge_union                                           2.70E+003
+.    .    52   trafodion_scan                  T011T1                1.00E+002
+49   50   51   merge_union                                           2.59E+003
+.    .    50   trafodion_scan                  T011T1                1.00E+002
+47   48   49   merge_union                                           2.50E+003
+.    .    48   trafodion_scan                  T011T1                1.00E+002
+45   46   47   merge_union                                           2.40E+003
+.    .    46   trafodion_scan                  T011T1                1.00E+002
+43   44   45   merge_union                                           2.29E+003
+.    .    44   trafodion_scan                  T011T1                1.00E+002
+41   42   43   merge_union                                           2.20E+003
+.    .    42   trafodion_scan                  T011T1                1.00E+002
+39   40   41   merge_union                                           2.09E+003
+.    .    40   trafodion_scan                  T011T1                1.00E+002
+37   38   39   merge_union                                           2.00E+003
+.    .    38   trafodion_scan                  T011T1                1.00E+002
+35   36   37   merge_union                                           1.90E+003
+.    .    36   trafodion_scan                  T011T1                1.00E+002
+33   34   35   merge_union                                           1.79E+003
+.    .    34   trafodion_scan                  T011T1                1.00E+002
+31   32   33   merge_union                                           1.70E+003
+.    .    32   trafodion_scan                  T011T1                1.00E+002
+29   30   31   merge_union                                           1.60E+003
+.    .    30   trafodion_scan                  T011T1                1.00E+002
+27   28   29   merge_union                                           1.50E+003
+.    .    28   trafodion_scan                  T011T1                1.00E+002
+25   26   27   merge_union                                           1.39E+003
+.    .    26   trafodion_scan                  T011T1                1.00E+002
+23   24   25   merge_union                                           1.29E+003
+.    .    24   trafodion_scan                  T011T1                1.00E+002
+21   22   23   merge_union                                           1.20E+003
+.    .    22   trafodion_scan                  T011T1                1.00E+002
+19   20   21   merge_union                                           1.10E+003
+.    .    20   trafodion_scan                  T011T1                1.00E+002
+17   18   19   merge_union                                           1.00E+003
+.    .    18   trafodion_scan                  T011T1                1.00E+002
+15   16   17   merge_union                                           9.00E+002
+.    .    16   trafodion_scan                  T011T1                1.00E+002
+13   14   15   merge_union                                           8.00E+002
+.    .    14   trafodion_scan                  T011T1                1.00E+002
+11   12   13   merge_union                                           7.00E+002
+.    .    12   trafodion_scan                  T011T1                1.00E+002
+9    10   11   merge_union                                           6.00E+002
+.    .    10   trafodion_scan                  T011T1                1.00E+002
+7    8    9    merge_union                                           5.00E+002
+.    .    8    trafodion_scan                  T011T1                1.00E+002
+5    6    7    merge_union                                           4.00E+002
+.    .    6    trafodion_scan                  T011T1                1.00E+002
+3    4    5    merge_union                                           3.00E+002
+.    .    4    trafodion_scan                  T011T1                1.00E+002
+1    2    3    merge_union                                           2.00E+002
+.    .    2    trafodion_scan                  T011T1                1.00E+002
 .    .    1    trafodion_scan                  T011T1                1.00E+002
 
 --- SQL operation complete.

@@ -345,6 +345,118 @@ get qid for statement explstmt2;
 store explain for explstmt2 in repository;
 explain options 'f' qid MXID123456 from repository;
 
+-- error: no explain available
+cqd generate_explain 'OFF';
+prepare explstmt3 from select * from t011t1;
+store explain for explstmt3 in repository;
+explain options 'f' select * from t011t1;
+cqd generate_explain 'ON';
+
+-- error: explain too large to be stored in repository
+prepare explstmt4 from select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+union all select a from t011t1
+;
+store explain for explstmt4 in repository;
+explain options 'f' explstmt4;
+
 -- duplicate column reference, should return error
 create table t011t5(a int, a int);
 create table t011t5 (a int, b int, a int);

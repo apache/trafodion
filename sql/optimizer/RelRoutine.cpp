@@ -1543,10 +1543,11 @@ void ProxyFunc::populateColumnDesc(char *tableNam,
    ComTdbVirtTableColumnInfo * colInfoArray = (ComTdbVirtTableColumnInfo*)
                       new(STMTHEAP) char[numCols * sizeof(ComTdbVirtTableColumnInfo)];
 
-   cmpSBD.buildColInfoArray(&colArray, 
+   cmpSBD.buildColInfoArray(COM_USER_DEFINED_ROUTINE_OBJECT,
+                            &colArray, 
                             colInfoArray, 
                             FALSE, FALSE, NULL,
-                            CmpCommon::statementHeap(), TRUE);
+                            CmpCommon::statementHeap());
 
    for (size_t colNum = 0; colNum < colArray.entries(); colNum++)
    {

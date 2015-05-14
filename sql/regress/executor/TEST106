@@ -54,6 +54,8 @@ drop table T106_interleaved_log;
 
 ?section setup
 
+set schema $$TEST_SCHEMA$$;
+
 obey TEST106(clnup);
 
 log LOG106 clear;
@@ -1332,6 +1334,7 @@ insert into T106_interleaved_log values
 log LOG106;
 
 ?section do_cancel
+set schema $$TEST_SCHEMA$$;
 log CANCEL_LOG106 clear;
 ------------------------------------------;
 ------ Contents of cancel session --------;
@@ -1377,6 +1380,8 @@ sh cat CANCEL_LOG106 >> cancel_log106_all;
 sh touch ${REGRRUNDIR}/test106_synch;
 
 ?section do_cancel_pname
+set schema $$TEST_SCHEMA$$;
+
 log CANCEL_LOG106 clear;
 ------------------------------------------;
 ------ Contents of cancel session --------;
@@ -1421,6 +1426,8 @@ sh cat CANCEL_LOG106 >> cancel_log106_all;
 sh touch ${REGRRUNDIR}/test106_synch;
 
 ?section do_cancel_nid_pid
+set schema $$TEST_SCHEMA$$;
+
 log CANCEL_LOG106 clear;
 ------------------------------------------;
 ------ Contents of cancel session --------;

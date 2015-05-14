@@ -619,6 +619,7 @@ short CmpSeabaseDDL::getPKeyInfoForTable (
 
 
 short CmpSeabaseDDL::constraintErrorChecks(
+                                           ExeCliInterface * cliInterface,
                                            StmtDDLAddConstraint *addConstrNode,
                                            NATable * naTable,
                                            ComConstraintType ct,
@@ -678,6 +679,26 @@ short CmpSeabaseDDL::constraintErrorChecks(
         } // for
     }
   
+  if (NOT foundConstr)
+    {
+      const NAString &constrCatName = addConstrNode->
+        getConstraintNameAsQualifiedName().getCatalogName();
+      const NAString &constrSchName = addConstrNode->
+        getConstraintNameAsQualifiedName().getSchemaName();
+      const NAString &constrObjName = addConstrNode->
+        getConstraintNameAsQualifiedName().getObjectName();
+
+      // check to see if this constraint was defined on some other table and
+      // exists in metadata
+      Lng32 retcode = existsInSeabaseMDTable(cliInterface, 
+                                             constrCatName, constrSchName, constrObjName,
+                                             COM_UNKNOWN_OBJECT, FALSE, FALSE);
+      if (retcode == 1) // exists
+        {
+          foundConstr = TRUE;
+        }
+    }
+
   if (foundConstr)
     {
       *CmpCommon::diags()
@@ -1412,7 +1433,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
       colInfoArray = new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
       keyInfoArray = new(STMTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
-      if (buildColInfoArray(&colArray, colInfoArray, implicitPK,
+      if (buildColInfoArray(COM_BASE_TABLE_OBJECT,
+                            &colArray, colInfoArray, implicitPK,
                             alignedFormat, &identityColPos))
         {
           processReturn();
@@ -2595,8 +2617,6 @@ short CmpSeabaseDDL::dropSeabaseTable2(
     }
 
   const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
-
-
       
   // return error if cascade is not specified and a referential constraint exists on
   // any of the unique constraints.
@@ -2616,15 +2636,18 @@ short CmpSeabaseDDL::dropSeabaseTable2(
             {
               const ComplementaryRIConstraint * rc = uniqConstr->getRefConstraintReferencingMe(0);
               
-              const NAString &constrName = 
-                (rc ? rc->getConstraintName().getObjectName() : " ");
-              *CmpCommon::diags() << DgSqlCode(-1059)
-                                  << DgConstraintName(constrName);
-              
-              deallocEHI(ehi); 
-              processReturn();
-              
-              return -1;
+              if (rc->getTableName() != naTable->getTableName())
+                {
+                  const NAString &constrName = 
+                    (rc ? rc->getConstraintName().getObjectName() : " ");
+                  *CmpCommon::diags() << DgSqlCode(-1059)
+                                      << DgConstraintName(constrName);
+                  
+                  deallocEHI(ehi); 
+                  processReturn();
+                  
+                  return -1;
+                }
             }
         }
     }
@@ -2803,6 +2826,11 @@ short CmpSeabaseDDL::dropSeabaseTable2(
         continue;
 
       RefConstraint * refConstr = (RefConstraint*)ariConstr;
+
+      // if self referencing constraint, then it was already dropped as part of
+      // dropping 'ri constraints referencing me' earlier.
+      if (refConstr->selfRef())
+        continue;
 
       const NAString& constrCatName = 
         refConstr->getConstraintName().getCatalogName();
@@ -3943,10 +3971,11 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
           return;
         }
       ConstValue *pDefVal = (ConstValue *)pColDef->getDefaultValueExpr();
-      
-      if ((pDefVal->origOpType() != ITM_CURRENT_USER) &&
+
+      if ((pDefVal) &&
+          (pDefVal->origOpType() != ITM_CURRENT_USER) &&
           (pDefVal->origOpType() != ITM_CURRENT_TIMESTAMP) &&
-          (pDefVal->origOpType() != ITM_CAST)) 
+          (pDefVal->origOpType() != ITM_CAST))
         {
           if (pDefVal->isNull()) 
             {
@@ -3963,6 +3992,15 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   if (pColDef->getDefaultClauseStatus() == ElemDDLColDef::NO_DEFAULT_CLAUSE_SPEC)
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_DEFAULT_REQUIRED);
+
+      processReturn();
+
+      return;
+    }
+
+  if (pColDef->getSGOptions())
+    {
+      *CmpCommon::diags() << DgSqlCode(-1514);
 
       processReturn();
 
@@ -4665,7 +4703,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
     }
   pkeyStr += ")";
 
-  if (constraintErrorChecks(alterAddConstraint->castToStmtDDLAddConstraintUnique(),
+  if (constraintErrorChecks(&cliInterface,
+                            alterAddConstraint->castToStmtDDLAddConstraintUnique(),
                             naTable,
                             COM_UNIQUE_CONSTRAINT, //TRUE, 
                             keyColList))
@@ -4936,7 +4975,9 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
         keyColOrderList.insert("ASC");
     }
 
-  if (constraintErrorChecks(alterAddConstraint->castToStmtDDLAddConstraintUnique(),
+  if (constraintErrorChecks(
+                            &cliInterface,
+                            alterAddConstraint->castToStmtDDLAddConstraintUnique(),
                             naTable,
                             COM_UNIQUE_CONSTRAINT, 
                             keyColList))
@@ -4964,7 +5005,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
                          naTable, COM_UNIQUE_CONSTRAINT, TRUE, &cliInterface))
     {
       *CmpCommon::diags()
-        << DgSqlCode(-1029)
+        << DgSqlCode(-1043)
         << DgTableName(uniqueStr);
 
       return;
@@ -5039,8 +5080,9 @@ short CmpSeabaseDDL::isCircularDependent(CorrName &ringTable,
         continue;
 
       RefConstraint * refConstr = (RefConstraint*)ariConstr;
+      if (refConstr->selfRef())
+        continue;
 
-      //      CorrName cn(refConstr->getDefiningTableName());
       CorrName cn(refConstr->getUniqueConstraintReferencedByMe().getTableName());
       if (cn == origRingTable)
         {
@@ -5206,7 +5248,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
   // If the referenced and referencing tables are the same, 
   // reject the request.  At this time, we do not allow self
   // referencing constraints.
-  if (referencingTableName == referencedTableName)
+  if ((CmpCommon::getDefault(TRAF_ALLOW_SELF_REF_CONSTR) == DF_OFF) &&
+      (referencingTableName == referencedTableName))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_SELF_REFERENCING_CONSTRAINT);
 
@@ -5267,7 +5310,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       ringNullList += " is null ";
     }
 
-  if (constraintErrorChecks(alterAddConstraint->castToStmtDDLAddConstraintRI(),
+  if (constraintErrorChecks(&cliInterface,
+                            alterAddConstraint->castToStmtDDLAddConstraintRI(),
                             ringNaTable,
                             COM_FOREIGN_KEY_CONSTRAINT, //FALSE, // referencing constr
                             ringKeyColList))
@@ -5820,7 +5864,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
     }
 
   NAList<NAString> keyColList;
-  if (constraintErrorChecks(alterAddConstraint->castToStmtDDLAddConstraintCheck(),
+  if (constraintErrorChecks(&cliInterface,
+                            alterAddConstraint->castToStmtDDLAddConstraintCheck(),
                             naTable,
                             COM_CHECK_CONSTRAINT, 
                             keyColList))
@@ -6043,8 +6088,10 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
   NABoolean isCheckConstr = 
     (strcmp(outObjType, COM_CHECK_CONSTRAINT_OBJECT_LIT) == 0);
 
+  NABoolean constrFound = FALSE;
   if (isUniqConstr)
     {
+      constrFound = FALSE;
       const AbstractRIConstraintList &ariList = naTable->getUniqueConstraints();
       for (Int32 i = 0; i < ariList.entries(); i++)
         {
@@ -6056,6 +6103,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
           
           if (dropConstrName == tableConstrName)
             {
+              constrFound = TRUE;
               if (uniqueConstr->hasRefConstraintsReferencingMe())
                 {
                   *CmpCommon::diags()
@@ -6067,12 +6115,23 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
                 }
             }
         } // for
+
+      if (NOT constrFound)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1052);
+          
+          processReturn();
+          
+          return;
+        }
     }
   
   NATable *otherNaTable = NULL;
   Int64 otherConstrUID = 0;
   if (isRefConstr)
     {
+      constrFound = FALSE;
+
       RefConstraint * refConstr = NULL;
       
       const AbstractRIConstraintList &ariList = naTable->getRefConstraints();
@@ -6085,10 +6144,20 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
           
           if (dropConstrName == tableConstrName)
             {
+              constrFound = TRUE;
               refConstr = (RefConstraint*)ariConstr;
             }
         } // for
  
+      if (NOT constrFound)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1052);
+          
+          processReturn();
+          
+          return;
+        }
+
       CorrName otherCN(refConstr->getUniqueConstraintReferencedByMe().getTableName());
       otherNaTable = bindWA.getNATable(otherCN);
       if (otherNaTable == NULL || bindWA.errStatus())
@@ -6878,8 +6947,14 @@ short CmpSeabaseDDL::getSpecialTableInfo
       createTableInfo = TRUE;
     }
 
-  if ((NOT isUninit) &&
-      (CmpCommon::getDefault(TRAF_BOOTSTRAP_MD_MODE) == DF_OFF))
+  NABoolean getUID = TRUE;
+  if (isUninit)
+    getUID = FALSE;
+  else if (CmpCommon::context()->isMxcmp())
+    getUID = FALSE;
+  else if (CmpCommon::getDefault(TRAF_BOOTSTRAP_MD_MODE) == DF_ON)
+    getUID = FALSE;
+  if (getUID)
     {
       ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
                                    CmpCommon::context()->sqlSession()->getParentQid());
