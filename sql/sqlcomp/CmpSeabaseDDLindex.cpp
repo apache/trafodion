@@ -42,6 +42,7 @@
 #include "StmtDDLDropIndex.h"
 #include "StmtDDLAlterTableEnableIndex.h"
 #include "StmtDDLAlterTableDisableIndex.h"
+#include "StmtDDLAlterIndexHBaseOptions.h"
 
 #include "CmpDDLCatErrorCodes.h"
 #include "ElemDDLHbaseOptions.h"
@@ -1432,10 +1433,10 @@ void CmpSeabaseDDL::dropSeabaseIndex(
       if (1) //NOT dropIndexNode->dropIfExists())
 	{
 	  if (isVolatile)
-	    *CmpCommon::diags() << DgSqlCode(-1389)
+	    *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
 				<< DgString0(objectNamePart);
 	  else
-	    *CmpCommon::diags() << DgSqlCode(-1389)
+	    *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
 				<< DgString0(extIndexName);
 	}
 
@@ -1669,7 +1670,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
 
   if (retcode == 0) // does not exist
     {
-      *CmpCommon::diags() << DgSqlCode(-1389)
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
 			  << DgString0(extBTname);
 
       processReturn();
@@ -1689,7 +1690,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
 
   if (retcode == 0) // does not exist
     {
-      *CmpCommon::diags() << DgSqlCode(-1389)
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
 			  << DgString0(extIndexName);
 
       processReturn();
@@ -1811,7 +1812,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
 
   if (retcode == 0) // does not exist
     {
-      *CmpCommon::diags() << DgSqlCode(-1389) 
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION) 
                           << DgString0(tableName.getExternalName(TRUE));
       processReturn();
       return;
@@ -1862,6 +1863,160 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
     ActiveSchemaDB()->getNATableDB()->removeNATable(cn, 
       NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
   }
+
+  return ;
+}
+
+void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
+                                       StmtDDLAlterIndexHBaseOptions * hbaseOptionsNode,
+                                       NAString &currCatName, NAString &currSchName)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  NAString idxName = hbaseOptionsNode->getIndexName();
+
+  ComObjectName indexName(idxName);
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  indexName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  NAString catalogNamePart = indexName.getCatalogNamePartAsAnsiString();
+  NAString schemaNamePart = indexName.getSchemaNamePartAsAnsiString(TRUE);
+  NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extIndexName = indexName.getExternalName(TRUE);
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
+  
+  ExpHbaseInterface * ehi = allocEHI();
+  if (ehi == NULL)
+    {
+      processReturn();
+      return;
+    }
+
+  // Disallow this ALTER on system metadata schema objects
+
+  if ((isSeabaseReservedSchema(indexName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_ALTER_NOT_ALLOWED_IN_SMD)
+                          << DgTableName(extIndexName);
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+  
+  // Make sure this object exists
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+                                   catalogNamePart, schemaNamePart, objectNamePart,
+                                   COM_INDEX_OBJECT,
+                                   (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) 
+                                    ? FALSE : TRUE),
+                                   TRUE, TRUE);
+  if (retcode < 0)  // some error occurred
+    {
+      processReturn();
+      deallocEHI(ehi);
+      return;
+    }
+  else if (retcode == 0)
+    {
+       CmpCommon::diags()->clear();
+      
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+                          << DgString0(extIndexName);
+
+      deallocEHI(ehi); 
+      processReturn();     
+      return;
+    }
+
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+
+  // Get base table name and base table uid
+
+  NAString btCatName;
+  NAString btSchName;
+  NAString btObjName;
+  Int64 btUID;
+  Int32 btObjOwner = 0;
+  Int32 btSchemaOwner = 0;
+  if (getBaseTable(&cliInterface,
+		   catalogNamePart, schemaNamePart, objectNamePart,
+		   btCatName, btSchName, btObjName, btUID, btObjOwner, btSchemaOwner))
+    {
+      processReturn();      
+      deallocEHI(ehi);      
+      return;
+    }
+  
+  CorrName cn(btObjName,
+              STMTHEAP,
+              btSchName,
+              btCatName);
+  
+  NATable *naTable = bindWA.getNATable(cn); 
+  if (naTable == NULL || bindWA.errStatus())
+    {
+      // shouldn't happen, actually, since getBaseTable above succeeded
+
+      CmpCommon::diags()->clear();     
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+                          << DgString0(extIndexName);
+      deallocEHI(ehi);  
+      processReturn();     
+      return;
+    }
+ 
+  // Make sure user has the privilege to perform the ALTER
+  
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner, btSchemaOwner))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+     deallocEHI(ehi); 
+     processReturn();
+     return;
+  }
+
+  CmpCommon::diags()->clear();
+
+  // Get the object UID so we can update the metadata
+
+  Int64 objUID = getObjectUID(&cliInterface,
+                              catalogNamePart.data(), schemaNamePart.data(), 
+                              objectNamePart.data(),
+                              COM_INDEX_OBJECT_LIT);
+  if (objUID < 0)
+    {
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+
+  // update HBase options in the metadata
+
+  ElemDDLHbaseOptions * edhbo = hbaseOptionsNode->getHBaseOptions();
+  short result = updateHbaseOptionsInMetadata(&cliInterface,objUID,edhbo);
+  
+  if (result < 0)
+    {
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+
+  // tell HBase to change the options
+
+  // TODO: Write this code
+
+  // invalidate cached NATable info on this table for all users
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+
+  deallocEHI(ehi); 
 
   return ;
 }

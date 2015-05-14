@@ -29710,6 +29710,12 @@ alter_index_action : file_attribute_clause
 				    StmtDDLAlterIndexAttribute(
                                        $1 /*file_attribute_clause*/);
                                 }
+                      | TOK_ALTER hbase_table_options
+                        {
+                                $$ = new (PARSERHEAP())
+				  StmtDDLAlterIndexHBaseOptions($2->castToElemDDLHbaseOptions());
+                        }
+
 //----------------------------------------------------------------------------
 // MV - RG
 
@@ -30859,6 +30865,11 @@ alter_table_action : add_table_constraint_definition
       				$$ = $1;
 
 			}
+                      | TOK_ALTER hbase_table_options
+                        {
+                                $$ = new (PARSERHEAP())
+				  StmtDDLAlterTableHBaseOptions($2->castToElemDDLHbaseOptions());
+                        }
 			
 
 /* type pStmtDDL */

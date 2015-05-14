@@ -819,6 +819,7 @@ enum OperatorTypeEnum {
                         DDL_ALTER_AUDIT_CONFIG,
                         DDL_ALTER_CATALOG,
                         DDL_ALTER_INDEX_ATTRIBUTE,
+                        DDL_ALTER_INDEX_ALTER_HBASE_OPTIONS,
                         DDL_ALTER_LIBRARY,
                         DDL_ALTER_MV,  // MV
                         DDL_ALTER_ROUTINE,
@@ -847,6 +848,7 @@ enum OperatorTypeEnum {
                         DDL_ALTER_TABLE_NAMESPACE,
                         DDL_ALTER_TABLE_ALTER_COLUMN_DEFAULT_VALUE,
                         DDL_ALTER_TABLE_ALTER_COLUMN_SET_SG_OPTION,
+                        DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS,
                         DDL_ALTER_MV_RENAME,
                         DDL_ALTER_MV_REFRESH_GROUP, // MV
                         DDL_ALTER_TRIGGER,

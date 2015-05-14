@@ -4239,7 +4239,9 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
           (CmpSeabaseDDL::genHbaseCreateOptions
            (indexes_desc->body.indexes_desc.hbaseCreateOptions,
             hbaseCreateOptions,
-            heap)))
+            heap,
+            NULL,
+            NULL)))
         return TRUE;
 
       if (table->isHbaseTable())

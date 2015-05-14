@@ -2445,10 +2445,10 @@ short CmpSeabaseDDL::dropSeabaseTable2(
           CmpCommon::diags()->clear();
 
           if (isVolatile)
-            *CmpCommon::diags() << DgSqlCode(-1389)
+            *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                                 << DgString0(objectNamePart);
           else
-            *CmpCommon::diags() << DgSqlCode(-1389)
+            *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                                 << DgString0(extTableName);
         }
 
@@ -2508,10 +2508,10 @@ short CmpSeabaseDDL::dropSeabaseTable2(
           CmpCommon::diags()->clear();
           
           if (isVolatile)
-            *CmpCommon::diags() << DgSqlCode(-1389)
+            *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                                 << DgString0(objectNamePart);
           else
-            *CmpCommon::diags() << DgSqlCode(-1389)
+            *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                                 << DgString0(extTableName);
         }
       
@@ -3363,7 +3363,7 @@ void CmpSeabaseDDL::renameSeabaseTable(
     {
       CmpCommon::diags()->clear();
       
-      *CmpCommon::diags() << DgSqlCode(-1389)
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                           << DgString0(extTableName);
   
       processReturn();
@@ -3489,6 +3489,136 @@ void CmpSeabaseDDL::renameSeabaseTable(
     NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
   ActiveSchemaDB()->getNATableDB()->removeNATable(newcn,
     NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+
+  return;
+}
+
+void CmpSeabaseDDL::alterSeabaseTableHBaseOptions(
+                                       StmtDDLAlterTableHBaseOptions * hbaseOptionsNode,
+                                       NAString &currCatName, NAString &currSchName)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  ComObjectName tableName(hbaseOptionsNode->getTableName());
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
+  const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
+  const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
+  const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extTableName = tableName.getExternalName(TRUE);
+  const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
+  
+  ExpHbaseInterface * ehi = allocEHI();
+  if (ehi == NULL)
+    {
+      processReturn();
+      return;
+    }
+
+  // Disallow this ALTER on system metadata schema objects
+
+  if ((isSeabaseReservedSchema(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_ALTER_NOT_ALLOWED_IN_SMD)
+                          << DgTableName(extTableName);
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+  
+  // Note: In the rename code (CmpSeabaseDDL::renameSeabaseTable), there
+  // is logic about here to forbid a rename on a volatile table. There doesn't
+  // seem to be any reason to forbid changing HBASE_OPTIONS on a volatile
+  // table (and indeed it appears to work fine), so we don't have this
+  // 'forbid' logic here.
+  
+  // Make sure this object exists
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+                                   catalogNamePart, schemaNamePart, objectNamePart,
+                                   COM_BASE_TABLE_OBJECT,
+                                   (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) 
+                                    ? FALSE : TRUE),
+                                   TRUE, TRUE);
+  if (retcode < 0)
+    {
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  
+  CorrName cn(objectNamePart,
+              STMTHEAP,
+              schemaNamePart,
+              catalogNamePart);
+  
+  NATable *naTable = bindWA.getNATable(cn); 
+  if (naTable == NULL || bindWA.errStatus())
+    {
+      CmpCommon::diags()->clear();
+      
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+                          << DgString0(extTableName);
+      deallocEHI(ehi); 
+      processReturn();     
+      return;
+    }
+ 
+  // Make sure user has the privilege to perform the ALTER
+
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner(),naTable->getSchemaOwner()))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      deallocEHI(ehi);
+      processReturn ();
+      return;
+    }
+
+  CmpCommon::diags()->clear();
+
+  // Get the object UID so we can update the metadata
+
+  Int64 objUID = getObjectUID(&cliInterface,
+                              catalogNamePart.data(), schemaNamePart.data(), 
+                              objectNamePart.data(),
+                              COM_BASE_TABLE_OBJECT_LIT);
+  if (objUID < 0)
+    {
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
+  // update HBase options in the metadata
+
+  ElemDDLHbaseOptions * edhbo = hbaseOptionsNode->getHBaseOptions();
+  short result = updateHbaseOptionsInMetadata(&cliInterface,objUID,edhbo);
+  
+  if (result < 0)
+    {
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
+  // tell HBase to change the options
+
+  // TODO: Write this code
+
+  // invalidate cached NATable info on this table for all users
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+
+  deallocEHI(ehi);
 
   return;
 }
@@ -5020,7 +5150,7 @@ short CmpSeabaseDDL::isCircularDependent(CorrName &ringTable,
   NATable *naTable = bindWA->getNATable(refdTable); 
   if (naTable == NULL || bindWA->errStatus())
     {
-      *CmpCommon::diags() << DgSqlCode(-1389)
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                           << DgString0(naTable->getTableName().getQualifiedNameAsString());
       
       processReturn();
@@ -8526,7 +8656,7 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   }
   if (cliRC == 100) // did not find the row
   {
-     *CmpCommon::diags() << DgSqlCode(-1389)
+     *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                         << DgString0(objName);
      return NULL;
   }

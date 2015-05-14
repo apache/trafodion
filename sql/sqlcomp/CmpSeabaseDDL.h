@@ -245,7 +245,17 @@ class CmpSeabaseDDL
   static short genHbaseCreateOptions(
 				     const char * hbaseCreateOptionsStr,
 				     NAList<HbaseCreateOption*>* &hbaseCreateOptions,
-				     NAMemory * heap);
+				     NAMemory * heap,
+                                     size_t * beginPos,
+                                     size_t * endPos);
+
+  static short genHbaseOptionsMetadataString(                                          
+                                      const NAList<HbaseCreateOption*> & hbaseCreateOptions,
+                                      NAString & hbaseOptionsMetadataString /* out */);
+
+  short updateHbaseOptionsInMetadata(ExeCliInterface * cliInterface,
+                                     Int64 objectUID,
+                                     ElemDDLHbaseOptions * edhbo);
 
   desc_struct * getSeabaseLibraryDesc(
      const NAString &catName, 
@@ -861,6 +871,13 @@ class CmpSeabaseDDL
 
   void renameSeabaseTable(
 			  StmtDDLAlterTableRename                  * renameTableNode,
+			  NAString &currCatName, NAString &currSchName);
+
+  void alterSeabaseTableHBaseOptions(
+			  StmtDDLAlterTableHBaseOptions * hbaseOptionsNode,
+			  NAString &currCatName, NAString &currSchName);
+  void alterSeabaseIndexHBaseOptions(
+			  StmtDDLAlterIndexHBaseOptions * hbaseOptionsNode,
 			  NAString &currCatName, NAString &currSchName);
 
   void addConstraints(

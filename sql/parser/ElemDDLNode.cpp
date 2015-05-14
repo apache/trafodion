@@ -1313,6 +1313,12 @@ ElemDDLNode::castToStmtDDLAlterIndexAttribute()
   return NULL;
 }
 
+StmtDDLAlterIndexHBaseOptions *
+ElemDDLNode::castToStmtDDLAlterIndexHBaseOptions()
+{
+  return NULL;
+}
+
 StmtDDLAlterLibrary *
 ElemDDLNode::castToStmtDDLAlterLibrary()
 {
@@ -1419,6 +1425,12 @@ ElemDDLNode::castToStmtDDLAlterTableSetConstraint()
 
 StmtDDLAlterTableToggleConstraint *
 ElemDDLNode::castToStmtDDLAlterTableToggleConstraint()
+{
+        return NULL;
+}
+
+StmtDDLAlterTableHBaseOptions *
+ElemDDLNode::castToStmtDDLAlterTableHBaseOptions()
 {
         return NULL;
 }

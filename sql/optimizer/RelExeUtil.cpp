@@ -64,6 +64,7 @@
 #include "StmtDDLCreateIndex.h"
 #include "StmtDDLPopulateIndex.h"
 #include "StmtDDLDropIndex.h"
+#include "StmtDDLAlterIndex.h"   // why don't we need StmtDDLAlterTable as well???
 #include "StmtDDLCreateDropSequence.h"
 #include "StmtDDLGrant.h"
 #include "StmtDDLRevoke.h"
@@ -3654,6 +3655,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean alterDropCol = FALSE;
   NABoolean alterDisableIndex = FALSE;
   NABoolean alterEnableIndex = FALSE;
+  NABoolean alterHBaseOptions = FALSE;
   NABoolean otherAlters = FALSE;
   NABoolean isPrivilegeMngt = FALSE;
   NABoolean isCreateSchema = FALSE;
@@ -3833,12 +3835,27 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
          alterRenameTable = TRUE;
       else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableAlterColumnSetSGOption())
          alterIdentityCol = TRUE;
+      else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableHBaseOptions())
+         alterHBaseOptions = TRUE;
        else
         otherAlters = TRUE;
 
       qualObjName_ =
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLAlterTable()->
         getTableNameAsQualifiedName();
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterIndex())
+    {
+      isAlter_ = TRUE;
+      isIndex_ = TRUE;
+      if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterIndexHBaseOptions())
+        alterHBaseOptions = TRUE;
+      else
+        otherAlters = TRUE;
+
+      qualObjName_ =
+        getDDLNode()->castToStmtDDLNode()->castToStmtDDLAlterIndex()->
+        getIndexNameAsQualifiedName();
     }
     else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateView())
     {
@@ -4016,7 +4033,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
          (isCreate_ || isDrop_ || purgedataHbase_ ||
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
 			alterAddConstr || alterDropConstr || alterRenameTable || 
-                        alterIdentityCol || otherAlters)))))
+                        alterIdentityCol || alterHBaseOptions || otherAlters)))))
       {
 	if (NOT isNative_)
 	  {
