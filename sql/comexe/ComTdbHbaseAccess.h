@@ -661,15 +661,16 @@ public:
       {(v ? flags2_ |= TRAF_UPSERT_WRITE_TO_WAL : flags2_ &= ~TRAF_UPSERT_WRITE_TO_WAL); };
       NABoolean getTrafWriteToWAL() { return (flags2_ & TRAF_UPSERT_WRITE_TO_WAL) != 0; };
 
-  const char * getLoadPrepLocation() const
-  {
-    return LoadPrepLocation_;
-  }
+  const char * getLoadPrepLocation() const { return LoadPrepLocation_; }
+  void setLoadPrepLocation(char * loadPrepLocation) { LoadPrepLocation_ = loadPrepLocation;  }
+  const char * getErrCountRowId() const { return errCountRowId_; }
+  void setErrCountRowId(char * v) { errCountRowId_ = v; }
+  const char * getErrCountTab() const { return errCountTab_; }
+  void setErrCountTab(char * v) { errCountTab_ = v; }
+  const char * getLoggingLocation() const { return loggingLocation_; }
+  void setLoggingLocation(char * v) { loggingLocation_ = v; }
 
-  void setLoadPrepLocation(char * loadPrepLocation)
-  {
-    LoadPrepLocation_ = loadPrepLocation;
-  }
+
 
   const Float32 getSamplingRate() const
   {
@@ -765,6 +766,18 @@ public:
    {  hbaseRowsetVsbbSize_ = size; }
    UInt16 getHbaseRowsetVsbbSize()
    { return hbaseRowsetVsbbSize_; } 
+
+   void setLogErrorRows(NABoolean v)
+     {(v ? flags2_ |= TRAF_LOAD_LOG_ERROR_ROWS : flags2_ &= ~TRAF_LOAD_LOG_ERROR_ROWS); };
+   NABoolean getLogErrorRows() { return (flags2_ & TRAF_LOAD_LOG_ERROR_ROWS) != 0; };
+
+   void setContinueOnError(NABoolean v)
+     {(v ? flags2_ |= TRAF_LOAD_CONTINUE_ON_ERROR : flags2_ &= ~TRAF_LOAD_CONTINUE_ON_ERROR); };
+   NABoolean getContinueOnError() { return (flags2_ & TRAF_LOAD_CONTINUE_ON_ERROR) != 0; };
+
+   UInt32 getMaxErrorRows() const{ return maxErrorRows_; }
+   void setMaxErrorRows(UInt32 v ) { maxErrorRows_= v; }
+
  protected:
   enum
   {
@@ -797,7 +810,9 @@ public:
     TRAF_LOAD_QUASI_SECURE           = 0x0080,
     TRAF_LOAD_TAKE_SNAPSHOT          = 0x0100,
     TRAF_LOAD_NO_DUPLICATTES         = 0x0200,
-    TRAF_USE_SNAPSHOT_SCAN           = 0x0400
+    TRAF_USE_SNAPSHOT_SCAN           = 0x0400,
+    TRAF_LOAD_LOG_ERROR_ROWS         = 0x0800,
+    TRAF_LOAD_CONTINUE_ON_ERROR      = 0x1000
   };
 
   UInt16 accessType_;
@@ -879,18 +894,20 @@ public:
   NABasicPtr zkPort_;
 
 
- HbasePerfAttributesPtr hbasePerfAttributes_;
+  HbasePerfAttributesPtr hbasePerfAttributes_;
   Float32 samplingRate_;
   NABasicPtr sampleLocation_;
 
   NABasicPtr LoadPrepLocation_;
+  NABasicPtr errCountRowId_;
+  NABasicPtr errCountTab_;
+  NABasicPtr loggingLocation_;
   UInt32 flags2_;
   UInt32 maxHFileSize_;
   HbaseSnapshotScanAttributesPtr hbaseSnapshotScanAttributes_;
+  UInt32 maxErrorRows_;
   UInt16 hbaseRowsetVsbbSize_; 
-
-  char fillers[14];
-
+  char fillers[10];
 };
 
 class ComTdbHbaseCoProcAccess : public ComTdbHbaseAccess

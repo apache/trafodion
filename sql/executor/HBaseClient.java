@@ -1214,6 +1214,36 @@ public class HBaseClient {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       return htc.startGet(transID, rowIDs, columns, timestamp);
   }
+
+  public boolean  createCounterTable(String tabName,  String famName) throws IOException, MasterNotRunningException
+  {
+    if (logger.isDebugEnabled()) logger.debug("HBaseClient.createCounterTable() - start");
+    HBaseAdmin admin = new HBaseAdmin(config);
+    TableName tn =  TableName.valueOf (tabName);
+    if (admin.tableExists(tabName)) {
+        admin.close();
+        return true;
+    }
+    HTableDescriptor desc = new HTableDescriptor(tn);
+    HColumnDescriptor colDesc = new HColumnDescriptor(famName);
+    colDesc.setMaxVersions(1);
+    desc.addFamily(colDesc);
+    admin.createTable(desc);
+    admin.close();
+    if (logger.isDebugEnabled()) logger.debug("HBaseClient.createCounterTable() - end");
+    return true;
+  }
+
+  public long incrCounter(String tabName, String rowId, String famName, String qualName, long incrVal) throws Exception
+  {
+    if (logger.isDebugEnabled()) logger.debug("HBaseClient.incrCounter() - start");
+
+    HTable myHTable = new HTable(config, tabName);
+    long count = myHTable.incrementColumnValue(Bytes.toBytes(rowId), Bytes.toBytes(famName), Bytes.toBytes(qualName), incrVal);
+    myHTable.close();
+    return count;
+  }
+
 }
     
 

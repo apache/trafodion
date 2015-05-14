@@ -641,6 +641,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_EVERY
 %token <tokval> TOK_EXCEPT
 %token <tokval> TOK_EXCEPTION
+%token <tokval> TOK_EXCEPTIONS
 %token <tokval> TOK_EXCEPTION_TABLE
 %token <tokval> TOK_EXCHANGE            /* Tandem extension non-reserved word */
 %token <tokval> TOK_EXCHANGE_AND_SORT
@@ -2790,11 +2791,11 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hBaseBulkLoadOption>      hbb_no_populate_indexes
 %type <hBaseBulkLoadOption>      hbb_constraints
 %type <hBaseBulkLoadOption>      hbb_no_output
-%type <hBaseBulkLoadOption>      hbb_log_errors_option
-%type <hBaseBulkLoadOption>      hbb_stop_after_n_errors
+%type <hBaseBulkLoadOption>      hbb_continue_on_error
+%type <hBaseBulkLoadOption>      hbb_log_error_rows
+%type <hBaseBulkLoadOption>      hbb_stop_after_n_error_rows
 %type <hBaseBulkLoadOption>      hbb_index_table_only
 %type <hBaseBulkLoadOption>      hbb_upsert_using_load
-
 %type <hbbUnloadOptionsList> optional_hbb_unload_options
 %type <hbbUnloadOptionsList> hbb_unload_option_list
 %type <hbbUnloadOption>      hbb_unload_option
@@ -17409,19 +17410,20 @@ hbbload_option_list : hbbload_option
                           $$ = $2;
                       }
 
-hbbload_option :   hbb_no_recovery_option
+hbbload_option :  hbb_no_recovery_option
                 | hbb_truncate_option
                 | hbb_update_stats_option
-                | hbb_log_errors_option
-                | hbb_stop_after_n_errors
+                | hbb_continue_on_error
+                | hbb_stop_after_n_error_rows
+                | hbb_log_error_rows
                 | hbb_no_duplicate_check
                 | hbb_no_output
                 | hbb_no_populate_indexes
                 | hbb_constraints
                 | hbb_index_table_only
                 | hbb_upsert_using_load
+                
               
-
 hbb_no_recovery_option : TOK_NO TOK_RECOVERY
                     {
                     //NO ROLLBACK
@@ -17473,20 +17475,34 @@ hbb_no_duplicate_check   : TOK_NO TOK_DUPLICATE TOK_CHECK
                                           NULL);
                       $$ = op;
                     }
-hbb_log_errors_option : TOK_LOG TOK_ERROR   //will need to add hdfs location for errors
+hbb_continue_on_error : TOK_CONTINUE TOK_ON TOK_ERROR
                     { //LOG_ERRORS
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
                               new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
-                                          (ExeUtilHBaseBulkLoad::LOG_ERRORS_,
-                                          0, 
-                                          NULL);
+                                          (ExeUtilHBaseBulkLoad::CONTINUE_ON_ERROR_, 0, NULL);
                       $$ = op;
                     }
-hbb_stop_after_n_errors: TOK_STOP TOK_AFTER unsigned_integer TOK_ERROR TOK_ROWS                
+hbb_log_error_rows : TOK_LOG TOK_ERROR TOK_ROWS
                     { //LOG_ERRORS
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
                               new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
-                                          (ExeUtilHBaseBulkLoad::STOP_AFTER_N_ERRORS_, 0, NULL);
+                                          (ExeUtilHBaseBulkLoad::LOG_ERROR_ROWS_, 0, NULL);
+                      $$ = op;
+                    }                    
+                    | TOK_LOG TOK_ERROR TOK_ROWS  TOK_TO QUOTED_STRING
+                    { //LOG_ERRORS
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::LOG_ERROR_ROWS_, 0, (char*)$5->data());
+                      $$ = op;
+                    }                    
+hbb_stop_after_n_error_rows: TOK_STOP TOK_AFTER unsigned_integer TOK_ERROR TOK_ROWS                
+                    { //LOG_ERRORS
+                    
+                    // need to give error if unsigned_integer ==0
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::STOP_AFTER_N_ERROR_ROWS_, $3, NULL);
                       $$ = op;
                     }      
 hbb_no_output :  TOK_NO TOK_OUTPUT
@@ -32356,6 +32372,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_ENTRIES
                       | TOK_ET
                       | TOK_EUROPEAN
+                      | TOK_EXCEPTIONS
                       | TOK_EXCEPTION_TABLE
                       | TOK_EXCHANGE
                       | TOK_EXCHANGE_AND_SORT

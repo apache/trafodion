@@ -3274,15 +3274,20 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
  DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
 
+  DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
+  DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
+  DD_____(TRAF_LOAD_ERROR_COUNT_TABLE,          "ERRORCOUNTER" ),
+  DD_____(TRAF_LOAD_ERROR_LOGGING_LOCATION,     "/bulkload/logs/" ),
   DDkwd__(TRAF_LOAD_FORCE_CIF,                  "ON"),
-
+  DDkwd__(TRAF_LOAD_LOG_ERROR_ROWS,             "OFF"),
+  DDint__(TRAF_LOAD_MAX_ERROR_ROWS,             "0"),
   DDint__(TRAF_LOAD_MAX_HFILE_SIZE,             "10240"), // in MB -->10GB by default
 
   DDkwd__(TRAF_LOAD_PREP_ADJUST_PART_FUNC,      "ON"),
   DDkwd__(TRAF_LOAD_PREP_CLEANUP,               "ON"),
   DDkwd__(TRAF_LOAD_PREP_KEEP_HFILES,           "OFF"),
-  DDkwd__(TRAF_LOAD_PREP_PHASE_ONLY,                 "OFF"),
-  DDkwd__(TRAF_LOAD_PREP_SKIP_DUPLICATES ,        "OFF"),
+  DDkwd__(TRAF_LOAD_PREP_PHASE_ONLY,            "OFF"),
+  DDkwd__(TRAF_LOAD_PREP_SKIP_DUPLICATES ,      "OFF"),
 
   //need add code to check if folder exists or not. if not issue an error and ask
   //user to create it
@@ -5794,6 +5799,16 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
       }
       break;
 
+     case TRAF_LOAD_ERROR_LOGGING_LOCATION:
+     {
+        if (value.length() > 512)
+        {
+           *CmpCommon::diags() << DgSqlCode(-2055)
+                                  << DgString0(value)
+                                  << DgString1(lookupAttrName(attrEnum));
+        }
+     }
+     break;
       default:  break;
       }
     }	  // code to valid overwrite (insert)

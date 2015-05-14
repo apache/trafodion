@@ -484,6 +484,10 @@ typedef enum {
  ,HBC_ERROR_STARTGETS_EXCEPTION
  ,HBC_ERROR_GET_HBTI_PARAM
  ,HBC_ERROR_GET_HBTI_EXCEPTION
+ ,HBC_ERROR_CREATE_COUNTER_PARAM
+ ,HBC_ERROR_CREATE_COUNTER_EXCEPTION
+ ,HBC_ERROR_INCR_COUNTER_PARAM
+ ,HBC_ERROR_INCR_COUNTER_EXCEPTION
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -554,6 +558,9 @@ public:
   HTableClient_JNI *startGets(NAHeap *heap, const char* tableName, bool useTRex, 
             ExHbaseAccessStats *hbs, Int64 transID, const LIST(HbaseStr)& rowIDs, 
             const LIST(HbaseStr) & cols, Int64 timestamp);
+  HBC_RetCode incrCounter( const char * tabName, const char * rowId, const char * famName, 
+                 const char * qualName , Int64 incr, Int64 & count);
+  HBC_RetCode createCounterTable( const char * tabName,  const char * famName);
 private:   
   // private default constructor
   HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
@@ -590,6 +597,8 @@ private:
    ,JM_START_GET
    ,JM_START_GETS
    ,JM_GET_HBTI
+   ,JM_CREATE_COUNTER_TABLE  
+   ,JM_INCR_COUNTER
    ,JM_LAST
   };
   static jclass          javaClass_; 
@@ -627,6 +636,11 @@ typedef enum {
  ,HVC_ERROR_GET_ALLSCH_EXCEPTION
  ,HVC_ERROR_GET_ALLTBL_PARAM
  ,HVC_ERROR_GET_ALLTBL_EXCEPTION
+ ,HVC_ERROR_HDFS_CREATE_PARAM
+ ,HVC_ERROR_HDFS_CREATE_EXCEPTION
+ ,HVC_ERROR_HDFS_WRITE_PARAM
+ ,HVC_ERROR_HDFS_WRITE_EXCEPTION
+ ,HVC_ERROR_HDFS_CLOSE_EXCEPTION
  ,HVC_LAST
 } HVC_RetCode;
 
@@ -659,6 +673,9 @@ public:
   HVC_RetCode getAllSchemas(LIST(Text *)& schNames);
   HVC_RetCode getAllTables(const char* schName, LIST(Text *)& tblNames);
 
+  HVC_RetCode hdfsCreateFile(const char* path);
+  HVC_RetCode hdfsWrite(const char* data, Int64 len);
+  HVC_RetCode hdfsClose();
   // Get the error description.
   virtual char* getErrorText(HVC_RetCode errEnum);
   
@@ -685,6 +702,9 @@ private:
    ,JM_GET_RDT
    ,JM_GET_ASH
    ,JM_GET_ATL
+   ,JM_HDFS_CREATE_FILE
+   ,JM_HDFS_WRITE
+   ,JM_HDFS_CLOSE
    ,JM_LAST
   };
   static jclass          javaClass_; 
@@ -750,7 +770,8 @@ public:
   HBLC_RetCode doBulkLoad(const HbaseStr &tblName, const Text& location, const Text& tableName, NABoolean quasiSecure, NABoolean snapshot);
 
   HBLC_RetCode  bulkLoadCleanup(const HbaseStr &tblName, const Text& location);
-
+  HBLC_RetCode incrCounter( const char * tabName, const char * rowId, const char * famName, const char * qualName , Int64 incr, Int64 & count);
+  HBLC_RetCode createCounterTable( const char * tabName,  const char * famName);
   // Get the error description.
   virtual char* getErrorText(HBLC_RetCode errEnum);
 

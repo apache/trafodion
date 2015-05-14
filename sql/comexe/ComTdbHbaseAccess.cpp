@@ -172,6 +172,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   hbasePerfAttributes_(hbasePerfAttributes),
   hbaseSnapshotScanAttributes_(hbaseSnapshotScanAttributes),
   LoadPrepLocation_ (NULL),
+  errCountRowId_(NULL),
+  errCountTab_(NULL),
+  loggingLocation_(NULL),
   samplingRate_(samplingRate),
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0)
@@ -430,6 +433,9 @@ Long ComTdbHbaseAccess::pack(void * space)
 	}
     }
   listOfGetRows_.pack(space);
+  errCountRowId_.pack(space);
+  errCountTab_.pack(space);
+  loggingLocation_.pack(space);
 
   return ComTdb::pack(space);
 }
@@ -493,6 +499,9 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
 	  //	  if (hgr->unpack(base, reallocator)) return -1;
 	}
     }
+  if (errCountRowId_.unpack(base)) return -1;
+  if (errCountTab_.unpack(base)) return -1;
+  if (loggingLocation_.unpack(base)) return -1;
 
   return ComTdb::unpack(base, reallocator);
 }

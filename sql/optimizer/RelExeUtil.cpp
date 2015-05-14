@@ -5438,7 +5438,9 @@ RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outH
   result->keepHFiles_ = keepHFiles_;
   result->truncateTable_ = truncateTable_;
   result->noRollback_= noRollback_;
-  result->logErrors_ = logErrors_ ;
+  result->continueOnError_ = continueOnError_ ;
+  result->logErrorRowsLocation_= logErrorRowsLocation_;
+  result->logErrorRows_ = logErrorRows_;
   result->noDuplicates_= noDuplicates_;
   result->indexes_= indexes_;
   result->constraints_= constraints_;
@@ -5446,7 +5448,7 @@ RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outH
   result->indexTableOnly_= indexTableOnly_;
   result->upsertUsingLoad_= upsertUsingLoad_;
   result->pQueryExpression_ = pQueryExpression_;
-
+  result->maxErrorRows_= maxErrorRows_;
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
@@ -5587,18 +5589,53 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
         setNoOutput(TRUE);
       }
       break;
-      case STOP_AFTER_N_ERRORS_:
+      case STOP_AFTER_N_ERROR_ROWS_:
       {
-        *da << DgSqlCode(-4485)
-        << DgString0(": STOP AFTER N ERRORS.");
-        return 1;
+        if (getMaxErrorRows() != 0)
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("MAX ERROR ROWS");
+          return 1;
+        }
+        setMaxErrorRows(lo->numericVal_);
       }
       break;
-      case LOG_ERRORS_:
+      case LOG_ERROR_ROWS_:
       {
-        *da << DgSqlCode(-4485)
-        << DgString0(": ERROR LOGGING.");
-        return 1;
+        if (getLogErrorRows())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("LOG ERROR ROWS");
+          return 1;
+        }
+        setContinueOnError(TRUE);
+        setLogErrorRows(TRUE);
+        if (lo->stringVal_ == NULL)
+           logErrorRowsLocation_ = CmpCommon::getDefaultString(TRAF_LOAD_ERROR_LOGGING_LOCATION);
+        else
+        {
+           if (strlen(lo->stringVal_) > 512) {
+              *da << DgSqlCode(-4487)
+                  << DgString0(lo->stringVal_);
+              return -1;
+           }
+           logErrorRowsLocation_ = lo->stringVal_;
+        }
+        //GIVE ERROR if EQUAL to BULKLOAD tmp location
+      }
+      break;
+      case CONTINUE_ON_ERROR_:
+      {
+        if (getContinueOnError())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("CONTINUE ON ERROR");
+          return 1;
+        }
+        setContinueOnError(TRUE);
       }
       break;
       case UPSERT_USING_LOAD_:
@@ -5642,6 +5679,10 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
       return 1;
     }
 
+  if (getLogErrorRows() || getMaxErrorRows() > 0)
+  {
+    setContinueOnError(TRUE);
+  }
   if (getIndexTableOnly())
   {
     // target table is index then : no output, no secondary index maintenance

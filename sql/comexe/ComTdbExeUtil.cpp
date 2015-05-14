@@ -2552,7 +2552,9 @@ ComTdbExeUtilHBaseBulkLoad::ComTdbExeUtilHBaseBulkLoad(char * tableName,
                            queue_index down,
                            queue_index up,
                            Lng32 num_buffers,
-                           ULng32 buffer_size
+                           ULng32 buffer_size,
+                           char * errCountTab,
+                           char * loggingLoc
                            )
     : ComTdbExeUtil(ComTdbExeUtil::HBASE_LOAD_,
                     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
@@ -2565,15 +2567,24 @@ ComTdbExeUtilHBaseBulkLoad::ComTdbExeUtilHBaseBulkLoad(char * tableName,
                     down, up,
                     num_buffers, buffer_size),
       ldQuery_(ldStmtStr),
-      flags_(0)
+      flags_(0),
+      maxErrorRows_(0),
+      errCountTable_(errCountTab),
+      loggingLocation_(loggingLoc)
+
+
     {
-    setNodeType(ComTdb::ex_HBASE_LOAD);
+      setNodeType(ComTdb::ex_HBASE_LOAD);
     }
 
 Long ComTdbExeUtilHBaseBulkLoad::pack(void * space)
 {
   if (ldQuery_)
     ldQuery_.pack(space);
+  if(errCountTable_)
+    errCountTable_.pack(space);
+  if(loggingLocation_)
+    loggingLocation_.pack(space);
 
   return ComTdbExeUtil::pack(space);
 }
@@ -2581,6 +2592,10 @@ Long ComTdbExeUtilHBaseBulkLoad::pack(void * space)
 Lng32 ComTdbExeUtilHBaseBulkLoad::unpack(void * base, void * reallocator)
 {
   if(ldQuery_.unpack(base))
+    return -1;
+  if(errCountTable_.unpack(base))
+    return -1;
+  if(loggingLocation_.unpack(base))
     return -1;
   return ComTdbExeUtil::unpack(base, reallocator);
 }

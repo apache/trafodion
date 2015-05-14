@@ -89,7 +89,7 @@ class ExpHbaseInterface : public NABasicObject
   virtual ~ExpHbaseInterface()
   {}
   
-  virtual Lng32 init(ExHbaseAccessStats *hbs) = 0;
+  virtual Lng32 init(ExHbaseAccessStats *hbs = NULL) = 0;
   
   virtual Lng32 cleanup() = 0;
   virtual Lng32 cleanupClient()
@@ -267,6 +267,7 @@ class ExpHbaseInterface : public NABasicObject
                  NABoolean v)=0;
  
  virtual  Lng32 initHBLC(ExHbaseAccessStats* hbs = NULL)=0;
+ virtual  Lng32 initHive() = 0;
 
  virtual Lng32 initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
@@ -289,6 +290,15 @@ class ExpHbaseInterface : public NABasicObject
 
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location) = 0;
+
+ virtual Lng32  hdfsCreateFile(const char* path)=0;
+ virtual Lng32  hdfsWrite(const char* data, Int64 size)=0;
+ virtual Lng32  hdfsClose()=0;
+ virtual Lng32  incrCounter( const char * tabName, const char * rowId,
+                             const char * famName, const char * qualName ,
+                             Int64 incr, Int64 & count)=0;
+ virtual Lng32  createCounterTable( const char * tabName,
+                                   const char * famName)=0;
   virtual Lng32 checkAndInsertRow(
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
@@ -382,7 +392,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   
   virtual ~ExpHbaseInterface_JNI();
   
-  virtual Lng32 init(ExHbaseAccessStats *hbs);
+  virtual Lng32 init(ExHbaseAccessStats *hbs = NULL);
   
   virtual Lng32 cleanup();
 
@@ -537,6 +547,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   NABoolean v);
 
 virtual  Lng32 initHBLC(ExHbaseAccessStats* hbs = NULL);
+virtual  Lng32 initHive();
 
 virtual Lng32 initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
@@ -558,6 +569,14 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
  
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location);
+ virtual Lng32  hdfsCreateFile(const char* path);
+ virtual Lng32  hdfsWrite(const char* data, Int64 size);
+ virtual Lng32  hdfsClose();
+ virtual Lng32  incrCounter( const char * tabName, const char * rowId,
+                             const char * famName, const char * qualName ,
+                             Int64 incr, Int64 & count);
+ virtual Lng32  createCounterTable( const char * tabName,
+                                   const char * famName);
 
   virtual Lng32 checkAndInsertRow(
 				  HbaseStr &tblName,
@@ -624,6 +643,7 @@ private:
   HBaseClient_JNI* client_;
   HTableClient_JNI* htc_;
   HBulkLoadClient_JNI* hblc_;
+  HiveClient_JNI* hive_;
   Int32  retCode_;
 };
 

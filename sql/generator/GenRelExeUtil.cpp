@@ -4627,7 +4627,20 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
     ldQuery = space->allocateAlignedSpace(ldQueryNAS.length() + 1);
     strcpy(ldQuery, ldQueryNAS.data());
   }
-
+  char * errCountTab = NULL;
+  NAString errCountTabNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_LOAD_ERROR_COUNT_TABLE);
+  if (errCountTabNAS.length() > 0)
+  {
+    errCountTab = space->allocateAlignedSpace(errCountTabNAS.length() + 1);
+    strcpy(errCountTab, errCountTabNAS.data());
+  }
+  char * logLocation = NULL;
+  NAString logLocationNAS = logErrorRowsLocation_;
+  if (logLocationNAS.length() > 0)
+  {
+    logLocation = space->allocateAlignedSpace(logLocationNAS.length() + 1);
+    strcpy(logLocation, logLocationNAS.data());
+  }
   // allocate a map table for the retrieved columns
   generator->appendAtEnd();
 
@@ -4663,7 +4676,9 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
          (queue_index)getDefault(GEN_DDL_SIZE_UP),
 #pragma nowarn(1506)   // warning elimination
          getDefault(GEN_DDL_NUM_BUFFERS),
-         1024); //getDefault(GEN_DDL_BUFFER_SIZE));
+         1024,          //getDefault(GEN_DDL_BUFFER_SIZE));
+         errCountTab,
+         logLocation);
 #pragma warn(1506)  // warning elimination
 
   exe_util_tdb->setPreloadCleanup(CmpCommon::getDefault(TRAF_LOAD_PREP_CLEANUP) == DF_ON);
@@ -4671,7 +4686,9 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   exe_util_tdb->setKeepHFiles(keepHFiles_);
   exe_util_tdb->setTruncateTable(truncateTable_);
   exe_util_tdb->setNoRollback(noRollback_);
-  exe_util_tdb->setLogErrors(logErrors_);
+  exe_util_tdb->setLogErrorRows(logErrorRows_);
+  exe_util_tdb->setContinueOnError(continueOnError_);
+  exe_util_tdb->setMaxErrorRows(maxErrorRows_);
   exe_util_tdb->setNoDuplicates(noDuplicates_);
   exe_util_tdb->setIndexes(indexes_);
   exe_util_tdb->setConstraints(constraints_);

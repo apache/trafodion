@@ -209,9 +209,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
        Rows Processed: 5 
-Task:  PREPARATION     Status: Ended      ET: 00:00:00.123
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.170
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.300
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.480
 
 --- 5 row(s) loaded.
 >>
@@ -233,25 +233,44 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
        Rows Processed: 5 
-Task:  PREPARATION     Status: Ended      ET: 00:00:00.135
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.179
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
-Task:  COMPLETION      Status: Ended      ET: 00:00:00.234
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.130
 
 --- 5 row(s) loaded.
 >>
->>--log errors are not implemented yet .
->>prepare s from load with log error into t015t2 select * from t015t1;
+>>--log error rows
+>>prepare s from load with log error rows into t015t2 select * from t015t1;
 
-*** ERROR[4485] Invalid option for BULK LOAD or BULK UNLOAD : ERROR LOGGING.
+--- SQL command prepared.
+>>explain options 'f' s;
 
-*** ERROR[8822] The statement was not prepared.
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
 
->>--explain options 'f' s;
->>--execute s;
+1    .    2    root                                                  1.00E+000
+.    .    1    hbase_bulk_load                                       1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
+Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.T015T2
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
+       Rows Processed: 5 
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.179
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.491
+Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  POPULATE INDEX  Status: Ended      ET: 00:00:01.521
+
+--- 5 row(s) loaded.
 >>
 >>delete from t015t2;
 
---- 15 row(s) deleted.
+--- 20 row(s) deleted.
 >>insert into t015t2 values (100),(200),(300);
 
 --- 3 row(s) inserted.
@@ -273,9 +292,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
        Rows Processed: 5 
-Task:  PREPARATION     Status: Ended      ET: 00:00:01.309
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.905
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
-Task:  COMPLETION      Status: Ended      ET: 00:00:02.305
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.492
 
 --- 5 row(s) loaded.
 >>
@@ -449,9 +468,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRE
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:04.266
+Task:  PREPARATION     Status: Ended      ET: 00:00:04.288
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
-Task:  COMPLETION      Status: Ended      ET: 00:00:00.599
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.582
 
 --- 5000 row(s) loaded.
 >>
@@ -531,9 +550,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRE
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:00.826
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.842
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
-Task:  COMPLETION      Status: Ended      ET: 00:00:00.476
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.491
 
 --- 5000 row(s) loaded.
 >>
@@ -632,9 +651,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOG
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:02.925
+Task:  PREPARATION     Status: Ended      ET: 00:00:02.896
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.404
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.589
 
 --- 5000 row(s) loaded.
 >>
@@ -738,9 +757,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOG
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:04.246
+Task:  PREPARATION     Status: Ended      ET: 00:00:04.859
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.400
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.559
 
 --- 5000 row(s) loaded.
 >>
@@ -874,7 +893,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 *** ERROR[8110] Duplicate rows detected.
 
---- 1 row(s) inserted.
+--- 0 row(s) inserted.
 >>load with no output into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>;
 
 *** ERROR[8110] Duplicate rows detected.
@@ -1228,11 +1247,11 @@ Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOG
 Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:06.924
+Task:  PREPARATION     Status: Ended      ET: 00:00:05.884
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  COMPLETION      Status: Ended      ET: 00:00:02.444
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.606
 Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  POPULATE INDEX  Status: Ended      ET: 00:00:15.983
+Task:  POPULATE INDEX  Status: Ended      ET: 00:00:07.303
 
 --- 5000 row(s) loaded.
 >>
@@ -1287,11 +1306,11 @@ Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOG
 Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:05.877
+Task:  PREPARATION     Status: Ended      ET: 00:00:05.019
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  COMPLETION      Status: Ended      ET: 00:00:02.448
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.563
 Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  POPULATE INDEX  Status: Ended      ET: 00:00:18.199
+Task:  POPULATE INDEX  Status: Ended      ET: 00:00:08.089
 
 --- 5000 row(s) loaded.
 >>
@@ -1468,9 +1487,9 @@ Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRE
 Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
        Rows Processed: 5000 
-Task:  PREPARATION     Status: Ended      ET: 00:00:03.169
+Task:  PREPARATION     Status: Ended      ET: 00:00:03.223
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
-Task:  COMPLETION      Status: Ended      ET: 00:00:01.397
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.560
 
 --- 5000 row(s) loaded.
 >>

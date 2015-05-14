@@ -42,15 +42,18 @@ import org.apache.hadoop.hive.metastore.api.UnknownDBException;
 // For Hive 0.10 or higher
 // import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataOutputStream;
 
 public class HiveClient {
 
     static Logger logger = Logger.getLogger(HiveClient.class.getName());
     static String ddlTimeConst = null;
     String lastError;
-    HiveConf hiveConf ;
+    HiveConf hiveConf = null;
     HiveMetaStoreClient hmsClient  ;
-    
+    FSDataOutputStream fsOut = null;
 
     public HiveClient() {
    
@@ -213,4 +216,52 @@ public class HiveClient {
 
         return fieldVal.toString();
     }
+
+  ///////////////////   
+  boolean hdfsCreateFile(String fname) throws IOException
+  {
+    HiveConf  config = new HiveConf();
+    if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsCreateFile() - started" );
+    Path filePath = new Path(fname);
+    FileSystem fs = FileSystem.get(filePath.toUri(),config);
+    fsOut = fs.create(filePath, true);
+    
+    if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsCreateFile() - file created" );
+
+    return true;
+  }
+  
+  boolean hdfsWrite(byte[] buff, long len) throws Exception
+  {
+
+    if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsWrite() - started" );
+    try
+    {
+      fsOut.write(buff);
+      fsOut.flush();
+    }
+    catch (Exception e)
+    {
+      if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsWrite() -- exception: " + e);
+      throw e;
+    }
+    if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsWrite() - bytes written and flushed:" + len  );
+    
+    return true;
+  }
+  
+  boolean hdfsClose() throws IOException
+  {
+    if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsClose() - started" );
+    try
+    {
+      fsOut.close();
+    }
+    catch (IOException e)
+    {
+      if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsClose() - exception:" + e);
+      throw e;
+    }
+    return true;
+  }
 }

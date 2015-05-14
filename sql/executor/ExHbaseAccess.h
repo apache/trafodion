@@ -167,6 +167,23 @@ public:
 
   Lng32 numRowsInDirectBuffer() { return directBufferRowNum_; }
 
+  static void incrErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
+                               const char * tabName, const char * rowId);
+
+  static void handleException(NAHeap *heap,
+                          char *loggingDdata,
+                          Lng32 loggingDataLen,
+                          ComCondition *errorCond,
+                          ExpHbaseInterface * ehi,
+                          NABoolean & LoggingFileCreated,
+                          char * loggingFileName);
+  static void buildLoggingPath(const char * loggingLocation,
+                               char *logId,
+                               const char *tableName,
+                               const char * loggingFileNamePrefix,
+                               Lng32 instId,
+                               char * loggingFileName);
+
 protected:
 
   /////////////////////////////////////////////////////
@@ -785,6 +802,7 @@ public:
     , HANDLE_ERROR
     , DONE
     , ALL_DONE
+
   } step_;
 
   //  const char * insRowId_;
@@ -862,15 +880,21 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
    private:
     void getHiveCreateTableDDL(NAString& hiveSampleTblNm, NAString& ddlText);
 
+    short createLoggingRow( UInt16 tuppIndex,  char * tuppRow, char * targetRow, int &targetRowLen);
+
     NABoolean hFileParamsInitialized_;  ////temporary-- need better mechanism later
     Text   familyLocation_;
     Text   importLocation_;
     Text   hFileName_;
 
-    //Queue * sortedListOfColNames_;
+    char loggingFileName_[1000];
+    NABoolean LoggingFileCreated_ ;
+    ComCondition * lastErrorCnd_;
     std::vector<UInt32> posVec_;
 
     char * prevRowId_;
+    char * loggingRow_;
+
 
     // HDFS file system and output file ptrs used for ustat sample table.
     hdfsFS hdfs_;

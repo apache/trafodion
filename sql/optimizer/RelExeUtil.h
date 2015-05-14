@@ -2151,19 +2151,19 @@ class ExeUtilHBaseBulkLoad : public ExeUtilExpr
 {
 public:
 
-
   enum HBaseBulkLoadOptionType {
     NO_ROLLBACK_,
     TRUNCATE_TABLE_,
     UPDATE_STATS_,
-    LOG_ERRORS_,
-    STOP_AFTER_N_ERRORS_,
+    LOG_ERROR_ROWS_,
+    STOP_AFTER_N_ERROR_ROWS_,
     NO_DUPLICATE_CHECK_,
     NO_POPULATE_INDEXES_,
     CONSTRAINTS_,
     NO_OUTPUT_,
     INDEX_TABLE_ONLY_,
-    UPSERT_USING_LOAD_
+    UPSERT_USING_LOAD_,
+    CONTINUE_ON_ERROR_
   };
 
     class HBaseBulkLoadOption
@@ -2194,14 +2194,16 @@ public:
     truncateTable_(FALSE),
     updateStats_(FALSE),
     noRollback_(FALSE),
-    logErrors_(FALSE),
+    continueOnError_(FALSE),
+    logErrorRows_(FALSE),
     noDuplicates_(TRUE),
     indexes_(TRUE),
     constraints_(FALSE),
     noOutput_(FALSE),
     indexTableOnly_(FALSE),
     upsertUsingLoad_(FALSE),
-    pQueryExpression_(queryExpression)
+    pQueryExpression_(queryExpression),
+    maxErrorRows_(0)
   {
   };
 
@@ -2223,14 +2225,24 @@ public:
   {
     keepHFiles_ = keepHFiles;
   }
-  NABoolean getLogErrors() const
+  NABoolean getContinueOnError() const
   {
-    return logErrors_;
+    return continueOnError_;
   }
 
-  void setLogErrors(NABoolean logErrors)
+  void setContinueOnError(NABoolean v)
   {
-    logErrors_ = logErrors;
+    continueOnError_ = v;
+  }
+
+  NABoolean getLogErrorRows() const
+  {
+    return logErrorRows_;
+  }
+
+  void setLogErrorRows(NABoolean v)
+  {
+    logErrorRows_ = v;
   }
 
   NABoolean getNoRollback() const
@@ -2319,6 +2331,18 @@ public:
  {
    updateStats_ = updateStats;
  }
+ void setMaxErrorRows( UInt32 v)
+ {
+   maxErrorRows_ = v;
+ }
+ UInt32 getMaxErrorRows( )
+  {
+    return maxErrorRows_ ;
+  }
+ void setLogErrorRowsLocation (char * str)
+ {
+   logErrorRowsLocation_ = str;
+ }
 
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
   virtual NABoolean producesOutput() { return (noOutput_ ? FALSE : TRUE); }
@@ -2335,7 +2359,8 @@ private:
   NABoolean truncateTable_;
   NABoolean updateStats_;
   NABoolean noRollback_;
-  NABoolean logErrors_;
+  NABoolean continueOnError_;
+  NABoolean logErrorRows_;
   NABoolean noDuplicates_;
   NABoolean indexes_;
   NABoolean constraints_;
@@ -2344,6 +2369,8 @@ private:
   NABoolean indexTableOnly_;
   NABoolean upsertUsingLoad_;
   RelExpr *pQueryExpression_;
+  UInt32     maxErrorRows_;
+  NAString  logErrorRowsLocation_;
 
 };
 
