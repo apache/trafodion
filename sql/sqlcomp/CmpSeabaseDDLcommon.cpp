@@ -3751,16 +3751,31 @@ short CmpSeabaseDDL::getAllIndexes(ExeCliInterface *cliInterface,
   return 0;
 }
 
+
 // Convert from hbase options string format to list of structs.
 // String format:
 //    HBASE_OPTIONS=>0002COMPRESSION='GZ'|BLOCKCACHE='10'|
-//    
+//
+// If beginPos and/or endPos parameters are not null, then the
+// beginning and/or ending position of the HBASE_OPTIONS string
+// is returned.
+//
+// Note that the input string may have things other than HBASE_OPTIONS
+// in it (such as ROW_FORMAT=>ALIGNED, for example). Those other things
+// are ignored by this method.
+    
 short CmpSeabaseDDL::genHbaseCreateOptions(
                                            const char * hbaseCreateOptionsStr,
                                            NAList<HbaseCreateOption*>* &hbaseCreateOptions,
-                                           NAMemory * heap)
+                                           NAMemory * heap,
+                                           size_t * beginPos,
+                                           size_t * endPos)
 {
   hbaseCreateOptions = NULL;
+  if (beginPos)
+    *beginPos = 0;
+  if (endPos)
+    *endPos = 0;
 
   if (hbaseCreateOptionsStr == NULL)
     return 0;
@@ -3787,7 +3802,12 @@ short CmpSeabaseDDL::genHbaseCreateOptions(
       // look for pattern    ='   to find the end of current option.
       const char * optionEnd = strstr(optionStart, "='");
       if (! optionEnd) // this is an error
-        {
+        { 
+          for (CollIndex k = 0; k < hbaseCreateOptions->entries(); k++)
+            {
+              HbaseCreateOption * hbo = (*hbaseCreateOptions)[k];
+              delete hbo;
+            }
           delete hbaseCreateOptions;
           return -1;
         }
@@ -3796,6 +3816,11 @@ short CmpSeabaseDDL::genHbaseCreateOptions(
       const char * valEnd = strstr(valStart, "'|");
       if (! valEnd) // this is an error
         {
+          for (CollIndex k = 0; k < hbaseCreateOptions->entries(); k++)
+            {
+              HbaseCreateOption * hbo = (*hbaseCreateOptions)[k];
+              delete hbo;
+            }
           delete hbaseCreateOptions;
           return -1;
         }
@@ -3810,8 +3835,208 @@ short CmpSeabaseDDL::genHbaseCreateOptions(
       optionStart = valEnd + strlen("'|");
     }
 
+  if (beginPos)
+    *beginPos = hboStr - hbaseCreateOptionsStr;
+  if (endPos)
+    // + 1 to allow for a space after the last |
+    // (this trailing space is always present)
+    *endPos = optionStart - hbaseCreateOptionsStr + 1;
+
   return 0;
 }
+
+
+// The function below is an inverse of CmpSeabaseDDL::genHbaseCreateOptions.
+// It takes an NAList of HbaseCreateOption objects and generates the equivalent
+// metadata text. Returns 0 if successful (and it is always successful).
+// Note that quotes inside the string are not doubled here.
+
+short CmpSeabaseDDL::genHbaseOptionsMetadataString(                                          
+                                           const NAList<HbaseCreateOption*> & hbaseCreateOptions,
+                                           NAString & hbaseOptionsMetadataString /* out */)
+{
+  CollIndex numberOfOptions = hbaseCreateOptions.entries();
+  if (numberOfOptions == 0)
+    {
+      hbaseOptionsMetadataString = "";  // no HBase options so return empty string
+    }
+  else
+    {
+      hbaseOptionsMetadataString = "HBASE_OPTIONS=>";
+  
+      // put in a 4-digit text NNNN indicating how many options there are
+
+      if (numberOfOptions > HBASE_OPTIONS_MAX_LENGTH)
+        // shouldn't happen; but truncate if it does for safety (note also
+        // that HBASE_OPTIONS_MAX_LENGTH happens to be 4 digits)
+        numberOfOptions = HBASE_OPTIONS_MAX_LENGTH;
+
+      char inTextForm[5];  // room for NNNN and null terminator
+
+      sprintf(inTextForm,"%04d",numberOfOptions);
+      hbaseOptionsMetadataString += inTextForm;
+
+      // now loop through list, appending KEY='VALUE'| for each option
+      // (the doubling of the single quotes is needed since this will be
+      // used as a literal string value in an INSERT statement later)
+   
+      for (CollIndex i = 0; i < numberOfOptions; i++)
+        {
+          HbaseCreateOption * hbaseOption = hbaseCreateOptions[i];  
+          NAText &key = hbaseOption->key();                        
+          NAText &val = hbaseOption->val();
+
+          hbaseOptionsMetadataString += key.c_str();
+          hbaseOptionsMetadataString += "='";
+          hbaseOptionsMetadataString += val.c_str();
+          hbaseOptionsMetadataString += "'|";
+        }
+      
+      hbaseOptionsMetadataString += " ";  // add a trailing separator     
+    }
+
+  return 0;
+}
+
+
+// This method updates the HBASE_OPTIONS=> text in the metadata with
+// new HBase options.
+
+short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
+  ExeCliInterface * cliInterface,
+  Int64 objectUID,
+  ElemDDLHbaseOptions * edhbo)
+{
+  short result = 0;
+
+  // get the text from the metadata
+
+  Lng32 textType = 2;  // to get text containing HBASE_OPTIONS=>
+  Lng32 textSubID = 0; // meaning, the text pertains to the object as a whole
+  NAString metadataText(STMTHEAP);
+  result = getTextFromMD(cliInterface,
+                         objectUID,
+                         textType,  
+                         textSubID,
+                         metadataText /* out */);
+  if (result != 0)
+    return result;
+
+  // convert the text to an NAList <HbaseCreateOption *> representation
+
+  NAList<HbaseCreateOption *> * hbaseCreateOptions = NULL;
+  size_t beginHBOTextPos = 0;
+  size_t endHBOTextPos = 0;
+  result = genHbaseCreateOptions(metadataText.data(),
+                                 hbaseCreateOptions /* out */,
+                                 STMTHEAP,
+                                 &beginHBOTextPos /* out */,
+                                 &endHBOTextPos /* out */);
+  if (result != 0)
+    // genHbaseCreateOptions makes sure oldHbaseCreateOptions is deleted
+    return result; 
+
+  // merge the new HBase options into the old ones, replacing any key
+  // value pairs that exist in both with the new one
+
+  // Note: It's likely that the typical case is just one Hbase option
+  // so we don't bother with clever optimizations such as what if the
+  // old list is empty.
+
+  if (!hbaseCreateOptions)
+    hbaseCreateOptions = new(STMTHEAP) NAList<HbaseCreateOption *>;
+
+  NAList<HbaseCreateOption *> & newHbaseCreateOptions = edhbo->getHbaseOptions(); 
+  for (CollIndex i = 0; i < newHbaseCreateOptions.entries(); i++)
+    {
+      HbaseCreateOption * newHbaseOption = newHbaseCreateOptions[i];  
+      bool notFound = true;
+      for (CollIndex j = 0; notFound && j < hbaseCreateOptions->entries(); j++)
+        {
+          HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[j];
+          if (newHbaseOption->key() == hbaseOption->key())
+            {
+            hbaseOption->setVal(newHbaseOption->val());
+            notFound = false;
+            }
+        }
+      if (notFound)
+        {
+        HbaseCreateOption * copyOfNew = new(STMTHEAP) HbaseCreateOption(*newHbaseOption);
+        hbaseCreateOptions->insert(copyOfNew);
+        }
+    }
+   
+  // convert the merged list to text
+
+  NAString hbaseOptionsMetadataString(STMTHEAP);
+  result = genHbaseOptionsMetadataString(*hbaseCreateOptions,
+                                         hbaseOptionsMetadataString /* out */);
+  if (result == 0)
+    {
+      // edit the old text, removing the present HBASE_OPTIONS=> text if any,
+      // and putting the new text in the same spot
+
+      metadataText.replace(beginHBOTextPos, 
+                           endHBOTextPos - beginHBOTextPos,
+                           hbaseOptionsMetadataString);   
+ 
+      // delete the old text from the metadata
+
+      // Note: It might be tempting to try an upsert instead of a
+      // delete followed by an insert, but this won't work. It is
+      // possible that the metadata text could shrink and take fewer
+      // rows in its new form than the old. So we do the simple thing
+      // to avoid such complications.
+ 
+      char buf[2000];
+      str_sprintf(buf, 
+                  "delete from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+                  objectUID, textType, textSubID);
+      Lng32 cliRC = cliInterface->executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          result = -1;
+        }
+      else
+        {
+          // double any quotes in the text, since we are going to use it
+          // as a literal an an INSERT statement shortly 
+
+          NAString doubledQuoteMetadataText;
+          ToQuotedString(doubledQuoteMetadataText /* out */,
+                         metadataText,
+                         FALSE /* don't surround with quotes */);
+
+          // insert the edited text back into the metadata
+
+          result = updateTextTable(cliInterface,
+                                   objectUID,
+                                   textType,
+                                   textSubID,
+                                   doubledQuoteMetadataText);
+        }
+    }
+
+  // delete any items we created
+
+  // Note that HbaseCreateOption contains members that allocate
+  // storage from the global heap so we must delete HbaseCreateOption
+  // explicitly to avoid global heap memory leaks.
+  
+  for (CollIndex k = 0; k < hbaseCreateOptions->entries(); k++)
+    {
+      HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[k];
+      delete hbaseOption;
+    }
+  delete hbaseCreateOptions;
+
+  return result;
+}
+
+
 
 void CmpSeabaseDDL::handleDDLCreateAuthorizationError(
    int32_t SQLErrorCode,
@@ -7414,6 +7639,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       (ddlExpr->addSchemaObjects()) ||
       (ddlExpr->updateVersion()) ||
       ((ddlNode) &&
+      // TODO: When making ALTER TABLE/INDEX transactional, add cases here for them
        ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
         (ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
         (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
@@ -7643,6 +7869,20 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           renameSeabaseTable(alterRenameTable,
                                   currCatName, currSchName);
         }
+     else if (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS)
+        {
+          StmtDDLAlterTableHBaseOptions * athbo =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableHBaseOptions();
+
+          alterSeabaseTableHBaseOptions(athbo, currCatName, currSchName);
+        }  
+      else if (ddlNode->getOperatorType() == DDL_ALTER_INDEX_ALTER_HBASE_OPTIONS)
+        {
+          StmtDDLAlterIndexHBaseOptions * aihbo =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLAlterIndexHBaseOptions();
+
+          alterSeabaseIndexHBaseOptions(aihbo, currCatName, currSchName);
+        }
       else if (ddlNode->getOperatorType() == DDL_CREATE_VIEW)
         {
           // create seabase view
@@ -7844,6 +8084,11 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            CmpSeabaseMDcleanup cmpSBDC(STMTHEAP);
 
            cmpSBDC.cleanupObjects(co, currCatName, currSchName, dws);
+        }
+      else
+        {
+           // some operator type that this routine doesn't support yet
+           *CmpCommon::diags() << DgSqlCode(-CAT_UNSUPPORTED_COMMAND_ERROR);  
         }
        
     } // else

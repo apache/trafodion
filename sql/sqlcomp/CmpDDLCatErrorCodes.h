@@ -381,6 +381,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_SHOWDDL_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE  = 1400
                   , CAT_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE_TO_CHARSET = 1401
                   , CAT_UNIQUE_INDEX_COLS_NOT_IN_DIV_EXPRS        = 1402
+                  , CAT_ALTER_NOT_ALLOWED_IN_SMD                  = 1403
 
                   // Detectable metadata inconsistencies
                   , CAT_CATSYS_CATREF_MISMATCH                    = 1500

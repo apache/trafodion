@@ -387,6 +387,7 @@
 1400 ZZZZZ 99999 BEGINNER MINOR LOGONLY The default value of column $0~ColumnName contains characters that cannot be converted to $1~String0.
 1401 ZZZZZ 99999 BEGINNER MINOR DBADMIN The default value of column $0~ColumnName contains characters that cannot be converted to character set $1~String0.
 1402 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unique index $0~TableName could not be created with the DIVISION LIKE TABLE option. Only non-unique indexes are supported with this option.
+1403 ZZZZZ 99999 BEGINNER MINOR DBADMIN This ALTER command is not allowed on a reserved system schema object.
 1420 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as it is part of the table's primary key.
 1421 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as it is used in the secondary index $1~TableName.
 1422 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid hbase name was specified in this DDL statement. A valid name can only contain these characters: [a-zA-Z_0-9-.]

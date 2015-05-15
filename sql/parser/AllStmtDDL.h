@@ -44,6 +44,7 @@
 #include "StmtDDLAlterCatalog.h"
 #include "StmtDDLAlterTrigger.h"
 #include "StmtDDLAlterIndexAttribute.h"
+#include "StmtDDLAlterIndexHBaseOptions.h"
 #include "StmtDDLAlterView.h"
 #include "StmtDDLAlterUser.h"
 #include "StmtDDLAlterDatabase.h"
