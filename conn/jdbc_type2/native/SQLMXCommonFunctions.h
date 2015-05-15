@@ -121,7 +121,7 @@ BOOL convertJavaToSQL(jobject jobj, jint paramNumber, struct WrapperInfoStruct *
 					jint sqlDatetimeCode,
 					BYTE *targetDataPtr,
 					jint targetLength, jint precision, jint scale, jboolean isSigned,
-					jint FSDataType, jint charSet, jstring iso88591Encoding);
+					jint FSDataType, jint charSet, jstring iso88591Encoding, jint vcIndLength);
 
 short ConvertSoftDecimalToDouble(jint sqlDataType, void *srcDataPtr, jint srcLength, 
 								jint srcScale, char *cTmpBuf);

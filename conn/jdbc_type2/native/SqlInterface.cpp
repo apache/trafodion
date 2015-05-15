@@ -171,6 +171,7 @@ SQLRETURN GetJDBCValues( SQLItemDesc_def *SQLItemDesc,
 	getMemoryAllocInfo(	SQLItemDesc->dataType,
 		SQLItemDesc->SQLCharset,
 		SQLItemDesc->maxLen,
+		SQLItemDesc->vc_ind_length,
 		totalMemLen,
 		&memAlignOffset,
 		&allocSize,
@@ -264,6 +265,7 @@ SQLRETURN GetJDBCValues( SQLItemDesc_def *SQLItemDesc,
 		getMemoryAllocInfo(	SQLItemDesc->dataType,
 			SQLItemDesc->SQLCharset,
 			SQLItemDesc->maxLen,
+			SQLItemDesc->vc_ind_length,
 			totalMemLen,
 			&memAlignOffset,
 			&allocSize,
@@ -319,6 +321,7 @@ SQLRETURN GetJDBCValues( SQLItemDesc_def *SQLItemDesc,
 		getMemoryAllocInfo(	SQLItemDesc->dataType,
 			SQLItemDesc->SQLCharset,
 			SQLItemDesc->maxLen,
+			SQLItemDesc->vc_ind_length,
 			totalMemLen,
 			&memAlignOffset,
 			&allocSize,
@@ -404,7 +407,7 @@ SQLRETURN SET_DATA_PTR(SRVR_STMT_HDL *pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descTy
 	{
 		SQLItemDesc = (SQLItemDesc_def *) SQLDesc->_buffer + i;
 
-		getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, memOffset,
+		getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, SQLItemDesc->vc_ind_length, memOffset,
 			&memAlignOffset, &allocSize, &varLayout);
 
 		if ((SQLItemDesc->dataType==SQLTYPECODE_INTERVAL) ||
@@ -562,7 +565,7 @@ SQLRETURN AllocAssignValueBuffer(SQLItemDescList_def *SQLDesc,  SQLValueList_def
 			SQLItemDesc = (SQLItemDesc_def *)SQLDesc->_buffer + curDescCount;
 			SQLValue  = (SQLValue_def *)SQLValueList->_buffer + curValueCount;
 
-			getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, memOffset,
+			getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, SQLItemDesc->vc_ind_length, memOffset,
 				&memAlignOffset, &AllocLength, NULL);
 
 			VarPtr = memPtr + memOffset + memAlignOffset;
@@ -702,9 +705,10 @@ SQLRETURN BuildSQLDesc(SRVR_STMT_HDL*pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descTyp
 		SQLItemDesc->datetimeCode = gDescItems[7].num_val_or_len;
 		SQLItemDesc->SQLCharset   = gDescItems[8].num_val_or_len;
 		SQLItemDesc->fsDataType   = gDescItems[9].num_val_or_len;
-		for (k = 10; k < NO_OF_DESC_ITEMS; k++) {
+		for (k = 10; k < 15; k++) {
 			gDescItems[k].string_val[gDescItems[k].num_val_or_len] = '\0';
 		}
+		SQLItemDesc->vc_ind_length = gDescItems[15].num_val_or_len;
 
 		SQLItemDesc->maxLen = AdjustCharLength(descType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen);
 
@@ -720,6 +724,7 @@ SQLRETURN BuildSQLDesc(SRVR_STMT_HDL*pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descTyp
 		implDesc[i].sqlDatetimeCode = SQLItemDesc->datetimeCode;
 		implDesc[i].FSDataType      = SQLItemDesc->fsDataType;
 		implDesc[i].paramMode       = SQLItemDesc->paramMode;
+		implDesc[i].vc_ind_length   = SQLItemDesc->vc_ind_length;
 
 		SQLItemDesc->version = 0;
 
@@ -903,6 +908,7 @@ static SQLRETURN ReadRow(SRVR_STMT_HDL *pSrvrStmt,
 				getMemoryAllocInfo(dataType,
 					charSet,
 					dataLength,
+					IRD[curColumnNo].vc_ind_length,
 					0,
 					NULL,
 					&allocLength,
@@ -950,6 +956,7 @@ static SQLRETURN ReadRow(SRVR_STMT_HDL *pSrvrStmt,
 			getMemoryAllocInfo(dataType,
 				charSet,
 				dataLength,
+				IRD[curColumnNo].vc_ind_length,
 				0,
 				NULL,
 				&allocLength,
@@ -3478,7 +3485,7 @@ SQLRETURN BuildSQLDesc(SRVR_STMT_HDL*pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descTyp
 	SRVR_DESC_HDL *implDesc = pSrvrStmt->allocImplDesc(descType);
 
 	// The following routine is hard coded for at least 15 items, so make sure it does not change
-	DEBUG_ASSERT(NO_OF_DESC_ITEMS>=15,("NO_OF_DESC_ITEMS(%d) is less than 15",NO_OF_DESC_ITEMS));
+	DEBUG_ASSERT(NO_OF_DESC_ITEMS>= 16,("NO_OF_DESC_ITEMS(%d) is less than 16",NO_OF_DESC_ITEMS));
 	*totalMemLen = 0;
 	for (i = 0; i < numEntries; i++) {
 		SQLItemDesc = (SQLItemDesc_def *)SQLDesc->_buffer + SQLDesc->_length;
@@ -3507,9 +3514,10 @@ SQLRETURN BuildSQLDesc(SRVR_STMT_HDL*pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descTyp
 		SQLItemDesc->datetimeCode = gDescItems[7].num_val_or_len;
 		SQLItemDesc->SQLCharset   = gDescItems[8].num_val_or_len;
 		SQLItemDesc->fsDataType   = gDescItems[9].num_val_or_len;
-		for (k = 10; k < NO_OF_DESC_ITEMS; k++) {
+		for (k = 10; k < 15; k++) {
 			gDescItems[k].string_val[gDescItems[k].num_val_or_len] = '\0';
 		}
+		SQLItemDesc->vc_ind_length = gDescItems[15].num_val_or_len;
 
 		SQLItemDesc->maxLen = AdjustCharLength(descType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen);
 
@@ -3525,6 +3533,7 @@ SQLRETURN BuildSQLDesc(SRVR_STMT_HDL*pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descTyp
 		implDesc[i].sqlDatetimeCode = SQLItemDesc->datetimeCode;
 		implDesc[i].FSDataType      = SQLItemDesc->fsDataType;
 		implDesc[i].paramMode       = SQLItemDesc->paramMode;
+		implDesc[i].vc_ind_length   = SQLItemDesc->vc_ind_length;
 
 		SQLItemDesc->version = 0;
 

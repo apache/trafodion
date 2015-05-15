@@ -280,6 +280,7 @@ int initSqlCore(int argc, char *argv[])
     gDescItems[14].item_id = SQLDESC_HEADING;
     gDescItems[14].string_val = ColumnHeading;
     gDescItems[14].num_val_or_len = MAX_ANSI_NAME_LEN+1;
+    gDescItems[15].item_id = SQLDESC_VC_IND_LENGTH;
 
 /*
     // Seaquest related - Linux port
@@ -1614,7 +1615,7 @@ short do_ExecSMD(
         indPtr = IPD[curParamNo].indPtr;
         dataType = IPD[curParamNo].dataType;
         SQLItemDesc = (SQLItemDesc_def *)pSrvrStmt->inputDescList._buffer + curParamNo;
-        getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, 0,
+        getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, SQLItemDesc->vc_ind_length, 0,
             NULL, &allocLength, NULL);
         if (! tableParamDone)
         {
@@ -1655,14 +1656,15 @@ short do_ExecSMD(
 }
 
 // Compute the memory allocation requirements for the descriptor data type
-void getMemoryAllocInfo(long data_type, long char_set, long data_length, long curr_mem_offset,
+void getMemoryAllocInfo(long data_type, long char_set, long data_length, long vc_ind_length, long curr_mem_offset,
                         long *mem_align_offset, int *alloc_size, long *var_layout)
 {
     FUNCTION_ENTRY("getMemoryAllocInfo",
-        ("data_type=%s, char_set=%s, data_length=%ld, curr_mem_offset=%ld, mem_align_offset=0x%08x, alloc_size=0x%08x, var_layout=0x%08x",
+        ("data_type=%s, char_set=%s, data_length=%ld, vc_ind_length=%ld, curr_mem_offset=%ld, mem_align_offset=0x%08x, alloc_size=0x%08x, var_layout=0x%08x",
         CliDebugSqlTypeCode(data_type),
         getCharsetEncoding(char_set),
         data_length,
+	vc_ind_length,
         curr_mem_offset,
         mem_align_offset,
         alloc_size,
@@ -1681,10 +1683,20 @@ void getMemoryAllocInfo(long data_type, long char_set, long data_length, long cu
         break;
     case SQLTYPECODE_VARCHAR_WITH_LENGTH:
     case SQLTYPECODE_VARCHAR_LONG:
-        memAlignOffset = (((curr_mem_offset + 2 - 1) >> 1) << 1) - curr_mem_offset;
-        varPad = 2;
-        varNulls = 1;
-        allocBoundry = 2;
+        if (vc_ind_length == 4)
+        {
+            memAlignOffset = (((curr_mem_offset + 4 - 1) >> 2) << 2) - curr_mem_offset;
+            varPad = 2;
+            varNulls = 1;
+            allocBoundry = 4;
+        }
+        else
+        {
+            memAlignOffset = (((curr_mem_offset + 2 - 1) >> 1) << 1) - curr_mem_offset;
+            varPad = 2;
+            varNulls = 1;
+            allocBoundry = 2;
+        }
         break;
     case SQLTYPECODE_SMALLINT:
     case SQLTYPECODE_SMALLINT_UNSIGNED:
@@ -1997,7 +2009,7 @@ short do_ExecFetchAppend(
         indPtr = IPD[curParamNo].indPtr;
         dataType = IPD[curParamNo].dataType;
         SQLItemDesc = (SQLItemDesc_def *)pSrvrStmt->inputDescList._buffer + curParamNo;
-        getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, 0,
+        getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, SQLItemDesc->vc_ind_length, 0,
             NULL, &allocLength, NULL);
         if (! tableParamDone)
         {
@@ -2025,7 +2037,7 @@ short do_ExecFetchAppend(
         curParamNo < pSrvrStmt->inputDescList._length ; curParamNo++, index++)
     {
         SQLItemDesc = (SQLItemDesc_def *)pSrvrStmt->inputDescList._buffer + curParamNo;
-        getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, 0,
+        getMemoryAllocInfo(SQLItemDesc->dataType, SQLItemDesc->SQLCharset, SQLItemDesc->maxLen, SQLItemDesc->vc_ind_length, 0,
             NULL, &allocLength, NULL);
         if (! tableParamDone)
         {
