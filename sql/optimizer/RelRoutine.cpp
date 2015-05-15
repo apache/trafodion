@@ -327,7 +327,9 @@ TableMappingUDF::TableMappingUDF(const TableMappingUDF & other)
   outputParams_ = other.outputParams_;
   dllInteraction_ = other.dllInteraction_ ;
   invocationInfo_ = other.invocationInfo_;
-  udrInterface_ = other.udrInterface_;
+  routineHandle_ = other.routineHandle_;
+  constParamBuffer_ = other.constParamBuffer_; // shallow copy is ok
+  constParamBufferLen_ = other.constParamBufferLen_;
   udfOutputToChildInputMap_ = other.udfOutputToChildInputMap_;
 }
 
@@ -364,8 +366,10 @@ RelExpr * TableMappingUDF::copyTopNode(RelExpr *derivedNode,
   result->scalarInputParams_ = scalarInputParams_;
   result->outputParams_ = outputParams_;
   result->dllInteraction_ = dllInteraction_;
-  result->invocationInfo_ = invocationInfo_;
-  result->udrInterface_ = udrInterface_;
+  result->invocationInfo_ = invocationInfo_;     // shallow copies for these
+  result->routineHandle_ = routineHandle_;       // items are ok, they are
+  result->constParamBuffer_ = constParamBuffer_; // shared for this invocation
+  result->constParamBufferLen_ = constParamBufferLen_;
   result->predsEvaluatedByUDF_ = predsEvaluatedByUDF_;
   result->udfOutputToChildInputMap_ = udfOutputToChildInputMap_;
   return TableValuedFunction::copyTopNode(result, outHeap);
@@ -417,13 +421,14 @@ void TableMappingUDF::addLocalExpr(LIST(ExprNode *) &xlist,
     }
   } 
   RelRoutine::addLocalExpr(xlist,llist);
-};
+}
 
 void TableMappingUDF::transformNode(NormWA & normWARef,
     ExprGroupId & locationOfPointerToMe) 
 {
   RelExpr::transformNode(normWARef, locationOfPointerToMe);
-};
+}
+
 void TableMappingUDF::rewriteNode(NormWA & normWARef)
 {
   for(Int32 i = 0; i < getArity(); i++)
@@ -434,22 +439,8 @@ void TableMappingUDF::rewriteNode(NormWA & normWARef)
   }
   // rewrite group attributes and selection pred
   RelExpr::rewriteNode(normWARef);
-} ;
-RelExpr * TableMappingUDF::normalizeNode(NormWA & normWARef)
-{
-  Lng32 initialSQLCode = CmpCommon::diags()->mainSQLCODE();
-  RelExpr *result = RelExpr::normalizeNode(normWARef);
+}
 
-  // check for diagnostics, generated during pushdownCoveredExpr()
-  // and return NULL if we see any, since pushdownCoveredExpr()
-  // does not return a status code
-  if (CmpCommon::diags()->mainSQLCODE() < 0 &&
-      initialSQLCode >= 0)
-    return NULL;
-
-  return result;
-};
- 
 void TableMappingUDF::primeGroupAnalysis()
 {
   RelExpr::primeGroupAnalysis();
@@ -530,8 +521,8 @@ void TableMappingUDF::pushdownCoveredExpr(
        selectionPred(),
        predsEvaluatedByUDF_,
        predsToPushDown);
-  // no good way to return failure, caller will check diags
-  // in TableMappingUDF::normalizeNode()
+  // no good way to return failure, error will be detected
+  // at the end of the normalization phase
 
   // rewrite the predicates to be pushed down in terms
   // of the values produced by the table-valued inputs

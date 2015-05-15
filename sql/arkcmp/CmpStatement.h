@@ -311,8 +311,7 @@ private:
   // on RelExpr are enabled only when it is set.
   NABoolean displayGraph_;
 
-  LIST(tmudr::UDRInvocationInfo *) *udrInvocationInfosToDelete_;
-  LIST(tmudr::UDRPlanInfo *) *udrPlanInfosToDelete_;
+  // for error reporting for UDFs, keep a list of requirements the UDF refused
   LIST(const NAString *) *detailsOnRefusedRequirements_;
 }; // end of CmpStatement
 

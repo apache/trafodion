@@ -191,7 +191,7 @@ int TMUDRSerializableObject::serialize(Bytes &outputBuffer,
   return sizeof(v_);
 }
 
-int TMUDRSerializableObject::deserialize(Bytes &inputBuffer,
+int TMUDRSerializableObject::deserialize(ConstBytes &inputBuffer,
                                          int &inputBufferLength)
 {
   if (inputBufferLength < sizeof(v_))
@@ -381,7 +381,7 @@ int TMUDRSerializableObject::serializeBinary(
 
 int TMUDRSerializableObject::deserializeInt(
      int &i,
-     Bytes &inputBuffer,
+     ConstBytes &inputBuffer,
      int &inputBufferLength)
 {
   if (inputBufferLength < sizeof(int))
@@ -397,7 +397,7 @@ int TMUDRSerializableObject::deserializeInt(
 
 int TMUDRSerializableObject::deserializeLong(
      long &i,
-     Bytes &inputBuffer,
+     ConstBytes &inputBuffer,
      int &inputBufferLength)
 {
   if (inputBufferLength < sizeof(long))
@@ -415,7 +415,7 @@ int TMUDRSerializableObject::deserializeString(
      const char *&s,
      int &stringLength,
      bool makeACopy,
-     Bytes &inputBuffer,
+     ConstBytes &inputBuffer,
      int &inputBufferLength)
 {
   if (inputBufferLength < sizeof(int))
@@ -457,7 +457,7 @@ int TMUDRSerializableObject::deserializeString(
 
 int TMUDRSerializableObject::deserializeString(
      std::string &s,
-     Bytes &inputBuffer,
+     ConstBytes &inputBuffer,
      int &inputBufferLength)
 {
   const char *temp = NULL;
@@ -476,7 +476,7 @@ int TMUDRSerializableObject::deserializeBinary(
      const void **b,
      int &binaryLength,
      bool makeACopy,
-     Bytes &inputBuffer,
+     ConstBytes &inputBuffer,
      int &inputBufferLength)
 {
   const char *temp;
@@ -492,7 +492,7 @@ int TMUDRSerializableObject::deserializeBinary(
 }
 
 TMUDRSerializableObject::TMUDRObjectType TMUDRSerializableObject::getNextObjectType(
-     Bytes inputBuffer,
+     ConstBytes inputBuffer,
      int inputBufferLength)
 {
   // determine the object type of the next object in the buffer
@@ -500,7 +500,7 @@ TMUDRSerializableObject::TMUDRObjectType TMUDRSerializableObject::getNextObjectT
     throw UDRException(38900,"not enough data to look at next object header, need %d, got %d bytes",
                        sizeof(v_),
                        inputBufferLength);
-  headerFields *nextObjInBuffer = reinterpret_cast<headerFields *>(inputBuffer);
+  const headerFields *nextObjInBuffer = reinterpret_cast<const headerFields *>(inputBuffer);
 
   return static_cast<TMUDRObjectType>(nextObjInBuffer->objectType_);
 }
@@ -2450,7 +2450,7 @@ int TypeInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int TypeInfo::deserialize(Bytes &inputBuffer,
+int TypeInfo::deserialize(ConstBytes &inputBuffer,
                           int &inputBufferLength)
 {
   int result =
@@ -2800,7 +2800,7 @@ int ColumnInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int ColumnInfo::deserialize(Bytes &inputBuffer,
+int ColumnInfo::deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength)
 {
   int result =
@@ -2892,7 +2892,7 @@ int ConstraintInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int ConstraintInfo::deserialize(Bytes &inputBuffer,
+int ConstraintInfo::deserialize(ConstBytes &inputBuffer,
                                 int &inputBufferLength)
 {
   int result =
@@ -2992,7 +2992,7 @@ int CardinalityConstraintInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int CardinalityConstraintInfo::deserialize(Bytes &inputBuffer,
+int CardinalityConstraintInfo::deserialize(ConstBytes &inputBuffer,
                                 int &inputBufferLength)
 {
   int result =
@@ -3127,7 +3127,7 @@ int UniqueConstraintInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int UniqueConstraintInfo::deserialize(Bytes &inputBuffer,
+int UniqueConstraintInfo::deserialize(ConstBytes &inputBuffer,
                                       int &inputBufferLength)
 {
   int result =
@@ -3248,7 +3248,7 @@ int PredicateInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int PredicateInfo::deserialize(Bytes &inputBuffer,
+int PredicateInfo::deserialize(ConstBytes &inputBuffer,
                                int &inputBufferLength)
 {
   int result =
@@ -3275,8 +3275,7 @@ int PredicateInfo::deserialize(Bytes &inputBuffer,
 
 ComparisonPredicateInfo::ComparisonPredicateInfo() :
      PredicateInfo(COMP_PREDICATE_INFO_OBJ),
-     columnNumber_(-1),
-     hasValue_(false)
+     columnNumber_(-1)
 {}
 
 /**
@@ -3304,7 +3303,7 @@ int ComparisonPredicateInfo::getColumnNumber() const
  */
 bool ComparisonPredicateInfo::hasAConstantValue() const
 {
-  return hasValue_;
+  return (value_.size() > 0);
 }
 
 /**
@@ -3331,7 +3330,6 @@ void ComparisonPredicateInfo::setColumnNumber(int columnNumber)
 
 void ComparisonPredicateInfo::setValue(const char *value)
 {
-  hasValue_ = true;
   value_.assign(value);
 }
 
@@ -3413,7 +3411,7 @@ int ComparisonPredicateInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int ComparisonPredicateInfo::deserialize(Bytes &inputBuffer,
+int ComparisonPredicateInfo::deserialize(ConstBytes &inputBuffer,
                                          int &inputBufferLength)
 {
   int result =
@@ -3517,6 +3515,15 @@ void PartitionInfo::addEntry(int colNum)
            colNum);
 
   partCols_.push_back(colNum);
+}
+
+/**
+ *  Clear the contents of the object
+ */
+void PartitionInfo::clear()
+{
+  type_ = UNKNOWN;
+  partCols_.clear();
 }
 
 void PartitionInfo::mapColumnNumbers(const std::vector<int> &map)
@@ -3628,6 +3635,15 @@ void OrderInfo::addEntryAt(int pos,
          pos, columnNumbers_.size());
   columnNumbers_.insert(columnNumbers_.begin() + pos, colNum);
   orderTypes_.insert(orderTypes_.begin() + pos, orderType);
+}
+
+/**
+ *  Clear the contents of the object
+ */
+void OrderInfo::clear()
+{
+  columnNumbers_.clear();
+  orderTypes_.clear();
 }
 
 void OrderInfo::mapColumnNumbers(const std::vector<int> &map)
@@ -4857,7 +4873,7 @@ int TupleInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int TupleInfo::deserialize(Bytes &inputBuffer,
+int TupleInfo::deserialize(ConstBytes &inputBuffer,
                            int &inputBufferLength)
 {
   int result =
@@ -4873,6 +4889,13 @@ int TupleInfo::deserialize(Bytes &inputBuffer,
                    inputBuffer,
                    inputBufferLength);
 
+  // delete all existing columns
+  for (std::vector<ColumnInfo *>::iterator it1 = columns_.begin();
+       it1 != columns_.end();
+       it1++)
+    delete *it1;
+  columns_.clear();
+
   for (int c=0; c<numCols; c++)
     {
       ColumnInfo ci;
@@ -4886,8 +4909,8 @@ int TupleInfo::deserialize(Bytes &inputBuffer,
                    inputBuffer,
                    inputBufferLength);
 
-  rowPtr_ = NULL;
-  wasNull_ = false;
+  // leave rowPtr_ intact, the row is not serialized/
+  // deserialized with this object
 
   if (getObjectType() == TUPLE_INFO_OBJ)
     validateDeserializedLength(result);
@@ -5269,7 +5292,7 @@ int TableInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int TableInfo::deserialize(Bytes &inputBuffer,
+int TableInfo::deserialize(ConstBytes &inputBuffer,
                            int &inputBufferLength)
 {
   int result =
@@ -5310,14 +5333,23 @@ int TableInfo::deserialize(Bytes &inputBuffer,
     throw UDRException(38900, "Invalid int array size in TableInfo, got %d, expected %d",
                        binarySize,
                        (numPartCols + 2*numOrderCols) * sizeof(int));
+  queryPartitioning_.clear();
   queryPartitioning_.setType(
        static_cast<PartitionInfo::PartitionTypeCode>(partType));
   for (c=0; c<numPartCols; c++)
     queryPartitioning_.addEntry(intArray[c]);
+  queryOrdering_.clear();
   for (c=0; c<numOrderCols; c++)
     queryOrdering_.addEntry(
          intArray[numPartCols+2*c],
          static_cast<OrderInfo::OrderTypeCode>(intArray[numPartCols+2*c+1]));
+
+  // delete all constraints
+  for (std::vector<ConstraintInfo *>::iterator it2 = constraints_.begin();
+       it2 != constraints_.end();
+       it2++)
+    delete *it2;
+  constraints_.clear();
 
   result += deserializeInt(numConstraints,
                            inputBuffer,
@@ -5361,28 +5393,18 @@ int TableInfo::deserialize(Bytes &inputBuffer,
 // ------------------------------------------------------------------------
 
 ParameterListInfo::ParameterListInfo() :
-     TupleInfo(PARAMETER_LIST_INFO_OBJ, getCurrentVersion()),
-     constBufferLen_(0),
-     constBuffer_(NULL)
+     TupleInfo(PARAMETER_LIST_INFO_OBJ, getCurrentVersion())
 {
 }
 
 ParameterListInfo::~ParameterListInfo()
 {
-  if (constBufferLen_)
-    delete constBuffer_;
 }
 
 int ParameterListInfo::serializedLength()
 {
-  // format: Base class + int(constBufferLength_) + binary(constBuffer_)
-  int result = TupleInfo::serializedLength() +
-    serializedLengthOfInt();
-
-  if (constBufferLen_ > 0)
-    result += serializedLengthOfBinary(constBufferLen_);
-
-  return result;
+  // format: Base class
+  return TupleInfo::serializedLength();
 }
 int ParameterListInfo::serialize(Bytes &outputBuffer,
                                  int &outputBufferLength)
@@ -5390,23 +5412,12 @@ int ParameterListInfo::serialize(Bytes &outputBuffer,
   int result = TupleInfo::serialize(outputBuffer,
                                     outputBufferLength);
 
-  result += serializeInt(constBufferLen_,
-                         outputBuffer,
-                         outputBufferLength);
-
-  if (constBufferLen_)
-    result += serializeBinary(
-         constBuffer_,
-         constBufferLen_,
-         outputBuffer,
-         outputBufferLength);
-
   validateSerializedLength(result);
 
   return result;
 }
 
-int ParameterListInfo::deserialize(Bytes &inputBuffer,
+int ParameterListInfo::deserialize(ConstBytes &inputBuffer,
                                    int &inputBufferLength)
 {
   int result =
@@ -5414,40 +5425,9 @@ int ParameterListInfo::deserialize(Bytes &inputBuffer,
                            inputBufferLength);
 
   validateObjectType(PARAMETER_LIST_INFO_OBJ);
-
-  result += deserializeInt(constBufferLen_,
-                           inputBuffer,
-                           inputBufferLength);
-
-  if (constBufferLen_ > 0)
-    {
-      result += deserializeBinary((const void **) &constBuffer_,
-                                  constBufferLen_,
-                                  true,
-                                  inputBuffer,
-                                  inputBufferLength);
-      // also let rowPtr_ in the base class
-      // point to this buffer, so that we can use
-      // the deserialize... methods
-      rowPtr_ = const_cast<char *>(constBuffer_);
-    }
-  else
-    constBuffer_ = NULL;
-
   validateDeserializedLength(result);
 
   return result;
-}
-
-void ParameterListInfo::setConstBuffer(int constBufferLen,
-                                       const char *constBuffer)
-{
-  if (constBuffer_ && constBuffer_ != constBuffer)
-    delete constBuffer_;
-
-  constBufferLen_ = constBufferLen;
-  constBuffer_ = constBuffer;
-  rowPtr_ = const_cast<char *>(constBuffer_);
 }
 
 
@@ -5496,6 +5476,10 @@ UDRInvocationInfo::UDRInvocationInfo() :
      callPhase_(UNKNOWN_CALL_PHASE),
      funcType_(GENERIC),
      debugFlags_(0),
+     sqlAccessType_(CONTAINS_NO_SQL),
+     sqlTransactionType_(REQUIRES_NO_TRANSACTION),
+     sqlRights_(INVOKERS_RIGHTS),
+     isolationType_(TRUSTED),
      udrWriterCompileTimeData_(NULL),
      totalNumInstances_(0),
      myInstanceNum_(0)
@@ -6249,19 +6233,10 @@ void UDRInvocationInfo::setUDRWriterCompileTimeData(
   validateCallPhase(COMPILER_INITIAL_CALL, COMPILER_PLAN_CALL,
                     "UDRInvocationInfo::setUDRWriterCompileTimeData()");
 
-  // for now we can't allow this, since we would call the destructor of
-  // this object after we unloaded the DLL containing the code
-  // Todo: Cache DLL opens, at least until after the
-  // UDRInvocationInfo objects get deleted.
-  throw UDRException(
-       38912,
-       "UDRInvocationInfo::setUDRWriterCompileTimeData() not yet supported");
-  /*
   if (udrWriterCompileTimeData_)
     delete udrWriterCompileTimeData_;
 
   udrWriterCompileTimeData_ = compileTimeData;
-  */
 }
 
 /**
@@ -6435,19 +6410,23 @@ void UDRInvocationInfo::print()
   if (isRunTime())
     printf("Query id                   : %s\n", getQueryId().c_str());
 
-  printf("Formal parameters          : (");
   bool needsComma = false;
-  for (int p=0; p<getFormalParameters().getNumColumns(); p++)
-    {
-      std::string buf;
 
-      if (needsComma)
-        printf(", ");
-      getFormalParameters().getColumn(p).toString(buf);
-      printf("%s", buf.c_str());
-      needsComma = true;
+  if (!isRunTime())
+    {
+      printf("Formal parameters          : (");
+      for (int p=0; p<getFormalParameters().getNumColumns(); p++)
+        {
+          std::string buf;
+
+          if (needsComma)
+            printf(", ");
+          getFormalParameters().getColumn(p).toString(buf);
+          printf("%s", buf.c_str());
+          needsComma = true;
+        }
+      printf(")\n");
     }
-  printf(")\n");
 
   printf("Actual parameters          : (");
   needsComma = false;
@@ -6489,7 +6468,7 @@ void UDRInvocationInfo::print()
     }
 
   if (isRunTime())
-    printf("Instance number            : %d of %d\n",
+    printf("Instance number (0-based)  : %d of %d\n",
            getMyInstanceNum(),
            getNumParallelInstances());
 
@@ -6501,7 +6480,7 @@ void UDRInvocationInfo::print()
   printf("\nOutput TableInfo\n----------------\n");
   outputTableInfo_.print();
 
-  if (getNumPredicates() > 0)
+  if (predicates_.size() > 0)
     {
       printf("\nPredicates\n----------\n");
 
@@ -6534,7 +6513,8 @@ void UDRInvocationInfo::print()
 
 int UDRInvocationInfo::serializedLength()
 {
-  // Format: base class + name + debugFlags + type + callPhase +
+  // Format: base class + name + sqlAccessType + sqlTransactionType_ +
+  // sqlRights + isolationType + debugFlags + type + callPhase +
   // numTableInputs + n*TableInfo + TableInfo(outputTableInfo_) +
   // formal params + actual params + num preds + preds
   int result = TMUDRSerializableObject::serializedLength() +
@@ -6543,7 +6523,7 @@ int UDRInvocationInfo::serializedLength()
     serializedLengthOfString(sessionUser_) +
     serializedLengthOfString(currentRole_) +
     serializedLengthOfString(queryId_) +
-    5*serializedLengthOfInt();
+    9*serializedLengthOfInt();
 
   int i;
 
@@ -6564,6 +6544,26 @@ int UDRInvocationInfo::serializedLength()
   return result;
 }
 
+// more convenient methods for external callers,
+// without side-effecting parameters
+void UDRInvocationInfo::serializeObj(Bytes outputBuffer,
+                                     int outputBufferLength)
+{
+  Bytes tempBuf = outputBuffer;
+  int tempLen   = outputBufferLength;
+
+  serialize(tempBuf, tempLen);
+}
+
+void UDRInvocationInfo::deserializeObj(ConstBytes inputBuffer,
+                                       int inputBufferLength)
+{
+  ConstBytes tempBuf = inputBuffer;
+  int tempLen   = inputBufferLength;
+
+  deserialize(tempBuf, tempLen);
+}
+
 int UDRInvocationInfo::serialize(Bytes &outputBuffer,
                                  int &outputBufferLength)
 {
@@ -6575,6 +6575,22 @@ int UDRInvocationInfo::serialize(Bytes &outputBuffer,
   result += serializeString(name_,
                             outputBuffer,
                             outputBufferLength);
+
+  result += serializeInt(static_cast<int>(sqlAccessType_),
+                         outputBuffer,
+                         outputBufferLength);
+
+  result += serializeInt(static_cast<int>(sqlTransactionType_),
+                         outputBuffer,
+                         outputBufferLength);
+
+  result += serializeInt(static_cast<int>(sqlRights_),
+                         outputBuffer,
+                         outputBufferLength);
+
+  result += serializeInt(static_cast<int>(isolationType_),
+                         outputBuffer,
+                         outputBufferLength);
 
   result += serializeInt(debugFlags_,
                          outputBuffer,
@@ -6638,7 +6654,7 @@ int UDRInvocationInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int UDRInvocationInfo::deserialize(Bytes &inputBuffer,
+int UDRInvocationInfo::deserialize(ConstBytes &inputBuffer,
                                    int &inputBufferLength)
 {
   int tempInt = 0;
@@ -6652,20 +6668,29 @@ int UDRInvocationInfo::deserialize(Bytes &inputBuffer,
                               inputBuffer,
                               inputBufferLength);
 
+  result += deserializeInt(tempInt,
+                           inputBuffer,
+                           inputBufferLength);
+  sqlAccessType_ = static_cast<SQLAccessType>(tempInt);
+
+  result += deserializeInt(tempInt,
+                           inputBuffer,
+                           inputBufferLength);
+  sqlTransactionType_ = static_cast<SQLTransactionType>(tempInt);
+
+  result += deserializeInt(tempInt,
+                           inputBuffer,
+                           inputBufferLength);
+  sqlRights_ = static_cast<SQLRightsType>(tempInt);
+
+  result += deserializeInt(tempInt,
+                           inputBuffer,
+                           inputBufferLength);
+  isolationType_ = static_cast<IsolationType>(tempInt);
+
   result += deserializeInt(debugFlags_,
                            inputBuffer,
                            inputBufferLength);
-
-#ifndef NDEBUG
-  int debugLoop = 2;
-
-  if (debugFlags_ & DEBUG_LOAD_MSG_LOOP)
-    debugLoop = 1;
-  // go into a loop to allow the user to attach a debugger,
-  // if requested, set debugLoop = 2 in the debugger to get out
-  while (debugLoop < 2)
-    debugLoop = 1-debugLoop;
-#endif
 
   result += deserializeInt(tempInt,
                            inputBuffer,
@@ -6710,6 +6735,13 @@ int UDRInvocationInfo::deserialize(Bytes &inputBuffer,
   result += actualParameterInfo_.deserialize(inputBuffer,
                                              inputBufferLength);
 
+  // delete all predicates
+  for (std::vector<PredicateInfo *>::iterator p = predicates_.begin();
+       p != predicates_.end();
+       p++)
+    delete *p;
+  predicates_.clear();
+
   result += deserializeInt(tempInt,
                            inputBuffer,
                            inputBufferLength);
@@ -6737,6 +6769,12 @@ int UDRInvocationInfo::deserialize(Bytes &inputBuffer,
         }
     }
 
+  // The UDR writer compile time data stays in place and is not affected
+  // by deserialization.
+
+  // totalNumInstances_ and myInstanceNum_ are currently not serialized,
+  // since they are set only at runtime.
+
   validateDeserializedLength(result);
 
   return result;
@@ -6760,7 +6798,7 @@ void UDRInvocationInfo::validateCallPhase(CallPhase start,
          callPhaseToString(end));
 }
 
-const char *UDRInvocationInfo::callPhaseToString(CallPhase c) const
+const char *UDRInvocationInfo::callPhaseToString(CallPhase c)
 {
   switch(c)
     {
@@ -6797,14 +6835,31 @@ const char *UDRInvocationInfo::callPhaseToString(CallPhase c) const
     }
 }
 
+void UDRInvocationInfo::setQueryId(const char *qid)
+{
+  queryId_ = qid;
+}
+
+void UDRInvocationInfo::setTotalNumInstances(int i)
+{
+  totalNumInstances_ = i;
+}
+
+void UDRInvocationInfo::setMyInstanceNum(int i)
+{
+  myInstanceNum_ = i;
+}
+
+
 // ------------------------------------------------------------------------
 // Member functions for class UDRPlanInfo
 // ------------------------------------------------------------------------
 
-UDRPlanInfo::UDRPlanInfo(UDRInvocationInfo *invocationInfo) :
+UDRPlanInfo::UDRPlanInfo(UDRInvocationInfo *invocationInfo, int planNum) :
      TMUDRSerializableObject(UDR_PLAN_INFO_OBJ,
                              getCurrentVersion()),
      invocationInfo_(invocationInfo),
+     planNum_(planNum),
      costPerRow_(0),
      degreeOfParallelism_(ANY_DEGREE_OF_PARALLELISM),
      udrWriterCompileTimeData_(NULL),
@@ -6818,6 +6873,16 @@ UDRPlanInfo::~UDRPlanInfo()
     delete udrWriterCompileTimeData_;
   if (planData_)
     delete planData_;
+}
+
+/**
+ *  Get a unique id for a given plan within a UDR invocation.
+ *
+ *  @return Plan number for this object, relative to the invocation.
+ */
+int UDRPlanInfo::getPlanNum() const
+{
+  return planNum_;
 }
 
 /**
@@ -7027,14 +7092,13 @@ const char *UDRPlanInfo::getPlanData(int &planDataLength)
 void UDRPlanInfo::print()
 {
   printf("\nUDRPlanInfo\n-----------------------\n");
-  printf("Cost per row               : ");
-  printf("%ld\n", costPerRow_);
-  printf("Degree of parallelism      : ");
-  printf("%d\n", degreeOfParallelism_);
-  if (getUDRWriterCompileTimeData())
+  printf("Plan number                : %d\n",  planNum_);
+  printf("Cost per row               : %ld\n", costPerRow_);
+  printf("Degree of parallelism      : %d\n",  degreeOfParallelism_);
+  if (udrWriterCompileTimeData_)
     {
       printf("UDR Writer comp. time data : ");
-      getUDRWriterCompileTimeData()->print();
+      udrWriterCompileTimeData_->print();
       printf("\n");
     }
   printf("UDF Writer plan data length: ");
@@ -7052,6 +7116,26 @@ int UDRPlanInfo::serializedLength()
   result += serializedLengthOfBinary(planDataLength_);
 
   return result;
+}
+
+// more convenient methods for external callers,
+// without side-effecting parameters
+void UDRPlanInfo::serializeObj(Bytes outputBuffer,
+                               int outputBufferLength)
+{
+  Bytes tempBuf = outputBuffer;
+  int tempLen   = outputBufferLength;
+
+  serialize(tempBuf, tempLen);
+}
+
+void UDRPlanInfo::deserializeObj(ConstBytes inputBuffer,
+                                 int inputBufferLength)
+{
+  ConstBytes tempBuf = inputBuffer;
+  int tempLen   = inputBufferLength;
+
+  deserialize(tempBuf, tempLen);
 }
 
 int UDRPlanInfo::serialize(Bytes &outputBuffer,
@@ -7082,7 +7166,7 @@ int UDRPlanInfo::serialize(Bytes &outputBuffer,
   return result;
 }
 
-int UDRPlanInfo::deserialize(Bytes &inputBuffer,
+int UDRPlanInfo::deserialize(ConstBytes &inputBuffer,
                              int &inputBufferLength)
 {
   int result =

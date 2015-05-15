@@ -479,6 +479,8 @@ typedef void (*SQLUDR_EmitRow)  (char            *rowData,        /*IN*/
 // by UDR writers and are therefore not declared here
 class TMUDFInternalSetup;
 class SPInfo;
+class LmLanguageManagerC;
+class LmLanguageManagerJava;
 class LmRoutineCppObj;
 
 namespace tmudr
@@ -488,6 +490,7 @@ namespace tmudr
 
   // type for a buffer of binary data (e.g. serialized objects)
   typedef char * Bytes;
+  typedef const char * ConstBytes;
 
 
   /**
@@ -559,7 +562,7 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
 
     void validateObjectType(TMUDRObjectType o);
@@ -597,25 +600,25 @@ namespace tmudr
                         int &outputBufferLength);
 
     int deserializeInt(int &i,
-                       Bytes &inputBuffer,
+                       ConstBytes &inputBuffer,
                        int &inputBufferLength);
     int deserializeLong(long &i,
-                        Bytes &inputBuffer,
+                        ConstBytes &inputBuffer,
                         int &inputBufferLength);
     int deserializeString(const char *&s,
                           int &stringLength,
                           bool makeACopy,
-                          Bytes &inputBuffer,
+                          ConstBytes &inputBuffer,
                           int &inputBufferLength);
     int deserializeString(std::string &s,
-                          Bytes &inputBuffer,
+                          ConstBytes &inputBuffer,
                           int &inputBufferLength);
     int deserializeBinary(const void **b,
                           int &binaryLength,
                           bool makeACopy,
-                          Bytes &inputBuffer,
+                          ConstBytes &inputBuffer,
                           int &inputBufferLength);
-    TMUDRObjectType getNextObjectType(Bytes inputBuffer,
+    TMUDRObjectType getNextObjectType(ConstBytes inputBuffer,
                                       int inputBufferLength);
 
   private:
@@ -793,7 +796,7 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
     void setOffsets(int dataOffset, int indOffset, int vcOffset);
 
@@ -907,7 +910,7 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
 
   private:
@@ -948,7 +951,7 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
 
   protected:
@@ -983,7 +986,7 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
 
   private:
@@ -1012,7 +1015,7 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
 
   private:
@@ -1083,7 +1086,7 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
 
   private:
@@ -1121,13 +1124,12 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
 
   private:
 
     int columnNumber_;
-    bool hasValue_;
     std::string value_;
 
   };
@@ -1175,6 +1177,7 @@ namespace tmudr
     // Functions available at compile time only
     void setType(PartitionTypeCode type);
     void addEntry(int colNum);
+    void clear();
 
     // UDR writers can ignore these methods
     void mapColumnNumbers(const std::vector<int> &map);
@@ -1222,6 +1225,7 @@ namespace tmudr
     void addEntryAt(int pos,
                     int colNum,
                     OrderTypeCode orderType = ASCENDING);
+    void clear();
 
     // UDR writers can ignore these methods
     void mapColumnNumbers(const std::vector<int> &map);
@@ -1326,7 +1330,7 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
     char *getRowPtr() const;
     int getRecordLength() const;
@@ -1386,7 +1390,7 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
 
   private:
@@ -1424,17 +1428,8 @@ namespace tmudr
     virtual int serializedLength();
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
-
-  private:
-
-    void setConstBuffer(int constBufferLen, const char *constBuffer);
-
-    int constBufferLen_;
-    const char *constBuffer_;
-
-    friend class ::TMUDFInternalSetup;
   };
 
   /**
@@ -1496,6 +1491,46 @@ namespace tmudr
       };
 
     /**
+     *  Type of SQL access allowed in this routine
+     */
+    enum SQLAccessType
+      {
+        CONTAINS_NO_SQL,
+        READS_SQL,
+        MODIFIES_SQL        
+      };
+
+    /**
+     *  Type of transaction that is required, if any
+     */
+    enum SQLTransactionType
+      {
+        REQUIRES_NO_TRANSACTION,
+        REQUIRES_SQL_TRANSACTION
+      };
+
+    /**
+     *  Effective user ids for determining privileges
+     *
+     *  This is meaningful only for UDRs that perform SQL
+     *  operations, using the default connection.
+     */
+    enum SQLRightsType
+      {
+        INVOKERS_RIGHTS,
+        DEFINERS_RIGHTS
+      };
+
+    /**
+     *  Indicates whether this UDR is trusted or not
+     */
+    enum IsolationType
+      {
+        ISOLATED,
+        TRUSTED
+      };
+
+    /**
      *  @brief call phase for the UDR interface
      *
      *  This is of limited interest for UDR writers and mostly
@@ -1505,6 +1540,13 @@ namespace tmudr
     enum CallPhase
       {
         UNKNOWN_CALL_PHASE          = 0,
+
+        // some pseudo-phases for the initial setup,
+        // not involving a UDRInvocationInfo object
+        DEBUG_LOOP_CALL             = 4,
+        GET_ROUTINE_CALL            = 6,
+
+        // following are the actual call phases
         COMPILER_INITIAL_CALL       = 10,
         COMPILER_DATAFLOW_CALL      = 20,
         COMPILER_CONSTRAINTS_CALL   = 30,
@@ -1603,10 +1645,13 @@ namespace tmudr
     // UDR writers can ignore these methods
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
+    void serializeObj(Bytes outputBuffer, int outputBufferLength);
+    void deserializeObj(ConstBytes inputBuffer, int inputBufferLength);
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
+    static const char *callPhaseToString(CallPhase c);
 
   private:
 
@@ -1617,7 +1662,9 @@ namespace tmudr
     void validateCallPhase(CallPhase start,
                            CallPhase end,
                            const char *callee) const;
-    const char *callPhaseToString(CallPhase c) const;
+    void setQueryId(const char *qid);
+    void setTotalNumInstances(int i);
+    void setMyInstanceNum(int i);
 
     static const int MAX_INPUT_TABLES = 2;
 
@@ -1628,6 +1675,10 @@ namespace tmudr
     std::string sessionUser_;
     std::string currentRole_;
     std::string queryId_;
+    SQLAccessType sqlAccessType_;
+    SQLTransactionType sqlTransactionType_;
+    SQLRightsType sqlRights_;
+    IsolationType isolationType_;
     TableInfo inputTableInfo_[MAX_INPUT_TABLES];
     TableInfo outputTableInfo_;
     int debugFlags_;
@@ -1643,6 +1694,8 @@ namespace tmudr
     // these classes are used internally by Trafodion
     friend class ::TMUDFInternalSetup;
     friend class ::SPInfo;
+    friend class ::LmLanguageManagerC;
+    friend class ::LmLanguageManagerJava;
     friend class ::LmRoutineCppObj;
   };
 
@@ -1678,6 +1731,7 @@ namespace tmudr
       };
 
     // Functions for use by UDR writer, both at compile and at run time
+    int getPlanNum() const;
     long getCostPerRow() const;
     int getDesiredDegreeOfParallelism() const;
 
@@ -1702,26 +1756,31 @@ namespace tmudr
     // UDR writers can ignore these methods
     inline static unsigned short getCurrentVersion() { return 1; }
     virtual int serializedLength();
+    void serializeObj(Bytes outputBuffer, int outputBufferLength);
+    void deserializeObj(ConstBytes inputBuffer, int inputBufferLength);
     virtual int serialize(Bytes &outputBuffer,
                           int &outputBufferLength);
-    virtual int deserialize(Bytes &inputBuffer,
+    virtual int deserialize(ConstBytes &inputBuffer,
                             int &inputBufferLength);
 
   private:
 
-    UDRPlanInfo(UDRInvocationInfo *invocationInfo);
+    UDRPlanInfo(UDRInvocationInfo *invocationInfo, int planNum);
     ~UDRPlanInfo();
 
     UDRInvocationInfo *invocationInfo_;
+    int planNum_;
     long costPerRow_;
     int degreeOfParallelism_;
     UDRWriterCompileTimeData *udrWriterCompileTimeData_;
     const char *planData_;
     int planDataLength_;
 
-    // this class is used by the Trafodion compiler
+    // class is used internally by Trafodion
     friend class ::TMUDFInternalSetup;
     friend class ::SPInfo;
+    friend class ::LmLanguageManagerC;
+    friend class ::LmRoutineCppObj;
   };
 
   /**

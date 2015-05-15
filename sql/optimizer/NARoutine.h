@@ -135,7 +135,11 @@ public:
   inline       ComSInt32         getMaxResults()           const { return maxResults_; }
   inline const ComString        &getExternalPath()         const { return externalPath_; }
   inline const ComString        &getFile()                 const { return externalFile_; }  
+  inline const ComString        &getContainerName()        const { return (language_ == COM_LANGUAGE_JAVA ?
+                                                                           externalName_ : externalFile_); }  
   inline const ComString        &getExternalName()         const { return externalName_; }  
+  inline const char             *getMethodName()           const { return (paramStyle_ != COM_STYLE_JAVA_OBJ ?
+                                                                           externalName_.data() : "<init>"); }  
   inline const ComString        &getSignature()            const { return signature_; }
   inline const ComObjectName    &getLibrarySqlName()       const { return librarySqlName_; }
   inline const QualifiedName    &getSqlName()              const { return name_; }  

@@ -85,6 +85,11 @@ struct MDDescsInfo;
 class CmpStatementISP;
 class EstLogProp;
 typedef IntrusiveSharedPtr<EstLogProp> EstLogPropSharedPtr;
+namespace tmudr {
+  class UDRInvocationInfo;
+  class UDRPlanInfo;
+  class UDR;
+}
 
 // Template changes for Yosemite compiler incompatible with others
 typedef HASHDICTIONARY(NAString, CollIndex) CursorSelectColumns;
@@ -445,6 +450,13 @@ public :
 
   CollationDBList *getCollationDBList() { return CDBList_; }
 
+  void addInvocationInfo(tmudr::UDRInvocationInfo *ii)
+                                { invocationInfos_.insert(ii); }
+  void addPlanInfo(tmudr::UDRPlanInfo *pi)
+                                      { planInfos_.insert(pi); }
+  void addRoutineHandle(Int32 rh)
+                                 { routineHandles_.insert(rh); }
+
 // MV
 private:
 // Adding support for multi threaded requestor (multi transactions) handling
@@ -588,6 +600,12 @@ private:
   CmpContextInfo::CmpContextClassType ciClass_;
 
   CollationDBList *CDBList_;
+
+  // objects allocated from the system heap, to be deleted
+  // after each statement has finished compiling
+  LIST(tmudr::UDRInvocationInfo *) invocationInfos_;
+  LIST(tmudr::UDRPlanInfo *)       planInfos_;
+  LIST(Int32)                      routineHandles_;
   
 }; // end of CmpContext 
 #pragma warn(1506)  // warning elimination 

@@ -86,6 +86,10 @@
 #include "dtm/tm.h"
 
 #include "CmpContext.h"
+#include "LmLangManager.h"
+#include "LmLangManagerC.h"
+#include "LmLangManagerJava.h"
+#include "LmRoutine.h"
 
 #define DISPLAY_DONE_WARNING 1032
 extern Lng32 getTotalTcbSpace(char * tdb, char * otherInfo, 
@@ -11569,3 +11573,184 @@ Lng32 SQLCLI_SeqGenCliInterface
 
 //LCOV_EXCL_STOP
 
+Int32 SQLCLI_GetRoutine
+(
+     /* IN */     CliGlobals  *cliGlobals,
+     /* IN */     const char  *serializedInvocationInfo,
+     /* IN */     Int32        invocationInfoLen,
+     /* IN */     const char  *serializedPlanInfo,
+     /* IN */     Int32        planInfoLen,
+     /* IN */     Int32        language,
+     /* IN */     Int32        paramStyle,
+     /* IN */     const char  *externalName,
+     /* IN */     const char  *containerName,
+     /* IN */     const char  *externalPath,
+     /* IN */     const char  *librarySqlName,
+     /* OUT */    Int32       *handle
+ )
+{
+  Lng32 cliRC                = 0;
+  ContextCli   & currContext = *(cliGlobals->currContext());
+  ComDiagsArea & diags       = currContext.diags();
+  LmLanguageManager *lm      = cliGlobals->getLanguageManager(
+                                               (ComRoutineLanguage) language);
+  LmRoutine *createdRoutine  = NULL;
+  LmResult lmres             = LM_ERR;
+
+  *handle = NullCliRoutineHandle;
+
+  if (lm)
+    lmres = lm->getObjRoutine(
+         serializedInvocationInfo,
+         invocationInfoLen,
+         serializedPlanInfo,
+         planInfoLen,
+         (ComRoutineLanguage) language,
+         (ComRoutineParamStyle) paramStyle,
+         externalName,
+         containerName,
+         externalPath,
+         librarySqlName,
+         &createdRoutine,
+         &diags);
+
+  if (lmres == LM_OK && createdRoutine != NULL)
+    {
+      // At the moment we don't set any callback pointers for getRow/emitRow,
+      // so the object we are getting can't be used to call the runtime interface,
+      // only compile-time calls will work.
+      // createdRoutine->setFunctionPtrs(TBD, TBD);
+
+      // assign a CLI handle to the routine and remember it in the context
+      *handle = (Int32) currContext.addTrustedRoutine(createdRoutine);
+    }
+  else
+    {
+      cliRC = diags.mainSQLCODE();
+      if (lmres == LM_OK &&
+          cliRC >= 0 &&
+          invocationInfoLen == 0)
+        // The DDL code calls getRoutine to validate the routine
+        // entry point. It does not specify an InvocationInfo and
+        // therefore no routine is created, due to insufficient
+        // info. Indicate this through this special warning code.
+        // Note: No diags area is set, since this is an expected
+        // code.
+        cliRC = LME_ROUTINE_VALIDATED;
+      else
+        ex_assert(cliRC < 0, "no diags from getObjRoutine");
+    }
+
+  return cliRC;
+}
+
+Int32 SQLCLI_InvokeRoutine
+(
+     /* IN */     CliGlobals  *cliGlobals,
+     /* IN */     Int32        handle,
+     /* IN */     Int32        phaseEnumAsInt,
+     /* IN */     const char  *serializedInvocationInfo,
+     /* IN */     Int32        invocationInfoLen,
+     /* OUT */    Int32       *invocationInfoLenOut,
+     /* IN */     const char  *serializedPlanInfo,
+     /* IN */     Int32        planInfoLen,
+     /* IN */     Int32        planNum,
+     /* OUT */    Int32       *planInfoLenOut,
+     /* IN */     char        *inputRow,
+     /* IN */     Int32        inputRowLen,
+     /* OUT */    char        *outputRow,
+     /* IN */     Int32        outputRowLen
+ )
+{
+  Lng32         cliRC       = 0;
+  ContextCli   &currContext = *(cliGlobals->currContext());
+  ComDiagsArea &diags       = currContext.diags();
+  LmResult      res         = LM_ERR;
+  LmRoutine    *lmRoutine   = cliGlobals->currContext()->getTrustedRoutine(handle);
+
+  if (lmRoutine)
+    res = lmRoutine->invokeRoutineMethod(
+         static_cast<tmudr::UDRInvocationInfo::CallPhase>(phaseEnumAsInt),
+         serializedInvocationInfo,
+         invocationInfoLen,
+         invocationInfoLenOut,
+         serializedPlanInfo,
+         planInfoLen,
+         planNum,
+         planInfoLenOut,
+         inputRow,
+         inputRowLen,
+         outputRow,
+         outputRowLen,
+         &diags);
+
+  if (res != LM_OK)
+    {
+      cliRC = diags.mainSQLCODE();
+
+      if (cliRC >= 0)
+        {
+          // make sure the diags area indicates an error
+          cliRC = -CLI_ROUTINE_INVOCATION_ERROR;
+          diags << DgSqlCode(cliRC);
+        }
+    }
+
+  return cliRC;
+}
+
+Int32 SQLCLI_GetRoutineInvocationInfo
+(
+     /* IN */     CliGlobals  *cliGlobals,
+     /* IN */     Int32        handle,
+     /* IN/OUT */ char        *serializedInvocationInfo,
+     /* IN */     Int32        invocationInfoMaxLen,
+     /* OUT */    Int32       *invocationInfoLenOut,
+     /* IN/OUT */ char        *serializedPlanInfo,
+     /* IN */     Int32        planInfoMaxLen,
+     /* IN */     Int32        planNum,
+     /* OUT */    Int32       *planInfoLenOut
+ )
+{
+  Lng32         cliRC       = 0;
+  ContextCli   &currContext = *(cliGlobals->currContext());
+  ComDiagsArea &diags       = currContext.diags();
+  LmResult      res         = LM_ERR;
+  LmRoutine    *lmRoutine   = cliGlobals->currContext()->getTrustedRoutine(handle);
+
+  if (lmRoutine)
+    res = lmRoutine->getRoutineInvocationInfo(
+         serializedInvocationInfo,
+         invocationInfoMaxLen,
+         invocationInfoLenOut,
+         serializedPlanInfo,
+         planInfoMaxLen,
+         planNum,
+         planInfoLenOut,
+         &diags);
+
+  if (res != LM_OK)
+    {
+      cliRC = diags.mainSQLCODE();
+
+      if (cliRC >= 0)
+        {
+          cliRC = -CLI_ROUTINE_INVOCATION_INFO_ERROR;
+          diags << DgSqlCode(cliRC);
+        }
+    }
+
+  return cliRC;
+}
+
+Int32 SQLCLI_PutRoutine
+(
+     /* IN */     CliGlobals  *cliGlobals,
+     /* IN */     Int32        handle
+ )
+{
+  if (handle != NullCliRoutineHandle)
+    cliGlobals->currContext()->putTrustedRoutine(handle);
+
+  return 0;
+}

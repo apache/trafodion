@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1998-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1103,6 +1103,58 @@ SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SeqGenCliInterface
 			        OUT: if returned, save it and pass it back in */
 
  void * seqGenAttrs
+ );
+
+const Int32 NullCliRoutineHandle = -1;
+
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetRoutine
+(
+ /* IN */     const char  *serializedInvocationInfo,
+ /* IN */     Int32        invocationInfoLen,
+ /* IN */     const char  *serializedPlanInfo,
+ /* IN */     Int32        planInfoLen,
+ /* IN */     Int32        language,
+ /* IN */     Int32        paramStyle,
+ /* IN */     const char  *externalName,
+ /* IN */     const char  *containerName,
+ /* IN */     const char  *externalPath,
+ /* IN */     const char  *librarySqlName,
+ /* OUT */    Int32       *handle
+
+ );
+
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_InvokeRoutine
+(
+ /* IN */     Int32        handle,
+ /* IN */     Int32        phaseEnumAsInt,
+ /* IN */     const char  *serializedInvocationInfo,
+ /* IN */     Int32        invocationInfoLen,
+ /* OUT */    Int32       *invocationInfoLenOut,
+ /* IN */     const char  *serializedPlanInfo,
+ /* IN */     Int32        planInfoLen,
+ /* IN */     Int32        planNum,
+ /* OUT */    Int32       *planInfoLenOut,
+ /* IN */     char        *inputRow,
+ /* IN */     Int32        inputRowLen,
+ /* OUT */    char        *outputRow,
+ /* IN */     Int32        outputRowLen
+ );
+
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetRoutineInvocationInfo
+(
+ /* IN */     Int32        handle,
+ /* IN/OUT */ char        *serializedInvocationInfo,
+ /* IN */     Int32        invocationInfoMaxLen,
+ /* OUT */    Int32       *invocationInfoLenOut,
+ /* IN/OUT */ char        *serializedPlanInfo,
+ /* IN */     Int32        planInfoMaxLen,
+ /* IN */     Int32        planNum,
+ /* OUT */    Int32       *planInfoLenOut
+ );
+
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_PutRoutine
+(
+ /* IN */     Int32        handle
  );
 
 #ifdef __cplusplus

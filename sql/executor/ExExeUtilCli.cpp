@@ -2264,3 +2264,142 @@ Lng32 ExeCliInterface::resetCQS(ComDiagsArea * globalDiags)
 }
   
   
+// methods for routine invocation
+
+Lng32 ExeCliInterface::getRoutine(
+     /* IN */     const char   *serializedInvocationInfo,
+     /* IN */     Int32         invocationInfoLen,
+     /* IN */     const char   *serializedPlanInfo,
+     /* IN */     Int32         planInfoLen,
+     /* IN */     Int32         language,
+     /* IN */     Int32         paramStyle,
+     /* IN */     const char   *externalName,
+     /* IN */     const char   *containerName,
+     /* IN */     const char   *externalPath,
+     /* IN */     const char   *librarySqlName,
+     /* OUT */    Int32        *handle,
+     /* IN/OUT */ ComDiagsArea *diags)
+{
+  Lng32 retcode = 0;
+
+  SQL_EXEC_ClearDiagnostics(NULL);
+
+  retcode = SQL_EXEC_GetRoutine(
+       serializedInvocationInfo,
+       invocationInfoLen,
+       serializedPlanInfo,
+       planInfoLen,
+       language,
+       paramStyle,
+       externalName,
+       containerName,
+       externalPath,
+       librarySqlName,
+       handle);
+
+  if (retcode != 0 && diags)
+    {
+      SQL_EXEC_MergeDiagnostics_Internal(*diags);
+      SQL_EXEC_ClearDiagnostics(NULL);
+    }
+
+  return retcode;
+}
+
+Lng32 ExeCliInterface::invokeRoutine(
+     /* IN */     Int32         handle,
+     /* IN */     Int32         phaseEnumAsInt,
+     /* IN */     const char   *serializedInvocationInfo,
+     /* IN */     Int32         invocationInfoLen,
+     /* OUT */    Int32        *invocationInfoLenOut,
+     /* IN */     const char   *serializedPlanInfo,
+     /* IN */     Int32         planInfoLen,
+     /* IN */     Int32         planNum,
+     /* OUT */    Int32        *planInfoLenOut,
+     /* IN */     char         *inputRow,
+     /* IN */     Int32         inputRowLen,
+     /* OUT */    char         *outputRow,
+     /* IN */     Int32         outputRowLen,
+     /* IN/OUT */ ComDiagsArea *diags)
+{
+  Lng32 retcode = 0;
+
+  SQL_EXEC_ClearDiagnostics(NULL);
+
+  retcode = SQL_EXEC_InvokeRoutine(
+       handle,
+       phaseEnumAsInt,
+       serializedInvocationInfo,
+       invocationInfoLen,
+       invocationInfoLenOut,
+       serializedPlanInfo,
+       planInfoLen,
+       planNum,
+       planInfoLenOut,
+       inputRow,
+       inputRowLen,
+       outputRow,
+       outputRowLen);
+
+  if (retcode != 0 && diags)
+    {
+      SQL_EXEC_MergeDiagnostics_Internal(*diags);
+      SQL_EXEC_ClearDiagnostics(NULL);
+    }
+
+  return retcode;
+}
+
+Lng32 ExeCliInterface::getRoutineInvocationInfo(
+     /* IN */     Int32         handle,
+     /* IN/OUT */ char         *serializedInvocationInfo,
+     /* IN */     Int32         invocationInfoMaxLen,
+     /* OUT */    Int32        *invocationInfoLenOut,
+     /* IN/OUT */ char         *serializedPlanInfo,
+     /* IN */     Int32         planInfoMaxLen,
+     /* IN */     Int32         planNum,
+     /* OUT */    Int32        *planInfoLenOut,
+     /* IN/OUT */ ComDiagsArea *diags)
+{
+  Lng32 retcode = 0;
+
+  SQL_EXEC_ClearDiagnostics(NULL);
+
+  retcode = SQL_EXEC_GetRoutineInvocationInfo(
+       handle,
+       serializedInvocationInfo,
+       invocationInfoMaxLen,
+       invocationInfoLenOut,
+       serializedPlanInfo,
+       planInfoMaxLen,
+       planNum,
+       planInfoLenOut);
+
+  if (retcode != 0 && diags)
+    {
+      SQL_EXEC_MergeDiagnostics_Internal(*diags);
+      SQL_EXEC_ClearDiagnostics(NULL);
+    }
+
+  return retcode;
+}
+
+Lng32 ExeCliInterface::putRoutine(
+     /* IN */     Int32         handle,
+     /* IN/OUT */ ComDiagsArea *diags)
+{
+  Lng32 retcode = 0;
+
+  SQL_EXEC_ClearDiagnostics(NULL);
+
+  retcode = SQL_EXEC_PutRoutine(
+       handle);
+
+  if (retcode != 0 && diags)
+    {
+      SQL_EXEC_MergeDiagnostics_Internal(*diags);
+      SQL_EXEC_ClearDiagnostics(NULL);
+    }
+
+  return retcode;
+}

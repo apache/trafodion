@@ -56,6 +56,7 @@
 #include "TransRule.h"          // for CreateTransformationRules()
 #include "PhyProp.h"            // for InitCostVariables()
 #include "NAClusterInfo.h"
+#include "UdfDllInteraction.h"
 #ifdef NA_CMPDLL
 #define   SQLPARSERGLOBALS_FLAGS   // needed to set SqlParser_Flags
 #endif // NA_CMPDLL
@@ -590,6 +591,31 @@ void CmpContext::cleanup(NABoolean exception)
     optSimulator_->cleanupAfterStatement();
   if(cmpMemMonitor)
     cmpMemMonitor->cleanupPerStatement();
+  if (invocationInfos_.entries() > 0)
+    {
+      // Clean up UDR structures that are allocated from the
+      // system heap. Plan infos can only exist if we also have
+      // invocation infos.
+      for (CollIndex i=0; i<invocationInfos_.entries(); i++)
+        TMUDFInternalSetup::deleteUDRInvocationInfo(invocationInfos_[i]);
+      for (CollIndex p=0; p<planInfos_.entries(); p++)
+        TMUDFInternalSetup::deleteUDRPlanInfo(planInfos_[p]);
+      invocationInfos_.clear();
+      planInfos_.clear();
+    }
+  if (routineHandles_.entries() > 0)
+    {
+      ExeCliInterface cliInterface(
+           statementHeap(),
+           NULL,
+           NULL, 
+           CmpCommon::context()->sqlSession()->getParentQid());
+
+      for (CollIndex r=0; r<routineHandles_.entries(); r++)
+        cliInterface.putRoutine(routineHandles_[r],
+                                CmpCommon::diags());
+      routineHandles_.clear();
+    }
 }
 
 // -----------------------------------------------------------------------

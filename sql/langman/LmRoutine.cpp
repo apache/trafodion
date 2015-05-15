@@ -44,8 +44,8 @@ LmRoutine::LmRoutine(LmHandle container,
                      ComRoutineExternalSecurity externalSecurity,
                      Int32 routineOwnerId,
                      const char *parentQid,
-                     ComUInt32 inputParamRowLen,
-                     ComUInt32 outputRowLen,
+                     Int32 inputParamRowLen,
+                     Int32 outputRowLen,
                      const char   *currentUserName,
                      const char   *sessionUserName,
                      LmParameter *lmParams,
@@ -110,6 +110,48 @@ LmRoutine::~LmRoutine()
     NADELETEBASIC(udrCatalog_, collHeap());
   if (udrSchema_)
     NADELETEBASIC(udrSchema_, collHeap());
+}
+
+LmResult LmRoutine::invokeRoutineMethod(
+     /* IN */     tmudr::UDRInvocationInfo::CallPhase phase,
+     /* IN */     const char   *serializedInvocationInfo,
+     /* IN */     Int32         invocationInfoLen,
+     /* OUT */    Int32        *invocationInfoLenOut,
+     /* IN */     const char   *serializedPlanInfo,
+     /* IN */     Int32         planInfoLen,
+     /* IN */     Int32         planNum,
+     /* OUT */    Int32        *planInfoLenOut,
+     /* IN */     char         *inputRow,
+     /* IN */     Int32         inputRowLen,
+     /* OUT */    char         *outputRow,
+     /* IN */     Int32         outputRowLen,
+     /* IN/OUT */ ComDiagsArea *da)
+{
+  LM_ASSERT(0); // should not call this method on the base class
+  return LM_ERR;
+}
+
+void LmRoutine::setRuntimeInfo(
+       const char   *parentQid,
+       int           totalNumInstances,
+       int           instanceNum)
+{
+  LM_ASSERT(0); // should not call this method on the base class
+}
+
+LmResult LmRoutine::getRoutineInvocationInfo
+(
+     /* IN/OUT */ char         *serializedInvocationInfo,
+     /* IN */     Int32         invocationInfoMaxLen,
+     /* OUT */    Int32        *invocationInfoLenOut,
+     /* IN/OUT */ char         *serializedPlanInfo,
+     /* IN */     Int32         planInfoMaxLen,
+     /* IN */     Int32         planNum,
+     /* OUT */    Int32        *planInfoLenOut,
+     /* IN/OUT */ ComDiagsArea *da)
+{
+  LM_ASSERT(0); // should not call this method on the base class
+  return LM_ERR;
 }
 
 const char *LmRoutine::getNameForDiags()

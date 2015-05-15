@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -58,6 +58,8 @@
 #include <semaphore.h>
 #include <pthread.h>
 #include "HBaseClient_JNI.h"
+#include "LmLangManagerC.h"
+#include "LmLangManagerJava.h"
 #include "CliSemaphore.h"
 
 
@@ -109,6 +111,8 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        , tidList_(NULL)
        , cliSemaphore_(NULL)
        , defaultContext_(NULL)
+       , langManC_(NULL)
+       , langManJava_(NULL)
 {
   globalsAreInitialized_ = FALSE;
   executorMemory_.setThreadSafe();
@@ -493,6 +497,69 @@ ExSsmpManager *CliGlobals::getSsmpManager()
 IpcServerClass *CliGlobals::getCbServerClass()
 {
   return currContext()->getCbServerClass();
+}
+
+LmLanguageManager * CliGlobals::getLanguageManager(ComRoutineLanguage language)
+{
+  switch (language)
+    {
+    case COM_LANGUAGE_JAVA:
+      return getLanguageManagerJava();
+      break;
+    case COM_LANGUAGE_C:
+    case COM_LANGUAGE_CPP:
+      return getLanguageManagerC();
+      break;
+    default:
+      ex_assert(0, "Invalid language in CliGlobals::getLanguageManager()");
+    }
+  return NULL;
+}
+
+LmLanguageManagerC * CliGlobals::getLanguageManagerC()
+{
+  if (!langManC_)
+    {
+      LmResult result;
+
+      langManC_ = new(&executorMemory_)
+        LmLanguageManagerC(result,
+                           FALSE,
+                           &(currContext()->diags()));
+
+      if (result != LM_OK)
+        {
+          delete langManC_;
+          langManC_ = NULL;
+        }
+    }
+
+  return langManC_;
+}
+
+LmLanguageManagerJava * CliGlobals::getLanguageManagerJava()
+{
+  if (!langManJava_)
+    {
+      LmResult result;
+
+      langManJava_ = new(&executorMemory_)
+        LmLanguageManagerJava(result,
+                              FALSE,
+                              1,
+                              NULL, // Java options should have been
+                                    // provided for earlier JNI calls
+                                    // in Trafodion
+                              &(currContext()->diags()));
+
+      if (result != LM_OK)
+        {
+          delete langManJava_;
+          langManJava_ = NULL;
+        }
+    }
+
+  return langManJava_;
 }
 
 ExeTraceInfo *CliGlobals::getExeTraceInfo()

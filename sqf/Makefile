@@ -175,10 +175,9 @@ setupdir:
 	@# SQL Messages .txt file
 	-@./makelink $(SQL_W)/bin/SqlciErrors.txt $(EXPORTINCSQL_DIR)
 
-	@# copy some header files (.cpp file is for reference only)
+	@# copy some header files
 	-ln -sf $(SQL_W)/cli/sqlcli.h $(EXPORTINCSQL_DIR)
 	-ln -sf $(SQL_W)/sqludr/sqludr.h $(EXPORTINCSQL_DIR)
-	-ln -sf $(SQL_W)/sqludr/sqludr.cpp $(EXPORTINCSQL_DIR)
 	@#
 	-mkdir -p export/include/nsk
 	-cp -p inc/cextdecs/cextdecs.h export/include/nsk

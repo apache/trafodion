@@ -33,7 +33,6 @@ exit;
 --------------------------------------------------------------------------
 drop table clicks;
 drop table t001_Datatypes;
-drop table_mapping function sessionize_static;
 drop table_mapping function sessionize_dynamic;
 drop table_mapping function sessionize_dynamic_shared;
 drop table_mapping function sessionize_err;
@@ -152,19 +151,7 @@ interval '666666 23:59:59.999999' day(6) to second(6),
 
 create library TEST001 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$;
 
--- the static version of sessionize does not have a compiler interface,
--- its result columns are defined in the DDL
-create table_mapping function sessionize_static(ts_colname char(10),
-                                                user_colname char(10),
-                                                timeintval int)
-returns (session_id largeint,
-         userid char(32),
-         ts largeint)
-external name 'SESSIONIZE_STATIC'
-language c
-library TEST001;
-
--- the dynamic version of sessionize uses a compiler interface to
+-- Sessionize uses a compiler interface to
 -- create result columns that match those of any input table given
 -- and it validates the column name for session id at compile time
 create table_mapping function sessionize_dynamic(user_colname char(10),
@@ -204,15 +191,7 @@ library TEST001;
 
 get table_mapping functions for library TEST001 ;
 
-showddl table_mapping function sessionize_static;
-
-SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id
-FROM UDF(sessionize_static(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
-                                 FROM clicks
-                                 PARTITION BY userid ORDER BY ts),
-                           cast('TS' as char(2)),
-                           'USERID',
-                           60000000)) XO(session_id,userid,ts);
+showddl table_mapping function sessionize_dynamic;
 
 SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
 FROM UDF(sessionize_dynamic(TABLE(SELECT userid,

@@ -2044,8 +2044,6 @@ static Int32 invokeUdrMethod(const char *method,
                                 (isJava ? COM_STYLE_JAVA_CALL : COM_STYLE_SQL),
                                 (txRequired ? COM_TRANSACTION_REQUIRED : COM_NO_TRANSACTION_REQUIRED),                                	
                                 COM_MODIFIES_SQL,
-                                NULL,
-                                NULL,
                                 "", // parentQid
                                 inputRowLen,
                                 outputRowLen,

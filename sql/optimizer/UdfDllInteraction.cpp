@@ -49,9 +49,12 @@
 // -----------------------------------------------------------------------
 
 TMUDFDllInteraction::TMUDFDllInteraction() :
-     dllPtr_(NULL),
-     createInterfaceObjectPtr_(NULL)
-{}
+     cliInterface_(CmpCommon::statementHeap(),
+                   0,
+                   NULL, 
+                   CmpCommon::context()->sqlSession()->getParentQid())
+{
+}
 
 NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
                                 TableMappingUDF * tmudfNode,
@@ -59,8 +62,12 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
 {
   // convert the compiler structures into something we can pass
   // to the UDF writer, to describe input parameters and input tables
+  char *constParamBuffer = NULL;
+  int constParamBufferLen = 0;
   tmudr::UDRInvocationInfo *invocationInfo =
     TMUDFInternalSetup::createInvocationInfoFromRelExpr(tmudfNode,
+                                                        constParamBuffer,
+                                                        constParamBufferLen,
                                                         CmpCommon::diags());
   if (!invocationInfo)
     {
@@ -69,63 +76,94 @@ NABoolean TMUDFDllInteraction::describeParamsAndMaxOutputs(
     }
 
   tmudfNode->setInvocationInfo(invocationInfo);
+  tmudfNode->setConstParamBuffer(constParamBuffer,
+                                 constParamBufferLen);
 
-  // get the interface class that has the code for the compiler interaction,
-  // this could be a C++ class provided by the UDF writer or the base class
-  // with the default implementation. Note: This could already be cached.
-  tmudr::UDR *udrInterface = tmudfNode->getUDRInterface();
-
-#ifndef NDEBUG
-  if (invocationInfo->getDebugFlags() & tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_INITIAL)
-    invocationInfo->print();
-#endif
+  // set up variables to serialize UDRInvocationInfo
+  char iiBuf[20000];
+  char *serializedUDRInvocationInfo = iiBuf;
+  int iiLen;
+  int iiAllocatedLen = sizeof(iiBuf);
 
   try
     {
-      if (!udrInterface)
-        {
-          // try to allocate a user-provided class for compiler interaction
-          if (createInterfaceObjectPtr_)
-            {
-              tmudr::CreateInterfaceObjectFunc factoryFunc =
-                reinterpret_cast<tmudr::CreateInterfaceObjectFunc>(
-                     createInterfaceObjectPtr_);
+      iiLen = invocationInfo->serializedLength();
 
-              // call the factory method to create an object that is
-              // derived from UDR
-              udrInterface = (*factoryFunc)();
-            }
-          else
-            // just use the default implementation in the base class
-            udrInterface = new tmudr::UDR();
+      if (iiLen > iiAllocatedLen)
+        serializedUDRInvocationInfo = new(CmpCommon::statementHeap()) char[iiLen];
 
-          tmudfNode->setUDRInterface(udrInterface);
-        }
-
-#ifndef NDEBUG
-      if (invocationInfo->getDebugFlags() &
-          tmudr::UDRInvocationInfo::DEBUG_INITIAL_COMPILE_TIME_LOOP)
-        udrInterface->debugLoop();
-#endif
-
-      TMUDFInternalSetup::setCallPhase(
-           invocationInfo,
-           tmudr::UDRInvocationInfo::COMPILER_INITIAL_CALL);
-      udrInterface->describeParamsAndColumns(*invocationInfo);
-      TMUDFInternalSetup::resetCallPhase(invocationInfo);
+      invocationInfo->serializeObj(serializedUDRInvocationInfo, iiLen);
     }
   catch (tmudr::UDRException e)
     {
-      processReturnStatus(e, tmudfNode);
+      *CmpCommon::diags() << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+                          << DgString0(invocationInfo->getUDRName().c_str())
+                          << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(
+                                            tmudr::UDRInvocationInfo::GET_ROUTINE_CALL))
+                          << DgString2("describeParams")
+                          << DgString3(e.getText().data());
       bindWA->setErrStatus();
       return FALSE;
     }
   catch (...)
     {
-      processReturnStatus(
-           tmudr::UDRException(
-                38900, "Unknown exception during describeParamsAndColumns()"),
-           tmudfNode);
+      *CmpCommon::diags() << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+                          << DgString0(invocationInfo->getUDRName().c_str())
+                          << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(
+                                            tmudr::UDRInvocationInfo::GET_ROUTINE_CALL))
+                          << DgString2("describeParams")
+                          << DgString3("General exception");
+      bindWA->setErrStatus();
+      return FALSE;
+    }
+
+  // Get a routine handle from the CLI, this goes through the language
+  // manager and may load a DLL or jar file if this is the first call
+  // in this process for a given library.
+  const NARoutine *routine = tmudfNode->getNARoutine();
+  CliRoutineHandle routineHandle = NullCliRoutineHandle;
+  const char *containerName = routine->getFile();
+
+  if (routine->getParamStyle() != COM_STYLE_JAVA_OBJ &&
+      routine->getParamStyle() != COM_STYLE_CPP_OBJ)
+    {
+      // other parameter styles are no longer supported.
+      *CmpCommon::diags() << DgSqlCode(-3286);
+      bindWA->setErrStatus();
+      return FALSE;
+    }
+
+  Int32 cliRC = cliInterface_.getRoutine(
+       serializedUDRInvocationInfo,
+       iiLen,
+       NULL, // no plan info at this stage
+       0,
+       routine->getLanguage(),
+       routine->getParamStyle(),
+       routine->getMethodName(),
+       // for C/C++ the container that gets loaded is the library file
+       // name, for Java it's the class name
+       routine->getContainerName(),
+       routine->getExternalPath(),
+       routine->getLibrarySqlName().getExternalName(),
+       &routineHandle,
+       CmpCommon::diags());
+  if (cliRC < 0)
+    {
+      bindWA->setErrStatus();
+      return FALSE;
+    }
+
+  CMPASSERT(routineHandle != NullCliRoutineHandle);
+  // register routine handle for later release when compilation is done
+  CmpCommon::context()->addRoutineHandle(routineHandle);
+  tmudfNode->setRoutineHandle(routineHandle);
+
+  // call the UDR compiler interface
+  if (!invokeRoutine(tmudr::UDRInvocationInfo::COMPILER_INITIAL_CALL,
+                     tmudfNode))
+    {
+      bindWA->setErrStatus();
       return FALSE;
     }
 
@@ -357,29 +395,11 @@ NABoolean TMUDFDllInteraction::describeDataflow(
           tmudr::ColumnInfo::USED :
           tmudr::ColumnInfo::NOT_USED));
 
-  try
-    {
-      TMUDFInternalSetup::setCallPhase(
-           invocationInfo,
-           tmudr::UDRInvocationInfo::COMPILER_DATAFLOW_CALL);
-      tmudfNode->getUDRInterface()->describeDataflowAndPredicates(
-           *invocationInfo);
-      TMUDFInternalSetup::resetCallPhase(invocationInfo);
-    }
-  catch (tmudr::UDRException e)
-    {
-      processReturnStatus(e, tmudfNode);
-      return FALSE;
-    }
-  catch (...)
-    {
-      processReturnStatus(
-           tmudr::UDRException(
-                38900, "Unknown exception during describeDataflowAndPredicates()"),
-           tmudfNode);
-      return FALSE;
-    }
-
+  // call the UDR compiler interface
+  if (!invokeRoutine(tmudr::UDRInvocationInfo::COMPILER_DATAFLOW_CALL,
+                     tmudfNode))
+    return FALSE;
+                     
   // Remove any unused output columns. Also, just as a sanity check,
   // make sure the UDF didn't change any of the output columns' usage
   for (int x=udfOutputCols.entries()-1; x>=0; x--)
@@ -515,34 +535,16 @@ NABoolean TMUDFDllInteraction::describeDataflow(
 NABoolean TMUDFDllInteraction::describeConstraints(
      TableMappingUDF * tmudfNode)
 {
-  tmudr::UDR *udrInterface = tmudfNode->getUDRInterface();
   tmudr::UDRInvocationInfo *invocationInfo = tmudfNode->getInvocationInfo();
 
   // set up constraint info for child tables
   if (!TMUDFInternalSetup::createConstraintInfoFromRelExpr(tmudfNode))
     return FALSE;
 
-  try
-    {
-      TMUDFInternalSetup::setCallPhase(
-           invocationInfo,
-           tmudr::UDRInvocationInfo::COMPILER_CONSTRAINTS_CALL);
-      udrInterface->describeConstraints(*invocationInfo);
-      TMUDFInternalSetup::resetCallPhase(invocationInfo);
-    }
-  catch (tmudr::UDRException e)
-    {
-      processReturnStatus(e, tmudfNode);
-      return FALSE;
-    }
-  catch (...)
-    {
-      processReturnStatus(
-           tmudr::UDRException(
-                38900, "Unknown exception during describeConstraints()"),
-           tmudfNode);
-      return FALSE;
-    }
+  // call the UDR compiler interface
+  if (!invokeRoutine(tmudr::UDRInvocationInfo::COMPILER_CONSTRAINTS_CALL,
+                     tmudfNode))
+    return FALSE;
 
   // translate resulting constraints on result table back into
   // ItemExprs
@@ -560,40 +562,22 @@ NABoolean TMUDFDllInteraction::degreeOfParallelism(
      TMUDFPlanWorkSpace * pws,
      int &dop)
 { 
-  tmudr::UDR *udrInterface = tmudfNode->getUDRInterface();
   tmudr::UDRInvocationInfo *invocationInfo = tmudfNode->getInvocationInfo();
   tmudr::UDRPlanInfo *udrPlanInfo = pws->getUDRPlanInfo();
 
   if (udrPlanInfo == NULL)
     {
       // make a UDRPlanInfo for this PWS
-      udrPlanInfo = TMUDFInternalSetup::createUDRPlanInfo(invocationInfo);
-      CmpCommon::statement()->addUDRPlanInfoToDelete(udrPlanInfo);
+      udrPlanInfo = TMUDFInternalSetup::createUDRPlanInfo(invocationInfo,
+                                                          tmudfNode->getNextPlanInfoNum());
       pws->setUDRPlanInfo(udrPlanInfo);
     }
 
-  try
-    {
-      TMUDFInternalSetup::setCallPhase(
-           invocationInfo,
-           tmudr::UDRInvocationInfo::COMPILER_DOP_CALL);
-      udrInterface->describeDesiredDegreeOfParallelism(*invocationInfo,
-                                                       *udrPlanInfo);
-      TMUDFInternalSetup::resetCallPhase(invocationInfo);
-    }
-  catch (tmudr::UDRException e)
-    {
-      processReturnStatus(e, tmudfNode);
-      return FALSE;
-    }
-  catch (...)
-    {
-      processReturnStatus(
-           tmudr::UDRException(
-                38900, "Unknown exception during describeDesiredDegreeOfParallelismdescribeParamsAndColumns()"),
-           tmudfNode);
-      return FALSE;
-    }
+  // call the UDR compiler interface
+  if (!invokeRoutine(tmudr::UDRInvocationInfo::COMPILER_DOP_CALL,
+                     tmudfNode,
+                     udrPlanInfo))
+    return FALSE;
 
   dop = udrPlanInfo->getDesiredDegreeOfParallelism();
   
@@ -604,57 +588,200 @@ NABoolean TMUDFDllInteraction::finalizePlan(
      TableMappingUDF * tmudfNode,
      tmudr::UDRPlanInfo *planInfo)
 { 
-  tmudr::UDR *udrInterface = tmudfNode->getUDRInterface();
   tmudr::UDRInvocationInfo *invocationInfo = tmudfNode->getInvocationInfo();
 
-  try
-    {
-      TMUDFInternalSetup::setCallPhase(
-           invocationInfo,
-           tmudr::UDRInvocationInfo::COMPILER_COMPLETION_CALL);
-      udrInterface->completeDescription(*invocationInfo, *planInfo);
-      TMUDFInternalSetup::resetCallPhase(invocationInfo);
-    }
-  catch (tmudr::UDRException e)
-    {
-      processReturnStatus(e, tmudfNode);
-      return FALSE;
-    }
-  catch (...)
-    {
-      processReturnStatus(
-           tmudr::UDRException(
-                38900, "Unknown exception during completeDescription()"),
-           tmudfNode);
-      return FALSE;
-    }
-
-#ifndef NDEBUG
-  if (invocationInfo->getDebugFlags() & tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_END_COMPILE)
-    {
-      invocationInfo->print();
-      planInfo->print();
-    }
-#endif
+  // call the UDR compiler interface
+  if (!invokeRoutine(tmudr::UDRInvocationInfo::COMPILER_COMPLETION_CALL,
+                     tmudfNode,
+                     planInfo))
+    return FALSE;
 
   return TRUE;
 }
 
-NABoolean TMUDFDllInteraction::setFunctionPtrs(
-     const NAString& entryName,
-     const NAString &libraryFileName)
+NABoolean TMUDFDllInteraction::invokeRoutine(tmudr::UDRInvocationInfo::CallPhase cp,
+                                             TableMappingUDF * tmudfNode,
+                                             tmudr::UDRPlanInfo *planInfo,
+                                             ComDiagsArea *diags)
 {
-  if (dllPtr_ == NULL)
-    return FALSE;
+  tmudr::UDRInvocationInfo *invocationInfo = tmudfNode->getInvocationInfo();
+  CliRoutineHandle routineHandle = tmudfNode->getRoutineHandle();
+  Int32 cliRC;
 
-  createInterfaceObjectPtr_ = getRoutinePtr(dllPtr_, entryName.data());
-  if (createInterfaceObjectPtr_ == NULL)
+  if (diags == NULL)
+    diags = CmpCommon::diags();
+
+  // set up variables to serialize/deserialize UDRInvocationInfo
+  char iiBuf[20000];
+  char *serializedUDRInvocationInfo = iiBuf;
+  int iiLen = 0;
+  int iiAllocatedLen = sizeof(iiBuf);
+  Int32 iiReturnedLen = -1;
+  int iiCheckLen = -1;
+
+  // set up variables to serialize/deserialize UDRPlanInfo
+  char piBuf[10000];
+  char *serializedUDRPlanInfo = piBuf;
+  int piLen = 0;
+  int piAllocatedLen = sizeof(piBuf);
+  Int32 piReturnedLen = -1;
+  int piCheckLen = -1;
+  int planNum = 0;
+
+  try
     {
-      (*CmpCommon::diags()) << DgSqlCode(-LME_DLL_METHOD_NOT_FOUND)
-                            << DgString0(entryName)
-                            << DgString1(libraryFileName);
+      if (invocationInfo && cp != tmudr::UDRInvocationInfo::COMPILER_INITIAL_CALL)
+        {
+          // Note: We don't send the invocationInfo in the initial call, because
+          //       we already sent it as part of the GetRoutine call and it did
+          //       not change in the meantime.
+
+          iiLen = invocationInfo->serializedLength();
+          if (iiLen > iiAllocatedLen)
+            {
+              // leave some room for growth for the returned data
+              // after the call
+              iiAllocatedLen = 2*iiLen + 4000;
+              serializedUDRInvocationInfo =
+                new(CmpCommon::statementHeap()) char[iiAllocatedLen];
+            }
+
+          invocationInfo->serializeObj(serializedUDRInvocationInfo, iiLen);
+        }
+
+      if (planInfo)
+        {
+          planNum = planInfo->getPlanNum();
+          piLen = planInfo->serializedLength();
+          if (piLen > piAllocatedLen)
+            {
+              // leave some room for growth for the returned data
+              // after the call
+              piAllocatedLen = 2*piLen + 2000;
+              serializedUDRPlanInfo =
+                new(CmpCommon::statementHeap()) char[piAllocatedLen];
+            }
+
+          planInfo->serializeObj(serializedUDRPlanInfo, piLen);
+        }
+    }
+  catch (tmudr::UDRException e)
+    {
+      *diags << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+             << DgString0(invocationInfo->getUDRName().c_str())
+             << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
+             << DgString2("serialize")
+             << DgString3(e.getText().data());
       return FALSE;
     }
+  catch (...)
+    {
+      *diags << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+             << DgString0(invocationInfo->getUDRName().c_str())
+             << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
+             << DgString2("serialize")
+             << DgString3("General exception");
+      return FALSE;
+    }
+
+  cliRC = cliInterface_.invokeRoutine(
+       routineHandle,
+       static_cast<Int32>(cp),
+       serializedUDRInvocationInfo,
+       iiLen,
+       &iiReturnedLen,
+       serializedUDRPlanInfo,
+       piLen,
+       planNum,
+       &piReturnedLen,
+       tmudfNode->getConstParamBuffer(),
+       tmudfNode->getConstParamBufferLen(),
+       NULL, // no output row
+       0,
+       diags);
+
+  if (cliRC < 0)
+    return FALSE;
+
+  // The previous call gave us the length to expect for the updated
+  // invocation and plan infos. Now make sure we have big enough buffers
+  // and then retrieve these objects.
+  if (iiReturnedLen > iiAllocatedLen)
+    {
+      // resize the buffer to be able to hold the returned info
+      iiAllocatedLen = iiReturnedLen;
+      if (serializedUDRInvocationInfo != iiBuf)
+        NADELETEBASIC(serializedUDRInvocationInfo, CmpCommon::statementHeap());
+      serializedUDRInvocationInfo =
+        new(CmpCommon::statementHeap()) char[iiAllocatedLen];
+    }
+
+  if (piReturnedLen > piAllocatedLen)
+    {
+      // resize the buffer to be able to hold the returned info
+      piAllocatedLen = piReturnedLen;
+      if (serializedUDRPlanInfo != piBuf)
+        NADELETEBASIC(serializedUDRPlanInfo, CmpCommon::statementHeap());
+      serializedUDRPlanInfo =
+        new(CmpCommon::statementHeap()) char[piAllocatedLen];
+    }
+
+  cliRC = cliInterface_.getRoutineInvocationInfo(
+       routineHandle,
+       serializedUDRInvocationInfo,
+       iiAllocatedLen,
+       &iiCheckLen,
+       serializedUDRPlanInfo,
+       piAllocatedLen,
+       planNum,
+       &piCheckLen,
+       diags);
+
+  if (cliRC < 0 ||
+      iiCheckLen != iiReturnedLen ||
+      piCheckLen != piReturnedLen)
+    {
+      // make sure we report an error
+      if (diags->mainSQLCODE() >= 0)
+        *diags << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+               << DgString0(invocationInfo->getUDRName().c_str())
+               << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
+               << DgString2("GetRoutineInvocationInfo")
+               << DgString3("CLI failed without diags");
+      return FALSE;
+    }
+
+  try
+    {
+      // if updated objects were returned, deserialize them, so that
+      // we can process the updated information in the caller
+      if (invocationInfo && iiReturnedLen > 0)
+        invocationInfo->deserializeObj(serializedUDRInvocationInfo,
+                                       iiCheckLen);
+
+      if (planInfo && piReturnedLen > 0)
+        planInfo->deserializeObj(serializedUDRPlanInfo,
+                                 piCheckLen);
+    }
+  catch (tmudr::UDRException e)
+    {
+      *diags << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+             << DgString0(invocationInfo->getUDRName().c_str())
+             << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
+             << DgString2("deserialize")
+             << DgString3(e.getText().data());
+      return FALSE;
+    }
+  catch (...)
+    {
+      *diags << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+             << DgString0(invocationInfo->getUDRName().c_str())
+             << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(cp))
+             << DgString2("deserialize")
+             << DgString3("General exception");
+      return FALSE;
+    }
+
   return TRUE;
 }
 
@@ -711,10 +838,16 @@ void TMUDFDllInteraction::processReturnStatus(const tmudr::UDRException &e,
 
 tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
      TableMappingUDF * tmudfNode,
+     char *&constBuffer,
+     int &constBufferLength,
      ComDiagsArea *diags)
 {
   tmudr::UDRInvocationInfo *result = new tmudr::UDRInvocationInfo();
   NABoolean success = TRUE;
+
+  // register this object with the context, so it will be cleaned
+  // up after compilation
+  CmpCommon::context()->addInvocationInfo(result);
 
   result->name_ = tmudfNode->getRoutineName().getQualifiedNameAsAnsiString().data();
   result->numTableInputs_ = tmudfNode->getArity();
@@ -760,8 +893,8 @@ tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
 
   // set info for the actual scalar input parameters
   const ValueIdList &actualParamVids = tmudfNode->getProcInputParamsVids();
-  int constBufferLength = 0;
-  char *constBuffer = NULL;
+  constBuffer = NULL;
+  constBufferLength = 0;
   int nextOffset = 0;
 
   for (CollIndex j=0; j < actualParamVids.entries(); j++)
@@ -778,14 +911,14 @@ tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
         }
     }
 
-  // allocate a buffer to hold the constant values in binary form
-  // add pass this buffer to the tmudr::ParameterInfoList object
-  // that holds the actual parameters (we are a friend and can
-  // therefore access the data members directly)
+  // Allocate a buffer to hold the constant values in binary form.
+  // This gets allocated from the statement heap and will not be
+  // changed or deallocated. Therefore, we won't need to copy
+  // this buffer again, e.g. in TableMappingUDF::copyTopNode().
   if (constBufferLength > 0)
-    constBuffer = new char[constBufferLength];
-  result->nonConstActualParameters().setConstBuffer(constBufferLength,
-                                                    constBuffer);
+    constBuffer = new(CmpCommon::statementHeap()) char[constBufferLength];
+  // record length for compile-time parameters
+  result->nonConstActualParameters().setRecordLength(constBufferLength);
 
   for (CollIndex i=0; i < actualParamVids.entries(); i++)
     {
@@ -937,11 +1070,6 @@ tmudr::UDRInvocationInfo *TMUDFInternalSetup::createInvocationInfoFromRelExpr(
     return NULL;
 
   // predicates_ is initially empty, nothing to do
-
-  // Since we allocated all our structures from the system heap,
-  // make sure that someone deletes it after compilation of the
-  // current statement completes
-  CmpCommon::statement()->addUDRInvocationInfoToDelete(result);
 
   return result;
 }
@@ -1950,23 +2078,16 @@ NABoolean TMUDFInternalSetup::createConstraintsFromConstraintInfo(
 }
 
 tmudr::UDRPlanInfo *TMUDFInternalSetup::createUDRPlanInfo(
-     tmudr::UDRInvocationInfo *invocationInfo)
-{
-  return new tmudr::UDRPlanInfo(invocationInfo);
-}
-
-void TMUDFInternalSetup::setCallPhase(
      tmudr::UDRInvocationInfo *invocationInfo,
-     tmudr::UDRInvocationInfo::CallPhase cp)
+     int planNum)
 {
-  invocationInfo->callPhase_ = cp;
-}
+  tmudr::UDRPlanInfo *result = new tmudr::UDRPlanInfo(invocationInfo, planNum);
 
-void TMUDFInternalSetup::resetCallPhase(
-     tmudr::UDRInvocationInfo *invocationInfo)
-{
-  invocationInfo->callPhase_ = 
-    tmudr::UDRInvocationInfo::UNKNOWN_CALL_PHASE;
+  // register the object for later deletion, whether this plan got
+  // selected or not and whether we had an error or not
+  CmpCommon::context()->addPlanInfo(result);
+
+  return result;
 }
 
 void TMUDFInternalSetup::setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
@@ -1978,7 +2099,9 @@ void TMUDFInternalSetup::setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
     {
       CMPASSERT(invocationInfo->getFormalParameters().getNumColumns() ==
                 paramTupleDesc->numAttrs());
-      invocationInfo->nonConstFormalParameters().setRecordLength(
+      // set record length, note that formal params will be copied
+      // to actual parameters below
+      invocationInfo->nonConstActualParameters().setRecordLength(
            paramTupleDesc->tupleDataLength());
       for (int p=0; p<invocationInfo->getFormalParameters().getNumColumns(); p++)
         {
@@ -1993,7 +2116,7 @@ void TMUDFInternalSetup::setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
   else
     {
       CMPASSERT(invocationInfo->getFormalParameters().getNumColumns() == 0);
-      invocationInfo->nonConstFormalParameters().setRecordLength(0);
+      invocationInfo->nonConstActualParameters().setRecordLength(0);
     }
 
   // As we move from compile time to runtime, replace the actual
@@ -2001,8 +2124,6 @@ void TMUDFInternalSetup::setOffsets(tmudr::UDRInvocationInfo *invocationInfo,
   // can expect the actual parameters at runtime to have the
   // types of the formal parameters. We should not access
   // formal parameters at runtime.
-  // Also erase the compile time constant parameters.
-  invocationInfo->nonConstActualParameters().setConstBuffer(0, NULL);
 
   while (invocationInfo->par().getNumColumns() > 0)
     invocationInfo->nonConstActualParameters().deleteColumn(0);

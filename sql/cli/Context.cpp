@@ -95,6 +95,8 @@
 #include "../../dbsecurity/auth/inc/dbUserAuth.h"
 #include "HBaseClient_JNI.h"
 #include "ComDistribution.h"
+#include "LmRoutine.h"
+
 // Printf-style tracing macros for the debug build. The macros are
 // no-ops in the release build.
 #ifdef NA_DEBUG_C_RUNTIME
@@ -363,6 +365,15 @@ void ContextCli::deleteMe()
 
   // Release all ExUdrServer references
   releaseUdrServers();
+
+  // delete all trusted routines in this context
+  CollIndex maxTrustedRoutineIx = trustedRoutines_.getUsedLength();
+  LmResult res;
+
+  for (CollIndex rx=0; rx<maxTrustedRoutineIx; rx++)
+    if (trustedRoutines_.used(rx))
+      putTrustedRoutine(rx);
+  trustedRoutines_.clear();
 
   closeStatementList_ = NULL;
   nextReclaimStatement_ = NULL;
@@ -5742,3 +5753,43 @@ RETCODE ContextCli::storeName(
 
 }
 //*********************** End of ContextCli::storeName *************************
+
+CollIndex ContextCli::addTrustedRoutine(LmRoutine *r)
+{
+  // insert routine into a free array element and return its index
+  CollIndex result = trustedRoutines_.freePos();
+
+  ex_assert(r != NULL, "Trying to insert a NULL routine into CliContext");
+  trustedRoutines_.insertAt(result, r);
+
+  return result;
+}
+
+LmRoutine *ContextCli::getTrustedRoutine(CollIndex ix)
+{
+  if (trustedRoutines_.used(ix))
+    return trustedRoutines_[ix];
+  else
+    {
+      diags() << DgSqlCode(-CLI_ROUTINE_INVALID);
+      return NULL;
+    }
+}
+
+void ContextCli::putTrustedRoutine(CollIndex ix)
+{
+  // free element ix of the Routine array and delete the object
+  ex_assert(trustedRoutines_[ix] != NULL,
+            "Trying to delete a non-existent routine handle");
+
+  LmResult res = LM_ERR;
+  LmLanguageManager *lm = cliGlobals_->getLanguageManager(
+       trustedRoutines_[ix]->getLanguage());
+
+  if (lm)
+    res = lm->putRoutine(trustedRoutines_[ix]);
+
+  if (res != LM_OK)
+    diags() << DgSqlCode(-CLI_ROUTINE_DEALLOC_ERROR);
+  trustedRoutines_.remove(ix);
+}

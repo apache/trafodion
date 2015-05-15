@@ -74,13 +74,15 @@ class LmLanguageManagerJava;
 // for Java (LMJ). The LMJ interfaces to the Java Virtual Machine (JVM)
 // using the Java Native Interface (JNI) API library.
 //
-// The JNI allows for one JVM per process, but it allows for multiple 
+// The JNI allows for one JVM per process, but it allows for multiple
 // threads to attach to the single JVM. These semantics are provided
-// for in the LMJ in that the first LMJ created allocates the JVM. Subsequent
-// LMJ instances are only attached to the JVM (assuming they are different
-// threads). Therefore, most of the LMJ's constructor parameters are only
-// applicable to the first LMJ instance. In a threaded application, the 
-// same LMJ instance created by a thread T must be used by T when it 
+// for in the LMJ in that the first LMJ created allocates the JVM or
+// attaches to an already existig JVM, created outside LMJ. Subsequent
+// LMJ instances are only attached to the JVM (assuming they are
+// different threads). Therefore, most of the LMJ's constructor
+// parameters are only applicable to the first LMJ instance, and only
+// if the JVM does not already exists. In a threaded application, the
+// same LMJ instance created by a thread T must be used by T when it
 // accesses services of the LMJ.
 //
 // The LMJ constructor has the following parameters:
@@ -98,6 +100,7 @@ class SQLLM_LIB_FUNC LmLanguageManagerJava : public LmLanguageManager
 {
 friend class LmRoutineJava;
 friend class LmResultSetJava;
+friend class LmRoutineJavaObj;
 friend class LmConnection;
 
 public:
@@ -147,8 +150,6 @@ public:
     ComRoutineParamStyle paramStyle,
     ComRoutineTransactionAttributes transactionAttrs,
     ComRoutineSQLAccess sqlAccessMode,
-    tmudr::UDRInvocationInfo *invocationInfo,
-    tmudr::UDRPlanInfo       *planInfo,
     const char   *parentQid,
     ComUInt32    inputRowLen,
     ComUInt32    outputRowLen,
@@ -167,6 +168,20 @@ public:
     LmHandle     emitRowPtr,
     ComUInt32    maxResultSets = 0,
     ComDiagsArea *diagsArea = NULL);
+
+  virtual LmResult getObjRoutine(
+    const char            *serializedInvocationInfo,
+    int                    invocationInfoLen,
+    const char            *serializedPlanInfo,
+    int                    planInfoLen,
+    ComRoutineLanguage     language,
+    ComRoutineParamStyle   paramStyle,
+    const char            *externalName,
+    const char            *containerName,
+    const char            *externalPath,
+    const char            *librarySqlName,
+    LmRoutine            **handle,
+    ComDiagsArea          *diagsArea);
 
   virtual LmResult putRoutine(
     LmRoutine *handle,
@@ -314,8 +329,6 @@ private:
   void processJavaOptions(const LmJavaOptions &userOptions,
                           LmJavaOptions &jvmOptions);
 
-  LmResult keepTxIdInPthreadTCB(ComDiagsArea *da);
-
 private:
   static char *sysClassPath_;       // JVM's class path.
   static char *classPath_;          // class path used by ClassLoader.
@@ -375,6 +388,14 @@ private:
   LmHandle utilityGetConnTypeId_; // getConnectionType()
   LmHandle utilityInitT4RSId_;    // initT4RS(), init method for T4 RS
   LmHandle utilityGetT4RSInfoId_; // getT4RSInfo()
+
+  LmHandle lmObjMethodInvokeClass_;   // LmUDRObjMethodInvoke class
+  LmHandle makeNewObjId_;             // make a new LmUDRObjMethodInvoke object
+  LmHandle routineMethodInvokeId_;    // invoke method of tmudr::UDR object
+  LmHandle routineReturnInfoClass_;   // nested class for return info
+  LmHandle returnInfoStatusField_;    // return status field id
+  LmHandle returnInfoRIIField_;       // returned invocation info field id
+  LmHandle returnInfoRPIField_;       // returned plan info field id
 
   LmHandle lmCharsetClass_;
   LmHandle bytesToUnicodeId_;    // conversion going into JVM

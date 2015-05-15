@@ -16088,33 +16088,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
   bindWA->getCurrentScope()->setRETDesc(rDesc);
   setRETDesc(rDesc);
 
-  ComUInt32 size = 0;
-  LmHandle dllPtr = NULL;
-
-  if (tmudfRoutine->getLanguage() == COM_LANGUAGE_CPP)
-    {
-      dllPtr = loadDll(tmudfRoutine->getFile().data(),
-                       tmudfRoutine->getExternalPath().data(),
-                       NULL,
-                       &size,
-                       CmpCommon::diags(),
-                       bindWA->wHeap());
-      if (dllPtr == NULL)
-        {
-          bindWA->setErrStatus();
-          return this;
-        }
-    }
-
   dllInteraction_ = new (bindWA->wHeap()) TMUDFDllInteraction();
-  dllInteraction_->setDllPtr(dllPtr);
-  if (dllPtr)
-    if (!dllInteraction_->setFunctionPtrs(tmudfRoutine->getExternalName(),
-                                          tmudfRoutine->getFile()))
-      {
-        bindWA->setErrStatus();
-        return this;
-      }
 
   // ValueIDList of the actual input parameters 
   // (tmudfRoutine has formal parameters)

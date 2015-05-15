@@ -425,7 +425,7 @@ elif [[ -d /opt/mapr ]]; then
 elif [[ -e $MY_SQROOT/sql/scripts/install_local_hadoop
      && -e $MY_SQROOT/export/bin${SQ_MBTYPE}/monitor
      && -e ${HBASE_TRXDIR}/${HBASE_TRX_JAR}
-     && -e $MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar
+     && -e $MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar
      && -e $MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar
      && -e $MY_SQROOT/export/lib/jdbcT2.jar ]]; then
 
@@ -666,7 +666,7 @@ if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HIVE_CNF_DIR"; 
 if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
 SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:\
 ${HBASE_TRXDIR}/${HBASE_TRX_JAR}:\
-$MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar:\
+$MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar:\
 $MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar:\
 $MY_SQROOT/export/lib/jdbcT2.jar
 
