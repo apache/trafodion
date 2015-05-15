@@ -305,8 +305,8 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
 			  /usr/lib/hbase/lib/htrace-core.jar
                           /usr/lib/hbase/lib/zookeeper.jar
                           /usr/lib/hbase/lib/protobuf-*.jar
-                         /usr/lib/hbase/lib/snappy-java-*.jar 
-                         /usr/lib/hbase/lib/high-scale-lib-*.jar 
+                         /usr/lib/hbase/lib/snappy-java-*.jar
+                         /usr/lib/hbase/lib/high-scale-lib-*.jar
                          /usr/lib/hbase/hbase-hadoop-compat.jar "
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
   export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
@@ -346,10 +346,10 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
                           /usr/hdp/current/hbase-client/lib/htrace-core*.jar
                           /usr/hdp/current/hbase-client/lib/zookeeper.jar
                           /usr/hdp/current/hbase-client/lib/protobuf-*.jar
-                         /usr/hdp/current/hbase-client/lib/snappy-java-*.jar 
-                         /usr/hdp/current/hbase-client/lib/high-scale-lib-*.jar 
+                         /usr/hdp/current/hbase-client/lib/snappy-java-*.jar
+                         /usr/hdp/current/hbase-client/lib/high-scale-lib-*.jar
                          /usr/hdp/current/hbase-client/lib/hbase-hadoop-compat-*-hadoop2.jar "
-                         
+
   export HIVE_JAR_DIRS="/usr/hdp/current/hive-client/lib"
   export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
@@ -709,6 +709,7 @@ fi
 export CLASSPATH=$(remove_duplicates_in_path "${CLASSPATH}:")
 
 PATH=$(remove_duplicates_in_path "$PATH")
+MANPATH=$(remove_duplicates_in_path "$MANPATH")
 
 ####################
 # Check/Report on key variables
