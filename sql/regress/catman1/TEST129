@@ -4,6 +4,7 @@
 -- Check privilege for DML statements in compiler
 
 obey TEST129(clean_up);
+initialize authorization;
 
 sh sqlci -i "TEST129(setup)" -u sql_user4;
 sh sqlci -i "TEST129(step1)" -u sql_user1;

@@ -147,6 +147,10 @@ public:
   // get the degree of this node (it is a unary op).
   virtual Int32 getArity() const;
 
+  void setFirstNRowsParam(ItemExpr *firstNRowsParam)   
+  { firstNRowsParam_ = firstNRowsParam; }
+  ItemExpr * getFirstNRowsParam() 			{ return firstNRowsParam_; }
+
   // access (get and set) the count of output variables for this (dynamic) query
   Int32 &outputVarCnt()			{ return outputVarCnt_; }
   NABoolean outputVarCntValid() const	{ return outputVarCnt_ >= 0; }
@@ -770,6 +774,8 @@ public:
 
   // flag used to indicate whether CIF is on or off in the explain plan only
   NABoolean isCIFOn_;
+
+  ItemExpr * firstNRowsParam_;
 }; // class RelRoot
 
 // -----------------------------------------------------------------------
@@ -1585,16 +1591,18 @@ public:
 class FirstN : public RelExpr
 {
 public:
-  FirstN(RelExpr * child,
-	 Int64 firstNRows,
-	 CollHeap *oHeap = CmpCommon::statementHeap())
-       : RelExpr(REL_FIRST_N, child, NULL, oHeap),
-	 firstNRows_(firstNRows),
-	 canExecuteInDp2_(FALSE)
-  {
-    setNonCacheable();
-  };
-
+ FirstN(RelExpr * child,
+        Int64 firstNRows,
+        ItemExpr * firstNRowsParam = NULL,
+        CollHeap *oHeap = CmpCommon::statementHeap())
+   : RelExpr(REL_FIRST_N, child, NULL, oHeap),
+    firstNRows_(firstNRows),
+    firstNRowsParam_(firstNRowsParam),
+    canExecuteInDp2_(FALSE)
+    {
+      setNonCacheable();
+    };
+  
   // sets the canExecuteInDp2 flag for the [LAST 1] operator
   // of an MTS delete and calls the base class implementation of bindNode.
   virtual RelExpr* bindNode(BindWA* bindWA);
@@ -1626,6 +1634,11 @@ public:
 
   void setFirstNRows(Int64 firstNRows) 		{ firstNRows_ = firstNRows; }
   Int64 getFirstNRows() 			{ return firstNRows_; }
+
+  void setFirstNRowsParam(ItemExpr *firstNRowsParam)   
+  { firstNRowsParam_ = firstNRowsParam; }
+  ItemExpr * getFirstNRowsParam() 			{ return firstNRowsParam_; }
+
   void setCanExecuteInDp2(NABoolean flag) 	{ canExecuteInDp2_ = flag; }
   NABoolean canExecuteInDp2() const             { return canExecuteInDp2_; }
   virtual NABoolean computeRowsAffected()   const ;
@@ -1633,6 +1646,7 @@ public:
 private:
   // Otherwise, return firstNRows_ at runtime.
   Int64 firstNRows_;
+  ItemExpr * firstNRowsParam_;
   NABoolean canExecuteInDp2_;
 
 }; // class FirstN

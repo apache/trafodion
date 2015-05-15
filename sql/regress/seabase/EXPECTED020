@@ -466,11 +466,7 @@ A
 >>
 >>create table test020t17 (c int not null references test020t17 primary key);
 
-*** ERROR[1090] Self-referencing constraints are currently not supported.
-
-*** ERROR[1029] Object TRAFODION.SCH.TEST020T17 could not be created.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>
 >>create table test020t18 (c int not null constraint test020t18pk primary key);
 
@@ -3091,4 +3087,44 @@ ALTER TABLE TRAFODION.SCH.TEST020_T34 ADD CONSTRAINT TRAFODION.SCH.T34_1
 >>insert into test020_t34 values (1,1);
 
 --- 1 row(s) inserted.
+>>
+>>-- self referencing constraints
+>>cqd traf_allow_self_ref_constr 'ON';
+
+--- SQL operation complete.
+>>create table test020t40 (a int not null primary key, b int not null);
+
+--- SQL operation complete.
+>>alter table test020t40 add constraint test020tu1 unique (b);
+
+--- SQL operation complete.
+>>alter table test020t40 add constraint test020tc1 foreign key (b) references test020t40(a);
+
+--- SQL operation complete.
+>>alter table test020t40 add constraint test020tc2 foreign key (a) references test020t40(b);
+
+--- SQL operation complete.
+>>
+>>-- next 2 drops should fail
+>>alter table test020_t34 drop constraint test020tu1;
+
+*** ERROR[1052] Constraint cannot be dropped because it does not belong to the specified table.
+
+--- SQL operation failed with errors.
+>>alter table test020_t34 drop constraint test020tc1;
+
+*** ERROR[1052] Constraint cannot be dropped because it does not belong to the specified table.
+
+--- SQL operation failed with errors.
+>>
+>>alter table test020t40 drop constraint test020tc2;
+
+--- SQL operation complete.
+>>alter table test020t40 drop constraint test020tc1;
+
+--- SQL operation complete.
+>>drop table test020t40;
+
+--- SQL operation complete.
+>>
 >>log;

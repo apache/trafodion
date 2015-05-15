@@ -1,6 +1,6 @@
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -83,6 +83,7 @@ drop table test020_10_030916_9668;
 drop table test020_LP_1360493;
 drop table test020_t34 cascade;
 drop table test020_t33 cascade;
+drop table test020t40 cascade;
 
 ?section tests
 create table  test020t1 (c1 int not null primary key,
@@ -701,3 +702,19 @@ alter table test020_t34 add constraint t34_1 foreign key(b) references test020_t
 showddl test020_t34;
 -- should succeed, ref constr not enforced
 insert into test020_t34 values (1,1);  
+
+-- self referencing constraints
+cqd traf_allow_self_ref_constr 'ON';
+create table test020t40 (a int not null primary key, b int not null);
+alter table test020t40 add constraint test020tu1 unique (b);
+alter table test020t40 add constraint test020tc1 foreign key (b) references test020t40(a);
+alter table test020t40 add constraint test020tc2 foreign key (a) references test020t40(b);
+
+-- next 2 drops should fail
+alter table test020_t34 drop constraint test020tu1;
+alter table test020_t34 drop constraint test020tc1;
+
+alter table test020t40 drop constraint test020tc2;
+alter table test020t40 drop constraint test020tc1;
+drop table test020t40;
+

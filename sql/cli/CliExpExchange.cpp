@@ -1019,7 +1019,7 @@ ex_expr::exp_return_type InputOutputExpr::doBulkMove(atp_struct * atp,
           else
             destPtr = bmi->getDescDataPtr(i);
 
-          str_cpy_all(destPtr, dataPtr, (Lng32)bmi->getLength(i));
+	  str_cpy_all(destPtr, dataPtr, (Lng32)bmi->getLength(i));
 	}
     }
 

@@ -1542,10 +1542,11 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
   // below it. If we add the FirstN node in the binder, the optimizer
   // will add the Sort node on top of the FirstN node. Maybe we
   // can teach optimizer to do this.
-  if (getFirstNRows() != -1)
+  if ((getFirstNRows() != -1) || (getFirstNRowsParam()))
     {
       RelExpr * firstn = new(generator->wHeap()) FirstN(child(0),
-							getFirstNRows());
+							getFirstNRows(),
+                                                        getFirstNRowsParam());
 
       // move my child's attributes to the firstN node.
       // Estimated rows will be mine.
@@ -1572,6 +1573,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 
       // reset firstN indication in the root node.
       setFirstNRows(-1);
+      setFirstNRowsParam(NULL);
     }
 
   if (isTrueRoot())

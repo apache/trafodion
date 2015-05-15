@@ -2766,7 +2766,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <aqrOptionsList>          aqr_options_list
 %type <aqrOption>               aqr_option
 %type <uint>                    aqr_task
-%type <int64>	 		optional_limit_spec
+%type <item>                   optional_limit_spec
 
 %type <tokval>                  dummy_token_lookahead
 %type <relx>                    exe_util_get_volatile_info
@@ -14479,7 +14479,7 @@ dml_query : query_expression order_by_clause access_type
                     YYERROR;
                   $5->finalizeUpdatability($$);
 
-		  if ($6 != -1)
+		  if ($6)
 		    {
 		      // limit clause was specified. 
 		      RelRoot * rr = (RelRoot*)$$;
@@ -14490,10 +14490,22 @@ dml_query : query_expression order_by_clause access_type
 			}
 		      else
 			{
-			   rr->setFirstNRows($6);
+                          NABoolean negate;
+                          if ($6->castToConstValue(negate))
+                            {
+                              ConstValue * limit = (ConstValue*)$6;
+                              Lng32 scale = 0;
+                              rr->setFirstNRows(limit->getExactNumericValue(scale));
+                              rr->setFirstNRowsParam(NULL);
+                            }
+                          else
+                            {
+                              rr->setFirstNRowsParam($6);
+                              rr->setFirstNRows(-1);
+                            }
 
-			   if ($2 != NULL) // ORDER BY specified
-			     rr->needFirstSortedRows() = TRUE;
+                          if ($2 != NULL) // ORDER BY specified
+                            rr->needFirstSortedRows() = TRUE;
 			}
 		    } // LIMIT clause was specified
                 }
@@ -14547,11 +14559,18 @@ dml_query : query_expression order_by_clause access_type
 optional_limit_spec : TOK_LIMIT NUMERIC_LITERAL_EXACT_NO_SCALE
                    {
 		     Int64 rows = atoInt64($2->data());
-		     $$ = rows;
+
+                     ConstValue * limit = new(PARSERHEAP()) ConstValue(rows);
+
+		     $$ = limit;
 		   }
+                 | TOK_LIMIT dynamic_parameter
+                 {
+                   $$ = $2;
+                 }
                  | /* empty */
                    {
-		     $$ = -1;
+		     $$ = NULL;
 		   }
 
 dml_statement : dml_query { $$ = $1; }

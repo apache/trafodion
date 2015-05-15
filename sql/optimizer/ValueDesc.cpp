@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -6080,6 +6080,7 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
 
 	   if ((constType->getTypeQualifier()  == NA_NUMERIC_TYPE) &&
 	       (((NumericType*)constType)->isExact()) &&
+               (NOT ((NumericType&)type).isBigNum()) &&
 	       (constType->getScale() > 0))
 	     {
 	       NAString newVal;
@@ -6094,7 +6095,8 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
 		 }
 	       else
 		 {
-		   newVal = val(0, vLen - constType->getScale());
+                   // get digits to the left of scale
+		   newVal = val(0, vLen - constType->getScale() );
 
 		   newVal += ".";
 		   newVal += val(vLen - constType->getScale(), constType->getScale());

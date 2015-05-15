@@ -2681,7 +2681,7 @@ char logonUserName[ComSqlId::MAX_LDAP_USER_NAME_LEN + 1];
       // user id has changed.
       // Drop any volatile schema created in this context
       // before switching the user.
-      dropSession(); // dropSession() clears the this->sqlParserFlags_
+      dropSession(TRUE); // dropSession() clears the this->sqlParserFlags_
 
       // close all tables that were opened by the previous user
       closeAllTables();
@@ -2812,7 +2812,13 @@ void ContextCli::completeSetAuthID(
    {
       // user id has changed.
       // Drop any volatile schema created in this context.
-      dropSession();
+     // Also kill and restart child mxcmp and compiler context.
+     if ((userID != databaseUserID_) ||
+         (sessionUserID != sessionUserID_) ||
+         (recreateMXCMP))
+       dropSession(TRUE); // remove compiler context cache
+     else
+       dropSession();
    }
 
    if (releaseUDRServers)
@@ -3870,7 +3876,8 @@ void ContextCli::beginSession(char * userSpecifiedSessionName)
   setInMemoryObjectDefn(FALSE);
 }
 
-void ContextCli::endMxcmpSession(NABoolean cleanupEsps)
+void ContextCli::endMxcmpSession(NABoolean cleanupEsps, 
+                                 NABoolean clearCmpCache)
 {
   Lng32 flags = 0;
   char* dummyReply = NULL;
@@ -3880,6 +3887,9 @@ void ContextCli::endMxcmpSession(NABoolean cleanupEsps)
     flags |= CmpMessageEndSession::CLEANUP_ESPS;
 
   flags |= CmpMessageEndSession::RESET_ATTRS;
+
+  if (clearCmpCache)
+    flags |= CmpMessageEndSession::CLEAR_CACHE;
 
 #ifdef NA_CMPDLL
   Int32 cmpStatus = 2;  // assume failure
@@ -4057,7 +4067,7 @@ void ContextCli::endSession(NABoolean cleanupEsps,
   setStatsArea(NULL, FALSE, FALSE, TRUE);
 }
 
-void ContextCli::dropSession()
+void ContextCli::dropSession(NABoolean clearCmpCache)
 {
   short rc = 0;
   if (volatileSchemaCreated_)
@@ -4078,7 +4088,7 @@ void ContextCli::dropSession()
       Lng32 cliRC = cliInterface.executeImmediate(sendCQD);
       NADELETEBASIC(sendCQD, exHeap());
       
-      endMxcmpSession(TRUE);
+      endMxcmpSession(TRUE, clearCmpCache);
     }
 
   resetAttributes();
@@ -4086,7 +4096,6 @@ void ContextCli::dropSession()
   mxcmpSessionInUse_ = FALSE;
 
   sessionInUse_ = FALSE;
-
 
   // Reset the stats area to ensure that the reference count in
   // prevStmtStats_ is decremented so that it can be freed up when

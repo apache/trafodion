@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -62,11 +62,13 @@ ex_tcb * ExFirstNTdb::build(ex_globals * glob)
 ExFirstNTcb::ExFirstNTcb(const ExFirstNTdb & firstn_tdb, 
 			 const ex_tcb & child_tcb,    // child queue pair
 			 ex_globals *glob
-			 ) : ex_tcb( firstn_tdb, 1, glob)
+			 ) : ex_tcb( firstn_tdb, 1, glob),
+                             step_(INITIAL_)
 {
   childTcb_ = &child_tcb;
   
-  CollHeap * space = glob->getSpace();
+  Space * space = glob->getSpace();
+  CollHeap * heap = (glob ? glob->getDefaultHeap() : NULL);
   
   // Allocate the buffer pool
 #pragma nowarn(1506)   // warning elimination 
@@ -93,6 +95,21 @@ ExFirstNTcb::ExFirstNTcb(const ExFirstNTdb & firstn_tdb,
 				    firstn_tdb.criDescUp_,
 				    space);
 
+  workAtp_ = NULL;
+  firstNParamVal_ = 0;
+  if (firstn_tdb.workCriDesc_)
+    {
+      workAtp_ = allocateAtp(firstn_tdb.workCriDesc_, space);
+      pool_->get_free_tuple(workAtp_->getTupp(firstn_tdb.workCriDesc_->noTuples()-1), 0);
+      workAtp_->getTupp(firstn_tdb.workCriDesc_->noTuples()-1).
+        setDataPointer((char*)&firstNParamVal_);
+    }
+
+  if (firstn_tdb.firstNRowsExpr_)
+    {
+      firstn_tdb.firstNRowsExpr_->fixup(0, getExpressionMode(), this,  space, heap, 
+                                        FALSE, glob);
+     }
 };
 
 ExFirstNTcb::~ExFirstNTcb()
@@ -168,7 +185,7 @@ short ExFirstNTcb::work()
 
   while (1) // exit via return
     {
-      switch (pstate->step_)
+      switch (step_)
 	{
 	case INITIAL_:
 	  {
@@ -177,14 +194,29 @@ short ExFirstNTcb::work()
 
 	    ex_queue_entry * centry = qchild_.down->getTailEntry();
 
-	    // firstNRows_ is set to a positive number at compile time if
-	    // FIRST N rows are requested.
+	    // firstNRows_ or firstNRowsParam is set to a positive number
+	    // if FIRST N rows are requested.
 	    // It is set to 0 or a negative number, if last N rows are needed.
 	    // 0 means process all but don't return any rows.
 	    // -1 means get all rows. Should not reach this state.
 	    // -ve number means return the last '-(N+2)' rows.
-	    if (firstnTdb().firstNRows() >= 0)
-	      {
+            Lng32 firstNVal = firstnTdb().firstNRows();
+            if (firstnTdb().firstNRowsExpr_)
+              {
+                ex_expr::exp_return_type evalRetCode =
+                  firstnTdb().firstNRowsExpr_->eval(pentry_down->getAtp(), workAtp_);
+                if (evalRetCode == ex_expr::EXPR_ERROR)
+                  {
+                    step_ = CANCEL_;
+                    
+                    break;
+                  }
+
+                firstNVal = firstNParamVal_;
+              }
+            
+            if (firstNVal >= 0)
+              {
 		centry->downState.request = ex_queue::GET_N;
 
 		// if I got a GET_ALL request then send a GET_N request to
@@ -193,15 +225,14 @@ short ExFirstNTcb::work()
 		// GET_N request value and firstNRows_ to my child.
 		if ((pentry_down->downState.request != ex_queue::GET_N) ||
 		    (pentry_down->downState.requestValue == firstnTdb().firstNRows()))
-		  centry->downState.requestValue = firstnTdb().firstNRows();
+		  centry->downState.requestValue = firstNVal;
 		else
 		  {
 		    centry->downState.requestValue = 
-		      MINOF(pentry_down->downState.requestValue,
-			    firstnTdb().firstNRows());
+		      MINOF(pentry_down->downState.requestValue, firstNVal);
 		  }
 
-		pstate->step_ = PROCESS_FIRSTN_;
+		step_ = PROCESS_FIRSTN_;
 	      }
             else
 	      {
@@ -209,7 +240,10 @@ short ExFirstNTcb::work()
 		centry->downState.request = ex_queue::GET_ALL;
 		centry->downState.requestValue = 11;
 
-		pstate->step_ = PROCESS_LASTN_;
+                requestedLastNRows_ = -(firstNVal + 2);
+                returnedLastNRows_ = 0;
+
+		step_ = PROCESS_LASTN_;
 	      }
 
 	    centry->downState.parentIndex = qparent_.down->getHeadIndex();
@@ -217,7 +251,6 @@ short ExFirstNTcb::work()
 	    centry->passAtp(pentry_down);
 	    
 	    qchild_.down->insert();
-
 	  }
 	  break;
 
@@ -243,7 +276,7 @@ short ExFirstNTcb::work()
 
 		  qparent_.down->removeHead();
 		  
-		  pstate->step_ = DONE_;
+		  step_ = DONE_;
 		}
 		break;
 
@@ -251,7 +284,7 @@ short ExFirstNTcb::work()
 		{
 		  qchild_.down->cancelRequest();
 		  moveChildDataToParent();
-		  pstate->step_ = CANCEL_;
+		  step_ = CANCEL_;
 		}
 		break;
 
@@ -279,12 +312,12 @@ short ExFirstNTcb::work()
 	      {
 	      case ex_queue::Q_OK_MMORE:
 		{
-		  if (pstate->requestedLastNRows_ == 0) // last 0
+		  if (requestedLastNRows_ == 0) // last 0
 		    {
 		      // ignore any upcoming rows.
 		      qchild_.up->removeHead();
 		    }
-		  else if (pstate->requestedLastNRows_ == 1) // last 1
+		  else if (requestedLastNRows_ == 1) // last 1
 		    {
 		      // We know that current entry is Q_OK_MMORE.
 		      // Need atleast 1 more entry than requested to process
@@ -338,7 +371,7 @@ short ExFirstNTcb::work()
 		{
 		  qchild_.down->cancelRequest();
 		  moveChildDataToParent();
-		  pstate->step_ = CANCEL_;
+		  step_ = CANCEL_;
 		}
 		break;
 
@@ -351,7 +384,7 @@ short ExFirstNTcb::work()
 		    {
 		      qparent_.down->removeHead();
 
-		      pstate->step_ = DONE_;
+		      step_ = DONE_;
 		    }
 		}
 		break;
@@ -370,7 +403,7 @@ short ExFirstNTcb::work()
 
 	case DONE_:
 	  {
-	    pstate->step_ = INITIAL_;
+	    step_ = INITIAL_;
 
 	    return WORK_CALL_AGAIN;
 	  }
@@ -398,7 +431,7 @@ short ExFirstNTcb::work()
 		{
 		  moveChildDataToParent();
 		  qparent_.down->removeHead();
-		  pstate->step_ = DONE_;
+		  step_ = DONE_;
 		}
 	      break;
 	      
@@ -418,9 +451,7 @@ short ExFirstNTcb::work()
 	} // switch
     } // while
 
-#pragma nowarn(203)   // warning elimination 
   return 0;
-#pragma warn(203)  // warning elimination 
 }
 #pragma warn(262)  // warning elimination 
 
@@ -435,7 +466,7 @@ short ExFirstNTcb::cancel()
 
   if (pentry_down->downState.request == ex_queue::GET_NOMORE)
     {
-      pstate->step_ = CANCEL_;
+      step_ = CANCEL_;
       qchild_.down->cancelRequest();
     }
   
@@ -445,18 +476,9 @@ short ExFirstNTcb::cancel()
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor and destructor for sort_private_state
 ///////////////////////////////////////////////////////////////////////////////
-
 ExFirstNPrivateState::ExFirstNPrivateState(const ExFirstNTcb *  tcb)
 {
-  // firstNRows_ contains 0 through N for first N request.
-  // It contains -2 through -(N+2) for last N request.
-  // -2 is last 0,  -(N+2) is last N.
-  requestedLastNRows_ = -(tcb->firstnTdb().firstNRows() + 2);
-  returnedLastNRows_ = 0;
-
-  step_ = ExFirstNTcb::INITIAL_;
 }
-
 ExFirstNPrivateState::~ExFirstNPrivateState()
 {
 };

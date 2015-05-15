@@ -592,6 +592,7 @@ short ExeUtilMetadataUpgrade::codeGen(Generator * generator)
 /////////////////////////////////////////////////////////
 short FirstN::codeGen(Generator * generator)
 {
+  ExpGenerator* expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
 
   ex_cri_desc * given_desc = generator->getCriDesc(Generator::DOWN);
@@ -603,25 +604,55 @@ short FirstN::codeGen(Generator * generator)
 
   ex_cri_desc * returned_desc = generator->getCriDesc(Generator::UP);
 
+  ex_cri_desc * work_cri_desc = NULL;
+  ex_expr * firstNRowsExpr = NULL;
+  if (firstNRowsParam_)
+    {
+      Int32 work_atp = 1; // temps
+      Int32 work_atp_index = 2;  // where the result row will be
+      work_cri_desc = new(space) ex_cri_desc(3, space);
+
+      // input param is typed as nullable. Make it non-nullable and unsigned.
+      NAType * newNAT = 
+        firstNRowsParam_->getValueId().getType().newCopy(generator->wHeap());
+      newNAT->setNullable(FALSE, FALSE);
+      
+      Cast * fnp = new(generator->wHeap()) Cast(firstNRowsParam_, newNAT);
+      fnp->bindNode(generator->getBindWA());
+      
+      ValueIdList vidL;
+      vidL.insert(fnp->getValueId());
+
+      UInt32 firstNValLen = 0;
+      expGen->generateContiguousMoveExpr(vidL,
+                                         0, // no convert nodes,
+                                         work_atp, work_atp_index,
+                                         ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+                                         firstNValLen, &firstNRowsExpr,
+                                         NULL, ExpTupleDesc::SHORT_FORMAT);
+    }
+  
   ComTdbFirstN * firstN_tdb
     = new(space) ComTdbFirstN(
-	 child_tdb,
-	 getFirstNRows(),
-	 given_desc,
-	 returned_desc,
-	 child_tdb->getMaxQueueSizeDown(),
-	 child_tdb->getMaxQueueSizeUp(),
-	 1, 4096);
-
+                              child_tdb,
+                              getFirstNRows(),
+                              firstNRowsExpr,
+                              work_cri_desc,
+                              given_desc,
+                              returned_desc,
+                              child_tdb->getMaxQueueSizeDown(),
+                              child_tdb->getMaxQueueSizeUp(),
+                              1, 4096);
+  
   generator->initTdbFields(firstN_tdb);
-
+  
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
-       addExplainInfo(firstN_tdb, childExplainTuple, 0, generator));
+                               addExplainInfo(firstN_tdb, childExplainTuple, 0, generator));
   }
-
+  
   generator->setGenObj(this, firstN_tdb);
-
+  
   return 0;
 }
 

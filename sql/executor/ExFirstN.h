@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -111,11 +111,28 @@ class ExFirstNTcb : public ex_tcb
   friend class   ExFirstNTdb;
   friend class   ExFirstNPrivateState;
 
+  enum FirstNStep {
+    INITIAL_,
+    PROCESS_FIRSTN_,
+    PROCESS_LASTN_,
+    DONE_,
+    CANCEL_,
+    ERROR_
+    };
+
   const ex_tcb * childTcb_;
 
   ex_queue_pair  qparent_;
   ex_queue_pair  qchild_;
-  
+
+  FirstNStep step_;
+
+  Int64 requestedLastNRows_;
+  Int64 returnedLastNRows_;
+
+  atp_struct     * workAtp_;
+  Lng32 firstNParamVal_;
+
   // Stub to cancel() subtask used by scheduler. 
   static ExWorkProcRetcode sCancel(ex_tcb *tcb) 
   { return ((ExFirstNTcb *) tcb)->cancel(); }
@@ -129,15 +146,6 @@ public:
   
   NA_EIDPROC ~ExFirstNTcb();  
   
-  enum FirstNStep {
-    INITIAL_,
-    PROCESS_FIRSTN_,
-    PROCESS_LASTN_,
-    DONE_,
-    CANCEL_,
-    ERROR_
-    };
-
   NA_EIDPROC short moveChildDataToParent();
 
   NA_EIDPROC void freeResources();  // free resources
@@ -162,10 +170,6 @@ class ExFirstNPrivateState : public ex_tcb_private_state
 {
   friend class ExFirstNTcb;
   
-  ExFirstNTcb::FirstNStep step_;
-
-  Int64 requestedLastNRows_;
-  Int64 returnedLastNRows_;
 public:
   NA_EIDPROC ExFirstNPrivateState(const ExFirstNTcb * tcb); //constructor
   NA_EIDPROC ex_tcb_private_state * allocate_new(const ex_tcb * tcb);

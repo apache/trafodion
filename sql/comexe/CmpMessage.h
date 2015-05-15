@@ -702,7 +702,8 @@ public:
   enum
   {
     CLEANUP_ESPS = 0x0001,
-    RESET_ATTRS  = 0x0002
+    RESET_ATTRS  = 0x0002,
+    CLEAR_CACHE = 0x0004
   };
 
   // Ipc related routines 
@@ -732,6 +733,10 @@ public:
   void setResetAttrs(NABoolean v)
     { ( v ? flags_ |= RESET_ATTRS : flags_ &= ~RESET_ATTRS);}
   NABoolean resetAttrs() { return (flags_ & RESET_ATTRS) != 0; };
+ 
+  void setClearCache(NABoolean v)
+    { ( v ? flags_ |= CLEAR_CACHE : flags_ &= ~CLEAR_CACHE);}
+  NABoolean clearCache() { return (flags_ & CLEAR_CACHE) != 0; };
   
 private:
   CmpMessageEndSession& operator=(const CmpMessageEndSession&);

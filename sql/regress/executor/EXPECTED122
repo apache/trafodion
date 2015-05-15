@@ -5,6 +5,10 @@
 >>
 >>obey TEST122(test_drop_tab);
 >>
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
+>>
 >>create table t122t1 ( a int not null );
 
 --- SQL operation complete.
@@ -61,7 +65,7 @@ A
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Mon Dec  8 11:31:42 2014
+-- Definition current  Wed Apr 22 14:46:39 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -113,7 +117,7 @@ A
 >>execute s3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Mon Dec  8 11:31:42 2014
+-- Definition current  Wed Apr 22 14:46:39 2015
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -172,7 +176,7 @@ iv
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Mon Dec  8 11:31:58 2014
+-- Definition current  Wed Apr 22 14:46:59 2015
 
   (
     A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -222,7 +226,7 @@ iv
 
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Mon Dec  8 11:31:59 2014
+-- Definition current  Wed Apr 22 14:47:01 2015
 
   (
     A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -270,6 +274,10 @@ iv
 >>
 >>
 >>obey TEST122(test_alter_tab);
+>>
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
 >>
 >>create table t122t3 (c1 int not null primary key, c2 int);
 
@@ -440,9 +448,7 @@ C1           C2
 --- 7 row(s) selected.
 >>
 >>
->>sh sqlci -i "TEST122(alter_tbl_add)"
-+>
-+>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+>>sh sqlci -i "TEST122(alter_tbl_add)";
 >>-- add columns, constraints, and indexes
 >>alter table t122t3_col add column c3 int default 0;
 
@@ -467,6 +473,10 @@ C1           C2
 
 End of MXCI Session
 
+>>
+>>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
 >>
 >>-- see new column in t122t3_col;
 >>select * from t122t3_col;
@@ -573,9 +583,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
->>sh sqlci -i "TEST122(alter_tbl_drop)"
-+>
-+>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+>>sh sqlci -i "TEST122(alter_tbl_drop)";
 >>-- drop columns, constraints, and indexes
 >>alter table t122t3_col drop column c3;
 
@@ -600,6 +608,14 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 End of MXCI Session
 
+>>
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
+>>
+>>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
 >>
 >>-- see only 2 columns in t122t3_col;
 >>select * from t122t3_col;
@@ -690,6 +706,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>
 >>
 >>obey TEST122(test_drop_view);
+>>
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
 >>
 >>-- makes sure referenced tables are invalidated
 >>-- structure:
@@ -1185,6 +1205,10 @@ E_C1         E_C2
 >>-- makes sure compiler process(es) caches are cleaned up
 >>-- between drops in the same session
 >>
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
+>>
 >>create table t122t6
 +>(
 +>  Int_1 INT SIGNED not null not droppable,
@@ -1253,7 +1277,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 2    .    3    root                                                  1.00E+000
 1    .    2    sort_scalar_aggr                                      1.00E+000
-.    .    1    trafodion_index_scan            T122T6_IDX1                1.00E+002
+.    .    1    trafodion_index_scan            T122T6_IDX1           1.00E+002
 
 --- SQL operation complete.
 >>execute XX;
@@ -1276,7 +1300,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 3    .    4    root                                                  1.00E+000
 2    .    3    shortcut_scalar_aggr                                  1.00E+000
 1    .    2    firstn                                                1.00E+000
-.    .    1    trafodion_index_scan            T122T6_IDX1                9.89E+001
+.    .    1    trafodion_index_scan            T122T6_IDX1           9.89E+001
 
 --- SQL operation complete.
 >>execute XX;

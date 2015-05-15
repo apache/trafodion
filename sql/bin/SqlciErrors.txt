@@ -61,7 +61,7 @@
 1059 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Request failed.  Dependent constraint $0~ConstraintName exists.
 1060 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed. View $0~string0 is invalid. 
 1061 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Dropping metadata catalog $0~CatalogName is not allowed.
-1062 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Dropping metadata schema $0~SchemaName is not allowed.
+1062 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Dropping metadata or reserved schema $0~SchemaName is not allowed.
 1063 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Dropping metadata index $0~TableName is not allowed.
 1064 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Dropping metadata view $0~TableName is not allowed.
 1065 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating constraint $0~ConstraintName in metadata schema is not allowed.

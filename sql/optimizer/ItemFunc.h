@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -5346,6 +5346,12 @@ public:
 
   inline const NATable  *getNATable()           const { return naTable_; }
   void setNATable (NATable *naTable) {naTable_ = naTable;}
+
+  virtual NABoolean isCacheableExpr(CacheWA& cwa)
+    { return TRUE; }
+
+  // append an ascii-version of ItemExpr into cachewa.qryText_
+  virtual void generateCacheKey(CacheWA& cwa) const;
 
  private:
   CorrName seqCorrName_;

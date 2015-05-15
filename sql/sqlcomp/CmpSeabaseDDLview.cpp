@@ -780,7 +780,7 @@ void CmpSeabaseDDL::createSeabaseView(
   ComTdbVirtTableColumnInfo * colInfoArray = 
     new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
 
-  if (buildColInfoArray(&colDefArray, colInfoArray, FALSE, 0, FALSE))
+  if (buildColInfoArray(COM_VIEW_OBJECT, &colDefArray, colInfoArray, FALSE, 0, FALSE))
     {
       deallocEHI(ehi); 
       processReturn();

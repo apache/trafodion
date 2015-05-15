@@ -2593,11 +2593,27 @@ short CmpDescribeSeabaseTable (
           privMDLoc += std::string(".\"") +
              std::string(SEABASE_PRIVMGR_SCHEMA) +
              std::string("\"");
-          PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+          PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags(), 
+                                        PrivMgr::PRIV_INITIALIZED);
 
+          CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+
+          // we should switch to another CI only if we are in an embedded CI
+          if (cmpSBD.switchCompiler())
+            {
+              // failed to switch/create compiler context.
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+              
+              return -1;
+            }
+ 
           PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
                                                            ComUser::getCurrentUser(),
                                                            privs);
+
+          // switch back the original commpiler, ignore error for now
+          cmpSBD.switchBackCompiler();
+
           if (retcode == STATUS_ERROR)
             {
               *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
@@ -2631,7 +2647,8 @@ short CmpDescribeSeabaseTable (
         privMDLoc += std::string(".\"") +    
              std::string(SEABASE_PRIVMGR_SCHEMA) +    
              std::string("\"");
-        PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+        PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags(),
+                                      PrivMgr::PRIV_INITIALIZED);
         std::string objectName(tableName);
         std::string privilegeText;
         int64_t objectUID = (int64_t)naTable->objectUid().get_value();
@@ -3181,7 +3198,8 @@ short CmpDescribeSeabaseTable (
       privMDLoc += std::string(".\"") + 
                    std::string(SEABASE_PRIVMGR_SCHEMA) + 
                    std::string("\"");
-      PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+      PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags(),
+                                    PrivMgr::PRIV_INITIALIZED);
       std::string objectName(tableName);
       std::string privilegeText;
       if (privInterface.describePrivileges(objectUID, objectName, naTable, privilegeText))

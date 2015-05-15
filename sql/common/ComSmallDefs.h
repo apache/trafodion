@@ -168,6 +168,8 @@ typedef NABoolean               ComBoolean;
 #define REPOS_METRIC_SESSION_TABLE "METRIC_SESSION_TABLE"
 #define REPOS_METRIC_TEXT_TABLE  "METRIC_TEXT_TABLE"
 
+#define SEABASE_REGRESS_DEFAULT_SCHEMA "SCH"
+
 // length of explain_plan column in metric_query_table.
 // explain_plan greater than this length are chunked and store in multiple
 // rows in metric_text_table

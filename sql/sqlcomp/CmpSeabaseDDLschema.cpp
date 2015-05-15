@@ -439,7 +439,8 @@ ComObjectType objectType;
  
 ComObjectName objName(catName,schName,NAString("dummy"),COM_TABLE_NAME,TRUE);
 
-   if (isSeabaseReservedSchema(objName) &&
+   if ((isSeabaseReservedSchema(objName) ||
+        (schName == SEABASE_SYSTEM_SCHEMA)) &&
        !Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_USER_CANNOT_DROP_SMD_SCHEMA)
