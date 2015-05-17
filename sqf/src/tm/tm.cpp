@@ -386,11 +386,13 @@ void tm_process_req_registerregion(CTmTxMessage * pp_msg)
 {
     TM_Txid_Internal * lp_transid = (TM_Txid_Internal *)
                                     &pp_msg->request()->u.iv_register_region.iv_transid;
+    TM_Transseq_Type * lp_startid = (TM_Transseq_Type *)
+                                    &pp_msg->request()->u.iv_register_region.iv_startid;
 
-    TMTrace(2, ("tm_process_req_registerregion ENTRY for Txn ID (%d,%d), msgid %d\n", 
-                lp_transid->iv_node, lp_transid->iv_seq_num, pp_msg->msgid()));
-    TMTrace(3, ("tm_process_req_registerregion for Txn ID (%d,%d) with region %s\n", 
-                lp_transid->iv_node, lp_transid->iv_seq_num,
+    TMTrace(2, ("tm_process_req_registerregion ENTRY for Txn ID (%d,%d), startid %ld, msgid %d\n",
+                lp_transid->iv_node, lp_transid->iv_seq_num, (long) lp_startid, pp_msg->msgid()));
+    TMTrace(3, ("tm_process_req_registerregion for Txn ID (%d,%d), startid %ld, with region %s\n",
+                lp_transid->iv_node, lp_transid->iv_seq_num, (long) lp_startid,
                 pp_msg->request()->u.iv_register_region.ia_regioninfo2)); 
 
     TM_TX_Info *lp_tx = (TM_TX_Info*) gv_tm_info.get_tx(lp_transid);
@@ -3058,7 +3060,7 @@ void tm_process_msg(BMS_SRE *pp_sre)
     if( la_recv_buffer_ddl!=NULL)
        lp_msg = new CTmTxMessage((Tm_Req_Msg_Type *) la_recv_buffer_ddl, pp_sre->sre_msgId);
     else 
-       lp_msg = new CTmTxMessage((Tm_Req_Msg_Type *) &la_recv_buffer, pp_sre->sre_msgId);
+    lp_msg = new CTmTxMessage((Tm_Req_Msg_Type *) &la_recv_buffer, pp_sre->sre_msgId);
 
     if (lp_msg_hdr->dialect_type == DIALECT_TM_DP2_SQ)
     {

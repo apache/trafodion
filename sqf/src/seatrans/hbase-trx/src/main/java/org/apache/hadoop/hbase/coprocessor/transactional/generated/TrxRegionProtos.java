@@ -16,7 +16,6 @@
 //
 // @@@ END COPYRIGHT @@@
 
-
 package org.apache.hadoop.hbase.coprocessor.transactional.generated;
 
 public final class TrxRegionProtos {

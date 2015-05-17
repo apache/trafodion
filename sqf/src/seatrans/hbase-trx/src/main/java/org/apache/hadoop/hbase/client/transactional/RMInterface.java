@@ -141,6 +141,8 @@ public class RMInterface {
 
         // if we don't have a TransactionState for this ID we need to register it with the TM
         if (ts == null) {
+           if (LOG.isTraceEnabled()) LOG.trace("registerTransaction transactionID (" + transactionID +
+                    ") not found in mapTransactionStates of size: " + mapTransactionStates.size());
            ts = new TransactionState(transactionID);
 
            long startIdVal = -1;
@@ -205,7 +207,7 @@ public class RMInterface {
             throw new IOException("registerTransaction failed with error.");
         }
 
-        if (LOG.isTraceEnabled()) LOG.trace("Exit registerTransaction, transaction ID: " + transactionID);
+        if (LOG.isTraceEnabled()) LOG.trace("Exit registerTransaction, transaction ID: " + transactionID + ", startId: " + ts.getStartId());
         return ts;
     }
 

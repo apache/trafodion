@@ -337,13 +337,16 @@ CoprocessorService, Coprocessor {
       RpcCallback<SsccBeginTransactionResponse> done) {
     SsccBeginTransactionResponse response = SsccBeginTransactionResponse.getDefaultInstance();
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: beginTransaction - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString());
+    long transId = request.getTransactionId();
+    long startId = request.getStartId();
+
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: beginTransaction - id " + transId + ", regionName " + regionInfo.getRegionNameAsString());
 
     Throwable t = null;
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
     WrongRegionException wre = null;
     try {
-      beginTransaction(request.getTransactionId());
+      beginTransaction(transId, startId);
     } catch (Throwable e) {
       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:beginTransaction threw exception after internal begin");
       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
@@ -377,9 +380,9 @@ CoprocessorService, Coprocessor {
    * @throws IOException
    */
 
-  public void beginTransaction(final long transactionId) throws IOException {
+  public void beginTransaction(final long transactionId, final long startId) throws IOException {
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  beginTransaction -- ENTRY txId: " + transactionId);
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  beginTransaction -- ENTRY txId: " + transactionId + " startId: " + startId);
     checkClosing(transactionId);
 
     // TBD until integration with recovery
@@ -406,27 +409,13 @@ CoprocessorService, Coprocessor {
     synchronized (transactionsById) {
       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  beginTransaction -- creating new SsccTransactionState without coprocessorHost txId: " + transactionId);
 
-//      IdTmId seqId;
-//      try {
-//         seqId = new IdTmId();
-//         if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor:  beginTransaction:getting new IdTM sequence ");
-//         idServer.id(ID_TM_SERVER_TIMEOUT, seqId);
-//         if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor:  beginTransaction: IdTM sequence is " + seqId.val);
-//      } catch (IdTmException exc) {
-//         LOG.error("SsccRegionEndpoint coprocessor:  beginTransaction: IdTm threw exception 1 " + exc);
-//         throw new IOException("SsccRegionEndpoint coprocessor:  beginTransaction: IdTm threw exception 1 " + exc);
-//      }
-//      catch (Exception e2) {
-//         LOG.error("SsccRegionEndpoint coprocessor:  beginTransaction: IdTm threw exception e2 " + e2);
-//         throw new IOException("SsccRegionEndpoint coprocessor:  beginTransaction: IdTm threw exception e2 " + e2);
-//      }
       state = new SsccTransactionState(transactionId,
                                 nextLogSequenceId.getAndIncrement(),
                                 nextLogSequenceId,
                                 m_Region.getRegionInfo(),
                                 m_Region.getTableDesc(), tHLog, configuredEarlyLogging,
-//                                seqId.val);
-                                nextSsccSequenceId.getAndIncrement());
+                                startId);
+//                                nextSsccSequenceId.getAndIncrement());
 
 
       state.setStartSequenceNumber(state.getStartId());
@@ -462,10 +451,10 @@ CoprocessorService, Coprocessor {
     * @return true: begin; false: not necessary to begin
     * @throws IOException
    */
-  private SsccTransactionState beginTransIfNotExist(final long transactionId) throws IOException{
+  private SsccTransactionState beginTransIfNotExist(final long transactionId, final long startId) throws IOException{
 
     if (LOG.isTraceEnabled()) LOG.trace("Enter SsccRegionEndpoint coprocessor: beginTransIfNotExist, txid: "
-              + transactionId + " transactionsById size: "
+              + transactionId + " startId: " + startId + " transactionsById size: "
               + transactionsById.size());
 
     String key = getTransactionalUniqueId(transactionId);
@@ -473,7 +462,7 @@ CoprocessorService, Coprocessor {
       SsccTransactionState state = transactionsById.get(key);
       if (state == null) {
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Begin transaction in beginTransIfNotExist beginning the transaction internally as state was null");
-        this.beginTransaction(transactionId);
+        this.beginTransaction(transactionId, startId);
         state =  transactionsById.get(key);
       }
       return state;
@@ -527,8 +516,10 @@ CoprocessorService, Coprocessor {
                      SsccCommitRequest request,
       RpcCallback<SsccCommitResponse> done) {
     SsccCommitResponse response = SsccCommitResponse.getDefaultInstance();
+    long transId = request.getTransactionId();
+    long commitId = request.getCommitId();
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commit - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString());
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commit - id " + transId + ", regionName " + regionInfo.getRegionNameAsString());
 
     Throwable t = null;
     WrongRegionException wre = null;
@@ -536,7 +527,7 @@ CoprocessorService, Coprocessor {
     {
      // Process local memory
       try {
-        commit(request.getTransactionId(), request.getIgnoreUnknownTransactionException());
+        commit(transId, commitId, request.getIgnoreUnknownTransactionException());
       } catch (Throwable e) {
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commit threw exception after internal commit");
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
@@ -574,12 +565,13 @@ CoprocessorService, Coprocessor {
      boolean reply = false;
      Throwable t = null;
     WrongRegionException wre = null;
+    long transId = request.getTransactionId();
 
      {
        // Process local memory
        try {
-         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commitIfPossible - id " + request.getTransactionId() + ", regionName, " + regionInfo.getRegionNameAsString() + "calling internal commitIfPossible");
-         reply = commitIfPossible(request.getTransactionId());
+         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commitIfPossible - id " + transId + ", regionName, " + regionInfo.getRegionNameAsString() + "calling internal commitIfPossible");
+         reply = commitIfPossible(transId);
        } catch (Throwable e) {
          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commitIfPossible threw exception after internal commitIfPossible");
           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
@@ -615,8 +607,10 @@ CoprocessorService, Coprocessor {
                             RpcCallback<SsccCommitRequestResponse> done) {
 
     SsccCommitRequestResponse response = SsccCommitRequestResponse.getDefaultInstance();
+    long transId = request.getTransactionId();
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commitRequest - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString());
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commitRequest - id " + transId +
+                      ", regionName " + regionInfo.getRegionNameAsString());
 
     int status = 0;
     IOException ioe = null;
@@ -627,12 +621,12 @@ CoprocessorService, Coprocessor {
     {
       // Process local memory
       try {
-        status = commitRequest(request.getTransactionId());
+        status = commitRequest(transId);
       } catch (UnknownTransactionException u) {
-        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commitRequest threw exception after internal commit: " + u.toString());
+        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commitRequest threw exception after internal commit" + u.toString());
         ute = u;
       } catch (IOException e) {
-        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commitRequest threw exception after internal commit: " + e.toString());
+        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:commitRequest threw exception after internal commit" + e.toString());
         ioe = e;
       }
     }
@@ -702,15 +696,8 @@ CoprocessorService, Coprocessor {
        //  This commitId must be comparable with the startId
        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commit : try to update the status and version ");
 
-       long commitId = nextSsccSequenceId.getAndIncrement();
-//       IdTmId commitId;
-//       try {
-//          commitId = new IdTmId();
-//          idServer.id(ID_TM_SERVER_TIMEOUT, commitId);
-//       } catch (IdTmException exc) {
-//          LOG.error("SsccRegionEndpoint coprocessor:  commit: IdTm threw exception 1 " + exc);
-//          throw new IOException("SsccRegionEndpoint coprocessor:  commit: IdTm threw exception 1 " + exc);
-//       }
+//       long commitId = nextSsccSequenceId.getAndIncrement();
+       long commitId = state.getCommitId();
 
        //update the putlist
        List<byte[]> putToDoList = state.getPutRows();
@@ -758,7 +745,7 @@ CoprocessorService, Coprocessor {
 
          //set the commitId of the transaction
 //         state.setCommitId(commitId.val);
-         state.setCommitId(commitId);
+//         state.setCommitId(commitId);
        }
        catch (Exception e) //something wrong
        {
@@ -826,16 +813,16 @@ CoprocessorService, Coprocessor {
     }
     retireTransaction(state);
   }
-  
+
  /**
-   * Commits the transaction                        
+   * Commits the transaction
    * @param long TransactionId
    * @param boolean ignoreUnknownTransactionException
    * @throws IOException 
    */
-  public void commit(final long transactionId, final boolean ignoreUnknownTransactionException) throws IOException {
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commit(txId) -- ENTRY txId: " + transactionId +
-              " ignoreUnknownTransactionException: " + ignoreUnknownTransactionException);
+  public void commit(final long transactionId, final long commitId, final boolean ignoreUnknownTransactionException) throws IOException {
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commit -- ENTRY txId: " + transactionId +
+              " commitId: " + commitId + " ignoreUnknownTransactionException: " + ignoreUnknownTransactionException);
     SsccTransactionState state=null;
     try {
       state = getTransactionState(transactionId);
@@ -858,8 +845,9 @@ CoprocessorService, Coprocessor {
       throw new IOException("Asked to commit a non-pending transaction");
     }
 */
+   state.setCommitId(commitId);
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commit(txId) -- EXIT txId: " + transactionId);
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commit -- EXIT " + state);
     commit(state);
   } 
 
@@ -874,8 +862,8 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: commitRequest -- ENTRY txId: " + transactionId);
     checkClosing(transactionId);
     SsccTransactionState state=null;
-	try{
-    state = getTransactionState(transactionId);
+    try{
+       state = getTransactionState(transactionId);
     } catch (UnknownTransactionException e) {
         return COMMIT_UNSUCCESSFUL;
     }
@@ -895,8 +883,8 @@ CoprocessorService, Coprocessor {
    * @param long TransactionId
    * @throws IOException
    */
-  public void commit(final long transactionId) throws IOException {
-     commit(transactionId, false /* IgnoreUnknownTransactionException */);
+  public void commit(final long transactionId, final long commitId) throws IOException {
+     commit(transactionId, commitId, false /* IgnoreUnknownTransactionException */);
   }
 
   @Override
@@ -904,8 +892,9 @@ CoprocessorService, Coprocessor {
                                 SsccAbortTransactionRequest request,
       RpcCallback<SsccAbortTransactionResponse> done) {
     SsccAbortTransactionResponse response = SsccAbortTransactionResponse.getDefaultInstance();
+    long transId = request.getTransactionId();
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: abortTransaction - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString());
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: abortTransaction - id " + transId + ", regionName " + regionInfo.getRegionNameAsString());
 
     IOException ioe = null;
     UnknownTransactionException ute = null;
@@ -915,7 +904,7 @@ CoprocessorService, Coprocessor {
     {
       // Process in local memory
       try {
-        abortTransaction(request.getTransactionId());
+        abortTransaction(transId);
       } catch (UnknownTransactionException u) {
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:abort threw UnknownTransactionException after internal abort");
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + u.getMessage() + "" + stackTraceToString(u));
@@ -1110,9 +1099,24 @@ CoprocessorService, Coprocessor {
 
     if (status == COMMIT_OK) {
 
+       IdTmId seqId;
+       try {
+          seqId = new IdTmId();
+          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  commitIfPossible:getting new IdTM sequence ");
+          idServer.id(ID_TM_SERVER_TIMEOUT, seqId);
+          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  commitIfPossible: IdTM sequence is " + seqId.val);
+       } catch (IdTmException exc) {
+          LOG.error("SsccRegionEndpoint coprocessor:  commitIfPossible: IdTm threw exception 1 " + exc);
+          throw new IOException("SsccRegionEndpoint coprocessor:  commitIfPossible: IdTm threw exception 1 " + exc);
+       }
+       catch (Exception e2) {
+          LOG.error("SsccRegionEndpoint coprocessor:  beginTransaction: IdTm threw exception e2 " + e2);
+          throw new IOException("SsccRegionEndpoint coprocessor:  beginTransaction: IdTm threw exception e2 " + e2);
+       }
+
        // Process local memory
        try {
-         commit(transactionId);
+         commit(transactionId, seqId.val);
          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  commitIfPossible -- ENTRY txId: " + transactionId + " COMMIT_OK");
          return true;
        } catch (Throwable e) {
@@ -1204,6 +1208,8 @@ CoprocessorService, Coprocessor {
     List<Result> results = new ArrayList<Result>();
     List<Cell> validResults = new ArrayList<Cell>();
     org.apache.hadoop.hbase.client.Result result = null;
+    long transId = request.getTransactionId();
+    long startId = request.getStartId();
 
     long scannerId = request.getScannerId();
     int numberOfRows = request.getNumberOfRows();
@@ -1222,8 +1228,7 @@ CoprocessorService, Coprocessor {
         scanner = getScanner(scannerId, nextCallSeq);
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: performScan - scanner is: " + scanner == null ? "NULL" : "NOT NULL" );
 
-        long transactionId = request.getTransactionId();
-        SsccTransactionState state = this.beginTransIfNotExist(transactionId); 
+        SsccTransactionState state = this.beginTransIfNotExist(transId, startId);
         Set<byte[]>visitCols = new HashSet<byte[]>();
 
         if (scanner != null)
@@ -1273,7 +1278,7 @@ CoprocessorService, Coprocessor {
                 if(firstCell == false) {
 
                     //long thisTs = c.getTimestamp();
-                    if (state.handleResult(c,statusResult.listCells(),verResult.listCells(),colResult.listCells(),transactionId) == true)
+                    if (state.handleResult(c,statusResult.listCells(),verResult.listCells(),colResult.listCells(),transId) == true)
                     {
                         byte[] keyt=CellUtil.cloneQualifier(c);
                         String keys = new String(keyt);
@@ -1343,7 +1348,7 @@ CoprocessorService, Coprocessor {
 
    rsh.nextCallSeq = nextCallSeq;
 
-   if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: performScan - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() +
+   if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: performScan - id " + transId + ", regionName " + regionInfo.getRegionNameAsString() +
 ", scannerId " + scannerId + ", nextCallSeq " + nextCallSeq + ", rsh.nextCallSeq " + rsh.nextCallSeq);
     org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanResponse.Builder performResponseBuilder = SsccPerformScanResponse.newBuilder();
     performResponseBuilder.setHasMore(hasMore);
@@ -1410,17 +1415,18 @@ CoprocessorService, Coprocessor {
     Throwable t = null;
     WrongRegionException wre = null;
     boolean exceptionThrown = false;
-    NullPointerException npe = null;        
+    NullPointerException npe = null;
     Exception ge = null;
-    IOException ioe = null;                 
-    LeaseStillHeldException lse = null;                 
+    IOException ioe = null;
+    LeaseStillHeldException lse = null;
     Scan scan = null;
     long scannerId = 0L;
     boolean isLoadingCfsOnDemandSet = false;
     long transId = request.getTransactionId();
+    long startId = request.getStartId();
 
     {
-    
+
       try {
         scan = ProtobufUtil.toScan(request.getScan());
         if (scan == null)
@@ -1459,15 +1465,15 @@ CoprocessorService, Coprocessor {
     if (!exceptionThrown) {
       try {
           scan.setMaxVersions();
-        scanner = getScanner(transId, scan);
+        scanner = getScanner(transId, startId, scan);
         if (scanner != null) {
-          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  openScanner called getScanner, scanner is " + scanner + ", transid " + request.getTransactionId());
+          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  openScanner called getScanner, scanner is " + scanner + ", transid " + transId);
           // Add the scanner to the map
           scannerId = addScanner(transId,scanner, this.m_Region);
-          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  openScanner called addScanner, scannerId is " + scannerId + ", transid " + request.getTransactionId());
+          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  openScanner called addScanner, scannerId is " + scannerId + ", transid " + transId);
         }
         else {
-          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  getScanner returned null, scannerId is " + scannerId + ", transid " + request.getTransactionId());
+          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  getScanner returned null, scannerId is " + scannerId + ", transid " + transId);
         }
       } catch (LeaseStillHeldException llse) {
 
@@ -1480,7 +1486,7 @@ CoprocessorService, Coprocessor {
       }
     }
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: openScanner - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString());
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: openScanner - transid " + transId + ", regionName " + regionInfo.getRegionNameAsString());
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerResponse.Builder openResponseBuilder = SsccOpenScannerResponse.newBuilder();
 
@@ -1516,18 +1522,18 @@ CoprocessorService, Coprocessor {
   }
 
   /**
-   * Obtain a RegionScanner                        
+   * Obtain a RegionScanner
    * @param long transactionId
-   * @param Scan scan             
+   * @param Scan scan
    * @return RegionScanner
    * @throws IOException 
    */
-  public RegionScanner getScanner(final long transactionId, final Scan scan)
+  public RegionScanner getScanner(final long transactionId, final long startId, final Scan scan)
                         throws IOException { 
 
     if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  RegionScanner getScanner -- ENTRY txId: " + transactionId );
 
-    SsccTransactionState state = this.beginTransIfNotExist(transactionId);
+    SsccTransactionState state = this.beginTransIfNotExist(transactionId, startId);
 
     //state.addScan(scan);
 
@@ -1554,10 +1560,10 @@ CoprocessorService, Coprocessor {
     Throwable t = null;
     WrongRegionException wre = null;
     Exception ce = null;
-
+    long transId = request.getTransactionId();
     long scannerId = request.getScannerId();
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: closeScanner - id " + request.getTransactionId() + ", regionName "
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: closeScanner - transId " + transId+ ", regionName "
                                         + regionInfo.getRegionNameAsString() + ", scannerId " + scannerId);
 
       try {
@@ -1643,14 +1649,16 @@ CoprocessorService, Coprocessor {
       byte[] getrow = get.getRow();
       String rowKey = Bytes.toString(row);
       String getRowKey = Bytes.toString(getrow);
+      long transId = request.getTransactionId();
+      long startId = request.getStartId();
 
-      if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: get - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", row = " + rowKey + ", getRowKey = " + getRowKey);
+      if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: get - id " + transId + ", regionName " + regionInfo.getRegionNameAsString() + ", row = " + rowKey + ", getRowKey = " + getRowKey);
 
       try {
 
-         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: get - id Calling getScanner id/scan" + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", row = " + rowKey + ", getRowKey = " + getRowKey);
+         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: get - id Calling getScanner id/scan " + transId + ", regionName " + regionInfo.getRegionNameAsString() + ", row = " + rowKey + ", getRowKey = " + getRowKey);
 
-         result2 = get(request.getTransactionId(),get);
+         result2 = get(transId, startId, get);
 
          if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: get - id No exception, result2 isEmpty is " 
 		   + result2.isEmpty() 
@@ -1724,13 +1732,12 @@ CoprocessorService, Coprocessor {
    * @return Result 
    * @throws IOException 
    */
-  public Result get(final long transactionId, final Get get)
+  public Result get(final long transactionId, final long startId, final Get get)
                           throws IOException {
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  get --  ENTRY txId: " + transactionId );
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  get --  ENTRY txId: " + transactionId + " startId: " + startId );
     //get thet state object
-    SsccTransactionState state = this.beginTransIfNotExist(transactionId); 
+    SsccTransactionState state = this.beginTransIfNotExist(transactionId, startId);
 
-    long startId = state.getStartId();
     Scan scan = new Scan(get);
 
     List<Cell> results = new ArrayList<Cell>();
@@ -1772,7 +1779,7 @@ CoprocessorService, Coprocessor {
       List<Cell> eachVersion = new ArrayList<Cell>();
       Set<byte[]>visitCols = new HashSet<byte[]>();
 
-      List<Cell> sl = statusResult.listCells();
+      List<Cell>  sl = statusResult.listCells();
       List<Cell> vl = verResult.listCells();
       List<Cell> cl = colResult.listCells();
 
@@ -1812,7 +1819,7 @@ CoprocessorService, Coprocessor {
   }
 
 /***********************************************************************************
-*****************  ALL code to support stateful PUT   *****************************
+*****************  ALL code to support stateless/stateful PUT   ********************
 ***********************************************************************************/
 
   @Override
@@ -1832,6 +1839,8 @@ CoprocessorService, Coprocessor {
     Throwable t = null;
     WrongRegionException wre = null;
     int status = 0;
+    long transId = request.getTransactionId();
+    long startId = request.getStartId();
     try {
        put = ProtobufUtil.toPut(proto);
     } catch (Throwable e) {
@@ -1846,7 +1855,7 @@ CoprocessorService, Coprocessor {
 
        // Process in local memory
        try {
-          status = put(request.getTransactionId(), put, stateless);
+          status = put(transId, startId, put, stateless);
           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:put returned status: " + status);
        } catch (Throwable e) {
           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:put threw exception after internal put");
@@ -1854,10 +1863,10 @@ CoprocessorService, Coprocessor {
           t = e;
        }
 
-       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: put - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: put - id " + transId + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
     }
     else  {
-       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: put - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + "- no valid PUT type or does not contain a row");
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: put - id " + transId + ", regionName " + regionInfo.getRegionNameAsString() + "- no valid PUT type or does not contain a row");
     }
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalResponse.Builder putTransactionalResponseBuilder = SsccPutTransactionalResponse.newBuilder();
@@ -1892,11 +1901,11 @@ CoprocessorService, Coprocessor {
    * @throws IOException
    */
 
-  public int put(final long transactionId, final Put put, boolean stateless)
+  public int put(final long transactionId, final long startId, final Put put, boolean stateless)
     throws IOException {
-    if (LOG.isTraceEnabled()) LOG.trace("Enter SsccRegionEndpoint coprocessor: put, txid " + transactionId + "stateless: " + stateless);
-    SsccTransactionState state = this.beginTransIfNotExist(transactionId);
-    long startId =  state.getStartId(); //use local transaction ID as timestamp for this new cell
+    if (LOG.isTraceEnabled()) LOG.trace("Enter SsccRegionEndpoint coprocessor: put, txid " + transactionId +
+                  ", startId " + startId +", stateless: " + stateless);
+    SsccTransactionState state = this.beginTransIfNotExist(transactionId, startId);
 
     // check whether has del before
     state.removeDelBeforePut(put, stateless);
@@ -2003,6 +2012,8 @@ CoprocessorService, Coprocessor {
     Delete delete = null;
     Throwable t = null;
     WrongRegionException wre = null;
+    long transId = request.getTransactionId();
+    long startId = request.getStartId();
 
     if (wre == null && type == MutationType.DELETE && proto.hasRow())
       row = proto.getRow().toByteArray();
@@ -2017,14 +2028,14 @@ CoprocessorService, Coprocessor {
     // Process in local memory
     int status = 0;
     try {
-      status = delete(request.getTransactionId(), delete);
+      status = delete(transId, startId, delete);
     } catch (Throwable e) {
       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:delete threw exception after internal delete");
       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
       t = e;
     }
 
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: delete - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: delete - id " + transId + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
 
      org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalResponse.Builder deleteTransactionalResponseBuilder = SsccDeleteTransactionalResponse.newBuilder();
 
@@ -2055,12 +2066,11 @@ CoprocessorService, Coprocessor {
    * @return int
    * @throws IOException
    */
-  public int delete(final long transactionId, final Delete delete)
+  public int delete(final long transactionId, final long startId, final Delete delete)
     throws IOException {
-    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: delete -- ENTRY txId: " + transactionId);
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: delete -- ENTRY txId: " + transactionId + ", startId:" + startId);
     checkClosing(transactionId);
-    SsccTransactionState state = this.beginTransIfNotExist(transactionId);
-    long startId = state.getStartId();
+    SsccTransactionState state = this.beginTransIfNotExist(transactionId, startId);
 
     //clone the delete
     //just to change the timestamp. But I hope the overhead is not too big a concern here
@@ -2258,6 +2268,8 @@ CoprocessorService, Coprocessor {
     WrongRegionException wre = null;
     int status = 0;
     boolean result = false;
+    long transId = request.getTransactionId();
+    long startId = request.getStartId();
 
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
@@ -2297,7 +2309,7 @@ CoprocessorService, Coprocessor {
             value = request.getValue();
 
           try {
-           result = checkAndDelete(request.getTransactionId(),
+           result = checkAndDelete(transId, startId,
                request.getRow().toByteArray(),
                request.getFamily().toByteArray(),
                request.getQualifier().toByteArray(),
@@ -2358,6 +2370,8 @@ CoprocessorService, Coprocessor {
     WrongRegionException wre = null;
     Throwable t = null;
     boolean result = false;
+    long transId = request.getTransactionId();
+    long startId = request.getStartId();
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutResponse.Builder checkAndPutResponseBuilder = SsccCheckAndPutResponse.newBuilder();
 
@@ -2397,7 +2411,9 @@ CoprocessorService, Coprocessor {
             value = request.getValue();
 
           try {
-           result = checkAndPut(request.getTransactionId(),
+           if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: attempting checkAndPut for trans: " + transId +
+                                 " startid: " + startId);
+           result = checkAndPut(transId, startId,
                request.getRow().toByteArray(),
                request.getFamily().toByteArray(),
                request.getQualifier().toByteArray(),
@@ -2452,27 +2468,27 @@ CoprocessorService, Coprocessor {
    * @return boolean
    * @throws IOException
    */
-  public boolean checkAndDelete(long transactionId,
+  public boolean checkAndDelete(long transactionId, long startId,
                                 byte[] row, byte[] family,
                                 byte[] qualifier, byte[] value, Delete delete)
     throws IOException {
 
     if (LOG.isTraceEnabled()) LOG.trace("Enter SsccRegionEndpoint coprocessor: checkAndDelete, txid: " + transactionId);
-    SsccTransactionState state = this.beginTransIfNotExist(transactionId);
+    SsccTransactionState state = this.beginTransIfNotExist(transactionId, startId);
     boolean result = false;
     byte[] rsValue = null;
 
     Get get = new Get(row);
     get.addColumn(family, qualifier);
 
-    Result rs = this.get(transactionId, get);
+    Result rs = this.get(transactionId, startId, get);
 
     boolean valueIsNull = value == null ||
                           value.length == 0;
     int lv_return = 0;
 
     if (rs.isEmpty() && valueIsNull) {
-      lv_return = this.delete(transactionId, delete);
+      lv_return = this.delete(transactionId, startId, delete);
       result = (lv_return == STATELESS_UPDATE_OK) ? true: false;
       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndDelete, txid: "
                + transactionId + " rsValue.length == 0, lv_return: " + lv_return + ", result is " + result);
@@ -2480,7 +2496,7 @@ CoprocessorService, Coprocessor {
     } else if (!rs.isEmpty() && valueIsNull) {
       rsValue = rs.getValue(family, qualifier);
       if (rsValue != null && rsValue.length == 0) {
-        lv_return = this.delete(transactionId, delete);
+        lv_return = this.delete(transactionId, startId, delete);
         result = (lv_return == STATELESS_UPDATE_OK) ? true: false;
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndDelete, txid: "
                + transactionId + " rsValue.length == 0, lv_return: " + lv_return + ", result is: " + result);
@@ -2493,7 +2509,7 @@ CoprocessorService, Coprocessor {
     } else if ((!rs.isEmpty())
               && !valueIsNull
               && (Bytes.equals(rs.getValue(family, qualifier), value))) {
-       lv_return = this.delete(transactionId, delete);
+       lv_return = this.delete(transactionId, startId, delete);
        result = (lv_return == STATELESS_UPDATE_OK) ? true : false;
        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndDelete, txid: "
                + transactionId + " rsValue matches the row, lv_return is: " + lv_return + ", result is: " + result);
@@ -2518,36 +2534,36 @@ CoprocessorService, Coprocessor {
    * @return boolean
    * @throws IOException
    */
-  public boolean checkAndPut(long transactionId, byte[] row, byte[] family,
+  public boolean checkAndPut(long transactionId, long startId, byte[] row, byte[] family,
                             byte[] qualifier, byte[] value, Put put)
     throws IOException {
 
-    SsccTransactionState state = this.beginTransIfNotExist(transactionId);
+    SsccTransactionState state = this.beginTransIfNotExist(transactionId, startId);
     boolean result = false;
     byte[] rsValue = null;
 
     Get get = new Get(row);
     get.addColumn(family, qualifier);
-    if (LOG.isTraceEnabled()) LOG.trace("Enter SsccRegionEndpoint coprocessor: checkAndPut, txid: " + transactionId + ", row " + row);
+    if (LOG.isTraceEnabled()) LOG.trace("Enter SsccRegionEndpoint coprocessor: checkAndPut, txid: " + transactionId +
+                          ", startId: " + startId + ", row " + row);
 
-    Result rs = this.get(transactionId, get);
+    Result rs = this.get(transactionId, startId, get);
 
     if (LOG.isTraceEnabled()) LOG.trace("Enter SsccRegionEndpoint coprocessor: checkAndPut, txid: "
                + transactionId + ", result is empty " + rs.isEmpty() +
                ", value is " + Bytes.toString(value));
 
-    boolean valueIsNull = value == null ||
-                          value.length == 0;
+    boolean valueIsNull = value == null || value.length == 0;
     int lv_return = 0;
     if (rs.isEmpty() && valueIsNull) {
-      lv_return = this.put(transactionId, put, false /* stateful */);
+      lv_return = this.put(transactionId, startId, put, false /* stateful */);
       result = (lv_return == STATEFUL_UPDATE_OK) ? true: false;
       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPut, txid: "
               + transactionId + " valueIsNull, lv_return is: " + lv_return + ", result is: " + result);
     } else if (!rs.isEmpty() && valueIsNull) {
       rsValue = rs.getValue(family, qualifier);
       if (rsValue != null && rsValue.length == 0) {
-        lv_return = this.put(transactionId, put, false /* stateful */);
+        lv_return = this.put(transactionId, startId, put, false /* stateful */);
         result = (lv_return == STATEFUL_UPDATE_OK) ? true: false;
         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPut, txid: "
                + transactionId + " rsValue.length == 0, lv_return: " + lv_return + ", result is: " + result);
@@ -2559,7 +2575,7 @@ CoprocessorService, Coprocessor {
       }
     } else if ((!rs.isEmpty()) && !valueIsNull
               && (Bytes.equals(rs.getValue(family, qualifier), value))) {
-       lv_return = this.put(transactionId, put, false /* stateful */);
+       lv_return = this.put(transactionId, startId, put, false /* stateful */);
        result = (lv_return == STATEFUL_UPDATE_OK) ? true : false;
        if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: checkAndPut, txid: "
                + transactionId + " rsValue matches the row, lv_return is: " + lv_return + ", result is: " + result);
@@ -2590,6 +2606,8 @@ CoprocessorService, Coprocessor {
    Throwable t = null;
    WrongRegionException wre = null;
    int status = 0;
+   long transId = request.getTransactionId();
+   long startId = request.getStartId();
 
    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor deleteMultiple: Entry");
 
@@ -2618,14 +2636,15 @@ CoprocessorService, Coprocessor {
            if (delete != null)
            {
              try {
-               status = delete(request.getTransactionId(), delete);
+               status = delete(transId, startId, delete);
              } catch (Throwable e) {
                if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor deleteMultiple:delete Caught exception " +
                             "after internal delete " + e.getMessage() + "" + stackTraceToString(e));
              t = e;
              }
 
-             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: deleteMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: deleteMultiple - id " + transId +
+                ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
 
              if (status != STATELESS_UPDATE_OK) {
                 String returnString;
@@ -2655,7 +2674,7 @@ CoprocessorService, Coprocessor {
          }
        }
        else
-         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: deleteMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", delete proto was null");
+         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: deleteMultiple - id " + transId + ", regionName " + regionInfo.getRegionNameAsString() + ", delete proto was null");
 
       }
     }
@@ -2689,10 +2708,13 @@ CoprocessorService, Coprocessor {
     SsccPutMultipleTransactionalResponse response = SsccPutMultipleTransactionalResponse.getDefaultInstance();
 
    java.util.List<org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto> results;
+
    boolean stateless = false;
    if (request.hasIsStateless()) {
       stateless = request.getIsStateless();
    }
+   if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor putMultiple: Entry, stateless: " + stateless);
+
    results = request.getPutList();
    int resultCount = request.getPutCount();
    byte [] row = null;
@@ -2701,7 +2723,8 @@ CoprocessorService, Coprocessor {
    Throwable t = null;
    WrongRegionException wre = null;
    int status = 0;
-   if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor putMultiple: Entry");
+   long transId = request.getTransactionId();
+   long startId = request.getStartId();
 
    if (wre == null){
 
@@ -2718,6 +2741,7 @@ CoprocessorService, Coprocessor {
            row = proto.getRow().toByteArray();
 
            try {
+               if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor putMultiple: converting put");
                put = ProtobufUtil.toPut(proto);
            } catch (Throwable e) {
              if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor putMultiple:put Caught exception " +
@@ -2729,7 +2753,7 @@ CoprocessorService, Coprocessor {
            if (put != null)
            {
              try {
-               status = put(request.getTransactionId(), put, stateless);
+               status = put(transId, startId, put, stateless);
                if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:putMultiple returned status: " + status);
              } catch (Throwable e) {
                 if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor putMultiple:put Caught exception " +
@@ -2737,7 +2761,10 @@ CoprocessorService, Coprocessor {
                t = e;
              }
 
-             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: putMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: putMultiple - id " + transId + ", regionName " + regionInfo.getRegionNameAsString() + ", type " + type + ", row " + Bytes.toString(row));
+           }
+           else {
+             if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: putMultiple - put is null ");
            }
            if (status != STATEFUL_UPDATE_OK) {
               String returnString;
@@ -2765,7 +2792,7 @@ CoprocessorService, Coprocessor {
          }
        }
         else
-         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: putMultiple - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", put proto was null");
+         if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: putMultiple - id " + transId + ", regionName " + regionInfo.getRegionNameAsString() + ", proto was null");
 
       }
     }
@@ -2812,6 +2839,8 @@ CoprocessorService, Coprocessor {
       int tmId = request.getTmId();
       Throwable t = null;
       WrongRegionException wre = null;
+      long transId = request.getTransactionId();
+      long startId = request.getStartId();
 
       if (reconstructIndoubts == 0) {
          if(LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:  RECOV recovery Request");
@@ -2830,7 +2859,7 @@ CoprocessorService, Coprocessor {
       }
 
       // Placeholder for real work when recovery is added
-      if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: recoveryResponse - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", tmId" + tmId);
+      if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: recoveryResponse - id " + transId + ", regionName " + regionInfo.getRegionNameAsString() + ", tmId" + tmId);
 
       org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestResponse.Builder recoveryResponseBuilder = SsccRecoveryRequestResponse.newBuilder();
 
@@ -2896,8 +2925,9 @@ CoprocessorService, Coprocessor {
       ColumnInterpreter<T, S, P, Q, R> ci = constructColumnInterpreterFromRequest(request);
       T temp;
       long transactionId = request.getTransactionId();
+      long startId = request.getStartId();
       Scan scan = ProtobufUtil.toScan(request.getScan());
-      scanner = getScanner(transactionId, scan);
+      scanner = getScanner(transactionId, startId, scan);
       List<Cell> results = new ArrayList<Cell>();
       byte[] colFamily = scan.getFamilies()[0];
       NavigableSet<byte[]> qualifiers = scan.getFamilyMap().get(colFamily);
@@ -2953,7 +2983,8 @@ CoprocessorService, Coprocessor {
       T temp;
       Scan scan = ProtobufUtil.toScan(request.getScan());
       long transactionId = request.getTransactionId();
-      scanner = getScanner(transactionId, scan);
+      long startId = request.getStartId();
+      scanner = getScanner(transactionId, startId, scan);
       List<Cell> results = new ArrayList<Cell>();
       byte[] colFamily = scan.getFamilies()[0];
       NavigableSet<byte[]> qualifiers = scan.getFamilyMap().get(colFamily);
@@ -3008,8 +3039,9 @@ CoprocessorService, Coprocessor {
       T temp;
       Scan scan = ProtobufUtil.toScan(request.getScan());
       long transactionId = request.getTransactionId();
-      scanner = getScanner(transactionId, scan);
-      SsccTransactionState state = this.beginTransIfNotExist(transactionId);
+      long startId = request.getStartId();
+      scanner = getScanner(transactionId, startId, scan);
+      SsccTransactionState state = this.beginTransIfNotExist(transactionId, startId);
       byte[] colFamily = scan.getFamilies()[0];
       NavigableSet<byte[]> qualifiers = scan.getFamilyMap().get(colFamily);
       byte[] qualifier = null;
@@ -3112,8 +3144,9 @@ CoprocessorService, Coprocessor {
       if (scan.getFilter() == null && qualifier == null)
         scan.setFilter(new FirstKeyOnlyFilter());
       transactionId = request.getTransactionId();
-      scanner = getScanner(transactionId, scan);
-      SsccTransactionState state = this.beginTransIfNotExist(transactionId);
+      long startId = request.getStartId();
+      scanner = getScanner(transactionId, startId, scan);
+      SsccTransactionState state = this.beginTransIfNotExist(transactionId, startId);
       boolean hasMoreRows = false;
       boolean firstCell;
       do {
@@ -3203,7 +3236,8 @@ CoprocessorService, Coprocessor {
       Long rowCountVal = 0L;
       Scan scan = ProtobufUtil.toScan(request.getScan());
       long transactionId = request.getTransactionId();
-      scanner = getScanner(transactionId, scan);
+      long startId = request.getStartId();
+      scanner = getScanner(transactionId, startId, scan);
       byte[] colFamily = scan.getFamilies()[0];
       NavigableSet<byte[]> qualifiers = scan.getFamilyMap().get(colFamily);
       byte[] qualifier = null;
@@ -3264,7 +3298,8 @@ CoprocessorService, Coprocessor {
       long rowCountVal = 0L;
       Scan scan = ProtobufUtil.toScan(request.getScan());
       long transactionId = request.getTransactionId();
-      scanner = getScanner(transactionId, scan);
+      long startId = request.getStartId();
+      scanner = getScanner(transactionId, startId, scan);
       byte[] colFamily = scan.getFamilies()[0];
       NavigableSet<byte[]> qualifiers = scan.getFamilyMap().get(colFamily);
       byte[] qualifier = null;
@@ -3329,7 +3364,8 @@ CoprocessorService, Coprocessor {
       S sumVal = null, sumWeights = null, tempVal = null, tempWeight = null;
       Scan scan = ProtobufUtil.toScan(request.getScan());
       long transactionId = request.getTransactionId();
-      scanner = getScanner(transactionId, scan);
+      long startId = request.getStartId();
+      scanner = getScanner(transactionId, startId, scan);
       byte[] colFamily = scan.getFamilies()[0];
       NavigableSet<byte[]> qualifiers = scan.getFamilyMap().get(colFamily);
       byte[] valQualifier = null, weightQualifier = null;
@@ -3493,21 +3529,21 @@ CoprocessorService, Coprocessor {
 
     this.configuredEarlyLogging = conf.getBoolean("hbase.regionserver.region.transactional.earlylogging", false);
 
-    if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor: get the reference from Region CoprocessorEnvrionment ");
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: get the reference from Region CoprocessorEnvrionment ");
 
     if (tmp_env.getSharedData().isEmpty())
-       if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor: shared map is empty ");
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: shared map is empty ");
     else
-       if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor: shared map is NOT empty Yes ... ");
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: shared map is NOT empty Yes ... ");
 
     transactionsByIdTestz = TrxRegionObserver.getRefMap();
 
     if (transactionsByIdTestz.isEmpty())
-       if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor: reference map is empty ");
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: reference map is empty ");
     else
-       if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor: reference map is NOT empty Yes ... ");
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: reference map is NOT empty Yes ... ");
 
-    if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor: UUU Region " + this.m_Region.getRegionNameAsString() + " check indoubt list from reference map ");
+    if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor: UUU Region " + this.m_Region.getRegionNameAsString() + " check indoubt list from reference map ");
 
     indoubtTransactionsById = (TreeMap<Long, WALEdit>)transactionsByIdTestz.get(
                                this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeypendingTransactionsById);
@@ -3515,14 +3551,14 @@ CoprocessorService, Coprocessor {
     indoubtTransactionsCountByTmid = (TreeMap<Integer,Integer>)transactionsByIdTestz.get(
                                this.m_Region.getRegionNameAsString()+TrxRegionObserver.trxkeyindoubtTransactionsCountByTmid);
     if (indoubtTransactionsCountByTmid != null) {
-       if (LOG.isDebugEnabled()) LOG.debug("SsccRegionEndpoint coprocessor:OOO successfully get the reference from Region CoprocessorEnvrionment ");
+       if (LOG.isTraceEnabled()) LOG.trace("SsccRegionEndpoint coprocessor:OOO successfully get the reference from Region CoprocessorEnvrionment ");
     }
-//    try {
-//       idServer = new IdTm(false);
-//    }
-//    catch (Exception e){
-//       LOG.error("SsccRegionEndpoint coprocessor:  unble to new IdTm " + e);
-//    }
+    try {
+       idServer = new IdTm(false);
+    }
+    catch (Exception e){
+       LOG.error("SsccRegionEndpoint coprocessor:  unble to new IdTm " + e);
+    }
     long logSeqId = nextLogSequenceId.get();
     long currentTime = System.currentTimeMillis();
     long ssccSeqId = currentTime > logSeqId ? currentTime : logSeqId;
@@ -3565,7 +3601,7 @@ CoprocessorService, Coprocessor {
          String str = sb.toString();
          String zNodePathTM = zNodePath + str;
          String zNodePathTMKey = zNodePathTM + "/" + zNodeKey;
-         if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Observer CP: ZKW Delete region recovery znode" + node + " zNode Path " + zNodePathTMKey);
+         if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: ZKW Delete region recovery znode" + node + " zNode Path " + zNodePathTMKey);
           // delete zookeeper recovery zNode, call ZK ...
          try {
              ZKUtil.deleteNodeFailSilent(zkw1, zNodePathTMKey);
@@ -3610,8 +3646,7 @@ CoprocessorService, Coprocessor {
    * @param SsccTransactionState transactionState
    * @throws IOException 
    */
-  private void resolveTransactionFromLog(
-    final SsccTransactionState transactionState) throws IOException {
+  private void resolveTransactionFromLog(final SsccTransactionState transactionState) throws IOException {
     LOG.error("SsccRegionEndpoint coprocessor:  Global transaction log is not Implemented. (Optimisticly) assuming transaction commit!");
     commit(transactionState);
   }
@@ -3686,12 +3721,12 @@ CoprocessorService, Coprocessor {
    * @param Delete[] deletes   
    * @throws IOException 
    */
-  public synchronized void delete(long transactionId, Delete[] deletes)
+  public synchronized void delete(long transactionId, long startId, Delete[] deletes)
     throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("Enter SsccRegionEndpoint coprocessor: deletes[], txid: " + transactionId);
     checkClosing(transactionId);
 
-    SsccTransactionState state = this.beginTransIfNotExist(transactionId);
+    SsccTransactionState state = this.beginTransIfNotExist(transactionId, startId);
 
     //for (Delete del : deletes) {
     //  state.addDelete(del);
@@ -3739,6 +3774,7 @@ CoprocessorService, Coprocessor {
 //                      }
 
                       //TBD Need to get HLOG ???
+                      if (LOG.isTraceEnabled()) LOG.trace("constructIndoubtTransactions for transId " + transactionId);
 		      SsccTransactionState state = new SsccTransactionState(transactionId, /* 1L my_Region.getLog().getSequenceNumber()*/
                                                                                 nextLogSequenceId.getAndIncrement(), nextLogSequenceId, 
                                                                                 regionInfo, m_Region.getTableDesc(), tHLog, false,
@@ -3758,7 +3794,9 @@ CoprocessorService, Coprocessor {
 //                         LOG.error("Trafodion Recovery Endpoint Coprocessor: IdTm threw exception 2 " + exc);
 //                      }
 //		      state.setSequenceNumber(seqId.val);
-		      state.setSequenceNumber(nextSsccSequenceId.getAndIncrement());
+                      if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint setting sequenceNumber to commitId: " + state.getCommitId());
+                      state.setSequenceNumber(state.getCommitId());
+//		      state.setSequenceNumber(nextSsccSequenceId.getAndIncrement());
 		      commitedTransactionsBySequenceNumber.put(state.getSequenceNumber(), state);
                       int tmid = (int) (transactionId >> 32);
                       if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Endpoint Coprocessor:E33 Region " + regionInfo.getRegionNameAsString() + " add prepared " + transactionId + " to TM " + tmid);              

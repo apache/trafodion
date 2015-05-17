@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -50,6 +50,9 @@ public:
     void suspended_tx(bool pv_suspended) {iv_suspended = pv_suspended;}
     bool suspended_tx() {return iv_suspended;}
 
+    TM_Transseq_Type get_startid();
+    void set_startid(long startid);
+
 private:
     TM_Transaction *ip_trans;
     int             iv_depth;
@@ -57,6 +60,7 @@ private:
     int             iv_outstanding_ios;
     bool            iv_propagated;
     bool            iv_suspended;
+    TM_Transseq_Type iv_startid;
 
     TMLIB_EnlistedTxn_Object() {}
 };
@@ -102,6 +106,8 @@ public:
     // misc helper methods
     TM_Transaction * get_trans (TM_Native_Type pv_transid);
     TM_Transaction * get_trans (unsigned int pv_tag);
+    TM_Transseq_Type get_startid();
+    void set_startid(long startid);
     void is_initialized (bool pv_init) { iv_initialized = pv_init;}
 
     // return current enlisted object,
@@ -112,6 +118,7 @@ public:
         TM_MAP iv_all_tags; //maps tags to TM_Transaction
         TMLIB_EnlistedTxn_Object *ip_enlisted_trans;
         bool iv_initialized;
+        TM_Transseq_Type iv_startid;
 };
 
 #endif

@@ -188,6 +188,7 @@ public:
    jobjectArray convertToByteArrayObjectArray(char **array, int numElements, int elementLen);
    int registerRegion(int64 pv_transid, const char pa_region[], const char pa_regionInfo[], int pv_regionInfo_Length);
    int registerRegion(int64 pv_transid,
+            int64 pv_startid,
             int pv_port,
             const char pa_hostname[],
             int pv_hostname_Length,

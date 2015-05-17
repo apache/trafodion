@@ -89,10 +89,12 @@ TM_Transaction::~TM_Transaction()
 }
 
 // TOPL
-short  TM_Transaction::register_region(int port, char *hostName, int hostname_Length, long startcode, char *regionInfo, int regionInfo_Length)
+short  TM_Transaction::register_region(long startid, int port, char *hostName, int hostname_Length, long startcode, char *regionInfo, int regionInfo_Length)
 {
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
+    //printf ("TM_Transaction::register_region ENTRY with startid %ld \n", startid);
+
 
     TMlibTrace(("TMLIB_TRACE : TM_Transaction::register_region ENTRY\n"), 2);
 
@@ -100,6 +102,7 @@ short  TM_Transaction::register_region(int port, char *hostName, int hostname_Le
          gv_tmlib.initialize();
 
     tmlib_init_req_hdr(TM_MSG_TYPE_REGISTERREGION, &lv_req);
+    lv_req.u.iv_register_region.iv_startid = startid;
     lv_req.u.iv_register_region.iv_pid = gv_tmlib.iv_my_pid;
     lv_req.u.iv_register_region.iv_nid = gv_tmlib.iv_my_nid;
     iv_transid.set_external_data_type(&lv_req.u.iv_register_region.iv_transid);
@@ -107,7 +110,7 @@ short  TM_Transaction::register_region(int port, char *hostName, int hostname_Le
     memcpy (lv_req.u.iv_register_region.ia_hostname, hostName, hostname_Length);
     lv_req.u.iv_register_region.iv_hostname_length = hostname_Length;
     lv_req.u.iv_register_region.iv_startcode = startcode;
-    
+
     memcpy (lv_req.u.iv_register_region.ia_regioninfo2, regionInfo, regionInfo_Length);
     lv_req.u.iv_register_region.iv_regioninfo_length = regionInfo_Length;
 
@@ -121,7 +124,7 @@ short  TM_Transaction::register_region(int port, char *hostName, int hostname_Le
     // record tag in our param, if an error occurred, this
     // will be -1, so we can do a blind copy here
     iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
-       
+
     TMlibTrace(("TMLIB_TRACE : TM_Transaction::register_region EXIT with error %d\n", iv_last_error), 2);
 
     return iv_last_error; 

@@ -359,16 +359,17 @@ int32 RM_Info_HBASE::start_branches (CTmTxBase *pp_txn,  int64 pv_flags, CTmTxMe
 // Purpose - Call  register a region  for this transaction.
 //------------------------------------------------------------------------------
 int32 RM_Info_HBASE::registerRegion (CTmTxBase *pp_txn,  int64 pv_flags, CTmTxMessage * pp_msg)
-{   
+{
    int32 lv_err = FEOK;
    int64 lv_transid = pp_txn->legacyTransid();
+   int64 lv_startid = pp_msg->request()->u.iv_register_region.iv_startid;
 
-
-   TMTrace (2, ("RM_Info_HBASE::registerRegion ENTRY : Txn ID (%d,%d), ENTRY, flags " PFLL ", region %s.\n",
-                pp_txn->node(), pp_txn->seqnum(), pv_flags,
+   TMTrace (2, ("RM_Info_HBASE::registerRegion ENTRY : Txn ID (%d,%d), ENTRY, startId: %ld, flags " PFLL ", region %s.\n",
+                pp_txn->node(), pp_txn->seqnum(), pv_flags, lv_startid,
                 pp_msg->request()->u.iv_register_region.ia_regioninfo2));
 
     lv_err = gv_HbaseTM.registerRegion(lv_transid,
+                   pp_msg->request()->u.iv_register_region.iv_startid,
                    pp_msg->request()->u.iv_register_region.iv_port,
                    pp_msg->request()->u.iv_register_region.ia_hostname,
                    pp_msg->request()->u.iv_register_region.iv_hostname_length,

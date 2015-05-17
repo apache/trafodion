@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -52,6 +52,27 @@ TMLIB_EnlistedTxn_Object::~TMLIB_EnlistedTxn_Object()
     iv_propagated = iv_suspended = false;
 }
 
+// -------------------------------------------------------------------
+// TMLIB_EnlistedTxn_Object::set_startid
+// -- set the startid in the current enlisted object.
+// ------------------------------------------------------------------
+void TMLIB_EnlistedTxn_Object::set_startid(TM_Transseq_Type pv_startid)
+{
+    TMlibTrace (("TMLIB_TRACE : TMLIB_EnlistedTxn_Object::set_startid ENTRY with startid:%ld \n", pv_startid), 2);
+    iv_startid = pv_startid;
+    TMlibTrace (("TMLIB_TRACE : TMLIB_EnlistedTxn_Object::set_startid EXIT\n"), 2);
+}
+
+// -------------------------------------------------------------------
+// TMLIB_EnlistedTxn_Object::get_startid
+// -- get the startid in the current enlisted object.
+// ------------------------------------------------------------------
+TM_Transseq_Type TMLIB_EnlistedTxn_Object::get_startid()
+{
+    TMlibTrace (("TMLIB_TRACE : TMLIB_EnlistedTxn_Object::get_startid EXIT returning startid:%ld\n", iv_startid), 2);
+    return iv_startid;
+}
+
 // -----------------------------------------------------------------
 // TheadTxn_Object methods
 // -----------------------------------------------------------------
@@ -59,6 +80,7 @@ TMLIB_ThreadTxn_Object::TMLIB_ThreadTxn_Object()
 {
     ip_enlisted_trans = NULL;
     iv_initialized = false;
+    iv_startid = -1;
 }
 
 TMLIB_ThreadTxn_Object::~TMLIB_ThreadTxn_Object()
@@ -349,6 +371,36 @@ void TMLIB_ThreadTxn_Object::set_current(TM_Transaction *pp_trans)
 }
 
 // -------------------------------------------------------------------
+// TMLIB_ThreadTxn_Object::set_startid
+// -- set the startid in the current enlisted object.
+// ------------------------------------------------------------------
+void TMLIB_ThreadTxn_Object::set_startid(long pv_startid)
+{
+    TMlibTrace (("TMLIB_TRACE : TMLIB_ThreadTxn_Object::set_startid ENTRY with startid:%ld \n", pv_startid), 2);
+    if (ip_enlisted_trans)
+    {
+        ip_enlisted_trans->set_startid(pv_startid);
+    }
+    TMlibTrace (("TMLIB_TRACE : TMLIB_ThreadTxn_Object::set_startid EXIT\n"), 2);
+}
+
+// -------------------------------------------------------------------
+// TMLIB_ThreadTxn_Object::get_startid
+// -- get the startid in the current enlisted object.
+// ------------------------------------------------------------------
+TM_Transseq_Type TMLIB_ThreadTxn_Object::get_startid()
+{
+    TM_Transseq_Type lv_startid = -1;
+    TMlibTrace (("TMLIB_TRACE : TMLIB_ThreadTxn_Object::get_startid ENTRY \n"), 2);
+    if (ip_enlisted_trans)
+    {
+        lv_startid = ip_enlisted_trans->get_startid();
+    }
+    TMlibTrace (("TMLIB_TRACE : TMLIB_ThreadTxn_Object::get_startid EXIT returning startid:%ld\n", lv_startid), 2);
+    return lv_startid;
+}
+
+// -------------------------------------------------------------------
 // TMLIB_ThreadTxn_Object::delete_current
 // -- detele the current enlisted object.  This method is only called 
 //    internally and we are responsible for deleting everything.
@@ -365,6 +417,7 @@ void TMLIB_ThreadTxn_Object::delete_current()
              delete lp_trans;
         }
         delete ip_enlisted_trans;
+        set_startid(-1);
         ip_enlisted_trans = NULL;
     }
     TMlibTrace (("TMLIB_TRACE : TMLIB_ThreadTxn_Object::delete_current EXIT\n"), 2);

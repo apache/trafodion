@@ -28,7 +28,7 @@ using namespace std;
  * Signature: (I[B[B)V   
  */
 JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_TransactionState_registerRegion
-(JNIEnv *pp_env, jobject pv_object, jlong pv_transid, jint pv_port, jbyteArray pv_hostname, jlong pv_startcode, jbyteArray pv_dos)
+(JNIEnv *pp_env, jobject pv_object, jlong pv_transid, jlong pv_startid, jint pv_port, jbyteArray pv_hostname, jlong pv_startcode, jbyteArray pv_dos)
 {
    short lv_ret;
    char la_hostname[TM_MAX_REGIONSERVER_STRING];
@@ -36,7 +36,7 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_Transac
    memset(la_hostname, 0, TM_MAX_REGIONSERVER_STRING);
    memset(la_dos, 0, TM_MAX_REGIONSERVER_STRING);
 
-   //cout << "ENTRY registerRegion JNI - passing ByteArray\n";
+   //cout << "ENTRY registerRegion JNI - passing transid: " << pv_transid << " startid: " << pv_startid << "\n";
    int lv_hostname_length = pp_env->GetArrayLength(pv_hostname);
    jbyte *lp_hostname = pp_env->GetByteArrayElements(pv_hostname, 0);
 
@@ -52,7 +52,7 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_Transac
           lp_dos,
           lv_dos_length);
 
-   lv_ret = REGISTERREGION(pv_transid, pv_port, la_hostname, lv_hostname_length, pv_startcode, la_dos, lv_dos_length);
+   lv_ret = REGISTERREGION(pv_transid, pv_startid, pv_port, la_hostname, lv_hostname_length, pv_startcode, la_dos, lv_dos_length);
    //cout << "REGISTERREGION Error: " << lv_ret << endl;
    pp_env->ReleaseByteArrayElements(pv_hostname, lp_hostname, 0);
    pp_env->ReleaseByteArrayElements(pv_dos, lp_dos, 0);

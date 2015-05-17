@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ typedef struct _tm_h_as_0 {
 // Native Data Type
 typedef SB_Int64_Type TM_Native_Type;
 typedef SB_Transid_Type TM_Transid_Type;
+typedef SB_Transseq_Type TM_Transseq_Type;
 
 //  legacy transid struct
 typedef struct _tmtransid_h_as_0 {

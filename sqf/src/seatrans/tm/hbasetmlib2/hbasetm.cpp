@@ -231,7 +231,7 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_COMPLETEREQUEST].jm_name      = "completeRequest";
   JavaMethods_[JM_COMPLETEREQUEST].jm_signature = "(J)S";
   JavaMethods_[JM_REGREGION  ].jm_name      = "callRegisterRegion";
-  JavaMethods_[JM_REGREGION  ].jm_signature = "(JI[BJ[B)S";
+  JavaMethods_[JM_REGREGION  ].jm_signature = "(JJI[BJ[B)S";
   JavaMethods_[JM_PARREGION  ].jm_name      = "participatingRegions";
   JavaMethods_[JM_PARREGION  ].jm_signature = "(J)I";
   JavaMethods_[JM_CNTPOINT   ].jm_name      = "addControlPoint";
@@ -541,6 +541,7 @@ int CHbaseTM::initialize(HBASETM_TraceMask pv_traceMask, bool pv_tm_stats, CTmTi
    lv_error = initConnection(pv_nid);
    if (lv_error)
    {
+      printf("CHbaseTM::initialize: CHbaseTM::initConnection failed with error %d.\n", lv_error);
       HBASETrace(HBASETM_TraceError,
                  (HDR "CHbaseTM::initialize: CHbaseTM::initConnection failed with error %d.\n", lv_error));
       //tm_log_event(DTM_HBASE_INIT_FAILED, SQ_LOG_CRIT, "DTM_HBASE_INIT_FAILED", lv_error);
@@ -619,6 +620,7 @@ void CHbaseTM::setTrace(HBASETM_TraceMask pv_traceMask)
 // Purpose  : Register a region for the specified transaction.
 //----------------------------------------------------------------------------
 int CHbaseTM::registerRegion(int64 pv_transid,
+                             int64 pv_startid,
  			     int pv_port,
  			     const char pa_hostname[],
  			     int pv_hostname_Length,
@@ -629,10 +631,11 @@ int CHbaseTM::registerRegion(int64 pv_transid,
 {
    int lv_error = FEOK;
    jlong  jlv_transid = pv_transid;
+   jlong  jlv_startid = pv_startid;
    jint jiv_port = pv_port;
    CTmTxKey lv_tid(pv_transid);
-   HBASETrace(HBASETM_TraceAPI, (HDR "CHbaseTM::registerRegion : Txn ID (%d,%d), hostname: %s.\n",
-				 lv_tid.node(), lv_tid.seqnum(), pa_hostname));
+   HBASETrace(HBASETM_TraceAPI, (HDR "CHbaseTM::registerRegion : Txn ID (%d,%d), startid %ld, hostname: %s.\n",
+				 lv_tid.node(), lv_tid.seqnum(), jlv_startid, pa_hostname));
   jthrowable exc;
   JOI_RetCode lv_joi_retcode = JOI_OK;
   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
@@ -656,6 +659,7 @@ int CHbaseTM::registerRegion(int64 pv_transid,
   lv_error = _tlp_jenv->CallShortMethod(javaObj_,
 					JavaMethods_[JM_REGREGION].methodID,
 					jlv_transid,
+					jlv_startid,
 					jiv_port,
 					jba_hostname,
 					pv_startcode,
