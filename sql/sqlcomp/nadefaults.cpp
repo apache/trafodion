@@ -4655,11 +4655,8 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
             (overwriteIfNotYet, errOrWarn, this);
           
           // set authorization state
-#ifdef _DEBUG
-          NABoolean checkAllPrivTables = TRUE;
-#else
+
           NABoolean checkAllPrivTables = FALSE;
-#endif
           errNum = cmpSBD.isPrivMgrMetadataInitialized(this,checkAllPrivTables);
           CmpCommon::context()->setAuthorizationState(errNum);
         }

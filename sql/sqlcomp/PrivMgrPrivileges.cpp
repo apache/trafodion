@@ -5245,6 +5245,9 @@ PrivStatus ColumnPrivsMDTable::selectWhere(
    std::vector<PrivMgrMDRow *> &rowList)
 {
 
+  if ((CmpCommon::getDefault(CAT_TEST_BOOL) == DF_OFF))
+    return STATUS_NOTFOUND;
+
 std::string selectStmt("SELECT object_uid,grantee_id,grantor_id,column_number,"
                        "       privileges_bitmap,grantable_bitmap FROM ");
 
