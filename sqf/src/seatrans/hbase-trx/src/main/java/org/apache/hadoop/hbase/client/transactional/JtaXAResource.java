@@ -50,6 +50,8 @@ public class JtaXAResource implements XAResource {
             }
         } catch (CommitUnsuccessfulException e) {
             throw new XAException(XAException.XA_RBROLLBACK);
+        } catch (UnsuccessfulDDLException e) {
+            throw new XAException(XAException.XA_RBROLLBACK);
         } catch (IOException e) {
             XAException xae = new XAException(XAException.XAER_RMERR);
             xae.initCause(e);
@@ -72,7 +74,7 @@ public class JtaXAResource implements XAResource {
         if (state != null) {
             try {
                 transactionManager.abort(state);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 XAException xae = new XAException(XAException.XAER_RMERR);
                 xae.initCause(e);
                 throw xae;
