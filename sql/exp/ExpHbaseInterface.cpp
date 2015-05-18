@@ -369,6 +369,7 @@ ExpHbaseInterface_JNI::ExpHbaseInterface_JNI(CollHeap* heap, const char* server,
    ,client_(NULL)
    ,htc_(NULL)
    ,hblc_(NULL)
+   ,hive_(NULL)
    ,retCode_(HBC_OK)
 {
 //  HBaseClient_JNI::logIt("ExpHbaseInterface_JNI::constructor() called.");
@@ -423,6 +424,22 @@ Lng32 ExpHbaseInterface_JNI::init(ExHbaseAccessStats *hbs)
   hbs_ = hbs;  // save for ExpHbaseInterface_JNI member function use
                // and eventually give to HTableClient_JNI
 
+  return HBASE_ACCESS_SUCCESS;
+}
+
+Lng32 ExpHbaseInterface_JNI::initHive()
+{
+  if (hive_ == NULL)
+  {
+    hive_ = HiveClient_JNI::getInstance();
+    
+    if (hive_->isInitialized() == FALSE)
+    {
+      HVC_RetCode retCode = hive_->init();
+      if (retCode != HVC_OK)
+        return -HBASE_ACCESS_ERROR;
+    }
+  }
   return HBASE_ACCESS_SUCCESS;
 }
 
@@ -1088,6 +1105,114 @@ Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
    else
      return -HBASE_CLEANUP_HFILE_ERROR;
  }
+ ///////////////////
+
+ //////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+ Lng32 ExpHbaseInterface_JNI::hdfsCreateFile(const char* path)
+ {
+   if (hive_ == NULL) {
+      retCode_ = initHive();
+      if (retCode_ != HVC_OK)
+         return retCode_;
+   }
+
+    retCode_ = hive_->hdfsCreateFile( path);
+
+    if (retCode_ == HVC_OK)
+      return HBASE_ACCESS_SUCCESS;
+    else
+      return -HVC_ERROR_HDFS_CREATE_EXCEPTION;
+ }
+
+ Lng32  ExpHbaseInterface_JNI::incrCounter( const char * tabName, const char * rowId,
+                             const char * famName, const char * qualName ,
+                             Int64 incr, Int64 & count)
+ {
+    if (client_ == NULL) {
+      retCode_ = init();
+      if (retCode_ != HBC_OK)
+         return -HBASE_ACCESS_ERROR;
+    }
+    retCode_ = client_->incrCounter( tabName, rowId, famName, qualName , incr, count);
+
+    if (retCode_ == HBC_OK)
+      return HBASE_ACCESS_SUCCESS;
+    else
+      return -HBC_ERROR_INCR_COUNTER_EXCEPTION;
+ }
+
+ Lng32  ExpHbaseInterface_JNI::createCounterTable( const char * tabName,  const char * famName)
+ {
+    if (client_ == NULL) {
+      retCode_ = init();
+      if (retCode_ != HBC_OK)
+         return -HBASE_ACCESS_ERROR;
+   }
+
+   retCode_ = client_->createCounterTable( tabName, famName);
+
+   if (retCode_ == HBC_OK)
+     return HBASE_ACCESS_SUCCESS;
+   else
+      return -HBC_ERROR_CREATE_COUNTER_EXCEPTION;
+ }
+ //////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+ Lng32 ExpHbaseInterface_JNI::hdfsWrite(const char* data, Int64 len)
+ {
+   if (hive_ == NULL) {
+      retCode_ = initHive();
+      if (retCode_ != HVC_OK)
+         return retCode_;
+   }
+   retCode_ = hive_->hdfsWrite( data, len);
+
+   if (retCode_ == HVC_OK)
+      return HBASE_ACCESS_SUCCESS;
+    else
+      return -HVC_ERROR_HDFS_WRITE_EXCEPTION;
+ }
+
+ //////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+ Lng32 ExpHbaseInterface_JNI::hdfsClose()
+ {
+   if (hive_ == NULL) {
+      retCode_ = initHive();
+      if (retCode_ != HVC_OK)
+         return retCode_;
+   }
+
+   retCode_ = hive_->hdfsClose();
+
+   if (retCode_ == HVC_OK)
+      return HVC_OK;
+    else
+      return -HVC_ERROR_HDFS_CLOSE_EXCEPTION;
+ }
+/*
+ Lng32 ExpHbaseInterface_JNI::hdfsCleanPath( const std::string& path)
+ {
+   if (hblc_ == NULL) {
+      retCode_ = initHBLC();
+      if (retCode_ != HBLC_OK)
+         return -HBASE_ACCESS_ERROR;
+   }
+
+   retCode_ = hblc_->hdfsCleanPath(path);
+
+   if (retCode_ == HBLC_OK)
+      return HBLC_OK;
+    else
+      return -HBLC_ERROR_HDFS_CLOSE_EXCEPTION;
+ }
+*/
+
+
 //----------------------------------------------------------------------------
 // Avoid messing up the class data members (like htc_)
 Lng32 ExpHbaseInterface_JNI::rowExists(

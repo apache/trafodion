@@ -60,7 +60,7 @@ using std::ofstream;
 #include  "ExpLOBinterface.h"
 #include  "ExpLOBexternal.h"
 #include  "str.h"
-
+#include "ExpHbaseInterface.h"
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilCreateTableAsTdb::build(ex_globals * glob)
 {
@@ -1074,15 +1074,15 @@ ex_tcb * ExExeUtilHBaseBulkLoadTdb::build(ex_globals * glob)
 // Constructor for class ExExeUtilHbaseLoadTcb
 ///////////////////////////////////////////////////////////////
 ExExeUtilHBaseBulkLoadTcb::ExExeUtilHBaseBulkLoadTcb(
-     const ComTdbExeUtil & exe_util_tdb,
-     ex_globals * glob)
-     : ExExeUtilTcb( exe_util_tdb, NULL, glob),
-       step_(INITIAL_),
-       nextStep_(INITIAL_),
-       rowsAffected_(0)
+    const ComTdbExeUtil & exe_util_tdb,
+    ex_globals * glob)
+: ExExeUtilTcb( exe_util_tdb, NULL, glob),
+  step_(INITIAL_),
+  nextStep_(INITIAL_),
+  rowsAffected_(0)
 {
+  ehi_ = NULL;
   qparent_.down->allocatePstate(this);
-
 }
 
 //////////////////////////////////////////////////////
@@ -1106,8 +1106,11 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
   ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
 
-  ExTransaction *ta = getGlobals()->castToExExeStmtGlobals()->
-    castToExMasterStmtGlobals()->getStatement()->getContext()->getTransaction();
+  ContextCli *currContext =
+    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
+    getStatement()->getContext();
+  ExTransaction *ta = currContext->getTransaction();
+
 
   NABoolean ustatNonEmptyTable = FALSE;
 
@@ -1115,32 +1118,32 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   {
     switch (step_)
     {
-      case INITIAL_:
+    case INITIAL_:
+    {
+      NABoolean xnAlreadyStarted = ta->xnInProgress();
+
+      if (xnAlreadyStarted  &&
+          //a transaction is active when we load/populate an indexe table
+          !hblTdb().getIndexTableOnly())
       {
-        NABoolean xnAlreadyStarted = ta->xnInProgress();
-
-        if (xnAlreadyStarted  &&
-            //a transaction is active when we load/populate an indexe table
-            !hblTdb().getIndexTableOnly())
-        {
-          //8111 - Transactions are not allowed with Bulk load.
-          ComDiagsArea * da = getDiagsArea();
-          *da << DgSqlCode(-8111);
-          step_ = LOAD_ERROR_;
+        //8111 - Transactions are not allowed with Bulk load.
+        ComDiagsArea * da = getDiagsArea();
+        *da << DgSqlCode(-8111);
+        step_ = LOAD_ERROR_;
           break;
-        }
+      }
 
-        if (setStartStatusMsgAndMoveToUpQueue("LOAD", &rc))
-          return rc;
+      if (setStartStatusMsgAndMoveToUpQueue("LOAD", &rc))
+        return rc;
 
-        if (hblTdb().getUpsertUsingLoad())
-          hblTdb().setPreloadCleanup(FALSE);
+      if (hblTdb().getUpsertUsingLoad())
+        hblTdb().setPreloadCleanup(FALSE);
 
-        if (hblTdb().getTruncateTable())
-        {
-          step_ = TRUNCATE_TABLE_;
-          break;
-        }
+      if (hblTdb().getTruncateTable())
+      {
+        step_ = TRUNCATE_TABLE_;
+        break;
+      }
 
         // Table will not be truncated, so make sure it is empty if Update
         // Stats has been requested. We obviously have to do this check before
@@ -1160,14 +1163,14 @@ short ExExeUtilHBaseBulkLoadTcb::work()
             ustatNonEmptyTable = TRUE;  // So we can display msg later
         }
 
-        step_ = LOAD_START_;
-      }
-        break;
+      step_ = LOAD_START_;
+    }
+    break;
 
-      case TRUNCATE_TABLE_:
-      {
-        if (setStartStatusMsgAndMoveToUpQueue(" PURGE DATA",&rc))
-          return rc;
+    case TRUNCATE_TABLE_:
+    {
+      if (setStartStatusMsgAndMoveToUpQueue(" PURGE DATA",&rc))
+        return rc;
 
         // Set the parserflag to prevent privilege checks in purgedata
         ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
@@ -1179,158 +1182,166 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           masterGlob->getStatement()->getContext()->setSqlParserFlags(0x20000);
         }
 
-        //for now the purgedata statement does not keep the partitions
-        char * ttQuery =
+      //for now the purgedata statement does not keep the partitions
+      char * ttQuery =
           new(getMyHeap()) char[strlen("PURGEDATA  ; ") +
-                               strlen(hblTdb().getTableName()) +
-                               100];
-        strcpy(ttQuery, "PURGEDATA  ");
-        strcat(ttQuery, hblTdb().getTableName());
-        strcat(ttQuery, ";");
+                                strlen(hblTdb().getTableName()) +
+                                100];
+      strcpy(ttQuery, "PURGEDATA  ");
+      strcat(ttQuery, hblTdb().getTableName());
+      strcat(ttQuery, ";");
 
-        Lng32 len = 0;
-        Int64 rowCount = 0;
-        cliRC = cliInterface()->executeImmediate(ttQuery, NULL,NULL,TRUE,NULL,TRUE);
-        NADELETEBASIC(ttQuery, getHeap());
-        ttQuery = NULL;
+      Lng32 len = 0;
+      Int64 rowCount = 0;
+      cliRC = cliInterface()->executeImmediate(ttQuery, NULL,NULL,TRUE,NULL,TRUE);
+      NADELETEBASIC(ttQuery, getHeap());
+      ttQuery = NULL;
 
         if (parserFlagSet)
           masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
 
-        if (cliRC < 0)
-        {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_ERROR_;
-          break;
-        }
-        step_ = LOAD_START_;
-
-        setEndStatusMsg(" PURGE DATA");
-      }
+      if (cliRC < 0)
+      {
+        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        step_ = LOAD_ERROR_;
         break;
+      }
+      step_ = LOAD_START_;
 
-      case LOAD_START_:
+      setEndStatusMsg(" PURGE DATA");
+    }
+    break;
+
+    case LOAD_START_:
+    {
+      if (setCQDs() <0)
       {
-        if (holdAndSetCQD("COMP_BOOL_226", "ON") < 0)
+        step_ = LOAD_END_ERROR_;
+        break;
+      }
+      if (hblTdb().getMaxErrorRows() > 0) {
+        int jniDebugPort = 0;
+        int jniDebugTimeout = 0;
+        ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
+                                              (char*)"", //Later may need to change to hblTdb.server_,
+                                              (char*)"", //Later may need to change to hblTdb.zkPort_,
+                                              jniDebugPort,
+                                              jniDebugTimeout);
+        retcode = ehi_->initHBLC();
+        if (retcode == 0) 
+           retcode = ehi_->createCounterTable(hblTdb().getErrCountTable(), (char *)"ERRORS");
+        if (retcode != 0 ) 
         {
+          Lng32 cliError = 0;
+
+          Lng32 intParam1 = -retcode;
+          ComDiagsArea * diagsArea = NULL;
+          ExRaiseSqlError(getHeap(), &diagsArea,
+                          (ExeErrorCode)(8448), NULL, &intParam1,
+                          &cliError, NULL,
+                          " ",
+                          getHbaseErrStr(retcode),
+                          (char *)currContext->getJniErrorStr().data());
           step_ = LOAD_END_ERROR_;
           break;
-        }
-        if (hblTdb().getForceCIF())
-        {
-          if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT", "ON") < 0)
-          {
-            step_ = LOAD_END_ERROR_;
-            break;
-          }
-          if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT_BMO", "ON") < 0)
-          {
-            step_ = LOAD_END_ERROR_;
-            break;
-          }
-          if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO", "100") < 0)
-          {
-            step_ = LOAD_END_ERROR_;
-            break;
-          }
-        }
-
-        if (hblTdb().getPreloadCleanup())
-          step_ = PRE_LOAD_CLEANUP_;
-        else
-        {
-          step_ = PREPARATION_;
-          if (hblTdb().getIndexes())
-            step_ = DISABLE_INDEXES_;
         }
       }
-      break;
-
-      case PRE_LOAD_CLEANUP_:
+      if (hblTdb().getPreloadCleanup())
+        step_ = PRE_LOAD_CLEANUP_;
+      else
       {
-        if (setStartStatusMsgAndMoveToUpQueue(" CLEANUP", &rc))
-          return rc;
-
-        //Cleanup files
-        char * clnpQuery =
-          new(getMyHeap()) char[strlen("LOAD CLEANUP FOR TABLE  ; ") +
-                               strlen(hblTdb().getTableName()) +
-                               100];
-        strcpy(clnpQuery, "LOAD CLEANUP FOR TABLE  ");
-        strcat(clnpQuery, hblTdb().getTableName());
-        strcat(clnpQuery, ";");
-
-        cliRC = cliInterface()->executeImmediate(clnpQuery, NULL,NULL,TRUE,NULL,TRUE);
-
-        NADELETEBASIC(clnpQuery, getHeap());
-        clnpQuery = NULL;
-        if (cliRC < 0)
-        {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_END_ERROR_;
-          break;
-        }
-
         step_ = PREPARATION_;
-
         if (hblTdb().getIndexes())
           step_ = DISABLE_INDEXES_;
-
-        setEndStatusMsg(" CLEANUP");
       }
-        break;
-      case DISABLE_INDEXES_:
+    }
+    break;
+
+    case PRE_LOAD_CLEANUP_:
+    {
+      if (setStartStatusMsgAndMoveToUpQueue(" CLEANUP", &rc))
+        return rc;
+
+      //Cleanup files
+      char * clnpQuery =
+          new(getMyHeap()) char[strlen("LOAD CLEANUP FOR TABLE  ; ") +
+                                strlen(hblTdb().getTableName()) +
+                                100];
+      strcpy(clnpQuery, "LOAD CLEANUP FOR TABLE  ");
+      strcat(clnpQuery, hblTdb().getTableName());
+      strcat(clnpQuery, ";");
+
+      cliRC = cliInterface()->executeImmediate(clnpQuery, NULL,NULL,TRUE,NULL,TRUE);
+
+      NADELETEBASIC(clnpQuery, getHeap());
+      clnpQuery = NULL;
+      if (cliRC < 0)
       {
-         if (setStartStatusMsgAndMoveToUpQueue(" DISABLE INDEXES", &rc))
+        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        step_ = LOAD_END_ERROR_;
+        break;
+      }
+
+      step_ = PREPARATION_;
+
+      if (hblTdb().getIndexes())
+        step_ = DISABLE_INDEXES_;
+
+      setEndStatusMsg(" CLEANUP");
+    }
+    break;
+    case DISABLE_INDEXES_:
+    {
+      if (setStartStatusMsgAndMoveToUpQueue(" DISABLE INDEXES", &rc))
+        return rc;
+
+      // disable indexes before starting the load preparation. load preparation phase will
+      // give an error if indexes are not disabled
+      // For constarints --disabling/enabling constarints is not supported yet. in this case the user
+      // needs to disable or drop the constraints manually before starting load. If constarints
+      // exist load preparation will give an error
+      char * diQuery =
+          new(getMyHeap()) char[strlen("ALTER TABLE DISABLE ALL INDEXES   ; ") +
+                                strlen(hblTdb().getTableName()) +
+                                100];
+      strcpy(diQuery, "ALTER TABLE  ");
+      strcat(diQuery, hblTdb().getTableName());
+      strcat(diQuery, " DISABLE ALL INDEXES ;");
+      cliRC = cliInterface()->executeImmediate(diQuery, NULL,NULL,TRUE,NULL,TRUE);
+
+      NADELETEBASIC(diQuery, getMyHeap());
+      diQuery = NULL;
+      if (cliRC < 0)
+      {
+        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        step_ = LOAD_END_ERROR_;
+        break;
+      }
+      step_ = PREPARATION_;
+
+      setEndStatusMsg(" DISABLE INDEXES");
+    }
+    break;
+
+    case PREPARATION_:
+    {
+      if (!hblTdb().getUpsertUsingLoad())
+      {
+        if (setStartStatusMsgAndMoveToUpQueue(" PREPARATION", &rc, 0, TRUE))
           return rc;
 
-         // disable indexes before starting the load preparation. load preparation phase will
-         // give an error if indexes are not disabled
-         // For constarints --disabling/enabling constarints is not supported yet. in this case the user
-         // needs to disable or drop the constraints manually before starting load. If constarints
-         // exist load preparation will give an error
-        char * diQuery =
-          new(getMyHeap()) char[strlen("ALTER TABLE DISABLE ALL INDEXES   ; ") +
-                               strlen(hblTdb().getTableName()) +
-                               100];
-        strcpy(diQuery, "ALTER TABLE  ");
-        strcat(diQuery, hblTdb().getTableName());
-        strcat(diQuery, " DISABLE ALL INDEXES ;");
-        cliRC = cliInterface()->executeImmediate(diQuery, NULL,NULL,TRUE,NULL,TRUE);
-
-        NADELETEBASIC(diQuery, getMyHeap());
-        diQuery = NULL;
+        if (hblTdb().getNoDuplicates())
+          cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "OFF");
+        else
+          cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "ON");
         if (cliRC < 0)
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
           step_ = LOAD_END_ERROR_;
           break;
         }
-        step_ = PREPARATION_;
 
-        setEndStatusMsg(" DISABLE INDEXES");
-      }
-        break;
-
-      case PREPARATION_:
-      {
-        if (!hblTdb().getUpsertUsingLoad())
-        {
-          if (setStartStatusMsgAndMoveToUpQueue(" PREPARATION", &rc, 0, TRUE))
-            return rc;
-
-          if (hblTdb().getNoDuplicates())
-            cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "OFF");
-          else
-            cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "ON");
-          if (cliRC < 0)
-          {
-          step_ = LOAD_END_ERROR_;
-            break;
-          }
-
-          rowsAffected_ = 0;
-          char * transQuery =hblTdb().ldQuery_;
+        rowsAffected_ = 0;
+        char * transQuery =hblTdb().ldQuery_;
           if (ustatNonEmptyTable)
             {
               // If the ustat option was specified, but the table to be loaded
@@ -1358,160 +1369,160 @@ short ExExeUtilHBaseBulkLoadTcb::work()
             }
           }
 
-          cliRC = cliInterface()->executeImmediate(transQuery,
-                                                   NULL,
-                                                   NULL,
-                                                   TRUE,
-                                                   &rowsAffected_);
+        cliRC = cliInterface()->executeImmediate(transQuery,
+            NULL,
+            NULL,
+            TRUE,
+            &rowsAffected_);
           if (parserFlagSet)
             masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
 
-          transQuery = NULL;
-          if (cliRC < 0)
-          {
-            rowsAffected_ = 0;
-            cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-            step_ = LOAD_END_ERROR_;
-            break;
-          }
-
-          step_ = COMPLETE_BULK_LOAD_;
-        if (rowsAffected_ == 0)
-          step_ = LOAD_END_;
-
-          sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
-          int len = strlen(statusMsgBuf_);
-          setEndStatusMsg(" PREPARATION", len, TRUE);
-        }
-        else
+        transQuery = NULL;
+        if (cliRC < 0)
         {
-          if (setStartStatusMsgAndMoveToUpQueue(" UPSERT USING LOAD ", &rc, 0, TRUE))
-            return rc;
-
           rowsAffected_ = 0;
-          char * upsQuery = hblTdb().ldQuery_;
-          cliRC = cliInterface()->executeImmediate(upsQuery, NULL, NULL, TRUE, &rowsAffected_);
-
-          upsQuery = NULL;
-          if (cliRC < 0)
-          {
-            cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-            step_ = LOAD_ERROR_;
-            break;
-          }
-
-          step_ = LOAD_END_;
-
-           if (hblTdb().getIndexes())
-             step_ = POPULATE_INDEXES_;
-
-          sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
-          int len = strlen(statusMsgBuf_);
-          setEndStatusMsg(" UPSERT USING LOAD ", len, TRUE);
-        }
-      }
-        break;
-
-
-      case COMPLETE_BULK_LOAD_:
-      {
-        if (setStartStatusMsgAndMoveToUpQueue(" COMPLETION", &rc,0, TRUE))
-          return rc;
-
-
-        //TRAF_LOAD_TAKE_SNAPSHOT
-        if (hblTdb().getNoRollback() )
-          cliRC = holdAndSetCQD("TRAF_LOAD_TAKE_SNAPSHOT", "OFF");
-        else
-          cliRC = holdAndSetCQD("TRAF_LOAD_TAKE_SNAPSHOT", "ON");
-
-        if (cliRC < 0)
-        {
-          step_ = LOAD_END_ERROR_;
-          break;
-        }
-
-        //this case is mainly for debugging
-        if (hblTdb().getKeepHFiles() &&
-            !hblTdb().getSecure() )
-        {
-          if (holdAndSetCQD("COMPLETE_BULK_LOAD_N_KEEP_HFILES", "ON") < 0)
-          {
-            step_ = LOAD_END_ERROR_;
-            break;
-          }
-        }
-        //complete load query
-        char * clQuery =
-          new(getMyHeap()) char[strlen("LOAD COMPLETE FOR TABLE  ; ") +
-                               strlen(hblTdb().getTableName()) +
-                               100];
-        strcpy(clQuery, "LOAD COMPLETE FOR TABLE  ");
-        strcat(clQuery, hblTdb().getTableName());
-        strcat(clQuery, ";");
-
-        cliRC = cliInterface()->executeImmediate(clQuery, NULL,NULL,TRUE,NULL,TRUE);
-
-        NADELETEBASIC(clQuery, getMyHeap());
-        clQuery = NULL;
-
-        if (cliRC < 0)
-        {
-          rowsAffected_ = 0;  
-                              
           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
           step_ = LOAD_END_ERROR_;
           break;
         }
-        cliRC = restoreCQD("TRAF_LOAD_TAKE_SNAPSHOT");
-         if (cliRC < 0)
-         {
-           step_ = LOAD_END_ERROR_;
-           break;
-         }
+
+        step_ = COMPLETE_BULK_LOAD_;
+        if (rowsAffected_ == 0)
+          step_ = LOAD_END_;
+
+        sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
+        int len = strlen(statusMsgBuf_);
+        setEndStatusMsg(" PREPARATION", len, TRUE);
+      }
+      else
+      {
+        if (setStartStatusMsgAndMoveToUpQueue(" UPSERT USING LOAD ", &rc, 0, TRUE))
+          return rc;
+
+        rowsAffected_ = 0;
+        char * upsQuery = hblTdb().ldQuery_;
+        cliRC = cliInterface()->executeImmediate(upsQuery, NULL, NULL, TRUE, &rowsAffected_);
+
+        upsQuery = NULL;
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_ERROR_;
+          break;
+        }
+
+          step_ = LOAD_END_;
 
         if (hblTdb().getIndexes())
           step_ = POPULATE_INDEXES_;
+
+        sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
+        int len = strlen(statusMsgBuf_);
+        setEndStatusMsg(" UPSERT USING LOAD ", len, TRUE);
+      }
+    }
+    break;
+
+
+    case COMPLETE_BULK_LOAD_:
+    {
+      if (setStartStatusMsgAndMoveToUpQueue(" COMPLETION", &rc,0, TRUE))
+        return rc;
+
+
+      //TRAF_LOAD_TAKE_SNAPSHOT
+      if (hblTdb().getNoRollback() )
+        cliRC = holdAndSetCQD("TRAF_LOAD_TAKE_SNAPSHOT", "OFF");
+      else
+        cliRC = holdAndSetCQD("TRAF_LOAD_TAKE_SNAPSHOT", "ON");
+
+      if (cliRC < 0)
+      {
+        step_ = LOAD_END_ERROR_;
+        break;
+      }
+
+      //this case is mainly for debugging
+      if (hblTdb().getKeepHFiles() &&
+          !hblTdb().getSecure() )
+      {
+        if (holdAndSetCQD("COMPLETE_BULK_LOAD_N_KEEP_HFILES", "ON") < 0)
+        {
+          step_ = LOAD_END_ERROR_;
+          break;
+        }
+      }
+      //complete load query
+      char * clQuery =
+          new(getMyHeap()) char[strlen("LOAD COMPLETE FOR TABLE  ; ") +
+                                strlen(hblTdb().getTableName()) +
+                                100];
+      strcpy(clQuery, "LOAD COMPLETE FOR TABLE  ");
+      strcat(clQuery, hblTdb().getTableName());
+      strcat(clQuery, ";");
+
+      cliRC = cliInterface()->executeImmediate(clQuery, NULL,NULL,TRUE,NULL,TRUE);
+
+      NADELETEBASIC(clQuery, getMyHeap());
+      clQuery = NULL;
+
+      if (cliRC < 0)
+      {
+        rowsAffected_ = 0;
+
+        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        step_ = LOAD_END_ERROR_;
+        break;
+      }
+      cliRC = restoreCQD("TRAF_LOAD_TAKE_SNAPSHOT");
+      if (cliRC < 0)
+      {
+        step_ = LOAD_END_ERROR_;
+        break;
+      }
+
+      if (hblTdb().getIndexes())
+        step_ = POPULATE_INDEXES_;
         else if (hblTdb().getUpdateStats())
           step_ = UPDATE_STATS_;
         else
           step_ = LOAD_END_;
 
-        setEndStatusMsg(" COMPLETION", 0, TRUE);
-      }
-        break;
+      setEndStatusMsg(" COMPLETION", 0, TRUE);
+    }
+    break;
 
-      case POPULATE_INDEXES_:
-      {
-        if (setStartStatusMsgAndMoveToUpQueue(" POPULATE INDEXES", &rc))
-          return rc;
+    case POPULATE_INDEXES_:
+    {
+      if (setStartStatusMsgAndMoveToUpQueue(" POPULATE INDEXES", &rc))
+        return rc;
 
-        char * piQuery =
-           new(getMyHeap()) char[strlen("POPULATE ALL INDEXES ON  ; ") +
+      char * piQuery =
+          new(getMyHeap()) char[strlen("POPULATE ALL INDEXES ON  ; ") +
                                 strlen(hblTdb().getTableName()) +
                                 100];
-         strcpy(piQuery, "POPULATE ALL INDEXES ON   ");
-         strcat(piQuery, hblTdb().getTableName());
-         strcat(piQuery, ";");
+      strcpy(piQuery, "POPULATE ALL INDEXES ON   ");
+      strcat(piQuery, hblTdb().getTableName());
+      strcat(piQuery, ";");
 
-         cliRC = cliInterface()->executeImmediate(piQuery, NULL,NULL,TRUE,NULL,TRUE);
+      cliRC = cliInterface()->executeImmediate(piQuery, NULL,NULL,TRUE,NULL,TRUE);
 
-         NADELETEBASIC(piQuery, getHeap());
-         piQuery = NULL;
+      NADELETEBASIC(piQuery, getHeap());
+      piQuery = NULL;
 
-         if (cliRC < 0)
-         {
-           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-           step_ = LOAD_END_ERROR_;
-           break;
-         }
+      if (cliRC < 0)
+      {
+        cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        step_ = LOAD_END_ERROR_;
+        break;
+      }
 
          if (hblTdb().getUpdateStats())
            step_ = UPDATE_STATS_;
          else
-           step_ = LOAD_END_;
+        step_ = LOAD_END_;
 
-         setEndStatusMsg(" POPULATE INDEXES", 0, TRUE);
+        setEndStatusMsg(" POPULATE INDEXES", 0, TRUE);
       }
         break;
 
@@ -1565,131 +1576,111 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = LOAD_END_ERROR_;
 
         setEndStatusMsg(" UPDATE STATS", 0, TRUE);
-      }
-      break;
-
-      case RETURN_STATUS_MSG_:
-      {
-        if (moveRowToUpQueue(statusMsgBuf_,0,&rc))
-          return rc;
-
-        step_ = nextStep_;
-      }
-      break;
-
-      case LOAD_END_:
-      case LOAD_END_ERROR_:
-      {
-        cliRC = restoreCQD("COMP_BOOL_226");
-         if (cliRC < 0)
-         {
-           step_ = LOAD_ERROR_;
-           break;
-         }
-         cliRC = restoreCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES");
-         if (cliRC < 0)
-         {
-           step_ = LOAD_ERROR_;
-           break;
-         }
-         if (hblTdb().getForceCIF())
-         {
-           if (restoreCQD("COMPRESSED_INTERNAL_FORMAT") < 0)
-           {
-             step_ = LOAD_ERROR_;
-             break;
-           }
-           if (restoreCQD("COMPRESSED_INTERNAL_FORMAT_BMO") < 0)
-           {
-             step_ = LOAD_ERROR_;
-             break;
-           }
-           if (restoreCQD("COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO") < 0)
-           {
-             step_ = LOAD_ERROR_;
-             break;
-           }
-         }
-         if (step_ == LOAD_END_)
-          step_ = DONE_;
-         else
-           step_ = LOAD_ERROR_;
-      }
-      break;
-
-      case DONE_:
-      {
-        if (qparent_.up->isFull())
-          return WORK_OK;
-
-        // Return EOF.
-        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-
-        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
-
-        up_entry->upState.setMatchNo(0);
-        up_entry->upState.status = ex_queue::Q_NO_DATA;
-
-        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-
-        if (diagsArea == NULL)
-          diagsArea = ComDiagsArea::allocate(getMyHeap());
-        else
-          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
-
-        diagsArea->setRowCount(rowsAffected_);
-
-        if (getDiagsArea())
-          diagsArea->mergeAfter(*getDiagsArea());
-
-        up_entry->setDiagsArea(diagsArea);
-
-        // insert into parent
-        qparent_.up->insert();
-        step_ = INITIAL_;
-        qparent_.down->removeHead();
-        return WORK_OK;
-      }
+    }
         break;
 
-      case LOAD_ERROR_:
+    case RETURN_STATUS_MSG_:
+    {
+      if (moveRowToUpQueue(statusMsgBuf_,0,&rc))
+        return rc;
+
+      step_ = nextStep_;
+    }
+    break;
+
+    case LOAD_END_:
+    case LOAD_END_ERROR_:
+    {
+      if (restoreCQDs() < 0)
       {
-        if (qparent_.up->isFull())
-          return WORK_OK;
+        step_ = LOAD_ERROR_;
+        break;
+      }
+      if (hblTdb().getContinueOnError() && ehi_)
+      {
+        ehi_->close();
+        ehi_ = NULL;
+      }
+      if (step_ == LOAD_END_)
+        step_ = DONE_;
+      else
+        step_ = LOAD_ERROR_;
+    }
+    break;
 
-        // Return EOF.
-        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+    case DONE_:
+    {
+      if (qparent_.up->isFull())
+        return WORK_OK;
 
-        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
+      // Return EOF.
+      ex_queue_entry * up_entry = qparent_.up->getTailEntry();
 
-        up_entry->upState.setMatchNo(0);
-        up_entry->upState.status = ex_queue::Q_SQLERROR;
+      up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
 
-        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+      up_entry->upState.setMatchNo(0);
+      up_entry->upState.status = ex_queue::Q_NO_DATA;
 
-        if (diagsArea == NULL)
-          diagsArea = ComDiagsArea::allocate(getMyHeap());
-        else
-          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
 
-        if (getDiagsArea())
+      if (diagsArea == NULL)
+        diagsArea = ComDiagsArea::allocate(getMyHeap());
+      else
+        diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+
+      diagsArea->setRowCount(rowsAffected_);
+
+      if (getDiagsArea())
+        diagsArea->mergeAfter(*getDiagsArea());
+
+      up_entry->setDiagsArea(diagsArea);
+
+      // insert into parent
+      qparent_.up->insert();
+      step_ = INITIAL_;
+      qparent_.down->removeHead();
+      return WORK_OK;
+    }
+    break;
+
+    case LOAD_ERROR_:
+    {
+      if (qparent_.up->isFull())
+        return WORK_OK;
+
+      // Return EOF.
+      ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+      up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
+
+      up_entry->upState.setMatchNo(0);
+      up_entry->upState.status = ex_queue::Q_SQLERROR;
+
+      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+
+      if (diagsArea == NULL)
+        diagsArea = ComDiagsArea::allocate(getMyHeap());
+      else
+        diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+
+      if (getDiagsArea())
         {
-          diagsArea->mergeAfter(*getDiagsArea());
+        diagsArea->mergeAfter(*getDiagsArea());
           diagsArea->setRowCount(rowsAffected_);
         }
 
-        up_entry->setDiagsArea(diagsArea);
+      up_entry->setDiagsArea(diagsArea);
 
-        // insert into parent
-        qparent_.up->insert();
+      // insert into parent
+      qparent_.up->insert();
 
-        pstate.matches_ = 0;
+      pstate.matches_ = 0;
 
 
 
-        step_ = DONE_;
-      }
-        break;
+      step_ = DONE_;
+    }
+    break;
 
     } // switch
   } // while
@@ -1698,8 +1689,61 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
 }
 
+short ExExeUtilHBaseBulkLoadTcb::setCQDs()
+{
+  if (holdAndSetCQD("COMP_BOOL_226", "ON") < 0) { return -1;}
+  if (hblTdb().getForceCIF())
+  {
+    if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT", "ON") < 0) {return -1; }
+    if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT_BMO", "ON") < 0){ return -1; }
+    if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO", "100") < 0) { return -1;}
+  }
+  if (holdAndSetCQD("TRAF_LOAD_LOG_ERROR_ROWS", (hblTdb().getLogErrorRows()) ? "ON" : "OFF") < 0)
+  { return -1;}
+
+  if (holdAndSetCQD("TRAF_LOAD_CONTINUE_ON_ERROR", (hblTdb().getContinueOnError()) ? "ON" : "OFF") < 0)
+  { return -1; }
+
+  char strMaxRR[10];
+  sprintf(strMaxRR,"%d", hblTdb().getMaxErrorRows());
+  if (holdAndSetCQD("TRAF_LOAD_MAX_ERROR_ROWS", strMaxRR) < 0) { return -1;}
+  if (hblTdb().getContinueOnError())
+  {
+    if (holdAndSetCQD("TRAF_LOAD_ERROR_COUNT_TABLE", hblTdb().getErrCountTable()) < 0)
+    { return -1;}
+
+    time_t t;
+    time(&t);
+    char pt[30];
+    struct tm * curgmtime = gmtime(&t);
+    strftime(pt, 30, "%Y%m%d_%H%M%S", curgmtime);
+
+    if (holdAndSetCQD("TRAF_LOAD_ERROR_COUNT_ID", pt) < 0) { return -1;}
+  }
+  return 0;
+}
+
+short ExExeUtilHBaseBulkLoadTcb::restoreCQDs()
+{
+  if (restoreCQD("COMP_BOOL_226") < 0) { return -1;}
+  if (restoreCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES") < 0)  { return -1;}
+  if (hblTdb().getForceCIF())
+  {
+    if (restoreCQD("COMPRESSED_INTERNAL_FORMAT") < 0) { return -1;}
+    if (restoreCQD("COMPRESSED_INTERNAL_FORMAT_BMO") < 0)  { return -1;}
+    if (restoreCQD("COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO") < 0)  { return -1;}
+  }
+  if (restoreCQD("TRAF_LOAD_LOG_ERROR_ROWS") < 0)  { return -1;}
+  if (restoreCQD("TRAF_LOAD_CONTINUE_ON_ERROR") < 0)  { return -1;}
+  if (restoreCQD("TRAF_LOAD_MAX_ERROR_ROWS") < 0)  { return -1;}
+  if (restoreCQD("TRAF_LOAD_ERROR_COUNT_TABLE") < 0)  { return -1;}
+  if (restoreCQD("TRAF_LOAD_ERROR_COUNT_ID") < 0) { return -1; }
+
+  return 0;
+}
+
 short ExExeUtilHBaseBulkLoadTcb::moveRowToUpQueue(const char * row, Lng32 len,
-                                                  short * rc, NABoolean isVarchar)
+    short * rc, NABoolean isVarchar)
 {
   if (hblTdb().getNoOutput())
     return 0;
@@ -1711,13 +1755,13 @@ short ExExeUtilHBaseBulkLoadTcb::moveRowToUpQueue(const char * row, Lng32 len,
 
 
 short ExExeUtilHBaseBulkLoadTcb::setStartStatusMsgAndMoveToUpQueue(const char * operation,
-                                     short * rc,
-                                     int bufPos,
-                                     NABoolean   withtime)
+    short * rc,
+    int bufPos,
+    NABoolean   withtime)
 {
 
   if (hblTdb().getNoOutput())
-     return 0;
+    return 0;
 
   if (withtime)
     startTime_ = NA_JulianTimestamp();
@@ -1728,12 +1772,12 @@ short ExExeUtilHBaseBulkLoadTcb::setStartStatusMsgAndMoveToUpQueue(const char * 
 
 
 void ExExeUtilHBaseBulkLoadTcb::setEndStatusMsg(const char * operation,
-                                     int bufPos,
-                                     NABoolean   withtime)
+    int bufPos,
+    NABoolean   withtime)
 {
 
   if (hblTdb().getNoOutput())
-     return ;
+    return ;
 
   char timeBuf[200];
 

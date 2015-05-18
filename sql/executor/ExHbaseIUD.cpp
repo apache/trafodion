@@ -27,6 +27,8 @@
 #include "ex_exe_stmt_globals.h"
 #include "ExpHbaseInterface.h"
 #include "hs_util.h"
+#include "NLSConversion.h"
+#include "ExHdfsScan.h"
 
 ExHbaseAccessInsertTcb::ExHbaseAccessInsertTcb(
           const ExHbaseAccessTdb &hbaseAccessTdb, 
@@ -982,11 +984,24 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
     ExHbaseAccessUpsertVsbbSQTcb( hbaseAccessTdb, glob),
     prevRowId_ (NULL),
     hdfs_(NULL),
-    hdfsSampleFile_(NULL)
+    hdfsSampleFile_(NULL),
+    lastErrorCnd_(NULL)
 {
    hFileParamsInitialized_ = false;  ////temporary-- need better mechanism later
    //sortedListOfColNames_ = NULL;
    posVec_.clear();
+
+   Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
+
+
+    ExHbaseAccessTcb::buildLoggingPath(((ExHbaseAccessTdb &)hbaseAccessTdb).getLoggingLocation(),
+                      (char *)((ExHbaseAccessTdb &)hbaseAccessTdb).getErrCountRowId(),
+                      ((ExHbaseAccessTdb &)hbaseAccessTdb).getTableName(),
+                      "traf_upsert_err",
+                      fileNum,
+                      loggingFileName_);
+   LoggingFileCreated_ = FALSE;
+   loggingRow_ =  new(glob->getDefaultHeap()) char[hbaseAccessTdb.updateRowLen_];
 }
 
 ExHbaseAccessBulkLoadPrepSQTcb::~ExHbaseAccessBulkLoadPrepSQTcb()
@@ -1158,7 +1173,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
   short rc = 0;
 
   ExMasterStmtGlobals *g = getGlobals()->
-    castToExExeStmtGlobals()->castToExMasterStmtGlobals();
+      castToExExeStmtGlobals()->castToExMasterStmtGlobals();
 
   NABoolean eodSeen = false;
 
@@ -1175,61 +1190,59 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
     if (pentry_down->downState.request == ex_queue::GET_NOMORE)
       step_ = ALL_DONE;
     else if (pentry_down->downState.request == ex_queue::GET_EOD &&
-             step_ != HANDLE_ERROR && lastHandledStep_ != HANDLE_ERROR)
+        step_ != HANDLE_ERROR && lastHandledStep_ != HANDLE_ERROR) {
+      eodSeen = true;
       if (currRowNum_ > rowsInserted_)
-      {
         step_ = PROCESS_INSERT;
-      }
       else
       {
         if (lastHandledStep_ == ALL_DONE)
           matches_ = 0;
         step_ = ALL_DONE;
-        eodSeen = true;
       }
-
+    }
     switch (step_)
     {
-      case NOT_STARTED:
+    case NOT_STARTED:
+    {
+      matches_ = 0;
+      currRowNum_ = 0;
+      numRetries_ = 0;
+
+      prevTailIndex_ = 0;
+      lastHandledStep_ = NOT_STARTED;
+
+      nextRequest_ = qparent_.down->getHeadIndex();
+
+      rowsInserted_ = 0;
+      step_ = INSERT_INIT;
+    }
+    break;
+
+    case INSERT_INIT:
+    {
+      retcode = ehi_->initHBLC(getHbaseAccessStats());
+
+      if (setupError(retcode, "ExpHbaseInterface::initHBLC"))
       {
-        matches_ = 0;
-        currRowNum_ = 0;
-        numRetries_ = 0;
-
-        prevTailIndex_ = 0;
-        lastHandledStep_ = NOT_STARTED;
-
-        nextRequest_ = qparent_.down->getHeadIndex();
-
-        rowsInserted_ = 0;
-        step_ = INSERT_INIT;
-      }
+        step_ = HANDLE_ERROR;
         break;
+      }
 
-      case INSERT_INIT:
+      table_.val = hbaseAccessTdb().getTableName();
+      table_.len = strlen(hbaseAccessTdb().getTableName());
+      short numCols = 0;
+
+      if (!hFileParamsInitialized_)
       {
-        retcode = ehi_->initHBLC(getHbaseAccessStats());
-
-        if (setupError(retcode, "ExpHbaseInterface::initHBLC"))
-        {
-          step_ = HANDLE_ERROR;
-          break;
-        }
-
-        table_.val = hbaseAccessTdb().getTableName();
-        table_.len = strlen(hbaseAccessTdb().getTableName());
-        short numCols = 0;
-
-        if (!hFileParamsInitialized_)
-        {
-          importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
-                                        ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
-          familyLocation_ = std::string(importLocation_ + "/#1");
-          Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
-          hFileName_ = std::string("hfile");
-          char hFileName[50];
-          snprintf(hFileName, 50, "hfile%d", fileNum);
-          hFileName_ = hFileName;
+              importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
+            ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
+        familyLocation_ = std::string(importLocation_ + "/#1");
+        Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
+        hFileName_ = std::string("hfile");
+        char hFileName[50];
+        snprintf(hFileName, 50, "hfile%d", fileNum);
+        hFileName_ = hFileName;
 
           NAString hiveDDL;
           NAString hiveSampleTblNm;
@@ -1242,7 +1255,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           retcode = ehi_->initHFileParams(table_, familyLocation_, hFileName_,
                                           hbaseAccessTdb().getMaxHFileSize(),
                                           hiveSampleTblNm.data(), hiveDDL.data());
-          hFileParamsInitialized_ = true;
+        hFileParamsInitialized_ = true;
 
           if (samplingRate > 0)
           {
@@ -1257,13 +1270,8 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
             sprintf(filePart, "/%d", fileNum);
             samplePath.append(filePart);
             hdfsSampleFile_ = hdfsOpenFile(hdfs_, samplePath.data(), O_WRONLY|O_CREAT, 0, 0, 0);
-            //if (!hdfsSampleFile_)
-            //  printf("*** Failed to open %s for writing.\n", samplePath.data());
-            //else
-            //  printf("*** File %s was opened successfully.\n", samplePath.data());
           }
 
-//              sortedListOfColNames_ = new  Queue(); //delete wehn done
           posVec_.clear();
           hbaseAccessTdb().listOfUpdatedColNames()->position();
           while (NOT hbaseAccessTdb().listOfUpdatedColNames()->atEnd())
@@ -1273,7 +1281,6 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
             hbaseAccessTdb().listOfUpdatedColNames()->advance();
             numCols++;
           }
-//              sortQualifiers(hbaseAccessTdb().listOfUpdatedColNames(),sortedListOfColNames_, posVec_);
         }
         if (setupError(retcode, "ExpHbaseInterface::createHFile"))
         {
@@ -1298,24 +1305,35 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
       {
         workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
           .setDataPointer(convertRow_);
-
+        lastErrorCnd_ = NULL;
         if (convertExpr())
           {
             insertRowlen_ = hbaseAccessTdb().convertRowLen_;
             ex_expr::exp_return_type evalRetCode =
               convertExpr()->eval(pentry_down->getAtp(), workAtp_,
                                   NULL, -1, &insertRowlen_);
-            if (evalRetCode == ex_expr::EXPR_ERROR)
-              {
+            if (evalRetCode == ex_expr::EXPR_ERROR) {
+               if (hbaseAccessTdb().getContinueOnError()) {
+                  if (pentry_down->getDiagsArea()) {
+                     Lng32 errorCount = pentry_down->getDiagsArea()->getNumber(DgSqlCode::ERROR_);
+                    lastErrorCnd_ = pentry_down->getDiagsArea()->getErrorEntry(errorCount);
+                  }
+                step_= HANDLE_EXCEPTION;
+                break;
+              }
+              else
+              { 
                 step_ = HANDLE_ERROR;
                 break;
               }
           }
+        }
 
         genAndAssignSyskey(hbaseAccessTdb().convertTuppIndex_, convertRow_);
 
         step_ = EVAL_ROWID_EXPR;
       }
+    
         break;
 
       case EVAL_ROWID_EXPR:
@@ -1325,7 +1343,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           step_ = HANDLE_ERROR;
           break;
         }
-
+        lastErrorCnd_ = NULL;
         // duplicates (same rowid) are not allowed in Hfiles. adding duplicates causes Hfiles to generate
         // errors
         if (prevRowId_ == NULL)
@@ -1339,18 +1357,29 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           // compare the current rowId to the previous one
           if (memcmp(prevRowId_, rowId_.val, rowId_.len) == 0)
           {
-            if (((ExHbaseAccessTdb&) hbaseAccessTdb()).getNoDuplicates())
-           {
+            if (((ExHbaseAccessTdb&) hbaseAccessTdb()).getNoDuplicates()  ||
+               ((NOT  ((ExHbaseAccessTdb&) hbaseAccessTdb()).getNoDuplicates()) && 
+                      hbaseAccessTdb().getContinueOnError())) { 
               //8110 Duplicate rows detected.
               ComDiagsArea * diagsArea = NULL;
               ExRaiseSqlError(getHeap(), &diagsArea,
                               (ExeErrorCode)(8110));
               pentry_down->setDiagsArea(diagsArea);
-              step_ = HANDLE_ERROR;
-              break;
+              if (hbaseAccessTdb().getContinueOnError()) {
+                  if (pentry_down->getDiagsArea()) {
+                     Lng32 errorCount = pentry_down->getDiagsArea()->getNumber(DgSqlCode::ERROR_);
+                    lastErrorCnd_ = pentry_down->getDiagsArea()->getErrorEntry(errorCount);
+                  }
+                  step_= HANDLE_EXCEPTION;
+                  break;
+              }
+              else {
+                 step_ = HANDLE_ERROR;
+                 break;
+              }
            }
-            else
-            {
+           else
+           {
               //skip duplicate
               step_ = DONE;
               break;
@@ -1377,8 +1406,6 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           step_ = HANDLE_ERROR;
           break;
         }
-
-        //insColTSval_ = -1;
 
         copyRowIDToDirectBuffer( rowId_);
         currRowNum_++;
@@ -1418,24 +1445,70 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
       case HANDLE_ERROR:
       {
-        // maybe we can continue if error is not fatal and logs the execptions-- will be done later
-        //
         if (handleError(rc))
           return rc;
 
-        retcode = ehi_->close();
-
         lastHandledStep_ =HANDLE_ERROR;
+        eodSeen = true;
+        matches_ = 0;
         step_ = ALL_DONE;
       }
         break;
 
       case HANDLE_EXCEPTION:
       {
-        // -- log the exception rows in a hdfs
-        //rows that don't pass the check constarints criteria and others
-        ex_assert(0, " state not handled yet")
-        step_ = SETUP_INSERT;
+      if (hbaseAccessTdb().getMaxErrorRows() > 0)
+      {
+        Int64 exceptionCount = 0;
+        ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, hbaseAccessTdb().getErrCountTab(), 
+                      hbaseAccessTdb().getErrCountRowId());
+        if (exceptionCount >  hbaseAccessTdb().getMaxErrorRows())
+        {
+          if (pentry_down->getDiagsArea())
+            pentry_down->getDiagsArea()->clear();
+          if (workAtp_->getDiagsArea())
+            workAtp_->getDiagsArea()->clear();
+
+          //8112 max number of error rows exceeded.
+          ComDiagsArea * diagsArea = NULL;
+          ExRaiseSqlError(getHeap(), &diagsArea,
+              (ExeErrorCode)(EXE_MAX_ERROR_ROWS_EXCEEDED));
+          pentry_down->setDiagsArea(diagsArea);
+          step_ = HANDLE_ERROR;
+          break;
+        }
+      }
+
+      if (hbaseAccessTdb().getLogErrorRows())
+      {
+        workAtp_->getTupp(hbaseAccessTdb().updateTuppIndex_).setDataPointer(updateRow_);
+
+        if (updateExpr())
+        {
+          ex_expr::exp_return_type evalRetCode =
+                              updateExpr()->eval(pentry_down->getAtp(), workAtp_);
+          if (evalRetCode == ex_expr::EXPR_ERROR)
+          {
+            step_ = HANDLE_ERROR;
+            break;
+          }
+        }
+        int loggingRowLen = 0;
+        Lng32 errorMsgLen = 0;
+        createLoggingRow( hbaseAccessTdb().updateTuppIndex_,  updateRow_,
+            loggingRow_ , loggingRowLen);
+        ExHbaseAccessTcb::handleException((NAHeap *)getHeap(), loggingRow_, loggingRowLen,
+               lastErrorCnd_,
+               ehi_,
+               LoggingFileCreated_,
+               loggingFileName_);
+      }
+      if (pentry_down->getDiagsArea())
+        pentry_down->getDiagsArea()->clear();
+      if (workAtp_->getDiagsArea())
+        workAtp_->getDiagsArea()->clear();
+
+        step_ = DONE;
       }
         break;
       case DONE:
@@ -1453,12 +1526,13 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           if (eodSeen)
           {
             ehi_->closeHFile(table_);
+            ehi_->hdfsClose();
             hFileParamsInitialized_ = false;
             retcode = ehi_->close();
           }
         }
       }
-        break;
+      break;
 
     } // switch
 
@@ -1467,6 +1541,61 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
   return WORK_OK;
 }
 
+short ExHbaseAccessBulkLoadPrepSQTcb::createLoggingRow( UInt16 tuppIndex,  char * tuppRow, char * targetRow, int &targetRowLen)
+{
+
+  ExpTupleDesc * rowTD =
+      hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+      (tuppIndex);
+
+  short colNameLen;
+  char * colName;
+  short nullVal = 0;
+  short nullValLen = 0;
+  short colValLen;
+  char *colVal;
+
+  Attributes * attr;
+  short *numColsPtr;
+
+  char * tmpTargetRow = targetRow;
+  for (Lng32 i = 0; i <  rowTD->numAttrs(); i++)
+  {
+    Attributes * attr = rowTD->getAttr(i);
+
+    if (attr)
+    {
+      colVal = &tuppRow[attr->getOffset()];
+      nullVal = 0;
+      if (attr->getNullFlag() &&
+          (*(short*)&tuppRow[attr->getNullIndOffset()]))
+      {
+        targetRow[0] = '|';
+        targetRow++;
+      }
+      else
+      {
+        colValLen =  attr->getLength(&tuppRow[attr->getVCLenIndOffset()]);
+        memcpy(targetRow,colVal, colValLen);
+        targetRow +=colValLen;
+        if (i != rowTD->numAttrs() -1)
+          targetRow[0] = '|';
+        else
+          targetRow[0] = '\n';
+        targetRow++;
+      }
+    }
+    else
+    {
+      ex_assert(false, "Unable to obtain column descriptor");
+    }
+
+  }   // for
+
+  targetRowLen= targetRow - tmpTargetRow;
+
+  return 0;
+}
 
 // UMD (unique UpdMergeDel on Trafodion tables)
 ExHbaseUMDtrafUniqueTaskTcb::ExHbaseUMDtrafUniqueTaskTcb

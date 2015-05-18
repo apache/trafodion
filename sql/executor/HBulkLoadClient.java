@@ -30,6 +30,8 @@ import java.io.File;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileAlreadyExistsException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -54,26 +56,24 @@ import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescriptio
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription.Type;
 import org.apache.hadoop.hbase.snapshot.RestoreSnapshotException;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
-//import org.apache.hadoop.hbase.io.hfile.Compression;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFileContext;
 import org.apache.hadoop.hbase.io.hfile.HFileContextBuilder;
 import org.apache.hadoop.hbase.io.compress.*;
-//import org.apache.hadoop.hbase.io.compress.Compression;
-//import org.apache.hadoop.hbase.io.hfile.Compression;
-//import org.apache.hadoop.hbase.io.hfile.Compression.Algorithm;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
 import org.apache.hadoop.hbase.regionserver.BloomType; 
-//import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
-//import org.apache.hadoop.hbase.client.Durability;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.trafodion.sql.HBaseAccess.HTableClient;
 //import org.trafodion.sql.HBaseAccess.HBaseClient;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.io.compress.CodecPool;
+import org.apache.hadoop.io.compress.Compressor;
+import org.apache.hadoop.io.compress.GzipCodec;
+import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hadoop.hbase.TableName;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -106,6 +106,7 @@ public class HBulkLoadClient
   String compression = COMPRESSION;
   int blockSize = BLOCKSIZE;
   DataBlockEncoding dataBlockEncoding = DataBlockEncoding.NONE;
+  FSDataOutputStream fsOut = null;
 
   public HBulkLoadClient()
   {
@@ -519,7 +520,5 @@ public class HBulkLoadClient
       compression = null;
     }
     return true;
-}
-
-
+  }
 }

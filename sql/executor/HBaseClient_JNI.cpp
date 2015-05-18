@@ -291,6 +291,10 @@ static const char* const hbcErrorEnumStr[] =
  ,"Java exception in startGets()."
  ,"Preparing parameters for getHbaseTableInfo()."
  ,"Java exception in getHbaseTableInfo()."
+ ,"preparing parameters for createCounterTable()."
+ ,"java exception in createCounterTable()."
+ ,"preparing parameters for incrCounter()."
+ ,"java exception in incrCounter()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -451,6 +455,10 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_START_GETS].jm_signature = "(JLjava/lang/String;ZJ[Ljava/lang/Object;[Ljava/lang/Object;J)I";
     JavaMethods_[JM_GET_HBTI].jm_name      = "getHbaseTableInfo";
     JavaMethods_[JM_GET_HBTI].jm_signature = "(Ljava/lang/String;[I)Z";
+    JavaMethods_[JM_CREATE_COUNTER_TABLE ].jm_name      = "createCounterTable";
+    JavaMethods_[JM_CREATE_COUNTER_TABLE ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
+    JavaMethods_[JM_INCR_COUNTER         ].jm_name      = "incrCounter";
+    JavaMethods_[JM_INCR_COUNTER         ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J)J";
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
@@ -2113,6 +2121,233 @@ HBLC_RetCode HBulkLoadClient_JNI::bulkLoadCleanup(
   jenv_->PopLocalFrame(NULL);
   return HBLC_OK;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+HVC_RetCode  HiveClient_JNI::hdfsCreateFile(const char* path)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::hdfsCreate(%s) called.", path);
+
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return HVC_ERROR_HDFS_CREATE_EXCEPTION;
+  }
+
+   jstring js_path = jenv_->NewStringUTF(path);
+   if (js_path == NULL) {
+     jenv_->PopLocalFrame(NULL);
+     return HVC_ERROR_HDFS_CREATE_PARAM;
+   }
+   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CREATE_FILE].methodID, js_path);
+
+   jenv_->DeleteLocalRef(js_path);
+
+   if (jenv_->ExceptionCheck())
+   {
+     getExceptionDetails();
+     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsCreate()", getLastError());
+     jenv_->PopLocalFrame(NULL);
+     return HVC_ERROR_HDFS_CREATE_EXCEPTION;
+   }
+
+   if (jresult == false)
+   {
+     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsCreaten()", getLastError());
+     jenv_->PopLocalFrame(NULL);
+     return HVC_ERROR_HDFS_CREATE_EXCEPTION;
+   }
+
+   jenv_->PopLocalFrame(NULL);
+   return HVC_OK;
+ }
+
+ //////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+ HVC_RetCode  HiveClient_JNI::hdfsWrite(const char* data, Int64 len)
+ {
+   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::hdfsWrite(%ld) called.", len);
+
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return HVC_ERROR_HDFS_WRITE_EXCEPTION;
+  }
+
+   //Write the requisite bytes into the file
+   jbyteArray jbArray = jenv_->NewByteArray( len);
+   if (!jbArray) {
+     jenv_->PopLocalFrame(NULL);
+     return HVC_ERROR_HDFS_WRITE_PARAM;
+   }
+   jenv_->SetByteArrayRegion(jbArray, 0, len, (const jbyte*)data);
+
+   jlong j_len = len;
+   // String write(java.lang.String);
+   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID,jbArray , j_len);
+
+   jenv_->DeleteLocalRef(jbArray);
+
+   if (jenv_->ExceptionCheck())
+   {
+     getExceptionDetails();
+     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsWrite()", getLastError());
+     jenv_->PopLocalFrame(NULL);
+     return HVC_ERROR_HDFS_WRITE_EXCEPTION;
+   }
+
+   if (jresult == false)
+   {
+     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsWrite()", getLastError());
+     jenv_->PopLocalFrame(NULL);
+     return HVC_ERROR_HDFS_WRITE_EXCEPTION;
+   }
+   jenv_->PopLocalFrame(NULL);
+   return HVC_OK;
+ }
+
+ //////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+HVC_RetCode  HiveClient_JNI::hdfsClose()
+{
+   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HiveClient_JNI::close() called.");
+   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+      getExceptionDetails();
+      return HVC_ERROR_HDFS_CLOSE_EXCEPTION;
+   }
+   if (javaObj_ == NULL)
+   {
+     // Maybe there was an initialization error.
+     jenv_->PopLocalFrame(NULL);
+     return HVC_OK;
+   }
+
+   // String close();
+   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CLOSE].methodID);
+
+   if (jenv_->ExceptionCheck())
+   {
+     getExceptionDetails();
+     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsClose()", getLastError());
+     jenv_->PopLocalFrame(NULL);
+     return HVC_ERROR_HDFS_CLOSE_EXCEPTION;
+   }
+
+   if (jresult == false)
+   {
+     logError(CAT_SQL_HBASE, "HiveClient_JNI::hdfsClose()", getLastError());
+     jenv_->PopLocalFrame(NULL);
+     return HVC_ERROR_HDFS_CLOSE_EXCEPTION;
+   }
+
+   jenv_->PopLocalFrame(NULL);
+   return HVC_OK;
+}
+ //////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+ HBC_RetCode  HBaseClient_JNI::incrCounter( const char * tabName, const char * rowId, const char * famName, const char * qualName , Int64 incr, Int64 & count)
+ {
+   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::incrCounter().");
+
+   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+      getExceptionDetails();
+      return HBC_ERROR_INCR_COUNTER_PARAM;
+   }
+   jstring js_tabName = jenv_->NewStringUTF(tabName);
+   if (js_tabName == NULL) {
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_INCR_COUNTER_PARAM;
+   }
+   jstring js_rowId = jenv_->NewStringUTF(rowId);
+   if (js_rowId == NULL) {
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_INCR_COUNTER_PARAM;
+   }
+
+   jstring js_famName = jenv_->NewStringUTF(famName);
+   if (js_famName == NULL) {
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_INCR_COUNTER_PARAM;
+   }
+
+   jstring js_qualName = jenv_->NewStringUTF(qualName);
+   if (js_qualName == NULL) {
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_INCR_COUNTER_PARAM;
+   }
+
+   jlong j_incr = incr;
+
+   jlong jcount = jenv_->CallLongMethod(javaObj_, JavaMethods_[JM_INCR_COUNTER].methodID, js_tabName, js_rowId, js_famName, js_qualName, j_incr);
+
+   count = jcount;
+
+   jenv_->DeleteLocalRef(js_tabName);
+   jenv_->DeleteLocalRef(js_rowId);
+   jenv_->DeleteLocalRef(js_famName);
+   jenv_->DeleteLocalRef(js_qualName);
+   if (jenv_->ExceptionCheck())
+   {
+     getExceptionDetails();
+     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+     logError(CAT_SQL_HBASE, "HBaseClient_JNI::incrCounter()", getLastError());
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_INCR_COUNTER_EXCEPTION;
+   }
+
+   jenv_->PopLocalFrame(NULL);
+   return HBC_OK;
+ }
+
+ //////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+ HBC_RetCode  HBaseClient_JNI::createCounterTable( const char * tabName,  const char * famName)
+ {
+   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::createCounterTable().");
+
+   if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+      getExceptionDetails();
+      return HBC_ERROR_CREATE_COUNTER_EXCEPTION;
+   }
+   jstring js_tabName = jenv_->NewStringUTF(tabName);
+   if (js_tabName == NULL) {
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_CREATE_COUNTER_PARAM;
+   }
+   jstring js_famName = jenv_->NewStringUTF(famName);
+   if (js_famName == NULL) {
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_INCR_COUNTER_PARAM;
+   }
+   jboolean jresult = jenv_->CallLongMethod(javaObj_, JavaMethods_[JM_CREATE_COUNTER_TABLE].methodID, js_tabName, js_famName);
+
+   jenv_->DeleteLocalRef(js_tabName);
+   jenv_->DeleteLocalRef(js_famName);
+   if (jenv_->ExceptionCheck())
+   {
+     getExceptionDetails();
+     logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+     logError(CAT_SQL_HBASE, "HBaseClient_JNI::createCounterTable()", getLastError());
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_CREATE_COUNTER_EXCEPTION;
+   }
+   if (jresult == false)
+   {
+     logError(CAT_SQL_HBASE, "HBaseClient_JNI::createCounterTable()", getLastError());
+     jenv_->PopLocalFrame(NULL);
+     return HBC_ERROR_CREATE_COUNTER_EXCEPTION;
+   }
+   jenv_->PopLocalFrame(NULL);
+   return HBC_OK;
+ }
+
 
 HBulkLoadClient_JNI::~HBulkLoadClient_JNI()
 {
@@ -3912,6 +4147,11 @@ static const char* const hvcErrorEnumStr[] =
  ,"Java exception in getAllSchemas()."
  ,"Preparing parameters for getAllTables()."
  ,"Java exception in getAllTables()."
+ ,"preparing parameters for hdfsCreateFile()."
+ ,"java exception in hdfsCreateFile()."
+ ,"preparing parameters for hdfsWrite()."
+ ,"java exception in hdfsWrite()."
+ ,"java exception in hdfsclose()."
 };
 
 
@@ -4005,6 +4245,12 @@ HVC_RetCode HiveClient_JNI::init()
     JavaMethods_[JM_GET_ASH     ].jm_signature = "()[Ljava/lang/Object;";
     JavaMethods_[JM_GET_ATL    ].jm_name      = "getAllTables";
     JavaMethods_[JM_GET_ATL    ].jm_signature = "(Ljava/lang/String;)[Ljava/lang/Object;";
+    JavaMethods_[JM_HDFS_CREATE_FILE ].jm_name      = "hdfsCreateFile";
+    JavaMethods_[JM_HDFS_CREATE_FILE ].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_HDFS_WRITE       ].jm_name      = "hdfsWrite";
+    JavaMethods_[JM_HDFS_WRITE       ].jm_signature = "([BJ)Z";
+    JavaMethods_[JM_HDFS_CLOSE       ].jm_name      = "hdfsClose";
+    JavaMethods_[JM_HDFS_CLOSE       ].jm_signature = "()Z";
    
     rc = (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;

@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -40,16 +40,17 @@ class ComTdbHdfsScan : public ComTdb
  protected:
   enum
   {
-    USE_CURSOR_MULTI = 0x0001,
-    DO_SPLIT_FILE_OPT = 0x0002,
-    HDFS_PREFETCH = 0x0004,
+    USE_CURSOR_MULTI            = 0x0001,
+    DO_SPLIT_FILE_OPT           = 0x0002,
+    HDFS_PREFETCH               = 0x0004,
     // flag to indicate whther we need to use Compressed Internal Format
-    USE_CIF       = 0x0008,
+    USE_CIF                     = 0x0008,
     // flag to indicate whther we need to use Defragmentation  with Compressed Internal Format
-    USE_CIF_DEFRAG= 0x0010,
+    USE_CIF_DEFRAG              = 0x0010,
 
     // ignore conversion errors and continue reading the next row.
-    CONTINUE_ON_ERROR = 0x0020
+    CONTINUE_ON_ERROR           = 0x0020,
+    LOG_ERROR_ROWS              = 0x0040
   };
 
   // Expression to filter rows.
@@ -106,9 +107,9 @@ class ComTdbHdfsScan : public ComTdb
   UInt16 port_;                                              // 100 - 101
 
   UInt16 convertSkipListSize_;                               // 102 - 103
-  Int16Ptr convertSkipList_;                                  // 104 - 111
+  Int16Ptr convertSkipList_;                                 // 104 - 111
 
-  Int64 asciiRowLen_;                                           // 112 - 119
+  Int64 asciiRowLen_;                                        // 112 - 119
 
   // cumulative list of all scanInfo entries for all esps (nodeMap entries)
   QueuePtr hdfsFileInfoList_;                                // 120-127
@@ -117,12 +118,16 @@ class ComTdbHdfsScan : public ComTdb
   // start at 'Begin' entry and read 'Num' entries.
   // At runtime, each esp will pick one of the ranges.
   // Later, we may align esps with the local files.
-  QueuePtr hdfsFileRangeBeginList_;                             // 128 - 135
-  QueuePtr hdfsFileRangeNumList_;                               // 136 - 143
+  QueuePtr hdfsFileRangeBeginList_;                          // 128 - 135
+  QueuePtr hdfsFileRangeNumList_;                            // 136 - 143
 
   NABasicPtr tableName_;                                     // 144 - 151
-  UInt32 rangeTailIOSize_;                                        // 152 - 155  
-  char fillersComTdbHdfsScan1_[28];                             // 156 - 183
+  UInt32 rangeTailIOSize_;                                   // 152 - 155
+  UInt32 maxErrorRows_;                                      // 156 - 159
+  NABasicPtr errCountTable_;                                  // 160 - 167
+  NABasicPtr loggingLocation_;                                // 168 - 175
+  NABasicPtr errCountRowId_;                                  // 176 - 183
+  char fillersComTdbHdfsScan1_[16];                           // 184 - 199
 
 public:
   enum HDFSFileType
@@ -170,6 +175,9 @@ public:
 		 Cardinality estimatedRowCount,
                  Int32  numBuffers,
                  UInt32  bufferSize
+                 , char * errCountTable
+                 , char * loggingLocation
+                 , char * errCountId
                  );
 
   ~ComTdbHdfsScan();
@@ -200,6 +208,12 @@ public:
   Int32 orderedQueueProtocol() const;
 
   char * tableName() { return tableName_; }
+  char * getErrCountTable() { return errCountTable_; }
+  void   setErrCountTable(char * v ) { errCountTable_ = v; }
+  char * getLoggingLocation() { return loggingLocation_; }
+  void   setLoggingLocation(char * v ) { loggingLocation_ = v; }
+  char * getErrCountRowId() { return errCountRowId_; }
+  void   setErrCountRowId(char * v ) { errCountRowId_ = v; }
 
   Queue* getHdfsFileInfoList() {return hdfsFileInfoList_;}
   Queue* getHdfsFileRangeBeginList() {return hdfsFileRangeBeginList_;}
@@ -227,10 +241,18 @@ public:
 
    void setUseCifDefrag(NABoolean v)
     {(v ? flags_ |= USE_CIF_DEFRAG : flags_ &= ~USE_CIF_DEFRAG); };
-    NABoolean useCifDefrag() { return (flags_ & USE_CIF_DEFRAG) != 0; };
+   NABoolean useCifDefrag() { return (flags_ & USE_CIF_DEFRAG) != 0; };
    void setContinueOnError(NABoolean v)
     {(v ? flags_ |= CONTINUE_ON_ERROR : flags_ &= ~CONTINUE_ON_ERROR); };
-    NABoolean continueOnError() { return (flags_ & CONTINUE_ON_ERROR) != 0; };
+   NABoolean continueOnError() { return (flags_ & CONTINUE_ON_ERROR) != 0; };
+
+    void setLogErrorRows(NABoolean v)
+     {(v ? flags_ |= LOG_ERROR_ROWS : flags_ &= ~LOG_ERROR_ROWS); };
+    NABoolean getLogErrorRows() { return (flags_ & LOG_ERROR_ROWS) != 0; };
+
+     UInt32 getMaxErrorRows() const { return maxErrorRows_;}
+     void setMaxErrorRows(UInt32 v ) { maxErrorRows_= v; }
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------

@@ -1015,6 +1015,27 @@ short FileScan::codeGenForHive(Generator * generator)
   Int64 expirationTimestamp = 0;
   char * hdfsHostName = NULL;
   Int32 hdfsPort = 0;
+  char * errCountTab = NULL;
+  char * logLocation = NULL;
+  char * errCountRowId  = NULL;
+  NAString errCountTabNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_LOAD_ERROR_COUNT_TABLE);
+  if (errCountTabNAS.length() > 0)
+  {
+    errCountTab = space->allocateAlignedSpace(errCountTabNAS.length() + 1);
+    strcpy(errCountTab, errCountTabNAS.data());
+  }
+  NAString logLocationNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_LOAD_ERROR_LOGGING_LOCATION);
+  if (logLocationNAS.length() > 0)
+  {
+    logLocation = space->allocateAlignedSpace(logLocationNAS.length() + 1);
+    strcpy(logLocation, logLocationNAS.data());
+  }
+  NAString errCountRowIdNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_LOAD_ERROR_COUNT_ID);
+  if (errCountRowIdNAS.length() > 0)
+  {
+    errCountRowId = space->allocateAlignedSpace(errCountRowIdNAS.length() + 1);
+    strcpy(errCountRowId, errCountRowIdNAS.data());
+  }
   NABoolean useCursorMulti = FALSE;
   NABoolean doSplitFileOpt = FALSE;
 
@@ -1127,7 +1148,10 @@ if (hTabStats->isOrcFile())
 		   upqueuelength,
 		   (Cardinality)getEstRowsAccessed().getValue(),
 		   numBuffers,
-		   buffersize
+		   buffersize,
+		   errCountTab,
+		   logLocation,
+		   errCountRowId 
 		   );
 
   generator->initTdbFields(hdfsscan_tdb);
@@ -1141,11 +1165,17 @@ if (hTabStats->isOrcFile())
     hdfsPrefetch = TRUE;
   hdfsscan_tdb->setHdfsPrefetch(hdfsPrefetch);
 
-  if (CmpCommon::getDefault(HDFS_READ_CONTINUE_ON_ERROR) == DF_ON)
+  if (CmpCommon::getDefault(HDFS_READ_CONTINUE_ON_ERROR) == DF_ON ||
+      CmpCommon::getDefault(TRAF_LOAD_CONTINUE_ON_ERROR) == DF_ON)
     hdfsscan_tdb->setContinueOnError(TRUE);
 
+  hdfsscan_tdb->setLogErrorRows(
+      CmpCommon::getDefault(TRAF_LOAD_LOG_ERROR_ROWS) == DF_ON);
+  hdfsscan_tdb->setMaxErrorRows(
+      (UInt32) CmpCommon::getDefaultNumeric(TRAF_LOAD_MAX_ERROR_ROWS));
+
   NABoolean useCIF = (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) != DF_OFF );
-  NABoolean useCIFDegrag = useCIF;
+  NABoolean useCIFDegrag = FALSE; //useCIF;  --set temporarily to OFF for testing only
 
   hdfsscan_tdb->setUseCif(useCIF);
   hdfsscan_tdb->setUseCifDefrag(useCIFDegrag);

@@ -3155,7 +3155,9 @@ public:
                              queue_index down,
                              queue_index up,
                              Lng32 num_buffers,
-                             ULng32 buffer_size
+                             ULng32 buffer_size,
+                             char * errCountTab,
+                             char * logLocation
                              );
 
   Long pack(void *);
@@ -3170,6 +3172,9 @@ public:
   {
     return "HBASE_BULK_LOAD";
   };
+
+  char * getErrCountTable() { return errCountTable_ ; }
+  char * getLoggingLocation() {return loggingLocation_;}
 
   void setPreloadCleanup(NABoolean v)
   {(v ? flags_ |= PRE_LOAD_CLEANUP : flags_ &= ~PRE_LOAD_CLEANUP); };
@@ -3191,9 +3196,13 @@ public:
   {(v ? flags_ |= NO_ROLLBACK : flags_ &= ~NO_ROLLBACK); };
   NABoolean getNoRollback() { return (flags_ & NO_ROLLBACK) != 0; };
 
-  void setLogErrors(NABoolean v)
-  {(v ? flags_ |= LOG_ERRORS : flags_ &= ~LOG_ERRORS); };
-  NABoolean getLogErrors() { return (flags_ & LOG_ERRORS) != 0; };
+  void setLogErrorRows(NABoolean v)
+  {(v ? flags_ |= LOG_ERROR_ROWS : flags_ &= ~LOG_ERROR_ROWS); };
+  NABoolean getLogErrorRows() { return (flags_ & LOG_ERROR_ROWS) != 0; };
+
+  void setContinueOnError(NABoolean v)
+  {(v ? flags_ |= CONTINUE_ON_ERROR : flags_ &= ~CONTINUE_ON_ERROR); };
+  NABoolean getContinueOnError() { return (flags_ & CONTINUE_ON_ERROR) != 0; };
 
   void setSecure(NABoolean v)
   {(v ? flags_ |= SECURE : flags_ &= ~SECURE); };
@@ -3230,6 +3239,9 @@ public:
     {
     (v ? flags_ |= UPDATE_STATS : flags_ &= ~UPDATE_STATS); };
   NABoolean getUpdateStats() { return (flags_ & UPDATE_STATS) != 0; };
+  void setMaxErrorRows (Int32 v) {    maxErrorRows_ = v; }
+
+  Int32 getMaxErrorRows() const  { return maxErrorRows_; }
 
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
@@ -3244,7 +3256,7 @@ private:
     KEEP_HFILES      = 0x0004,
     TRUNCATE_TABLE   = 0x0008,
     NO_ROLLBACK      = 0x0010,
-    LOG_ERRORS       = 0x0020,
+    LOG_ERROR_ROWS   = 0x0020,
     SECURE           = 0x0040,
     NO_DUPLICATES    = 0x0080,
     INDEXES          = 0x0100,
@@ -3253,15 +3265,18 @@ private:
     INDEX_TABLE_ONLY = 0x0800,
     UPSERT_USING_LOAD= 0x1000,
     FORCE_CIF        = 0x2000,
-    UPDATE_STATS     = 0x4000
+    UPDATE_STATS     = 0x4000,
+    CONTINUE_ON_ERROR= 0x8000
   };
 
   // load stmt
   NABasicPtr ldQuery_;                               // 00-07
 
   UInt32 flags_;                                     // 08-11
-
-  char fillersExeUtilHbaseLoad_[4];                  // 12-15
+  Int32  maxErrorRows_;                              // 12-15
+  NABasicPtr errCountTable_;                         // 16-23
+  NABasicPtr loggingLocation_;                       // 24-31
+  char fillersExeUtilHbaseLoad_[8];                  // 32-39
 };
 
 //******************************************************

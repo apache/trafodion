@@ -2400,6 +2400,73 @@ void ExHbaseAccessTcb::setRowID(char *rowId, Lng32 rowIdLen)
    memcpy(rowID_.val, rowId, rowIdLen);
 }
 
+void ExHbaseAccessTcb::buildLoggingPath(
+                             const char * loggingLocation,
+                             char * logId,
+                             const char * tableName,
+                             const char * loggingFileNamePrefix,
+                             Lng32 instId,
+                             char * loggingFileName)
+{
+  time_t t;
+  char logId_tmp[30];
+
+  if (logId == NULL || strlen(logId) == 0)
+  {
+     time(&t);
+     struct tm * curgmtime = gmtime(&t);
+     strftime(logId_tmp, sizeof(logId_tmp)-1, "%Y%m%d_%H%M%S", curgmtime);
+     logId = logId_tmp;
+  }
+  sprintf(loggingFileName, "%s/ERR_%s/%s_%s_%d",
+                  loggingLocation, logId, tableName, loggingFileNamePrefix, instId);
+}
+
+void ExHbaseAccessTcb::handleException(NAHeap *heap,
+                                    char *logErrorRow,
+                                    Lng32 logErrorRowLen,
+                                    ComCondition *errorCond,
+                                    ExpHbaseInterface * ehi,
+                                    NABoolean & LoggingFileCreated,
+                                    char *loggingFileName)
+{
+  Lng32 errorMsgLen = 0;
+  charBuf *cBuf = NULL;
+  char *errorMsg;
+  Lng32 retcode;
+
+  if (!LoggingFileCreated) {
+     retcode = ehi->hdfsCreateFile(loggingFileName);
+     if (retcode == HBASE_ACCESS_SUCCESS)
+        LoggingFileCreated = TRUE;
+     else
+        ex_assert(0, "Error while creating the log file");
+  }
+  retcode = ehi->hdfsWrite(logErrorRow, logErrorRowLen);
+  ex_assert((retcode == HBASE_ACCESS_SUCCESS), "Error while writing the log file");
+  if (errorCond != NULL) {
+     errorMsgLen = errorCond->getMessageLength();
+     const NAWcharBuf wBuf((NAWchar*)errorCond->getMessageText(), errorMsgLen, heap);
+     cBuf = unicodeToISO88591(wBuf, heap, cBuf);
+     errorMsg = (char *)cBuf->data();
+     errorMsgLen = cBuf -> getStrLen();
+     errorMsg[errorMsgLen]='\n';
+     errorMsgLen++;
+  }
+  else {
+     errorMsgLen = strlen("[UNKNOWN EXCEPTION]\n");
+  }
+  retcode = ehi->hdfsWrite(errorMsg, errorMsgLen);
+}
+
+void ExHbaseAccessTcb::incrErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
+                                    const char * tabName, const char * rowId )
+{
+  Lng32 retcode;
+  retcode = ehi->incrCounter(tabName, rowId, (const char*)"ERRORS",(const char*)"ERROR_COUNT",1, totalExceptionCount);
+}
+
+
 static const char * const BatchSizeEnvvar = 
   getenv("SQL_CANCEL_BATCH_SIZE");
 static const Lng32 BatchSize = (BatchSizeEnvvar &&

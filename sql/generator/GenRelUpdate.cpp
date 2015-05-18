@@ -61,14 +61,11 @@
 // Contents:
 //    
 //   DeleteCursor::codeGen()
-//   DP2Delete::codeGen()
 //   Delete::codeGen()
 //
-//   DP2Insert::codeGen()
 //   Insert::codeGen()
 //
 //   UpdateCursor::codeGen()
-//   DP2Update::codeGen()
 //   Update::codeGen()
 //
 // ##IM: to be REMOVED:
@@ -76,7 +73,11 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-
+extern  int CreateAllCharsExpr(const NAType &formalType,
+                               ItemExpr &actualValue,
+                               CmpContext *cmpContext,
+                               ItemExpr *&newExpr);
+                               
 inline static NABoolean getReturnRow(const GenericUpdate *gu,
 				     const IndexDesc *index)
 {
@@ -2197,8 +2198,11 @@ short HbaseInsert::codeGen(Generator *generator)
   ex_cri_desc * workCriDesc = NULL;
   const UInt16 insertTuppIndex = 2;
   const UInt16 rowIdTuppIndex = 3;
+  const UInt16 loggingTuppIndex = 4;
   const UInt16 projRowTuppIndex = 5;
   workCriDesc = new(space) ex_cri_desc(6, space);
+
+  ULng32 loggingRowLen = 0;
 
   NABoolean addDefaultValues = TRUE;
   NABoolean hasAddedColumns = FALSE;
@@ -2295,6 +2299,56 @@ short HbaseInsert::codeGen(Generator *generator)
 			       tupleDesc);
     }
 
+  ex_expr * loggingDataExpr = NULL;
+  ExpTupleDesc * loggingDataTupleDesc = NULL;
+  //--bulk load error logging
+  if (CmpCommon::getDefault(TRAF_LOAD_LOG_ERROR_ROWS) == DF_ON) {
+  CmpContext *cmpContext = generator->currentCmpContext();
+
+  ValueIdList loggingDataVids;
+
+  for (CollIndex i = 0; i < insertVIDList.entries(); i++)
+  {
+    ItemExpr &inputExpr = *(insertVIDList[i].getItemExpr());
+    const NAType &formalType = insertVIDList[i].getType();
+    ItemExpr *lmExpr = NULL;
+    ItemExpr *lmExpr2 = NULL;
+    int res;
+
+    lmExpr = &inputExpr;
+    res = CreateAllCharsExpr(formalType, // [IN] Child output type
+        *lmExpr,                         // [IN] Actual input value
+        cmpContext,                      // [IN] Compilation context
+        lmExpr2                          // [OUT] Returned expression
+        );
+    GenAssert(res == 0 && lmExpr != NULL,
+        "Error building expression tree for LM child Input value");
+    if (lmExpr2)
+    {
+      lmExpr2->bindNode(generator->getBindWA());
+      loggingDataVids.insert(lmExpr2->getValueId());
+    }
+  } // for (i = 0; i < insertVIDList.entries(); i++)
+
+  if (loggingDataVids.entries()>0)
+  {
+    expGen->generateContiguousMoveExpr (
+      loggingDataVids,                       // [IN] source ValueIds
+      FALSE,                                 // [IN] add convert nodes?
+      1,                                     // [IN] target atp number (work atp 1)
+      loggingTuppIndex,                      // [IN] target tupp index
+      tupleFormat,                           // [IN] target tuple data format
+      loggingRowLen,                          // [OUT] target tuple length
+      &loggingDataExpr,                      // [OUT] move expression
+      &loggingDataTupleDesc,                 // [optional OUT] target tuple desc
+      ExpTupleDesc::LONG_FORMAT              // [optional IN] target desc format
+      );
+
+  }
+  // Add the tuple descriptor for request values to the work ATP
+  workCriDesc->setTupleDescriptor(loggingTuppIndex, loggingDataTupleDesc);
+  }
+  ////////////
   // If constraints are present, generate constraint expression.
   // Only works for base tables because the constraint information is
   // stored with the table descriptor which doesn't exist for indexes.
@@ -2616,7 +2670,7 @@ short HbaseInsert::codeGen(Generator *generator)
 		      insertExpr,
 		      constraintExpr,
 		      rowIdExpr,
-		      NULL, // updateExpr
+		      loggingDataExpr, // logging expr
 		      NULL, // mergeInsertExpr
 		      NULL, // mergeInsertRowIdExpr
 		      NULL, // mergeUpdScanExpr
@@ -2629,7 +2683,7 @@ short HbaseInsert::codeGen(Generator *generator)
 
 		      0, //asciiRowLen,
 		      insertRowLen,
-		      0, // updateRowLen
+		      loggingRowLen, //loggingRowLen
 		      0, // mergeInsertRowLen
 		      0, // fetchedRowLen
 		      projRowLen, // returnedUpdatedRowLen
@@ -2643,7 +2697,7 @@ short HbaseInsert::codeGen(Generator *generator)
 
 		      0, //asciiTuppIndex,
 		      insertTuppIndex,
-		      0, //updateTuppIndex
+		      loggingTuppIndex, //loggingTuppIndex
 		      0, // mergeInsertTuppIndex
 		      0, // mergeInsertRowIdTuppIndex
 		      0, // returnedFetchedTuppIndex
@@ -2740,6 +2794,34 @@ short HbaseInsert::codeGen(Generator *generator)
             Float32 sampleRate = (Float32)sampleRows / (Float32)totalRows;
             //printf("*** In HbaseInsert::codeGen(): Sample percentage is %.2f.\n", sampleRate);
             hbasescan_tdb->setSamplingRate(sampleRate);
+          }
+        hbasescan_tdb->setContinueOnError(CmpCommon::getDefault(TRAF_LOAD_CONTINUE_ON_ERROR) == DF_ON);
+        hbasescan_tdb->setLogErrorRows(CmpCommon::getDefault(TRAF_LOAD_LOG_ERROR_ROWS) == DF_ON);
+        hbasescan_tdb->setMaxErrorRows((UInt32)CmpCommon::getDefaultNumeric(TRAF_LOAD_MAX_ERROR_ROWS));
+        NAString errCountRowIdNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_LOAD_ERROR_COUNT_ID);
+        char * errCountRowId = NULL;
+        if (errCountRowIdNAS.length() > 0)
+        {
+          errCountRowId = space->allocateAlignedSpace(errCountRowIdNAS.length() + 1);
+          strcpy(errCountRowId, errCountRowIdNAS.data());
+          hbasescan_tdb->setErrCountRowId(errCountRowId);
+        }
+
+        NAString errCountTabNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_LOAD_ERROR_COUNT_TABLE);
+        char * errCountTab = NULL;
+        if (errCountTabNAS.length() > 0)
+        {
+          errCountTab = space->allocateAlignedSpace(errCountTabNAS.length() + 1);
+          strcpy(errCountTab, errCountTabNAS.data());
+          hbasescan_tdb->setErrCountTab(errCountTab);
+        }
+        NAString loggingLocNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_LOAD_ERROR_LOGGING_LOCATION);
+        char * loggingLoc = NULL;
+        if (loggingLocNAS.length() > 0)
+        {
+          loggingLoc = space->allocateAlignedSpace(loggingLocNAS.length() + 1);
+          strcpy(loggingLoc, loggingLocNAS.data());
+          hbasescan_tdb->setLoggingLocation(loggingLoc);
           }
       }
 

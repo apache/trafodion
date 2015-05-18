@@ -2997,14 +2997,9 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 		       CONV_ASCII_BIN64S,
 		       NULL, 0);
 
-	    /*
-	    ex_expr::exp_return_type er =
-	      convAsciiToInt64(srcNumericVal,
-			       0, ptrSrc, srcLen,
-			       heap_, &diagsArea, 0);
-	    */
-
-	    if (er == ex_expr::EXPR_ERROR)
+            if (diagsArea != atp1->getDiagsArea())
+                   atp1->setDiagsArea(diagsArea);
+	    if (er == ex_expr::EXPR_ERROR) 
 	      return ex_expr::EXPR_ERROR;
 	  }
 
@@ -3076,13 +3071,9 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 		       heap_, &diagsArea,
 		       CONV_ASCII_FLOAT64,
 		       NULL, 0);
-		       
-	    /*	    ex_expr::exp_return_type er =
-	      convAsciiToFloat64((char*)&srcNumericVal,
-				 ptrSrc, srcLen,
-				 heap_, &diagsArea, 0);
-	    */
-	    if (er == ex_expr::EXPR_ERROR)
+            if (diagsArea != atp1->getDiagsArea())
+                   atp1->setDiagsArea(diagsArea);
+	    if (er == ex_expr::EXPR_ERROR) 
 	      return ex_expr::EXPR_ERROR;
 	  }
 
@@ -3157,7 +3148,9 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 		       heap_, &diagsArea,
 		       CONV_ASCII_F_V,
 		       NULL, 0);
-	    if (er == ex_expr::EXPR_ERROR)
+            if (diagsArea != atp1->getDiagsArea())
+               atp1->setDiagsArea(diagsArea);
+	    if (er == ex_expr::EXPR_ERROR) 
 	      return ex_expr::EXPR_ERROR;
 	  }
 	else

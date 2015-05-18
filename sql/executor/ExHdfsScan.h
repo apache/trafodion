@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@
 #include "hdfs.h"
 
 #include <time.h>
-
+#include "ExHbaseAccess.h"
+#include "ExpHbaseInterface.h"
 // -----------------------------------------------------------------------
 // Classes defined in this file
 // -----------------------------------------------------------------------
@@ -142,7 +143,6 @@ public:
     else
       return NULL;
   }
-
 #ifdef NEED_PSTATE
   // For dynamic queue resizing.
   virtual ex_tcb_private_state * allocatePstates(
@@ -164,8 +164,10 @@ protected:
   ,ERROR_CLOSE_FILE
   ,COLLECT_STATS
   , HANDLE_ERROR
+  ,HANDLE_EXCEPTION
   , DONE
-  } step_;
+  , HANDLE_ERROR_WITH_CLOSE
+  } step_,nextStep_;
 
   /////////////////////////////////////////////////////
   // Private methods.
@@ -218,6 +220,7 @@ protected:
   hdfsFile hfdsFileHandle_;
   char * hdfsScanBuffer_;
   char * hdfsBufNextRow_;
+
   char * debugPrevRow_;             // Pointer to help with debugging.
   Int64 debugtrailingPrevRead_;
   char *debugPenultimatePrevRow_;
@@ -266,7 +269,16 @@ protected:
   bool  seqScanAgain_;
   char cursorId_[8];
 
+  char loggingFileName_[1000];
+  NABoolean LoggingFileCreated_ ;
+  char * hdfsLoggingRow_;
+  char * hdfsLoggingRowEnd_;
   tupp_descriptor * defragTd_;
+
+  ExpHbaseInterface * ehi_;
+
+  NABoolean exception_;
+  ComCondition * lastErrorCnd_;
 };
 
 class ExOrcScanTcb  : public ExHdfsScanTcb
