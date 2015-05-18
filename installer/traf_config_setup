@@ -134,11 +134,6 @@ if [ -f $LOCAL_TRAF_CONFIG ]; then
 	source $LOCAL_TRAF_CONFIG
 fi
 
-if [[ "$(whoami)" == "$TRAF_USER" ]]; then
-   echo "***ERROR: The Trafodion username cannot be the same as the install username"
-   exit -1 
-fi
-
 echo "#!/bin/bash" > $LOCAL_TRAF_CONFIG
 echo "export TRAF_USER=\"$TRAF_USER\"" >> $LOCAL_TRAF_CONFIG
 echo "export TRAF_WORKDIR=\"$TRAF_WORKDIR\"" >> $LOCAL_TRAF_CONFIG
@@ -181,6 +176,7 @@ if [[ -z "$answer" ]]; then
 else
    NODES="$answer"
    NODE_LIST=""
+   ERROR_NODES=""
    for node in $NODES
    do
       newNode=$(ssh -n $node hostname)
@@ -206,15 +202,35 @@ else
       fi
     
       #Testing sudo access on all nodes
-      ssh -n $node sudo echo "***INFO: Testing sudo access on node $node"
+      ssh -n $newNode sudo echo "***INFO: Testing sudo access on node $newNode"
       if [ $? -ne "0" ]; then
-         echo "***ERROR: Node $node does not have sudo access."
-         echo "***ERROR: Must have sudo access on all nodes."
-         exit -1
+         error=1
+         ERROR_NODES="$ERROR_NODES $newNode"
       fi
       
       NODE_LIST="$NODE_LIST $newNode"  
    done
+
+   if [[ $error == "1" ]]; then
+      echo "***ERROR: $ERROR_NODES does not have sudo access."
+      echo "***ERROR: Must have sudo access on all nodes."
+      exit -1
+   fi
+fi
+
+for node in $NODE_LIST
+do
+   ssh -n $node echo "***INFO: Testing ssh on $node"
+   if [[ $? -ne "0" ]]; then
+      errorFound=1
+      ERROR_NODES="$ERROR_NODES $node"
+   fi
+done
+
+if [[ $errorFound == "1" ]]; then
+   echo "***ERROR: Could not ssh to $ERROR_NODES."
+   echo "***ERROR: Check permissions and known hosts files."
+   exit -1 
 fi
 
 node_count=$(echo $NODE_LIST | wc -w)
@@ -455,10 +471,10 @@ if [[ -z $TRAF_BUILD ]]; then
    exit -1
 fi
 
-install_features_path=$(tar -tf $TRAF_BUILD | grep "install_features")
+install_features_path=$(tar -tf $LOCAL_WORKDIR/$TRAF_BUILD | grep "install_features")
 
 if [[ ! -z $install_features_path ]]; then
-   tar -xzf $TRAF_BUILD $install_features_path
+   tar -xzf $LOCAL_WORKDIR/$TRAF_BUILD $install_features_path
    source $install_features_path
    echo "export CDH_5_3_HDP_2_2_SUPPORT=\"$CDH_5_3_HDP_2_2_SUPPORT\"" >> $LOCAL_TRAF_CONFIG
 else

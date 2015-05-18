@@ -161,6 +161,8 @@ http://$URL/api/v1/clusters/$CLUSTER_NAME/services/hdfs/config > $LOCAL_WORKDIR/
 if [ $? != 0 ]; then
     echo "***ERROR: Unable to modify HDFS configuration through Cloudera's REST API."
     echo "***ERROR: Check if Cloudera URL is correct, may need to enter external IP address."
+    echo "***ERROR: Check if iptables/firewall is configured correctly and ports a
+    re enabled."
     echo "***ERROR: Check that HDFS is running without error."
     exit -1
 fi
@@ -171,7 +173,9 @@ curl_error=$(grep TITLE $LOCAL_WORKDIR/traf_hdfs_config_temp | grep Error | wc -
 if [ $curl_error -ne 0 ]; then
     echo "***ERROR: Unable to modify hdfs configuration through Cloudera's REST API."
     echo "***ERROR: Check if Cloudera URL is correct, may need to enter external IP address
-." 
+."
+    echo "***ERROR: Check if iptables/firewall is configured correctly and ports a
+    re enabled."  2>&1 
     echo "***ERROR: Check that HDFS is running without error."
     exit -1
 fi

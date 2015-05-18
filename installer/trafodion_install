@@ -113,14 +113,6 @@ echo "******************************"
 echo
 
 #==============================================
-# check that we are running from a userid with sudo access
-sudo echo "***INFO: testing sudo access"
-if [ $? -ne 0 ]; then
-    echo "***ERROR: This script must be run from a userid with sudo access."
-    exit -1
-fi
-
-#==============================================
 # Default values
 
 export timestamp=$(date +%F-%H-%M-%S)
@@ -134,6 +126,22 @@ export TRAF_CONFIG="/etc/trafodion/trafodion_config"
 export TRAF_CONFIG_DIR=$(dirname $TRAF_CONFIG)
 export TRAF_CONFIG_FILE=$(basename $TRAF_CONFIG)
 export TRAF_USER="trafodion"
+
+#==============================================
+#Prechecks 
+
+#Check not installing as userid Trafodion
+if [[ "$(whoami)" == "$TRAF_USER" ]]; then
+   echo "***ERROR: The Trafodion username cannot be the same as the install username"
+   exit -1
+fi
+
+# check that we are running from a userid with sudo access
+sudo echo "***INFO: testing sudo access"
+if [ $? -ne 0 ]; then
+    echo "***ERROR: This script must be run from a userid with sudo access."
+    exit -1
+fi
 
 #==============================================
 # Setup log & working directories
@@ -691,13 +699,14 @@ do
       reserved_ports=$(ssh $node -n '/sbin/sysctl net.ipv4.ip_local_reserved_ports' | awk -F'=' '{print $2;}' | sed 's/^ //')
       ssh $node -n 'sudo chmod 777 /etc/sysctl.conf'
       ssh $node -n 'sudo sed -i '/net.ipv4.ip_local_reserved_ports""\=*/d' /etc/sysctl.conf'
-      if [[ -z "${reserved_ports}" ]]; then
-         ssh $node -n "sudo echo "$reservedTrafodionPorts" >> /etc/sysctl.conf"
-      else
-         ssh $node -n "sudo echo "$reservedTrafodionPorts","$reserved_ports" >> /etc/sysctl.conf"
-      fi
-      ssh $node -n 'sudo chmod 644 /etc/sysctl.conf'
-      ssh $node -n 'sudo /sbin/sysctl -p'
+
+   if [[ -z "${reserved_ports}" ]]; then
+      ssh $node -n 'sudo echo "$reservedTrafodionPorts" >> /etc/sysctl.conf'
+   else
+      ssh $node -n "sudo echo "$reservedTrafodionPorts","$reserved_ports" >> /etc/sysctl.conf"
+   fi
+   ssh $node -n 'sudo chmod 644 /etc/sysctl.conf'
+   ssh $node -n 'sudo /sbin/sysctl -p'
    else
       echo "***ERROR: Unable to reserve DCS ports (37800 and 40010)."
       exit -1
