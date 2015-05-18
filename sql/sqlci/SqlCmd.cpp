@@ -752,8 +752,6 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
   retcode = cliInterface.executeImmediatePrepare(queryBuf);
   if (retcode < 0)
     {
-      cliInterface.retrieveSQLDiagnostics(&sqlci_env->diagsArea());
-
       HandleCLIError(retcode, sqlci_env);
 
       goto label_return;
@@ -762,8 +760,6 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
   retcode = cliInterface.clearExecFetchClose(explainData, explainDataLen);
   if (retcode < 0)
     {
-      cliInterface.retrieveSQLDiagnostics(&sqlci_env->diagsArea());
-
       HandleCLIError(retcode, sqlci_env);
 
       goto label_return;
@@ -774,8 +770,6 @@ short SqlCmd::updateRepos(SqlciEnv * sqlci_env, SQLSTMT_ID * stmt, char * queryI
                                       explainData, explainDataLen);
   if (retcode < 0)
     {
-      cliInterface.retrieveSQLDiagnostics(&sqlci_env->diagsArea());
-
       HandleCLIError(retcode, sqlci_env);
 
       goto label_return;
@@ -3284,19 +3278,17 @@ short StoreExplain::process(SqlciEnv * sqlci_env)
     }
 
   retcode = updateRepos(sqlci_env, prep_stmt->getStmt(), prep_stmt->uniqueQueryId());
-  if (retcode < 0)
-    {
-      return cleanupAfterError(retcode, sqlci_env, 
-                               prep_stmt->getStmt(), prep_stmt->getSqlSrc(),
-                               prep_stmt->getOutputDesc(), prep_stmt->getInputDesc(),
-                               TRUE);
-    }
 
   char donemsg[100];
   donemsg[0] = '\0';
 
-  sprintf(donemsg, OP_COMPLETE_MESSAGE);
-
+  if (retcode == 0)
+    sprintf(donemsg, OP_COMPLETE_MESSAGE);
+  else if (retcode > 0)
+    sprintf(donemsg, OP_COMPLETED_WARNINGS);
+  else
+    sprintf(donemsg, OP_COMPLETED_ERRORS);
+    
   Logfile *log = sqlci_env->get_logfile();
   if (!lastLineWasABlank)
     {

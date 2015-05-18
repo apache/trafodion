@@ -1075,11 +1075,11 @@ class ComTdbVirtTableRoutineInfo : public ComTdbVirtTableBase
                              Int16 d, const char * sa, Int16 con, Int16 i, const char * ps,
                              const char * ta, Int32 mr, Int32 sas, const char * en,
                              const char * p, const char * uv, const char * es, const char * em,
-                             const char * lf, Int32 lv, const char * s)
+                             const char * lf, Int32 lv, const char * s, const char *ls)
     : ComTdbVirtTableBase(),
     routine_name(rn), deterministic(d), call_on_null(con), isolate(i), max_results(mr),
     state_area_size(sas), external_name(en), library_filename(lf), library_version(lv),
-    signature(s)
+      signature(s), library_sqlname(ls)
       {
         strcpy(UDR_type, ut);
         strcpy(language_type, lt);
@@ -1119,6 +1119,7 @@ class ComTdbVirtTableRoutineInfo : public ComTdbVirtTableBase
   const char *library_filename;
   Int32 library_version;
   const char * signature;
+  const char * library_sqlname;
   Int64 object_uid;
   Int32 object_owner_id;
   Int32 schema_owner_id;

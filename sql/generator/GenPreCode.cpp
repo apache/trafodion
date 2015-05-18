@@ -1542,10 +1542,11 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
   // below it. If we add the FirstN node in the binder, the optimizer
   // will add the Sort node on top of the FirstN node. Maybe we
   // can teach optimizer to do this.
-  if (getFirstNRows() != -1)
+  if ((getFirstNRows() != -1) || (getFirstNRowsParam()))
     {
       RelExpr * firstn = new(generator->wHeap()) FirstN(child(0),
-							getFirstNRows());
+							getFirstNRows(),
+                                                        getFirstNRowsParam());
 
       // move my child's attributes to the firstN node.
       // Estimated rows will be mine.
@@ -1572,6 +1573,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 
       // reset firstN indication in the root node.
       setFirstNRows(-1);
+      setFirstNRowsParam(NULL);
     }
 
   if (isTrueRoot())
@@ -4764,7 +4766,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
                   br->setSpecialNulls(TRUE);
                 }
             }
-        }
+        } // index_table
 
       if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
 	  (getTableDesc()->getNATable()->isHbaseCellTable()) ||
@@ -4774,22 +4776,25 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	    {
 	      retColRefSet_.insert(getIndexDesc()->getIndexColumns()[i]);
 	    }
-	}
-      else
-	{
-	  for (ValueId valId = colRefSet.init();
-	       colRefSet.next(valId);
-	       colRefSet.advance(valId))
-	    {
-	      ValueId dummyValId;
-	      if (NOT getGroupAttr()->getCharacteristicInputs().referencesTheGivenValue(valId, dummyValId))
-		retColRefSet_.insert(valId);
-	    }
-	  
-	  // add all the key columns. If values are missing in hbase, then atleast the key
-	  // value is needed to retrieve a row. 
-	  HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
-	}
+        }
+
+      for (ValueId valId = colRefSet.init();
+           colRefSet.next(valId);
+           colRefSet.advance(valId))
+        {
+          ValueId dummyValId;
+          if (NOT getGroupAttr()->getCharacteristicInputs().referencesTheGivenValue(valId, dummyValId))
+            retColRefSet_.insert(valId);
+        }
+
+      if (NOT ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
+               (getTableDesc()->getNATable()->isHbaseCellTable()) ||
+               (getTableDesc()->getNATable()->isSQLMXAlignedTable())))
+        {
+          // add all the key columns. If values are missing in hbase, then atleast the key
+          // value is needed to retrieve a row. 
+          HbaseAccess::addColReferenceFromVIDlist(getIndexDesc()->getIndexKey(), retColRefSet_);
+        }
     }
 
   NABoolean inlinedActions = FALSE;
@@ -4908,6 +4913,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 
   CollIndex totalColCount = getTableDesc()->getColumnList().entries();
   if ((getTableDesc()->getNATable()->isSQLMXAlignedTable()) &&
+      (newRecExprArray().entries() > 0) &&
       (newRecExprArray().entries() <  totalColCount))
     {
       ValueIdArray holeyArray(totalColCount);
@@ -11185,6 +11191,9 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
 	isUnique = TRUE;
     }
 
+  if (!isUnique)
+      generator->oltOptInfo()->setMultipleRowsReturned(TRUE) ;
+
   if ((isUnique) &&
       (NOT generator->oltOptInfo()->multipleRowsReturned()))
     {
@@ -11200,8 +11209,7 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
 	{
 	  if ((CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
 	      (NOT generator->isRIinliningForTrafIUD()) &&
-	      (searchKey() && searchKey()->isUnique()) &&
-	      (executorPred().entries() == 0))
+	      (searchKey() && searchKey()->isUnique()))
 	    {
 	      uniqueRowsetHbaseOper() = TRUE;
 	    }

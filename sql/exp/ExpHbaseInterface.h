@@ -89,7 +89,7 @@ class ExpHbaseInterface : public NABasicObject
   virtual ~ExpHbaseInterface()
   {}
   
-  virtual Lng32 init(ExHbaseAccessStats *hbs) = 0;
+  virtual Lng32 init(ExHbaseAccessStats *hbs = NULL) = 0;
   
   virtual Lng32 cleanup() = 0;
   virtual Lng32 cleanupClient()
@@ -103,7 +103,11 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 create(HbaseStr &tblName,
 		       NAText * hbaseCreateOptionsArray,
                        int numSplits, int keyLength,
-                       const char ** splitValues) =0;
+                       const char ** splitValues,
+                       NABoolean noXn) =0;
+
+  // During upsert using load, register truncate on abort will be used
+  virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn) = 0;
 
   // During a drop of seabase table or index, the object is first removed from 
   // seabase metadata. If that succeeds, the corresponding hbase object is dropped.
@@ -112,7 +116,7 @@ class ExpHbaseInterface : public NABasicObject
   // If a create of the same table comes in later and an error is returned
   // during create, we delay and retry for a fixed number of times since that table
   // may still be dropped by the worked thread.
-  virtual Lng32 drop(HbaseStr &tblName, NABoolean async) = 0;
+  virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn) = 0;
 
   // drops all objects from hbase that match the pattern
   virtual Lng32 dropAll(const char * pattern, NABoolean async) = 0;
@@ -149,6 +153,8 @@ class ExpHbaseInterface : public NABasicObject
 			 Lng32 espNum=0) = 0;
 
   virtual Lng32 scanClose() = 0;
+
+  virtual Lng32 getHTable(HbaseStr &tblName) = 0;
 
   Lng32 fetchAllRows(
 		     HbaseStr &tblName,
@@ -238,6 +244,11 @@ class ExpHbaseInterface : public NABasicObject
 		  NABoolean noXn,
 		  const int64_t timestamp) = 0;
 
+ virtual Lng32 getRows(
+          short rowIDLen,
+          HbaseStr &rowIDs,
+          const LIST(HbaseStr) & columns) = 0;
+
  virtual Lng32 insertRows(
 		  HbaseStr &tblName,
                   short rowIDLen,
@@ -256,11 +267,14 @@ class ExpHbaseInterface : public NABasicObject
                  NABoolean v)=0;
  
  virtual  Lng32 initHBLC(ExHbaseAccessStats* hbs = NULL)=0;
+ virtual  Lng32 initHive() = 0;
 
  virtual Lng32 initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
                            Text& hfileName,
-                           Int64 maxHFileSize) = 0;
+                           Int64 maxHFileSize,
+                           const char* sampleTblName,
+                           const char* hiveDDL) = 0;
 
  virtual Lng32 addToHFile(short rowIDLen,
                           HbaseStr &rowIDs,
@@ -276,6 +290,15 @@ class ExpHbaseInterface : public NABasicObject
 
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location) = 0;
+
+ virtual Lng32  hdfsCreateFile(const char* path)=0;
+ virtual Lng32  hdfsWrite(const char* data, Int64 size)=0;
+ virtual Lng32  hdfsClose()=0;
+ virtual Lng32  incrCounter( const char * tabName, const char * rowId,
+                             const char * famName, const char * qualName ,
+                             Int64 incr, Int64 & count)=0;
+ virtual Lng32  createCounterTable( const char * tabName,
+                                   const char * famName)=0;
   virtual Lng32 checkAndInsertRow(
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
@@ -331,6 +354,9 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 setArchivePermissions( const char * tbl)=0;
 
   virtual Lng32 getBlockCacheFraction(float& frac) = 0;
+  virtual Lng32 getHbaseTableInfo(const HbaseStr& tblName,
+                                  Int32& indexLevels,
+                                  Int32& blockSize) = 0;
 
 protected:
   enum 
@@ -366,7 +392,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   
   virtual ~ExpHbaseInterface_JNI();
   
-  virtual Lng32 init(ExHbaseAccessStats *hbs);
+  virtual Lng32 init(ExHbaseAccessStats *hbs = NULL);
   
   virtual Lng32 cleanup();
 
@@ -380,9 +406,12 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 create(HbaseStr &tblName,
 	               NAText* hbaseCreateOptionsArray,
                        int numSplits, int keyLength,
-                       const char ** splitValues);
+                       const char ** splitValues,
+                       NABoolean noXn);
 
-  virtual Lng32 drop(HbaseStr &tblName, NABoolean async);
+  virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn);
+
+  virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean noXn);
   virtual Lng32 dropAll(const char * pattern, NABoolean async);
 
   virtual ByteArrayList* listAll(const char * pattern);
@@ -417,6 +446,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 			 Lng32 espNum = 0);
 
   virtual Lng32 scanClose();
+
+  virtual Lng32 getHTable(HbaseStr &tblName);
 
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
@@ -493,6 +524,10 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   HbaseStr& row,
 		  NABoolean noXn,
 		  const int64_t timestamp);
+ virtual Lng32 getRows(
+          short rowIDLen,
+          HbaseStr &rowIDs,
+          const LIST(HbaseStr) & columns);
 
  virtual Lng32 insertRows(
 		  HbaseStr &tblName,
@@ -512,11 +547,14 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   NABoolean v);
 
 virtual  Lng32 initHBLC(ExHbaseAccessStats* hbs = NULL);
+virtual  Lng32 initHive();
 
 virtual Lng32 initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
                            Text& hfileName,
-                           Int64 maxHFileSize);
+                           Int64 maxHFileSize,
+                           const char* sampleTblName,
+                           const char* hiveDDL);
  virtual Lng32 addToHFile(short rowIDLen,
                           HbaseStr &rowIDs,
                           HbaseStr &rows);
@@ -531,6 +569,14 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
  
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location);
+ virtual Lng32  hdfsCreateFile(const char* path);
+ virtual Lng32  hdfsWrite(const char* data, Int64 size);
+ virtual Lng32  hdfsClose();
+ virtual Lng32  incrCounter( const char * tabName, const char * rowId,
+                             const char * famName, const char * qualName ,
+                             Int64 incr, Int64 & count);
+ virtual Lng32  createCounterTable( const char * tabName,
+                                   const char * famName);
 
   virtual Lng32 checkAndInsertRow(
 				  HbaseStr &tblName,
@@ -588,17 +634,17 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
   virtual Lng32  setArchivePermissions( const char * tabName) ;
 
   virtual Lng32 getBlockCacheFraction(float& frac) ;
+  virtual Lng32 getHbaseTableInfo(const HbaseStr& tblName,
+                                  Int32& indexLevels,
+                                  Int32& blockSize) ;
 
 private:
   bool  useTRex_;
   HBaseClient_JNI* client_;
   HTableClient_JNI* htc_;
   HBulkLoadClient_JNI* hblc_;
+  HiveClient_JNI* hive_;
   Int32  retCode_;
-  char* lastKVBuffer_;
-  Int32 lastKVBufferSize_;
-  char* lastKVColName_;
-  Int32 lastKVColNameSize_;
 };
 
 #endif

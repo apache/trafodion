@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -407,7 +407,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 		switch( (*op)->getTupleFormat() )
 		  {
 		  case ExpTupleDesc::SQLMX_KEY_FORMAT:
-		  case ExpTupleDesc::SQLMP_FORMAT:
+		  case ExpTupleDesc::PACKED_FORMAT:
 		    {
 		      // if this is a special field (either a field following
 		      // a varchar field, or a missing field), then compute
@@ -522,7 +522,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 			{
                           if ((mode == exp_WRITE)    &&
                               (rowLen)               &&
-                              (*op)->isSQLMPFormat())
+                              (*op)->isSQLPackedFormat())
                           {	
                              varOffset = (*op)->getOffset();
                              currAttr = *op;
@@ -542,7 +542,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 			      *nulldata = 0;
 			    }
 			}
-		    }  // SQLMX_KEY_FORMAT, SQLMP_FORMAT
+		    }  // SQLMX_KEY_FORMAT, PACKED_FORMAT
 		  break;
 
 		  case ExpTupleDesc::SQLARK_EXPLODED_FORMAT:
@@ -839,12 +839,12 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
       else
       // Check if we have an operand that we need to keep track of the length
       // as we go.  This is a varchar attribute for SQLMX_FORMAT and
-      // SQLMP_FORMAT formats, and all attributes for SQLMX_ALIGNED_FORMAT
+      // PACKED_FORMAT formats, and all attributes for SQLMX_ALIGNED_FORMAT
       // since fixed fields are rearranged.
       if ((currAttr && retcode == ex_expr::EXPR_OK) ||
           (currAttr                        &&
            (retcode == ex_expr::EXPR_NULL) &&
-           ((currAttr->getTupleFormat() == ExpTupleDesc::SQLMP_FORMAT) ||
+           ((currAttr->getTupleFormat() == ExpTupleDesc::PACKED_FORMAT) ||
             (currAttr->getTupleFormat() == ExpTupleDesc::SQLMX_ALIGNED_FORMAT))))
       {
         varOffset += currAttr->getLength(op_data[ex_clause::MAX_OPERANDS]);
@@ -2997,14 +2997,9 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 		       CONV_ASCII_BIN64S,
 		       NULL, 0);
 
-	    /*
-	    ex_expr::exp_return_type er =
-	      convAsciiToInt64(srcNumericVal,
-			       0, ptrSrc, srcLen,
-			       heap_, &diagsArea, 0);
-	    */
-
-	    if (er == ex_expr::EXPR_ERROR)
+            if (diagsArea != atp1->getDiagsArea())
+                   atp1->setDiagsArea(diagsArea);
+	    if (er == ex_expr::EXPR_ERROR) 
 	      return ex_expr::EXPR_ERROR;
 	  }
 
@@ -3076,13 +3071,9 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 		       heap_, &diagsArea,
 		       CONV_ASCII_FLOAT64,
 		       NULL, 0);
-		       
-	    /*	    ex_expr::exp_return_type er =
-	      convAsciiToFloat64((char*)&srcNumericVal,
-				 ptrSrc, srcLen,
-				 heap_, &diagsArea, 0);
-	    */
-	    if (er == ex_expr::EXPR_ERROR)
+            if (diagsArea != atp1->getDiagsArea())
+                   atp1->setDiagsArea(diagsArea);
+	    if (er == ex_expr::EXPR_ERROR) 
 	      return ex_expr::EXPR_ERROR;
 	  }
 
@@ -3157,7 +3148,9 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 		       heap_, &diagsArea,
 		       CONV_ASCII_F_V,
 		       NULL, 0);
-	    if (er == ex_expr::EXPR_ERROR)
+            if (diagsArea != atp1->getDiagsArea())
+               atp1->setDiagsArea(diagsArea);
+	    if (er == ex_expr::EXPR_ERROR) 
 	      return ex_expr::EXPR_ERROR;
 	  }
 	else
@@ -3211,8 +3204,14 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 
       DEF_ASSIGN(Int32,comboLen1, 6);
       DEF_ASSIGN(Int32,comboLen2, 11);
-      char* comboPtr1 = (char*)&comboLen1;
-      char* comboPtr2 = (char*)&comboLen2;
+
+      //
+      // NOTE: Use "unsigned char" in the next 2 lines so that we do not
+      //       get sign extension.  That way the 8-bit values pointed at
+      //       can be 0 - 255 rather than only 0 - 127.
+      //
+      unsigned char* comboPtr1 = (unsigned char*)&comboLen1;
+      unsigned char* comboPtr2 = (unsigned char*)&comboLen2;
       
       Int16 srcVCIndLen   = (Int16)comboPtr1[1];
       Int16 patVCIndLen   = (Int16)comboPtr2[1];
@@ -3264,8 +3263,12 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       }
       
       // Set up pointers to offsets and lengths of all pattern strings
-      PTR_TO_PCODE(char, pOffPtr, 12);
-      PTR_TO_PCODE(char, pLenPtr, 13);
+      //
+      // NOTE: Use "unsigned char" so that offsets and lengths can be
+      // up to 255.
+      //
+      PTR_TO_PCODE(unsigned char, pOffPtr, 12);
+      PTR_TO_PCODE(unsigned char, pLenPtr, 13);
 
       char* tempSrc = srcStr;
       Int32 tempSrcLen = srcLen;

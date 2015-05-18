@@ -489,6 +489,7 @@ short CmpSeabaseDDL::getListOfReferencedTables(
       // views should only be referencing tables, other views, or functions
       CMPASSERT(objectRefd.objectType == COM_BASE_TABLE_OBJECT_LIT ||
                 objectRefd.objectType == COM_USER_DEFINED_ROUTINE_OBJECT_LIT ||
+                objectRefd.objectType == COM_SEQUENCE_GENERATOR_OBJECT_LIT ||
                 objectRefd.objectType == COM_VIEW_OBJECT_LIT);
 
       // found a table, add to list
@@ -779,7 +780,7 @@ void CmpSeabaseDDL::createSeabaseView(
   ComTdbVirtTableColumnInfo * colInfoArray = 
     new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
 
-  if (buildColInfoArray(&colDefArray, colInfoArray, FALSE, 0, FALSE))
+  if (buildColInfoArray(COM_VIEW_OBJECT, &colDefArray, colInfoArray, FALSE, 0, FALSE))
     {
       deallocEHI(ehi); 
       processReturn();

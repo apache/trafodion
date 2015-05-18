@@ -1,7 +1,7 @@
 #!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -106,14 +106,6 @@ done
 
 if [ -d $MY_SQROOT/sql/local_hadoop ]; then
   . $(dirname $(which swhadoop))/sw_env.sh
-fi
-
-if [ "$SEABASE_REGRESS" == "" ]; then
-  sqlci -i init_sql_regr.sql
-else
-  if [ "$SEABASE_REGRESS_DIFFS" == "" ]; then
-    sqlci -i init_sb_regr.sql
-  fi
 fi
 
 echo ""

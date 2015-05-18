@@ -1776,7 +1776,10 @@ enum DefaultConstants
   // Specifies locations for CREATE statements that don't have a
   // LOCATION clause
   DDL_DEFAULT_LOCATIONS,
-
+  
+  //Support transactions for DDL operations.
+  DDL_TRANSACTIONS,
+  
   // controls various optimizations, see enum QueryOptimizationOptions.
   QUERY_OPTIMIZATION_OPTIONS,
 
@@ -1884,8 +1887,6 @@ enum DefaultConstants
   GROUP_BY_USING_ORDINAL,
 
   SKIP_UNAVAILABLE_PARTITION,
-
-  SQLMX_ALIGNED_ROW_FORMAT,
 
   ISOLATION_LEVEL_FOR_UPDATES,
 
@@ -2242,7 +2243,6 @@ enum DefaultConstants
   CAT_LARGE_BLOCKS_MAX_KEYSIZE,
   CAT_LARGE_BLOCKS_MAX_ROWSIZE,
 
-  ALIGNED_ROW_FORMAT,
   SQLMX_SHOWDDL_SUPPRESS_ROW_FORMAT,
 
   FORCE_PARALLEL_INSERT_SELECT,
@@ -3145,7 +3145,6 @@ enum DefaultConstants
   USTAT_RETRY_DELAY,
   USTAT_RETRY_LIMIT,
   USTAT_RETRY_NEC_COLS_LIMIT,
-  VALIDATE_SCHEMA_REDEF_TS,
   REPLICATE_IO_VERSION,
   COMPRESSED_INTERNAL_FORMAT_ROOT_DOES_CONVERSION,
   COMPRESSED_INTERNAL_FORMAT_BULK_MOVE,
@@ -3591,7 +3590,7 @@ enum DefaultConstants
 
   // if set to on, table will be created in aligned row format.
   // SQ row will be created in aligned format and stored as a single col in hbase.
-  TRAF_DEFAULT_ALIGNED_FORMAT,
+  TRAF_ALIGNED_ROW_FORMAT,
 
   // this is used to change cache size of sequence numbers for a session.
   // It overwrites the cache size that was specified during sequence creation.
@@ -3644,6 +3643,12 @@ enum DefaultConstants
   TRAF_UNLOAD_DEF_RECORD_SEPARATOR,
   TRAF_LOAD_FORCE_CIF,
   TRAF_ENABLE_ORC_FORMAT,
+  TRAF_LOAD_LOG_ERROR_ROWS,
+  TRAF_LOAD_MAX_ERROR_ROWS,
+  TRAF_LOAD_CONTINUE_ON_ERROR,
+  TRAF_LOAD_ERROR_COUNT_ID,
+  TRAF_LOAD_ERROR_COUNT_TABLE,
+  TRAF_LOAD_ERROR_LOGGING_LOCATION,
 
  // max size in bytes of a char or varchar column in a trafodion table.
   TRAF_MAX_CHARACTER_COL_LENGTH,
@@ -3682,6 +3687,8 @@ enum DefaultConstants
 
   TRAF_USE_RWRS_FOR_MD_INSERT,
 
+  TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,
+
   PCODE_DEBUG_LOGDIR,
   PCODE_EXPR_CACHE_CMP_ONLY,
   PCODE_EXPR_CACHE_DEBUG,
@@ -3691,6 +3698,17 @@ enum DefaultConstants
 
   // if on, store only the needed explain data. See ExplainTuple::genExplainTupleData.
   EXPLAIN_SPACE_OPT,
+  HBASE_ROWSET_VSBB_SIZE,
+  // hbase table block size, default is 64KB
+  HBASE_BLOCK_SIZE,
+  // hbase table index level, when zero, index level will be read from Hfile 
+  HBASE_INDEX_LEVEL,
+
+  // enable special features for certain vendors.
+  MODE_SPECIAL_5,
+
+  // enable self referencing foreign key constraints
+  TRAF_ALLOW_SELF_REF_CONSTR,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

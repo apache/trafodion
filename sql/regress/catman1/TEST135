@@ -74,7 +74,7 @@ create shared schema t135sch;
 
 -- Prepare library file
 sh rm -f ./udrtest135.dll;
-sh sh $$scriptsdir$$/tools/dll-compile.ksh udrtest135.c
+sh sh $$scriptsdir$$/tools/dll-compile.ksh udrtest135.cpp
   2>&1 | tee LOG135-SECONDARY;
 set pattern $$DLL$$ udrtest135.dll;
 

@@ -2030,8 +2030,7 @@ public:
   // This method is defined in PartFunc.cpp
   // ---------------------------------------------------------------------
   void completePartitionBoundaries(const ValueIdList& partitioningKeyOrder,
-				   Lng32 encodedBoundaryKeyLength,
-				   NABoolean isSQLMPTable);
+				   Lng32 encodedBoundaryKeyLength);
 
   void setupForStatement(NABoolean useStringVersion);
   void resetAfterStatement();

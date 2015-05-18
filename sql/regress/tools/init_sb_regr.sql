@@ -20,24 +20,15 @@
 
 #ifdef SEABASE_REGRESS
 
-cqd mode_seabase 'ON';
-
 delete from TRAFODION."_MD_".DEFAULTS
-     where ATTRIBUTE  in('MODE_SEABASE', 'MODE_SEAHIVE', 'SCHEMA',
-     'SEABASE_VOLATILE_TABLES');
+     where ATTRIBUTE  = 'SCHEMA';
 
 insert into TRAFODION."_MD_".DEFAULTS
      values
-     ('MODE_SEABASE ', 'ON', 'inserted during seabase regressions run'),
-     ('SCHEMA ', 'TRAFODION.SCH ', 'inserted during seabase regressions run'),
-     ('SEABASE_VOLATILE_TABLES ', 'ON', 'insert during seabase regressions run');
+     ('SCHEMA ', 'TRAFODION.SCH ', 'inserted during seabase regressions run');
 
-insert into TRAFODION."_MD_".DEFAULTS
-     values
-     ('MODE_SEAHIVE ', 'ON', 'inserted during seabase regressions run');
+--create shared schema trafodion.sch;
 
-create shared schema trafodion.sch;
-
-initialize authorization;
+--initialize authorization;
 #endif
 

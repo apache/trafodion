@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ ComTdbFastExtract::ComTdbFastExtract(
                      Space *space,
                      unsigned short childDataTuppIndex,
                      unsigned short cnvChildDataTuppIndex,
+                     ULng32 childDataRowLen,
                      Int64 hdfBuffSize,
                      Int16 replication
 
@@ -93,7 +94,8 @@ ComTdbFastExtract::ComTdbFastExtract(
   hiveTableName_(hiveTableName),
   hdfsIOBufferSize_(hdfBuffSize),
   hdfsReplication_(replication),
-  ioTimeout_(ioTimeout)
+  ioTimeout_(ioTimeout),
+  childDataRowLen_(childDataRowLen)
 {
 
 }

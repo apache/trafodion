@@ -21,11 +21,11 @@
 default_trafodion_user="trafodion"
 default_hbase_user="hbase"
 default_hdfs_user="hdfs"
-mappers=2 
-date_str="$(date '+%Y%m%d-%H%M')" 
- 
+mappers=2
+date_str="$(date '+%Y%m%d-%H%M')"
+
 ###############################################################################
-#which_environment function 
+#which_environment function
 ###############################################################################
 which_environment()
 {
@@ -39,11 +39,10 @@ which_environment()
     #cannot determine which environment we are using
     return 3
   fi
-
 }
 
 ###############################################################################
-#do_hadoop -- for dev environemt only
+#do_hadoop -- for dev environment only
 ###############################################################################
 do_hadoop()
 {
@@ -127,15 +126,15 @@ parse_srvr_user_name()
   local myprocess_name=$1
   local pid_str=($(jps | grep $myprocess_name ))
   if [[ PIPESTATUS[0] -ne 0 || -z $pid_str ]] ; then
-    echo "***[ERROR]: cannot parse the $myprocess_name pid. "  | tee -a  ${log_file}
+    echo "***[ERROR]: cannot parse the $myprocess_name pid."  | tee -a  ${log_file}
     return 1
   fi
-  
+
   local myusername=($(ps -f --pid ${pid_str[0]} | grep ${pid_str[0]}))
   if [[ PIPESTATUS[0] -ne 0 || -z $pid_str ]] ; then
-    echo "***[ERROR]: cannot parse the $myprocess_name user name. "  | tee -a  ${log_file}
+    echo "***[ERROR]: cannot parse the $myprocess_name user name."  | tee -a  ${log_file}
     return 1
-  fi  
+  fi
   echo ${myusername[0]}  | tee -a  ${log_file}
   return 0
 }
@@ -143,21 +142,21 @@ parse_srvr_user_name()
 #confirm_choice
 ###############################################################################
 confirm_choice()
-{ 
+{
   if [[ $confirm -eq 0   ]] ; then
     return 0
   fi
   local msg=$1
   echo -n "$msg [ value (Y/N), default is N ]: "
   read answer
-  
+
   if [[ -z $answer ]] ; then
      return 1
-  else 
+  else
      if [[ ${answer^} == "Y" ]]; then
-       return 0 
+       return 0
      else
-       return 1  
+       return 1
      fi
   fi
 }
@@ -173,8 +172,8 @@ validate_srvr_user_name()
   local mytyp=
   local myuser=
 
-  if [[ -z  $verified_user_name ]] ; then 
-    echo "WARNING: The user name running $service_name service was not provided by user. " | tee -a  ${log_file}
+  if [[ -z  $verified_user_name ]] ; then
+    echo "WARNING: The user name running $service_name service was not provided by user." | tee -a  ${log_file}
     myuser=$(parse_srvr_user_name "$my_process_name" )
     if [[ $? -ne 0  || -z $myuser  ]]
     then
@@ -185,23 +184,23 @@ validate_srvr_user_name()
       echo "INFO: The user name running $service_name service was computed as: $myuser ." | tee -a  ${log_file}
       mytyp=computed
     fi
-    confirm_choice "Would you like to use the $mytyp user name: ${myuser} ?" 
+    confirm_choice "Would you like to use the $mytyp user name: ${myuser} ?"
     if [[ $? -ne 0 ]]
     then
-      #echo "***[ERROR]: User $myuser was rejected. "    | tee -a  ${log_file}  
+      #echo "***[ERROR]: User $myuser was rejected."    | tee -a  ${log_file}
       return 1
      else
       verified_user_name=$myuser
-    fi 
+    fi
   fi
   # now verify the id
   id $verified_user_name  2>&1 > /dev/null
   if [[ $? -ne 0  ]]
   then
-    echo "***[ERROR]: user $verified_user_name is not a valid user."   | tee -a  ${log_file}  
+    echo "***[ERROR]: user $verified_user_name is not a valid user."   | tee -a  ${log_file}
     return 1
   fi
-  return 0 
+  return 0
 }
 
 ###############################################################################
@@ -214,7 +213,7 @@ verify_or_create_folder()
   # check if it is valid HDFS path
   echo  "${hdfs_backup_location}" | egrep -i -e 'hdfs://.*:.*/.*'  2>&1 > /dev/null
   if [[ ${PIPESTATUS[1]} -ne 0 ]]
-  then  
+  then
     echo "***[ERROR]: "${hdfs_backup_location}"  is not a valid HDFS path."   | tee -a $log_file
     echo "***[ERROR]: Please provide a valid HDFS path as backup location."   | tee -a $log_file
     return 1
@@ -224,19 +223,19 @@ verify_or_create_folder()
   echo  "${hbase_cmd}" | tee -a $log_file
   do_sudo ${hbase_user} "${hbase_cmd}"   2>&1 | tee -a  ${log_file}
   if [[ ${cr} == "create" && ${PIPESTATUS[0]} -ne 0 ]] ; then
-    hbase_cmd="$(get_hadoop_cmd) fs -mkdir -p ${hsdf_loc} "
+    hbase_cmd="$(get_hadoop_cmd) fs -mkdir -p ${hsdf_loc}"
     echo  "${hbase_cmd}" | tee -a $log_file
     do_sudo ${hdfs_user} "${hbase_cmd}"   2>&1 | tee -a  ${log_file}
     if [[ ${PIPESTATUS[0]} -ne 0 ]] ;  then
       echo "***[ERROR]: ${hsdf_loc} folder could not be created."   | tee -a $log_file
-      return  1 
+      return  1
     fi
     hbase_cmd="$(get_hadoop_cmd) fs -chown ${hbase_user}:${hbase_user}   ${hsdf_loc} "
     echo  "${hbase_cmd}" | tee -a ${log_file}
     do_sudo ${hdfs_user} "${hbase_cmd}"   2>&1 | tee -a  ${log_file}
     if [[ ${PIPESTATUS[0]} -ne 0 ]] ;  then
-      echo "***[ERROR]: Could not change owner on ${hsdf_loc}. "   | tee -a $log_file
-      return 1 
+      echo "***[ERROR]: Could not change owner on ${hsdf_loc}."   | tee -a $log_file
+      return 1
     fi
   fi
 
@@ -246,14 +245,14 @@ verify_or_create_folder()
     echo  "${hbase_cmd}" | tee -a ${log_file}
     do_sudo ${hbase_user} "${hbase_cmd}"      2>&1 | tee -a  ${log_file}
     if [[ ${PIPESTATUS[0]} -ne 0 ]] ;  then
-      echo "***[ERROR]: hbase user does not have priviledge to write to the HDFS location ${hsdf_loc}."  | tee -a $log_file
+      echo "***[ERROR]: hbase user does not have privilege to write to the HDFS location ${hsdf_loc}."  | tee -a $log_file
       return 1
     fi
     hbase_cmd="$(get_hadoop_cmd) fs -rm -skipTrash $hsdf_loc/tmp"
     echo  "${hbase_cmd}" | tee -a ${log_file}
     do_sudo ${hbase_user} "$hbase_cmd"   | tee -a $log_file
   fi
-  
+
   return 0
 }
 
@@ -270,14 +269,14 @@ verify_trafodion_is_down()
   local ret_code=${PIPESTATUS[0]}
   which_environment
   local env1=$?
-  # cstat seems to return 1 in the case on deve environment and not 0 even though it succeeds
+  # cstat seems to return 1 in the dev environment and not 0 even though it succeeds
   # in the cluster env it returns 0 on success
-  if [[ ${env1} -eq 1 && ${ret_code} -eq 1 ]]; then 
+  if [[ ${env1} -eq 1 && ${ret_code} -eq 1 ]]; then
    #dev env
    ret_code=0
   fi
-  
-  if [[ ${ret_code} -ne 0 ]] 
+
+  if [[ ${ret_code} -ne 0 ]]
   then
    echo "***[ERROR]: Cannot verify whether trafodion is down or not."   | tee -a $log_file
    return  1
@@ -290,7 +289,6 @@ verify_trafodion_is_down()
     echo "***[INFO]: Trafodion is down."  | tee -a $log_file
   fi
   return 0
-
 }
 ###############################################################################
 #validate_sudo_access
@@ -303,7 +301,7 @@ validate_sudo_access()
    then
      echo "***[ERROR]: Could not validate sudo access."     | tee -a ${log_file}
      return 1
-   fi 
+   fi
 
    return 0
 }
@@ -312,11 +310,11 @@ validate_sudo_access()
 ###############################################################################
 create_tmp_and_log_folders()
 {
-  echo "Checking if  ${log_dir} exists... " 
+  echo "Checking if  ${log_dir} exists..."
   mkdir ${log_dir}   &> /dev/null
   if [[ ! -d "${log_dir}" ]]
   then
-    echo "***[ERROR]: Cannot create ${log_dir} folder." 
+    echo "***[ERROR]: Cannot create ${log_dir} folder."
     return  1;
   fi
   mkdir $tmp_dir &> /dev/null
@@ -325,8 +323,7 @@ create_tmp_and_log_folders()
     echo "***[ERROR]: Cannot create $tmp_dir folder."    | tee -a $log_file
     return 1;
   fi
-    return 0
-
+  return 0
 }
 
 
@@ -350,28 +347,28 @@ validate_environment_and_users()
   elif [[ $which_env -eq 2 ]]
   then
     # we are on a cluster with Cloudera, Horton Works or Mapr installed
-    validate_srvr_user_name "$hbase_user" "HRegionServer" "$default_hbase_user" "HBase"  
+    validate_srvr_user_name "$hbase_user" "HRegionServer" "$default_hbase_user" "HBase"
     if [[ $? -ne 0 ]]; then
-      echo "***[ERROR]: HBase user could not be validated." | tee -a ${log_file} 
+      echo "***[ERROR]: HBase user could not be validated." | tee -a ${log_file}
       return 1
     fi
     hbase_user="$verified_user_name"
     echo "HBase user name: $hbase_user"    | tee -a ${log_file}
-      
-    validate_srvr_user_name "$hdfs_user" "DataNode" "$default_hdfs_user"  "HDFS"  
+
+    validate_srvr_user_name "$hdfs_user" "DataNode" "$default_hdfs_user"  "HDFS"
     if [[ $? -ne 0 ]]; then
-      echo "***[ERROR]: HDFS user could not be validated."  | tee -a ${log_file} 
+      echo "***[ERROR]: HDFS user could not be validated."  | tee -a ${log_file}
       return 1
     fi
     hdfs_user="$verified_user_name"
-    echo "HDFS user name: $hdfs_user"  | tee -a ${log_file} 
-    
-    validate_srvr_user_name "$trafodion_user" "Trafodion"  "$default_trafodion_user"  "Trafodion"  
+    echo "HDFS user name: $hdfs_user"  | tee -a ${log_file}
+
+    validate_srvr_user_name "$trafodion_user" "Trafodion"  "$default_trafodion_user"  "Trafodion"
     if [[ $? -ne 0 ]] ; then
-      echo "***[ERROR]: Trafodion user could not be validated." | tee -a ${log_file} 
+      echo "***[ERROR]: Trafodion user could not be validated." | tee -a ${log_file}
       return 1
     fi
-    trafodion_user="$verified_user_name" 
+    trafodion_user="$verified_user_name"
     echo "Trafodion user name: $trafodion_user"  | tee -a ${log_file}
     #verify sudo access
     validate_sudo_access $hbase_user
@@ -379,25 +376,24 @@ validate_environment_and_users()
       return 1
     fi
   else
-    echo "***[ERROR]: Did not find supported Hadoop distribution or $MY_SQROOT is not set"
+    echo "***[ERROR]: Did not find supported Hadoop distribution or $MY_SQROOT is not set."
     return 1
   fi
 
   hbase_snapshot_enabled=$($(get_hbase_cmd) org.apache.hadoop.hbase.util.HBaseConfTool hbase.snapshot.enabled)
   echo "hbase.snapshot.enabled=${hbase_snapshot_enabled}"
-  if [[ "$hbase_snapshot_enabled" != "true" ]] 
+  if [[ "$hbase_snapshot_enabled" != "true" ]]
   then
     echo "***[ERROR]: Snapshots do not seem to be enabled. Please enable snapshots and try again."   | tee -a $log_file
     return  1
   fi
 
-    verify_trafodion_is_down ${trafodion_user}
-    if [[ $? -ne 0 ]] ;  then
-      return 1
-    fi
+  verify_trafodion_is_down ${trafodion_user}
+  if [[ $? -ne 0 ]] ;  then
+    return 1
+  fi
 
-
-    return 0
+  return 0
 }
 ###############################################################################
 #get_hdfs_uri
@@ -407,7 +403,7 @@ get_hdfs_uri()
   local hbase_rtdir=$($(get_hbase_cmd) org.apache.hadoop.hbase.util.HBaseConfTool hbase.rootdir)
   local fs_defFs=$($(get_hbase_cmd) org.apache.hadoop.hbase.util.HBaseConfTool fs.defaultFS)
   echo  "${fs_defFs}" | egrep -i -e 'hdfs://.*' 2>&1 > /dev/null
-  if [[ ${PIPESTATUS[1]} -ne 0 ]];  then  
+  if [[ ${PIPESTATUS[1]} -ne 0 ]];  then
     echo ${hbase_rtdir} | sed "s/\(hdfs:\/\/.*:[0-9]*\).*/\1/i"
   else
     echo ${fs_defFs}

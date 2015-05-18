@@ -525,12 +525,6 @@ public:
   ULng32 getRCBLength() const { return rcbLen_; }
   ULng32 getKeyLength() const { return keyLength_; }
 
-  const void *getSecurityLabel() const { return securityLabel_; }
-  ULng32 getSecurityLabelLength() const { return securityLabelLen_; }
-
-  const void * getConstraintLabelInfo() const { return constraintLabelInfo_; }
-  ULng32 getConstraintLabelInfoLen() const { return constraintLabelInfoLen_; }
-
   const char * getParentTableName() const { return parentTableName_; }
   const ComPartitioningScheme &getPartitioningScheme() const { return partitioningScheme_; }
    
@@ -563,22 +557,6 @@ public:
 
   NABoolean isInsertable() const
   {  return (flags_ & IS_INSERTABLE) != 0; }
-
-// LCOV_EXCL_START :mp
-  void setSQLMPShorthandView( NABoolean value )
-  {  value ? flags_ |= SQLMP_SHORTHAND_VIEW : flags_ &= ~SQLMP_SHORTHAND_VIEW; }
-// LCOV_EXCL_STOP
-
-  NABoolean isSQLMPShorthandView() const
-  {  return (flags_ & SQLMP_SHORTHAND_VIEW) != 0; }
-
-// LCOV_EXCL_START :mp
-  void setSQLMPTable( NABoolean value )
-  {  value ? flags_ |= SQLMP_ROW_FORMAT : flags_ &= ~SQLMP_ROW_FORMAT; }
-// LCOV_EXCL_STOP
-
-  NABoolean isSQLMPTable() const
-  {  return (flags_ & SQLMP_ROW_FORMAT) != 0; }
 
   void setSQLMXTable( NABoolean value )
   {  value ? flags_ |= SQLMX_ROW_FORMAT : flags_ &= ~SQLMX_ROW_FORMAT; }
@@ -716,8 +694,7 @@ public:
   const ExtendedQualName *getKey() const              { return &qualifiedName_; }
 
   char * getViewFileName() const              { return viewFileName_; }
-  char * getSchemaLabelFileName() const       { return schemaLabelFileName_; }
-  const Int64 &getSchemaRedefTime() const     { return schemaRedefTime_; }
+
   // MV
   // ---------------------------------------------------------------------
   // Materialized Views support
@@ -823,6 +800,7 @@ public:
   // which completes the row size calculation with HBase info.
   Int32 computeHBaseRowSizeFromMetaData() const ;
   Int64 estimateHBaseRowCount() const;
+  NABoolean getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const;
 
 private:
   // copy ctor
@@ -875,8 +853,6 @@ private:
   // Bitfield flags to be used instead of numerous NABoolean fields
   enum Flags {
     UNUSED                    = 0x00000000,
-    SQLMP_SHORTHAND_VIEW      = 0x00000001,
-    SQLMP_ROW_FORMAT          = 0x00000002,
     SQLMX_ROW_FORMAT          = 0x00000004,
     SQLMX_ALIGNED_ROW_FORMAT  = 0x00000008,
     IS_INSERTABLE             = 0x00000010,
@@ -1055,7 +1031,6 @@ private:
   UInt32 hitCount_;
   UInt32 replacementCounter_;
 
-
   COM_VERSION osv_;
   COM_VERSION ofv_;
 
@@ -1063,14 +1038,6 @@ private:
   void * rcb_;
   ULng32 rcbLen_;
   ULng32 keyLength_;
-
-  void * constraintLabelInfo_;
-  ULng32 constraintLabelInfoLen_;
-
-  void * securityLabel_;
-  ULng32 securityLabelLen_;
-  char * schemaLabelFileName_;
-  Int64 schemaRedefTime_;
 
   char * parentTableName_;
 

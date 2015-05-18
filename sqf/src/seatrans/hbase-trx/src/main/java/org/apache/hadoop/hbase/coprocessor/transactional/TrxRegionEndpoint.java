@@ -63,6 +63,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.codec.binary.Hex;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
@@ -81,8 +83,10 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.ScannerTimeoutException;
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.transactional.MemoryUsageException;
+import org.apache.hadoop.hbase.client.transactional.OutOfOrderProtocolException;
+import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
+import org.apache.hadoop.hbase.client.transactional.BatchException;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
@@ -189,6 +193,13 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
 import org.apache.hadoop.hbase.zookeeper.ZKUtil;
 import org.apache.zookeeper.KeeperException;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionMultipleRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionMultipleResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitMultipleRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitMultipleResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleResponse;
+
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -311,19 +322,25 @@ CoprocessorService, Coprocessor {
   private static final int DEFAULT_MEMORY_THRESHOLD = 100; // 100% memory used
   private static final int DEFAULT_MEMORY_SLEEP = 15 * 1000;
   private static final boolean DEFAULT_MEMORY_WARN_ONLY = true;        
+  private static final boolean DEFAULT_MEMORY_PERFORM_GC = false;
+  private static final boolean DEFAULT_SUPPRESS_OOP = false;
   private static final String SLEEP_CONF = "hbase.transaction.clean.sleep";
   private static final String LEASE_CONF  = "hbase.transaction.lease.timeout";
   private static final String MEMORY_THRESHOLD = "hbase.transaction.memory.threshold";
   private static final String MEMORY_WARN_ONLY = "hbase.transaction.memory.warn.only";
   private static final String MEMORY_CONF = "hbase.transaction.memory.sleep";
+  private static final String MEMORY_PERFORM_GC = "hbase.transaction.memory.perform.GC";
+  private static final String SUPPRESS_OOP = "hbase.transaction.suppress.OOP.exception";
   protected static int transactionLeaseTimeout = 0;
   private static int scannerLeaseTimeoutPeriod = 0;
   private static int scannerThreadWakeFrequency = 0;
   private static int memoryUsageThreshold = DEFAULT_MEMORY_THRESHOLD;
+  private static boolean memoryUsagePerformGC = DEFAULT_MEMORY_PERFORM_GC;
   private static boolean memoryUsageWarnOnly = DEFAULT_MEMORY_WARN_ONLY;
   private static MemoryMXBean memoryBean = null;
   private static float memoryPercentage = 0;
   private static boolean memoryThrottle = false;
+  private static boolean suppressOutOfOrderProtocolException = DEFAULT_SUPPRESS_OOP;
 
   // Transaction state defines
   private static final int COMMIT_OK = 1;
@@ -346,6 +363,10 @@ CoprocessorService, Coprocessor {
 
   public static final int REGION_STATE_RECOVERING = 0;
   public static final int REGION_STATE_START = 2;
+
+  public static final String trxkeyEPCPinstance = "EPCPinstance";
+  // TBD Maybe we should just use HashMap to improve the performance, ConcurrentHashMap could be too strict
+  static ConcurrentHashMap<String, Object> transactionsEPCPMap = new ConcurrentHashMap<String, Object>();
 
   // TrxRegionService methods
     
@@ -420,6 +441,85 @@ CoprocessorService, Coprocessor {
     }
 
     AbortTransactionResponse aresponse = abortTransactionResponseBuilder.build();
+
+    done.run(aresponse);
+  }
+
+  @Override
+  public void abortTransactionMultiple(RpcController controller,
+                                AbortTransactionMultipleRequest request,
+                                RpcCallback<AbortTransactionMultipleResponse> done) {
+    AbortTransactionMultipleResponse response = AbortTransactionMultipleResponse.getDefaultInstance();
+
+    long transactionId = request.getTransactionId();
+    int i = 0;
+    int numOfRegion = request.getRegionNameCount();
+    String requestRegionName;
+    IOException ioe = null;
+    UnknownTransactionException ute = null;
+    WrongRegionException wre = null;
+    Throwable t = null;
+
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: abortMultiple - txId " + transactionId + ", master regionName " + regionInfo.getRegionNameAsString());
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: abortMultiple - txId " + transactionId + " number of region is commitMultiple " + numOfRegion);
+
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionMultipleResponse.Builder abortTransactionMultipleResponseBuilder = AbortTransactionMultipleResponse.newBuilder();
+    abortTransactionMultipleResponseBuilder.setHasException(false);
+
+    while (i < numOfRegion) {
+         requestRegionName = request.getRegionName(i).toStringUtf8();    
+         abortTransactionMultipleResponseBuilder.addException(BatchException.EXCEPTION_OK.toString());
+
+         try {
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint abortMultiple begins for region " + requestRegionName);
+              TrxRegionEndpoint regionEPCP = (TrxRegionEndpoint) transactionsEPCPMap.get(requestRegionName+trxkeyEPCPinstance);
+              if (regionEPCP == null) {
+                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint abortMultiple region NOT FOUND in EPCP map " + requestRegionName);
+                 abortTransactionMultipleResponseBuilder.setHasException(true);
+                 abortTransactionMultipleResponseBuilder.setException(i, BatchException.EXCEPTION_REGIONNOTFOUND_ERR.toString());
+              }
+              else {
+                 regionEPCP.abortTransaction(transactionId);
+              }
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint abortMultiple ends");
+             // abortTransaction(transactionId);
+         } catch (UnknownTransactionException u) {
+              if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:abort - txId " + transactionId + ", Caught UnknownTransactionException after internal abortTransaction call - " + u.getMessage() + " " + stackTraceToString(u));
+              ute = u;
+         } catch (IOException e) {
+              if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:abort - txId " + transactionId + ", Caught IOException after internal abortTransaction call - " + e.getMessage() + " " + stackTraceToString(e));
+              ioe = e;
+         }
+
+         if (t != null)
+         {
+              abortTransactionMultipleResponseBuilder.setHasException(true);
+              abortTransactionMultipleResponseBuilder.setException(i, t.toString());
+         }
+
+         if (wre != null)
+         {
+              abortTransactionMultipleResponseBuilder.setHasException(true);
+              abortTransactionMultipleResponseBuilder.setException(i, wre.toString());
+         }
+
+         if (ioe != null)
+         {
+              abortTransactionMultipleResponseBuilder.setHasException(true);
+              abortTransactionMultipleResponseBuilder.setException(i, ioe.toString());
+         }
+
+         if (ute != null)
+         {
+              abortTransactionMultipleResponseBuilder.setHasException(true);
+              abortTransactionMultipleResponseBuilder.setException(i, ute.toString());
+         }
+
+         i++; // move to next region 
+
+    } // end of while-loop on all the regions in thecommitMultiple request
+
+    AbortTransactionMultipleResponse aresponse = abortTransactionMultipleResponseBuilder.build();
 
     done.run(aresponse);
   }
@@ -559,6 +659,69 @@ CoprocessorService, Coprocessor {
   }
 
   @Override
+  public void commitMultiple(RpcController controller,
+                     CommitMultipleRequest request,
+                     RpcCallback<CommitMultipleResponse> done) {
+    CommitMultipleResponse response = CommitMultipleResponse.getDefaultInstance();
+
+    Throwable t = null;
+    WrongRegionException wre = null;
+    long transactionId = request.getTransactionId();
+    int i = 0;
+    int numOfRegion = request.getRegionNameCount();
+    String requestRegionName;
+
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitMultiple - txId " + transactionId + " master regionName " + regionInfo.getRegionNameAsString());
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitMultiple - txId " + transactionId + " number of region is commitMultiple " + numOfRegion);
+
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitMultipleResponse.Builder commitMultipleResponseBuilder = CommitMultipleResponse.newBuilder();
+    commitMultipleResponseBuilder.setHasException(false);
+
+    while (i < numOfRegion) {
+         requestRegionName = request.getRegionName(i).toStringUtf8();    
+         commitMultipleResponseBuilder.addException(BatchException.EXCEPTION_OK.toString());
+
+         try {
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint commitMultiple begins for region " + requestRegionName);
+              TrxRegionEndpoint regionEPCP = (TrxRegionEndpoint) transactionsEPCPMap.get(requestRegionName+trxkeyEPCPinstance);
+              if (regionEPCP == null) {
+                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint commitMultiple region NOT FOUND in EPCP map " + requestRegionName);
+                 commitMultipleResponseBuilder.setHasException(true);
+                 commitMultipleResponseBuilder.setException(i, BatchException.EXCEPTION_REGIONNOTFOUND_ERR.toString());
+              }
+              else {
+                 regionEPCP.commit(transactionId, request.getIgnoreUnknownTransactionException());
+              }
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint commitMultiple ends");
+             //commit(transactionId, request.getIgnoreUnknownTransactionException());
+         } catch (Throwable e) {
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitMultiple - txId " + transactionId + ", Caught exception after internal commit call "
+                     + e.getMessage() + " " + stackTraceToString(e));
+              t = e;
+         }
+
+         if (t != null)
+         {
+              commitMultipleResponseBuilder.setHasException(true);
+              commitMultipleResponseBuilder.setException(i, t.toString());
+         }
+
+         if (wre != null)
+         {
+              commitMultipleResponseBuilder.setHasException(true);
+              commitMultipleResponseBuilder.setException(i, wre.toString());
+         }
+
+         i++; // move to next region 
+
+    } // end of while-loop on all the regions in thecommitMultiple request
+
+    CommitMultipleResponse cresponse = commitMultipleResponseBuilder.build();
+
+    done.run(cresponse);
+  }
+
+  @Override
   public void commitIfPossible(RpcController controller,
                                 CommitIfPossibleRequest request,
       RpcCallback<CommitIfPossibleResponse> done) {
@@ -687,6 +850,109 @@ CoprocessorService, Coprocessor {
     commitRequestResponseBuilder.setResult(status);
 
     CommitRequestResponse cresponse = commitRequestResponseBuilder.build();
+    done.run(cresponse);
+  }
+
+  @Override
+  public void commitRequestMultiple(RpcController controller,
+                            CommitRequestMultipleRequest request,
+                            RpcCallback<CommitRequestMultipleResponse> done) {
+
+    CommitRequestMultipleResponse response = CommitRequestMultipleResponse.getDefaultInstance();
+
+    int status = 0;
+    IOException ioe = null;
+    UnknownTransactionException ute = null;
+    Throwable t = null;
+    WrongRegionException wre = null;
+    long transactionId = request.getTransactionId();
+    int i = 0;
+    int numOfRegion = request.getRegionNameCount();
+    String requestRegionName;
+
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequestMultiple - txId " + transactionId + ", master regionName " + regionInfo.getRegionNameAsString());
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequestMultiple - txId " + transactionId + " number of region is commitMultiple " + numOfRegion);
+
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestMultipleResponse.Builder commitRequestMultipleResponseBuilder = CommitRequestMultipleResponse.newBuilder();
+    commitRequestMultipleResponseBuilder.setHasException(false);
+
+    while (i < numOfRegion) {
+         requestRegionName = request.getRegionName(i).toStringUtf8();    
+/*
+         if (LOG.isTraceEnabled()) LOG.trace("EPCP AA0 Region Key " + Hex.encodeHexString(request.getRegionName(i).toStringUtf8().getBytes()));
+         if (LOG.isTraceEnabled()) LOG.trace("EPCP AA0 Region Key " + this.m_Region.getRegionNameAsString());
+         if (LOG.isTraceEnabled()) LOG.trace("EPCP AA0 Region Key " + this.m_Region.getRegionName().toString());
+         if (LOG.isTraceEnabled()) LOG.trace("EPCP AA0 Region Key " + Hex.encodeHexString(ByteString.copyFrom(this.m_Region.getRegionName()).toString().getBytes()));
+         if (LOG.isTraceEnabled()) LOG.trace("EPCP AA1 Region Key " + Hex.encodeHexString(requestRegionName.getBytes()));
+         if (LOG.isTraceEnabled()) LOG.trace("EPCP AA2 Region Key " + Hex.encodeHexString(this.m_Region.getRegionNameAsString().getBytes()));
+         if (LOG.isTraceEnabled()) LOG.trace("EPCP AA2 Region Key " + Hex.encodeHexString(this.m_Region.getRegionName()));
+
+         if (requestRegionName.equals(ByteString.copyFrom(this.m_Region.getRegionName()).toString())) {
+            if (LOG.isTraceEnabled()) { LOG.trace("EPCP BB0 Region Key matches !! " + request.getRegionName(i).toString()); }
+         }
+         if (Arrays.equals(request.getRegionName(i).toStringUtf8().getBytes(), this.m_Region.getRegionNameAsString().getBytes())) {
+            if (LOG.isTraceEnabled()) { LOG.trace("EPCP BB1 Region Key matches !! " + request.getRegionName(i).toString()); }
+         }
+         if (request.getRegionName(i).toStringUtf8().equals(this.m_Region.getRegionNameAsString())) {
+            if (LOG.isTraceEnabled()) { LOG.trace("EPCP BB2 Region Key matches !! " + request.getRegionName(i).toString()); }
+         }
+*/         
+         commitRequestMultipleResponseBuilder.addException(BatchException.EXCEPTION_OK.toString());
+
+         try {
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint commitRequestMultiple begins for region " + requestRegionName);
+              TrxRegionEndpoint regionEPCP = (TrxRegionEndpoint) transactionsEPCPMap.get(requestRegionName+trxkeyEPCPinstance);
+              if (regionEPCP == null) {
+                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint commitRequestMultiple region NOT FOUND in EPCP map " + requestRegionName);
+                 commitRequestMultipleResponseBuilder.setHasException(true);
+                 commitRequestMultipleResponseBuilder.setException(i, BatchException.EXCEPTION_REGIONNOTFOUND_ERR.toString());
+              }
+              else {
+                 if (i == (numOfRegion - 1)) {status = regionEPCP.commitRequest(transactionId, true);} // only the last region flush
+                 else {status = regionEPCP.commitRequest(transactionId, false);}
+              }
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint commitRequestMultiple ends");
+             //status = commitRequest(transactionId);
+         } catch (UnknownTransactionException u) {
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequestMultiple - txId " + transactionId + ", Caught UnknownTransactionException after internal commitRequest call - " + u.toString());
+              ute = u;
+         } catch (IOException e) {
+              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequestMultiple - txId " + transactionId + ", Caught IOException after internal commitRequest call - "+ e.toString());
+              ioe = e;
+         }
+
+          if (t != null)
+         {
+              commitRequestMultipleResponseBuilder.setHasException(true);
+              commitRequestMultipleResponseBuilder.setException(i, BatchException.EXCEPTION_SKIPREMAININGREGIONS_OK.toString());
+         }
+
+         if (wre != null)
+         {
+              commitRequestMultipleResponseBuilder.setHasException(true);
+              commitRequestMultipleResponseBuilder.setException(i, BatchException.EXCEPTION_SKIPREMAININGREGIONS_OK.toString());
+         }
+
+         if (ioe != null)
+         {
+              commitRequestMultipleResponseBuilder.setHasException(true);
+              commitRequestMultipleResponseBuilder.setException(i, BatchException.EXCEPTION_SKIPREMAININGREGIONS_OK.toString());
+         }
+
+         if (ute != null)
+         {
+              commitRequestMultipleResponseBuilder.setHasException(true);
+              commitRequestMultipleResponseBuilder.setException(i, BatchException.EXCEPTION_SKIPREMAININGREGIONS_OK.toString());
+         }
+
+         commitRequestMultipleResponseBuilder.addResult(status);
+
+         i++; // move to next region 
+
+    } // end of while-loop on all the regions in thecommitMultiple request
+
+    CommitRequestMultipleResponse cresponse = commitRequestMultipleResponseBuilder.build();
+
     done.run(cresponse);
   }
 
@@ -951,6 +1217,7 @@ CoprocessorService, Coprocessor {
 
     RegionScanner scanner = null;
     Throwable t = null;
+    OutOfOrderProtocolException oop = null;
     WrongRegionException wre = null;
     Exception ce = null;
     long transId = request.getTransactionId();
@@ -972,6 +1239,26 @@ CoprocessorService, Coprocessor {
         regionInfo.getRegionNameAsString());
     } else {
     */
+
+    // There should be a matching key in the transactionsById map
+    // associated with this transaction id.  If there is not
+    // one, then the initial openScanner call for the transaction
+    // id was not called.  This is a protocol error requiring
+    // openScanner, performScan followed by a closeScanner.
+
+    String key = getTransactionalUniqueId(transId);
+    boolean keyFound = transactionsById.containsKey(key);
+
+    if (keyFound != true)
+    {
+      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: closeScanner - Unknown transaction [" + transId
+             + "] in region ["
+             + m_Region.getRegionInfo().getRegionNameAsString()
+             + "], will create an OutOfOrderProtocol exception ");
+      oop = new OutOfOrderProtocolException("closeScanner does not have an active transaction with an open scanner, txId: " + transId);
+    }
+
+    if (oop == null) {
       try {
          scanner = removeScanner(scannerId);
 
@@ -997,9 +1284,7 @@ CoprocessorService, Coprocessor {
          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: closeScanner - txId " + transId + ", Caught exception " + e.getMessage() + " " + stackTraceToString(e));
          t = e;
       }
-
-    //Commenting out for now
-    //}
+    }
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CloseScannerResponse.Builder closeResponseBuilder = CloseScannerResponse.newBuilder();
 
@@ -1021,6 +1306,18 @@ CoprocessorService, Coprocessor {
     {
       closeResponseBuilder.setHasException(true);
       closeResponseBuilder.setException(ce.toString());
+    }
+
+    if (oop != null)
+    {
+      if (this.suppressOutOfOrderProtocolException == false)
+      {
+        closeResponseBuilder.setHasException(true);
+        closeResponseBuilder.setException(oop.toString());
+        LOG.warn("TrxRegionEndpoint coprocessor: closeScanner - OutOfOrderProtocolException, transaction was not found, txId: " + transId + ",returned exception" + ", regionName " + regionInfo.getRegionNameAsString());
+      }
+      else
+        LOG.warn("TrxRegionEndpoint coprocessor: closeScanner - suppressing OutOfOrderProtocolException, transaction was not found, txId: " + transId + ", regionName " + regionInfo.getRegionNameAsString());
     }
 
     CloseScannerResponse cresponse = closeResponseBuilder.build();
@@ -1533,6 +1830,7 @@ CoprocessorService, Coprocessor {
     RegionScanner scanner = null;
     Throwable t = null;
     ScannerTimeoutException ste = null;
+    OutOfOrderProtocolException oop = null;
     OutOfOrderScannerNextException ooo = null;
     UnknownScannerException use = null;
     MemoryUsageException mue = null;
@@ -1582,6 +1880,25 @@ CoprocessorService, Coprocessor {
       }
       else
       {
+        // There should be a matching key in the transactionsById map
+        // associated with this transaction id.  If there is not
+        // one, then the initial openScanner call for the transaction
+        // id was not called.  This is a protocol error requiring
+        // openScanner, performScan followed by a closeScanner.
+
+        String key = getTransactionalUniqueId(transId);
+        boolean keyFound = transactionsById.containsKey(key);
+
+        if (keyFound != true)
+        {
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - Unknown transaction [" + transId
+                 + "] in region ["
+                 + m_Region.getRegionInfo().getRegionNameAsString()
+                 + "], will create an OutOfOrderProtocol exception ");
+          oop = new OutOfOrderProtocolException("performScan does not have an active transaction with an open scanner, txId: " + transId);
+         }
+
+        if (oop == null) {
         try {
 
           scanner = getScanner(scannerId, nextCallSeq);
@@ -1672,6 +1989,7 @@ CoprocessorService, Coprocessor {
      }
     }
    }
+     }
 
    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PerformScanResponse.Builder performResponseBuilder = PerformScanResponse.newBuilder();
    performResponseBuilder.setHasMore(hasMore);
@@ -1690,43 +2008,63 @@ CoprocessorService, Coprocessor {
 
     if (t != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(t.toString());
     }
 
     if (ste != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(ste.toString());
     }
 
     if (wre != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(wre.toString());
     }
 
     if (ne != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(ne.toString());
     }
 
     if (ooo != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(ooo.toString());
     }
 
     if (use != null)
     {
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(use.toString());
+    }
+
+    if (oop != null)
+    {
+      performResponseBuilder.setHasMore(false);
+      if (this.suppressOutOfOrderProtocolException == false)
+      {
+        performResponseBuilder.setHasException(true);
+        performResponseBuilder.setException(oop.toString());
+        LOG.warn("TrxRegionEndpoint coprocessor: performScan - OutOfOrderProtocolException, transaction was not found, txId: " + transId + ", return exception" + ", regionName " + regionInfo.getRegionNameAsString());
+      }
+      else
+        LOG.warn("TrxRegionEndpoint coprocessor: performScan - suppressing OutOfOrderProtocolException, transaction was not found, txId: " + transId + ", regionName " + regionInfo.getRegionNameAsString());
     }
 
     if (mue != null)
     {
       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - performing memoryPercentage " + memoryPercentage + ", posting memory usage exceeds indicated percentage");
+      performResponseBuilder.setHasMore(false);
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(mue.toString());
     }
@@ -2532,9 +2870,12 @@ CoprocessorService, Coprocessor {
 
         this.cleanTimer = conf.getInt(SLEEP_CONF, DEFAULT_SLEEP);
         this.memoryUsageThreshold = conf.getInt(MEMORY_THRESHOLD, DEFAULT_MEMORY_THRESHOLD);
+        this.memoryUsagePerformGC = conf.getBoolean(MEMORY_PERFORM_GC, DEFAULT_MEMORY_PERFORM_GC);
         this.memoryUsageWarnOnly = conf.getBoolean(MEMORY_WARN_ONLY, DEFAULT_MEMORY_WARN_ONLY);
         this.memoryUsageTimer = conf.getInt(MEMORY_CONF, DEFAULT_MEMORY_SLEEP);
+        this.memoryUsageTimer = conf.getInt(MEMORY_CONF, DEFAULT_MEMORY_SLEEP);
 
+        this.suppressOutOfOrderProtocolException = conf.getBoolean(SUPPRESS_OOP, DEFAULT_SUPPRESS_OOP);
 	if (this.transactionLeases == null)  
 	    this.transactionLeases = new Leases(LEASE_CHECK_FREQUENCY);
 
@@ -2553,8 +2894,12 @@ CoprocessorService, Coprocessor {
             + this.memoryUsageTimer
             + ", MemoryUsageThreshold: "
             + this.memoryUsageThreshold
+            + ", MemoryUsagePerformGC: "
+            + this.memoryUsagePerformGC
             + ", MemoryUsageWarnOnly: "
-            + this.memoryUsageWarnOnly);
+            + this.memoryUsageWarnOnly
+            + ", Suppress OutOfOrderProtocolException: "
+            + this.suppressOutOfOrderProtocolException);
 
         // Start the clean core thread
           
@@ -2644,6 +2989,8 @@ CoprocessorService, Coprocessor {
     else
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: shared map is NOT empty");
 
+    transactionsEPCPMap.put(this.m_Region.getRegionNameAsString()+trxkeyEPCPinstance, this);
+
     transactionsByIdTestz = TrxRegionObserver.getRefMap();
 
     if (transactionsByIdTestz.isEmpty()) {
@@ -2715,6 +3062,9 @@ CoprocessorService, Coprocessor {
   public void stop(CoprocessorEnvironment env) throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: stop ");
     stoppable.stop("stop() TrxRegionEndpoint");
+
+    transactionsEPCPMap.remove(this.m_Region.getRegionNameAsString()+trxkeyEPCPinstance);
+
   }
 
   // Internal support methods
@@ -2997,9 +3347,7 @@ CoprocessorService, Coprocessor {
                 m_Region.put(put);
               }
               catch (Exception e) {
-                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Trafodion Recovery: Executing put caught an exception " + e.toString());
-                 state.setStatus(Status.ABORTED);
-                 retireTransaction(state, true);
+                 LOG.warn("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Trafodion Recovery: Executing put caught an exception " + e.toString());
                  throw new IOException(e.toString());
               }
      	     } else if (CellUtil.isDelete(kv))  {
@@ -3014,9 +3362,7 @@ CoprocessorService, Coprocessor {
                  m_Region.delete(del);
                   }
                catch (Exception e) {
-                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Trafodion Recovery: Executing delete caught an exception " + e.toString());
-                 state.setStatus(Status.ABORTED);
-                 retireTransaction(state, true);
+                 LOG.warn("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Trafodion Recovery: Executing delete caught an exception " + e.toString());
                  throw new IOException(e.toString());
                 }
    	     }
@@ -3042,9 +3388,7 @@ CoprocessorService, Coprocessor {
              m_Region.put(put);
            }
            catch (Exception e) {
-              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Executing put caught an exception " + e.toString());
-              state.setStatus(Status.ABORTED);
-              retireTransaction(state, true);
+              LOG.warn("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Executing put caught an exception " + e.toString());
               throw new IOException(e.toString());
            }
          }
@@ -3059,9 +3403,7 @@ CoprocessorService, Coprocessor {
              m_Region.delete(delete);
            }
            catch (Exception e) {
-              if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit  - txId " + transactionId + ", Executing delete caught an exception " + e.toString());
-              state.setStatus(Status.ABORTED);
-              retireTransaction(state, true);
+              LOG.warn("TrxRegionEndpoint coprocessor: commit  - txId " + transactionId + ", Executing delete caught an exception " + e.toString());
               throw new IOException(e.toString());
            }
          }
@@ -3078,7 +3420,7 @@ CoprocessorService, Coprocessor {
             WALEdit e1 = state.getEdit();
             WALEdit e = new WALEdit();
             if (e1.isEmpty() || e1.getKeyValues().size() <= 0) {
-               if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV EPCP: commit - txId " + transactionId + ", Encountered empty TS WAL Edit list during commit, HLog txid " + txid);
+               if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV endpoint CP: commit - txId " + transactionId + ", Encountered empty TS WAL Edit list during commit, HLog txid " + txid);
                }
             else {
                  Cell c = e1.getKeyValues().get(0);
@@ -3096,13 +3438,13 @@ CoprocessorService, Coprocessor {
                     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Write commit HLOG seq " + txid);
                  }
                  catch (IOException exp1) {
-                    if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV EPCP: commit - txId " + transactionId + ", Writing to HLOG : Threw an exception " + exp1.toString());
+                    if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV endpoint CP: commit - txId " + transactionId + ", Writing to HLOG : Threw an exception " + exp1.toString());
                     throw exp1;
                  }
             } // e1 is not empty
          } // not full edit write in commit record during phase 2
         else { //do this for  rollover case
-           if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV EPCP:commit -- HLOG rollover txId: " + transactionId);
+           if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV endpoint CP:commit -- HLOG rollover txId: " + transactionId);
            commitTag = state.formTransactionalContextTag(TS_CONTROL_POINT_COMMIT);
            tagList.add(commitTag);
            WALEdit e1 = state.getEdit();
@@ -3123,7 +3465,7 @@ CoprocessorService, Coprocessor {
                 if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commit - txId " + transactionId + ", Y11 write commit HLOG seq " + txid);
             }
             catch (IOException exp1) {
-               if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV EPCP: commit - txId " + transactionId + ", Writing to HLOG : Threw an exception " + exp1.toString());
+               if (LOG.isTraceEnabled()) LOG.trace("TRAF RCOV endpoint CP: commit - txId " + transactionId + ", Writing to HLOG : Threw an exception " + exp1.toString());
                throw exp1;
              }
             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commit -- EXIT txId: " + transactionId + " HLog seq " + txid);
@@ -3584,7 +3926,7 @@ CoprocessorService, Coprocessor {
 
       synchronized (recoveryCheckLock) {
             if ((indoubtTransactionsById == null) || (indoubtTransactionsById.size() == 0)) {
-              if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV Endpoint Coprocessor: Region " + regionInfo.getRegionNameAsString() + " has no in-doubt transaction, set region START ");
+              if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV endpoint CP: Region " + regionInfo.getRegionNameAsString() + " has no in-doubt transaction, set region START ");
               regionState = REGION_STATE_START; // region is started for transactional access
               reconstructIndoubts = 1; 
               try {
@@ -3606,12 +3948,12 @@ CoprocessorService, Coprocessor {
 		      String key = String.valueOf(transactionId);
                       ArrayList<WALEdit> editList = (ArrayList<WALEdit>) entry.getValue();
                       //editList = (ArrayList<WALEdit>) indoubtTransactionsById.get(transactionId);
-                      if (LOG.isTraceEnabled()) LOG.trace("TrafodionEPCP: reconstruct transaction in Region " + regionInfo.getRegionNameAsString() + " process in-doubt transaction " + transactionId);
+                      if (LOG.isTraceEnabled()) LOG.trace("Trafodion endpoint CP: reconstruct transaction in Region " + regionInfo.getRegionNameAsString() + " process in-doubt transaction " + transactionId);
 		      TrxTransactionState state = new TrxTransactionState(transactionId, /* 1L my_Region.getLog().getSequenceNumber()*/
                                                                                 nextLogSequenceId.getAndIncrement(), nextLogSequenceId, 
                                                                                 regionInfo, m_Region.getTableDesc(), tHLog, false);
 
-                      if (LOG.isTraceEnabled()) LOG.trace("TrafodionEPCP: reconstruct transaction in Region " + regionInfo.getRegionNameAsString() + " create transaction state for " + transactionId);
+                      if (LOG.isTraceEnabled()) LOG.trace("Trafodion endpointCP: reconstruct transaction in Region " + regionInfo.getRegionNameAsString() + " create transaction state for " + transactionId);
 
                       state.setFullEditInCommit(true);
 		      state.setStartSequenceNumber(nextSequenceId.get());
@@ -3619,17 +3961,17 @@ CoprocessorService, Coprocessor {
 
                       // Re-establish write ordering (put and get) for in-doubt transactional
                      int num  = editList.size();
-                     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP: reconstruct transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() +
+                     if (LOG.isTraceEnabled()) LOG.trace("TrxRegion endpoint CP: reconstruct transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() +
                                " with number of edit list kvs size " + num);
                     for (int i = 0; i < num; i++){
                           WALEdit b = editList.get(i);
-                          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP: reconstruction transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() +
+                          if (LOG.isTraceEnabled()) LOG.trace("TrxRegion endpoint CP: reconstruction transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() +
                                " with " + b.size() + " kv in WALEdit " + i);
                           for (KeyValue kv : b.getKeyValues()) {
                              Put put;
                              Delete del;
                              synchronized (editReplay) {
-                             if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP:reconstruction transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() +
+                             if (LOG.isTraceEnabled()) LOG.trace("TrxRegion endpoint CP:reconstruction transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() +
                                " re-establish write ordering Op Code " + kv.getType());
                              if (kv.getTypeByte() == KeyValue.Type.Put.getCode()) {
                                put = new Put(CellUtil.cloneRow(kv)); // kv.getRow()
@@ -3654,7 +3996,7 @@ CoprocessorService, Coprocessor {
 		      commitPendingTransactions.add(state);
 		      state.setSequenceNumber(nextSequenceId.getAndIncrement());
 		      commitedTransactionsBySequenceNumber.put(state.getSequenceNumber(), state);
-                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP: reconstruct transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() +
+                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegion endpoint CP: reconstruct transaction " + transactionId + ", region " + regionInfo.getRegionNameAsString() +
                               " complete in prepared state");
 
                      // Rewrite HLOG for prepared edit (this method should be invoked in postOpen Observer ??
@@ -3666,12 +4008,12 @@ CoprocessorService, Coprocessor {
                        this.tHLog.sync(txid);
                     }
                     catch (IOException exp) {
-                       LOG.warn("TrxRegionEPCP: reconstruct transaction - Caught IOException in HLOG appendNoSync -- EXIT txId: " + transactionId + " HLog seq " + txid);
+                       LOG.warn("TrxRegion endpoint CP: reconstruct transaction - Caught IOException in HLOG appendNoSync -- EXIT txId: " + transactionId + " HLog seq " + txid);
                        //throw exp;
                     }   
-                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP: reconstruct transaction: rewrite to HLOG CR edit for transaction " + transactionId);
+                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegion endpoint CP: reconstruct transaction: rewrite to HLOG CR edit for transaction " + transactionId);
                       int tmid = (int) (transactionId >> 32);
-                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEPCP " + regionInfo.getRegionNameAsString() + " reconstruct transaction " + transactionId + " for TM " + tmid);
+                    if (LOG.isTraceEnabled()) LOG.trace("TrxRegion endpoint CP " + regionInfo.getRegionNameAsString() + " reconstruct transaction " + transactionId + " for TM " + tmid);
              } // for all txns in indoubt transcation list
              } // not reconstruct indoubtes yet
              reconstructIndoubts = 1;
@@ -3896,6 +4238,10 @@ CoprocessorService, Coprocessor {
    * @throws IOException
    */
   public int commitRequest(final long transactionId) throws IOException {
+     return commitRequest(transactionId, true);
+  }
+
+  public int commitRequest(final long transactionId, boolean flushHLOG) throws IOException {
     long txid = 0;
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest -- ENTRY txId: " + transactionId);
     TrxTransactionState state;
@@ -3998,11 +4344,11 @@ CoprocessorService, Coprocessor {
                   state.getEdit(), new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
                   nextLogSequenceId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
                   if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest COMMIT_OK -- EXIT txId: " + transactionId + " HLog seq " + txid);
-                  this.tHLog.sync(txid);
+                  if (flushHLOG) this.tHLog.sync(txid);
             }
             else {
-                 //if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: YYY0 commitRequest just SYNC -- EXIT txId: " + transactionId + " MAX HLog seq " + state.getFlushTxId());
-                 this.tHLog.sync(state.getFlushTxId());
+                  //if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: YYY0 commitRequest just SYNC -- EXIT txId: " + transactionId + " MAX HLog seq " + state.getFlushTxId());
+                  if (flushHLOG) this.tHLog.sync(state.getFlushTxId());
             }
             if (LOG.isInfoEnabled()) {
                      writeToLogEndTime = System.nanoTime();
@@ -4773,14 +5119,37 @@ CoprocessorService, Coprocessor {
       }
 
       memoryThrottle = false;
+      if (memoryPercentage > memoryUsageThreshold) {
+        // If configured to perform a garbage collection,
+        // try to release memory before throttling the queries.
+        if (memoryUsagePerformGC == true) {
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkMemoryUsage - before GC, memoryPercentage is " + memoryPercentage);
+          System.gc();
+          // Calculate the memory usage again before
+          // setting the throttle value or post a warning.
+          memUsed = memoryBean.getHeapMemoryUsage().getUsed();
+          memMax = memoryBean.getHeapMemoryUsage().getMax();
+          memoryPercentage = 0L;
+
+          if (memMax != 0) {
+            memoryPercentage = (memUsed * 100) / memMax;
+          }
+
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkMemoryUsage - after GC, memoryPercentage is " + memoryPercentage);
 
       if (memoryPercentage > memoryUsageThreshold) {
         if(memoryUsageWarnOnly == false)  
           memoryThrottle = true;
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkMemoryUsage - memoryPercentage is " + memoryPercentage + ", memoryThrottle is "+ memoryThrottle);
       }   
-    }   
+        } else {
+          if(memoryUsageWarnOnly == false)
+            memoryThrottle = true;
+          if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: checkMemoryUsage - memoryPercentage is " + memoryPercentage + ", memoryThrottle is "+ memoryThrottle);
+        }
+      }
+    }
   }
-}
 
+}
 //1}

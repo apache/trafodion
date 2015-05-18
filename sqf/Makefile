@@ -175,10 +175,9 @@ setupdir:
 	@# SQL Messages .txt file
 	-@./makelink $(SQL_W)/bin/SqlciErrors.txt $(EXPORTINCSQL_DIR)
 
-	@# copy some header files (.cpp file is for reference only)
+	@# copy some header files
 	-ln -sf $(SQL_W)/cli/sqlcli.h $(EXPORTINCSQL_DIR)
 	-ln -sf $(SQL_W)/sqludr/sqludr.h $(EXPORTINCSQL_DIR)
-	-ln -sf $(SQL_W)/sqludr/sqludr.cpp $(EXPORTINCSQL_DIR)
 	@#
 	-mkdir -p export/include/nsk
 	-cp -p inc/cextdecs/cextdecs.h export/include/nsk
@@ -260,11 +259,11 @@ SRC_PKG_TAR ?= "../${PKG_PROD}-src.tgz"
 
 PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf src/seatrans/hbase-trx hbase_utilities/backup_and_restore
 
-PKG_BIN_OBJS += trafci
+PKG_BIN_OBJS += trafci sources
 PKG_BIN_OBJS += export/limited-support-tools
 
 PKG_BIN_DIRS ?= sql export
-PKG_BIN_DIRS += trafci
+PKG_BIN_DIRS += trafci sources
 
 # Package Regression variables (parser file is for compGeneral/TESTTOK2)
 PKG_REGRESS_OBJS ?= $(SQL_W)/regress inc/seaquest/sqtypes.h inc/fs/feerrors.h $(SQL_W)/cli/sqlcli.h $(SQL_W)/cli/SQLCLIdev.h $(SQL_W)/parser/sqlparser.y
@@ -301,10 +300,6 @@ pkglist-files: pkglist-symlinks
 # simple symlinks that point to filename (does not start with . or /)
 pkglist-symlinks:
 	find $(PKG_BIN_OBJS) -lname '[^./]*' > $@
-
-#	Check the deliverable package matches the bill of materials
-check-package-bom:
-	$(MY_SQROOT)/build-scripts/bom/check-tarfile-bom -f $(PKG_TAR) -d $(MY_SQROOT)/build-scripts/bom
 
 #	Targets to tar/gzip the self installer
 packagebin:

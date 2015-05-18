@@ -118,11 +118,27 @@ CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
     }
 }
 
+// We normally don't send user CQDs to the metadata CmpContext.
+// To bypass this set the env variable TRAF_PROPAGATE_USER_CQDS to 1.
+// The sendAllControlsAndFlags() uses current CmpContext pointer, if given,
+// to get the user CQDs and pass them to the new CmpContext.
+static THREAD_P Int32 passingUserCQDs = -1;
+
 // RETURN: -1, if error. 0, if context switched successfully.
 short CmpSeabaseDDL::switchCompiler(Int32 cntxtType)
 {
+  if (passingUserCQDs == -1)
+    {
+      const char *pucStr = getenv("TRAF_PROPAGATE_USER_CQDS");
+      passingUserCQDs = 0;  // check the flag only once
+      if (pucStr != NULL && atoi(pucStr) == 1)
+        passingUserCQDs = 1;
+    }
+
   cmpSwitched_ = FALSE;
   CmpContext* currContext = CmpCommon::context();
+
+  // we should switch to another CI only if we are in an embedded CI
   if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
     {
       if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(cntxtType))
@@ -134,7 +150,7 @@ short CmpSeabaseDDL::switchCompiler(Int32 cntxtType)
       cmpSwitched_ = TRUE;
     }
 
-  if (sendAllControlsAndFlags(currContext))
+  if (sendAllControlsAndFlags(currContext, cntxtType))
     {
       switchBackCompiler();
       return -1;
@@ -168,8 +184,32 @@ short CmpSeabaseDDL::switchBackCompiler()
   return 0;
 }
 
-// Return:  TRUE, table desc found. FALSE, not found or error.
-NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
+// ----------------------------------------------------------------------------
+// Method: getMDtableInfo
+//
+// When compiler context is instantiated, definitions of system and privmgr
+// metadata tables are stored as an array of MDDescsInfo structs.  
+//
+// This method searches the list of MDDescsInfo structs looking for the 
+// entry corresponding to the passed in name.
+//
+// Parameters:
+//  input:
+//    name - the fully qualified metadata table
+//    objType - the object type (base table, index, etc)
+//
+//  output:
+//    tableInfo, 
+//    colInfoSize, colInfo, 
+//    keyInfoSize, keyInfo, 
+//    indexInfoSize, indexInfo
+//
+// Return:  TRUE, object is cached, FALSE, object not found (or error)
+//
+// Possible enhancements, instead of returning columns for each value in
+// the MDDescsInfo entry, just return the MDDescsInfo entry
+// ----------------------------------------------------------------------------
+NABoolean CmpSeabaseDDL::getMDtableInfo(const ComObjectName &name,
                                         ComTdbVirtTableTableInfo* &tableInfo,
                                         Lng32 &colInfoSize,
                                         const ComTdbVirtTableColumnInfo* &colInfo,
@@ -180,28 +220,134 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
                                         const ComObjectType objType)
 {
   tableInfo = NULL;
-
   indexInfoSize = 0;
   indexInfo = NULL;
 
+  NAString objName = name.getObjectNamePartAsAnsiString();
   if (objName.isNull())
     return FALSE;
 
-  for (Int32 i = 0; i < sizeof(allMDtablesInfo)/sizeof(MDTableInfo); i++)
-    {
-      const MDTableInfo &mdti = allMDtablesInfo[i];
-      
-      if (! mdti.newName)
-        return FALSE;
+  // If metadata tables have not yet been added to the compiler context, 
+  // return FALSE
+  if (! CmpCommon::context()->getTrafMDDescsInfo())
+    return FALSE;
 
-      if (! CmpCommon::context()->getTrafMDDescsInfo())
-        return FALSE;
-
-      MDDescsInfo &mddi = CmpCommon::context()->getTrafMDDescsInfo()[i];
-
-      if (objName == mdti.newName)
+  // The first set of objects are system metadata.  Check the passed in
+  // objName and objType for a match
+  if (isSeabaseMD(name.getCatalogNamePartAsAnsiString(),
+                  name.getSchemaNamePartAsAnsiString(TRUE),
+                  name.getObjectNamePartAsAnsiString()))
+    { 
+      for (Int32 i = 0; i < sizeof(allMDtablesInfo)/sizeof(MDTableInfo); i++)
         {
-          if (objType == COM_BASE_TABLE_OBJECT)
+          const MDTableInfo &mdti = allMDtablesInfo[i];
+      
+          if (! mdti.newName)
+            return FALSE;
+
+          MDDescsInfo &mddi = CmpCommon::context()->getTrafMDDescsInfo()[i];
+
+          if (objName == mdti.newName)
+            {
+              if (objType == COM_BASE_TABLE_OBJECT)
+                {
+                  colInfoSize = mddi.numNewCols;
+                  colInfo = mddi.newColInfo;
+                  keyInfoSize = mddi.numNewKeys;
+                  keyInfo = mddi.newKeyInfo;
+
+                  indexInfoSize = mddi.numIndexes;
+                  indexInfo = mddi.indexInfo;
+
+                  // this is an index. It cannot selected as a base table objects.
+                  if (mdti.isIndex)
+                    return FALSE;
+                }
+              else if (objType == COM_INDEX_OBJECT)
+                {
+                  colInfoSize = mddi.numNewCols;
+                  colInfo = mddi.newColInfo;
+                  keyInfoSize = mddi.numNewKeys;
+                  keyInfo = mddi.newKeyInfo;
+
+                }
+              else
+                return FALSE;
+
+              if (mddi.tableInfo == NULL)
+                {
+                  const NAString catName(TRAFODION_SYSCAT_LIT);
+                  const NAString schName(SEABASE_MD_SCHEMA);
+                  NAString extTableName = catName + "." + "\"" + schName + "\"" + "." + objName;
+
+                  CmpSeabaseDDL cmpSBD(STMTHEAP);
+                  if (cmpSBD.getSpecialTableInfo(CTXTHEAP,
+                                                 catName, schName, objName, extTableName, 
+                                                 objType, tableInfo) == 0)
+                    mddi.tableInfo = (ComTdbVirtTableTableInfo*)tableInfo;
+                  else
+                    return FALSE; // error
+                }
+              else
+                tableInfo = mddi.tableInfo;
+
+              return TRUE;
+            }
+          else  //if (mdti.oldName && (objName == mdti.oldName))
+            {
+              const char * oldName = NULL;
+              const QString * oldDDL = NULL;
+              Lng32 sizeOfoldDDL = 0;
+              if (getOldMDInfo(mdti, oldName, oldDDL, sizeOfoldDDL) == FALSE)
+                return FALSE;
+
+              if ((oldName) && (objName == oldName))
+                {
+                  if ((mddi.numOldCols > 0) && (mddi.oldColInfo))
+                    {
+                      colInfoSize = mddi.numOldCols;
+                      colInfo = mddi.oldColInfo;
+                    }
+                  else
+                    {
+                      colInfoSize = mddi.numNewCols;
+                      colInfo = mddi.newColInfo;
+                    }
+              
+                  if ((mddi.numOldKeys > 0) && (mddi.oldKeyInfo))
+                    {
+                      keyInfoSize = mddi.numOldKeys;
+                      keyInfo = mddi.oldKeyInfo;
+                    }
+                  else
+                    {
+                      keyInfoSize = mddi.numNewKeys;
+                      keyInfo = mddi.newKeyInfo;
+                    }
+
+                  return TRUE;
+                } // oldName
+            }
+        } // for
+    }
+
+  // check privmgr tables
+  if (isSeabasePrivMgrMD(name.getCatalogNamePartAsAnsiString(),
+                         name.getSchemaNamePartAsAnsiString(TRUE)))
+    { 
+      // privmgr metadata tables start after system metadata tables
+      size_t startingPos = sizeof(allMDtablesInfo)/sizeof(MDTableInfo);
+      for (size_t i = 0; i < sizeof(privMgrTables)/sizeof(PrivMgrTableStruct); i++)
+        {
+          const PrivMgrTableStruct &tableDefinition = privMgrTables[i];
+
+          MDDescsInfo &mddi = CmpCommon::context()->getTrafMDDescsInfo()[startingPos + i];
+          NAString descTbl(tableDefinition.tableName);
+
+          // Privmgr metadata tables get their definition from the new values
+          // stored in the MDDescsInfo struct
+          // At this time there are no indexes or views 
+          if (objName == descTbl)
             {
               colInfoSize = mddi.numNewCols;
               colInfo = mddi.newColInfo;
@@ -211,78 +357,27 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
               indexInfoSize = mddi.numIndexes;
               indexInfo = mddi.indexInfo;
 
-              // this is an index. It cannot selected as a base table objects.
-              if (mdti.isIndex)
-                return FALSE;
-            }
-          else if (objType == COM_INDEX_OBJECT)
-            {
-              colInfoSize = mddi.numNewCols;
-              colInfo = mddi.newColInfo;
-              keyInfoSize = mddi.numNewKeys;
-              keyInfo = mddi.newKeyInfo;
-
-            }
-          else
-            return FALSE;
-
-          if (mddi.tableInfo == NULL)
-            {
-              const NAString catName(TRAFODION_SYSCAT_LIT);
-              const NAString schName(SEABASE_MD_SCHEMA);
-              NAString extTableName = catName + "." + "\"" + schName + "\"" + "." + objName;
-
-              CmpSeabaseDDL cmpSBD(STMTHEAP);
-              if (cmpSBD.getSpecialTableInfo(CTXTHEAP,
-                                             catName, schName, objName, extTableName, 
-                                             objType, tableInfo) == 0)
-                mddi.tableInfo = (ComTdbVirtTableTableInfo*)tableInfo;
-              else
-                return FALSE; // error
-            }
-          else
-            tableInfo = mddi.tableInfo;
-
-          return TRUE;
-        }
-      else  //if (mdti.oldName && (objName == mdti.oldName))
-        {
-          const char * oldName = NULL;
-          const QString * oldDDL = NULL;
-          Lng32 sizeOfoldDDL = 0;
-          if (getOldMDInfo(mdti, oldName, oldDDL, sizeOfoldDDL) == FALSE)
-            return FALSE;
-
-          if ((oldName) && (objName == oldName))
-            {
-              if ((mddi.numOldCols > 0) && (mddi.oldColInfo))
+              if (mddi.tableInfo == NULL)
                 {
-                  colInfoSize = mddi.numOldCols;
-                  colInfo = mddi.oldColInfo;
+                  const NAString catName(TRAFODION_SYSCAT_LIT);
+                  const NAString schName(SEABASE_PRIVMGR_SCHEMA);
+                  NAString extTableName = catName + "." + "\"" + schName + "\"" + "." + objName;
+
+                  CmpSeabaseDDL cmpSBD(STMTHEAP);
+                  if (cmpSBD.getSpecialTableInfo(CTXTHEAP,
+                                                 catName, schName, objName, extTableName,
+                                                 objType, tableInfo) == 0)
+                    mddi.tableInfo = (ComTdbVirtTableTableInfo*)tableInfo;
+                  else
+                    return FALSE; // error
                 }
               else
-                {
-                  colInfoSize = mddi.numNewCols;
-                  colInfo = mddi.newColInfo;
-                }
-              
-              if ((mddi.numOldKeys > 0) && (mddi.oldKeyInfo))
-                {
-                  keyInfoSize = mddi.numOldKeys;
-                  keyInfo = mddi.oldKeyInfo;
-                }
-              else
-                {
-                  keyInfoSize = mddi.numNewKeys;
-                  keyInfo = mddi.newKeyInfo;
-                }
+                tableInfo = mddi.tableInfo;
 
               return TRUE;
-            } // oldName
-        }
-        
-    } // for
-
+          }
+      }
+    }
   return FALSE;
 }
 
@@ -444,7 +539,8 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
 
       keyInfoArray = new(CTXTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
-      if (buildColInfoArray(&colArray, colInfoArray, FALSE, FALSE, NULL, CTXTHEAP))
+      if (buildColInfoArray(COM_BASE_TABLE_OBJECT,
+                            &colArray, colInfoArray, FALSE, FALSE, NULL, CTXTHEAP))
         {
           return resetCQDs(hbaseSerialization, hbVal, -1);
         }
@@ -522,6 +618,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       if (createIndexColAndKeyInfoArrays(indexColRefArray,
                                          createIndexNode->isUniqueSpecified(),
                                          FALSE, // no syskey
+                                         FALSE, // not alignedFormat
                                          btNAColArray, btNAKeyArr,
                                          numIndexKeys, numIndexNonKeys, numIndexCols,
                                          indexColInfoArray, indexKeyInfoArray,
@@ -596,17 +693,49 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
   return resetCQDs(hbaseSerialization, hbVal, 0);
 }
 
+// ----------------------------------------------------------------------------
+// Method: createMDdescs
+// 
+// This method is called when the compiler context is instantiated to create
+// a cache of system and privmgr metadata. 
+// Metadata definitions are stored as an array of MDDescsInfo structs.  
+//
+// This method extracts hardcoded definitions of each metadata table, creates
+// an MDDescsInfo struct and appends it to the list of entries. 
+//
+// The list of MDDescsInfo structs is organized as follows:
+//    Tables in "_MD_" schema ordered by list defined in allMDtablesInfo
+//    Tables in "_PRIVMGR_MGR_" schema order by list defined in PrivMgrTables 
+//
+// Parameters:
+//  input/output:
+//    trafMDDescsInfo - returns the list of MDDescsInfo structs for metadata
+//      the list of structures will be allocated out of the CNTXHEAP
+//    
 // RETURN: -1, error.  0, all ok.
+// ----------------------------------------------------------------------------
 short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
 {
+  // if structure is already allocated, just return
+  // Question - will trafMDDescsInfo ever be NOT NULL?
   if (trafMDDescsInfo)
     return 0;
 
-  Lng32 numTables = sizeof(allMDtablesInfo) / sizeof(MDTableInfo);
+  size_t numMDTables = sizeof(allMDtablesInfo) / sizeof(MDTableInfo);
+  size_t numPrivTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
+
+  // Allocate an array of MDDescsInfo structs to handle all system and
+  // privmgr metadata tables.  Authorization may not be enabled but
+  // go ahead and load privmgr metadata definitions anyway - the current
+  // session may enable authorization so these entries will be available.
   trafMDDescsInfo = (MDDescsInfo*) 
-    new(CTXTHEAP) char[numTables * sizeof(MDDescsInfo)];
+    new(CTXTHEAP) char[(numMDTables + numPrivTables) * sizeof(MDDescsInfo)];
+
+  // Initialize the SQL parser - it is called to get table details
   Parser parser(CmpCommon::context());
-  for (Lng32 i = 0; i < numTables; i++)
+
+  // Load definitions of system metadata tables
+  for (size_t i = 0; i < numMDTables; i++)
     {
       const MDTableInfo &mdti = allMDtablesInfo[i];
 
@@ -690,6 +819,60 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
         }
     } // for
 
+  // Load descs for privilege metadata
+  for (size_t i = 0; i < numPrivTables; i++)
+    {
+      const PrivMgrTableStruct &tableDefinition = privMgrTables[i];
+      MDDescsInfo &mddi = trafMDDescsInfo[numMDTables + i];
+
+      Lng32 numCols = 0;
+      Lng32 numKeys = 0;
+
+      ComTdbVirtTableColumnInfo * colInfoArray = NULL;
+      ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
+      ComTdbVirtTableIndexInfo * indexInfo = NULL;
+
+      // Set up create table ddl
+      NAString tableDDL("CREATE TABLE ");
+      NAString privMgrMDLoc;
+      CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+
+      tableDDL += privMgrMDLoc.data() + NAString('.') + tableDefinition.tableName; 
+      tableDDL += tableDefinition.tableDDL->str;
+
+      QString ddlString; 
+      ddlString.str = tableDDL.data();
+
+      if (processDDLandCreateDescs(parser,
+                                   &ddlString, sizeof(QString),
+                                   FALSE,
+                                   0, NULL, 0, NULL,
+                                   numCols, colInfoArray,
+                                   numKeys, keyInfoArray,
+                                   indexInfo))
+        goto label_error;
+
+       // Privmgr metadata is not needed to upgrade trafodion metadata so
+       // it uses standard SQL to perform upgrade operations.  That means
+       // this code does not have to differenciate between old and new
+       // definitions.
+       mddi.numNewCols = numCols;
+       mddi.numOldCols = numCols;
+
+       mddi.newColInfo = colInfoArray;
+       mddi.oldColInfo = colInfoArray;
+
+       mddi.numNewKeys = numKeys;
+       mddi.numOldKeys = numKeys;
+
+       mddi.newKeyInfo = keyInfoArray;
+       mddi.oldKeyInfo = keyInfoArray;
+ 
+       mddi.numIndexes = 0;
+       mddi.indexInfo = NULL;
+       mddi.tableInfo = NULL;
+    }
+
   return 0;
 
  label_error:
@@ -765,7 +948,28 @@ NABoolean CmpSeabaseDDL::isSeabaseMD(
       seabaseDefCatName.toUpper();
       
       if ((catName == seabaseDefCatName) &&
-          (schName == SEABASE_MD_SCHEMA))
+          (schName == SEABASE_MD_SCHEMA ))
+        {
+          return TRUE;
+        }
+    }
+
+  return FALSE;
+}
+
+NABoolean CmpSeabaseDDL::isSeabasePrivMgrMD(
+                                            const NAString &catName,
+                                            const NAString &schName)
+{
+  if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
+      (NOT catName.isNull()))
+    {
+      NAString seabaseDefCatName = "";
+      CmpCommon::getDefault(SEABASE_CATALOG, seabaseDefCatName, FALSE);
+      seabaseDefCatName.toUpper();
+
+      if ((catName == seabaseDefCatName) &&
+          (schName == SEABASE_PRIVMGR_SCHEMA))
         {
           return TRUE;
         }
@@ -886,6 +1090,12 @@ ComBoolean CmpSeabaseDDL::isSeabaseMD(const ComObjectName &name)
   return isSeabaseMD(name.getCatalogNamePartAsAnsiString(),
                    name.getSchemaNamePartAsAnsiString(TRUE),
                    name.getObjectNamePartAsAnsiString());
+}
+
+ComBoolean CmpSeabaseDDL::isSeabasePrivMgrMD(const ComObjectName &name)
+{
+  return isSeabasePrivMgrMD(name.getCatalogNamePartAsAnsiString(),
+                            name.getSchemaNamePartAsAnsiString(TRUE));
 }
 
 void CmpSeabaseDDL::getColName(const char * colFam, const char * colQual,
@@ -1304,7 +1514,8 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
   return retcode;
 }   
 
-short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext)
+short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext,
+					     Int32 cntxtType)
 {
   const NAString * val =
     ActiveControlDB()->getControlSessionValue("SHOWPLAN");
@@ -1321,7 +1532,16 @@ short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext)
   savedCmpParserFlags_ = Get_SqlParser_Flags (0xFFFFFFFF);
   SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedCliParserFlags_);
 
-  if (sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION, sendCSs, prevContext) < 0)
+  // pass the old context pointer to propagate user CQDs from previous
+  // compiler context to new metadata CmpContext if specified.
+  // Currently this switchCompiler() method is only called when switching
+  // to the metadata compiler. To pass CQDs to other type of compiler,
+  // add code here.
+  CmpContext *ci = NULL;
+  if (passingUserCQDs == 1 && cntxtType == CmpContextInfo::CMPCONTEXT_TYPE_META)
+    ci = prevContext;
+
+  if (sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION, sendCSs, ci) < 0)
     return -1;
 
   Lng32 cliRC;
@@ -1372,8 +1592,6 @@ short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext)
   Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
   
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
-
-  SQL_EXEC_SetParserFlagsForExSqlComp_Internal(ALLOW_SPECIALTABLETYPE);
 
   return 0;
 }
@@ -2110,9 +2328,13 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
       if (hbaseCreateOptionsArray[HBASE_NAME].empty())
         hbaseCreateOptionsArray[HBASE_NAME] = SEABASE_DEFAULT_COL_FAMILY;
 
+      NABoolean noXn =
+                (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
+                
       retcode = ehi->create(*table, hbaseCreateOptionsArray,
                             numSplits, keyLength,
-                            (const char **)encodedKeysBuffer);
+                            (const char **)encodedKeysBuffer,
+                            noXn);
     }
   else
     {
@@ -2140,12 +2362,16 @@ short CmpSeabaseDDL::dropHbaseTable(ExpHbaseInterface *ehi,
 
   retcode = ehi->exists(*table);
   if (retcode == -1) // exists
-    {       
+    {    
+      
+      NABoolean noXn =
+           (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_OFF) ?  true : false;
+                
       if ((CmpCommon::getDefault(HBASE_ASYNC_DROP_TABLE) == DF_ON) ||
           (asyncDrop))
-        retcode = ehi->drop(*table, TRUE);
+        retcode = ehi->drop(*table, TRUE, noXn);
       else
-        retcode = ehi->drop(*table, FALSE);
+        retcode = ehi->drop(*table, FALSE, noXn);
       if (retcode < 0)
         {
           *CmpCommon::diags() << DgSqlCode(-8448)
@@ -2288,15 +2514,6 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
   length = naType->getNominalSize();
   nullable = naType->supportsSQLnull();
 
-  if ((serializedOption == 1) && (alignedFormat))
-    {
-      *CmpCommon::diags()
-        << DgSqlCode(-4222)
-        << DgString0("\"SERIALIZED option on ALIGNED format tables\"");
-      
-      return -1;
-    }
-
   switch (naType->getTypeQualifier())
     {
     case NA_CHARACTER_TYPE:
@@ -2405,8 +2622,22 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
         
         return -1; 
       }
-      
+
     } // switch
+
+  if ((serializedOption == 1) && (alignedFormat))
+    {
+      // ignore serialized option on aligned format tables
+      resetFlags(hbaseColFlags, SEABASE_SERIALIZED);
+      
+      /*
+       *CmpCommon::diags()
+       << DgSqlCode(-4222)
+       << DgString0("\"SERIALIZED option on ALIGNED format tables\"");
+       
+       return -1;
+      */
+    }
 
   return 0;
 }
@@ -2695,7 +2926,7 @@ static short isValidHbaseName(const char * str)
   return -1; // valid name
 }
 
-
+// RETURN: 1, exists. 0, does not exists. -1, error.
 short CmpSeabaseDDL::existsInSeabaseMDTable(
                                           ExeCliInterface *cliInterface,
                                           const char * catName,
@@ -3521,16 +3752,31 @@ short CmpSeabaseDDL::getAllIndexes(ExeCliInterface *cliInterface,
   return 0;
 }
 
+
 // Convert from hbase options string format to list of structs.
 // String format:
 //    HBASE_OPTIONS=>0002COMPRESSION='GZ'|BLOCKCACHE='10'|
-//    
+//
+// If beginPos and/or endPos parameters are not null, then the
+// beginning and/or ending position of the HBASE_OPTIONS string
+// is returned.
+//
+// Note that the input string may have things other than HBASE_OPTIONS
+// in it (such as ROW_FORMAT=>ALIGNED, for example). Those other things
+// are ignored by this method.
+    
 short CmpSeabaseDDL::genHbaseCreateOptions(
                                            const char * hbaseCreateOptionsStr,
                                            NAList<HbaseCreateOption*>* &hbaseCreateOptions,
-                                           NAMemory * heap)
+                                           NAMemory * heap,
+                                           size_t * beginPos,
+                                           size_t * endPos)
 {
   hbaseCreateOptions = NULL;
+  if (beginPos)
+    *beginPos = 0;
+  if (endPos)
+    *endPos = 0;
 
   if (hbaseCreateOptionsStr == NULL)
     return 0;
@@ -3557,7 +3803,12 @@ short CmpSeabaseDDL::genHbaseCreateOptions(
       // look for pattern    ='   to find the end of current option.
       const char * optionEnd = strstr(optionStart, "='");
       if (! optionEnd) // this is an error
-        {
+        { 
+          for (CollIndex k = 0; k < hbaseCreateOptions->entries(); k++)
+            {
+              HbaseCreateOption * hbo = (*hbaseCreateOptions)[k];
+              delete hbo;
+            }
           delete hbaseCreateOptions;
           return -1;
         }
@@ -3566,6 +3817,11 @@ short CmpSeabaseDDL::genHbaseCreateOptions(
       const char * valEnd = strstr(valStart, "'|");
       if (! valEnd) // this is an error
         {
+          for (CollIndex k = 0; k < hbaseCreateOptions->entries(); k++)
+            {
+              HbaseCreateOption * hbo = (*hbaseCreateOptions)[k];
+              delete hbo;
+            }
           delete hbaseCreateOptions;
           return -1;
         }
@@ -3580,8 +3836,208 @@ short CmpSeabaseDDL::genHbaseCreateOptions(
       optionStart = valEnd + strlen("'|");
     }
 
+  if (beginPos)
+    *beginPos = hboStr - hbaseCreateOptionsStr;
+  if (endPos)
+    // + 1 to allow for a space after the last |
+    // (this trailing space is always present)
+    *endPos = optionStart - hbaseCreateOptionsStr + 1;
+
   return 0;
 }
+
+
+// The function below is an inverse of CmpSeabaseDDL::genHbaseCreateOptions.
+// It takes an NAList of HbaseCreateOption objects and generates the equivalent
+// metadata text. Returns 0 if successful (and it is always successful).
+// Note that quotes inside the string are not doubled here.
+
+short CmpSeabaseDDL::genHbaseOptionsMetadataString(                                          
+                                           const NAList<HbaseCreateOption*> & hbaseCreateOptions,
+                                           NAString & hbaseOptionsMetadataString /* out */)
+{
+  CollIndex numberOfOptions = hbaseCreateOptions.entries();
+  if (numberOfOptions == 0)
+    {
+      hbaseOptionsMetadataString = "";  // no HBase options so return empty string
+    }
+  else
+    {
+      hbaseOptionsMetadataString = "HBASE_OPTIONS=>";
+  
+      // put in a 4-digit text NNNN indicating how many options there are
+
+      if (numberOfOptions > HBASE_OPTIONS_MAX_LENGTH)
+        // shouldn't happen; but truncate if it does for safety (note also
+        // that HBASE_OPTIONS_MAX_LENGTH happens to be 4 digits)
+        numberOfOptions = HBASE_OPTIONS_MAX_LENGTH;
+
+      char inTextForm[5];  // room for NNNN and null terminator
+
+      sprintf(inTextForm,"%04d",numberOfOptions);
+      hbaseOptionsMetadataString += inTextForm;
+
+      // now loop through list, appending KEY='VALUE'| for each option
+      // (the doubling of the single quotes is needed since this will be
+      // used as a literal string value in an INSERT statement later)
+   
+      for (CollIndex i = 0; i < numberOfOptions; i++)
+        {
+          HbaseCreateOption * hbaseOption = hbaseCreateOptions[i];  
+          NAText &key = hbaseOption->key();                        
+          NAText &val = hbaseOption->val();
+
+          hbaseOptionsMetadataString += key.c_str();
+          hbaseOptionsMetadataString += "='";
+          hbaseOptionsMetadataString += val.c_str();
+          hbaseOptionsMetadataString += "'|";
+        }
+      
+      hbaseOptionsMetadataString += " ";  // add a trailing separator     
+    }
+
+  return 0;
+}
+
+
+// This method updates the HBASE_OPTIONS=> text in the metadata with
+// new HBase options.
+
+short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
+  ExeCliInterface * cliInterface,
+  Int64 objectUID,
+  ElemDDLHbaseOptions * edhbo)
+{
+  short result = 0;
+
+  // get the text from the metadata
+
+  Lng32 textType = 2;  // to get text containing HBASE_OPTIONS=>
+  Lng32 textSubID = 0; // meaning, the text pertains to the object as a whole
+  NAString metadataText(STMTHEAP);
+  result = getTextFromMD(cliInterface,
+                         objectUID,
+                         textType,  
+                         textSubID,
+                         metadataText /* out */);
+  if (result != 0)
+    return result;
+
+  // convert the text to an NAList <HbaseCreateOption *> representation
+
+  NAList<HbaseCreateOption *> * hbaseCreateOptions = NULL;
+  size_t beginHBOTextPos = 0;
+  size_t endHBOTextPos = 0;
+  result = genHbaseCreateOptions(metadataText.data(),
+                                 hbaseCreateOptions /* out */,
+                                 STMTHEAP,
+                                 &beginHBOTextPos /* out */,
+                                 &endHBOTextPos /* out */);
+  if (result != 0)
+    // genHbaseCreateOptions makes sure oldHbaseCreateOptions is deleted
+    return result; 
+
+  // merge the new HBase options into the old ones, replacing any key
+  // value pairs that exist in both with the new one
+
+  // Note: It's likely that the typical case is just one Hbase option
+  // so we don't bother with clever optimizations such as what if the
+  // old list is empty.
+
+  if (!hbaseCreateOptions)
+    hbaseCreateOptions = new(STMTHEAP) NAList<HbaseCreateOption *>;
+
+  NAList<HbaseCreateOption *> & newHbaseCreateOptions = edhbo->getHbaseOptions(); 
+  for (CollIndex i = 0; i < newHbaseCreateOptions.entries(); i++)
+    {
+      HbaseCreateOption * newHbaseOption = newHbaseCreateOptions[i];  
+      bool notFound = true;
+      for (CollIndex j = 0; notFound && j < hbaseCreateOptions->entries(); j++)
+        {
+          HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[j];
+          if (newHbaseOption->key() == hbaseOption->key())
+            {
+            hbaseOption->setVal(newHbaseOption->val());
+            notFound = false;
+            }
+        }
+      if (notFound)
+        {
+        HbaseCreateOption * copyOfNew = new(STMTHEAP) HbaseCreateOption(*newHbaseOption);
+        hbaseCreateOptions->insert(copyOfNew);
+        }
+    }
+   
+  // convert the merged list to text
+
+  NAString hbaseOptionsMetadataString(STMTHEAP);
+  result = genHbaseOptionsMetadataString(*hbaseCreateOptions,
+                                         hbaseOptionsMetadataString /* out */);
+  if (result == 0)
+    {
+      // edit the old text, removing the present HBASE_OPTIONS=> text if any,
+      // and putting the new text in the same spot
+
+      metadataText.replace(beginHBOTextPos, 
+                           endHBOTextPos - beginHBOTextPos,
+                           hbaseOptionsMetadataString);   
+ 
+      // delete the old text from the metadata
+
+      // Note: It might be tempting to try an upsert instead of a
+      // delete followed by an insert, but this won't work. It is
+      // possible that the metadata text could shrink and take fewer
+      // rows in its new form than the old. So we do the simple thing
+      // to avoid such complications.
+ 
+      char buf[2000];
+      str_sprintf(buf, 
+                  "delete from %s.\"%s\".%s where text_uid = %Ld and text_type = %d and sub_id = %d",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+                  objectUID, textType, textSubID);
+      Lng32 cliRC = cliInterface->executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          result = -1;
+        }
+      else
+        {
+          // double any quotes in the text, since we are going to use it
+          // as a literal an an INSERT statement shortly 
+
+          NAString doubledQuoteMetadataText;
+          ToQuotedString(doubledQuoteMetadataText /* out */,
+                         metadataText,
+                         FALSE /* don't surround with quotes */);
+
+          // insert the edited text back into the metadata
+
+          result = updateTextTable(cliInterface,
+                                   objectUID,
+                                   textType,
+                                   textSubID,
+                                   doubledQuoteMetadataText);
+        }
+    }
+
+  // delete any items we created
+
+  // Note that HbaseCreateOption contains members that allocate
+  // storage from the global heap so we must delete HbaseCreateOption
+  // explicitly to avoid global heap memory leaks.
+  
+  for (CollIndex k = 0; k < hbaseCreateOptions->entries(); k++)
+    {
+      HbaseCreateOption * hbaseOption = (*hbaseCreateOptions)[k];
+      delete hbaseOption;
+    }
+  delete hbaseCreateOptions;
+
+  return result;
+}
+
+
 
 void CmpSeabaseDDL::handleDDLCreateAuthorizationError(
    int32_t SQLErrorCode,
@@ -4640,6 +5096,13 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
                                             const NAString &objName,
                                             const ComObjectType objectType)
 {
+
+  //if DDL_TRANSACTIONS is ON, no need of additional cleanup.
+  //This check is temporary and will be removed once full functionality 
+  //is in.
+  if(CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_ON)
+    return;
+    
   Lng32 cliRC = 0;
   char buf[1000];
 
@@ -4674,6 +5137,7 @@ void CmpSeabaseDDL::cleanupObjectAfterError(
 }
 
 short CmpSeabaseDDL::buildColInfoArray(
+                                       ComObjectType objType,
                                        ElemDDLColDefArray *colArray,
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        NABoolean implicitPK,
@@ -4681,6 +5145,11 @@ short CmpSeabaseDDL::buildColInfoArray(
                                        Lng32 *identityColPos,
                                        NAMemory * heap)
 {
+  std::vector<NAString> myvector;
+
+  if (identityColPos)
+    *identityColPos = -1;
+
   size_t index = 0;
   for (index = 0; index < colArray->entries(); index++)
     {
@@ -4706,6 +5175,8 @@ short CmpSeabaseDDL::buildColInfoArray(
       
       char * col_name = new((heap ? heap : STMTHEAP)) char[colName.length() + 1];
       strcpy(col_name, (char*)colName.data());
+
+      myvector.push_back(col_name);
 
       colInfoArray[index].colName = col_name;
       colInfoArray[index].colNumber = index;
@@ -4734,7 +5205,17 @@ short CmpSeabaseDDL::buildColInfoArray(
       if ((identityColPos) &&
           ((defaultClass == COM_IDENTITY_GENERATED_BY_DEFAULT) ||
            (defaultClass == COM_IDENTITY_GENERATED_ALWAYS)))
-        *identityColPos = index;
+        {
+          if ((objType == COM_BASE_TABLE_OBJECT) &&
+              (*identityColPos >= 0)) // previously found
+            {
+              // cannot have more than one identity cols
+              *CmpCommon::diags() << DgSqlCode(-1511);
+              return -1;
+            }
+
+          *identityColPos = index;
+        }
 
       colInfoArray[index].colHeading = NULL;
       if (heading.length() > 0)
@@ -4759,6 +5240,20 @@ short CmpSeabaseDDL::buildColInfoArray(
       strcpy(colInfoArray[index].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
       colInfoArray[index].isOptional = FALSE;
       colInfoArray[index].colFlags = colFlags;
+    }
+  
+  if ((objType == COM_BASE_TABLE_OBJECT) ||
+      (objType == COM_VIEW_OBJECT))
+    {
+      // find duplicate colname references. If found, return error and first dup colname.
+      std::sort (myvector.begin(), myvector.end()); 
+      std::vector<NAString>::iterator it = adjacent_find(myvector.begin(), myvector.end());
+      if (it != myvector.end())
+        {
+          *CmpCommon::diags() << DgSqlCode(-1080)
+                              << DgColumnName(*it);
+          return -1;
+        }
     }
 
   return 0;
@@ -6501,6 +6996,15 @@ void CmpSeabaseDDL::dropSeabaseMD()
 
   CmpCommon::context()->setIsUninitializedSeabase(TRUE);
   CmpCommon::context()->uninitializedSeabaseErrNum() = -1393;
+  CmpCommon::context()->setIsAuthorizationEnabled(FALSE);
+
+  // kill child arkcmp process. It would ensure that a subsequent
+  // query, if sent to arkcmp, doesnt get stale information. After restart,
+  // the new arkcmp will cause its context to have uninitialized state.
+  // Note: TESTEXIT command only works if issued internally.
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL);
+  cliInterface.executeImmediate("SELECT TESTEXIT;");
+  cliInterface.clearGlobalDiags();
 
   return;
 }
@@ -7150,6 +7654,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       (ddlExpr->addSchemaObjects()) ||
       (ddlExpr->updateVersion()) ||
       ((ddlNode) &&
+      // TODO: When making ALTER TABLE/INDEX transactional, add cases here for them
        ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
         (ddlNode->getOperatorType() == DDL_CLEANUP_OBJECTS) ||
         (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
@@ -7157,6 +7662,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
         (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
         (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
         (ddlNode->getOperatorType() == DDL_CREATE_TABLE) ||
+        (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DROP_COLUMN) ||
         (ddlNode->getOperatorType() == DDL_DROP_TABLE))))
     {
       // transaction will be started and commited in called methods.
@@ -7232,7 +7738,33 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
               (createTableParseNode->getAddConstraintCheckArray().entries() > 0))
             createSeabaseTableCompound(createTableParseNode, currCatName, currSchName);
           else
-            createSeabaseTable(createTableParseNode, currCatName, currSchName);
+            {
+              createSeabaseTable(createTableParseNode, currCatName, currSchName);
+              
+              if ((getenv("SQLMX_REGRESS")) &&
+                  (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_)) &&
+                  (CmpCommon::diags()->mainSQLCODE() == -CAT_SCHEMA_DOES_NOT_EXIST_ERROR))
+                {
+                  ComObjectName tableName(createTableParseNode->getTableName());
+                  ComAnsiNamePart currCatAnsiName(currCatName);
+                  ComAnsiNamePart currSchAnsiName(currSchName);
+                  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
+                  
+                  const NAString schemaNamePart = 
+                    tableName.getSchemaNamePartAsAnsiString(TRUE);
+
+                  if (schemaNamePart == SEABASE_REGRESS_DEFAULT_SCHEMA)
+                    {
+                      // create this schema
+                      CmpCommon::diags()->clear();
+                      cliRC = cliInterface.executeImmediate("create shared schema trafodion.sch");
+                      if (cliRC >= 0)
+                        {
+                          createSeabaseTable(createTableParseNode, currCatName, currSchName);
+                        }
+                    }
+                }
+            }
         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_HBASE_TABLE)
         {
@@ -7377,6 +7909,20 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 
           renameSeabaseTable(alterRenameTable,
                                   currCatName, currSchName);
+        }
+     else if (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS)
+        {
+          StmtDDLAlterTableHBaseOptions * athbo =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableHBaseOptions();
+
+          alterSeabaseTableHBaseOptions(athbo, currCatName, currSchName);
+        }  
+      else if (ddlNode->getOperatorType() == DDL_ALTER_INDEX_ALTER_HBASE_OPTIONS)
+        {
+          StmtDDLAlterIndexHBaseOptions * aihbo =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLAlterIndexHBaseOptions();
+
+          alterSeabaseIndexHBaseOptions(aihbo, currCatName, currSchName);
         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_VIEW)
         {
@@ -7579,6 +8125,11 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            CmpSeabaseMDcleanup cmpSBDC(STMTHEAP);
 
            cmpSBDC.cleanupObjects(co, currCatName, currSchName, dws);
+        }
+      else
+        {
+           // some operator type that this routine doesn't support yet
+           *CmpCommon::diags() << DgSqlCode(-CAT_UNSUPPORTED_COMMAND_ERROR);  
         }
        
     } // else

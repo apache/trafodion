@@ -1,7 +1,7 @@
 #! /bin/sh
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -31,21 +31,13 @@ fi
 # 	'/^\*\*\* ERROR\[[0-9][0-9]*] /s/].*/]/'
 # goes in here.  When not, then remove it!
 sed "
-s:CURRENT DIRECTORY[ ]*/(usr|home)/[A-Za-z0-9/:_]*:CURRENT DIRECTORY[ ]*/usr/@mydir@:
 s/\\\\[A-Z0-9]*\.\\\$[A-Z0-9]*\.[A-Z0-9]*\./#CAT.#SCH./g
-s/SQL CATALOG[ ]*NONSTOP_SQLMX_[A-Z0-9]*/SQL CATALOG[ ]*NONSTOP_SQLMX_@system@/
-s/NONSTOP_SQLMX_[A-Z0-9]*\.S/NONSTOP_SQLMX_@system@\.S/
-s/\\\\[A-Z0-9]*\./@system@./g
-s/\.\$[A-Z0-9]\{1,7\}/.#VOL/g
-s/\$[A-Za-z][A-Za-z0-9]*\./#VOL./g
-s/\$[A-Za-z][A-Za-z0-9]*\;/#VOL;/g
-s/\$[A-Za-z][A-Za-z0-9]*)/#VOL )/g
 s,\( DIRECTORY  *\)/[^ ][^ ]* *$,\1/#d,
 s/^\(MESSAGEFILE     [  ]*\).*/\1#f/
 /^MESSAGEFILE VRSN[     ]*{/s/{.*/#v/
-/^SQL SCHEMA[   ]/s/($NSK_SUBVOL) *$/(#SV)/
 /^\*\*\* ERROR/s/[A-Z0-9]*\.[A-Z0-9]*\./#CAT.#SCH./g
 s/\.[ ]*\*\*\*/\. \*\*\*/g
-s/DP2_CACHE_4096_BLOCKS.*/DP2_CACHE_4096_BLOCKS/
 s/\(SQL USER ID[ ]*\)[0-9]*/\1@authid@/g
+s/\(AUTHORIZATION[ ]*\)[a-z]*/\1@authorization@/g
+s/\(AUTHENTICATION[ ]*\)[a-z]*/\1@authentication@/g
 s/CURRENT DIRECTORY .*/CURRENT DIRECTORY/" $fil

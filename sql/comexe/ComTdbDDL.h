@@ -183,8 +183,7 @@ public:
            queue_index down,
            queue_index up,
            Lng32 num_buffers,
-           ULng32 buffer_size,
-           NABoolean mpRequest = FALSE
+           ULng32 buffer_size
            );
   
   // ---------------------------------------------------------------------
@@ -247,7 +246,6 @@ public:
 protected:
   enum Flags 
   { 
-    SQLMP_RQST                    = 0x0001,
     CREATE_TABLE_DDL         = 0x0002,
     CREATE_INDEX_DDL         = 0x0004,
     CREATE_MV_DDL               = 0x0008,
@@ -258,11 +256,6 @@ protected:
  
   UInt16 flags_;                       // 00-01
   char fillersComTdbDDL_[30];          // 02-31
-
-  NABoolean mpRequest() const
-  {
-    return ((flags_ & SQLMP_RQST) != 0);
-  };
 };
 #pragma warn(1506)  // warning elimination 
 

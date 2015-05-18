@@ -3,7 +3,7 @@
 --
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -171,10 +171,10 @@ prepare s from load with no recovery  no populate indexes  into t015t2 select * 
 explain options 'f' s;
 execute s;
 
---log errors are not implemented yet .
-prepare s from load with log error into t015t2 select * from t015t1;
---explain options 'f' s;
---execute s;
+--log error rows
+prepare s from load with log error rows into t015t2 select * from t015t1;
+explain options 'f' s;
+execute s;
 
 delete from t015t2;
 insert into t015t2 values (100),(200),(300);

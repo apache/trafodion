@@ -595,7 +595,7 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
   daMark = da->mark();
   ex_expr::exp_return_type evalReturnCode = defaultValueIdList.evalAtCompileTime
     (0,
-     ExpTupleDesc::SQLMP_FORMAT,
+     ExpTupleDesc::PACKED_FORMAT,
      defaultValue, attr->getDefaultValueStorageLength() + extraFltLen,
      &length, &offset, da);
 

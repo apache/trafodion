@@ -27,7 +27,7 @@
 **********************************************************************/
 
 
-  #include "lmjni.h"
+#include "lmjni.h"
 #include "ComRtUtils.h"
 #include "LmRoutineJava.h"
 #include "LmJavaExceptionReporter.h"
@@ -51,6 +51,7 @@ LmRoutineJava::LmRoutineJava(
   LmParameter           *returnValue,
   ComUInt32              maxResultSets,
   char                  *routineSig,
+  ComRoutineParamStyle   paramStyle,
   ComRoutineTransactionAttributes transactionAttrs,
   ComRoutineSQLAccess    sqlAccessMode,
   ComRoutineExternalSecurity externalSecurity,
@@ -67,7 +68,7 @@ LmRoutineJava::LmRoutineJava(
   ComDiagsArea          *da)
   : LmRoutine(container, routine, sqlName, externalName, librarySqlName,
               numSqlParam, maxResultSets,
-              COM_LANGUAGE_JAVA, COM_STYLE_JAVA_CALL, transactionAttrs, sqlAccessMode,
+              COM_LANGUAGE_JAVA, paramStyle, transactionAttrs, sqlAccessMode,
               externalSecurity, 
 	      routineOwnerId,
               parentQid, inputRowLen, outputRowLen, 
@@ -89,6 +90,9 @@ LmRoutineJava::LmRoutineJava(
     setIsInternalSPJ(TRUE);
   else
     setIsInternalSPJ(FALSE);
+
+  if (paramStyle == COM_STYLE_JAVA_OBJ)
+    return;
  
   // Get method return type.
   retType_ = LmJavaType(returnValue).getType();
@@ -667,6 +671,15 @@ void LmRoutineJava::deleteLmResultSetsOverMax(ComDiagsArea *diagsArea)
     cleanupLmResultSet( maxResultSets_, diagsArea );
 
   return;
+}
+
+// check validity of the object after calling the constructor
+ComBoolean LmRoutineJava::isValid()
+{
+  if (retType_ > LmJavaType::JT_NONE &&
+      retType_ <= LmJavaType::JT_LAST)
+    return TRUE;
+  return FALSE;
 }
 
 //////////////////////////////////////////////////////////////////////

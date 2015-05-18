@@ -641,6 +641,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_EVERY
 %token <tokval> TOK_EXCEPT
 %token <tokval> TOK_EXCEPTION
+%token <tokval> TOK_EXCEPTIONS
 %token <tokval> TOK_EXCEPTION_TABLE
 %token <tokval> TOK_EXCHANGE            /* Tandem extension non-reserved word */
 %token <tokval> TOK_EXCHANGE_AND_SORT
@@ -2766,7 +2767,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <aqrOptionsList>          aqr_options_list
 %type <aqrOption>               aqr_option
 %type <uint>                    aqr_task
-%type <int64>	 		optional_limit_spec
+%type <item>                   optional_limit_spec
 
 %type <tokval>                  dummy_token_lookahead
 %type <relx>                    exe_util_get_volatile_info
@@ -2778,21 +2779,23 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    exe_util_lob_extract
 %type <relx>                    unload_statement
 %type <relx>                    load_statement
+%type <boolean>                 load_sample_option
 %type <relx>                    exe_util_init_hbase
 %type <hBaseBulkLoadOptionsList> optional_hbbload_options
 %type <hBaseBulkLoadOptionsList> hbbload_option_list
 %type <hBaseBulkLoadOption>      hbbload_option
 %type <hBaseBulkLoadOption>      hbb_no_recovery_option
 %type <hBaseBulkLoadOption>      hbb_truncate_option
+%type <hBaseBulkLoadOption>      hbb_update_stats_option
 %type <hBaseBulkLoadOption>      hbb_no_duplicate_check
 %type <hBaseBulkLoadOption>      hbb_no_populate_indexes
 %type <hBaseBulkLoadOption>      hbb_constraints
 %type <hBaseBulkLoadOption>      hbb_no_output
-%type <hBaseBulkLoadOption>      hbb_log_errors_option
-%type <hBaseBulkLoadOption>      hbb_stop_after_n_errors
+%type <hBaseBulkLoadOption>      hbb_continue_on_error
+%type <hBaseBulkLoadOption>      hbb_log_error_rows
+%type <hBaseBulkLoadOption>      hbb_stop_after_n_error_rows
 %type <hBaseBulkLoadOption>      hbb_index_table_only
 %type <hBaseBulkLoadOption>      hbb_upsert_using_load
-
 %type <hbbUnloadOptionsList> optional_hbb_unload_options
 %type <hbbUnloadOptionsList> hbb_unload_option_list
 %type <hbbUnloadOption>      hbb_unload_option
@@ -4993,7 +4996,8 @@ special_index_table_name : TOK_TABLE '(' TOK_INDEX_TABLE actual_table_name
                            optional_special_utility_open_clause 
                            optional_with_shared_access_clause ')'
                 {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
+                  if ((Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE)) ||
+                      (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
                     {
                       // We don't allow a user to do their own index maint,
                       // nor even SELECT from an index (because that
@@ -14476,7 +14480,7 @@ dml_query : query_expression order_by_clause access_type
                     YYERROR;
                   $5->finalizeUpdatability($$);
 
-		  if ($6 != -1)
+		  if ($6)
 		    {
 		      // limit clause was specified. 
 		      RelRoot * rr = (RelRoot*)$$;
@@ -14487,10 +14491,22 @@ dml_query : query_expression order_by_clause access_type
 			}
 		      else
 			{
-			   rr->setFirstNRows($6);
+                          NABoolean negate;
+                          if ($6->castToConstValue(negate))
+                            {
+                              ConstValue * limit = (ConstValue*)$6;
+                              Lng32 scale = 0;
+                              rr->setFirstNRows(limit->getExactNumericValue(scale));
+                              rr->setFirstNRowsParam(NULL);
+                            }
+                          else
+                            {
+                              rr->setFirstNRowsParam($6);
+                              rr->setFirstNRows(-1);
+                            }
 
-			   if ($2 != NULL) // ORDER BY specified
-			     rr->needFirstSortedRows() = TRUE;
+                          if ($2 != NULL) // ORDER BY specified
+                            rr->needFirstSortedRows() = TRUE;
 			}
 		    } // LIMIT clause was specified
                 }
@@ -14544,11 +14560,18 @@ dml_query : query_expression order_by_clause access_type
 optional_limit_spec : TOK_LIMIT NUMERIC_LITERAL_EXACT_NO_SCALE
                    {
 		     Int64 rows = atoInt64($2->data());
-		     $$ = rows;
+
+                     ConstValue * limit = new(PARSERHEAP()) ConstValue(rows);
+
+		     $$ = limit;
 		   }
+                 | TOK_LIMIT dynamic_parameter
+                 {
+                   $$ = $2;
+                 }
                  | /* empty */
                    {
-		     $$ = -1;
+		     $$ = NULL;
 		   }
 
 dml_statement : dml_query { $$ = $1; }
@@ -17260,17 +17283,18 @@ aqr_option : TOK_SQLCODE '=' NUMERIC_LITERAL_EXACT_NO_SCALE
 
 /* type relx */
 //HBASE LOAD 
-load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
+load_statement : TOK_LOAD TOK_TRANSFORM load_sample_option TOK_INTO table_name query_expression
                   {
                     //disabled by default in 0.8.0 release 
                     if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
                       YYERROR; 
-                      
+
                     $$ = new (PARSERHEAP())
-                          HBaseBulkLoadPrep(CorrName(*$4, PARSERHEAP()),
+                          HBaseBulkLoadPrep(CorrName(*$5, PARSERHEAP()),
                                             NULL,
                                             REL_HBASE_BULK_LOAD,
-                                            $5//,
+                                            $6,
+                                            $3//,
                                             //NULL
                                             );  
                     }
@@ -17290,25 +17314,34 @@ load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
                       UInt32 pos = 
                           stmt->index(" into ", 0, NAString::ignoreCase);
                        
-                      NAString stmt1 = "LOAD TRANSFORM ";
-                      stmt1.append((char*)&(stmt->data()[pos]));
-                      
-                        ExeUtilHBaseBulkLoad * eubl = new (PARSERHEAP()) 
+                      RelRoot *top = finalize($5);
+
+                      ExeUtilHBaseBulkLoad * eubl = new (PARSERHEAP()) 
                                         ExeUtilHBaseBulkLoad(CorrName(*$4, PARSERHEAP()),
                                         NULL,
-                                        (char*)stmt1.data(),
+                                        NULL,
                                         stmtCharSet,
+                                        top,
                                         PARSERHEAP());
-                        if (eubl->setOptions($2, SqlParser_Diags))
-                               YYERROR; 
-                        if (eubl->getUpsertUsingLoad())
-                        {
-                          NAString stmt2 = "UPSERT USING LOAD ";
-                          stmt2.append((char*)&(stmt->data()[pos])); 
-                          eubl->setStmtText((char*)stmt2.data(), stmtCharSet);
-                        
-                        }
-                        $$ = finalize(eubl);    
+                      if (eubl->setOptions($2, SqlParser_Diags))
+                             YYERROR; 
+
+                      NAString stmt1;
+                      if (eubl->getUpsertUsingLoad())
+                      {
+                        stmt1 = "UPSERT USING LOAD ";
+                        stmt1.append((char*)&(stmt->data()[pos])); 
+                        eubl->setStmtText((char*)stmt1.data(), stmtCharSet);
+                      }
+                      else
+                      {
+                        stmt1 = "LOAD TRANSFORM ";
+                        if (eubl->getUpdateStats())
+                          stmt1.append("WITH SAMPLE ");
+                        stmt1.append((char*)&(stmt->data()[pos])); 
+                        eubl->setStmtText((char*)stmt1.data(), stmtCharSet);
+                      }
+                      $$ = finalize(eubl);
                     
                     }
                                             
@@ -17354,7 +17387,21 @@ load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
                           $$ = finalize(hblt);         
                           
                       }   
-                      
+
+load_sample_option : TOK_WITH TOK_SAMPLE
+                            {
+                              if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+                              {
+                                yyerror("");
+                                YYERROR;     /*internal syntax only!*/
+                              }
+                              $$ = TRUE;
+                            }
+                            | empty
+                            {
+                              $$ = FALSE;
+                            }
+
 optional_hbbload_options : TOK_WITH hbbload_option_list
                             {
                                $$ = $2;
@@ -17382,18 +17429,20 @@ hbbload_option_list : hbbload_option
                           $$ = $2;
                       }
 
-hbbload_option :   hbb_no_recovery_option
+hbbload_option :  hbb_no_recovery_option
                 | hbb_truncate_option
-                | hbb_log_errors_option
-                | hbb_stop_after_n_errors
+                | hbb_update_stats_option
+                | hbb_continue_on_error
+                | hbb_stop_after_n_error_rows
+                | hbb_log_error_rows
                 | hbb_no_duplicate_check
                 | hbb_no_output
                 | hbb_no_populate_indexes
                 | hbb_constraints
                 | hbb_index_table_only
                 | hbb_upsert_using_load
+                
               
-
 hbb_no_recovery_option : TOK_NO TOK_RECOVERY
                     {
                     //NO ROLLBACK
@@ -17410,6 +17459,16 @@ hbb_truncate_option : TOK_TRUNCATE TOK_TABLE
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
                               new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
                                           (ExeUtilHBaseBulkLoad::TRUNCATE_TABLE_,
+                                          0,
+                                          NULL);
+                      $$ = op;
+                    }
+hbb_update_stats_option : TOK_UPDATE TOK_STATISTICS
+                    {
+                      //UPDATE STATISTICS
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::UPDATE_STATS_,
                                           0,
                                           NULL);
                       $$ = op;
@@ -17435,20 +17494,34 @@ hbb_no_duplicate_check   : TOK_NO TOK_DUPLICATE TOK_CHECK
                                           NULL);
                       $$ = op;
                     }
-hbb_log_errors_option : TOK_LOG TOK_ERROR   //will need to add hdfs location for errors
+hbb_continue_on_error : TOK_CONTINUE TOK_ON TOK_ERROR
                     { //LOG_ERRORS
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
                               new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
-                                          (ExeUtilHBaseBulkLoad::LOG_ERRORS_,
-                                          0, 
-                                          NULL);
+                                          (ExeUtilHBaseBulkLoad::CONTINUE_ON_ERROR_, 0, NULL);
                       $$ = op;
                     }
-hbb_stop_after_n_errors: TOK_STOP TOK_AFTER unsigned_integer TOK_ERROR TOK_ROWS                
+hbb_log_error_rows : TOK_LOG TOK_ERROR TOK_ROWS
                     { //LOG_ERRORS
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
                               new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
-                                          (ExeUtilHBaseBulkLoad::STOP_AFTER_N_ERRORS_, 0, NULL);
+                                          (ExeUtilHBaseBulkLoad::LOG_ERROR_ROWS_, 0, NULL);
+                      $$ = op;
+                    }                    
+                    | TOK_LOG TOK_ERROR TOK_ROWS  TOK_TO QUOTED_STRING
+                    { //LOG_ERRORS
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::LOG_ERROR_ROWS_, 0, (char*)$5->data());
+                      $$ = op;
+                    }                    
+hbb_stop_after_n_error_rows: TOK_STOP TOK_AFTER unsigned_integer TOK_ERROR TOK_ROWS                
+                    { //LOG_ERRORS
+                    
+                    // need to give error if unsigned_integer ==0
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::STOP_AFTER_N_ERROR_ROWS_, $3, NULL);
                       $$ = op;
                     }      
 hbb_no_output :  TOK_NO TOK_OUTPUT
@@ -17504,12 +17577,15 @@ hbb_upsert_using_load : TOK_UPSERT TOK_USING TOK_LOAD
                     YYERROR;
                   }
                
+                  RelRoot *top = finalize($5);
+
                   ExeUtilHBaseBulkUnLoad * eubl = new (PARSERHEAP()) 
                                     ExeUtilHBaseBulkUnLoad(CorrName("DUMMY", PARSERHEAP()),
                                     NULL,
                                     (char*)stmt->data(),
                                     $4,
                                     stmtCharSet,
+                                    top,
                                     PARSERHEAP());
                   if (eubl->setOptions($2, SqlParser_Diags))
                     YYERROR; 
@@ -25982,6 +26058,11 @@ file_attribute_row_format_clause : TOK_ALIGNED TOK_FORMAT
                                   $$ = new (PARSERHEAP()) ElemDDLFileAttrRowFormat
 				    (ElemDDLFileAttrRowFormat::ePACKED);
 				}
+				| TOK_HBASE TOK_FORMAT
+				{
+                                  $$ = new (PARSERHEAP()) ElemDDLFileAttrRowFormat
+				    (ElemDDLFileAttrRowFormat::eHBASE);
+				}
 
 /* type pElemDDL */
 attribute_inmemory_options_clause : 
@@ -29664,6 +29745,12 @@ alter_index_action : file_attribute_clause
 				    StmtDDLAlterIndexAttribute(
                                        $1 /*file_attribute_clause*/);
                                 }
+                      | TOK_ALTER hbase_table_options
+                        {
+                                $$ = new (PARSERHEAP())
+				  StmtDDLAlterIndexHBaseOptions($2->castToElemDDLHbaseOptions());
+                        }
+
 //----------------------------------------------------------------------------
 // MV - RG
 
@@ -30813,6 +30900,11 @@ alter_table_action : add_table_constraint_definition
       				$$ = $1;
 
 			}
+                      | TOK_ALTER hbase_table_options
+                        {
+                                $$ = new (PARSERHEAP())
+				  StmtDDLAlterTableHBaseOptions($2->castToElemDDLHbaseOptions());
+                        }
 			
 
 /* type pStmtDDL */
@@ -32310,6 +32402,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_ENTRIES
                       | TOK_ET
                       | TOK_EUROPEAN
+                      | TOK_EXCEPTIONS
                       | TOK_EXCEPTION_TABLE
                       | TOK_EXCHANGE
                       | TOK_EXCHANGE_AND_SORT

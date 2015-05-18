@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -57,7 +57,6 @@ NAFileSet::NAFileSet(const QualifiedName & fileSetName,
 		     const NAColumnArray & horizontalPartKeyColumns,
 		     PartitioningFunction * forHorizontalPartitioning,
 		     short keytag, 
-		     unsigned short SQLMPkeytag,
 		     Int64 redefTime,
 		     NABoolean audited,
 		     NABoolean auditCompressed,
@@ -94,7 +93,6 @@ NAFileSet::NAFileSet(const QualifiedName & fileSetName,
 	   partitioningKeyColumns_(horizontalPartKeyColumns, h),
            partFunc_(forHorizontalPartitioning),
 	   keytag_(keytag),
-	   SQLMPkeytag_(SQLMPkeytag),
 	   redefTime_(redefTime),
 	   audited_(audited),
 	   auditCompressed_(auditCompressed),

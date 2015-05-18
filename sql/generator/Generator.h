@@ -1521,9 +1521,7 @@ public:
   {
     ExpTupleDesc::TupleDataFormat tdf = ExpTupleDesc::UNINITIALIZED_FORMAT;
 
-    if ( tbl->isSQLMPTable() )
-      tdf = ExpTupleDesc::SQLMP_FORMAT;
-    else if ( tbl->isSQLMXAlignedTable() )
+    if ( tbl->isSQLMXAlignedTable() )
       tdf = ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
     else 
       tdf = ExpTupleDesc::SQLMX_FORMAT;
@@ -1535,7 +1533,7 @@ public:
   ExpTupleDesc::TupleDataFormat getDataFormat( const NATable                *tbl,
                                                ExpTupleDesc::TupleDataFormat tdf )
   {
-    if( embeddedInsertSelect() && (NOT tbl->isSQLMPTable()) )
+    if( embeddedInsertSelect() )
       return ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
     else
       return tdf;

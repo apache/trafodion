@@ -1377,7 +1377,7 @@ public:
     }
 
     static NABoolean isHBaseMeta(const NAString& schName)
-    { return (schName == "_MD_"); }
+    { return (schName == "_MD_" || schName == "_PRIVMGR_MD_"); }
 
     //static NABoolean isHBaseSchema(const NAString& schName)
     //{ return (schName == "HBASE"); }

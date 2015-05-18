@@ -28,7 +28,7 @@
   <groupId>org.trafodion</groupId>
   <artifactId>rest</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
   <name>rest</name>
   <url>http://wiki.trafodion.org</url>
   
@@ -345,21 +345,17 @@
   	<jackson.version>1.8.8</jackson.version>
   	<jasper.version>5.5.23</jasper.version>
   	<jaxb-api.version>2.1</jaxb-api.version>
-<!-- 
-    org.eclipse.jetty
-  	<jetty.version>9.2.6</jetty.version>
- -->
-  	<jetty.version>6.1.26</jetty.version>
+    <jetty.version>9.2.10.v20150310</jetty.version>  
   	<jetty.jspapi.version>6.1.14</jetty.jspapi.version>
   	<jersey.version>1.8</jersey.version>
   	<junit.version>4.10</junit.version>
-  	<slf4j.version>1.4.3</slf4j.version>
+    <slf4j.version>1.6.6</slf4j.version>
   	<log4j.version>1.2.16</log4j.version>
   	<zookeeper.version>3.4.5</zookeeper.version>
   	<jython-standalone.version>2.5.3</jython-standalone.version>
   	<jettison.version>1.3.5</jettison.version>
   	<displaytag.version>1.1.1</displaytag.version>
-  	<jdbct4.version>1.0.0</jdbct4.version>
+  	<jdbct4.version>1.1.0</jdbct4.version>
    	
     <!-- Plugin Dependencies -->
     <maven.antrun.plugin.version>1.6</maven.antrun.plugin.version>
@@ -374,7 +370,7 @@
     <build.helper.maven.plugin.version>1.5</build.helper.maven.plugin.version>
 
     <!-- also must update this when we bump version -->
-    <package.version>1.1.0</package.version>
+    <package.version>1.2.0</package.version>
   	<final.name>${project.artifactId}-${project.version}</final.name>
   	
   	<!-- Test inclusion patterns used by failsafe configuration -->
@@ -455,6 +451,16 @@
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
       <version>${hadoop.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty</artifactId>
+        </exclusion>          
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty-util</artifactId>
+        </exclusion>   
+      </exclusions>                           
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
@@ -464,45 +470,47 @@
         <exclusion>
           <groupId>jline</groupId>
           <artifactId>jline</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.mortbay.jetty</groupId>
-      <artifactId>jetty</artifactId>
-      <version>${jetty.version}</version>
-      <exclusions>
+        </exclusion>     
         <exclusion>
-          <groupId>org.mortbay.jetty</groupId>
-          <artifactId>servlet-api</artifactId>
-        </exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion> 
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.mortbay.jetty</groupId>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-continuation</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-http</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-io</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-security</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-servlet</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-util</artifactId>
       <version>${jetty.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.mortbay.jetty</groupId>
-      <artifactId>jsp-2.1</artifactId>
-      <version>${jetty.jspapi.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>ant</groupId>
-          <artifactId>ant</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.mortbay.jetty</groupId>
-      <artifactId>jsp-api-2.1</artifactId>
-      <version>${jetty.jspapi.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.mortbay.jetty</groupId>
-      <artifactId>servlet-api-2.5</artifactId>
-      <version>${jetty.jspapi.version}</version>
     </dependency>
     <!-- While jackson is also a dependency of both jersey and avro, these
          can bring in jars from different, incompatible versions. We force
@@ -530,11 +538,6 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
       <version>${slf4j.version}</version>
     </dependency>
     <dependency>
@@ -612,16 +615,6 @@
       <artifactId>jettison</artifactId>
       <version>${jettison.version}</version>
     </dependency>
-    <dependency>
-      <groupId>displaytag</groupId>
-      <artifactId>displaytag</artifactId>
-      <version>${displaytag.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>displaytag</groupId>
-      <artifactId>displaytag-export-poi</artifactId>
-      <version>${displaytag.version}</version>
-    </dependency> 
     <!-- JDBCT4 dependencies -->    
     <dependency>    
       <groupId>org.trafodion.jdbc.t4.T4Driver</groupId>

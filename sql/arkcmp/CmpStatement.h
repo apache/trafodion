@@ -93,7 +93,6 @@ public:
   ReturnStatus process(const CmpMessageUpdateHist&);
   ReturnStatus process(const CmpMessageSetTrans&);
   ReturnStatus process(const CmpMessageDatabaseUser&);
-  ReturnStatus process(const CmpMessageReadTableDef&);
   ReturnStatus process(const CmpMessageEndSession&);
   ReturnStatus process(const CmpMessageDDLwithStatus&);
 
@@ -312,8 +311,7 @@ private:
   // on RelExpr are enabled only when it is set.
   NABoolean displayGraph_;
 
-  LIST(tmudr::UDRInvocationInfo *) *udrInvocationInfosToDelete_;
-  LIST(tmudr::UDRPlanInfo *) *udrPlanInfosToDelete_;
+  // for error reporting for UDFs, keep a list of requirements the UDF refused
   LIST(const NAString *) *detailsOnRefusedRequirements_;
 }; // end of CmpStatement
 

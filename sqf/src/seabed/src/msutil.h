@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ extern void        msg_util_format_phandle(char            *pp_buf,
                                            SB_Phandle_Type *pp_phandle);
 extern void        msg_util_format_transid(char            *pp_buf,
                                            SB_Transid_Type  pv_transid);
+extern void        msg_util_format_transseq(char             *pp_buf,
+                                            SB_Transseq_Type  pv_transseq);
 extern const char *msg_util_get_msg_type(MSGTYPE pv_msg_type);
 extern const char *msg_util_get_req_type(REQTYPE pv_req_type);
 extern const char *msg_util_get_reply_type(REPLYTYPE pv_reply_type);

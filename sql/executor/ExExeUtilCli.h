@@ -273,6 +273,52 @@ private:
   Lng32 setCQS(const char * shape, ComDiagsArea * globalDiags = NULL);
   Lng32 resetCQS(ComDiagsArea * globalDiags = NULL);
 
+  // methods for routine invocation
+  Lng32 getRoutine(
+       /* IN */     const char   *serializedInvocationInfo,
+       /* IN */     Int32         invocationInfoLen,
+       /* IN */     const char   *serializedPlanInfo,
+       /* IN */     Int32         planInfoLen,
+       /* IN */     Int32         language,
+       /* IN */     Int32         paramStyle,
+       /* IN */     const char   *externalName,
+       /* IN */     const char   *containerName,
+       /* IN */     const char   *externalPath,
+       /* IN */     const char   *librarySqlName,
+       /* OUT */    Int32        *handle,
+       /* IN/OUT */ ComDiagsArea *diags);
+
+  Lng32 invokeRoutine(
+       /* IN */     Int32         handle,
+       /* IN */     Int32         phaseEnumAsInt,
+       /* IN */     const char   *serializedInvocationInfo,
+       /* IN */     Int32         invocationInfoLen,
+       /* OUT */    Int32        *invocationInfoLenOut,
+       /* IN */     const char   *serializedPlanInfo,
+       /* IN */     Int32         planInfoLen,
+       /* IN */     Int32         planNum,
+       /* OUT */    Int32        *planInfoLenOut,
+       /* IN */     char         *inputRow,
+       /* IN */     Int32         inputRowLen,
+       /* OUT */    char         *outputRow,
+       /* IN */     Int32         outputRowLen,
+       /* IN/OUT */ ComDiagsArea *diags);
+
+  Lng32 getRoutineInvocationInfo(
+       /* IN */     Int32         handle,
+       /* IN/OUT */ char         *serializedInvocationInfo,
+       /* IN */     Int32         invocationInfoMaxLen,
+       /* OUT */    Int32        *invocationInfoLenOut,
+       /* IN/OUT */ char         *serializedPlanInfo,
+       /* IN */     Int32         planInfoMaxLen,
+       /* IN */     Int32         planNum,
+       /* OUT */    Int32        *planInfoLenOut,
+       /* IN/OUT */ ComDiagsArea *diags);
+
+  Lng32 putRoutine(
+       /* IN */     Int32         handle,
+       /* IN/OUT */ ComDiagsArea *diags);
+
 private:
   struct Attrs
     {

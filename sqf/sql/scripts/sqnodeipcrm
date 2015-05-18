@@ -2,7 +2,7 @@
 #
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -21,27 +21,29 @@
 function rm_shm {
     lv_port_file=$1
     echo "Using Portfile $lv_port_file"
-    lv_virtual_node=`echo $lv_port_file | cut -d '.' -f 3`
+    declare -i lv_virtual_node
+    let lv_virtual_node=`echo $lv_port_file | cut -d '.' -f 3`
     lv_port_no=`cat $lv_port_file | cut -d ':' -f 2`
-    if [ -z "$CLUSTERNAME" ]; then
-       lv_virtual_node=`echo $lv_port_file | cut -d '.' -f 3`
-       printf -v shm_key '0x%1x001%04x' $lv_virtual_node $lv_port_no    
-       printf -v shm_name '/SYSV%1x001%04x' $lv_virtual_node $lv_port_no
-    else
-       printf -v shm_key '0x0001%04x' $lv_port_no    
+    #echo "lv_virtual_node=$lv_virtual_node"
+    #echo "lv_port_no=$lv_port_no"
+    if [ -e $SQ_PDSH ]; then
+       printf -v shm_key '0x0001%04x' $lv_port_no
        printf -v shm_name '/SYSV0001%04x' $lv_port_no
+    else
+       printf -v shm_key '0x%1x001%04x' $lv_virtual_node $lv_port_no
+       printf -v shm_name '/SYSV%1x001%04x' $lv_virtual_node $lv_port_no
     fi
-    printf -v rms_shm_key '0x1000%04x' $lv_port_no    
+    printf -v rms_shm_key '0x1000%04x' $lv_port_no
     shm_id=`ipcs -m | grep "$shm_key" | cut -d ' ' -f 2`
     rms_shm_id=`ipcs -m | grep "$rms_shm_key"| cut -d ' ' -f 2`
     if [ -z $shm_id ]; then
        return
     fi
     echo "Killing the following attached process to shared segment $shm_id"
-    pids=`lsof | egrep "$shm_name" | awk '{print $2}'`    
+    pids=`lsof | egrep "$shm_name" | awk '{print $2}'`
     echo $pids
     if [ -n "$pids" ]; then
-       echo $pids | xargs kill -9 
+       echo $pids | xargs kill -9
     fi
     if [ -n $shm_id ]; then
        echo "Removing monitor shared segment $shm_id"
@@ -53,12 +55,16 @@ function rm_shm {
     fi
 }
 
-if [ ! -e $MY_SQROOT/tmp/monitor.port.*.bak ]; then
+declare -i portFilesCount
+let portFilesCount=`ls $MY_SQROOT/tmp/monitor.port.*.bak 2>/dev/null | wc -l`
+if ( [ "$portFilesCount" '==' 0 ] ); then
    echo "Unable to get the monitor port number"
    exit 1
 fi
-portFiles=`ls $MY_SQROOT/tmp/monitor.port.*.bak` 
+
+portFiles=`ls $MY_SQROOT/tmp/monitor.port.*.bak`
 for portFile in $portFiles; do
     rm_shm $portFile
 done
+
 exit 0

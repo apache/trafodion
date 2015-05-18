@@ -8216,6 +8216,8 @@ ItemExpr *DefaultSpecification::bindNode(BindWA *bindWA)
       if (boundExpr->getOperatorType() == ITM_CONSTANT)
         ((ConstValue *)boundExpr)->setWasDefaultSpec();
 
+      boundExpr->setWasDefaultClause(TRUE);
+
       setValueId(boundExpr->getValueId());
       return getValueId().getItemExpr();
     }
@@ -12427,14 +12429,6 @@ ItemExpr *AuditImage::bindNode(BindWA *bindWA)
   // Obtain the NATable for the objectName.
   NATable *table = bindWA->getNATable(getObjectName());
   if (bindWA->errStatus()) return NULL; 
-
-  if (table->isSQLMPTable())
-  {
-     *CmpCommon::diags() << DgSqlCode(-4082) <<
-         DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-     bindWA->setErrStatus();
-     return this;
-  }
 
   setNATable(table);
 

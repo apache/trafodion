@@ -11,10 +11,29 @@ extern "C" {
 /*
  * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
  * Method:    createTableReq
- * Signature: ([B[[BJ[B)V
+ * Signature: ([B[[BIIJ[B)V
  */
 JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_createTableReq
-  (JNIEnv *, jobject, jbyteArray, jobjectArray, jlong, jbyteArray);
+  (JNIEnv *, jobject, jbyteArray, jobjectArray, jint, jint, jlong, jbyteArray);
+
+/*
+ * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
+ * Method:    dropTableReq
+ * Signature: ([BJ)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_dropTableReq
+  (JNIEnv *, jobject, jbyteArray, jlong);
+
+
+
+/*
+ * Class:     org_apache_hadoop_hbase_client_transactional_RMInterface
+ * Method:    dropTableReq
+ * Signature: ([BJ)V
+ */
+JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_truncateOnAbortReq
+  (JNIEnv *pp_env, jobject pv_object, jbyteArray pv_tblname, jlong pv_transid);
+
 
 #ifdef __cplusplus
 }

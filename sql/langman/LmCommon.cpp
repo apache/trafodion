@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -264,6 +264,8 @@ LmHandle loadDll(
   return NULL;
 #else
   char *libraryName = NULL;
+  if (str_len(externalPath) == 0)
+    externalPath = ".";
   libraryName = new (heap)
 	  char[str_len(externalPath) + str_len(containerName) + 2];
   sprintf(libraryName, "%s/%s", externalPath, containerName);

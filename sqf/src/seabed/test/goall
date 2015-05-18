@@ -257,7 +257,6 @@ go250 $cluster $verbose
 go253 $cluster $verbose
 go261 $cluster $verbose
 go262 $cluster $verbose
-go263 $cluster $verbose
 go266 $cluster $verbose
 go277 $cluster $verbose
 go277 $cluster $verbose -thread

@@ -2,7 +2,7 @@
 -- Test: TEST0122 (Executor)
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2011-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -45,6 +45,8 @@ obey TEST122(clnup);
 exit;
 
 ?section test_drop_tab
+
+set schema $$TEST_SCHEMA$$;
 
 create table t122t1 ( a int not null );
 
@@ -120,6 +122,8 @@ execute s6;
 
 ?section test_alter_tab
 
+set schema $$TEST_SCHEMA$$;
+
 create table t122t3 (c1 int not null primary key, c2 int);
 insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
 select * from t122t3;
@@ -153,7 +157,7 @@ insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
 select * from t122t4_fk;
 
 
-sh sqlci -i "TEST122(alter_tbl_add)"
+sh sqlci -i "TEST122(alter_tbl_add)";
 
 control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
 
@@ -182,7 +186,9 @@ insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
 explain options 'f'
 insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
 
-sh sqlci -i "TEST122(alter_tbl_drop)"
+sh sqlci -i "TEST122(alter_tbl_drop)";
+
+set schema $$TEST_SCHEMA$$;
 
 control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
 
@@ -213,6 +219,8 @@ insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
 
 
 ?section test_drop_view
+
+set schema $$TEST_SCHEMA$$;
 
 -- makes sure referenced tables are invalidated
 -- structure:
@@ -302,6 +310,8 @@ select * from t122t5_e;
 -- makes sure compiler process(es) caches are cleaned up
 -- between drops in the same session
 
+set schema $$TEST_SCHEMA$$;
+
 create table t122t6
 (
   Int_1 INT SIGNED not null not droppable,
@@ -375,6 +385,8 @@ log LOG122;
 
 ?section drop_tab
 
+set schema $$TEST_SCHEMA$$;
+
 log LOG122;
 
 drop table t122t1;
@@ -384,6 +396,8 @@ create table t122t1 ( a char(4) not null );
 insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
 
 ?section alter_tbl_add
+set schema $$TEST_SCHEMA$$;
+
 log LOG122;
 -- add columns, constraints, and indexes
 alter table t122t3_col add column c3 int default 0;
@@ -394,6 +408,7 @@ alter table t122t4_fk add constraint t122_fk foreign key (c2) references t122t3_
 create index t122t3_index on t122t3(c2);
 
 ?section alter_tbl_drop
+set schema $$TEST_SCHEMA$$;
 log LOG122;
 -- drop columns, constraints, and indexes
 alter table t122t3_col drop column c3;
@@ -404,7 +419,7 @@ alter table t122t4_fk drop constraint t122_fk;
 drop index t122t3_index;
 
 ?section drop_view
-
+set schema $$TEST_SCHEMA$$;
 log LOG122;
 
 drop view t122_v7;

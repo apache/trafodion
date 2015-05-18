@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -108,6 +108,16 @@ static void setAuthenticationError(
    odbc_SQLSvc_SQLError * SQLError,
    const char * externalUsername,
    bool isInternalError);
+
+// Internal calls - Defined in libcli.so
+
+int SQL_EXEC_AssignParserFlagsForExSqlComp_Internal( /*IN*/ unsigned int flagbits);
+
+int SQL_EXEC_GetParserFlagsForExSqlComp_Internal( /*IN*/ unsigned int &flagbits);
+
+void SQL_EXEC_SetParserFlagsForExSqlComp_Internal( /*IN*/ unsigned int flagbits);
+
+#define INTERNAL_QUERY_FROM_EXEUTIL 0x20000
 
 //#define SRVR_PERFORMANCE
 
@@ -4806,56 +4816,79 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
 
         if (exception_->exception_nr == 0)
         {
-        if ((QryCatalogSrvrStmt = getSrvrStmt(catStmtLabel, TRUE)) == NULL)
-        {
-               SendEventMsg(MSG_SRVR_POST_CONNECT_ERROR, EVENTLOG_ERROR_TYPE,
-                       srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-                       2, "CATALOG APIs", "Allocate Statement");
-               exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
-               exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_UNABLE_TO_ALLOCATE_SQL_STMT;
-        }
-        else
-        {
-        retcode = QryCatalogSrvrStmt->ExecDirect(NULL, CatalogQuery, EXTERNAL_STMT, TYPE_SELECT, SQL_ASYNC_ENABLE_OFF, 0);
+           if ((QryCatalogSrvrStmt = getSrvrStmt(catStmtLabel, TRUE)) == NULL)
+           {
+              SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR,
+                           EVENTLOG_ERROR_TYPE,
+                           srvrGlobal->nskProcessInfo.processId,
+                           ODBCMX_SERVER,
+                           srvrGlobal->srvrObjRef,
+                           2,
+                           "CATALOG APIs",
+                           "Allocate Statement");
+              exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+              exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_UNABLE_TO_ALLOCATE_SQL_STMT;
+           }
+           else
+           {
+              // Temporary solution - bypass checks on metadata tables
+              unsigned int savedParserFlags = 0;
 
-        if (retcode == SQL_ERROR)
-        {
-               ERROR_DESC_def *p_buffer = QryCatalogSrvrStmt->sqlError.errorList._buffer;
-               strncpy(RequestError, p_buffer->errorText,sizeof(RequestError) -1);
-               RequestError[sizeof(RequestError)] = '\0';
-               SendEventMsg(MSG_SRVR_POST_CONNECT_ERROR, EVENTLOG_ERROR_TYPE,srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
-                              srvrGlobal->srvrObjRef, 2, "CATALOG APIs", RequestError);
-               exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
-               exception_->u.SQLError.errorList._length = QryCatalogSrvrStmt->sqlError.errorList._length;
-               exception_->u.SQLError.errorList._buffer = QryCatalogSrvrStmt->sqlError.errorList._buffer;
-        }
-        else
-        {
-	QryCatalogSrvrStmt->sqlStmtType = TYPE_SELECT_CATALOG;
-	outputDesc->_length = QryCatalogSrvrStmt->outputDescList._length;
-	outputDesc->_buffer = QryCatalogSrvrStmt->outputDescList._buffer;
-/*
-               retcode = QryCatalogSrvrStmt->FetchPerf(100, 0, SQL_ASYNC_ENABLE_OFF, 0);
-               if (retcode == SQL_ERROR)
-               {
-                       ERROR_DESC_def *p_buffer = QryCatalogSrvrStmt->sqlError.errorList._buffer;
-                       strncpy(RequestError, p_buffer->errorText,sizeof(RequestError) -1);
-                       RequestError[RequestError] = '\0';
-                       SendEventMsg(MSG_SRVR_POST_CONNECT_ERROR, EVENTLOG_ERROR_TYPE, srvrGlobal->nskProcessInfo.processId,                                               ODBCMX_SERVER, srvrGlobal->srvrObjRef, 2, "Catalog APIs", RequestError);
-                       exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
-                       exception_->u.SQLError.errorList._length = QryCatalogSrvrStmt->sqlError.errorList._length;
-                       exception_->u.SQLError.errorList._buffer = QryCatalogSrvrStmt->sqlError.errorList._buffer;
-               }
-               else if (retcode != SQL_NO_DATA_FOUND)
-               {
-                       exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
-                       exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_FETCH_FAILED;
-             }
-*/
-        }
-}
+              SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedParserFlags);
 
+              try
+              {
+                 SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
+
+                 retcode = QryCatalogSrvrStmt->ExecDirect(NULL, CatalogQuery, EXTERNAL_STMT, TYPE_SELECT, SQL_ASYNC_ENABLE_OFF, 0);
+
+                 SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedParserFlags);
+                 if (retcode == SQL_ERROR)
+                 {
+                    ERROR_DESC_def *p_buffer = QryCatalogSrvrStmt->sqlError.errorList._buffer;
+                    strncpy(RequestError, p_buffer->errorText,sizeof(RequestError) -1);
+                    RequestError[sizeof(RequestError)] = '\0';
+
+                    SendEventMsg(MSG_SQL_ERROR,
+                                 EVENTLOG_ERROR_TYPE,
+                                 srvrGlobal->nskProcessInfo.processId,
+                                 ODBCMX_SERVER,
+                                 srvrGlobal->srvrObjRef,
+                                 2,
+                                 p_buffer->sqlcode,
+                                 RequestError);
+
+                    exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+                    exception_->u.SQLError.errorList._length = QryCatalogSrvrStmt->sqlError.errorList._length;
+                    exception_->u.SQLError.errorList._buffer = QryCatalogSrvrStmt->sqlError.errorList._buffer;
+                    exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECDIRECT_FAILED;
+                 }
+
+              } //try
+              catch (...)
+              {
+                 SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedParserFlags);
+                 SendEventMsg(MSG_PROGRAMMING_ERROR,
+                              EVENTLOG_ERROR_TYPE,
+                              srvrGlobal->nskProcessInfo.processId,
+                              ODBCMX_SERVER,
+                              srvrGlobal->srvrObjRef,
+                              1,
+                              "Exception in executing Catalog API");
+
+                 exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+                 exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECDIRECT_FAILED;
+              } // catch
+           }
         }
+
+        if (exception_->exception_nr == 0)
+        {
+           QryCatalogSrvrStmt->sqlStmtType = TYPE_SELECT_CATALOG;
+           outputDesc->_length = QryCatalogSrvrStmt->outputDescList._length;
+           outputDesc->_buffer = QryCatalogSrvrStmt->outputDescList._buffer;
+        }
+
 MapException:
         // resource statistics
         if (resStatSession != NULL)

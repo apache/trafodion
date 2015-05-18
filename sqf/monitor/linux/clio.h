@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public:
                          { if ( iv_initted ) ((SharedMemHdr *) ip_cshm)->wdtEnabler = -17958194; }
     int                 get_notice(struct message_def **pp_msg, bool wait = false);
     inline int          get_monitor_pid(void) {return(iv_mpid); }
-    bool                init_comm();
+    bool                init_comm(bool altsig = false);
     const char *        mon_port() {return ip_mon_mpi_port.c_str();};
     int                 signal_cv( int err=0 );
     const char *        mon_port_fname() {return ip_port_fname;};
@@ -131,6 +131,7 @@ public:
     static void              (*cp_trace_cb)(const char *pp_where, 
                                             const char *pp_format, 
                                             va_list pv_ap);
+    bool                       iv_altsig;
     bool                       iv_initted;
     bool                       iv_monitor_down;
     bool                       iv_shutdown;

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -366,8 +366,8 @@ void Attributes::displayContents(Space * space, Int32 operandNum,
       str_cat(buf, "UNINITIALIZED_FORMAT", buf);
       break;
 
-    case ExpTupleDesc::SQLMP_FORMAT: 
-      str_cat(buf, "SQLMP_FORMAT", buf);
+    case ExpTupleDesc::PACKED_FORMAT: 
+      str_cat(buf, "PACKED_FORMAT", buf);
       break;
 
     case ExpTupleDesc::SQLMX_KEY_FORMAT: 

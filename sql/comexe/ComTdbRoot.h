@@ -537,16 +537,16 @@ protected:
   // number of uninitialized mvs in the list
   Int16 uninitializedMvCount_;                                      // 234-235
 
-  Int16 schCount_;                                                  // 236-237
+  Int16 unused1_;                                                   // 236-237
   Int16 rtFlags3_;                                                  // 238-239
 
   // list of uninitialized mvs
   UninitializedMvNamePtr uninitializedMvList_;                      // 240-247
   
   // contains pointer to CompilerStatsInfo class.
-  NABasicPtr compilerStatsInfo_;                          // 248-255
+  NABasicPtr compilerStatsInfo_;                                    // 248-255
 
-  SchemaLabelInfoPtrPtr schemaLabelInfoList_;                       // 256-263
+  NABasicPtr unused2_;                                              // 256-263
   
   // contains pointer to RWRSInfo class.
   NABasicPtr rwrsInfo_;                                             // 264-271
@@ -677,8 +677,6 @@ public:
 	    UninitializedMvName * uninitializedMvList,
 	    short uninitializedMvCount,
 	    NABasicPtr compilerStatsInfo,
-                Int16 schCount,
-  	  SchemaLabelInfoPtrPtr schemaLabelInfoList,
 	   NABasicPtr rwrsInfo,
            Int32 numObjectUIDs,
            Int64 *objectUIDs,
@@ -857,9 +855,6 @@ public:
   SqlTableOpenInfoPtr *stoiStoiList() {return stoiList_; }
 
   Queue* getViewStoiList() {return viewStoiList_; }
-  
-  SchemaLabelInfoPtr *schemaLabelInfoList() { return schemaLabelInfoList_; }
-  Int16 getSchCount() { return schCount_; }
 
   QuerySimilarityInfo * querySimilarityInfo() { return qsi_; };
 

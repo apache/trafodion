@@ -189,16 +189,16 @@ SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, s
 	pConnect = (SRVR_CONNECT_HDL *)dialogueId;
 				
 	cleanupSQLMessage();
-	cleanupSQLValueList();
-	if (batchRowsetSize)
+	if (rowCount._buffer == NULL || batchRowsetSize > inputRowCnt)
 	{
-		// Limit the rows read to the minimum of either request
-		if (totalRowCount>batchRowsetSize) inputRowCnt = batchRowsetSize;
-		else inputRowCnt = totalRowCount;
-	} else inputRowCnt = 1;
-
-	MEMORY_ALLOC_ARRAY(rowCount._buffer,int,inputRowCnt);
-	rowCount._length = 0;
+	   inputRowCnt = batchRowsetSize;
+           if (inputRowCnt == 0)
+              inputRowCnt = 1;
+           if (rowCount._buffer != NULL)
+              MEMORY_DELETE(rowCount._buffer);
+	   MEMORY_ALLOC_ARRAY(rowCount._buffer,int, inputRowCnt);
+	   rowCount._length = 0;
+        }
 	memset(rowCount._buffer,0,inputRowCnt*sizeof(int));
 
 	sqlStmtType = inSqlStmtType;
@@ -320,11 +320,11 @@ SQLRETURN SRVR_STMT_HDL::Close(unsigned short inFreeResourceOpt)
 
 	if (stmtType == INTERNAL_STMT) CLI_DEBUG_RETURN_SQL(SQL_SUCCESS);
 	cleanupSQLMessage();
-	cleanupSQLValueList();
 	freeResourceOpt = inFreeResourceOpt;
 	rc = FREESTATEMENT(this);
 	if (inFreeResourceOpt == SQL_DROP)
 		removeSrvrStmt(dialogueId, (long)this);
+
 	CLI_DEBUG_RETURN_SQL(rc);
 }
 
@@ -335,7 +335,6 @@ SQLRETURN SRVR_STMT_HDL::InternalStmtClose(unsigned short inFreeResourceOpt)
 
 	SQLRETURN rc;
 	cleanupSQLMessage();
-	cleanupSQLValueList();
 	freeResourceOpt = inFreeResourceOpt;
 	CLI_DEBUG_RETURN_SQL(FREESTATEMENT(this));
 }
@@ -463,16 +462,10 @@ void  SRVR_STMT_HDL::cleanupSQLValueList(void)
 {
 	FUNCTION_ENTRY("SRVR_STMT_HDL::cleanupSQLValueList",(NULL));
 
-	MEMORY_DELETE(outputValueList._buffer);
-	MEMORY_DELETE(outputValueVarBuffer);
+	MEMORY_DELETE_ARRAY(outputValueList._buffer);
+	MEMORY_DELETE_ARRAY(outputValueVarBuffer);
 	outputValueList._length = 0;
 	maxRowCnt = 0;
-	if (rowCount._length > 0) {
-	  MEMORY_DELETE(rowCount._buffer);
-	}
-	rowCount._buffer = NULL;
-	rowCount._length = 0;
-
 	FUNCTION_RETURN_VOID((NULL));
 }
 
@@ -480,13 +473,13 @@ void  SRVR_STMT_HDL::cleanupSQLDescList(void)
 {
 	FUNCTION_ENTRY("SRVR_STMT_HDL::cleanupSQLDescList",(NULL));
 
-	MEMORY_DELETE(inputDescList._buffer);
-	MEMORY_DELETE(inputDescVarBuffer);
+	MEMORY_DELETE_ARRAY(inputDescList._buffer);
+	MEMORY_DELETE_ARRAY(inputDescVarBuffer);
 	inputDescList._length = 0;
 	inputDescVarBufferLen = 0;
 
-	MEMORY_DELETE(outputDescList._buffer);
-	MEMORY_DELETE(outputDescVarBuffer);
+	MEMORY_DELETE_ARRAY(outputDescList._buffer);
+	MEMORY_DELETE_ARRAY(outputDescVarBuffer);
 	outputDescList._length = 0;
 	outputDescVarBufferLen = 0;
 	FUNCTION_RETURN_VOID((NULL));
@@ -496,7 +489,7 @@ void  SRVR_STMT_HDL::cleanupAll(void)
 {
 	FUNCTION_ENTRY("SRVR_STMT_HDL::cleanupAll",(NULL));
 
-	MEMORY_DELETE(sqlString.dataValue._buffer);
+	MEMORY_DELETE_ARRAY(sqlString.dataValue._buffer);
 	sqlString.dataValue._length = 0;
 	cleanupSQLMessage();
 	cleanupSQLDescList();
@@ -504,12 +497,13 @@ void  SRVR_STMT_HDL::cleanupAll(void)
 	inputValueList._buffer = NULL;
 	inputValueList._length = 0;
 	inputValueVarBuffer = NULL;
-	MEMORY_DELETE(rowCount._buffer);
+	MEMORY_DELETE_ARRAY(rowCount._buffer);
+        rowCount._buffer = NULL;
 	rowCount._length = 0;
-	MEMORY_DELETE(IPD);
-	MEMORY_DELETE(IRD);
-	MEMORY_DELETE(fetchQuadField);
-	MEMORY_DELETE(batchQuadField);
+	MEMORY_DELETE_ARRAY(IPD);
+	MEMORY_DELETE_ARRAY(IRD);
+	MEMORY_DELETE_ARRAY(fetchQuadField);
+	MEMORY_DELETE_ARRAY(batchQuadField);
 	FUNCTION_RETURN_VOID((NULL));
 }
 
@@ -552,12 +546,12 @@ SQLRETURN SRVR_STMT_HDL::freeBuffers(short descType)
 	switch (descType)
 	{
 	case SQLWHAT_INPUT_DESC:
-		MEMORY_DELETE(inputDescVarBuffer);
+		MEMORY_DELETE_ARRAY(inputDescVarBuffer);
 		inputDescVarBufferLen = 0;
 		paramCount = 0;
 		break;
 	case SQLWHAT_OUTPUT_DESC:
-		MEMORY_DELETE(outputDescVarBuffer);
+		MEMORY_DELETE_ARRAY(outputDescVarBuffer);
 		outputDescVarBufferLen = 0;
 		columnCount = 0;
 		break;
@@ -731,7 +725,6 @@ SQLRETURN SRVR_STMT_HDL::ExecuteCall(const SQLValueList_def *inValueList,short i
 
 	SQLRETURN rc;
 	cleanupSQLMessage();
-	cleanupSQLValueList();
 	inputValueList._buffer = inValueList->_buffer;
 	inputValueList._length = inValueList->_length;
 #ifndef _FASTPATH
@@ -799,7 +792,7 @@ void SRVR_STMT_HDL::resetFetchSize(long fetchSize)
 		// If columnCount is zero, the descriptor should not be used, so just deallocate.
 		// Need to leave fetchRowsetSize set so we know that the statement was a rowset before.
 		fetchQuadEntries = columnCount;
-		MEMORY_DELETE(fetchQuadField);
+		MEMORY_DELETE_ARRAY(fetchQuadField);
 		if (fetchQuadEntries)
 		{
 			MEMORY_ALLOC_ARRAY(fetchQuadField, struct SQLCLI_QUAD_FIELDS,fetchQuadEntries);
@@ -858,7 +851,7 @@ void SRVR_STMT_HDL::batchSetup(long statementCount)
 	if ((batchRowsetSize!=totalRows) && inputDescVarBufferLen)
 	{
 		DEBUG_OUT(DEBUG_LEVEL_DATA|DEBUG_LEVEL_ROWSET,("Batch area being reallocated"));
-		MEMORY_DELETE(batchQuadField);
+		MEMORY_DELETE_ARRAY(batchQuadField);
 		batchQuadEntries = 0;
 		batchRowsetSize = 0;
 
@@ -942,11 +935,11 @@ SRVR_DESC_HDL *SRVR_STMT_HDL::allocImplDesc(DESC_TYPE descType)
 	switch (descType)
 	{
 	case Input:
-		MEMORY_DELETE(IPD);
+		MEMORY_DELETE_ARRAY(IPD);
 		if (paramCount > 0) MEMORY_ALLOC_ARRAY(IPD,SRVR_DESC_HDL,paramCount+inputDescParamOffset);
 		FUNCTION_RETURN_PTR(IPD,("Input IPD"));
 	case Output:
-		MEMORY_DELETE(IRD);
+		MEMORY_DELETE_ARRAY(IRD);
 		if (columnCount > 0) MEMORY_ALLOC_ARRAY(IRD,SRVR_DESC_HDL,columnCount);
 		FUNCTION_RETURN_PTR(IRD,("Output IRD"));
 	}

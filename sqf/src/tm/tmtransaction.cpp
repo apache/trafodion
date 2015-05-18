@@ -128,11 +128,17 @@ short  TM_Transaction::register_region(int port, char *hostName, int hostname_Le
 
 }
 
-short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* pa_tblname)
+short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* pa_tblname, char** pa_keys, int pv_numsplits, int pv_keylen)
 {
     short lv_error = FEOK;
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
+
+    int len = sizeof(Tm_Req_Msg_Type);
+    int len_aligned = 8*(((len + 7)/8));
+    int buffer_size = pv_numsplits*pv_keylen;
+    int total_buffer = len_aligned + buffer_size;
+    char *buffer = new char[total_buffer];
 
     TMlibTrace(("TMLIB_TRACE : TM_Transaction::create_table ENTRY tablename: %s\n", pa_tblname), 1);
 
@@ -143,12 +149,75 @@ short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* p
     iv_transid.set_external_data_type(&lv_req.u.iv_ddl_request.iv_transid);
     memcpy(lv_req.u.iv_ddl_request.ddlreq, pa_tbldesc, pv_tbldesc_len);
     lv_req.u.iv_ddl_request.ddlreq_len = pv_tbldesc_len;
+    lv_req.u.iv_ddl_request.crt_numsplits = pv_numsplits;
+    lv_req.u.iv_ddl_request.crt_keylen = pv_keylen;
     lv_req.u.iv_ddl_request.ddlreq_type = TM_DDL_CREATE;
+    memcpy(buffer, (char*)&lv_req, len);
+
+    int i;
+    int index = len_aligned;
+    for(i=0; i<pv_numsplits; i++){
+       memcpy((buffer+index), pa_keys[i], pv_keylen);
+       index = index + pv_keylen;
+    }
+
+    iv_last_error = gv_tmlib.send_tm_link(buffer, total_buffer, &lv_rsp, iv_transid.get_node());
+    delete buffer;
+    if(iv_last_error)
+    {
+        TMlibTrace(("TMLIB_TRACE : TM_Transaction::create_table returning error %d\n", iv_last_error), 1);
+        return iv_last_error;
+    }
+    return lv_error;
+}
+
+short TM_Transaction::reg_truncateonabort(char* pa_tblname, int pv_tblname_len)
+{
+    short lv_error = FEOK;
+    Tm_Req_Msg_Type lv_req;
+    Tm_Rsp_Msg_Type lv_rsp;
+
+    TMlibTrace(("TMLIB_TRACE : TM_Transaction::reg_truncateonabort ENTRY tablename: %s\n", pa_tblname), 1);
+
+    if (!gv_tmlib.is_initialized())
+         gv_tmlib.initialize();
+
+    tmlib_init_req_hdr(TM_MSG_TYPE_DDLREQUEST, &lv_req);
+    iv_transid.set_external_data_type(&lv_req.u.iv_ddl_request.iv_transid);
+    memcpy(lv_req.u.iv_ddl_request.ddlreq, pa_tblname, pv_tblname_len);
+    lv_req.u.iv_ddl_request.ddlreq_len = pv_tblname_len;
+    lv_req.u.iv_ddl_request.ddlreq_type = TM_DDL_TRUNCATE;
 
     iv_last_error = gv_tmlib.send_tm(&lv_req, &lv_rsp, iv_transid.get_node());
     if(iv_last_error)
     {
-        TMlibTrace(("TMLIB_TRACE : TM_Transaction::create_table returning error %d\n", iv_last_error), 1);
+        TMlibTrace(("TMLIB_TRACE : TM_Transaction::reg_truncateonabort returning error %d\n", iv_last_error), 1);
+        return iv_last_error;
+    }
+    return lv_error;
+}
+
+short TM_Transaction::drop_table(char* pa_tblname, int pv_tblname_len)
+{
+    short lv_error = FEOK;
+    Tm_Req_Msg_Type lv_req;
+    Tm_Rsp_Msg_Type lv_rsp;
+
+    TMlibTrace(("TMLIB_TRACE : TM_Transaction::drop_table ENTRY tablename: %s\n", pa_tblname), 1);
+
+    if (!gv_tmlib.is_initialized())
+         gv_tmlib.initialize();
+
+    tmlib_init_req_hdr(TM_MSG_TYPE_DDLREQUEST, &lv_req);
+    iv_transid.set_external_data_type(&lv_req.u.iv_ddl_request.iv_transid);
+    memcpy(lv_req.u.iv_ddl_request.ddlreq, pa_tblname, pv_tblname_len);
+    lv_req.u.iv_ddl_request.ddlreq_len = pv_tblname_len;
+    lv_req.u.iv_ddl_request.ddlreq_type = TM_DDL_DROP;
+
+    iv_last_error = gv_tmlib.send_tm(&lv_req, &lv_rsp, iv_transid.get_node());
+    if(iv_last_error)
+    {
+        TMlibTrace(("TMLIB_TRACE : TM_Transaction::drop_table returning error %d\n", iv_last_error), 1);
         return iv_last_error;
     }
     return lv_error;

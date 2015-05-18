@@ -50,82 +50,64 @@ LmRoutineCppObj::LmRoutineCppObj(
   const char            *sqlName,
   const char            *externalName,
   const char            *librarySqlName,
-  ComUInt32             numSqlParam,
-  ComUInt32             numTableInfo,
-  LmTableInfo           *tableInfo,
-  char                  *routineSig,
-  ComUInt32             maxResultSets,
+  ComUInt32              maxResultSets,
   ComRoutineTransactionAttributes transactionAttrs,
-  ComRoutineSQLAccess   sqlAccessMode,
+  ComRoutineSQLAccess    sqlAccessMode,
   ComRoutineExternalSecurity externalSecurity,
-  Int32                 routineOwnerId,
-  const char            *queryId,
-  ComUInt32             inputParamRowLen,
-  ComUInt32             outputRowLen,
-  const char           *currentUserName,
-  const char           *sessionUserName,
-  LmParameter           *parameters,
+  Int32                  routineOwnerId,
   LmLanguageManagerC    *lm,
-  LmHandle              routine,
-  LmHandle              getNextRowPtr,
-  LmHandle              emitRowPtr,
   LmContainer           *container,
   ComDiagsArea          *diags)
-  : LmRoutineC(sqlName, externalName, librarySqlName, numSqlParam, routineSig,
-               maxResultSets,
-               COM_LANGUAGE_CPP,
-               COM_STYLE_CPP_OBJ,
-               transactionAttrs,
-               sqlAccessMode,
-               externalSecurity, 
-	       routineOwnerId,
-               queryId, inputParamRowLen, outputRowLen, 
-               currentUserName, sessionUserName,  
-	       parameters, lm, routine, container, diags)
+  : LmRoutine(container,
+              (LmHandle) interfaceObj,
+              sqlName,
+              externalName,
+              librarySqlName,
+              0,
+              maxResultSets,
+              COM_LANGUAGE_CPP,
+              COM_STYLE_CPP_OBJ,
+              transactionAttrs,
+              sqlAccessMode,
+              externalSecurity, 
+              routineOwnerId,
+              invocationInfo->getQueryId().c_str(),
+              invocationInfo->par().getRecordLength(),
+              invocationInfo->out().getRecordLength(),
+              invocationInfo->getCurrentUser().c_str(),
+              invocationInfo->getSessionUser().c_str(),
+              NULL,
+              lm),
+    planInfos_(collHeap()),
+    invocationInfo_(invocationInfo),
+    interfaceObj_(interfaceObj),
+    paramRow_(NULL),
+    inputRows_(NULL),
+    outputRow_(NULL)
 {
+  if (planInfo)
+    planInfos_.insertAt(0, planInfo);
+  interfaceObj_->getNextRowPtr_ = NULL; // set these with setFunctionPtrs()
+  interfaceObj_->emitRowPtr_    = NULL;
+  numInputTables_   = invocationInfo->getNumTableInputs();
 
-  invocationInfo_ = invocationInfo;
-  planInfo_       = planInfo;
-  interfaceObj_   = interfaceObj;
-  interfaceObj_->getNextRowPtr_ = (SQLUDR_GetNextRow)getNextRowPtr;
-  interfaceObj_->emitRowPtr_    = (SQLUDR_EmitRow)emitRowPtr;
-  numInputTables_ = invocationInfo->getNumTableInputs();
-  paramRowLen_    = inputParamRowLen;
-  outputRowLen_   = outputRowLen;
-
-  paramRow_ = new(collHeap()) char[paramRowLen_];
-  memset(paramRow_,0,paramRowLen_);
-  const_cast<tmudr::ParameterListInfo &>(invocationInfo->par()).setRowPtr(paramRow_);
-
-  if (numInputTables_ > 0)
+  if (inputParamRowLen_ > 0)
     {
-      inputRows_ = new (collHeap()) char *[numInputTables_];
-      for (int i=0; i<numInputTables_; i++)
-        {
-          int inputRowLength = invocationInfo->in(i).recordLength_;
-
-          inputRows_[i] = new(collHeap()) char[inputRowLength];
-          memset(inputRows_[i], 0, inputRowLength);
-          const_cast<tmudr::TableInfo &>(
-               invocationInfo->in(i)).setRowPtr(inputRows_[i]);
-        }
-    }
-  else
-    {
-      inputRows_ = NULL;
+      paramRow_ = new(collHeap()) char[inputParamRowLen_];
+      memset(paramRow_,0,inputParamRowLen_);
+      const_cast<tmudr::ParameterListInfo &>(invocationInfo->par()).setRowPtr(paramRow_);
     }
 
-  outputRow_ = new (collHeap()) char[outputRowLen + 2*WALL_STRING_LEN];
-  // remember the pointer to the actually usable
-  // buffer, not where the wall starts
-  outputRow_ += WALL_STRING_LEN;
-  memset(outputRow_, 0, outputRowLen);
-  setUpWall(outputRow_, outputRowLen);
-  invocationInfo->out().setRowPtr(outputRow_);
+  // inputRows_ and outputRow_ will be allocated in setRuntimeInfo() 
 }
 
 LmRoutineCppObj::~LmRoutineCppObj()
 {
+  delete invocationInfo_;
+  for (CollIndex i=0; i<planInfos_.getUsedLength(); i++)
+    if (planInfos_.used(i))
+      delete planInfos_[i];
+
   try
     {
       // delete the interface object, the virtual destructor may call user code
@@ -136,15 +118,78 @@ LmRoutineCppObj::~LmRoutineCppObj()
       // for now, just treat this as a fatal error, since we don't have a diags area
       throw e;
     }
+  catch (...)
+    {
+      // for now, just treat this as a fatal error, since we don't have a diags area
+      throw;
+    }
 
-  if (numInputTables_ > 0)
+  if (paramRow_)
+    NADELETEBASIC(paramRow_, collHeap());
+
+  if (inputRows_)
     {
       for (int i=0; i<numInputTables_; i++)
-        NADELETEBASIC((inputRows_[i]), collHeap());
+        if (inputRows_[i])
+          NADELETEBASIC((inputRows_[i]), collHeap());
       NADELETEBASIC(inputRows_, collHeap());
     }
-  // actually allocated buffer started where the wall starts
-  NADELETEBASIC((outputRow_ - WALL_STRING_LEN), collHeap());
+  if (outputRow_)
+    // actually allocated buffer started where the wall starts
+    NADELETEBASIC((outputRow_ - WALL_STRING_LEN), collHeap());
+}
+
+const char *LmRoutineCppObj::getParentQid()
+{
+  return invocationInfo_->getQueryId().c_str();
+}
+
+void LmRoutineCppObj::setRuntimeInfo(
+     const char   *parentQid,
+     int           totalNumInstances,
+     int           myInstanceNum)
+{
+  invocationInfo_->setQueryId(parentQid);
+  invocationInfo_->setTotalNumInstances(totalNumInstances);
+  invocationInfo_->setMyInstanceNum(myInstanceNum);
+
+  // allocate row buffers
+  if (numInputTables_ > 0)
+    {
+      inputRows_ = new (collHeap()) char *[numInputTables_];
+      for (int i=0; i<numInputTables_; i++)
+        {
+          int inputRowLength = invocationInfo_->in(i).recordLength_;
+
+          if (inputRowLength > 0)
+            {
+              inputRows_[i] = new(collHeap()) char[inputRowLength];
+              memset(inputRows_[i], 0, inputRowLength);
+              const_cast<tmudr::TableInfo &>(
+                   invocationInfo_->in(i)).setRowPtr(inputRows_[i]);
+            }
+          else
+            // at compile time, input rows are not specified
+            inputRows_[i] = NULL;
+        }
+    }
+  else
+    {
+      inputRows_ = NULL;
+    }
+
+  if (outputRowLen_ > 0)
+    {
+      outputRow_ = new (collHeap()) char[outputRowLen_ + 2*WALL_STRING_LEN];
+      // remember the pointer to the actually usable
+      // buffer, not where the wall starts
+      outputRow_ += WALL_STRING_LEN;
+      memset(outputRow_, 0, outputRowLen_);
+      setUpWall(outputRow_, outputRowLen_);
+      invocationInfo_->out().setRowPtr(outputRow_);
+    }
+  else
+    outputRow_ = NULL;
 }
 
 LmResult LmRoutineCppObj::invokeRoutine(void *inputRow,
@@ -160,18 +205,81 @@ LmResult LmRoutineCppObj::invokeRoutine(void *inputRow,
 }
 
 LmResult LmRoutineCppObj::invokeRoutineMethod(
-     tmudr::UDRInvocationInfo::CallPhase phase,
-     void *parameterRow,
-     ComDiagsArea *da)
+     /* IN */     tmudr::UDRInvocationInfo::CallPhase phase,
+     /* IN */     const char   *serializedInvocationInfo,
+     /* IN */     Int32         invocationInfoLen,
+     /* OUT */    Int32        *invocationInfoLenOut,
+     /* IN */     const char   *serializedPlanInfo,
+     /* IN */     Int32         planInfoLen,
+     /* IN */     Int32         planNum,
+     /* OUT */    Int32        *planInfoLenOut,
+     /* IN */     char         *inputParamRow,
+     /* IN */     Int32         inputParamRowLen,
+     /* OUT */    char         *outputRow,
+     /* IN */     Int32         outputRowLen,
+     /* IN/OUT */ ComDiagsArea *da)
 {
   LmResult result = LM_OK;
 
+  // initialize out parameters
+  *invocationInfoLenOut = 0;
+  *planInfoLenOut = 0;
+
+  // some parameter checks
+  if (invocationInfoLen <= 0 &&
+      invocationInfo_ == NULL)
+    {
+      // we need to have an Invocation info
+      *da << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+          << DgString0(getNameForDiags())
+          << DgString1(tmudr::UDRInvocationInfo::callPhaseToString(
+                            tmudr::UDRInvocationInfo::COMPILER_INITIAL_CALL))
+          << DgString2("LmRoutineCppObj::invokeRoutineMethod()")
+          << DgString3("Missing UDRInvocationInfo");
+    }
+
   try
     {
+      if (invocationInfoLen > 0)
+        {
+          if (invocationInfo_ == NULL)
+            invocationInfo_ = new tmudr::UDRInvocationInfo;
+
+          // unpack the invocation info
+          invocationInfo_->deserializeObj(serializedInvocationInfo,
+                                          invocationInfoLen);
+        }
+
+      if (planInfoLen > 0)
+        {
+          if (!planInfos_.used(planNum))
+            planInfos_.insertAt(planNum, new tmudr::UDRPlanInfo(invocationInfo_,
+                                                                planNum));
+
+          // unpack the invocation info
+          planInfos_[planNum]->deserializeObj(serializedPlanInfo,
+                                              planInfoLen);
+        }
+
+      // some parameter checks
+      if (inputParamRowLen < inputParamRowLen_)
+        return LM_ERR;
+      // test to do for scalar UDFs
+      // if (outputRowLen < invocationInfo_->out().getRecordLength())
+      //   return LM_ERR;
+
+      if (inputParamRow && inputParamRowLen_ > 0)
+        // copy parameter row
+        memcpy(invocationInfo_->par().getRowPtr(), inputParamRow, inputParamRowLen_);
+
       invocationInfo_->callPhase_ = phase;
       switch (phase)
         {
         case tmudr::UDRInvocationInfo::COMPILER_INITIAL_CALL:
+          if (invocationInfo_->getDebugFlags() &
+              tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_INITIAL)
+            invocationInfo_->print();
+
 #ifndef NDEBUG
           {
             if (invocationInfo_->getDebugFlags() &
@@ -197,23 +305,44 @@ LmResult LmRoutineCppObj::invokeRoutineMethod(
         case tmudr::UDRInvocationInfo::COMPILER_DOP_CALL:
           interfaceObj_->describeDesiredDegreeOfParallelism(
                *invocationInfo_,
-               *planInfo_);
+               *planInfos_[planNum]);
           break;
 
         case tmudr::UDRInvocationInfo::COMPILER_PLAN_CALL:
           interfaceObj_->describePlanProperties(*invocationInfo_,
-                                                *planInfo_);
+                                                *planInfos_[planNum]);
           break;
 
         case tmudr::UDRInvocationInfo::COMPILER_COMPLETION_CALL:
           interfaceObj_->completeDescription(*invocationInfo_,
-                                             *planInfo_);
+                                             *planInfos_[planNum]);
+          if (invocationInfo_->getDebugFlags() &
+              tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_END_COMPILE)
+            {
+              invocationInfo_->print();
+              printf("\n");
+              for (CollIndex i=0; i<planInfos_.getUsedLength(); i++)
+                if (planInfos_.used(i))
+                  {
+                    if (i == planNum)
+                      printf("++++++++++ Chosen plan: ++++++++++\n");
+                    else
+                      printf("-------- Plan not chosen: --------\n");
+                    planInfos_[i]->print();
+                  }
+            }
+
           break;
 
         case tmudr::UDRInvocationInfo::RUNTIME_WORK_CALL:
           {
-            // copy parameter row
-            memcpy(invocationInfo_->par().getRowPtr(), parameterRow, inputParamRowLen_);
+            if (invocationInfo_->getDebugFlags() &
+                tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME)
+              {
+                invocationInfo_->print();
+                planInfos_[planNum]->print();
+              }
+
 #ifndef NDEBUG
             if ((invocationInfo_->getDebugFlags() &
                  tmudr::UDRInvocationInfo::DEBUG_INITIAL_RUN_TIME_LOOP_ALL) ||
@@ -224,7 +353,7 @@ LmResult LmRoutineCppObj::invokeRoutineMethod(
 #endif
 
             interfaceObj_->processData(*invocationInfo_,
-                                       *planInfo_);
+                                       *planInfos_[planNum]);
 
             if (result == LM_OK)
               {
@@ -254,21 +383,126 @@ LmResult LmRoutineCppObj::invokeRoutineMethod(
           break;
         
         }
+
+      // return length of updated invocation and plan info for
+      // compile-time phases
+      if (invocationInfo_ &&
+          phase < tmudr::UDRInvocationInfo::RUNTIME_WORK_CALL)
+        {
+          *invocationInfoLenOut = invocationInfo_->serializedLength();
+          if (planInfos_.used(planNum))
+            *planInfoLenOut = planInfos_[planNum]->serializedLength();
+        }
     }
   catch (tmudr::UDRException e)
     {
-      strncpy(sqlState_, e.getSQLState(), sizeof(sqlState_));
-      sqlState_[SQLUDR_SQLSTATE_SIZE-1] = '\0';
-      strncpy(msgText_, e.getText().data(), sizeof(msgText_));
-      msgText_[SQLUDR_MSGTEXT_SIZE-1] = '\0';
+      // Check the returned SQLSTATE value and raise appropriate
+      // SQL code. Valid SQLSTATE values begin with "38" except "38000"
+      const char *sqlState = e.getSQLState();
 
-      result = processReturnStatus(SQLUDR_ERROR, da);
+      if ((strncmp(sqlState, "38", 2) == 0) &&
+          (strncmp(sqlState, "38000", 5) != 0))
+        {
+          *da << DgSqlCode(-LME_CUSTOM_ERROR)
+              << DgString0(e.getText().c_str())
+              << DgString1(sqlState);
+          *da << DgCustomSQLState(sqlState);
+        }
+      else
+        {
+          *da << DgSqlCode(-LME_UDF_ERROR)
+              << DgString0(invocationInfo_->getUDRName().c_str())
+              << DgString1(sqlState)
+              << DgString2(e.getText().c_str());
+        }
+      result = LM_ERR;
+    }
+  catch (...)
+    {
+      *da << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+          << DgString0(getNameForDiags())
+          << DgString1(invocationInfo_->callPhaseToString(phase))
+          << DgString2("LmRoutineCppObj::invokeRoutineMethod()")
+          << DgString3("general exception");
+      result = LM_ERR;
     }
 
   invocationInfo_->callPhase_ =
     tmudr::UDRInvocationInfo::UNKNOWN_CALL_PHASE;
 
   return result;
+}
+
+LmResult LmRoutineCppObj::getRoutineInvocationInfo(
+     /* IN/OUT */ char         *serializedInvocationInfo,
+     /* IN */     Int32         invocationInfoMaxLen,
+     /* OUT */    Int32        *invocationInfoLenOut,
+     /* IN/OUT */ char         *serializedPlanInfo,
+     /* IN */     Int32         planInfoMaxLen,
+     /* IN */     Int32         planNum,
+     /* OUT */    Int32        *planInfoLenOut,
+     /* IN/OUT */ ComDiagsArea *da)
+{
+  LmResult result = LM_OK;
+
+  // Retrieve updated invocation and plan info.
+  // The invokeRoutineMethod provided the required buffer
+  // space, so there is no excuse for having insufficient
+  // buffer when calling this, and doing so will raise
+  // an exception in the try block below.
+  try
+    {
+      if (invocationInfo_ && invocationInfoMaxLen > 0)
+        {
+          char *tempiibuf = serializedInvocationInfo;
+          int tempiilen   = invocationInfoMaxLen;
+          *invocationInfoLenOut = invocationInfo_->serialize(
+               tempiibuf, tempiilen);
+        }
+      else
+        *invocationInfoLenOut = 0;
+
+      if (planInfos_.used(planNum) && planInfoMaxLen > 0)
+        {
+          char *temppibuf = serializedPlanInfo;
+          int temppilen   = planInfoMaxLen;
+          *planInfoLenOut = planInfos_[planNum]->serialize(
+               temppibuf, temppilen);
+        }
+      else
+        *planInfoLenOut = 0;
+    }
+  catch (tmudr::UDRException e)
+    {
+      // this UDRException is generated by Trafodion code and
+      // it is an internal error to fail serializing the structs,
+      // even though, the user might have caused it by corrupting
+      // these structs
+      *da << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+          << DgString0(getNameForDiags())
+          << DgString1(invocationInfo_->callPhaseToString(invocationInfo_->getCallPhase()))
+          << DgString2("LmRoutineCppObj::getRoutineInvocationInfo()")
+          << DgString3("e.getText().c_str()");
+      result = LM_ERR;
+    }
+  catch (...)
+    {
+      *da << DgSqlCode(-LME_COMPILER_INTERFACE_ERROR)
+          << DgString0(getNameForDiags())
+          << DgString1(invocationInfo_->callPhaseToString(invocationInfo_->getCallPhase()))
+          << DgString2("LmRoutineCppObj::getRoutineInvocationInfo()")
+          << DgString3("general exception");
+      result = LM_ERR;
+    }
+
+  return result;
+}
+
+void LmRoutineCppObj::setFunctionPtrs(SQLUDR_GetNextRow getNextRowPtr,
+                                      SQLUDR_EmitRow emitRowPtr)
+{
+  interfaceObj_->getNextRowPtr_ = getNextRowPtr;
+  interfaceObj_->emitRowPtr_    = emitRowPtr;
 }
 
 void LmRoutineCppObj::setUpWall(char *userBuf, int userBufLen)

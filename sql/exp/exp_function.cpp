@@ -1,7 +1,7 @@
 /*********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -3507,7 +3507,7 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
 	    // upcase target
 	    for (Int32 i = 0; i < length; i++)
 	      {
-	        target[i] =  TOUPPER(source[i]); 
+	        target[i] =  TOUPPER(source[i]);
 	      }         
           }
         //--------------------------
@@ -3520,8 +3520,7 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
   case REC_BYTE_V_ASCII: 
   case REC_BYTE_V_ASCII_LONG: 
   {
-      short vc_len;
-      str_cpy_all((char *) &vc_len, varlenPtr, attr->getVCIndicatorLength());
+      Int32 vc_len = attr->getLength(varlenPtr);
      
       if (CollationInfo::isSystemCollation(collation))
       {
@@ -3565,16 +3564,14 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
         //
         // Copy the source to the target.
         //
-        //short vc_len;
-        //str_cpy_all((char *) &vc_len, varlenPtr, attr->getVCIndicatorLength());
-        str_cpy_all(&target[attr->getVCIndicatorLength()], source, vc_len);
-
-        if (isCaseInsensitive)
+        if (!isCaseInsensitive)
+          str_cpy_all(target, source, vc_len);
+        else
           {
 	    // upcase target
 	    for (Int32 i = 0; i < vc_len; i++)
 	      {
-	        target[attr->getVCIndicatorLength()+i] =  TOUPPER(source[i]); 
+	        target[i] =  TOUPPER(source[i]);
 	      }         
           }
 
@@ -3582,16 +3579,8 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
         // Blankpad the target (if needed).
         //
         if (vc_len < length)
-          str_pad(&target[attr->getVCIndicatorLength() + vc_len],
+          str_pad(&target[vc_len],
 	          (Int32) (length - vc_len), ' ');
-        //
-        // Make the length bytes to be the maximum length for this field.  This
-        // will make all encoded varchar keys to have the same length and so the
-        // comparison will depend on the fixed part of the varchar buffer.
-        //
-        vc_len = (short) length;
-        str_cpy_all(target, (char *) &vc_len, attr->getVCIndicatorLength());
-       
       }
 
   }
@@ -3600,31 +3589,23 @@ void ex_function_encode::encodeKeyValue(Attributes * attr,
   // added for Unicode data type.
   case REC_NCHAR_V_UNICODE: 
   {
+    Int32 vc_len = attr->getLength(varlenPtr);
+
     //
     // Copy the source to the target.
     //
-    short vc_len;
-    str_cpy_all((char *) &vc_len, varlenPtr, attr->getVCIndicatorLength());
-    
-    str_cpy_all(&target[attr->getVCIndicatorLength()], source, vc_len);
+    str_cpy_all(target, source, vc_len);
 
     //
     // Blankpad the target (if needed).
     //
     if (vc_len < length)
-      wc_str_pad((NAWchar*)&target[attr->getVCIndicatorLength() + vc_len],
-	      (Int32) (length - vc_len)/sizeof(NAWchar), unicode_char_set::space_char());
+      wc_str_pad((NAWchar*)&target[vc_len],
+                 (Int32) (length - vc_len)/sizeof(NAWchar), unicode_char_set::space_char());
 
 #if defined( NA_LITTLE_ENDIAN )
-      wc_swap_bytes((NAWchar*)&target[attr->getVCIndicatorLength()], length/sizeof(NAWchar));
+    wc_swap_bytes((NAWchar*)target, length/sizeof(NAWchar));
 #endif
-    //
-    // Make the length bytes to be the maximum length for this field.  This
-    // will make all encoded varchar keys to have the same length and so the
-    // comparison will depend on the fixed part of the varchar buffer.
-    //
-    vc_len = (short) length;
-    str_cpy_all(target, (char *) &vc_len, attr->getVCIndicatorLength());
     break;
   }
 
@@ -4371,16 +4352,11 @@ ex_expr::exp_return_type ex_function_hash::eval(char *op_data[],
   }
   else
   {
-    Lng32 length;
+    // get the actual length stored in the data, or fixed length
+    Lng32 length = srcOp->getLength(op_data[-MAX_OPERANDS + 1]);
     
     // if VARCHAR, skip trailing blanks and adjust length.
-    if (getOperand(1)->getVCIndicatorLength() > 0) {
-      short vcLength;
-      str_cpy_all((char *)&vcLength, op_data[-MAX_OPERANDS + 1], 
-		  srcOp->getVCIndicatorLength());
-      
-      length = (Lng32)vcLength;
-      
+    if (srcOp->getVCIndicatorLength() > 0) {
       switch ( srcOp->getDatatype() ) {
 	
 	// added to correctly handle VARNCHAR.
@@ -4408,9 +4384,6 @@ ex_expr::exp_return_type ex_function_hash::eval(char *op_data[],
 	  length--;
 	break;
       }
-    }
-    else {
-      length = srcOp->getLength();
     }
     
     UInt32 flags = ExHDPHash::NO_FLAGS;
@@ -4464,8 +4437,7 @@ ex_expr::exp_return_type ex_function_hivehash::eval(char *op_data[],
         DFS2REC::isANSIVarChar(srcOp->getDatatype())) && 
        getOperand(1)->getVCIndicatorLength() > 0 ) 
   {
-      str_cpy_all((char *)&length, op_data[-MAX_OPERANDS + 1], 
-		  srcOp->getVCIndicatorLength());
+      length = srcOp->getLength(op_data[-MAX_OPERANDS + 1]);
       hashValue = ex_function_hivehash::hashForCharType(op_data[1],length);
   } else
   if ( DFS2REC::isSQLFixedChar(srcOp->getDatatype()) ) {
@@ -6179,6 +6151,7 @@ ExRowsetArrayScan::eval(char          *op_data[],
   // SQLVarChar;
   // The size of the field is sizeof(short) for rowset SQLVarChars. 
   if(SourceAttr->getVCIndicatorLength() > 0){
+    assert(SourceAttr->getVCIndicatorLength() == sizeof(short));
     str_cpy_all((char*)op_data[-ex_clause::MAX_OPERANDS], 
       (char*)(&op_data[-ex_clause::MAX_OPERANDS+1][index*size]), sizeof(short));
     SourceElemPtr += sizeof(short);
@@ -6310,6 +6283,7 @@ ExRowsetArrayInto::eval(char *op_data[], CollHeap *heap,
   if (resultIsNull == FALSE){  
     if (DFS2REC::isSQLVarChar(resultAttr->getDatatype())) { 
       unsigned short VCLen = 0;
+      assert(resultAttr->getVCIndicatorLength() == sizeof(short));
       str_cpy_all((char *) &VCLen,
 	(char*)op_data[-ex_clause::MAX_OPERANDS + 1], sizeof(short));
     
@@ -7474,6 +7448,8 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     // Copy the source to the target.
     //
     short vc_len;
+    // See bug LP 1444134, make this compatible with encoding for
+    // varchars and remove the VC indicator
     assert(attr->getVCIndicatorLength() == sizeof(vc_len));
     str_cpy_all((char *) &vc_len, varlen_ptr, attr->getVCIndicatorLength());
     
@@ -7500,7 +7476,10 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     //
     // Copy the source to the target.
     //
+    // See bug LP 1444134, make this compatible with encoding for
+    // varchars and remove the VC indicator
     short vc_len;
+    assert(attr->getVCIndicatorLength() == sizeof(vc_len));
     str_cpy_all((char *) &vc_len, varlen_ptr, attr->getVCIndicatorLength());
     
     if (target != source)

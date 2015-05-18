@@ -1130,7 +1130,10 @@ getDP2CacheSizeInBlocks(const CostScalar& blockSizeInKb)
 {
     CostScalar cacheSizeInBlocks = csZero;
 
-    if (blockSizeInKb == 32.)
+    if (blockSizeInKb >= 64.)
+      cacheSizeInBlocks = 
+        CostPrimitives::getBasicCostFactor(NCM_CACHE_SIZE_IN_BLOCKS);
+    else if (blockSizeInKb == 32.)
       cacheSizeInBlocks =
         CostPrimitives::getBasicCostFactor(DP2_CACHE_32K_BLOCKS);
 // LCOV_EXCL_START :cnu
@@ -1153,9 +1156,8 @@ getDP2CacheSizeInBlocks(const CostScalar& blockSizeInKb)
       cacheSizeInBlocks =
         CostPrimitives::getBasicCostFactor(DP2_CACHE_512_BLOCKS);
     else
-      // If we get here it is because a new block size was introduced and
-      // needs to be supported.
-      DCMPASSERT(FALSE);
+      cacheSizeInBlocks =
+        CostPrimitives::getBasicCostFactor(NCM_CACHE_SIZE_IN_BLOCKS);
 // LCOV_EXCL_STOP
 
   return cacheSizeInBlocks;

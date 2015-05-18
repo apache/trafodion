@@ -1,9 +1,9 @@
 /*
- * PropertyConiguratorImpl.hh
+ * PropertyConfiguratorImpl.hh
+ *
+ * (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
  *
  * Copyright 2002, Log4cpp Project. All rights reserved.
- *
- * (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
  *
  * See the COPYING file for the terms of usage and distribution.
  */

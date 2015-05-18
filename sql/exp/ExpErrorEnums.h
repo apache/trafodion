@@ -88,6 +88,7 @@ enum ExeErrorCode
   EXE_HALLOWEEN_INSERT_AUTOCOMMIT       = 8107,
   EXE_INVALID_SESSION_DEFAULT           = 8109,
   EXE_DUPLICATE_ENTIRE_RECORD           = 8110,
+  EXE_MAX_ERROR_ROWS_EXCEEDED           = 8113,
   EXE_LAST_INTEGRITY_ERROR              = 8139,
 
   // ---------------------------------------------------------------------
@@ -281,7 +282,12 @@ enum ExeErrorCode
 
   CLI_UNUSED                            = 8740,
   CLI_CANNOT_EXECUTE_IN_MEM_DEFN        = 8741,
-  CLI_GET_METADATA_INFO_ERROR = 8742,
+  CLI_GET_METADATA_INFO_ERROR           = 8742,
+  CLI_ROUTINE_INVALID                   = 8743,
+  CLI_ROUTINE_DEALLOC_ERROR             = 8744,
+  CLI_ROUTINE_INVOCATION_ERROR          = 8745,
+  CLI_ROUTINE_INVOCATION_INFO_ERROR     = 8746,
+
   CLI_DUPLICATE_DESC			= 8801,
   CLI_DUPLICATE_STMT			= 8802,
   CLI_DESC_NOT_EXISTS			= 8803,

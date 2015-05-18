@@ -215,6 +215,7 @@ static SB_Thread::Usem        gv_ms_open_sem;
 static SB_Ts_Slot_Mgr         gv_ms_recv_tag_mgr("slotmgr-msmon-outstanding", SB_Slot_Mgr::ALLOC_FAST, MS_MAX_MON_OUT);
 int                           gv_ms_streams = 0;
 int                           gv_ms_streams_max = 0;
+bool                          gv_ms_su_altsig           = false;
 bool                          gv_ms_su_called           = false;
 bool                          gv_ms_su_eventmsgs        = true;
 int                           gv_ms_su_pnid             = -1;
@@ -237,6 +238,7 @@ static SB_Imap                gv_ms_tag_map("map-ms-tag");
 static SB_Ts_LLmap            gv_ms_tc_map("map-ms-tc");
 static int                    gv_ms_trace_callback_inx = 0;
 static MS_Mon_Tmlib_Cb_Type   gv_ms_tmlib_callback      = NULL;
+static MS_Mon_Tmlib2_Cb_Type  gv_ms_tmlib2_callback     = NULL;
 static MS_Mon_TmSync_Cb_Type  gv_ms_tmsync_callback     = NULL;
 SB_Ts_Lmap                    Ms_Open_Thread::cv_run_map("map-ms-open-thread-run");
 
@@ -332,9 +334,10 @@ static int            msg_mon_open_self(char            *pp_name,
 static int            msg_mon_process_startup_com(bool pv_sysmsgs,
                                                   bool pv_attach,
                                                   bool pv_eventmsgs,
-                                                  bool pv_pipeio)
+                                                  bool pv_pipeio,
+                                                  bool pv_altsig)
 SB_THROWS_FATAL;
-static int            msg_mon_process_startup_ph1(bool pv_attach)
+static int            msg_mon_process_startup_ph1(bool pv_attach, bool pv_altsig)
 SB_THROWS_FATAL;
 static void           msg_mon_recv_msg_cbt(MS_Md_Type *pp_md);
 static void           msg_mon_recv_msg_cbt_discard(const char *pp_where,
@@ -4366,7 +4369,7 @@ SB_Export int msg_mon_open_process(char            *pp_name,
 SB_Export int msg_mon_open_process_fs(char            *pp_name,
                                       SB_Phandle_Type *pp_phandle,
                                       int             *pp_oid) {
-    SB_API_CTR (lv_zctr, MSG_MON_OPEN_PROCESS_FS_FS);
+    SB_API_CTR (lv_zctr, MSG_MON_OPEN_PROCESS_FS);
 
     SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_OPEN_PROCESS, 0);
     return msg_mon_open_process_com(pp_name,
@@ -5635,8 +5638,9 @@ SB_THROWS_FATAL {
     SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP, 0);
     return msg_mon_process_startup_com(pv_sysmsgs,
                                        gv_ms_attach,
-                                       true,  // eventmsgs
-                                       true); // pipeio
+                                       true,   // eventmsgs
+                                       true,   // pipeio
+                                       false); // altsig
 }
 
 //
@@ -5650,7 +5654,8 @@ SB_THROWS_FATAL {
     return msg_mon_process_startup_com(pv_sysmsgs,
                                        gv_ms_attach,
                                        pv_eventmsgs,
-                                       true);
+                                       true,   // pipeio
+                                       false); // altsig
 }
 
 //
@@ -5664,7 +5669,23 @@ SB_THROWS_FATAL {
     return msg_mon_process_startup_com(pv_sysmsgs,
                                        gv_ms_attach,
                                        true,       // eventmsgs
-                                       pv_pipeio);
+                                       pv_pipeio,
+                                       false);     // altsig
+}
+
+//
+// Purpose: handle process startup
+//
+SB_Export int msg_mon_process_startup4(int pv_sysmsgs, int pv_pipeio, int pv_altsig)
+SB_THROWS_FATAL {
+    SB_API_CTR (lv_zctr, MSG_MON_PROCESS_STARTUP4);
+
+    SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP4, 0);
+    return msg_mon_process_startup_com(pv_sysmsgs,
+                                       gv_ms_attach,
+                                       true,       // eventmsgs
+                                       pv_pipeio,
+                                       pv_altsig);
 }
 
 //
@@ -5673,7 +5694,8 @@ SB_THROWS_FATAL {
 int msg_mon_process_startup_com(bool pv_sysmsgs,
                                 bool pv_attach,
                                 bool pv_eventmsgs,
-                                bool pv_pipeio)
+                                bool pv_pipeio,
+                                bool pv_altsig)
 SB_THROWS_FATAL {
     const char   *WHERE = "msg_mon_process_startup";
     char         *lp_s;
@@ -5688,8 +5710,8 @@ SB_THROWS_FATAL {
                                    lv_cmdline.size());
         if (lp_s == NULL)
             lp_s = const_cast<char *>("<unknown>");
-        trace_where_printf(WHERE, "ENTER sysmsgs=%d, attach=%d, eventmsgs=%d, pipeio=%d, ppid=%d, pcmdline=%s\n",
-                           pv_sysmsgs, pv_attach, pv_eventmsgs, pv_pipeio, lv_ppid, lp_s);
+        trace_where_printf(WHERE, "ENTER sysmsgs=%d, attach=%d, eventmsgs=%d, pipeio=%d, altsig=%d, ppid=%d, pcmdline=%s\n",
+                           pv_sysmsgs, pv_attach, pv_eventmsgs, pv_pipeio, pv_altsig, lv_ppid, lp_s);
     }
     if (!gv_ms_calls_ok) // msg_mon_process_startup
         return ms_err_rtn_msg(WHERE, "msg_init() not called or shutdown",
@@ -5702,8 +5724,9 @@ SB_THROWS_FATAL {
     gv_ms_su_sysmsgs = pv_sysmsgs;
     gv_ms_su_eventmsgs = pv_eventmsgs;
     gv_ms_su_pipeio = pv_pipeio;
+    gv_ms_su_altsig = pv_altsig;
 
-    int lv_fserr = msg_mon_process_startup_ph1(pv_attach);
+    int lv_fserr = msg_mon_process_startup_ph1(pv_attach, pv_altsig);
     if (gp_local_mon_io != NULL)
         gv_ms_mon_calls_ok = true;
     if (gv_ms_trace_mon)
@@ -5714,7 +5737,7 @@ SB_THROWS_FATAL {
 //
 // Purpose: handle process startup
 //
-int msg_mon_process_startup_ph1(bool pv_attach)
+int msg_mon_process_startup_ph1(bool pv_attach, bool pv_altsig)
 SB_THROWS_FATAL {
     const char           *WHERE = "msg_mon_process_startup_ph1";
     Mon_Shared_Msg_Type  *lp_msg;
@@ -5802,7 +5825,7 @@ SB_THROWS_FATAL {
     }
     gp_local_mon_io = new Local_IO_To_Monitor(gv_ms_su_pid);
 
-    if ((gp_local_mon_io != NULL) && !gp_local_mon_io->init_comm()) {
+    if ((gp_local_mon_io != NULL) && !gp_local_mon_io->init_comm(pv_altsig)) {
         delete gp_local_mon_io;
         gp_local_mon_io = NULL;
     }
@@ -9027,6 +9050,23 @@ SB_Export int msg_mon_trans_register_tmlib(MS_Mon_Tmlib_Cb_Type pv_callback) {
     return lv_fserr;
 }
 
+//
+// Purpose: register tmlib2
+//
+SB_Export int msg_mon_trans_register_tmlib2(MS_Mon_Tmlib2_Cb_Type pv_callback) {
+    const char *WHERE = "msg_mon_trans_register_tmlib2";
+    SB_API_CTR (lv_zctr, MSG_MON_TRANS_REGISTER_TMLIB2);
+
+    if (gv_ms_trace_trans)
+        trace_where_printf(WHERE, "ENTER\n");
+    // don't check gv_ms_inited [may be called after static initializer]
+    gv_ms_tmlib2_callback = pv_callback;
+    int lv_fserr = XZFIL_ERR_OK;
+    if (gv_ms_trace_trans)
+        trace_where_printf(WHERE, "EXIT OK, ret=%d\n", lv_fserr);
+    return lv_fserr;
+}
+
 SB_Export void  msg_test_openers_close() {
     SB_Trans::Trans_Stream::close_nidpid_streams(false);
 }
@@ -9526,7 +9566,8 @@ void ms_stats_print(bool pv_trace, char *pp_line) {
 //
 // Purpose: clear current transid
 //
-void ms_transid_clear(MS_Mon_Transid_Type pv_transid) {
+void ms_transid_clear(MS_Mon_Transid_Type  pv_transid,
+                      MS_Mon_Transseq_Type pv_startid) {
     const char *WHERE = "ms_transid_clear";
     int         lv_tmliberr;
 
@@ -9544,15 +9585,34 @@ void ms_transid_clear(MS_Mon_Transid_Type pv_transid) {
         if (gv_ms_trace_trans && lv_tmliberr)
             trace_where_printf(WHERE, "TRANSID-CLEAR_TX, tmliberr=%d\n",
                                lv_tmliberr);
+    } else if (gv_ms_tmlib2_callback != NULL) {
+        if (gv_ms_trace_trans) {
+            char la_startid[100];
+            char la_transid[100];
+            msg_util_format_transid(la_transid, pv_transid);
+            msg_util_format_transseq(la_startid, pv_startid);
+            trace_where_printf(WHERE, "TRANSID-CLEAR_TX, transid=%s, startid=%s\n",
+                               la_transid, la_startid);
+        }
+        // ignore any error outcome
+        lv_tmliberr = gv_ms_tmlib2_callback(TMLIB_FUN_CLEAR_TX,
+                                            pv_transid,
+                                            NULL,
+                                            pv_startid,
+                                            NULL);
+        if (gv_ms_trace_trans && lv_tmliberr)
+            trace_where_printf(WHERE, "TRANSID-CLEAR_TX, tmliberr=%d\n",
+                               lv_tmliberr);
     }
 }
 
 //
 // Purpose: return current transid
 //
-int ms_transid_get(bool                 pv_supp,
-                   bool                 pv_trace,
-                   MS_Mon_Transid_Type *pp_transid) {
+int ms_transid_get(bool                  pv_supp,
+                   bool                  pv_trace,
+                   MS_Mon_Transid_Type  *pp_transid,
+                   MS_Mon_Transseq_Type *pp_startid) {
     const char *WHERE = "ms_transid_get";
     int         lv_tmliberr;
 
@@ -9560,6 +9620,7 @@ int ms_transid_get(bool                 pv_supp,
         if (gv_ms_trace_trans || pv_trace)
             trace_where_printf(WHERE, "TRANSID-GET_TX, NOT called - suppressed\n");
         TRANSID_SET_NULL((*pp_transid));
+        TRANSSEQ_SET_NULL((*pp_startid));
         lv_tmliberr = XZFIL_ERR_OK;
     } else if (gv_ms_tmlib_callback != NULL) {
         TRANSID_SET_NULL((*pp_transid));
@@ -9572,10 +9633,27 @@ int ms_transid_get(bool                 pv_supp,
             trace_where_printf(WHERE, "TRANSID-GET_TX, transid=%s, tmliberr=%d\n",
                                la_transid, lv_tmliberr);
         }
+    } else if (gv_ms_tmlib2_callback != NULL) {
+        TRANSID_SET_NULL((*pp_transid));
+        TRANSSEQ_SET_NULL((*pp_startid));
+        lv_tmliberr = gv_ms_tmlib2_callback(TMLIB_FUN_GET_TX,
+                                            *pp_transid,
+                                            pp_transid,
+                                            *pp_startid,
+                                            pp_startid);
+        if (gv_ms_trace_trans || pv_trace) {
+            char la_startid[100];
+            char la_transid[100];
+            msg_util_format_transid(la_transid, *pp_transid);
+            msg_util_format_transseq(la_startid, *pp_startid);
+            trace_where_printf(WHERE, "TRANSID-GET_TX, transid=%s, startid=%s, tmliberr=%d\n",
+                               la_transid, la_startid, lv_tmliberr);
+        }
     } else {
         if (gv_ms_trace_trans || pv_trace)
             trace_where_printf(WHERE, "TRANSID-GET_TX, NOT called - no callback\n");
         TRANSID_SET_NULL((*pp_transid));
+        TRANSSEQ_SET_NULL((*pp_startid));
         lv_tmliberr = XZFIL_ERR_OK;
     }
     return lv_tmliberr;
@@ -9584,20 +9662,40 @@ int ms_transid_get(bool                 pv_supp,
 //
 // Purpose: register current transid
 //
-int ms_transid_reg(MS_Mon_Transid_Type pv_transid) {
+int ms_transid_reg(MS_Mon_Transid_Type   pv_transid,
+                   MS_Mon_Transseq_Type pv_startid) {
     const char *WHERE = "ms_transid_reg";
     int         lv_tmliberr;
 
-    if (gv_ms_trace_trans) {
-        char la_transid[100];
-        msg_util_format_transid(la_transid, pv_transid);
-        trace_where_printf(WHERE, "TRANSID-REG_TX, transid=%s\n",
-                           la_transid);
-    }
-    SB_util_assert(gv_ms_tmlib_callback != NULL);
-    lv_tmliberr = gv_ms_tmlib_callback(TMLIB_FUN_REG_TX, pv_transid, NULL);
-    if (gv_ms_trace_trans && lv_tmliberr) {
-        trace_where_printf(WHERE, "TRANSID-REG_TX, tmliberr=%d\n", lv_tmliberr);
+    SB_util_assert((gv_ms_tmlib_callback != NULL) || (gv_ms_tmlib2_callback != NULL));
+    if (gv_ms_tmlib_callback != NULL) {
+        if (gv_ms_trace_trans) {
+            char la_transid[100];
+            msg_util_format_transid(la_transid, pv_transid);
+            trace_where_printf(WHERE, "TRANSID-REG_TX, transid=%s\n",
+                               la_transid);
+        }
+        lv_tmliberr = gv_ms_tmlib_callback(TMLIB_FUN_REG_TX,
+                                           pv_transid,
+                                           NULL);
+        if (gv_ms_trace_trans && lv_tmliberr)
+            trace_where_printf(WHERE, "TRANSID-REG_TX, tmliberr=%d\n", lv_tmliberr);
+    } else if (gv_ms_tmlib2_callback != NULL) {
+        if (gv_ms_trace_trans) {
+            char la_startid[100];
+            char la_transid[100];
+            msg_util_format_transid(la_transid, pv_transid);
+            msg_util_format_transseq(la_startid, pv_startid);
+            trace_where_printf(WHERE, "TRANSID-REG_TX, transid=%s, startid=%s\n",
+                               la_transid, la_startid);
+        }
+        lv_tmliberr = gv_ms_tmlib2_callback(TMLIB_FUN_REG_TX,
+                                            pv_transid,
+                                            NULL,
+                                            pv_startid,
+                                            NULL);
+        if (gv_ms_trace_trans && lv_tmliberr)
+            trace_where_printf(WHERE, "TRANSID-REG_TX, tmliberr=%d\n", lv_tmliberr);
     }
     return lv_tmliberr;
 }
@@ -9605,7 +9703,8 @@ int ms_transid_reg(MS_Mon_Transid_Type pv_transid) {
 //
 // Purpose: reinstate transid
 //
-int ms_transid_reinstate(MS_Mon_Transid_Type pv_transid) {
+int ms_transid_reinstate(MS_Mon_Transid_Type  pv_transid,
+                         MS_Mon_Transseq_Type pv_startid) {
     const char *WHERE = "ms_transid_reinstate";
     int         lv_tmliberr;
 
@@ -9619,6 +9718,24 @@ int ms_transid_reinstate(MS_Mon_Transid_Type pv_transid) {
         lv_tmliberr = gv_ms_tmlib_callback(TMLIB_FUN_REINSTATE_TX,
                                            pv_transid,
                                            NULL);
+        if (gv_ms_trace_trans && lv_tmliberr) {
+            trace_where_printf(WHERE, "TRANSID-REINSTATE_TX, tmliberr=%d\n",
+                               lv_tmliberr);
+        }
+    } else if (gv_ms_tmlib2_callback != NULL) {
+        if (gv_ms_trace_trans) {
+            char la_startid[100];
+            char la_transid[100];
+            msg_util_format_transid(la_transid, pv_transid);
+            msg_util_format_transseq(la_startid, pv_startid);
+            trace_where_printf(WHERE, "TRANSID-REINSTATE_TX, transid=%s, startid=%s\n",
+                               la_transid, la_startid);
+        }
+        lv_tmliberr = gv_ms_tmlib2_callback(TMLIB_FUN_REINSTATE_TX,
+                                            pv_transid,
+                                            NULL,
+                                            pv_startid,
+                                            NULL);
         if (gv_ms_trace_trans && lv_tmliberr) {
             trace_where_printf(WHERE, "TRANSID-REINSTATE_TX, tmliberr=%d\n",
                                lv_tmliberr);

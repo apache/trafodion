@@ -108,13 +108,7 @@ public:
          ComUInt32 requestRowSize,
          ComUInt32 replyRowSize,
          ComDiagsArea &d,
-         char *parentQid,
-         ComUInt32 udrSerInvocationInfoLen,
-         const char *udrSerInvocationInfo,
-         ComUInt32 udrSerPlanInfoLen,
-         const char *udrSerPlanInfo,
-         ComUInt32 totalNumInstances,
-         ComUInt32 myInstanceNum);
+         char *parentQid);
 
   //
   // This constructor is used to create an uninitialized instance that
@@ -214,10 +208,6 @@ public:
 
   ComUInt32 getRequestRowSize() const { return requestRowSize_; }
   ComUInt32 getReplyRowSize() const { return replyRowSize_; }
-
-  inline tmudr::UDRInvocationInfo *getInvocationInfo()
-                                                   { return invocationInfo_; }
-  inline tmudr::UDRPlanInfo *getPlanInfo()               { return planInfo_; }
 
   // Access to result set object with RS handle
   UdrResultSet *getUdrResultSetByHandle(RSHandle handle);
@@ -408,10 +398,6 @@ private:
   ComDiagsArea *rowDiags_;
 
   char      *parentQid_; // Query Id of the CALL Statement
-
-  // C++ interface
-  tmudr::UDRInvocationInfo *invocationInfo_;
-  tmudr::UDRPlanInfo *planInfo_;
 
 }; // SPInfo
 

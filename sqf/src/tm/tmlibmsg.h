@@ -481,6 +481,7 @@ typedef enum {
 
 // TM system states 
 typedef enum {
+    TM_STATE_NOTRUNNING              = -1, // Tm not up or not running
     TM_STATE_INITIAL                 = 100,// Initial state, before startup commences.
     TM_STATE_UP,                     
     TM_STATE_DOWN,                         // initial state at startup time.
@@ -491,7 +492,7 @@ typedef enum {
     TM_STATE_TX_DISABLED_SHUTDOWN_PHASE1,  // In phase 1 of shutdown. Transactions disabled.
     TM_STATE_QUIESCE,                      // Received a NodeQuiesce from Monitor.
     TM_STATE_DRAIN,                        // Received a drain.
-    TM_STATE_WAITING_RM_OPEN               // Waiting for RM opens to complete before declaring the TM up.
+    TM_STATE_WAITING_RM_OPEN,              // Waiting for RM opens to complete before declaring the TM up.
 } TM_STATE;
 
 // TM system recovery state
@@ -551,7 +552,10 @@ typedef struct ddlmessage_req {
     TM_Transid_Type     iv_transid;
     char                ddlreq[TM_MAX_DDLREQUEST_STRING];
     int                 ddlreq_len;
+    int                 crt_numsplits;
+    int                 crt_keylen;
     TM_DDL_REQ          ddlreq_type;
+    char                key_eyecatch[10];
 } Ddl_Message_Req_Type;
 
 typedef struct hbaseregioninfo_req {

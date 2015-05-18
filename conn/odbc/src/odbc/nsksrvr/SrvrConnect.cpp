@@ -442,7 +442,8 @@ static void* SessionWatchDog(void* arg)
 				okToGo = false;
 			}
 		}
-		if (okToGo)
+
+        if (okToGo)
 		{
 			retcode = pSrvrStmt->ExecDirect(NULL, "CONTROL QUERY DEFAULT traf_no_dtm_xn 'ON'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
 			if (retcode < 0)
@@ -493,6 +494,28 @@ static void* SessionWatchDog(void* arg)
 				okToGo = false;
 			}
 		}
+        if (okToGo)
+        {
+            retcode = pSrvrStmt->ExecDirect(NULL, "CQD DETAILED_STATISTICS 'OFF'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+            if (retcode < 0)
+            {
+                errMsg.str("");
+                if(pSrvrStmt->sqlError.errorList._length > 0)
+                    p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+                else if(pSrvrStmt->sqlWarning._length > 0)
+                    p_buffer = pSrvrStmt->sqlWarning._buffer;
+                if(p_buffer != NULL && p_buffer->errorText)
+                    errMsg << "Failed to turn off statistics - " << p_buffer->errorText;
+                else
+                    errMsg << "Failed to turn off statistics - " << " no additional information";
+
+                errStr = errMsg.str();
+                SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                        0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                        1, errStr.c_str());
+                okToGo = false;
+            }
+        }
 
 		while(!record_session_done && okToGo)
 		{
@@ -949,19 +972,28 @@ static void* SessionWatchDog(void* arg)
 															1, "Invalid data pointer found in SessionWatchDog(). Cannot write explain plan.");
 						break;
 					}
-					retcode = SQL_EXEC_StoreExplainData( &(pQueryAdd->m_exec_start_utc_ts),
-                                               				(char *)(pQueryAdd->m_query_id.c_str()),
-                                               				pQueryAdd->m_explain_plan,
-                                               				pQueryAdd->m_explain_plan_len );
-
-					if (retcode < 0)
-					{
+                                        if (pQueryAdd->m_explain_plan && (pQueryAdd->m_explain_plan_len > 0))
+                                          {
+                                            retcode = SQL_EXEC_StoreExplainData( &(pQueryAdd->m_exec_start_utc_ts),
+                                                                                 (char *)(pQueryAdd->m_query_id.c_str()),
+                                                                                 pQueryAdd->m_explain_plan,
+                                                                                 pQueryAdd->m_explain_plan_len );
+                                            
+                                            if (retcode == -EXE_EXPLAIN_PLAN_TOO_LARGE)
+                                              {
+                                                // explain info is too big to be stored in repository.
+                                                // ignore this error and continue with query execution.
+                                                retcode = 0;
+                                              }
+                                            else if (retcode < 0)
+                                              {
 						char errStr[256];
 						sprintf( errStr, "Error updating explain data. SQL_EXEC_StoreExplainData() returned: %d", retcode );
 						SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
-										0, ODBCMX_SERVER,
-										srvrGlobal->srvrObjRef, 1, errStr);
-					}
+                                                             0, ODBCMX_SERVER,
+                                                             srvrGlobal->srvrObjRef, 1, errStr);
+                                              }
+                                          }
 				}
 			}
 		}//End while
@@ -1399,7 +1431,10 @@ ImplInit (
 	srvrGlobal->m_bStatisticsEnabled = bStatisticsEnabled;
 	srvrGlobal->m_iAggrInterval = aggrInterval;
 	srvrGlobal->m_iQueryPubThreshold = queryPubThreshold;
+	if (!srvrGlobal->m_bStatisticsEnabled)
+		bPlanEnabled = false;
 	srvrGlobal->sqlPlan = bPlanEnabled;
+		
 
 	CEE_TIMER_CREATE2(DEFAULT_AS_POLLING,0,ASTimerExpired,(CEE_tag_def)NULL, &srvrGlobal->ASTimerHandle,srvrGlobal->receiveThrId);
 
@@ -6624,6 +6659,14 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 				if (pSrvrStmt->exPlan == SRVR_STMT_HDL::COLLECTED)
 					return true;
 
+				// Ignore plan collection of unique queries and ones with no stats for performance reasons
+				if (pSrvrStmt->sqlNewQueryType == SQL_SELECT_UNIQUE ||
+					pSrvrStmt->sqlNewQueryType == SQL_INSERT_UNIQUE ||
+					pSrvrStmt->sqlNewQueryType == SQL_UPDATE_UNIQUE ||
+					pSrvrStmt->sqlNewQueryType == SQL_DELETE_UNIQUE ||
+					(pSrvrStmt->comp_stats_info.statsCollectionType == SQLCLI_NO_STATS && pSrvrStmt->comp_stats_info.compilationStats.compilerId[0] != 0))
+					return true;
+					
 				// allocate explainDataLen bytes of explainData space
 				explainData = new char[explainDataLen];
 				if (explainData == NULL)
@@ -6641,17 +6684,6 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 													&retExplainLen);
 				if (iqqcode == -CLI_GENCODE_BUFFER_TOO_SMALL)
 				{
-					if (retExplainLen >= 200000) // greater than length of explain column
-					{
-						char errStr[128];
-						sprintf( errStr, "Packed explain greater than table column size: %d", explainDataLen );
-						SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
-								srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER,
-								srvrGlobal->srvrObjRef, 1, errStr);
-
-						delete explainData;
-						return false;
-					}
 					explainDataLen = retExplainLen;
 
 					// allocate explainDataLen bytes of explainData space
@@ -6672,7 +6704,14 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 												explainDataLen,
 												&retExplainLen);
 				}
-				if (iqqcode < 0)
+                                else if (iqqcode == -EXE_NO_EXPLAIN_INFO)
+                                {
+                                  retExplainLen = 0;
+                                  if (explainData)
+                                    delete explainData;
+                                  explainData = 0;
+                                }
+				else if (iqqcode < 0)
 				{
 					char errStr[256];
 					sprintf( errStr, "Error retrieving packed explain. SQL_EXEC_GetExplainData() returned: %d", iqqcode );
@@ -6690,7 +6729,7 @@ bool getSQLInfo(E_GetSQLInfoType option, long stmtHandle, char *stmtLabel )
 				pSrvrStmt->sqlPlan = explainData;
 				pSrvrStmt->sqlPlanLen = retExplainLen;
 				pSrvrStmt->exPlan = SRVR_STMT_HDL::COLLECTED;
-				return true;				
+				return true;
 			break;
 
 			case MODE_SPECIAL_1:

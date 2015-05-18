@@ -9,7 +9,7 @@
  *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -27,33 +27,3 @@
  *
  *****************************************************************************
  */
-
-
-#include <stdlib.h>
-#include "Platform.h"
-#include "TempIncludes.h"
-#include "string.h"
-
-void tempInit()
-{ 
-  const size_t MAX_BUF = 120;
-  char env_buf[MAX_BUF];
-  const char *env_ptr;
-
-  env_ptr  = getenv("SQL^CMP^LOG");
-  if (env_ptr && strlen(env_ptr) < MAX_BUF-100) {
-    strcpy(env_buf, "SQL_CMP_LOG=");
-    strcat(env_buf, env_ptr);
-    putenv(env_buf);
-  }
-
-#ifndef NDEBUG
-  env_ptr  = getenv("SQLMP^READTABLEDEF");
-  if (env_ptr && strlen(env_ptr) < MAX_BUF-100) {
-    strcpy(env_buf, "SQLMP_READTABLEDEF=");
-    strcat(env_buf, env_ptr);
-    putenv(env_buf);
-  }
-#endif
-
-}

@@ -82,7 +82,7 @@ public:
     return resultSetList_[index]; 
   }
 
-	ComRoutineTransactionAttributes getTransactionAttrs() const { return transactionAttrs_; }
+  ComRoutineTransactionAttributes getTransactionAttrs() const { return transactionAttrs_; }
   ComRoutineSQLAccess getSqlAccessMode() const { return sqlAccessMode_; }
 
   const char *getSqlName() const { return sqlName_; }
@@ -106,12 +106,41 @@ public:
   // will be reported in the diagsArea, if available.
   virtual void cleanupResultSets(ComDiagsArea *diagsArea = NULL) = 0;
   
-  const char *getParentQid() { return parentQid_; }
+  virtual const char *getParentQid() { return parentQid_; }
+
+  virtual void setRuntimeInfo(
+       const char   *parentQid,
+       int           numTotalInstances,
+       int           myInstanceNum);
 
   // Main routine invocation method
   virtual LmResult invokeRoutine(void *inputRow,
 				 void *outputRow,
                                  ComDiagsArea *da) = 0;
+  virtual LmResult invokeRoutineMethod(
+       /* IN */     tmudr::UDRInvocationInfo::CallPhase phase,
+       /* IN */     const char   *serializedInvocationInfo,
+       /* IN */     Int32         invocationInfoLen,
+       /* OUT */    Int32        *invocationInfoLenOut,
+       /* IN */     const char   *serializedPlanInfo,
+       /* IN */     Int32         planInfoLen,
+       /* IN */     Int32         planNum,
+       /* OUT */    Int32        *planInfoLenOut,
+       /* IN */     char         *inputRow,
+       /* IN */     Int32         inputRowLen,
+       /* OUT */    char         *outputRow,
+       /* IN */     Int32         outputRowLen,
+       /* IN/OUT */ ComDiagsArea *da);
+  virtual LmResult getRoutineInvocationInfo
+    (
+         /* IN/OUT */ char         *serializedInvocationInfo,
+         /* IN */     Int32         invocationInfoMaxLen,
+         /* OUT */    Int32        *invocationInfoLenOut,
+         /* IN/OUT */ char         *serializedPlanInfo,
+         /* IN */     Int32         planInfoMaxLen,
+         /* IN */     Int32         planNum,
+         /* OUT */    Int32        *planInfoLenOut,
+         /* IN/OUT */ ComDiagsArea *da);
 
   ComRoutineLanguage getLanguage() const { return language_; }
   ComRoutineParamStyle getParamStyle() const { return paramStyle_; }
@@ -123,13 +152,23 @@ public:
 
   LmParameter *getLmParams() const { return lmParams_; }
 
-  ComUInt32 getInputParamRowLen() const { return inputParamRowLen_; }
-  ComUInt32 getOutputRowLen() const { return outputRowLen_; }
+  Int32 getInputParamRowLen() const { return inputParamRowLen_; }
+  Int32 getOutputRowLen() const { return outputRowLen_; }
 
   // Returns the routine name to use for error reporting.
   // For command-line operations the sqlName_ is not available 
   // and so we'll use the externalName_ instead.
   const char *getNameForDiags();
+
+  virtual ~LmRoutine();
+
+  virtual LmLanguageManager *getLM() { return lm_; }
+
+  LmContainer* container()
+    { return (LmContainer*)container_; }
+
+  LmHandle getContainerHandle()
+    { return ((LmContainer*)container_)->getHandle(); }
 
 protected:
   LmRoutine(LmHandle container,
@@ -146,22 +185,12 @@ protected:
             ComRoutineExternalSecurity externalSecurity,
             Int32 routineOwnerId,
             const char *parentQid,
-            ComUInt32 inputParamRowLen,
-            ComUInt32 outputRowLen,
+            Int32 inputParamRowLen,
+            Int32 outputRowLen,
             const char   *currentUserName,
             const char   *sessionUserName,
             LmParameter *lmParams,
             LmLanguageManager *lm);
-
-  virtual ~LmRoutine();
-
-  virtual LmLanguageManager *getLM() { return lm_; }
-
-  LmContainer* container()
-    { return (LmContainer*)container_; }
-
-  LmHandle getContainerHandle()
-    { return ((LmContainer*)container_)->getHandle(); }
 
   LmLanguageManager *lm_;       // Owning LM
   LmHandle container_;          // Handle to the external routine's container.
@@ -176,7 +205,7 @@ protected:
                                         // Non-Duplicate result sets
                                         // are stored.
 
-	ComRoutineTransactionAttributes transactionAttrs_;//check if transaction is required
+  ComRoutineTransactionAttributes transactionAttrs_;//check if transaction is required
 	
   ComRoutineSQLAccess  sqlAccessMode_;  // level of SQL access that is
                                         // allowed within external routine
@@ -192,8 +221,8 @@ protected:
   ComRoutineExternalSecurity externalSecurity_;
   Int32 routineOwnerId_;
 
-  ComUInt32 inputParamRowLen_;
-  ComUInt32 outputRowLen_;
+  Int32 inputParamRowLen_;
+  Int32 outputRowLen_;
 
   const char *udrCatalog_;	   // Default catalog value
   const char *udrSchema_;	   // Default schema value

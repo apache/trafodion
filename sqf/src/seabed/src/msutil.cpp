@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -116,6 +116,14 @@ void msg_util_format_transid(char            *pp_buf,
             pv_transid.id[1],
             pv_transid.id[2],
             pv_transid.id[3]);
+}
+
+//
+// Purpose: format trans-seq
+//
+void msg_util_format_transseq(char             *pp_buf,
+                              SB_Transseq_Type  pv_transseq) {
+    sprintf(pp_buf, "%ld", pv_transseq);
 }
 
 //

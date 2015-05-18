@@ -1,9 +1,9 @@
 /*
  * PropertyConfigurator.cpp
  *
- * Copyright 2001, Glen Scott. All rights reserved.
+ * (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
  *
- * (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+ * Copyright 2001, Glen Scott. All rights reserved.
  *
  * See the COPYING file for the terms of usage and distribution.
  */

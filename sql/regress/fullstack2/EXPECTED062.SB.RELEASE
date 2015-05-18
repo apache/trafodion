@@ -65,7 +65,7 @@ abc"bad
 ----------------------------------
 Current Environment
 ----------------------------------
-AUTHENTICATION     enabled
+AUTHENTICATION     disabled
 AUTHORIZATION      enabled
 CURRENT DIRECTORY  /opt/home/rmarton/git_ws/core/sql/regress/rundir/fullstack2
 LIST_COUNT         4294967295
@@ -923,7 +923,7 @@ No CONTROL SESSION settings are in effect.
 ----------------------------------
 Current Environment
 ----------------------------------
-AUTHENTICATION     enabled
+AUTHENTICATION     disabled
 AUTHORIZATION      enabled
 CURRENT DIRECTORY  /opt/home/rmarton/git_ws/core/sql/regress/rundir/fullstack2
 LIST_COUNT         4294967295
@@ -988,7 +988,7 @@ select TESTABORT;
 ----------------------------------
 Current Environment
 ----------------------------------
-AUTHENTICATION     enabled
+AUTHENTICATION     disabled
 AUTHORIZATION      enabled
 CURRENT DIRECTORY  /opt/home/rmarton/git_ws/core/sql/regress/rundir/fullstack2
 LIST_COUNT         4294967295
@@ -1047,7 +1047,7 @@ Current DEFAULTS
 ----------------------------------
 Current Environment
 ----------------------------------
-AUTHENTICATION     enabled
+AUTHENTICATION     disabled
 AUTHORIZATION      enabled
 CURRENT DIRECTORY  /opt/home/rmarton/git_ws/core/sql/regress/rundir/fullstack2
 LIST_COUNT         4294967295

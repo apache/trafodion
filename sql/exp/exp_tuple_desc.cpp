@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -338,7 +338,7 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
   // Compute length of tuple and assign offset to attributes.
   switch (tf)
     {
-      case SQLMP_FORMAT:
+      case PACKED_FORMAT:
       {
         Int16 varchar_seen = 0;
         for (UInt32 i=0; i < num_attrs; i++)
@@ -837,6 +837,15 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
           }
         }
         
+        nullBitIdx  = 0;
+	for ( i = 0; i < num_attrs; i++ )
+        {
+         if (attrs[i]->getNullFlag())
+          {
+           attrs[i]->setNullBitIndex(nullBitIdx++ );
+          }          
+        }
+
         if(fixedFields->entries() &&
           ((*rtnFlags & ADDED_COLUMN) > 0))
           *rtnFlags |= ExpTupleDesc::ADDED_FIXED_PRESENT;

@@ -1009,7 +1009,7 @@ ex_expr::exp_return_type InputOutputExpr::doBulkMove(atp_struct * atp,
           else 
             srcPtr = bmi->getDescDataPtr(i);
 
-	  str_cpy_all(dataPtr, srcPtr, bmi->getLength(i));
+          str_cpy_all(dataPtr, srcPtr, bmi->getLength(i));
 	}
       else
 	{
@@ -1020,14 +1020,7 @@ ex_expr::exp_return_type InputOutputExpr::doBulkMove(atp_struct * atp,
             destPtr = bmi->getDescDataPtr(i);
 
 	  str_cpy_all(destPtr, dataPtr, (Lng32)bmi->getLength(i));
-
-          // clear unused varchar bytes
-          if (bmi->isVarchar(i)) 
-            {
-              ExpTupleDesc::clearUnusedVarchar(destPtr, (Lng32)bmi->getLength(i), 
-                                               bmi->isNullable(i));
-            }
-	}        
+	}
     }
 
   return ex_expr::EXPR_OK;
@@ -2387,7 +2380,7 @@ ex_expr::exp_return_type InputOutputExpr::describeInput(void * input_desc_,
 	  // Get offsets to data, null indicator and varchar len indicator
 	  // in the actual row and set them in the descriptor.
 	  //
-	  // This is being done for sqlark_exploded_ and sqlmp formats only.
+	  // This is being done for sqlark_exploded_ and packed formats only.
 	  // The offsets that are set in descriptor assume that the returned
 	  // row to user is a single contiguous aligned row even though internally
 	  // that row could be represented by multiple fragments, each with

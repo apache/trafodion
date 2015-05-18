@@ -1,7 +1,7 @@
 #!/bin/sh
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 # @@@ END COPYRIGHT @@@
 
 export IFS=""
-TMP=/tmp/zxx
+TMP=/tmp/zxx.$$
 cp $1 $TMP
 while read -e x; do
 	if [ "$x" != "#include \"mpio.h\"" -a "$x" != "#include \"mpicxx.h\"" ]; then

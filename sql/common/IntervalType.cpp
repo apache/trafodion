@@ -581,28 +581,16 @@ void IntervalType::getZeroValue(void* bufPtr, Lng32* bufLen,
 
 void IntervalType::minRepresentableValue(void* bufPtr, Lng32* bufLen,
 					 NAString** stringLiteral,
-					 CollHeap* h,
-                                         NABoolean sqlmpKeyGen) const
+					 CollHeap* h) const
 {
   getRepresentableValue('-', bufPtr, bufLen, stringLiteral, h);
-  if (sqlmpKeyGen)
-    {
-      Int64 minVal = LLONG_MIN;
-      str_cpy_all((char *) bufPtr, (char *) &minVal, *bufLen);
-    }
 }
 
 void IntervalType::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
 					 NAString** stringLiteral,
-					 CollHeap* h,
-                                         NABoolean sqlmpKeyGen) const
+					 CollHeap* h) const
 {
   getRepresentableValue('+', bufPtr, bufLen, stringLiteral,h);
-  if (sqlmpKeyGen)
-    {
-      Int64 maxVal = LLONG_MAX;
-      str_cpy_all((char *) bufPtr, (char *) &maxVal, *bufLen);
-    }
 }
 
 NABoolean IntervalType::createSQLLiteral(const char * buf,

@@ -3595,7 +3595,7 @@ public class SQLMXResultSet extends SQLMXHandle implements java.sql.ResultSet {
 
 						//Do not reuse a statement for a new query.
 						//In SQL we do not support reusing the statement id for a new statement.
-						if(dropStmt){
+						if(dropStmt && (stmt_ != null)){
 							this.stmt_.stmtId_ = 0;
 						}
 					}// End sync

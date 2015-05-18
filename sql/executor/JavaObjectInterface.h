@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -34,12 +34,15 @@
 #endif
 
 extern __thread JNIEnv *jenv_;
+extern __thread NAString *tsRecentJMFromJNI;
+
 
 // This structure defines the information needed for each java method used.
 struct JavaMethodInit {
-    std::string   jm_name;       // The method name.
-    std::string   jm_signature;  // The method signature.
-    jmethodID     methodID;      // The JNI methodID
+    const char *jm_name;       // The method name.
+    const char *jm_signature;  // The method signature.
+    jmethodID   methodID;      // The JNI methodID
+    NAString   *jm_full_name;
   };
 
 typedef enum {
@@ -163,6 +166,7 @@ protected:
   static jmethodID gGetStackTraceMethodID;
   static jmethodID gThrowableToStringMethodID;
   static jmethodID gStackFrameToStringMethodID;
+  static jint jniHandleCapacity_;
 
   jobject   javaObj_;
   bool      needToDetach_;

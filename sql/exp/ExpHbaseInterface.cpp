@@ -28,11 +28,16 @@
 ****************************************************************************
 */
 
-#include "Platform.h"
+#include "ex_stdh.h"
 #include "ExpHbaseInterface.h"
 #include "str.h"
 #include "NAStringDef.h"
 #include "ex_ex.h"
+#include "ExStats.h"
+#include "Globals.h"
+#include "SqlStats.h"
+#include "CmpCommon.h"
+#include "CmpContext.h"
 
 extern Int64 getTransactionIDFromContext();
 
@@ -75,6 +80,32 @@ ExpHbaseInterface* ExpHbaseInterface::newInstance(CollHeap* heap,
                                           debugPort, debugTimeout); // This is the transactional interface
 }
 
+NABoolean isParentQueryCanceled()
+{
+  NABoolean isCanceled = FALSE;
+  CliGlobals *cliGlobals = GetCliGlobals();
+  StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
+  const char *parentQid = CmpCommon::context()->sqlSession()->getParentQid();
+  if (statsGlobals && parentQid)
+  {
+    short savedPriority, savedStopMode;
+    statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+      cliGlobals->myPin(), savedPriority, savedStopMode,
+      FALSE /*shouldTimeout*/);
+    StmtStats *ss = statsGlobals->getMasterStmtStats(parentQid, 
+      strlen(parentQid), RtsQueryId::ANY_QUERY_);
+    if (ss)
+    {
+      ExMasterStats *masterStats = ss->getMasterStats();
+      if (masterStats && masterStats->getCanceledTime() != -1)
+        isCanceled = TRUE;
+    }
+    statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
+       cliGlobals->myPin(), savedPriority, savedStopMode);
+  }
+  return isCanceled;
+}
+
 Int32 ExpHbaseInterface_JNI::deleteColumns(
 	     HbaseStr &tblName,
 	     HbaseStr& column)
@@ -99,8 +130,7 @@ Int32 ExpHbaseInterface_JNI::deleteColumns(
 
   NABoolean done = FALSE;
   HbaseStr rowID;
-  while (NOT done)
-  {
+  do {
      // Added the for loop to consider using deleteRows
      // to delete the column for all rows in the batch 
      for (int rowNo = 0; rowNo < numReqRows; rowNo++)
@@ -124,7 +154,7 @@ Int32 ExpHbaseInterface_JNI::deleteColumns(
             break;
 	 }
      }
-  } // while NOT done
+  } while (!(done || isParentQueryCanceled()));
   scanClose();
   if (retcode == HTC_DONE)
      return HBASE_ACCESS_SUCCESS;
@@ -339,9 +369,8 @@ ExpHbaseInterface_JNI::ExpHbaseInterface_JNI(CollHeap* heap, const char* server,
    ,client_(NULL)
    ,htc_(NULL)
    ,hblc_(NULL)
+   ,hive_(NULL)
    ,retCode_(HBC_OK)
-   ,lastKVBuffer_(NULL)
-   ,lastKVColName_(NULL)
 {
 //  HBaseClient_JNI::logIt("ExpHbaseInterface_JNI::constructor() called.");
 }
@@ -398,6 +427,22 @@ Lng32 ExpHbaseInterface_JNI::init(ExHbaseAccessStats *hbs)
   return HBASE_ACCESS_SUCCESS;
 }
 
+Lng32 ExpHbaseInterface_JNI::initHive()
+{
+  if (hive_ == NULL)
+  {
+    hive_ = HiveClient_JNI::getInstance();
+    
+    if (hive_->isInitialized() == FALSE)
+    {
+      HVC_RetCode retCode = hive_->init();
+      if (retCode != HVC_OK)
+        return -HBASE_ACCESS_ERROR;
+    }
+  }
+  return HBASE_ACCESS_SUCCESS;
+}
+
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::cleanup()
 {
@@ -437,13 +482,6 @@ Lng32 ExpHbaseInterface_JNI::close()
 //  HBaseClient_JNI::logIt("ExpHbaseInterface_JNI::close() called.");
   if (client_ == NULL)
     return HBASE_ACCESS_SUCCESS;
-    
-  NADELETEBASIC(lastKVBuffer_, heap_);
-  NADELETEBASIC(lastKVColName_, heap_);
-  
-  lastKVBuffer_ = NULL;
-  lastKVColName_ = NULL;
-
   return cleanup();
 }
 
@@ -469,7 +507,8 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 				    NAText * hbaseCreateOptionsArray,
                                     int numSplits, int keyLength,
-                                    const char ** splitValues)
+                                    const char ** splitValues,
+                                    NABoolean noXn)
 {
   if (client_ == NULL)
   {
@@ -477,7 +516,11 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
       return -HBASE_ACCESS_ERROR;
   }
   
-  Int64 transID = getTransactionIDFromContext();
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
  
   retCode_ = client_->create(tblName.val, hbaseCreateOptionsArray,
                              numSplits, keyLength, splitValues, transID);
@@ -488,17 +531,46 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
     return -HBASE_CREATE_ERROR;
 }
 
-
 //----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async)
+Lng32 ExpHbaseInterface_JNI::registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn)
 {
   if (client_ == NULL)
   {
     if (init(hbs_) != HBASE_ACCESS_SUCCESS)
       return -HBASE_ACCESS_ERROR;
   }
-    
-  retCode_ = client_->drop(tblName.val, async);
+
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
+
+  retCode_ = client_->registerTruncateOnAbort(tblName.val, transID);
+
+  if (retCode_ == HBC_OK)
+    return HBASE_ACCESS_SUCCESS;
+  else
+    return -HBASE_DROP_ERROR;
+}
+
+
+//----------------------------------------------------------------------------
+Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async, NABoolean noXn)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+   
+  Int64 transID;
+  if (noXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
+
+  retCode_ = client_->drop(tblName.val, async, transID);
 
   //close();
   if (retCode_ == HBC_OK)
@@ -644,6 +716,16 @@ Lng32 ExpHbaseInterface_JNI::scanClose()
     htc_ = NULL;
   }
     
+  return HBASE_ACCESS_SUCCESS;
+}
+
+Lng32 ExpHbaseInterface_JNI::getHTable(HbaseStr &tblName)
+{
+  htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_, hbs_);
+  if (htc_ == NULL) {
+    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
+    return HBASE_OPEN_ERROR;
+  }
   return HBASE_ACCESS_SUCCESS;
 }
 
@@ -837,7 +919,6 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
     retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
     return HBASE_OPEN_ERROR;
   }
-  
 
   Int64 transID;
   if (noXn)
@@ -846,9 +927,25 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
     transID = getTransactionIDFromContext();
   retCode_ = htc->insertRows(transID, rowIDLen, rowIDs, rows, timestamp, autoFlush);
 
-
-
   client_->releaseHTableClient(htc);
+
+  if (retCode_ != HBC_OK)
+    return -HBASE_ACCESS_ERROR;
+  else
+    return HBASE_ACCESS_SUCCESS;
+}
+
+//----------------------------------------------------------------------------
+Lng32 ExpHbaseInterface_JNI::getRows(
+          short rowIDLen,
+          HbaseStr &rowIDs,
+	  const LIST(HbaseStr) & columns)
+{
+  ex_assert(htc_ != NULL, "htc_ is null");
+  Int64 transID;
+  transID = getTransactionIDFromContext();
+  retCode_ = htc_->getRows(transID, rowIDLen, rowIDs, columns);
+
 
   if (retCode_ != HBC_OK)
     return -HBASE_ACCESS_ERROR;
@@ -923,14 +1020,16 @@ Lng32 ExpHbaseInterface_JNI::initHBLC(ExHbaseAccessStats* hbs)
 Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
                            Text& hfileName,
-                           Int64 maxHFileSize)
+                           Int64 maxHFileSize,
+                           const char* sampleTblName,
+                           const char* hiveDDL)
 {
   if (hblc_ == NULL)
   {
     return -HBASE_ACCESS_ERROR;
   }
 
-  retCode_ = hblc_->initHFileParams(tblName, hFileLoc, hfileName, maxHFileSize);
+  retCode_ = hblc_->initHFileParams(tblName, hFileLoc, hfileName, maxHFileSize, sampleTblName, hiveDDL);
   //close();
   if (retCode_ == HBLC_OK)
     return HBASE_ACCESS_SUCCESS;
@@ -1006,6 +1105,114 @@ Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
    else
      return -HBASE_CLEANUP_HFILE_ERROR;
  }
+ ///////////////////
+
+ //////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+ Lng32 ExpHbaseInterface_JNI::hdfsCreateFile(const char* path)
+ {
+   if (hive_ == NULL) {
+      retCode_ = initHive();
+      if (retCode_ != HVC_OK)
+         return retCode_;
+   }
+
+    retCode_ = hive_->hdfsCreateFile( path);
+
+    if (retCode_ == HVC_OK)
+      return HBASE_ACCESS_SUCCESS;
+    else
+      return -HVC_ERROR_HDFS_CREATE_EXCEPTION;
+ }
+
+ Lng32  ExpHbaseInterface_JNI::incrCounter( const char * tabName, const char * rowId,
+                             const char * famName, const char * qualName ,
+                             Int64 incr, Int64 & count)
+ {
+    if (client_ == NULL) {
+      retCode_ = init();
+      if (retCode_ != HBC_OK)
+         return -HBASE_ACCESS_ERROR;
+    }
+    retCode_ = client_->incrCounter( tabName, rowId, famName, qualName , incr, count);
+
+    if (retCode_ == HBC_OK)
+      return HBASE_ACCESS_SUCCESS;
+    else
+      return -HBC_ERROR_INCR_COUNTER_EXCEPTION;
+ }
+
+ Lng32  ExpHbaseInterface_JNI::createCounterTable( const char * tabName,  const char * famName)
+ {
+    if (client_ == NULL) {
+      retCode_ = init();
+      if (retCode_ != HBC_OK)
+         return -HBASE_ACCESS_ERROR;
+   }
+
+   retCode_ = client_->createCounterTable( tabName, famName);
+
+   if (retCode_ == HBC_OK)
+     return HBASE_ACCESS_SUCCESS;
+   else
+      return -HBC_ERROR_CREATE_COUNTER_EXCEPTION;
+ }
+ //////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+ Lng32 ExpHbaseInterface_JNI::hdfsWrite(const char* data, Int64 len)
+ {
+   if (hive_ == NULL) {
+      retCode_ = initHive();
+      if (retCode_ != HVC_OK)
+         return retCode_;
+   }
+   retCode_ = hive_->hdfsWrite( data, len);
+
+   if (retCode_ == HVC_OK)
+      return HBASE_ACCESS_SUCCESS;
+    else
+      return -HVC_ERROR_HDFS_WRITE_EXCEPTION;
+ }
+
+ //////////////////////////////////////////////////////////////////////////////
+ //
+ //////////////////////////////////////////////////////////////////////////////
+ Lng32 ExpHbaseInterface_JNI::hdfsClose()
+ {
+   if (hive_ == NULL) {
+      retCode_ = initHive();
+      if (retCode_ != HVC_OK)
+         return retCode_;
+   }
+
+   retCode_ = hive_->hdfsClose();
+
+   if (retCode_ == HVC_OK)
+      return HVC_OK;
+    else
+      return -HVC_ERROR_HDFS_CLOSE_EXCEPTION;
+ }
+/*
+ Lng32 ExpHbaseInterface_JNI::hdfsCleanPath( const std::string& path)
+ {
+   if (hblc_ == NULL) {
+      retCode_ = initHBLC();
+      if (retCode_ != HBLC_OK)
+         return -HBASE_ACCESS_ERROR;
+   }
+
+   retCode_ = hblc_->hdfsCleanPath(path);
+
+   if (retCode_ == HBLC_OK)
+      return HBLC_OK;
+    else
+      return -HBLC_ERROR_HDFS_CLOSE_EXCEPTION;
+ }
+*/
+
+
 //----------------------------------------------------------------------------
 // Avoid messing up the class data members (like htc_)
 Lng32 ExpHbaseInterface_JNI::rowExists(
@@ -1326,6 +1533,23 @@ Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
 
   estRC = 0;
   retCode_ = client_->estimateRowCount(tblName.val, partialRowSize, numCols, estRC);
+  return retCode_;
+}
+
+// Get Hbase Table information. This will be generic function to get needed information
+// from Hbase layer. Currently index level and blocksize is being requested for use in
+// costing code, but can be extended in the future so that we only make one JNI call.
+Lng32 ExpHbaseInterface_JNI::getHbaseTableInfo(const HbaseStr& tblName,
+                                               Int32& indexLevels,
+                                               Int32& blockSize)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+
+  retCode_ = client_->getHbaseTableInfo(tblName.val, indexLevels, blockSize);
   return retCode_;
 }
 

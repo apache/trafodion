@@ -1498,9 +1498,6 @@ public:
   }
 
   LIST(OptUDFInfo *) &getUDFList()  { return udfList_; }
-  
-  LIST(SchemaLabelInfoPtr) &getSLIList()  { return schemaLabelInfoList_; }
-  short &schemaCount() { return schemaCount_ ; }
 
   ValueIdList &inputFunction()		   { return inputFunction_; }
   TableViewUsageList &tableViewUsageList() { return tableViewUsageList_; }
@@ -1928,9 +1925,6 @@ private:
 
   NAString corrNameTokens_;
   UninitializedMvNameList *uninitializedMvList_;
-  short schemaCount_;
-
-  LIST (SchemaLabelInfoPtr) schemaLabelInfoList_;
 
   NABoolean isBindTrueRoot_;
   SQLATTRHOLDABLE_INTERNAL_TYPE holdableType_;

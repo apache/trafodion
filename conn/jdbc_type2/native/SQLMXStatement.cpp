@@ -171,7 +171,11 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_executeDirect
 		jenv->CallVoidMethod(jobj, gJNICache.setCurrentStmtIdMethodId, stmtId);
 		jenv->CallVoidMethod(jobj, gJNICache.setCurrentTxidStmtMethodId, currentTxid);
 		throwSQLException(jenv, &exception_.u.SQLError);
-		exception_.u.SQLError.errorList._buffer = NULL;
+		for (int i = 0; i <exception_.u.SQLError.errorList._length; i++)
+		{
+		    MEMORY_DELETE_ARRAY((exception_.u.SQLError.errorList._buffer + i)->errorText);
+		}
+		MEMORY_DELETE_ARRAY(exception_.u.SQLError.errorList._buffer);
 		break;
 	case odbc_SQLSvc_ExecDirect_SQLQueryCancelled_exn_:
 		jenv->CallVoidMethod(jobj, gJNICache.setCurrentStmtIdMethodId, stmtId);
@@ -530,6 +534,11 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_executeBatch
 		case odbc_SQLSvc_ExecDirect_SQLError_exn_:
 		    jenv->CallVoidMethod(jobj, gJNICache.setCurrentStmtIdMethodId, stmtId);
 			throwSQLException(jenv, &exception_.u.SQLError);
+			for (int i = 0; i < exception_.u.SQLError.errorList._length; i++)
+			{
+			    MEMORY_DELETE_ARRAY((exception_.u.SQLError.errorList._buffer + i)->errorText);
+			}
+			MEMORY_DELETE_ARRAY(exception_.u.SQLError.errorList._buffer);
 			break;
 		case odbc_SQLSvc_ExecDirect_SQLQueryCancelled_exn_:
 		 	jenv->CallVoidMethod(jobj, gJNICache.setCurrentStmtIdMethodId, stmtId);

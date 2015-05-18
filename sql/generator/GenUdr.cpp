@@ -1900,16 +1900,6 @@ PhysicalTableMappingUDF::codeGen(Generator *generator)
          addExplainInfo(newTdb, firstExplainTuple, secondExplainTuple, generator));
   }
 
-  // Todo: Handle multiple TMUDF invocations using the same DLL in the same
-  //       SQL statement. Also error situations where we load the DDL but
-  //       don't reach here
-
-  // delete the TMUDRInterface object here, since this will call a destructor
-  // that's defined in the DLL to be unloaded
-  delete udrInterface_;
-  udrInterface_ = NULL;
-  unloadDll(getDllInteraction()->getDllPtr(), CmpCommon::diags());
-  
   if (metadata.getRoutineID() > 0)
     generator->objectUids().insert(metadata.getRoutineID());
 

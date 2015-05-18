@@ -264,10 +264,12 @@ Int32 main(Int32 argc, char **argv)
                            (Lng32)524288);
       try
       {
-        context= new (cmpContextHeap) CmpContext(CmpContext::IS_DYNAMIC_SQL |
-				(IsSecondaryMxcmp ? CmpContext::IS_SECONDARY_MXCMP : 0) |
-				(CmpMainISPConnection ? CmpContext::IS_ISP : 0),
-                         cmpContextHeap);
+        context= new (cmpContextHeap) CmpContext
+          (CmpContext::IS_DYNAMIC_SQL |
+           (IsSecondaryMxcmp ? CmpContext::IS_SECONDARY_MXCMP : 0) |
+           (CmpMainISPConnection ? CmpContext::IS_ISP : 0) |
+           (CmpContext::IS_MXCMP),
+           cmpContextHeap);
 
         QRLogger::instance().setModule(QRLogger::QRL_MXCMP);
         QRLogger::instance().initLog4cpp("log4cpp.trafodion.masterexe.config");

@@ -140,7 +140,7 @@ will setup HTTPS in the embedded Jetty server. To create an obfuscated password 
 the following command:
 
 ----
-java -classpath $REST_HOME/lib/jetty-6.1.26.jar:$REST_HOME/lib/jetty-util-6.1.26.jar org.mortbay.jetty.security.Password {password}
+java -classpath $REST_HOME/lib/jetty-9.2.10.v20150310.jar:$REST_HOME/lib/jetty-util-9.2.10.v20150310.jar org.eclipse.jetty.util.security.Password}
 ----
 
 The output of this command is similar to:
@@ -149,7 +149,7 @@ OBF:{obfuscated password string}
 MD5:{obfuscated password string}
 ----
 
-Copy/paste the entire string beginning including "OBF:" into this property.
+Copy/paste the entire string including "OBF:" into this property.
 The server will use this property when creating the _/conf/rest-keystore_ directory.
            
 To change this configuration, edit _conf/rest-site.xml_, copy the changed file around the cluster and restart.
@@ -159,7 +159,7 @@ To change this configuration, edit _conf/rest-site.xml_, copy the changed file a
 To decrypt the obfuscated string in `rest.ssl.password` do the following:
 
 ----
-java -classpath $REST_HOME/lib/jetty-6.1.26.jar:$REST_HOME/lib/jetty-util-6.1.26.jar org.mortbay.jetty.security.Password {obfuscated password string}
+java -classpath $REST_HOME/lib/jetty-9.2.10.v20150310.jar:$REST_HOME/lib/jetty-util-9.2.10.v20150310.jar org.eclipse.jetty.util.security.Password {obfuscated password string}
 ----
 
 The output of this command is similar to:
@@ -167,6 +167,7 @@ The output of this command is similar to:
 {your unobfuscated password}
 OBF:{obfuscated password string}
 MD5:{obfuscated password string}
+CRYPT:{obfuscated password string}
 ----
 ====
 

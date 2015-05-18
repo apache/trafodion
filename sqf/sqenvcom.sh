@@ -29,7 +29,7 @@
 
 # Trafodion version (also update file ../sql/common/copyright.h)
 export TRAFODION_VER_MAJOR=1
-export TRAFODION_VER_MINOR=1
+export TRAFODION_VER_MINOR=2
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
@@ -143,6 +143,8 @@ if [[ -e ${MY_SQROOT}/etc/ms.env ]] ; then
      export SQ_VIRTUAL_NODES="$VIRT_NODES"
   fi
 fi
+
+export SQ_IDTMSRV=1
 
 export MY_MPI_ROOT="$MY_SQROOT"
 export MPI_ROOT="$MY_SQROOT/opt/hpmpi"
@@ -303,8 +305,8 @@ elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" ]]; then
 			  /usr/lib/hbase/lib/htrace-core.jar
                           /usr/lib/hbase/lib/zookeeper.jar
                           /usr/lib/hbase/lib/protobuf-*.jar
-                         /usr/lib/hbase/lib/snappy-java-*.jar 
-                         /usr/lib/hbase/lib/high-scale-lib-*.jar 
+                         /usr/lib/hbase/lib/snappy-java-*.jar
+                         /usr/lib/hbase/lib/high-scale-lib-*.jar
                          /usr/lib/hbase/hbase-hadoop-compat.jar "
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
   export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
@@ -344,10 +346,10 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
                           /usr/hdp/current/hbase-client/lib/htrace-core*.jar
                           /usr/hdp/current/hbase-client/lib/zookeeper.jar
                           /usr/hdp/current/hbase-client/lib/protobuf-*.jar
-                         /usr/hdp/current/hbase-client/lib/snappy-java-*.jar 
-                         /usr/hdp/current/hbase-client/lib/high-scale-lib-*.jar 
+                         /usr/hdp/current/hbase-client/lib/snappy-java-*.jar
+                         /usr/hdp/current/hbase-client/lib/high-scale-lib-*.jar
                          /usr/hdp/current/hbase-client/lib/hbase-hadoop-compat-*-hadoop2.jar "
-                         
+
   export HIVE_JAR_DIRS="/usr/hdp/current/hive-client/lib"
   export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
@@ -423,7 +425,7 @@ elif [[ -d /opt/mapr ]]; then
 elif [[ -e $MY_SQROOT/sql/scripts/install_local_hadoop
      && -e $MY_SQROOT/export/bin${SQ_MBTYPE}/monitor
      && -e ${HBASE_TRXDIR}/${HBASE_TRX_JAR}
-     && -e $MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar
+     && -e $MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar
      && -e $MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar
      && -e $MY_SQROOT/export/lib/jdbcT2.jar ]]; then
 
@@ -664,7 +666,7 @@ if [[ -n "$HIVE_CNF_DIR"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:$HIVE_CNF_DIR"; 
 if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
 SQ_CLASSPATH=${SQ_CLASSPATH}${HBASE_TRXDIR}:\
 ${HBASE_TRXDIR}/${HBASE_TRX_JAR}:\
-$MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar:\
+$MY_SQROOT/export/lib/trafodion-sql-${TRAFODION_VER}.jar:\
 $MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar:\
 $MY_SQROOT/export/lib/jdbcT2.jar
 
@@ -707,6 +709,7 @@ fi
 export CLASSPATH=$(remove_duplicates_in_path "${CLASSPATH}:")
 
 PATH=$(remove_duplicates_in_path "$PATH")
+MANPATH=$(remove_duplicates_in_path "$MANPATH")
 
 ####################
 # Check/Report on key variables

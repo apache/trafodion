@@ -30,6 +30,8 @@ import java.io.File;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileAlreadyExistsException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -54,29 +56,34 @@ import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescriptio
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription.Type;
 import org.apache.hadoop.hbase.snapshot.RestoreSnapshotException;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
-//import org.apache.hadoop.hbase.io.hfile.Compression;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFileContext;
 import org.apache.hadoop.hbase.io.hfile.HFileContextBuilder;
 import org.apache.hadoop.hbase.io.compress.*;
-//import org.apache.hadoop.hbase.io.compress.Compression;
-//import org.apache.hadoop.hbase.io.hfile.Compression;
-//import org.apache.hadoop.hbase.io.hfile.Compression.Algorithm;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
 import org.apache.hadoop.hbase.regionserver.BloomType; 
-//import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
-//import org.apache.hadoop.hbase.client.Durability;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.trafodion.sql.HBaseAccess.HTableClient;
 //import org.trafodion.sql.HBaseAccess.HBaseClient;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.io.compress.CodecPool;
+import org.apache.hadoop.io.compress.Compressor;
+import org.apache.hadoop.io.compress.GzipCodec;
+import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hadoop.hbase.TableName;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+
+import org.apache.hive.jdbc.HiveDriver;
+import java.sql.Connection;
+import java.sql.Statement;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.lang.ClassNotFoundException;
 
 public class HBulkLoadClient
 {
@@ -99,6 +106,7 @@ public class HBulkLoadClient
   String compression = COMPRESSION;
   int blockSize = BLOCKSIZE;
   DataBlockEncoding dataBlockEncoding = DataBlockEncoding.NONE;
+  FSDataOutputStream fsOut = null;
 
   public HBulkLoadClient()
   {
@@ -118,8 +126,9 @@ public class HBulkLoadClient
   void setLastError(String err) {
       lastError = err;
   }
-  public boolean initHFileParams(String hFileLoc, String hFileNm, long userMaxSize /*in MBs*/, String tblName) 
-  throws UnsupportedOperationException, IOException
+  public boolean initHFileParams(String hFileLoc, String hFileNm, long userMaxSize /*in MBs*/, String tblName,
+                                 String sampleTblName, String sampleTblDDL) 
+  throws UnsupportedOperationException, IOException, SQLException, ClassNotFoundException
   {
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.initHFileParams() called.");
     
@@ -129,10 +138,10 @@ public class HBulkLoadClient
     HTable myHTable = new HTable(config, tblName);
     HTableDescriptor hTbaledesc = myHTable.getTableDescriptor();
     HColumnDescriptor[] hColDescs = hTbaledesc.getColumnFamilies();
-    if (hColDescs.length != 1 )
+    if (hColDescs.length > 2 )  //2 column family , 1 for user data, 1 for transaction metadata
     {
       myHTable.close();
-      throw new UnsupportedOperationException ("only one family is supported.");
+      throw new UnsupportedOperationException ("only two families are supported.");
     }
     
     compression= hColDescs[0].getCompression().getName();
@@ -154,7 +163,17 @@ public class HBulkLoadClient
       maxHFileSize = userMaxSize * 1024 *1024;  //maxSize is in MBs
 
     myHTable.close();
-    
+
+    if (sampleTblDDL.length() > 0)
+    {
+      Class.forName("org.apache.hive.jdbc.HiveDriver");
+      Connection conn = DriverManager.getConnection("jdbc:hive2://", "hive", "");
+      Statement stmt = conn.createStatement();
+      stmt.execute("drop table if exists " + sampleTblName);
+      //System.out.println("*** DDL for Hive sample table is: " + sampleTblDDL);
+      stmt.execute(sampleTblDDL);
+    }
+
     return true;
   }
   public boolean doCreateHFile() throws IOException, URISyntaxException
@@ -501,7 +520,5 @@ public class HBulkLoadClient
       compression = null;
     }
     return true;
-}
-
-
+  }
 }

@@ -1025,10 +1025,8 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
     } // while
 }
 
-ExHbaseGetSQTaskTcb::ExHbaseGetSQTaskTcb(
-					 //				     ExHbaseAccessSelectTcb * tcb)
-					 ExHbaseAccessTcb * tcb)
-  :  ExHbaseTaskTcb(tcb)
+ExHbaseGetSQTaskTcb::ExHbaseGetSQTaskTcb( ExHbaseAccessTcb * tcb, NABoolean rowsetTcb)
+  :  ExHbaseTaskTcb(tcb, rowsetTcb)
   , step_(NOT_STARTED)
 {
 }
@@ -1042,11 +1040,13 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
   rc = 0;
-  Lng32 remainingInBatch = batchSize_;
 
   while (1)
     {
-      ex_queue_entry *pentry_down = tcb_->qparent_.down->getHeadEntry();
+      
+      ex_queue_entry *pentry_down = NULL;
+      if (! tcb_->qparent_.down->isEmpty())
+          pentry_down = tcb_->qparent_.down->getHeadEntry();
       
       switch (step_)
 	{
@@ -1060,7 +1060,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	  {
 	    tcb_->table_.val = tcb_->hbaseAccessTdb().getTableName();
 	    tcb_->table_.len = strlen(tcb_->hbaseAccessTdb().getTableName());
-
+            remainingInBatch_ = tcb_->rowIds_.entries();
 	    if (tcb_->rowIds_.entries() == 1)
 	      {
 		retcode = tcb_->ehi_->getRowOpen(tcb_->table_, tcb_->rowIds_[0],
@@ -1079,18 +1079,17 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 		else
 		  step_ = NEXT_ROW;
 	      }
-	      
 	  }
 	  break;
 
 	case NEXT_ROW:
 	  {
-            if (--remainingInBatch <= 0)
-            {
-              rc = WORK_CALL_AGAIN;
-              return 1;
+            if (remainingInBatch_ <= 0) {
+               step_ = GET_CLOSE;
+               break;
             }
 	    retcode = tcb_->ehi_->nextRow();
+            remainingInBatch_--;
             // EOD is end of data, EOR is end of result set. 
             // for single get, EOD or EOR indicates DONE
             // for multi get, only EOR indicates DONE
@@ -1098,7 +1097,10 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
                  ( (retcode == HBASE_ACCESS_EOD) &&
                    (tcb_->rowIds_.entries() == 1) ) )
 	      {
-		step_ = GET_CLOSE;
+                if (rowsetTcb_)
+                   step_ = DONE;
+                else
+		   step_ = GET_CLOSE;
 		break;
 	      }
             
@@ -1106,10 +1108,12 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
             if ( (retcode == HBASE_ACCESS_EOD) && 
                  (tcb_->rowIds_.entries() > 1) )
             {
-                step_ = NEXT_ROW;
+                if (rowsetTcb_)
+                   step_ = DONE;
+                else
+                   step_ = NEXT_ROW;
                 break;
             }
- 
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::nextRow"))
 	      step_ = HANDLE_ERROR;
 	    else
@@ -1122,7 +1126,10 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	    retcode = tcb_->createSQRowDirect();
 	    if (retcode == HBASE_ACCESS_NO_ROW)
 	    {
-	       step_ = NEXT_ROW;
+               if (rowsetTcb_)
+                  step_ = DONE;
+               else
+	          step_ = NEXT_ROW;
 	       break;
 	    }
 	    if (retcode < 0)
@@ -1150,28 +1157,34 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	    else if (rc == -1)
 	      step_ = HANDLE_ERROR;
 	    else
-	      step_ = NEXT_ROW;
+            {
+              if (rowsetTcb_)
+                 step_ = DONE;
+              else
+	         step_ = NEXT_ROW;
+            }
 	  }
 	  break;
-
 	case RETURN_ROW:
 	  {
 	    rc = 0;
 	    if (tcb_->moveRowToUpQueue(tcb_->convertRow_, tcb_->hbaseAccessTdb().convertRowLen(), 
 				       &rc, FALSE))
 	      return 1;
-
 	    if (tcb_->getHbaseAccessStats())
 	      tcb_->getHbaseAccessStats()->incUsedRows();
-
-	    if ((pentry_down->downState.request == ex_queue::GET_N) &&
+            if (rowsetTcb_)
+                step_ = DONE;
+            else
+            {
+	      if ((pentry_down->downState.request == ex_queue::GET_N) &&
 		(pentry_down->downState.requestValue == tcb_->matches_))
 	      {
 		step_ = GET_CLOSE;
 		break;
 	      }
-
-	    step_ = NEXT_ROW;
+	      step_ = NEXT_ROW;
+            }
 	  }
 	  break;
 
@@ -1181,7 +1194,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::getClose"))
 	      step_ = HANDLE_ERROR;
 	    else
-	      step_ = DONE;
+	      step_ = ALL_DONE;
 	  }
 	  break;
 
@@ -1193,15 +1206,19 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	  break;
 	    
 	case DONE:
-	  {
-	    step_ = NOT_STARTED;
-	    return 0;
-	  }
-	  break;
-
+           if (tcb_->handleDone(rc, 0))
+               return 1;
+           else
+               step_ = NEXT_ROW;
+           break;
+        case ALL_DONE:
+	   step_ = NOT_STARTED;
+	   return 0;
+	   break;
 	}// switch
 
     } // while
+    return 0;
 }
 
 ExHbaseAccessSelectTcb::ExHbaseAccessSelectTcb(
@@ -1243,7 +1260,7 @@ ExHbaseAccessSelectTcb::ExHbaseAccessSelectTcb(
     {
       if (hbaseTdb.sqHbaseTable())
 	getSQTaskTcb_ = 
-	  new(getGlobals()->getDefaultHeap()) ExHbaseGetSQTaskTcb(this);
+	  new(getGlobals()->getDefaultHeap()) ExHbaseGetSQTaskTcb(this, FALSE);
       else if (hbaseTdb.rowwiseFormat())
 	getRowwiseTaskTcb_ = 
 	  new(getGlobals()->getDefaultHeap()) ExHbaseGetRowwiseTaskTcb(this);

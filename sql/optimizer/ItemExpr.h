@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -150,6 +150,12 @@ private:
   ValueId       exprId_;    // used for the MEMOIZED mode
 
 }; // class ExprValueId
+
+// declarations for ItemExpr::treeWalk below
+typedef ItemExpr * (*ItemTreeWalkFunc)(ItemExpr *,
+                                       CollHeap *outHeap,
+                                       void *context);
+enum ItemTreeWalkSeq { ITM_PREFIX_WALK, ITM_POSTFIX_WALK };
 
 // -----------------------------------------------------------------------
 // A generic item expression node.
@@ -809,6 +815,13 @@ public:
   // Find all eqaulity columns in an item expression tree.
   void findEqualityCols(ValueIdSet & result);
 
+  // execute transformation function f on each node of the tree and
+  // return the transformed tree
+  ItemExpr *treeWalk(ItemTreeWalkFunc f,
+                     CollHeap *outHeap = NULL,
+                     enum ItemTreeWalkSeq sequence = ITM_POSTFIX_WALK,
+                     void *context = NULL);
+
   // --------------------------------------------------------------------
   // isCovered() : (for a ValueId)
   //
@@ -1161,6 +1174,10 @@ public:
   void setRangespecItemExpr(NABoolean v = TRUE)
   { (v ? flags_ |= IS_RANGESPEC_ITEM_EXPR : flags_ &= ~IS_RANGESPEC_ITEM_EXPR); }
 
+  NABoolean wasDefaultClause()   const { return (flags_ & WAS_DEFAULT_CLAUSE) != 0; }
+  void setWasDefaultClause(NABoolean v)
+  { (v ? flags_ |= WAS_DEFAULT_CLAUSE : flags_ &= ~WAS_DEFAULT_CLAUSE); }
+
   virtual QR::ExprElement getQRExprElem() const;
 
   virtual ItemExpr* removeRangeSpecItems(NormWA* normWA = NULL);
@@ -1222,7 +1239,11 @@ private:
 
     // if set, then subtree rooted below this ItemExpr has been referenced
     // as an order by ordinal.
-    IN_ORDERBY_ORDINAL = 0x0020
+    IN_ORDERBY_ORDINAL = 0x0020,
+
+    // If set, this subtree was created while processing the DEFAULT
+    // clause in DefaultSpecification::bindNode. 
+    WAS_DEFAULT_CLAUSE = 0x0040
   };
 
   // ---------------------------------------------------------------------

@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -114,6 +114,10 @@ long util_cpu_timer_wait(int ms) {
             break;
     }
     return us;
+}
+
+void util_format_startid(char *buf, SB_Transseq_Type startid) {
+    sprintf(buf, "%ld", startid);
 }
 
 void util_format_transid(char *buf, SB_Transid_Type transid) {

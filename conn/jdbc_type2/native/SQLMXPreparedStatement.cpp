@@ -727,9 +727,8 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_cpqPrep
 	//Soln 10-111229-1174 -- start
 	if(sqlString.dataValue._buffer != NULL)
 	{
-		delete[] sqlString.dataValue._buffer;
+		MEMORY_DELETE_ARRAY(sqlString.dataValue._buffer);
 		sqlString.dataValue._length = 0;
-		sqlString.dataValue._buffer = NULL;
 	}
 	//Soln 10-111229-1174 -- end
 	if (moduleName)

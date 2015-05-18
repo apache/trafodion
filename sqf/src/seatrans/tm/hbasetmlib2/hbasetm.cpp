@@ -243,7 +243,11 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_NODEUP     ].jm_name      = "nodeUp";
   JavaMethods_[JM_NODEUP     ].jm_signature = "(I)V";
   JavaMethods_[JM_CREATETABLE ].jm_name      = "callCreateTable";
-  JavaMethods_[JM_CREATETABLE ].jm_signature = "(J[B)S";
+  JavaMethods_[JM_CREATETABLE ].jm_signature = "(J[B[Ljava/lang/Object;)S";
+  JavaMethods_[JM_REGTRUNCABORT].jm_name      = "callRegisterTruncateOnAbort";
+  JavaMethods_[JM_REGTRUNCABORT].jm_signature = "(J[B)S";
+  JavaMethods_[JM_DROPTABLE ].jm_name      = "callDropTable";
+  JavaMethods_[JM_DROPTABLE ].jm_signature = "(J[B)S";
   JavaMethods_[JM_RQREGINFO  ].jm_name      = "callRequestRegionInfo";
   JavaMethods_[JM_RQREGINFO  ].jm_signature = "()Lorg/trafodion/dtm/HashMapArray;";
 
@@ -844,7 +848,10 @@ short CHbaseTM::nodeUp(int32 nid){
 //----------------------------------------------------------------------------
 int CHbaseTM::createTable(int64 pv_transid,
                            const char* pa_tbldesc,
-                           int pv_tbldesc_len)
+                           int pv_tbldesc_len,
+                           char** pv_keys,
+                           int pv_numsplits,
+                           int pv_keylen)
 {
    int lv_error = FEOK;
    jlong jlv_transid = pv_transid;
@@ -867,10 +874,17 @@ int CHbaseTM::createTable(int64 pv_transid,
       return RET_ADD_PARAM;
    _tlp_jenv->SetByteArrayRegion(jba_tbldesc, 0, pv_tbldesc_len, (const jbyte*) pa_tbldesc);
 
+   jobjectArray j_keys = NULL;
+   if (pv_numsplits > 0)
+   {
+      j_keys = convertToByteArrayObjectArray(pv_keys, pv_numsplits, pv_keylen);
+   }
+
    lv_error = _tlp_jenv->CallShortMethod(javaObj_,
                     JavaMethods_[JM_CREATETABLE].methodID,
                     jlv_transid,
-                    jba_tbldesc);
+                    jba_tbldesc,
+                    j_keys);
    exc = _tlp_jenv->ExceptionOccurred();
    if(exc) {
       _tlp_jenv->ExceptionDescribe();
@@ -879,6 +893,7 @@ int CHbaseTM::createTable(int64 pv_transid,
    }
 
    _tlp_jenv->DeleteLocalRef(jba_tbldesc);
+   _tlp_jenv->DeleteLocalRef(j_keys);
 
    HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::createTable : Error %d, Txn ID (%d,%d), hostname %s.\n",
                 lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tbldesc));
@@ -886,6 +901,136 @@ int CHbaseTM::createTable(int64 pv_transid,
    return lv_error;
 }
 
+//----------------------------------------------------------------------------
+// CHbaseTM: regTruncateOnAbort
+// Purpose: To handle registration of truncate table during upsert using load
+// ---------------------------------------------------------------------------
+int CHbaseTM::regTruncateOnAbort(int64 pv_transid,
+                           const char* pa_tblname,
+                           int pv_tblname_len)
+{
+   int lv_error = FEOK;
+   jlong jlv_transid = pv_transid;
+   CTmTxKey lv_tid(pv_transid);
+
+   HBASETrace(HBASETM_TraceExitError,
+              (HDR "CHbaseTM::regTruncateOnAbort returning %d.\n", lv_error));
+
+   jthrowable exc;
+   JOI_RetCode lv_joi_retcode = JOI_OK;
+   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   if (lv_joi_retcode != JOI_OK) {
+      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
+      fflush(stdout);
+      abort();
+   }
+
+   jbyteArray jba_tblname = _tlp_jenv->NewByteArray(pv_tblname_len);
+   if (jba_tblname == NULL)
+      return RET_ADD_PARAM;
+   _tlp_jenv->SetByteArrayRegion(jba_tblname, 0, pv_tblname_len, (const jbyte*) pa_tblname);
+
+   lv_error = _tlp_jenv->CallShortMethod(javaObj_,
+                    JavaMethods_[JM_REGTRUNCABORT].methodID,
+                    jlv_transid,
+                    jba_tblname);
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      lv_error = RET_EXCEPTION;
+   }
+
+   _tlp_jenv->DeleteLocalRef(jba_tblname);
+
+   HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::regTruncateOnAbort : Error %d, Txn ID (%d,%d), hostname %s.\n",
+                lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tblname));
+
+   return lv_error;
+}
+
+
+//----------------------------------------------------------------------------
+// CHbaseTM: dropTable
+// Purpose: To handle drop table transactional requests
+// ---------------------------------------------------------------------------
+int CHbaseTM::dropTable(int64 pv_transid,
+                           const char* pa_tblname,
+                           int pv_tblname_len)
+{
+   int lv_error = FEOK;
+   jlong jlv_transid = pv_transid;
+   CTmTxKey lv_tid(pv_transid);
+
+   HBASETrace(HBASETM_TraceExitError,
+              (HDR "CHbaseTM::dropTable returning %d.\n", lv_error));
+
+   jthrowable exc;
+   JOI_RetCode lv_joi_retcode = JOI_OK;
+   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   if (lv_joi_retcode != JOI_OK) {
+      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
+      fflush(stdout);
+      abort();
+   }
+
+   jbyteArray jba_tblname = _tlp_jenv->NewByteArray(pv_tblname_len);
+   if (jba_tblname == NULL)
+      return RET_ADD_PARAM;
+   _tlp_jenv->SetByteArrayRegion(jba_tblname, 0, pv_tblname_len, (const jbyte*) pa_tblname);
+
+   lv_error = _tlp_jenv->CallShortMethod(javaObj_,
+                    JavaMethods_[JM_DROPTABLE].methodID,
+                    jlv_transid,
+                    jba_tblname);
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      lv_error = RET_EXCEPTION;
+   }
+
+   _tlp_jenv->DeleteLocalRef(jba_tblname);
+
+   HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::dropTable : Error %d, Txn ID (%d,%d), hostname %s.\n",
+                lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tblname));
+
+   return lv_error;
+}
+
+jobjectArray CHbaseTM::convertToByteArrayObjectArray(char **array,
+                   int numElements, int elementLen)
+{
+   int i = 0;
+   jobjectArray j_objArray = NULL;
+   for (i = 0; i < numElements; i++)
+   {
+       jbyteArray j_obj = _tlp_jenv->NewByteArray(elementLen);
+       if (_tlp_jenv->ExceptionCheck())
+       {
+          if (j_objArray != NULL)
+             _tlp_jenv->DeleteLocalRef(j_objArray);
+          return NULL;
+       }
+
+       _tlp_jenv->SetByteArrayRegion(j_obj, 0, elementLen,
+             (const jbyte *)(array[i]));
+       if (j_objArray == NULL)
+       {
+          j_objArray = _tlp_jenv->NewObjectArray(numElements,
+                 _tlp_jenv->GetObjectClass(j_obj), NULL);
+          if (_tlp_jenv->ExceptionCheck())
+          {
+             _tlp_jenv->DeleteLocalRef(j_obj);
+             return NULL;
+          }
+       }
+
+       _tlp_jenv->SetObjectArrayElement(j_objArray, i, (jobject)j_obj);
+       _tlp_jenv->DeleteLocalRef(j_obj);
+   }
+   return j_objArray;
+}
 
 //----------------------------------------------------------------------------
 // CHbaseTM::shutdown

@@ -61,7 +61,43 @@ extern short CmpDescribeSeabaseTable (
                              NABoolean withPartns = FALSE,
                              NABoolean withoutSalt = FALSE,
                              NABoolean withoutDivisioning = FALSE,
-                             NABoolean noTrailingSemi = FALSE);
+                             NABoolean noTrailingSemi = FALSE,
+
+                             // used to add or remove column definition from col list.
+                             // valid for 'createLike' mode. Used for 'alter add/drop col'.
+                             char * colName = NULL,
+                             NABoolean isAdd = FALSE,
+                             const NAColumn * nacol = NULL);
+                             
+static bool checkSpecifiedPrivs(
+   ElemDDLPrivActArray & privActsArray,  
+   const char * externalObjectName,
+   ComObjectType objectType,
+   NATable * naTable,
+   std::vector<PrivType> & objectPrivs,
+   std::vector<ColPrivSpec> & colPrivs); 
+   
+static bool ElmPrivToPrivType(
+   OperatorTypeEnum    elmPriv,
+   PrivType          & privType,
+   bool                forRevoke = false);  
+   
+static bool hasValue(
+   const std::vector<ColPrivSpec> & container,
+   PrivType value);                              
+                             
+static bool hasValue(
+   const std::vector<PrivType> & container,
+   PrivType value); 
+   
+static bool isMDGrantRevokeOK(
+   const std::vector<PrivType> & objectPrivs,
+   const std::vector<ColPrivSpec> & colPrivs,
+   bool isGrant);   
+   
+static bool isValidPrivTypeForObject(
+   ComObjectType objectType,
+   PrivType privType);                               
 
 void CmpSeabaseDDL::convertVirtTableColumnInfoToDescStruct( 
      const ComTdbVirtTableColumnInfo * colInfo,
@@ -520,7 +556,70 @@ short CmpSeabaseDDL::updatePKeyInfo(
   return 0;
 }
 
+// ----------------------------------------------------------------------------
+// Method: getPKeyInfoForTable
+//
+// This method reads the metadata to get the primary key constraint name and UID
+// for a table.
+//
+// Params:
+//   In:  catName, schName, objName describing the table
+//   In:  cliInterface - pointer to the cli handle
+//   Out:  constrName and constrUID
+//
+// Returns 0 if found, -1 otherwise
+// ComDiags is set up with error
+// ---------------------------------------------------------------------------- 
+short CmpSeabaseDDL::getPKeyInfoForTable (
+                                          const char *catName,
+                                          const char *schName,
+                                          const char *objName,
+                                          ExeCliInterface *cliInterface,
+                                          NAString &constrName,
+                                          Int64 &constrUID)
+{
+  char query[4000];
+  constrUID = -1;
+
+  // get constraint info
+  str_sprintf(query, "select O.object_name, C.constraint_uid "
+                     "from %s.\"%s\".%s O, %s.\"%s\".%s C "
+                     "where O.object_uid = C.constraint_uid "
+                     "  and C.constraint_type = '%s' and C.table_uid = "
+                     "   (select object_uid from %s.\"%s\".%s "
+                     "    where catalog_name = '%s' "
+                     "      and schema_name = '%s' " 
+                     "      and object_name = '%s')",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
+              COM_PRIMARY_KEY_CONSTRAINT_LIT,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              catName, schName, objName);
+
+  Queue * constrInfoQueue = NULL;
+  Lng32 cliRC = cliInterface->fetchAllRows(constrInfoQueue, query, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+
+      processReturn();
+
+      return -1;
+    }
+
+  assert (constrInfoQueue->numEntries() == 1);
+  constrInfoQueue->position();
+  OutputInfo * vi = (OutputInfo*)constrInfoQueue->getNext();
+  char * pConstrName = (char*)vi->get(0);
+  constrName = pConstrName;
+  constrUID = *(Int64*)vi->get(1);
+
+  return 0;
+}
+
+
 short CmpSeabaseDDL::constraintErrorChecks(
+                                           ExeCliInterface * cliInterface,
                                            StmtDDLAddConstraint *addConstrNode,
                                            NATable * naTable,
                                            ComConstraintType ct,
@@ -580,6 +679,26 @@ short CmpSeabaseDDL::constraintErrorChecks(
         } // for
     }
   
+  if (NOT foundConstr)
+    {
+      const NAString &constrCatName = addConstrNode->
+        getConstraintNameAsQualifiedName().getCatalogName();
+      const NAString &constrSchName = addConstrNode->
+        getConstraintNameAsQualifiedName().getSchemaName();
+      const NAString &constrObjName = addConstrNode->
+        getConstraintNameAsQualifiedName().getObjectName();
+
+      // check to see if this constraint was defined on some other table and
+      // exists in metadata
+      Lng32 retcode = existsInSeabaseMDTable(cliInterface, 
+                                             constrCatName, constrSchName, constrObjName,
+                                             COM_UNKNOWN_OBJECT, FALSE, FALSE);
+      if (retcode == 1) // exists
+        {
+          foundConstr = TRUE;
+        }
+    }
+
   if (foundConstr)
     {
       *CmpCommon::diags()
@@ -1281,9 +1400,10 @@ short CmpSeabaseDDL::createSeabaseTable2(
           alignedFormat = TRUE;
         }
     }
-  else if(CmpCommon::getDefault(TRAF_DEFAULT_ALIGNED_FORMAT) == DF_ON)
+  else if(CmpCommon::getDefault(TRAF_ALIGNED_ROW_FORMAT) == DF_ON)
     {
-      alignedFormat = TRUE;
+      if ( NOT isSeabaseReservedSchema(tableName))
+        alignedFormat = TRUE;
     }
 
   // allow nullable clustering key or unique constraints based on the
@@ -1313,7 +1433,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
       colInfoArray = new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
       keyInfoArray = new(STMTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
-      if (buildColInfoArray(&colArray, colInfoArray, implicitPK,
+      if (buildColInfoArray(COM_BASE_TABLE_OBJECT,
+                            &colArray, colInfoArray, implicitPK,
                             alignedFormat, &identityColPos))
         {
           processReturn();
@@ -2346,10 +2467,10 @@ short CmpSeabaseDDL::dropSeabaseTable2(
           CmpCommon::diags()->clear();
 
           if (isVolatile)
-            *CmpCommon::diags() << DgSqlCode(-1389)
+            *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                                 << DgString0(objectNamePart);
           else
-            *CmpCommon::diags() << DgSqlCode(-1389)
+            *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                                 << DgString0(extTableName);
         }
 
@@ -2409,10 +2530,10 @@ short CmpSeabaseDDL::dropSeabaseTable2(
           CmpCommon::diags()->clear();
           
           if (isVolatile)
-            *CmpCommon::diags() << DgSqlCode(-1389)
+            *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                                 << DgString0(objectNamePart);
           else
-            *CmpCommon::diags() << DgSqlCode(-1389)
+            *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                                 << DgString0(extTableName);
         }
       
@@ -2495,9 +2616,10 @@ short CmpSeabaseDDL::dropSeabaseTable2(
         }
     }
 
+  const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
+      
   // return error if cascade is not specified and a referential constraint exists on
   // any of the unique constraints.
-  const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
   
   if (dropTableNode->getDropBehavior() == COM_RESTRICT_DROP_BEHAVIOR)
     {
@@ -2514,15 +2636,18 @@ short CmpSeabaseDDL::dropSeabaseTable2(
             {
               const ComplementaryRIConstraint * rc = uniqConstr->getRefConstraintReferencingMe(0);
               
-              const NAString &constrName = 
-                (rc ? rc->getConstraintName().getObjectName() : " ");
-              *CmpCommon::diags() << DgSqlCode(-1059)
-                                  << DgConstraintName(constrName);
-              
-              deallocEHI(ehi); 
-              processReturn();
-              
-              return -1;
+              if (rc->getTableName() != naTable->getTableName())
+                {
+                  const NAString &constrName = 
+                    (rc ? rc->getConstraintName().getObjectName() : " ");
+                  *CmpCommon::diags() << DgSqlCode(-1059)
+                                      << DgConstraintName(constrName);
+                  
+                  deallocEHI(ehi); 
+                  processReturn();
+                  
+                  return -1;
+                }
             }
         }
     }
@@ -2608,7 +2733,6 @@ short CmpSeabaseDDL::dropSeabaseTable2(
         } // if
     } // for
 
-  // drop all unique constraints from metadata
   for (Int32 i = 0; i < uniqueList.entries(); i++)
     {
       AbstractRIConstraint *ariConstr = uniqueList[i];
@@ -2624,20 +2748,52 @@ short CmpSeabaseDDL::dropSeabaseTable2(
       const NAString& constrSchName = 
         uniqConstr->getConstraintName().getSchemaName();
       
-      const NAString& constrObjName = 
-        uniqConstr->getConstraintName().getObjectName();
+      NAString constrObjName = 
+        (NAString) uniqConstr->getConstraintName().getObjectName();
       
-      Int64 constrUID = getObjectUID(cliInterface,
+      // Get the constraint UID
+      Int64 constrUID = -1;
+
+      // If the table being dropped is from a metadata schema, setup 
+      // an UniqueConstraint entry for the table being dropped describing its 
+      // primary key.  This is temporary until metadata is changed to create 
+      // primary keys with a known name.
+      if (isSeabasePrivMgrMD(catalogNamePart, schemaNamePart) ||
+          isSeabaseMD(catalogNamePart, schemaNamePart, objectNamePart))
+        {
+          assert (uniqueList.entries() == 1);
+          assert (uniqueList[0]->getOperatorType() == ITM_UNIQUE_CONSTRAINT);
+          UniqueConstraint * uniqConstr = (UniqueConstraint*)uniqueList[0];
+          assert (uniqConstr->isPrimaryKeyConstraint());
+          NAString adjustedConstrName;
+          if (getPKeyInfoForTable (catalogNamePart.data(),
+                                   schemaNamePart.data(),
+                                   objectNamePart.data(),
+                                   cliInterface,
+                                   constrObjName,
+                                   constrUID) == -1)
+            {
+              deallocEHI(ehi); 
+              processReturn();
+              return -1;
+            }
+            
+        }
+
+      // Read the metadata to get the constraint UID
+      else
+        {
+            constrUID = getObjectUID(cliInterface,
                                      constrCatName.data(), constrSchName.data(), constrObjName.data(),
                                      (uniqConstr->isPrimaryKeyConstraint() ?
                                       COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT :
                                       COM_UNIQUE_CONSTRAINT_OBJECT_LIT));                
-      if (constrUID < 0)
-        {
-          deallocEHI(ehi); 
-          processReturn();
-          
-          return -1;
+          if (constrUID == -1)
+            {
+              deallocEHI(ehi); 
+              processReturn();
+              return -1;
+            }
         }
 
       if (deleteConstraintInfoFromSeabaseMDTables(cliInterface,
@@ -2670,6 +2826,11 @@ short CmpSeabaseDDL::dropSeabaseTable2(
         continue;
 
       RefConstraint * refConstr = (RefConstraint*)ariConstr;
+
+      // if self referencing constraint, then it was already dropped as part of
+      // dropping 'ri constraints referencing me' earlier.
+      if (refConstr->selfRef())
+        continue;
 
       const NAString& constrCatName = 
         refConstr->getConstraintName().getCatalogName();
@@ -3230,7 +3391,7 @@ void CmpSeabaseDDL::renameSeabaseTable(
     {
       CmpCommon::diags()->clear();
       
-      *CmpCommon::diags() << DgSqlCode(-1389)
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                           << DgString0(extTableName);
   
       processReturn();
@@ -3360,6 +3521,474 @@ void CmpSeabaseDDL::renameSeabaseTable(
   return;
 }
 
+void CmpSeabaseDDL::alterSeabaseTableHBaseOptions(
+                                       StmtDDLAlterTableHBaseOptions * hbaseOptionsNode,
+                                       NAString &currCatName, NAString &currSchName)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  ComObjectName tableName(hbaseOptionsNode->getTableName());
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
+  const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
+  const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
+  const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extTableName = tableName.getExternalName(TRUE);
+  const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
+  
+  ExpHbaseInterface * ehi = allocEHI();
+  if (ehi == NULL)
+    {
+      processReturn();
+      return;
+    }
+
+  // Disallow this ALTER on system metadata schema objects
+
+  if ((isSeabaseReservedSchema(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_ALTER_NOT_ALLOWED_IN_SMD)
+                          << DgTableName(extTableName);
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+  
+  // Note: In the rename code (CmpSeabaseDDL::renameSeabaseTable), there
+  // is logic about here to forbid a rename on a volatile table. There doesn't
+  // seem to be any reason to forbid changing HBASE_OPTIONS on a volatile
+  // table (and indeed it appears to work fine), so we don't have this
+  // 'forbid' logic here.
+  
+  // Make sure this object exists
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+                                   catalogNamePart, schemaNamePart, objectNamePart,
+                                   COM_BASE_TABLE_OBJECT,
+                                   (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) 
+                                    ? FALSE : TRUE),
+                                   TRUE, TRUE);
+  if (retcode < 0)
+    {
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  
+  CorrName cn(objectNamePart,
+              STMTHEAP,
+              schemaNamePart,
+              catalogNamePart);
+  
+  NATable *naTable = bindWA.getNATable(cn); 
+  if (naTable == NULL || bindWA.errStatus())
+    {
+      CmpCommon::diags()->clear();
+      
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+                          << DgString0(extTableName);
+      deallocEHI(ehi); 
+      processReturn();     
+      return;
+    }
+ 
+  // Make sure user has the privilege to perform the ALTER
+
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner(),naTable->getSchemaOwner()))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      deallocEHI(ehi);
+      processReturn ();
+      return;
+    }
+
+  CmpCommon::diags()->clear();
+
+  // Get the object UID so we can update the metadata
+
+  Int64 objUID = getObjectUID(&cliInterface,
+                              catalogNamePart.data(), schemaNamePart.data(), 
+                              objectNamePart.data(),
+                              COM_BASE_TABLE_OBJECT_LIT);
+  if (objUID < 0)
+    {
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
+  // update HBase options in the metadata
+
+  ElemDDLHbaseOptions * edhbo = hbaseOptionsNode->getHBaseOptions();
+  short result = updateHbaseOptionsInMetadata(&cliInterface,objUID,edhbo);
+  
+  if (result < 0)
+    {
+      deallocEHI(ehi);
+      processReturn();
+      return;
+    }
+
+  // tell HBase to change the options
+
+  // TODO: Write this code
+
+  // invalidate cached NATable info on this table for all users
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+
+  deallocEHI(ehi);
+
+  return;
+}
+
+/////////////////////////////////////////////////////////////////////
+// currTab:          table on which column is being added to or dropped from
+// newTempTab:  temporary table with new definition
+// currTempTab:  name of table that currTab that will be renamed to 
+//
+// Steps:
+//   create newTempTab based on currTab and added/dropped column
+//   insert data into newTempTab from currTab
+//   rename currTab to currTempTab
+//   rename newTempTab to currTab
+//   drop currTempTab
+//
+/////////////////////////////////////////////////////////////////////
+short CmpSeabaseDDL::alignedFormatTableAddDropColumn
+(
+ Int64 objUID,
+ NABoolean isAdd,
+ const NAString &catalogNamePart,
+ const NAString &schemaNamePart,
+ const NAString &objectNamePart,
+ char * colName, const NAColumn * nacol)
+{
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+                               CmpCommon::context()->sqlSession()->getParentQid());
+
+  NABoolean xnWasStartedHere = FALSE;
+  Queue * usingViewsQueue = NULL;
+  cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
+  if (cliRC < 0)
+    {
+      processReturn();
+      
+      return -1;
+    }
+
+  if (usingViewsQueue->numEntries() > 0)
+    {
+      if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+        return -1;
+    }
+
+  NAList<NAString> viewNameList(STMTHEAP, usingViewsQueue->numEntries());
+  NAList<NAString> viewDefnList(STMTHEAP, usingViewsQueue->numEntries());
+
+  // create temp table based on the current table DDL and added/dropped column.
+  // add/drop col name is colName.
+  // Added col defn is contained in nacol.
+  NAString newTempTab; 
+  ComDeriveRandomInternalName ( ComGetNameInterfaceCharSet(),
+                                objectNamePart, newTempTab, STMTHEAP);
+
+  char newTempTabStr[1000];
+  str_sprintf(newTempTabStr, "%s.\"%s\".%s", 
+              catalogNamePart.data(), schemaNamePart.data(), newTempTab.data());
+
+  CorrName newTempTabCN(newTempTab,
+                        STMTHEAP, schemaNamePart, catalogNamePart);
+
+  // current table and curr temp table
+  char currTabStr[1000];
+  str_sprintf(currTabStr, "%s.\"%s\".%s", 
+              catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
+
+  CorrName currTabCN(objectNamePart, STMTHEAP, 
+                     schemaNamePart, catalogNamePart);
+
+  NAString currTempTab; 
+  ComDeriveRandomInternalName ( ComGetNameInterfaceCharSet(),
+                                objectNamePart, currTempTab, STMTHEAP);
+  
+  char currTempTabStr[1000];
+  str_sprintf(currTempTabStr, "%s.\"%s\".%s", 
+              catalogNamePart.data(), schemaNamePart.data(), currTempTab.data());
+
+
+  // create DDL for newTempTab  
+  char * buf = NULL;
+  ULng32 buflen = 0;
+  retcode = CmpDescribeSeabaseTable(currTabCN, 3/*createlike*/, buf, buflen, 
+                                    STMTHEAP,
+                                    NULL,
+                                    FALSE, FALSE, FALSE,
+                                    TRUE,
+                                    colName, isAdd, nacol);
+  if (retcode)
+    return -1;
+
+  // find out any views on this table.
+  // save their definition and drop them.
+  // they will be recreated before return.
+  usingViewsQueue->position();
+  for (int idx = 0; idx < usingViewsQueue->numEntries(); idx++)
+    {
+      OutputInfo * vi = (OutputInfo*)usingViewsQueue->getNext(); 
+      char * viewName = vi->get(0);
+      
+      viewNameList.insert(viewName);
+
+      ComObjectName viewCO(viewName, COM_TABLE_NAME);
+
+      const NAString catName = viewCO.getCatalogNamePartAsAnsiString();
+      const NAString schName = viewCO.getSchemaNamePartAsAnsiString(TRUE);
+      const NAString objName = viewCO.getObjectNamePartAsAnsiString(TRUE);
+
+      Int64 viewUID = getObjectUID(&cliInterface,
+                                   catName.data(), schName.data(), objName.data(), 
+                                   COM_VIEW_OBJECT_LIT);
+      if (viewUID < 0 )
+        {
+          endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+          
+          return -1;
+        }
+
+      NAString viewText;
+      if (getTextFromMD(&cliInterface, viewUID, COM_VIEW_TEXT, 0, viewText))
+        {
+          endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+          
+          return -1;
+        }
+
+      viewDefnList.insert(viewText);
+
+      if (dropOneTableorView(cliInterface,viewName,COM_VIEW_OBJECT,false))
+        {
+          endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+  
+          processReturn();
+          
+          return -1;
+        }
+    }
+
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, 0);
+  
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE);
+  NATable * naTable = NULL;
+
+  NAString colNames;
+
+  char queryBuf[1000];
+
+  NAString query = "create table ";
+  query += newTempTabStr;
+  query += " ";
+
+  NABoolean done = FALSE;
+  Lng32 curPos = 0;
+  while (NOT done)
+    {
+      short len = *(short*)&buf[curPos];
+      NAString frag(&buf[curPos+sizeof(short)],
+                    len - ((buf[curPos+len-1]== '\n') ? 1 : 0));
+
+      query += frag;
+      curPos += ((((len+sizeof(short))-1)/8)+1)*8;
+
+      if (curPos >= buflen)
+        done = TRUE;
+    }
+
+  cliRC = cliInterface.executeImmediate((char*)query.data());
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      goto label_error;
+    }
+
+  //  naTable = bindWA.getNATable((isAdd ? currTabCN : newTempTabCN));
+  naTable = bindWA.getNATable(newTempTabCN);
+  if (! naTable)
+    {
+      goto label_error;
+    }
+
+  // update metadata to change column type to 'A'(added)
+  if (isAdd)
+    {
+      str_sprintf(queryBuf, "update %s.\"%s\".%s set column_class = 'A' where object_uid = %Ld and column_name = '%s' ",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                  naTable->objectUid().castToInt64(), colName);
+      
+      cliRC = cliInterface.executeImmediate(queryBuf);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          goto label_error;
+        }
+      
+    }
+
+  // insert data from current table into new temp table.
+  //  query = "upsert using load into ";
+  query = "insert into ";
+  query += newTempTabStr;
+  query += " ";
+
+  for (Lng32 i = 0; i < naTable->getNAColumnArray().entries(); i++)
+    {
+      const NAColumn *nac = naTable->getNAColumnArray()[i];
+
+      if (nac->isSystemColumn())
+        continue;
+ 
+      if ((isAdd) && (colName == nac->getColName()))
+        continue;
+
+      colNames += nac->getColName();
+
+      colNames += ",";
+    }
+
+  // remove last comma
+  colNames = colNames.strip(NAString::trailing, ',');
+
+  query += "(" + colNames + ")";
+
+  query += " select ";
+  query += colNames;
+
+  query += " from ";
+  query += currTabStr;
+
+  query += ";";
+
+  cliRC = cliInterface.executeImmediate(query.data());
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      processReturn();
+
+      goto label_error;
+    }
+  
+  // rename current table to temp
+  str_sprintf(queryBuf, "alter table \"%s\".\"%s\".\"%s\" rename to \"%s\" ",
+              catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
+              currTempTab.data());
+  
+  cliRC = cliInterface.executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      processReturn();
+
+      goto label_error;
+    }
+
+  // rename new temp table to current table
+  str_sprintf(queryBuf, "alter table \"%s\".\"%s\".\"%s\" rename to \"%s\" ",
+              catalogNamePart.data(), schemaNamePart.data(), newTempTab.data(),
+              objectNamePart.data());
+  
+  cliRC = cliInterface.executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      processReturn();
+
+      goto label_error1;
+    }
+
+  // drop curr temp table
+  str_sprintf(queryBuf, "drop table \"%s\".\"%s\".\"%s\" ",
+              catalogNamePart.data(), schemaNamePart.data(), currTempTab.data(),
+              objectNamePart.data());
+  
+  cliRC = cliInterface.executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      processReturn();
+
+      goto label_error0;
+    }
+
+   if (recreateViews(cliInterface, viewNameList, viewDefnList))
+    {
+      return -1;
+    }
+
+  return 0;
+
+ label_error1:
+  // rename current temp table to current
+  str_sprintf(queryBuf, "alter table \"%s\".\"%s\".\"%s\" rename to \"%s\" ",
+              catalogNamePart.data(), schemaNamePart.data(), currTempTab.data(),
+              objectNamePart.data());
+  
+  cliRC = cliInterface.executeImmediate(queryBuf);
+
+ label_error:
+  cleanupObjectAfterError(cliInterface,
+                          catalogNamePart, schemaNamePart, newTempTab,
+                          COM_BASE_TABLE_OBJECT);
+
+  recreateViews(cliInterface, viewNameList, viewDefnList);
+
+  return -1;
+
+ label_error0:
+  cleanupObjectAfterError(cliInterface,
+                          catalogNamePart, schemaNamePart, currTempTab,
+                          COM_BASE_TABLE_OBJECT);
+
+  recreateViews(cliInterface, viewNameList, viewDefnList);
+
+  return -1;
+}
+
+short CmpSeabaseDDL::recreateViews(ExeCliInterface &cliInterface,
+                                   NAList<NAString> &viewNameList,
+                                   NAList<NAString> &viewDefnList)
+{
+  Lng32 cliRC = 0;
+
+  for (Lng32 i = 0; i < viewDefnList.entries(); i++)
+    {
+      cliRC = cliInterface.executeImmediate(viewDefnList[i]);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          return -1;
+        }
+    }
+
+  return 0;
+}
+
 void CmpSeabaseDDL::alterSeabaseTableAddColumn(
                                                StmtDDLAlterTableAddColumn * alterAddColNode,
                                                NAString &currCatName, NAString &currSchName)
@@ -3380,7 +4009,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   const NAString extTableName = tableName.getExternalName(TRUE);
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
+                               CmpCommon::context()->sqlSession()->getParentQid());
 
   if ((isSeabaseReservedSchema(tableName)) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
@@ -3472,10 +4101,11 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
           return;
         }
       ConstValue *pDefVal = (ConstValue *)pColDef->getDefaultValueExpr();
-      
-      if ((pDefVal->origOpType() != ITM_CURRENT_USER) &&
+
+      if ((pDefVal) &&
+          (pDefVal->origOpType() != ITM_CURRENT_USER) &&
           (pDefVal->origOpType() != ITM_CURRENT_TIMESTAMP) &&
-          (pDefVal->origOpType() != ITM_CAST)) 
+          (pDefVal->origOpType() != ITM_CAST))
         {
           if (pDefVal->isNull()) 
             {
@@ -3492,6 +4122,15 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   if (pColDef->getDefaultClauseStatus() == ElemDDLColDef::NO_DEFAULT_CLAUSE_SPEC)
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_DEFAULT_REQUIRED);
+
+      processReturn();
+
+      return;
+    }
+
+  if (pColDef->getSGOptions())
+    {
+      *CmpCommon::diags() << DgSqlCode(-1514);
 
       processReturn();
 
@@ -3580,13 +4219,12 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
+      
       processReturn();
-
+      
       return;
     }
 
-  //  CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
     NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
 
@@ -3725,17 +4363,6 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
       return;
     }
 
-  if (naTable->isSQLMXAlignedTable())
-    {
-     *CmpCommon::diags()
-	<< DgSqlCode(-4222)
-	<< DgString0("\"DROP COLUMN on ALIGNED format tables\"");
-    
-      processReturn();
-
-      return;
-     }
-
   const NAColumnArray &nacolArr = naTable->getNAColumnArray();
   const NAString &colName = alterDropColNode->getColName();
 
@@ -3802,150 +4429,137 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
 
   Int64 objUID = naTable->objectUid().castToInt64();
 
-  if (isSeabaseMD(tableName))
-    {
-      // objectUID for a metadata table is not available in NATable struct
-      // since the definition for a MD table is hardcoded.
-      // get objectUID for metadata tables from the OBJECTS table.
-      objUID =
-        getObjectUID(&cliInterface,
-                     catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
-                     COM_BASE_TABLE_OBJECT_LIT);
-    }
+  NABoolean xnWasStartedHere = FALSE;
 
   Lng32 colNumber = nacol->getPosition();
-
-  char buf[4000];
-  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld and column_number = %d",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-              objUID,
-              colNumber);
-
-  cliRC = cliInterface.executeImmediate(buf);
-  if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-      processReturn();
-
-      return;
-    }
-
-  str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %Ld and column_number >= %d",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-              objUID,
-              colNumber);
-
-  cliRC = cliInterface.executeImmediate(buf);
-  if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-      processReturn();
-
-      return;
-    }
-
-  str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %Ld and column_number >= %d",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
-              objUID,
-              colNumber);
-
-  cliRC = cliInterface.executeImmediate(buf);
-  if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-
-      processReturn();
-
-      return;
-    }
-
-  // remove column from all rows of the base table
-  HbaseStr hbaseTable;
-  hbaseTable.val = (char*)extNameForHbase.data();
-  hbaseTable.len = extNameForHbase.length();
-
-  //  Text column("cf1:");
-
-  //  Text column(SEABASE_DEFAULT_COL_FAMILY);
-  //  column.append(":");
-  //  column.append(colName);
-
-  NAString column(nacol->getHbaseColFam(), heap_);
-  column.append(":");
-  //  column.append(nacol->getHbaseColQual());
-
-  char * colQualPtr = (char*)nacol->getHbaseColQual().data();
-  Lng32 colQualLen = nacol->getHbaseColQual().length();
-  Int64 colQval = str_atoi(colQualPtr, colQualLen);
-  if (colQval <= UCHAR_MAX)
-    {
-      unsigned char c = (unsigned char)colQval;
-      column.append((char*)&c, 1);
-    }
-  else if (colQval <= USHRT_MAX)
-    {
-      unsigned short s = (unsigned short)colQval;
-      column.append((char*)&s, 2);
-    }
-  else if (colQval <= ULONG_MAX)
-    {
-      Lng32 l = (Lng32)colQval;
-      column.append((char*)&l, 4);
-    }
-  else
-    column.append((char*)&colQval, 8);
-  
-  HbaseStr colNameStr;
   char *col = NULL;
-  col = (char *) heap_->allocateMemory(column.length() + 1, FALSE);
-  if (col)
+  if (naTable->isSQLMXAlignedTable())
     {
-      memcpy(col, column.data(), column.length());
-      col[column.length()] = 0;
-      colNameStr.val = col;
-      colNameStr.len = column.length();
-    }
+      if (alignedFormatTableAddDropColumn(naTable->objectUid().castToInt64(),
+                                          FALSE, // drop col
+                                          catalogNamePart, schemaNamePart, objectNamePart,
+                                          (char*)colName.data(), NULL))
+        {
+          processReturn();
+          return;
+        }
+     }
   else
     {
-      deallocEHI(ehi);
-
-      *CmpCommon::diags() << DgSqlCode(-EXE_NO_MEM_TO_EXEC);  // error -8571
-
-      processReturn();
-
-      return;
-    }
-  retcode = ehi->deleteColumns(hbaseTable, colNameStr);
-  if (retcode < 0)
-    {
-      *CmpCommon::diags() << DgSqlCode(-8448)
-                          << DgString0((char*)"ExpHbaseInterface::deleteColumns()")
-                          << DgString1(getHbaseErrStr(-retcode))
-                          << DgInt0(-retcode)
-                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+      if (beginXnIfNotInProgress(&cliInterface, xnWasStartedHere))
+        return;
       
-      deallocEHI(ehi); 
-      heap_->deallocateMemory(col);
+      char buf[4000];
+      str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld and column_number = %d",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                  objUID,
+                  colNumber);
+      
+      cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          goto label_return;
+        }
+      
+      str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %Ld and column_number >= %d",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                  objUID,
+                  colNumber);
+      
+      cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          goto label_return;
+        }
+      
+      str_sprintf(buf, "update %s.\"%s\".%s set column_number = column_number - 1 where object_uid = %Ld and column_number >= %d",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
+                  objUID,
+                  colNumber);
+      
+      cliRC = cliInterface.executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          goto label_return;
+        }
+      
+      // remove column from all rows of the base table
+      HbaseStr hbaseTable;
+      hbaseTable.val = (char*)extNameForHbase.data();
+      hbaseTable.len = extNameForHbase.length();
+      
+      {
+        NAString column(nacol->getHbaseColFam(), heap_);
+        column.append(":");
+        
+        char * colQualPtr = (char*)nacol->getHbaseColQual().data();
+        Lng32 colQualLen = nacol->getHbaseColQual().length();
+        Int64 colQval = str_atoi(colQualPtr, colQualLen);
+        if (colQval <= UCHAR_MAX)
+          {
+            unsigned char c = (unsigned char)colQval;
+            column.append((char*)&c, 1);
+          }
+        else if (colQval <= USHRT_MAX)
+          {
+            unsigned short s = (unsigned short)colQval;
+            column.append((char*)&s, 2);
+          }
+        else if (colQval <= ULONG_MAX)
+          {
+            Lng32 l = (Lng32)colQval;
+            column.append((char*)&l, 4);
+          }
+        else
+          column.append((char*)&colQval, 8);
+        
+        HbaseStr colNameStr;
+        col = (char *) heap_->allocateMemory(column.length() + 1, FALSE);
+        if (col)
+          {
+            memcpy(col, column.data(), column.length());
+            col[column.length()] = 0;
+            colNameStr.val = col;
+            colNameStr.len = column.length();
+          }
+        else
+          {
+            cliRC = -EXE_NO_MEM_TO_EXEC;
+            *CmpCommon::diags() << DgSqlCode(-EXE_NO_MEM_TO_EXEC);  // error -8571
+            
+            goto label_return;
+          }
 
-      processReturn();
+        cliRC = ehi->deleteColumns(hbaseTable, colNameStr);
+        if (cliRC < 0)
+          {
+            *CmpCommon::diags() << DgSqlCode(-8448)
+                                << DgString0((char*)"ExpHbaseInterface::deleteColumns()")
+                                << DgString1(getHbaseErrStr(-retcode))
+                                << DgInt0(-retcode)
+                                << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+            
+            goto label_return;
+          }
+      }
+    } // hbase format table
 
-      return;
-    }
-
-  if (updateObjectRedefTime(&cliInterface,
-                            catalogNamePart, schemaNamePart, objectNamePart,
-                            COM_BASE_TABLE_OBJECT_LIT))
+  cliRC = updateObjectRedefTime(&cliInterface,
+                                catalogNamePart, schemaNamePart, objectNamePart,
+                                COM_BASE_TABLE_OBJECT_LIT);
+  if (cliRC < 0)
     {
-      processReturn();
-      heap_->deallocateMemory(col);
-
-      deallocEHI(ehi);
-
-      return;
+      goto label_return;
     }
 
+ label_return:
+  endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC);
+  
   deallocEHI(ehi); 
   heap_->deallocateMemory(col);
 
@@ -4219,7 +4833,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
     }
   pkeyStr += ")";
 
-  if (constraintErrorChecks(alterAddConstraint->castToStmtDDLAddConstraintUnique(),
+  if (constraintErrorChecks(&cliInterface,
+                            alterAddConstraint->castToStmtDDLAddConstraintUnique(),
                             naTable,
                             COM_UNIQUE_CONSTRAINT, //TRUE, 
                             keyColList))
@@ -4490,7 +5105,9 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
         keyColOrderList.insert("ASC");
     }
 
-  if (constraintErrorChecks(alterAddConstraint->castToStmtDDLAddConstraintUnique(),
+  if (constraintErrorChecks(
+                            &cliInterface,
+                            alterAddConstraint->castToStmtDDLAddConstraintUnique(),
                             naTable,
                             COM_UNIQUE_CONSTRAINT, 
                             keyColList))
@@ -4518,7 +5135,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
                          naTable, COM_UNIQUE_CONSTRAINT, TRUE, &cliInterface))
     {
       *CmpCommon::diags()
-        << DgSqlCode(-1029)
+        << DgSqlCode(-1043)
         << DgTableName(uniqueStr);
 
       return;
@@ -4574,7 +5191,7 @@ short CmpSeabaseDDL::isCircularDependent(CorrName &ringTable,
   NATable *naTable = bindWA->getNATable(refdTable); 
   if (naTable == NULL || bindWA->errStatus())
     {
-      *CmpCommon::diags() << DgSqlCode(-1389)
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                           << DgString0(naTable->getTableName().getQualifiedNameAsString());
       
       processReturn();
@@ -4593,8 +5210,9 @@ short CmpSeabaseDDL::isCircularDependent(CorrName &ringTable,
         continue;
 
       RefConstraint * refConstr = (RefConstraint*)ariConstr;
+      if (refConstr->selfRef())
+        continue;
 
-      //      CorrName cn(refConstr->getDefiningTableName());
       CorrName cn(refConstr->getUniqueConstraintReferencedByMe().getTableName());
       if (cn == origRingTable)
         {
@@ -4760,7 +5378,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
   // If the referenced and referencing tables are the same, 
   // reject the request.  At this time, we do not allow self
   // referencing constraints.
-  if (referencingTableName == referencedTableName)
+  if ((CmpCommon::getDefault(TRAF_ALLOW_SELF_REF_CONSTR) == DF_OFF) &&
+      (referencingTableName == referencedTableName))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_SELF_REFERENCING_CONSTRAINT);
 
@@ -4821,7 +5440,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       ringNullList += " is null ";
     }
 
-  if (constraintErrorChecks(alterAddConstraint->castToStmtDDLAddConstraintRI(),
+  if (constraintErrorChecks(&cliInterface,
+                            alterAddConstraint->castToStmtDDLAddConstraintRI(),
                             ringNaTable,
                             COM_FOREIGN_KEY_CONSTRAINT, //FALSE, // referencing constr
                             ringKeyColList))
@@ -5374,7 +5994,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
     }
 
   NAList<NAString> keyColList;
-  if (constraintErrorChecks(alterAddConstraint->castToStmtDDLAddConstraintCheck(),
+  if (constraintErrorChecks(&cliInterface,
+                            alterAddConstraint->castToStmtDDLAddConstraintCheck(),
                             naTable,
                             COM_CHECK_CONSTRAINT, 
                             keyColList))
@@ -5597,8 +6218,10 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
   NABoolean isCheckConstr = 
     (strcmp(outObjType, COM_CHECK_CONSTRAINT_OBJECT_LIT) == 0);
 
+  NABoolean constrFound = FALSE;
   if (isUniqConstr)
     {
+      constrFound = FALSE;
       const AbstractRIConstraintList &ariList = naTable->getUniqueConstraints();
       for (Int32 i = 0; i < ariList.entries(); i++)
         {
@@ -5610,6 +6233,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
           
           if (dropConstrName == tableConstrName)
             {
+              constrFound = TRUE;
               if (uniqueConstr->hasRefConstraintsReferencingMe())
                 {
                   *CmpCommon::diags()
@@ -5621,12 +6245,23 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
                 }
             }
         } // for
+
+      if (NOT constrFound)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1052);
+          
+          processReturn();
+          
+          return;
+        }
     }
   
   NATable *otherNaTable = NULL;
   Int64 otherConstrUID = 0;
   if (isRefConstr)
     {
+      constrFound = FALSE;
+
       RefConstraint * refConstr = NULL;
       
       const AbstractRIConstraintList &ariList = naTable->getRefConstraints();
@@ -5639,10 +6274,20 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
           
           if (dropConstrName == tableConstrName)
             {
+              constrFound = TRUE;
               refConstr = (RefConstraint*)ariConstr;
             }
         } // for
  
+      if (NOT constrFound)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1052);
+          
+          processReturn();
+          
+          return;
+        }
+
       CorrName otherCN(refConstr->getUniqueConstraintReferencedByMe().getTableName());
       otherNaTable = bindWA.getNATable(otherCN);
       if (otherNaTable == NULL || bindWA.errStatus())
@@ -5814,7 +6459,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   StmtDDLGrant * grantNode = NULL;
   StmtDDLRevoke * revokeNode = NULL;
   NAString tabName;
-  ComAnsiNameSpace nameSpace;  
+  ComAnsiNameSpace nameSpace; 
   
   if (isGrant)
     {
@@ -5867,146 +6512,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
               STMTHEAP,
               tableName.getSchemaNamePart().getInternalName(),
               tableName.getCatalogNamePart().getInternalName());
-
-  ElemDDLGranteeArray & pGranteeArray = 
-    (isGrant ? grantNode->getGranteeArray() : revokeNode->getGranteeArray());
-
-  ElemDDLPrivActArray & pPrivActsArray =
-    (isGrant ? grantNode->getPrivilegeActionArray() :
-     revokeNode->getPrivilegeActionArray());
-
-  NABoolean   allPrivs =
-    (isGrant ? grantNode->isAllPrivilegesSpecified() : 
-     revokeNode->isAllPrivilegesSpecified());
-
-  NABoolean   isWGOSpecified =
-    (isGrant ? grantNode->isWithGrantOptionSpecified() : 
-     revokeNode->isGrantOptionForSpecified());
-
-  NABoolean   isGrantedBySpecified =
-    (isGrant ? grantNode->isByGrantorOptionSpecified() : 
-     revokeNode->isByGrantorOptionSpecified());
-     
-  vector<std::string> userPermissions;
-  if (allPrivs)
-    {
-     userPermissions.push_back("ALL");
-    }
-  else
-    {
-      for (Lng32 i = 0; i < pPrivActsArray.entries(); i++)
-        {
-          switch (pPrivActsArray[i]->getOperatorType() )
-            {
-            case ELM_PRIV_ACT_SELECT_ELEM:
-              {
-                userPermissions.push_back("SELECT");
-                break;
-              }
               
-            case ELM_PRIV_ACT_INSERT_ELEM:
-              {
-                userPermissions.push_back("INSERT");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_DELETE_ELEM:
-              {
-                userPermissions.push_back("DELETE");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_UPDATE_ELEM:   
-              {
-                userPermissions.push_back("UPDATE");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_USAGE_ELEM:
-              {
-                userPermissions.push_back("USAGE");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_REFERENCES_ELEM:
-              {
-                userPermissions.push_back("REFERENCES");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_EXECUTE_ELEM:
-              {
-                userPermissions.push_back("EXECUTE");
-                break;
-              }
-              
-            case ELM_PRIV_ACT_ALL_DML_ELEM:
-              {
-                userPermissions.push_back("ALL_DML");
-                break;
-              }
-              
-            default:
-              {
-                NAString privType = "UNKNOWN";
-                
-                *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_PRIV_FOR_OBJECT)
-                                    <<  DgString0(privType)
-                                    << DgString1(extTableName);
-                
-                
-                processReturn();
-
-                return;
-              }
-            }  // end switch
-        } // for
-    }
-
-
- // Prepare to call privilege manager
-  NAString MDLoc;
-  CONCAT_CATSCH(MDLoc, getSystemCatalog(), SEABASE_MD_SCHEMA);
-  NAString privMgrMDLoc;
-  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
-
-  PrivMgrCommands command(std::string(MDLoc.data()), 
-                          std::string(privMgrMDLoc.data()), 
-                          CmpCommon::diags());
-
-  // If the object is a metadata table or a privilege manager table, don't 
-  // allow the privilege to be grantable.
-  bool isPrivMgrTable = command.isPrivMgrTable(std::string(extTableName.data()));
-  NABoolean isMDTable = (isSeabaseMD(tableName) || isPrivMgrTable) ? TRUE : FALSE;
-
-  if (isMDTable && isWGOSpecified)
-    {
-      *CmpCommon::diags() << DgSqlCode(-CAT_WGO_NOT_ALLOWED);
-
-      processReturn();
-      return;
-    }
-
-  // Grants/revokes of the select privilege on metadata tables are allowed
-  // Grants/revokes of other relevant privileges are allowed if parser flag
-  //   INTERNAL_QUERY_FROM_EXEUTIL is set
-  // Revoke:  allow ALL and ALL_DML to be specified
-  if (isMDTable && (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
-    {
-      if (userPermissions.size() == 1 &&
-          (userPermissions[0] == "SELECT" ||
-           (!isGrant && userPermissions[0] == "ALL") ||
-           (!isGrant && userPermissions[0] == "ALL_DML")))
-        {} // operation allowed
-      else
-        {
-          *CmpCommon::diags() << DgSqlCode(-CAT_SMD_PRIVS_CANNOT_BE_CHANGED);
-
-          processReturn();
-          return;
-        }
-    }
-
   // set up common information for all grantees
   ComObjectType objectType = COM_BASE_TABLE_OBJECT;
   switch (nameSpace)
@@ -6029,9 +6535,10 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   Int64 objectUID = 0;
   Int32 objectOwnerID = 0;
   Int32 schemaOwnerID = 0;
+  NATable *naTable = NULL;
   if (objectType == COM_BASE_TABLE_OBJECT)
     {
-      NATable *naTable = bindWA.getNATable(cn);
+      naTable = bindWA.getNATable(cn);
       if (naTable == NULL || bindWA.errStatus())
         {
           *CmpCommon::diags()
@@ -6044,6 +6551,76 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       objectUID = (int64_t)naTable->objectUid().get_value();
       objectOwnerID = (int32_t)naTable->getOwner();
       schemaOwnerID = naTable->getSchemaOwner();
+    }
+
+  ElemDDLGranteeArray & pGranteeArray = 
+    (isGrant ? grantNode->getGranteeArray() : revokeNode->getGranteeArray());
+
+  ElemDDLPrivActArray & privActsArray =
+    (isGrant ? grantNode->getPrivilegeActionArray() :
+     revokeNode->getPrivilegeActionArray());
+
+  NABoolean   allPrivs =
+    (isGrant ? grantNode->isAllPrivilegesSpecified() : 
+     revokeNode->isAllPrivilegesSpecified());
+
+  NABoolean   isWGOSpecified =
+    (isGrant ? grantNode->isWithGrantOptionSpecified() : 
+     revokeNode->isGrantOptionForSpecified());
+
+  NABoolean   isGrantedBySpecified =
+    (isGrant ? grantNode->isByGrantorOptionSpecified() : 
+     revokeNode->isByGrantorOptionSpecified());
+
+  vector<std::string> userPermissions;
+  std::vector<PrivType> objectPrivs;
+  std::vector<ColPrivSpec> colPrivs;
+  
+
+  if (allPrivs)
+    objectPrivs.push_back(ALL_PRIVS);
+  else
+    if (!checkSpecifiedPrivs(privActsArray,extTableName.data(),objectType,
+                             naTable,objectPrivs,colPrivs))
+      {
+        processReturn();
+        return;
+      }
+
+ // Prepare to call privilege manager
+  NAString MDLoc;
+  CONCAT_CATSCH(MDLoc, getSystemCatalog(), SEABASE_MD_SCHEMA);
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+
+  PrivMgrCommands command(std::string(MDLoc.data()), 
+                          std::string(privMgrMDLoc.data()), 
+                          CmpCommon::diags());
+
+  // If the object is a metadata table or a privilege manager table, don't 
+  // allow the privilege to be grantable.
+  NABoolean isMDTable = (isSeabaseMD(tableName) || 
+                         isSeabasePrivMgrMD(tableName));
+
+  if (isMDTable && isWGOSpecified)
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_WGO_NOT_ALLOWED);
+
+      processReturn();
+      return;
+    }
+
+  // Grants/revokes of the select privilege on metadata tables are allowed
+  // Grants/revokes of other relevant privileges are allowed if parser flag
+  //   INTERNAL_QUERY_FROM_EXEUTIL is set
+  // Revoke:  allow ALL and ALL_DML to be specified
+  if (isMDTable && !Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) &&
+      !isMDGrantRevokeOK(objectPrivs,colPrivs,isGrant))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_SMD_PRIVS_CANNOT_BE_CHANGED);
+
+      processReturn();
+      return;
     }
 
   // for metadata tables, the objectUID is not initialized in the NATable
@@ -6148,7 +6725,8 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
                                                          granteeName, 
                                                          effectiveGrantorID, 
                                                          effectiveGrantorName, 
-                                                         userPermissions,
+                                                         objectPrivs,
+                                                         colPrivs,
                                                          allPrivs,
                                                          isWGOSpecified); 
       }
@@ -6158,8 +6736,11 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
                                                           objectName, 
                                                           objectType, 
                                                           grantee, 
+                                                          granteeName, 
                                                           effectiveGrantorID, 
-                                                          userPermissions, 
+                                                          effectiveGrantorName, 
+                                                          objectPrivs, 
+                                                          colPrivs,
                                                           allPrivs, 
                                                           isWGOSpecified);
  
@@ -6496,11 +7077,17 @@ short CmpSeabaseDDL::getSpecialTableInfo
       createTableInfo = TRUE;
     }
 
-  if ((NOT isUninit) && 
-      (CmpCommon::getDefault(TRAF_BOOTSTRAP_MD_MODE) == DF_OFF))
+  NABoolean getUID = TRUE;
+  if (isUninit)
+    getUID = FALSE;
+  else if (CmpCommon::context()->isMxcmp())
+    getUID = FALSE;
+  else if (CmpCommon::getDefault(TRAF_BOOTSTRAP_MD_MODE) == DF_ON)
+    getUID = FALSE;
+  if (getUID)
     {
       ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
+                                   CmpCommon::context()->sqlSession()->getParentQid());
 
       if (switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
         return -1;
@@ -6521,7 +7108,6 @@ short CmpSeabaseDDL::getSpecialTableInfo
       switchBackCompiler();
 
       createTableInfo = TRUE;
-
     }
 
   if (createTableInfo)
@@ -6565,20 +7151,46 @@ desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(
   NAString extTableName = coName.getExternalName(TRUE);
 
   ComTdbVirtTableTableInfo * tableInfo = NULL;
-  Lng32 colInfoSize;
-  const ComTdbVirtTableColumnInfo * colInfo;
-  Lng32 keyInfoSize;
-  const ComTdbVirtTableKeyInfo * keyInfo;
+  Lng32 colInfoSize = 0;
+  const ComTdbVirtTableColumnInfo * colInfo = NULL;
+  Lng32 keyInfoSize = 0;
+  const ComTdbVirtTableKeyInfo * keyInfo = NULL;
+  Lng32 uniqueInfoSize = 0;
+  ComTdbVirtTableConstraintInfo * constrInfo = NULL;
 
   Lng32 indexInfoSize = 0;
   const ComTdbVirtTableIndexInfo * indexInfo = NULL;
-  if (NOT CmpSeabaseMDupgrade::getMDtableInfo(objName,
+  if (NOT CmpSeabaseMDupgrade::getMDtableInfo(coName,
                                               tableInfo,
                                               colInfoSize, colInfo,
                                               keyInfoSize, keyInfo,
                                               indexInfoSize, indexInfo,
                                               objType))
     return NULL;
+
+  // Setup the primary key information as a unique constraint
+  uniqueInfoSize = 1;
+  constrInfo = new(STMTHEAP) ComTdbVirtTableConstraintInfo[uniqueInfoSize];
+  constrInfo->baseTableName = (char*)extTableName.data();
+
+  // The primary key constraint name is the name of the object appended
+  // with "_PK";
+  NAString constrName = extTableName;
+  constrName += "_PK";
+  constrInfo->constrName = (char*)constrName.data();
+
+  constrInfo->constrType = 3; // pkey_constr
+
+  constrInfo->colCount = keyInfoSize;
+  constrInfo->keyInfoArray = (ComTdbVirtTableKeyInfo *)keyInfo;
+
+  constrInfo->numRingConstr = 0;
+  constrInfo->ringConstrArray = NULL;
+  constrInfo->numRefdConstr = 0;
+  constrInfo->refdConstrArray = NULL;
+
+  constrInfo->checkConstrLen = 0;
+  constrInfo->checkConstrText = NULL;
 
   tableDesc =
     Generator::createVirtualTableDesc
@@ -6587,7 +7199,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(
      (ComTdbVirtTableColumnInfo*)colInfo,
      keyInfoSize,
      (ComTdbVirtTableKeyInfo*)keyInfo,
-     0, NULL,
+     uniqueInfoSize, constrInfo,
      indexInfoSize, 
      (ComTdbVirtTableIndexInfo *)indexInfo,
      0, NULL,
@@ -7109,7 +7721,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
                                                      const NAString &schName, 
                                                      const NAString &objName,
                                                      const ComObjectType objType,
-                                                     NABoolean includeInvalidDefs)
+                                                     NABoolean includeInvalidDefs,
+                                                     Int32 ctlFlags)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -7327,9 +7940,9 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
     }
   
   //restore CQDs.
+  cliInterface.restoreCQD("OPTIMIZATION_LEVEL");
   cliInterface.restoreCQD("MERGE_JOINS");
   cliInterface.restoreCQD("HASH_JOINS");
-  cliInterface.restoreCQD("OPTIMIZATION_LEVEL");
   
   if (cliRC < 0)
     return NULL;
@@ -7861,8 +8474,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
           return NULL;
         }
 
-      DefaultToken  tok = CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN);
-      if (tok == DF_LATEST)
+      if (ctlFlags & GET_SNAPSHOTS)
       {
         char * snapName = NULL;
         Lng32 retcode = ehi->getLatestSnapshot(extNameForHbase.data(), snapName, STMTHEAP);
@@ -7915,7 +8527,9 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
     }
 
   desc_struct *tDesc = NULL;
-  if (isSeabaseMD(catName, schName, objName))
+  NABoolean isMDTable = (isSeabaseMD(catName, schName, objName) || 
+                        isSeabasePrivMgrMD(catName, schName));
+  if (isMDTable)
     {
       if (! CmpCommon::context()->getTrafMDDescsInfo())
         {
@@ -7971,7 +8585,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
               break;
             default:
               tDesc = getSeabaseUserTableDesc(catName, schName, objName, 
-                                              objType, includeInvalidDefs);
+                                              objType, includeInvalidDefs,
+                                              GET_SNAPSHOTS /* get snapshot */);
 	  }
           switchBackCompiler();
         }
@@ -8094,11 +8709,15 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   " sql_access, call_on_null, isolate_bool, param_style,"
   " transaction_attributes, max_results, state_area_size, external_name,"
   " parallelism, user_version, external_security, execution_mode,"
-  " library_filename, version, signature from %s.\"%s\".%s a, %s.\"%s\".%s b"
-  " where a.udr_uid = %Ld and a.library_uid = b.library_uid "
-  " for read committed access",
+  " library_filename, version, signature,  catalog_name, schema_name,"
+  " object_name"
+  " from %s.\"%s\".%s r, %s.\"%s\".%s l, %s.\"%s\".%s o "
+  " where r.udr_uid = %Ld and r.library_uid = l.library_uid "
+  " and l.library_uid = o.object_uid for read committed access",
        getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
-       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES, objectUID);
+       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
+       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+       objectUID);
 
 
   cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
@@ -8116,7 +8735,7 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   }
   if (cliRC == 100) // did not find the row
   {
-     *CmpCommon::diags() << DgSqlCode(-1389)
+     *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
                         << DgString0(objName);
      return NULL;
   }
@@ -8188,6 +8807,27 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   cliInterface.getPtrAndLen(18, ptr, len);
   routineInfo->signature = new (STMTHEAP) char[len+1];    
   str_cpy_and_null((char *)routineInfo->signature, ptr, len, '\0', ' ', TRUE);
+  // library SQL name, in three parts
+  cliInterface.getPtrAndLen(19, ptr, len);
+  char *libCat = new (STMTHEAP) char[len+1];    
+  str_cpy_and_null(libCat, ptr, len, '\0', ' ', TRUE);
+  cliInterface.getPtrAndLen(20, ptr, len);
+  char *libSch = new (STMTHEAP) char[len+1];    
+  str_cpy_and_null(libSch, ptr, len, '\0', ' ', TRUE);
+  cliInterface.getPtrAndLen(21, ptr, len);
+  char *libObj = new (STMTHEAP) char[len+1];    
+  str_cpy_and_null(libObj, ptr, len, '\0', ' ', TRUE);
+  ComObjectName libSQLName(libCat, libSch, libObj,
+                           COM_UNKNOWN_NAME,
+                           ComAnsiNamePart::INTERNAL_FORMAT,
+                           STMTHEAP);
+  NAString libSQLExtName = libSQLName.getExternalName();
+  routineInfo->library_sqlname = new (STMTHEAP) char[libSQLExtName.length()+1];    
+  str_cpy_and_null((char *)routineInfo->library_sqlname,
+                   libSQLExtName.data(),
+                   libSQLExtName.length(),
+                   '\0', ' ', TRUE);
+  
   ComTdbVirtTableColumnInfo *paramsArray;
   Lng32 numParams;
   char direction[50];
@@ -8220,4 +8860,463 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   return routine_desc;
 }
 
+
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: checkSpecifiedPrivs                                             *
+// *                                                                           *
+// *    Processes the privilege specification and returns the lists of object  *
+// * and column privileges.                                                    *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <privActsArray>                 ElemDDLPrivActArray &           In       *
+// *    is a reference to the parsed list of privileges to be granted or       *
+// *  revoked.                                                                 *
+// *                                                                           *
+// *  <externalObjectName>            const char *                    In       *
+// *    is the fully qualified name of the object that privileges are being    *
+// *  granted or revoked on.                                                   *
+// *                                                                           *
+// *  <objectType>                    ComObjectType                   In       *
+// *    is the type of the object that privileges are being granted or         *
+// *  revoked on.                                                              *
+// *                                                                           *
+// *  <naTable>                       NATable *                       In       *
+// *    if the object type is a table or view, the cache for the metadata      *
+// *  related to the object, otherwise NULL.                                   *
+// *                                                                           *
+// *  <objectPrivs>                   std::vector<PrivType> &         Out      *
+// *    passes back a list of the object privileges to be granted or revoked.  *
+// *                                                                           *
+// *  <colPrivs>                      std::vector<ColPrivSpec> &      Out      *
+// *    passes back a list of the column privileges and the specific columns   *
+// *  on which the privileges are to be granted or revoked.                    *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Privileges processed successfully.  Lists of object and column     *
+// *        privileges were returned.                                          *
+// * false: Error processing privileges. The error is in the diags area.       *
+// *                                                                           *
+// *****************************************************************************
+static bool checkSpecifiedPrivs(
+   ElemDDLPrivActArray & privActsArray,  
+   const char * externalObjectName,
+   ComObjectType objectType,
+   NATable * naTable,
+   std::vector<PrivType> & objectPrivs,
+   std::vector<ColPrivSpec> & colPrivs) 
+
+{
+
+   for (Lng32 i = 0; i < privActsArray.entries(); i++)
+   {
+      // Currently only DML privileges are supported.
+      PrivType privType;
+      if (!ElmPrivToPrivType(privActsArray[i]->getOperatorType(),privType) ||
+          !isDMLPrivType(privType))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_PRIV_FOR_OBJECT)
+                             << DgString0(PrivMgrUserPrivs::convertPrivTypeToLiteral(privType).c_str()) 
+                             << DgString1(externalObjectName);
+         return false;
+      }
+      
+      //
+      // The same privilege cannot be specified twice in one grant or revoke
+      // statement.  This includes granting or revoking the same privilege at 
+      // the object-level and the column-level.
+      if (hasValue(objectPrivs,privType) || hasValue(colPrivs,privType))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_DUPLICATE_PRIVILEGES);
+         return false;
+      }
+   
+      if (!isValidPrivTypeForObject(objectType,privType) && privType != PrivType::ALL_DML)
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_PRIVILEGE_NOT_ALLOWED_FOR_THIS_OBJECT_TYPE)
+                             << DgString0(PrivMgrUserPrivs::convertPrivTypeToLiteral(privType).c_str());
+         return false;
+      }
+      
+      // For some DML privileges the user may be granting either column  
+      // or object privileges.  If it is not a privilege that can be granted
+      // at the column level, it is an object-level privilege.
+      if (!isColumnPrivType(privType))
+      {
+         objectPrivs.push_back(privType);
+         continue;
+      }
+      
+      ElemDDLPrivActWithColumns * privActWithColumns = dynamic_cast<ElemDDLPrivActWithColumns *>(privActsArray[i]);
+      ElemDDLColNameArray colNameArray = privActWithColumns->getColumnNameArray();
+      // If no columns were specified, this is an object-level privilege.
+      if (colNameArray.entries() == 0)  
+      {
+         objectPrivs.push_back(privType);
+         continue;
+      }
+      
+      // Column-level privileges can only be specified for tables and views.
+      // Currently caller maps both tables and views to the object type base table.
+      if (objectType != COM_BASE_TABLE_OBJECT)
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_INCORRECT_OBJECT_TYPE)
+                             << DgTableName(externalObjectName);
+         return false;
+      }
+      
+      // It's a table or view, validate the column.  Get the list of 
+      // columns and verify the list contains the specified column(s).
+      const NAColumnArray &nacolArr = naTable->getNAColumnArray();
+      for (size_t c = 0; c < colNameArray.entries(); c++)
+      {
+         const NAColumn * naCol = nacolArr.getColumn(colNameArray[c]->getColumnName());
+         if (naCol == NULL)
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_COLUMN_DOES_NOT_EXIST_ERROR)
+                                << DgColumnName(colNameArray[c]->getColumnName());
+            return false;
+         }
+         // Specified column was found.
+         ColPrivSpec colPrivEntry;
+         
+         colPrivEntry.privType = privType;
+         colPrivEntry.columnOrdinal = naCol->getPosition();
+         colPrivs.push_back(colPrivEntry);
+      }
+   } 
+   
+   return true;
+
+}
+//************************ End of checkSpecifiedPrivs **************************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: ElmPrivToPrivType                                               *
+// *                                                                           *
+// *  This function maps a parser privilege enum (ELM_PRIV_ACT) to a Privilege *
+// *  Manager PrivType.                                                        *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <elmPriv>                       OperatorTypeEnum                In       *
+// *    is a parser privilege enum.                                            *
+// *                                                                           *
+// *  <privType>                      PrivType &                      Out      *
+// *    passes back the CatPrivBitmap privilege enum.                          *
+// *                                                                           *
+// *  <forRevoke>                     bool                            [In]     *
+// *    is true if this is part of a revoke command, otherwise false.  Default *
+// *  to true.  Currently unused, placeholder for schema and DDL privileges.   *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Privilege converted                                                *
+// * false: Privilege not recognized.                                          *
+// *                                                                           *
+// *****************************************************************************
+static bool ElmPrivToPrivType(
+   OperatorTypeEnum    elmPriv,
+   PrivType          & privType,
+   bool                forRevoke)
+   
+{
+
+   switch (elmPriv)
+   {
+      case ELM_PRIV_ACT_DELETE_ELEM:
+         privType = PrivType::DELETE_PRIV;
+         break;
+ 
+      case ELM_PRIV_ACT_EXECUTE_ELEM:
+         privType = PrivType::EXECUTE_PRIV;
+         break;
+ 
+      case ELM_PRIV_ACT_INSERT_ELEM:
+         privType = PrivType::INSERT_PRIV;
+         break;
+ 
+      case ELM_PRIV_ACT_REFERENCES_ELEM:
+         privType = PrivType::REFERENCES_PRIV;
+         break;
+         
+      case ELM_PRIV_ACT_SELECT_ELEM:
+         privType = PrivType::SELECT_PRIV;
+         break;
+
+      case ELM_PRIV_ACT_UPDATE_ELEM:   
+         privType = PrivType::UPDATE_PRIV;
+         break;
+
+      case ELM_PRIV_ACT_USAGE_ELEM:   
+         privType = PrivType::USAGE_PRIV;
+         break;
+
+      case ELM_PRIV_ACT_ALTER_ELEM:
+        // if (forRevoke)
+        //    privType = PrivType::ALL_ALTER;
+       //  else
+            privType = PrivType::ALTER_PRIV;
+         break;
+
+      case ELM_PRIV_ACT_CREATE_ELEM:
+       //  if (forRevoke)
+       //     privType = PrivType::ALL_CREATE;
+       //  else
+            privType = PrivType::CREATE_PRIV;
+         break;
+      
+      case ELM_PRIV_ACT_DROP_ELEM:
+       //  if (forRevoke)
+       //     privType = PrivType::ALL_DROP;
+       //  else
+            privType = PrivType::DROP_PRIV;
+         break;
+
+      case ELM_PRIV_ACT_ALL_DDL_ELEM:
+        privType = PrivType::ALL_DDL;
+        break;
+ 
+      case ELM_PRIV_ACT_ALL_DML_ELEM:
+         privType = PrivType::ALL_DML;
+         break;
+
+      case ELM_PRIV_ACT_ALL_OTHER_ELEM:
+         privType = PrivType::ALL_PRIVS;
+         break;
+
+      default:
+         return false;
+   }
+   
+   return true;
+
+}
+//************************* End of ElmPrivToPrivType ***************************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: hasValue                                                        *
+// *                                                                           *
+// *   This function determines if a ColPrivSpec vector contains a PrivType    *
+// *   value.                                                                  *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <container>                  std::vector<ColPrivSpec>           In       *
+// *    is the vector of ColPrivSpec values.                                   *
+// *                                                                           *
+// *  <value>                      PrivType                           In       *
+// *    is the value to be compared against existing values in the vector.     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Vector contains the value.                                         *
+// * false: Vector does not contain the value.                                 *
+// *                                                                           *
+// *****************************************************************************
+static bool hasValue(
+   const std::vector<ColPrivSpec> & container,
+   PrivType value)
+   
+{
+
+   for (size_t index = 0; index < container.size(); index++)
+      if (container[index].privType == value)
+         return true;
+         
+   return false;
+   
+}
+//***************************** End of hasValue ********************************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: hasValue                                                        *
+// *                                                                           *
+// *   This function determines if a PrivType vector contains a PrivType value.*
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <container>                  std::vector<PrivType>              In       *
+// *    is the vector of 32-bit values.                                        *
+// *                                                                           *
+// *  <value>                      PrivType                           In       *
+// *    is the value to be compared against existing values in the vector.     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Vector contains the value.                                         *
+// * false: Vector does not contain the value.                                 *
+// *                                                                           *
+// *****************************************************************************
+static bool hasValue(
+   const std::vector<PrivType> & container,
+   PrivType value)
+   
+{
+
+   for (size_t index = 0; index < container.size(); index++)
+      if (container[index] == value)
+         return true;
+         
+   return false;
+   
+}
+//***************************** End of hasValue ********************************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: isMDGrantRevokeOK                                               *
+// *                                                                           *
+// *   This function determines if a grant or revoke a privilege to/from a     *
+// * metadata table should be allowed.                                         *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectPrivs>                const std::vector<PrivType> &      In       *
+// *    is a vector of object-level privileges.                                *
+// *                                                                           *
+// *  <colPrivs>                   const std::vector<ColPrivSpec> &   In       *
+// *    is a vector of column-level privileges.                                *
+// *                                                                           *
+// *  <isGrant>                    bool                               In       *
+// *    is a true if this is a grant operation, false if revoke.               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Grant/revoke is OK.                                                *
+// * false: Grant/revoke should be rejected.                                   *
+// *                                                                           *
+// *****************************************************************************
+static bool isMDGrantRevokeOK(
+   const std::vector<PrivType> & objectPrivs,
+   const std::vector<ColPrivSpec> & colPrivs,
+   bool isGrant)
+
+{
+
+// Can only grant or revoke privileges on MD tables if only granting select,
+// or only revoking all privileges.  Only valid combination is no object
+// privileges and 1 or more column privileges (all SELECT), or no column
+// privilege and exactly one object privilege.  In the latter case, the 
+// privilege must either be SELECT, or if a REVOKE operation, either 
+// ALL_PRIVS or ALL_DML.
+
+// First check if no column privileges.
+
+   if (colPrivs.size() == 0)
+   {
+      // Should never get this far with both vectors being empty, but check 
+      // just in case.
+      if (objectPrivs.size() == 0) 
+         return false;
+         
+      if (objectPrivs.size() > 1)
+         return false;
+         
+      if (objectPrivs[0] == SELECT_PRIV)
+         return true;
+         
+      if (isGrant)
+         return false;
+       
+      if (objectPrivs[0] == ALL_PRIVS || objectPrivs[0] == ALL_DML)
+         return true;
+      
+      return false;
+   }
+   
+// Have column privs
+   if (objectPrivs.size() > 0)
+      return false;
+      
+   for (size_t i = 0; i < colPrivs.size(); i++)
+      if (colPrivs[i].privType != SELECT_PRIV)
+         return false;
+         
+   return true;     
+
+}
+//************************* End of isMDGrantRevokeOK ***************************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: isValidPrivTypeForObject                                        *
+// *                                                                           *
+// *   This function determines if a priv type is valid for an object.         *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectType>                 ComObjectType                      In       *
+// *    is the type of the object.                                             *
+// *                                                                           *
+// *  <privType>                   PrivType                           In       *
+// *    is the type of the privilege.                                          *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: Priv type is valid for object.                                     *
+// * false: Priv type is not valid for object.                                 *
+// *                                                                           *
+// *****************************************************************************
+static bool isValidPrivTypeForObject(
+   ComObjectType objectType,
+   PrivType privType)
+   
+{
+
+   switch (objectType)
+   {
+      case COM_LIBRARY_OBJECT:
+         return isLibraryPrivType(privType); 
+      case COM_STORED_PROCEDURE_OBJECT:
+      case COM_USER_DEFINED_ROUTINE_OBJECT:
+         return isUDRPrivType(privType); 
+      case COM_SEQUENCE_GENERATOR_OBJECT:
+         return isSequenceGeneratorPrivType(privType); 
+      case COM_BASE_TABLE_OBJECT:
+      case COM_VIEW_OBJECT:
+         return isTablePrivType(privType); 
+      default:
+         return false;
+   }
+
+   return false;
+
+}
+//********************* End of isValidPrivTypeForObject ************************
 

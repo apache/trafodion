@@ -1,4 +1,6 @@
 /**
+ * (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -69,12 +71,20 @@ public static final String trxkeypendingTransactionsById = "pendingTransactionsB
 public static final String trxkeyindoubtTransactionsCountByTmid = "indoubtTransactionsCountByTmid";
 public static final String trxkeyClosingVar = "checkClosingVariable";
 
+public static final String SPLIT_DELAY_LIMIT = "hbase.transaction.split.delay.limit";
+public static final String EARLY_DRAIN =       "hbase.transaction.split.drain.early";
+public static final String ACTIVE_DELAY_LEN =  "hbase.transaction.split.active.delay";
+public static final String PENDING_DELAY_LEN = "hbase.transaction.split.pending.delay";
+
 public static final int TS_ACTIVE = 0;
 public static final int TS_COMMIT_REQUEST = 1;
 public static final int TS_COMMIT = 2;
 public static final int TS_ABORT = 3;
 public static final int TS_CONTROL_POINT_COMMIT = 4;
 public static final byte TS_TRAFODION_TXN_TAG_TYPE = 41;
+public static final int ACTIVETXN_DELAY_DEFAULT = 15 * 1000;
+public static final int PENDINGTXN_DELAY_DEFAULT = 500;
+public static final int SPLIT_DELAY_DEFAULT = 360;
 
 // In-doubt transaction list during recovered WALEdit replay
 private SortedMap<Long, List<WALEdit>> pendingTransactionsById = new TreeMap<Long, List<WALEdit>>();//WALEdit>();
@@ -95,6 +105,10 @@ HLog tHLog;
 ServerName sn;
 String hostName;
 int port;
+int splitDelayLimit;
+boolean earlyDrain;
+int activeDelayLen;
+int pendingDelayLen;
 long activeCount = 0;
 long abortCount = 0;
 long commitCount = 0;
@@ -116,8 +130,24 @@ private static Object zkRecoveryCheckLock = new Object();
 // Region Observer Coprocessor START
 @Override
 public void start(CoprocessorEnvironment e) throws IOException {
-
+    RegionCoprocessorEnvironment regionCoprEnv = (RegionCoprocessorEnvironment)e;
     RegionCoprocessorEnvironment re = (RegionCoprocessorEnvironment) e;
+    my_Region = re.getRegion();
+    regionInfo = my_Region.getRegionInfo();
+
+    org.apache.hadoop.conf.Configuration conf = regionCoprEnv.getConfiguration();
+    this.splitDelayLimit = conf.getInt(SPLIT_DELAY_LIMIT, SPLIT_DELAY_DEFAULT);
+    this.activeDelayLen = conf.getInt(ACTIVE_DELAY_LEN, ACTIVETXN_DELAY_DEFAULT);
+    this.pendingDelayLen = conf.getInt(PENDING_DELAY_LEN, PENDINGTXN_DELAY_DEFAULT);
+    this.earlyDrain = conf.getBoolean(EARLY_DRAIN, false);
+
+    if (LOG.isTraceEnabled()) {
+        LOG.trace("Properties for -- " + regionInfo.getRegionNameAsString());
+        LOG.trace("Property: splitDelayLimit = " + this.splitDelayLimit);
+        LOG.trace("Property: activeDelayLen = " + this.activeDelayLen);
+        LOG.trace("Property: pendingDelayLen = " + this.pendingDelayLen);
+        LOG.trace("Property: earlyDrain = " + this.earlyDrain);
+    }
     
     if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: trxRegionObserver load start ");
 
@@ -128,8 +158,6 @@ public void start(CoprocessorEnvironment e) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: trxRegionObserver put data structure into CoprocessorEnvironment ");
     }
  
-   my_Region = re.getRegion();
-   regionInfo = my_Region.getRegionInfo();
    tHLog = my_Region.getLog();
    RegionServerServices rss = re.getRegionServerServices();
    sn = rss.getServerName();
@@ -511,36 +539,73 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
        }
 } // end of createRecoveryzNode
 
+    protected void pendingWait() throws IOException {
+        int count = 1;
+        while(!commitPendingTransactions.isEmpty()) {
+            try {
+                if(LOG.isDebugEnabled()) LOG.debug("pendingWait() delay, count " + count++ + " on: " + regionInfo.getRegionNameAsString());
+                Thread.sleep(this.pendingDelayLen);
+            } catch(InterruptedException e) {
+                String error = "Problem while calling sleep() on pendingWait delay, " + e;
+                if(LOG.isErrorEnabled()) LOG.error("Problem while calling sleep() on preSplit delay, returning. " + e);
+                throw new IOException(error);
+            }
+        }
+    }
+
+    protected void activeWait() throws IOException {
+        int counter = 0;
+        int minutes = 0;
+        int currentMin = 0;
+
+        boolean delayMsg = false;
+        while(!transactionsById.isEmpty()) {
+            try {
+                delayMsg = true;
+                Thread.sleep(this.activeDelayLen);
+                counter++;
+                currentMin = (counter * this.activeDelayLen) / 60000;
+
+                if(currentMin > minutes) {
+                    minutes = currentMin;
+                    if (LOG.isInfoEnabled()) LOG.info("Delaying split due to transactions present. Delayed : " + 
+                                                      minutes + " minute(s) on " + regionInfo.getRegionNameAsString());
+                }
+                if(minutes >= this.splitDelayLimit) {
+                    if(LOG.isWarnEnabled()) LOG.warn("Surpassed split delay limit of " + this.splitDelayLimit
+                                                    + " minutes. Continuing with split");
+                    delayMsg = false;
+                    break;
+                }
+            } catch (InterruptedException e) {
+                String error = "Problem while calling sleep() on preSplit delay - activeWait: " + e;
+                if(LOG.isErrorEnabled()) LOG.error(error);
+                throw new IOException(error);
+            }
+        }
+        if(delayMsg) {
+          if(LOG.isWarnEnabled()) LOG.warn("Continuing with split operation, no active transactions on: " + regionInfo.getRegionNameAsString());
+        }
+    }
+
     @Override
     public void preSplit(ObserverContext<RegionCoprocessorEnvironment> c, byte[] splitRow) throws IOException {
-        HRegion region = c.getEnvironment().getRegion();
-        int sleepCounter = 0;
-        boolean delayed = false;
-        if(LOG.isTraceEnabled()) LOG.trace("preSplit -- ENTRY region: " + region.getRegionNameAsString());
+        if(LOG.isTraceEnabled()) LOG.trace("preSplit -- ENTRY region: " + regionInfo.getRegionNameAsString());
 
-        while(!(transactionsById.isEmpty() && commitPendingTransactions.isEmpty())) {
-               try {
-                       delayed = true;
-                       Thread.sleep(60000);
-                       sleepCounter++;
-                       if(LOG.isDebugEnabled()) LOG.debug("Delaying split due to transactions present. Delayed : " + sleepCounter +
-                                       " minute(s) on " + region.getRegionNameAsString());
-               } catch(InterruptedException e) {
-                       LOG.warn("Problem while calling sleep(), " + e);
-               }
+        if(!this.earlyDrain) {
+          activeWait();
         }
-        if(LOG.isDebugEnabled()) LOG.debug("preSplit -- setting close var to true on: " + region.getRegionNameAsString());
         closing.set(true);
-        if(delayed) if(LOG.isWarnEnabled()) LOG.warn("Continuing with split operation, no transactions on: " + region.getRegionNameAsString());
+        pendingWait();
 
-        if(LOG.isTraceEnabled()) LOG.trace("preSplit -- EXIT region: " + region.getRegionNameAsString());
+        if(LOG.isTraceEnabled()) LOG.trace("preSplit -- EXIT region: " + regionInfo.getRegionNameAsString());
     }
 
     @Override
     public void    preClose(ObserverContext<RegionCoprocessorEnvironment> c, boolean abortRequested) {
-        if(LOG.isDebugEnabled()) {
+        if(LOG.isInfoEnabled()) {
             HRegion region = c.getEnvironment().getRegion();
-            LOG.debug("preClose -- setting close var to true on: " + region.getRegionNameAsString());
+            LOG.info("preClose -- setting close var to true on: " + region.getRegionNameAsString());
         }
         closing.set(true);
     }

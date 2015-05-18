@@ -420,7 +420,7 @@ void tm_process_req_registerregion(CTmTxMessage * pp_msg)
 // tm_process_req_ddlrequest
 // Purpose : process message of type TM_MSG_TYPE_DDLREQUEST
 // -----------------------------------------------------------------
-void tm_process_req_ddlrequest(CTmTxMessage * pp_msg)
+void tm_process_req_ddlrequest(CTmTxMessage * pp_msg, char * ddlbuffer)
 {
     TM_Txid_Internal * lp_transid = (TM_Txid_Internal *)
                                     &pp_msg->request()->u.iv_ddl_request.iv_transid;
@@ -428,7 +428,7 @@ void tm_process_req_ddlrequest(CTmTxMessage * pp_msg)
     TMTrace(2, ("tm_process_req_ddlrequest ENTRY for Txn ID (%d, %d) ", lp_transid->iv_node, lp_transid->iv_seq_num));
 
     TM_TX_Info *lp_tx = (TM_TX_Info*) gv_tm_info.get_tx(lp_transid);
-    lp_tx->req_ddloperation(pp_msg);
+    lp_tx->req_ddloperation(pp_msg, ddlbuffer);
     pp_msg->reply(FEOK);
 
     TMTrace(2, ("tm_process_req_ddlrequest EXIT for Txn ID"));
@@ -2770,8 +2770,9 @@ void tm_process_monitor_msg(BMS_SRE *pp_sre, char *pp_buf)
 void tm_process_msg(BMS_SRE *pp_sre) 
 {
     short                  lv_ret;
-    char                   la_recv_buffer[MAX_RECEIVE_BUFFER];
     char                   la_send_buffer[4096];
+    char                   la_recv_buffer[MAX_RECEIVE_BUFFER];
+    char                  *la_recv_buffer_ddl = NULL;
     Tm_Broadcast_Req_Type *lp_br_req;
     Tm_Broadcast_Rsp_Type *lp_br_rsp; 
     Tm_Perf_Stats_Req_Type *lp_ps_req;
@@ -2786,9 +2787,18 @@ void tm_process_msg(BMS_SRE *pp_sre)
 
     TMTrace(2, ("tm_process_msg ENTRY\n"));
 
+    if(pp_sre->sre_reqDataSize > MAX_RECEIVE_BUFFER){
+       la_recv_buffer_ddl = new char[pp_sre->sre_reqDataSize];
+
+    lv_ret = BMSG_READDATA_(pp_sre->sre_msgId,           // msgid
+                            la_recv_buffer_ddl,          // reqdata
+                            pp_sre->sre_reqDataSize);    // bytecount
+
+    }else{
     lv_ret = BMSG_READDATA_(pp_sre->sre_msgId,           // msgid
                             la_recv_buffer,              // reqdata
                             pp_sre->sre_reqDataSize);    // bytecount
+    }
 
     if (lv_ret != 0)
     {
@@ -3041,10 +3051,14 @@ void tm_process_msg(BMS_SRE *pp_sre)
         break;
     }// switch
 
-    // Allocate a message object.  It will be deleted by the 
+    // Allocate a message object.  It will be deleted by the
     // TM_TX_Info::process_eventQ method once the request
     // has been processed.
-    lp_msg = new CTmTxMessage((Tm_Req_Msg_Type *) &la_recv_buffer, pp_sre->sre_msgId);
+
+    if( la_recv_buffer_ddl!=NULL)
+       lp_msg = new CTmTxMessage((Tm_Req_Msg_Type *) la_recv_buffer_ddl, pp_sre->sre_msgId);
+    else 
+       lp_msg = new CTmTxMessage((Tm_Req_Msg_Type *) &la_recv_buffer, pp_sre->sre_msgId);
 
     if (lp_msg_hdr->dialect_type == DIALECT_TM_DP2_SQ)
     {
@@ -3145,7 +3159,12 @@ void tm_process_msg(BMS_SRE *pp_sre)
         tm_process_req_registerregion(lp_msg);
         break;
    case TM_MSG_TYPE_DDLREQUEST:
-        tm_process_req_ddlrequest(lp_msg);
+        if( la_recv_buffer_ddl==NULL)
+           tm_process_req_ddlrequest(lp_msg, (char *)la_recv_buffer);
+        else {
+           tm_process_req_ddlrequest(lp_msg, (char *)la_recv_buffer_ddl);
+           delete[] la_recv_buffer_ddl;
+        }
         break;
    case TM_MSG_TYPE_REQUESTREGIONINFO:
         tm_process_req_requestregioninfo(lp_msg);

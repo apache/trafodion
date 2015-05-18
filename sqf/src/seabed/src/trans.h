@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -45,5 +45,14 @@
   idin.id[2] = val; \
   idin.id[3] = val; \
 }
+
+#define TRANSSEQ_COPY(dest,src) { \
+  dest = src; \
+}
+#define TRANSSEQ_SET_VALUE(idin,val) { \
+  idin = val; \
+}
+#define TRANSSEQ_SET_NULL(id) TRANSSEQ_SET_VALUE(id, 0)
+
 
 #endif // !__SB_TRANS_H_

@@ -269,7 +269,7 @@ class CTmTxBase :public virtual CTmPoolElement
        virtual bool req_join(CTmTxMessage *pp_msg);
        virtual bool req_suspend(CTmTxMessage *pp_msg);
        virtual bool req_registerRegion(CTmTxMessage *pp_msg);
-       virtual bool req_ddloperation(CTmTxMessage *pp_msg);
+       virtual bool req_ddloperation(CTmTxMessage *pp_msg, char *ddlbuffer);
 
        virtual int mapErr(short pv_tmError) = 0;
 

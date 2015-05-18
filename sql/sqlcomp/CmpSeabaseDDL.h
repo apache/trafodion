@@ -163,6 +163,9 @@ class CmpSeabaseDDL
 			       const NAString &schName,
 			       const NAString &objName);
  
+  static NABoolean isSeabasePrivMgrMD(const NAString &catName,
+			              const NAString &schName);
+ 
   static NABoolean isUserUpdatableSeabaseMD(const NAString &catName,
 			       const NAString &schName,
 			       const NAString &objName);
@@ -242,7 +245,17 @@ class CmpSeabaseDDL
   static short genHbaseCreateOptions(
 				     const char * hbaseCreateOptionsStr,
 				     NAList<HbaseCreateOption*>* &hbaseCreateOptions,
-				     NAMemory * heap);
+				     NAMemory * heap,
+                                     size_t * beginPos,
+                                     size_t * endPos);
+
+  static short genHbaseOptionsMetadataString(                                          
+                                      const NAList<HbaseCreateOption*> & hbaseCreateOptions,
+                                      NAString & hbaseOptionsMetadataString /* out */);
+
+  short updateHbaseOptionsInMetadata(ExeCliInterface * cliInterface,
+                                     Int64 objectUID,
+                                     ElemDDLHbaseOptions * edhbo);
 
   desc_struct * getSeabaseLibraryDesc(
      const NAString &catName, 
@@ -285,6 +298,7 @@ class CmpSeabaseDDL
   }
 
   short buildColInfoArray(
+                          ComObjectType objType,
 			  ElemDDLColDefArray * colArray,
 			  ComTdbVirtTableColumnInfo * colInfoArray,
 			  NABoolean implicitPK,
@@ -350,7 +364,9 @@ class CmpSeabaseDDL
  protected:
 
   enum {
-    SEABASE_SERIALIZED = 0x0001
+    SEABASE_SERIALIZED = 0x0001,
+    // set if we need to get the hbase snapshot info of the table
+    GET_SNAPSHOTS = 0x0002
   };
 
   void setFlags(ULng32 &flags, ULng32 flagbits)
@@ -369,6 +385,8 @@ class CmpSeabaseDDL
 
   ComBoolean isSeabaseMD(const ComObjectName &name);
 
+  ComBoolean isSeabasePrivMgrMD(const ComObjectName &name);
+
   ComBoolean isSeabaseReservedSchema(const ComObjectName &name);
 
   ComBoolean isSeabase(const ComObjectName &name) ;
@@ -381,10 +399,10 @@ class CmpSeabaseDDL
   ExpHbaseInterface* allocEHI(const char * server, const char * zkPort,
                               NABoolean raiseError);
   
-  // if prevContext is defined, get the controlDB from the previous context so the
-  // defaults are copied from the previous cmp context to the new cmp context. This is only
-  // required for embedded compilers where a SWITCH is taking place
-  short sendAllControlsAndFlags(CmpContext* prevContext=NULL);
+  // if prevContext is defined, get user CQDs from the controlDB of
+  // previous context and send them to the new cmp context
+  short sendAllControlsAndFlags(CmpContext* prevContext=NULL,
+				Int32 cntxtType=-1);
 
   void restoreAllControlsAndFlags();
   
@@ -723,6 +741,7 @@ class CmpSeabaseDDL
 		    NAString &pkeyName);
 
   short constraintErrorChecks(
+                              ExeCliInterface * cliInterface,
 			      StmtDDLAddConstraint *addConstrNode,
 			      NATable * naTable,
 			      ComConstraintType ct,
@@ -756,6 +775,14 @@ class CmpSeabaseDDL
 		       Int64 *outTableUID,
 		       const ComTdbVirtTableKeyInfo * keyInfoArray,
 		       ExeCliInterface *cliInterface);
+
+  short getPKeyInfoForTable (
+                            const char *catName,
+                            const char *schName,
+                            const char *objName,
+                            ExeCliInterface *cliInterface,
+                            NAString &constrName,
+                            Int64 &constrUID);
 
   short updateRIInfo(
 		       StmtDDLAddConstraintRIArray &riArray,
@@ -847,6 +874,13 @@ class CmpSeabaseDDL
 			  StmtDDLAlterTableRename                  * renameTableNode,
 			  NAString &currCatName, NAString &currSchName);
 
+  void alterSeabaseTableHBaseOptions(
+			  StmtDDLAlterTableHBaseOptions * hbaseOptionsNode,
+			  NAString &currCatName, NAString &currSchName);
+  void alterSeabaseIndexHBaseOptions(
+			  StmtDDLAlterIndexHBaseOptions * hbaseOptionsNode,
+			  NAString &currCatName, NAString &currSchName);
+
   void addConstraints(
 		      ComObjectName &tableName,
 		      ComAnsiNamePart &currCatAnsiName,
@@ -857,16 +891,28 @@ class CmpSeabaseDDL
 		      StmtDDLAddConstraintCheckArray &checkConstrArr);
   
   void alterSeabaseTableAddColumn(
-				  StmtDDLAlterTableAddColumn * alterAddColNode,
-				  NAString &currCatName, NAString &currSchName);
+                                  StmtDDLAlterTableAddColumn * alterAddColNode,
+                                  NAString &currCatName, NAString &currSchName);
   
   void alterSeabaseTableDropColumn(
 				   StmtDDLAlterTableDropColumn * alterDropColNode,
 				   NAString &currCatName, NAString &currSchName);
   
+  short alignedFormatTableAddDropColumn(
+                                        Int64 objUID,
+                                        NABoolean isAdd,
+                                        const NAString &catalogNamePart,
+                                        const NAString &schemaNamePart,
+                                        const NAString &objectNamePart,
+                                        char * colName, const NAColumn * nacol);
+  
+  short recreateViews(ExeCliInterface &cliInterface,
+                      NAList<NAString> &viewNameList,
+                      NAList<NAString> &viewDefnList);
+
   void alterSeabaseTableAlterIdentityColumn(
-				   StmtDDLAlterTableAlterColumnSetSGOption * alterIdentityColNode,
-				   NAString &currCatName, NAString &currSchName);
+                                            StmtDDLAlterTableAlterColumnSetSGOption * alterIdentityColNode,
+                                            NAString &currCatName, NAString &currSchName);
   
   void alterSeabaseTableAddPKeyConstraint(
 					  StmtDDLAddConstraint * alterAddConstraint,
@@ -1074,9 +1120,10 @@ class CmpSeabaseDDL
 					const NAString &schName, 
 					const NAString &objName,
 					const ComObjectType objType,
-					NABoolean includeInvalidDefs);
+					NABoolean includeInvalidDefs,
+					Int32 ctlFlags);
  
-  static NABoolean getMDtableInfo(const NAString &objName,
+  static NABoolean getMDtableInfo(const ComObjectName &ansiName,
                                   ComTdbVirtTableTableInfo* &tableInfo,
 				  Lng32 &colInfoSize,
 				  const ComTdbVirtTableColumnInfo* &colInfo,
@@ -1131,6 +1178,7 @@ class CmpSeabaseDDL
 				       ElemDDLColRefArray & indexColRefArray,
 				       NABoolean isUnique,
 				       NABoolean hasSyskey,
+                                       NABoolean alignedFormat,
 				       const NAColumnArray &baseTableNAColArray,
 				       const NAColumnArray &baseTableKeyArr,
 				       Lng32 &keyColCount,

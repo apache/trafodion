@@ -251,10 +251,11 @@ bool PrivMgrCommands::describeComponents(
 // ----------------------------------------------------------------------------
 bool PrivMgrCommands::describePrivileges (const int64_t objectUID,
                                           const std::string &objectName,
+                                          const NATable * naTable,
                                           std::string &privilegeText)
 {
   PrivMgrPrivileges objectPrivs (objectUID, objectName, 0, metadataLocation_, pDiags_);
-  PrivStatus retcode = objectPrivs.getPrivTextForObject(privilegeText);
+  PrivStatus retcode = objectPrivs.getPrivTextForObject(naTable,privilegeText);
   return (retcode == STATUS_GOOD) ? true : false;
 }
 
@@ -626,6 +627,7 @@ PrivStatus privStatus = STATUS_GOOD;
 //    granteeUID, granteeName - identifies the grantee
 //    grantorUID, grantorName - identifies the grantor
 //    privsList - a list of privileges to grant
+//    colPrivsArray - an array of column privileges
 //    isAllSpecified - grant all privileges for the object type
 //    isWGOSpecified - indicates if WITH GRANT OPTION was specified
 //
@@ -640,7 +642,8 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
    const std::string &granteeName,
    const int32_t grantorUID,
    const std::string &grantorName,
-   const std::vector<string> &privsList,
+   const std::vector<PrivType> &privsList,
+   const std::vector<ColPrivSpec> & colPrivsArray,
    const bool isAllSpecified,
    const bool isWGOSpecified)
 {
@@ -655,7 +658,7 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
   PrivMgrPrivileges grantCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
   grantCmd.setTrafMetadataLocation(trafMetadataLocation_);
   return grantCmd.grantObjectPriv
-   (objectType, granteeUID, granteeName, grantorName, privsList, isAllSpecified, isWGOSpecified);
+   (objectType, granteeUID, granteeName, grantorName, privsList, colPrivsArray, isAllSpecified, isWGOSpecified);
 }
 
 PrivStatus PrivMgrCommands::grantObjectPrivilege (
@@ -1044,8 +1047,11 @@ PrivStatus PrivMgrCommands::revokeObjectPrivilege(
     const std::string &objectName,
     const ComObjectType objectType,
     const int32_t granteeUID,
+    const std::string & granteeName,
     const int32_t grantorUID,
-    const std::vector<string> &privList,
+    const std::string & grantorName,
+    const std::vector<PrivType> &privList,
+    const std::vector<ColPrivSpec> & colPrivsArray,
     const bool isAllSpecified,
     const bool isGOFSpecified)
 {
@@ -1061,8 +1067,11 @@ PrivStatus PrivMgrCommands::revokeObjectPrivilege(
   PrivMgrPrivileges revokeCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
   revokeCmd.setTrafMetadataLocation(trafMetadataLocation_);
   return revokeCmd.revokeObjectPriv(objectType,
-                                    granteeUID, 
+                                    granteeUID,
+                                    granteeName,
+                                    grantorName, 
                                     privList,
+                                    colPrivsArray,
                                     isAllSpecified, 
                                     isGOFSpecified); 
 }

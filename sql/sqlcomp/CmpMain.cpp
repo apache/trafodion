@@ -161,7 +161,6 @@ Lng32  CmpMain::prev_QI_Priv_Value = 0 ;
 // mode, enable TESTEXIT.
 // This is to force mxcmp abend to test certain queries, like recovery
 // after mxcmp failure.
-#ifndef _DEBUG
 // +7 below is to get past "insert " in input_str, e.g. "insert INTOINSPECT;"
 static Int32 sqlcompTestExit(QueryText& input)
 {
@@ -180,7 +179,6 @@ static Int32 sqlcompTestExit(QueryText& input)
 
   return 0;
 }
-#endif
 
 #ifdef _DEBUG
 // LCOV_EXCL_START
@@ -2201,6 +2199,12 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
 
 
   queryExpr = queryExpr->normalizeNode(normWA);
+
+  if (!queryExpr)
+    {
+      sqlcompCleanup(input_str, queryExpr, TRUE);
+      return NORMALIZERERROR;
+    }
 
   // QSTUFF: check whether a table is both read and updated
   if ( queryExpr->checkReadWriteConflicts(normWA) != RelExpr::RWOKAY )

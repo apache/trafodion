@@ -280,6 +280,8 @@ struct DefaultDefault
 #define XDDrlis_(name,value)		XDD(name,value,&validateRoleNameList)
 #define  DDrver_(name,value)             DD(name,value,&validateReplIoVersion)
 #define XDDMVA__(name,value)            XDD(name,value,&validateMVAge)
+#define	 DDusht_(name,value)		 DD(name,value,&validate_uint16)
+
 
 const DefaultValidator	validateUnknown;
 const DefaultValidator	validateAnsiName(CASE_SENSITIVE_ANSI); // e.g. 'c.s.tbl'
@@ -340,14 +342,13 @@ const ValidatePublicSchema    validatePublicSchema;
 // This high value should be same as default value of REPLICATE_IO_VERSION
 const ValidateReplIoVersion   validateReplIoVersion(11,17);
 const ValidateMVAge           validateMVAge;
+const Validate_uint16         validate_uint16;
 
 // See the NOTEs above for how to maintain this list!
 THREAD_P DefaultDefault defaultDefaults[] = {
  DDflt0_(ACCEPTABLE_INPUTESTLOGPROP_ERROR,	"0.5"),
 
 SDDint__(AFFINITY_VALUE,                        "-2"),
-
- DDkwd__(ALIGNED_ROW_FORMAT,			"ON"),
 
 SDDkwd__(ALLOW_AUDIT_ATTRIBUTE_CHANGE,	       "FALSE"), // Used to control if row sampling will use the sample operator in SQL/MX or the
 
@@ -1164,6 +1165,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
  DDdskNS(DDL_DEFAULT_LOCATIONS,                ""),
 
   DDkwd__(DDL_EXPLAIN,                           "OFF"),
+  DDkwd__(DDL_TRANSACTIONS,         "OFF"),
 
     // We ignore this setting for the first (SYSTEM_DEFAULTS) table open+read.
   DDkwd__(DEFAULTS_TABLE_ACCESS_WARNINGS,	"OFF"),
@@ -1730,6 +1732,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HBASE_ASYNC_DROP_TABLE,		"OFF"),
  // HBASE_CACHE_BLOCKS, ON => cache every scan, OFF => cache no scan
  // SYSTEM => cache scans which take less than 1 RS block cache mem.
+ DDui___(HBASE_BLOCK_SIZE,                      "65536"),
  DDkwd__(HBASE_CACHE_BLOCKS,		"SYSTEM"),
   DD_____(HBASE_CATALOG,                        "HBASE"),
   DDkwd__(HBASE_CHECK_AND_UPDEL_OPT,		"ON"),
@@ -1744,6 +1747,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  DDkwd__(HBASE_FILTER_PREDS,		             "OFF"),
  DDkwd__(HBASE_HASH2_PARTITIONING,                   "ON"),
+ DDui___(HBASE_INDEX_LEVEL,                          "0"),
  DDui___(HBASE_MAX_COLUMN_INFO_LENGTH,                "10000"),
  DDui___(HBASE_MAX_COLUMN_NAME_LENGTH,               "100"),
  DDui___(HBASE_MAX_COLUMN_VAL_LENGTH,                  "1000"),
@@ -1760,6 +1764,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDui___(HBASE_REGION_SERVER_MAX_HEAP_SIZE,     "1024"), // in units of MB
 
   DDkwd__(HBASE_ROWSET_VSBB_OPT,		"ON"),
+  DDusht_(HBASE_ROWSET_VSBB_SIZE,        	"1000"),
   DDflt0_(HBASE_SALTED_TABLE_MAX_FILE_SIZE,	"0"),
   DDkwd__(HBASE_SALTED_TABLE_SET_SPLIT_POLICY,	"ON"),
   DD_____(HBASE_SCHEMA,                         "HBASE"),
@@ -2242,6 +2247,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // enable special  features in R2.93
   DDkwd__(MODE_SPECIAL_3,                       "OFF"),
   DDkwd__(MODE_SPECIAL_4,                       "OFF"),
+  DDkwd__(MODE_SPECIAL_5,                       "OFF"),
 
   DDnsklo(MP_CATALOG,				"$SYSTEM.SQL"),
   DDnsksv(MP_SUBVOLUME,				"SUBVOL"),
@@ -2864,8 +2870,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // Do the query analysis phase
   DDkwd__(QUERY_ANALYSIS,	"ON"),
 
- // IpcGuardianServer::spawnProcess sets a 384 MB limit on mxcmp heap.
- // Exceeding this limit crashes mxcmp. So set query_cache max to 200 MB.
+ // query_cache max should be 200 MB. Set it 0 to turn off query cache
  //XDD0_200000(QUERY_CACHE,                  "0"),
  XDD0_200000(QUERY_CACHE,                  "16384"),
 
@@ -3177,7 +3182,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
 
   DDflte_(SORT_TREE_NODE_SIZE,			".012"),
 
-  DDkwd__(SQLMX_ALIGNED_ROW_FORMAT,		"OFF"),
   DDkwd__(SQLMX_REGRESS,                                    "OFF"),
   DDkwd__(SQLMX_SHOWDDL_SUPPRESS_ROW_FORMAT,	"OFF"),
   DDansi_(SQLMX_UTIL_EXPLAIN_PLAN,              "OFF"),
@@ -3255,6 +3259,12 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
 
+  DDint__(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,	"2"),
+
+ DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
+
+ DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
+
  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
  DDkwd__(TRAF_BOOTSTRAP_MD_MODE,                            "OFF"),   
@@ -3263,21 +3273,24 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
- DDkwd__(TRAF_DEFAULT_ALIGNED_FORMAT,                 "OFF"),   
-
  DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  
  DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
 
+  DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
+  DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
+  DD_____(TRAF_LOAD_ERROR_COUNT_TABLE,          "ERRORCOUNTER" ),
+  DD_____(TRAF_LOAD_ERROR_LOGGING_LOCATION,     "/bulkload/logs/" ),
   DDkwd__(TRAF_LOAD_FORCE_CIF,                  "ON"),
-
+  DDkwd__(TRAF_LOAD_LOG_ERROR_ROWS,             "OFF"),
+  DDint__(TRAF_LOAD_MAX_ERROR_ROWS,             "0"),
   DDint__(TRAF_LOAD_MAX_HFILE_SIZE,             "10240"), // in MB -->10GB by default
 
   DDkwd__(TRAF_LOAD_PREP_ADJUST_PART_FUNC,      "ON"),
   DDkwd__(TRAF_LOAD_PREP_CLEANUP,               "ON"),
   DDkwd__(TRAF_LOAD_PREP_KEEP_HFILES,           "OFF"),
-  DDkwd__(TRAF_LOAD_PREP_PHASE_ONLY,                 "OFF"),
-  DDkwd__(TRAF_LOAD_PREP_SKIP_DUPLICATES ,        "OFF"),
+  DDkwd__(TRAF_LOAD_PREP_PHASE_ONLY,            "OFF"),
+  DDkwd__(TRAF_LOAD_PREP_SKIP_DUPLICATES ,      "OFF"),
 
   //need add code to check if folder exists or not. if not issue an error and ask
   //user to create it
@@ -3498,7 +3511,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_SHOW_MFV_INFO,                  "OFF"),
   DDflte_(USTAT_UEC_HI_RATIO,                   "0.5"),
   DDflte_(USTAT_UEC_LOW_RATIO,                  "0.1"),
-  DDkwd__(USTAT_USE_BACKING_SAMPLE,             "OFF"),  //@ZXtemp
+  DDkwd__(USTAT_USE_BACKING_SAMPLE,             "OFF"),
   DDkwd__(USTAT_USE_BULK_LOAD,                  "OFF"),
   DDkwd__(USTAT_USE_GROUPING_FOR_SAMPLING,      "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "OFF"),
@@ -3509,8 +3522,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
   DDkwd__(VALIDATE_RFORK_REDEF_TS,	        "OFF"),
-  DDkwd__(VALIDATE_SCHEMA_REDEF_TS,             "ON"),
-
 
   DDkwd__(VALIDATE_VIEWS_AT_OPEN_TIME,		"OFF"),
 
@@ -4649,11 +4660,8 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
             (overwriteIfNotYet, errOrWarn, this);
           
           // set authorization state
-#ifdef _DEBUG
-          NABoolean checkAllPrivTables = TRUE;
-#else
+
           NABoolean checkAllPrivTables = FALSE;
-#endif
           errNum = cmpSBD.isPrivMgrMetadataInitialized(this,checkAllPrivTables);
           CmpCommon::context()->setAuthorizationState(errNum);
         }
@@ -5545,6 +5553,25 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	}
       break;
 
+      case MODE_SPECIAL_5:
+	{
+	  NAString val;
+          
+          if (value == "ON")
+            val = "ON";
+          else
+            val = "OFF";
+          
+          insert(ALLOW_INCOMPATIBLE_COMPARISON, val, errOrWarn);
+          
+          insert(ALLOW_INCOMPATIBLE_ASSIGNMENT, val, errOrWarn);
+          
+          insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
+
+          insert(TRAF_ALLOW_SELF_REF_CONSTR, val, errOrWarn);
+	}
+      break;
+
       case MODE_SEABASE:
 	{
 	  if (value == "ON")
@@ -5791,6 +5818,16 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
       }
       break;
 
+     case TRAF_LOAD_ERROR_LOGGING_LOCATION:
+     {
+        if (value.length() > 512)
+        {
+           *CmpCommon::diags() << DgSqlCode(-2055)
+                                  << DgString0(value)
+                                  << DgString1(lookupAttrName(attrEnum));
+        }
+     }
+     break;
       default:  break;
       }
     }	  // code to valid overwrite (insert)

@@ -110,13 +110,7 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
                ComUInt32 requestRowSize,
                ComUInt32 replyRowSize,
                ComDiagsArea &d,
-               char *parentQid,
-               ComUInt32 udrSerInvocationInfoLen,
-               const char *udrSerInvocationInfo,
-               ComUInt32 udrSerPlanInfoLen,
-               const char *udrSerPlanInfo,
-               ComUInt32 totalNumInstances,
-               ComUInt32 myInstanceNum)
+               char *parentQid)
       : udrGlobals_(udrGlobals),
         udrHandle_(udrHandle),
         lmHandle_(FALSE),
@@ -249,55 +243,6 @@ SPInfo::SPInfo(UdrGlobals *udrGlobals,
     lmParameters_ = (LmParameter *) udrHeapPtr_->allocateMemory(lmParamBytes);
     memset(lmParameters_, 0, lmParamBytes);
   }
-
-  try
-    {
-      if (udrSerInvocationInfoLen > 0)
-        {
-          char *buffer = const_cast<char *>(udrSerInvocationInfo);
-          int bufferLen = udrSerInvocationInfoLen;
-          
-          invocationInfo_ = new tmudr::UDRInvocationInfo();
-          invocationInfo_->deserialize(buffer, bufferLen);
-          invocationInfo_->queryId_ = parentQid;
-          invocationInfo_->totalNumInstances_ = totalNumInstances;
-          invocationInfo_->myInstanceNum_ = myInstanceNum;
-#ifndef NDEBUG
-          if (invocationInfo_->getDebugFlags() &
-              tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME)
-            {
-              // print checks the call phase, so set it to runtime
-              invocationInfo_->callPhase_ =
-                tmudr::UDRInvocationInfo::RUNTIME_WORK_CALL;
-              invocationInfo_->print();
-              invocationInfo_->callPhase_ =
-                tmudr::UDRInvocationInfo::UNKNOWN_CALL_PHASE;
-            }
-#endif
-        }
-      else
-        invocationInfo_ = NULL;
-
-      if (udrSerPlanInfoLen > 0)
-        {
-          char *buffer = const_cast<char *>(udrSerPlanInfo);
-          int bufferLen = udrSerPlanInfoLen;
-
-          planInfo_ = new tmudr::UDRPlanInfo(invocationInfo_);
-          planInfo_->deserialize(buffer, bufferLen);
-#ifndef NDEBUG
-          if (invocationInfo_ && invocationInfo_->getDebugFlags() &
-              tmudr::UDRInvocationInfo::PRINT_INVOCATION_INFO_AT_RUN_TIME)
-            planInfo_->print();
-#endif
-        }
-      else
-        planInfo_ = NULL;
-    }
-  catch (tmudr::UDRException e)
-    {
-      TMUDFDllInteraction::processReturnStatus(e, pSqlName, &d);
-    }
 
   // Now we create the data stream that will be used by this SPInfo
   // instance. All we need to do is call a constructor, but first there
@@ -493,12 +438,6 @@ SPInfo::~SPInfo()
       udrHeapPtr_->deallocateMemory(tableInfo_);
     }
   }
-
-  if (invocationInfo_)
-    delete invocationInfo_;
-
-  if (planInfo_)
-    delete planInfo_;
 
   if (rowDiags_)
     rowDiags_->decrRefCount();

@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -141,6 +141,7 @@ static const char *ga_sb_api_ctr_names[] = {
         "msg_mon_node_up",
         "msg_mon_open_process",
         "msg_mon_open_process_backup",
+        "msg_mon_open_process_fs",
         "msg_mon_open_process_ic",
         "msg_mon_open_process_nowait_cb",
         "msg_mon_open_process_self",
@@ -151,6 +152,8 @@ static const char *ga_sb_api_ctr_names[] = {
         "msg_mon_process_shutdown_now",
         "msg_mon_process_startup",
         "msg_mon_process_startup2",
+        "msg_mon_process_startup3",
+        "msg_mon_process_startup4",
         "msg_mon_reg_get",
         "msg_mon_reg_set",
         "msg_mon_register_death_notification",
@@ -180,6 +183,7 @@ static const char *ga_sb_api_ctr_names[] = {
         "msg_mon_trans_end",
         "msg_mon_trans_enlist",
         "msg_mon_trans_register_tmlib",
+        "msg_mon_trans_register_tmlib2",
         "msg_set_phandle",
 //      "MSG_TEST_ASSERT_DISABLE",
 //      "MSG_TEST_ASSERT_ENABLE",

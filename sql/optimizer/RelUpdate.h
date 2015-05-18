@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -928,7 +928,8 @@ public:
          ItemExpr *insertCols = NULL,
          ItemExpr *orderBy = NULL,
          CollHeap *oHeap = CmpCommon::statementHeap(),
-         InsertType insertType = SIMPLE_INSERT);
+         InsertType insertType = SIMPLE_INSERT,
+         NABoolean createUstatSample = FALSE);
 
   // copy ctor
   Insert (const Insert &) ; // not written
@@ -1075,6 +1076,16 @@ public:
     isTrafLoadPrep_ = isTrafLoadPrep;
   }
 
+  NABoolean getCreateUstatSample() const
+  {
+    return createUstatSample_;
+  }
+
+  void setCreateUstatSample(NABoolean val)
+  {
+    createUstatSample_ = val;
+  }
+
 protected:
 
   InsertType       insertType_;
@@ -1175,6 +1186,10 @@ private:
   NABoolean isUpsert_;
 
   NABoolean isTrafLoadPrep_;
+
+  // If this is TRUE, a sample table will be created during the bulk load for
+  // use by Update Statistics.
+  NABoolean createUstatSample_;
 };
 
 // -----------------------------------------------------------------------
@@ -1798,9 +1813,10 @@ public:
                TableDesc *tabId,
                OperatorTypeEnum otype = REL_HBASE_BULK_LOAD,
                RelExpr *child = NULL,
+               NABoolean createUstatSample = FALSE,
                CollHeap *oHeap = CmpCommon::statementHeap(),
                InsertType insertType = SIMPLE_INSERT)
-  : Insert(name,tabId,REL_UNARY_INSERT,child,NULL,NULL,oHeap, insertType)
+  : Insert(name,tabId,REL_UNARY_INSERT,child,NULL,NULL,oHeap, insertType, createUstatSample)
     {};
 
   // copy ctor

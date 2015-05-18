@@ -241,7 +241,7 @@ Int32 main (Int32 argc, char *argv[])
   }
   catch (...)
   {
-    cerr << "Error while initializing messaging system. Exiting..." << endl;
+    cerr << "Error while initializing messaging system. Please make sure Trafodion is started and up. Exiting..." << endl;
     exit(1);
   }
 

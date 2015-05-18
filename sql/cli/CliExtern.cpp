@@ -7706,6 +7706,207 @@ Lng32 SQL_EXEC_SeqGenCliInterface
   return retcode;
 }
 
+SQLCLI_LIB_FUNC Lng32 SQL_EXEC_GetRoutine
+(
+ /* IN */     const char  *serializedInvocationInfo,
+ /* IN */     Int32        invocationInfoLen,
+ /* IN */     const char  *serializedPlanInfo,
+ /* IN */     Int32        planInfoLen,
+ /* IN */     Int32        language,
+ /* IN */     Int32        paramStyle,
+ /* IN */     const char  *externalName,
+ /* IN */     const char  *containerName,
+ /* IN */     const char  *externalPath,
+ /* IN */     const char  *librarySqlName,
+ /* OUT */    Int32       *handle
+ )
+{
+  Lng32 retcode;
+  CLISemaphore *tmpSemaphore;
+  ContextCli   *threadContext;
+  CLI_NONPRIV_PROLOGUE(retcode);
+  try
+    {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode = SQLCLI_GetRoutine(
+           GetCliGlobals(),
+           serializedInvocationInfo,
+           invocationInfoLen,
+           serializedPlanInfo,
+           planInfoLen,
+           language,
+           paramStyle,
+           externalName,
+           containerName,
+           externalPath,
+           librarySqlName,
+           handle);
+    }
+  catch(...)
+    {
+      retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+      if (cliWillThrow())
+	{
+          threadContext->decrNumOfCliCalls();
+	  tmpSemaphore->release();
+	  throw;
+	}
+#endif
+    }
+  threadContext->decrNumOfCliCalls();
+  tmpSemaphore->release();
+  RecordError(NULL, retcode);
+  return retcode;
+}
+
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_InvokeRoutine
+(
+ /* IN */     Int32 handle,
+ /* IN */     Int32 phaseEnumAsInt,
+ /* IN */     const char *serializedInvocationInfo,
+ /* IN */     Int32 invocationInfoLen,
+ /* OUT */    Int32 *invocationInfoLenOut,
+ /* IN */     const char *serializedPlanInfo,
+ /* IN */     Int32 planInfoLen,
+ /* IN */     Int32 planNum,
+ /* OUT */    Int32 *planInfoLenOut,
+ /* IN */     char  *inputRow,
+ /* IN */     Int32 inputRowLen,
+ /* OUT */    char  *outputRow,
+ /* IN */     Int32 outputRowLen
+ )
+{
+  Lng32 retcode;
+  CLISemaphore *tmpSemaphore;
+  ContextCli   *threadContext;
+  CLI_NONPRIV_PROLOGUE(retcode);
+  try
+    {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode = SQLCLI_InvokeRoutine(
+           GetCliGlobals(),
+           handle,
+           phaseEnumAsInt,
+           serializedInvocationInfo,
+           invocationInfoLen,
+           invocationInfoLenOut,
+           serializedPlanInfo,
+           planInfoLen,
+           planNum,
+           planInfoLenOut,
+           inputRow,
+           inputRowLen,
+           outputRow,
+           outputRowLen);
+    }
+  catch(...)
+    {
+      retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+      if (cliWillThrow())
+	{
+          threadContext->decrNumOfCliCalls();
+	  tmpSemaphore->release();
+	  throw;
+	}
+#endif
+    }
+  threadContext->decrNumOfCliCalls();
+  tmpSemaphore->release();
+  RecordError(NULL, retcode);
+  return retcode;
+}
+
+SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetRoutineInvocationInfo
+(
+ /* IN */     Int32 handle,
+ /* IN/OUT */ char  *serializedInvocationInfo,
+ /* IN */     Int32 invocationInfoMaxLen,
+ /* OUT */    Int32 *invocationInfoLenOut,
+ /* IN/OUT */ char  *serializedPlanInfo,
+ /* IN */     Int32 planInfoMaxLen,
+ /* IN */     Int32 planNum,
+ /* OUT */    Int32 *planInfoLenOut
+ )
+{
+  Lng32 retcode;
+  CLISemaphore *tmpSemaphore;
+  ContextCli   *threadContext;
+  CLI_NONPRIV_PROLOGUE(retcode);
+  try
+    {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode = SQLCLI_GetRoutineInvocationInfo(
+           GetCliGlobals(),
+           handle,
+           serializedInvocationInfo,
+           invocationInfoMaxLen,
+           invocationInfoLenOut,
+           serializedPlanInfo,
+           planInfoMaxLen,
+           planNum,
+           planInfoLenOut);
+    }
+  catch(...)
+    {
+      retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+      if (cliWillThrow())
+	{
+          threadContext->decrNumOfCliCalls();
+	  tmpSemaphore->release();
+	  throw;
+	}
+#endif
+    }
+  threadContext->decrNumOfCliCalls();
+  tmpSemaphore->release();
+  RecordError(NULL, retcode);
+  return retcode;
+}
+
+SQLCLI_LIB_FUNC Lng32 SQL_EXEC_PutRoutine
+(
+ /* IN */    Int32        handle
+ )
+{
+  Lng32 retcode;
+  CLISemaphore *tmpSemaphore;
+  ContextCli   *threadContext;
+  CLI_NONPRIV_PROLOGUE(retcode);
+  try
+    {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode = SQLCLI_PutRoutine(GetCliGlobals(),
+                                  handle);
+    }
+  catch(...)
+    {
+      retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+      if (cliWillThrow())
+	{
+          threadContext->decrNumOfCliCalls();
+	  tmpSemaphore->release();
+	  throw;
+	}
+#endif
+    }
+  threadContext->decrNumOfCliCalls();
+  tmpSemaphore->release();
+  RecordError(NULL, retcode);
+  return retcode;
+}
+
 #ifdef __cplusplus
 }
 #endif

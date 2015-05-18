@@ -1155,139 +1155,96 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
 
 Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
 {
-  // TBD: need to be fixed by following the same format as create...FromHbaseFormat
-  return -HBASE_CREATE_ROW_ERROR;
-
-#ifdef __ignore
   // no columns are being fetched from hbase, do not create a row.
   if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
     return 0;
-  
+
   ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-  
+
+  ExpTupleDesc * asciiSourceTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (hbaseAccessTdb().asciiTuppIndex_);
+
   ExpTupleDesc * convertTuppTD =
     hbaseAccessTdb().workCriDesc_->getTupleDescriptor
     (hbaseAccessTdb().convertTuppIndex_);
   
+  Attributes * attr = NULL;
+
+  // initialize latest timestamp to 0 for every column
+  memset(latestTimestampForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
+
   hbaseAccessTdb().listOfFetchedColNames()->position();
   Lng32 idx = -1;
-  
-  Int32 kvLength, valueLength, valueOffset, qualLength, qualOffset;
-  Int32 familyLength, familyOffset;
-  Int64 timestamp = 0;
-  Int64 latestTimestamp = 0;
 
-  char *kvBuf = (char *) rowResult;
-
-  Int32 numCols = *(Int32 *)kvBuf;
-  kvBuf += sizeof(numCols);
-  if (numCols == 0)
-    return 0;
-
-  Int32 rowIDLen = *(Int32 *)kvBuf;
-  kvBuf += sizeof(rowIDLen);
-  kvBuf += rowIDLen;
-
-  Int32 *temp;
-  char *value;
-  char *buffer;
-  char *colName;
-  char *family;
-  char inlineColName[INLINE_COLNAME_LEN+1];
-  char *fullColName;
-  char *colVal; 
+  BYTE *colVal; 
   Lng32 colValLen;
-  Lng32  colNameLen;
-  Int32 allocatedLength = 0;
+  long timestamp;
+  char *colName;
+  short colNameLen;
+  BYTE nullVal;
+  Lng32 retcode;
+  int numCols; 
+  retcode = ehi_->getNumCols(numCols);
+  if (retcode == HBASE_ACCESS_NO_ROW)
+     return retcode ;
 
-  // sometimes updated rows return 2 versions.
-  // see comments in method createSQRowFromHbaseFormat. 
+  if (retcode != HBASE_ACCESS_SUCCESS)
+  {
+     setupError(retcode, "", "getNumCols()");
+     return retcode;
+  }
+
+  // aligned format should only return one column.
   if (numCols > 2)
     {
       // error
       return -HBASE_CREATE_ROW_ERROR;
     }
 
-  for (Lng32 i = 0; i < numCols; i++)
-    {
-      temp = (Int32 *)kvBuf;
-      kvLength = *temp++;
-      valueLength = *temp++;
-      valueOffset = *temp++;
-      qualLength = *temp++;
-      qualOffset = *temp++;
-      familyLength = *temp++;
-      familyOffset = *temp++;
-      timestamp = *(Int64 *)temp;
-      temp += 2;
-      buffer = (char *)temp;
-      value = buffer + valueOffset; 
-      
-      colName = (char*)buffer + qualOffset;
-      family = (char *)buffer + familyOffset;
-      colNameLen = familyLength + qualLength + 1; // 1 for ':'
-      
-      if (allocatedLength == 0 && colNameLen < INLINE_COLNAME_LEN)
-        fullColName = inlineColName;
-      else
-        {
-          if (colNameLen > allocatedLength)
-            {
-              if (allocatedLength > 0)
-                {
-                  NADELETEBASIC(fullColName, getHeap());
-                }
-              fullColName = new (getHeap()) char[colNameLen + 1];
-              allocatedLength = colNameLen;
-            }
-        }
-      strncpy(fullColName, family, familyLength);
-      fullColName[familyLength] = '\0';
-      strcat(fullColName, ":");
-      strncat(fullColName, colName, qualLength); 
-      fullColName[colNameLen] = '\0';
-      
-      colName = fullColName;
-      
-      colVal = (char*)value;
-      colValLen = valueLength;
-      
-      if (! getColPos(colName, colNameLen, idx)) // not found
-        {
-          if (allocatedLength  > 0)
-            NADELETEBASIC(fullColName, getHeap());
-          // error
-          return -HBASE_CREATE_ROW_ERROR;
-        }
-      
-      if (timestamp > latestTimestamp)
-        latestTimestamp = timestamp;
-
-      if (timestamp == latestTimestamp) 
-        {
-          char * srcPtr = asciiRow_;
-          str_cpy_all(srcPtr, colVal, colValLen);
-        }
-
-      kvBuf = (char *)temp + kvLength;
-    }
-  
-    if (allocatedLength > 0)
-    {
-      NADELETEBASIC(fullColName, getHeap());
-    }
+  Lng32 asciiRowLen = hbaseAccessTdb().asciiRowLen_;
+  for (int colNo= 0; colNo < numCols; colNo++)
+  {
+    retcode = ehi_->getColName(colNo, &colName, colNameLen, timestamp);
+    if (retcode != HBASE_ACCESS_SUCCESS)
+      {
+        setupError(retcode, "", "getColName()");
+        return retcode;
+      }
     
-    workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
-      .setDataPointer(convertRow_);
-    workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
-      .setDataPointer(asciiRow_);
+    if (! getColPos(colName, colNameLen, idx)) // not found
+      { 
+        ex_assert(FALSE, "Error in getColPos()");
+      }
+    
+    if (timestamp > latestTimestampForCols_[idx])
+      latestTimestampForCols_[idx] = timestamp;
+
+    // copy to asciiRow only if this is the latest version seen so far
+    // for this column. On 6/10/2014 we get two versions for a newly
+    // updated column that has not been committed yet.
+    if (timestamp == latestTimestampForCols_[idx]) 
+      {
+        colVal = (BYTE*)asciiRow_;
+        retcode = ehi_->getColVal(colNo, colVal, asciiRowLen,
+                                  FALSE, nullVal);
+        if (retcode != HBASE_ACCESS_SUCCESS)
+          {
+            setupError(retcode, "", "getColVal()");
+            return retcode;
+          }
+      }
+  }
+
+  workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
+    .setDataPointer(convertRow_);
+  workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
+    .setDataPointer(asciiRow_);
   
   if (convertExpr())
     {
-      UInt32 datalen = colValLen;
       ex_expr::exp_return_type evalRetCode =
-	convertExpr()->eval(pentry_down->getAtp(), workAtp_,
-                            NULL, datalen);
+	convertExpr()->eval(pentry_down->getAtp(), workAtp_, NULL, asciiRowLen);
       if (evalRetCode == ex_expr::EXPR_ERROR)
 	{
 	  return -1;
@@ -1295,10 +1252,7 @@ Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
     }
 
   return 0;
-#endif
 }
-
-// returns:
 
 // returns:
 // 0, if expr is false
@@ -1774,10 +1728,12 @@ Lng32 ExHbaseAccessTcb::setupUniqueKeyAndCols(NABoolean doInit)
   return 0;
 }
 
+
 keyRangeEx::getNextKeyRangeReturnType ExHbaseAccessTcb::setupSubsetKeys
 (NABoolean fetchRangeHadRows)
 {
   ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+
   ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
   keyRangeEx::getNextKeyRangeReturnType keyRangeStatus;
   
@@ -2176,9 +2132,6 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
                                           *(colVal+1), *(colVal+2));
                   break;
                 default:
-                  printf("Length of column %d is %d, data type is %d\n", i, attr->getLength(), datatype);
-                  //strncpy((char*)&numUnion, colVal, 4);
-                  //printf("Value of column %d is %d\n", i, numUnion.i);
                   hiveBuffInx += sprintf(hiveBuff+hiveBuffInx, "???|");
                   break;
               }
@@ -2225,8 +2178,6 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
 
   if (includeInSample)
     {
-      //hiveBuff[hiveBuffInx-1] = '\0';
-      //printf("%s\n", hiveBuff);
       // Overwrite trailing delimiter with newline.
       hiveBuff[hiveBuffInx-1] = '\n';
       hdfsWrite(getHdfs(), getHdfsSampleFile(), hiveBuff, hiveBuffInx);
@@ -2449,15 +2400,83 @@ void ExHbaseAccessTcb::setRowID(char *rowId, Lng32 rowIdLen)
    memcpy(rowID_.val, rowId, rowIdLen);
 }
 
+void ExHbaseAccessTcb::buildLoggingPath(
+                             const char * loggingLocation,
+                             char * logId,
+                             const char * tableName,
+                             const char * loggingFileNamePrefix,
+                             Lng32 instId,
+                             char * loggingFileName)
+{
+  time_t t;
+  char logId_tmp[30];
+
+  if (logId == NULL || strlen(logId) == 0)
+  {
+     time(&t);
+     struct tm * curgmtime = gmtime(&t);
+     strftime(logId_tmp, sizeof(logId_tmp)-1, "%Y%m%d_%H%M%S", curgmtime);
+     logId = logId_tmp;
+  }
+  sprintf(loggingFileName, "%s/ERR_%s/%s_%s_%d",
+                  loggingLocation, logId, tableName, loggingFileNamePrefix, instId);
+}
+
+void ExHbaseAccessTcb::handleException(NAHeap *heap,
+                                    char *logErrorRow,
+                                    Lng32 logErrorRowLen,
+                                    ComCondition *errorCond,
+                                    ExpHbaseInterface * ehi,
+                                    NABoolean & LoggingFileCreated,
+                                    char *loggingFileName)
+{
+  Lng32 errorMsgLen = 0;
+  charBuf *cBuf = NULL;
+  char *errorMsg;
+  Lng32 retcode;
+
+  if (!LoggingFileCreated) {
+     retcode = ehi->hdfsCreateFile(loggingFileName);
+     if (retcode == HBASE_ACCESS_SUCCESS)
+        LoggingFileCreated = TRUE;
+     else
+        ex_assert(0, "Error while creating the log file");
+  }
+  retcode = ehi->hdfsWrite(logErrorRow, logErrorRowLen);
+  ex_assert((retcode == HBASE_ACCESS_SUCCESS), "Error while writing the log file");
+  if (errorCond != NULL) {
+     errorMsgLen = errorCond->getMessageLength();
+     const NAWcharBuf wBuf((NAWchar*)errorCond->getMessageText(), errorMsgLen, heap);
+     cBuf = unicodeToISO88591(wBuf, heap, cBuf);
+     errorMsg = (char *)cBuf->data();
+     errorMsgLen = cBuf -> getStrLen();
+     errorMsg[errorMsgLen]='\n';
+     errorMsgLen++;
+  }
+  else {
+     errorMsgLen = strlen("[UNKNOWN EXCEPTION]\n");
+  }
+  retcode = ehi->hdfsWrite(errorMsg, errorMsgLen);
+}
+
+void ExHbaseAccessTcb::incrErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
+                                    const char * tabName, const char * rowId )
+{
+  Lng32 retcode;
+  retcode = ehi->incrCounter(tabName, rowId, (const char*)"ERRORS",(const char*)"ERROR_COUNT",1, totalExceptionCount);
+}
+
+
 static const char * const BatchSizeEnvvar = 
   getenv("SQL_CANCEL_BATCH_SIZE");
 static const Lng32 BatchSize = (BatchSizeEnvvar &&
                                atoi(BatchSizeEnvvar) > 0 )?
                                atoi(BatchSizeEnvvar) : 8192;
 
-ExHbaseTaskTcb::ExHbaseTaskTcb(ExHbaseAccessTcb * tcb)
+ExHbaseTaskTcb::ExHbaseTaskTcb(ExHbaseAccessTcb * tcb, NABoolean rowsetTcb)
   : tcb_(tcb)
   , batchSize_(BatchSize)
+  , rowsetTcb_(rowsetTcb)
 {}
 
 ExWorkProcRetcode ExHbaseTaskTcb::work(short &rc)

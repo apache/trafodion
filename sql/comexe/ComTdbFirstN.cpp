@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -52,6 +52,8 @@ ComTdbFirstN::ComTdbFirstN()
  ComTdbFirstN::ComTdbFirstN(
       ComTdb * child_tdb,
       Int64 firstNRows,
+      ex_expr * firstNRowsExpr,
+      ex_cri_desc * workCriDesc,
       ex_cri_desc * givenCriDesc,
       ex_cri_desc * returnedCriDesc,
       queue_index down,
@@ -68,7 +70,9 @@ ComTdbFirstN::ComTdbFirstN()
 	       numBuffers,
 	       bufferSize),
 	tdbChild_(child_tdb),
-	firstNRows_(firstNRows)
+	firstNRows_(firstNRows),
+        firstNRowsExpr_(firstNRowsExpr),
+        workCriDesc_(workCriDesc)
 {
 }
 
@@ -81,13 +85,17 @@ void ComTdbFirstN::display() const {};
 Long ComTdbFirstN::pack(void * space)
 {
   tdbChild_.pack(space);
-
+  firstNRowsExpr_.pack(space);
+  workCriDesc_.pack(space);
+ 
   return ComTdb::pack(space);
 }
 
 Lng32 ComTdbFirstN::unpack(void * base, void * reallocator)
 {
   if(tdbChild_.unpack(base, reallocator)) return -1;
+  if(firstNRowsExpr_.unpack(base, reallocator)) return -1;
+  if(workCriDesc_.unpack(base, reallocator)) return -1;
 
   return ComTdb::unpack(base, reallocator);
 }

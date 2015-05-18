@@ -10665,6 +10665,7 @@ RelRoot::RelRoot(RelExpr *input,
     partReqType_(ANY_PARTITIONING),
     partitionByTree_(NULL),
     predExprTree_(NULL),
+    firstNRowsParam_(NULL),
     flags_(0)
 {
   accessOptions().accessType() = ACCESS_TYPE_NOT_SPECIFIED_;
@@ -10736,6 +10737,7 @@ RelRoot::RelRoot(RelExpr *input,
     partReqType_(ANY_PARTITIONING),
     partitionByTree_(NULL),
     predExprTree_(NULL),
+    firstNRowsParam_(NULL),
     flags_(0)
 {
   accessOptions().accessType() = at;
@@ -10813,6 +10815,7 @@ RelRoot::RelRoot(const RelRoot & other)
     partitionByTree_(other.partitionByTree_),
     isCIFOn_(other.isCIFOn_),
     predExprTree_(other.predExprTree_),
+    firstNRowsParam_(other.firstNRowsParam_),
     flags_(other.flags_)
 {
   oltOptInfo() = ((RelRoot&)other).oltOptInfo();
@@ -11028,6 +11031,8 @@ RelExpr * RelRoot::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->partReqType_ = partReqType_ ;
 
   result->isQueryNonCacheable_ = isQueryNonCacheable_; 
+
+  result->firstNRowsParam_ = firstNRowsParam_;
 
   result->flags_ = flags_;
 
@@ -11525,7 +11530,8 @@ RelExpr * FirstN::copyTopNode(RelExpr *derivedNode,
   FirstN *result;
 
   if (derivedNode == NULL) {
-    result = new (outHeap) FirstN(NULL, getFirstNRows(), outHeap);
+    result = new (outHeap) FirstN(NULL, getFirstNRows(), getFirstNRowsParam(),
+                                  outHeap);
     result->setCanExecuteInDp2(canExecuteInDp2());
   }
   else
@@ -12564,7 +12570,8 @@ Insert::Insert(const CorrName &name,
         ItemExpr *insertCols ,
         ItemExpr *orderBy ,
         CollHeap *oHeap ,
-        InsertType insertType)
+        InsertType insertType,
+        NABoolean createUstatSample)
  : GenericUpdate(name,tabId,otype,child,NULL,NULL,oHeap),
    insertColTree_(insertCols),
    orderByTree_(orderBy),
@@ -12581,7 +12588,8 @@ Insert::Insert(const CorrName &name,
    overwriteHiveTable_(FALSE),
    isSequenceFile_(FALSE),
    isUpsert_(FALSE),
-   isTrafLoadPrep_(FALSE)
+   isTrafLoadPrep_(FALSE),
+   createUstatSample_(createUstatSample)
 {
   insert_a_tuple_ = FALSE;
   if ( child ) {
@@ -12672,6 +12680,7 @@ RelExpr * Insert::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->setSequenceFile(isSequenceFile());
   result->isUpsert_ = isUpsert_;
   result->isTrafLoadPrep_ = isTrafLoadPrep_;
+  result->createUstatSample_ = createUstatSample_;
   
   return GenericUpdate::copyTopNode(result, outHeap);
 }
@@ -12960,11 +12969,14 @@ const NAString HbaseInsert::getText() const
       if (getInsertType() == Insert::VSBB_INSERT_USER)
 	text += "vsbb_upsert";
       else if (getInsertType() == Insert::UPSERT_LOAD)
-      if (getIsTrafLoadPrep())
-        text += "load_preparation";
+        {
+          if (getIsTrafLoadPrep())
+            text += "load_preparation";
+          else
+            text += "load";
+        }
       else
-	text += "load";
-
+        text += "upsert";
     }
   else
     text += "insert";

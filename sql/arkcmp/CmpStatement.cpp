@@ -151,8 +151,6 @@ CmpStatement::CmpStatement(CmpContext* context,
   isSMDRecompile_ = FALSE;
   isParallelLabelOp_ = FALSE;
   displayGraph_ = FALSE;
-  udrInvocationInfosToDelete_ = NULL;
-  udrPlanInfosToDelete_ = NULL;
   detailsOnRefusedRequirements_ = NULL;
 
 #ifndef NDEBUG
@@ -211,19 +209,6 @@ CmpStatement::~CmpStatement()
 
   if (reply_)
     reply_->decrRefCount();
-
-  // delete UDF compiler interface structures that were allocated
-  // from the system heap. Note that the lists containing these
-  // are allocated from the statement heap
-  if (udrInvocationInfosToDelete_)
-    for (CollIndex i=0; i<udrInvocationInfosToDelete_->entries(); i++)
-      TMUDFInternalSetup::deleteUDRInvocationInfo(
-           udrInvocationInfosToDelete_->at(i));
-
-  if (udrPlanInfosToDelete_)
-    for (CollIndex i=0; i<udrPlanInfosToDelete_->entries(); i++)
-      TMUDFInternalSetup::deleteUDRPlanInfo(
-           udrPlanInfosToDelete_->at(i));
 
   // GLOBAL_EMPTY_INPUT_LOGPROP points to an EstLogProp object in the heap.
   // Because it is a SharedPtr, it must be set to NULL before the statement
@@ -1289,174 +1274,6 @@ CmpStatement::process(const CmpMessageDatabaseUser &statement)
 
 }
 
-//-----------------------------------------------------------------------------
-// This processes ReadTableDef requests against SQL/MP and/or SQL/MX objects. 
-// In particular, it processes requests to retrieve the SQL/MP catalog in 
-// which a given SQL/MP object is registered (given either the object's logical
-// or physical name), and it also processes requests to retrieve all meta-data
-// information associated with a given SQL/MP or SQL/MX object.
-//-----------------------------------------------------------------------------
-CmpStatement::ReturnStatus
-CmpStatement::process (const CmpMessageReadTableDef& rtd)
-{
-/*
-   CmpReadTableDefInfo * rtdInfo = (CmpReadTableDefInfo *)(rtd.data());
-   reply_ = new(outHeap_) CmpMessageReplyCode(outHeap_, rtd.id(), 0, 0, 
-                                              outHeap_);
-  
-   rtdInfo->unpack((char *)rtdInfo);
-
-   NAString objectNameStr(rtdInfo->getObjName());
-   NAString ansiName;
-   QualifiedName qualName;
-
-   switch (rtdInfo->getNameType())
-     {
-       case CmpReadTableDefInfo::SQLMP:
-       {
-         
-         ComMPLoc objName(objectNameStr, ComMPLoc::FULLFILE);
-         if (!objName.isValid(ComMPLoc::FULLFILE))
-         {
-            // input object names must be fully-qualified. For a Guardian
-            // name (nametype == SQLMP), the name must be of the form
-            // \<sys>.$<vol>.<subvol>.<filename>.
-            error(arkcmpErrorFileName, objName.getMPName());
-            return CmpStatement_ERROR;
-         }
-
-         qualName.setCatalogName(objName.getSysDotVol());
-         qualName.setSchemaName(objName.getSubvolName());
-         qualName.setObjectName(objName.getFileName());
-
-         break;
-       }
-
-       case CmpReadTableDefInfo::ANSI:
-       {
-         // input object names must be fully-qualified. For a logical 
-         // name (nametype == ANSI), the name must be of the form
-         // <catalog>.<schema>.<objectname>. 
-         ComObjectName objName(objectNameStr, COM_TABLE_NAME);
-	 if (!objName.isValid() || objName.getCatalogNamePart().isEmpty())
-         {
-            error(arkcmpErrorFileName, objectNameStr);
-            return CmpStatement_ERROR;
-         }
-
-         qualName.setCatalogName(objName.getCatalogNamePartAsAnsiString());
-         qualName.setSchemaName(objName.getSchemaNamePartAsAnsiString());
-         qualName.setObjectName(objName.getObjectNamePartAsAnsiString());
- 
-         ansiName = objectNameStr;
-         break;
-       }
-       default:
-       {
-         error(arkcmpErrorNoDiags, rtdInfo->getObjName());
-         return CmpStatement_ERROR;
-       }
-     }
-
-   // retrieve all meta-data information associated with the object.
-   desc_struct *tableDesc;
-
-   tableDesc = context_->schemaDB_->getReadTableDef()->readTableDef(qualName);
-
-   context_->schemaDB_->getReadTableDef()->endTransaction();
-
-   if (!tableDesc)
-   {
-      error(arkcmpErrorNoDiags, rtdInfo->getObjName());
-      return CmpStatement_ERROR;
-   }
-
-   char *catalogName = tableDesc->body.table_desc.catalogName;
-   NAString guardianName(tableDesc->body.table_desc.tablename);
-
-   switch (rtdInfo->getRequestType())
-     {
-       case CmpReadTableDefInfo::CATALOG:
-       {
-         // return the name of SQL/MP catalog in which the object is registered
-         // (note that this is only applicable for a SQL/MP object).
-
-         if (tableDesc->body.table_desc.underlyingFileType == SQLMX)
-         {
-            // cannot request SQL/MP catalog information for a SQL/MX table.
-            context_->schemaDB_->getReadTableDef()->deleteTree(tableDesc);
-            error(arkcmpErrorNoDiags, rtdInfo->getObjName());
-            return CmpStatement_ERROR;
-         }
-
-#pragma nowarn(1506)   // warning elimination         
-         CmpMessageReadTableDefReply rtdReply ((char *)(ansiName.data()),
-                                               ansiName.length(),
-                                               (char *)(guardianName.data()),
-                                               guardianName.length(),
-                                               catalogName,
-                                               str_len(catalogName),
-                                               0, 0,
-                                               heap_
-                                              );
-#pragma warn(1506)  // warning elimination 
-
-         size_t replyDataSize = rtdReply.getLength();
-         char *replyBuf = new(outHeap_) char[replyDataSize];
-         rtdReply.pack(replyBuf);
-         reply_->data() = replyBuf;
-         reply_->size() = replyDataSize;
- 
-         break;
-       }
-
-       case CmpReadTableDefInfo::METADATA:
-       {
-         // return the metadata information associated with the given object.
-
-         //******************************************************************
-         // NOTE: This case is not yet fully-implemented. Remove this comment
-         // when the final implementation has been completed - this code is
-         // required by the preprocessor group, and by ODBC for Release 2.
-         //******************************************************************
-         Lng32 descLength = tableDesc->getLength();
-         char * packedTableDesc = new(heap_)char[descLength];
-
-         tableDesc->pack(packedTableDesc);
-
-#pragma nowarn(1506)   // warning elimination 
-         CmpMessageReadTableDefReply rtdReply ((char *)(ansiName.data()),
-                                               ansiName.length(),
-                                               (char *)(guardianName.data()),
-                                               guardianName.length(),
-                                               catalogName,
-                                               str_len(catalogName),
-                                               (char *)packedTableDesc,
-                                               descLength, 
-                                               heap_
-                                              );
-#pragma warn(1506)  // warning elimination 
-
-         size_t replyDataSize = rtdReply.getLength();
-         char *replyBuf = new(outHeap_) char[replyDataSize];
-         rtdReply.pack(replyBuf);
-
-         delete packedTableDesc;
-         
-         reply_->data() = replyBuf;
-         reply_->size() = replyDataSize;
- 
-         break;
-       }
-       default:
-         break;
-     }
-
-   context_->schemaDB_->getReadTableDef()->deleteTree(tableDesc);
-*/
-   return CmpStatement_SUCCESS;
-}
-
 CmpStatement::ReturnStatus
 CmpStatement::process (const CmpMessageEndSession& es)
 {
@@ -1471,6 +1288,11 @@ CmpStatement::process (const CmpMessageEndSession& es)
   if (((CmpMessageEndSession&)es).resetAttrs())
     {
       context_->schemaDB_->getDefaults().resetSessionOnlyDefaults();
+    }
+
+  if (((CmpMessageEndSession&)es).clearCache())
+    {
+      CURRENTQCACHE->makeEmpty();
     }
 
   SQL_EXEC_DeleteHbaseJNI();
@@ -1541,10 +1363,6 @@ CmpStatement::process (const CmpMessageObj& request)
         ret = ((CmpStatementISP*)(this))->process
           (*(CmpMessageISPGetNext*)(&request));
         break;
-
-      case (CmpMessageObj::READTABLEDEF_REQUEST) :
-	ret = process(*(CmpMessageReadTableDef*)(&request));
-	break;
 
       case (CmpMessageObj::END_SESSION) :
 	ret = process(*(CmpMessageEndSession*)(&request));
@@ -1803,24 +1621,6 @@ void CmpStatement::initCqsWA()
 void CmpStatement::clearCqsWA() 
 { 
    cqsWA_ = NULL; 
-}
-
-void CmpStatement::addUDRInvocationInfoToDelete(
-     tmudr::UDRInvocationInfo *deleteThisAfterCompilation)
-{
-  if (!udrInvocationInfosToDelete_)
-    udrInvocationInfosToDelete_ = new(heap_) LIST(tmudr::UDRInvocationInfo *)(heap_);
-
-  udrInvocationInfosToDelete_->insert(deleteThisAfterCompilation);
-}
-
-void CmpStatement::addUDRPlanInfoToDelete(
-     tmudr::UDRPlanInfo *deleteThisAfterCompilation)
-{
-  if (!udrPlanInfosToDelete_)
-    udrPlanInfosToDelete_ = new(heap_) LIST(tmudr::UDRPlanInfo *)(heap_);
-
-  udrPlanInfosToDelete_->insert(deleteThisAfterCompilation);
 }
 
 void CmpStatement::setTMUDFRefusedRequirements(const char *details)

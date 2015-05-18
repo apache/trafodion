@@ -25,14 +25,14 @@ include macros.gmk
 
 # Make Targets
 .PHONY: all log4cpp dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr rest odb
-.PHONY: package package-all pkg-product pkg-sql-regress
+.PHONY: package package-all pkg-product pkg-sql-regress check-copyrights
 
 ################
 ### Main targets
 # Server-side only
 
 # Default target (all components)
-all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb
+all: $(MPI_TARGET) log4cpp dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar rest odb check-copyrights
 
 package: pkg-product pkg-client
 
@@ -81,14 +81,14 @@ trafci: jdbc_jar
 jdbc_type2_jar: ndcs
 	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
-	
-rest: verhdr 
+
+rest: verhdr
 	cd rest && $(MAKE) 2>&1 | sed -e "s/$$/  ##(REST)/" ; exit $${PIPESTATUS[0]}
 
-odb: ndcs 
+odb: ndcs
 	cd conn/odb && $(MAKE) 2>&1 | sed -e "s/$$/	##(ODB)/" ; exit $${PIPESTATUS[0]}
-    
-clean: sqroot
+
+clean: sqroot clean-source-pkgs
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd $(SEAMONSTER_TARGET)/src &&	$(MAKE) clean
 	cd log4cpp/$(LOG4CPP_VER)/src &&	$(MAKE) clean
@@ -100,9 +100,9 @@ clean: sqroot
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
-	cd conn/odb && 			$(MAKE) clean
+	cd conn/odb &&			$(MAKE) clean
 
-cleanall: sqroot
+cleanall: sqroot clean-source-pkgs
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
 	cd log4cpp/$(LOG4CPP_VER)/src &&	$(MAKE) cleanall
 	cd dbsecurity &&		$(MAKE) cleanall
@@ -117,15 +117,32 @@ cleanall: sqroot
 
 package-all: package pkg-sql-regress
 
-pkg-product: all
+pkg-product: all pkg-source
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
 
-pkg-client: ci ndcs
+pkg-client: ci ndcs odb
 	cd conn &&  make all 2>&1 | sed -e "s/$$/	##(Package clients)/" ; exit $${PIPESTATUS[0]}
 
 # Package SQL regression tests (all target produces some regress/tool files so do that first)
 pkg-sql-regress: all
 	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
+
+# Package open source files
+pkg-source: log4cpp-tar
+
+log4cpp-tar: sqf/sources/$(LOG4CPP_VER).tar
+
+sqf/sources/$(LOG4CPP_VER).tar : log4cpp/$(LOG4CPP_VER).tar
+	mkdir -p sqf/sources && ln log4cpp/$(LOG4CPP_VER).tar sqf/sources | sed -e "s/$$/	##(Log4cpp)/";exit $${PIPESTATUS[0]}
+
+log4cpp/$(LOG4CPP_VER).tar:
+	cd log4cpp && tar -cf $(LOG4CPP_VER).tar $$(git ls-tree HEAD -r --name-only $(LOG4CPP_VER)) | sed -e "s/$$/	##(Log4cpp)/";exit $${PIPESTATUS[0]}
+
+clean-source-pkgs: clean-log4cpp-tar
+	rm -rf sqf/sources
+
+clean-log4cpp-tar:
+	rm -f log4cpp/log4cpp*.tar
 
 version:
 	@cd sqf; unset SQ_VERBOSE; source sqenv.sh ; echo "$${TRAFODION_VER}"
@@ -137,3 +154,6 @@ sqroot:
 # Check for absolute filenames used as dynamic linked libraries
 find-absolute-dlls:
 	sqf/build-scripts/find-abs-dlls
+
+check-copyrights:
+	python ./updateCopyrightCheck.py

@@ -1,7 +1,7 @@
 -- Test: TEST131 (Executor)
 -- @@@ START COPYRIGHT @@@
 --
--- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+-- (C) Copyright 2002-2015 Hewlett-Packard Development Company, L.P.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -63,6 +63,8 @@ grant all on t131a to SQL_USER7;
 sh sqlci -i"TEST131(priv_cancel)" -u"SQL_User7"  ;
 
 ?section clnup
+
+set schema $$TEST_SCHEMA$$;
 
 drop table T131c;
 drop table T131b;

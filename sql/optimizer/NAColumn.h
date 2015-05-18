@@ -88,7 +88,6 @@ public:
     Lng32 position,
     NAType *type,
     CollHeap *h,
-    unsigned short SQLMPKeytag = 0,
     const NATable* table = NULL,
     ColumnClass columnClass = USER_COLUMN,
     const ComColumnDefaultClass defaultClass = COM_NO_DEFAULT,
@@ -107,7 +106,6 @@ public:
     colName_(colName, h),
     position_(position),
     type_(type),
-    SQLMPKeytag_(SQLMPKeytag),
     table_(table),
     columnClass_(columnClass),
     defaultClass_(defaultClass),
@@ -146,7 +144,6 @@ public:
     colName_(nac.colName_,h),
     position_(nac.position_),
     type_(nac.type_),
-    SQLMPKeytag_(nac.SQLMPKeytag_),
     table_(nac.table_),
     columnClass_(nac.columnClass_),
     defaultClass_(nac.defaultClass_),
@@ -218,7 +215,6 @@ public:
          { return getFullColRefName().getColRefAsAnsiString(); }
 
   inline Lng32 getPosition() const 		{ return position_; }
-  inline unsigned short getSQLMPKeytag() const	{ return SQLMPKeytag_; }
   inline const NAType* getType() const		{ return type_; }
   inline NAType*& mutateType()			{ return type_; }
   //Returns TRUE if type_ is a numeric type
@@ -413,16 +409,8 @@ private:
 
   // ---------------------------------------------------------------------
   // The ordinal position of the column within the table or index, zero-based.
-  // If < 0, this is really the KEYTAG column of a SQL/MP index
-  // (and is the 0th column of the index).
   // ---------------------------------------------------------------------
   Lng32 position_;
-
-  // ---------------------------------------------------------------------
-  // The fixed value for the MP KEYTAG column.
-  // Zero for any base table or for any MX object.
-  // ---------------------------------------------------------------------
-  unsigned short SQLMPKeytag_;
 
   // ---------------------------------------------------------------------
   // A pointer to its Type Descriptor.

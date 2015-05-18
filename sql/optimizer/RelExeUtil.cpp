@@ -64,6 +64,7 @@
 #include "StmtDDLCreateIndex.h"
 #include "StmtDDLPopulateIndex.h"
 #include "StmtDDLDropIndex.h"
+#include "StmtDDLAlterIndex.h"   // why don't we need StmtDDLAlterTable as well???
 #include "StmtDDLCreateDropSequence.h"
 #include "StmtDDLGrant.h"
 #include "StmtDDLRevoke.h"
@@ -93,6 +94,10 @@
 #include "SqlParserGlobals.h"		// must be last #include
 #include "ItmFlowControlFunction.h"
 #include "HDFSHook.h"
+#include "PrivMgrComponentPrivileges.h"
+#include "ComUser.h"
+#include "CmpSeabaseDDL.h"
+#include "SqlTableOpenInfo.h"
 
 
 NAWchar *SQLTEXTW();
@@ -303,6 +308,7 @@ RelExpr * ExeUtilExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   result->tableId_ = tableId_;
   result->virtualTabId_ = virtualTabId_;
+  result->setOptStoi(stoi_);
 
   return GenericUtilExpr::copyTopNode(result, outHeap);
 }
@@ -434,6 +440,92 @@ ExeUtilExpr::unparse(NAString &result,
     default:
       break;
     }
+}
+
+// Returns TRUE if current user has requested component privilege
+NABoolean ExeUtilExpr::checkForComponentPriv(
+  SQLOperation operation,
+  BindWA *bindWA)
+{
+  // If authorization is not enabled, implicitly have priv
+  if (!bindWA->currentCmpContext()->isAuthorizationEnabled())
+    return TRUE;
+
+  // if DB__ROOT, implicitly have priv
+  if (ComUser::getCurrentUser() == ComUser::getRootUserID())
+    return TRUE;
+
+  // If have requested component privilege, return TRUE
+  NAString privMgrMDLoc = CmpSeabaseDDL::getSystemCatalogStatic() + \
+                          NAString(".\"") + \
+                          SEABASE_PRIVMGR_SCHEMA + \
+                          NAString ("\"");
+  PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
+                                                 CmpCommon::diags());
+  if (componentPrivileges.hasSQLPriv(ComUser::getCurrentUser(),operation,true))
+    return TRUE;
+ return FALSE;
+}
+
+// Sets up a stoi table entry.  This entry is used later when privileges
+// are checked to make sure the current user has required privileges 
+void ExeUtilExpr::setupStoiForPrivs (
+  SqlTableOpenInfo::AccessFlags privs,
+  BindWA *bindWA)
+{
+
+  // The stoi requires information from NATable
+  NATable *naTable = bindWA->getNATable(getTableName());
+  if (naTable == NULL)
+  {
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      *CmpCommon::diags() << DgSqlCode(-1034);
+    bindWA->setErrStatus();
+    return;
+  }
+
+  NAString fileName( naTable->getClusteringIndex()->
+                          getFileSetName().getQualifiedNameAsString(),
+                     bindWA->wHeap());
+
+  SqlTableOpenInfo * stoi_ = new (bindWA->wHeap()) SqlTableOpenInfo;
+
+  stoi_->setFileName(convertNAString(fileName, bindWA->wHeap()));
+
+  // set privileges as requested
+  stoi_->setSelectAccess(privs.select_);
+  stoi_->setInsertAccess(privs.insert_);
+  stoi_->setUpdateAccess(privs.update_);
+  stoi_->setDeleteAccess(privs.delete_);
+
+  // Add to stoiList associated with plan
+  OptSqlTableOpenInfo *stoiInList = NULL;
+
+  // First see if entry has already been added
+  for (CollIndex i=0; i < bindWA->getStoiList().entries(); i++)
+    if (strcmp(bindWA->getStoiList()[i]->getStoi()->fileName(), fileName) == 0) {
+      stoiInList = bindWA->getStoiList()[i];
+      break;
+    }
+
+  // If entry has not been added, add it to bindWA's list
+  if (!stoiInList)
+  {
+    OptSqlTableOpenInfo *optStoi = new (bindWA->wHeap())
+      OptSqlTableOpenInfo( stoi_,getTableName(), bindWA->wHeap());
+    optStoi->setTable ((NATable *)naTable);
+    bindWA->getStoiList().insert(optStoi);
+  }
+
+  // Adjust list of privileges to include utility requirements
+  else
+  {
+    if (stoi_->getSelectAccess()) stoiInList->getStoi()->setSelectAccess();
+    if (stoi_->getInsertAccess()) stoiInList->getStoi()->setInsertAccess();
+    if (stoi_->getUpdateAccess()) stoiInList->getStoi()->setUpdateAccess();
+    if (stoi_->getDeleteAccess()) stoiInList->getStoi()->setDeleteAccess();
+  }
+  return;
 }
 
 ExeUtilGetStatistics::ExeUtilGetStatistics(NAString statementName,
@@ -3563,6 +3655,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean alterDropCol = FALSE;
   NABoolean alterDisableIndex = FALSE;
   NABoolean alterEnableIndex = FALSE;
+  NABoolean alterHBaseOptions = FALSE;
   NABoolean otherAlters = FALSE;
   NABoolean isPrivilegeMngt = FALSE;
   NABoolean isCreateSchema = FALSE;
@@ -3742,12 +3835,27 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
          alterRenameTable = TRUE;
       else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableAlterColumnSetSGOption())
          alterIdentityCol = TRUE;
+      else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableHBaseOptions())
+         alterHBaseOptions = TRUE;
        else
         otherAlters = TRUE;
 
       qualObjName_ =
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLAlterTable()->
         getTableNameAsQualifiedName();
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterIndex())
+    {
+      isAlter_ = TRUE;
+      isIndex_ = TRUE;
+      if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterIndexHBaseOptions())
+        alterHBaseOptions = TRUE;
+      else
+        otherAlters = TRUE;
+
+      qualObjName_ =
+        getDDLNode()->castToStmtDDLNode()->castToStmtDDLAlterIndex()->
+        getIndexNameAsQualifiedName();
     }
     else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateView())
     {
@@ -3913,7 +4021,8 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCleanupObjects())
     {
       isCleanup_ = TRUE;
-      hbaseDDLNoUserXn_ = TRUE;
+      if (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+        hbaseDDLNoUserXn_ = TRUE;
 
       returnStatus_ = 
         getExprNode()->castToElemDDLNode()->castToStmtDDLCleanupObjects()->getStatus();
@@ -3924,7 +4033,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
          (isCreate_ || isDrop_ || purgedataHbase_ ||
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
 			alterAddConstr || alterDropConstr || alterRenameTable || 
-                        alterIdentityCol || otherAlters)))))
+                        alterIdentityCol || alterHBaseOptions || otherAlters)))))
       {
 	if (NOT isNative_)
 	  {
@@ -5339,22 +5448,63 @@ RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outH
     result = new (outHeap)
       ExeUtilHBaseBulkLoad(getTableName(),
                       getExprNode(),
-                      NULL, CharInfo::UnknownCharSet, outHeap);
+                      NULL, CharInfo::UnknownCharSet, pQueryExpression_, outHeap);
   else
     result = (ExeUtilHBaseBulkLoad *) derivedNode;
 
   result->keepHFiles_ = keepHFiles_;
   result->truncateTable_ = truncateTable_;
   result->noRollback_= noRollback_;
-  result->logErrors_ = logErrors_ ;
+  result->continueOnError_ = continueOnError_ ;
+  result->logErrorRowsLocation_= logErrorRowsLocation_;
+  result->logErrorRows_ = logErrorRows_;
   result->noDuplicates_= noDuplicates_;
   result->indexes_= indexes_;
   result->constraints_= constraints_;
   result->noOutput_= noOutput_;
   result->indexTableOnly_= indexTableOnly_;
   result->upsertUsingLoad_= upsertUsingLoad_;
-
+  result->pQueryExpression_ = pQueryExpression_;
+  result->maxErrorRows_= maxErrorRows_;
   return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilHBaseBulkLoad::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  RelExpr * boundExpr = NULL;
+
+  // If user does not have the MANAGE_LOAD component privilege, setup stoi for
+  // privileges needed to perform load operation
+  if (!checkForComponentPriv(SQLOperation::MANAGE_LOAD, bindWA))
+  {
+    // Load requires select and insert privileges
+    // Load requires delete if TRUNCATE is specified
+    SqlTableOpenInfo::AccessFlags privs;
+    privs.select_ = 1;
+    privs.insert_ = 1;
+    privs.update_ = 0;
+    privs.delete_ = truncateTable_;
+
+    setupStoiForPrivs(privs, bindWA);
+    if (bindWA->errStatus())
+      return NULL;
+
+    getQueryExpression()->bindNode(bindWA);
+  }
+
+  if (bindWA->errStatus())
+    return NULL;
+
+  boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  return boundExpr;
 }
 
 const NAString ExeUtilHBaseBulkLoad::getText() const
@@ -5401,7 +5551,6 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
         setTruncateTable(TRUE);
       }
       break;
-
       case INDEX_TABLE_ONLY_:
       {
         if (getIndexTableOnly())
@@ -5457,18 +5606,53 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
         setNoOutput(TRUE);
       }
       break;
-      case STOP_AFTER_N_ERRORS_:
+      case STOP_AFTER_N_ERROR_ROWS_:
       {
-        *da << DgSqlCode(-4485)
-        << DgString0(": STOP AFTER N ERRORS.");
-        return 1;
+        if (getMaxErrorRows() != 0)
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("MAX ERROR ROWS");
+          return 1;
+        }
+        setMaxErrorRows(lo->numericVal_);
       }
       break;
-      case LOG_ERRORS_:
+      case LOG_ERROR_ROWS_:
       {
-        *da << DgSqlCode(-4485)
-        << DgString0(": ERROR LOGGING.");
-        return 1;
+        if (getLogErrorRows())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("LOG ERROR ROWS");
+          return 1;
+        }
+        setContinueOnError(TRUE);
+        setLogErrorRows(TRUE);
+        if (lo->stringVal_ == NULL)
+           logErrorRowsLocation_ = CmpCommon::getDefaultString(TRAF_LOAD_ERROR_LOGGING_LOCATION);
+        else
+        {
+           if (strlen(lo->stringVal_) > 512) {
+              *da << DgSqlCode(-4487)
+                  << DgString0(lo->stringVal_);
+              return -1;
+           }
+           logErrorRowsLocation_ = lo->stringVal_;
+        }
+        //GIVE ERROR if EQUAL to BULKLOAD tmp location
+      }
+      break;
+      case CONTINUE_ON_ERROR_:
+      {
+        if (getContinueOnError())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("CONTINUE ON ERROR");
+          return 1;
+        }
+        setContinueOnError(TRUE);
       }
       break;
       case UPSERT_USING_LOAD_:
@@ -5483,6 +5667,18 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
         setUpsertUsingLoad(TRUE);
       }
       break;
+      case UPDATE_STATS_:
+      {
+        if (getUpdateStats())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("UPDATE STATISTICS");
+          return 1;
+        }
+        setUpdateStats(TRUE);
+      }
+      break;
       default:
       {
         CMPASSERT(0);
@@ -5492,6 +5688,18 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
     }
   }
 
+  // Update stats not allowed with upsert load.
+  if (getUpdateStats() && getUpsertUsingLoad())
+    {
+      // 4492 BULK LOAD option UPDATE STATISTICS cannot be used with UPSERT USING LOAD option.
+      *da << DgSqlCode(-4492);
+      return 1;
+    }
+
+  if (getLogErrorRows() || getMaxErrorRows() > 0)
+  {
+    setContinueOnError(TRUE);
+  }
   if (getIndexTableOnly())
   {
     // target table is index then : no output, no secondary index maintenance
@@ -5523,6 +5731,7 @@ RelExpr * ExeUtilHBaseBulkLoadTask::copyTopNode(RelExpr *derivedNode, CollHeap* 
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
+
 
 const NAString ExeUtilHBaseBulkLoadTask::getText() const
 {
@@ -5562,7 +5771,34 @@ RelExpr * ExeUtilHBaseBulkUnLoad::copyTopNode(RelExpr *derivedNode, CollHeap* ou
   result->overwriteMergeFile_ = overwriteMergeFile_;
   result->snapSuffix_= snapSuffix_;
   result->scanType_ = scanType_;
+  result->pQueryExpression_ = pQueryExpression_;
   return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilHBaseBulkUnLoad::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  RelExpr * boundExpr = NULL;
+
+  // If user does not have the MANAGE_LOAD component privilege, call the
+  // binder to bind the associated query expression.  The binder returns
+  // any privilege errors
+  if (!checkForComponentPriv(SQLOperation::MANAGE_LOAD, bindWA))
+  {
+    // Verify that current user has privileges by binding the
+    // query expression attached to request
+    getQueryExpression()->bindNode(bindWA);
+  }
+
+  boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  return boundExpr;
 }
 
 const NAString ExeUtilHBaseBulkUnLoad::getText() const

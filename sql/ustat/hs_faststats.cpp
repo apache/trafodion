@@ -76,7 +76,9 @@ template <class T> void FastStatsHist<T>::actuate(Lng32 numEHIntervals)
 {
   //cbf_->printfreq(group_->colNames->data());
   Int32 numEWIntervals = 4 * numEHIntervals;
-  T width = (max_ - min_) / numEWIntervals;
+  T width = (max_ - min_ + (numEWIntervals - 1)) / numEWIntervals;
+  if (width == 0) // range of values (e.g., _SALT_) may be less than # intervals
+    width = 1;
 
   // Average height of intervals in equi-width histogram. This is passed to the
   // histogram ctor below when creating the equi-width histogram, and is used as
@@ -144,7 +146,7 @@ template <class T> void FastStatsHist<T>::actuate(Lng32 numEHIntervals)
   NAList<T> boundaries(STMTHEAP, numEHIntervals);
 
   equiWidthHist.convertToEQHistogram(height, equiHeightHist, boundaries);
-  equiHeightHist.display(cout, "Equa-height Histogram");
+  //equiHeightHist.display(cout, "Equa-height Histogram");
   equiHeightHist.estimateRowsAndUecs(FastStatsHist::SAMPLE_RATE, skRatio);
   //equaHeightHistogram.displayRowsAndUecs(cout, "========== Computed UECs ===========");
 }

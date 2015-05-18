@@ -35,8 +35,6 @@
 #include "ex_mdam.h"
 #include "hdfs.h"
 
-#define ROWSET_MAX_NO_ROWS     1000
-
 // -----------------------------------------------------------------------
 // Classes defined in this file
 // -----------------------------------------------------------------------
@@ -166,6 +164,25 @@ public:
   {
     return -1.0f;
   }
+
+  Lng32 numRowsInDirectBuffer() { return directBufferRowNum_; }
+
+  static void incrErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
+                               const char * tabName, const char * rowId);
+
+  static void handleException(NAHeap *heap,
+                          char *loggingDdata,
+                          Lng32 loggingDataLen,
+                          ComCondition *errorCond,
+                          ExpHbaseInterface * ehi,
+                          NABoolean & LoggingFileCreated,
+                          char * loggingFileName);
+  static void buildLoggingPath(const char * loggingLocation,
+                               char *logId,
+                               const char *tableName,
+                               const char * loggingFileNamePrefix,
+                               Lng32 instId,
+                               char * loggingFileName);
 
 protected:
 
@@ -445,7 +462,7 @@ protected:
 class ExHbaseTaskTcb : public ExGod
 {
  public:
-  ExHbaseTaskTcb(ExHbaseAccessTcb * tcb);
+  ExHbaseTaskTcb(ExHbaseAccessTcb * tcb,  NABoolean rowsetTcb = FALSE);
 
   virtual ExWorkProcRetcode work(short &retval);
 
@@ -458,6 +475,8 @@ class ExHbaseTaskTcb : public ExGod
   // To allow cancel, some tasks will need to return to the 
   // scheduler occasionally.
   Lng32 batchSize_;
+  NABoolean rowsetTcb_;
+  Lng32 remainingInBatch_;
 };
 
 class ExHbaseScanTaskTcb  : public ExHbaseTaskTcb
@@ -595,8 +614,7 @@ public:
 class ExHbaseGetSQTaskTcb  : public ExHbaseTaskTcb
 {
 public:
-  //  ExHbaseGetSQTaskTcb(ExHbaseAccessSelectTcb * tcb);
-  ExHbaseGetSQTaskTcb(ExHbaseAccessTcb * tcb);
+  ExHbaseGetSQTaskTcb(ExHbaseAccessTcb * tcb, NABoolean rowsetTcb);
   
   virtual ExWorkProcRetcode work(short &retval); 
 
@@ -616,8 +634,8 @@ public:
     , COLLECT_STATS
     , HANDLE_ERROR
     , DONE
+    , ALL_DONE
   } step_;
-
 };
 
 class ExHbaseAccessSelectTcb  : public ExHbaseAccessTcb
@@ -784,6 +802,7 @@ public:
     , HANDLE_ERROR
     , DONE
     , ALL_DONE
+
   } step_;
 
   //  const char * insRowId_;
@@ -859,15 +878,23 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     }
 
    private:
+    void getHiveCreateTableDDL(NAString& hiveSampleTblNm, NAString& ddlText);
+
+    short createLoggingRow( UInt16 tuppIndex,  char * tuppRow, char * targetRow, int &targetRowLen);
+
     NABoolean hFileParamsInitialized_;  ////temporary-- need better mechanism later
     Text   familyLocation_;
     Text   importLocation_;
     Text   hFileName_;
 
-    //Queue * sortedListOfColNames_;
+    char loggingFileName_[1000];
+    NABoolean LoggingFileCreated_ ;
+    ComCondition * lastErrorCnd_;
     std::vector<UInt32> posVec_;
 
     char * prevRowId_;
+    char * loggingRow_;
+
 
     // HDFS file system and output file ptrs used for ustat sample table.
     hdfsFS hdfs_;
@@ -1070,18 +1097,23 @@ public:
     , PROCESS_UPDATE
     , PROCESS_UPDATE_AND_CLOSE
     , PROCESS_SELECT
-    , PROCESS_SELECT_AND_CLOSE
     , NEXT_ROW
     , RS_CLOSE
     , HANDLE_ERROR
     , DONE
     , ALL_DONE
+    , ROW_DONE
+    , CREATE_ROW
+    , APPLY_PRED
+    , RETURN_ROW
   } step_;
 
   ExHbaseAccessSQRowsetTcb( const ExHbaseAccessTdb &tdb,
 			    ex_globals *glob );
   
   virtual ExWorkProcRetcode work(); 
+  Lng32 setupRowIds();
+  Lng32 setupUniqueKey();
  private:
   Lng32 currRowNum_;
 

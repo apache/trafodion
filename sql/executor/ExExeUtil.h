@@ -54,7 +54,6 @@ class ExpHbaseInterface;
 class ByteArrayList;
 
 //class FILE_STREAM;
-
 #include "ComAnsiNamePart.h"
 #include "ComTdbExeUtil.h"
 #include "ComTdbRoot.h"
@@ -62,6 +61,8 @@ class ByteArrayList;
 #include "ExExeUtilCli.h"
 #include "ExpLOBstats.h"
 #include "hiveHook.h"
+
+
 #include "SequenceFileReader.h"
 
 #define TO_FMT3u(u) MINOF(((u)+500)/1000, 999)
@@ -85,7 +86,7 @@ class ExExeUtilDisplayExplainComplexTdb;
 class ExExeUtilFastDeleteTdb;
 class ExExeUtilSuspendTdb;
 class ExExeUtilSuspendTcb;
-
+class ExpHbaseInterface;
 
 // -----------------------------------------------------------------------
 // Classes referenced in this file
@@ -3435,7 +3436,8 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
       POST_LOAD_CLEANUP_,
       TRUNCATE_TABLE_,
       DISABLE_INDEXES_,
-      POPULATE_INDEXES_, 
+      POPULATE_INDEXES_,
+      UPDATE_STATS_,
       RETURN_STATUS_MSG_,
       DONE_,
       HANDLE_ERROR_, DELETE_DATA_AND_ERROR_,
@@ -3449,9 +3451,11 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   Int64 startTime_;
   Int64 endTime_;
   Int64 rowsAffected_;
-
-
   char statusMsgBuf_[BUFFER_SIZE];
+  ExpHbaseInterface * ehi_;
+
+  short setCQDs();
+  short restoreCQDs();
 };
 
 class ExExeUtilHbaseLoadPrivateState : public ex_tcb_private_state

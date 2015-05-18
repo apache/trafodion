@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1144,8 +1144,7 @@ NAString* CharType::getKey(CollHeap* h) const
 
 void SQLChar::minRepresentableValue(void* bufPtr, Lng32* bufLen,
 				    NAString ** stringLiteral,
-				    CollHeap* h,
-				    NABoolean sqlmpKeyGen) const
+				    CollHeap* h) const
 {
 // 2/19/98: checked for unicode. No need to add Unicode case.
   ComASSERT(*bufLen >= getNominalSize());
@@ -1189,8 +1188,7 @@ void SQLChar::minRepresentableValue(void* bufPtr, Lng32* bufLen,
 
 void SQLChar::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
 				    NAString ** stringLiteral,
-				    CollHeap* h,
-				    NABoolean sqlmpKeyGen) const
+				    CollHeap* h) const
 {
 // 2/19/98: checked for unicode
   ComASSERT(*bufLen >= getNominalSize());
@@ -1278,8 +1276,7 @@ return 0;
 
 void SQLVarChar::minRepresentableValue(void* bufPtr, Lng32* bufLen,
 				       NAString ** stringLiteral,
-				       CollHeap* h,
-				       NABoolean sqlmpKeyGen) const
+				       CollHeap* h) const
 {
   ComASSERT(*bufLen >= getNominalSize() + getVarLenHdrSize());
 
@@ -1348,8 +1345,7 @@ void SQLVarChar::minRepresentableValue(void* bufPtr, Lng32* bufLen,
 
 void SQLVarChar::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
 				       NAString ** stringLiteral,
-				       CollHeap* h,
-				       NABoolean sqlmpKeyGen) const
+				       CollHeap* h) const
 {
   ComASSERT(*bufLen >= getNominalSize() + getVarLenHdrSize());
 

@@ -33,17 +33,20 @@ import org.trafodion.rest.util.RestConfiguration;
 import org.trafodion.rest.util.VersionInfo;
 import org.trafodion.rest.script.ScriptManager;
 import org.trafodion.rest.script.ScriptContext;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.nio.SelectChannelConnector;
-import org.mortbay.jetty.security.Constraint;
-import org.mortbay.jetty.security.ConstraintMapping;
-import org.mortbay.jetty.security.SecurityHandler;
-import org.mortbay.jetty.security.SslSocketConnector;
-import org.mortbay.jetty.security.Password;
-import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.ServletHolder;
-import org.mortbay.thread.QueuedThreadPool;
+
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.security.Password;
+import org.eclipse.jetty.util.*;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 
@@ -141,145 +144,124 @@ public class TrafodionRest implements Runnable, RestConstants {
 		thrd.start();	
 	}
 
-	public void run() {
-		VersionInfo.logVersion();
-		
-		// set up the Jersey servlet container for Jetty
-		ServletHolder sh = new ServletHolder(ServletContainer.class);
-		sh.setInitParameter(
-				"com.sun.jersey.config.property.resourceConfigClass",
-				ResourceConfig.class.getCanonicalName());
-		sh.setInitParameter("com.sun.jersey.config.property.packages","org.trafodion.rest");
+    public void run() {
+	    VersionInfo.logVersion();
 
-		// set up Jetty and run the embedded server
-		Server server = new Server();
-
-		SelectChannelConnector connector = new SelectChannelConnector();
-		connector.setPort(servlet.getConfiguration().getInt("rest.port", 4200));
-		LOG.info("HTTP port:" + servlet.getConfiguration().getInt("rest.port", 4200));
-		connector.setHost(servlet.getConfiguration().get("rest.host", "0.0.0.0"));
-
-		//Get the obfuscated SSL keystore password property. This is set by Trafodion installer
-        //Presence of property triggers SSL setup otherwise SSL disabled.
-        //See http://docs.codehaus.org/display/JETTY/Securing+Passwords for more detail
-        boolean setupSSL = false;
-        String sKeyStoreObfPswd = servlet.getConfiguration().get(Constants.REST_SSL_PASSWORD, ""); 
-        if(sKeyStoreObfPswd.length() > 0) {
-            setupSSL = true;
-            LOG.info("Setting up SSL");
-        } else {
-            LOG.info("SSL disabled");
-        }
+	    // Set the default max thread number to 100 to limit
+        // the number of concurrent requests so that REST server doesn't OOM easily.
+        // Jetty sets the default max thread number to 250, if we don't set it.
+        //
+        // Our default min thread number 2 is the same as that used by Jetty.
+        int maxThreads = servlet.getConfiguration().getInt("rest.threads.max", 100);
+        int minThreads = servlet.getConfiguration().getInt("rest.threads.min", 2);
+        QueuedThreadPool threadPool = new QueuedThreadPool(maxThreads,minThreads);
+        Server server = new Server(threadPool);
         
-        SslSocketConnector sslConnector = null;
-        if(setupSSL) {
-            int sslPort = servlet.getConfiguration().getInt("rest.https.port", 4201);
-            LOG.info("HTTPS port:" + sslPort);
-            connector.setConfidentialPort(sslPort);
-            String sKeyStore = servlet.getConfiguration().get(Constants.REST_KEYSTORE, Constants.DEFAULT_REST_KEYSTORE); 
-            String sKeyStorePswd = new Password(sKeyStoreObfPswd).toString();
-            if(LOG.isDebugEnabled())
-                LOG.debug("setPort(" + sslPort + ")" +
-                        ",setKeystore(" + sKeyStore + ")" +
-                        ",setTruststore(" + sKeyStore + ")" +
-                        ",setPassword(" + sKeyStorePswd + ")" +
-                        ",setKeyPassword(" + sKeyStorePswd + ")" +
-                        ",setTrustPassword(" + sKeyStorePswd + ")");
-            
-            //Create the keystore 
-            String keyStoreCommand = servlet.getConfiguration().get(Constants.REST_KEYSTORE_COMMAND,Constants.DEFAULT_REST_KEYSTORE_COMMAND); 
-            if(LOG.isDebugEnabled())
-                LOG.debug("keyStoreCommand:" + keyStoreCommand);
-            String command = keyStoreCommand
-                    .replace(Constants.REST_KEYSTORE, sKeyStore)
-                    .replace(Constants.REST_SSL_PASSWORD, sKeyStorePswd);
-            if(LOG.isDebugEnabled())
-                LOG.debug("command:" + command);
-           ScriptContext scriptContext = new ScriptContext();
-           scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
-           scriptContext.setCommand(command);
-           if(LOG.isDebugEnabled())
-               LOG.debug("keystore exec [" + scriptContext.getCommand() + "]");
-           ScriptManager.getInstance().runScript(scriptContext);// This will block while script runs
-           if(LOG.isDebugEnabled())
-               LOG.debug("keystore exit [" + scriptContext.getExitCode() + "]");
-           StringBuilder sb = new StringBuilder();
-           sb.append("exit code [" + scriptContext.getExitCode() + "]");
-           if (!scriptContext.getStdOut().toString().isEmpty())
-               sb.append(", stdout [" + scriptContext.getStdOut().toString()  + "]");
-           if (!scriptContext.getStdErr().toString().isEmpty())
-               sb.append(", stderr [" + scriptContext.getStdErr().toString()  + "]");
-           if(LOG.isDebugEnabled())
-               LOG.debug(sb.toString());
-           
-           switch (scriptContext.getExitCode()) {
-           case 0:
-               LOG.info("Keystore created successfully");
-               break;
-            default:
-               LOG.error("Keystore creation failure...exiting");
-               System.exit(-1);
-           }
-
-            // Second, construct and populate a SSL Context object (for use in the Channel Connector)
-            sslConnector = new SslSocketConnector( );
-            sslConnector.setPort(sslPort);
-            sslConnector.setKeystore(sKeyStore);
-            sslConnector.setTruststore(sKeyStore);
-            sslConnector.setPassword(sKeyStorePswd);
-            sslConnector.setKeyPassword(sKeyStorePswd);
-            sslConnector.setTrustPassword(sKeyStorePswd);
-        }
+        int httpPort = servlet.getConfiguration().getInt("rest.port", 4200);
+        int httpsPort = servlet.getConfiguration().getInt("rest.https.port", 4201);
         
-        // Finally, register both connectors with this server object 
-        if(setupSSL) 
-            server.setConnectors(new Connector[ ] { connector, sslConnector});
-        else
-            server.setConnectors(new Connector[ ] { connector });
-		server.addConnector(connector);
+        HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.setOutputBufferSize(32768);
 
-		// Set the default max thread number to 100 to limit
-		// the number of concurrent requests so that REST server doesn't OOM easily.
-		// Jetty set the default max thread number to 250, if we don't set it.
-		//
-		// Our default min thread number 2 is the same as that used by Jetty.
-		int maxThreads = servlet.getConfiguration().getInt("rest.threads.max", 100);
-		int minThreads = servlet.getConfiguration().getInt("rest.threads.min", 2);
-		QueuedThreadPool threadPool = new QueuedThreadPool(maxThreads);
-		threadPool.setMinThreads(minThreads);
-		server.setThreadPool(threadPool);
-		server.setSendServerVersion(false);
-		server.setSendDateHeader(false);
-		server.setStopAtShutdown(true);
-		
-        SecurityHandler shd = null;
-        if(setupSSL) {
-            //Create the internal mechanisms to handle secure connections and redirects
-            Constraint constraint = new Constraint();
-            constraint.setDataConstraint(Constraint.DC_CONFIDENTIAL);
+        ServerConnector http = new ServerConnector(server,
+                new HttpConnectionFactory(httpConfig));
+        http.setPort(httpPort);
+        http.setIdleTimeout(30000);
+        LOG.info("Setup HTTP on port:" + httpPort);
+	    
+	    //Get the obfuscated SSL keystore password property. This is set by Trafodion installer
+	    //Presence of property triggers SSL setup otherwise SSL disabled.
+	    //See www.eclipse.org/jetty/documentation/current/configuring-security-secure-passwords.html for more detail
+	    boolean setupSSL = false;
+	    String sKeyStoreObfPswd = servlet.getConfiguration().get(Constants.REST_SSL_PASSWORD, ""); 
+	    if(sKeyStoreObfPswd.length() > 0) {
+	        setupSSL = true;
+	    } else {
+	        LOG.info("SSL disabled");
+	    }
 
-            ConstraintMapping cm = new ConstraintMapping();
-            cm.setConstraint(constraint);
-            cm.setPathSpec("/*");
+	    if(setupSSL) {
+	        LOG.info("Setup HTTPS on port:" + httpsPort);
+	        String sKeyStore = servlet.getConfiguration().get(Constants.REST_KEYSTORE, Constants.DEFAULT_REST_KEYSTORE); 
+	        String sKeyStorePswd = new Password(sKeyStoreObfPswd).toString();
+	        SslContextFactory sslContextFactory = new SslContextFactory();
+	        sslContextFactory.setKeyStorePath(sKeyStore);
+	        sslContextFactory.setKeyStoreType("JKS");
+	        sslContextFactory.setKeyStorePassword(sKeyStorePswd);
+	        sslContextFactory.setKeyManagerPassword(sKeyStorePswd);
 
-            shd = new SecurityHandler();
-            shd.setConstraintMappings(new ConstraintMapping[] { cm });
-        }
+	        //Create the keystore 
+	        String keyStoreCommand = servlet.getConfiguration().get(Constants.REST_KEYSTORE_COMMAND,Constants.DEFAULT_REST_KEYSTORE_COMMAND); 
+	        if(LOG.isDebugEnabled())
+	            LOG.debug("keyStoreCommand:" + keyStoreCommand);
+	        String command = keyStoreCommand
+	                .replace(Constants.REST_KEYSTORE, sKeyStore)
+	                .replace(Constants.REST_SSL_PASSWORD, sKeyStorePswd);
+	        if(LOG.isDebugEnabled())
+	            LOG.debug("command:" + command);
+	        ScriptContext scriptContext = new ScriptContext();
+	        scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+	        scriptContext.setCommand(command);
+	        if(LOG.isDebugEnabled())
+	            LOG.debug("keystore exec [" + scriptContext.getCommand() + "]");
+	        ScriptManager.getInstance().runScript(scriptContext);// This will block while script runs
+	        if(LOG.isDebugEnabled())
+	            LOG.debug("keystore exit [" + scriptContext.getExitCode() + "]");
+	        StringBuilder sb = new StringBuilder();
+	        sb.append("exit code [" + scriptContext.getExitCode() + "]");
+	        if (!scriptContext.getStdOut().toString().isEmpty())
+	            sb.append(", stdout [" + scriptContext.getStdOut().toString()  + "]");
+	        if (!scriptContext.getStdErr().toString().isEmpty())
+	            sb.append(", stderr [" + scriptContext.getStdErr().toString()  + "]");
+	        if(LOG.isDebugEnabled())
+	            LOG.debug(sb.toString());
 
-		Context context = new Context(server, "/", Context.SESSIONS);
-		context.addServlet(sh, "/*");
-		
-		if(setupSSL)		
-		    context.addHandler(shd);
+	        switch (scriptContext.getExitCode()) {
+	        case 0:
+	            LOG.info("Keystore created successfully");
+	            break;
+	        default:
+	            LOG.error("Keystore creation error [" + scriptContext.getStdOut().toString() + "]...exiting");
+	            System.exit(-1);
+	        }
+	        
+	        HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
+	        httpsConfig.addCustomizer(new SecureRequestCustomizer());
+	        httpsConfig.setSecureScheme("https");
+	        httpConfig.setSecurePort(httpsPort);
 
-		try {
-			server.start();
-			server.join();
-		} catch (InterruptedException e) {
-			LOG.error("InterruptedException " + e);
-		} catch (Exception e) {
-			LOG.error("Exception " + e);
-		}
+	        ServerConnector https = new ServerConnector(server,
+	                new SslConnectionFactory(sslContextFactory, "http/1.1"),
+	                new HttpConnectionFactory(httpsConfig));
+	        https.setPort(httpsPort);
+	        https.setIdleTimeout(500000);
+	        server.setConnectors(new Connector[] { http, https });     
+	    } else {
+	        server.setConnectors(new Connector[] { http });
+	    }
+
+	    // set up the Jersey servlet container for Jetty
+	    ServletHolder sh = new ServletHolder(ServletContainer.class);
+	    sh.setInitParameter(
+	            "com.sun.jersey.config.property.resourceConfigClass",
+	            ResourceConfig.class.getCanonicalName());
+	    sh.setInitParameter("com.sun.jersey.config.property.packages","org.trafodion.rest");
+
+	    ServletContextHandler ctxHandler = new ServletContextHandler(
+	            ServletContextHandler.SESSIONS);
+	    ctxHandler.setContextPath("/");
+	    ctxHandler.addServlet(sh, "/*");
+	    server.setHandler(ctxHandler);
+	    server.setStopAtShutdown(true);
+
+	    try {
+	        server.start();
+	        server.join();
+	    } catch (InterruptedException e) {
+	        LOG.error("InterruptedException " + e);
+	    } catch (Exception e) {
+	        LOG.error("Exception " + e);
+	    }
 	}
 
 	public static void main(String[] args) throws Exception {

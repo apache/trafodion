@@ -46,6 +46,7 @@
 #include "UdrStreams.h"
 #include "UdrExeIpc.h"
 #include "LmRoutineC.h"
+#include "LmRoutineCppObj.h"
 #include "udrdecs.h"
 #include "spinfoCallback.h"
 
@@ -161,34 +162,83 @@ void processALoadMessage(UdrGlobals *UdrGlob,
         
         if (lm)
         {
-          lmResult = lm->getRoutine(sp->getNumParameters(),
-                                    sp->getLmParameters(),
-                                    sp->getNumTables(),
-                                    sp->getLmTables(),
-                                    sp->getReturnValue(),
-				    sp->getParamStyle(),
-				    sp->getTransactionAttrs(),
-                                    sp->getSQLAccessMode(),
-                                    sp->getInvocationInfo(),
-                                    sp->getPlanInfo(),
-                                    sp->getParentQid(),
-                                    sp->getRequestRowSize(),
-                                    sp->getReplyRowSize(),
-                                    sp->getSqlName(),
-                                    sp->getExternalName(),
-                                    sp->getRoutineSig(),
-                                    sp->getContainerName(),
-                                    sp->getExternalPathName(),
-                                    sp->getLibrarySqlName(),
-		                    UdrGlob->getCurrentUserName(),
-	                            UdrGlob->getSessionUserName(),
-	                            sp->getExternalSecurity(),
-	                            sp->getRoutineOwnerId(),
-                                    &lmRoutine,
-                                    (LmHandle)&SpInfoGetNextRow,
-                                    emitRowFuncPtr,
-                                    sp->getMaxNumResultSets(),
-                                    diags);
+          if (sp->getParamStyle() == COM_STYLE_JAVA_OBJ ||
+              sp->getParamStyle() == COM_STYLE_CPP_OBJ)
+            {
+              lmResult = lm->getObjRoutine(
+                   request.getUDRSerInvocationInfo(),
+                   request.getUDRSerInvocationInfoLen(),
+                   request.getUDRSerPlanInfo(),
+                   request.getUDRSerPlanInfoLen(),
+                   sp->getLanguage(),
+                   sp->getParamStyle(),
+                   sp->getExternalName(),
+                   sp->getContainerName(),
+                   sp->getExternalPathName(),
+                   sp->getLibrarySqlName(),
+                   &lmRoutine,
+                   diags);
+
+              if (lmRoutine)
+                {
+                  LmRoutineCppObj *objRoutine =
+                    static_cast<LmRoutineCppObj *>(lmRoutine);
+
+                  if (sp->getParamStyle() == COM_STYLE_CPP_OBJ)
+                    // set function pointers for functions provided
+                    // by tdm_udrserv
+                    objRoutine->setFunctionPtrs(SpInfoGetNextRow,
+                                                SpInfoEmitRowCpp);
+
+                  // add items to the UDRInvocationInfo that are not
+                  // known at compile time (total # of instances is
+                  // kind of known, but we want to give the executor a
+                  // chance to change it)
+                  lmRoutine->setRuntimeInfo(request.getParentQid(),
+                                            request.getNumInstances(),
+                                            request.getInstanceNum());
+
+#ifndef NDEBUG
+                  int debugLoop = 2;
+
+                  if (objRoutine->getInvocationInfo()->getDebugFlags() &
+                      tmudr::UDRInvocationInfo::DEBUG_LOAD_MSG_LOOP)
+                    debugLoop = 1;
+                  // go into a loop to allow the user to attach a debugger,
+                  // if requested, set debugLoop = 2 in the debugger to get out
+                  while (debugLoop < 2)
+                    debugLoop = 1-debugLoop;
+#endif
+
+                }
+            }
+          else
+            lmResult = lm->getRoutine(sp->getNumParameters(),
+                                      sp->getLmParameters(),
+                                      sp->getNumTables(),
+                                      sp->getLmTables(),
+                                      sp->getReturnValue(),
+                                      sp->getParamStyle(),
+                                      sp->getTransactionAttrs(),
+                                      sp->getSQLAccessMode(),
+                                      sp->getParentQid(),
+                                      sp->getRequestRowSize(),
+                                      sp->getReplyRowSize(),
+                                      sp->getSqlName(),
+                                      sp->getExternalName(),
+                                      sp->getRoutineSig(),
+                                      sp->getContainerName(),
+                                      sp->getExternalPathName(),
+                                      sp->getLibrarySqlName(),
+                                      UdrGlob->getCurrentUserName(),
+                                      UdrGlob->getSessionUserName(),
+                                      sp->getExternalSecurity(),
+                                      sp->getRoutineOwnerId(),
+                                      &lmRoutine,
+                                      (LmHandle)&SpInfoGetNextRow,
+                                      emitRowFuncPtr,
+                                      sp->getMaxNumResultSets(),
+                                      diags);
         }
         
         if (lmResult == LM_OK)
@@ -366,13 +416,7 @@ SPInfo *processLoadParameters(UdrGlobals *UdrGlob,
                                           request.getInputRowSize(),
                                           request.getOutputRowSize(),
                                           /* ComDiagsArea */ d,
-                                          (char *)request.getParentQid(),
-                                          request.getUDRSerInvocationInfoLen(),
-                                          request.getUDRSerInvocationInfo(),
-                                          request.getUDRSerPlanInfoLen(),
-                                          request.getUDRSerPlanInfo(),
-                                          request.getNumInstances(),
-                                          request.getInstanceNum());
+                                          (char *)request.getParentQid());
       if (sp == NULL)
         {  // memory problem
           UdrGlob->getSPList()->releaseOldestSPJ(/* ComDiagsArea */ d);

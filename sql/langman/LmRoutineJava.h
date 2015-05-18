@@ -11,7 +11,7 @@
 *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -84,6 +84,7 @@ protected:
     LmParameter  *returnValue,
     ComUInt32     maxResultSets,
     char         *routineSig,
+    ComRoutineParamStyle paramStyle,
     ComRoutineTransactionAttributes transactionAttrs,
     ComRoutineSQLAccess sqlAccessMode,
     ComRoutineExternalSecurity externalSecurity,
@@ -99,7 +100,7 @@ protected:
     LmContainer  *container,
     ComDiagsArea *diagsArea);
 
-  ~LmRoutineJava();
+  virtual ~LmRoutineJava();
 
   // Utilities.
   LmHandle getContainerHandle()
@@ -117,13 +118,7 @@ protected:
   inline ComBoolean isInternalSPJ() const
     { return udrForInternalSPJ_; }
 
-  ComBoolean isValid()
-  {
-    if (retType_ > LmJavaType::JT_NONE &&
-        retType_ <= LmJavaType::JT_LAST)
-      return TRUE;
-    return FALSE;
-  }
+  virtual ComBoolean isValid();
 
   // This method invokes a static Java method that returns void. In
   // the future if we need to support Java methods that return a value

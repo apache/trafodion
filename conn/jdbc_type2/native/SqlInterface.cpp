@@ -390,7 +390,7 @@ SQLRETURN SET_DATA_PTR(SRVR_STMT_HDL *pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descTy
 	if (rowsetSize) buffer_multiplier = rowsetSize;
 	else buffer_multiplier = 1;
 
-	MEMORY_DELETE(*varBuffer);
+	MEMORY_DELETE_ARRAY(*varBuffer);
 
 	DEBUG_ASSERT(*totalMemLen!=0,("totalMemLen==0"));
 	MEMORY_ALLOC_ARRAY(*varBuffer,BYTE,(*totalMemLen) * buffer_multiplier);
@@ -420,6 +420,12 @@ SQLRETURN SET_DATA_PTR(SRVR_STMT_HDL *pSrvrStmt, SRVR_STMT_HDL::DESC_TYPE descTy
 				i+1,
 				SQLDESC_LENGTH,
 				SQLItemDesc->maxLen,
+				NULL);
+			HANDLE_ERROR(retcode, sqlWarning);
+			retcode = CLI_SetDescItem(pDesc,
+				i+1,
+				SQLDESC_VC_IND_LENGTH,
+				(long)sizeof(short),
 				NULL);
 			HANDLE_ERROR(retcode, sqlWarning);
 		}
@@ -525,8 +531,8 @@ SQLRETURN AllocAssignValueBuffer(SQLItemDescList_def *SQLDesc,  SQLValueList_def
 	long totalRowMemLen;
 
 	// Allocate SQLValue Array
-	MEMORY_DELETE(SQLValueList->_buffer);
-	MEMORY_DELETE(VarBuffer);
+	MEMORY_DELETE_ARRAY(SQLValueList->_buffer);
+	MEMORY_DELETE_ARRAY(VarBuffer);
 	numValues = SQLDesc->_length * maxRowCount;
 	if (numValues == 0)
 	{
@@ -1215,10 +1221,15 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 		// Not a SELECT stmt type
 		if ((pSrvrStmt->sqlStmtType & TYPE_SELECT) == 0)
 		{
+                        Int64 tmpRowCount;
 			// Get row count
 			retcode =  CLI_GetDiagnosticsStmtInfo2 (pStmt, SQLDIAG_ROW_COUNT,
-				(int *)pSrvrStmt->rowCount._buffer,
+					&tmpRowCount,
 				NULL, 0, NULL);
+                        if (retcode == SQL_SUCCESS)
+                           pSrvrStmt->rowCount._buffer[0] = (int)tmpRowCount;
+                        else
+                           pSrvrStmt->rowCount._buffer[0] = 0;
 			pSrvrStmt->totalRowCount += pSrvrStmt->rowCount._buffer[0];
 			// Batch Binding Size
 			if (pSrvrStmt->batchRowsetSize)
@@ -1290,14 +1301,18 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 		case SQL_UPDATE_NON_UNIQUE:
 		case SQL_DELETE_NON_UNIQUE:
 		default:
+                        Int64 tmpRowCount;
 			// For all other NON-UNIQUE statements get the row count from GetDiag2
 			retcode =  CLI_GetDiagnosticsStmtInfo2(	pStmt,
 				SQLDIAG_ROW_COUNT,
-				(int*)pSrvrStmt->rowCount._buffer,
+                                &tmpRowCount, 
 				NULL,
 				0,
 				NULL);
-
+                        if (retcode == 0)
+		           pSrvrStmt->rowCount._buffer[0] = (int)tmpRowCount;
+                        else
+		           pSrvrStmt->rowCount._buffer[0] = 0;
 			pSrvrStmt->totalRowCount += pSrvrStmt->rowCount._buffer[0];
 			if (pSrvrStmt->batchRowsetSize > 0){
 				// Currently we only get one value back from SQL for rowsets.
@@ -1810,7 +1825,7 @@ SQLRETURN GETSQLERROR(SRVR_STMT_HDL *pSrvrStmt,
 			if (buf_len>msg_buf_len)
 			{
 				DEBUG_OUT(DEBUG_LEVEL_CLI,("CLI Message length changed.  Retrying."));
-				MEMORY_DELETE(msg_buf);
+				MEMORY_DELETE_ARRAY(msg_buf);
 				msg_buf_len = buf_len;
 				MEMORY_ALLOC_ARRAY(msg_buf, char, msg_buf_len+1);
 				msg_buf[msg_buf_len] = 0;
@@ -1832,12 +1847,12 @@ SQLRETURN GETSQLERROR(SRVR_STMT_HDL *pSrvrStmt,
 		{
 			kdsCopySQLErrorException(SQLError, "Internal Error : From CLI_GetDiagnosticsCondInfo2",
 				retcode, "");
-			MEMORY_DELETE(msg_buf);
+			MEMORY_DELETE_ARRAY(msg_buf);
 			break;
 		}
 		sqlState[5] = '\0';
 		kdsCopySQLErrorException(SQLError, msg_buf, sqlcode, sqlState);
-		MEMORY_DELETE(msg_buf);
+		MEMORY_DELETE_ARRAY(msg_buf);
 		curr_cond++;
 	}
 
@@ -1966,13 +1981,16 @@ SQLRETURN EXECDIRECT(SRVR_STMT_HDL* pSrvrStmt)
 		// If NOT a select type
 		if ((pSrvrStmt->sqlStmtType & TYPE_SELECT)==0)
 		{
-			retcode =  CLI_GetDiagnosticsStmtInfo2(pStmt, SQLDIAG_ROW_COUNT,(int*) &pSrvrStmt->rowsAffected,
+                        Int64 tmpRowCount;
+			retcode =  CLI_GetDiagnosticsStmtInfo2(pStmt, SQLDIAG_ROW_COUNT, &tmpRowCount,
 				NULL, 0, NULL);
 			if (retcode < 0)
 			{
 				sqlWarning = TRUE;
 				pSrvrStmt->rowsAffected = -1;
 			}
+                        else
+                                pSrvrStmt->rowsAffected = (int)tmpRowCount;
 		}
 		else
 			pSrvrStmt->rowsAffected = -1;
@@ -3058,10 +3076,7 @@ SQLRETURN PREPAREFORMFC(SRVR_STMT_HDL* pSrvrStmt)
 	}
 
 	//Soln. No.: 10-111229-1174 fix memory leak
-	if (pInputDescInfo != NULL )
-	{
-		delete[] pInputDescInfo;
-	}
+	MEMORY_DELETE_ARRAY(pInputDescInfo);
 
 	// MFC - resume normal flow if a .lck file exists
 	if (pSrvrStmt->columnCount > 0)

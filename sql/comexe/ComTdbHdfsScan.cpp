@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -61,7 +61,10 @@ ComTdbHdfsScan::ComTdbHdfsScan(
                                queue_index up,
                                Cardinality estimatedRowCount,
                                Int32  numBuffers,
-                               UInt32  bufferSize
+                               UInt32  bufferSize,
+                               char * errCountTable = NULL,
+                               char * loggingLocation = NULL,
+                               char * errCountId = NULL
                                )
 : ComTdb( ComTdb::ex_HDFS_SCAN,
             eye_HDFS_SCAN,
@@ -98,7 +101,10 @@ ComTdbHdfsScan::ComTdbHdfsScan(
   workAtpIndex_(workAtpIndex),
   moveExprColsTuppIndex_(moveColsTuppIndex),
   workCriDesc_(work_cri_desc),
-  flags_(0)
+  flags_(0),
+  errCountTable_(errCountTable),
+  loggingLocation_(loggingLocation),
+  errCountRowId_(errCountId)
 {};
 
 ComTdbHdfsScan::~ComTdbHdfsScan()
@@ -130,7 +136,9 @@ Long ComTdbHdfsScan::pack(void * space)
   hdfsFileInfoList_.pack(space);
   hdfsFileRangeBeginList_.pack(space);
   hdfsFileRangeNumList_.pack(space);
-
+  errCountTable_.pack(space);
+  loggingLocation_.pack(space);
+  errCountRowId_.pack(space);
   return ComTdb::pack(space);
 }
 
@@ -159,6 +167,9 @@ Lng32 ComTdbHdfsScan::unpack(void * base, void * reallocator)
   if (hdfsFileRangeBeginList_.unpack(base, reallocator)) return -1;
   if (hdfsFileRangeNumList_.unpack(base, reallocator)) return -1;
 
+  if (errCountTable_.unpack(base)) return -1;
+  if (loggingLocation_.unpack(base)) return -1;
+  if (errCountRowId_.unpack(base)) return -1;
   return ComTdb::unpack(base, reallocator);
 }
 

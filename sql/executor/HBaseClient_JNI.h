@@ -197,6 +197,8 @@ typedef enum {
  ,HTC_GET_COLVAL_EXCEPTION
  ,HTC_GET_ROWID_EXCEPTION
  ,HTC_NEXTCELL_EXCEPTION
+ ,HTC_ERROR_GETROWS_PARAM
+ ,HTC_ERROR_GETROWS_EXCEPTION
  ,HTC_LAST
 } HTC_RetCode;
 
@@ -273,6 +275,7 @@ public:
 		Int64 timestamp);
   HTC_RetCode startGets(Int64 transID, const LIST(HbaseStr)& rowIDs, const LIST(HbaseStr) & cols, 
 		Int64 timestamp);
+  HTC_RetCode getRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, const LIST(HbaseStr)& columns);
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const LIST(HbaseStr)& columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
   HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
@@ -386,6 +389,7 @@ private:
    ,JM_DIRECT_INSERT_ROWS
    ,JM_DIRECT_DELETE_ROWS
    ,JM_FETCH_ROWS
+   ,JM_DIRECT_GET_ROWS
    ,JM_LAST
   };
   char *tableName_; 
@@ -478,6 +482,12 @@ typedef enum {
  ,HBC_ERROR_SET_ARC_PERMS_EXCEPTION
  ,HBC_ERROR_STARTGET_EXCEPTION
  ,HBC_ERROR_STARTGETS_EXCEPTION
+ ,HBC_ERROR_GET_HBTI_PARAM
+ ,HBC_ERROR_GET_HBTI_EXCEPTION
+ ,HBC_ERROR_CREATE_COUNTER_PARAM
+ ,HBC_ERROR_CREATE_COUNTER_EXCEPTION
+ ,HBC_ERROR_INCR_COUNTER_PARAM
+ ,HBC_ERROR_INCR_COUNTER_EXCEPTION
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -509,8 +519,9 @@ public:
   HBC_RetCode create(const char* fileName, HBASE_NAMELIST& colFamilies);
   HBC_RetCode create(const char* fileName, NAText*  hbaseOptions, 
                      int numSplits, int keyLength, const char** splitValues, Int64 transID);
-  HBC_RetCode drop(const char* fileName, bool async);
-  HBC_RetCode drop(const char* fileName, JNIEnv* jenv); // thread specific
+  HBC_RetCode registerTruncateOnAbort(const char* fileName, Int64 transID);
+  HBC_RetCode drop(const char* fileName, bool async, Int64 transID);
+  HBC_RetCode drop(const char* fileName, JNIEnv* jenv, Int64 transID); // thread specific
   HBC_RetCode dropAll(const char* pattern, bool async);
   HBC_RetCode copy(const char* currTblName, const char* oldTblName);
   ByteArrayList* listAll(const char* pattern);
@@ -525,6 +536,7 @@ public:
   HBC_RetCode cleanSnpTmpLocation(const char * path);
   HBC_RetCode setArchivePermissions(const char * path);
   HBC_RetCode getBlockCacheFraction(float& frac);
+  HBC_RetCode getHbaseTableInfo(const char* tblName, Int32& indexLevels, Int32& blockSize);
 
   // req processing in worker threads
   HBC_RetCode enqueueRequest(HBaseClientRequest *request);
@@ -546,6 +558,9 @@ public:
   HTableClient_JNI *startGets(NAHeap *heap, const char* tableName, bool useTRex, 
             ExHbaseAccessStats *hbs, Int64 transID, const LIST(HbaseStr)& rowIDs, 
             const LIST(HbaseStr) & cols, Int64 timestamp);
+  HBC_RetCode incrCounter( const char * tabName, const char * rowId, const char * famName, 
+                 const char * qualName , Int64 incr, Int64 & count);
+  HBC_RetCode createCounterTable( const char * tabName,  const char * famName);
 private:   
   // private default constructor
   HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
@@ -563,6 +578,7 @@ private:
    ,JM_REL_HTC
    ,JM_CREATE
    ,JM_CREATEK
+   ,JM_TRUNCABORT
    ,JM_DROP
    ,JM_DROP_ALL
    ,JM_LIST_ALL
@@ -580,6 +596,9 @@ private:
    ,JM_SET_ARC_PERMS
    ,JM_START_GET
    ,JM_START_GETS
+   ,JM_GET_HBTI
+   ,JM_CREATE_COUNTER_TABLE  
+   ,JM_INCR_COUNTER
    ,JM_LAST
   };
   static jclass          javaClass_; 
@@ -617,6 +636,11 @@ typedef enum {
  ,HVC_ERROR_GET_ALLSCH_EXCEPTION
  ,HVC_ERROR_GET_ALLTBL_PARAM
  ,HVC_ERROR_GET_ALLTBL_EXCEPTION
+ ,HVC_ERROR_HDFS_CREATE_PARAM
+ ,HVC_ERROR_HDFS_CREATE_EXCEPTION
+ ,HVC_ERROR_HDFS_WRITE_PARAM
+ ,HVC_ERROR_HDFS_WRITE_EXCEPTION
+ ,HVC_ERROR_HDFS_CLOSE_EXCEPTION
  ,HVC_LAST
 } HVC_RetCode;
 
@@ -649,6 +673,9 @@ public:
   HVC_RetCode getAllSchemas(LIST(Text *)& schNames);
   HVC_RetCode getAllTables(const char* schName, LIST(Text *)& tblNames);
 
+  HVC_RetCode hdfsCreateFile(const char* path);
+  HVC_RetCode hdfsWrite(const char* data, Int64 len);
+  HVC_RetCode hdfsClose();
   // Get the error description.
   virtual char* getErrorText(HVC_RetCode errEnum);
   
@@ -675,6 +702,9 @@ private:
    ,JM_GET_RDT
    ,JM_GET_ASH
    ,JM_GET_ATL
+   ,JM_HDFS_CREATE_FILE
+   ,JM_HDFS_WRITE
+   ,JM_HDFS_CLOSE
    ,JM_LAST
   };
   static jclass          javaClass_; 
@@ -730,7 +760,8 @@ public:
   // Must be called.
   HBLC_RetCode init();
 
-  HBLC_RetCode initHFileParams(const HbaseStr &tblName, const Text& hFileLoc, const Text& hfileName, Int64 maxHFileSize);
+  HBLC_RetCode initHFileParams(const HbaseStr &tblName, const Text& hFileLoc, const Text& hfileName, Int64 maxHFileSize,
+                              const char* sampleTblName, const char* hiveDDL);
 
   HBLC_RetCode addToHFile( short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, ExHbaseAccessStats *hbs);
 
@@ -739,7 +770,8 @@ public:
   HBLC_RetCode doBulkLoad(const HbaseStr &tblName, const Text& location, const Text& tableName, NABoolean quasiSecure, NABoolean snapshot);
 
   HBLC_RetCode  bulkLoadCleanup(const HbaseStr &tblName, const Text& location);
-
+  HBLC_RetCode incrCounter( const char * tabName, const char * rowId, const char * famName, const char * qualName , Int64 incr, Int64 & count);
+  HBLC_RetCode createCounterTable( const char * tabName,  const char * famName);
   // Get the error description.
   virtual char* getErrorText(HBLC_RetCode errEnum);
 

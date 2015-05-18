@@ -1876,6 +1876,8 @@ NABoolean ExUdrTcb::sendControlMessage(UdrIpcObjectType t,
       //  set the instance number/numInstances
       Lng32 numInstances = myExeStmtGlobals()->getNumOfInstances();
       Lng32 instanceNum = myExeStmtGlobals()->getMyInstanceNumber();
+      if (numInstances == 0)
+        numInstances = 1; // I compute, therefore I am.
 
       // Steps to create a LOAD message:
       // - First create a UdrLoadMsg instance on the IPC heap and initialize

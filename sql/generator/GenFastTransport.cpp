@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ static ItemExpr *CreateCastExpr(ItemExpr &source, const NAType &target,
   return result;
 }
 
-static int CreateAllCharsExpr(const NAType &formalType,
+int CreateAllCharsExpr(const NAType &formalType,
                                ItemExpr &actualValue,
                                CmpContext *cmpContext,
                                ItemExpr *&newExpr)
@@ -405,6 +405,7 @@ static short ft_codegen(Generator *generator,
     space,
     childDataTuppIndex,
     cnvChildDataTuppIndex,
+    childDataRowLen,
     hdfsBufSize,
     replication
     );

@@ -41,7 +41,7 @@
 #include "StmtNode.h"
 #include "charinfo.h"
 #include "RelFastTransport.h"
-//#include "LateBindInfo.h"
+#include "PrivMgrMD.h"
 
 
 // -----------------------------------------------------------------------
@@ -201,7 +201,6 @@ public:
 	  double numExplRows = 0,
 	  CollHeap *oHeap = CmpCommon::statementHeap())
     : GenericUtilExpr(ddlStmtText, ddlStmtTextCharSet, ddlNode, NULL, REL_DDL, oHeap),
-    mpRequest_ (FALSE),
     specialDDL_(FALSE),
     ddlObjNATable_(NULL),
     forShowddlExplain_(forShowddlExplain),
@@ -238,7 +237,6 @@ public:
 	 CharInfo::CharSet ddlStmtTextCharSet,
 	  CollHeap *oHeap = CmpCommon::statementHeap())
    : GenericUtilExpr(ddlStmtText, ddlStmtTextCharSet, NULL, NULL, REL_DDL, oHeap),
-    mpRequest_ (FALSE),
     specialDDL_(FALSE),
     ddlObjNATable_(NULL),
     forShowddlExplain_(FALSE),
@@ -276,7 +274,6 @@ public:
 	 CharInfo::CharSet ddlStmtTextCharSet,
 	 CollHeap *oHeap = CmpCommon::statementHeap())
    : GenericUtilExpr(ddlStmtText, ddlStmtTextCharSet, NULL, NULL, REL_DDL, oHeap),
-    mpRequest_ (FALSE),
     specialDDL_(FALSE),
     ddlObjNATable_(NULL),
     forShowddlExplain_(FALSE),
@@ -331,8 +328,6 @@ public:
   virtual desc_struct 	*createVirtualTableDesc();
 
   ExprNode * getDDLNode(){return getExprNode();};
-
-  NABoolean &mpRequest() { return mpRequest_;}
 
   char * getDDLStmtText()
   {
@@ -406,9 +401,6 @@ public:
     DROP_REPOS                = 0x0010,
     UPGRADE_REPOS            = 0x0020
   };
-
-  // is this a DDL operation to work on SQL/MP tables?
-  NABoolean mpRequest_;
 
   // see method processSpecialDDL in sqlcomp/parser.cpp
   NABoolean specialDDL_;
@@ -527,7 +519,8 @@ public:
     : GenericUtilExpr(stmtText, stmtTextCharSet, exprNode, child, REL_EXE_UTIL, oHeap),
 	 type_(type),
 	 tableName_(name, oHeap),
-	 tableId_(NULL)
+	 tableId_(NULL),
+         stoi_(NULL)
   {
   };
 
@@ -567,6 +560,20 @@ public:
   void          setUtilTableDesc(TableDesc *newId)  
   { tableId_ = newId; }
 
+  NABoolean checkForComponentPriv(SQLOperation operation, BindWA *bindQA);
+
+  void setupStoiForPrivs(SqlTableOpenInfo::AccessFlags privs, BindWA *bindWA);
+
+  OptSqlTableOpenInfo *getOptStoi() const
+  {
+    return stoi_;
+  }
+
+  void setOptStoi(OptSqlTableOpenInfo *stoi)
+  {
+    stoi_ = stoi;
+  }
+
   virtual NABoolean explainSupported() { return FALSE; }
 
   virtual NABoolean dontUseCache() { return FALSE; }
@@ -580,6 +587,8 @@ protected:
   // a unique identifer for the table specified by tableName_
   TableDesc *tableId_;  
 
+  // for special privilege checks - add a stoi
+  OptSqlTableOpenInfo *stoi_;
 };
 
 class ExeUtilDisplayExplain : public ExeUtilExpr
@@ -2142,18 +2151,19 @@ class ExeUtilHBaseBulkLoad : public ExeUtilExpr
 {
 public:
 
-
   enum HBaseBulkLoadOptionType {
     NO_ROLLBACK_,
     TRUNCATE_TABLE_,
-    LOG_ERRORS_,
-    STOP_AFTER_N_ERRORS_,
+    UPDATE_STATS_,
+    LOG_ERROR_ROWS_,
+    STOP_AFTER_N_ERROR_ROWS_,
     NO_DUPLICATE_CHECK_,
     NO_POPULATE_INDEXES_,
     CONSTRAINTS_,
     NO_OUTPUT_,
     INDEX_TABLE_ONLY_,
-    UPSERT_USING_LOAD_
+    UPSERT_USING_LOAD_,
+    CONTINUE_ON_ERROR_
   };
 
     class HBaseBulkLoadOption
@@ -2175,20 +2185,25 @@ public:
                    ExprNode * exprNode,
                    char * stmtText,
                    CharInfo::CharSet stmtTextCharSet,
+                   RelExpr *queryExpression,
                    CollHeap *oHeap = CmpCommon::statementHeap())
    : ExeUtilExpr(HBASE_LOAD_, hBaseTableName, exprNode, NULL,
                  stmtText, stmtTextCharSet, oHeap),
     //preLoadCleanup_(FALSE),
     keepHFiles_(FALSE),
     truncateTable_(FALSE),
+    updateStats_(FALSE),
     noRollback_(FALSE),
-    logErrors_(FALSE),
+    continueOnError_(FALSE),
+    logErrorRows_(FALSE),
     noDuplicates_(TRUE),
     indexes_(TRUE),
     constraints_(FALSE),
     noOutput_(FALSE),
     indexTableOnly_(FALSE),
-    upsertUsingLoad_(FALSE)
+    upsertUsingLoad_(FALSE),
+    pQueryExpression_(queryExpression),
+    maxErrorRows_(0)
   {
   };
 
@@ -2197,9 +2212,9 @@ public:
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
                                 CollHeap* outHeap = 0);
 
-  virtual short codeGen(Generator*);
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
 
-  NABoolean isAuthorized(Generator* generator);
+  virtual short codeGen(Generator*);
 
   NABoolean getKeepHFiles() const
   {
@@ -2210,14 +2225,24 @@ public:
   {
     keepHFiles_ = keepHFiles;
   }
-  NABoolean getLogErrors() const
+  NABoolean getContinueOnError() const
   {
-    return logErrors_;
+    return continueOnError_;
   }
 
-  void setLogErrors(NABoolean logErrors)
+  void setContinueOnError(NABoolean v)
   {
-    logErrors_ = logErrors;
+    continueOnError_ = v;
+  }
+
+  NABoolean getLogErrorRows() const
+  {
+    return logErrorRows_;
+  }
+
+  void setLogErrorRows(NABoolean v)
+  {
+    logErrorRows_ = v;
   }
 
   NABoolean getNoRollback() const
@@ -2297,8 +2322,32 @@ public:
    upsertUsingLoad_ = upsertUsingLoad;
  }
 
+ NABoolean getUpdateStats() const
+ {
+   return updateStats_;
+ }
+
+ void setUpdateStats(NABoolean updateStats)
+ {
+   updateStats_ = updateStats;
+ }
+ void setMaxErrorRows( UInt32 v)
+ {
+   maxErrorRows_ = v;
+ }
+ UInt32 getMaxErrorRows( )
+  {
+    return maxErrorRows_ ;
+  }
+ void setLogErrorRowsLocation (char * str)
+ {
+   logErrorRowsLocation_ = str;
+ }
+
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
   virtual NABoolean producesOutput() { return (noOutput_ ? FALSE : TRUE); }
+
+  RelExpr *getQueryExpression() { return pQueryExpression_; }
 
   short setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> *
       hBaseBulkLoadOptionList,
@@ -2308,8 +2357,10 @@ private:
   //NABoolean preLoadCleanup_;
   NABoolean keepHFiles_;
   NABoolean truncateTable_;
+  NABoolean updateStats_;
   NABoolean noRollback_;
-  NABoolean logErrors_;
+  NABoolean continueOnError_;
+  NABoolean logErrorRows_;
   NABoolean noDuplicates_;
   NABoolean indexes_;
   NABoolean constraints_;
@@ -2317,6 +2368,9 @@ private:
   //target table is index table
   NABoolean indexTableOnly_;
   NABoolean upsertUsingLoad_;
+  RelExpr *pQueryExpression_;
+  UInt32     maxErrorRows_;
+  NAString  logErrorRowsLocation_;
 
 };
 
@@ -2411,6 +2465,7 @@ public:
                    char * stmtText,
                    NAString * extractLocation,
                    CharInfo::CharSet stmtTextCharSet,
+                   RelExpr *queryExpression,
                    CollHeap *oHeap = CmpCommon::statementHeap())
    : ExeUtilExpr(HBASE_UNLOAD_, hBaseTableName, exprNode, NULL,
                  stmtText, stmtTextCharSet, oHeap),
@@ -2422,7 +2477,8 @@ public:
     extractLocation_(*extractLocation, oHeap),
     overwriteMergeFile_(FALSE),
     scanType_(REGULAR_SCAN_),
-    snapSuffix_(oHeap)
+    snapSuffix_(oHeap),
+    pQueryExpression_(queryExpression)
   {
   };
 
@@ -2430,11 +2486,11 @@ public:
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
                                 CollHeap* outHeap = 0);
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
   virtual short codeGen(Generator*);
 
   ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple, ComTdb * tdb, Generator *generator);
-
-  NABoolean isAuthorized(Generator* generator);
 
   NABoolean getLogErrors() const
   {
@@ -2482,6 +2538,8 @@ public:
     return overwriteMergeFile_;
   }
 
+  RelExpr *getQueryExpression() { return pQueryExpression_; }
+
   void setOverwriteMergeFile(NABoolean overwriteMergeFile)
   {
     overwriteMergeFile_ = overwriteMergeFile;
@@ -2499,6 +2557,7 @@ private:
   NABoolean overwriteMergeFile_;
   NAString snapSuffix_;
   ScanType scanType_;
+  RelExpr *pQueryExpression_;
 };
 
 

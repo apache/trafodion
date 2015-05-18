@@ -42,6 +42,7 @@
 #include "StmtDDLDropIndex.h"
 #include "StmtDDLAlterTableEnableIndex.h"
 #include "StmtDDLAlterTableDisableIndex.h"
+#include "StmtDDLAlterIndexHBaseOptions.h"
 
 #include "CmpDDLCatErrorCodes.h"
 #include "ElemDDLHbaseOptions.h"
@@ -68,6 +69,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
      ElemDDLColRefArray &indexColRefArray,
      NABoolean isUnique,
      NABoolean hasSyskey,
+     NABoolean alignedFormat,
      const NAColumnArray &baseTableNAColArray,
      const NAColumnArray &baseTableKeyArr,
      Lng32 &keyColCount,
@@ -297,7 +299,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
       CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
       ULng32 colFlags = 0;
       
-      retcode = getTypeInfo(naType, FALSE, FALSE,
+      retcode = getTypeInfo(naType, alignedFormat, FALSE,
 			    colInfoArray[i].datatype, colInfoArray[i].length, 
 			    precision, scale, dtStart, dtEnd, upshifted, 
 			    colInfoArray[i].nullable,
@@ -595,6 +597,10 @@ void CmpSeabaseDDL::createSeabaseIndex(
       return;
     }
 
+  NABoolean alignedFormat = FALSE;
+  if (naTable->isSQLMXAlignedTable())
+    alignedFormat = TRUE;
+
   if ((naTable->hasSecondaryIndexes()) &&
       (NOT createIndexNode->isVolatile()))
     {
@@ -766,6 +772,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   if (createIndexColAndKeyInfoArrays(indexColRefArray,
 				     createIndexNode->isUniqueSpecified(),
 				     naTable->getClusteringIndex()->hasSyskey(),
+                                     alignedFormat,
 				     naColArray,
 				     baseTableKeyArr,
 				     keyColCount,
@@ -823,6 +830,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   tableInfo->validDef = 0;
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
+  tableInfo->rowFormat = (alignedFormat ? 1 : 0);
 
   ComTdbVirtTableIndexInfo * ii = new(STMTHEAP) ComTdbVirtTableIndexInfo();
   ii->baseTableName = (char*)extTableName.data();
@@ -837,7 +845,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   NAList<HbaseCreateOption*> hbaseCreateOptions;
   NAString hco;
 
-  if (naTable->isSQLMXAlignedTable())
+  if (alignedFormat)
     {
       hco += "ROW_FORMAT=>ALIGNED ";
     }
@@ -1062,6 +1070,17 @@ short CmpSeabaseDDL::populateSeabaseIndexFromTable(
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+
+      if ((isUnique) && (CmpCommon::diags()->mainSQLCODE() == -EXE_DUPLICATE_ENTIRE_RECORD))
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNIQUE_INDEX_LOAD_FAILED_WITH_DUPLICATE_ROWS)
+                              << DgTableName(indexName);
+         }
+      else
+        {
+          *CmpCommon::diags() << DgSqlCode(-CAT_CLI_LOAD_INDEX)
+                              << DgTableName(indexName);
+        }
     }
 
   //  SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(ALLOW_SPECIALTABLETYPE);
@@ -1161,7 +1180,9 @@ void CmpSeabaseDDL::populateSeabaseIndex(
     }
 
   // Requester must have SELECT and INSERT privileges
-  if (!ComUser::isRootUserID() && isAuthorizationEnabled())
+  if (!ComUser::isRootUserID() && 
+      isAuthorizationEnabled() &&
+      !Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
     {
       NABoolean hasPriv = TRUE;
       if ( !privs->hasSelectPriv() )
@@ -1412,10 +1433,10 @@ void CmpSeabaseDDL::dropSeabaseIndex(
       if (1) //NOT dropIndexNode->dropIfExists())
 	{
 	  if (isVolatile)
-	    *CmpCommon::diags() << DgSqlCode(-1389)
+	    *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
 				<< DgString0(objectNamePart);
 	  else
-	    *CmpCommon::diags() << DgSqlCode(-1389)
+	    *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
 				<< DgString0(extIndexName);
 	}
 
@@ -1649,7 +1670,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
 
   if (retcode == 0) // does not exist
     {
-      *CmpCommon::diags() << DgSqlCode(-1389)
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
 			  << DgString0(extBTname);
 
       processReturn();
@@ -1669,7 +1690,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
 
   if (retcode == 0) // does not exist
     {
-      *CmpCommon::diags() << DgSqlCode(-1389)
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
 			  << DgString0(extIndexName);
 
       processReturn();
@@ -1791,7 +1812,7 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
 
   if (retcode == 0) // does not exist
     {
-      *CmpCommon::diags() << DgSqlCode(-1389) 
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION) 
                           << DgString0(tableName.getExternalName(TRUE));
       processReturn();
       return;
@@ -1842,6 +1863,160 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
     ActiveSchemaDB()->getNATableDB()->removeNATable(cn, 
       NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
   }
+
+  return ;
+}
+
+void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
+                                       StmtDDLAlterIndexHBaseOptions * hbaseOptionsNode,
+                                       NAString &currCatName, NAString &currSchName)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  NAString idxName = hbaseOptionsNode->getIndexName();
+
+  ComObjectName indexName(idxName);
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  indexName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  NAString catalogNamePart = indexName.getCatalogNamePartAsAnsiString();
+  NAString schemaNamePart = indexName.getSchemaNamePartAsAnsiString(TRUE);
+  NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extIndexName = indexName.getExternalName(TRUE);
+
+  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
+  CmpCommon::context()->sqlSession()->getParentQid());
+  
+  ExpHbaseInterface * ehi = allocEHI();
+  if (ehi == NULL)
+    {
+      processReturn();
+      return;
+    }
+
+  // Disallow this ALTER on system metadata schema objects
+
+  if ((isSeabaseReservedSchema(indexName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_ALTER_NOT_ALLOWED_IN_SMD)
+                          << DgTableName(extIndexName);
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+  
+  // Make sure this object exists
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+                                   catalogNamePart, schemaNamePart, objectNamePart,
+                                   COM_INDEX_OBJECT,
+                                   (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) 
+                                    ? FALSE : TRUE),
+                                   TRUE, TRUE);
+  if (retcode < 0)  // some error occurred
+    {
+      processReturn();
+      deallocEHI(ehi);
+      return;
+    }
+  else if (retcode == 0)
+    {
+       CmpCommon::diags()->clear();
+      
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+                          << DgString0(extIndexName);
+
+      deallocEHI(ehi); 
+      processReturn();     
+      return;
+    }
+
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+
+  // Get base table name and base table uid
+
+  NAString btCatName;
+  NAString btSchName;
+  NAString btObjName;
+  Int64 btUID;
+  Int32 btObjOwner = 0;
+  Int32 btSchemaOwner = 0;
+  if (getBaseTable(&cliInterface,
+		   catalogNamePart, schemaNamePart, objectNamePart,
+		   btCatName, btSchName, btObjName, btUID, btObjOwner, btSchemaOwner))
+    {
+      processReturn();      
+      deallocEHI(ehi);      
+      return;
+    }
+  
+  CorrName cn(btObjName,
+              STMTHEAP,
+              btSchName,
+              btCatName);
+  
+  NATable *naTable = bindWA.getNATable(cn); 
+  if (naTable == NULL || bindWA.errStatus())
+    {
+      // shouldn't happen, actually, since getBaseTable above succeeded
+
+      CmpCommon::diags()->clear();     
+      *CmpCommon::diags() << DgSqlCode(-CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
+                          << DgString0(extIndexName);
+      deallocEHI(ehi);  
+      processReturn();     
+      return;
+    }
+ 
+  // Make sure user has the privilege to perform the ALTER
+  
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner, btSchemaOwner))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+     deallocEHI(ehi); 
+     processReturn();
+     return;
+  }
+
+  CmpCommon::diags()->clear();
+
+  // Get the object UID so we can update the metadata
+
+  Int64 objUID = getObjectUID(&cliInterface,
+                              catalogNamePart.data(), schemaNamePart.data(), 
+                              objectNamePart.data(),
+                              COM_INDEX_OBJECT_LIT);
+  if (objUID < 0)
+    {
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+
+  // update HBase options in the metadata
+
+  ElemDDLHbaseOptions * edhbo = hbaseOptionsNode->getHBaseOptions();
+  short result = updateHbaseOptionsInMetadata(&cliInterface,objUID,edhbo);
+  
+  if (result < 0)
+    {
+      deallocEHI(ehi); 
+      processReturn();
+      return;
+    }
+
+  // tell HBase to change the options
+
+  // TODO: Write this code
+
+  // invalidate cached NATable info on this table for all users
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn,
+    NATableDB::REMOVE_FROM_ALL_USERS, COM_BASE_TABLE_OBJECT);
+
+  deallocEHI(ehi); 
 
   return ;
 }

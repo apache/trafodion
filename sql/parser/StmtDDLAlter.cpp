@@ -2,7 +2,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -678,6 +678,51 @@ const NAString
 StmtDDLAlterIndexAttribute::getText() const
 {
   return "StmtDDLAlterIndexAttribute";
+}
+
+// -----------------------------------------------------------------------
+// methods for class StmtDDLAlterIndexHBaseOptions
+// -----------------------------------------------------------------------
+
+StmtDDLAlterIndexHBaseOptions::StmtDDLAlterIndexHBaseOptions(ElemDDLHbaseOptions *pHBaseOptions)
+: StmtDDLAlterIndex(DDL_ALTER_INDEX_ALTER_HBASE_OPTIONS),
+  pHBaseOptions_(pHBaseOptions)
+{
+  // nothing else to do
+}
+
+// virtual destructor
+StmtDDLAlterIndexHBaseOptions::~StmtDDLAlterIndexHBaseOptions()
+{
+  // delete the things I own
+  delete pHBaseOptions_;
+}
+
+
+// cast
+StmtDDLAlterIndexHBaseOptions * 
+StmtDDLAlterIndexHBaseOptions::castToStmtDDLAlterIndexHBaseOptions()
+{
+  return this;
+}
+
+// method for tracing
+NATraceList 
+StmtDDLAlterIndexHBaseOptions::getDetailInfo() const
+{
+  NAString detailText;
+  NATraceList detailTextList;
+
+  ComASSERT(pHBaseOptions_ NEQ NULL);
+  // detailTextList.append(pHBaseOptions_); figure out what to do here later
+
+  return detailTextList;
+}
+
+const NAString 
+StmtDDLAlterIndexHBaseOptions::getText() const
+{
+  return "StmtDDLAlterIndexHBaseOptions";
 }
 
 // -----------------------------------------------------------------------
@@ -2090,9 +2135,50 @@ StmtDDLAlterTableAddColumn::getText() const
   return "StmtDDLAlterTableAddColumn";
 }
 
+// -----------------------------------------------------------------------
+// methods for class StmtDDLAlterTableHBaseOptions
+// -----------------------------------------------------------------------
+
+StmtDDLAlterTableHBaseOptions::StmtDDLAlterTableHBaseOptions(ElemDDLHbaseOptions *pHBaseOptions)
+: StmtDDLAlterTable(DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS),
+  pHBaseOptions_(pHBaseOptions)
+{
+  // nothing else to do
+}
+
+// virtual destructor
+StmtDDLAlterTableHBaseOptions::~StmtDDLAlterTableHBaseOptions()
+{
+  // delete the things I own
+  delete pHBaseOptions_;
+}
 
 
+// cast
+StmtDDLAlterTableHBaseOptions * 
+StmtDDLAlterTableHBaseOptions::castToStmtDDLAlterTableHBaseOptions()
+{
+  return this;
+}
 
+// method for tracing
+NATraceList 
+StmtDDLAlterTableHBaseOptions::getDetailInfo() const
+{
+  NAString detailText;
+  NATraceList detailTextList;
+
+  ComASSERT(pHBaseOptions_ NEQ NULL);
+  // detailTextList.append(pHBaseOptions_); figure out what to do here later
+
+  return detailTextList;
+}
+
+const NAString 
+StmtDDLAlterTableHBaseOptions::getText() const
+{
+  return "StmtDDLAlterTableHBaseOptions";
+}
 
 // -----------------------------------------------------------------------
 // methods for class StmtDDLAlterLibrary

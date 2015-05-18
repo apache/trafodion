@@ -147,8 +147,6 @@ public:
   NABoolean subjectTable() const{ return (otherFlags_ & SUBJECT_TABLE) != 0; }
   NABoolean isAudited()         { return (otherFlags_ & AUDITED)     != 0; }
   NABoolean isIndex()           { return (otherFlags_ & IS_MX_INDEX) != 0; }
-  NABoolean isSQLMPTable()      { return (otherFlags_ & IS_SQLMP_TABLE) != 0;}
-  NABoolean isSQLMPShorthandView() { return (otherFlags_ & IS_SQLMP_SHORTHAND_VIEW) != 0; }
   NABoolean specialTable() { return (otherFlags_ & SPECIAL_TABLE) != 0; }
   NABoolean isUDRSurrogate()    { return (otherFlags_ & IS_UDR_SURROGATE) != 0; }
   NABoolean isReverseScan()    { return (otherFlags_ & REVERSE_SCAN) != 0; }
@@ -204,10 +202,6 @@ public:
                { (v ? otherFlags_ |= AUDITED : otherFlags_ &= ~AUDITED); }
   void setIsIndex(NABoolean v)            
                  { (v ? otherFlags_ |= IS_MX_INDEX : otherFlags_ &= ~IS_MX_INDEX); }
-  void setIsSQLMPTable(NABoolean v)            
-     { (v ? otherFlags_ |= IS_SQLMP_TABLE : otherFlags_ &= ~IS_SQLMP_TABLE); }
-  void setIsSQLMPShorthandView(NABoolean v)            
-     { (v ? otherFlags_ |= IS_SQLMP_SHORTHAND_VIEW : otherFlags_ &= ~IS_SQLMP_SHORTHAND_VIEW); }
   void setSpecialTable(NABoolean v)            
      { (v ? otherFlags_ |= SPECIAL_TABLE : otherFlags_ &= ~SPECIAL_TABLE); }
   void setIsUDRSurrogate(NABoolean v)
@@ -460,8 +454,6 @@ private:
     SECURITY       = 0x0020, 
     AUDITED        = 0x0040,
     IS_MX_INDEX    = 0x0080,
-    IS_SQLMP_TABLE = 0x0100, 
-    IS_SQLMP_SHORTHAND_VIEW = 0x0200,
     SPECIAL_TABLE =  0x0400, 
     IS_UDR_SURROGATE = 0x0800,
     SUBJECT_TABLE  =   0x01000, // triggers

@@ -536,6 +536,12 @@ class Validate_1_128      : public ValidateNumericRange
     : ValidateNumericRange(VALID_UINT, 1, (float)128) {}
 };
 
+class Validate_uint16      : public ValidateNumericRange
+{public:
+  Validate_uint16()
+    : ValidateNumericRange(VALID_UINT, 1, (float)USHRT_MAX) {}
+};
+
 class ValidateOverrideSchema : public DefaultValidator
 {public:
   ValidateOverrideSchema() : DefaultValidator() {}

@@ -389,7 +389,6 @@ public:
   ConstValue(const NAType * type, 
 	     const NABoolean wantMinValue,
 	     const NABoolean allowNull,
-             const NABoolean isSQLMPTable = FALSE,
              NAMemory * outHeap = CmpCommon::statementHeap());
 
   ConstValue(OperatorTypeEnum otype, ConstValue *other,
@@ -697,8 +696,8 @@ class SystemLiteral : public ConstValue
   // or excluding NULL (system-supplied version)
   SystemLiteral
     (const NAType *type, const NABoolean wantMinValue,
-     const NABoolean allowNull, const NABoolean isSQLMPTable = FALSE)
-    : ConstValue(type, wantMinValue, allowNull, isSQLMPTable) 
+     const NABoolean allowNull)
+    : ConstValue(type, wantMinValue, allowNull)
     { isSystemSupplied_ = TRUE; }
 }; 
 

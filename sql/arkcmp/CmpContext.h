@@ -85,6 +85,11 @@ struct MDDescsInfo;
 class CmpStatementISP;
 class EstLogProp;
 typedef IntrusiveSharedPtr<EstLogProp> EstLogPropSharedPtr;
+namespace tmudr {
+  class UDRInvocationInfo;
+  class UDRPlanInfo;
+  class UDR;
+}
 
 // Template changes for Yosemite compiler incompatible with others
 typedef HASHDICTIONARY(NAString, CollIndex) CursorSelectColumns;
@@ -196,7 +201,10 @@ public :
 		  // IS_AUTHORIZATION_READY is TRUE if all privmgr metadata
 		  //   tables exist 
 		  IS_AUTHORIZATION_ENABLED = 0x400,
-		  IS_AUTHORIZATION_READY = 0x800
+		  IS_AUTHORIZATION_READY = 0x800,
+
+                  // if this context was created in an mxcmp process
+                  IS_MXCMP = 0x1000
 		};
 
   CmpContext (UInt32 flags,
@@ -223,6 +231,7 @@ public :
   NABoolean isInstalling() const { return flags_ & IS_INSTALLING; }
   NABoolean ignoreErrors() const { return flags_ & IS_IGNORE_ERR; }
   NABoolean isStandalone() const { return flags_ & IS_STANDALONE; }
+  NABoolean isMxcmp() const { return flags_ & IS_MXCMP; }
   NABoolean isSecondaryMxcmp() const { return flags_ & IS_SECONDARY_MXCMP; }
   NABoolean isEmbeddedArkcmp() const { return flags_ & IS_EMBEDDED_ARKCMP;}
   NABoolean isUninitializedSeabase() const { return flags_ & IS_UNINITIALIZED_SEABASE;}
@@ -445,6 +454,13 @@ public :
 
   CollationDBList *getCollationDBList() { return CDBList_; }
 
+  void addInvocationInfo(tmudr::UDRInvocationInfo *ii)
+                                { invocationInfos_.insert(ii); }
+  void addPlanInfo(tmudr::UDRPlanInfo *pi)
+                                      { planInfos_.insert(pi); }
+  void addRoutineHandle(Int32 rh)
+                                 { routineHandles_.insert(rh); }
+
 // MV
 private:
 // Adding support for multi threaded requestor (multi transactions) handling
@@ -588,6 +604,12 @@ private:
   CmpContextInfo::CmpContextClassType ciClass_;
 
   CollationDBList *CDBList_;
+
+  // objects allocated from the system heap, to be deleted
+  // after each statement has finished compiling
+  LIST(tmudr::UDRInvocationInfo *) invocationInfos_;
+  LIST(tmudr::UDRPlanInfo *)       planInfos_;
+  LIST(Int32)                      routineHandles_;
   
 }; // end of CmpContext 
 #pragma warn(1506)  // warning elimination 

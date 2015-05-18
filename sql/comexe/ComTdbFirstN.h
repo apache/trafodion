@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2003-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -48,6 +48,8 @@ public:
   ComTdbFirstN(
       ComTdb * child_tdb,
       Int64 firstNRows,
+      ex_expr * firstNRowsExpr,
+      ex_cri_desc *workCriDesc,
       ex_cri_desc * givenCriDesc,
       ex_cri_desc * returnedCriDesc,
       queue_index down,
@@ -96,9 +98,9 @@ public:
 
   virtual Int32 numChildren() const { return 1; }
   virtual const char *getNodeName() const { return "EX_FIRSTN"; };
-  virtual Int32 numExpressions() const { return 0; };
-  virtual ex_expr* getExpressionNode(Int32 pos) { return NULL; };
-  virtual const char * getExpressionName(Int32 pos) const { return NULL; };
+  virtual Int32 numExpressions() const { return 1; };
+  virtual ex_expr* getExpressionNode(Int32 pos) { return firstNRowsExpr_; };
+  virtual const char * getExpressionName(Int32 pos) const { return "firstNRowsExpr"; };
 
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
@@ -110,8 +112,9 @@ protected:
 
   Int64 firstNRows_;                // 00-07
   ComTdbPtr tdbChild_;              // 08-15
-  char filler0ComTdbFirstN_[48];    // 16-63  unused
-
+  ExExprPtr firstNRowsExpr_;      // 16-23
+  ExCriDescPtr workCriDesc_;       // 24-31
+  char filler0ComTdbFirstN_[32];    // 32-63  unused
 };
 
 #endif

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -119,8 +119,6 @@ void TableDesc::addCheckConstraint(BindWA *bindWA,
     {
       if (constraint->isTheCascadingView())
 	error->setSQLCODE(EXE_CHECK_OPTION_VIOLATION);		// cascadING
-      else if (naTable->isSQLMPTable())
-	error->setSQLCODE(EXE_CHECK_OPTION_VIOLATION);	      // MP view WCO
       else
 	error->setSQLCODE(EXE_CHECK_OPTION_VIOLATION_CASCADED);	// cascadED
       constrPred = new (bindWA->wHeap()) IfThenElse(constrPred, ok, error);
@@ -180,31 +178,11 @@ void TableDesc::setPrimaryKeyColumns()
 {
   ValueIdSet primaryColumns;
 
-  if ( getNATable()->isSQLMPTable() )
-  {
-// LCOV_EXCL_START - mp
-    // For MP tables, primary key columns are not marked, instead
-    // primary key is treated same as the clustering key
-    for ( CollIndex j = 0 ; j < colList_.entries() ; j++ )
+  for ( CollIndex j = 0 ; j < colList_.entries() ; j++ )
     {
-
+      
       ValueId valId = colList_[j];
-
-      NAColumn *column = valId.getNAColumn();
-
-      if (column->isClusteringKey() )
-	primaryColumns.insert(valId) ;
-
-    }
-// LCOV_EXCL_STOP
-  }
-  else
-  {
-    for ( CollIndex j = 0 ; j < colList_.entries() ; j++ )
-    {
-
-      ValueId valId = colList_[j];
-
+      
       NAColumn *column = valId.getNAColumn();
 
       if ( column->isPrimaryKey() )
@@ -217,7 +195,7 @@ void TableDesc::setPrimaryKeyColumns()
               column->setReferencedForMultiIntHist();
       }
     }
-  }
+
   primaryKeyColumns_ = primaryColumns;
 }
 
@@ -454,49 +432,6 @@ const ColStatDescList &TableDesc::getTableColStats()
   possible that one the partitions has more data thus more data blocks leading  to
   more index level than the other ones.
   */
-
-    if(table_->isSQLMPTable())
-    {
-// LCOV_EXCL_START - mp
-  //It is possible that colStats contains default row count of 100 so
-  //take the maximum of natable rowcount and colStats row count.
-  //NATable rowcount is an estimation based on EOF and row length etc.
-  CostScalar NATableCard = table_->getEstRowCount();
-  CostScalar colStatCard = colStats_[0]->getColStats()->getRowcount();
-  CostScalar card = MAXOF(NATableCard,colStatCard);
-  for(CollIndex j=0;j<indexes_.entries();j++)
-  {
-	IndexDesc * index = indexes_[j];
-	const NAFileSet * indexFileSet = index->getNAFileSet();
-
-	CostScalar indexCard = card /
-			  (index->getPartitioningFunction()?((NodeMap *)(index
-			  ->getPartitioningFunction()->getNodeMap()))->
-				getNumActivePartitions():1);
-
-	if(indexFileSet->isKeySequenced() && index->getIndexLevels() <=1)
-	{
-	  CostScalar numDataBlocks = indexCard/index->getEstimatedRecordsPerBlock();
-	  //over here 3 is the header size in bytes
-	  CostScalar entriesPerIndexBlock = CostScalar(indexFileSet->getBlockSize() /
-				  (3 + index->getKeyLength())).getFloor();
-	  if(entriesPerIndexBlock <=1)
-	    continue;
-	  if(numDataBlocks <=1 OR entriesPerIndexBlock >= numDataBlocks)
-	    continue;
-	  Lng32 indexLevels =1;
-	  CostScalar indexBlocks = numDataBlocks;
-	  while(indexBlocks >1)
-	  {
-	    indexBlocks = (indexBlocks / entriesPerIndexBlock).getCeiling();
-	    if(indexBlocks >1) indexLevels += 1;
-	  }
-	    index->setIndexLevels(indexLevels);
-	}
-// LCOV_EXCL_STOP
-
-  }
-    }
 
   // compress histograms based on query predicates
   if (CmpCommon::getDefault(COMP_BOOL_18) != DF_ON)

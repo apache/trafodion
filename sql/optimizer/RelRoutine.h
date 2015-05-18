@@ -71,6 +71,8 @@ namespace tmudr {
   class UDR;
 }
 
+typedef Int32 CliRoutineHandle;
+
 // -----------------------------------------------------------------------
 /*!
 *  \brief RelRoutine Class.
@@ -692,7 +694,8 @@ public :
   outputParams_(NULL),
   dllInteraction_(NULL),
   invocationInfo_(NULL),
-  udrInterface_(NULL)
+  numPlanInfos_(0),
+  routineHandle_(NullCliRoutineHandle)
   { };
 
   TableMappingUDF(RelExpr * child0,
@@ -700,12 +703,13 @@ public :
                  OperatorTypeEnum otype = REL_TABLE_MAPPING_UDF,
                  CollHeap *oHeap = CmpCommon::statementHeap())
   : TableValuedFunction(child0, params, otype, oHeap),
-  childInfo_(oHeap),
-  scalarInputParams_(NULL),
-  outputParams_(NULL),
-  dllInteraction_(NULL),
-  invocationInfo_(NULL),
-  udrInterface_(NULL)
+    childInfo_(oHeap),
+    scalarInputParams_(NULL),
+    outputParams_(NULL),
+    dllInteraction_(NULL),
+    invocationInfo_(NULL),
+    numPlanInfos_(0),
+    routineHandle_(NullCliRoutineHandle)
   { };
   //! TableMappingUDF Constructor
   //  expects at least a name
@@ -714,11 +718,12 @@ public :
                  CollHeap *oHeap = CmpCommon::statementHeap())
   : TableValuedFunction(name, params, otype, oHeap),
     childInfo_(oHeap),
-	scalarInputParams_(NULL),
-	outputParams_(NULL),
+    scalarInputParams_(NULL),
+    outputParams_(NULL),
     dllInteraction_(NULL),
     invocationInfo_(NULL),
-    udrInterface_(NULL)
+    numPlanInfos_(0),
+    routineHandle_(NullCliRoutineHandle)
   { };
 
   //! TableValueUDF Copy Constructor 
@@ -748,7 +753,6 @@ public :
   virtual void transformNode(NormWA & normWARef,
     ExprGroupId & locationOfPointerToMe);
   virtual void rewriteNode(NormWA & normWARef) ;
-  virtual RelExpr * normalizeNode(NormWA & normWARef);
  
   virtual void primeGroupAnalysis();
 
@@ -885,9 +889,24 @@ public :
     return invocationInfo_;
   }
 
-  tmudr::UDR * getUDRInterface()
+  int getNextPlanInfoNum()
   {
-    return udrInterface_;
+    return numPlanInfos_++;
+  }
+
+  char * getConstParamBuffer() const
+  {
+    return constParamBuffer_;
+  }
+
+  Int32 getConstParamBufferLen() const
+  {
+    return constParamBufferLen_;
+  }
+
+  CliRoutineHandle getRoutineHandle() const
+  {
+    return routineHandle_;
   }
 
   inline  const NAColumnArray    &getScalarInputParams()   const 
@@ -915,8 +934,11 @@ public :
   inline void setInvocationInfo(tmudr::UDRInvocationInfo *invocationInfo)
   { invocationInfo_ = invocationInfo; }
 
-  inline void setUDRInterface(tmudr::UDR *udrInterface)
-  { udrInterface_ = udrInterface; }
+  inline void setConstParamBuffer(char *buf, int len)
+  { constParamBuffer_ = buf; constParamBufferLen_ = len; }
+
+  inline void setRoutineHandle(CliRoutineHandle handle)
+  { routineHandle_ = handle; }
 
 protected:
 
@@ -929,7 +951,7 @@ protected:
   // the udrInterface should be in a cache, created when we invoke
   // a particular interface for the first time and deleted when
   // we unload the DLL
-  tmudr::UDR *udrInterface_;
+  CliRoutineHandle routineHandle_;
 
   ValueIdSet predsEvaluatedByUDF_;
 
@@ -951,6 +973,9 @@ private:
   // objects needed for the interaction with TMUDFs at compile time
   TMUDFDllInteraction *dllInteraction_ ;
   tmudr::UDRInvocationInfo *invocationInfo_;
+  int numPlanInfos_;
+  char *constParamBuffer_;
+  Int32 constParamBufferLen_;
 
 }; // class TableMappingUDF
 

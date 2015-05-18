@@ -504,15 +504,6 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
             (connectionType.connectionType()==CmpMessageConnectionType::ISP);
           break;
         }
-      case (CmpMessageObj::READTABLEDEF_REQUEST) :
-        {
-          cmpStatement = new CTXTHEAP CmpStatement(cmpContext_);
-          CmpMessageReadTableDef readTabDef(NULL,0,CTXTHEAP);
-	  receiveAndSetUp(this, readTabDef);
-          cmpStatement->process(readTabDef);
-          
-          break;
-        }
       default:
         break;      
       } // end of switch (message1.getNextObjType())

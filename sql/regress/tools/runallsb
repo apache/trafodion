@@ -1,7 +1,7 @@
 #!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -36,9 +36,9 @@
 
 export SQLMX_REGRESS=1
 
-  export SEABASE_REGRESS=2
+export SEABASE_REGRESS=2
 
-TEST_SUBDIRS="catman1 core compGeneral fullstack2 charsets executor qat udr hive seabase" 
+TEST_SUBDIRS="core compGeneral executor seabase fullstack2 charsets qat catman1 udr hive" 
 
 #
 # Make sure we're running from the regress subdir

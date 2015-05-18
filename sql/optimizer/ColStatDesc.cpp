@@ -11459,7 +11459,6 @@ MultiColumnUecList::displayMissingStatsWarning(TableDesc * mostRefdTable,
   //  3. Table is not volatile or automation is ON for volatile tables.
   //  4. Auto missing stats CQD level is set high enough for this single or multi-col hist.
   if (  ustatAuto > 0 && 
-        !mostRefdNATable->isSQLMPTable() && 
         HSGlobalsClass::schemaVersion >= COM_VERS_2300 &&
         (!mostRefdNATable->isVolatileTable() || 
          CmpCommon::getDefault(USTAT_AUTO_FOR_VOLATILE_TABLES) == DF_ON) &&

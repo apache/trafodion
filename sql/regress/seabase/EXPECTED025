@@ -1247,7 +1247,7 @@ A      B           C
 >>
 >>-- First insert should succeed
 >>
->>insert into T025T003 (b,c) values(1,1),(2,2);
+>>insert into T025T003 values(DEFAULT,  1,1),(DEFAULT,  2,2);
 
 --- 2 row(s) inserted.
 >>
@@ -1279,17 +1279,17 @@ A      B           C
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>-- Should fail with error -3414
+>>-- Should fail with error -3428
 >>
 >>insert into T025T003 values(DEFAULT,1,1), (9223372036854775804,1,1);
 
-*** ERROR[8102] The operation is prevented by a unique constraint.
+*** ERROR[3428] IDENTITY column A defined as GENERATED ALWAYS cannot accept values specified by the user.
 
---- 0 row(s) inserted.
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Insert should succeed
->>
->>insert into T025T003 values(DEFAULT,1,1),(DEFAULT,2,2);
+>>insert into T025T003(b,c) values(1,1),(2,2);
 
 --- 2 row(s) inserted.
 >>
@@ -1308,8 +1308,8 @@ A                     B           C
 
  9223372036854775802           1           1
  9223372036854775803           2           2
- 9223372036854775805           1           1
- 9223372036854775806           2           2
+ 9223372036854775804           1           1
+ 9223372036854775805           2           2
 
 --- 4 row(s) selected.
 >>
@@ -1412,13 +1412,9 @@ A           B           C
 +>
 +>                           NOT NULL NOT DROPPABLE,
 +>                      b     INT UNSIGNED NOT NULL,
-+>                      c     INT UNSIGNED, primary key(a))
-+>
-+>--HASH2 PARTITION BY(a)
-+>                    ;
++>                      c     INT UNSIGNED, primary key(a));
 
 --- SQL operation complete.
->>-- (ADD LOCATION $$partition$$); 
 >>
 >>-- Insert using DEFAULT for IDENTITY column
 >>
@@ -1454,8 +1450,6 @@ A           B           C
 
 --- SQL operation complete.
 >>-- (ADD LOCATION $$partition$$); 
->>
->>-- Insert using DEFAULT for IDENTITY column, should succeed
 >>
 >>insert into T025T005 values(DEFAULT,1,1),(DEFAULT,2,2);
 
@@ -1900,7 +1894,7 @@ CREATE TABLE TRAFODION.S025.T025T004
 +>(DEFAULT,-2,1,1,'dasf',2.1,'dfaf','dfa','dfa','d'),	
 +>(DEFAULT,-1,2,1,'dasf',2.1,'dfaf','dfa','dfa','d');
 
-*** ERROR[8101] The operation is prevented by check constraint TRAFODION.S025.T025T003_569459312_1432 on table TRAFODION.S025.T025T003.
+*** ERROR[8101] The operation is prevented by check constraint TRAFODION.S025.T025T003_137833266_5811 on table TRAFODION.S025.T025T003.
 
 --- 0 row(s) inserted.
 >>
@@ -2554,8 +2548,6 @@ SURROGATE_KEY         B           C
 
 --- SQL operation complete.
 >>
->>-- Should receive error -3431
->>
 >>insert into T025T002 values(DEFAULT),(DEFAULT);
 
 --- 2 row(s) inserted.
@@ -2572,7 +2564,6 @@ SURROGATE_KEY         B           C
 +>                      primary key(surrogate_key) );
 
 --- SQL operation complete.
->>-- Should receive error -3431
 >>
 >>insert into T025T002 values(DEFAULT),(DEFAULT);
 
@@ -2626,7 +2617,7 @@ CREATE VOLATILE TABLE T025T00V2
 >>
 >>-- Fourth insert should fail
 >>
->>insert into T025T00V2 values(default,1,1);
+>>insert into T025T00V2(b,c) values(1,1);
 
 --- 1 row(s) inserted.
 >>insert into T025T00V2 values(default,1,1);
@@ -2682,6 +2673,104 @@ _SALT_      A                     B
 
 --- 6 row(s) selected.
 >>
+>>-- identity cols and default values
+>>create table T025T010 (a largeint generated always as identity not null primary key, 
++>                         b int default 10);
+
+--- SQL operation complete.
+>>create table T025T010s (a largeint generated always as identity not null primary key, 
++>                         b int default 10) 
++>  salt using 4 partitions;
+
+--- SQL operation complete.
+>>
+>>prepare s from insert into T025T010 default values;
+
+--- SQL command prepared.
+>>prepare s from insert into T025T010 values (default, default);
+
+--- SQL command prepared.
+>>prepare s from insert into T025T010 values (default, default+1);
+
+--- SQL command prepared.
+>>prepare s from insert into T025T010 (a) values (default);
+
+--- SQL command prepared.
+>>prepare s from insert into T025T010 (b) values (2);
+
+--- SQL command prepared.
+>>
+>>prepare s from insert into T025T010s default values;
+
+--- SQL command prepared.
+>>prepare s from insert into T025T010s values (default, default);
+
+--- SQL command prepared.
+>>prepare s from insert into T025T010 values (default, default+1);
+
+--- SQL command prepared.
+>>prepare s from insert into T025T010s (a) values (default);
+
+--- SQL command prepared.
+>>prepare s from insert into T025T010s (b) values (2);
+
+--- SQL command prepared.
+>>
+>>prepare s from insert into T025T010 (b) select b from T025T010s;
+
+--- SQL command prepared.
+>>
+>>-- identity cols default value negative tests, should return error 3428
+>>prepare s from insert into T025T010 (a) values (1);
+
+*** ERROR[3428] IDENTITY column A defined as GENERATED ALWAYS cannot accept values specified by the user.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s from insert into T025T010 values (default+1, default);
+
+*** ERROR[3428] IDENTITY column A defined as GENERATED ALWAYS cannot accept values specified by the user.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s from insert into T025T010 (a) values (default+1);
+
+*** ERROR[3428] IDENTITY column A defined as GENERATED ALWAYS cannot accept values specified by the user.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s from insert into T025T010s (a) values (1);
+
+*** ERROR[3428] IDENTITY column A defined as GENERATED ALWAYS cannot accept values specified by the user.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s from insert into T025T010s values (default+1, default);
+
+*** ERROR[3428] IDENTITY column A defined as GENERATED ALWAYS cannot accept values specified by the user.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s from insert into T025T010s (a) values (default+1);
+
+*** ERROR[3428] IDENTITY column A defined as GENERATED ALWAYS cannot accept values specified by the user.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s from insert into T025T010 (a) select a from T025T010s;
+
+*** ERROR[3428] IDENTITY column A defined as GENERATED ALWAYS cannot accept values specified by the user.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- identity col cannot be added
+>>alter table t025t010 add column c largeint generated by default as identity;
+
+*** ERROR[1514] Cannot add an IDENTITY column using ALTER TABLE command.
+
+--- SQL operation failed with errors.
+>>
 >>-- Clean up test
 >>
 >>drop table T025T001;
@@ -2712,6 +2801,12 @@ _SALT_      A                     B
 
 --- SQL operation complete.
 >>drop table T025T009;
+
+--- SQL operation complete.
+>>drop table T025T010;
+
+--- SQL operation complete.
+>>drop table T025T010s;
 
 --- SQL operation complete.
 >>drop schema s025 cascade;

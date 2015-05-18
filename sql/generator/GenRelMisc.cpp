@@ -483,8 +483,7 @@ short DDLExpr::codeGen(Generator * generator)
                 (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
                 (queue_index)getDefault(GEN_DDL_SIZE_UP),
                 getDefault(GEN_DDL_NUM_BUFFERS),
-                getDefault(GEN_DDL_BUFFER_SIZE),
-                mpRequest());
+                getDefault(GEN_DDL_BUFFER_SIZE));
   
   if (isHbase_)
     {
@@ -593,6 +592,7 @@ short ExeUtilMetadataUpgrade::codeGen(Generator * generator)
 /////////////////////////////////////////////////////////
 short FirstN::codeGen(Generator * generator)
 {
+  ExpGenerator* expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
 
   ex_cri_desc * given_desc = generator->getCriDesc(Generator::DOWN);
@@ -604,25 +604,55 @@ short FirstN::codeGen(Generator * generator)
 
   ex_cri_desc * returned_desc = generator->getCriDesc(Generator::UP);
 
+  ex_cri_desc * work_cri_desc = NULL;
+  ex_expr * firstNRowsExpr = NULL;
+  if (firstNRowsParam_)
+    {
+      Int32 work_atp = 1; // temps
+      Int32 work_atp_index = 2;  // where the result row will be
+      work_cri_desc = new(space) ex_cri_desc(3, space);
+
+      // input param is typed as nullable. Make it non-nullable and unsigned.
+      NAType * newNAT = 
+        firstNRowsParam_->getValueId().getType().newCopy(generator->wHeap());
+      newNAT->setNullable(FALSE, FALSE);
+      
+      Cast * fnp = new(generator->wHeap()) Cast(firstNRowsParam_, newNAT);
+      fnp->bindNode(generator->getBindWA());
+      
+      ValueIdList vidL;
+      vidL.insert(fnp->getValueId());
+
+      UInt32 firstNValLen = 0;
+      expGen->generateContiguousMoveExpr(vidL,
+                                         0, // no convert nodes,
+                                         work_atp, work_atp_index,
+                                         ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+                                         firstNValLen, &firstNRowsExpr,
+                                         NULL, ExpTupleDesc::SHORT_FORMAT);
+    }
+  
   ComTdbFirstN * firstN_tdb
     = new(space) ComTdbFirstN(
-	 child_tdb,
-	 getFirstNRows(),
-	 given_desc,
-	 returned_desc,
-	 child_tdb->getMaxQueueSizeDown(),
-	 child_tdb->getMaxQueueSizeUp(),
-	 1, 4096);
-
+                              child_tdb,
+                              getFirstNRows(),
+                              firstNRowsExpr,
+                              work_cri_desc,
+                              given_desc,
+                              returned_desc,
+                              child_tdb->getMaxQueueSizeDown(),
+                              child_tdb->getMaxQueueSizeUp(),
+                              1, 4096);
+  
   generator->initTdbFields(firstN_tdb);
-
+  
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
-       addExplainInfo(firstN_tdb, childExplainTuple, 0, generator));
+                               addExplainInfo(firstN_tdb, childExplainTuple, 0, generator));
   }
-
+  
   generator->setGenObj(this, firstN_tdb);
-
+  
   return 0;
 }
 
@@ -1629,8 +1659,6 @@ short RelRoot::codeGen(Generator * generator)
 	    stoi->setValidateViewsAtOpenTime(TRUE);
           else
             stoi->setValidateViewsAtOpenTime(FALSE);
-	  //else if (NOT stoi->isSQLMPTable())
-	   // stoi->setValidateViewsAtOpenTime(TRUE);
 
 	  viewStoiList->insert(stoi);
 
@@ -2180,74 +2208,6 @@ short RelRoot::codeGen(Generator * generator)
 
   NABoolean validateSSTSFlag = TRUE;
 
-
-  SchemaLabelInfoPtrPtr tdbSchemaLabelInfoList=NULL;
-  short numOfUniqueSchemaNames = 0;
-
-  short cntOfSchLabelsAtBindTime = generator->getBindWA()->schemaCount();
-  
-  SchemaLabelInfo *bindSchemaLabeInfoPtr, *tdbSchemaLabelInfoPtr;
-  
-  LIST (SchemaLabelInfoPtr) tdbtmpList;
-  LIST (SchemaLabelInfoPtr) bindschemaLabelInfoList;
-
-  bindschemaLabelInfoList = generator->getBindWA()->getSLIList();
-  
-  for (short tmpc = 0; tmpc < cntOfSchLabelsAtBindTime; ++tmpc )
-  {
-    bindSchemaLabeInfoPtr = bindschemaLabelInfoList[tmpc];
-    NABoolean foundInSchemaLabelInfoList = 0;
-
-    if(numOfUniqueSchemaNames != 0)
-    {
-      for (Int32 tmps = 0; tmps < numOfUniqueSchemaNames; tmps++)
-      {
-        if(strcmp(tdbtmpList[tmps]->schemaLabelName(),
-            bindSchemaLabeInfoPtr->schemaLabelName()) == 0)
-        {
-          foundInSchemaLabelInfoList = 1;
-          break;
-        }
-      }
-    }
-
-    if(foundInSchemaLabelInfoList == 0)
-    { 
-      char *tmpLabelName, *tmpAnsiName;
-
-      tmpLabelName = new(space) char[strlen(
-             bindSchemaLabeInfoPtr ->schemaLabelName())+1];
-      strcpy(tmpLabelName, bindSchemaLabeInfoPtr->schemaLabelName());
-
-      tmpAnsiName = new(space) char[strlen(
-             bindSchemaLabeInfoPtr ->schemaAnsiName())+1];
-      strcpy(tmpAnsiName, bindSchemaLabeInfoPtr->schemaAnsiName());
-
-      tdbSchemaLabelInfoPtr = new(space) SchemaLabelInfo;
-
-      tdbSchemaLabelInfoPtr->setSchemaLabelName(tmpLabelName);
-      tdbSchemaLabelInfoPtr->setSchemaAnsiName(tmpAnsiName);
-
-      tdbSchemaLabelInfoPtr->setSchemaLabelRedefTS
-            (bindSchemaLabeInfoPtr->schemaLabelRedefTS());
-      tdbSchemaLabelInfoPtr->setValidateSSTSAtOpenTime(validateSSTSFlag);
-
-      tdbtmpList.insert(tdbSchemaLabelInfoPtr);
-      ++ numOfUniqueSchemaNames;
-    }
-  }
-
-  if(numOfUniqueSchemaNames > 0 )
-  {
-  
-    tdbSchemaLabelInfoList = new (space) SchemaLabelInfoPtr[numOfUniqueSchemaNames];
-
-    for (short schIdx = 0; schIdx < numOfUniqueSchemaNames; schIdx++)
-    {
-      tdbSchemaLabelInfoList[schIdx] = tdbtmpList[schIdx];
-    }
-  }
-
   CollIndex numObjectUIDs = generator->objectUids().entries();
   Int64 *objectUIDsPtr = NULL;
   if (numObjectUIDs > 0)
@@ -2368,8 +2328,6 @@ short RelRoot::codeGen(Generator * generator)
 		 newMvList,
 		 uninitializedMvCount,
 		 compilerStatsInfoBuf,
-		 numOfUniqueSchemaNames,
-		 tdbSchemaLabelInfoList,
 		 rwrsInfoBuf,
                  numObjectUIDs ,
                  objectUIDsPtr,

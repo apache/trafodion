@@ -1,9 +1,9 @@
 /*
  * StringUtil.cpp
  *
- * Copyright 2002, Log4cpp Project. All rights reserved.
+ * (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
  *
- * (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+ * Copyright 2002, Log4cpp Project. All rights reserved.
  *
  * See the COPYING file for the terms of usage and distribution.
  */
@@ -35,7 +35,7 @@ namespace log4cpp {
     std::string StringUtil::vform(const char* format, va_list args) {
         size_t size = 1024;
         char* buffer = new char[size];
-
+            
         while (1) {
             va_list args_copy;
 
@@ -48,19 +48,19 @@ namespace log4cpp {
             int n = VSNPRINTF(buffer, size, format, args_copy);
 
             va_end(args_copy);
-
+                
             // If that worked, return a string.
             if ((n > -1) && (static_cast<size_t>(n) < size)) {
                 std::string s(buffer);
                 delete [] buffer;
                 return s;
             }
-
+                
             // Else try again with more space.
             size = (n > -1) ?
                 n + 1 :   // ISO/IEC 9899:1999
                 size * 2; // twice the old size
-
+                
             delete [] buffer;
             buffer = new char[size];
         }

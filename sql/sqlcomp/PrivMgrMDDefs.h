@@ -45,8 +45,18 @@ struct PrivMgrTableStruct
   const TableDDLString * tableDDL;
   const bool isIndex;
 };
-
 // the following TableDDLStrings describe each metadata tables
+static const TableDDLString columnPrivilegesDDL[] =
+{" ( \
+   object_uid largeint not null, \
+   grantee_id int not null, \
+   grantor_id int not null, \
+   column_number int not null, \
+   privileges_bitmap largeint not null, \
+   grantable_bitmap largeint not null, \
+   primary key (object_uid, grantee_id, grantor_id, column_number) \
+   );" };
+
 static const TableDDLString componentsDDL[] =
 {" ( \
    component_uid largeint not null primary key, \
@@ -106,14 +116,26 @@ static const TableDDLString roleUsageDDL[] =
   grant_depth int not null, \
   primary key (role_id, grantor_id, grantee_id) \
   );" };
+  
+static const TableDDLString schemaPrivilegesDDL[] = 
+{ " ( \
+  schema_uid largeint not null, \
+  grantee_id int not null, \
+  grantor_id int not null, \
+  privileges_bitmap largeint not null, \
+  grantable_bitmap largeint not null, \
+  primary key (schema_uid, grantor_id, grantee_id) \
+  );" };
 
 // The PrivMgrTableStruct describes each table
 static const PrivMgrTableStruct privMgrTables[] =
   { { "OBJECT_PRIVILEGES", objectPrivilegesDDL, false }, 
+    { "COLUMN_PRIVILEGES", columnPrivilegesDDL, false },
     { "COMPONENTS", componentsDDL, false },
     { "COMPONENT_OPERATIONS", componentOperationsDDL, false },
     { "COMPONENT_PRIVILEGES", componentPrivilegesDDL, false },
     { "ROLE_USAGE", roleUsageDDL, false }
+   ,{ "SCHEMA_PRIVILEGES", schemaPrivilegesDDL, false } 
   };
 
 

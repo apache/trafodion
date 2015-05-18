@@ -1,7 +1,7 @@
 #######################################################################
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 1995-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -160,9 +160,7 @@ JSRC := RowToInsert.java \
         HBaseClient.java \
 	HiveClient.java \
         HBulkLoadClient.java \
-	OrcFileReader.java
-
-
+	OrcFileReader.java 
 
 # Set up explicit dependencies (necessary for parallel builds... and for correctness).
 $(TARGOBJDIR)/java/$(PACKAGE)/HTableClient.class : $(TARGOBJDIR)/java/$(PACKAGE)/RowToInsert.class

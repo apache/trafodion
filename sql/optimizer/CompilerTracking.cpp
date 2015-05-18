@@ -1,7 +1,7 @@
 // **********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2009-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 // **********************************************************************
 #include "CompilerTracking.h"
 #include "QRLogger.h"
+#include "ExExeUtilCli.h"
 #ifdef _MSC_VER
 #undef _MSC_VER
 #endif
@@ -667,28 +668,18 @@ CompilerTrackingInfo::logIntervalInPrivateTable()
            qCacheRecompiles(),
            compilerInfo());
 
-  CmpCliStmt begin("BEGIN WORK;");
-  if( begin.executeNoDataExpected() )
+  ExeCliInterface cliInterface(
+       CmpCommon::statementHeap(),
+       NULL,
+       NULL, 
+       CmpCommon::context()->sqlSession()->getParentQid());
+
+  if( cliInterface.beginWork() >= 0 )
   {
-    begin.myfree();
-
-    CmpCliStmt interval(dmlbuffer);
-    if( interval.executeNoDataExpected() )
-    {
-      interval.myfree();
-
-      CmpCliStmt commit("COMMIT WORK;");
-      commit.executeNoDataExpected();
-      commit.myfree();
-    }
+    if( cliInterface.executeImmediate(dmlbuffer) >= 0 )
+      cliInterface.commitWork();
     else
-    {
-      interval.myfree();
-
-      CmpCliStmt rollback("ROLLBACK WORK;");
-      rollback.executeNoDataExpected();
-      rollback.myfree();
-    }    
+      cliInterface.rollbackWork();
   }
 }
 

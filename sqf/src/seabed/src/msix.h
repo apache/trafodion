@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -297,6 +297,7 @@ typedef struct fs_fs_write {
   } flags;                                  /* end of flags union */
                                             /* note this covers SendFlags */
   TCBREF_DEF              tcbref;           /* TMF transaction id */
+  int64                   startid;          /* start id */
   int32                   userid;           /* userid for SQ */
   VarString               lid;              /* Lid, if not default */
                                             /*   (Added in Version_MAY94) */
@@ -333,6 +334,7 @@ typedef struct fs_fs_writeread {
                                             /* note this covers SendFlags */
   linkmon_sendflags_template sendflags;
   TCBREF_DEF              tcbref;           /* TMF transaction id */
+  int64                   startid;          /* start id */
   int32                   userid;           /* userid for SQ */
   VarString               lid;              /* Lid, if not default */
                                             /*   (Added in Version_MAY94) */

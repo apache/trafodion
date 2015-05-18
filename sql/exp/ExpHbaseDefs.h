@@ -21,6 +21,7 @@
 #define EXP_HBASE_DEFS_H
 
 #include "BaseTypes.h"
+#include "NABasicObject.h"
 
 #define HBASE_ACCESS_SUCCESS 0
 #define HBASE_ACCESS_PREEMPT 1
@@ -72,7 +73,7 @@ enum HbaseOptionEnum
   };
 
 
-class HbaseCreateOption
+class HbaseCreateOption : public NABasicObject
 {
  public:
   HbaseCreateOption(const NAText &key, const NAText &val)
@@ -95,6 +96,7 @@ class HbaseCreateOption
   
   NAText &key() { return key_;}
   NAText &val()  { return val_;}
+  void setVal(NAText & val) { val_ = val; }
   
  private:
   NAText key_;

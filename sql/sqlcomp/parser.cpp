@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -1392,8 +1392,6 @@ NABoolean Parser::parseUtilISPCommand(const char* command, size_t cmdLen, CharIn
 // Special DDL requests consist of:
 //   UPDATE STATISTICS
 //   CREATE TANDEM_CAT_REQUEST
-//   CREATE, ALTER, and DROP of SQL/MP tables,
-//    excluding CREATE/ALTER/DROP SQLMP ALIAS 
 //
 // return TRUE: if a special DDL request or error.
 //            : if error, node returned is NULL.
@@ -1509,77 +1507,8 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
       specialDDL = TRUE;      
     }
 
-  // Now check to see if user requested a CREATE, ALTER, or DROP for SQL/MP
-  // tables.  SQL/MP DDL requests are only supported through SQL if running
-  // as part of SQL release and debug regressions. This is determined by 
-  // checking the following environment variable:
-  //   SQLMX_REGRESS 
-  //        1 - running regressions using mx objects
-  //        2 - running regressions using mp objects
-  NABoolean isValidMpDDL = FALSE;
-  char *ev = getenv("SQLMX_REGRESS");
-  NABoolean mpAliasDDL = FALSE;
-  if ( (ev) && (ev[0] == '2') )
-  {
-    // check for CREATE, ALTER, or DROP
-    Int32 numDDLTokens = 3;
-    static const char* ddlTokens[] = { "CREATE", "ALTER", "DROP" };
-    
-    NABoolean ddlTokenFound = FALSE;
-    Int32 i = 0;
-    while ((i < numDDLTokens) && (!ddlTokenFound))
-      {
-	position = ns.index(ddlTokens[i], 0, NAString::ignoreCase);
-	if (position == 0)
-         {
-	   specialDDL = TRUE;
-#pragma nowarn(1506)   // warning elimination 
-           Int32 pos = ns.first(' ');
-#pragma warn(1506)  // warning elimination 
-           NAString tmpStr;
-           tmpStr = ns(pos + 1, ns.length()-(pos + 1));
-           tmpStr = tmpStr.strip(NAString::leading, ' ');
-#pragma nowarn(1506)   // warning elimination 
-           pos = tmpStr.index("SQLMP", 0, NAString::ignoreCase);
-#pragma warn(1506)  // warning elimination 
-           if (pos == 0)       // CREATE/ALTER/DROP SQLMP ALIAS DDL
-             mpAliasDDL = TRUE;
-         }
-	i++;
-      }
-
-    // Found a CREATE, ALTER, or DROP; make sure second token is valid
-    if (specialDDL && !mpAliasDDL)
-      {
-        Int32 numUnsuppDDLTokens = 3;
-        static const char* unsuppDDLTokens[] = { "CATALOG", "SCHEMA", "SQL" };
-
-        i = 0;
-        while (i < numUnsuppDDLTokens)
-          {
-            position = 0;
-            position = ns.index(unsuppDDLTokens[i], 0, NAString::ignoreCase);
-            if (position == 0)
-              {
-                // Invalid command to send to SQL/MP
-                *SqlParser_Diags << DgSqlCode(-1010);
-                CmpCommon::diags()->mergeAfter(*SqlParser_Diags);
-                return TRUE;
-              }
-            i++;
-          }
-        
-        // Found a valid MP DDL request
-        isValidMpDDL = TRUE;
-
-        // do not start Xn at runtime. 
-        xnNeeded = FALSE;
-
-      }  // special DDL: SQL/MP DDL request
-  }
-
   // If a special DDL is found, go ahead and create a DDLExpr node
-  if (specialDDL && !mpAliasDDL)
+  if (specialDDL)
     {
       *node = NULL;
       DDLExpr * ddlExpr = new(CmpCommon::statementHeap()) 
@@ -1588,9 +1517,6 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
 	RelRoot(ddlExpr);
 
       ddlExpr->xnNeeded() = xnNeeded;
-
-      // If this is a SQLMP request, set member in ddlExpr
-      ddlExpr->mpRequest() = isValidMpDDL;
 
       ddlExpr->specialDDL() = TRUE;
 

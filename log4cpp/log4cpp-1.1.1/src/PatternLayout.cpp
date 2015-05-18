@@ -1,9 +1,9 @@
 /*
  * PatternLayout.cpp
  *
- * Copyright 2002, Bastiaan Bakker. All rights reserved.
+ * (C) Copyright 2010-2015 Hewlett-Packard Development Company, L.P.
  *
- * (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+ * Copyright 2002, Bastiaan Bakker. All rights reserved.
  *
  * See the COPYING file for the terms of usage and distribution.
  */
@@ -39,7 +39,7 @@
 */
 
 #include <stdio.h>
-
+ 
 std::ostream& operator<<(std::ostream& os, int64_t i) {
     char buf[20];
     ::sprintf(buf,"%I64d", i);
@@ -68,7 +68,7 @@ namespace log4cpp {
             if (specifier == "") {
                 _precision = -1;
             } else {
-#ifdef LOG4CPP_HAVE_SSTREAM
+#ifdef LOG4CPP_HAVE_SSTREAM 
                 std::istringstream s(specifier);
 #else
                 std::istrstream s(specifier.c_str());
@@ -144,7 +144,7 @@ namespace log4cpp {
             std::string::size_type pos = timeFormat.find("%l");
             if (pos == std::string::npos) {
                 _printMillis = false;
-                _timeFormat1 = timeFormat;
+                _timeFormat1 = timeFormat; 
             } else {
                 _printMillis = true;
                 _timeFormat1 = timeFormat.substr(0, pos);
@@ -160,7 +160,7 @@ namespace log4cpp {
             std::string timeFormat;
             if (_printMillis) {
                 std::ostringstream formatStream;
-                formatStream << _timeFormat1
+                formatStream << _timeFormat1 
                              << std::setw(3) << std::setfill('0')
                              << event.timeStamp.getMilliSeconds()
                              << _timeFormat2;
@@ -196,7 +196,7 @@ namespace log4cpp {
             t *= 1000;
             t += event.timeStamp.getMilliSeconds() -
                 TimeStamp::getStartTime().getMilliSeconds();
-
+            
             out << t;
 #else
             double t = event.timeStamp.getSeconds() -
@@ -204,7 +204,7 @@ namespace log4cpp {
             t *= 1000;
             t += event.timeStamp.getMilliSeconds() -
                 TimeStamp::getStartTime().getMilliSeconds();
-
+            
             out << std::setiosflags(std::ios::fixed)
                 << std::setprecision(0) << t;
 #endif
@@ -214,7 +214,7 @@ namespace log4cpp {
     struct FormatModifierComponent : public PatternLayout::PatternComponent {
         FormatModifierComponent(PatternLayout::PatternComponent* component,
                                 size_t minWidth, size_t maxWidth, bool alignLeft) :
-            _component(component) ,
+            _component(component) , 
             _minWidth(minWidth),
             _maxWidth(maxWidth),
             _alignLeft(alignLeft) {
@@ -276,7 +276,7 @@ namespace log4cpp {
     }
 
     void PatternLayout::setConversionPattern(const std::string& conversionPattern) throw(ConfigureFailure) {
-#ifdef LOG4CPP_HAVE_SSTREAM
+#ifdef LOG4CPP_HAVE_SSTREAM 
         std::istringstream conversionStream(conversionPattern);
 #else
         std::istrstream conversionStream(conversionPattern.c_str());
@@ -298,12 +298,12 @@ namespace log4cpp {
                         conversionStream.putback(ch2);
                         conversionStream >> minWidth;
                         conversionStream.get(ch2);
-                    }
+                    } 
                     if (ch2 == '.') {
                         conversionStream >> maxWidth;
                     } else {
                         conversionStream.putback(ch2);
-                    }
+                    }                        
                 }
                 if (!conversionStream.get(ch)) {
                     std::ostringstream msg;
@@ -364,7 +364,7 @@ namespace log4cpp {
                 default:
                     std::ostringstream msg;
                     msg << "unknown conversion specifier '" << ch << "' in '" << conversionPattern << "' at index " << conversionStream.tellg();
-                    throw ConfigureFailure(msg.str());
+                    throw ConfigureFailure(msg.str());                    
                 }
                 if (component) {
                     if (!literal.empty()) {
@@ -430,7 +430,7 @@ namespace log4cpp {
           l->setConversionPattern(PatternLayout::TTCC_CONVERSION_PATTERN);
           return result;
        }
-
+       
        l->setConversionPattern(pattern);
        return result;
    }

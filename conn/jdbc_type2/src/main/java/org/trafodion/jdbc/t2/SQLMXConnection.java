@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2005-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2005-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -213,6 +213,9 @@ public class SQLMXConnection extends PreparedStatementManager implements
 				// commit the Transaction
 				cs = this.createStatement();
 				cs.execute("commit");
+                        } catch (SQLException se) {
+                           if (se.getErrorCode()  != -8605)
+                              throw se;
 			} finally {
 				setTxid_(0);
 				if(cs != null ){
@@ -1342,6 +1345,9 @@ public class SQLMXConnection extends PreparedStatementManager implements
 				// commit the Transaction
 				cs = this.createStatement();
 				cs.execute("rollback");
+                        } catch (SQLException se) {
+                          if (se.getErrorCode() != -8609)
+                             throw se;
 			} finally {
 				if(cs != null){
 					try{cs.close();}catch(Exception ee){}
