@@ -134,7 +134,8 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   ciClass_(CmpContextInfo::CMPCONTEXT_TYPE_NONE),
   qcache_(NULL),                              // just to be safe ...
   optPCodeCache_(NULL),                       // just to be safe ...
-  CDBList_(NULL)
+  CDBList_(NULL),
+  allControlCount_(0)
 {
   SetMode(isDynamicSQL() ? STMT_DYNAMIC : STMT_STATIC);
 
