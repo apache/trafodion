@@ -427,6 +427,18 @@ public final class Constants {
     public static final String T2_DRIVER_CLASS_NAME = "org.trafodion.jdbc.t2.T2Driver";
     /** T2 Driver URL */
     public static final String T2_DRIVER_URL = "jdbc:t2jdbc:";
+    /** T2 Driver trace file */
+    public static final String T2_DRIVER_TRACE_FILE = "t2.driver.trace.file";
+    /** Default value for T2 Driver trace file */
+    public static final String DEFAULT_T2_DRIVER_TRACE_FILE = "${dcs.log.dir}/${dcs.log.file}";
+    /** T2 Driver trace flag */
+    public static final String T2_DRIVER_TRACE_FLAG = "t2.driver.trace.flag";
+    /**
+     * Default value for T2 Driver trace flag, 0 = No tracing. 1 = Traces
+     * connection and statement pooling calls only. 2 = Traces the LOB-code path
+     * only. 3 = Traces the entry point of all JDBC methods.
+     */
+    public static final String DEFAULT_T2_DRIVER_TRACE_FLAG = "0";
     /** CQD to turn table stats off */
     public static final String CQD_ESTIMATE_HBASE_ROW_COUNT_OFF = "CONTROL QUERY DEFAULT estimate_hbase_row_count 'OFF'";
 
