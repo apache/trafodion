@@ -750,7 +750,7 @@ CoprocessorService, Coprocessor {
            Put verPut = new Put(dKey, commitId);
            verPut.add(DtmConst.TRANSACTION_META_FAMILY , SsccConst.VERSION_COL,SsccConst.generateVersionValue(startId,true));
            m_Region.put(verPut);
-           m_Region.delete(d);
+//           m_Region.delete(d);
          }
          //DO a batch mutation
          //Mutation[] m = (Mutation[])mutList.toArray();
