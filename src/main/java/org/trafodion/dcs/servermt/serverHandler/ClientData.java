@@ -33,6 +33,7 @@ import org.trafodion.dcs.servermt.serverSql.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 
 public class ClientData {
     private static  final Log LOG = LogFactory.getLog(ClientData.class);
@@ -62,10 +63,11 @@ public class ClientData {
     private String threadRegisteredPath = "";
     private String threadRegisteredData = null;
     
+    Configuration conf = null;
 //=========== SQL =====================================
    TrafConnection trafConnection = null;
 //=====================================================    
-    ClientData(SocketAddress clientSocketAddress, ServerUtils utils){
+    ClientData(SocketAddress clientSocketAddress, ServerUtils utils, Configuration conf){
 
     bbHeader = ByteBufferUtils.allocate(ServerConstants.HEADER_SIZE,true);
     bbBody = ByteBufferUtils.allocate(ServerConstants.BODY_SIZE,true);
@@ -80,6 +82,7 @@ public class ClientData {
     
     this.clientSocketAddress = clientSocketAddress;
     this.utils = utils;
+    this.conf = conf;
     }
     void resetReadData(){
         total_read = 0;
@@ -198,5 +201,8 @@ public class ClientData {
     }
     void setTrafConnection(TrafConnection trafConnection){
         this.trafConnection = trafConnection;
+    }
+    public Configuration getConf(){
+        return conf;
     }
 }

@@ -140,11 +140,17 @@ public final class Constants {
     /** Configuration key for DCS server user program statistics interval time */
     public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_INTERVAL_TIME = "dcs.server.user.program.statistics.interval.time";
 
+    /** T2 Driver Property key for DCS server user program statistics interval time */
+    public static final String PROPERTY_STATISTICS_INTERVAL_TIME = "statisticsIntervalTime";
+
     /** Default value for DCS server user program statistics interval time */
     public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_INTERVAL_TIME = 60;
 
     /** Configuration key for DCS server user program statistics limit time */
     public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME = "dcs.server.user.program.statistics.limit.time";
+
+    /** T2 Driver Property key for DCS server user program statistics limit time */
+    public static final String PROPERTY_STATISTICS_LIMIT_TIME = "statisticsLimitTime";
 
     /** Default value for DCS server user program statistics limit time */
     public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_LIMIT_TIME = 60;
@@ -152,11 +158,17 @@ public final class Constants {
     /** Configuration key for DCS server user program statistics type */
     public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE = "dcs.server.user.program.statistics.type";
 
+    /** T2 Driver Property key for DCS server user program statistics type */
+    public static final String PROPERTY_STATISTICS_TYPE = "statisticsType";
+
     /** Default value for DCS server user program statistics type */
     public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_TYPE = "aggregated";
 
     /** Configuration key for DCS server user program statistics enable */
     public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "dcs.server.user.program.statistics.enabled";
+
+    /** T2 Driver Property key for DCS server user program statistics enable */
+    public static final String PROPERTY_PROGRAM_STATISTICS_ENABLE = "programStatisticsEnabled";
 
     /** Default value for DCS server user program statistics enable */
     public static final String DEFAULT_DCS_SERVER_USER_PROGRAM_STATISTICS_ENABLE = "true";
@@ -166,6 +178,12 @@ public final class Constants {
      * queries
      */
     public static final String DCS_SERVER_USER_PROGRAM_STATISTICS_SQLPLAN_ENABLE = "dcs.server.user.program.statistics.sqlplan.enabled";
+
+    /**
+     * T2 Driver Property key for DCS server user program to enable sqlplan for
+     * queries
+     */
+    public static final String PROPERTY_STATISTICS_SQLPLAN_ENABLE = "statisticsSqlPlanEnabled";
 
     /**
      * Default value for DCS server user program to enable sql plans for queries

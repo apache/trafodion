@@ -34,6 +34,7 @@ import org.apache.commons.logging.LogFactory;
 public class Descriptor2 {
 
     private static  final Log LOG = LogFactory.getLog(Descriptor2.class);
+    private boolean oldFormat = false;
 //================== T2 desc fields ============================================
     private int        sqlCharset_;
     private int        odbcCharset_;
@@ -94,8 +95,9 @@ public class Descriptor2 {
             int sqlOctetLength_,int isNullable_,String name_,int scale_,int precision_,boolean isSigned_,
             boolean isCurrency_,boolean isCaseSensitive_,String catalogName_,String schemaName_,String tableName_,
             int fsDataType_,int intLeadPrec_,int paramMode_,int paramIndex_,int paramPos_,int odbcPrecision_,
-            int maxLen_,int displaySize_,String label_){
+            int maxLen_,int displaySize_,String label_, boolean oldFormat){
         
+        this.oldFormat = oldFormat;
         this.sqlCharset_ = sqlCharset_;
         this.odbcCharset_ = odbcCharset_;
         this.sqlDataType_ = sqlDataType_;
@@ -128,6 +130,7 @@ public class Descriptor2 {
 //====================================================================
         if(LOG.isDebugEnabled()){
             LOG.debug("T2 descriptor ----------");
+            LOG.debug("Old Format       :" + oldFormat);
             LOG.debug("sqlCharset_      :" + sqlCharset_);
             LOG.debug("odbcCharset_     :" + odbcCharset_);
             LOG.debug("sqlDataType_     :" + sqlDataType_ + " :" + SqlUtils.getSqlDataType(sqlDataType_));
@@ -219,9 +222,38 @@ public class Descriptor2 {
         memAlignOffset = 0;
         allocSize = 0;
         varLayout = 0;
+        
+        if(LOG.isDebugEnabled()){
+            LOG.debug("T4 descriptor ----------");
+            LOG.debug("noNullValue      :" + noNullValue);
+            LOG.debug("nullValue        :" + nullValue);
+            LOG.debug("version          :" + version);
+            LOG.debug("dataType         :" + dataType);
+            LOG.debug("datetimeCode     :" + datetimeCode);
+            LOG.debug("maxLen           :" + maxLen);
+            LOG.debug("precision        :" + precision);
+            LOG.debug("scale            :" + scale);
+            LOG.debug("nullInfo         :" + nullInfo);
+            LOG.debug("signed           :" + signed);
+            LOG.debug("odbcDataType     :" + odbcDataType);
+            LOG.debug("odbcPrecision    :" + odbcPrecision);
+            LOG.debug("sqlCharset       :" + sqlCharset);
+            LOG.debug("odbcCharset      :" + odbcCharset);
+            LOG.debug("colHeadingNm     :" + colHeadingNm);
+            LOG.debug("tableName        :" + tableName);
+            LOG.debug("schemaName       :" + schemaName);
+            LOG.debug("headingName      :" + headingName);
+            LOG.debug("intLeadPrec      :" + intLeadPrec);
+            LOG.debug("paramMode        :" + paramMode);
+            LOG.debug("memAlignOffset   :" + memAlignOffset);
+            LOG.debug("allocSize        :" + allocSize);
+            LOG.debug("varLayout        :" + varLayout);
+            LOG.debug("T4 descriptor End ----------");
+        }
     }
 //==========================================================================
     public Descriptor2(Descriptor2 dsc){
+        this.oldFormat = dsc.oldFormat;
         this.sqlCharset_ = dsc.sqlCharset_;
         this.odbcCharset_ = dsc.odbcCharset_;
         this.sqlDataType_ = dsc.sqlDataType_;
@@ -277,55 +309,105 @@ public class Descriptor2 {
         
     }
     public void insertIntoByteBuffer(ByteBuffer bbBuf) throws UnsupportedEncodingException {
-        
-        bbBuf.putInt(noNullValue);
-        bbBuf.putInt(nullValue);
-        bbBuf.putInt(version);
-        bbBuf.putInt(dataType);
-        bbBuf.putInt(datetimeCode);
-        bbBuf.putInt(maxLen);
-        bbBuf.putInt(precision);
-        bbBuf.putInt(scale);
-        bbBuf.putInt(nullInfo);
-        bbBuf.putInt(signed);
-        bbBuf.putInt(odbcDataType);
-        bbBuf.putInt(odbcPrecision);
-        bbBuf.putInt(sqlCharset);
-        bbBuf.putInt(odbcCharset);
-        ByteBufferUtils.insertString(colHeadingNm,bbBuf);
-        ByteBufferUtils.insertString(tableName,bbBuf);
-        ByteBufferUtils.insertString(catalogName,bbBuf);
-        ByteBufferUtils.insertString(schemaName,bbBuf);
-        ByteBufferUtils.insertString(headingName,bbBuf);
-        bbBuf.putInt(intLeadPrec);
-        bbBuf.putInt(paramMode);
+        if (oldFormat == false){
+            bbBuf.putInt(noNullValue);
+            bbBuf.putInt(nullValue);
+            bbBuf.putInt(version);
+            bbBuf.putInt(dataType);
+            bbBuf.putInt(datetimeCode);
+            bbBuf.putInt(maxLen);
+            bbBuf.putInt(precision);
+            bbBuf.putInt(scale);
+            bbBuf.putInt(nullInfo);
+            bbBuf.putInt(signed);
+            bbBuf.putInt(odbcDataType);
+            bbBuf.putInt(odbcPrecision);
+            bbBuf.putInt(sqlCharset);
+            bbBuf.putInt(odbcCharset);
+            ByteBufferUtils.insertString(colHeadingNm,bbBuf);
+            ByteBufferUtils.insertString(tableName,bbBuf);
+            ByteBufferUtils.insertString(catalogName,bbBuf);
+            ByteBufferUtils.insertString(schemaName,bbBuf);
+            ByteBufferUtils.insertString(headingName,bbBuf);
+            bbBuf.putInt(intLeadPrec);
+            bbBuf.putInt(paramMode);
+        }
+        else {
+            bbBuf.putInt(version);
+            bbBuf.putInt(dataType);
+            bbBuf.putInt(datetimeCode);
+            bbBuf.putInt(maxLen);
+            bbBuf.putShort((short)precision);
+            bbBuf.putShort((short)scale);
+            bbBuf.put((byte)nullInfo);
+            ByteBufferUtils.insertString(colHeadingNm,bbBuf);
+            bbBuf.put((byte)signed);
+            bbBuf.putInt(odbcDataType);
+            bbBuf.putShort((short)odbcPrecision);
+            bbBuf.putInt(sqlCharset);
+            bbBuf.putInt(odbcCharset);
+            ByteBufferUtils.insertString(tableName,bbBuf);
+            ByteBufferUtils.insertString(catalogName,bbBuf);
+            ByteBufferUtils.insertString(schemaName,bbBuf);
+            ByteBufferUtils.insertString(headingName,bbBuf);
+            bbBuf.putInt(intLeadPrec);
+            bbBuf.putInt(paramMode);
+        }
     }
     public int lengthOfData() {
         int datamaxLen = 0;
         
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ByteBufferUtils.lengthOfString(colHeadingNm);
-        datamaxLen += ByteBufferUtils.lengthOfString(tableName);
-        datamaxLen += ByteBufferUtils.lengthOfString(catalogName);
-        datamaxLen += ByteBufferUtils.lengthOfString(schemaName);
-        datamaxLen += ByteBufferUtils.lengthOfString(headingName);
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        datamaxLen += ServerConstants.INT_FIELD_SIZE;
-        
+        if (oldFormat == false){
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ByteBufferUtils.lengthOfString(colHeadingNm);
+            datamaxLen += ByteBufferUtils.lengthOfString(tableName);
+            datamaxLen += ByteBufferUtils.lengthOfString(catalogName);
+            datamaxLen += ByteBufferUtils.lengthOfString(schemaName);
+            datamaxLen += ByteBufferUtils.lengthOfString(headingName);
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;
+        }
+        else {
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;       //version
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;       //dataType
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;       //datetimeCode
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;       //maxLen
+            datamaxLen += ServerConstants.SHORT_FIELD_SIZE;       //precision
+            datamaxLen += ServerConstants.SHORT_FIELD_SIZE;       //scale
+            datamaxLen += ServerConstants.BYTE_FIELD_SIZE;       //nullInfo
+            datamaxLen += ByteBufferUtils.lengthOfString(colHeadingNm);
+            datamaxLen += ServerConstants.BYTE_FIELD_SIZE;       //signed
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;       //odbcDataType
+            datamaxLen += ServerConstants.SHORT_FIELD_SIZE;       //odbcPrecision
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;       //sqlCharset
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;       //odbcCharset
+            datamaxLen += ByteBufferUtils.lengthOfString(tableName);
+            datamaxLen += ByteBufferUtils.lengthOfString(catalogName);
+            datamaxLen += ByteBufferUtils.lengthOfString(schemaName);
+            datamaxLen += ByteBufferUtils.lengthOfString(headingName);
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;       //intLeadPrec
+            datamaxLen += ServerConstants.INT_FIELD_SIZE;       //paramMode
+        }
         return datamaxLen;
+    }
+    public void setOldFormat(boolean oldFormat){
+        this.oldFormat = oldFormat;
+    }
+    public boolean getOldFormat(){
+        return oldFormat;
     }
     public void setNoNullValue(int v){
         noNullValue = v;
@@ -482,30 +564,31 @@ public class Descriptor2 {
     public void debugDescriptor(){
         if(LOG.isDebugEnabled()){
             LOG.debug("T4 descriptor -----------");
-            LOG.debug("noNullValue :" + noNullValue);
-            LOG.debug("nullValue :" + nullValue);
-            LOG.debug("version :" + version);
-            LOG.debug("dataType :" + dataType);
-            LOG.debug("datetimeCode :" + datetimeCode);
-            LOG.debug("maxLen :" + maxLen);
-            LOG.debug("precision :" + precision);
-            LOG.debug("scale :" + scale);
-            LOG.debug("nullInfo :" + nullInfo);
-            LOG.debug("signed :" + signed);
-            LOG.debug("odbcDataType :" + odbcDataType);
-            LOG.debug("odbcPrecision :" + odbcPrecision);
-            LOG.debug("sqlCharset :" + sqlCharset);
-            LOG.debug("odbcCharset :" + odbcCharset);
-            LOG.debug("colHeadingNm :" + colHeadingNm);
-            LOG.debug("tableName :" + tableName);
-            LOG.debug("catalogName :" + catalogName);
-            LOG.debug("schemaName :" + schemaName);
-            LOG.debug("headingName :" + headingName);
-            LOG.debug("intLeadPrec :" + intLeadPrec);
-            LOG.debug("paramMode :" + paramMode);
-            LOG.debug("memAlignOffset :" + memAlignOffset);
-            LOG.debug("allocSize :" + allocSize);
-            LOG.debug("varLayout :" + varLayout);
+            LOG.debug("Old Format       :" + oldFormat);
+            LOG.debug("noNullValue      :" + noNullValue);
+            LOG.debug("nullValue        :" + nullValue);
+            LOG.debug("version          :" + version);
+            LOG.debug("dataType         :" + dataType);
+            LOG.debug("datetimeCode     :" + datetimeCode);
+            LOG.debug("maxLen           :" + maxLen);
+            LOG.debug("precision        :" + precision);
+            LOG.debug("scale            :" + scale);
+            LOG.debug("nullInfo         :" + nullInfo);
+            LOG.debug("signed           :" + signed);
+            LOG.debug("odbcDataType     :" + odbcDataType);
+            LOG.debug("odbcPrecision    :" + odbcPrecision);
+            LOG.debug("sqlCharset       :" + sqlCharset);
+            LOG.debug("odbcCharset      :" + odbcCharset);
+            LOG.debug("colHeadingNm     :" + colHeadingNm);
+            LOG.debug("tableName        :" + tableName);
+            LOG.debug("catalogName      :" + catalogName);
+            LOG.debug("schemaName       :" + schemaName);
+            LOG.debug("headingName      :" + headingName);
+            LOG.debug("intLeadPrec      :" + intLeadPrec);
+            LOG.debug("paramMode        :" + paramMode);
+            LOG.debug("memAlignOffset   :" + memAlignOffset);
+            LOG.debug("allocSize        :" + allocSize);
+            LOG.debug("varLayout        :" + varLayout);
             LOG.debug("T4 descriptor End -----------");
         }
     }

@@ -253,7 +253,7 @@ public class SqlUtils {
         if ((stmtType & ServerConstants.TYPE_GRANT) != 0) rc = rc + "|TYPE_GRANT";
         if ((stmtType & ServerConstants.TYPE_DROP) != 0) rc = rc + "|TYPE_DROP";
         if ((stmtType & ServerConstants.TYPE_CALL) != 0) rc = rc + "|TYPE_CALL";
-        if (rc.length()==0) rc = "Unknown(" + stmtType +")";
+        if (rc.length()==0) rc = "UNKNOWN(" + stmtType +")";
         return rc;
     }
     static public String getSqlQueryStatementType(int stmtType)
@@ -375,7 +375,7 @@ public class SqlUtils {
             case ServerConstants.SQLTYPECODE_BITVAR:
                 return("SQLTYPECODE_BITVAR");
         };
-        rc = "Unknown (" + code + ")";
+        rc = "UNKNOWN (" + code + ")";
         return rc;
     }
     static public String getDataType(int dataType)
@@ -421,7 +421,7 @@ public class SqlUtils {
             case Types.TINYINT:
                 return "TINYINT";
             default:
-                return "UNKNOWN";
+                return "UNKNOWN (" + dataType + ")";
         }
     }
     static public BigDecimal getBigDecimalValue(Object paramValue) throws SQLException {

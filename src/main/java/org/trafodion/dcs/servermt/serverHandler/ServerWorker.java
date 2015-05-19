@@ -59,6 +59,7 @@ public class ServerWorker extends Thread {
     private ServerApiSqlDisconnect serverApiSqlDisconnect;
     private ServerApiSqlClose serverApiSqlClose;
     private ServerApiSqlEndTransact serverApiSqlEndTransact;
+    private ServerApiGetCatalogs serverApiGetCatalogs;
 
     ServerWorker(ZkClient zkc, int instance, int serverThread, String serverName, byte[] cert){
         this.zkc=zkc;
@@ -77,6 +78,7 @@ public class ServerWorker extends Thread {
         serverApiSqlDisconnect = new ServerApiSqlDisconnect(instance, serverThread);
         serverApiSqlClose = new ServerApiSqlClose(instance, serverThread);
         serverApiSqlEndTransact = new ServerApiSqlEndTransact(instance, serverThread);
+        serverApiGetCatalogs = new ServerApiGetCatalogs(instance, serverThread);
     }
     public void closeTrafConnection(SelectionKey key) {
         latch = new CountDownLatch(1);
@@ -168,6 +170,7 @@ public class ServerWorker extends Thread {
                 clientData = serverApiSqlClose.processApi(clientData ); 
                 break;
             case ServerConstants.SRVR_API_GETCATALOGS:
+                clientData = serverApiGetCatalogs.processApi(clientData ); 
                 break;
             case ServerConstants.SRVR_API_STOPSRVR:
                 break;

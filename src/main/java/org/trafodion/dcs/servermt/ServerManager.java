@@ -119,6 +119,7 @@ public final class ServerManager implements Callable {
         System.setProperty("dcs.root.logger",System.getProperty("dcs.root.logger"));
         System.setProperty("dcs.log.dir",System.getProperty("dcs.log.dir"));
         System.setProperty("dcs.log.file",System.getProperty("dcs.log.file"));
+        
     }
 
     @Override
@@ -139,8 +140,6 @@ public final class ServerManager implements Callable {
             retryIntervalMillis = conf.getInt(Constants.DCS_SERVER_CHECK_TCPIPPORT_RETRY_INTERVAL_MILLIS,Constants.DEFAULT_DCS_SERVER_CHECK_TCPIPPORT_RETRY_INTERVAL_MILLIS);
             retryCounterFactory = new RetryCounterFactory(maxRestartAttempts, retryIntervalMillis);
 
-// 1:1:24501:1:2:24502:1:3:24503:1:4:24504:1:5:24505:1:6:24506:1:7:24507:1:8:24508:1:9:24509:1:10:24510:
-            
             tokens = portMap.split("[:]");
             if (tokens == null || tokens.length < 3){
                 throw new Exception("PortMap incorrect :[" + portMap + "]");

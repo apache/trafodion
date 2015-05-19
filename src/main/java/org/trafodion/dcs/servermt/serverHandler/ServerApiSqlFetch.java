@@ -47,6 +47,10 @@ public class ServerApiSqlFetch {
     private static final int odbc_SQLSvc_Fetch_SQLStillExecuting_exn_ = 6;
     private static final int odbc_SQLSvc_Fetch_SQLQueryCancelled_exn_ = 7;
     private static final int odbc_SQLSvc_Fetch_TransactionError_exn_ = 8;
+    
+    private static final int dateLength = 10;
+    private static final int timeLength = 8;
+    private static final int timestampLength = 26;
 
     private static  final Log LOG = LogFactory.getLog(ServerApiSqlFetch.class);
     private int instance;
@@ -91,6 +95,7 @@ public class ServerApiSqlFetch {
     private long rowOffset;
     private int curRowNumber;
     private int outNumParam;
+    private int outLength;
 
     ServerApiSqlFetch(int instance, int serverThread) {  
         this.instance = instance;
@@ -177,89 +182,194 @@ public class ServerApiSqlFetch {
             trafConn = clientData.getTrafConnection();
             trafStmt = trafConn.getTrafStatement(stmtLabel);
             rs = trafStmt.getResultSet();
-//            stmt = trafStmt.getStatement();
-//
-//=====================Process ServerApiSqlFetch===========================
+            outDescList = trafStmt.getOutDescList();
+            
             maxRowLen = trafStmt.getOutParamLength();
             outNumParam = trafStmt.getOutNumberParams();
             outDescList = trafStmt.getOutDescList();
             
-            if(LOG.isDebugEnabled())
-                LOG.debug(serverWorkerName + ". outParamLength :" + maxRowLen);
-            
+            if(LOG.isDebugEnabled()){
+                LOG.debug(serverWorkerName + ". maxRowLen :" + maxRowLen);
+                LOG.debug(serverWorkerName + ". outNumParam :" + outNumParam);
+            }
             returnCode = ServerConstants.SQL_SUCCESS;
             boolean closeResultSet = false;
             
-            try {
-                while( rs != null){
-                    Descriptor2[] desc = outDescList.getDescriptors2();
-                    Descriptor2 dsc;
-                    int dataType = 0;
-                    int dataMaxLen = 0;
-                    sqlrs = (SQLMXResultSet)rs;
-                    if (false == rs.next()){
-                        closeResultSet = true; 
-                        if(LOG.isDebugEnabled())
-                            LOG.debug(serverWorkerName + ". T2 Fetch.rs.next() false");
-                        break;
-                    }
-                    else{
-                        if(LOG.isDebugEnabled())
-                            LOG.debug(serverWorkerName + ". T2 Fetch.rs.next() true");
-                    }
-                    if(totalOutLen == 0){
-                        totalOutLen = maxRowLen * maxRowCnt;
-                        outValues = new byte[(int)totalOutLen];
-                    }
-                    if(LOG.isDebugEnabled()){
-                        LOG.debug(serverWorkerName + ". outNumParam :" + outNumParam);
-                        LOG.debug(serverWorkerName + ". maxRowLen :" + maxRowLen);
-                        LOG.debug(serverWorkerName + ". totalOutLen :" + totalOutLen);
-                    }
-                    rowOffset = maxRowLen * curRowNumber;
-                
-                    for(int column = 1; column <= outNumParam; column++){
-                        dsc = desc[column - 1];
-                        int noNullValueOffset = dsc.getNoNullValue();
-                        int nullValueOffset = dsc.getNullValue();
-                        
-                        if (nullValueOffset != -1)
-                            nullValueOffset += rowOffset;
-                        if (noNullValueOffset != -1)
-                            noNullValueOffset += rowOffset;
-                        
-                        byte[] sqlarray = sqlrs.getSQLBytes(column);
-                        if (sqlarray == null) {
-                            short value = -1;
-                            outValues[(int)nullValueOffset] = (byte) ((value >>> 8) & 0xff);
-                            outValues[(int)(nullValueOffset + 1)] = (byte) ((value) & 0xff);
+//=====================Process ServerApiSqlFetch===========================
+            if (outDescList.getOldFormat() == false){
+                try {
+                    while( rs != null){
+                        Descriptor2[] desc = outDescList.getDescriptors2();
+                        Descriptor2 dsc;
+                        int dataType = 0;
+                        int dataMaxLen = 0;
+                        sqlrs = (SQLMXResultSet)rs;
+                        if (false == rs.next()){
+                            closeResultSet = true; 
+                            if(LOG.isDebugEnabled())
+                                LOG.debug(serverWorkerName + ". T2 Fetch.rs.next() false");
+                            break;
                         }
-                        else {
-                            outValues = formatSqlT4Output(dsc, sqlarray, noNullValueOffset, outValues, bbBody.order());
+                        else{
+                            if(LOG.isDebugEnabled())
+                                LOG.debug(serverWorkerName + ". T2 Fetch.rs.next() true");
                         }
+                        if(totalOutLen == 0){
+                            totalOutLen = maxRowLen * maxRowCnt;
+                            outValues = new byte[(int)totalOutLen];
+                        }
+                        if(LOG.isDebugEnabled()){
+                            LOG.debug(serverWorkerName + ". curRowNumber :" + curRowNumber);
+                            LOG.debug(serverWorkerName + ". totalOutLen :" + totalOutLen);
+                        }
+                        rowOffset = maxRowLen * curRowNumber;
+                    
+                        for(int column = 1; column <= outNumParam; column++){
+                            dsc = desc[column - 1];
+                            int noNullValueOffset = dsc.getNoNullValue();
+                            int nullValueOffset = dsc.getNullValue();
+                            
+                            if (nullValueOffset != -1)
+                                nullValueOffset += rowOffset;
+                            if (noNullValueOffset != -1)
+                                noNullValueOffset += rowOffset;
+                            
+                            byte[] sqlarray = sqlrs.getSQLBytes(column);
+                            if (sqlarray == null) {
+                                short value = -1;
+                                outValues[(int)nullValueOffset] = (byte) ((value >>> 8) & 0xff);
+                                outValues[(int)(nullValueOffset + 1)] = (byte) ((value) & 0xff);
+                            }
+                            else {
+                                outValues = formatSqlT4Output(dsc, sqlarray, noNullValueOffset, outValues, bbBody.order());
+                            }
+                        }
+                        curRowNumber++;
+                        if(LOG.isDebugEnabled()){
+                            LOG.debug(serverWorkerName + ". curRowNumber :" + curRowNumber + " maxRowCnt :" + maxRowCnt);
+                        }
+                        if (curRowNumber == maxRowCnt)
+                            break;
                     }
-                    curRowNumber++;
-                    if(LOG.isDebugEnabled()){
-                        LOG.debug(serverWorkerName + ". curRowNumber :" + curRowNumber + " maxRowCnt :" + maxRowCnt);
-                    }
-                    if (curRowNumber == maxRowCnt){
-                        break;
-                    }
+                } catch (SQLException ex){
+                    LOG.error(serverWorkerName + ". Fetch.SQLException " + ex);
+                    errorList = new SQLWarningOrErrorList(ex); 
+                    returnCode = errorList.getReturnCode();
                 }
-            } catch (SQLException ex){
-                LOG.error(serverWorkerName + ". Fetch.SQLException " + ex);
-                errorList = new SQLWarningOrErrorList(ex); 
-                returnCode = errorList.getReturnCode();
+                rowsAffected = curRowNumber;
+                if (rowsAffected != maxRowCnt && rowsAffected != 0){
+                    int len = (int)(rowsAffected * maxRowLen);
+                    if(LOG.isDebugEnabled()){
+                        LOG.debug(serverWorkerName + ". len :" + len);
+                    }
+                    byte[] dst = new byte[len];
+                    System.arraycopy(outValues, 0, dst, 0, len);
+                    if(LOG.isDebugEnabled()){
+                        LOG.debug(serverWorkerName + ". dst :" + Arrays.toString(dst));
+                    }
+                    outValues = dst;
+                }
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". closeResultSet before");
+                if (closeResultSet == true)         
+                    trafStmt.closeTResultSet();
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". closeResultSet after");
             }
-            rowsAffected = curRowNumber;
-            if (rowsAffected != maxRowCnt && rowsAffected != 0){
-                int len = (int)(rowsAffected * maxRowLen);
-                byte[] dst = new byte[len];
-                System.arraycopy(outValues, 0, dst, 0, len);
-                outValues = dst;
+//---------------------------------------------------------------------------------------------
+            else {
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". Processing old format result set");
+                int byteIndex = 0;
+                
+                try {
+                    while( rs != null){
+                        Descriptor2[] desc = outDescList.getDescriptors2();
+                        Descriptor2 dsc;
+                        int dataType = 0;
+                        int dataMaxLen = 0;
+                        sqlrs = (SQLMXResultSet)rs;
+                        if (false == rs.next()){
+                            closeResultSet = true; 
+                            if(LOG.isDebugEnabled())
+                                LOG.debug(serverWorkerName + ". T2 Fetch.rs.next() false");
+                            break;
+                        }
+                        else{
+                            if(LOG.isDebugEnabled())
+                                LOG.debug(serverWorkerName + ". T2 Fetch.rs.next() true");
+                        }
+                        if(totalOutLen == 0){
+                            byteIndex = 0;
+                            totalOutLen = maxRowLen * maxRowCnt;
+                            outValues = new byte[(int)totalOutLen];
+                        }
+                        byte[] sqlarray = null;
+                        short SQLDataInd = 0;
+                        
+                        for(int column = 1; column <= outNumParam; column++){
+                            dsc = desc[column - 1];
+                            sqlarray = sqlrs.getSQLBytes(column);
+                            if (sqlarray != null)
+                                SQLDataInd = 0;
+                            else 
+                                SQLDataInd = -1;
+                            
+                            outValues[byteIndex++] = (byte) (SQLDataInd);
+                            if (SQLDataInd == 0){    
+                                ByteBuffer tb = ByteBuffer.wrap(sqlarray).order(bbBody.order());
+                                int allocLength = sqlarray.length;
+                            
+                                switch (dsc.getDataType()) {
+                                case ServerConstants.SQLTYPECODE_VARCHAR_WITH_LENGTH:
+                                case ServerConstants.SQLTYPECODE_VARCHAR_LONG:
+                                case ServerConstants.SQLTYPECODE_BITVAR:
+                                case ServerConstants.SQLTYPECODE_VARCHAR:
+                                    boolean shortLength = dsc.getPrecision() < Math.pow(2, 15);
+                                    allocLength = (shortLength) ? tb.getShort() + 2 : tb.getInt() + 4;
+                                    break;
+                                }
+                                System.arraycopy(sqlarray, 0, outValues, (int)byteIndex, allocLength);
+    
+                                byteIndex = byteIndex + allocLength;
+                                
+                                switch (dsc.getDataType()) {
+                                case ServerConstants.SQLTYPECODE_VARCHAR_WITH_LENGTH:
+                                case ServerConstants.SQLTYPECODE_VARCHAR_LONG:
+                                case ServerConstants.SQLTYPECODE_BITVAR:
+                                case ServerConstants.SQLTYPECODE_CHAR:
+                                case ServerConstants.SQLTYPECODE_VARCHAR:
+                                    byteIndex++;
+                                    break;
+                                }
+                            }
+                        }
+                        curRowNumber++;
+                        if (curRowNumber == maxRowCnt)
+                            break;
+                    }
+                } catch (SQLException ex){
+                    LOG.error(serverWorkerName + ". Fetch.SQLException " + ex);
+                    errorList = new SQLWarningOrErrorList(ex); 
+                    returnCode = errorList.getReturnCode();
+                }
+                rowsAffected = curRowNumber;
+                if (rowsAffected != maxRowCnt && rowsAffected != 0){
+                    int len = byteIndex;
+                    if(LOG.isDebugEnabled()){
+                        LOG.debug(serverWorkerName + ". len :" + len);
+                    }
+                    byte[] dst = new byte[len];
+                    System.arraycopy(outValues, 0, dst, 0, len);
+                    outValues = dst;
+                }
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". closeResultSet before");
+                if (closeResultSet == true)         
+                    trafStmt.closeTResultSet();
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". closeResultSet after");
             }
-            if (closeResultSet == true)         
-                trafStmt.closeTResultSet();
 //
 //===================calculate length of output ByteBuffer========================
 //

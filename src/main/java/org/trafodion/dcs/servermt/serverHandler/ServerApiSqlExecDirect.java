@@ -263,7 +263,7 @@ public class ServerApiSqlExecDirect {
             if (returnCode == ServerConstants.SQL_SUCCESS || returnCode == ServerConstants.SQL_SUCCESS_WITH_INFO) {
                 if (resultSetColumns > 0){
                     strsmd = (SQLMXResultSetMetaData)rsmd;
-                    resultSetDescList = new Descriptor2List(resultSetColumns);
+                    resultSetDescList = new Descriptor2List(resultSetColumns,false);
                     
                     numResultSets = 1;
                     stmtLabels = new String[numResultSets];
@@ -306,36 +306,38 @@ public class ServerApiSqlExecDirect {
                             sqlOctetLength_,isNullable_,name_,scale_,precision_,isSigned_,
                             isCurrency_,isCaseSensitive_,catalogName_,schemaName_,tableName_,
                             fsDataType_,intLeadPrec_,paramMode_,paramIndex_,paramPos_,odbcPrecision_,
-                            maxLen_,displaySize_,label_);
+                            maxLen_,displaySize_,label_, false);
                         resultSetDescList.addDescriptor(column,outDesc);
                     }
                     if(LOG.isDebugEnabled()){
                         for (int column = 1; column <= resultSetColumns; column++){
                             Descriptor2 dsc = resultSetDescList.getDescriptors2()[column-1];
-                            LOG.debug(serverWorkerName + ".Column :" + column);
-                            LOG.debug(serverWorkerName + ".out_noNullValue" + column + " :" + dsc.getNoNullValue());
-                            LOG.debug(serverWorkerName + ".out_nullValue" + column + " :" + dsc.getNullValue());
-                            LOG.debug(serverWorkerName + ".out_version" + column + " :" + dsc.getVersion());
-                            LOG.debug(serverWorkerName + ".out_dataType " + column + " :" + SqlUtils.getDataType(dsc.getDataType()));
-                            LOG.debug(serverWorkerName + ".out_datetimeCode " + column + " :" + dsc.getDatetimeCode());
-                            LOG.debug(serverWorkerName + ".out_maxLen " + column + " :" + dsc.getMaxLen());
-                            LOG.debug(serverWorkerName + ".out_precision " + column + " :" + dsc.getPrecision());
-                            LOG.debug(serverWorkerName + ".out_scale " + column + " :" + dsc.getScale());
-                            LOG.debug(serverWorkerName + ".out_nullInfo " + column + " :" + dsc.getNullInfo());
-                            LOG.debug(serverWorkerName + ".out_signed " + column + " :" + dsc.getSigned());
-                            LOG.debug(serverWorkerName + ".out_odbcDataType " + column + " :" + dsc.getOdbcDataType());
-                            LOG.debug(serverWorkerName + ".out_odbcPrecision " + column + " :" + dsc.getOdbcPrecision());
-                            LOG.debug(serverWorkerName + ".out_sqlCharset " + column + " :" + SqlUtils.getCharsetName(dsc.getSqlCharset()) + "[" + dsc.getSqlCharset() + "]");
-                            LOG.debug(serverWorkerName + ".out_odbcCharset " + column + " :" + SqlUtils.getCharsetName(dsc.getOdbcCharset()) + "[" + dsc.getOdbcCharset() + "]");
-                            LOG.debug(serverWorkerName + ".out_colHeadingNm " + column + " :" + dsc.getColHeadingNm());
-                            LOG.debug(serverWorkerName + ".out_tableName " + column + " :" + dsc.getTableName());
-                            LOG.debug(serverWorkerName + ".out_schemaName " + column + " :" + dsc.getSchemaName());
-                            LOG.debug(serverWorkerName + ".out_headingName " + column + " :" + dsc.getHeadingName());
-                            LOG.debug(serverWorkerName + ".out_intLeadPrec " + column + " :" + dsc.getParamMode());
-                            LOG.debug(serverWorkerName + ".out_paramMode " + column + " :" + dsc.getColHeadingNm());
-                            LOG.debug(serverWorkerName + ".out_memAlignOffset " + column + " :" + dsc.getMemAlignOffset());
-                            LOG.debug(serverWorkerName + ".out_allocSize " + column + " :" + dsc.getAllocSize());
-                            LOG.debug(serverWorkerName + ".out_varLayout " + column + " :" + dsc.getVarLayout());
+                            LOG.debug(serverWorkerName + ". [" + column + "] Output descriptor -------------" );
+                            LOG.debug(serverWorkerName + ". oldFormat " + column + " :" + dsc.getOldFormat());
+                            LOG.debug(serverWorkerName + ". noNullValue " + column + " :" + dsc.getNoNullValue());
+                            LOG.debug(serverWorkerName + ". nullValue " + column + " :" + dsc.getNullValue());
+                            LOG.debug(serverWorkerName + ". version " + column + " :" + dsc.getVersion());
+                            LOG.debug(serverWorkerName + ". dataType " + column + " :" + SqlUtils.getDataType(dsc.getDataType()));
+                            LOG.debug(serverWorkerName + ". datetimeCode " + column + " :" + dsc.getDatetimeCode());
+                            LOG.debug(serverWorkerName + ". maxLen " + column + " :" + dsc.getMaxLen());
+                            LOG.debug(serverWorkerName + ". precision " + column + " :" + dsc.getPrecision());
+                            LOG.debug(serverWorkerName + ". scale " + column + " :" + dsc.getScale());
+                            LOG.debug(serverWorkerName + ". nullInfo " + column + " :" + dsc.getNullInfo());
+                            LOG.debug(serverWorkerName + ". signed " + column + " :" + dsc.getSigned());
+                            LOG.debug(serverWorkerName + ". odbcDataType " + column + " :" + dsc.getOdbcDataType());
+                            LOG.debug(serverWorkerName + ". odbcPrecision " + column + " :" + dsc.getOdbcPrecision());
+                            LOG.debug(serverWorkerName + ". sqlCharset " + column + " :" + SqlUtils.getCharsetName(dsc.getSqlCharset()) + "[" + dsc.getSqlCharset() + "]");
+                            LOG.debug(serverWorkerName + ". odbcCharset " + column + " :" + SqlUtils.getCharsetName(dsc.getOdbcCharset()) + "[" + dsc.getOdbcCharset() + "]");
+                            LOG.debug(serverWorkerName + ". colHeadingNm " + column + " :" + dsc.getColHeadingNm());
+                            LOG.debug(serverWorkerName + ". tableName " + column + " :" + dsc.getTableName());
+                            LOG.debug(serverWorkerName + ". schemaName " + column + " :" + dsc.getSchemaName());
+                            LOG.debug(serverWorkerName + ". headingName " + column + " :" + dsc.getHeadingName());
+                            LOG.debug(serverWorkerName + ". intLeadPrec " + column + " :" + dsc.getParamMode());
+                            LOG.debug(serverWorkerName + ". paramMode " + column + " :" + dsc.getColHeadingNm());
+                            LOG.debug(serverWorkerName + ". memAlignOffset " + column + " :" + dsc.getMemAlignOffset());
+                            LOG.debug(serverWorkerName + ". allocSize " + column + " :" + dsc.getAllocSize());
+                            LOG.debug(serverWorkerName + ". varLayout " + column + " :" + dsc.getVarLayout());
+                            LOG.debug(serverWorkerName + ". Output descriptor End-------------");
                         }
                     }
                     trafStmt.setOutNumberParams(resultSetColumns);

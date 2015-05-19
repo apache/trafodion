@@ -95,13 +95,20 @@ public class TrafStatement {
         reset();
     }
     public void closeTResultSet(){
+        if(LOG.isDebugEnabled())
+            LOG.debug(serverWorkerName + ". T2 rs.close(" + stmtLabel + ") begin");
         try {
-            if (rs != null && rs.isClosed() == false)
+            if (rs != null && rs.isClosed() == false){
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". T2 rs before close ");
                 rs.close();
-        } catch (SQLException e){}
+                if(LOG.isDebugEnabled())
+                    LOG.debug(serverWorkerName + ". T2 rs after close ");
+            }
+        } catch (Exception e){}
         rs = null;
         if(LOG.isDebugEnabled())
-            LOG.debug(serverWorkerName + ". T2 rs.close(" + stmtLabel + ")");
+            LOG.debug(serverWorkerName + ". T2 rs.close(" + stmtLabel + ") end");
     }
     public void setOutNumberParams(int outNumberParams){
         this.outNumberParams = outNumberParams;

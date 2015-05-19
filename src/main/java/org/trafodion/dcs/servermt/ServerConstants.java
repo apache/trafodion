@@ -352,5 +352,40 @@ public final class ServerConstants {
     public static final int FLOAT_FIELD_SIZE                    = 4;
     
     public static final int SERVER_STATUS_DELAY                 = 30000;
+    
+    // declarations for processing metadata
+    public static final short SQL_API_SQLGETTYPEINFO = 47;
+    public static final short SQL_API_SQLCOLUMNS = 40;
+    public static final short SQL_API_SQLSPECIALCOLUMNS = 52;
+    public static final short SQL_API_SQLSTATISTICS = 53;
+    public static final short SQL_API_SQLTABLES = 54;
+    public static final short SQL_API_SQLCOLUMNPRIVILEGES = 56;
+    public static final short SQL_API_SQLFOREIGNKEYS = 60;
+    // public static final short SQL_API_TBLSYNONYM = 63;
+    // //dbscripts_mv_synonym
+    // public static final short SQL_API_TBLMVS = 64; //dbscripts_mv_synonym
+    public static final short SQL_API_SQLPRIMARYKEYS = 65;
+    public static final short SQL_API_SQLPROCEDURECOLUMNS = 66;
+    public static final short SQL_API_SQLPROCEDURES = 67;
+    public static final short SQL_API_SQLTABLEPRIVILEGES = 70;
+    public static final short SQL_API_TBLSYNONYM = 1917; // dbscripts_mv_synonym
+    public static final short SQL_API_TBLMVS = 1918; // dbscripts_mv_synonym
 
+    public static final short SQL_API_JDBC = 9999;
+    public static final short SQL_API_SQLTABLES_JDBC = (short) (SQL_API_SQLTABLES + SQL_API_JDBC);
+    public static final short SQL_API_SQLCOLUMNS_JDBC = (short) (SQL_API_SQLCOLUMNS + SQL_API_JDBC);
+    public static final short SQL_API_SQLSPECIALCOLUMNS_JDBC = (short) (SQL_API_SQLSPECIALCOLUMNS + SQL_API_JDBC);
+    public static final short SQL_API_SQLGETTYPEINFO_JDBC = (short) (SQL_API_SQLGETTYPEINFO + SQL_API_JDBC);
+
+    // values of NULLABLE field in descriptor
+    public static final long SQL_NO_NULLS = 0;
+    public static final long SQL_NULLABLE = 1;
+
+    // Reserved values for UNIQUE argument of SQLStatistics()
+    public static final int SQL_INDEX_UNIQUE = 0;
+    public static final int SQL_INDEX_ALL = 1;
+
+    // Column types and scopes in SQLSpecialColumns.
+    public static final int SQL_BEST_ROWID = 1;
+    public static final int SQL_ROWVER = 2;
 }

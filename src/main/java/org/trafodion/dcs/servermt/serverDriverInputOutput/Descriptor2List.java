@@ -35,20 +35,26 @@ import org.apache.commons.logging.LogFactory;
 
 public class Descriptor2List {
     private static  final Log LOG = LogFactory.getLog(Descriptor2List.class);
-    private int length;                //total length
-    private long paramLength;        //length of 
-    private long nullLength;        //length of 
-    private long noNullLength;        //length of 
+    private int length;
+    private long paramLength;
+    private long nullLength;
+    private long noNullLength;
     private int numberParams;
     private Descriptor2[] buffer;
+    private boolean oldFormat;
+    private int lengthOldFormat;        //for Catalogs Api we need to convert Descriptor2 to Old Format
     
     public Descriptor2List(){
-        length = 0;            // total length excluding sizeof length
-        paramLength = 0;   // row length
+        length = 0;
+        paramLength = 0;
         numberParams = 0; 
         buffer = null;
+        oldFormat = false;
+        lengthOldFormat = 0;
     }
-    public Descriptor2List(int numberParams){
+    public Descriptor2List(int numberParams, boolean oldFormat){
+        this.oldFormat = oldFormat;
+        lengthOldFormat = ServerConstants.INT_FIELD_SIZE; //old SQLItemDescList
         this.length = 3 * ServerConstants.INT_FIELD_SIZE;
         this.paramLength = 0;
         this.nullLength = 0;        //length of null buffer. every description needs short 
@@ -57,6 +63,8 @@ public class Descriptor2List {
         buffer = new Descriptor2[numberParams];
     }
     public Descriptor2List(Descriptor2List dl){
+        oldFormat = dl.oldFormat;
+        lengthOldFormat = dl.lengthOldFormat;
         length = dl.length;
         paramLength = dl.paramLength;
         nullLength = dl.nullLength;
@@ -67,6 +75,8 @@ public class Descriptor2List {
             buffer[i] = dl.buffer[i];
     }
     public void addDescriptor(int param, Descriptor2 dsc){
+        if(LOG.isDebugEnabled())
+            LOG.debug("addDescriptor param :" + param + " numberParams :" + numberParams);
         length += dsc.lengthOfData();
         if (dsc.getNullInfo() == 1){        //nullable
             dsc.setNullValue((int)nullLength);
@@ -90,7 +100,11 @@ public class Descriptor2List {
             nullLength = ((nullLength + 8 - 1) >> 3) << 3;
             noNullLength = ((noNullLength + 8 - 1) >> 3) << 3;
             paramLength = nullLength + noNullLength;
-            
+            if(LOG.isDebugEnabled()){
+                LOG.debug("nullLength :" + nullLength);
+                LOG.debug("noNullLength :" + noNullLength);
+                LOG.debug("maxLen :" + paramLength);
+            }
             for (int i = 0; i < numberParams; i++) {
                 tmpdsc = buffer[i];
                 tmpNoNullLength = tmpdsc.getNoNullValue();
@@ -106,22 +120,40 @@ public class Descriptor2List {
         }
     }
     public void insertIntoByteBuffer(ByteBuffer bbBuf) throws UnsupportedEncodingException {
-        bbBuf.putInt(length);
-//
-        if (length > 0){
-            bbBuf.putInt((int)paramLength);
-            bbBuf.putInt(numberParams);
-            
+        if (oldFormat == false){
             if(LOG.isDebugEnabled())
-                LOG.debug("paramLength :" + paramLength + " numberParams :" + numberParams);
-    
-            for (int i = 0; i < numberParams; i++) {
-                buffer[i].insertIntoByteBuffer(bbBuf);
+                LOG.debug("length :" + length + " paramLength :" + paramLength + " numberParams :" + numberParams);
+            bbBuf.putInt(length);
+            if (length > 0){
+                bbBuf.putInt((int)paramLength);
+                bbBuf.putInt(numberParams);
+                for (int i = 0; i < numberParams; i++) {
+                    buffer[i].insertIntoByteBuffer(bbBuf);
+                }
+            }
+         }
+        else {
+            if(LOG.isDebugEnabled())
+                 LOG.debug("numberParams :" + numberParams);
+            bbBuf.putInt(numberParams);
+            if (numberParams > 0){
+                for (int i = 0; i < numberParams; i++) {
+                    buffer[i].insertIntoByteBuffer(bbBuf);
+                }
             }
         }
     }
     public int lengthOfData() {
-        return length;        
+        if (oldFormat == false)
+            return length;        
+        else
+            return lengthOldFormat;
+    }
+    public void setOldFormat(boolean oldFormat){
+        this.oldFormat = oldFormat;
+    }
+    public boolean getOldFormat(){
+        return oldFormat;
     }
     public void  setParamLength(long paramLength){
         this.paramLength = paramLength;

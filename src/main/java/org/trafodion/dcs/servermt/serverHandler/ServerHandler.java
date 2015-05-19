@@ -86,7 +86,7 @@ public final class ServerHandler implements Callable {
     private SelectionKey serverkey;
     private ServerWorker worker=null;
     private ServerUtils utils = null;
-
+    
     public String parentZnode;
     public int fport;
     public String hostName;
@@ -347,7 +347,7 @@ public final class ServerHandler implements Callable {
                 LOG.debug(serverName + ". Received an incoming connection from: " + s.getRemoteSocketAddress());
             client.configureBlocking( false );
             SelectionKey clientkey = client.register( selector, SelectionKey.OP_READ );
-            ClientData clientData = new ClientData(s.getRemoteSocketAddress(), utils);
+            ClientData clientData = new ClientData(s.getRemoteSocketAddress(), utils, conf);
             utils.updateServerState(ServerConstants.SERVER_STATE_CONNECTED);
             clientData.setThreadRegisteredPath();
             clientData.setThreadRegisteredData();
