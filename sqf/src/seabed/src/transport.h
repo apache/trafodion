@@ -569,7 +569,7 @@ namespace SB_Trans {
 #ifdef SQ_PHANDLE_VERIFIER
                                                        ,SB_Verif_Type pv_verif
 #endif
-                                                       );
+                                                       ,bool          pv_lock);
         void                      map_nidpid_remove_stream(const char *pp_where,
                                                            int         pv_nid,
                                                            int         pv_pid

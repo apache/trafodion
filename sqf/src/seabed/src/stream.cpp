@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -544,7 +544,7 @@ void SB_Trans::Trans_Stream::close_stream(const char   *pp_where,
                 trace_where_printf(WHERE,
                                    "Deleting stream=%s, stream-ref=%d\n",
                                    pp_stream->get_name(),
-                                   pp_stream->ref_get());
+                                   lv_ref_count);
             delete pp_stream;
         } else {
             if (gv_ms_trace_ref)
@@ -1736,9 +1736,9 @@ bool SB_Trans::Trans_Stream::is_self() {
 // Purpose: add stream to nid/pid map
 //
 #ifdef SQ_PHANDLE_VERIFIER
-void SB_Trans::Trans_Stream::map_nidpid_add_stream(int pv_nid, int pv_pid, SB_Verif_Type pv_verif) {
+void SB_Trans::Trans_Stream::map_nidpid_add_stream(int pv_nid, int pv_pid, SB_Verif_Type pv_verif, bool pv_lock) {
 #else
-void SB_Trans::Trans_Stream::map_nidpid_add_stream(int pv_nid, int pv_pid) {
+void SB_Trans::Trans_Stream::map_nidpid_add_stream(int pv_nid, int pv_pid, bool pv_lock) {
 #endif
     const char  *WHERE = "Trans_Stream::map_nidpid_add_stream";
 #ifdef SQ_PHANDLE_VERIFIER
@@ -1769,7 +1769,7 @@ void SB_Trans::Trans_Stream::map_nidpid_add_stream(int pv_nid, int pv_pid) {
     lv_nidpid.u.i.iv_pid = pv_pid;
     NPS_Node *lp_node = new_NPS_Node(lv_nidpid.u.iv_nidpid, this);
 #endif
-    gv_sb_stream_nidpid_map.put(&lp_node->iv_link);
+    gv_sb_stream_nidpid_map.put_lock(&lp_node->iv_link, pv_lock);
 }
 
 //
@@ -2558,7 +2558,7 @@ void SB_Trans::Trans_Stream::set_stream_name() {
 #else
                 lv_nid, lv_pid, ia_pname, ia_prog);
 #endif
-    else 
+    else
 #ifdef SQ_PHANDLE_VERIFIER
         sprintf(&lp_p[1], "%d/%d/" PFVY " (%s-%s)",
 #else

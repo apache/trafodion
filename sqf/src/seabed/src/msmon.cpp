@@ -1081,6 +1081,11 @@ int msg_mon_close_process_com(SB_Phandle_Type *pp_phandle,
                 if (lp_od->iv_fs_open)
                     lv_free_od = true;
             }
+            if (gv_ms_trans_sock && !lp_od->iv_fs_open) {
+                if ((lp_stream != NULL) && lp_stream->is_self()) {
+                } else
+                    lv_free_od = true;
+            }
             if (!lv_free_od) {
                 if (gv_ms_trace_mon)
                     trace_where_printf(WHERE, "EXIT OK\n");
@@ -1155,7 +1160,7 @@ int msg_mon_close_process_name(const char *pp_name, bool *pp_local) {
 int msg_mon_close_process_od(Ms_Od_Type *pp_od,
                              bool        pv_free_oid,
                              bool        pv_send_mon) {
-    const char *WHERE = "msg_mon_close_process";
+    const char *WHERE = "msg_mon_close_process_od";
     bool        lv_local;
     int         lv_mpierr;
 
@@ -1172,8 +1177,6 @@ int msg_mon_close_process_od(Ms_Od_Type *pp_od,
     if (!pp_od->iv_self && pv_send_mon)
         lv_mpierr = msg_mon_close_process_name(pp_od->ia_process_name, &lv_local);
     else {
-        if (gv_ms_trace_mon)
-            trace_where_printf(WHERE, "EXIT OK\n");
         lv_mpierr = MPI_SUCCESS;
         lv_local = true;
     }
@@ -5090,6 +5093,7 @@ int msg_mon_open_process_com_ph2_sock(const char      *pp_where,
     strcpy(pp_od->ia_prog, la_prog);
     if (pv_ic)
         strcat(la_name, "-IC");
+    SB_Trans::Trans_Stream::map_nidpid_lock();
     SB_Trans::Sock_Stream *lp_stream =
       SB_Trans::Sock_Stream::create(la_name,
                                     pp_name,
@@ -5117,6 +5121,12 @@ int msg_mon_open_process_com_ph2_sock(const char      *pp_where,
 #endif
                                     pv_ptype);
     lp_stream->start_stream();
+    SB_Trans::Trans_Stream::map_nidpid_unlock();
+
+    if (pv_reopen) {
+        // close decremented, so put it back
+        SB_Trans::Trans_Stream::add_stream_con_count(1);
+    }
 
     // fill out od
     if (!pv_reopen)
@@ -9847,7 +9857,7 @@ bool ms_util_name_seq_get(char           *pp_name_seq,
         if (pp_verif != NULL)
             sscanf(lp_p, PFVY, pp_verif);
     }
-    
+
     return lv_ret;
 }
 #endif
