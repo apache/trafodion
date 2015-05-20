@@ -16,7 +16,7 @@ extern "C" {
  * Signature: (I[B[B)V   
  */
 JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_TransactionState_registerRegion
-(JNIEnv *pp_env, jobject pv_object, jlong pv_transid, jint pv_port, jbyteArray pv_hostname, jlong pv_startcode, jbyteArray pv_dos);
+(JNIEnv *pp_env, jobject pv_object, jlong pv_transid, jlong pv_startid, jint pv_port, jbyteArray pv_hostname, jlong pv_startcode, jbyteArray pv_dos);
 
 #ifdef __cplusplus
 }

@@ -48,7 +48,7 @@ public:
     short abort(bool pv_doom = false);
     short suspend(TM_Transid *transid, bool coordinator_role=true);
     short resume();
-    short register_region(int port, char *hostname, int hostname_length, long startcode, char *regionInfo, int regionInfoLength); //TOPL
+    short register_region(long startid, int port, char *hostname, int hostname_length, long startcode, char *regionInfo, int regionInfoLength); //TOPL
     short create_table(char* pa_tbldesc, int pv_tbldesc_len, char* pa_tblname, char** pv_keys, int pv_numsplits, int pv_keylen);
     short reg_truncateonabort(char* pa_tblname, int pv_tblname_len);
     short drop_table(char* pa_tblname, int pv_tblname_len);

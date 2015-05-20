@@ -3634,7 +3634,8 @@ Lng32 ExHbaseAccessSQRowsetTcb::setupUniqueKey()
 {
   ex_queue_entry *pentry_down = qparent_.down->getQueueEntry(nextRequest_);
 
-  if (pentry_down->downState.request == ex_queue::GET_NOMORE)
+  if (pentry_down->downState.request == ex_queue::GET_NOMORE
+     || pentry_down->downState.request == ex_queue::GET_EOD)
      return 1;
 
   ex_expr::exp_return_type exprRetCode = ex_expr::EXPR_OK;
@@ -3708,6 +3709,19 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
 	step_ = ALL_DONE;
+      else if (pentry_down->downState.request == ex_queue::GET_EOD) {
+         if (numRowsInDirectBuffer() > 0) {
+            if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::UPDATE_)
+               step_ = PROCESS_UPDATE_AND_CLOSE;
+            else if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_)
+               step_ = PROCESS_DELETE_AND_CLOSE;
+            else 
+               ex_assert(0, "EOD and Select is not handled here"); 
+          }
+          else
+            step_ = ALL_DONE;
+     }
+
 
       switch (step_)
 	{
@@ -3846,8 +3860,8 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                  step_ = CREATE_ROW;
               break;
             }
-	    if (currRowNum_ < hbaseAccessTdb().getHbaseRowsetVsbbSize()) {
-	        matches_++;
+	    matches_++;
+	    if (numRowsInDirectBuffer() < hbaseAccessTdb().getHbaseRowsetVsbbSize()) {
 		step_ = DONE;
 		break;
 	    }
@@ -3913,7 +3927,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                                        hbaseAccessTdb().useHbaseXn(),
 				       -1 // ColTS_
 				       );
-
+            currRowNum_ = 0;	    
 	    if (setupError(retcode, "ExpHbaseInterface::deleteRows"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -3941,6 +3955,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	      retcode = ehi_->getRows(hbaseAccessTdb().getRowIDLen(),
                             rowIDs_, 
                             columns_);
+              currRowNum_ = 0;
 	      if (setupError(retcode, "ExpHbaseInterface::getRows"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -4001,14 +4016,14 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                                        hbaseAccessTdb().useHbaseXn(),
 				       -1);
 
-	    
+            currRowNum_ = 0;	    
 	    if (setupError(retcode, "ExpHbaseInterface::insertRows"))
 	      {
 		step_ = HANDLE_ERROR;
 		break;
 	      }
 
-          if (getHbaseAccessStats())
+            if (getHbaseAccessStats())
 	    {
 	      getHbaseAccessStats()->lobStats()->numReadReqs++;
 	      getHbaseAccessStats()->incUsedRows(numRowsInBuffer);

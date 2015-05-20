@@ -56,11 +56,17 @@ import org.apache.hadoop.hbase.ipc.ServerRpcController;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
 
+import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
+
 public class SsccTableClient {
 
   static String regionname = "RegionName";
   static HTable ht = null;
-  static long id = 1L;
+  static long transId = 0L;
+  static long startId = 0L;
+  static long commitId = 0L;
   static long scannerId = 0L;
   static int returnStatus = 0;
   static boolean checkResult = false;
@@ -77,6 +83,10 @@ public class SsccTableClient {
   static Scan scan = null;
   private HRegionInfo currentRegion = null;
   static Pair<byte[][], byte[][]> startEndKeys = null;
+
+  private static IdTm idServer;
+  private static IdTmId tmId;
+  private static final int ID_TM_SERVER_TIMEOUT = 1000;
 
   private static final String TABLE_NAME = "table1";
 
@@ -105,11 +115,25 @@ public class SsccTableClient {
   private static final int STATELESS_UPDATE_OK = 3;
   private static final int STATELESS_UPDATE_CONFLICT = 5;
 
-
   private static HBaseAdmin admin;
 
  // Initialize and set up tables 
     public static void initialize() throws Exception {
+
+     try {
+        idServer = new IdTm(false);
+     }
+     catch (Exception e){
+        System.out.println("Exception creating new IdTm: " + e);
+     }
+     tmId = new IdTmId();
+     try {
+        bumpTransIds();
+     }
+     catch (Exception e){
+        System.out.println("Exception bumpTransIds " + e);
+     }
+
 
      Configuration config = HBaseConfiguration.create();
 
@@ -190,11 +214,11 @@ public class SsccTableClient {
       @Override
       public SsccAbortTransactionResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccAbortTransactionRequest.Builder builder = SsccAbortTransactionRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         instance.abortTransaction(controller, builder.build(), rpcCallback);
-        return rpcCallback.get();        
+        return rpcCallback.get();
       }
     };
 
@@ -233,7 +257,8 @@ public class SsccTableClient {
       @Override
       public SsccBeginTransactionResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccBeginTransactionRequest.Builder builder = SsccBeginTransactionRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         instance.beginTransaction(controller, builder.build(), rpcCallback);
@@ -248,7 +273,7 @@ public class SsccTableClient {
         e.printStackTrace();
       }
 
-    System.out.println("Finished testSsccBeginTransaction with transId: " + id);
+    System.out.println("Finished testSsccBeginTransaction with transId: " + transId);
     return;
   }
 
@@ -266,7 +291,8 @@ public class SsccTableClient {
       @Override
       public SsccCheckAndDeleteResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRequest.Builder builder = SsccCheckAndDeleteRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
         builder.setRow(HBaseZeroCopyByteString.wrap(ROW1));
         builder.setFamily(HBaseZeroCopyByteString.wrap(FAMILY));
@@ -318,7 +344,8 @@ public class SsccTableClient {
       @Override
       public SsccCheckAndDeleteResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRequest.Builder builder = SsccCheckAndDeleteRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
         builder.setRow(HBaseZeroCopyByteString.wrap(ROW1));
         builder.setFamily(HBaseZeroCopyByteString.wrap(FAMILY));
@@ -369,7 +396,8 @@ public class SsccTableClient {
       @Override
       public SsccCheckAndDeleteResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRequest.Builder builder = SsccCheckAndDeleteRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
         builder.setRow(HBaseZeroCopyByteString.wrap(ROW2));
         builder.setFamily(HBaseZeroCopyByteString.wrap(FAMILY));
@@ -421,7 +449,8 @@ public class SsccTableClient {
       @Override
       public SsccCheckAndPutResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest.Builder builder = SsccCheckAndPutRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
         builder.setRow(HBaseZeroCopyByteString.wrap(ROW1));
         builder.setFamily(HBaseZeroCopyByteString.wrap(FAMILY));
@@ -470,7 +499,8 @@ public class SsccTableClient {
       @Override
       public SsccCheckAndPutResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest.Builder builder = SsccCheckAndPutRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
         builder.setRow(HBaseZeroCopyByteString.wrap(ROW1));
         builder.setFamily(HBaseZeroCopyByteString.wrap(FAMILY));
@@ -519,7 +549,8 @@ public class SsccTableClient {
       @Override
       public SsccCheckAndPutResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest.Builder builder = SsccCheckAndPutRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
         builder.setRow(HBaseZeroCopyByteString.wrap(ROW1));
         builder.setFamily(HBaseZeroCopyByteString.wrap(FAMILY));
@@ -568,7 +599,8 @@ public class SsccTableClient {
       @Override
       public SsccCheckAndPutResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest.Builder builder = SsccCheckAndPutRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
         builder.setRow(HBaseZeroCopyByteString.wrap(ROW2));
         builder.setFamily(HBaseZeroCopyByteString.wrap(FAMILY));
@@ -579,7 +611,7 @@ public class SsccTableClient {
         builder.setPut(m1);
 
         instance.checkAndPut(controller, builder.build(), rpcCallback);
-        return rpcCallback.get();        
+        return rpcCallback.get();
       }
     };
 
@@ -587,7 +619,7 @@ public class SsccTableClient {
       try {
         result = ht.coprocessorService(SsccRegionService.class, null, null, callable);
       } catch (Throwable e) {
-        e.printStackTrace();     
+        e.printStackTrace();
       }
       for (SsccCheckAndPutResponse cresponse : result.values())
       {
@@ -617,7 +649,7 @@ public class SsccTableClient {
       @Override
       public SsccCloseScannerResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCloseScannerRequest.Builder builder = SsccCloseScannerRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
         builder.setScannerId(scannerId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
@@ -648,7 +680,14 @@ public class SsccTableClient {
 
   static public void testSsccCommit() throws IOException {
 
-    System.out.println("Starting testSsccCommit with transId: " + id);
+    System.out.println("Starting testSsccCommit with transId: " + transId);
+
+    try {
+       bumpCommitId();
+    } catch (Exception exc) {
+       System.out.println("testSsccCommit : exception " + exc);
+       throw new IOException("testSsccCommit : exception " + exc);
+    }
 
     Batch.Call<SsccRegionService, SsccCommitResponse> callable =
         new Batch.Call<SsccRegionService, SsccCommitResponse>() {
@@ -659,11 +698,12 @@ public class SsccTableClient {
       @Override
       public SsccCommitResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequest.Builder builder = SsccCommitRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
+        builder.setCommitId(commitId);
 
         instance.commit(controller, builder.build(), rpcCallback);
-        return rpcCallback.get();        
+        return rpcCallback.get();
       }
     };
 
@@ -671,7 +711,7 @@ public class SsccTableClient {
       try {
         result = ht.coprocessorService(SsccRegionService.class, null, null, callable);
       } catch (Throwable e) {
-        e.printStackTrace();     
+        e.printStackTrace();
       }
 
       for (SsccCommitResponse cresponse : result.values())
@@ -680,7 +720,7 @@ public class SsccTableClient {
         boolean hasException = cresponse.getHasException();
         if (hasException)
         {
-          System.out.println("  SsccCommitResponse exception " + exception );
+          System.out.println("SsccCommitResponse exception " + exception );
           throw new IOException(exception);
         }
       }
@@ -691,7 +731,7 @@ public class SsccTableClient {
 
   static public void testSsccCommitRequest() throws IOException {
 
-    System.out.println("Starting testSsccCommitRequest with transId: " + id);
+    System.out.println("Starting testSsccCommitRequest with transId: " + transId);
 
     Batch.Call<SsccRegionService, SsccCommitRequestResponse> callable =
         new Batch.Call<SsccRegionService, SsccCommitRequestResponse>() {
@@ -702,7 +742,7 @@ public class SsccTableClient {
       @Override
       public SsccCommitRequestResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitRequestRequest.Builder builder = SsccCommitRequestRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         instance.commitRequest(controller, builder.build(), rpcCallback);
@@ -747,7 +787,7 @@ public class SsccTableClient {
 
   static public void testSsccCommitIfPossible() throws IOException {
 
-    System.out.println("Starting testSsccCommitIfPossible");
+    System.out.println("Starting testSsccCommitIfPossible with transId: " + transId );
 
     Batch.Call<SsccRegionService, SsccCommitIfPossibleResponse> callable =
         new Batch.Call<SsccRegionService, SsccCommitIfPossibleResponse>() {
@@ -758,9 +798,8 @@ public class SsccTableClient {
       @Override
       public SsccCommitIfPossibleResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCommitIfPossibleRequest.Builder builder = SsccCommitIfPossibleRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
-
         instance.commitIfPossible(controller, builder.build(), rpcCallback);
         return rpcCallback.get();
       }
@@ -803,7 +842,8 @@ public class SsccTableClient {
       @Override
       public SsccDeleteTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest.Builder builder = SsccDeleteTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Delete d = new Delete(ROW1);
@@ -873,7 +913,8 @@ public class SsccTableClient {
       @Override
       public SsccDeleteMultipleTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest.Builder builder = SsccDeleteMultipleTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Delete d1 = new Delete(ROW1);
@@ -962,7 +1003,8 @@ public class SsccTableClient {
         //Get get = new Get(ROW1).addColumn(FAMILY, Bytes.toBytes(1));
         Get get = new Get(ROW1).addColumn(FAMILY, QUAL_A);
         builder.setGet(ProtobufUtil.toGet(get));
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         instance.get(controller, builder.build(), rpcCallback);
@@ -1005,7 +1047,8 @@ public class SsccTableClient {
       @Override
       public SsccPutTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.Builder builder = SsccPutTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Put p = new Put(ROW1).add(FAMILY, QUAL_A, Bytes.toBytes(1));
@@ -1083,7 +1126,8 @@ public class SsccTableClient {
       @Override
       public SsccPutTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.Builder builder = SsccPutTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Put p = new Put(ROW1).add(FAMILY, QUAL_A, Bytes.toBytes(1));
@@ -1159,7 +1203,8 @@ public class SsccTableClient {
       @Override
       public SsccPutTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.Builder builder = SsccPutTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Put p = new Put(ROW2).add(FAMILY, QUAL_A, Bytes.toBytes(1));
@@ -1237,7 +1282,8 @@ public class SsccTableClient {
       @Override
       public SsccPutTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.Builder builder = SsccPutTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Put p = new Put(ROW3).add(FAMILY, QUAL_A, Bytes.toBytes(1));
@@ -1314,7 +1360,8 @@ public class SsccTableClient {
       @Override
       public SsccPutTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.Builder builder = SsccPutTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Put p = new Put(ROW4).add(FAMILY, QUAL_A, Bytes.toBytes(1));
@@ -1391,7 +1438,8 @@ public class SsccTableClient {
       @Override
       public SsccPutTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.Builder builder = SsccPutTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Put p = new Put(ROW5).add(FAMILY, QUAL_A, Bytes.toBytes(1));
@@ -1468,7 +1516,8 @@ public class SsccTableClient {
       @Override
       public SsccPutTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.Builder builder = SsccPutTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Put p = new Put(ROW6).add(FAMILY, QUAL_A, Bytes.toBytes(1));
@@ -1541,7 +1590,8 @@ public class SsccTableClient {
       @Override
       public SsccPutTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.Builder builder = SsccPutTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Put p = new Put(ROW1).add(FAMILYBAD, QUAL_A, Bytes.toBytes(1));
@@ -1577,7 +1627,8 @@ public class SsccTableClient {
       @Override
       public SsccPutMultipleTransactionalResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest.Builder builder = SsccPutMultipleTransactionalRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Put p = new Put(ROW1).add(FAMILY, QUAL_A, Bytes.toBytes(1));
@@ -1601,7 +1652,7 @@ public class SsccTableClient {
         boolean hasException = pmresponse.getHasException();
         if (hasException) {
           String exception = pmresponse.getException();
-          System.out.println("  testSsccPutMultiple exception " + exception );
+          System.out.println("testSsccPutMultiple exception " + exception );
         }
         else {
           returnStatus = pmresponse.getStatus();
@@ -1647,7 +1698,8 @@ public class SsccTableClient {
       @Override
       public SsccPerformScanResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPerformScanRequest.Builder builder = SsccPerformScanRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
         builder.setScannerId(scannerId);
         builder.setNumberOfRows(3);
@@ -1714,7 +1766,8 @@ public class SsccTableClient {
       @Override
       public SsccOpenScannerResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccOpenScannerRequest.Builder builder = SsccOpenScannerRequest.newBuilder();
-        builder.setTransactionId(id);
+        builder.setTransactionId(transId);
+        builder.setStartId(startId);
         builder.setRegionName(ByteString.copyFromUtf8(regionname));
 
         Scan scan = new Scan();
@@ -1763,7 +1816,7 @@ public class SsccTableClient {
       @Override
       public SsccRecoveryRequestResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRecoveryRequestRequest.Builder rbuilder = SsccRecoveryRequestRequest.newBuilder();
-        rbuilder.setTransactionId(id);
+        rbuilder.setTransactionId(transId);
         rbuilder.setRegionName(ByteString.copyFromUtf8(regionname));
         rbuilder.setTmId(7);
 
@@ -1793,6 +1846,40 @@ public class SsccTableClient {
       return;
   }
 
+  static public void bumpTransIds() throws IOException {
+     transId++;
+
+     try {
+        bumpStartId();
+     } catch (IOException exc) {
+        System.out.println("bumpStartId : threw exception " + exc);
+        throw new IOException("bumpStartId : threw exception " + exc);
+     }
+  }
+
+  static public void bumpStartId() throws IOException {
+
+     try {
+        idServer.id(ID_TM_SERVER_TIMEOUT, tmId);
+        startId = tmId.val;
+     } catch (IdTmException exc) {
+        System.out.println("bumpStartId : IdTm threw exception " + exc);
+        throw new IOException("bumpStartId : IdTm threw exception " + exc);
+     }
+  }
+
+  static public void bumpCommitId() throws IOException {
+     System.out.println("bumping CommitId ");
+
+     try {
+        idServer.id(ID_TM_SERVER_TIMEOUT, tmId);
+        commitId = tmId.val;
+     } catch (IdTmException exc) {
+        System.out.println("bumpCommitId : IdTm threw exception " + exc);
+        throw new IOException("bumpCommitId : IdTm threw exception " + exc);
+     }
+  }
+
   static public void main(String[] args) {
 
     System.out.println("Starting SsccTableClient");
@@ -1807,40 +1894,40 @@ public class SsccTableClient {
       testSsccCommitRequest();
       testSsccCommit();
 
-      id++; //Should be 2
+      bumpTransIds(); //Should be 2
 
       testSsccBeginTransaction();
       testSsccDelete();
       testSsccCommitRequest();
       testSsccCommit();
 
-      id++; //Should be 3
+      bumpTransIds(); //Should be 3
 
       testSsccBeginTransaction();
       testSsccPutMultiple();
       testSsccCommitRequest();
       testSsccCommit();
 
-      id++; //Should be 4
+      bumpTransIds(); //Should be 4
 
       testSsccBeginTransaction();
       testSsccGet();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 5
+      bumpTransIds(); //Should be 5
 
       testSsccBeginTransaction();
       testSsccDeleteMultiple();
       testSsccCommitRequest();
       testSsccCommit();
 
-      id++; //Should be 6
+      bumpTransIds(); //Should be 6
 
       testSsccBeginTransaction();
       testSsccGet();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 7
+      bumpTransIds(); //Should be 7
 
       testSsccBeginTransaction();
       testSsccPutMultiple();
@@ -1856,24 +1943,24 @@ public class SsccTableClient {
         System.out.println(t.toString());
       }
 
-      id++; //Should be 8
+      bumpTransIds(); //Should be 8
 
       testSsccBeginTransaction();
       testSsccGet();                 // Should be no rows
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 9 // should be COMMIT_SUCCESSFUL 
+      bumpTransIds(); //Should be 9 // should be COMMIT_SUCCESSFUL
       testSsccBeginTransaction();
       testSsccPut();
       testSsccCommitRequest();
       testSsccCommit();
 
-      id++; //Should be 10 // should have one from the Get
+      bumpTransIds(); //Should be 10 // should have one from the Get
       testSsccBeginTransaction();
       testSsccGet();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 11
+      bumpTransIds(); //Should be 11
       testSsccBeginTransaction();
       testSsccDelete();
       testSsccGet();
@@ -1888,54 +1975,58 @@ public class SsccTableClient {
         System.out.println(t.toString());
       }
 
-      id++; //Should be 12  // Should have no rows
+      bumpTransIds(); //Should be 12  // Should have no rows
       testSsccBeginTransaction();
       testSsccGet();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 13
+      bumpTransIds(); //Should be 13
       testSsccBeginTransaction();
       testSsccCheckAndPut(); // should return true
       testSsccCheckAndPut(); // should return false
       testSsccCheckAndPut2(); // should return true
       testSsccCheckAndPut3(); // should return Exception
-      testSsccCommitIfPossible(); // should return true
+      testSsccCommitIfPossible();  // Bumps id internally // should return true
 
-      id++; //Should be 14
+      bumpTransIds(); //Should be 14
       testSsccBeginTransaction();
       testSsccGet();             // Should have a row
-      testSsccCommitIfPossible();// should return true
+      testSsccCommitIfPossible();  // Bumps id internally // should return true
 
-      id++; //Should be 15
+      bumpTransIds(); //Should be 15
       testSsccBeginTransaction();
       testSsccCheckAndDelete2(); // should return true
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 16
+
+      bumpTransIds(); //Should be 16
       testSsccBeginTransaction();
       testSsccGet();             // Should have one row left
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 17
+
+      bumpTransIds(); //Should be 17
       testSsccBeginTransaction();
       testSsccDeleteMultiple();
       testSsccCommitRequest();
       testSsccCommit();
 
-      id++; //Should be 18
+      bumpTransIds(); //Should be 18
       testSsccBeginTransaction();
       testSsccCheckAndPut(); // should return true
       testSsccGet();         // should have 1 row
       testSsccCheckAndDelete(); // should return true
       testSsccGet();         // should have no rows
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 19
+
+      bumpTransIds(); //Should be 19
       testSsccBeginTransaction();
       testSsccGet();              // should have no rows
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 20  // should be COMMIT_SUCCESSFUL with six rows 
+
+      bumpTransIds(); //Should be 20  // should be COMMIT_SUCCESSFUL with six rows
       testSsccBeginTransaction();
       testSsccPut1();
       testSsccPut2();
@@ -1951,23 +2042,26 @@ public class SsccTableClient {
       System.out.println("TestSsccPerformScan get rows 4 through 6");
       testSsccPerformScan();  // Get the second three
       testSsccCloseScanner();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 21  Should show ROW1
+
+      bumpTransIds(); //Should be 21  Should show ROW1
       testSsccBeginTransaction();
       testSsccGet();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 22
+
+      bumpTransIds(); //Should be 22
       testSsccBeginTransaction();
       testSsccDeleteMultiple();
       testSsccCommitRequest();
       testSsccCommit();
 
-      id++; //Should be 23  Should show zero rows
+      bumpTransIds(); //Should be 23  Should show zero rows
       testSsccBeginTransaction();
       testSsccGet();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
+
 
 /*
       testRecoveryRequest();
@@ -1990,7 +2084,7 @@ public class SsccTableClient {
       // Try to commit a Put that uses an invalid FAMILY
       // Should catch NoSuchColumnFamilyException
 
-      id++; // Should be 24
+      bumpTransIds(); // Should be 24
       testSsccBeginTransaction();
       testSsccPutException();
       testSsccCommitRequest();
@@ -2005,13 +2099,14 @@ public class SsccTableClient {
       }
 
       // Confirm there are no records in 'table1'
-      id++; //Should be 25
+      bumpTransIds(); //Should be 25
       testSsccBeginTransaction();
       System.out.println("Should show no matching rows from the Get");
       testSsccGet();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 26, leaves no rows in the table
+
+      bumpTransIds(); //Should be 26, leaves no rows in the table
       testSsccBeginTransaction();
       testSsccPut();
       testSsccGet();
@@ -2021,26 +2116,27 @@ public class SsccTableClient {
       testSsccCommit();
 
       // Confirm there are no records in 'table1'
-      id++; //Should be 27
+      bumpTransIds(); //Should be 27
       testSsccBeginTransaction();
       System.out.println("Should show no matching rows from the Get");
       testSsccGet();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
+
 
       //Should be transaction id 28
-      id++;
+      bumpTransIds();
       testSsccBeginTransaction();
       testSsccPut(true);      // stateless put
       testSsccCommitRequest();
       testSsccCommit();
 
-      id++; //Should be 29 // should be COMMIT_SUCCESSFUL
+      bumpTransIds(); //Should be 29 // should be COMMIT_SUCCESSFUL
       testSsccBeginTransaction();
       testSsccPut(true);      // stateless put
       testSsccCommitRequest();
       testSsccCommit();
 
-      id++; //Should be 30  // should be COMMIT_SUCCESSFUL with six rows
+      bumpTransIds(); //Should be 30  // should be COMMIT_SUCCESSFUL with six rows
       testSsccBeginTransaction();
       testSsccPut1(true);
       testSsccPut2(true);
@@ -2056,9 +2152,10 @@ public class SsccTableClient {
       System.out.println("TestSsccPerformScan get rows 4 through 6");
       testSsccPerformScan();  // Get the second three
       testSsccCloseScanner();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
 
-      id++; //Should be 31, leaves no rows in the table
+
+      bumpTransIds(); //Should be 31, leaves no rows in the table
       testSsccBeginTransaction();
       testSsccPut(true);
       testSsccGet();
@@ -2068,17 +2165,18 @@ public class SsccTableClient {
       testSsccCommit();
 
       // Confirm there are no records in 'table1'
-      id++; //Should be 32
+      bumpTransIds(); //Should be 32
       testSsccBeginTransaction();
       System.out.println("Should show no matching rows from the Get");
       testSsccGet();
-      testSsccCommitIfPossible();
+      testSsccCommitIfPossible();  // Bumps id internally
+
 
     } catch (IOException e) {
-      System.out.println("SsccTableClient threw IOException");
+      System.out.println("SsccTableClient threw IOException: " + e);
       System.out.println(e.toString());
     } catch (Throwable t) {
-      System.out.println("SsccTableClient threw throwable exception");
+      System.out.println("SsccTableClient threw throwable exception: " + t);
       System.out.println(t.toString());
     }
 

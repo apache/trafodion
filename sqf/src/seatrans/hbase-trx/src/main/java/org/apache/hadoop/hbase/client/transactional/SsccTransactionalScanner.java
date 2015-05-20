@@ -162,6 +162,7 @@ public class SsccTransactionalScanner extends AbstractClientScanner {
 
       SsccRegionProtos.SsccOpenScannerRequest.Builder requestBuilder = SsccOpenScannerRequest.newBuilder();
       requestBuilder.setTransactionId(ts.getTransactionId());
+      requestBuilder.setStartId(ts.getStartId());
       requestBuilder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
       requestBuilder.setScan(ProtobufUtil.toScan(scan));
       SsccRegionProtos.SsccOpenScannerRequest openRequest = requestBuilder.build();
@@ -199,6 +200,7 @@ public class SsccTransactionalScanner extends AbstractClientScanner {
                 final long nextCallSeqInput = this.nextCallSeq;
                 SsccRegionProtos.SsccPerformScanRequest.Builder requestBuilder = SsccPerformScanRequest.newBuilder();
                 requestBuilder.setTransactionId(ts.getTransactionId());
+                requestBuilder.setStartId(ts.getStartId());
                 requestBuilder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
                 requestBuilder.setScannerId(scannerID);
                 requestBuilder.setNumberOfRows(nbRows);

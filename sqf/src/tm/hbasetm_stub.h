@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public:
    short prepareCommit(int64 pv_transid) {return FEOK; }
    short doCommit(int64 pv_transid) { return FEOK; }
    short abortTransaction(int64 pv_transid) {return FEOK; }
-   int registerRegion(int64 pv_transid, const char pa_region[], int64 pv_hashcode, const char pa_regionInfo[], int pv_regionInfo_Length) {return FEOK; }
+   int registerRegion(int64 pv_transid, int64 pv_startid, const char pa_region[], int64 pv_hashcode, const char pa_regionInfo[], int pv_regionInfo_Length) {return FEOK; }
    int recoverRegion(int64 *pp_count, int64 *pp_transidList[], int64 *pp_flags);
    short nodeDown(int32 pv_nid) { return FEOK; }
    short nodeUp(int32 pv_nid) { return FEOK; }

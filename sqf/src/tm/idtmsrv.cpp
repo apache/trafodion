@@ -188,8 +188,8 @@ void do_req(BMS_SRE *pp_sre) {
 
     if (lv_ec == XZFIL_ERR_OK) {
         if (gv_verbose)
-            printf("srv: reply, rep-type=%d, tag=%ld, len=%d\n",
-                   lv_rep.iv_rep_type, lv_rep.iv_rep_tag, lv_rep.iv_rep_len);
+            printf("srv: reply, rep-type=%d, tag=%ld, id=%ld, len=%d\n",
+                   lv_rep.iv_rep_type, lv_rep.iv_rep_tag, lv_rep.u.iv_id.iv_id, lv_rep.iv_rep_len);
         lv_len = (int) sizeof(lv_rep);
     } else {
         lv_len = 0;

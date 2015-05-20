@@ -1,20 +1,21 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
 
 // This file contains protocol buffers that are used for TrxRegionProtocol.
 
@@ -41,7 +42,8 @@ message SsccAbortTransactionResponse {
 
 message SsccBeginTransactionRequest{
   required int64 transactionId = 1;
-  required bytes regionName = 2;
+  required int64 startId = 2;
+  required bytes regionName = 3;
 }
 
 message SsccBeginTransactionResponse {
@@ -52,7 +54,8 @@ message SsccBeginTransactionResponse {
 message SsccCommitRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
-  optional bool ignoreUnknownTransactionException = 3;
+  required int64 commitId = 3;
+  optional bool ignoreUnknownTransactionException = 4;
 }
 
 message SsccCommitResponse {
@@ -84,12 +87,13 @@ message SsccCommitIfPossibleResponse {
 
 message SsccCheckAndDeleteRequest {
   required int64 transactionId = 1;
-  required bytes regionName = 2;
-  required bytes row = 3;
-  required bytes family = 4;
-  required bytes qualifier = 5;
-  required bytes value = 6;
-  required MutationProto delete = 7;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto delete = 8;
 }
 
 message SsccCheckAndDeleteResponse {
@@ -100,12 +104,13 @@ message SsccCheckAndDeleteResponse {
 
 message SsccCheckAndPutRequest {
   required int64 transactionId = 1;
-  required bytes regionName = 2;
-  required bytes row = 3;
-  required bytes family = 4;
-  required bytes qualifier = 5;
-  required bytes value = 6;
-  required MutationProto put = 7;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required bytes row = 4;
+  required bytes family = 5;
+  required bytes qualifier = 6;
+  required bytes value = 7;
+  required MutationProto put = 8;
 }
 
 message SsccCheckAndPutResponse {
@@ -127,8 +132,9 @@ message SsccCloseScannerResponse {
 
 message SsccDeleteMultipleTransactionalRequest {
   required int64 transactionId = 1;
-  required bytes regionName = 2;
-  repeated MutationProto delete = 3;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  repeated MutationProto delete = 4;
 }
 
 message SsccDeleteMultipleTransactionalResponse {
@@ -140,8 +146,9 @@ message SsccDeleteMultipleTransactionalResponse {
 
 message SsccDeleteTransactionalRequest {
   required int64 transactionId = 1;
-  required bytes regionName = 2;
-  required MutationProto delete = 3;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required MutationProto delete = 4;
 }
 
 message SsccDeleteTransactionalResponse {
@@ -153,8 +160,9 @@ message SsccDeleteTransactionalResponse {
 
 message SsccGetTransactionalRequest {
   required int64 transactionId = 1;
-  required bytes regionName = 2;
-  required Get get = 3;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required Get get = 4;
 }
 
 message SsccGetTransactionalResponse {
@@ -165,8 +173,9 @@ message SsccGetTransactionalResponse {
 
 message SsccOpenScannerRequest {
   required int64 transactionId = 1;
-  required bytes regionName = 2;
-  required Scan scan = 3;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required Scan scan = 4;
 }
 
 message SsccOpenScannerResponse {
@@ -177,11 +186,12 @@ message SsccOpenScannerResponse {
 
 message SsccPerformScanRequest {
   required int64 transactionId = 1;
-  required bytes regionName = 2;
-  required int64 scannerId = 3;
-  required int32 numberOfRows = 4;
-  required bool  closeScanner = 5;
-  required int64 nextCallSeq = 6;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required int64 scannerId = 4;
+  required int32 numberOfRows = 5;
+  required bool  closeScanner = 6;
+  required int64 nextCallSeq = 7;
 }
 
 message SsccPerformScanResponse {
@@ -195,9 +205,10 @@ message SsccPerformScanResponse {
 
 message SsccPutTransactionalRequest {
   required int64 transactionId = 1;
-  required bytes regionName = 2;
-  required MutationProto put = 3;
-  optional bool isStateless = 4;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required MutationProto put = 4;
+  optional bool isStateless = 5;
 }
 
 message SsccPutTransactionalResponse {
@@ -209,9 +220,10 @@ message SsccPutTransactionalResponse {
 
 message SsccPutMultipleTransactionalRequest {
   required int64 transactionId = 1;
-  required bytes regionName = 2;
-  repeated MutationProto put = 3;
-  optional bool isStateless = 4;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  repeated MutationProto put = 4;
+  optional bool isStateless = 5;
 }
 
 message SsccPutMultipleTransactionalResponse {
@@ -223,8 +235,9 @@ message SsccPutMultipleTransactionalResponse {
 
 message SsccRecoveryRequestRequest {
   required int64 transactionId = 1;
-  required bytes regionName = 2;
-  required int32 tmId = 3;
+  required int64 startId = 2;
+  required bytes regionName = 3;
+  required int32 tmId = 4;
 }
 
 message SsccRecoveryRequestResponse {
@@ -242,9 +255,10 @@ message SsccTransactionalAggregateRequest {
    */
   required bytes regionName = 1;
   required int64 transactionId = 2;
-  required string interpreter_class_name = 3;
-  required Scan scan = 4;
-  optional bytes  interpreter_specific_bytes = 5;
+  required int64 startId = 3;
+  required string interpreter_class_name = 4;
+  required Scan scan = 5;
+  optional bytes  interpreter_specific_bytes = 6;
 }
 
 message SsccTransactionalAggregateResponse {

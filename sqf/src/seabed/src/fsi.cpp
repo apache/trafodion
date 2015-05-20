@@ -2920,10 +2920,10 @@ short fs_int_fs_file_readupdatex(FS_Fd_Type  *pp_fd,
                                            NULL,                 // segid
                                            true,                 // internal
                                            false);               // ts
-        if (lv_fserr != XZFIL_ERR_OK)
-            return fs_int_err_fd_rtn(WHERE, pp_fd, lv_fserr);
         if (pp_length != NULL)
             *pp_length = lv_xfer_count;
+        if (lv_fserr != XZFIL_ERR_OK)
+            return fs_int_err_fd_rtn(WHERE, pp_fd, lv_fserr);
     } else {
         if (pp_length != NULL)
             *pp_length = -1;

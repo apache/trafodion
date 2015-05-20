@@ -40,6 +40,8 @@ drop table t011t4;
 
 drop view v;
 drop table t011t5;
+drop table t011t6a;
+drop table t011t6b;
 
 -- delete explain for statement explstmt from repository
 set parserflags 131072;
@@ -465,3 +467,85 @@ create view v as select a,a from t011t5;
 create view v as select a,b,1 as z,b from t011t5;
 create view v as select 1 as b, 2 as a, 1 as b from t011t5;
 create view v as select a,b from t011t5;
+
+-- Test for the bug 1452424
+create table t011t6a (
+a int not null, b int, c int,
+d char(2), e char(4), f char(8))
+attribute extent (1024, 1024), maxextents 15 store by (a);
+
+insert into t011t6a values
+ (1,10,100,'d1','e1','f1'),
+ (2,20,200,'d2','e2','f2'),
+ (3,30,300,'d3','e3','f3'),
+ (4,40,400,'d4','e4','f4'),
+ (5,50,500,'d5','e5','f5'),
+ (6,60,600,'d6','e6','f6'),
+ (7,70,700,'d7','e7','f7'),
+ (8,80,800,'d8','e8','f8'),
+ (9,90,900,'d9','e9','f9'),
+ (10,100,1000,'da','ea','fa'),
+ (11,110,1100,'db','eb','fb'),
+ (12,120,1200,'dc','ec','fc'),
+ (13,130,1300,'dd','ed','fd'),
+ (14,140,1400,'de','ee','fe'),
+ (15,150,1500,'df','ef','ff');
+
+create table t011t6b (
+ a int not null, 
+ b int,
+ c int,
+ d char(10),
+ e varchar(10),
+ f char(10),
+ v1 int not null,
+ v2 int not null,
+ v3 int not null,
+ v4 int not null,
+ v5 int not null)
+ store by (a, v1, v2, v3, v4, v5) AS (
+ select * from t011t6a
+ transpose 10 as v1
+ transpose 100,22,222 as v2
+ transpose 1000,33,333 as v3
+ transpose 10000,44,444 as v4
+ transpose 100000,55,555 as v5);
+
+-- should be 1215
+select count(*) from t011t6b;
+
+insert into t011t6b (
+select * from t011t6a
+transpose 0 as v1
+transpose 1,3,5,7 as v2
+transpose 2,4,6,8 as v3
+transpose 3,5,7,9 as v4
+transpose 4,6,8,10 as v5);
+
+-- should be 5055
+select count(*) from t011t6b;
+
+prepare x1 from update t011t6b
+set b = (select a from t011t6a where a = 1), c = (select a from t011t6a where a = 11), 
+d = (select d from t011t6a where a = 15), e = (select e from t011t6a where c = 1000),
+f = (select f from t011t6a where b = 100) where v1 < 100000 and v2 < 99 and v3 < 500;
+
+explain options 'f' x1;
+-- 4110 updated
+execute x1;
+
+prepare x2 from delete from t011t6b
+where d = (select d from t011t6a where a = 15) and 
+e = (select e from t011t6a where c = 1000) 
+and f = (select f from t011t6a where b = 100);
+
+explain options 'f' x2;
+-- 4110 deleted
+execute x2;
+
+--- shoud be 945
+select count(*) from t011t6b;
+
+drop table t011t6a ;
+drop table t011t6b ;
+

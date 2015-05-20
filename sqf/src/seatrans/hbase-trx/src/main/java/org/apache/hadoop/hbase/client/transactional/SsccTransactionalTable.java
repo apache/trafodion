@@ -189,6 +189,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
             org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccGetTransactionalRequest.Builder builder = SsccGetTransactionalRequest.newBuilder();            
             builder.setGet(ProtobufUtil.toGet(get));
             builder.setTransactionId(transactionState.getTransactionId());
+            builder.setStartId(transactionState.getStartId());
             builder.setRegionName(ByteString.copyFromUtf8(regionName));
 
             instance.get(controller, builder.build(), rpcCallback);
@@ -244,6 +245,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
               public SsccDeleteTransactionalResponse call(SsccRegionService instance) throws IOException {
                 org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteTransactionalRequest.Builder builder = SsccDeleteTransactionalRequest.newBuilder();      
                 builder.setTransactionId(transactionState.getTransactionId());
+                builder.setStartId(transactionState.getStartId());
                 builder.setRegionName(ByteString.copyFromUtf8(regionName));
 
                 MutationProto m1 = ProtobufUtil.toMutation(MutationType.DELETE, delete);
@@ -288,13 +290,15 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
      */
     public synchronized void put(final TransactionState transactionState, final Put put) throws IOException {
 
+      if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put without location ENTRY");
       put(transactionState, put, true);
+      if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put without location EXIT");
 
     }
 
     public synchronized void put(final TransactionState transactionState, final Put put, final boolean bool_addLocation) throws IOException{
       validatePut(put);
-      if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put ENTRY");
+      if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put ENTRY adding location with transactionState: " + transactionState);
 
       if (bool_addLocation) addLocation(transactionState, super.getRegionLocation(put.getRow()));
       final String regionName = super.getRegionLocation(put.getRow()).getRegionInfo().getRegionNameAsString();
@@ -307,6 +311,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
           public SsccPutTransactionalResponse call(SsccRegionService instance) throws IOException {
             org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutTransactionalRequest.Builder builder = SsccPutTransactionalRequest.newBuilder();
             builder.setTransactionId(transactionState.getTransactionId());
+            builder.setStartId(transactionState.getStartId());
             builder.setRegionName(ByteString.copyFromUtf8(regionName));
 
             // For Statefull puts SQL uses checkAndPut, so we assume stateless
@@ -324,18 +329,24 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
           result = super.coprocessorService(SsccRegionService.class, put.getRow(), put.getRow(), callable);
         } catch (Throwable e) {
           e.printStackTrace();
-          throw new IOException("ERROR while calling coprocessor put");
+          throw new IOException("ERROR while calling coprocessor put " + e);
         }
         Collection<SsccPutTransactionalResponse> results = result.values();
         SsccPutTransactionalResponse[] resultArray = new SsccPutTransactionalResponse[results.size()]; 
         results.toArray(resultArray);
-        if(resultArray.length == 0) 
+        if(resultArray.length == 0){
+          if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put Problem with calling coprocessor put, no regions returned result");
           throw new IOException("Problem with calling coprocessor put, no regions returned result");
+        }
 
-        if(resultArray[0].getStatus() != STATELESS_UPDATE_OK)
+        if(resultArray[0].getStatus() != STATELESS_UPDATE_OK){
+          if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put conflict writing:  Array.getStatus returned: " + resultArray[0].getStatus());
           throw new IOException("conflict writing:  Array.getStatus returned: " + resultArray[0].getStatus());
-        if(resultArray[0].hasException())
-          throw new IOException(resultArray[0].getException());     
+        }
+        if(resultArray[0].hasException()){
+          if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put Exception: " + resultArray[0].getException());
+          throw new IOException(resultArray[0].getException());
+        }
     // put is void, may not need to check result
     if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put EXIT");
   }
@@ -371,6 +382,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
       public SsccCheckAndDeleteResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndDeleteRequest.Builder builder = SsccCheckAndDeleteRequest.newBuilder();
         builder.setTransactionId(transactionState.getTransactionId());
+        builder.setStartId(transactionState.getStartId());
         builder.setRegionName(ByteString.copyFromUtf8(regionName));
         builder.setRow(HBaseZeroCopyByteString.wrap(row));
         if(family != null)
@@ -427,7 +439,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
 			final byte[] row, final byte[] family, final byte[] qualifier,
 			final byte[] value, final Put put) throws IOException {
 
-		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.checkAndPut row: " + row
+		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.checkAndPut transactionState: " + transactionState + " row: " + row
 				+ " family: " + family + " qualifier: " + qualifier
 				+ " value: " + value);
 		if (!Bytes.equals(row, put.getRow())) {
@@ -449,6 +461,8 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
       public SsccCheckAndPutResponse call(SsccRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccCheckAndPutRequest.Builder builder = SsccCheckAndPutRequest.newBuilder();
         builder.setTransactionId(transactionState.getTransactionId());
+if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + transactionState.getStartId());
+        builder.setStartId(transactionState.getStartId());
         builder.setRegionName(ByteString.copyFromUtf8(regionName));
         builder.setRow(HBaseZeroCopyByteString.wrap(row));
         if (family != null)
@@ -480,14 +494,14 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
           PrintWriter pw = new PrintWriter(sw);
           e.printStackTrace(pw);
           //sw.toString();
-        throw new IOException("ERROR while calling coprocessor checkAndDelete" + sw.toString());
+        throw new IOException("ERROR while calling coprocessor checkAndPut" + sw.toString());
       }
       Collection<SsccCheckAndPutResponse> results = result.values();
       // Should only be one result, if more than one. Can't handle.
       SsccCheckAndPutResponse[] resultArray = new SsccCheckAndPutResponse[results.size()];
       results.toArray(resultArray);
       if(resultArray.length == 0)
-         throw new IOException("Problem with calling checkAndDelete in coprocessor, no regions returned result");
+         throw new IOException("Problem with calling checkAndPut in coprocessor, no regions returned result");
       return resultArray[0].getResult();
     }
 
@@ -533,6 +547,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
    	      public SsccDeleteMultipleTransactionalResponse call(SsccRegionService instance) throws IOException {
    	        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccDeleteMultipleTransactionalRequest.Builder builder = SsccDeleteMultipleTransactionalRequest.newBuilder();
    	        builder.setTransactionId(transactionState.getTransactionId());
+                builder.setStartId(transactionState.getStartId());
    	        builder.setRegionName(ByteString.copyFromUtf8(regionName));
 
    	        for(Delete delete : rowsInSameRegion) {
@@ -612,6 +627,7 @@ public class SsccTransactionalTable extends HTable implements TransactionalTable
 	      public SsccPutMultipleTransactionalResponse call(SsccRegionService instance) throws IOException {
 	        org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccPutMultipleTransactionalRequest.Builder builder = SsccPutMultipleTransactionalRequest.newBuilder();
 	        builder.setTransactionId(transactionState.getTransactionId());
+	        builder.setStartId(transactionState.getStartId());
 	        builder.setRegionName(ByteString.copyFromUtf8(regionName));
 
 	        for (Put put : rowsInSameRegion){

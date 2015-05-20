@@ -98,6 +98,8 @@ class TMLIB : public JavaObjectInterfaceTM
         // methods
         short add_or_update(TM_Transid pv_transid, bool pv_can_end = false,
                             int pv_tag = -1);
+        short add_or_update(TM_Transid pv_transid, TM_Transseq_Type pv_startid,
+                            bool pv_can_end = false, int pv_tag = -1);
         bool clear_entry (TM_Transid pv_transid, bool pv_server, /*bool pv_suspend,*/ 
                            bool pv_force = true);
         bool is_enlisted (int32 pv_node) {return ia_is_enlisted[pv_node];}

@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ typedef struct SS_Node {
 } SS_Node;
 
 SB_Trans::Sock_Listener *SB_Trans::Sock_Stream::cp_listener = NULL;
+bool                     SB_Trans::Sock_Stream::cv_mon_stream_set = false;
 SB_Ts_Imap               SB_Trans::Sock_Stream::cv_stream_map;
 
 SB_Trans::Sock_Stream_Accept_Thread *SB_Trans::Sock_Stream::cp_accept_thread = NULL;
@@ -76,9 +77,12 @@ SB_Trans::Sock_Stream_Helper_Thread *SB_Trans::Sock_Stream::cp_helper_thread = N
 //
 static SS_Node *new_SS_Node(int                    pv_sock,
                             SB_Trans::Sock_Stream *pp_stream) {
+    const char *WHERE = "new_SS_Node";
+
     SS_Node *lp_node = new SS_Node();
     lp_node->iv_link.iv_id.i = pv_sock;
     lp_node->ip_stream = pp_stream;
+    pp_stream->ref_inc(WHERE, &lp_node->ip_stream);
     return lp_node;
 }
 
@@ -156,8 +160,10 @@ SB_Trans::Sock_Stream::Sock_Stream(const char           *pp_name,
                pv_opened_type),
   iv_aecid_sock_stream(SB_ECID_STREAM_SOCK),
   ip_sock(pp_sock),
+  iv_close_ind_sent(false),
   iv_seq(1),
-  iv_sock_errored(0) {
+  iv_sock_errored(0),
+  iv_stopped(false) {
     const char *WHERE = "Sock_Stream::Sock_Stream";
     if (strcmp(pp_name, "monitor") == 0)
         ref_inc(WHERE, NULL); // death expects a reference
@@ -183,6 +189,8 @@ SB_Trans::Sock_Stream::Sock_Stream(const char           *pp_name,
     }
     SS_Node *lp_node = new_SS_Node(iv_sock, this);
     cv_stream_map.put(&lp_node->iv_link);
+    if (pv_open_nid >= 0)
+        map_nidpid_add_stream(pv_open_nid, pv_open_pid, pv_open_verif, false);
 
     if (gv_ms_trace_alloc)
         trace_where_printf(WHERE, "creating this=%p\n", pfp(this));
@@ -196,14 +204,23 @@ SB_Trans::Sock_Stream::Sock_Stream(const char           *pp_name,
 //
 SB_Trans::Sock_Stream::~Sock_Stream() {
     const char *WHERE = "Sock_Stream::~Sock_Stream";
+    bool        lv_marker;
 
     if (gv_ms_trace_sock)
-        trace_where_printf(WHERE, "destroying this=%p\n", pfp(this));
+        trace_where_printf(WHERE, "destroying this=%p steam=%p\n", pfp(this), pfp(this));
 
+    sock_lock();
     if (ip_sock != NULL) {
         ip_sock->destroy();
         ip_sock = NULL;
     }
+    sock_unlock();
+    lv_marker = get_thread_marker();
+    if (!lv_marker)
+        ip_sock_eh->eh_lock();
+    ip_sock_eh->set_stream(NULL);
+    if (!lv_marker)
+        ip_sock_eh->eh_unlock();
 }
 
 //
@@ -211,12 +228,22 @@ SB_Trans::Sock_Stream::~Sock_Stream() {
 //
 void SB_Trans::Sock_Stream::close_sock() {
     iv_sock_errored = EHOSTDOWN;
+    sock_lock();
     if (ip_sock != NULL)
         ip_sock->stop();
+    sock_unlock();
+    if (iv_open_nid >= 0) { // accept
+        if (!iv_close_ind_sent) {
+            iv_close_ind_sent  = true;
+            send_close_ind();
+        }
+    }
     SS_Node *lp_node = static_cast<SS_Node *>(cv_stream_map.remove(iv_sock));
+    if (lp_node != NULL) {
+        lp_node->ip_stream->ref_dec("close_sock:delete_SS_Node",
+                                    &lp_node->ip_stream);
+    }
     delete lp_node;
-    if (iv_open_nid >= 0) // accept
-        Trans_Stream::send_close_ind();
 
 #ifdef USE_SEND_LAT
     for (int lv_inx = 0; lv_inx < gv_stream_lat_inx; lv_inx++)
@@ -300,13 +327,32 @@ void SB_Trans::Sock_Stream::close_streams() {
 //
 // Purpose: close stream
 //
-void SB_Trans::Sock_Stream::close_this(bool, bool, bool) {
+void SB_Trans::Sock_Stream::close_this(bool pv_local,
+                                       bool pv_lock,
+                                       bool pv_sem) {
     const char *WHERE = "Sock_Stream::close_this";
 
+    pv_local = pv_local; // touch
+    pv_sem = pv_sem; // touch
     if (gv_ms_trace_sock)
         trace_where_printf(WHERE, "ENTER stream=%p %s\n",
                            pfp(this), ia_stream_name);
-    close_sock();
+    if (!iv_stopped) {
+        iv_stopped = true;
+
+        // clear nidpid map
+        if (iv_open_nid >= 0)
+            map_nidpid_remove(pv_lock);
+        close_sock();
+        if (md_ref_get() == 0)
+            sock_free();
+
+        // change counts last
+        if (iv_open_nid < 0)
+            add_stream_con_count(-1);
+        else
+            add_stream_acc_count(-1);
+    }
 }
 
 //
@@ -414,11 +460,16 @@ void SB_Trans::Sock_Stream::process_events(int pv_events) {
     bool          lv_cont;
     int           lv_len;
 
+    if (!cv_mon_stream_set) {
+        cv_mon_stream_set = true;
+        set_thread_marker(true);
+    }
+
     lp_r = &iv_r;        // ref iv_r through lp_r
     lp_rd = &lp_r->iv_rd;
     lp_hdr = &lp_rd->iv_hdr;
     if (gv_ms_trace_sock)
-        trace_where_printf(WHERE, "events=0x%x\n", pv_events);
+        trace_where_printf(WHERE, "stream=%p, events=0x%x\n", pfp(this), pv_events);
     if (pv_events & (POLLIN | EVENTS_ERR)) {
         lv_cont = true;
         while (lv_cont) {
@@ -497,11 +548,15 @@ void SB_Trans::Sock_Stream::process_events(int pv_events) {
 
             case RSTATE_ERROR:
             case RSTATE_EOF:
+//sleep(2);
                 finish_writereads(ms_err_sock_to_fserr(WHERE,
                                   iv_sock_errored));
-                stop_sock();
                 stop_recv();
-                close_sock();
+                if (!cv_shutdown && (iv_open_nid >= 0)) {
+                    if (map_nidpid_remove(true)) { // it's helper2's now
+                        Trans_Stream::close_stream(WHERE, this, true, true, true);
+                    }
+                }
                 break;
 
             default:
@@ -528,19 +583,21 @@ short SB_Trans::Sock_Stream::exec_abandon(MS_Md_Type *pp_md,
     if (gv_ms_trace)
         trace_where_printf(WHERE, "ENTER msgid=%d, md=%p, reqid=%d, can-reqid=%d\n",
                            pp_md->iv_link.iv_id.i, pfp(pp_md), pv_reqid, pv_can_reqid);
+    exec_com_init_simple(pp_md, pv_reqid, pv_can_reqid);
     lv_fserr = exec_com_chk(WHERE);
     if (gv_ms_trace_abandon)
         trace_where_printf(WHERE, "reqid=%d, can-reqid=%d, fserr=%d\n",
                            pv_reqid, pv_can_reqid, lv_fserr);
     if (lv_fserr != XZFIL_ERR_OK) {
         exec_com_error(MS_OP_ABANDON, pp_md, lv_fserr);
+        lv_fserr = 0; // clear error
+        finish_abandon(pp_md);
         if (gv_ms_trace)
             trace_where_printf(WHERE, "EXIT fserr=%d\n", lv_fserr);
         return lv_fserr;
     }
 
     iv_req_map.put(pp_md);
-    exec_com_init_simple(pp_md, pv_reqid, pv_can_reqid);
     lv_sockerr = send_md(MS_OP_ABANDON,
                          MS_PMH_TYPE_ABANDON,
                          MD_STATE_ABANDON_SENDING,
@@ -871,6 +928,7 @@ short SB_Trans::Sock_Stream::exec_reply(MS_Md_Type *pp_md,
     lp_s->iv_req_ctrl_size = pv_req_ctrl_size,
     lp_s->ip_req_data = pp_req_data;
     lp_s->iv_req_data_size = pv_req_data_size,
+assert(lp_s->iv_req_data_size >= 0);
     lp_s->iv_rep_max_ctrl_size = 0;
     lp_s->iv_rep_max_data_size = 0;
     lv_sockerr = send_md(MS_OP_REPLY,
@@ -958,6 +1016,7 @@ short SB_Trans::Sock_Stream::exec_reply_nw(MS_Md_Type *pp_md,
     lp_s->iv_req_ctrl_size = pv_req_ctrl_size,
     lp_s->ip_req_data = pp_req_data;
     lp_s->iv_req_data_size = pv_req_data_size,
+assert(lp_s->iv_req_data_size >= 0);
     lp_s->iv_rep_max_ctrl_size = 0;
     lp_s->iv_rep_max_data_size = 0;
     lv_sockerr = send_md(MS_OP_REPLY_NW,
@@ -1022,6 +1081,7 @@ short SB_Trans::Sock_Stream::exec_wr(MS_Md_Type *pp_md,
     lp_s->iv_req_ctrl_size = pv_req_ctrl_size;
     lp_s->ip_req_data = pp_req_data;
     lp_s->iv_req_data_size = pv_req_data_size;
+assert(lp_s->iv_req_data_size >= 0);
     lp_s->iv_rep_max_ctrl_size = pv_rep_max_ctrl_size;
     lp_s->iv_rep_max_data_size = pv_rep_max_data_size;
 
@@ -1379,44 +1439,48 @@ void SB_Trans::Sock_Stream::recv_buf_cont(RInfo_Type *pp_r,
     int         lv_errno;
     ssize_t     lv_rc;
 
-    lv_count = pp_r->iv_recv_size - pp_r->iv_recv_count;
-    lv_rc = ip_sock->read(&pp_r->ip_buf[pp_r->iv_recv_count],
-                          lv_count,
-                          &lv_errno);
-    if (lv_rc > 0) {
-        pp_r->iv_recv_count += lv_rc;
-        if (gv_ms_trace_sm)
-            trace_where_printf(WHERE, "sock=%d, recv-count=" PFSZ ", recv-size=" PFSZ "\n",
-                               iv_sock,
-                               pp_r->iv_recv_count,
-                               pp_r->iv_recv_size);
-        if (pp_r->iv_recv_count >= pp_r->iv_recv_size)
-            pp_r->iv_state = RSTATE_RCVD;
-        *pp_cont = true;
-    } else if (lv_rc == 0) {
-        iv_sock_errored = EHOSTDOWN;
-        if (gv_ms_trace_sm)
-            trace_where_printf(WHERE, "sock=%d, state=EOF, errno=%d(%s)\n",
-                               iv_sock,
-                               iv_sock_errored,
-                               strerror_r(iv_sock_errored,
-                                          la_errno,
-                                          sizeof(la_errno)));
-        pp_r->iv_state = RSTATE_EOF;
-    } else if (lv_errno == EWOULDBLOCK)
-        pp_r->iv_state = RSTATE_RCVING;
-    else {
-        iv_sock_errored = lv_errno;
-        if (gv_ms_trace_sm)
-            trace_where_printf(WHERE,
-                               "sock=%d, state=ERROR, errno=%d(%s)\n",
-                               iv_sock,
-                               iv_sock_errored,
-                               strerror_r(iv_sock_errored,
-                                          la_errno,
-                                          sizeof(la_errno)));
-        pp_r->iv_state = RSTATE_ERROR;
+    sock_lock();
+    if (ip_sock != NULL) {
+        lv_count = pp_r->iv_recv_size - pp_r->iv_recv_count;
+        lv_rc = ip_sock->read(&pp_r->ip_buf[pp_r->iv_recv_count],
+                              lv_count,
+                              &lv_errno);
+        if (lv_rc > 0) {
+            pp_r->iv_recv_count += lv_rc;
+            if (gv_ms_trace_sm)
+                trace_where_printf(WHERE, "sock=%d, recv-count=" PFSZ ", recv-size=" PFSZ "\n",
+                                   iv_sock,
+                                   pp_r->iv_recv_count,
+                                   pp_r->iv_recv_size);
+            if (pp_r->iv_recv_count >= pp_r->iv_recv_size)
+                pp_r->iv_state = RSTATE_RCVD;
+            *pp_cont = true;
+        } else if (lv_rc == 0) {
+            iv_sock_errored = EHOSTDOWN;
+            if (gv_ms_trace_sm)
+                trace_where_printf(WHERE, "sock=%d, state=EOF, errno=%d(%s)\n",
+                                   iv_sock,
+                                   iv_sock_errored,
+                                   strerror_r(iv_sock_errored,
+                                              la_errno,
+                                              sizeof(la_errno)));
+            pp_r->iv_state = RSTATE_EOF;
+        } else if (lv_errno == EWOULDBLOCK)
+            pp_r->iv_state = RSTATE_RCVING;
+        else {
+            iv_sock_errored = lv_errno;
+            if (gv_ms_trace_sm)
+                trace_where_printf(WHERE,
+                                   "sock=%d, state=ERROR, errno=%d(%s)\n",
+                                   iv_sock,
+                                   iv_sock_errored,
+                                   strerror_r(iv_sock_errored,
+                                              la_errno,
+                                              sizeof(la_errno)));
+            pp_r->iv_state = RSTATE_ERROR;
+        }
     }
+    sock_unlock();
 }
 
 //
@@ -1430,36 +1494,40 @@ void SB_Trans::Sock_Stream::recv_buf_init(RInfo_Type *pp_r,
     int         lv_errno;
     ssize_t     lv_rc;
 
-    pp_r->ip_buf = static_cast<char *>(pp_buf);
-    pp_r->iv_recv_size = pv_count;
+    sock_lock();
+    if (ip_sock != NULL) {
+        pp_r->ip_buf = static_cast<char *>(pp_buf);
+        pp_r->iv_recv_size = pv_count;
 
-    lv_rc = ip_sock->read(pp_buf, pv_count, &lv_errno);
-    if (lv_rc > 0) {
-        pp_r->iv_recv_count = lv_rc;
-        if (gv_ms_trace_sm)
-            trace_where_printf(WHERE, "sock=%d, recv-count=" PFSZ ", recv-size=" PFSZ "\n",
-                               iv_sock,
-                               pp_r->iv_recv_count,
-                               pp_r->iv_recv_size);
-        if (lv_rc >= pp_r->iv_recv_size)
-            pp_r->iv_state = RSTATE_RCVD;
-        else
-            pp_r->iv_state = RSTATE_RCVING;
-        *pp_cont = true;
-    } else {
-        pp_r->iv_recv_count = 0;
-        if (lv_rc == 0) {
-            pp_r->iv_state = RSTATE_EOF;
-            iv_sock_errored = EHOSTDOWN;
+        lv_rc = ip_sock->read(pp_buf, pv_count, &lv_errno);
+        if (lv_rc > 0) {
+            pp_r->iv_recv_count = lv_rc;
+            if (gv_ms_trace_sm)
+                trace_where_printf(WHERE, "sock=%d, recv-count=" PFSZ ", recv-size=" PFSZ "\n",
+                                   iv_sock,
+                                   pp_r->iv_recv_count,
+                                   pp_r->iv_recv_size);
+            if (lv_rc >= pp_r->iv_recv_size)
+                pp_r->iv_state = RSTATE_RCVD;
+            else
+                pp_r->iv_state = RSTATE_RCVING;
             *pp_cont = true;
-        } else if (lv_errno == EWOULDBLOCK)
-            pp_r->iv_state = RSTATE_RCVING;
-        else {
-            pp_r->iv_state = RSTATE_ERROR;
-            iv_sock_errored = lv_errno;
-            *pp_cont = true;
+        } else {
+            pp_r->iv_recv_count = 0;
+            if (lv_rc == 0) {
+                pp_r->iv_state = RSTATE_EOF;
+                iv_sock_errored = EHOSTDOWN;
+                *pp_cont = true;
+            } else if (lv_errno == EWOULDBLOCK)
+                pp_r->iv_state = RSTATE_RCVING;
+            else {
+                pp_r->iv_state = RSTATE_ERROR;
+                iv_sock_errored = lv_errno;
+                *pp_cont = true;
+            }
         }
     }
+    sock_unlock();
 }
 
 //
@@ -1468,7 +1536,8 @@ void SB_Trans::Sock_Stream::recv_buf_init(RInfo_Type *pp_r,
 void SB_Trans::Sock_Stream::send_abandon_ack(MS_Md_Type *pp_md,
                                              int         pv_reqid,
                                              int         pv_can_ack_reqid) {
-    const char *WHERE = "Sock_Stream::send_abandon_ack";
+    const char  *WHERE = "Sock_Stream::send_abandon_ack";
+    Stream_Base *lp_stream;
 
     // delegate to helper thread - comp-thread can't do this work
     pp_md->iv_op = MS_OP_ABANDON_ACK;
@@ -1481,9 +1550,13 @@ void SB_Trans::Sock_Stream::send_abandon_ack(MS_Md_Type *pp_md,
     if (cp_helper_thread != NULL && !gv_ms_shutdown_called)
         cp_helper_thread->add(pp_md);
     else {
-        MS_BUF_MGR_FREE(pp_md->out.ip_recv_data);
-        pp_md->out.ip_recv_data = NULL;
-        Msg_Mgr::put_md(pp_md->iv_link.iv_id.i, "helper not running");
+        // helper can't do this, so do it directly
+        if (gv_ms_trace)
+            trace_where_printf(WHERE, "sending abandon-ack DIRECT\n");
+        lp_stream = static_cast<Stream_Base *>(pp_md->ip_stream);
+        lp_stream->exec_abandon_ack(pp_md,
+                                    pp_md->iv_aa_reqid,
+                                    pp_md->iv_aa_can_ack_reqid);
     }
 }
 
@@ -1497,28 +1570,32 @@ void SB_Trans::Sock_Stream::send_buf_cont(MS_SS_Type *pp_s,
     int         lv_errno;
     ssize_t     lv_wc;
 
-    lv_count = pp_s->iv_send_size - pp_s->iv_send_count;
-    lv_wc = ip_sock->write(&pp_s->ip_buf[pp_s->iv_send_count],
-                           lv_count,
-                           &lv_errno);
-    if (lv_wc > 0) {
-        pp_s->iv_send_count += static_cast<int>(lv_wc);
-        if (gv_ms_trace_sm)
-            trace_where_printf(WHERE, "sock=%d, send-count=%d, send-size=%d\n",
-                               iv_sock,
-                               pp_s->iv_send_count,
-                               pp_s->iv_send_size);
-        if (pp_s->iv_send_count >= pp_s->iv_send_size)
-            pp_s->iv_state = SSTATE_SENT;
-        *pp_cont = true;
-    } else if (lv_errno == EWOULDBLOCK) {
-        pp_s->iv_state = SSTATE_SENDING;
-            // turn on EPOLLOUT
-        ip_sock->event_change(EPOLLIN | EPOLLOUT, ip_sock_eh);
-    } else {
-        pp_s->iv_state = SSTATE_ERROR;
-        iv_sock_errored = lv_errno;
+    sock_lock();
+    if (ip_sock != NULL) {
+        lv_count = pp_s->iv_send_size - pp_s->iv_send_count;
+        lv_wc = ip_sock->write(&pp_s->ip_buf[pp_s->iv_send_count],
+                               lv_count,
+                               &lv_errno);
+        if (lv_wc > 0) {
+            pp_s->iv_send_count += static_cast<int>(lv_wc);
+            if (gv_ms_trace_sm)
+                trace_where_printf(WHERE, "sock=%d, send-count=%d, send-size=%d\n",
+                                   iv_sock,
+                                   pp_s->iv_send_count,
+                                   pp_s->iv_send_size);
+            if (pp_s->iv_send_count >= pp_s->iv_send_size)
+                pp_s->iv_state = SSTATE_SENT;
+            *pp_cont = true;
+        } else if (lv_errno == EWOULDBLOCK) {
+            pp_s->iv_state = SSTATE_SENDING;
+                // turn on EPOLLOUT
+            ip_sock->event_change(EPOLLIN | EPOLLOUT, ip_sock_eh);
+        } else {
+            pp_s->iv_state = SSTATE_ERROR;
+            iv_sock_errored = lv_errno;
+        }
     }
+    sock_unlock();
 }
 
 //
@@ -1532,32 +1609,36 @@ void SB_Trans::Sock_Stream::send_buf_init(MS_SS_Type *pp_s,
     int         lv_errno;
     ssize_t     lv_wc;
 
-    pp_s->ip_buf = static_cast<char *>(pp_buf);
-    pp_s->iv_send_size = static_cast<int>(pv_count);
+    sock_lock();
+    if (ip_sock != NULL) {
+        pp_s->ip_buf = static_cast<char *>(pp_buf);
+        pp_s->iv_send_size = static_cast<int>(pv_count);
 
-    lv_wc = ip_sock->write(pp_buf, pv_count, &lv_errno);
-    if (lv_wc > 0) {
-        pp_s->iv_send_count = static_cast<int>(lv_wc);
-        if (gv_ms_trace_sm)
-            trace_where_printf(WHERE, "sock=%d, send-count=%d, send-size=%d\n",
-                               iv_sock,
-                               pp_s->iv_send_count,
-                               pp_s->iv_send_size);
-        if (lv_wc >= pp_s->iv_send_size)
-            pp_s->iv_state = SSTATE_SENT;
-        else
-            pp_s->iv_state = SSTATE_SENDING;
-        *pp_cont = true;
-    } else {
-        pp_s->iv_send_count = 0;
-        if (lv_errno == EWOULDBLOCK)
-            pp_s->iv_state = SSTATE_SENDING;
-        else {
-            pp_s->iv_state = SSTATE_ERROR;
-            iv_sock_errored = lv_errno;
+        lv_wc = ip_sock->write(pp_buf, pv_count, &lv_errno);
+        if (lv_wc > 0) {
+            pp_s->iv_send_count = static_cast<int>(lv_wc);
+            if (gv_ms_trace_sm)
+                trace_where_printf(WHERE, "sock=%d, send-count=%d, send-size=%d\n",
+                                   iv_sock,
+                                   pp_s->iv_send_count,
+                                   pp_s->iv_send_size);
+            if (lv_wc >= pp_s->iv_send_size)
+                pp_s->iv_state = SSTATE_SENT;
+            else
+                pp_s->iv_state = SSTATE_SENDING;
             *pp_cont = true;
+        } else {
+            pp_s->iv_send_count = 0;
+            if (lv_errno == EWOULDBLOCK)
+                pp_s->iv_state = SSTATE_SENDING;
+            else {
+                pp_s->iv_state = SSTATE_ERROR;
+                iv_sock_errored = lv_errno;
+                *pp_cont = true;
+            }
         }
     }
+    sock_unlock();
 }
 
 //
@@ -1816,6 +1897,7 @@ int SB_Trans::Sock_Stream::send_md(MS_Md_Op_Type  pv_op,
     SB_util_assert_ieq(lv_status, 0);
 
     if (lv_reply) {
+        pp_md->iv_md_state = MD_STATE_REPLY_SEND_FIN; // done with REPLY
         for (;;) {
             lv_status = iv_reply_piggyback_mutex.lock();
             SB_util_assert_ieq(lv_status, 0); // sw fault
@@ -1940,7 +2022,11 @@ void SB_Trans::Sock_Stream::send_sm() {
 
         case SSTATE_DONE:
             // turn off EPOLLOUT
-            ip_sock->event_change(EPOLLIN, ip_sock_eh);
+            sock_lock();
+            if (ip_sock != NULL) {
+                ip_sock->event_change(EPOLLIN, ip_sock_eh);
+            }
+            sock_unlock();
             if (lp_md->iv_tid != SB_Thread::Sthr::self_id())
                 lp_md->iv_cv.signal(true);
             break;
@@ -1949,7 +2035,6 @@ void SB_Trans::Sock_Stream::send_sm() {
             finish_writereads(ms_err_sock_to_fserr(WHERE,
                               iv_sock_errored));
             stop_sock();
-            close_sock();
             break;
         }
     }
@@ -1960,6 +2045,35 @@ void SB_Trans::Sock_Stream::send_sm() {
 //
 void SB_Trans::Sock_Stream::shutdown() {
     close_streams();
+}
+
+void SB_Trans::Sock_Stream::sock_free() {
+    const char *WHERE = "Sock_Stream::sock_free";
+
+    if (gv_ms_trace_sock)
+        trace_where_printf(WHERE, "ENTER\n");
+    sock_lock();
+    if (ip_sock != NULL) {
+        ip_sock->destroy();
+        ip_sock = NULL;
+    }
+    sock_unlock();
+    if (gv_ms_trace_sock)
+        trace_where_printf(WHERE, "EXIT\n");
+}
+
+void SB_Trans::Sock_Stream::sock_lock() {
+    int lv_status;
+
+    lv_status = iv_sock_mutex.lock();
+    SB_util_assert_ieq(lv_status, 0);
+}
+
+void SB_Trans::Sock_Stream::sock_unlock() {
+    int lv_status;
+
+    lv_status = iv_sock_mutex.unlock();
+    SB_util_assert_ieq(lv_status, 0);
 }
 
 //
@@ -1994,20 +2108,38 @@ int SB_Trans::Sock_Stream::start_stream() {
 // Purpose: stop recv
 //
 void SB_Trans::Sock_Stream::stop_recv() {
-    send_close_ind();
-}
+    const char *WHERE = "Sock_Stream::stop_recv";
 
-//
-// Purpose: stop completions
-//
-void SB_Trans::Sock_Stream::stop_completions() {
+    if (get_thread_marker()) {
+        if (gv_ms_trace)
+            trace_where_printf(WHERE, "stream=%p %s, comp thread ENTER\n",
+                               pfp(this), ia_stream_name);
+        if (!iv_close_ind_sent) {
+            iv_close_ind_sent  = true;
+            send_close_ind();
+        }
+        stop_sock();
+        if (gv_ms_trace)
+            trace_where_printf(WHERE, "stream=%p %s, comp thread EXIT\n",
+                               pfp(this), ia_stream_name);
+        return;
+    }
 }
 
 //
 // Purpose: stop sock
 //
 void SB_Trans::Sock_Stream::stop_sock() {
-    ip_sock->stop();
+    sock_lock();
+    if (ip_sock != NULL)
+        ip_sock->stop();
+    sock_unlock();
+}
+
+//
+// Purpose: stop completions
+//
+void SB_Trans::Sock_Stream::stop_completions() {
 }
 
 //
@@ -2127,10 +2259,41 @@ SB_Trans::Sock_Stream_EH::~Sock_Stream_EH() {
 }
 
 //
+// Purpose: lock eh
+//
+void SB_Trans::Sock_Stream_EH::eh_lock() {
+    int lv_status;
+
+    lv_status = iv_eh_mutex.lock();
+    SB_util_assert_ieq(lv_status, 0); // sw fault
+}
+
+//
+// Purpose: unlock eh
+//
+void SB_Trans::Sock_Stream_EH::eh_unlock() {
+    int lv_status;
+
+    lv_status = iv_eh_mutex.unlock();
+    SB_util_assert_ieq(lv_status, 0); // sw fault
+}
+
+//
 // Purpose: socket stream event handler process events
 //
 void SB_Trans::Sock_Stream_EH::process_events(int pv_events) {
-    ip_stream->process_events(pv_events);
+    eh_lock();
+    if (ip_stream != NULL) {
+        ip_stream->process_events(pv_events);
+    }
+    eh_unlock();
+}
+
+//
+// Purpose: set stream
+//
+void SB_Trans::Sock_Stream_EH::set_stream(Sock_Stream *pp_stream) {
+    ip_stream = pp_stream;
 }
 
 //

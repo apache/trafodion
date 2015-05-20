@@ -1195,8 +1195,9 @@ short sendAllControls(NABoolean copyCQS,
         }
     }
 
-  if (NOT sendUserCQDs)
+  if (NOT sendUserCQDs && prevContext)
     {
+      // Send only to different context (prevContext != NULL)
       // and send the CQDs that were entered by user and were not 'reset reset'
       for (i = 0; i < cdb->getCQDList().entries(); i++)
         {
@@ -1650,24 +1651,20 @@ static short CmpDescribePlan(
   retcode = exeImmedOneStmt("CONTROL SESSION SET 'SHOWPLAN' 'ON';");
   if (retcode)
     goto label_error;
-  //    return (short)retcode;
 
   // Now prepare the query to be 'showplan'ed
   retcode = SQL_EXEC_SetDescItem(&sql_src, 1, SQLDESC_VAR_PTR,
                                  (Long)query, 0);
   if (retcode)
   {
-    resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
-    goto label_error;
-    //    return ((retcode < 0) ? -1 : (short)retcode);
+    goto label_error_1;
   }
 
   retcode = SQL_EXEC_SetDescItem(&sql_src, 1, SQLDESC_LENGTH,
                                  strlen(query) + 1, 0);
   if (retcode)
   {
-    resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
-    goto label_error;
+    goto label_error_1;
   }
 
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal (originalParserFlags);
@@ -1698,9 +1695,7 @@ static short CmpDescribePlan(
   {
     resetRetcode = SQL_EXEC_MergeDiagnostics_Internal(*CmpCommon::diags());
 
-    resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
-
-    goto label_error;
+    goto label_error_1;
   }
 
   retcode = CmpFormatPlan(stmt_id, flags, 
@@ -1710,8 +1705,7 @@ static short CmpDescribePlan(
                           space, heap);
   if (retcode)
   {
-    resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
-    goto label_error;
+    goto label_error_1;
   }
 
   outbuflen = space.getAllocatedSpaceSize();
@@ -1737,9 +1731,10 @@ static short CmpDescribePlan(
 
   return 0;
 
- label_error:
+ label_error_1:
     resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
 
+ label_error:
     resetRetcode  = exeImmedCQD("TRAF_RELOAD_NATABLE_CACHE", FALSE);
 
     return ((retcode < 0) ? -1 : (short)retcode);

@@ -63,6 +63,10 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.trafodion.dtm.HBaseTmZK;
 import org.trafodion.dtm.TmAuditTlog;
 
+import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
+import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
@@ -77,6 +81,13 @@ public class HBaseTxClient {
    private static TmDDL tmDDL;
    private short dtmID;
    private int stallWhere;
+   private IdTm idServer;
+   private static final int ID_TM_SERVER_TIMEOUT = 1000;
+
+   public enum AlgorithmType{
+     MVCC, SSCC
+   }
+   public AlgorithmType TRANSACTION_ALGORITHM;
 
    boolean useTlog;
    boolean useForgotten;
@@ -88,12 +99,12 @@ public class HBaseTxClient {
    TransactionManager trxManager;
    static Map<Long, TransactionState> mapTransactionStates = TransactionMap.getInstance();
    Map<Integer, RecoveryThread> mapRecoveryThreads = new HashMap<Integer, org.trafodion.dtm.HBaseTxClient.RecoveryThread>();
-   private final Object mapLock = new Object();
+   static final Object mapLock = new Object();
 
    void setupLog4j() {
        	//System.out.println("In setupLog4J");
-	System.setProperty("trafodion.root", System.getenv("MY_SQROOT"));
-	String confFile = System.getenv("MY_SQROOT")
+        System.setProperty("trafodion.root", System.getenv("MY_SQROOT"));
+        String confFile = System.getenv("MY_SQROOT")
             + "/conf/log4j.dtm.config";
         PropertyConfigurator.configure(confFile);
     }
@@ -161,20 +172,20 @@ public class HBaseTxClient {
       try {
         trxManager = TransactionManager.getInstance(config);
       } catch (IOException e ){
-            LOG.error("Unable to create TransactionManager, throwing exception");
-            throw new RuntimeException(e);
+          LOG.error("Unable to create TransactionManager, throwing exception");
+          throw new RuntimeException(e);
       }
 
       if (useRecovThread) {
          if (LOG.isDebugEnabled()) LOG.debug("Starting recovery thread for tm ID: " + dtmID);
-          try {                                                                          
-              tmZK = new HBaseTmZK(config, dtmID);                              
-          }catch (IOException e ){                                                       
+          try {
+              tmZK = new HBaseTmZK(config, dtmID);
+          }catch (IOException e ){
               LOG.error("Unable to create HBaseTmZK TM-zookeeper class, throwing exception");
-              throw new RuntimeException(e);                                             
-          }                                                                              
-          recovThread = new RecoveryThread(tLog, tmZK, trxManager);                      
-          recovThread.start();                     
+              throw new RuntimeException(e);
+          }
+          recovThread = new RecoveryThread(tLog, tmZK, trxManager);
+          recovThread.start();
       }
       if (LOG.isDebugEnabled()) LOG.debug("Exit init(String, String, String)");
       return true;
@@ -196,7 +207,19 @@ public class HBaseTxClient {
       this.useRecovThread = false;
       this.stallWhere = 0;
       this.useDDLTrans = false;
- 
+
+      String useSSCC = System.getenv("TM_USE_SSCC");
+      TRANSACTION_ALGORITHM = AlgorithmType.MVCC;
+      if (useSSCC != null)
+         TRANSACTION_ALGORITHM = (Integer.parseInt(useSSCC) == 1) ? AlgorithmType.SSCC :AlgorithmType.MVCC ;
+
+      try {
+         idServer = new IdTm(false);
+      }
+      catch (Exception e){
+         LOG.error("Exception creating new IdTm: " + e);
+      }
+
       try {
          String useDDLTransactions = System.getenv("TM_ENABLE_DDL_TRANS");
          if (useDDLTransactions != null) {
@@ -275,12 +298,12 @@ public class HBaseTxClient {
 
       if (useRecovThread) {
          if (LOG.isDebugEnabled()) LOG.debug("Entering recovThread Usage");
-          try {                                                                          
-              tmZK = new HBaseTmZK(config, dtmID);                              
-          }catch (IOException e ){                                                       
+          try {
+              tmZK = new HBaseTmZK(config, dtmID);
+          }catch (IOException e ){
               LOG.error("Unable to create HBaseTmZK TM-zookeeper class, throwing exception");
-              throw new RuntimeException(e);                                             
-          }                                                                              
+              throw new RuntimeException(e);
+          }
           recovThread = new RecoveryThread(tLog,
                                            tmZK,
                                            trxManager,
@@ -288,7 +311,7 @@ public class HBaseTxClient {
                                            useForgotten,
                                            forceForgotten,
                                            useTlog);
-          recovThread.start();                     
+          recovThread.start();
       }
       if (LOG.isTraceEnabled()) LOG.trace("Exit init()");
       return true;
@@ -347,22 +370,32 @@ public class HBaseTxClient {
       return TransReturnCode.RET_OK.getShort();
    }
 
-   public long beginTransaction(final long transactionId) throws Exception
-    {
+   public long beginTransaction(final long transactionId) throws Exception {
 
-      if (LOG.isDebugEnabled()) LOG.debug("Enter beginTransaction, txid: " + transactionId);
+      if (LOG.isTraceEnabled()) LOG.trace("Enter beginTransaction, txid: " + transactionId);
       TransactionState tx = trxManager.beginTransaction(transactionId);
+      if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:beginTransaction new transactionState created: " + tx);
       if(tx == null) {
-    	  LOG.error("null Transaction State returned by the Transaction Manager, txid: " + transactionId);
-    	  throw new Exception("TransactionState is null");
+         LOG.error("null Transaction State returned by the Transaction Manager, txid: " + transactionId);
+         throw new Exception("TransactionState is null");
       }
 
       synchronized(mapLock) {
-         mapTransactionStates.put(tx.getTransactionId(), tx);
+         TransactionState tx2 = mapTransactionStates.get(transactionId);
+         if (tx2 != null) {
+            // Some other thread added the transaction while we were creating one.  It's already in the
+            // map, so we can use the existing one.
+            if (LOG.isDebugEnabled()) LOG.debug("HBaseTxClient:beginTransaction, found TransactionState object while creating a new one " + tx2);
+            tx = tx2;
+         }
+         else {
+            if (LOG.isDebugEnabled()) LOG.debug("HBaseTxClient:beginTransaction, adding new TransactionState to map " + tx);
+            mapTransactionStates.put(transactionId, tx);
+         }
       }
 
       if (LOG.isDebugEnabled()) LOG.debug("Exit beginTransaction, Transaction State: " + tx + " mapsize: " + mapTransactionStates.size());
-     return tx.getTransactionId();
+      return transactionId;
    }
 
    public short abortTransaction(final long transactionID) throws Exception {
@@ -386,7 +419,7 @@ public class HBaseTxClient {
 
       if ((stallWhere == 1) || (stallWhere == 3)) {
          LOG.info("Stalling in phase 2 for abortTransaction");
-         Thread.sleep(300000); // Initially set to run every 5 min                                 
+         Thread.sleep(300000); // Initially set to run every 5 min
       }
 
       try {
@@ -441,7 +474,7 @@ public class HBaseTxClient {
              LOG.info("Exit RET_HASCONFLICT prepareCommit, txid: " + transactionId);
              return TransReturnCode.RET_HASCONFLICT.getShort();
           default:
-             if (LOG.isTraceEnabled()) LOG.trace("Exit default RET_EXCEPTION prepareCommit, txid: " + transactionId);
+             LOG.info("Exit default RET_EXCEPTION prepareCommit, txid: " + transactionId);
              return TransReturnCode.RET_EXCEPTION.getShort();
         }
      } catch (IOException e) {
@@ -465,6 +498,24 @@ public class HBaseTxClient {
       LOG.error("Returning from HBaseTxClient:doCommit, (null tx) retval: " + TransReturnCode.RET_NOTX.toString() + " txid: " + transactionId);
           return TransReturnCode.RET_NOTX.getShort();
        }
+
+       // Set the commitId
+       IdTmId commitId = null;
+       if (TRANSACTION_ALGORITHM == AlgorithmType.SSCC) {
+          try {
+             commitId = new IdTmId();
+             if (LOG.isTraceEnabled()) LOG.trace("doCommit getting new commitId");
+             idServer.id(ID_TM_SERVER_TIMEOUT, commitId);
+             if (LOG.isTraceEnabled()) LOG.trace("doCommit idServer.id returned: " + commitId.val);
+          } catch (IdTmException exc) {
+             LOG.error("doCommit: IdTm threw exception " + exc);
+             throw new CommitUnsuccessfulException("doCommit: IdTm threw exception " + exc);
+          }
+       }
+
+       final long commitIdVal = (TRANSACTION_ALGORITHM == AlgorithmType.SSCC) ? commitId.val : -1;
+       if (LOG.isTraceEnabled()) LOG.trace("doCommit setting commitId (" + commitIdVal + ") for tx: " + ts.getTransactionId());
+       ts.setCommitId(commitIdVal);
 
        try {
           ts.setStatus(TransState.STATE_COMMITTED);
@@ -497,8 +548,8 @@ public class HBaseTxClient {
        }
 //       mapTransactionStates.remove(transactionId);
 
-       if (LOG.isTraceEnabled()) LOG.trace("Exit doCommit, retval(ok): " + TransReturnCode.RET_OK.toString() 
-	   				+ " txid: " + transactionId + " mapsize: " + mapTransactionStates.size());
+       if (LOG.isTraceEnabled()) LOG.trace("Exit doCommit, retval(ok): " + TransReturnCode.RET_OK.toString() +
+                         " txid: " + transactionId + " mapsize: " + mapTransactionStates.size());
 
        return TransReturnCode.RET_OK.getShort();
    }
@@ -515,8 +566,8 @@ public class HBaseTxClient {
        try {
           ts.completeRequest();
        } catch(Exception e) {
-          LOG.error("Returning from HBaseTxClient:completeRequest, ts.completeRequest: EXCEPTION" + " txid: " + transactionId);
-       throw new Exception("Exception during completeRequest, unable to commit.");
+          LOG.error("Returning from HBaseTxClient:completeRequest, ts.completeRequest: txid: " + transactionId + ", EXCEPTION: " + e);
+       throw new Exception("Exception during completeRequest, unable to commit.  Exception: " + e);
        }
 
      synchronized(mapLock) {
@@ -527,11 +578,10 @@ public class HBaseTxClient {
      return TransReturnCode.RET_OK.getShort();
    }
 
-   
    public short tryCommit(long transactionId) throws Exception {
      if (LOG.isDebugEnabled()) LOG.debug("Enter tryCommit, txid: " + transactionId);
      short err, commitErr, abortErr = TransReturnCode.RET_OK.getShort();
-    
+
      try {
        err = prepareCommit(transactionId);
        if (err != TransReturnCode.RET_OK.getShort()) {
@@ -547,7 +597,7 @@ public class HBaseTxClient {
        err = completeRequest(transactionId);
        if (err != TransReturnCode.RET_OK.getShort()) 
          if (LOG.isDebugEnabled()) LOG.debug("tryCommit completeRequest failed with error " + err);
-       
+
      } catch(Exception e) {
        mapTransactionStates.remove(transactionId);
        LOG.error("Returning from HBaseTxClient:tryCommit, ts: EXCEPTION" + " txid: " + transactionId);
@@ -557,7 +607,7 @@ public class HBaseTxClient {
     synchronized(mapLock) {
        mapTransactionStates.remove(transactionId);
     }
-  
+
     if (LOG.isDebugEnabled()) LOG.debug("Exit completeRequest txid: " + transactionId + " mapsize: " + mapTransactionStates.size());
     return TransReturnCode.RET_OK.getShort();
   }
@@ -664,30 +714,29 @@ public class HBaseTxClient {
    }
 
     public short callRegisterRegion(long transactionId,
+                                    long startId,
 				    int  pv_port,
 				    byte[] pv_hostname,
 				    long pv_startcode,
 				    byte[] pv_regionInfo) throws Exception {
- 	String hostname    = new String(pv_hostname);
-	if (LOG.isDebugEnabled()) LOG.debug("Enter callRegisterRegion, txid: [" + transactionId + "]");
-	if (LOG.isTraceEnabled()) LOG.trace("callRegisterRegion, txid: [" + transactionId + "], port: " + pv_port + ", hostname: " + hostname + ", reg info len: " + pv_regionInfo.length + " " + new String(pv_regionInfo, "UTF-8"));
+       String hostname    = new String(pv_hostname);
+       if (LOG.isTraceEnabled()) LOG.trace("Enter callRegisterRegion, txid: [" + transactionId + "], startId: " + startId + ", port: "
+           + pv_port + ", hostname: " + hostname + ", reg info len: " + pv_regionInfo.length + " " + new String(pv_regionInfo, "UTF-8"));
 
-	HRegionInfo lv_regionInfo;
-	try {
-	    lv_regionInfo = HRegionInfo.parseFrom(pv_regionInfo);
-	}
-	catch (Exception de) {
-           if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callRegisterRegion exception in lv_regionInfo parseFrom, retval: " +
-             TransReturnCode.RET_EXCEPTION.toString() +
-		     " txid: " + transactionId +
-		     " DeserializationException: " + de);
-	   StringWriter sw = new StringWriter();
-	   PrintWriter pw = new PrintWriter(sw);
-	   de.printStackTrace(pw);
-	   LOG.error(sw.toString()); 
-	   
-           throw new Exception("DeserializationException in lv_regionInfo parseFrom, unable to register region");
-	}
+       HRegionInfo lv_regionInfo;
+       try {
+          lv_regionInfo = HRegionInfo.parseFrom(pv_regionInfo);
+       }
+       catch (Exception de) {
+          if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callRegisterRegion exception in lv_regionInfo parseFrom, retval: " +
+             TransReturnCode.RET_EXCEPTION.toString() + " txid: " + transactionId + " DeserializationException: " + de);
+          StringWriter sw = new StringWriter();
+          PrintWriter pw = new PrintWriter(sw);
+          de.printStackTrace(pw);
+          LOG.error(sw.toString());
+
+          throw new Exception("DeserializationException in lv_regionInfo parseFrom, unable to register region");
+       }
 
        // TODO Not in CDH 5.1       ServerName lv_servername = ServerName.valueOf(hostname, pv_port, pv_startcode);
        String lv_hostname_port_string = hostname + ":" + pv_port;
@@ -698,7 +747,35 @@ public class HBaseTxClient {
 
        TransactionState ts = mapTransactionStates.get(transactionId);
        if(ts == null) {
-          ts = trxManager.beginTransaction(transactionId);
+          if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callRegisterRegion transactionId (" + transactionId +
+                   ") not found in mapTransactionStates of size: " + mapTransactionStates.size());
+          try {
+             ts = trxManager.beginTransaction(transactionId);
+          }
+          catch (IdTmException exc) {
+             LOG.error("HBaseTxClient: beginTransaction for tx (" + transactionId + ") caught exception " + exc);
+             throw new IdTmException("HBaseTxClient: beginTransaction for tx (" + transactionId + ") caught exception " + exc);
+          }
+          synchronized (mapLock) {
+             TransactionState ts2 = mapTransactionStates.get(transactionId);
+             if (ts2 != null) {
+                // Some other thread added the transaction while we were creating one.  It's already in the
+                // map, so we can use the existing one.
+                if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callRegisterRegion, found TransactionState object while creating a new one " + ts2);
+                ts = ts2;
+             }
+             else {
+                ts.setStartId(startId);
+                if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callRegisterRegion new transactionState created: " + ts );
+             }
+          }// end synchronized
+       }
+       else {
+          if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callRegisterRegion existing transactionState found: " + ts );
+          if (ts.getStartId() == -1) {
+            ts.setStartId(startId);
+            if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callRegisterRegion reset startId for transactionState: " + ts );
+          }
        }
 
        try {
@@ -746,7 +823,7 @@ public class HBaseTxClient {
       if (LOG.isTraceEnabled()) LOG.trace("Exit addControlPoint, returning: " + result);
       return result;
    }
-   
+
      /**
       * Thread to gather recovery information for regions that need to be recovered 
       */
@@ -798,10 +875,9 @@ public class HBaseTxClient {
              public void stopThread() {
                  this.continueThread = false;
              }
-             
-             private void addRegionToTS(String hostnamePort, byte[] regionInfo,
-            		                    TransactionState ts) throws Exception{
-            	 HRegionInfo regionInfoLoc; // = new HRegionInfo();
+
+             private void addRegionToTS(String hostnamePort, byte[] regionInfo, TransactionState ts) throws Exception{
+                 HRegionInfo regionInfoLoc; // = new HRegionInfo();
                  final byte [] delimiter = ",".getBytes();
                  String[] result = hostnamePort.split(new String(delimiter), 3);
 
@@ -817,7 +893,7 @@ public class HBaseTxClient {
                                  LOG.error("Unable to parse region byte array, " + e);
                                  throw e;
                  }
-                 /*                 
+                 /*
                  ByteArrayInputStream lv_bis = new ByteArrayInputStream(regionInfo);
                  DataInputStream lv_dis = new DataInputStream(lv_bis);
                  try {
@@ -826,15 +902,14 @@ public class HBaseTxClient {
                          throw new Exception();
                  }
                  */
-		 //HBase98 TODO: need to set the value of startcode correctly
-		 //HBase98 TODO: Not in CDH 5.1:  ServerName lv_servername = ServerName.valueOf(hostname, port, 0);
+                 //HBase98 TODO: need to set the value of startcode correctly
+                 //HBase98 TODO: Not in CDH 5.1:  ServerName lv_servername = ServerName.valueOf(hostname, port, 0);
 
-		 String lv_hostname_port_string = hostname + ":" + port;
-		 String lv_servername_string = ServerName.getServerName(lv_hostname_port_string, 0);
-		 ServerName lv_servername = ServerName.parseServerName(lv_servername_string);
+                 String lv_hostname_port_string = hostname + ":" + port;
+                 String lv_servername_string = ServerName.getServerName(lv_hostname_port_string, 0);
+                 ServerName lv_servername = ServerName.parseServerName(lv_servername_string);
 
-                 TransactionRegionLocation loc = new TransactionRegionLocation(regionInfoLoc,
-									       lv_servername);
+                 TransactionRegionLocation loc = new TransactionRegionLocation(regionInfoLoc, lv_servername);
                  ts.addRegion(loc);
              }
 
@@ -1074,7 +1149,7 @@ public class HBaseTxClient {
      //================================================================================
      // DTMCI Calls
      //================================================================================
-    
+
      //--------------------------------------------------------------------------------
      // callRequestRegionInfo
      // Purpose: Prepares HashMapArray class to get region information

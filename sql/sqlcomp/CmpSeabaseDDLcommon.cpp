@@ -161,25 +161,30 @@ short CmpSeabaseDDL::switchCompiler(Int32 cntxtType)
 
 short CmpSeabaseDDL::switchBackCompiler()
 {
-  if (NOT cmpSwitched_)
-    return 0;
-
-  // save existing diags info
-  ComDiagsArea * tempDiags = ComDiagsArea::allocate(heap_);
-  tempDiags->mergeAfter(*CmpCommon::diags());
+  ComDiagsArea * tempDiags = NULL;
+  if (cmpSwitched_)
+    {
+      tempDiags = ComDiagsArea::allocate(heap_);
+      tempDiags->mergeAfter(*CmpCommon::diags());
+    }
   
+  // do restore here even though switching may not have happened, i.e.
+  // when switchToCompiler() was not called by the embedded CI, see above.
   restoreAllControlsAndFlags();
   
-  // ignore new (?) and restore old diags
-  CmpCommon::diags()->clear();
-  CmpCommon::diags()->mergeAfter(*tempDiags);
-  tempDiags->clear();
-  tempDiags->deAllocate();
+  if (cmpSwitched_)
+    {
+      // ignore new (?) from restore call but restore old diags
+      CmpCommon::diags()->clear();
+      CmpCommon::diags()->mergeAfter(*tempDiags);
+      tempDiags->clear();
+      tempDiags->deAllocate();
   
-  // switch back the original commpiler, ignore error for now
-  SQL_EXEC_SWITCH_BACK_COMPILER();
+      // switch back to the original commpiler, ignore return error
+      SQL_EXEC_SWITCH_BACK_COMPILER();
 
-  cmpSwitched_ = FALSE;
+      cmpSwitched_ = FALSE;
+    }
 
   return 0;
 }
@@ -1514,6 +1519,7 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
   return retcode;
 }   
 
+#define CQD_SENT_MAX 7
 short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext,
 					     Int32 cntxtType)
 {
@@ -1532,25 +1538,12 @@ short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext,
   savedCmpParserFlags_ = Get_SqlParser_Flags (0xFFFFFFFF);
   SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedCliParserFlags_);
 
-  // pass the old context pointer to propagate user CQDs from previous
-  // compiler context to new metadata CmpContext if specified.
-  // Currently this switchCompiler() method is only called when switching
-  // to the metadata compiler. To pass CQDs to other type of compiler,
-  // add code here.
-  CmpContext *ci = NULL;
-  if (passingUserCQDs == 1 && cntxtType == CmpContextInfo::CMPCONTEXT_TYPE_META)
-    ci = prevContext;
+  Int32 cliRC;
+  CmpContext *cmpctxt = CmpCommon::context();
 
-  if (sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION, sendCSs, ci) < 0)
-    return -1;
+  CMPASSERT(cmpctxt->getCntlCount() >= 0 && cmpctxt->getCntlCount() <= CQD_SENT_MAX);
 
-  Lng32 cliRC;
   ExeCliInterface cliInterface(STMTHEAP);
-
-  cliRC = cliInterface.holdAndSetCQD("volatile_schema_in_use", "OFF");
-  if (cliRC < 0)
-    return -1;
-
   cliRC = cliInterface.executeImmediate("control query shape hold;");
   if (cliRC < 0)
     {
@@ -1558,34 +1551,77 @@ short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext,
       return -1;
     }
 
-  cliRC = cliInterface.holdAndSetCQD("hbase_filter_preds", "OFF");
-  if (cliRC < 0)
-    return -1;
+  if (cmpctxt->getCntlCount() < CQD_SENT_MAX)
+    {
+      if (cmpctxt->getCntlCount() < 1)
+        {
+          cliRC = cliInterface.holdAndSetCQD("volatile_schema_in_use", "OFF");
+          if (cliRC < 0)
+            return -1;
+          else
+            cmpctxt->incCntlCount();  // = 1
+        }
 
-  // We have to turn NJ on for meta query compilation.
-  cliRC = cliInterface.holdAndSetCQD("nested_joins", "ON");
-  if (cliRC < 0)
-    return -1;
+      if (cmpctxt->getCntlCount() < 2)
+        {
+          cliRC = cliInterface.holdAndSetCQD("hbase_filter_preds", "OFF");
+          if (cliRC < 0)
+            return -1;
+          else
+            cmpctxt->incCntlCount();  // = 2
+        }
 
-  // turn off esp parallelism until optimizer fixes esp plan issue pbm.
-  cliRC = cliInterface.holdAndSetCQD("attempt_esp_parallelism", "OFF");
-  if (cliRC < 0)
-    return -1;
+      if (cmpctxt->getCntlCount() < 3)
+        {
+          // We have to turn NJ on for meta query compilation.
+          cliRC = cliInterface.holdAndSetCQD("nested_joins", "ON");
+          if (cliRC < 0)
+            return -1;
+          else
+            cmpctxt->incCntlCount();  // = 3
+        }
 
-  // this cqd causes problems when internal indexes are created.
-  // disable it here for ddl operations.
-  // Not sure if this cqd is used anywhere or is needed. Maybe we should remove it.
-  cliRC = cliInterface.holdAndSetCQD("hide_indexes", "NONE");
-  if (cliRC < 0)
-    return -1;
+      if (cmpctxt->getCntlCount() < 4)
+        {
+          // turn off esp parallelism until optimizer fixes esp plan issue pbm.
+          cliRC = cliInterface.holdAndSetCQD("attempt_esp_parallelism", "OFF");
+          if (cliRC < 0)
+            return -1;
+          else
+            cmpctxt->incCntlCount();  // = 4
+        }
 
-  cliRC = cliInterface.holdAndSetCQD("traf_no_dtm_xn", "OFF");
-  if (cliRC < 0)
-    return -1;
+      if (cmpctxt->getCntlCount() < 5)
+        {
+          // this cqd causes problems when internal indexes are created.
+          // disable it here for ddl operations.
+          // Not sure if this cqd is used anywhere or is needed.
+          // Maybe we should remove it.
+          cliRC = cliInterface.holdAndSetCQD("hide_indexes", "NONE");
+          if (cliRC < 0)
+            return -1;
+          else
+            cmpctxt->incCntlCount();  // = 5
+        }
 
-  cliRC = cliInterface.holdAndSetCQD("hbase_rowset_vsbb_opt", "OFF");
-  if (cliRC < 0)
-    return -1;
+      if (cmpctxt->getCntlCount() < 6)
+        {
+          cliRC = cliInterface.holdAndSetCQD("traf_no_dtm_xn", "OFF");
+          if (cliRC < 0)
+            return -1;
+          else
+            cmpctxt->incCntlCount();  // = 6
+        }
+
+      if (cmpctxt->getCntlCount() < 7)  // CQD_SENT_MAX is 7
+        {
+          cliRC = cliInterface.holdAndSetCQD("hbase_rowset_vsbb_opt", "OFF");
+          if (cliRC < 0)
+            return -1;
+          else
+            cmpctxt->incCntlCount();  // = 7
+        }
+    }
 
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
 
@@ -1603,6 +1639,9 @@ void CmpSeabaseDDL::restoreAllControlsAndFlags()
 
   cliRC = cliInterface.executeImmediate("control query shape restore;");
 
+  if (CmpCommon::context()->getCntlCount() > 0 &&
+      CmpCommon::context()->getCntlCount() < CQD_SENT_MAX)
+    {
   cliRC = cliInterface.restoreCQD("volatile_schema_in_use");
 
   cliRC = cliInterface.restoreCQD("hbase_filter_preds");
@@ -1616,6 +1655,7 @@ void CmpSeabaseDDL::restoreAllControlsAndFlags()
   cliRC = cliInterface.restoreCQD("traf_no_dtm_xn");
 
   cliRC = cliInterface.restoreCQD("hbase_rowset_vsbb_opt");
+    }
 
   // Restore parser flags settings of cmp and exe context to what they originally were
   Set_SqlParser_Flags (savedCmpParserFlags_);

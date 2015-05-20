@@ -59,7 +59,7 @@ public class TransactionState {
     private boolean ddlTrans;
     private static boolean useConcurrentHM = false;
     private static boolean getCHMVariable = true;
-    
+
     public Set<String> tableNames = Collections.synchronizedSet(new HashSet<String>());
     public Set<TransactionRegionLocation> participatingRegions;
     /**
@@ -68,7 +68,7 @@ public class TransactionState {
     private Set<TransactionRegionLocation> regionsToIgnore = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
     private Set<TransactionRegionLocation> retryRegions = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
 
-    private native void registerRegion(long transid, int port, byte[] hostname, long startcode, byte[] regionInfo);
+    private native void registerRegion(long transid, long startId, int port, byte[] hostname, long startcode, byte[] regionInfo);
 
     public boolean islocalTransaction() {
       return localTransaction;
@@ -265,11 +265,11 @@ public class TransactionState {
         }
         else {
           if(LOG.isTraceEnabled()) LOG.trace("TransactionState.registerLocation global transaction registering region.");
-          registerRegion(transactionId, lv_port, lv_hostname, lv_startcode, lv_byte_region_info);
+          registerRegion(transactionId, startId, lv_port, lv_hostname, lv_startcode, lv_byte_region_info);
         }
       }
 
-    public boolean addRegion(final TransactionRegionLocation trRegion) {        
+    public boolean addRegion(final TransactionRegionLocation trRegion) {
 
 // Save hregion for now
         boolean added = participatingRegions.add(trRegion);
@@ -282,7 +282,7 @@ public class TransactionState {
         return added;
     }
 
-    public boolean addRegion(final HRegionLocation hregion) {        
+    public boolean addRegion(final HRegionLocation hregion) {
 
         TransactionRegionLocation trRegion   = new TransactionRegionLocation(hregion.getRegionInfo(), 
                                                                              hregion.getServerName());

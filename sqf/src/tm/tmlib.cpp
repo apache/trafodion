@@ -38,6 +38,7 @@
 //extern int HbaseTM_initiate_stall(int where);  Shouldn't need these here.
 //extern HashMapArray* HbaseTM_process_request_regions_info();
 
+
 //==== For the JNI call to RMInterface.cleartransaction - begin
 #include <iostream>
 #include "jni.h"
@@ -199,12 +200,38 @@ int tmlib_init_req_hdr(short req_type, Tm_Req_Msg_Type *pp_req)
     *pp_transid = pv_ext_transid;
 }
 
+// ------------------------------------------------------------
+// set_transid_startid
+// Purpose - need this for now to convert from seabed transid
+// to ours
+// ------------------------------------------------------------
+ void tmlib_set_transid_startid_from_ms ( TM_Transid *pp_transid, MS_Mon_Transid_Type pv_transid2, TM_Transseq_Type *pv_startid, MS_Mon_Transseq_Type pv_startid2)
+{
+    TM_Transid_Type pv_ext_transid;
+    pv_ext_transid.id[0] = pv_transid2.id[0];
+    pv_ext_transid.id[1] = pv_transid2.id[1];
+    pv_ext_transid.id[2] = pv_transid2.id[2];
+    pv_ext_transid.id[3] = pv_transid2.id[3];
+
+    *pp_transid = pv_ext_transid;
+    *pv_startid = pv_startid2;
+}
+
 void tmlib_set_ms_from_transid(TM_Transid_Type pp_transid, MS_Mon_Transid_Type *pp_transid2)
 {
     pp_transid2->id[0] = pp_transid.id[0];
     pp_transid2->id[1] = pp_transid.id[1];
     pp_transid2->id[2] = pp_transid.id[2];
     pp_transid2->id[3] = pp_transid.id[3];
+}
+
+void tmlib_set_ms_from_transid_startid(TM_Transid_Type pp_transid, MS_Mon_Transid_Type *pp_transid2, TM_Transseq_Type pv_startid, MS_Mon_Transseq_Type *pv_startid2)
+{
+    pp_transid2->id[0] = pp_transid.id[0];
+    pp_transid2->id[1] = pp_transid.id[1];
+    pp_transid2->id[2] = pp_transid.id[2];
+    pp_transid2->id[3] = pp_transid.id[3];
+    *pv_startid2 = pv_startid;
 }
 
 // ------------------------------------------------------------
@@ -387,7 +414,7 @@ int tmlib_callback (MS_Mon_Tmlib_Fun_Type pv_fun,
                 tm_log_write(DTM_LIB_TRANS_INVALID_ID, SQ_LOG_WARNING, la_buf);
                 TMlibTrace(("TMLIB_TRACE : tmlib_callback, TMLIB_FUN_CLEAR_TX, %s\n", 
                       la_buf), 1);
-                
+
                 TM_Transaction *lp_saveTrans = gp_trans_thr->get_current();
                 gv_tmlib.reinstate_tx (&lv_transid);
                 gv_tmlib.clear_entry(lv_transid, true /*server*/, false);
@@ -444,21 +471,190 @@ int tmlib_callback (MS_Mon_Tmlib_Fun_Type pv_fun,
     return lv_return;
 }
 
+// ----------------------------------------------------------------
+// tmlib_callback2
+// Purpose - callback registered with Seabed upon startup, used
+//           for File System Propagation (transId and StartId)
+// ---------------------------------------------------------------
+int tmlib_callback2 (MS_Mon_Tmlib_Fun_Type pv_fun,
+                    MS_Mon_Transid_Type pv_transid,
+                    MS_Mon_Transid_Type *pp_transid_out,
+                    MS_Mon_Transseq_Type pv_startid,
+                    MS_Mon_Transseq_Type *pp_startid_out)
+
+{
+    char       la_buf[DTM_STRING_BUF_SIZE];
+    int        lv_return = FEOK;
+    TM_Transid lv_transid;
+    TM_Transseq_Type lv_startid;
+
+   TMlibTrace(("TMLIB_TRACE : tmlib_callback2 ENTRY with function %d \n",
+                     pv_fun), 2);
+
+    if (!gv_tmlib.is_initialized())
+        gv_tmlib.initialize();
+
+    // instantiate a gp_trans_thr object for this thread if needed.
+    if (gp_trans_thr == NULL)
+       gp_trans_thr = new TMLIB_ThreadTxn_Object();
+
+    tmlib_set_transid_startid_from_ms (&lv_transid, pv_transid, &lv_startid, pv_startid);
+
+    switch (pv_fun)
+    {
+    // called in the client to get the current transaction
+    case TMLIB_FUN_GET_TX:
+    {
+         TMlibTrace(("TMLIB_TRACE : tmlib_callback2, FUN_GET_TX\n"), 3);
+
+         // active transaction
+         if (gp_trans_thr->get_current() != NULL)
+         {
+             if ((pp_transid_out == NULL) || (pp_startid_out == NULL))
+                 lv_return = FEMISSPARM;
+             else
+             {
+                 gp_trans_thr->increase_current_ios();
+                 // otherwise, return the active transaction to propagate
+                 tmlib_set_ms_from_transid_startid(
+                       gp_trans_thr->get_current()->getTransid()->get_data(), pp_transid_out,
+                       gp_trans_thr->get_startid(), pp_startid_out);
+                 TMlibTrace(("TMLIB_TRACE : tmlib_callback2, FUN_GET_TX, returning seq num %d and startid %ld\n",
+                          gp_trans_thr->get_current()->getTransid()->get_seq_num(), gp_trans_thr->get_startid()), 3);
+             }
+         }
+         break;
+    }
+
+    // called in the server to register a propagated transaction
+    case TMLIB_FUN_REG_TX:
+    {
+        // if the tx is already active, increase the depth as we
+        // cannot delete the transaction before the final reply.
+        // in a nowait env, we can have more than 1 request come
+        // in for the same tx
+        TMlibTrace(("TMLIB_TRACE : tmlib_callback2, TMLIB_FUN_REG_TX, seq num %d\n", lv_transid.get_seq_num()), 3);
+        if ((gp_trans_thr->get_current()!= NULL) && (gp_trans_thr->get_current()->equal(lv_transid)))
+        {
+            gp_trans_thr->increase_current_depth();
+        }
+        else
+        {
+            // if its not active, add it if need be
+            lv_return = gv_tmlib.add_or_update(lv_transid, lv_startid);
+         }
+        break;
+    }
+
+    // called in the server to clear the propagated transaction
+    case TMLIB_FUN_CLEAR_TX:
+    {
+         // make sure we are clearing the proper transaction
+         TMlibTrace(("TMLIB_TRACE : tmlib_callback2, TMLIB_FUN_CLEAR_TX, seq num %d\n",
+                      lv_transid.get_seq_num()), 3);
+
+        // transaction may have been aborted and was cleared out
+        if (gp_trans_thr->get_current())
+        {
+            // If the transaction being cleared doesn't match the current transaction then
+            // we assume that Seabed is well behaved, but that the application has managed
+            // to set the current transaction since the reinstate callback!  So we re-do
+            // the reinstate, clear it and then set the current transaction back to what
+            // it was when we were called.
+            if (!(gp_trans_thr->get_current()->equal(lv_transid)))
+            {
+                sprintf(la_buf, "Warning: File System transaction to be cleared does not "
+                        "match current transaction %d, assuming it changed since the reinstate.\n",
+                        gp_trans_thr->get_current()->getTransid()->get_seq_num());
+                tm_log_write(DTM_LIB_TRANS_INVALID_ID, SQ_LOG_WARNING, la_buf);
+                TMlibTrace(("TMLIB_TRACE : tmlib_callback2, TMLIB_FUN_CLEAR_TX, %s\n",
+                      la_buf), 1);
+
+                TM_Transaction *lp_saveTrans = gp_trans_thr->get_current();
+                TM_Transseq_Type lv_saveStartId = gp_trans_thr->get_startid();
+                gv_tmlib.reinstate_tx (&lv_transid);
+                gv_tmlib.clear_entry(lv_transid, true /*server*/, false);
+                gp_trans_thr->set_current(lp_saveTrans);
+                gp_trans_thr->set_startid(lv_saveStartId);
+            }
+            else
+               gv_tmlib.clear_entry (lv_transid, true /*server*/, false);
+        }
+        break;
+    }
+
+    // called in the client to reinstate a transaction that left the process
+    case TMLIB_FUN_REINSTATE_TX:
+    {
+         TMlibTrace(("TMLIB_TRACE : tmlib_callback2, TMLIB_FUN_REINSTATE_TX, seq num %d\n",
+                      lv_transid.get_seq_num()), 3);
+        // if we have an active tx, it better be the same!
+         if (gp_trans_thr->get_current())
+         {
+             if (!(gp_trans_thr->get_current()->equal(lv_transid)))
+                lv_return = FEINVTRANSID;
+         }
+         else{
+             gv_tmlib.reinstate_tx (&lv_transid);
+             gp_trans_thr->set_startid(lv_startid);
+         }
+        /* We have to allow this for aborts with outstanding I/Os.
+         if (!(gp_trans_thr->get_current()))
+         {
+             sprintf(la_buf, "Transaction reinstatement failed.\n");
+             tm_log_write(DTM_LIB_INVALID_TRANS, SQ_LOG_CRIT, la_buf);
+             abort();
+         } */
+
+         if (gp_trans_thr->get_current())
+            gp_trans_thr->decrease_current_ios();
+         else
+            lv_return = FEINVTRANSID;
+         break;
+    }
+
+    default:
+    {
+        sprintf(la_buf, "Seabed software fault - bad input pv_fun %d\n", pv_fun);
+        TMlibTrace(("TMLIB_TRACE : tmlib_callback2 failed %s", la_buf), 1);
+        tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, la_buf);
+        abort();  // seabed software fault - bad input
+        break;
+    }
+    }
+
+    TMlibTrace(("TMLIB_TRACE : tmlib_callback2 EXIT with error %d\n",
+                     lv_return), 2);
+
+    return lv_return;
+}
+
 // TOPL REGISTERTRANSACTION
-short REGISTERREGION(long transid, int pv_port, char *pa_hostname, int pv_hostname_length, long pv_startcode, char *pa_regionInfo, int pv_regionInfo_length)
+short REGISTERREGION(long transid, long startid, int pv_port, char *pa_hostname, int pv_hostname_length, long pv_startcode, char *pa_regionInfo, int pv_regionInfo_length)
 {
    short lv_error = FEOK;
    TM_Transaction *lp_trans = NULL;
    TM_Transid lv_transid((TM_Native_Type) transid);
+   TM_Transseq_Type lv_startid((TM_Transseq_Type) startid);
    // instantiate a gp_trans_thr object for this thread if needed.
-   TMlibTrace(("TMLIB_TRACE : REGISTERREGION ENTRY: txid: (%d,%d), port: %d, hostname %s, length: %d, startcode: %ld, regionInfo: %s, length: %d.\n", 
-            lv_transid.get_node(), lv_transid.get_seq_num(), pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length), 2);
-   
-   if (gp_trans_thr == NULL)
+   TMlibTrace(("TMLIB_TRACE : REGISTERREGION ENTRY: txid: (%d,%d), startId: %ld, port: %d, hostname %s, length: %d, startcode: %ld, regionInfo: %s, length: %d.\n",
+            lv_transid.get_node(), lv_transid.get_seq_num(), startid, pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length), 2);
+
+   if (gp_trans_thr == NULL){
+      TMlibTrace(("REGISTERREGION gp_trans_thr is null\n"), 2);
       gp_trans_thr = new TMLIB_ThreadTxn_Object();
+      gp_trans_thr->set_startid(lv_startid);
+   }
 
    TM_Transaction *lp_currTrans = gp_trans_thr->get_current();
+   TM_Transseq_Type lv_savedStartId = gp_trans_thr->get_startid();
 
+   TMlibTrace(("REGISTERREGION lv_savedStartId is %ld.  Startid is %ld \n", (long) lv_savedStartId, startid), 2);
+   if (lv_savedStartId <= 0){ // -1 or 0
+      TMlibTrace(("REGISTERREGION setting lv_savedStartId to %ld. \n", startid), 2);
+      lv_savedStartId = lv_startid;
+      gp_trans_thr->set_startid(lv_startid);
+   }
    if (lp_currTrans
        /* Removed check that the registerregion request is for the current transaction for now. 
           The test is failing for nodes > 0.  Also the else looks incorrect - it assumes that
@@ -467,7 +663,7 @@ short REGISTERREGION(long transid, int pv_port, char *pa_hostname, int pv_hostna
        lp_currTrans->getTransid()->get_native_type() == lv_transid.get_native_type()*/) {
       TMlibTrace(("TMLIB_TRACE : REGISTERREGION using current transid (%d,%d).\n", 
                   lv_transid.get_node(), lv_transid.get_seq_num()), 1);
-      lv_error =  lp_currTrans->register_region(pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length);
+      lv_error =  lp_currTrans->register_region(lv_savedStartId, pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length);
    }
    else {
       lp_trans = new TM_Transaction();
@@ -476,10 +672,11 @@ short REGISTERREGION(long transid, int pv_port, char *pa_hostname, int pv_hostna
       gp_trans_thr->add_trans(lp_trans);
 
       gp_trans_thr->set_current(lp_trans);
+      gp_trans_thr->set_startid(lv_startid);
       if (lv_error == FEOK) {
          TMlibTrace(("TMLIB_TRACE : REGISTERREGION using transid (%d,%d) passed to REGISTERREGION.\n", 
                      lv_transid.get_node(), lv_transid.get_seq_num()), 1);
-         lv_error =  lp_trans->register_region(pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length);
+         lv_error =  lp_trans->register_region(lv_startid, pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length);
       }
       gp_trans_thr->set_current(lp_currTrans);
       delete lp_trans;
@@ -557,7 +754,6 @@ short REGTRUNCATEONABORT(char *pv_tblname, int pv_tblname_len, long pv_transid)
 
     return lv_error;
 }
-
 
 // -------------------------------------------------------------------
 // DROPTABLE
@@ -2261,7 +2457,8 @@ TMLIB::TMLIB() : JavaObjectInterfaceTM()
 {
     tm_rtsigblock_proc();  
     iv_initialized = false;
-    msg_mon_trans_register_tmlib (tmlib_callback);
+//    msg_mon_trans_register_tmlib (tmlib_callback);
+    msg_mon_trans_register_tmlib2 (tmlib_callback2);
 
     for (int lv_idx = 0; lv_idx < MAX_NODES; lv_idx++)
     {
@@ -2357,6 +2554,74 @@ short TMLIB::add_or_update (TM_Transid pv_transid, bool pv_can_end,
      return FEOK;
 }
 
+// -----------------------------------------------------------------
+// add_or_update
+// Purpose - get a transaction and startid into our system.
+// The new transaction is the current transaction after the call.
+// If the TM Library already has this transaction in it's list of
+// active transactions, then we increase the depth after making it
+// current.  This can happen when a server receives multiple
+// awaitiox completions for the same transaction without replying
+// to the first awaitiox (receive depth > 1 on NSK).
+// -----------------------------------------------------------------
+short TMLIB::add_or_update (TM_Transid pv_transid, TM_Transseq_Type pv_startid,
+                            bool pv_can_end, int pv_tag)
+{
+     int lv_new_tx = false;
+
+     TMlibTrace(("TMLIB_TRACE : TMLIB::add_or_update ENTRY\n"), 2);
+     // if the tx doesn't exist yet here, create a new one
+     TM_Transaction *lp_trans = gp_trans_thr->get_trans(pv_transid.get_native_type());
+
+    pv_can_end = pv_can_end; //Intel compiler warning 869
+    pv_tag = pv_tag; //Intel compiler warning 869
+
+     if (!lp_trans)
+     {
+         TMlibTrace(("TMLIB_TRACE : TMLIB::add_or_update - adding new transaction " PFLL "\n",
+                      pv_transid.get_native_type()), 3);
+
+         lv_new_tx = true;
+         lp_trans = new TM_Transaction(pv_transid, true /*fs server*/);
+         if (lp_trans == NULL)
+         {
+             TMlibTrace(("TMLIB_TRACE : TMLIB::add_or_update EXIT with error %d\n", FENOBUFSPACE), 1);
+             return FENOBUFSPACE;
+         }
+
+         short lv_error = lp_trans->get_error();
+         if (lv_error)
+         {
+             TMlibTrace(("TMLIB_TRACE : TMLIB::add_or_update - new transaction failed with error %d\n",
+                          lp_trans->get_error()), 1);
+             delete lp_trans;
+             lp_trans = NULL;
+             TMlibTrace(("TMLIB_TRACE : TMLIB::add_or_update EXIT with error %d\n", lv_error), 2);
+             return lv_error;
+         }
+     }
+     else
+     {
+        TMlibTrace(("TMLIB_TRACE : TMLIB::add_or_update - found existing transaction " PFLL "\n",
+                     pv_transid.get_native_type()), 3);
+     }
+
+     if (lp_trans)
+     {
+         gp_trans_thr->set_current(lp_trans);
+         if (lv_new_tx){
+             gp_trans_thr->set_startid(pv_startid);
+             TMlibTrace(("TMLIB_TRACE : TMLIB::add_or_update - setting startid %ld for transaction " PFLL "\n",
+                     gp_trans_thr->get_startid(), pv_transid.get_native_type()), 3);
+             gp_trans_thr->set_current_propagated(true);
+         }
+         else
+             gp_trans_thr->increase_current_depth();
+     }
+     TMlibTrace(("TMLIB_TRACE : TMLIB::add_or_update EXIT\n"), 2);
+     return FEOK;
+}
+
 // ------------------------------------------------------------------------
 // clear_entry
 // Purpose :  clear an entry out of our system and suspend if instructed to
@@ -2397,13 +2662,15 @@ bool TMLIB::clear_entry (TM_Transid pv_transid, bool pv_server,
 
          } else
          {
+             gp_trans_thr->set_startid(-1);
              gp_trans_thr->set_current(NULL);
          }
     }
 
-    if ((lv_done) && (pv_force))
+    if ((lv_done) && (pv_force)){
+        gp_trans_thr->set_startid(-1);
         gp_trans_thr->set_current(NULL);
-  
+    }
     TMlibTrace(("TMLIB_TRACE : TMLIB::add_or_update EXIT\n"), 2);
     return lv_done;
 

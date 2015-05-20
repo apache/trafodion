@@ -239,15 +239,15 @@ public class SsccTransactionState extends TransactionState{
             {
             	//check whether has mt_ family , if has ,doesn't display, if not, displays
                 if(versionList==null && statusList==null){
-                    if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
-                    return true;
+                if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Assuming cell was inserted outside of SSCC and returning true");
+                return true;
                 }else {
               	    if(LOG.isTraceEnabled()) LOG.trace("handleResult thisTs " + thisTs+ " > startId " + startId + ".  Cell is inserted by another transaction");
               	    return false;
                 }
             }
 
-            if (statusList != null)  
+            if (statusList != null)
             {
                 byte[] lv_colList = null;
                 if(colList != null)
@@ -490,8 +490,8 @@ public class SsccTransactionState extends TransactionState{
         long TxId = this.getTransactionId();
         if(LOG.isTraceEnabled()) LOG.trace("checkStatusListForConflict: ENTER TxId: " + TxId + ", with startId " + startId );
         if(statusList == null) return false;
-        if(LOG.isTraceEnabled()) LOG.trace("checkStatusListForConflict: TxId: " + TxId + ", statusList is not null");
         int count = statusList.size();
+        if(LOG.isTraceEnabled()) LOG.trace("checkStatusListForConflict: TxId: " + TxId + ", statusList is not null, size: " + count);
 
         if(count == 0) {
            return false;
@@ -546,7 +546,11 @@ public class SsccTransactionState extends TransactionState{
         System.arraycopy(byte_2, 0, byte_3, byte_1.length, byte_2.length);
         return byte_3;
     }
-    
+    @Override
+    public String toString() {
+        return super.toString() + ", startId: " + getStartId() + ", commitId: " + getCommitId();
+    }
+
     /**
      * before put ,check whether there has delete previous. if true remove the del
      */

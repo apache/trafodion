@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -230,10 +230,14 @@ namespace SB_Trans {
         Sock_Stream_EH(Sock_Stream *pp_stream);
         virtual ~Sock_Stream_EH();
 
+        void         eh_lock();
+        void         eh_unlock();
         virtual void process_events(int pv_events);
+        virtual void set_stream(Sock_Stream *pp_stream);
 
     private:
-        Sock_Stream *ip_stream;
+        Sock_Stream         *ip_stream;
+        SB_Thread::ECM       iv_eh_mutex;
     };
 
     //
@@ -449,20 +453,27 @@ namespace SB_Trans {
                               MS_Md_Type    *pp_md,
                               short          pv_fserr);
         void          send_sm();
+        void          sock_free();
+        void          sock_lock();
+        void          sock_unlock();
         void          stop_sock();
 
         static Sock_Stream_Accept_Thread *cp_accept_thread;
         static Sock_Stream_Helper_Thread *cp_helper_thread;
         static Sock_Listener             *cp_listener;
+        static bool                       cv_mon_stream_set;
         static SB_Ts_Imap                 cv_stream_map;
         MS_Md_Type                       *ip_send_md;
         Sock_User                        *ip_sock;
         Sock_Stream_EH                   *ip_sock_eh;
         RInfo_Type                        iv_r;
+        bool                              iv_close_ind_sent;
         SB_Thread::ECM                    iv_send_mutex;
         int                               iv_seq;
         int                               iv_sock;
         int                               iv_sock_errored;
+        SB_Thread::ECM                    iv_sock_mutex;
+        bool                              iv_stopped;
     };
 
     typedef bool (*SB_Mon_Sock_Accept_Cb_Type)(void *pp_sock);
