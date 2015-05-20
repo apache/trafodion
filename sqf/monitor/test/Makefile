@@ -24,6 +24,8 @@ FLAGS = $(CFLAGS)
 #FLAGS+= -fdiagnostics-show-option
 FLAGS+= -Wall -Wextra
 
+LIBS+=  -lsqlite3
+
 INCLUDES =  -I$(INCEXPDIR) -I../linux
 
 MONOUTDIR = ../linux/$(OUTDIR)
@@ -61,8 +63,8 @@ TEST_PGMS	+= $(OUTDIR)/spxProc
 $(OUTDIR)/%:%.cxx $(CLIENTOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
-	@echo $(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
-	@$(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@echo $(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@$(CXX) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 

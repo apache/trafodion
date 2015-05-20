@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,25 +17,6 @@
 #
 # @@@ END COPYRIGHT @@@
 
-function StartLobProcesses
-{
-echo Starting lob server processes
-let count=0
-tmp_node_status=`mktemp -t`
-sqshell -c zone > $tmp_node_status
-let totalNodes=`grep 'Up' $tmp_node_status | wc -l`
-while [ ${count} -lt $totalNodes ]
-do
-sqshell -a > /dev/null << eof
-set {process \zlobsrv${count} } PERSIST_RETRIES=10,60
-set {process \zlobsrv${count} } PERSIST_ZONES=0,1
-exec {name \$zlobsrv${count}, nowait, nid ${count}, out stdout_\$ZLOBSRV${count} } mxlobsrvr
-eof
-echo Successfully started \$zlobsrv${count}
-let count=count+1
-done
-}
+$MY_SQROOT/sql/scripts/percomstart lob zlobsrv mxlobsrvr
 
-StartLobProcesses
-
-exit 0
+exit $?

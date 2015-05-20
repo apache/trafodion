@@ -1,6 +1,8 @@
+#!/bin/sh
+
 # @@@ START COPYRIGHT @@@
 #
-# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2015 Hewlett-Packard Development Company, L.P.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,13 +18,5 @@
 #
 # @@@ END COPYRIGHT @@@
 
-begin node
-_virtualnodes 2
-end node
-
-#begin floating_ip
-#process=$MXOAS;interface=bond1;external-ip=xxx.xxx.xx.xxx
-#process=$MXOAS;interface=eth0;internal-ip=xxx.xxx.xxx.xxx
-#floating_ip_node_id 1
-#floating_ip_failover_node_id 0
-#end floating_ip
+rm -f sqconfig.db
+sqlite3 sqconfig.db < $MY_SQROOT/sql/scripts/createConfigDb
