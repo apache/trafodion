@@ -822,6 +822,9 @@ class InterfaceStatement {
 	// -------------------------------------------------------------
 	//TODO: this whole function needs to be rewritten
 	short getSqlStmtType(String str) {
+		str=str.replaceAll("\\n"," ");
+		str=str.replaceAll("\\s*/\\*.*?\\*/\\s*", " ").trim();
+
 		// 7708
 		stmtIsLock = false;
 
