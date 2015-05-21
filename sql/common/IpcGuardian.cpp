@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -4528,7 +4528,18 @@ short IpcGuardianServer::changePriority(IpcPriority priority, NABoolean isDelta)
 					
 NABoolean IpcGuardianServer::serverDied()
 {
-  return FALSE; // does not work on NT
+  const GuaProcessHandle &ph = getServerId().getPhandle();
+  char pname[PhandleStringLen];
+  Int32 pnameLen = ph.toAscii(pname, PhandleStringLen);
+  pname[pnameLen] = '\0';
+#ifdef SQ_PHANDLE_VERIFIER
+  int nid, pid;
+  SB_Verif_Type verifier;
+  int rc = msg_mon_get_process_info2(pname, &nid, &pid, &verifier);
+#else
+  int nid, pid; int rc = msg_mon_get_process_info(pname, &nid, &pid);
+#endif
+  return rc != 0 ;
 }
 
 void IpcGuardianServer::populateDiagsAreaFromTPCError(ComDiagsArea *&diags,

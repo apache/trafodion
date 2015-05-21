@@ -2859,6 +2859,11 @@ Lng32 SQLCLI_ProcessRetryQuery(
   if (id)
     NADELETEBASIC(id, currContext->exHeap());
 
+  Statement *newStmt = currContext->getStatement(aqrSI->getRetryStatementId());
+  StmtStats *stmtStats = (newStmt ? newStmt->getStmtStats() : NULL);
+  if (stmtStats)
+    stmtStats->setAqrInProgress(FALSE);
+
   aqr->clearRetryInfo();
 
   if (aqrSI)

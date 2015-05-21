@@ -16151,6 +16151,30 @@ exe_util_display_explain: explain_starting_tokens TOK_PROCEDURE '(' QUOTED_STRIN
 		 
                  $$ = eue;
 	       }
+exe_util_display_explain: explain_starting_tokens TOK_FOR TOK_QID qid_identifier
+              {
+                char * tmpString =
+                          new (PARSERHEAP()) char[$4->length() + 5];
+                strcpy(tmpString, "QID=");
+                strncpy(tmpString+4, $4->data(), $4->length());
+                tmpString[$4->length()+4] = '\0';
+                ExeUtilDisplayExplain * eue =
+                   new (PARSERHEAP ()) ExeUtilDisplayExplain
+                   (ExeUtilExpr::DISPLAY_EXPLAIN_,
+                    (char*)NULL, CharInfo::UnknownCharSet,
+                    NULL,
+                    tmpString,
+                    ($1 ? (char*)$1->data() : NULL),
+                    NULL,
+                    PARSERHEAP());
+                 //$$ = finalize(eue);
+
+                 // xn will be started, if needed, when the exeutilstmt stmt
+                 // is processed.
+                 eue->xnNeeded() = FALSE;
+
+                 $$ = eue;
+              }
 exe_util_display_explain: explain_starting_tokens TOK_QID qid_identifier TOK_FROM TOK_RMS
               {
                 char * tmpString = 
