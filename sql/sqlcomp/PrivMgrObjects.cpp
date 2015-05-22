@@ -60,7 +60,7 @@ public:
 // Constructors and destructors:
 // -------------------------------------------------------------------
    MyRow(std::string tableName)
-   : PrivMgrMDRow(tableName),
+   : PrivMgrMDRow(tableName, OBJECTS_ENUM),
      objectUID_(0)
    { };
    
@@ -116,8 +116,9 @@ class MyTable : public PrivMgrMDTable
 public:
    MyTable(
       const std::string & tableName,
+      PrivMgrTableEnum myTableEnum,
       ComDiagsArea * pDiags) 
-   : PrivMgrMDTable(tableName,pDiags),
+   : PrivMgrMDTable(tableName,OBJECTS_ENUM,pDiags),
      lastRowRead_(tableName)
      {};
 
@@ -157,7 +158,7 @@ PrivMgrObjects::PrivMgrObjects (
    ComDiagsArea * pDiags)
 : PrivMgr(metadataLocation,pDiags),
   fullTableName_(metadataLocation + ".OBJECTS"),
-  myTable_(*(new MyTable(fullTableName_,pDiags))) 
+  myTable_(*(new MyTable(fullTableName_,OBJECTS_ENUM, pDiags))) 
 { } 
 
 // -----------------------------------------------------------------------
@@ -165,7 +166,7 @@ PrivMgrObjects::PrivMgrObjects (
 // -----------------------------------------------------------------------
 PrivMgrObjects::PrivMgrObjects(const PrivMgrObjects &other)
 : PrivMgr(other),
-  myTable_(*new MyTable(fullTableName_,pDiags_))
+  myTable_(*new MyTable(fullTableName_,OBJECTS_ENUM, pDiags_))
 {
 
    fullTableName_ = other.fullTableName_;
@@ -685,6 +686,9 @@ std::string selectStmt("SELECT CATALOG_NAME, SCHEMA_NAME, OBJECT_NAME,"
 Queue * tableQueue = NULL;
 
 PrivStatus privStatus = executeFetchAll(selectStmt,tableQueue);
+
+   if (privStatus == STATUS_ERROR)
+      return STATUS_ERROR;
 
    tableQueue->position();
    for (int idx = 0; idx < tableQueue->numEntries(); idx++)

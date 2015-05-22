@@ -65,8 +65,8 @@ class ComUser
      static Int32 getSessionUser();
      static bool isRootUserID();
      static bool isRootUserID(Int32 userID);
-     static bool isPublicUserID(Int32 userID);
-     static bool isSystemUserID(Int32 userID);
+     static bool isPublicUserID(Int32 userID) {return (userID == PUBLIC_USER);};
+     static bool isSystemUserID(Int32 userID) {return (userID == SYSTEM_USER);};
      static Int32 getRootUserID() { return SUPER_USER; }
      static Int32 getPublicUserID() { return PUBLIC_USER; }
      static Int32 getSystemUserID() { return SYSTEM_USER; }

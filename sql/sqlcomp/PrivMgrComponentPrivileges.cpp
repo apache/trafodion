@@ -54,7 +54,7 @@ public:
 // Constructors and destructors:
 // -------------------------------------------------------------------
    MyRow(std::string tableName)
-   : PrivMgrMDRow(tableName),
+   : PrivMgrMDRow(tableName, COMPONENT_PRIVILEGES_ENUM),
      componentUID_(0)
    { };
    MyRow(const MyRow &other)
@@ -100,7 +100,7 @@ public:
    MyTable(
       const std::string & tableName,
       ComDiagsArea * pDiags = NULL) 
-   : PrivMgrMDTable(tableName,pDiags),
+   : PrivMgrMDTable(tableName,COMPONENT_PRIVILEGES_ENUM, pDiags),
      lastRowRead_(tableName)
     {};
     
@@ -150,7 +150,7 @@ PrivMgrComponentPrivileges::PrivMgrComponentPrivileges(
    const std::string & metadataLocation,
    ComDiagsArea * pDiags)
 : PrivMgr(metadataLocation,pDiags),
-  fullTableName_(metadataLocation_ + ".COMPONENT_PRIVILEGES"),
+  fullTableName_(metadataLocation_ + "." + PRIVMGR_COMPONENT_PRIVILEGES),
   myTable_(*new MyTable(fullTableName_,pDiags)) 
 { };
 

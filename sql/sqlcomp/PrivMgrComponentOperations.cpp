@@ -59,7 +59,7 @@ public:
 // Constructors and destructors:
 // -------------------------------------------------------------------
    MyRow(std::string tableName)
-   : PrivMgrMDRow(tableName),
+   : PrivMgrMDRow(tableName, COMPONENT_OPERATIONS_ENUM),
      componentUID_(0)
    { };
    MyRow(const MyRow &other)
@@ -119,8 +119,9 @@ class MyTable : public PrivMgrMDTable
 public:
    MyTable(
       const std::string & tableName,
+      PrivMgrTableEnum myTableEnum,
       ComDiagsArea * pDiags) 
-   : PrivMgrMDTable(tableName,pDiags),
+   : PrivMgrMDTable(tableName,COMPONENT_OPERATIONS_ENUM, pDiags),
      lastRowRead_(tableName)
     {};
    
@@ -169,9 +170,9 @@ using namespace ComponentOperations;
 PrivMgrComponentOperations::PrivMgrComponentOperations(
    const std::string & metadataLocation,
    ComDiagsArea * pDiags)
-: PrivMgr(metadataLocation,pDiags),
-  fullTableName_(metadataLocation_ + ".COMPONENT_OPERATIONS"),
-  myTable_(*new MyTable(fullTableName_,pDiags)) 
+: PrivMgr(metadataLocation, pDiags),
+  fullTableName_(metadataLocation_ + "." + PRIVMGR_COMPONENT_OPERATIONS),
+  myTable_(*new MyTable(fullTableName_,COMPONENT_OPERATIONS_ENUM, pDiags)) 
 { };
 
 // -----------------------------------------------------------------------
@@ -179,7 +180,7 @@ PrivMgrComponentOperations::PrivMgrComponentOperations(
 // -----------------------------------------------------------------------
 PrivMgrComponentOperations::PrivMgrComponentOperations(const PrivMgrComponentOperations &other)
 : PrivMgr(other),
-  myTable_(*new MyTable(fullTableName_,pDiags_))
+  myTable_(*new MyTable(fullTableName_,COMPONENT_OPERATIONS_ENUM, pDiags_))
 {
    fullTableName_ = other.fullTableName_;
 }

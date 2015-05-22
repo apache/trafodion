@@ -188,6 +188,17 @@ Tom                                                 White Socks
 --- SQL operation complete.
 >>get tables;
 
+Tables in Schema TRAFODION._PRIVMGR_MD_
+=======================================
+
+COLUMN_PRIVILEGES
+COMPONENTS
+COMPONENT_OPERATIONS
+COMPONENT_PRIVILEGES
+OBJECT_PRIVILEGES
+ROLE_USAGE
+SCHEMA_PRIVILEGES
+
 --- SQL operation complete.
 >>
 >>create table t133_t1 (c1 int not null primary key, c2 int);
@@ -211,9 +222,6 @@ Tom                                                 White Socks
 
 --- SQL operation failed with errors.
 >>
->>initialize authorization;
-
---- SQL operation complete.
 >>obey TEST133(set_up);
 >>set schema "_PRIVMGR_MD_";
 
@@ -256,14 +264,6 @@ SCHEMA_PRIVILEGES
 OBJECT_NAME                                                                                                                                                       TYPE  GRANTEE     PRIVILEGES_BITMAP     GRANTABLE_BITMAP
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------  ----  ----------  --------------------  --------------------
 
-TRAFODION."T133SCH"."GAMES"                                                                                                                                       BT    DB__ROOT                      47                    47
-TRAFODION."T133SCH"."GAMES_BY_PLAYER"                                                                                                                             VI    DB__ROOT                       1                     0
-TRAFODION."T133SCH"."HOME_TEAMS_GAMES"                                                                                                                            VI    DB__ROOT                       1                     0
-TRAFODION."T133SCH"."PLAYERS"                                                                                                                                     BT    DB__ROOT                      47                    47
-TRAFODION."T133SCH"."PLAYERS_ON_TEAM"                                                                                                                             VI    DB__ROOT                       1                     0
-TRAFODION."T133SCH"."STANDINGS"                                                                                                                                   BT    DB__ROOT                      47                    47
-TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
-TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COLUMN_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENTS"                                                                                                                             BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."COMPONENT_OPER                                                                                                                          BT    DB__ROOT                      47                    47
@@ -271,6 +271,14 @@ TRAFODION."_PRIVMGR_MD_"."COMPONENT_PRIV                                        
 TRAFODION."_PRIVMGR_MD_"."OBJECT_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."ROLE_USAGE"                                                                                                                             BT    DB__ROOT                      47                    47
 TRAFODION."_PRIVMGR_MD_"."SCHEMA_PRIVILE                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION.T133SCH.GAMES                                                                                                                                           BT    DB__ROOT                      47                    47
+TRAFODION.T133SCH.GAMES_BY_PLAYER                                                                                                                                 VI    DB__ROOT                      33                    33
+TRAFODION.T133SCH.HOME_TEAMS_GAMES                                                                                                                                VI    DB__ROOT                      33                    33
+TRAFODION.T133SCH.PLAYERS                                                                                                                                         BT    DB__ROOT                      47                    47
+TRAFODION.T133SCH.PLAYERS_ON_TEAM                                                                                                                                 VI    DB__ROOT                      33                    33
+TRAFODION.T133SCH.STANDINGS                                                                                                                                       BT    DB__ROOT                      47                    47
+TRAFODION.T133SCH.TEAMS                                                                                                                                           BT    DB__ROOT                      47                    47
+TRAFODION.T133SCH.TEAM_STATISTICS                                                                                                                                 BT    DB__ROOT                      47                    47
 
 --- 15 row(s) selected.
 >>
@@ -280,7 +288,6 @@ TRAFODION."_PRIVMGR_MD_"."SCHEMA_PRIVILE                                        
 >>get tables;
 
 --- SQL operation complete.
->>sh sleep 30;
 >>initialize authorization;
 
 --- SQL operation complete.
@@ -452,6 +459,7 @@ SCHEMA_PRIVILEGES
 *** ERROR[1017] You are not authorized to perform this operation.
 
 --- SQL operation failed with errors.
+>>
 >>exit;
 
 End of MXCI Session

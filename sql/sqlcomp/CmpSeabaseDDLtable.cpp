@@ -6459,19 +6459,27 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   StmtDDLGrant * grantNode = NULL;
   StmtDDLRevoke * revokeNode = NULL;
   NAString tabName;
-  ComAnsiNameSpace nameSpace; 
-  
+  ComAnsiNameSpace nameSpace;  
+
+  NAString grantedByName;
+  NABoolean isGrantedBySpecified = FALSE;
   if (isGrant)
     {
       grantNode = stmtDDLNode->castToStmtDDLGrant();
       tabName = grantNode->getTableName();
       nameSpace = grantNode->getGrantNameAsQualifiedName().getObjectNameSpace();
+      isGrantedBySpecified = grantNode->isByGrantorOptionSpecified();
+      grantedByName = 
+       isGrantedBySpecified ? grantNode->getByGrantor()->getAuthorizationIdentifier(): "";
     }
   else
     {
       revokeNode = stmtDDLNode->castToStmtDDLRevoke();
       tabName = revokeNode->getTableName();
       nameSpace = revokeNode->getRevokeNameAsQualifiedName().getObjectNameSpace();
+      isGrantedBySpecified = revokeNode->isByGrantorOptionSpecified();
+      grantedByName = 
+       isGrantedBySpecified ? revokeNode->getByGrantor()->getAuthorizationIdentifier(): "";
     }
 
   // If using HBase to perform authorization, call it now.
@@ -6551,6 +6559,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       objectUID = (int64_t)naTable->objectUid().get_value();
       objectOwnerID = (int32_t)naTable->getOwner();
       schemaOwnerID = naTable->getSchemaOwner();
+      objectType = naTable->getObjectType();
     }
 
   ElemDDLGranteeArray & pGranteeArray = 
@@ -6567,10 +6576,6 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   NABoolean   isWGOSpecified =
     (isGrant ? grantNode->isWithGrantOptionSpecified() : 
      revokeNode->isGrantOptionForSpecified());
-
-  NABoolean   isGrantedBySpecified =
-    (isGrant ? grantNode->isByGrantorOptionSpecified() : 
-     revokeNode->isByGrantorOptionSpecified());
 
   vector<std::string> userPermissions;
   std::vector<PrivType> objectPrivs;
@@ -6646,8 +6651,6 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
 
   // Determine effective grantor ID and grantor name based on GRANTED BY clause
   // current user, and object owner
-  NAString grantedByName = 
-     isGrantedBySpecified ? grantNode->getByGrantor()->getAuthorizationIdentifier(): "";
   Int32 effectiveGrantorID;
   std::string effectiveGrantorName;
   PrivStatus result = command.getGrantorDetailsForObject( 
@@ -6664,14 +6667,6 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       processReturn();
       return;
     }
-
-  // TBD:  allow WGO once grant/restrict processing is completed
-  if (isWGOSpecified )
-    {
-      *CmpCommon::diags() << DgSqlCode(-CAT_WGO_NOT_ALLOWED);
-      processReturn();
-      return;
-   }
 
   std::string objectName (extTableName.data());
 
@@ -7613,10 +7608,11 @@ desc_struct * CmpSeabaseDDL::getSeabaseLibraryDesc(
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
-  Int64 libUID = getObjectUID(&cliInterface, 
-                                 catName.data(), schName.data(),
-                                 libraryName.data(),
-                                 (char *)COM_LIBRARY_OBJECT_LIT);
+  Int64 libUID = getObjectUIDandOwners(&cliInterface, 
+                                       catName.data(), schName.data(),
+                                       libraryName.data(),
+                                       COM_LIBRARY_OBJECT,
+                                       objectOwner, schemaOwner);
   if (libUID == -1)
      return NULL;
      
@@ -7660,6 +7656,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseLibraryDesc(
   str_cpy_and_null((char *)libraryInfo->library_filename, ptr, len, '\0', ' ', TRUE);
   cliInterface.getPtrAndLen(2, ptr, len);
   libraryInfo->library_version = *(Int32 *)ptr;
+  libraryInfo->object_owner_id = objectOwner;
+  libraryInfo->schema_owner_id = schemaOwner;
   
   desc_struct *library_desc = Generator::createVirtualLibraryDesc(
             libraryName.data(),
@@ -8963,8 +8961,7 @@ static bool checkSpecifiedPrivs(
       }
       
       // Column-level privileges can only be specified for tables and views.
-      // Currently caller maps both tables and views to the object type base table.
-      if (objectType != COM_BASE_TABLE_OBJECT)
+      if (objectType != COM_BASE_TABLE_OBJECT && objectType != COM_VIEW_OBJECT)
       {
          *CmpCommon::diags() << DgSqlCode(-CAT_INCORRECT_OBJECT_TYPE)
                              << DgTableName(externalObjectName);

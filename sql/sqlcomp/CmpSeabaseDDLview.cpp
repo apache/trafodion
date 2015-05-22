@@ -371,8 +371,8 @@ short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewN
   // set all bits to true initially, we will be ANDing with privileges
   // from all referenced objects 
   // default table and view privileges are the same, set up default values
-  PrivMgrPrivileges::setTablePrivs(privilegesBitmap);
-  PrivMgrPrivileges::setTablePrivs(grantableBitmap);
+  PrivMgr::setTablePrivs(privilegesBitmap);
+  PrivMgr::setTablePrivs(grantableBitmap);
 
   if (!isAuthorizationEnabled())
     return 0;

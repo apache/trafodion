@@ -7134,7 +7134,7 @@ NABoolean CmpSeabaseDDL::insertPrivMgrInfo(const Int64 objUID,
                                            const Int32 schemaOwnerID,
                                            const Int32 creatorID)
 {
-  if (!PrivMgrPrivileges::isSecurableObject(objectType))
+  if (!PrivMgr::isSecurableObject(objectType))
     return TRUE;
 
   // View privileges are handled differently than other objects.  For views,
@@ -7240,7 +7240,7 @@ NABoolean CmpSeabaseDDL::deletePrivMgrInfo(const NAString &objectName,
                                            const Int64 objUID, 
                                            const ComObjectType objectType)
 {
-  if (!PrivMgrPrivileges::isSecurableObject(objectType))
+  if (!PrivMgr::isSecurableObject(objectType))
    return TRUE;
 
   // Initiate the privilege manager interface class

@@ -3289,7 +3289,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
 
    // no privilege support available for hbase and hive tables
    assert (objDef->getNATable());
-   if (isHbaseCat(objDef->getCatName()) || isHiveCat(objDef->getCatName()))
+   if (CmpSeabaseDDL::isHbase(objDef->getCatName()) || isHiveCat(objDef->getCatName()))
      return TRUE;
 
   // Let keep track of how long authorization takes

@@ -2644,10 +2644,9 @@ short CmpDescribeSeabaseTable (
              std::string("\"");
         PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags(),
                                       PrivMgr::PRIV_INITIALIZED);
-        std::string objectName(tableName);
         std::string privilegeText;
-        int64_t objectUID = (int64_t)naTable->objectUid().get_value();
-        if (privInterface.describePrivileges(objectUID, objectName, naTable, privilegeText))
+        PrivMgrObjectInfo objectInfo(naTable);
+        if (privInterface.describePrivileges(objectInfo, privilegeText))
         {
           outputShortLine(space, " ");
           outputLine(space, privilegeText.c_str(), 0);
@@ -3195,9 +3194,9 @@ short CmpDescribeSeabaseTable (
                    std::string("\"");
       PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags(),
                                     PrivMgr::PRIV_INITIALIZED);
-      std::string objectName(tableName);
+      PrivMgrObjectInfo objectInfo(naTable);
       std::string privilegeText;
-      if (privInterface.describePrivileges(objectUID, objectName, naTable, privilegeText))
+      if (privInterface.describePrivileges(objectInfo, privilegeText))
       {
         outputShortLine(space, " ");
         outputLine(space, privilegeText.c_str(), 0);
@@ -3300,9 +3299,9 @@ short CmpDescribeSequence(
                                   std::string(privMgrMDLoc.data()),
                                   CmpCommon::diags());
 
-    std::string objectName(seqName);
     std::string privilegeText;
-    if (privInterface.describePrivileges(objectUID, objectName, naTable, privilegeText))
+    PrivMgrObjectInfo objectInfo(naTable); 
+    if (privInterface.describePrivileges(objectInfo, privilegeText))
     {
       outputShortLine(*space, " ");
       outputLine(*space, privilegeText.c_str(), 0);
@@ -3445,13 +3444,19 @@ bool CmpDescribeLibrary(
 
   ExeCliInterface cliInterface(heap);
         
-  Int64 libraryUID = -1;
 
-  libraryUID = cmpSBD.getObjectUID(&cliInterface, 
-                                    libCatNamePart, 
-                                    libSchNamePart, 
-                                    libObjNamePart,
-                                    COM_LIBRARY_OBJECT_LIT);
+  desc_struct *tDesc = cmpSBD.getSeabaseLibraryDesc(libCatNamePart, 
+                                                    libSchNamePart, 
+                                                    libObjNamePart);
+  if (tDesc == NULL)
+  {
+    *CmpCommon::diags() << DgSqlCode(-4082)
+                        << DgTableName(extLibraryName.data());
+    return 0;
+  }
+
+
+  Int64 libraryUID = tDesc->body.library_desc.libraryUID;
 
    if (libraryUID <= 0) // does not exist
    {
@@ -3485,46 +3490,10 @@ PrivMgrCommands privInterface(privMgrMDLoc.data(),CmpCommon::diags());
 Space localSpace;
 Space * space = &localSpace;
 
-char query[1000];
-char libraryFilename[1025];
-  
-  sprintf(query,"SELECT library_filename from %s.\"%s\".%s WHERE library_uid = %ld",
-                ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG),
-                SEABASE_MD_SCHEMA,SEABASE_LIBRARIES,libraryUID);
-
-Int32 cliRC = cliInterface.fetchRowsPrologue(query,TRUE/*no exec*/); 
-
-   if (cliRC < 0)
-   {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return false;
-   }
-
-   cliRC = cliInterface.clearExecFetchClose(NULL,0);
-   if (cliRC < 0)
-   {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return false;
-   }
-
-   if (cliRC == 100) // did not find the row
-      return false;
-
-char * ptr = NULL;
-Lng32 len = 0;
-
-   cliInterface.getPtrAndLen(1,ptr,len);
-   if (len >= sizeof(libraryFilename))
-      return false;
-       
-   str_cpy_and_null(libraryFilename,ptr,len,'\0',' ',TRUE);
-
-   outputShortLine(*space," ");
-
 char buf[1000];
 
    sprintf(buf,"CREATE LIBRARY \"%s\" FILE '%s'",
-           libraryName.data(),libraryFilename);
+           tDesc->body.library_desc.libraryName, tDesc->body.library_desc.libraryFilename);
            
    outputShortLine(*space,buf);
    outputShortLine(*space,";");
@@ -3547,9 +3516,14 @@ char buf[1000];
                                     std::string(privMgrMDLoc.data()),
                                     CmpCommon::diags());
 
-      std::string objectName(libraryName);
+      std::string objectName(tDesc->body.library_desc.libraryName);
       std::string privilegeText;
-      if (privInterface.describePrivileges(libraryUID,objectName,NULL,privilegeText))
+      PrivMgrObjectInfo objectInfo (
+        libraryUID, objectName,
+        tDesc->body.library_desc.libraryOwnerID,
+        tDesc->body.library_desc.librarySchemaOwnerID,
+        COM_LIBRARY_OBJECT );
+      if (privInterface.describePrivileges(objectInfo,privilegeText))
       {
          outputShortLine(*space," ");
          outputLine(*space,privilegeText.c_str(),0);
@@ -4049,7 +4023,12 @@ short CmpDescribeRoutine (const CorrName   & cn,
 
     std::string objectName(rName);
     std::string privilegeText;
-    if (privInterface.describePrivileges(objectUID, objectName, NULL, privilegeText))
+    PrivMgrObjectInfo objectInfo(
+      objectUID, objectName,
+      (int32_t)routine->getObjectOwner(),
+      (int32_t)routine->getSchemaOwner(),
+      COM_USER_DEFINED_ROUTINE_OBJECT);
+    if (privInterface.describePrivileges(objectInfo, privilegeText))
     {
       outputShortLine(*space, " ");
       outputLine(*space, privilegeText.c_str(), 0);

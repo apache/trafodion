@@ -63,8 +63,6 @@ drop table_mapping function sessionize;
 -- drop database
 drop schema t135sch cascade;
 drop schema t135sch_user3 cascade;
--- disables authorization
-initialize authorization, drop;
 
 ?section set_up
 -- ============================================================================
@@ -78,8 +76,6 @@ sh sh $$scriptsdir$$/tools/dll-compile.ksh udrtest135.cpp
   2>&1 | tee LOG135-SECONDARY;
 set pattern $$DLL$$ udrtest135.dll;
 
--- enable authorization;
-initialize authorization;
 get tables in schema "_PRIVMGR_MD_";
 
 -- Prepare metadata queries
@@ -408,7 +404,6 @@ drop table_mapping function t135_sessionize;
 ?section negative_tests
 -- ============================================================================
 set schema t135sch;
---initialize authorization, drop;
 
 ?section user1_views
 -- ============================================================================

@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public:
 // Constructors and destructors:
 // -------------------------------------------------------------------
    MyRow(std::string tableName)
-   : PrivMgrMDRow(tableName),
+   : PrivMgrMDRow(tableName, COMPONENTS_ENUM),
      componentUID_(0)
    { };
    
@@ -107,7 +107,7 @@ public:
    MyTable(
       const std::string & tableName,
       ComDiagsArea * pDiags) 
-   : PrivMgrMDTable(tableName,pDiags),
+   : PrivMgrMDTable(tableName,COMPONENTS_ENUM, pDiags),
      lastRowRead_(tableName)
      {};
 

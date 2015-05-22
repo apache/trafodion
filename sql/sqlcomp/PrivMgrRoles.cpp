@@ -61,7 +61,7 @@ public:
 // Constructors and destructors:
 // -------------------------------------------------------------------
    MyRow(std::string tableName)
-   : PrivMgrMDRow(tableName),
+   : PrivMgrMDRow(tableName, ROLE_USAGES_ENUM),
      roleID_(0)
    { };
    MyRow(const MyRow &other)
@@ -110,7 +110,7 @@ public:
    MyTable(
       const std::string & tableName,
       ComDiagsArea * pDiags = NULL) 
-   : PrivMgrMDTable(tableName,pDiags),
+   : PrivMgrMDTable(tableName,ROLE_USAGES_ENUM, pDiags),
      lastRowRead_(tableName)
     {};
    

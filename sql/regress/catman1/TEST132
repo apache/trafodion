@@ -1,0 +1,444 @@
+-- ============================================================================
+-- TEST132 - tests utility privilege checking
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- This tests the following commands:
+--
+--   Library operations
+--   LOAD/UNLOAD & PURGEDATA
+--   POPULATE INDEX
+--   SHOWDDL & INVOKE
+--   UPDATE STATISTICS
+--
+-- Sections:
+--   clean_up - removes database setup
+--   set_up - prepares for test
+--   test_<type> - runs tests for different commands
+--   <operation>_<type> - runs tests for an operation by a user
+-- ============================================================================
+
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+obey TEST132(clean_up);
+obey TEST132(set_up);
+log LOG132 clear;
+obey TEST132(test_libraries);
+obey TEST132(test_load_unload_purgedata);
+obey TEST132(test_popindex);
+obey TEST132(test_show);
+obey TEST132(test_stats);
+log;
+obey TEST132(clean_up);
+exit;
+
+?section clean_up
+set schema t132sch;
+drop sequence t132_team_number_sequence;
+drop schema t132sch cascade;
+
+?section set_up
+create shared schema t132sch;
+
+-- Prepare library file
+sh rm -f ./etest140.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh etest140.cpp
+  2>&1 | tee LOG132-SECONDARY;
+set pattern $$DLL$$ etest140.dll;
+
+?section test_libraries
+-- =================================================================
+-- run tests to make sure users that create libraries have correct
+-- privileges.  To create a library, you must:
+--   be DB__ROOT
+--   be granted DB__ROOTROLE
+--   have the MANAGE_LIBRARY and CREATE/CREATE_LIBARARY privileges
+-- =================================================================
+
+set schema t132sch;
+get libraries;
+get privileges on component sql_operations for "PUBLIC";
+
+-- succeed: DB__ROOT can create a library
+sh sqlci -i "TEST132(manage_library)";
+
+-- fail: sql_user1 cannot create a library
+sh sqlci -i "TEST132(manage_library)" -u sql_user1;
+
+-- succeed: grant DB__ROOTROLE to sql_user1
+grant role DB__ROOTROLE to sql_user1;
+sh sqlci -i "TEST132(manage_library)" -u sql_user1;
+
+-- fail: just grant the create privilege
+grant component privilege CREATE_LIBRARY on sql_operations to sql_user2;
+sh sqlci -i "TEST132(manage_library)" -u sql_user2;
+
+-- succeed: now grant the manage_library privilege
+grant component privilege MANAGE_LIBRARY on sql_operations to sql_user2;
+get privileges on component sql_operation for sql_user2;
+sh sqlci -i "TEST132(manage_library)" -u sql_user2;
+
+-- reset 
+revoke role DB__ROOTROLE from sql_user1;
+revoke component privilege MANAGE_LIBRARY on sql_operations from sql_user2;
+revoke component privilege CREATE_LIBRARY on sql_operations from sql_user2;
+get privileges on component sql_operations for "PUBLIC";
+
+?section manage_library
+
+set schema t132sch;
+log LOG132;
+get libraries in schema t132sch;
+create library t132_l1 file 'udrtest135.dll';
+get libraries in schema t132sch;
+drop library t132_l1;
+get libraries in schema t132sch;
+
+?section test_load_unload_purgedata
+-- =================================================================
+-- run tests to make sure users with correct privileges can load
+-- and unload data.  To load a table, you must:
+--   be DB__ROOT
+--   be granted DB__ROOTROLE
+--   have the MANAGE_LOAD
+--   be table owner
+--   have SELECT and INSERT (DELETE for TRUNCATE option) privilege
+--
+-- To unload a table, you must:`
+--   be DB__ROOT
+--   be granted DB__ROOTROLE
+--   have the MANAGE_LOAD
+--   be table owner
+--   have SELECT privilege
+-- 
+-- To purgedata data, you must:
+--   be DB__ROOT
+--   be table owner
+--   have SELECT and DELETE privileges
+-- =================================================================
+
+set schema t132sch;
+get tables;
+
+
+-- perform a load and unload as DB__ROOT
+-- purgedata
+-- perform a load and unload after being granted DB__ROOTROLE
+-- purgedata
+-- perform a load and unload without privileges
+-- perform a load and unload as table owner
+-- purgedata
+-- perform a load and unload with SELECT
+-- perform a load and unload with SELECT, INSERT
+-- purgedata, grant DELETE and purgedata again
+-- perform a load (truncate) and unload with select, insert, delete
+-- perform a load and unload with MANAGE_LOAD privilege
+ 
+-- reset
+
+?section test_popindex
+-- =================================================================
+-- run tests to make sure users that populate indexes have correct
+-- privileges.  To populate an index, you must:
+--   be DB__ROOT
+--   be table owner
+--   have the SELECT and INSERT privilege
+-- =================================================================
+
+set schema t132sch;
+get tables;
+
+create table t132t1 (c1 int not null primary key, c2 int);
+create index t132t1_ndx1 on t132t1 (c2) no populate;
+create table t132t2 (c1 int not null primary key, c2 int)
+  attribute by sql_user1;
+create index t132t2_ndx1 on t132t2(c2) no populate;
+create table t132t3 (c1 int not null primary key, c2 int)
+  attribute by sql_user1;
+create index t132t3_ndx1 on t132t3(c2) no populate;
+
+insert into t132t1 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
+insert into t132t2 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
+insert into t132t3 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
+
+get tables;
+showddl t132t1;
+showddl t132t2;
+showddl t132t3;
+
+-- DB__ROOT can populate indexes
+sh sqlci -i "TEST132(populate_index)";
+obey TEST132(popindex_check_reset);
+
+-- object owner can populate
+-- sql_user1 owns t132t2 and t132t3 but not t132t1
+--  popindex fails for t132t1 but works for the rest
+sh sqlci -i "TEST132(populate_index)" -u sql_user1;
+obey TEST132(popindex_check_reset);
+
+-- if user belongs to DB__ROOTROLE, has no privilege
+grant role DB__ROOTROLE to sql_user2;
+sh sqlci -i "TEST132(populate_index)" -u sql_user2;
+
+-- if user has SELECT and INSERT privileges
+grant SELECT,INSERT on t132t1 to sql_user3;
+grant SELECT, INSERT on t132t2 to sql_user3 by sql_user1;
+sh sqlci -i "TEST132(populate_index)" -u sql_user3;
+obey TEST132(popindex_check_reset);
+
+-- reset
+revoke role DB__ROOTROLE from sql_user2;
+drop table t132t1 cascade;
+drop table t132t2 cascade;
+drop table t132t3 cascade;
+get tables;
+
+?section populate_index
+set schema t132sch;
+log LOG132;
+
+populate index t132t1_ndx1 on t132t1;;
+populate index t132t2_ndx1 on t132t2;
+populate index t132t3_ndx1 on t132t3;
+
+?section popindex_check_reset
+set schema t132sch;
+log LOG132;
+set parserflags 1;
+
+select count(*) from table (index_table t132t1_ndx1);
+select count(*) from table (index_table t132t2_ndx1);
+select count(*) from table (index_table t132t3_ndx1);
+
+drop index t132t1_ndx1;
+create index t132t1_ndx1 on t132t1 (c2) no populate;
+drop index t132t2_ndx1;
+create index t132t2_ndx1 on t132t2 (c2) no populate;
+drop index t132t3_ndx1;
+create index t132t3_ndx1 on t132t3 (c2) no populate;
+
+?section test_show
+-- =================================================================
+-- run tests to make sure users that perform show commands have correct
+-- privileges.  To perform show commands, you must:
+--   be DB__ROOT
+--   be object owner
+--   have the SHOW privilege (PUBLIC & DB__ROOTROLE has priv)
+--   have SELECT privileges on object
+-- =================================================================
+
+set schema t132sch;
+
+create table t132_teams
+  (team_number int not null primary key,
+   team_name char(20) not null,
+   team_contact varchar(50) not null,
+   team_contact_number char (10) not null
+   )
+  ;
+
+alter table t132_teams add constraint valid_team_no check (team_number > 0);
+
+insert into t132_teams values
+   (1, 'White Socks', 'Sam','4082282222'),
+   (2, 'Giants', 'Joe', '5102839483'),
+   (3, 'Cardinals', 'Stella', '9513849384'),
+   (4, 'Indians', 'Matt', '5128383748'),
+   (5, 'Tigers', 'Ronit', '6198273827');
+
+create table t132_games
+   ( home_team_number int not null,
+     visitor_team_number int not null,
+     game_number int not null primary key,
+     game_time timestamp not null,
+     game_location varchar(50) not null)
+     attribute by sql_user1
+  ;
+create index t132_home_games on t132_games (home_team_number);
+
+alter table t132_games add constraint valid_game_number check (game_number > 0);
+
+insert into t132_games values
+   (1, 2, 1, timestamp '2009-04-23 19:30:00', 'California'),
+   (1, 3, 2, timestamp '2009-04-24 19:30:00', 'California'),
+   (1, 4, 3, timestamp '2009-04-25 10:00:00', 'Oklahoma'),
+   (2, 3, 4, timestamp '2009-04-25 13:30:00', 'Michigan'),
+   (1, 5, 5, timestamp '2009-04-25 15:00:00', 'Oklahoma'),
+   (2, 5, 6, timestamp '2009-04-27 17:00:00', 'New York'),
+   (3, 4, 7, timestamp '2009-04-28 17:00:00', 'Florida'),
+   (4, 2, 8, current_timestamp, 'Missouri');
+
+create view t132_giants_games as 
+  select game_number, game_time, game_location
+  from t132_games
+  where home_team_number = 2
+  order by 1,2,3;
+select * from t132_giants_games;
+ 
+create view t132_home_teams_games as
+  select t.team_number, g.game_number, g.game_time
+  from "T132_TEAMS" t,
+       "T132_GAMES" g
+  where t.team_number = g.home_team_number
+  order by 1, game_number, game_time;
+select team_number, game_number from t132_home_teams_games;
+
+create sequence t132_team_number_sequence;
+
+-- revoke show prvilege from PUBLIC
+get privileges on component sql_operations for "PUBLIC";
+revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+get privileges on component sql_operations for "PUBLIC";
+
+-- DB__ROOT has all privileges
+obey TEST132(show_objects);
+
+-- sql_user1 owns some of the objects but not all
+sh sqlci -i "TEST132(show_objects)" -u sql_user1;
+
+-- sql_user2 get privileges through DB__ROOTROLE role SHOW privilege
+-- first illustrate that sql_user2 has no privileges
+sh sqlci -i "TEST132(show_objects)" -u sql_user2;
+grant role DB__ROOTROLE to sql_user2;
+
+-- now sql_user2 has privileges with the grant
+sh sqlci -i "TEST132(show_objects)" -u sql_user2;
+revoke role DB__ROOTROLE from sql_user2;
+
+-- sql_user3 gets some privileges through SELECT grant
+grant SELECT on t132_teams to sql_user3;
+sh sqlci -i "TEST132(show_objects)" -u sql_user3;
+ 
+-- regrant the show privs - everyone has privs
+get privileges on component sql_operations for "PUBLIC";
+grant component privilege "SHOW" on sql_operations to "PUBLIC";
+get privileges on component sql_operations for "PUBLIC";
+sh sqlci -i "TEST132(show_objects)" -u sql_user1;
+sh sqlci -i "TEST132(show_objects)" -u sql_user2;
+sh sqlci -i "TEST132(show_objects)" -u sql_user3;
+
+drop table t132_teams cascade;
+drop table t132_games cascade;
+drop sequence t132_team_number_sequence;
+
+?section show_objects
+
+set schema t132sch;
+log LOG132;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+showddl t132_games;
+showddl t132_teams;
+showddl t132_giants_games;
+showddl t132_home_teams_games;
+showddl sequence t132_team_number_sequence;
+
+invoke t132_games;
+invoke t132_teams;
+invoke t132_giants_games;
+invoke t132_home_teams_games;
+
+?section test_stats
+-- =================================================================
+-- run tests to make sure users that update statistics have correct
+-- privileges.  To update stats, you must:
+--   be DB__ROOT
+--   be table owner
+--   have the MANAGE_STATISTICS privilege (DB__ROOTROLE has priv)
+-- =================================================================
+
+set schema t132sch;
+get tables;
+
+create table t132t1 (c1 int, c2 int);
+create table t132t2 (c1 int, c2 int) attribute by sql_user1;
+insert into t132t1 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
+insert into t132t2 values (1,1), (2,2), (3,3),(4,4), (5,5),(6,6), (7,7),(8,8);
+
+get tables;
+select count(*) from t132t1;
+select count(*) from t132t2;
+
+-- update statistics as DB__ROOT
+sh sqlci -i "TEST132(update_stats)";
+
+-- run as DB__ROOTROLE
+-- DB__ROOTROLE is granted MANAGE_STATISTICS privilege by default
+-- first show that sql_user2 cannot perform operations
+sh sqlci -i "TEST132(update_stats)" -u sql_user2;
+grant role DB__ROOTROLE to sql_user2;
+
+-- now show privileges after being granted DB__ROOTROLE role
+sh sqlci -i "TEST132(update_stats)" -u sql_user2;
+revoke role DB__ROOTROLE from sql_user2;
+
+-- run as table owner, sql_user1 owns one table
+-- update stats only works for t132t2, showstats works on both tables
+sh sqlci -i "TEST132(show_update_stats)" -u sql_user1;
+
+-- revoke SHOW privilege from public for the next set of tests
+get privileges on component sql_operations for "PUBLIC";
+revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+get privileges on component sql_operations for "PUBLIC";
+
+-- Run with MANAGE_STATISTICS and no SHOW
+-- first illustrate that sql_user3 has no privs
+get privileges on component sql_operations for sql_user3;
+sh sqlci -i "TEST132(show_update_stats)" -u sql_user3;
+grant component privilege MANAGE_STATISTICS on sql_operations to sql_user3;
+
+-- now show privileges after being granted MANAGE_STATISTICS
+get privileges on component sql_operations for sql_user3;
+sh sqlci -i "TEST132(show_update_stats)" -u sql_user3;
+revoke component privilege MANAGE_STATISTICS on sql_operations from sql_user3;
+get privileges on component sql_operations for sql_user3;
+
+-- test showstats
+-- showstats should no longer work
+sh sqlci -i "TEST132(show_stats)" -u sql_user3;
+
+-- grant select to allow showstats to work
+grant SELECT on t132t1 to sql_user4;
+showddl t132t1;
+sh sqlci -i "TEST132(show_stats)" -u sql_user4;
+
+-- reset
+revoke SELECT on t132t1 from sql_user4;
+grant component privilege "SHOW" on sql_operations to "PUBLIC";
+get privileges on component sql_operations for "PUBLIC";
+
+drop table t132t1;
+drop table t132t2;
+
+?section show_update_stats
+obey TEST132(update_stats);
+obey TEST132(show_stats);
+
+?section update_stats
+set schema t132sch;
+log LOG132;
+
+update statistics for table t132t1 on every column;
+update statistics for table t132t2 on every column;
+
+?section show_stats
+set schema t132sch;
+log LOG132;
+
+showstats for table t132t1 on every column;
+showstats for table t132t2 on every column;

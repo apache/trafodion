@@ -431,6 +431,8 @@ struct library_desc_struct {
   char *libraryFilename;
   Int32 libraryVersion;
   ComSInt64 libraryUID;
+  Int32 libraryOwnerID;
+  Int32 librarySchemaOwnerID;
 #ifdef NA_LITTLE_ENDIAN
   void encode() {}
 #endif

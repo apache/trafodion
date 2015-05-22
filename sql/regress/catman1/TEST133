@@ -32,16 +32,14 @@
 --   authorized - runs authorization tests
 -- ============================================================================
 
-cqd metadata_cache_size '0';
-cqd QUERY_CACHE '0';
 obey TEST133(clean_up);
-register user sql_user4;
 log LOG133 clear;
 obey TEST133(create_db);
 obey TEST133(tests);
 sh sqlci -i "TEST133(authorized)" -u sql_user4;
 log;
 obey TEST133(clean_up);
+initialize authorization;
 exit;
 
 ?section clean_up
@@ -49,9 +47,6 @@ set schema "_PRIVMGR_MD_";
 drop sequence t133sch.team_number_sequence;
 -- drop database
 drop schema t133sch cascade;
-
--- removes privilege metadata
-initialize authorization, drop;
 
 ?section create_db
 create schema t133sch;
@@ -205,14 +200,12 @@ create view t133_v1 as select * from t133_t1;
 create index t133_i1 on t133_t1(c2);
 create table t133_t2 like t133_t1;
 
-initialize authorization;
 obey TEST133(set_up);
 get tables;
 execute get_owner_privs;
 
 initialize authorization, drop;
 get tables;
-sh sleep 30;
 initialize authorization;
 get tables;
 select count (*) from components;
@@ -237,5 +230,4 @@ set schema "_PRIVMGR_MD_";
 log LOG133;
 initialize authorization;
 initialize authorization, drop;
-exit;
 

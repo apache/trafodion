@@ -1,7 +1,4 @@
 >>obey TEST137(set_up);
->>initialize authorization;
-
---- SQL operation complete.
 >>prepare get_roles from
 +>select substring (auth_db_name,1,20) as role_name
 +>from "_MD_".AUTHS
@@ -671,6 +668,73 @@ LIBRARY_BOOKS
 >>
 >>
 >>log;
+>>-- These tests should succeed
+>>-- returns 2 rows
+>>showddl role db__rootrole;
+
+CREATE ROLE "DB__ROOTROLE";
+  -- GRANT ROLE "DB__ROOTROLE" TO "DB__ROOT" WITH ADMIN OPTION;
+
+--- SQL operation complete.
+>>execute get_component_operations;
+
+*** ERROR[15017] Statement GET_COMPONENT_OPERATIONS was not found.
+
+>>grant component privilege lib_view_checkouts on library_books to sql_user4 
++>   with grant option;
+
+--- SQL operation complete.
+>>grant component privilege lib_manage_checkouts on library_books to sql_user5;
+
+--- SQL operation complete.
+>>-- returns 17 rows
+>>execute get_priv_desc;
+
+*** ERROR[15017] Statement GET_PRIV_DESC was not found.
+
+>>
+>>-- These tests should fail
+>>register component library_other;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>create component privilege lib_other as 'LO' on library_books;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>--revoke component privilege lib_manage_checkouts
+>>--   on library_books from library_admin;
+>>--revoke component privilege lib_view_repository
+>>--   on library_books from sql_user6;
+>>log;
+>>-- these tests should succeed
+>>grant component privilege lib_view_checkouts on library_books to sql_user6;
+
+--- SQL operation complete.
+>>execute get_priv_desc;
+
+*** ERROR[15017] Statement GET_PRIV_DESC was not found.
+
+>>revoke component privilege lib_view_checkouts on library_books from sql_user6;
+
+--- SQL operation complete.
+>>
+>>-- these tests should fail
+>>grant component privilege lib_manage_checkouts on library_books to sql_user6;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>log;
+>>-- these tests should fail
+>>grant component privilege lib_view_repository on library_books to sql_user7;
+
+*** ERROR[1004] Object LIB_VIEW_REPOSITORY does not exist or object type is invalid for the current operation.
+
+--- SQL operation failed with errors.
+>>log;
 >>obey TEST137(operator_privs);
 >>-- This section tests operation privileges:
 >>-- Test environment
@@ -1301,22 +1365,54 @@ CREATE COMPONENT PRIVILEGE USE_ALTERNATE_SCHEMA AS 'UA' ON SQL_OPERATIONS
 >>-- user2
 >>-- Create operations fail
 >>sh sh runmxci.ksh -i "TEST137(user2_cc)" -u sql_user2;
+>>-- user2 requests
+>>--create catalog t137cat1;
+>>--create schema t137cat1.t137sch;
+>>--drop schema t137cat1.t137sch;
+>>--drop catalog t137cat1;
+>>--create schema t137sch;
+>>--drop schema t137sch cascade;
+>>log;
 >>-- create catalog works
 >>grant component privilege create_catalog on sql_operations to library_admin;
 
 --- SQL operation complete.
 >>sh sh runmxci.ksh -i "TEST137(user2_cc)" -u sql_user2;
+>>-- user2 requests
+>>--create catalog t137cat1;
+>>--create schema t137cat1.t137sch;
+>>--drop schema t137cat1.t137sch;
+>>--drop catalog t137cat1;
+>>--create schema t137sch;
+>>--drop schema t137sch cascade;
+>>log;
 >>-- create catalog and create schema works
 >>grant component privilege create_schema on sql_operations to library_admin;
 
 --- SQL operation complete.
 >>sh sh runmxci.ksh -i "TEST137(user2_cc)" -u sql_user2;
+>>-- user2 requests
+>>--create catalog t137cat1;
+>>--create schema t137cat1.t137sch;
+>>--drop schema t137cat1.t137sch;
+>>--drop catalog t137cat1;
+>>--create schema t137sch;
+>>--drop schema t137sch cascade;
+>>log;
 >>-- create catalog fails
 >>revoke component privilege create_catalog 
 +>   on sql_operations from library_admin;
 
 --- SQL operation complete.
 >>sh sh runmxci.ksh -i "TEST137(user2_cc)" -u sql_user2;
+>>-- user2 requests
+>>--create catalog t137cat1;
+>>--create schema t137cat1.t137sch;
+>>--drop schema t137cat1.t137sch;
+>>--drop catalog t137cat1;
+>>--create schema t137sch;
+>>--drop schema t137sch cascade;
+>>log;
 >>revoke component privilege create_schema
 +>   on sql_operations from library_admin;
 
@@ -1324,10 +1420,18 @@ CREATE COMPONENT PRIVILEGE USE_ALTERNATE_SCHEMA AS 'UA' ON SQL_OPERATIONS
 >>
 >>-- user3 (operation fail)
 >>sh sh runmxci.ksh -i "TEST137(user3_cc)" -u sql_user3;
+>>-- user3 requests
+>>--create catalog t137cat1;
+>>--create schema t137sch;
+>>log;
 >>
 >>-- user6 
 >>-- operation fails
 >>sh sh runmxci.ksh -i "TEST137(user6_cc)" -u sql_user6;
+>>-- user6 requests
+>>--create schema t137sch;
+>>--drop schema t137sch cascade;
+>>log;
 >>-- operation works
 >>grant role db__useradmin to sql_user6;
 
@@ -1335,6 +1439,10 @@ CREATE COMPONENT PRIVILEGE USE_ALTERNATE_SCHEMA AS 'UA' ON SQL_OPERATIONS
 
 --- SQL operation failed with errors.
 >>sh sh runmxci.ksh -i "TEST137(user6_cc)" -u sql_user6;
+>>-- user6 requests
+>>--create schema t137sch;
+>>--drop schema t137sch cascade;
+>>log;
 >>-- operation fails
 >>revoke role db__useradmin from sql_user6;
 
@@ -1342,33 +1450,52 @@ CREATE COMPONENT PRIVILEGE USE_ALTERNATE_SCHEMA AS 'UA' ON SQL_OPERATIONS
 
 --- SQL operation failed with errors.
 >>sh sh runmxci.ksh -i "TEST137(user6_cc)" -u sql_user6;
+>>-- user6 requests
+>>--create schema t137sch;
+>>--drop schema t137sch cascade;
+>>log;
 >>
 >>-- user7
 >>-- fails
 >>sh sh runmxci.ksh -i "TEST137(user7_cc)" -u sql_user7;
+>>-- user7 requests
+>>--create catalog t137cat1;
+>>--create schema t137cat1.t137sch;
+>>--drop schema t137cat1.t137sch;
+>>--drop catalog t137cat1;
+>>log;
 >>-- works
 >>grant component privilege create_catalog, create_schema 
 +>   on sql_operations to sql_user7;
 
 --- SQL operation complete.
 >>sh sh runmxci.ksh -i "TEST137(user7_cc)" -u sql_user7;
+>>-- user7 requests
+>>--create catalog t137cat1;
+>>--create schema t137cat1.t137sch;
+>>--drop schema t137cat1.t137sch;
+>>--drop catalog t137cat1;
+>>log;
 >>-- fails
 >>revoke component privilege create_schema, create_catalog 
 +>   on sql_operations from sql_user7;
 
 --- SQL operation complete.
 >>sh sh runmxci.ksh -i "TEST137(user7_cc)" -u sql_user7;
+>>-- user7 requests
+>>--create catalog t137cat1;
+>>--create schema t137cat1.t137sch;
+>>--drop schema t137cat1.t137sch;
+>>--drop catalog t137cat1;
+>>log;
 >>
 >>-- user8 (fails)
 >>sh sh runmxci.ksh -i "TEST137(user8_cc)" -u sql_user8;
+>>-- user8 requests
+>>--create catalog t137cat1;
+>>--create schema t137sch;
+>>log;
 >>
->>-- reset state
->>grant component privilege create_catalog on sql_operations to public;
-
---- SQL operation complete.
->>grant component privilege create_schema on sql_operations to public;
-
---- SQL operation complete.
 >>showddl component sql_operations;
 
 REGISTER COMPONENT SQL_OPERATIONS SYSTEM DETAIL 'Component for SQL operations';
@@ -1519,9 +1646,6 @@ CREATE COMPONENT PRIVILEGE CREATE_ROUTINE_ACTION AS 'CA' ON SQL_OPERATIONS
 
 CREATE COMPONENT PRIVILEGE CREATE_CATALOG AS 'CC' ON SQL_OPERATIONS SYSTEM
   DETAIL 'Allow grantee to create catalogs';
-
- GRANT COMPONENT PRIVILEGE CREATE_CATALOG
- ON SQL_OPERATIONS TO PUBLIC;
 
 --  GRANT COMPONENT PRIVILEGE CREATE_CATALOG
  ON SQL_OPERATIONS TO DB__ROOT
@@ -2028,16 +2152,10 @@ drop component privilege lib_view_benefactors cascade;
 >>drop role library_ckout_clerks;
 
 --- SQL operation complete.
->>initialize authorization,drop;
-
---- SQL operation complete.
 >>
 >>
 >>-- run tests for revoke.
 >>obey TEST137(revoke_comp_privs_setup);
->>initialize authorization;
-
---- SQL operation complete.
 >>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 
 --- SQL operation complete.
@@ -2107,6 +2225,53 @@ drop component privilege lib_view_benefactors cascade;
 
 --- SQL operation complete.
 >>
+>>log;
+>>grant component privilege lib_view_repository
++>on library_books to sql_user2 with grant option;
+
+--- SQL operation complete.
+>>log;
+>>grant component privilege lib_view_repository
++>on library_books to sql_user3 with grant option;
+
+--- SQL operation complete.
+>>
+>>grant component privilege lib_view_repository
++>on library_books to sql_user1;
+
+--- SQL operation complete.
+>>
+>>grant component privilege lib_view_repository
++>on library_books to sql_user5;
+
+--- SQL operation complete.
+>>log;
+>>grant component privilege lib_view_repository
++>on library_books to DB__ROOT with grant option;
+
+--- SQL operation complete.
+>>
+>>grant component privilege lib_view_repository
++>on library_books to sql_user5;
+
+--- SQL operation complete.
+>>
+>>grant component privilege lib_view_repository
++>on library_books to sql_user4 with grant option;
+
+--- SQL operation complete.
+>>log;
+>>grant component privilege lib_view_repository
++>on library_books to sql_user5;
+
+--- SQL operation complete.
+>>log;
+>>revoke component privilege lib_view_repository
++>on library_books from sql_user3;
+
+*** ERROR[1025] Request failed.  Dependent object  exists.
+
+--- SQL operation failed with errors.
 >>log;
 >>unregister component Library_books cascade;
 

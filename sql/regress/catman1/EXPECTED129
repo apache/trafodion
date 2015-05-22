@@ -168,9 +168,7 @@ GRANT SELECT(A), INSERT(A) ON
 >>
 >>grant select (b,d) on t3 to sql_user3 with grant option;
 
-*** ERROR[1007] The WITH GRANT OPTION is not supported.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>grant select (f,g) on t4 to sql_user3;
 
 --- SQL operation complete.
@@ -188,6 +186,7 @@ CREATE TABLE TRAFODION.US4.T3
 ;
 
 -- GRANT SELECT, INSERT, DELETE, UPDATE, REFERENCES ON TRAFODION.US4.T3 TO SQL_USER4 WITH GRANT OPTION;
+  GRANT SELECT(B, D) ON TRAFODION.US4.T3 TO SQL_USER3 WITH GRANT OPTION;
 
 --- SQL operation complete.
 >>showddl t4;
@@ -431,14 +430,10 @@ select * from table(natablecache()) ;
 >>
 >>grant select (b,d) on t3 to sql_user3 with grant option;
 
-*** ERROR[1007] The WITH GRANT OPTION is not supported.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>grant select (f,g) on t4 to sql_user3;
 
-*** ERROR[8102] The operation is prevented by a unique constraint.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>showddl t3;
 
 CREATE TABLE TRAFODION.US4.T3
@@ -474,30 +469,26 @@ CREATE TABLE TRAFODION.US4.T4
 --- SQL operation failed with errors.
 >>revoke select (b) on t3 from sql_user3;
 
-*** ERROR[1018] Grant of role or privilege SELECT on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>
 >>revoke grant option for select (c) on t3 from sql_user3;
 
-*** ERROR[1007] The WITH GRANT OPTION is not supported.
+*** ERROR[1018] Grant of role or privilege SELECT on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
 --- SQL operation failed with errors.
 >>
 >>revoke grant option for select (d) on t3 from sql_user3;
 
-*** ERROR[1007] The WITH GRANT OPTION is not supported.
-
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>
 >>revoke grant option for select (b) on t3 from sql_user3;
 
-*** ERROR[1007] The WITH GRANT OPTION is not supported.
+*** ERROR[1018] Grant of role or privilege SELECT on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
 --- SQL operation failed with errors.
 >>revoke grant option for select (b) on t3 from sql_user3 cascade;
 
-*** ERROR[1007] The WITH GRANT OPTION is not supported.
+*** ERROR[1018] Grant of role or privilege SELECT on TRAFODION.US4.T3 from SQL_USER4 to SQL_USER3 not found, revoke request ignored.
 
 --- SQL operation failed with errors.
 >>showddl t3;

@@ -1455,6 +1455,8 @@ desc_struct *Generator::createVirtualLibraryDesc(
    strcpy(library_desc->body.library_desc.libraryFilename, libraryInfo->library_filename);
    library_desc->body.library_desc.libraryVersion = libraryInfo->library_version;
    library_desc->body.library_desc.libraryUID = libraryInfo->library_UID;
+   library_desc->body.library_desc.libraryOwnerID = libraryInfo->object_owner_id;
+   library_desc->body.library_desc.librarySchemaOwnerID = libraryInfo->schema_owner_id;
    
    return library_desc;
    

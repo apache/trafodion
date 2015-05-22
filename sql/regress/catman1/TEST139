@@ -32,16 +32,6 @@
 
 cqd CAT_ENABLE_QUERY_INVALIDATION 'OFF';
 obey TEST139(clean_up);
-register user sql_user1;
-register user sql_user2;
-register user sql_user3;
-register user sql_user4;
-register user sql_user5;
-register user sql_user6;
-register user sql_user7;
-register user sql_user8;
-register user sql_user9;
-register user sql_user10;
 cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
 log LOG139 clear;
 obey TEST139(set_up);
@@ -55,9 +45,6 @@ exit;
 ?section clean_up
 -- drop database
 drop schema t139sch cascade;
-
--- removes privilege metadata
-initialize authorization, drop;
 
 ?section create_db
 create shared schema t139sch;
@@ -179,7 +166,6 @@ create volatile table home_games as
 
 ?section set_up
 set schema "_PRIVMGR_MD_";
-initialize authorization;
 prepare get_owner_privs from
 select distinct
    substring (object_name,1,10) as object_name,

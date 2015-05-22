@@ -20,12 +20,15 @@
   
 // ==========================================================================
 // Contains non inline methods in the following classes
+//   PrivMgrObjectInfo
 //   PrivMgrCommands
 // ==========================================================================
 
 #include "PrivMgrCommands.h"
 #include "PrivMgrMD.h"
 #include "DgBaseType.h"
+#include "NATable.h"
+#include "NAColumn.h"
 
 #include "PrivMgrPrivileges.h"
 
@@ -36,6 +39,30 @@
 #include "ComSecurityKey.h"
 #include <cstdio>
 #include <algorithm>
+
+// ****************************************************************************
+// Class: PrivMgrObjectInfo
+// ****************************************************************************
+PrivMgrObjectInfo::PrivMgrObjectInfo(
+  const NATable *naTable)
+: objectOwner_ (naTable->getOwner()),
+  schemaOwner_ (naTable->getSchemaOwner()),
+  objectUID_   (naTable->objectUid().get_value()),
+  objectName_  (naTable->getTableName().getQualifiedNameAsAnsiString().data()),
+  objectType_  (naTable->getObjectType())
+{
+  const NAColumnArray &colNameArray = naTable->getNAColumnArray();
+  for (size_t i = 0; i < colNameArray.entries(); i++)
+  {
+    const NAColumn * naCol = colNameArray.getColumn(i);
+    std::string columnName(naCol->getColName().data());
+    columnList_.push_back( columnName);
+  }
+}
+ 
+// ****************************************************************************
+// Class: PrivMgrCommands
+// ****************************************************************************
 
 // -----------------------------------------------------------------------
 // Default Constructor
@@ -249,13 +276,11 @@ bool PrivMgrCommands::describeComponents(
 // returns true if successful
 // The Trafodion diags area contains any errors that were encountered
 // ----------------------------------------------------------------------------
-bool PrivMgrCommands::describePrivileges (const int64_t objectUID,
-                                          const std::string &objectName,
-                                          const NATable * naTable,
+bool PrivMgrCommands::describePrivileges (const PrivMgrObjectInfo &objectInfo,
                                           std::string &privilegeText)
 {
-  PrivMgrPrivileges objectPrivs (objectUID, objectName, 0, metadataLocation_, pDiags_);
-  PrivStatus retcode = objectPrivs.getPrivTextForObject(naTable,privilegeText);
+  PrivMgrPrivileges objectPrivs (objectInfo, metadataLocation_, pDiags_);
+  PrivStatus retcode = objectPrivs.getPrivTextForObject(objectInfo,privilegeText);
   return (retcode == STATUS_GOOD) ? true : false;
 }
 
@@ -647,7 +672,7 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
    const bool isAllSpecified,
    const bool isWGOSpecified)
 {
-  if (!PrivMgrPrivileges::isSecurableObject(objectType))
+  if (!isSecurableObject(objectType))
   {
     *pDiags_ << DgSqlCode (-15455)
              << DgString0 ("GRANT")
@@ -670,7 +695,7 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
       const PrivMgrBitmap &objectPrivs,
       const PrivMgrBitmap &grantablePrivs)
 {
-  if (!PrivMgrPrivileges::isSecurableObject(objectType))
+  if (!isSecurableObject(objectType))
   {
     *pDiags_ << DgSqlCode (-15455)
              << DgString0 ("GRANT")
@@ -1055,7 +1080,7 @@ PrivStatus PrivMgrCommands::revokeObjectPrivilege(
     const bool isAllSpecified,
     const bool isGOFSpecified)
 {
-  if (!PrivMgrPrivileges::isSecurableObject(objectType))
+  if (!isSecurableObject(objectType))
   {
     *pDiags_ << DgSqlCode (-15455)
              << DgString0 ("REVOKE")

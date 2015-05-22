@@ -1,7 +1,7 @@
 //*****************************************************************************
 // @@@ START COPYRIGHT @@@
 //
-//// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+//// (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.
 ////
 ////  Licensed under the Apache License, Version 2.0 (the "License");
 ////  you may not use this file except in compliance with the License.
@@ -30,6 +30,26 @@
 // *
 // *****************************************************************************
 
+// List of tables that make up the privilege manager component
+#define PRIVMGR_OBJECT_PRIVILEGES "OBJECT_PRIVILEGES"
+#define PRIVMGR_COLUMN_PRIVILEGES "COLUMN_PRIVILEGES"
+#define PRIVMGR_COMPONENTS "COMPONENTS"
+#define PRIVMGR_COMPONENT_OPERATIONS "COMPONENT_OPERATIONS"
+#define PRIVMGR_COMPONENT_PRIVILEGES "COMPONENT_PRIVILEGES"
+#define PRIVMGR_ROLE_USAGE "ROLE_USAGE"
+#define PRIVMGR_SCHEMA_PRIVILEGES "SCHEMA_PRIVILEGES"
+
+enum PrivMgrTableEnum { OBJECT_PRIVILEGES_ENUM = 30,
+                            COLUMN_PRIVILEGES_ENUM = 31,
+                            SCHEMA_PRIVIELGES_ENUM = 32,
+                            COMPONENTS_ENUM        = 33,
+                            COMPONENT_OPERATIONS_ENUM  = 34,
+                            COMPONENT_PRIVILEGES_ENUM  = 35,
+                            ROLE_USAGES_ENUM           = 36,
+                            OBJECTS_ENUM               = 37,
+                            UNKNOWN_ENUM               = 38
+                          };
+
 // The TableDDLString is used to contain the CREATE text for privilege manager
 // metadata tables
 struct TableDDLString {
@@ -45,12 +65,22 @@ struct PrivMgrTableStruct
   const TableDDLString * tableDDL;
   const bool isIndex;
 };
+
+// Trafodion creates HBase tables that concatenate the catalog, schema, and
+// object name together.  The max HBase name can only be 255.  As long as
+// we create Trafodion objects in HBase the same way, the object_name variables
+// stored in the PrivMgr tables cannot exceed 255.  If we decide to change
+// our naming convention, this size could change. 
+  
 // the following TableDDLStrings describe each metadata tables
 static const TableDDLString columnPrivilegesDDL[] =
 {" ( \
    object_uid largeint not null, \
+   object_name varchar(600 bytes) character set utf8 not null, \
    grantee_id int not null, \
+   grantee_name varchar(256 bytes) character set utf8 not null, \
    grantor_id int not null, \
+   grantor_name varchar(256 bytes) character set utf8 not null, \
    column_number int not null, \
    privileges_bitmap largeint not null, \
    grantable_bitmap largeint not null, \
@@ -120,8 +150,11 @@ static const TableDDLString roleUsageDDL[] =
 static const TableDDLString schemaPrivilegesDDL[] = 
 { " ( \
   schema_uid largeint not null, \
+  schema_name varchar(600 bytes) character set utf8 not null, \
   grantee_id int not null, \
+  grantee_name varchar(256 bytes) character set utf8 not null, \
   grantor_id int not null, \
+  grantor_name varchar(256 bytes) character set utf8 not null, \
   privileges_bitmap largeint not null, \
   grantable_bitmap largeint not null, \
   primary key (schema_uid, grantor_id, grantee_id) \
@@ -129,13 +162,13 @@ static const TableDDLString schemaPrivilegesDDL[] =
 
 // The PrivMgrTableStruct describes each table
 static const PrivMgrTableStruct privMgrTables[] =
-  { { "OBJECT_PRIVILEGES", objectPrivilegesDDL, false }, 
-    { "COLUMN_PRIVILEGES", columnPrivilegesDDL, false },
-    { "COMPONENTS", componentsDDL, false },
-    { "COMPONENT_OPERATIONS", componentOperationsDDL, false },
-    { "COMPONENT_PRIVILEGES", componentPrivilegesDDL, false },
-    { "ROLE_USAGE", roleUsageDDL, false }
-   ,{ "SCHEMA_PRIVILEGES", schemaPrivilegesDDL, false } 
+  { { PRIVMGR_OBJECT_PRIVILEGES, objectPrivilegesDDL, false }, 
+    { PRIVMGR_COLUMN_PRIVILEGES, columnPrivilegesDDL, false },
+    { PRIVMGR_COMPONENTS, componentsDDL, false },
+    { PRIVMGR_COMPONENT_OPERATIONS, componentOperationsDDL, false },
+    { PRIVMGR_COMPONENT_PRIVILEGES, componentPrivilegesDDL, false },
+    { PRIVMGR_ROLE_USAGE, roleUsageDDL, false }
+   ,{ PRIVMGR_SCHEMA_PRIVILEGES, schemaPrivilegesDDL, false } 
   };
 
 

@@ -41,10 +41,78 @@ class ComSecurityKey;
 // *****************************************************************************
 
 // Contents of file
+class PrivMgrObjectInfo;
+class ObjectPrivsRow;
 class PrivMgrUserPrivs;
-class PrivMgrPrivileges;
+class PrivMgrCommands;
 
+// Forward references
+class PrivMgrPrivileges;
 class NATable;
+
+// ****************************************************************************
+// *
+// * Class:        PrivMgrObjectInfo
+// * Description:  This class describes object details needed to perform 
+// *               describe requests
+// *
+// ****************************************************************************
+class PrivMgrObjectInfo
+{
+  public:
+
+  PrivMgrObjectInfo( const int64_t objectUID,
+                     const std::string objectName,
+                     const int32_t objectOwner,
+                     const int32_t schemaOwner,
+                     const ComObjectType objectType)
+  : objectOwner_ (objectOwner),
+    objectName_ (objectName),
+    schemaOwner_ (schemaOwner),
+    objectUID_ (objectUID),
+    objectType_ (objectType)
+  {}
+
+
+  PrivMgrObjectInfo(const NATable *naTable);
+
+  const int32_t getObjectOwner()                  { return objectOwner_; }
+  const std::string getObjectName()               { return objectName_; }
+  const int32_t getSchemaOwner()                  { return schemaOwner_; }
+  const int64_t getObjectUID()                    { return objectUID_; }
+  const ComObjectType getObjectType()             { return objectType_; }
+  const std::vector<std::string> &getColumnList() { return columnList_; }
+
+  private:
+
+  int64_t                  objectUID_;
+  std::string              objectName_;
+  int32_t                  objectOwner_;
+  int32_t                  schemaOwner_;
+  ComObjectType            objectType_;
+  std::vector<std::string> columnList_;
+};
+
+// ****************************************************************************
+// class: ObjectPrivsRow
+//
+// ****************************************************************************
+class ObjectPrivsRow
+{
+public:
+   char objectName[(MAX_SQL_IDENTIFIER_NAME_LEN*3) + 2 + 1];
+   ComObjectType objectType;
+   int32_t granteeID;
+   char granteeName[MAX_USERNAME_LEN * 2 + 1];
+   ComGranteeType granteeType;
+   int32_t grantorID;
+   char grantorName[MAX_USERNAME_LEN * 2 + 1];
+   ComGrantorType grantorType;
+   int64_t privilegesBitmap;
+   int64_t grantableBitmap;
+};
+
+
 // *****************************************************************************
 // *
 // * Class:        PrivMgrUserPrivs
@@ -279,9 +347,7 @@ public:
                            std::vector<std::string> & outlines);
     
    bool describePrivileges(
-      const int64_t objectUID,
-      const std::string &objectName,
-      const NATable * naTable,
+      const PrivMgrObjectInfo &objectInfo,
       std::string &privilegeText);
 
    PrivStatus dropAuthorizationMetadata();

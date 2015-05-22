@@ -21,17 +21,20 @@
 #ifndef PRIVMGR_PRIVILEGES_H
 #define PRIVMGR_PRIVILEGES_H
 
-#include <string>
-#include <bitset>
-#include <vector>
 #include "PrivMgrDefs.h"
 #include "PrivMgrMD.h"
 #include "PrivMgrMDTable.h"
 #include "PrivMgrDesc.h"
 #include "ComSmallDefs.h"
 
+#include <string>
+#include <bitset>
+#include <vector>
+#include <set>
+
 class ComSecurityKey;
 class NATable;
+class PrivMgrObjectInfo;
 
 // *****************************************************************************
 // *
@@ -47,7 +50,7 @@ class UIDAndPrivs
 {
 public:
    int64_t objectUID;
-   PrivMgrBitmap privsBitmap;
+   PrivObjectBitmap privsBitmap;
 };
 
 // *****************************************************************************
@@ -58,29 +61,6 @@ class PrivMgrPrivileges : public PrivMgr
 {
 public:
 
-// -------------------------------------------------------------------
-// Static functions:
-// -------------------------------------------------------------------
-   static bool isSecurableObject(const ComObjectType objectType)
-   {
-     return (objectType == COM_BASE_TABLE_OBJECT ||
-             objectType == COM_LIBRARY_OBJECT ||
-             objectType == COM_USER_DEFINED_ROUTINE_OBJECT ||
-             objectType == COM_VIEW_OBJECT ||
-             objectType == COM_SEQUENCE_GENERATOR_OBJECT ||
-             objectType == COM_STORED_PROCEDURE_OBJECT);
-   }
-
-   // Set default privileges for a bitmap based on a table or view
-   static void setTablePrivs(PrivMgrBitmap &bitmap)
-   {
-      bitmap.reset();
-      bitmap.set(SELECT_PRIV);
-      bitmap.set(DELETE_PRIV);
-      bitmap.set(INSERT_PRIV);
-      bitmap.set(UPDATE_PRIV);
-      bitmap.set(REFERENCES_PRIV);
-   }
  enum ChosenPrivs { ORIGINAL_PRIVS, CURRENT_PRIVS };
 
  //
@@ -95,6 +75,11 @@ public:
       const int32_t grantorID,
       const std::string &metadataLocation,
       ComDiagsArea * pDiags = NULL);
+
+   PrivMgrPrivileges (
+      const PrivMgrObjectInfo &objectInfo,
+      const std::string &metadataLocation,
+      ComDiagsArea *pDiags = NULL);
 
    PrivMgrPrivileges(
       const std::string &metadataLocation,
@@ -122,28 +107,23 @@ public:
    PrivStatus getPrivBitmaps(
       const std::string & whereClause,
       const std::string & orderByClause,
-      std::vector<PrivMgrBitmap> & privBitmaps);
+      std::vector<PrivObjectBitmap> & privBitmaps);
       
    PrivStatus getPrivRowsForObject(
       const int64_t objectUID,
       std::vector<ObjectPrivsRow> & objectPrivsRows);
 
    PrivStatus getPrivTextForObject(
-      const NATable *naTable,
+      const PrivMgrObjectInfo &objectInfo,
       std::string &privilegeText);
 
    PrivStatus getPrivsOnObjectForUser(
       const int64_t objectUID,
       const int32_t userID,
-      PrivMgrBitmap &userPrivs,
-      PrivMgrBitmap &grantablePrivs,
+      PrivObjectBitmap &userPrivs,
+      PrivObjectBitmap &grantablePrivs,
       std::vector <ComSecurityKey *>* secKeySet);
 
-   PrivStatus getUIDandPrivs(
-      const int32_t granteeID,
-      ComObjectType objectType,
-      std::vector<UIDAndPrivs> & UIDandPrivs);
-       
    PrivStatus givePrivForObjects(
       const int32_t currentOwnerID,
       const int32_t newOwnerID,
@@ -172,8 +152,8 @@ public:
       const ComObjectType objectType,
       const int32_t granteeID,
       const std::string &granteeName,
-      const PrivMgrBitmap privsBitmap,
-      const PrivMgrBitmap grantableBitmap);
+      const PrivObjectBitmap privsBitmap,
+      const PrivObjectBitmap grantableBitmap);
 
    PrivStatus grantToOwners(
       const ComObjectType objectType,
@@ -222,8 +202,6 @@ public:
   // helpers
   // -------------------------------------------------------------------
   bool isAuthIDGrantedPrivs(const int32_t authID);
-  bool isPublicUser(int32_t userID) { return (userID == PUBLIC_AUTH_ID); }
-  bool isSystemUser(int32_t userID) { return (userID == SYSTEM_AUTH_ID); }
 
 protected:
 
@@ -288,6 +266,9 @@ private:
     ViewUsage &viewUsage,
     const std::vector<ObjectUsage *> listOfAffectedObjects);
 
+  PrivStatus generateColumnRowList();
+  PrivStatus generateObjectRowList();
+
   PrivStatus getAffectedObjects(
     const ObjectUsage &objectUsage,
     const PrivCommand command,
@@ -304,15 +285,25 @@ private:
   PrivStatus getRowsForGrantee(
     const int64_t objectUID,
     const int32_t granteeID,
+    const bool isObjectTable,
     const std::vector<int32_t> & roleIDs,
     std::vector<PrivMgrMDRow *> &rowList,
     std::vector <ComSecurityKey *>* secKeySet); 
     
+  void getTreeOfGrantors(
+    const int32_t granteeID,
+    std::set<int32_t> &listOfGrantors);
+
   PrivStatus givePriv(
      const int32_t currentOwnerID,
      const int32_t newOwnerID,
      const std::string &newOwnerName,
      const int64_t objectUID);    
+
+  bool hasColumnWGO(
+   const std::vector<ColPrivSpec> & colPrivsArrayIn,
+   const std::vector<int32_t> &roleIDs,
+   PrivStatus & privStatus);
 
   void scanObjectBranch( 
     const PrivType pType, // in
@@ -339,9 +330,11 @@ int64_t        objectUID_;
 std::string    objectName_;
 int32_t        grantorID_;   // is this needed as a member
 
-std::string    fullTableName_;
+std::string    objectTableName_;
 std::string    columnTableName_;
-std::string    trafMetadataLocation_;
+
+std::vector<PrivMgrMDRow *> objectRowList_;
+std::vector<PrivMgrMDRow *> columnRowList_;
 
 };
 #endif // PRIVMGR_PRIVILEGES_H

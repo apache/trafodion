@@ -54,9 +54,8 @@
 // *    TRAFODION.PRIVMGR_MD.tablename)                                        *
 // *                                                                           *
 // *****************************************************************************
-PrivMgrMDRow::PrivMgrMDRow(std::string myTableName)
+PrivMgrMDRow::PrivMgrMDRow(std::string myTableName, PrivMgrTableEnum myTableEnum)
 : myTableName_(myTableName)
-
 {}   
    
 // -----------------------------------------------------------------------
@@ -105,6 +104,7 @@ PrivMgrMDRow::~PrivMgrMDRow()
 // *****************************************************************************
 PrivMgrMDTable::PrivMgrMDTable( 
    const std::string & tableName,
+   PrivMgrTableEnum myTableEnum,
    ComDiagsArea * pDiags)
 : tableName_(tableName),
   pDiags_(pDiags)

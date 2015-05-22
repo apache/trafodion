@@ -27,8 +27,6 @@ obey TEST131(clnup);
 
 log LOG131 ;
 
-initialize authorization;
-
 -- run the test in sqlci sessions which start after authorization
 -- is enabled.
 log;
@@ -73,8 +71,6 @@ revoke component privilege QUERY_CANCEL on sql_operations from SQL_USER7;
 revoke role role131  from sql_user7;
 revoke component privilege QUERY_CANCEL on SQL_OPERATIONS from role131;
 drop role role131;
-
-initialize authorization, drop;
 
 ?section setup
 

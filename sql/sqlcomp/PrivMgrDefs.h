@@ -24,6 +24,7 @@
 #include <bitset>
 #include "NAUserId.h"
 #include "ComSmallDefs.h"
+
 // *****************************************************************************
 // *
 // * File:         PrivMgrDef.h
@@ -31,23 +32,7 @@
 // *               privilege manager component
 // *
 // *****************************************************************************
-#define MAX_PRIV_OBJECT_NAME_LEN 600
 
-class ObjectPrivsRow
-{
-public:
-   char objectName[MAX_PRIV_OBJECT_NAME_LEN + 1];
-   ComObjectType objectType;
-   int32_t granteeID;
-   char granteeName[MAX_USERNAME_LEN * 2 + 1];
-   ComGranteeType granteeType;
-   int32_t grantorID;
-   char grantorName[MAX_USERNAME_LEN * 2 + 1];
-   ComGrantorType grantorType;
-   int64_t privilegesBitmap;
-   int64_t grantableBitmap;   
-};      
-      
 // Returns the result of the operation 
 enum PrivStatus { STATUS_UNKNOWN   = 20,
                   STATUS_GOOD      = 21,
@@ -55,6 +40,23 @@ enum PrivStatus { STATUS_UNKNOWN   = 20,
                   STATUS_NOTFOUND  = 23,
                   STATUS_ERROR     = 24
                 };
+
+enum {SQL_OPERATIONS_COMPONENT_UID = 1};
+#define SQL_OPERATION_NAME "SQL_OPERATIONS"
+
+#define PRIVMGR_INTERNAL_ERROR(text)                                      \
+   *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)                   \
+            << DgString0(__FILE__)                                        \
+            << DgInt0(__LINE__)                                           \
+            << DgString1(text)                                            
+
+
+enum class PrivClass {
+   ALL = 2,
+   OBJECT = 3,
+   COMPONENT = 4,
+   SCHEMA = 5
+};
 
 // Defines the list of supported privileges
 // and their order in the privilege and grantable bitmaps
@@ -124,6 +126,63 @@ inline bool isSequenceGeneratorPrivType(PrivType privType)
    
 }
      
+// Defines the list of privileges that are support for the 
+// SQLOperation component
+enum class SQLOperation {
+   ALTER = 2,
+   ALTER_LIBRARY,
+   ALTER_ROUTINE,
+   ALTER_ROUTINE_ACTION,
+   ALTER_SCHEMA,
+   ALTER_SEQUENCE,
+   ALTER_SYNONYM,
+   ALTER_TABLE,
+   ALTER_TRIGGER,
+   ALTER_VIEW,
+   CREATE,
+   CREATE_CATALOG,
+   CREATE_INDEX,
+   CREATE_LIBRARY,
+   CREATE_PROCEDURE,
+   CREATE_ROUTINE,
+   CREATE_ROUTINE_ACTION,
+   CREATE_SCHEMA,
+   CREATE_SEQUENCE,
+   CREATE_SYNONYM,
+   CREATE_TABLE,
+   CREATE_TRIGGER,
+   CREATE_VIEW,
+   DROP,
+   DROP_CATALOG,
+   DROP_INDEX,
+   DROP_LIBRARY,
+   DROP_PROCEDURE,
+   DROP_ROUTINE,
+   DROP_ROUTINE_ACTION,
+   DROP_SCHEMA,
+   DROP_SEQUENCE,
+   DROP_SYNONYM,
+   DROP_TABLE,
+   DROP_TRIGGER,
+   DROP_VIEW,
+   MANAGE_COMPONENTS,
+   MANAGE_LIBRARY,
+   MANAGE_LOAD,
+   MANAGE_ROLES,
+   MANAGE_STATISTICS,
+   MANAGE_USERS,
+   QUERY_ACTIVATE,
+   QUERY_CANCEL,
+   QUERY_SUSPEND,
+   REMAP_USER,
+   SHOW,
+   USE_ALTERNATE_SCHEMA,
+   FIRST_OPERATION = ALTER,
+   LAST_OPERATION = USE_ALTERNATE_SCHEMA,
+   NUMBER_OF_OPERATIONS = LAST_OPERATION - FIRST_OPERATION + 1,
+   UNKNOWN
+};
+
 enum class PrivDropBehavior {
    CASCADE = 2,
    RESTRICT = 3
@@ -214,6 +273,5 @@ inline bool isDMLPrivType(PrivType privType)
 #define DB_ROOTROLE_ID 1000000
 
 #define MAX_SQL_IDENTIFIER_NAME_LEN 256
-
 
 #endif

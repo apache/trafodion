@@ -35,10 +35,10 @@
 1033 ZZZZZ 99999 BEGINNER MINOR DBADMIN The table name is not specified.
 1034 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Unable to obtain privileges
 1035 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName already exists.
-1036 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only services ID can execute DROP SQL.
-1037 ZZZZZ 99999 BEGINNER MAJOR DBADMIN SQL is not installed on system $0~string0.
+1036 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Authorization ID $0~String0 cannot grant to authorization ID $1~String1 because it could create a circular dependency.
+1037 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Revoke failed because of a dependent grant between authorization ID $0~string0 and authorization ID $1~string1
 1038 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Not all user catalogs have been dropped from the system.
-1039 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The DROP SQL statement could not be executed.
+1039 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No privileges were revoked.  You lack the grant option for the specified privilege(s).
 1040 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The use of ALTER on metadata tables is not permitted.
 1041 ZZZZZ 99999 BEGINNER MINOR DBADMIN The primary key has already been defined.
 1042 ZZZZZ 99999 BEGINNER MINOR DBADMIN All PRIMARY KEY or UNIQUE constraint columns must be NOT NULL.

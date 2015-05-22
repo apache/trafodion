@@ -1,8 +1,4 @@
 >>
->>initialize authorization;
-
---- SQL operation complete.
->>
 >>-- run the test in sqlci sessions which start after authorization
 >>-- is enabled.
 >>log;
@@ -312,9 +308,9 @@ SQL_USER7
 >>
 >>-- expect error 8031 since the query is not running.
 >>obey cancel_cmd;
->>control query cancel qid MXID11000018903212296528300595471000000000206U3334000_52_S1;
+>>control query cancel qid MXID11000010365212299077168091428000000000206U3334000_38_S1;
 
-*** ERROR[8031] Server declined cancel request for query ID MXID11000018903212296528300595471000000000206U3334000_52_S1. The query is not in OPEN or FETCH or EXECUTE state.
+*** ERROR[8031] Server declined cancel request for query ID MXID11000010365212299077168091428000000000206U3334000_38_S1. The query is not in OPEN or FETCH or EXECUTE state.
 
 --- SQL operation failed with errors.
 >>
@@ -490,10 +486,6 @@ End of MXCI Session
 *** ERROR[1338] Role ROLE131 is not defined in the database.
 
 --- SQL operation failed with errors.
->>
->>initialize authorization, drop;
-
---- SQL operation complete.
 >>
 >>
 >>log;
