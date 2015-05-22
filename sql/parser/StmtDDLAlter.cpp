@@ -1533,10 +1533,11 @@ StmtDDLAlterTableSetConstraint::getText() const
 //
 
 StmtDDLAlterTableDisableIndex::StmtDDLAlterTableDisableIndex
-    (NAString & indexName, NABoolean allIndexes)
+(NAString & indexName, NABoolean allIndexes, NABoolean allUniqueIndexes)
   : StmtDDLAlterTable(DDL_ALTER_TABLE_DISABLE_INDEX),
     indexName_(indexName, PARSERHEAP()),
-    allIndexes_(allIndexes) 
+    allIndexes_(allIndexes),
+    allUniqueIndexes_(allUniqueIndexes)
 {
 }
 
@@ -1587,10 +1588,11 @@ StmtDDLAlterTableDisableIndex::getText() const
 //
 
 StmtDDLAlterTableEnableIndex::StmtDDLAlterTableEnableIndex
-    (NAString & indexName, NABoolean allIndexes)
+(NAString & indexName, NABoolean allIndexes, NABoolean allUniqueIndexes)
   : StmtDDLAlterTable(DDL_ALTER_TABLE_ENABLE_INDEX),
     indexName_(indexName, PARSERHEAP()),
-    allIndexes_(allIndexes) 
+    allIndexes_(allIndexes),
+    allUniqueIndexes_(allUniqueIndexes)
 {
 }
 

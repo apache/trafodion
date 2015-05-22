@@ -2568,6 +2568,7 @@ ComTdbExeUtilHBaseBulkLoad::ComTdbExeUtilHBaseBulkLoad(char * tableName,
                     num_buffers, buffer_size),
       ldQuery_(ldStmtStr),
       flags_(0),
+      flags2_(0),
       maxErrorRows_(0),
       errCountTable_(errCountTab),
       loggingLocation_(loggingLoc)

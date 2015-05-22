@@ -9477,12 +9477,14 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   setTargetUserColPosList();
   bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
   bindWA->getCurrentScope()->setRETDesc(currRETDesc);
+  NABoolean bulkLoadIndex = bindWA->isTrafLoadPrep() && noIMneeded() ;
 
-  if (someNonDefaultValuesSpecified) // query-expr child specified
+  if (someNonDefaultValuesSpecified) 
+    // query-expr child specified
     {
 
       const RETDesc &sourceTable = *child(0)->getRETDesc();
-      if (sourceTable.getDegree() != newTgtColList.entries()) {
+      if ((sourceTable.getDegree() != newTgtColList.entries())&& !bulkLoadIndex) {
       // 4023 degree of row value constructor must equal that of target table
       *CmpCommon::diags() << DgSqlCode(-4023)
 #pragma nowarn(1506)   // warning elimination
@@ -9515,12 +9517,31 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     if (getBoundView())
       viewColumns = getBoundView()->getRETDesc()->getColumnList();
 
+     if (bulkLoadIndex) {
+       setRETDesc(child(0)->getRETDesc());
+       /*ValueIdList outputs;
+       getRETDesc()->getValueIdList(outputs, USER_AND_SYSTEM_COLUMNS);
+       ValueIdSet potentialOutputs;
+       getPotentialOutputValues(potentialOutputs);
+       potentialOutputs.insertList(outputs); 
+       setPotentialOutputValues(potentialOutputs);
+       // this flag is set to indicate optimizer not to pick the
+       // TupleFlow operator
+       setNoFlow(TRUE); */
+      } 
+
     for (i = 0; i < tgtColList.entries() && i2 < newTgtColList.entries(); i++) {
       if(tgtColList[i] != newTgtColList[i2])
         continue;
 
       ValueId target = tgtColList[i];
-      ValueId source = sourceTable.getValueId(i2);
+      ValueId source ;
+      if (!bulkLoadIndex)
+        source = sourceTable.getValueId(i2);
+      else {
+        ColRefName & cname = ((ColReference *)(baseColRefs()[i2]))->getColRefNameObj();
+        source = sourceTable.findColumn(cname)->getValueId();
+      }
       CMPASSERT(target != source);
 
       const NAColumn *nacol = target.getNAColumn();
@@ -9966,14 +9987,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
         getOptStoi()->getStoi()->setUpdateColumn(i,scanStoi->getUpdateColumn(i));
   }
    
-  if ((getIsTrafLoadPrep() ) && getTableDesc()->hasSecondaryIndexes())
-  {
-
-   //this is safe guard. Indexes are supposed to be disabled already before reaching this point from the bulk load utility
-    //4484--Indexes not supported yet with bulk load. Disable the indexes and try again.
-    *CmpCommon::diags() << DgSqlCode(-4484)
-                        << DgString0("bulk load");
-  }
   if ((getIsTrafLoadPrep()) &&
       (getTableDesc()->getCheckConstraints().entries() != 0 ||
           getTableDesc()->getNATable()->getRefConstraints().entries() != 0  ))
@@ -9998,7 +10011,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     }
 
   }
-  if (NOT isMerge())
+  if (NOT (isMerge() || noIMneeded()))
     boundExpr = handleInlining(bindWA, boundExpr);
 
   // turn OFF Non-atomic Inserts for ODBC if we have detected that Inlining is needed
@@ -10011,13 +10024,15 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   }
   
   
-  // When mtsStatement_ is set Insert needs to return rows;
+  // When mtsStatement_ or bulkLoadIndex is set Insert needs to return rows;
   // so potential outputs are added (note that it's not replaced) to 
   // the Insert node. Currently mtsStatement_ is set
   // for MTS queries and embedded insert queries.
-  if (isMtsStatement())
+  if (isMtsStatement() || bulkLoadIndex)
     {
-      setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, getTableDesc()));
+      if(isMtsStatement())
+        setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, getTableDesc()));
+
       bindWA->getCurrentScope()->setRETDesc(getRETDesc());
 
       ValueIdList outputs;

@@ -7916,21 +7916,24 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
         {
 
           NABoolean allIndexes = FALSE;
+          NABoolean allUniquesOnly = FALSE;
           StmtDDLAlterTableDisableIndex * disableIdx = ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableDisableIndex();
           NAString tabNameNAS ;
           if (disableIdx)
           {
             allIndexes = disableIdx->getAllIndexes();
             tabNameNAS = disableIdx->getTableName();
+            allUniquesOnly = disableIdx->getAllUniqueIndexes();
           }
           else
           {
             StmtDDLAlterTableEnableIndex * enableIdx = ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableEnableIndex();
-            allIndexes = enableIdx->getAllIndexes();
+            allIndexes = enableIdx->getAllIndexes() ;
             tabNameNAS = enableIdx->getTableName();
+            allUniquesOnly = enableIdx->getAllUniqueIndexes();
           }
 
-          if (!allIndexes)
+          if (!(allIndexes || allUniquesOnly))
             alterSeabaseTableDisableOrEnableIndex(ddlNode,
                                                 currCatName,
                                                 currSchName);
@@ -7939,7 +7942,8 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
             alterSeabaseTableDisableOrEnableAllIndexes(ddlNode,
                                                      currCatName,
                                                      currSchName,
-                                                     (NAString &) tabNameNAS);
+                                                       (NAString &) tabNameNAS,
+                                                       allUniquesOnly);
           }
         }
      else if (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME)

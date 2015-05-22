@@ -158,6 +158,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   listOfFetchedColNames_(listOfFetchedColNames),
   listOfUpDeldColNames_(listOfUpDeldColNames),
   listOfMergedColNames_(listOfMergedColNames),
+  listOfIndexesAndTable_(NULL),
 
   keyInfo_(keyInfo),
   keyColName_(keyColName),
@@ -258,6 +259,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   listOfFetchedColNames_(NULL),
   listOfUpDeldColNames_(NULL),
   listOfMergedColNames_(NULL),
+  listOfIndexesAndTable_(NULL),
 
   keyInfo_(NULL),
   keyColName_(NULL),
@@ -397,6 +399,7 @@ Long ComTdbHbaseAccess::pack(void * space)
   listOfFetchedColNames_.pack(space);
   listOfUpDeldColNames_.pack(space);
   listOfMergedColNames_.pack(space);
+  listOfIndexesAndTable_.pack(space);
   keyInfo_.pack(space);
   keyColName_.pack(space);
   server_.pack(space);
@@ -461,6 +464,7 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(listOfFetchedColNames_.unpack(base, reallocator)) return -1;
   if(listOfUpDeldColNames_.unpack(base, reallocator)) return -1;
   if(listOfMergedColNames_.unpack(base, reallocator)) return -1;
+  if(listOfIndexesAndTable_.unpack(base, reallocator)) return -1;
   if(keyInfo_.unpack(base, reallocator)) return -1;
   if(keyColName_.unpack(base)) return -1;
   if(server_.unpack(base)) return -1;

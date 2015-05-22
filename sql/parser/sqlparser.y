@@ -1341,6 +1341,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_RANGE               /* Tandem extension non-reserved word*/
 %token <tokval> TOK_RANGE_N             /* TD extension that HP wants to ignore */
 %token <tokval> TOK_RANGELOG			/* MV */
+%token <tokval> TOK_REBUILD
 %token <tokval> TOK_REFERENCES
 %token <tokval> TOK_REGISTER            /* Tandem extension */
 %token <tokval> TOK_UNREGISTER          /* Tandem extension */
@@ -2788,7 +2789,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hBaseBulkLoadOption>      hbb_truncate_option
 %type <hBaseBulkLoadOption>      hbb_update_stats_option
 %type <hBaseBulkLoadOption>      hbb_no_duplicate_check
-%type <hBaseBulkLoadOption>      hbb_no_populate_indexes
+%type <hBaseBulkLoadOption>      hbb_rebuild_indexes
 %type <hBaseBulkLoadOption>      hbb_constraints
 %type <hBaseBulkLoadOption>      hbb_no_output
 %type <hBaseBulkLoadOption>      hbb_continue_on_error
@@ -17437,7 +17438,7 @@ hbbload_option :  hbb_no_recovery_option
                 | hbb_log_error_rows
                 | hbb_no_duplicate_check
                 | hbb_no_output
-                | hbb_no_populate_indexes
+                | hbb_rebuild_indexes
                 | hbb_constraints
                 | hbb_index_table_only
                 | hbb_upsert_using_load
@@ -17533,11 +17534,11 @@ hbb_no_output :  TOK_NO TOK_OUTPUT
                                            NULL);
                       $$ = op;
                     }                     
-hbb_no_populate_indexes   : TOK_NO TOK_POPULATE TOK_INDEXES
+hbb_rebuild_indexes   : TOK_REBUILD TOK_INDEXES
                     { //INDEXES
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
                               new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
-                                          (ExeUtilHBaseBulkLoad::NO_POPULATE_INDEXES_,
+                                          (ExeUtilHBaseBulkLoad::REBUILD_INDEXES_,
                                            0, 
                                            NULL);
                       $$ = op;
@@ -28975,19 +28976,13 @@ index_definition : TOK_CREATE optional_unique_optional_ghost TOK_INDEX
 populate_index_definition: TOK_POPULATE TOK_INDEX
                         index_name TOK_ON ddl_qualified_name optional_purgedata
                                 {
-                                  if (CmpCommon::getDefault(MODE_SEABASE) == DF_OFF)
-                                  {
-                                    // pop index will be processed by sqlutils code
-                                    yyerror(""); 
-                                    YYERROR;
-                                  }
-
+                                  
                                   StmtDDLPopulateIndex *pNode =
                                     new (PARSERHEAP())
 				      StmtDDLPopulateIndex(
-							 FALSE,
-							 *$3 /*index_name*/,
-							 *$5 /*ddl_qualified_name*/);
+                                           FALSE, FALSE,
+                                           *$3 /*index_name*/,
+                                           *$5 /*ddl_qualified_name*/);
                                  pNode->synthesize();
 
                                   delete $3 /*index_name*/;
@@ -28996,26 +28991,38 @@ populate_index_definition: TOK_POPULATE TOK_INDEX
                                }
 
                     | TOK_POPULATE TOK_ALL TOK_INDEXES
-                        TOK_ON ddl_qualified_name optional_purgedata
+                        TOK_ON ddl_qualified_name 
                                 {
-                                  if (CmpCommon::getDefault(MODE_SEABASE) == DF_OFF)
-                                  {
-                                    // pop index will be processed by sqlutils code
-                                    yyerror(""); 
-                                    YYERROR;
-                                  }
+                                  
+				  NAString cn("DUMMY");
+
+                                  StmtDDLPopulateIndex *pNode =
+                                    new (PARSERHEAP())
+				      StmtDDLPopulateIndex(
+                                           TRUE, FALSE,
+                                           cn /*index_name*/,
+                                           *$5 /*ddl_qualified_name*/);
+				  pNode->synthesize();
+				  
+                                  delete $5 /*ddl_qualified_name*/;
+                                  $$ = pNode;
+                               }
+                            | TOK_POPULATE TOK_ALL TOK_UNIQUE TOK_INDEXES
+                              TOK_ON ddl_qualified_name 
+                                {
+                                  
 
 				  NAString cn("DUMMY");
 
                                   StmtDDLPopulateIndex *pNode =
                                     new (PARSERHEAP())
 				      StmtDDLPopulateIndex(
-							   TRUE,
-							   cn /*index_name*/,
-							   *$5 /*ddl_qualified_name*/);
+                                           FALSE,TRUE,
+                                           cn /*index_name*/,
+                                           *$6 /*ddl_qualified_name*/);
 				  pNode->synthesize();
 				  
-                                  delete $5 /*ddl_qualified_name*/;
+                                  delete $6 /*ddl_qualified_name*/;
                                   $$ = pNode;
                                }
 
@@ -31091,7 +31098,18 @@ alter_table_disable_index_clause : TOK_DISABLE TOK_ALL TOK_INDEXES
                                   NAString *tmp = new 
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
-                                    StmtDDLAlterTableDisableIndex(*tmp, TRUE);
+                                    StmtDDLAlterTableDisableIndex(*tmp, 
+                                                                  TRUE, FALSE);
+                                  delete tmp;
+                                }
+                                |
+                                TOK_DISABLE TOK_ALL TOK_UNIQUE TOK_INDEXES
+                                {
+                                  NAString *tmp = new 
+                                     (PARSERHEAP()) NAString((""),PARSERHEAP());
+                                  $$ = new (PARSERHEAP())
+                                    StmtDDLAlterTableDisableIndex(*tmp, FALSE,
+                                                                  TRUE);
                                   delete tmp;
                                 }
                                 |
@@ -31100,7 +31118,8 @@ alter_table_disable_index_clause : TOK_DISABLE TOK_ALL TOK_INDEXES
                                   NAString *tmp = new
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
-                                    StmtDDLAlterTableDisableIndex(*tmp, TRUE);
+                                    StmtDDLAlterTableDisableIndex(*tmp, TRUE, 
+                                                                  FALSE);
                                   delete tmp;
                                 }
                                 |
@@ -31108,7 +31127,7 @@ alter_table_disable_index_clause : TOK_DISABLE TOK_ALL TOK_INDEXES
                                 {
                                   $$ = new (PARSERHEAP())
                                     StmtDDLAlterTableDisableIndex
-                                     ( *$3, FALSE);
+                                    ( *$3, FALSE, FALSE);
                                   delete $3;
                                 }
 
@@ -31117,7 +31136,18 @@ alter_table_enable_index_clause : TOK_ENABLE TOK_ALL TOK_INDEXES
                                   NAString *tmp = new 
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
-                                    StmtDDLAlterTableEnableIndex(*tmp, TRUE);
+                                    StmtDDLAlterTableEnableIndex(*tmp, TRUE, 
+                                                                 FALSE);
+                                  delete tmp;
+                                }
+                                |
+                                TOK_ENABLE TOK_ALL TOK_UNIQUE TOK_INDEXES
+                                {
+                                  NAString *tmp = new 
+                                     (PARSERHEAP()) NAString((""),PARSERHEAP());
+                                  $$ = new (PARSERHEAP())
+                                    StmtDDLAlterTableEnableIndex(*tmp, FALSE,
+                                                                 TRUE);
                                   delete tmp;
                                 }
                                 |
@@ -31126,7 +31156,8 @@ alter_table_enable_index_clause : TOK_ENABLE TOK_ALL TOK_INDEXES
                                   NAString *tmp = new
                                      (PARSERHEAP()) NAString((""),PARSERHEAP());
                                   $$ = new (PARSERHEAP())
-                                    StmtDDLAlterTableEnableIndex(*tmp, TRUE);
+                                    StmtDDLAlterTableEnableIndex(*tmp, TRUE, 
+                                                                 FALSE);
                                   delete tmp;
                                 }
                                 |
@@ -31134,7 +31165,7 @@ alter_table_enable_index_clause : TOK_ENABLE TOK_ALL TOK_INDEXES
                                 {
                                   $$ = new (PARSERHEAP())
                                     StmtDDLAlterTableEnableIndex
-                                     ( *$3, FALSE);
+                                    ( *$3, FALSE, FALSE);
                                   delete $3;
                                 }
 
@@ -32634,6 +32665,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_RATE 
                       | TOK_REAL_IEEE
                       | TOK_REAL_TANDEM
+                      | TOK_REBUILD
                       | TOK_RECOMPUTE // MV 
                       | TOK_RECORD_SEPARATOR
                       | TOK_RECOVER

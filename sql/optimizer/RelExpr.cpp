@@ -12589,7 +12589,8 @@ Insert::Insert(const CorrName &name,
    isSequenceFile_(FALSE),
    isUpsert_(FALSE),
    isTrafLoadPrep_(FALSE),
-   createUstatSample_(createUstatSample)
+   createUstatSample_(createUstatSample),
+   baseColRefs_(NULL)
 {
   insert_a_tuple_ = FALSE;
   if ( child ) {
@@ -12793,7 +12794,7 @@ Delete::Delete(const CorrName &name, TableDesc *tabId, OperatorTypeEnum otype,
 	       ConstStringList * csl,
 	       CollHeap *oHeap)
   : GenericUpdate(name,tabId,otype,child,newRecExpr,currOfCursorName,oHeap),
-    isFastDelete_(FALSE), noIMneeded_(FALSE),
+    isFastDelete_(FALSE),
     csl_(csl),estRowsAccessed_(0)
 {
   setCacheableNode(CmpMain::BIND);
@@ -12986,7 +12987,7 @@ const NAString HbaseInsert::getText() const
 
 RelExpr * HbaseInsert::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
-  RelExpr *result;
+  HbaseInsert *result;
 
   if (derivedNode == NULL)
     result = new (outHeap) HbaseInsert(getTableName(),
@@ -12995,7 +12996,9 @@ RelExpr * HbaseInsert::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 					NULL,
 					outHeap);
   else
-    result = derivedNode;
+    result = (HbaseInsert *) derivedNode;
+  
+  result->returnRow_ = returnRow_;
 
   return Insert::copyTopNode(result, outHeap);
 }

@@ -4809,7 +4809,6 @@ static void etabadd(char type, char *run, int id)
         np = 0,     /* no parse via SQLTable() flag: 0=parse, 1=no_parse */
         ret = 0;    /* parseopt return value */
     int or = no;    /* Original etab[] entry (used fo replications) */
-    SQLBIGINT Onp;  /* ODBC Number of table partitions */
     SQLHSTMT Os=0,  /* ODBC Statement handle to analyze source table(s) */
              Os1=0; /* ODBC statement handle to get table partitions */
     SQLCHAR Ostn[3][MAXOBJ_LEN];    /* ODBC to save schema/table/type name */

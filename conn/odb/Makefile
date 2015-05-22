@@ -53,9 +53,9 @@ vpath %.c src
 generic: odb64luo
 
 ifeq ($(SQ_BUILD_TYPE),debug)
-CFLAGS_LNX += -m64 -O2 -mtune=generic -g
+CFLAGS_LNX += -m64 -O2 -mtune=generic -fno-strict-aliasing -g
 else
-CFLAGS_LNX += -m64 -O2 -mtune=generic -s
+CFLAGS_LNX += -m64 -O2 -mtune=generic -fno-strict-aliasing -s
 endif
 
 profile: CFLAGS_LNX += -DODB_PROFILE
