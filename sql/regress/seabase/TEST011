@@ -24,6 +24,7 @@ obey TEST011(clnup);
 
 log LOG011 clear;
 obey TEST011(tests);
+obey TEST011(clnup);
 log;
 exit;
 

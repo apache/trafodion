@@ -1,0 +1,258 @@
+-- Test: TESTRTS (Core)
+-- Owner: Executor Runtime Stats Team
+-- Functionality: To test RTS
+-- Expected files: EXPECTEDRTS, EXPECTEDRTS.MX EXPECTEDRTS.MP
+-- Table created: TSTAT
+-- Limitations:
+
+
+?section create_insert
+cqd hist_on_demand_stats_size '10000';
+
+obey TESTRTS(clean_up);
+sh chmod 777 $scriptsdir/tools/run_rts.ksh ;
+log LOGRTS clear ;
+
+create table tstat (a char(5) not null ,
+                     b smallint not null ,
+                     c char(4),
+                     d integer,
+                     primary key (a,b) )
+                     salt using 2 partitions ;
+insert into tstat values ('AAAA ',11,'AAAA',11);
+insert into tstat values ('BBBB ',12,'BBBB',12);
+insert into tstat values ('MMMM ',21,'MMMM',21);
+insert into tstat values ('XXXXX',22,'XXXX', 22);
+
+control query default attempt_esp_parallelism 'on' ;
+control query default parallel_num_esps '2' ;
+control query default detailed_statistics 'ACCUMULATED' ;
+set session default statistics_view_type 'default' ;
+control query shape esp_exchange(hash_groupby(esp_exchange(scan)));
+
+-- ACCUMULATED Stats Test
+-- Also tests to mimic ODBC by calling explain options 'f'
+-- and ensure qid current returns the qid user prepared statement
+prepare s1 from select distinct d from tstat ;
+explain options 'f' s1 ;
+log LOGRTS;
+get statistics for qid current ;
+log;
+log QIDOUT clear;
+display qid for s1;
+log;
+sh $scriptsdir/tools/run_rts.ksh;
+log LOGRTS;
+display statistics for qid current;
+get statistics for qid current ;
+execute s1;
+log;
+sh $scriptsdir/tools/run_rts.ksh;
+log LOGRTS;
+display statistics for qid current;
+get statistics for qid current ;
+prepare s1 from select distinct d from tstat ; 
+log;
+-- You shouldn't see the statistics of old qid
+sh $scriptsdir/tools/run_rts.ksh;
+log QIDOUT clear;
+display qid for s1;
+log;
+sh $scriptsdir/tools/run_rts.ksh;
+log LOGRTS;
+display statistics for qid current;
+get statistics for qid current ;
+
+-- PERTABLE stats
+control query default detailed_statistics 'pertable' ;
+set session default statistics_view_type 'default' ;
+prepare s1 from select distinct d from tstat ; 
+log;
+explain options 'f' s1 ;
+log LOGRTS;
+get statistics for qid current ;
+log;
+log QIDOUT clear;
+display qid for s1;
+log;
+sh $scriptsdir/tools/run_rts.ksh;
+sh $scriptsdir/tools/run_rts.ksh ACCUMULATED;
+log LOGRTS;
+display statistics for qid current;
+get statistics for qid current ;
+display statistics for qid current accumulated ;
+get statistics for qid current accumulated ;
+execute s1;
+log;
+sh $scriptsdir/tools/run_rts.ksh;
+sh $scriptsdir/tools/run_rts.ksh ACCUMULATED;
+log LOGRTS;
+display statistics for qid current;
+get statistics for qid current ;
+display statistics for qid current accumulated; 
+get statistics for qid current accumulated;
+log;
+-- Tests for PARENT QID
+sh $scriptsdir/tools/run_rts.ksh QID;
+log LOGRTS;
+obey PQIDOUT;
+prepare s1 from select distinct d from tstat ;
+log;
+log QIDOUT clear;
+display qid for s1;
+log;
+sh $scriptsdir/tools/run_rts.ksh;
+log ;
+log LOGRTS;
+SET SESSION DEFAULT PARENT_QID 'NONE' ;
+prepare s1 from select distinct d from tstat ;
+log;
+log QIDOUT clear;
+display qid for s1;
+log;
+sh $scriptsdir/tools/run_rts.ksh;
+log LOGRTS;
+
+-- TEST for OPERATOR stats
+control query default detailed_statistics 'system' ;
+set session default statistics_view_type 'default' ;
+prepare s1 from select distinct d from tstat ;
+log ;
+log QIDOUT clear;
+display qid for s1 ;
+log ;
+sh $scriptsdir/tools/run_rts.ksh;
+log LOGRTS;
+execute s1 ;
+log ;
+sh $scriptsdir/tools/run_rts.ksh;
+sh $scriptsdir/tools/run_rts.ksh ACCUMULATED;
+sh $scriptsdir/tools/run_rts.ksh PERTABLE;
+sh $scriptsdir/tools/run_rts.ksh PROGRESS ;
+sh $scriptsdir/tools/run_rts.ksh DEFAULT;
+log LOGRTS ;
+get statistics for qid current ;
+get statistics for qid current accumulated ;
+get statistics for qid current pertable ;
+get statistics for qid current progress ;
+get statistics for qid current default ;
+set session default statistics_view_type 'default' ;
+get statistics for qid current ;
+set session default statistics_view_type 'accumulated' ;
+get statistics for qid current ;
+set session default statistics_view_type 'pertable' ;
+get statistics for qid current ;
+set session default statistics_view_type 'progress' ;
+get statistics for qid current ;
+set session default statistics_view_type 'pertable' ;
+
+-- TEST for RMS Stats
+get statistics for RMS 0 ;
+-- get statistics for RMS all is not tested because it can filtering issues
+
+-- Misc tests to increase code coverage
+control query shape cut;
+select 'FUNKY_OPT_UNIQUE', count(*) from table(statistics(NULL,'CPU=0'));
+select 'FUNKY_OPT_UNIQUE', count(*) from table(statistics(NULL,'CPU_OFFENDER=-1'));
+-- Coverage for SscpNewIncomingConnectionStream::processCpuStatsReq
+select 'FUNKY_OPT_UNIQUE', count(*) from table(statistics(NULL,'CPU_OFFENDER=-1'));
+select 'FUNKY_OPT_UNIQUE', count(*) from table(statistics(NULL,'DISK_OFFENDER=-1'));
+log; log RTSTEMPLOG clear;
+get statistics for rms all;
+log;
+sh grep "Stats Heap Allocated" RTSTEMPLOG | sort -u >> LOGRTS;
+log LOGRTS;
+
+-- TEST for EXPLAIN_IN_RMS 
+control query default explain_in_rms 'on' ;
+control query shape cut;
+prepare s1 from select d from tstat ;
+log;
+log QIDOUT clear;
+display qid for s1;
+log;
+sh $scriptsdir/tools/run_rts.ksh EXPLAIN;
+log LOGRTS;
+
+-- TEST for index name - Soln 10-090330-0390 
+create index tstati on tstat(d);
+prepare s1 from select d from tstat ;
+explain options 'f' s1 ;
+log ;
+log QIDOUT clear ;
+display qid for s1 ;
+log ;
+sh $scriptsdir/tools/run_rts.ksh;
+log LOGRTS;
+execute s1 ;
+log ;
+sh $scriptsdir/tools/run_rts.ksh PERTABLE;
+log LOGRTS;
+
+-- EXECDirect test to check if QID current is proper
+select * from tstat ;
+get statistics for qid current ;
+
+-- Compare QID CURRENT to QID <qid>
+control query default detailed_statistics 'ACCUMULATED' ;
+obey TESTRTS(compare_current_qid);
+
+control query default detailed_statistics 'PERTABLE' ;
+obey TESTRTS(compare_current_qid);
+
+control query default detailed_statistics 'system' ;
+obey TESTRTS(compare_current_qid);
+
+obey TESTRTS(exeindp2_stats);
+--Negative tests using STATISTICS stored procedure
+select * from table (statistics(null, 'QID='));
+select * from table (statistics(null, 'QID=mxid'));
+select * from table (statistics(null, 'QID=MXID01001'));
+select * from table (statistics(null, 'CPU='));
+select * from table (statistics(null, 'PID='));
+select * from table (statistics(null, 'SYSTEM='));
+select * from table (statistics(null, 'MERGE=2'));
+
+--Negative tests using GET STATISTICS command
+get statistics for qid ;
+get statistics for qid mxid ;
+get statistics for qid "mxid" ;
+get statistics for qid mxid01001 ;
+get statistics for qid mxid0100202 ;
+get statistics for qid mxid010010A0788 ;
+get statistics for qid mxid01002020880 ;
+get statistics for cpu ;
+get statistics for cpu a;
+get statistics for cpu "A";
+get statistics for pid ;
+get statistics for pid a,a ;
+get statistics for pid a;
+
+-- Test to determine if invalid token is taken as stmt name
+select * from table (statistics(null, 'AAA='));
+obey TESTRTS(clean_up);
+log;
+exit;
+
+?section compare_current_qid
+prepare s1 from select count(*) from
+tstat A, tstat B, tstat C, tstat D;
+
+execute s1;
+
+log; log STATS_CURRENT clear;
+get statistics for qid current;
+log; log QID_TEMP clear;
+display qid for s1;
+log; log LOGRTS;
+sh grep "^QID is " QID_TEMP | cut -c 8- | sed "s/^/get statistics for qid /g" | sed "s/$/;/g"  > STATS_CMD_QID;
+log; log STATS_QID clear;
+obey STATS_CMD_QID;
+log;
+
+sh diff STATS_CURRENT STATS_QID  >> LOGRTS;
+log LOGRTS;
+
+?section clean_up
+drop table tstat;
+

@@ -770,8 +770,6 @@ public:
   HBLC_RetCode doBulkLoad(const HbaseStr &tblName, const Text& location, const Text& tableName, NABoolean quasiSecure, NABoolean snapshot);
 
   HBLC_RetCode  bulkLoadCleanup(const HbaseStr &tblName, const Text& location);
-  HBLC_RetCode incrCounter( const char * tabName, const char * rowId, const char * famName, const char * qualName , Int64 incr, Int64 & count);
-  HBLC_RetCode createCounterTable( const char * tabName,  const char * famName);
   // Get the error description.
   virtual char* getErrorText(HBLC_RetCode errEnum);
 

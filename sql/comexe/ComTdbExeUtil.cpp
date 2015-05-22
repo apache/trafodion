@@ -2603,7 +2603,7 @@ void ComTdbExeUtilHBaseBulkLoad::displayContents(Space * space,ULng32 flag)
 {
   ComTdb::displayContents(space,flag & 0xFFFFFFFE);
 
-  if(flag & 0x00000008)
+   if (flag  & 0x00000008)
     {
       char buf[1000];
       str_sprintf(buf, "\nFor ComTdbExeUtilHbaseLoad :");
@@ -2631,8 +2631,21 @@ void ComTdbExeUtilHBaseBulkLoad::displayContents(Space * space,ULng32 flag)
           space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
         }
 
-
-    }
+     if (getLogErrorRows()) {
+        if (loggingLocation_) {
+           str_sprintf(buf, "Logging location = %s ", loggingLocation_.getPointer()); 
+           space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        }
+     }
+     if (maxErrorRows_ > 0) {
+        str_sprintf(buf, "Max Error Rows = %d", maxErrorRows_);
+        space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        if (errCountTable_) {
+           str_sprintf(buf, "Error Counter Table Name = %s ", errCountTable_.getPointer()); 
+           space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        }
+     }
+  }
 
   if (flag & 0x00000001)
     {

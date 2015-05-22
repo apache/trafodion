@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -311,12 +311,28 @@ void SscpNewIncomingConnectionStream::processStatsReq(IpcConnection *connection)
                         stats->getOrigCollectStatsType());
                 break;
               default:
-                  mergedStats = new (getHeap())
-                    ExStatisticsArea(getHeap(), 0, stats->getCollectStatsType(),
+                 if (reqType == SQLCLI_STATS_REQ_QID_DETAIL)
+                    mergedStats = new (getHeap())
+                       ExStatisticsArea(getHeap(), 0, ComTdb::QID_DETAIL_STATS,
+                        ComTdb::QID_DETAIL_STATS);
+                 else
+                    mergedStats = new (getHeap())
+                       ExStatisticsArea(getHeap(), 0, stats->getCollectStatsType(),
                         stats->getOrigCollectStatsType());
               }
               mergedStats->setDetailLevel(queryId->getDetailLevel());
             }
+            if (reqType == SQLCLI_STATS_REQ_QID_DETAIL)
+            {
+              mergedStats->appendCpuStats(stats, TRUE);
+              if (stats->getMasterStats() != NULL)
+              {
+                ExMasterStats *masterStats = new (getHeap()) ExMasterStats((NAHeap *)getHeap());
+                masterStats->copyContents(stats->getMasterStats());
+                mergedStats->setMasterStats(masterStats);
+              }
+            }
+            else
             {
               mergedStats->merge(stats, queryId->getStatsMergeType());
               reply->incNumSqlProcs();
