@@ -60,6 +60,13 @@
 
 #include "ComCextdecs.h"
 
+static bool checkAccessPrivileges(
+   const ParTableUsageList & vtul,
+   const ParViewColTableColsUsageList & vctcul,
+   PrivMgrBitmap & privilegesBitmap,
+   PrivMgrBitmap & grantableBitmap);
+
+
 short CmpSeabaseDDL::buildViewText(StmtDDLCreateView * createViewParseNode,
 				   NAString &viewText) 
 {
@@ -379,55 +386,12 @@ short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewN
 
   const ParViewUsages &vu = createViewNode->getViewUsages();
   const ParTableUsageList &vtul = vu.getViewTableUsageList();
+  const ParViewColTableColsUsageList &vctcul = vu.getViewColTableColsUsageList();
 
   // If DB__ROOT, no need to gather privileges
-  if (!ComUser::isRootUserID())
-    {
-      // generate the lists of privileges and grantable privileges
-      // a side effect is to return an error if basic privileges are not granted
-      for (CollIndex i = 0; i < vtul.entries(); i++)
-        {
-          ComObjectName usedObjName(vtul[i].getQualifiedNameObj()
-                                    .getQualifiedNameAsAnsiString(),
-                                    vtul[i].getAnsiNameSpace());
-
-          const NAString catalogNamePart = usedObjName.getCatalogNamePartAsAnsiString();
-          const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
-          const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
-          const NAString extUsedObjName = usedObjName.getExternalName(TRUE);
-          CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
-
-          // Grab privileges from the NATable structure
-          BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
-          NATable *naTable = bindWA.getNATable(cn);
-          if (naTable == NULL)
-            {
-              SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in gather view privileges");
-              return -1; 
-            }
-
-          PrivMgrUserPrivs *privs = naTable->getPrivInfo();
-          if (privs == NULL) 
-            {         
-              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
-               return -1;
-            }
-
-          // Requester must have at least select privilege
-          if ( !privs->hasSelectPriv() )
-            {
-               *CmpCommon::diags() << DgSqlCode( -4481 )
-                                   << DgString0( "SELECT" )
-                                   << DgString1( extUsedObjName.data());
- 
-                return -1;
-            }
-
-          // Summarize privileges
-          privilegesBitmap &= privs->getObjectBitmap();
-          grantableBitmap &= privs->getGrantableBitmap();
-        }
-    }
+  if (!ComUser::isRootUserID() &&
+      !checkAccessPrivileges(vtul,vctcul,privilegesBitmap,grantableBitmap))
+    return -1;
 
   // If view is not updatable or insertable, turn off privs in bitmaps
   if (!createViewNode->getIsUpdatable())
@@ -1392,6 +1356,179 @@ short CmpSeabaseDDL::dropMetadataViews(ExeCliInterface * cliInterface)
 
   return 0;
 }
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: checkAccessPrivileges                                           *
+// *                                                                           *
+// *   This function determines if a user has the requesite privileges to      *
+// * access the referenced objects that comprise the view.                     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <vtul>                   const ParTableUsageList &              In       *
+// *    is a reference to a list of objects used by the view.                  *
+// *                                                                           *
+// *  <vctcul>                 const ParViewColTableColsUsageList &   In       *
+// *    is a reference to the list of columns used by the view.                *
+// *                                                                           *
+// *  <privilegesBitmap>       PrivMgrBitmap &                        Out      *
+// *    passes back the union of privileges the user has on the referenced     *
+// *    objects.                                                               *
+// *                                                                           *
+// *  <grantableBitmap>        PrivMgrBitmap &                        Out      *
+// *    passes back the union of the with grant option authority the user has  *
+// *    on the referenced objects.                                             *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// *  true: User has requisite privileges; bitmap unions returned.             *
+// * false: Could not retrieve privileges or user does not have requesite      *
+// *        privileges; see diags area for error details.                      *
+// *                                                                           *
+// *****************************************************************************
+static bool checkAccessPrivileges(
+   const ParTableUsageList & vtul,
+   const ParViewColTableColsUsageList & vctcul,
+   PrivMgrBitmap & privilegesBitmap,
+   PrivMgrBitmap & grantableBitmap)
+   
+{
+
+BindWA bindWA(ActiveSchemaDB(),CmpCommon::context(),FALSE/*inDDL*/);
+bool missingPrivilege = false;
+NAString extUsedObjName;
+
+// generate the lists of privileges and grantable privileges
+// a side effect is to return an error if basic privileges are not granted
+   for (CollIndex i = 0; i < vtul.entries(); i++)
+   {
+      ComObjectName usedObjName(vtul[i].getQualifiedNameObj().getQualifiedNameAsAnsiString(),
+                                vtul[i].getAnsiNameSpace());
+
+      const NAString catalogNamePart = usedObjName.getCatalogNamePartAsAnsiString();
+      const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
+      const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
+      const NAString extUsedObjName = usedObjName.getExternalName(TRUE);
+      CorrName cn(objectNamePart,STMTHEAP, schemaNamePart,catalogNamePart);
+
+      // Grab privileges from the NATable structure
+      NATable *naTable = bindWA.getNATable(cn);
+      if (naTable == NULL)
+      {
+         SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in checkAccessPrivileges");
+         return false; 
+      }
+
+      PrivMgrUserPrivs *privs = naTable->getPrivInfo();
+      if (privs == NULL) 
+      {         
+         *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+         return false;
+      }
+
+      // Requester must have at least select privilege
+      if ( !privs->hasSelectPriv() )
+         missingPrivilege = true;
+
+     // Summarize privileges
+      privilegesBitmap &= privs->getObjectBitmap();
+      grantableBitmap &= privs->getGrantableBitmap();
+   }
+   
+   if (!missingPrivilege)
+      return true;
+   
+   missingPrivilege = false;   
+      
+PrivColumnBitmap colPrivBitmap;
+PrivColumnBitmap colGrantableBitmap;
+
+   PrivMgrPrivileges::setColumnPrivs(colPrivBitmap);
+   PrivMgrPrivileges::setColumnPrivs(colGrantableBitmap);
+
+   for (size_t i = 0; i < vctcul.entries(); i++)
+   {
+      const ParViewColTableColsUsage &vctcu = vctcul[i];
+      int32_t usingColNum = vctcu.getUsingViewColumnNumber();
+      const ColRefName &usedColRef = vctcu.getUsedObjectColumnName();
+      
+      ComObjectName usedObjName;
+
+      usedObjName = usedColRef.getCorrNameObj().getQualifiedNameObj().
+                    getQualifiedNameAsAnsiString();
+
+      const NAString catalogNamePart = usedObjName.getCatalogNamePartAsAnsiString();
+      const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
+      const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
+      extUsedObjName = usedObjName.getExternalName(TRUE);
+      CorrName cn(objectNamePart,STMTHEAP,schemaNamePart,catalogNamePart);
+
+      NATable *naTable = bindWA.getNATable(cn);
+      if (naTable == NULL)
+      {
+         SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in checkAccessPrivileges");
+         return -1; 
+      }
+
+      const NAColumnArray &nacolArr = naTable->getNAColumnArray();
+      ComString usedObjColName(usedColRef.getColName());
+      const NAColumn * naCol = nacolArr.getColumn(usedObjColName);
+      if (naCol == NULL)
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_COLUMN_DOES_NOT_EXIST_ERROR)
+                             << DgColumnName(usedObjColName);
+         return false;
+      }
+      int32_t usedColNumber = naCol->getPosition();
+     
+      // Grab privileges from the NATable structure
+      PrivMgrUserPrivs *privs = naTable->getPrivInfo();
+      if (privs == NULL) 
+      {         
+         *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+         return false;
+      }
+      // If the user is missing SELECT on at least one column-level privilege,
+      // view cannot be created.  No need to proceed.
+      if (!privs->hasColSelectPriv(usedColNumber))
+      {
+         missingPrivilege = true;
+         break;
+      }        
+      
+      colPrivBitmap &= privs->getColumnPrivBitmap(usedColNumber);
+      colGrantableBitmap &= privs->getColumnGrantableBitmap(usedColNumber);
+   }
+  
+   if (missingPrivilege || vctcul.entries() == 0)
+   {
+      *CmpCommon::diags() << DgSqlCode(-4481)
+                          << DgString0("SELECT")
+                          << DgString1(extUsedObjName.data());
+      return false;
+   }
+  
+   for (size_t i = FIRST_DML_COL_PRIV; i <= LAST_DML_COL_PRIV; i++ )
+   {
+      if (colPrivBitmap.test(PrivType(i)))
+         privilegesBitmap.set(PrivType(i));   
+ 
+      if (colGrantableBitmap.test(PrivType(i)))
+         grantableBitmap.set(PrivType(i));   
+   }
+   
+   return true;
+
+}
+//*********************** End of checkAccessPrivileges *************************
+
+   
 
 
   

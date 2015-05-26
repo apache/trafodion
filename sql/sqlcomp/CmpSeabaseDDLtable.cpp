@@ -6577,10 +6577,8 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
     (isGrant ? grantNode->isWithGrantOptionSpecified() : 
      revokeNode->isGrantOptionForSpecified());
 
-  vector<std::string> userPermissions;
   std::vector<PrivType> objectPrivs;
   std::vector<ColPrivSpec> colPrivs;
-  
 
   if (allPrivs)
     objectPrivs.push_back(ALL_PRIVS);
