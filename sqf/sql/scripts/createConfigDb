@@ -126,3 +126,10 @@ create table monRegUniqueStrings
    primary key ( nid, id )
 );
 
+-- Persist Data (monitor gensq.pl)
+create table monRegPersistData
+(
+   keyName     varchar(50) primary key,
+   valueName   varchar(50)
+);
+

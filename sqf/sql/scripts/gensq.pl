@@ -20,6 +20,7 @@
 #
 require "ctime.pl";
 use sqnodes;
+use sqpersist;
 use POSIX;
 
 # Process types.  Must match values defined by the monitor in msgdef.h.
@@ -629,6 +630,30 @@ sub processNodes {
     }
 }
 
+sub processPersist {
+    my $err = 0;
+    while (<SRC>) {
+        if (/^begin persist/) {
+        }
+        elsif (/^end persist/) {
+            if (sqpersist::validatePersist() != 0) {
+                $err = 1;
+            }
+            if ($err != 0) {
+                print "   Error: not a valid persist configuration statement.\n";
+                print "Exiting without generating cluster.conf due to errors.\n";
+                exit 1;
+            }
+            return;
+        }
+        else {
+            if (sqpersist::parseStmt() != 0) {
+                $err = 1;
+            }
+        }
+    }
+}
+
 sub printZoneList {
 
     if (!$gDebug) {
@@ -884,8 +909,21 @@ while (<SRC>) {
     elsif (/^begin floating_ip/) {
         processFloatingIp;
     }
+    elsif (/^begin persist/) {
+        processPersist;
+    }
     elsif (/^%/) {
         printSQShellCommand;
+    }
+    else {
+        if (/^#/) {
+        }
+        elsif (/^\s*$/) {
+        }
+        else {
+            print "invalid line:", $_;
+            exit 1
+        }
     }
 }
 

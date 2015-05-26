@@ -23,7 +23,7 @@
 
 function Usage
 {
-    echo "Usage: ${0##/*/} -c | -h | -l[<nid>] | -n[<name>] | -p[<proc>] | -q | -r | -s[<name>] | -u | -x[<name>]"
+    echo "Usage: ${0##/*/} -c | -h | -l[<nid>] | -n[<name>] | -p[<proc>] | -q | -r | -s[<name>] | -u | -x[<name>] | -z"
     echo
     echo "-c                Displays cluster wide registry values"
     echo "-h                Displays this help message"
@@ -35,6 +35,7 @@ function Usage
     echo "-s[<name>]        Displays all [or specific] spare node specific configuration values"
     echo "-u                Displays unique strings"
     echo "-x[<name>]        Displays all [or specific] physical node configuration values"
+    echo "-z                Displays persistent process data"
 }
 
 function monRegClusterData
@@ -306,6 +307,16 @@ EOF
 
 }
 
+function persistentData
+{
+
+sqlite3 sqconfig.db <<EOF
+.headers on
+select * from monRegPersistData;
+EOF
+
+}
+
 function uniqueStrings
 {
 
@@ -317,7 +328,7 @@ EOF
 }
 
 # options may be followed by one colon to indicate they have a required argument
-if ! options=$(getopt -o chl::n::p::qrs::ux:: -- "$@")
+if ! options=$(getopt -o chl::n::p::qrs::ux::z -- "$@")
 then
     # something went wrong, getopt will put out an error message for us
     Usage
@@ -396,6 +407,10 @@ do
             else
                 monPNodeConfig
             fi
+            ;;
+
+        -z)
+            persistentData
             ;;
 
     esac
