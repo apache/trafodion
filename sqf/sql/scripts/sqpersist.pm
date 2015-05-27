@@ -138,7 +138,7 @@ sub parseStatement {
     }
     if ($s =~ /^#/) {
     } elsif ($s =~ /^\s*$/) {
-    } elsif ($s =~ /^(PERSIST_PROCESS_KEYS\s*)/) {
+    } elsif ($s =~ /^(PERSIST_PROCESS_KEYS)\s*/) {
         my $k = $1;
         $s =~ s:$k::;
         if (parseEq($s)) {
@@ -161,7 +161,7 @@ sub parseStatement {
                 print "   Error: Expecting <key> e.g. DTM\n"; #T
             }
         }
-    } elsif ($s =~ /^([A-Z]+)(_PROCESS_NAME\s*)/) {
+    } elsif ($s =~ /^([A-Z]+)(_PROCESS_NAME)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
         $s =~ s:$g_prefix$k::;
@@ -183,7 +183,7 @@ sub parseStatement {
                 }
             }
         }
-    } elsif ($s =~ /(^[A-Z]+)(_PROCESS_TYPE\s*)/) {
+    } elsif ($s =~ /(^[A-Z]+)(_PROCESS_TYPE)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
         $s =~ s:$g_prefix$2::;
@@ -201,7 +201,7 @@ sub parseStatement {
                 }
             }
         }
-    } elsif ($s =~ /(^[A-Z]+)(_PROGRAM_NAME\s*)/) {
+    } elsif ($s =~ /(^[A-Z]+)(_PROGRAM_NAME)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
         $s =~ s:$g_prefix$2::;
@@ -219,7 +219,7 @@ sub parseStatement {
                 }
             }
         }
-    } elsif ($s =~ /(^[A-Z]+)(_REQUIRES_DTM\s*)/) {
+    } elsif ($s =~ /(^[A-Z]+)(_REQUIRES_DTM)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
         $s =~ s:$g_prefix$2::;
@@ -237,7 +237,7 @@ sub parseStatement {
                 }
             }
         }
-    } elsif ($s =~ /(^[A-Z]+)(_STDOUT\s*)/) {
+    } elsif ($s =~ /(^[A-Z]+)(_STDOUT)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
         $s =~ s:$g_prefix$2::;
@@ -259,7 +259,7 @@ sub parseStatement {
                 }
             }
         }
-    } elsif ($s =~ /(^[A-Z]+)(_PERSIST_RETRIES\s*)/) {
+    } elsif ($s =~ /(^[A-Z]+)(_PERSIST_RETRIES)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
         $s =~ s:$g_prefix$2::;
@@ -290,7 +290,7 @@ sub parseStatement {
                 }
             }
         }
-    } elsif ($s =~ /(^[A-Z]+)(_PERSIST_ZONES\s*)/) {
+    } elsif ($s =~ /(^[A-Z]+)(_PERSIST_ZONES)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
         $s =~ s:$g_prefix$2::;
