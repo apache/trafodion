@@ -1251,7 +1251,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       else
       {
         step_ = PREPARATION_;
-        if (hblTdb().getIndexes())
+        if (hblTdb().getRebuildIndexes() || hblTdb().getHasUniqueIndexes())
           step_ = DISABLE_INDEXES_;
       }
     }
@@ -1262,14 +1262,19 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       if (setStartStatusMsgAndMoveToUpQueue(" CLEANUP", &rc))
         return rc;
 
-      //Cleanup files
-      char * clnpQuery =
-          new(getMyHeap()) char[strlen("LOAD CLEANUP FOR TABLE  ; ") +
-                                strlen(hblTdb().getTableName()) +
-                                100];
-      strcpy(clnpQuery, "LOAD CLEANUP FOR TABLE  ");
-      strcat(clnpQuery, hblTdb().getTableName());
-      strcat(clnpQuery, ";");
+        //Cleanup files
+        char * clnpQuery =
+          new(getMyHeap()) char[strlen("LOAD CLEANUP FOR TABLE ; ") +
+                               strlen(hblTdb().getTableName()) +
+                               100];
+       
+        strcpy(clnpQuery, "LOAD CLEANUP FOR TABLE ");
+        if (hblTdb().getIndexTableOnly())
+          strcat(clnpQuery, "TABLE(INDEX_TABLE ");
+        strcat(clnpQuery, hblTdb().getTableName());
+        if (hblTdb().getIndexTableOnly())
+          strcat(clnpQuery, ")");
+        strcat(clnpQuery, ";");
 
       cliRC = cliInterface()->executeImmediate(clnpQuery, NULL,NULL,TRUE,NULL,TRUE);
 
@@ -1284,7 +1289,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
       step_ = PREPARATION_;
 
-      if (hblTdb().getIndexes())
+      if (hblTdb().getRebuildIndexes() || hblTdb().getHasUniqueIndexes())
         step_ = DISABLE_INDEXES_;
 
       setEndStatusMsg(" CLEANUP");
@@ -1306,7 +1311,10 @@ short ExExeUtilHBaseBulkLoadTcb::work()
                                 100];
       strcpy(diQuery, "ALTER TABLE  ");
       strcat(diQuery, hblTdb().getTableName());
-      strcat(diQuery, " DISABLE ALL INDEXES ;");
+      if (hblTdb().getRebuildIndexes())
+        strcat(diQuery, " DISABLE ALL INDEXES ;");
+      else
+        strcat(diQuery, " DISABLE ALL UNIQUE INDEXES ;"); // has unique indexes and rebuild not specified
       cliRC = cliInterface()->executeImmediate(diQuery, NULL,NULL,TRUE,NULL,TRUE);
 
       NADELETEBASIC(diQuery, getMyHeap());
@@ -1413,8 +1421,8 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
           step_ = LOAD_END_;
 
-        if (hblTdb().getIndexes())
-          step_ = POPULATE_INDEXES_;
+          if (hblTdb().getRebuildIndexes() || hblTdb().getHasUniqueIndexes())
+            step_ = POPULATE_INDEXES_;
 
         sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
         int len = strlen(statusMsgBuf_);
@@ -1455,11 +1463,15 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       //complete load query
       char * clQuery =
           new(getMyHeap()) char[strlen("LOAD COMPLETE FOR TABLE  ; ") +
-                                strlen(hblTdb().getTableName()) +
-                                100];
-      strcpy(clQuery, "LOAD COMPLETE FOR TABLE  ");
-      strcat(clQuery, hblTdb().getTableName());
-      strcat(clQuery, ";");
+                               strlen(hblTdb().getTableName()) +
+                               100];
+        strcpy(clQuery, "LOAD COMPLETE FOR TABLE  ");
+        if (hblTdb().getIndexTableOnly())
+          strcat(clQuery, "TABLE(INDEX_TABLE ");
+        strcat(clQuery, hblTdb().getTableName());
+        if (hblTdb().getIndexTableOnly())
+          strcat(clQuery, ")");
+        strcat(clQuery, ";");
 
       cliRC = cliInterface()->executeImmediate(clQuery, NULL,NULL,TRUE,NULL,TRUE);
 
@@ -1469,7 +1481,6 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       if (cliRC < 0)
       {
         rowsAffected_ = 0;
-
         cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
         step_ = LOAD_END_ERROR_;
         break;
@@ -1481,12 +1492,12 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         break;
       }
 
-      if (hblTdb().getIndexes())
+      if (hblTdb().getRebuildIndexes() || hblTdb().getHasUniqueIndexes())
         step_ = POPULATE_INDEXES_;
-        else if (hblTdb().getUpdateStats())
-          step_ = UPDATE_STATS_;
-        else
-          step_ = LOAD_END_;
+      else if (hblTdb().getUpdateStats())
+        step_ = UPDATE_STATS_;
+      else
+        step_ = LOAD_END_;
 
       setEndStatusMsg(" COMPLETION", 0, TRUE);
     }
@@ -1501,7 +1512,10 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           new(getMyHeap()) char[strlen("POPULATE ALL INDEXES ON  ; ") +
                                 strlen(hblTdb().getTableName()) +
                                 100];
-      strcpy(piQuery, "POPULATE ALL INDEXES ON   ");
+      if (hblTdb().getRebuildIndexes())
+        strcpy(piQuery, "POPULATE ALL INDEXES ON   ");
+      else
+        strcpy(piQuery, "POPULATE ALL UNIQUE INDEXES ON   "); // has unique indexes and rebuild not used
       strcat(piQuery, hblTdb().getTableName());
       strcat(piQuery, ";");
 
@@ -1692,6 +1706,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 short ExExeUtilHBaseBulkLoadTcb::setCQDs()
 {
   if (holdAndSetCQD("COMP_BOOL_226", "ON") < 0) { return -1;}
+  if (holdAndSetCQD("ALLOW_INCOMPATIBLE_ASSIGNMENT", "ON") < 0) { return -1;}
   if (hblTdb().getForceCIF())
   {
     if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT", "ON") < 0) {return -1; }
@@ -1727,6 +1742,7 @@ short ExExeUtilHBaseBulkLoadTcb::restoreCQDs()
 {
   if (restoreCQD("COMP_BOOL_226") < 0) { return -1;}
   if (restoreCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES") < 0)  { return -1;}
+  if (restoreCQD("ALLOW_INCOMPATIBLE_ASSIGNMENT") < 0)  { return -1;}
   if (hblTdb().getForceCIF())
   {
     if (restoreCQD("COMPRESSED_INTERNAL_FORMAT") < 0) { return -1;}

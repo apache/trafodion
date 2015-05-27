@@ -841,6 +841,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("REAL",               TOK_REAL,        ANS_|RESWORD_|NONRESTOKEN_),
   ParKeyWord("REAL_IEEE",          TOK_REAL_IEEE,   NONRESTOKEN_),
   ParKeyWord("REAL_TANDEM",        TOK_REAL_TANDEM, NONRESTOKEN_),
+  ParKeyWord("REBUILD",            TOK_REBUILD,     NONRESTOKEN_),
   ParKeyWord("RECOMPUTE",          TOK_RECOMPUTE,   FLAGSNONE_),
   ParKeyWord("RECORD_SEPARATOR",   TOK_RECORD_SEPARATOR, NONRESTOKEN_),
   ParKeyWord("RECOVER",            TOK_RECOVER,     NONRESTOKEN_),

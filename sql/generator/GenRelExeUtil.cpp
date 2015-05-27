@@ -4689,7 +4689,8 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   exe_util_tdb->setContinueOnError(continueOnError_);
   exe_util_tdb->setMaxErrorRows(maxErrorRows_);
   exe_util_tdb->setNoDuplicates(noDuplicates_);
-  exe_util_tdb->setIndexes(indexes_);
+  exe_util_tdb->setRebuildIndexes(rebuildIndexes_);
+  exe_util_tdb->setHasUniqueIndexes(hasUniqueIndexes_);
   exe_util_tdb->setConstraints(constraints_);
   exe_util_tdb->setNoOutput(noOutput_);
   exe_util_tdb->setIndexTableOnly(indexTableOnly_);
@@ -4741,6 +4742,24 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
   char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
   strcpy(zkPort, zkPortNAS.data());
 
+  Queue * indexList = NULL;
+  const LIST(IndexDesc *) indList = getUtilTableDesc()->getIndexes();
+
+  indexList = new(space) Queue(space);
+  char * indexName = NULL;
+  {
+    // base table is included
+    for (CollIndex i=0; i<indList.entries(); i++) 
+      {
+        IndexDesc *index = indList[i];
+        indexName = 
+          space->AllocateAndCopyToAlignedSpace
+          (index->getExtIndexName(), 0);
+
+        indexList->insert(indexName);
+      }
+  }
+
   ComTdbHbaseAccess *load_tdb = new(space)
     ComTdbHbaseAccess(
                       ComTdbHbaseAccess::BULK_LOAD_TASK_,
@@ -4776,6 +4795,7 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
     load_tdb->setIsTrafLoadCompetion(TRUE);
     load_tdb->setIsTrafLoadKeepHFiles(taskType_ == COMPLETE_BULK_LOAD_N_KEEP_HFILES_ ? TRUE: FALSE);
   }
+  load_tdb->setListOfIndexesAndTable(indexList);
 
 
   if(!generator->explainDisabled()) {

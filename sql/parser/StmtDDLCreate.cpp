@@ -2266,11 +2266,13 @@ StmtDDLCreateIndex::getText() const
 // constructor
 //
 StmtDDLPopulateIndex::StmtDDLPopulateIndex(NABoolean populateAll,
-                                       const NAString & anIndexName,
-                                       const QualifiedName & aTableName,
-                                       CollHeap    * heap)
+                                           NABoolean populateAllUnique,
+                                           const NAString & anIndexName,
+                                           const QualifiedName & aTableName,
+                                           CollHeap    * heap)
         : StmtDDLNode(DDL_POPULATE_INDEX),
           populateAll_(populateAll),
+          populateAllUnique_(populateAllUnique),
           indexName_(anIndexName, heap),
           indexQualName_(heap),
           origTableQualName_(heap),

@@ -203,32 +203,32 @@ insert into nulls values ('aaa1','bbbbb1'),(null,'bbbbb2'),
                          ('aaa3',null),(null,null),
                           ('aaa5',null),(null,'bbbbb6');
 --load1
-load with no populate indexes no recovery into customer_address 
+load with no recovery into customer_address 
 select * from hive.hive.customer_address;    
 --
 select count(*) from hive.hive.customer_address;                                                                                          
 select count(*) from customer_address;
 
 --load2
-load  with no populate indexes no recovery  into customer_demographics 
+load  with no recovery  into customer_demographics 
 select * from hive.hive.customer_demographics  where cd_demo_sk <= 20000;
 --
 select count(*) from hive.hive.customer_demographics   where cd_demo_sk <= 20000;
 select count(*) from customer_demographics;
 --load3
-load  with no populate indexes   no recovery into customer_demographics_salt 
+load  with no recovery into customer_demographics_salt 
 select * from hive.hive.customer_demographics  where cd_demo_sk <= 20000;      
 --                                                                              
 select count(*) from customer_demographics_salt;
 --load4
-load  with no populate indexes no recovery  into customer_salt 
+load  with no recovery  into customer_salt 
 select * from hive.hive.customer;
 --
 select count(*) from hive.hive.customer;
 select count(*) from customer_salt;
 
 --load5
-load  with no populate indexes  no recovery into store_sales_salt 
+load  with no recovery into store_sales_salt 
 select * from hive.hive.store_sales where ss_item_sk <= 1000;
 --
 --select count(*) from hive.hive.store_sales  where ss_item_sk <= 1000;

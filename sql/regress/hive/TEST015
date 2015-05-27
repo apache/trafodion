@@ -163,11 +163,11 @@ execute s;
 
 select * from t015t2 order by a;
 
-prepare s from load with no populate indexes into t015t2 select * from t015t1;
+prepare s from load into t015t2 select * from t015t1;
 explain options 'f' s;
 execute s;
 
-prepare s from load with no recovery  no populate indexes  into t015t2 select * from t015t1;
+prepare s from load with no recovery into t015t2 select * from t015t1;
 explain options 'f' s;
 execute s;
 
@@ -179,7 +179,7 @@ execute s;
 delete from t015t2;
 insert into t015t2 values (100),(200),(300);
 select * from t015t2 order by a;
-load with truncate table no populate indexes  into t015t2 select * from t015t1;
+load with truncate table into t015t2 select * from t015t1;
 
 select * from t015t2 order by a;
 
@@ -236,7 +236,7 @@ load transform into customer_address
 select * from hive.hive.customer_address where ca_address_sk <= 5000;                                                                                              
 explain options 'f' s;
 
-load  with no populate indexes  into customer_address 
+load   into customer_address 
 select * from hive.hive.customer_address where ca_address_sk <= 5000;                                                                                                   
 
 select count(*) from customer_address;
@@ -252,7 +252,7 @@ load transform into customer_address_NOPK
 select * from hive.hive.customer_address  where ca_address_sk <= 5000;                                                                                              
 explain options 'f' s;
 
-load  with no populate indexes  into customer_address_NOPK 
+load   into customer_address_NOPK 
 select * from hive.hive.customer_address where ca_address_sk <= 5000;                                                                                                   
 
 select count(*) from customer_address_NOPK;
@@ -279,7 +279,7 @@ sh grep -A 18  "ESP_EXCHANGE.*2" LOG015_PLAN.LOG  | grep parent_partitioning -A 
 
 log LOG015;
 
-load  with no populate indexes  into customer_demographics 
+load   into customer_demographics 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;                                                                                            
 
 select count(*) from customer_demographics;
@@ -306,7 +306,7 @@ sh grep "ESP_EXCHANGE.*2" LOG015_PLAN.LOG  >> LOG015 ;
 sh grep -A 18  "ESP_EXCHANGE.*2" LOG015_PLAN.LOG  | grep parent_partitioning -A 3 >> LOG015 ;
 log LOG015;
 
-load  with no populate indexes  into customer_demographics_salt 
+load   into customer_demographics_salt 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;;                                                                                              
 
 select count(*) from customer_demographics_salt;
@@ -372,7 +372,7 @@ prepare s from load transform into t015t4 select a,a,a from t015t1 <<+ cardinali
 explain options 'f' s;
 execute s;
 cqd TRAF_LOAD_PREP_SKIP_DUPLICATES reset;
-load with no output, no duplicate check ,  no populate indexes into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>; 
+load with no output, no duplicate check into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>; 
 select * from t015t4 order by a;
 ---
 cqd TRAF_LOAD_PREP_SKIP_DUPLICATES 'ON';
@@ -423,8 +423,12 @@ create table customer_demographics_salt
   primary key (cd_demo_sk)
 )
 salt using 4 partitions on (cd_demo_sk);
-create index cd_dep_count_IDX on customer_demographics(cd_dep_count) no populate ;
-create index cd_dep_college_count_IDX on customer_demographics(cd_dep_college_count) no populate;
+create index cd_dep_count_IDX on customer_demographics(cd_dep_count);
+create index cd_dep_college_count_IDX on customer_demographics(cd_dep_college_count);
+
+explain options 'f' 
+load  transform into customer_demographics 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
 load  into customer_demographics 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
@@ -434,11 +438,15 @@ select count(*) from customer_demographics;
 select count(*) from table(index_table cd_dep_count_IDX);
 select count(*) from table(index_table cd_dep_college_count_IDX);
 
-drop index cd_dep_count_IDX;
-drop index cd_dep_college_count_IDX;
+load  with rebuild indexes into customer_demographics 
+select * from hive.hive.customer_demographics where cd_demo_sk > 5000 and cd_demo_sk <= 6000 ;
 
-create index cd_dep_count_IDX2 on customer_demographics_salt(cd_dep_count) no populate ;
-create index cd_dep_college_count_IDX2 on customer_demographics_salt(cd_dep_college_count) no populate;
+select count(*) from customer_demographics;
+select count(*) from table(index_table cd_dep_count_IDX);
+select count(*) from table(index_table cd_dep_college_count_IDX);
+
+create index cd_dep_count_IDX2 on customer_demographics_salt(cd_dep_count);
+create index cd_dep_college_count_IDX2 on customer_demographics_salt(cd_dep_college_count);
 ---------------------------
 load  into customer_demographics_salt 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
@@ -545,7 +553,7 @@ load transform into customer_address
 select * from hive.hive.customer_address  where ca_address_sk <= 5000;                                                                                              
 explain options 'f' s;
 
-load  with no populate indexes  into customer_address 
+load   into customer_address 
 select * from hive.hive.customer_address  where ca_address_sk <= 5000;                                                                                                   
 
 select count(*) from customer_address;

@@ -19,7 +19,7 @@
  *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2007-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -60,7 +60,8 @@ class StmtDDLAlterTableDisableIndex : public StmtDDLAlterTable
 public:
 
   // constructor
-  StmtDDLAlterTableDisableIndex(NAString & indexName, NABoolean allIndexes);
+  StmtDDLAlterTableDisableIndex(NAString & indexName, NABoolean allIndexes,
+                                NABoolean allUniqueIndexes);
 
   // virtual destructor
   virtual ~StmtDDLAlterTableDisableIndex();
@@ -71,6 +72,7 @@ public:
   // accessors
   inline const NAString &getIndexName() const;
   inline const NABoolean getAllIndexes() const;
+  inline const NABoolean getAllUniqueIndexes() const;
 
   // ---------------------------------------------------------------------
   // mutators
@@ -81,6 +83,7 @@ public:
   void synthesize();
   inline void setIndexName(NAString & indexName);
   inline void setAllIndexes(NABoolean allIndexes);
+  inline void setAllUniqueIndexes(NABoolean allIndexes);
 
   // methods for tracing
   const NAString displayLabel2() const;
@@ -98,6 +101,7 @@ private:
 
   NAString  indexName_;
   NABoolean allIndexes_;
+  NABoolean allUniqueIndexes_;
 
 }; // class StmtDDLAlterTableDisableIndex
 
@@ -117,6 +121,12 @@ StmtDDLAlterTableDisableIndex::getAllIndexes() const
   return allIndexes_;
 }
 
+inline const NABoolean
+StmtDDLAlterTableDisableIndex::getAllUniqueIndexes() const
+{
+  return allUniqueIndexes_;
+}
+
 inline void 
 StmtDDLAlterTableDisableIndex::setIndexName(NAString & indexName)
 {
@@ -127,6 +137,12 @@ inline void
 StmtDDLAlterTableDisableIndex::setAllIndexes(NABoolean allIndexes)
 {
   allIndexes_ = allIndexes;
+}
+
+inline void 
+StmtDDLAlterTableDisableIndex::setAllUniqueIndexes(NABoolean allUniqueIndexes)
+{
+  allUniqueIndexes_ = allUniqueIndexes;
 }
 
 #endif // STMTDDLALTERTABLEDISABLEIDX_H

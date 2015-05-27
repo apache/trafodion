@@ -958,7 +958,8 @@ class CmpSeabaseDDL
                                                ExprNode * ddlNode,
                                                NAString &currCatName,
                                                NAString &currSchName,
-                                               NAString &tableName);
+                                               NAString &tableName,
+                                               NABoolean allUniquesOnly);
   short alterSeabaseTableDisableOrEnableIndex(
                                               const char * catName,
                                               const char * schName,

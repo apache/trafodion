@@ -5199,6 +5199,12 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
   if (nodeIsPreCodeGenned())
     return this;
 
+  // char. outputs are set to empty after in RelExpr::genPreCode sometimes,
+  // after a call to resolveCharOutputs. We need to remember if a returnRow
+  // tdb flag should be set, even if no output columns are required
+  if (getIsTrafLoadPrep() && !getGroupAttr()->getCharacteristicOutputs().isEmpty())
+    setReturnRow(TRUE);
+
   if (! GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs))
     return NULL;
 
@@ -5222,8 +5228,7 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
       ((getInsertType() == Insert::VSBB_INSERT_USER) ||
        (getInsertType() == Insert::UPSERT_LOAD)))
     {
-      if ((inlinedActions) ||
-	  (producesOutputs()))
+      if ((inlinedActions || producesOutputs())&& !getIsTrafLoadPrep())
  	setInsertType(Insert::SIMPLE_INSERT);
     }
 

@@ -1278,6 +1278,7 @@ public:
  private:
   enum {
       NOT_STARTED
+    , GET_NAME
     , LOAD_CLEANUP
     , COMPLETE_LOAD
     , LOAD_CLOSE

@@ -2185,6 +2185,8 @@ short HbaseInsert::codeGen(Generator *generator)
   MapTable * last_map_table = generator->getLastMapTable();
 
   NABoolean returnRow = getReturnRow(this, getIndexDesc());
+  if (getIsTrafLoadPrep())
+    returnRow = isReturnRow();
 
   ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
   ex_cri_desc * returnedDesc = givenDesc;
