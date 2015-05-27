@@ -31,8 +31,6 @@ echo $TRAF_WORKDIR
 # input parameter defaults
 typeset NODES="$HOSTNAME"
 typeset DCS_SERVERS_PARM=""
-typeset timestamp=$(date +%F-%H-%M-%S)
-typeset INSTALL_LOG="/var/log/trafodion/trafodion_install_$timestamp.log"
 
 TRAF_CONFIG=/etc/trafodion/trafodion_config
 source $TRAF_CONFIG
@@ -69,7 +67,7 @@ if [[ "$userId" != "$TRAF_USER" ]]; then
 fi
 
 #============================================
-echo "***INFO: Starting Trafodion installer ($timestamp)" | tee -a $INSTALL_LOG
+echo "***INFO: traf_start" | tee -a $INSTALL_LOG
 
 #============================================
 # Check if an existing instance is up

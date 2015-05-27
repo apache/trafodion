@@ -148,6 +148,8 @@ fi
 
 sudo mkdir -p $TRAF_LOGDIR
 sudo chmod 777 $TRAF_LOGDIR
+touch $INSTALL_LOG
+sudo chmod 777 $INSTALL_LOG
 echo "***INFO: Log file located at $INSTALL_LOG"
 
 sudo mkdir -p $TRAF_CONFIG_DIR
@@ -213,7 +215,7 @@ if [ -z "$USER_CONFIG" ]; then
    fi
 
    # prompt user for configuration info
-   $LOCAL_WORKDIR/traf_config_setup
+   $LOCAL_WORKDIR/traf_config_setup | tee -a $INSTALL_LOG
    if [ ${PIPESTATUS[0]} != "0" ]; then
       echo "***ERROR: Error while running traf_config_setup." | tee -a $INSTALL_LOG
       echo "***ERROR: No configuration file created." | tee -a $INSTALL_LOG
@@ -788,7 +790,7 @@ echo "******************************"
 echo
 sudo mkdir -p $SQ_ROOT
 sudo chown $TRAF_USER.trafodion $SQ_ROOT
-sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_start"
+sudo su $TRAF_USER --command "$TRAF_WORKDIR/installer/traf_start" 2>&1 | tee -a $INSTALL_LOG
 
 if [ ${PIPESTATUS[0]} != "0" ]; then
    echo "***ERROR: Error while running traf_start." | tee -a $INSTALL_LOG
