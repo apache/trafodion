@@ -226,6 +226,91 @@ static NABoolean processConstHBaseKeys(Generator * generator,
   return TRUE;
 }
 
+//
+// replaceVEGExpressions1() - a helper routine for ItemExpr::replaceVEGExpressions()
+//
+// NOTE: The code in this routine came from the previous version of 
+//       ItemExpr::replaceVEGExpressions().   It has been pulled out
+//       into a separate routine so that the C++ compiler will produce
+//       code that needs signficantly less stack space for the 
+//       recursive ItemExpr::replaceVEGExpressions() routine.
+//
+ItemExpr * ItemExpr::replaceVEGExpressions1( VEGRewritePairs* lookup )
+{
+   // see if this expression is already in there
+   ValueId rewritten;
+   if (lookup->getRewritten(rewritten /* out */, getValueId()))
+   {
+     if (rewritten == NULL_VALUE_ID)
+       return NULL;
+     else
+       return rewritten.getItemExpr();
+   }
+   return (ItemExpr *)( (char *)(NULL) -1 ) ;
+}
+
+//
+// replaceVEGExpressions2() - a helper routine for ItemExpr::replaceVEGExpressions()
+//
+// NOTE: The code in this routine came from the previous version of
+//       ItemExpr::replaceVEGExpressions().   It has been pulled out
+//       into a separate routine so that the C++ compiler will produce
+//       code that needs signficantly less stack space for the
+//       recursive ItemExpr::replaceVEGExpressions() routine.
+//
+void ItemExpr::replaceVEGExpressions2( Int32 index 
+                                     , const ValueIdSet& availableValues
+                                     , const ValueIdSet& inputValues
+                                     ,       ValueIdSet& currAvailableValues
+                                     , const GroupAttributes * left_ga
+                                     , const GroupAttributes * right_ga
+                                     )
+{
+   // If we have asked that the EquiPredicate resolve 
+   // each child of the equipred by available values from the 
+   // respectively input GAs, make sure we pick the right one.
+
+   // First we find out what GA covers the current EquiPred child
+   // we are processing (0 or 1), and pick the one that covers, unless
+   // both GAs do. If both GAs cover, the just make sure we pick a 
+   // different one for each child. The hash join will later fix up
+   // the predicate expression to match its children.
+   // If none of the GAs covers, we have a problem...
+
+   // This fix was put in to solve solution: 10-100722-1962
+
+   ValueIdSet dummy;
+
+   NABoolean leftGaCovers = left_ga->covers(child(index)->getValueId(),
+                                             inputValues,
+                                             dummy);
+   NABoolean rightGaCovers = right_ga->covers(child(index)->getValueId(),
+                                             inputValues,
+                                             dummy);
+
+   if (leftGaCovers == FALSE && rightGaCovers == FALSE)
+     {
+       // for the moment it is assumed that this code is only
+       // executed for hash and merge joins, and in general each 
+       // side of the expression should be coverd by a child.
+       // So if we have neither, we have a problem ..
+       cout << "Unable to pick GA to use: " << getArity() << endl;
+       CMPASSERT(FALSE);
+     }
+   else
+     {
+       const GroupAttributes *coveringGa =  NULL;
+       currAvailableValues.clear();
+       currAvailableValues += inputValues;
+       if (leftGaCovers && rightGaCovers)
+         coveringGa = (index == 0 ? left_ga : right_ga);
+       else
+         coveringGa = (leftGaCovers ? left_ga : right_ga);
+
+       currAvailableValues += coveringGa->getCharacteristicOutputs();
+       
+     }
+}
 
 // -----------------------------------------------------------------------
 // ItemExpr::replaceVEGExpressions()
@@ -265,15 +350,9 @@ ItemExpr * ItemExpr::replaceVEGExpressions
 
   if (lookup && replicateExpression)  // if lookup table is present
     {
-      // see if this expression is already in there
-      ValueId rewritten;
-      if (lookup->getRewritten(rewritten /* out */, getValueId()))
-	{
-	  if (rewritten == NULL_VALUE_ID)
-	    return NULL;
-	  else
-	    return rewritten.getItemExpr();
-	}
+       ItemExpr* tmpIePtr = ItemExpr::replaceVEGExpressions1( lookup ) ;
+       if ( tmpIePtr != (ItemExpr *)( (char *)(NULL) -1 ) )
+          return tmpIePtr ;
     };
 
   if (replicateExpression)
@@ -300,7 +379,6 @@ ItemExpr * ItemExpr::replaceVEGExpressions
       GENASSERT(left_ga == NULL && right_ga == NULL);
 #endif
 
-      const ValueIdSet emptySet;
       switch (getArity())
 	{
 	case 0: // const, VEGRef, and VEGPred have arity 0
@@ -494,52 +572,15 @@ ItemExpr * ItemExpr::replaceVEGExpressions
             right_ga != NULL && 
             getArity() == 2 )
           {
-            // If we have asked that the EquiPredicate resolve 
-            // each child of the equipred by available values from the 
-            // respectively input GAs, make sure we pick the right one.
- 
-            // First we find out what GA covers the current EquiPred child
-            // we are processing (0 or 1), and pick the one that covers, unless
-            // both GAs do. If both GAs cover, the just make sure we pick a 
-            // different one for each child. The hash join will later fix up
-            // the predicate expression to match its children.
-            // If none of the GAs covers, we have a problem...
- 
-            // This fix was put in to solve solution: 10-100722-1962
-
-            ValueIdSet dummy;
-
-            NABoolean leftGaCovers = left_ga->covers(child(index)->getValueId(),
-                                                      inputValues,
-                                                      dummy);
-            NABoolean rightGaCovers = right_ga->covers(child(index)->getValueId(),
-                                                      inputValues,
-                                                      dummy);
-
-            if (leftGaCovers == FALSE && rightGaCovers == FALSE)
-              {
-                // for the moment it is assumed that this code is only
-                // executed for hash and merge joins, and in general each 
-                // side of the expression should be coverd by a child.
-                // So if we have neither, we have a problem ..
-                cout << "Unable to pick GA to use: " << getArity() << endl;
-                CMPASSERT(FALSE);
-              }
-            else
-              {
-                const GroupAttributes *coveringGa =  NULL;
-                currAvailableValues.clear();
-                currAvailableValues += inputValues;
-                if (leftGaCovers && rightGaCovers)
-                  coveringGa = (index == 0 ? left_ga : right_ga);
-                else
-                  coveringGa = (leftGaCovers ? left_ga : right_ga);
-
-                currAvailableValues += coveringGa->getCharacteristicOutputs();
-                
-              }
-
+            ItemExpr::replaceVEGExpressions2( index 
+                                            , availableValues
+                                            , inputValues
+                                            , currAvailableValues
+                                            , left_ga
+                                            , right_ga
+                                            ) ;
           }
+
 	ItemExpr *newChild = child(index)->replaceVEGExpressions(
              currAvailableValues,
 	     inputValues,

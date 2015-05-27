@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -238,6 +238,12 @@ public:
   // Each operator supports a (virtual) method for transforming its
   // scalar expressions to a canonical form
   virtual void transformNode(NormWA & normWARef,
+			     ExprValueId & locationOfPointerToMe,
+                             ExprGroupId & introduceSemiJoinHere,
+			     const ValueIdSet & externalInputs);
+
+  // Note: Only the UnLogic operator needs transformNode2 so not made virtual.
+          void transformNode2(NormWA & normWARef,
 			     ExprValueId & locationOfPointerToMe,
                              ExprGroupId & introduceSemiJoinHere,
 			     const ValueIdSet & externalInputs);

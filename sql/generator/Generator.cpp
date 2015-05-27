@@ -254,19 +254,19 @@ Generator::Generator(CmpContext* currentCmpContext) :
   if ( logDirLen > 0 && CURROPTPCODECACHE->getPCDlogDirPath() == NULL )
   {
      CURROPTPCODECACHE->setPCDlogDirPath( &PCDLogDir );
+  }
 
 #define MAX_UNIQ_PART (8+4+16)
-     if ( logDirLen < (sizeof(NExLogPathNam_) - MAX_UNIQ_PART - 1 ) )
-     {
-       strncpy( NExLogPathNam_ , PCDLogDir.data(), logDirLen );
+  if ( logDirLen < (sizeof(NExLogPathNam_) - MAX_UNIQ_PART - 1 ) )
+  {
+    strncpy( NExLogPathNam_ , PCDLogDir.data(), logDirLen );
 
-       // Add a unique value to end of PCODE_DEBUG_LOGDIR name
-       sprintf( &NExLogPathNam_[logDirLen], "/NELOG.%x.%lx"
-              , CURROPTPCODECACHE->getUniqFileNamePid()
-              , CURROPTPCODECACHE->getUniqFileNameTime() );
+    // Add a unique value to end of PCODE_DEBUG_LOGDIR name
+    sprintf( &NExLogPathNam_[logDirLen], "/NELOG.%x.%lx"
+           , CURROPTPCODECACHE->getUniqFileNamePid()
+           , CURROPTPCODECACHE->getUniqFileNameTime() );
 
-       NExDbgInfoObj_.setNExLogPath( &NExLogPathNam_[0] );
-     }
+    NExDbgInfoObj_.setNExLogPath( &NExLogPathNam_[0] );
   }
 
   // Initialize other member variables.

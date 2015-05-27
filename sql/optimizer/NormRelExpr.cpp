@@ -541,168 +541,229 @@ NABoolean Scan::shrinkNewTree(OperatorTypeEnum op, ItemExpr *ptrToNewTree,
  return status;
 }
 
+#define AVR_STATE0 0
+#define AVR_STATE1 1
+#define AVR_STATE2 2
+
 ItemExpr * Scan::applyAssociativityAndCommutativity(
 					      QRDescGenerator *descGenerator,
 					      CollHeap *heap, 
-					      ItemExpr *ptrToOldTree, 
+					      ItemExpr *origPtrToOldTree, 
 					      NormWA& normWARef,
 					      NABoolean& transformationStatus)
 {
   if( CmpCommon::getDefault(SUBSTRING_TRANSFORMATION) != DF_OFF )
-    return ptrToOldTree;
+    return origPtrToOldTree;
+
+  ItemExpr *         newLeftNode  = NULL ;
+  ItemExpr *         newRightNode = NULL ;
+  ItemExpr *         newNode      = NULL ;
+  ItemExpr *         ptrToOldTree = NULL ;
+
+  //
+  // applyAssociativityAndCommutativity() used to be called recursively not just
+  // for all the items in an expression but for all the items in the node
+  // tree for an entire query. Consequently, we must eliminate the recursive
+  // calls to applyAssociativityAndCommutativity() by keeping the
+  // information needed by each "recursive" level in the HEAP and using
+  // a "while" loop to look at each node in the tree in the same order as
+  // the old recursive technique would have done.
+  // The information needed by each "recursive" level is basically just
+  // * a pointer to what node (ItemExpr *) to look at next,
+  // * a "state" value that tells us where we are in the
+  //   applyAssociativityAndCommutativity() code for the ItemExpr node
+  //   that we are currently working on, and
+  // * a pointer to the new left node (from the "recursive" call on child(0))
+  //   which we need to have available *after* recursing down the child(1) tree.
+  //   NOTE: We don't have to keep the ptr to the new right node in a similar
+  //   fashion because the code does not assign to 'newRightNode' until *after*
+  //   all recursion is finished.
+  //
+  ARRAY( ItemExpr * ) IEarray(10) ; //Initially 10 elements (no particular reason to choose 10)
+  ARRAY( Int16 )      state(10)   ; //These ARRAYs will grow automatically as needed.)
+  ARRAY( ItemExpr *) leftNodeArray(10, heap);
+
+  Int32   currIdx = 0;
+  IEarray.insertAt( currIdx, origPtrToOldTree );
+  state.insertAt(   currIdx, AVR_STATE0 );
 
  // if(ptrToOldTree->getOperatorType() == ITM_NOT_EQUAL)
-   // ptrToOldTree = transformUnSupportedNotEqualTo(heap,ptrToOldTree); 
+   // ptrToOldTree = transformUnSupportedNotEqualTo(heap,ptrToOldTree);
 
-  ItemExpr* newNode = NULL;
-  
-  // Convert the expression to a rangespec immediately under any of the following
-  // conditions:
-  //   1) The expression is a leaf predicate (not an AND or OR).
-  //   2) The expressions is rooted by an OR node that is derived from an in-list.
-  //      This is guaranteed to be an OR backbone of conditions on the same
-  //      column/expr, and can be handled by createRangeSpec() without the overhead
-  //      of recursing through applyAssociativityAndCommutativity(), which incurs
-  //      a massive usage of memory for a large in-list. See bug #3248.
-  //   3) The expression has already undergone rangespec conversion.
-  if((ptrToOldTree->getOperatorType() != ITM_AND && 
-      ptrToOldTree->getOperatorType() != ITM_OR)
-        ||
-     (ptrToOldTree->getOperatorType() == ITM_OR &&
-      static_cast<BiLogic*>(ptrToOldTree)->createdFromINlist())
-        ||
-      ptrToOldTree->isRangespecItemExpr())
+  while ( currIdx >= 0 )
   {
-    OptNormRangeSpec* range = static_cast<OptNormRangeSpec*>(
+     ptrToOldTree = IEarray[currIdx] ;
+
+     // Convert the expression to a rangespec immediately under any of the following
+     // conditions:
+     //   1) The expression is a leaf predicate (not an AND or OR).
+     //   2) The expressions is rooted by an OR node that is derived from an in-list.
+     //      This is guaranteed to be an OR backbone of conditions on the same
+     //      column/expr, and can be handled by createRangeSpec() without the overhead
+     //      of recursing through applyAssociativityAndCommutativity(), which incurs
+     //      a massive usage of memory for a large in-list. See bug #3248.
+     //   3) The expression has already undergone rangespec conversion.
+     if((ptrToOldTree->getOperatorType() != ITM_AND &&
+         ptrToOldTree->getOperatorType() != ITM_OR)
+           ||
+        (ptrToOldTree->getOperatorType() == ITM_OR &&
+         static_cast<BiLogic*>(ptrToOldTree)->createdFromINlist())
+           ||
+         ptrToOldTree->isRangespecItemExpr())
+     {
+       OptNormRangeSpec* range = static_cast<OptNormRangeSpec*>(
                                    OptRangeSpec::createRangeSpec(descGenerator,
-                                                                 ptrToOldTree, 
+                                                                 ptrToOldTree,
                                                                  heap,
                                                                  TRUE));
 
-    // Transforms all Birel ItemExpression into RangeSpecRef ItemExpression
-    if( range != NULL)
-    {
-      RangeSpecRef *refrange = new (heap) 
+       // Transforms all Birel ItemExpression into RangeSpecRef ItemExpression
+       if( range != NULL)
+       {
+         RangeSpecRef *refrange = new (heap)
                                   RangeSpecRef(ITM_RANGE_SPEC_FUNC,
                                                range,
                                                range->getRangeExpr(),
                                                range->getRangeItemExpr(&normWARef));
-      transformationStatus = TRUE;
-      // Ensure that base column value ids are replaced by vegrefs (Bugzilla 2808).
-      refrange->getReplacementExpr()->normalizeNode(normWARef);
-      return(refrange);
-    }
-    else
-      return ptrToOldTree;	
+         transformationStatus = TRUE;
+         // Ensure that base column value ids are replaced by vegrefs (Bugzilla 2808).
+         refrange->getReplacementExpr()->normalizeNode(normWARef);
+         newNode = refrange ;
+       }
+       else
+         newNode = ptrToOldTree ;
+     }
+     else
+     {
+       // Recurse through for ITM_AND/ITM_OR
+       // depth first traversal
+       if ( state[currIdx] == AVR_STATE0 )
+       {
+          state.insertAt( currIdx, AVR_STATE1 ) ;
+          currIdx++ ;                               //"Recurse" down to child 0
+          state.insertAt(   currIdx, AVR_STATE0 ) ; // and start that child's state at 0
+          IEarray.insertAt( currIdx, ptrToOldTree->child(0) ) ;
+          continue ;
+       }
+       else if ( state[currIdx] == AVR_STATE1 )
+       {
+          leftNodeArray.insertAt( currIdx, newNode ); //Save the "return value" from recursion
+
+          state.insertAt( currIdx, AVR_STATE2 ) ;
+          currIdx++ ;                               //"Recurse" down to child 1
+          state.insertAt(   currIdx, AVR_STATE0 ) ; // and start that child's state at 0
+          IEarray.insertAt( currIdx, ptrToOldTree->child(1) ) ;
+          continue ;
+       }
+       else
+       {
+          newLeftNode    = leftNodeArray[currIdx] ;   //Restore 'newLeftNode'
+          state.insertAt( currIdx, AVR_STATE0 ) ;     //Mark us as done with this IE
+
+          newRightNode   = newNode ; // Set newRightNode = "return value" from recursion
+       }
+
+       // case OR:
+       if ((newLeftNode->getOperatorType() == ITM_RANGE_SPEC_FUNC) &&
+	   (newRightNode->getOperatorType() == ITM_RANGE_SPEC_FUNC))
+       {
+         // where a = 10 or b =20
+         // where a = 10 or a =20
+         if(shrinkNewTree(ptrToOldTree->getOperatorType(),
+                          newLeftNode, (RangeSpecRef *)newRightNode, normWARef))
+         {
+	   newNode = (ItemExpr *)newLeftNode;
+         }
+         else
+         {
+	   // where a = 10 or b =20
+	   newNode = new (heap) BiLogic(ptrToOldTree->getOperatorType(),
+				       (RangeSpecRef *)newLeftNode,
+				       (RangeSpecRef *)newRightNode);
+         }
+       }
+       else if((newLeftNode->getOperatorType() == ptrToOldTree->getOperatorType())
+	       && (newRightNode->getOperatorType() == ITM_RANGE_SPEC_FUNC))
+       {
+         // where a = 10 or b =20  or a =30
+         // ored set = ((a=10),(b=20))
+         // we are merging anded set with rangespec (a=30)
+         // if shrinkNewTree() returns true then intervals are already merged in shrinkNewTree(),
+         // since matching columns are
+         // found in the ored set.
+         // else we add the rangespec into ored set.
+         if(!shrinkNewTree(ptrToOldTree->getOperatorType(),
+                           newLeftNode,(RangeSpecRef *)newRightNode,normWARef))
+         {
+	   newNode = new (heap) BiLogic(ptrToOldTree->getOperatorType(),
+				        newLeftNode,
+				        (RangeSpecRef *)newRightNode);
+         }
+         else
+	   newNode = (ItemExpr *)newLeftNode;
+       }
+       // This condition is redundant, not able to formulate any query for this
+       // we can't generate tree like
+       //                 Or
+       //                / \
+       //            OrSet OrSet
+       else if((newLeftNode->getOperatorType() ==
+		       ptrToOldTree->getOperatorType()) &&
+	      (newRightNode->getOperatorType() ==
+		       ptrToOldTree->getOperatorType()))
+       {
+         newNode = new (heap) BiLogic(ptrToOldTree->getOperatorType(),
+				      newLeftNode,newRightNode);
+       }
+       else if ((newLeftNode->getOperatorType() == ITM_RANGE_SPEC_FUNC)
+	       && (newRightNode->getOperatorType() == ptrToOldTree->getOperatorType()))
+       {
+         // where a = 10 or b =20  or a =30
+         // ored set = ((a=10),(b=20))
+         // we are merging anded set with rangespec (a=30)
+         // if shrinkNewTree() returns true then intervals are already merged in shrinkNewTree(),
+         // since matching columns are
+         // found in the ored set.
+         // else we add the rangespec into ored set.
+
+         if(!shrinkNewTree(ptrToOldTree->getOperatorType(),
+                           newRightNode,(RangeSpecRef *)newLeftNode,normWARef))
+         {
+	   newNode = new (heap) BiLogic(ptrToOldTree->getOperatorType(),
+				         (RangeSpecRef *)newLeftNode,
+				         newRightNode);
+         }
+         else
+	   newNode = (ItemExpr *)newRightNode;
+       }
+       else
+       {
+         newNode = new (heap) BiLogic(ptrToOldTree->getOperatorType(),
+				      newLeftNode,newRightNode);
+       }
+
+       // If user had specified selectivity for original predicate,
+       // then apply the same to the new predicate as well.
+       if(ptrToOldTree->isSelectivitySetUsingHint())
+       {
+         if(newNode->getOperatorType() == ITM_RANGE_SPEC_FUNC)
+         {
+           newNode->child(1)->setSelectivitySetUsingHint();
+           newNode->child(1)->setSelectivityFactor(ptrToOldTree->getSelectivityFactor());
+         }
+         else
+         {
+           newNode->setSelectivitySetUsingHint();
+           newNode->setSelectivityFactor(ptrToOldTree->getSelectivityFactor());
+         }
+       }
+
+       CMPASSERT(newNode != NULL);
+     }
+     if ( state[currIdx] == AVR_STATE0 )  // if done with current ItemExpr
+       currIdx-- ;                        // then return to parent
   }
-  else
-  {
-    // Recurse through for ITM_AND/ITM_OR
-    // depth first traversal
-    ItemExpr* newLeftNode = applyAssociativityAndCommutativity(
-      descGenerator,heap,ptrToOldTree->child(0),normWARef,transformationStatus);
-    ItemExpr* newRightNode = applyAssociativityAndCommutativity(
-      descGenerator,heap,ptrToOldTree->child(1),normWARef,transformationStatus);
-
-    // case OR:
-    if ((newLeftNode->getOperatorType() == ITM_RANGE_SPEC_FUNC) && 
-	(newRightNode->getOperatorType() == ITM_RANGE_SPEC_FUNC))
-    {       
-      // where a = 10 or b =20  
-      // where a = 10 or a =20  
-      if(shrinkNewTree(ptrToOldTree->getOperatorType(),
-                       newLeftNode, (RangeSpecRef *)newRightNode, normWARef))
-      {
-	newNode = (ItemExpr *)newLeftNode;
-      }
-      else
-      {
-	// where a = 10 or b =20 
-	newNode = new (heap) BiLogic(ptrToOldTree->getOperatorType(),
-				    (RangeSpecRef *)newLeftNode,
-				    (RangeSpecRef *)newRightNode);
-      }
-    }
-    else if((newLeftNode->getOperatorType() == ptrToOldTree->getOperatorType()) 
-	    && (newRightNode->getOperatorType() == ITM_RANGE_SPEC_FUNC))
-    {
-      // where a = 10 or b =20  or a =30
-      // ored set = ((a=10),(b=20))
-      // we are merging anded set with rangespec (a=30)
-      // if shrinkNewTree() returns true then intervals are already merged in shrinkNewTree(), 
-      // since matching columns are 
-      // found in the ored set.
-      // else we add the rangespec into ored set.
-      if(!shrinkNewTree(ptrToOldTree->getOperatorType(),
-                        newLeftNode,(RangeSpecRef *)newRightNode,normWARef))
-      {
-	newNode = new (heap) BiLogic(ptrToOldTree->getOperatorType(),
-				     newLeftNode,
-				     (RangeSpecRef *)newRightNode);
-      }
-      else
-	newNode = (ItemExpr *)newLeftNode;
-    }
-    // This condition is redundant, not able to formulate any query for this
-    // we can't generate tree like
-    //                 Or
-    //                / \
-    //            OrSet OrSet
-    else if((newLeftNode->getOperatorType() == 
-		    ptrToOldTree->getOperatorType()) && 
-	   (newRightNode->getOperatorType() == 
-		    ptrToOldTree->getOperatorType()))
-    {
-      newNode = new (heap) BiLogic(ptrToOldTree->getOperatorType(),
-				   newLeftNode,newRightNode);
-    }
-    else if ((newLeftNode->getOperatorType() == ITM_RANGE_SPEC_FUNC) 
-	    && (newRightNode->getOperatorType() == ptrToOldTree->getOperatorType()))
-    {     
-      // where a = 10 or b =20  or a =30
-      // ored set = ((a=10),(b=20))
-      // we are merging anded set with rangespec (a=30)
-      // if shrinkNewTree() returns true then intervals are already merged in shrinkNewTree(), 
-      // since matching columns are 
-      // found in the ored set.
-      // else we add the rangespec into ored set.
-
-      if(!shrinkNewTree(ptrToOldTree->getOperatorType(),
-                        newRightNode,(RangeSpecRef *)newLeftNode,normWARef))
-      {
-	newNode = new (heap) BiLogic(ptrToOldTree->getOperatorType(),
-				      (RangeSpecRef *)newLeftNode,
-				      newRightNode);
-      }
-      else
-	newNode = (ItemExpr *)newRightNode;
-    }
-    else 
-    {			  
-      newNode = new (heap) BiLogic(ptrToOldTree->getOperatorType(),
-				   newLeftNode,newRightNode);
-      	    
-    }
-
-    // If user had specified selectivity for original predicate,
-    // then apply the same to the new predicate as well.
-    if(ptrToOldTree->isSelectivitySetUsingHint())
-    {
-      if(newNode->getOperatorType() == ITM_RANGE_SPEC_FUNC)
-      {
-        newNode->child(1)->setSelectivitySetUsingHint();
-        newNode->child(1)->setSelectivityFactor(ptrToOldTree->getSelectivityFactor());
-      }
-      else
-      {
-        newNode->setSelectivitySetUsingHint();
-        newNode->setSelectivityFactor(ptrToOldTree->getSelectivityFactor());
-      }
-    }
-
-    CMPASSERT(newNode != NULL);
-    return newNode; 
-  }
+  return newNode;
 }
 // -----------------------------------------------------------------------
 // RelExpr::transformSelectPred()

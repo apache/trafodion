@@ -2789,7 +2789,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   // Maximum number of PCODE Branch Instructions in an Expr
   // for which we will attempt PCODE optimizations.
-  DDint__(PCODE_MAX_OPT_BRANCH_CNT,          "19000"),
+  // NOTE: Default value reduced to 12000 for Trafodion to avoid stack
+  //       overflow in PCODE optimization where recursion is used.
+  DDint__(PCODE_MAX_OPT_BRANCH_CNT,          "12000"),
 
   // Maximum number of PCODE Instructions in an Expr
   // for which we will attempt PCODE optimizations.

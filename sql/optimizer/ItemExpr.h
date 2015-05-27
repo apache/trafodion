@@ -459,6 +459,8 @@ public:
   // once again.
   virtual void synthTypeAndValueId(NABoolean redriveTypeSynthesisFlag = FALSE,
 				   NABoolean redriveChildTypeSynthesis = FALSE);
+  virtual void synthTypeAndValueId2(NABoolean redriveTypeSynthesisFlag = FALSE,
+				    NABoolean redriveChildTypeSynthesis = FALSE);
 
   // Propagate type information down the ItemExpr tree.
   // Called by coerceType().  The default implementation
@@ -645,6 +647,7 @@ public:
   // query tree to a canonical form. The parameter setOfPredExpr is
   // supplied only when predicates are normalized.
   virtual ItemExpr * normalizeNode(NormWA & normWARef);
+  virtual ItemExpr * normalizeNode2(NormWA & normWARef);
 
   // A helper function. Used by preCodeGen to convert external types
   // to internal types.
@@ -927,6 +930,15 @@ public:
                          const GroupAttributes *left_ga = NULL,
                          const GroupAttributes *right_ga = NULL);
 
+  ItemExpr * replaceVEGExpressions1( VEGRewritePairs* lookup );
+  void       replaceVEGExpressions2( Int32 index
+                                   , const ValueIdSet& availableValues
+                                   , const ValueIdSet& inputValues
+                                   ,       ValueIdSet& currAvailableValues
+                                   , const GroupAttributes * left_ga
+                                   , const GroupAttributes * right_ga
+                                   );
+
 
   // ---------------------------------------------------------------------
   // ItemExpr::replaceOperandsOfInstantiateNull()
@@ -1039,6 +1051,16 @@ public:
 		       UnparseFormatEnum form = USER_FORMAT,
 		       TableDesc * tabId = NULL) const;
 
+  void      computeKwdAndFlags( NAString  &kwd,
+                                NABoolean &prefixFns,
+                                NABoolean &specialPrefixFns,
+                                PhaseEnum phase,
+                                UnparseFormatEnum form,
+                                TableDesc * tabId) const;
+
+  void    computeKwdAndPostfix( NAString &kwd, NAString &postfix,
+                                UnparseFormatEnum form = USER_FORMAT ) const ;
+
   virtual void print(FILE * f = stdout,
 		     const char * prefix = "",
 		     const char * suffix = "") const;
@@ -1116,6 +1138,9 @@ public:
 
   // append an ascii-version of ItemExpr into cachewa.qryText_
   virtual void generateCacheKey(CacheWA& cachewa) const;
+
+  // A helper routine for ItemExpr::generateCacheKey()
+  void addSelectivityFactor( CacheWA& cwa ) const ;
 
   // return a string that identifies the operator. same as getText() except
   // we prepend char set to string literals. This is to fix genesis case

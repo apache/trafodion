@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1994-2015 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -310,19 +310,8 @@ ItemExpr * ItemExpr::normalizeNode(NormWA & normWARef)
       for (Int32 i = 0; i < arity; i++)
          child(i) = child(i)->getReplacementExpr()->normalizeNode(normWARef);
 
-      // -----------------------------------------------------------------
-      // If this expression is a member of a ValueId Equality Group
-      // (VEG), then replace it with a reference to the VEG.
-      // -----------------------------------------------------------------
-      ItemExpr * vegrefPtr = normWARef.getVEGReference(getValueId());
-      // we either got a VEGRef or an ITM_CONSTANT back
-      if (vegrefPtr)
-        // return without setting the replacement expression
-        // the same valueid could map to different VEGRefs in different
-        // regions
-        return vegrefPtr;
-      else
-        return getReplacementExpr(); // returns this
+      // Now do non-recursive part
+      return( normalizeNode2( normWARef ) );
     }
   // ---------------------------------------------------------------------
   // Normalize each child subtree.
@@ -359,6 +348,33 @@ ItemExpr * ItemExpr::normalizeNode(NormWA & normWARef)
   return getReplacementExpr();
 
 } // ItemExpr::normalizeNode()
+
+
+//
+// normalizeNode2() - a helper routine for ItemExpr::normalizeNode()
+//
+// NOTE: The code in this routine came from the previous version of
+//       ItemExpr::normalizeNode().   It has been pulled out into a separate
+//       routine so that the C++ compiler will produce code that needs
+//       signficantly less stack space for the recursive
+//       ItemExpr::normalizeNode() routine.
+//
+ItemExpr * ItemExpr::normalizeNode2(NormWA & normWARef)
+{
+      // -----------------------------------------------------------------
+      // If this expression is a member of a ValueId Equality Group
+      // (VEG), then replace it with a reference to the VEG.
+      // -----------------------------------------------------------------
+      ItemExpr * vegrefPtr = normWARef.getVEGReference(getValueId());
+      // we either got a VEGRef or an ITM_CONSTANT back
+      if (vegrefPtr)
+        // return without setting the replacement expression
+        // the same valueid could map to different VEGRefs in different
+        // regions
+        return vegrefPtr;
+      else
+        return getReplacementExpr(); // returns this
+}
 
 //
 //  This method is invoked from inside a ROWS SINCE operator.
@@ -1548,10 +1564,18 @@ NABoolean BiLogic::predicateEliminatesNullAugmentedRows(NormWA & normWARef,
       // is the subject for null instantiation.
       // -------------------------------------------------------------
 
-    GroupAttributes emptyGA;
-    emptyGA.setCharacteristicOutputs(outerReferences);
-    ValueIdSet emptySet, emptySet1, coveredExpr, coveredSubExpr;
-    ValueIdSet instNullValue;
+    // 
+    // NOTE: Use heap in the following lines, not stack.
+    //       We are in a recursive method, so we must keep our stack
+    //       requirements to a minimum.
+    // 
+    GroupAttributes * emptyGA   = new (STMTHEAP) GroupAttributes ;
+    emptyGA->setCharacteristicOutputs(outerReferences);
+    ValueIdSet * emptySet       = new (STMTHEAP) ValueIdSet ;
+    ValueIdSet * emptySet1      = new (STMTHEAP) ValueIdSet ;
+    ValueIdSet * coveredExpr    = new (STMTHEAP) ValueIdSet ;
+    ValueIdSet * coveredSubExpr = new (STMTHEAP) ValueIdSet ;
+    ValueIdSet * instNullValue  = new (STMTHEAP) ValueIdSet ;
     NABoolean containsOuterReferencesInSelectList = FALSE;
     for (CollIndex i = 0; i < 2; i++)
     {
@@ -1560,14 +1584,14 @@ NABoolean BiLogic::predicateEliminatesNullAugmentedRows(NormWA & normWARef,
         InstantiateNull *inst = (InstantiateNull *)child(i)->castToItemExpr();
         if ((normWARef.inSelectList())&&!(inst->NoCheckforLeftToInnerJoin))
         {
-          instNullValue.insert(inst->getValueId());
-          emptyGA.coverTest(
-            instNullValue,
-            emptySet,
-            coveredExpr,
-            emptySet1,
-            &coveredSubExpr);
-          if(!coveredExpr.isEmpty())
+          instNullValue->insert(inst->getValueId());
+          emptyGA->coverTest(
+            *instNullValue,
+            *emptySet,
+            *coveredExpr,
+            *emptySet1,
+            coveredSubExpr);
+          if(!coveredExpr->isEmpty())
           {
             containsOuterReferencesInSelectList = TRUE;
           }
@@ -1585,10 +1609,16 @@ NABoolean BiLogic::predicateEliminatesNullAugmentedRows(NormWA & normWARef,
           returnValue = TRUE;
       }
       containsOuterReferencesInSelectList = FALSE;
-      instNullValue.clear();
-      coveredExpr.clear();
-      coveredSubExpr.clear();
+      instNullValue->clear();
+      coveredExpr->clear();
+      coveredSubExpr->clear();
     }
+    NADELETE( emptyGA ,   GroupAttributes, STMTHEAP );
+    NADELETE( emptySet ,       ValueIdSet, STMTHEAP );
+    NADELETE( emptySet1 ,      ValueIdSet, STMTHEAP );
+    NADELETE( coveredExpr ,    ValueIdSet, STMTHEAP );
+    NADELETE( coveredSubExpr , ValueIdSet, STMTHEAP );
+    NADELETE( instNullValue ,  ValueIdSet, STMTHEAP );
   }
 
   return returnValue;
@@ -3914,17 +3944,22 @@ ItemExpr * UnLogicMayBeAnEliminableTruthTest(ItemExpr *unlogic, NABoolean aggOK)
 } // UnLogicMayBeAnEliminableTruthTest()
 
 #pragma nowarn(1506)   // warning elimination
-void UnLogic::transformNode(NormWA & normWARef,
+
+//
+// transformNode2() - a helper routine for UnLogic::transformNode()
+//
+// NOTE: The code in this routine came from the previous version of
+//       UnLogic::transformNode().   It has been pulled out
+//       into a separate routine so that the C++ compiler will produce
+//       code that needs signficantly less stack space for the
+//       UnLogic::transformNode() routine which get used in
+//       recursive code.
+//
+void UnLogic::transformNode2(NormWA & normWARef,
                             ExprValueId & locationOfPointerToMe,
                             ExprGroupId & introduceSemiJoinHere,
                             const ValueIdSet & externalInputs)
 {
-  if (nodeIsTransformed())
-    {
-      locationOfPointerToMe = getReplacementExpr();
-      return;
-    }
-
   DBGSETDBG( "TRANSFORM_DEBUG" )
   DBGIF(
     unp = "";
@@ -3989,6 +4024,20 @@ void UnLogic::transformNode(NormWA & normWARef,
          }
     }
 
+}
+void UnLogic::transformNode(NormWA & normWARef,
+                            ExprValueId & locationOfPointerToMe,
+                            ExprGroupId & introduceSemiJoinHere,
+                            const ValueIdSet & externalInputs)
+{
+  if (nodeIsTransformed())
+    {
+      locationOfPointerToMe = getReplacementExpr();
+      return;
+    }
+
+  UnLogic::transformNode2( normWARef, locationOfPointerToMe,
+                              introduceSemiJoinHere, externalInputs ) ;
   switch(getOperatorType())
     {
     case ITM_NOT:
