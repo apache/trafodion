@@ -2614,7 +2614,7 @@ short HbaseAccess::codeGen(Generator * generator)
     hbpa->setUseMinMdamProbeSize(TRUE);
   generator->setHBaseNumCacheRows(MAXOF(getEstRowsAccessed().getValue(),
                                         getMaxCardEst().getValue()), 
-                                  hbpa) ;
+                                  hbpa, samplePercent()) ;
   generator->setHBaseCacheBlocks(computedHBaseRowSizeFromMetaData,
                                  getEstRowsAccessed().getValue(),hbpa);
 

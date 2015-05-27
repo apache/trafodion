@@ -2395,7 +2395,8 @@ NABoolean Generator::considerDefragmentation( const ValueIdList & valIdList,
 }
 
 void Generator::setHBaseNumCacheRows(double estRowsAccessed,
-                                     ComTdbHbaseAccess::HbasePerfAttributes * hbpa)
+                                     ComTdbHbaseAccess::HbasePerfAttributes * hbpa,
+                                     Float32 samplePercent)
 {
   // compute the number of rows accessed per scan node instance and use it
   // to set HBase scan cache size (in units of number of rows). This cache
@@ -2411,13 +2412,34 @@ void Generator::setHBaseNumCacheRows(double estRowsAccessed,
   if (numProcesses == 0)
     numProcesses++;
   UInt32 rowsAccessedPerProcess = ceil(estRowsAccessed/numProcesses) ;
+  Lng32 cacheRows;
   if (rowsAccessedPerProcess < cacheMin)
-    hbpa->setNumCacheRows(cacheMin);
+    cacheRows = cacheMin;
   else if (rowsAccessedPerProcess < cacheMax)
-    hbpa->setNumCacheRows(rowsAccessedPerProcess);
+    cacheRows = rowsAccessedPerProcess;
   else
-      hbpa->setNumCacheRows(cacheMax);
-    
+    cacheRows = cacheMax;
+
+  // Reduce the scanner cache if necessary based on the sampling rate (usually
+  // only for Update Stats) so that it will return to the client once for every
+  // USTAT_HBASE_SAMPLE_RETURN_INTERVAL rows on average. This avoids long stays
+  // in the region server (and a possible OutOfOrderScannerNextException), where
+  // a random row filter is used for sampling.
+  if (cacheRows > cacheMin && samplePercent > 0.0)
+  {
+    ULng32 sampleReturnInterval =
+        ActiveSchemaDB()->getDefaults().getAsULong(USTAT_HBASE_SAMPLE_RETURN_INTERVAL);
+    Lng32 newScanCacheSize = (Lng32)(sampleReturnInterval * samplePercent);
+    if (newScanCacheSize < cacheRows)
+      {
+        if (newScanCacheSize >= cacheMin)
+          cacheRows = newScanCacheSize;
+        else
+          cacheRows = cacheMin;
+      }
+  }
+
+  hbpa->setNumCacheRows(cacheRows);
 }
 
 void Generator::setHBaseCacheBlocks(Int32 hbaseRowSize, double estRowsAccessed,

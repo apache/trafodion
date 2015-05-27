@@ -3437,6 +3437,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDflt0_(USTAT_FREQ_SIZE_PERCENT,              "0.5"),  // >100 effectively disables
   DDflt0_(USTAT_GAP_PERCENT,                    "10.0"),
   DDflt0_(USTAT_GAP_SIZE_MULTIPLIER,            "1.5"),
+  DDui___(USTAT_HBASE_SAMPLE_RETURN_INTERVAL,   "10000000"), // Avoid scanner timeout by including on average at
+                                                             //   least one row per this many when sampling within HBase.
   DDflt0_(USTAT_INCREMENTAL_FALSE_PROBABILITY,   "0.01"),
   DDkwd__(USTAT_INCREMENTAL_UPDATE_STATISTICS,   "ON"),
   DDkwd__(USTAT_INSERT_TO_NONAUDITED_TABLE,     "OFF"),  // Used internally to overcome problem in which insert
