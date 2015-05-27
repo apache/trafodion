@@ -414,9 +414,9 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_REL_HTC    ].jm_name      = "releaseHTableClient";
     JavaMethods_[JM_REL_HTC    ].jm_signature = "(Lorg/trafodion/sql/HBaseAccess/HTableClient;)V";
     JavaMethods_[JM_CREATE     ].jm_name      = "create";
-    JavaMethods_[JM_CREATE     ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;)Z";
+    JavaMethods_[JM_CREATE     ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;Z)Z";
     JavaMethods_[JM_CREATEK    ].jm_name      = "createk";
-    JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/Object;JII)Z";
+    JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/Object;JIIZ)Z";
     JavaMethods_[JM_TRUNCABORT ].jm_name      = "registerTruncateOnAbort";
     JavaMethods_[JM_TRUNCABORT ].jm_signature = "(Ljava/lang/String;J)Z";
     JavaMethods_[JM_DROP       ].jm_name      = "drop";
@@ -764,7 +764,7 @@ HBC_RetCode HBaseClient_JNI::releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc)
 //////////////////////////////////////////////////////////////////////////////
 //
 //////////////////////////////////////////////////////////////////////////////
-HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFamilies)
+HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFamilies, NABoolean isMVCC)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::create(%s) called.", fileName);
   if (jenv_ == NULL)
@@ -794,8 +794,9 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFam
   }
     
   tsRecentJMFromJNI = JavaMethods_[JM_CREATE].jm_full_name;
+  jboolean j_isMVCC = isMVCC;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
-        JavaMethods_[JM_CREATE].methodID, js_fileName, j_fams);
+        JavaMethods_[JM_CREATE].methodID, js_fileName, j_fams, j_isMVCC);
 
   jenv_->DeleteLocalRef(js_fileName); 
   jenv_->DeleteLocalRef(j_fams);
@@ -827,7 +828,8 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
                                     NAText* createOptionsArray,
                                     int numSplits, int keyLength,
                                     const char ** splitValues,
-                                    Int64 transID)
+                                    Int64 transID,
+                                    NABoolean isMVCC)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::create(%s) called.", fileName);
   if (jenv_ == NULL)
@@ -877,8 +879,9 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
   jint j_keyLength = keyLength;
 
   tsRecentJMFromJNI = JavaMethods_[JM_CREATEK].jm_full_name;
+  jboolean j_isMVCC = isMVCC;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
-          JavaMethods_[JM_CREATEK].methodID, js_fileName, j_opts, j_keys, j_tid, j_numSplits, j_keyLength);
+          JavaMethods_[JM_CREATEK].methodID, js_fileName, j_opts, j_keys, j_tid, j_numSplits, j_keyLength, j_isMVCC);
 
   jenv_->DeleteLocalRef(js_fileName); 
   jenv_->DeleteLocalRef(j_opts);

@@ -487,7 +487,8 @@ Lng32 ExpHbaseInterface_JNI::close()
 
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
-				    HBASE_NAMELIST& colFamNameList)
+				    HBASE_NAMELIST& colFamNameList,
+                                    NABoolean isMVCC)
 {
   if (client_ == NULL)
   {
@@ -495,7 +496,7 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
       return -HBASE_ACCESS_ERROR;
   }
     
-  retCode_ = client_->create(tblName.val, colFamNameList); 
+  retCode_ = client_->create(tblName.val, colFamNameList, isMVCC); 
   //close();
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
@@ -508,7 +509,8 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 				    NAText * hbaseCreateOptionsArray,
                                     int numSplits, int keyLength,
                                     const char ** splitValues,
-                                    NABoolean noXn)
+                                    NABoolean noXn,
+                                    NABoolean isMVCC)
 {
   if (client_ == NULL)
   {
@@ -523,7 +525,8 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
     transID = getTransactionIDFromContext();
  
   retCode_ = client_->create(tblName.val, hbaseCreateOptionsArray,
-                             numSplits, keyLength, splitValues, transID);
+                             numSplits, keyLength, splitValues, transID,
+                             isMVCC);
   //close();
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;

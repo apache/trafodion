@@ -137,7 +137,9 @@ GenericUpdate(const CorrName &name,
     canDoCheckAndUpdel_(FALSE),
     noDTMxn_(FALSE),
     noCheck_(FALSE),
-    noIMneeded_(FALSE)
+    noIMneeded_(FALSE),
+    useMVCC_(FALSE),
+    useSSCC_(FALSE)
   {}
 
   // copy ctor
@@ -517,6 +519,16 @@ GenericUpdate(const CorrName &name,
 
   NABoolean noCheck() { return noCheck_; }
   void setNoCheck(NABoolean v) { noCheck_ = v; }
+
+  NABoolean &useMVCC() { return useMVCC_; }
+
+  NABoolean &useSSCC() { return useSSCC_; }
+ 
+  NABoolean useMVCCorSSCC() { if (useSSCC_ || useMVCC_)
+                                return TRUE;
+                               else
+                                 return FALSE; 
+                            }
 protected:
   
 private:
@@ -887,6 +899,13 @@ private:
   // curently used by Delete and Bulk Load Insert only. Other operators
   // have different schemes to avoid IM
   NABoolean noIMneeded_;
+
+  // if set to ON, then this statement will run under MVCC mode
+  NABoolean useMVCC_;
+
+  // if set to ON, then this statement will run under SSCC mode
+  NABoolean useSSCC_;
+
 };
 
 // -----------------------------------------------------------------------

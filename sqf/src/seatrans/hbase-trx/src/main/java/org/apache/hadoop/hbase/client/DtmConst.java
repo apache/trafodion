@@ -29,7 +29,9 @@ public class DtmConst {
   public static final byte[] TRANSACTION_META_FAMILY = "mt_"
       .getBytes(META_CHARSET);     // it is likely that user table also name CF as mt_, but this is not the case for Trafodion, but for user hbase table, something need to revisit in the future
 
-  public static final int MAX_VERSION = 3;
-  public static final int MAX_DATA_VERSION = MAX_VERSION * 2;
+  public static final int MVCC_MAX_VERSION = 1;
+  public static final int SSCC_MAX_VERSION = 3;
+  public static final int MVCC_MAX_DATA_VERSION = MVCC_MAX_VERSION * 2;
+  public static final int SSCC_MAX_DATA_VERSION = SSCC_MAX_VERSION * 2;
 
 }

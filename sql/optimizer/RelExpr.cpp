@@ -12281,6 +12281,8 @@ RelExpr * GenericUpdate::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->canDoCheckAndUpdel() = canDoCheckAndUpdel();
   result->setNoCheck(noCheck());
   result->noDTMxn() = noDTMxn();
+  result->useMVCC() = useMVCC();
+  result->useSSCC() = useSSCC();
 
   if (currOfCursorName())
     result->currOfCursorName_ = currOfCursorName()->copyTree(outHeap)->castToItemExpr();
