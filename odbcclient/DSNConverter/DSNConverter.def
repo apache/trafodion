@@ -1,0 +1,18 @@
+;/**********************************************************************
+;// @@@ START COPYRIGHT @@@
+;//
+;// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+;//
+;// @@@ END COPYRIGHT @@@ 
+;********************************************************************/
+
+; DSNConverter.def : Declares the module parameters for the DLL.
+
+DESCRIPTION "ODBC/MX DSN Converter DLL, (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P."
+LIBRARY DSNConverter
+EXPORTS
+	IsDriverInstalled @1
+	FindADSNbyVersion @2
+	FindAllDSNbyVersion @3
+	MigrateDS @4
+	MigrateAllDS @5
