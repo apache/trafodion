@@ -73,11 +73,11 @@ sub validKey {
 
 sub parseEnd {
     my ($s) =  @_;
-    if ($s =~ /\s*$/) {
+    if ($s =~ /^\s*?$/) {
         return 1;
     } else {
         displayStmt($g_ok);
-        print "   Error: Expecting <eoln>\n";
+        print "   Error: Expecting <eoln>, but saw $s\n";
         return 0;
     }
 }
@@ -85,12 +85,12 @@ sub parseEnd {
 sub parseEq {
     my ($s) =  @_;
     if ($s =~ /(=\s*)/) {
-        $s =~ s:=$1::;
-        return 1;
+        $s =~ s:$1::;
+        return (1, $s);
     } else {
         displayStmt($g_ok);
-        print "   Error: Expecting '='\n";
-        return 0;
+        print "   Error: Expecting '=', but saw $s\n"; #T
+        return (0, '');
     }
 }
 
@@ -104,12 +104,13 @@ sub parseNid {
         my $r = $1;
         $s =~ s:$1::;
         return (1, $r);
-    } elsif ($s =~ /\s*/) {
+    } elsif ($s =~ /(^\s*)/) {
+        my $r = $1;
         $s =~ s:$1::;
-        return (1, '');
+        return (1, $r);
     } else {
         displayStmt($g_ok);
-        print "   Error: Expecting { %nid | %nid+ }\n";
+        print "   Error: Expecting { %nid | %nid+ }, but saw $s\n"; #T
         return (0, '');
     }
 }
@@ -126,7 +127,7 @@ sub parseZid {
         return (1, $r);
     } else {
         displayStmt($g_ok);
-        print "   Error: Expecting { %zid | %zid+ }\n";
+        print "   Error: Expecting { %zid | %zid+ }, but saw $s\n"; #T
         return (0, '');
     }
 }
@@ -140,14 +141,16 @@ sub parseStatement {
     } elsif ($s =~ /^\s*$/) {
     } elsif ($s =~ /^(PERSIST_PROCESS_KEYS)\s*/) {
         my $k = $1;
-        $s =~ s:$k::;
-        if (parseEq($s)) {
+        $s =~ s:$k\s*::;
+        my $eq;
+        ($eq, $s) = parseEq($s);
+        if ($eq) {
             my $value;
-            while ($s =~ /([A-Z]+)\s*,\s*/) {
+            while ($s =~ /([A-Z]+)(\s*,\s*)/) {
                 my $key = $1;
                 $g_keys{$key} = $key;
                 $value = $value . $key . ',';
-                $s =~ s:$key::;
+                $s =~ s:$key$2::;
             }
             if ($s =~ /([A-Z]+)/) {
                 my $key = $1;
@@ -158,37 +161,45 @@ sub parseStatement {
                 parseEnd($s);
             } else {
                 displayStmt($g_ok);
-                print "   Error: Expecting <key> e.g. DTM\n"; #T
+                print "   Error: Expecting <key> e.g. DTM, but saw $s\n"; #T
             }
         }
     } elsif ($s =~ /^([A-Z]+)(_PROCESS_NAME)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$k::;
+        $s =~ s:$g_prefix$k\s*::;
         if (validKey($g_prefix)) {
-            if (parseEq($s)) {
-                if (/(\$[A-Z]+)/) {
-                    $g_processName = $1;
-                    $s =~ s:$1::;
+            my $eq;
+            ($eq, $s) = parseEq($s);
+            if ($eq) {
+                if ($s =~ /(\$)([A-Z]+)/) {
+                    $g_processName = $1 . $2;
+                    $s =~ s:\$$2::;
                     my ($res, $r) = parseNid($s);
                     if ($res == 1) {
                         $g_processName = $g_processName . $r;
                         $g_opts |= 0x1;
+                        $s =~ s:$r::;
+                        $s =~ s:\+::;
                     }
                     push(@g_dbList, $g_prefix . $k, $g_processName);
-                    parseEnd($s);
+                    if ($res == 1) {
+                        parseEnd($s);
+                    }
                 } else {
                     displayStmt($g_ok);
-                    print "   Error: Expecting <process-name> e.g. \$TM[%nid[+]]\n"; #T
+                    print "   Error: Expecting <process-name> e.g. \$TM[%nid[+]], but saw $s\n"; #T
                 }
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_PROCESS_TYPE)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2::;
+        $s =~ s:$g_prefix$2\s*::;
         if (validKey($g_prefix)) {
-            if (parseEq($s)) {
+            my $eq;
+            ($eq, $s) = parseEq($s);
+            if ($eq) {
                 if ($s =~ /(DTM|GENERIC|SSMP)/) {
                     $g_processType = $1;
                     $s =~ s:$1::;
@@ -197,16 +208,18 @@ sub parseStatement {
                     parseEnd($s);
                 } else {
                     displayStmt($g_ok);
-                    print "   Error: Expecting { DTM | GENERIC | SSMP }\n"; #T
+                    print "   Error: Expecting { DTM | GENERIC | SSMP }, but saw $s\n"; #T
                 }
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_PROGRAM_NAME)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2::;
+        $s =~ s:$g_prefix$2\s*::;
         if (validKey($g_prefix)) {
-            if (parseEq($s)) {
+            my $eq;
+            ($eq, $s) = parseEq($s);
+            if ($eq) {
                 if ($s =~ /([a-zA-Z0-0_]+)/) {
                     $g_programName = $1;
                     $s =~ s:$1::;
@@ -215,16 +228,18 @@ sub parseStatement {
                     parseEnd($s);
                 } else {
                     displayStmt($g_ok);
-                    print "   Error: Expecting <program-name> e.g. tm\n"; #T
+                    print "   Error: Expecting <program-name> e.g. tm, but saw $s\n"; #T
                 }
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_REQUIRES_DTM)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2::;
+        $s =~ s:$g_prefix$2\s*::;
         if (validKey($g_prefix)) {
-            if (parseEq($s)) {
+            my $eq;
+            ($eq, $s) = parseEq($s);
+            if ($eq) {
                 if ($s =~ /(Y|N)/) {
                     $g_requiresDtm = $1;
                     $s =~ s:$1::;
@@ -233,38 +248,43 @@ sub parseStatement {
                     parseEnd($s);
                 } else {
                     displayStmt($g_ok);
-                    print "   Error: Expecting { Y | N }\n"; #T
+                    print "   Error: Expecting { Y | N }, but saw $s\n"; #T
                 }
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_STDOUT)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2::;
+        $s =~ s:$g_prefix$2\s*::;
         if (validKey($g_prefix)) {
-            if (parseEq($s)) {
+            my $eq;
+            ($eq, $s) = parseEq($s);
+            if ($eq) {
                 if ($s =~ /([a-zA-Z0-9_\/]+)/) {
                     $g_stdout = $1;
                     $s =~ s:$1::;
-                    if ($s =~ /(%nid\+?)/) {
+                    if ($s =~ /(%nid\+)/) {
                         $g_stdout = $g_stdout . $1;
                         $s =~ s:$1::;
+                        $s =~ s:\+::;
                     }
                     $g_opts |= 0x10;
                     push(@g_dbList, $g_prefix . $k, $g_stdout);
                     parseEnd($s);
                 } else {
                     displayStmt($g_ok);
-                    print "   Error: Expecting <stdout> e.g. stdout_TM[%nid[+]]\n"; #T
+                    print "   Error: Expecting <stdout> e.g. stdout_TM[%nid[+]], but saw $s\n"; #T
                 }
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_PERSIST_RETRIES)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2::;
+        $s =~ s:$g_prefix$2\s*::;
         if (validKey($g_prefix)) {
-            if (parseEq($s)) {
+            my $eq;
+            ($eq, $s) = parseEq($s);
+            if ($eq) {
                 if ($s =~ /(\d+)\s*/) {
                     $g_persistRetries = $1;
                     $s =~ s:$1\s*::;
@@ -278,31 +298,37 @@ sub parseStatement {
                             parseEnd($s);
                         } else {
                             displayStmt($g_ok);
-                            print "   Error: Expecting <secs> e.g. 30\n"; #T
+                            print "   Error: Expecting <secs> e.g. 30, but saw $s\n"; #T
                         }
                     } else {
                         displayStmt($g_ok);
-                        print "   Error: Expecting ,\n"; #T
+                        print "   Error: Expecting ',', but saw $s\n"; #T
                     }
                 } else {
                     displayStmt($g_ok);
-                    print "   Error: Expecting <retries> e.g. 2\n"; #T
+                    print "   Error: Expecting <retries> e.g. 2, but saw $s\n"; #T
                 }
             }
         }
     } elsif ($s =~ /(^[A-Z]+)(_PERSIST_ZONES)\s*/) {
         my $g_prefix = $1;
         my $k = $2;
-        $s =~ s:$g_prefix$2::;
+        $s =~ s:$g_prefix$2\s*::;
         if (validKey($g_prefix)) {
-            if (parseEq($s)) {
+            my $eq;
+            ($eq, $s) = parseEq($s);
+            if ($eq) {
                 my ($res, $r) = parseZid($s);
                 if ($res == 1) {
                     $g_persistZones = $r;
+                    $s =~ s:$r::;
+                    $s =~ s:\+::;
                     $g_opts |= 0x40;
                 }
                 push(@g_dbList, $g_prefix . $k, $g_persistZones);
-                parseEnd($s);
+                if ($res == 1) {
+                    parseEnd($s);
+                }
             }
         }
     } else {
