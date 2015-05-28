@@ -1,0 +1,18 @@
+;// @@@ START COPYRIGHT @@@
+;//
+;// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+;//
+;// @@@ END COPYRIGHT @@@
+; TCPIPV4.def : Declares the module parameters for the DLL.
+
+LIBRARY      "hp_tcpipv40300"
+
+EXPORTS
+TCPIPInitIO
+TCPIPExitIO
+TCPIPOpenSession
+TCPIPCloseSession
+TCPIPDoWriteRead
+
+
+
