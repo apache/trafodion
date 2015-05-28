@@ -185,6 +185,34 @@ sub addDbPersistProc {
     $insDbPersistStmt->execute;
 }
 
+sub addDbPersistData {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $keyName   = @_[0];
+    my $valueName = @_[1];
+
+    my $insDbPersistStmt = $DBH->prepare("insert into monRegPersistData values (?, ?)");
+
+    $insDbPersistStmt->bind_param(1, $keyName);
+    $insDbPersistStmt->bind_param(2, $valueName);
+
+    $insDbPersistStmt->execute;
+}
+
+sub delDbPersistData {
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $delDbPersistStmt = $DBH->prepare("delete from monRegPersistData");
+    $delDbPersistStmt->execute;
+}
+
 # Physical node table
 sub addDbPNode {
 
