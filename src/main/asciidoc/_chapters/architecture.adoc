@@ -1,0 +1,136 @@
+////
+/**
+  *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+////
+[[architecture]]
+= Architecture
+:doctype: book
+:numbered:
+:toc: left
+:icons: font
+:experimental:
+
+[[arch-overview]]
+== Overview   
+[[arch-overview-dcs]]
+=== DCS  
+DCS, see figure <<img-dcs,Figure 1>>, is a framework that connects 
+ODBC/JDBC Type 4 clients to Trafodion user programs (MXOSRVR servers). In a nutshell, clients connect to a listening 
+DcsMaster on a well known port. DcsMaster looks in ZooKeeper for an "available"
+DcsServer user program (MXOSRVR) and returns an object reference to that server back to the client.
+The client then connects directly to the MXOSRVR. After the initial startup DcsMaster restarts any failed
+DcsServers. And, DcsServers restart any failed MXOSRVRs.
+
+DCS provides the following:  
+
+* A lightweight process management framework. 
+* High performance client listener using Java NIO.  
+* Simple configuration and startup 
+* A highly available and scaleable Trafodion connectivity service.
+* Uses ZooKeeper as backbone for coordination and process management. 
+* Embedded user interface to examine state, logs, process status.            
+* Standalone REST server. 
+* 100% Java implementation. 
+ 
+[[img-dcs]]
+image::architecture.png[caption="Figure 1: ", title="DCS Architecture"]
+
+[[arch-client]]
+== Client   
+The Trafodion ODBC/JDBC Type 4 client drivers connect to MXOSRVRs through the DCS Master.
+	
+[[arch-dcsmaster]]
+== DcsMaster 
+_DcsMaster_ is the implementation of the Master Server. The Master server
+is responsible for listening for client connection requests, monitoring all DcsServer instances in the cluster
+and restarting any DcsServers that fail after initial startup.
+
+[[master-startup]]
+=== Startup Behavior 
+The DcsMaster is started via the scripts found in the _/bin_ directory. During startup it registers itself in Zookeeper.
+If the DcsMaster is started as a backup then after registering in Zookeeper it waits to become the next DcsMaster leader.
+If ever the backup becomes the leader it executes the _bin/dcsbind.sh_ script to enable floating IP on a given interface and
+IP address.
+
+[[master-runtime]]
+=== Runtime Impact 
+A common question is what happens to an DCS cluster when the DcsMaster goes down. Because the
+DcsMaster doesn't affect the running DcsServers or connected clients, the cluster can still function 
+i.e., clients already connected to MXOSRVRs can continue to work. However, the DcsMaster controls critical
+functions such as listening for clients and restarting DcsServers. So, while the cluster can still run for
+a time without the DcsMaster, it should be restarted as soon as possible.     
+
+=== High Availability 
+DcsMaster backup servers may be configured by adding host names to the _conf/backup-masters_ file. They are started
+and stopped automatically by the _bin/master-backup.sh_ script whenever DCS is started or stopped. Every backup 
+DcsMaster follows the current leader DcsMaster watching for it to fail. If failure of the leader occurs the first
+backup DcsMaster in line for succession checks to see if floating IP is enabled. If enabled it executes
+the _bin/scripts/dcsbind.sh_ script to add a floating IP address to an interface on its node. It then continues
+with normal initialization and eventually starts listening for new client connections. It may take
+several seconds for the takeover to complete. When a failed node is restored a new DcsMaster backup may
+be started manually by executing the _bin/dcs-daemon.sh_ script on the restored node e.g.,
+
+----
+>bin/dcs-daemon.sh start master
+----
+
+The newly created DcsMaster backup process will take its place at the back of the line waiting for the current DcsMaster leader to fail.
+         
+[[master-processes]]
+=== Processes
+The DcsMaster runs several background threads:
+         
+==== Listener 
+The listener thread is responsible for servicing client requests. It pairs
+each client with an registered MXOSRVR found in Zookeeper. A default port
+is configured but this may be changed in the configuration by modifying               
+the _dcs.master.port_ and _dcs.master.port.range_ properties.
+         
+[[master-processes-server-manager]]
+==== ServerManager 
+The server manager thread is responsible for monitoring and restarting its child DcsServers. It  
+runs a server handler for each DcsServer found in _conf/servers_.
+
+[[server-arch]]
+== DcsServer 
+_DcsServer_ is the server implementation. It is responsible for starting and keeping
+its Trafodion user program (MXOSRVR) running.
+       
+[[server-startup]]
+=== Startup Behavior 
+The DcsServer is started via the scripts found in the _/bin_ directory. During startup it registers itself in Zookeeper. 
+         
+[[server-runtime]]
+=== Runtime Impact 
+The DcsServer can continue to function if the DcsMaster goes down. the cluster can still function in a "steady 
+state." However, the DcsMaster controls critical functions such as DcsServer failure and.  
+So while the cluster can still run for a time without the DcsMaster, 
+the DcsMaster should be restarted as soon as possible.     
+         
+[[server-arch-processes]]
+=== Processes 
+The DcsServer runs a variety of background threads:
+
+[[server-processes-server-manager]]
+==== ServerManager
+The server manager thread is responsible for monitoring and restarting its child MXOSRVRs. It  
+runs a server handler for each MXOSRVR found after the hostname in _conf/servers_.
+                  
+[[server-processes-script-manager]]
+==== ScriptManager
+The script manager thread is responsible for readng and compiling the script used to run the MXOSRVR. It  
+can detect a change in any script found in _bin/scripts_. If any file changes it will
+reload and compile the changed script.

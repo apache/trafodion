@@ -1,0 +1,30 @@
+[ODBC Data Sources]
+TDM_Default_DataSource      = Trafodion
+traf                        = Trafodion
+
+[traf]
+Description                 = traf DSN
+Driver                      = Trafodion
+Catalog                     = TEMPLATE_CATALOG
+Schema                      = TEMPLATE_SCHEMA
+DataLang                    = 0
+FetchBufferSize             = SYSTEM_DEFAULT
+Server                      = TCP:TEMPLATE_DSN
+SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
+SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
+SQL_QUERY_TIMEOUT           = NO_TIMEOUT
+ServiceName                 = HP_DEFAULT_SERVICE
+
+[TDM_Default_DataSource]
+Description                 = Trafodion test system
+Driver                      = Trafodion
+Catalog                     = TEMPLATE_CATALOG
+Schema                      = TEMPLATE_SCHEMA
+DataLang                    = 0
+FetchBufferSize             = SYSTEM_DEFAULT
+Server                      = TCP:TEMPLATE_DSN
+SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
+SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
+SQL_QUERY_TIMEOUT           = NO_TIMEOUT
+ServiceName                 = HP_DEFAULT_SERVICE
+

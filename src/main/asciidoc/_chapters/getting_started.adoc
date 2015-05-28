@@ -1,0 +1,92 @@
+////
+<!-- 
+/**
+  *(C) Copyright 2015 Hewlett-Packard Development Company, L.P.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-->         
+////
+
+= Getting Started
+:doctype: book
+:numbered:
+:toc: left
+:icons: font
+:experimental:
+
+
+== Introduction
+<<quickstart,Quick Start>> will get you up and running on a single-node instance of DCS. 
+<<configuration,Configuration>> describes setup of DCS in a multi-node configuration.
+
+[[quickstart]]
+== Quick Start
+
+This guide describes setup of a single node DCS instance.
+It leads you through creating a configuration, and then starting
+up and shutting down your DCS instance. The below exercise
+should take no more than ten minutes (not including download time).
+
+=== Download and unpack the latest release.
+
+Decompress and untar your download and then change into the unpacked directory.
+
+---- 
+ $ tar xzf dcs-{projectVersion}.tar.gz
+ $ cd dcs-{projectVersion}
+----
+
+Is _java_ installed? 
+
+The steps in the following sections presume a 1.7 version of Oracle
+_java_ is installed on your machine and available on your path; i.e. when you type _java_, you see output that describes the
+options the java program takes (DCS requires java 7 or better). If this is not the case, DCS will not start. 
+Install _java_, edit _conf/dcs-env.sh_, uncommenting the `JAVA_HOME` line pointing it to your java install.
+      
+Is _Trafodion_ installed and running?
+
+DCS presumes a _Trafodion_ instance is installed and running on your machine and available on your path; i.e. the
+`MY_SQROOT` is set and when you type _sqcheck_, you see output that confirms _Trafodion_ is running. If this is not
+the case, DCS may start but you'll see many errors in the DcsServer logs related to user program startup. 
+      
+At this point, you are ready to start DCS.
+
+=== Starting DCS
+
+Now start DCS:
+----     
+ $ bin/start-dcs.sh 
+ localhost: starting zookeeper, logging to /logs/dcs-user-1-zookeeper-hostname.out
+ localhost: running Zookeeper
+ starting master, logging to /logs/dcs-user-1-master-hostname.out
+ localhost: starting server, logging to /logs/dcs-user-1-server-hostname.out 
+----
+
+You should now have a running DCS instance. DCS logs can be found in the
+_logs_ subdirectory. Peruse them especially if DCS had trouble starting.
+
+=== Stopping DCS
+
+Stop your DCS instance by running the stop script.
+----
+ $ ./bin/stop-dcs.sh
+ localhost: stopping server.
+ stopping master.
+ localhost: stopping zookeeper.
+----
+
+Where to go next? 
+
+The above described setup is good for testing and experiments only. Next move on to <<configuration,configuration>> 
+where we'll go into depth on the different requirements and critical configurations needed setting up a distributed DCS deploy.
